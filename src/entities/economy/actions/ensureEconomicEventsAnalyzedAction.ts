@@ -5,9 +5,9 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { analyzeEconomicEvents } from '../api/analyzeEconomicEvents';
 import {
     CALENDAR_COUNTRY,
-    type CalendarCountry,
     isCalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * Server Action: 발표된 Medium+ 미분석 이벤트를 AI 분석으로 채운다. 본문은

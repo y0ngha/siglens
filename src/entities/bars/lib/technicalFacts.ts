@@ -17,7 +17,10 @@ export interface TechnicalFacts {
     pctAbove52wLow: number;
 }
 
-// timeframe prop 없이도 결정적으로 계산하기 위해 마지막 RECENT_BARS_WINDOW 봉만 사용한다.
+/**
+ * 52주 고저와 변동률을 계산할 최근 봉 수(일봉 252개 ≈ 1년). timeframe prop 없이도 결정적으로 계산하려고
+ * 마지막 이 개수의 봉만 쓴다.
+ */
 export const RECENT_BARS_WINDOW = 252;
 
 // 등락률 계산에 직전 봉(prev)과 마지막 봉(last)이 필요하므로 최소 2개 봉이 있어야 한다.

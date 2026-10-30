@@ -90,7 +90,7 @@ describe('addLocalWatchlistEntry', () => {
         expect(entries).toEqual([
             { symbol: 'AAPL', label: '애플', addedAt: T0 },
         ]);
-        expect(JSON.parse(storage.dump()!)).toEqual(entries);
+        expect(JSON.parse(storage.dump() ?? 'null')).toEqual(entries);
     });
 
     it('이미 있으면 added=false, 목록은 그대로다', () => {

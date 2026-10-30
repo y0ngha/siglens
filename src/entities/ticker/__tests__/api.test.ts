@@ -4,13 +4,13 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 // `cryptoAssetStore` is still mocked because `isCryptoSymbolStatic` imports `isCryptoSymbol`
 // from it — vitest needs a mock so the import resolves without touching the DB.
-vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
+vi.mock('@/entities/ticker/server/cryptoAssetStore', () => ({
     isCryptoSymbol: vi.fn(),
 }));
 // `isTabAllowedForSymbol` delegates to `isCryptoSymbolStatic` (unstable_cache-wrapped)
 // instead of raw `isCryptoSymbol`. The `isTabAllowedForSymbol` describe block controls
 // behaviour via `mockIsCryptoSymbolStatic`.
-vi.mock('@/entities/ticker/lib/isCryptoSymbolStatic', () => ({
+vi.mock('@/entities/ticker/server/isCryptoSymbolStatic', () => ({
     isCryptoSymbolStatic: vi.fn(),
 }));
 
@@ -30,7 +30,7 @@ import {
 import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
+import { isCryptoSymbolStatic } from '@/entities/ticker/server/isCryptoSymbolStatic';
 
 import type {
     AssetTranslationRecord,

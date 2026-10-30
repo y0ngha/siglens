@@ -11,19 +11,27 @@ import {
 import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
 
-interface UseTabsOptions<T extends string> {
+/**
+ * 탭이 `aria-controls`로 가리키는 패널이 DOM에 있는 범위.
+ * `'all'`은 비활성 패널도 `hidden`으로 남기는 소비자, `'active'`는 활성 패널만 마운트하는 소비자다.
+ */
+export type TabPanelMounting = 'all' | 'active';
+
+export interface UseTabsOptions<T extends string> {
     tabs: readonly T[];
     activeTab: T;
     onChange: (tab: T) => void;
     withHomeEnd?: boolean;
     idPrefix?: string;
+    /** 기본 `'all'`. `'active'`면 비활성 탭에는 `aria-controls`를 달지 않는다(없는 요소를 가리키지 않게). */
+    panelMounting?: TabPanelMounting;
 }
 
 interface TabProps {
     role: 'tab';
     id: string;
     'aria-selected': boolean;
-    'aria-controls': string;
+    'aria-controls': string | undefined;
     tabIndex: 0 | -1;
     onClick: () => void;
     onKeyDown: (e: KeyboardEvent) => void;
@@ -34,12 +42,17 @@ interface UseTabsReturn<T extends string> {
     getTabProps: (tab: T) => TabProps;
 }
 
+/**
+ * WAI-ARIA tabs 패턴의 탭 prop 묶음(roving tabindex·화살표 이동·활성 탭 스크롤)을 만든다.
+ * `TabsPill`·`TabsUnderline`이 쓰며, 패널의 id는 `buildPanelId`/`buildTabId`로 맞춘다.
+ */
 export function useTabs<T extends string>({
     tabs,
     activeTab,
     onChange,
     withHomeEnd = true,
     idPrefix,
+    panelMounting = 'all',
 }: UseTabsOptions<T>): UseTabsReturn<T> {
     const generatedPrefix = useId();
     /* `tabs` 배열은 호출부에서 매 렌더 새로 만들어지므로 effect 의존성에 그대로
@@ -47,41 +60,28 @@ export function useTabs<T extends string>({
     const firstTab = tabs[0];
     const tabRefs = useRef(new Map<T, HTMLElement | null>());
     const tabRefCallbacks = useRef(new Map<T, RefCallback<HTMLElement>>());
-    // focusTabRef provides a stable focusItem for useRovingKeyboardNav;
-    // synced to focusTab via useLayoutEffect after focusTab is declared
-    const focusTabRef = useRef<(tab: T, e: KeyboardEvent<Element>) => void>(
-        () => {}
-    );
-    const stableFocusTab = useCallback(
-        (nextTab: T, e: KeyboardEvent<Element>) =>
-            focusTabRef.current(nextTab, e),
-        []
-    );
-
-    const handleKeyDown = useRovingKeyboardNav({
-        items: tabs,
-        activeItem: activeTab,
-        onChange,
-        focusItem: stableFocusTab,
-        withHomeEnd,
-    });
 
     const focusTab = useCallback((nextTab: T) => {
         tabRefs.current.get(nextTab)?.focus();
     }, []);
 
-    const getRef = useCallback((tab: T): RefCallback<HTMLElement> => {
-        if (!tabRefCallbacks.current.has(tab)) {
-            tabRefCallbacks.current.set(tab, el => {
-                tabRefs.current.set(tab, el);
-            });
-        }
-        return tabRefCallbacks.current.get(tab)!;
-    }, []);
+    const handleKeyDown = useRovingKeyboardNav({
+        items: tabs,
+        activeItem: activeTab,
+        onChange,
+        focusItem: focusTab,
+        withHomeEnd,
+    });
 
-    useLayoutEffect(() => {
-        focusTabRef.current = focusTab;
-    }, [focusTab]);
+    const getRef = useCallback((tab: T): RefCallback<HTMLElement> => {
+        const cached = tabRefCallbacks.current.get(tab);
+        if (cached) return cached;
+        const callback: RefCallback<HTMLElement> = el => {
+            tabRefs.current.set(tab, el);
+        };
+        tabRefCallbacks.current.set(tab, callback);
+        return callback;
+    }, []);
 
     /*
      * 활성 탭을 스크롤 뷰 안으로 끌어온다.
@@ -132,13 +132,16 @@ export function useTabs<T extends string>({
             role: 'tab',
             id: buildTabId(prefix, tab),
             'aria-selected': tab === activeTab,
-            'aria-controls': buildPanelId(prefix, tab),
+            'aria-controls':
+                panelMounting === 'all' || tab === activeTab
+                    ? buildPanelId(prefix, tab)
+                    : undefined,
             tabIndex: tab === activeTab ? 0 : -1,
             onClick: () => onChange(tab),
             onKeyDown: handleKeyDown,
             ref: getRef(tab),
         }),
-        [activeTab, onChange, handleKeyDown, prefix, getRef]
+        [activeTab, onChange, handleKeyDown, prefix, getRef, panelMounting]
     );
 
     return { getTabProps };

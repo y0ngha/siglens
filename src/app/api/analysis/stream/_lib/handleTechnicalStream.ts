@@ -1,8 +1,8 @@
 import type { AssembledPromptRecord } from '@y0ngha/siglens-core';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';

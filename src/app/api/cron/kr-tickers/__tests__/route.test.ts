@@ -11,13 +11,13 @@ vi.mock('next/server', () => ({ after: mockAfter }));
 vi.mock('@/shared/lib/backgroundTask', () => ({
     fireAndForget: mockFireAndForget,
 }));
-vi.mock('@/entities/ticker/lib/syncKrListedTickers', () => ({
+vi.mock('@/entities/ticker/server/syncKrListedTickers', () => ({
     syncKrListedTickers: mockSync,
 }));
 vi.mock('../reconcileDeps', () => ({
     createReconcileDeps: () => ({}),
 }));
-vi.mock('@/entities/ticker/lib/reconcileUsTickerNames', () => ({
+vi.mock('@/entities/ticker/server/reconcileUsTickerNames', () => ({
     reconcileUsTickerNames: mockReconcile,
 }));
 

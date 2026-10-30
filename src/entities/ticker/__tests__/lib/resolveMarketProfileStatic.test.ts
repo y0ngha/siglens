@@ -1,16 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@/entities/ticker/lib/getAssetInfoStatic', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoStatic', () => ({
     getAssetInfoStatic: vi.fn(),
 }));
 // 캐시 없는 경로를 부르면 안 된다 — 부르면 테스트가 실패하도록 던지게 둔다.
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(() => {
         throw new Error('uncached getAssetInfo must not be called');
     }),
 }));
 
-import { getAssetInfoStatic } from '@/entities/ticker/lib/getAssetInfoStatic';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
 
 describe('resolveMarketProfileStatic', () => {

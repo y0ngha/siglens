@@ -51,7 +51,7 @@ vi.mock('@/shared/api/market/sessionSpecFor', async () => {
 
 import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
-import { __resetBarsMemoryForTests } from '../lib/barsDataCache';
+import { __resetBarsMemoryForTests } from '../server/barsDataCache';
 import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,

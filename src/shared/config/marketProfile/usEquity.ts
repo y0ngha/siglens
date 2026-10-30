@@ -3,7 +3,7 @@ import type { MarketProfileDescriptor } from './types';
 /**
  * US listing exchanges that survive search filtering.
  *
- * Mirrors `US_EXCHANGES` in `src/entities/ticker/lib/fmpTickerApi.ts`.
+ * Mirrors `US_EXCHANGES` in `src/entities/ticker/server/fmpTickerApi.ts`.
  * If you add or remove an exchange here, apply the same change there (and
  * vice-versa) to keep ticker search and market-profile routing in sync.
  * See CONVENTIONS.md#CS-3 for the duplication rationale.

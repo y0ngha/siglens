@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const { search } = vi.hoisted(() => ({ search: vi.fn() }));
-vi.mock('@/entities/ticker/lib/searchTicker', () => ({ searchTicker: search }));
+vi.mock('@/entities/ticker/server/searchTicker', () => ({
+    searchTicker: search,
+}));
 
 import { searchTickerTool } from '@/app/api/ai/chat/tools/searchTicker';
 

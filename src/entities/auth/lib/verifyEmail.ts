@@ -28,7 +28,10 @@ function expiredCodeError(): VerifyEmailError {
     };
 }
 
-/** Verify a numeric email verification code. */
+/**
+ * 제출된 이메일 인증 코드를 저장된 해시와 상수 시간으로 비교하고, 맞으면 `verified` 마커로 바꾼다.
+ * 마커는 `registerUser`가 가입 시 확인한다. 이미 `verified`면 코드를 보지 않고 성공을 돌려준다.
+ */
 export async function verifyEmail(
     input: VerifyEmailInput,
     dependencies: VerifyEmailDependencies

@@ -1,15 +1,12 @@
 import 'server-only';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runNewsAnalysis,
     type EnrichedNewsItem,
     type SubmitNewsAnalysisOptions,
     type RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
+import type { Locale } from '@/shared/i18n/locales';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
-import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveReasoning } from '@/shared/lib/byokGate';
@@ -19,7 +16,11 @@ import {
     resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
+import { DrizzleNewsRepository } from '../api';
+import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 
+/** 뉴스 분석 본문의 입력 — 쿠키 액션과 공개 API가 같은 형상으로 넘긴다. */
 export interface ExecuteNewsAnalysisParams {
     /** 누구의 이름으로 어떤 키로 부르는지 — 쿠키 액션도 공개 API도 호출부가 정해 넘긴다. */
     readonly caller: AnalysisCaller;
@@ -51,8 +52,8 @@ export async function executeNewsAnalysis({
     cacheOnly = false,
 }: ExecuteNewsAnalysisParams): Promise<RunNewsAnalysisResult> {
     const keyOptions = resolveCallerKeyOptions(caller, cacheOnly);
-    // Resolve profile once; derive both assetClass and currency from it
-    // (same pattern as runOverallAnalysisAction/prewarmOverall).
+    // 프로필을 한 번만 resolve해 assetClass와 currency를 모두 거기서 얻는다
+    // (runOverallAnalysisAction/prewarmOverall과 같은 방식).
     const marketProfile = await resolveMarketProfile(symbol);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
@@ -65,9 +66,9 @@ export async function executeNewsAnalysis({
         loadNewsMacroCalendar(),
     ]);
 
-    // The per-card stage and 30-day window above are untouched — buildAnalysisNewsItems
-    // bounds what the aggregate prompt sees(top 25 by priceImpact). 동일 pipeline을
-    // submitOverallAnalysisAction이 공유해 news axis cache가 같은 키로 hit한다.
+    // buildAnalysisNewsItems가 집계 프롬프트가 보는 기사를 제한한다(priceImpact 상위 25건).
+    // submitOverallAnalysisAction이 같은 파이프라인을 공유해 news axis cache가 같은 키로
+    // hit한다.
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
 

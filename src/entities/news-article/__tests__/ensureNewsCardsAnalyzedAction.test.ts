@@ -5,7 +5,7 @@ vi.mock('next/cache', () => ({
     revalidateTag: revalidateTagSpy,
 }));
 
-vi.mock('../lib/newsRefreshFlag', () => ({
+vi.mock('../server/newsRefreshFlag', () => ({
     tryClaimNewsRefresh: vi.fn(),
     shortenNewsRefreshClaim: vi.fn(),
     markFetched: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('../lib/newsRefreshFlag', () => ({
 
 // 잠금은 기본적으로 항상 잡힌다(=그대로 실행). 다른 경로가 진행 중인 경우는 개별
 // 테스트가 덮어쓴다. 잠금 자체의 원자성·해제는 newsCardAnalysisLock.test.ts가 본다.
-vi.mock('../lib/newsCardAnalysisLock', () => ({
+vi.mock('../server/newsCardAnalysisLock', () => ({
     withNewsCardAnalysisLock: vi.fn(
         async (_symbol: string, run: () => Promise<void>) => {
             await run();
@@ -38,7 +38,7 @@ vi.mock('@/shared/api/e2eEnv', () => ({
 // The action resolves its client through the getNewsClient factory (FMP in
 // prod, fake under E2E_TEST). We mock the factory directly so each test injects
 // a fresh client without fighting the factory's module-level singleton cache.
-vi.mock('../lib/getNewsClient', () => ({
+vi.mock('../server/getNewsClient', () => ({
     getNewsClient: vi.fn(),
 }));
 
@@ -48,7 +48,7 @@ vi.mock('@/shared/db/client', () => ({
 
 // getAssetInfo is called by ensureNewsCardsAnalyzedAction (via resolveMarketProfile) to resolve
 // news source per asset. Default to equity (no marketProfile) so existing tests are unaffected.
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
 }));
 
@@ -69,7 +69,7 @@ import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from '../lib/newsAnalysisConstants'
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
 import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
-import { getNewsClient } from '../lib/getNewsClient';
+import { getNewsClient } from '../server/getNewsClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
     NewsItem,
@@ -81,9 +81,9 @@ import {
     tryClaimNewsRefresh,
     shortenNewsRefreshClaim,
     markFetched,
-} from '../lib/newsRefreshFlag';
-import { withNewsCardAnalysisLock } from '../lib/newsCardAnalysisLock';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+} from '../server/newsRefreshFlag';
+import { withNewsCardAnalysisLock } from '../server/newsCardAnalysisLock';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { NewsIngestWriteError } from '../lib/ingestNewsForSymbol';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
@@ -149,7 +149,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockIsE2E.mockReturnValue(false);
 
         mockFetchNewsForPeriod = vi.fn();
-        // upsertNewsItem은 Task 4에서 Promise<boolean>으로 변경됨:
+        // upsertNewsItem은 Promise<boolean>을 돌려준다:
         // true = 신규 삽입 또는 내용 변경, false = no-op(동일 기사 재fetch).
         // 기본값 true: 기존 테스트 대부분이 "변경 있음" 시나리오를 검증하므로.
         mockUpsertNewsItem = vi.fn().mockResolvedValue(true);
@@ -246,9 +246,9 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         it('한 번에 보강하는 기사 수를 VISITOR_NEWS_CARD_LIMIT로 묶는다', async () => {
             // 적재 lookback이 180일이고 FMP 상한이 1,000건이라, 상한이 없으면
             // 백로그가 쌓인 종목의 첫 마운트 한 번이 최악 1,000회 LLM 왕복이 된다.
-            // 2-vCPU 박스에서 LLM 소켓 4개를 수십 분 잡는다(감사: 비용 확인 패스).
+            // 2-vCPU 박스에서 LLM 소켓 4개를 수십 분 잡는다.
             // 픽스처 길이를 상수에서 파생한다 — 하드코딩하면 상수를 그 값 이상으로
-            // 올리는 순간 테스트가 조용히 무장 해제된다(감사 라운드 13).
+            // 올리는 순간 테스트가 조용히 무장 해제된다.
             const many = Array.from(
                 { length: VISITOR_NEWS_CARD_LIMIT * 2 },
                 (_, i) => ({
@@ -314,6 +314,27 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await ensureNewsCardsAnalyzedAction('aapl');
 
             expect(revalidateTagSpy).toHaveBeenCalledWith('news:AAPL', 'max');
+        });
+
+        it('소문자 심볼 요청도 대문자로 정규화해 적재·선점·분석 완료 조회에 쓴다', async () => {
+            // 형상 검사는 대소문자를 가리지 않아 `005930.ks`가 통과한다. 소문자 그대로
+            // 소스에 넘기면 네이버 경로가 기사 `symbol`을 소문자로 만들고, `news.id`
+            // 충돌 upsert가 기존 `005930.KS` 행의 symbol을 소문자로 덮어써 정상 조회에서
+            // 사라진다. 분석 완료 집합도 소문자로 조회돼 이미 분석된 기사를 놓친다.
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('005930.ks');
+
+            expect(mockTryClaimNewsRefresh).toHaveBeenCalledWith('005930.KS');
+            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+                '005930.KS',
+                NEWS_LOOKBACK_MS
+            );
+            expect(mockListAnalyzedIds).toHaveBeenCalledWith(
+                '005930.KS',
+                NEWS_LOOKBACK_MS
+            );
         });
 
         // fresh.length === 0 시나리오는 아래 'revalidateTag 게이팅은' describe의
@@ -389,7 +410,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         // fire-and-forget 계약(파일 docstring, SERVER.md#SA-6) —
-        // NewsIngestWriteError는 throw하지 않고 삼킨다(PR #700 리뷰).
+        // NewsIngestWriteError는 throw하지 않고 삼킨다.
         it('majority-failure: 과반 reject → throw하지 않고 삼키며, revalidateTag 미도달', async () => {
             const errorSpy = vi
                 .spyOn(console, 'error')
@@ -564,7 +585,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             ]);
             // Both upserts fail → 2/2 > 50%, triggers majority-failure throw
             // inside ingestNewsForSymbol — but this fire-and-forget call site
-            // must swallow it (PR #700 review), not propagate.
+            // must swallow it, not propagate.
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));
@@ -578,7 +599,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             errorSpy.mockRestore();
         });
 
-        // PR #700 리뷰 — 이 액션은 fire-and-forget(waitUntil) 계약이므로
+        // 이 액션은 fire-and-forget(waitUntil) 계약이므로
         // NewsIngestWriteError를 절대 위로 던지면 안 된다. prewarmNews(cron)와
         // 대칭적인 반대 계약: 여기선 삼키고 로그만 남긴다.
         it('NewsIngestWriteError를 삼키고 지정된 접두사로 로깅한다', async () => {
@@ -714,7 +735,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
-    // ── FIX 3(감사) — 동시 LLM 호출 상한 ──
+    // ── FIX 3 — 동시 LLM 호출 상한 ──
 
     describe('동시 카드 분석 제한은', () => {
         it('FIX 3 — unanalyzed 아이템이 NEWS_CARD_ANALYSIS_PARALLEL_LIMIT를 초과해도 전부 분석된다', async () => {
@@ -946,8 +967,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             ]);
             // Both upserts fail → majority failure inside ingestNewsForSymbol,
             // but the action swallows NewsIngestWriteError (fire-and-forget
-            // contract, PR #700 review) instead of propagating it. markFetched
-            // HAS run — 표시가 FMP 왕복 앞으로 옮겨졌다(감사: 비용 라운드 13).
+            // contract) instead of propagating it. markFetched
+            // HAS run — 표시가 FMP 왕복 앞으로 옮겨졌다.
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));

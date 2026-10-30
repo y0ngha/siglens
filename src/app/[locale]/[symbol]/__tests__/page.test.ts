@@ -3,7 +3,7 @@ const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
@@ -31,7 +31,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // FearGreedFactsSummary → fearGreedLabels reads POC_WINDOW_DEFAULT at
     // module scope whenever it lands in the import graph.
     POC_WINDOW_DEFAULT: 60,
-    // getSeedBarsStatic(barsStaticCache)이 지표 화이트리스트의 baseline으로 쓴다.
+    // getSeedBarsStatic이 부르는 toSeedBarsData(seedBars)가 지표 화이트리스트의 baseline으로 쓴다.
     EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} },
     // quantizeBarsDataToLastClosed가 봉이 **있을 때만** 호출한다. 빈 배열은
     // `bars.length === 0`에서 단락되므로 이 목이 없던 동안에도 드러나지 않았지만,
@@ -57,7 +57,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock(
@@ -73,7 +73,7 @@ vi.mock(
 // undefined를 읽는다. 실제 shape에 맞춰 빈 지표를 함께 준다.
 // 빈 봉은 `getBarsStatic`이 `EmptyBarsError`로 던져(캐시에 넣지 않으려고) 호출부가 degrade로 읽는다 —
 // 정상 경로 픽스처는 봉이 하나 이상 있어야 한다.
-vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: vi.fn().mockResolvedValue({
         bars: [
             { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
@@ -156,7 +156,7 @@ import {
     default as SymbolPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,
@@ -166,7 +166,7 @@ import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
-import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { isValidElement, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';

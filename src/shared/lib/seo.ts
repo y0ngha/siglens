@@ -140,7 +140,7 @@ export function brandIntroName(locale: Locale): string {
 export const SYMBOLS_PATH = '/symbols';
 
 /**
- * 홈 `Organization` 노드의 `@id`. 홈 페이지(`(home)/page.tsx`)와 `/about`
+ * 홈 `Organization` 노드의 `@id`. 홈(`(home)/_lib/homeJsonLdNodes.ts`)과 `/about`
  * 페이지가 각자 `${SITE_URL}#organization` 리터럴을 조립해 크롤러가 두 문서를
  * 같은 개체로 묶는 참조가 오타 하나로 갈릴 수 있었다 — 상수 하나로 묶는다.
  */
@@ -158,7 +158,7 @@ export interface OrganizationCoreJsonLd {
  * 발행 주체 `Organization` 노드의 **핵심 속성**(`@id`·`name`·`url`).
  *
  * 전 페이지에 깔리는 `SiteJsonLd`가 `WebSite.publisher`의 참조 대상을 같은 문서 안에 두려고
- * 이 최소 노드를 싣고, 홈(`(home)/page.tsx`)은 이 위에 로고·설명·sameAs 등을 얹은 풍부한 노드를
+ * 이 최소 노드를 싣고, 홈(`(home)/_lib/homeJsonLdNodes.ts`)은 이 위에 로고·설명·sameAs 등을 얹은 풍부한 노드를
  * 낸다. 같은 `@id`의 두 정의는 파서가 하나로 합치는데, 겹치는 속성 값이 다르면 충돌한다 —
  * 두 곳이 이 함수 하나에서 핵심 속성을 받아야 값이 갈릴 수 없다.
  */

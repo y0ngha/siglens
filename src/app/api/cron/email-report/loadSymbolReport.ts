@@ -9,7 +9,7 @@ import { getNewsList } from '@/entities/news-article/api';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { narrowOptionsContent } from '@/entities/seo-snapshot/lib/optionsContent';
 import { narrowTechnicalContent } from '@/entities/seo-snapshot/lib/technicalContent';

@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { cn } from '@/shared/lib/cn';
 import { reportClientError } from '@/shared/lib/reportClientError';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
+/** `RouteErrorView` 입력. 문구는 각 `error.tsx`가 번역한 문자열이다. */
 export interface RouteErrorViewProps {
     error: Error & { digest?: string };
     reset: () => void;
@@ -44,7 +46,10 @@ export function RouteErrorView({
 
     return (
         <main
-            className={`${containerClassName} flex flex-1 flex-col items-center py-20 text-center`}
+            className={cn(
+                containerClassName,
+                'flex flex-1 flex-col items-center py-20 text-center'
+            )}
         >
             {/*
              * 메시지 묶음만 alert로 알린다 — 버튼·링크까지 넣으면 스크린리더가 조작

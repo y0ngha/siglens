@@ -1,5 +1,5 @@
 import 'server-only';
-import { correctKrSymbolSuffix } from '@/entities/ticker/lib/koreanNameStore';
+import { correctKrSymbolSuffix } from '@/entities/ticker/server/koreanNameStore';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { logToolDegrade } from './logToolDegrade';
 

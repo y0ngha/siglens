@@ -1,5 +1,5 @@
 import type { AssetInfo } from '@/shared/lib/types';
-import { getAssetInfo } from './getAssetInfo';
+import { getAssetInfo } from '../server/getAssetInfo';
 import {
     marketProfileOf,
     DEFAULT_MARKET_PROFILE,

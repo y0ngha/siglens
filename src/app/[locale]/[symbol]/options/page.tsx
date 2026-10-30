@@ -1,94 +1,73 @@
-import { getTranslations } from 'next-intl/server';
-import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
-import { hasOptionsProse } from '@/entities/seo-snapshot/lib/optionsContent';
-import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolRouteParams } from '@/shared/config/market';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import {
-    fetchOptionsSnapshot,
-    hasOptionsMarket,
-} from '@/entities/options-chain/lib/optionsDataCache';
-import { resolveSnapshotSlots } from '@/entities/options-chain/lib/optionsSlots';
-import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import {
-    ALWAYS_NOINDEX_TAB_ROBOTS,
-    buildBreadcrumbJsonLd,
-} from '@/shared/lib/seo';
-import {
-    buildSymbolOptionsSeoContent,
-    buildSymbolSeoContent,
-} from '@/shared/lib/seoSymbol';
-import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
-import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+
+import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
+import {
+    enterSymbolTabMetadata,
+    enterSymbolTabPage,
+    type SymbolTabParams,
+} from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
+import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
+import { resolveSnapshotSlots } from '@/entities/options-chain/lib/optionsSlots';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
+import { hasOptionsProse } from '@/entities/seo-snapshot/lib/optionsContent';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { SymbolRouteParams } from '@/shared/config/market';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import { buildSymbolOptionsSeoContent } from '@/shared/lib/seoSymbol';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
+import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 
-// 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
-// compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
-export const revalidate = 43200; // 12h — SSR은 만기일뿐(Max Pain/IV/OI는 클라)
+import { loadHasOptionsMarket, loadOptionsSnapshot } from './_lib/optionsData';
 
-// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
-// 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
-// revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
+/** ISR 상한. SSR은 만기일 목록뿐이고 Max Pain·IV·OI는 클라가 그린다. */
+export const revalidate = 43200; // 12h
+
+/**
+ * 빈 배열 = 빌드 시 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand ISR. 없으면 동적 세그먼트가
+ * 매 요청 동적 렌더돼 `revalidate`가 무력화된다.
+ */
 export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
 
 interface Props {
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
 }
 
+/**
+ * 옵션 탭 메타데이터 — **항상 noindex**. 이 탭의 산문은 더는 프리웜되지 않아 옵션 체인 수치표만
+ * 남는다. 옵션 없는 종목도 같다(`follow`는 남겨 형제 탭 안내 링크를 크롤러가 따라가게 한다).
+ *
+ * 크립토엔 이 탭이 없다 — 본문과 같은 `isTabAllowedForSymbol` 판정으로 메타데이터 단계에서도 404다.
+ * 옵션 시장 여부는 카피(`hasOptions`)에만 쓰여 차단 판정과 겹쳐 기다린다.
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = resolveLocale(rawLocale);
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const upper = symbol.toUpperCase();
-    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
-    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
-    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
-    if (!isAdmissibleSymbolShape(upper)) notFound();
-    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
-    const { assetInfo, degraded } = await requireResolvableAsset(upper);
-    // 본문 `isTabAllowedForSymbol` 가드와 같은 판정으로 메타데이터 단계에서도 404다(크립토엔
-    // 이 탭이 없다). 레이아웃·본문이 notFound()를 던져도 generateMetadata 결과가 이기므로,
-    // 여기서 탭 카피 + self-canonical을 돌려주면 404 응답이 정상 페이지 메타를 단다.
+    const {
+        locale,
+        ticker: upper,
+        tSeo,
+        assetInfo,
+        degraded,
+    } = await enterSymbolTabMetadata(params);
     if (!(await isTabAllowedForSymbol(upper, 'options'))) notFound();
-    // hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다. 여기서 흡수하지 않으면 throw가
-    // generateMetadata를 reject시켜 ISR cold-gen에서 500을 낸다. 옵션 시장 여부를 모르면
-    // false(노출 안 함)로 degrade → noindex로 안전하게 처리한다. (이 fetch는
-    // staticSymbolCache로 감싸져 DSU를 throw하지 않고, DSU가 발생하더라도 위
-    // `requireResolvableAsset`이 이미 같은 요청 안에서 rethrow했으므로 제어 흐름은 보존된다.)
     const [hasOptions, blockedMetadata] = await Promise.all([
-        staticSymbolCache(
-            ['options:has', upper],
+        loadHasOptionsMarket(
             upper,
-            () => hasOptionsMarket(upper),
-            [],
-            SECONDS_PER_HALF_DAY
-        ).catch((e: unknown) => {
-            console.error(
-                '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
-                e
-            );
-            return false;
-        }),
-        // 차단 판정은 옵션 시장 조회와 독립이다 — 겹쳐서 기다린다.
+            '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:'
+        ),
         getBlockedSymbolMetadata({
             locale,
             symbol: upper,
@@ -108,10 +87,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         locale,
         hasOptions,
     });
-    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
-    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 산문이 빠지면 옵션
-    // 체인 수치표만 남아 색인 근거가 없다. 옵션 없는 종목도 같은 값이다 — 예전에도
-    // `follow`를 남겨 본문의 형제 탭 안내 링크를 크롤러가 따라가게 했다.
     return {
         ...symbolMetadataFromSeo(seo, locale),
         robots: ALWAYS_NOINDEX_TAB_ROBOTS,
@@ -119,151 +94,81 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * 본문용 옵션 시장 여부. ISR degrade guard: hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다.
- * throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다. false로
- * degrade → 이미 존재하는 OptionsEmptyState 분기로 자연스럽게 빠진다.
+ * 옵션 탭 본문(미국 주식 전용) — 옵션 시장·스냅샷이 있으면 체인 화면을, 없거나 조회가 실패하면 빈 상태
+ * 화면을 렌더한다. 스냅샷 산문은 두 경우 모두 유지한다.
+ *
+ * AI 스냅샷 산문과 AI 위젯(`OptionsPageClient` 안)은 같은 결론을 그리므로 XOR이다 — 산문이 렌더
+ * 가능하면 위젯은 `hasSnapshotProse`로 화면만 끈 채 마운트를 유지한다(공유 등록 때문).
  */
-function loadHasOptionsForBody(upper: string): Promise<boolean> {
-    return staticSymbolCache(
-        ['options:has', upper],
-        upper,
-        () => hasOptionsMarket(upper),
-        [],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            '[OptionsPage] hasOptionsMarket failed, degrading to false:',
-            e
-        );
-        return false;
-    });
-}
-
 export default async function OptionsPage({ params }: Props) {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = enterLocale(rawLocale);
-    const t = await getTranslations('app.symbol');
-    const tSeo = await getTranslations('shared.seo');
-    const upper = symbol.toUpperCase();
-
-    if (!isAdmissibleSymbolShape(upper)) notFound();
-
-    // 탭 가드(크립토 hard-404)를 asset·snapshots 읽기와 **같이** 시작한다 — 예전에는 가드를
-    // 먼저 기다린 뒤 Promise.all을 시작해 한 단이 더 직렬이었다(2026-10 서버 성능 감사 L2).
-    // Yahoo를 부르는 hasOptionsMarket만 가드 결과에 묶어, 크립토 심볼에는 여전히 부르지 않는다.
+    const { locale, ticker: upper } = await enterSymbolTabPage(params);
+    // 탭 가드(크립토 404)를 번역·자산·스냅샷 읽기와 같이 시작한다. Yahoo를 부르는 옵션 시장 조회만 가드
+    // 결과에 묶어 크립토에는 부르지 않는다. 자산은 레이아웃이 이미 읽은 캐시 엔트리라 크립토도 가드
+    // 전에 읽어도 왕복이 늘지 않는다.
     const tabAllowedPromise = isTabAllowedForSymbol(upper, 'options');
-    const [tabAllowed, { assetInfo, degraded }, hasOptions, snapshots] =
-        await Promise.all([
-            tabAllowedPromise,
-            // 크립토도 가드 결과 전에 읽는다 — 의도된 동작이다. 레이아웃이 이미 읽은 캐시 엔트리
-            // (`getAssetInfoStatic` + `React.cache`)라 FMP·DB 왕복이 추가되지 않는다.
-            getAssetInfoResilient(upper),
-            tabAllowedPromise.then(allowed =>
-                allowed ? loadHasOptionsForBody(upper) : false
-            ),
-            // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
-            // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-            // `export const revalidate` literal above.
-            getSeoSnapshotsStatic(upper, revalidate, locale),
-        ]);
-    // Hard-404 crypto symbols — this tab is equity-only.
+    const [
+        t,
+        tSeo,
+        tabAllowed,
+        { assetInfo, degraded },
+        hasOptions,
+        snapshots,
+    ] = await Promise.all([
+        getTranslations('app.symbol'),
+        getTranslations('shared.seo'),
+        tabAllowedPromise,
+        getAssetInfoResilient(upper),
+        tabAllowedPromise.then(allowed =>
+            allowed
+                ? loadHasOptionsMarket(
+                      upper,
+                      '[OptionsPage] hasOptionsMarket failed, degrading to false:'
+                  )
+                : false
+        ),
+        // revalidate는 이 페이지 선언과 같은 값이라 색인 게이트의 읽기와 캐시를 공유한다.
+        getSeoSnapshotsStatic(upper, revalidate, locale),
+    ]);
     if (!tabAllowed) notFound();
     const optionsSnapshot = findSnapshotForLocale(snapshots, 'options', locale);
-    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
-    // 그것만 보여주고, 클라이언트 AI 위젯(OptionsAiAnalysis, OptionsPageClient
-    // 내부)는 계속 마운트하되 `hideView`로 UI만 끈다 — 렌더 자체를 건너뛰면
-    // `useRegisterShareable`이 돌지 않아 헤더 공유 버튼이 이 탭의 분석 결과를
-    // 등록받지 못한다(review round 2 fix). 두 소스가 동일 필드(summary/perExpiration/
-    // signals)를 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번,
-    // 스크린리더에 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다.
-    // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowOptionsContent를
-    // 재사용해 프로즈 컴포넌트와 동일 판단. audit fix FIX 9에서도 재사용된다
-    // (OptionsEmptyState의 snapshotSlot을 truthy-element가 아닌 이 boolean으로
-    // 게이팅).
+    // 프로즈 컴포넌트와 같은 `narrowOptionsContent` 판정이라 둘이 어긋나지 않는다.
     const showOptionsProse = hasOptionsProse(optionsSnapshot?.content);
 
-    // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
-    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    // 두 데이터 소스가 동시에 죽어 형상만으로 실재를 보증할 수 없는 심볼 → 다른 탭과 같은 404.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
     if (!assetInfo) notFound();
 
     const displayName = buildDisplayName(assetInfo, upper, locale);
+    // 이 탭은 미국 주식 전용이라(위 탭 가드) 시장 프로필을 고정한다 — `OptionsSnapshotProseProps` JSDoc.
+    const snapshotProse = (
+        <OptionsSnapshotProse
+            content={optionsSnapshot?.content}
+            symbol={upper}
+            displayName={displayName}
+            marketProfile="us-equity"
+            generatedAt={optionsSnapshot?.generatedAt}
+            plain={optionsSnapshot?.plain}
+        />
+    );
+    // 옵션 시장이 없거나(조회 실패 포함) 스냅샷을 못 읽으면 빈 상태 화면 — 산문은 렌더 가능할 때만 싣는다.
+    const emptyState = (
+        <OptionsEmptyState
+            symbol={upper}
+            snapshotSlot={showOptionsProse ? snapshotProse : undefined}
+        />
+    );
+    if (!hasOptions) return emptyState;
 
-    // 옵션 시장이 없으면(또는 조회 실패로 degrade되면) OptionsEmptyState를 렌더한다.
-    // 스냅샷이 있으면 이 분기에서도 프로즈를 유지한다(spec §7 — degraded 분기에서도
-    // 스냅샷 유지). OptionsSnapshotProse 자체가 콘텐츠 없으면 null을 반환한다.
-    if (!hasOptions) {
-        return (
-            <OptionsEmptyState
-                symbol={upper}
-                snapshotSlot={
-                    showOptionsProse ? (
-                        <OptionsSnapshotProse
-                            content={optionsSnapshot?.content}
-                            symbol={upper}
-                            displayName={displayName}
-                            // options 탭은 us-equity 전용이다(147행 notFound
-                            // 가드) — OptionsSnapshotProseProps JSDoc 참고.
-                            marketProfile="us-equity"
-                            generatedAt={optionsSnapshot?.generatedAt}
-                            plain={optionsSnapshot?.plain}
-                        />
-                    ) : undefined
-                }
-            />
-        );
-    }
+    const snapshot = await loadOptionsSnapshot(upper);
+    if (snapshot === null) return emptyState;
 
-    // ISR degrade guard: fetchOptionsSnapshot는 Yahoo 인프라 실패 시 throw한다.
-    // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
-    // null로 degrade → 이미 존재하는 null 분기(OptionsEmptyState)로 자연스럽게 빠진다.
-    const snapshot = await staticSymbolCache(
-        // -v2: IV is null for quote-less / near-zero chains (yahooNormalize) — old entries carry fake IVs
-        ['options:snapshot-v2', upper],
-        upper,
-        () => fetchOptionsSnapshot(upper),
-        [],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            '[OptionsPage] fetchOptionsSnapshot failed, degrading to null:',
-            e
-        );
-        return null;
-    });
-    if (snapshot === null) {
-        return (
-            <OptionsEmptyState
-                symbol={upper}
-                snapshotSlot={
-                    showOptionsProse ? (
-                        <OptionsSnapshotProse
-                            content={optionsSnapshot?.content}
-                            symbol={upper}
-                            displayName={displayName}
-                            // options 탭은 us-equity 전용이다(147행 notFound
-                            // 가드) — OptionsSnapshotProseProps JSDoc 참고.
-                            marketProfile="us-equity"
-                            generatedAt={optionsSnapshot?.generatedAt}
-                            plain={optionsSnapshot?.plain}
-                        />
-                    ) : undefined
-                }
-            />
-        );
-    }
-
-    // 수집 시점에 확정한 슬롯 매핑을 쓴다 — 묵은 스냅샷을 `new Date()`로 다시 매핑하면
-    // 날짜가 밀려 chip이 바뀌거나 사라진다. 매핑이 없는 슬롯은 chip을 그리지 않는다.
+    // 수집 시점에 확정한 슬롯 매핑을 쓴다 — 묵은 스냅샷을 지금 시각으로 다시 매핑하면 날짜가 밀려
+    // 칩이 바뀌거나 사라진다. 매핑이 없는 슬롯은 칩을 그리지 않는다.
     const slots = resolveSnapshotSlots(snapshot, new Date());
-
-    // 클라이언트가 읽는 계약 필드만 보낸다(`toClientOptionsSnapshot` JSDoc). 예전에는 같은
-    // 스냅샷이 prop과 `HydrationBoundary`(읽는 쿼리 없음)로 두 번 실렸다.
+    // 클라이언트가 읽는 계약 필드만 보낸다(`toClientOptionsSnapshot` JSDoc).
     const clientSnapshot = toClientOptionsSnapshot(snapshot);
 
-    // hasOptions: true 하드코딩은 의도적 — 위 OptionsEmptyState 분기(line 79, 83)를
-    // 통과한 시점이라 옵션 시장이 존재함이 보장된다. generateMetadata와 달리 본문
-    // 렌더 경로에서는 false 분기로 빠질 수 없으므로 재조회 없이 상수로 둔다.
+    // 여기까지 왔으면 옵션 시장이 있다 — 메타데이터와 달리 `false` 분기가 없어 상수로 둔다.
     const { fullTitle, description, url } = buildSymbolOptionsSeoContent(
         upper,
         tSeo,
@@ -276,8 +181,7 @@ export default async function OptionsPage({ params }: Props) {
         }
     );
 
-    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
-    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF·지수·모호한 종목은 undefined로 생략된다.
     const aboutNode = buildAssetAboutNode(
         upper,
         pickAssetName(assetInfo, upper, locale),
@@ -289,65 +193,31 @@ export default async function OptionsPage({ params }: Props) {
         description,
         about: aboutNode,
         locale,
-        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
-        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다.
         generatedAt: showOptionsProse ? optionsSnapshot?.generatedAt : null,
     });
-
-    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
-    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
-    const tTab = await getTranslations('shared.symbolTab');
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [
-            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
-            { name: tTab('options'), url },
-        ],
-        locale
-    );
+    const breadcrumbJsonLd = await buildSymbolTabBreadcrumbJsonLd({
+        ticker: upper,
+        displayName,
+        tab: 'options',
+        tabUrl: url,
+        tSeo,
+        locale,
+    });
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            {/* main 랜드마크: 다른 5개 sibling 페이지와 일관성. options-empty
-                상태(OptionsEmptyState)는 자체적으로 <main>을 가지지만, 옵션
-                데이터가 있는 정상 path도 동일하게 main으로 감싸야 sibling 일관성
-                과 a11y landmark navigation이 유지된다. */}
-            {/* audit fix FIX 3: space-y-6 added — all 6 sibling pages have it,
-                and its absence left the h1 flush against the snapshot card
-                below. (The redundant `mx-auto max-w-5xl px-4` that
-                OptionsPageClient used to re-apply internally is removed there
-                — see OptionsPageClient.tsx — so this <main>'s max-width is the
-                single source and the snapshot card no longer reads ~32px wider
-                than the cards beneath it.) */}
+            {/* 빈 상태 화면(`OptionsEmptyState`)은 자체 <main>을 가진다 — 정상 경로도 같은 main
+                랜드마크와 폭으로 감싼다(`OptionsPageClient`는 폭을 다시 잡지 않는다). */}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {t('page.ba2808', { v0: displayName })}
                 </SymbolPageHeading>
-                {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget,
-                    inside OptionsPageClient below) and OptionsSnapshotProse
-                    both render the same AI conclusion (summary/perExpiration/
-                    signals). Showing both duplicated the text for sighted
-                    users and screen readers and doubled as a duplicate-content
-                    SEO risk. OptionsAiAnalysis fetches its analysis via a
-                    client-side hook — during ISR generation it bakes its
-                    loading skeleton into the static HTML (no crawlable AI
-                    text) until it hydrates — so this prose covers crawlers
-                    either way; `hasSnapshotProse` (below) additionally tells
-                    OptionsPageClient to hide the widget's view (not unmount —
-                    it keeps registering Share data) when this prose is already
-                    showing the same content. Renders null when no snapshot
-                    exists (spec 2026-07-24 Task 7b). */}
-                <OptionsSnapshotProse
-                    content={optionsSnapshot?.content}
-                    symbol={upper}
-                    displayName={displayName}
-                    // options 탭은 us-equity 전용이다(147행 notFound 가드) —
-                    // OptionsSnapshotProseProps JSDoc 참고.
-                    marketProfile="us-equity"
-                    generatedAt={optionsSnapshot?.generatedAt}
-                    plain={optionsSnapshot?.plain}
-                />
+                {/* AI 위젯은 클라 훅으로 데이터를 받아 ISR HTML에 골격만 남긴다 — 크롤러가 읽는 AI
+                    문장은 이 산문뿐이다. 스냅샷이 없으면 null. */}
+                {snapshotProse}
                 <OptionsPageClient
                     symbol={upper}
                     companyName={displayName}

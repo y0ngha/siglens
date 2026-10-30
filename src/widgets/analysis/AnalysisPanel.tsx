@@ -12,7 +12,7 @@ import type {
     TierInfoDepth,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { useFunnelMeterShown } from '@/shared/hooks/useFunnelMeterShown';
+import { useFunnelMeterShown } from './hooks/useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';

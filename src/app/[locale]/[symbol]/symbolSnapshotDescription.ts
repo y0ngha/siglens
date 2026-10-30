@@ -1,5 +1,5 @@
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import type {
     SeoAnalysisSnapshot,
     SeoSnapshotTab,
@@ -25,12 +25,13 @@ interface TabSnapshotInput {
     readonly assetClass: AssetClass;
     readonly tSeo: SeoTranslator;
     /**
-     * 프리웜이 구워 둔 평이화 산문을 설명에 먼저 쓸지. 차트·종합 탭만 켠다 —
-     * 나머지 탭은 원문 헤드라인이 설명으로 더 낫다고 판단해 둔 상태다.
+     * 프리웜이 구워 둔 평이화 산문을 설명에 먼저 쓸지. 차트 탭만 켠다 — 나머지 탭은 원문
+     * 헤드라인이 설명으로 더 낫다고 판단해 둔 상태다.
      */
     readonly preferPlain?: boolean;
 }
 
+/** `loadTabSnapshotMeta` 결과 — 메타데이터가 description 교체에 쓴다. */
 export interface TabSnapshotMeta {
     /** 이 탭의 SEO 스냅샷 행. */
     readonly snap: SeoAnalysisSnapshot | undefined;

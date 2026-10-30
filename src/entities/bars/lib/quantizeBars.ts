@@ -1,75 +1,13 @@
-import type {
-    BarsData,
-    IndicatorResult,
-    MarketSessionSpec,
+import {
+    US_EQUITY_SESSION,
+    isRegularSessionOpen,
+    type BarsData,
+    type MarketSessionSpec,
 } from '@y0ngha/siglens-core';
-import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
-import { ISO_DATE_LENGTH, MS_PER_SECOND } from '@/shared/config/time';
-import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
-
-/**
- * Drops the last per-bar element from every per-bar indicator array in lockstep
- * with the forming bar being stripped from `bars`. Whole-series snapshot fields
- * (volumeProfile, smc) are left untouched.
- *
- * Per-bar fields fall into three shapes:
- *   1. Plain arrays (`rsi`, `macd`, `bollinger`, etc.) — direct `.slice(0, -1)`.
- *   2. Record-of-arrays (`ma`, `ema`: `Record<number, (number|null)[]>`) —
- *      all values are arrays → slice each value array.
- *   3. Snapshot objects (`volumeProfile`: VolumeProfileResult|null, `smc`: SMCResult) —
- *      NOT all values are arrays (e.g. smc.premiumZone is an object, not an array)
- *      → pass through untouched.
- *
- * The "all values are arrays" predicate is the distinguishing heuristic:
- *   - ma/ema entries: every value is `(number|null)[]` → allArrays = true → slice.
- *   - smc: premiumZone/discountZone/equilibriumZone are objects → allArrays = false → skip.
- *   - volumeProfile: it is `null` or a single object with non-array props → skip.
- *
- * CAVEAT: this heuristic relies on snapshot fields (volumeProfile, smc) having at least
- * one non-array value. If `@y0ngha/siglens-core` adds a new snapshot field where every
- * value happens to be an array (e.g. `{ segments: [], zones: [] }`), it will be wrongly
- * sliced. When upgrading siglens-core, audit any new IndicatorResult fields for this case.
- * Tracked: https://github.com/y0ngha/siglens/issues/576 (whitelist-based hardening).
- */
-function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
-    // safe: Object.fromEntries preserves every key of `indicators`, only removing
-    // the last element from per-bar arrays — runtime shape is structurally identical
-    // to IndicatorResult.
-    return Object.fromEntries(
-        Object.entries(indicators).map(([key, value]) => {
-            if (Array.isArray(value)) {
-                return [key, value.slice(0, -1)];
-            }
-            if (value !== null && typeof value === 'object') {
-                // Could be Record<number, array> (ma/ema) or a snapshot object (volumeProfile/smc).
-                // Distinguish by checking whether ALL values of this object are arrays.
-                // safe: guarded by `typeof value === 'object' && value !== null` above —
-                // any non-null object is string-indexable, so Object.entries accepts it.
-                const entries = Object.entries(
-                    value as Record<string, unknown>
-                );
-                const allArrays =
-                    entries.length > 0 &&
-                    entries.every(([, v]) => Array.isArray(v));
-                if (allArrays) {
-                    return [
-                        key,
-                        Object.fromEntries(
-                            // safe: allArrays(=true) verified Array.isArray(v) for every entry above.
-                            entries.map(([k, v]) => [
-                                k,
-                                (v as unknown[]).slice(0, -1),
-                            ])
-                        ),
-                    ];
-                }
-                return [key, value];
-            }
-            return [key, value];
-        })
-    ) as unknown as IndicatorResult;
-}
+import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { dropLastIndicatorBar } from './dropLastIndicatorBar';
 
 /**
  * 지금 **형성 중(forming) 봉이 있을 수 있는가** — 정규장이 열려 있으면 참이다(crypto는 24/7이라 항상 참).
@@ -81,7 +19,7 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
  * 쓰이는 곳은 둘 다 클라이언트의 seed 복원 재조회(`shouldRefetchBarsSeed`)를 게이트한다.
  * - **생성 시점**(`page.tsx`의 `seedHasFormingBarTrimmed`): ISR HTML을 만들 때 정규장이 열려 있었는가.
  *   장중에 만든 HTML을 장 마감 뒤에 열면 seed에 그날 마지막 봉이 없을 수 있고, 그 사이 만들어진 분석의
- *   작도는 그 봉 시각을 참조한다(PR #957). 실제로 뗐는지가 아니라 세션 기준이어야 그 경로가 닫힌다.
+ *   작도는 그 봉 시각을 참조해 seed 봉에 맞지 않는다. 실제로 뗐는지가 아니라 세션 기준이어야 그 경로가 닫힌다.
  * - **뷰 시점**(`ChartContent`의 `formingBarNow`): 지금 열려 있으면 라이브 봉을 받으러 간다.
  *
  * 형성 중 봉이 seed에서 빠졌으면 서버가 형성 중 봉 시각을 참조하는 분석 작도(`chartOverlays`)는 seed 봉에
@@ -98,8 +36,8 @@ export function hasFormingBar(session: MarketSessionSpec, now: Date): boolean {
  * 달력(`session.timeZone` — KST/ET), 24/7(crypto)이면 UTC 날짜다. 그 날짜의 UTC 자정 이상이면
  * 현재 세션의 봉이다(`>=`라 분봉 같은 장중 시각 봉도 같은 판정을 받는다).
  *
- * 이 판정이 없던 옛 quantize는 정규장이면 **무조건** 마지막 봉을 뗐다. 오늘 봉이 아직 없는 시리즈
- * (개장 직후, 휴장 직후 quote 봉 부재)에서는 확정된 직전 거래일 봉을 떼어 한 세션 뒤처진 값을 냈다
+ * 이 판정이 없으면 정규장일 때 **무조건** 마지막 봉을 떼게 된다. 오늘 봉이 아직 없는 시리즈(개장 직후,
+ * 휴장 직후 quote 봉 부재)에서는 확정된 직전 거래일 봉을 떼어 한 세션 뒤처진 값이 나온다
  * (2026-10-06 373220.KS: 10-02 종가 대신 09-30 종가를 표기).
  */
 function lastBarIsCurrentSession(
@@ -157,9 +95,7 @@ export function lastCompletedDailyClose(
         return null;
     return {
         close: bar.close,
-        date: new Date(bar.time * MS_PER_SECOND)
-            .toISOString()
-            .slice(0, ISO_DATE_LENGTH),
+        date: toUtcIsoDate(new Date(bar.time * MS_PER_SECOND)),
     };
 }
 

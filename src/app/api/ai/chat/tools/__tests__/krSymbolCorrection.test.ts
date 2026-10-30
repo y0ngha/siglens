@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const correctKrSymbolSuffix = vi.hoisted(() => vi.fn());
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     correctKrSymbolSuffix,
 }));
 

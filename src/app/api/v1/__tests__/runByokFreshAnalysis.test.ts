@@ -181,10 +181,10 @@ vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn(async () => 'us-equity'),
 }));
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(async () => ({ name: 'Apple', fmpSymbol: 'AAPL' })),
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -219,7 +219,7 @@ vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
         to: new Date('2026-08-01T00:00:00Z'),
     })),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
 

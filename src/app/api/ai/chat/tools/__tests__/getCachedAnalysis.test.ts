@@ -36,7 +36,7 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
         return { findRecentForPrompt };
     }),
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
 vi.mock('@/entities/portfolio/api', () => ({
@@ -52,7 +52,7 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: profile,
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({

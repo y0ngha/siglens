@@ -79,7 +79,7 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 
@@ -283,10 +283,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 vi.mock('@/entities/analysis-plain/api', () => ({
     rewriteToPlainLanguage: vi.fn(async () => '쉽게 쓴 분석문입니다.'),
 }));
-vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
+vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     /**
      * 현재가 조회는 이 라우트의 관심사가 아니다 — "payload에 숫자가 있으면
-     * 조회하지 않는다"는 분기는 `entities/analysis-plain/lib/currentPrice.ts`로
+     * 조회하지 않는다"는 분기는 `entities/analysis-plain/server/currentPrice.ts`로
      * 옮겨졌고, 그쪽 단위 테스트가 실물로 검증한다. 여기서 실물을 쓰면 시세
      * 프로바이더까지 끌려온다.
      */
@@ -313,7 +313,7 @@ import {
     resolveReasoning,
 } from '@/shared/lib/byokGate';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
-import { resolvePriceAsOf } from '@/entities/analysis-plain/lib/currentPrice';
+import { resolvePriceAsOf } from '@/entities/analysis-plain/server/currentPrice';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
@@ -343,7 +343,7 @@ import {
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';

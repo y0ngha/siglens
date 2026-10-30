@@ -44,6 +44,30 @@ describe('useRecentSymbols', () => {
         });
         expect(result.current.entries.map(e => e.symbol)).toEqual(['AAPL']);
     });
+
+    describe('영속 문자열 계약', () => {
+        it('저장 키는 배포된 값과 같다', () => {
+            expect(LOCAL_STORAGE_RECENT_SYMBOLS_KEY).toBe(
+                'siglens:recent-symbols:v1'
+            );
+        });
+
+        it('리터럴 키로 쓰고 리터럴 이벤트를 보내면 같은 탭 구독자가 갱신된다', () => {
+            const { result } = renderHook(() => useRecentSymbols());
+            act(() => {
+                localStorage.setItem(
+                    'siglens:recent-symbols:v1',
+                    JSON.stringify([
+                        { symbol: 'AMD', label: 'AMD', viewedAt: 1 },
+                    ])
+                );
+                window.dispatchEvent(
+                    new Event('siglens:recent-symbols-change')
+                );
+            });
+            expect(result.current.entries.map(e => e.symbol)).toEqual(['AMD']);
+        });
+    });
 });
 
 describe('RecordRecentSymbol', () => {

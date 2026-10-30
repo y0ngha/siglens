@@ -31,6 +31,24 @@ describe('formatMaxPain', () => {
     it('큰 strike도 콤마 그룹핑된다', () => {
         expect(formatMaxPain(1_234_567)).toBe('$1,234,567');
     });
+
+    it('런타임 기본 로케일이 de-DE여도 SSR/hydration 출력이 en-US 그룹핑으로 같다', () => {
+        const original = Number.prototype.toLocaleString;
+        const spy = vi
+            .spyOn(Number.prototype, 'toLocaleString')
+            .mockImplementation(function (
+                this: number,
+                locales?: Intl.LocalesArgument,
+                options?: Intl.NumberFormatOptions
+            ) {
+                return original.call(this, locales ?? 'de-DE', options);
+            });
+        try {
+            expect(formatMaxPain(1234)).toBe('$1,234');
+        } finally {
+            spy.mockRestore();
+        }
+    });
 });
 
 describe('formatPutCallRatio', () => {

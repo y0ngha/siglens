@@ -24,7 +24,7 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: async () => 'us-equity',
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: async () => null,
 }));
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
@@ -56,7 +56,7 @@ vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsSchedule: async () => null,
     listReportedEarningsDates: async () => [],
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: async () => ({ bars: [], indicators: {} }),
 }));
 vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({

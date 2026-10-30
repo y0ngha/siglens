@@ -13,7 +13,7 @@ import {
     EXTENDED_QUOTE_TIMEOUT_CACHE_TTL_SECONDS,
 } from '@/shared/config/time';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
-import { getAssetInfoStatic } from '@/entities/ticker/lib/getAssetInfoStatic';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     buildExtendedQuote,

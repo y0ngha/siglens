@@ -11,7 +11,7 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverall
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';

@@ -25,6 +25,7 @@ const RULES: readonly Rule[] = [
     { id: 'number', labelKey: 'hasNumber', test: hasNumber },
 ];
 
+/** 비밀번호 규칙 충족 여부 목록. `descriptionId`를 입력의 `aria-describedby`에 연결해 쓴다. */
 export function PasswordStrengthHint({
     password,
     descriptionId,
@@ -50,11 +51,10 @@ export function PasswordStrengthHint({
                             {tRule(rule.labelKey, { v0: MIN_PASSWORD_LENGTH })}
                         </span>
                         {/*
-                         * 보조기술에는 상태가 전혀 가지 않고 있었다. 눈으로는
-                         * ✓/○ 모양이 색과 별개로 구분을 주지만 그 글리프가
-                         * `aria-hidden`이고, 라벨 문자열("8자 이상")은 충족
-                         * 여부와 무관하게 동일하다 — 스크린리더 사용자는 규칙
-                         * 세 개를 한 번 듣고 무엇이 모자란지는 끝내 알 수 없었다.
+                         * 눈으로는 ✓/○ 모양이 색과 별개로 구분을 주지만 그 글리프는
+                         * `aria-hidden`이고 라벨 문자열("8자 이상")은 충족 여부와
+                         * 무관하게 같다. 충족 여부를 텍스트로도 실어야 스크린리더
+                         * 사용자가 무엇이 모자란지 안다.
                          *
                          * `aria-live`는 붙이지 않는다. 이 목록은 입력의
                          * `aria-describedby` 대상이라 타이핑 한 글자마다

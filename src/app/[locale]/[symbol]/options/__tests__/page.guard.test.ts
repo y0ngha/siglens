@@ -19,7 +19,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -29,14 +29,14 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 // Heavy page-body dependencies — mock to prevent import-time side effects.
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn().mockResolvedValue(false),
 }));
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn().mockResolvedValue(false),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/widgets/options/OptionsPageClient', () => ({
@@ -116,7 +116,7 @@ describe('Options page tab guard', () => {
         // 가드는 asset·snapshots 읽기와 병렬로 돈다 — 크립토 케이스도 asset 읽기가
         // 끝나야 notFound()에 닿으므로 안전한 기본값을 둔다.
         const { getAssetInfoResilient } =
-            await import('@/entities/ticker/lib/getAssetInfoResilient');
+            await import('@/entities/ticker/server/getAssetInfoResilient');
         vi.mocked(getAssetInfoResilient).mockResolvedValue({
             assetInfo: { symbol: 'BTCUSD', name: 'Bitcoin USD' },
             degraded: false,
@@ -147,7 +147,7 @@ describe('Options page tab guard', () => {
         // safe defaults that prevent a downstream notFound. We just need to confirm
         // the guard path itself didn't call it.
         const { getAssetInfoResilient } =
-            await import('@/entities/ticker/lib/getAssetInfoResilient');
+            await import('@/entities/ticker/server/getAssetInfoResilient');
         (
             getAssetInfoResilient as MockedFunction<
                 typeof getAssetInfoResilient
@@ -222,7 +222,7 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
 
         // Provide assetInfo so generateMetadata can build real metadata content.
         const { getAssetInfoResilient } =
-            await import('@/entities/ticker/lib/getAssetInfoResilient');
+            await import('@/entities/ticker/server/getAssetInfoResilient');
         (
             getAssetInfoResilient as MockedFunction<
                 typeof getAssetInfoResilient
@@ -273,7 +273,7 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
             staticSymbolCache as MockedFunction<typeof staticSymbolCache>
         ).mockResolvedValue(true);
         const { getAssetInfoResilient } =
-            await import('@/entities/ticker/lib/getAssetInfoResilient');
+            await import('@/entities/ticker/server/getAssetInfoResilient');
         (
             getAssetInfoResilient as MockedFunction<
                 typeof getAssetInfoResilient

@@ -46,7 +46,7 @@ async function loadSqueezeContext(
         // 에이전트 도구·종합 분석·공개 API 라우트처럼 넓게 import되는 그래프에 들어가므로, 숏스퀴즈 입력을 실제로 읽을 때만
         // 그 모듈을 불러 무관한 import 그래프(과 그 테스트의 `next/cache` 부분 목)에 부작용을 퍼뜨리지 않는다.
         const { getSessionBarsStatic } =
-            await import('@/entities/bars/lib/sessionBarsStaticCache');
+            await import('@/entities/bars/server/sessionBarsStaticCache');
         const data = await getSessionBarsStatic(symbol, 'us-equity');
         return toSqueezeContext(data.bars);
     } catch (error) {

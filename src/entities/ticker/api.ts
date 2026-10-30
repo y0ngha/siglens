@@ -30,7 +30,7 @@ import type {
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { isCryptoSymbolStatic } from './lib/isCryptoSymbolStatic';
+import { isCryptoSymbolStatic } from './server/isCryptoSymbolStatic';
 import {
     getDescriptor,
     isKrEquitySymbol,

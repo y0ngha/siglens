@@ -52,11 +52,11 @@ vi.mock('../../api', () => ({
         };
     },
 }));
-vi.mock('../../lib/fmpTickerApi', async () => ({
-    ...(await vi.importActual('../../lib/fmpTickerApi')),
+vi.mock('../../server/fmpTickerApi', async () => ({
+    ...(await vi.importActual('../../server/fmpTickerApi')),
     searchBySymbol: (q: string) => searchBySymbolMock(q),
 }));
-vi.mock('../../lib/koreanNameStore', () => ({
+vi.mock('../../server/koreanNameStore', () => ({
     getKoreanNames: async () => ({}),
     lookupTickerDisplayNames: async (symbols: string[]) =>
         Object.fromEntries(
@@ -71,25 +71,25 @@ vi.mock('../../lib/koreanNameStore', () => ({
         entries.forEach(e => tickers.set(e.symbol, e));
     },
 }));
-vi.mock('../../lib/koreanTranslator', () => ({
+vi.mock('../../server/koreanTranslator', () => ({
     translateCompanyNames: (entries: unknown) =>
         translateCompanyNamesMock(entries),
 }));
-vi.mock('../../lib/krEquityQuoteName', () => ({
+vi.mock('../../server/krEquityQuoteName', () => ({
     fetchKrEquityQuoteName: vi.fn(),
 }));
-vi.mock('../../lib/cryptoAssetStore', () => ({
+vi.mock('../../server/cryptoAssetStore', () => ({
     getCryptoAsset: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('../../lib/fmpCryptoMembership', () => ({
+vi.mock('../../server/fmpCryptoMembership', () => ({
     fmpCryptoMembership: vi.fn().mockResolvedValue(null),
 }));
 
 import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
-} from '../../lib/getAssetInfo';
-import { reconcileUsTickerNames } from '../../lib/reconcileUsTickerNames';
+} from '../../server/getAssetInfo';
+import { reconcileUsTickerNames } from '../../server/reconcileUsTickerNames';
 
 /** stock-list 표기와 search-symbol 표기 — 정규화 후에도 다른 (가상의) 불일치. */
 const STOCK_LIST_NAME = 'Acme Global Technologies Inc';

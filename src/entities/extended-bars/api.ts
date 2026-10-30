@@ -3,7 +3,7 @@ import type { Bar } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { ExtendedBarTimeframe } from '@/shared/api/market/extendedBarsSession';
 import { getCachedExtendedBarsProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { getAssetInfoStatic } from '@/entities/ticker/lib/getAssetInfoStatic';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
 import { extendedBarsFrom } from './lib/extendedBarsRequest';
 

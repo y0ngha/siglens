@@ -1,34 +1,35 @@
-import { getTranslations } from 'next-intl/server';
-import type { SeoTranslator } from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
-import { resolveLocale, type Locale } from '@/shared/i18n/locales';
-import {
-    localeAlternatesFrom,
-    selfCanonicalAlternates,
-    localeCanonical,
-    localeOpenGraph,
-    localePageRobots,
-} from '@/shared/lib/seoAlternates';
+import { getTranslations } from 'next-intl/server';
 import {
     CATEGORY_CONFIG,
     categoriesInRegion,
 } from '@/entities/market-news/lib/categoryConfig';
 import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
-import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { RegionTabs } from '@/shared/ui/RegionTabs';
-import { fetchCategoryPreviews } from '../_lib/categoryPreviews';
-import { fetchCategoryDigestLines } from '../_lib/categoryDigests';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
+import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     SITE_URL,
+    type SeoTranslator,
 } from '@/shared/lib/seo';
 import { clampSeoDescription } from '@/shared/lib/seoClamp';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
-import { brandName, brandTitle } from '@/shared/lib/brandName';
+import {
+    localeAlternatesFrom,
+    selfCanonicalAlternates,
+} from '@/shared/lib/seoAlternates';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { fetchCategoryDigestLines } from '../_lib/categoryDigests';
+import { fetchCategoryPreviews } from '../_lib/categoryPreviews';
+import {
+    buildNewsHubMetadata,
+    NEWS_HUB_OG_IMAGE_PATH,
+} from '../_lib/newsHubMetadata';
+import { allPreviewsEmpty } from '../_lib/regionPreviews';
 
 // 24h ISR — 허브 인덱스는 카테고리 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -36,52 +37,47 @@ import { brandName, brandTitle } from '@/shared/lib/brandName';
 export const revalidate = 86400;
 
 const PATH = '/news/us';
+
+/** metadata·JSON-LD `name`이 공유하는 허브 제목(브랜드 없음). */
 function newsUsTitle(t: SeoTranslator): string {
     return t('newsUs.title');
 }
-function newsUsFullTitle(t: SeoTranslator, locale: Locale): string {
-    return brandTitle(newsUsTitle(t), locale);
-}
+
+/** metadata·JSON-LD가 같은 길이 제한을 거친 설명을 쓰도록 한 곳에서 자른다. */
 function newsUsDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('newsUs.description'));
 }
 
-/**
- * 이 페이지는 2026-08 이전 `/news`의 역할을 그대로 이어받았다.
- *
- * `/news`가 미국·한국·암호화폐 3지역 상위 허브가 되면서, "미국 카테고리 목록"이
- * 갈 곳이 필요해졌다. 구 `/news`로 유입되던 질의(`미국 시장 뉴스`, 리브랜딩 전
- * 표기인 `미국 마켓 뉴스`)를 여기가 승계한다 — 그래서 키워드 목록도 함께 옮겼다.
- */
-interface LocaleMetadataParams {
+interface UsNewsHubRouteProps {
     readonly params: Promise<{ locale: string }>;
 }
 
+/**
+ * 미국 카테고리 허브. `/news`가 3지역 상위 허브라 미국 관련 질의(`미국 시장 뉴스`와
+ * 옛 표기 `미국 마켓 뉴스`)는 여기가 타게팅한다. 미리보기가 하나도 없으면 h1 + 두 문단 +
+ * 카드 제목뿐인 thin 분량이라 색인시키지 않는다.
+ */
 export async function generateMetadata({
     params,
-}: LocaleMetadataParams): Promise<Metadata> {
-    const { locale: rawLocale } = await params;
-    const locale = resolveLocale(rawLocale);
-    const ogLocale = localeOpenGraph(locale);
-    // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const url = localeCanonical(locale, PATH);
-    // 미리보기가 하나도 없으면 이 페이지는 h1 + 두 문단 + 카드 제목뿐이라
-    // 2026-07 thin-content 사태에서 문제가 된 분량(약 677자)보다도 얇다.
-    // 첫인상으로 판정되는 신규 URL이라 그 상태를 색인시키지 않는다.
-    const previews = await Promise.all(
-        categoriesInRegion('us').map(cat => fetchCategoryPreviews(cat, locale))
-    );
-    const degraded = previews.every(list => list.length === 0);
-    const tSeo = await getTranslations({
+}: UsNewsHubRouteProps): Promise<Metadata> {
+    const locale = resolveLocale((await params).locale);
+    const [previews, tSeo] = await Promise.all([
+        Promise.all(
+            categoriesInRegion('us').map(cat =>
+                fetchCategoryPreviews(cat, locale)
+            )
+        ),
+        getTranslations({ locale, namespace: 'shared.seo' }),
+    ]);
+    const degraded = allPreviewsEmpty(previews);
+    return buildNewsHubMetadata({
         locale,
-        namespace: 'shared.seo',
-    });
-    return {
+        path: PATH,
         title: newsUsTitle(tSeo),
         description: newsUsDescription(tSeo),
         keywords: [
             '미국 시장 뉴스',
-            // 구 표기. 리브랜딩(2026-08) 전 유입 질의를 잃지 않기 위해 남긴다.
+            // 옛 표기 — 기존 유입 질의를 잃지 않기 위해 남긴다.
             '미국 마켓 뉴스',
             '미국 주식 뉴스',
             '미국 외환 뉴스',
@@ -90,101 +86,77 @@ export async function generateMetadata({
             'AI 뉴스 다이제스트',
             '시그렌즈 뉴스',
         ],
-        // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별 자기참조 URL을
-        // 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로 가리켜 hreflang 상호참조가
-        // 깨진다. degraded(noindex)는 self-canonical만 내고 hreflang 군집은 싣지 않는다.
+        degraded,
         alternates: degraded
             ? selfCanonicalAlternates(locale, PATH)
             : await localeAlternatesFrom(params, PATH),
-        robots: degraded
-            ? { index: false, follow: true }
-            : localePageRobots(locale),
-        openGraph: {
-            type: 'website',
-            siteName: brandName(locale),
-            title: newsUsFullTitle(tSeo, locale),
-            description: newsUsDescription(tSeo),
-            url,
-            ...ogLocale,
-            // `/news/opengraph-image.tsx`를 **명시적으로** 가리킨다. 파일 컨벤션은
-            // 그 세그먼트에 붙고, 하위 세그먼트가 자기 `openGraph`를 선언하면
-            // 상속이 끊긴다 — 그러면 공유 카드에 이미지가 통째로 빠지는데,
-            // 빌드/렌더에는 아무 에러도 나지 않아 조용히 넘어간다.
-            images: [`${SITE_URL}/news/opengraph-image`],
-        },
-        twitter: buildTwitterMetadata({
-            title: newsUsFullTitle(tSeo, locale),
-            description: newsUsDescription(tSeo),
-            images: [`${SITE_URL}/news/opengraph-image`],
-        }),
-    };
+        // 이 세그먼트에는 `opengraph-image`가 없다 — `/news`의 이미지를 명시적으로 가리킨다.
+        imagePath: NEWS_HUB_OG_IMAGE_PATH,
+    });
 }
 
-export default async function UsNewsHubPage({
-    params,
-}: {
-    readonly params: Promise<{ locale: string }>;
-}) {
-    const { locale: rawLocale } = await params;
-    const locale = enterLocale(rawLocale);
+/**
+ * 미국 카테고리 허브 — 카테고리 카드(미리보기 헤드라인 + 다이제스트 한 줄). 미리보기가 전부
+ * 비면 metadata와 같은 판정으로 구조화데이터를 생략한다.
+ */
+export default async function UsNewsHubPage({ params }: UsNewsHubRouteProps) {
+    const locale = enterLocale((await params).locale);
     // 배포 빌드에는 DB가 없다 — 이름/미리보기 없이 구워진 이 렌더를 60초 뒤 재생성하게 한다.
     await shortenRevalidateIfDatabaseMissingAtBuild();
-    // 셋은 서로 독립이다.
-    const [t, tNav, tSeo] = await Promise.all([
+    const categories = categoriesInRegion('us');
+    // 번역자·미리보기·다이제스트 한 줄은 서로 독립이다.
+    const [t, tNav, tSeo, previewsByCategory, digestLines] = await Promise.all([
         getTranslations('app.news'),
         getTranslations(),
         getTranslations('shared.seo'),
-    ]);
-    const categories = categoriesInRegion('us');
-    const [previewsByCategory, digestLines] = await Promise.all([
         Promise.all(categories.map(cat => fetchCategoryPreviews(cat, locale))),
         fetchCategoryDigestLines(categories, locale),
     ]);
-
+    // metadata가 noindex를 거는 것과 같은 술어로 구조화데이터를 끈다.
+    const degraded = allPreviewsEmpty(previewsByCategory);
     const url = `${SITE_URL}${PATH}`;
-
-    const webPageJsonLd = {
-        ...buildWebPageJsonLd({
-            url: url,
-            name: brandTitle(newsUsTitle(tSeo), locale),
-            description: newsUsDescription(tSeo),
-            locale,
-        }),
-    };
-
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [
-            { name: t('page.dc06c4'), url: `${SITE_URL}/news` },
-            { name: t('page.d311d2'), url },
-        ],
-        locale
-    );
+    const hubName = t('page.dc06c4');
+    const pageName = t('page.d311d2');
 
     return (
         <>
-            <JsonLd data={webPageJsonLd} />
-            <JsonLd data={breadcrumbJsonLd} />
+            {!degraded && (
+                <>
+                    <JsonLd
+                        data={buildWebPageJsonLd({
+                            url,
+                            name: brandTitle(newsUsTitle(tSeo), locale),
+                            description: newsUsDescription(tSeo),
+                            locale,
+                        })}
+                    />
+                    <JsonLd
+                        data={buildBreadcrumbJsonLd(
+                            [
+                                { name: hubName, url: `${SITE_URL}/news` },
+                                { name: pageName, url },
+                            ],
+                            locale
+                        )}
+                    />
+                </>
+            )}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs vertical="news" active="us" currentPath={PATH} />
                 {/* 가시 브레드크럼 — 위 BreadcrumbList와 같은 마디·같은 텍스트. */}
                 <Breadcrumb
                     trail={[
-                        { label: t('page.dc06c4'), href: '/news' },
-                        { label: t('page.d311d2') },
+                        { label: hubName, href: '/news' },
+                        { label: pageName },
                     ]}
                 />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
-                    {t('page.d311d2')}
+                    {pageName}
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
                     <p>{t('page.d97943')}</p>
-                    {/*
-                     * "카드 클릭 시 원문 기사로 이동합니다"였는데, 이 페이지의
-                     * 카드는 전부 `/news/{slug}`로 가는 내부 링크다 — 실측으로
-                     * 외부 앵커 0개, `target="_blank"` 0개. 원문으로 나가는 것은
-                     * 리프 카테고리 페이지의 기사 카드이고, 그 동작을 허브의
-                     * 카테고리 카드 설명으로 옮겨 적은 문장이었다.
-                     */}
+                    {/* 이 페이지의 카드는 전부 `/news/{slug}`로 가는 내부 링크다 — 원문 기사로
+                        나가는 것은 리프 카테고리 페이지의 기사 카드라, 안내 문장도 그에 맞춘다. */}
                     <p>{t('page.ace274')}</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -35,26 +35,26 @@ vi.mock('@/shared/db/client', async importOriginal => ({
 const mockSearchBySymbol = vi.fn().mockResolvedValue([]);
 const mockFilterUsExchanges = vi.fn().mockReturnValue([]);
 
-vi.mock('@/entities/ticker/lib/fmpTickerApi', async () => ({
+vi.mock('@/entities/ticker/server/fmpTickerApi', async () => ({
     searchBySymbol: (...args: unknown[]) => mockSearchBySymbol(...args),
     filterUsExchanges: (...args: unknown[]) => mockFilterUsExchanges(...args),
     // `findExactUsMatch`는 정규화 규칙(dot→hyphen)을 품고 있어 stub하면 안 된다 —
     // 이 스펙은 degrade 체인만 검증하므로 실제 구현을 그대로 쓴다.
     findExactUsMatch: (
         await vi.importActual<
-            typeof import('@/entities/ticker/lib/fmpTickerApi')
-        >('@/entities/ticker/lib/fmpTickerApi')
+            typeof import('@/entities/ticker/server/fmpTickerApi')
+        >('@/entities/ticker/server/fmpTickerApi')
     ).findExactUsMatch,
 }));
 
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     getKoreanNames: vi.fn().mockResolvedValue({}),
     setKoreanTickers: vi.fn().mockResolvedValue(undefined),
     getTickerDisplayNames: vi.fn().mockResolvedValue({}),
     lookupTickerDisplayNames: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
+vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
     translateCompanyNames: vi.fn().mockResolvedValue({}),
 }));
 
@@ -67,7 +67,7 @@ vi.mock('@/entities/ticker/lib/cacheKeys', () => ({
 import {
     getAssetInfo,
     _resetInFlightTranslationsForTest,
-} from '@/entities/ticker/lib/getAssetInfo';
+} from '@/entities/ticker/server/getAssetInfo';
 
 describe('getAssetInfo degradation chain', () => {
     beforeEach(() => {

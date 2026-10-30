@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { RouteErrorView } from '@/app/_components/RouteErrorView';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
-import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface RootErrorProps {
     error: Error & { digest?: string };
@@ -11,13 +11,9 @@ interface RootErrorProps {
 }
 
 /**
- * Root error boundary — covers `/`, `/backtesting`, `/privacy`, `/terms`,
- * `/account*`, `/signup*`, `/forgot-password`, `/reset-password`.
- *
- * Sits one level above route-specific boundaries (market/error.tsx,
- * economy/error.tsx). Catches interactive client-side throws that escape
- * those nested boundaries and presents a branded, retryable UI instead of
- * a blank page. `reset()` re-renders the failed segment in place.
+ * 로케일 세그먼트의 기본 에러 경계 — 자체 `error.tsx`가 없는 모든 라우트(홈·계정·인증·법률·문서
+ * 페이지 등)에서 빠져나온 렌더 오류를 받아 브랜드 화면과 재시도를 보여 준다. `reset()`은 실패한
+ * 세그먼트를 제자리에서 다시 그린다.
  */
 export default function RootError({ error, reset }: RootErrorProps) {
     const t = useTranslations('app.home');

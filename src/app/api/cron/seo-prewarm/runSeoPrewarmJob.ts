@@ -1,5 +1,5 @@
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
-import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
+import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 import { getDatabaseClient } from '@/shared/db/client';
 import { releasePrewarmLock } from './lock';
 import { pruneExpiredRows } from './pruneExpiredRows';

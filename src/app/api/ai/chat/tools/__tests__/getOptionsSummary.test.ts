@@ -8,7 +8,7 @@ const { hasMarket, fetchSnapshot, summarize, isTabAllowed } = vi.hoisted(
         isTabAllowed: vi.fn(),
     })
 );
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     hasOptionsMarket: hasMarket,
     fetchOptionsSnapshot: fetchSnapshot,
 }));
