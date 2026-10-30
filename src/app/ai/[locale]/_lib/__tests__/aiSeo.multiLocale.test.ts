@@ -12,7 +12,7 @@ vi.mock('@/shared/i18n/indexableLocales', () => ({
     SYMBOL_INDEXABLE_LOCALES: ['ko'] as const,
 }));
 
-const { buildAiHomeMetadata } = await import('@/app/ai/[locale]/aiSeo');
+const { buildAiHomeMetadata } = await import('@/app/ai/[locale]/_lib/aiSeo');
 const { AI_SITE_URL } = await import('@/shared/config/aiHost');
 
 const copy = {

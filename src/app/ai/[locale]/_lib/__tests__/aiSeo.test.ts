@@ -5,7 +5,7 @@ import {
     buildAiBenchmarkMetadata,
     buildAiHomeJsonLd,
     buildAiHomeMetadata,
-} from '@/app/ai/[locale]/aiSeo';
+} from '@/app/ai/[locale]/_lib/aiSeo';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 

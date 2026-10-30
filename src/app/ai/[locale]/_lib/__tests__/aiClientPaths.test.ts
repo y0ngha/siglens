@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { AI_CLIENT_PATHS } from '@/app/ai/[locale]/aiClientPaths';
+import { AI_CLIENT_PATHS } from '@/app/ai/[locale]/_lib/aiClientPaths';
 
 function walk(dir: string): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap(e =>

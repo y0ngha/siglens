@@ -25,7 +25,7 @@ vi.mock('next/headers', () => ({
 }));
 vi.mock('next/navigation', () => ({ redirect: m.redirect }));
 
-import { maybeHandoffRedirect } from '@/app/ai/[locale]/handoffRedirect';
+import { maybeHandoffRedirect } from '@/app/ai/[locale]/_lib/handoffRedirect';
 
 describe('maybeHandoffRedirect', () => {
     beforeEach(() => {
