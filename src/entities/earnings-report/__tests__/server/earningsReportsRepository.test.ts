@@ -10,15 +10,8 @@ import { asc, desc, type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { earningsReports } from '@/shared/db/schema';
-import {
-    dateConfirmedFromPayload,
-    dedupeEarningsReportInputs,
-    DrizzleEarningsReportsRepository,
-    toCalendarItem,
-    toComparisonItems,
-    upcomingUnreportedDates,
-    type EarningsReportUpsertInput,
-} from '@/entities/earnings-report/api';
+import { DrizzleEarningsReportsRepository } from '../../server/earningsReportsRepository';
+import type { EarningsReportUpsertInput } from '../../model';
 
 const rawPayload = {
     date: '2025-08-01',
@@ -275,172 +268,6 @@ describe('DrizzleEarningsReportsRepository', () => {
         });
     });
 
-    describe('toComparisonItems', () => {
-        it('빈 배열이면 빈 결과를 반환한다', () => {
-            expect(toComparisonItems([], '2026-05-10')).toEqual([]);
-        });
-
-        it('과거 항목이 1개뿐이면 recent-or-future 슬롯으로 반환', () => {
-            const result = toComparisonItems(
-                [
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-04-30',
-                        epsActual: '2.01',
-                        epsEstimated: '1.95',
-                        revenueActual: '111184000000',
-                        revenueEstimated: '109457600000',
-                        lastUpdated: '2026-05-10',
-                    },
-                ],
-                '2026-05-10'
-            );
-            expect(result).toHaveLength(1);
-            expect(result[0].slot).toBe('recent-or-future');
-        });
-
-        it('과거 항목이 2개뿐이면 past-1 + recent-or-future 슬롯으로 반환', () => {
-            const result = toComparisonItems(
-                [
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-01-29',
-                        epsActual: '2.85',
-                        epsEstimated: '2.67',
-                        revenueActual: '143756000000',
-                        revenueEstimated: '138391000000',
-                        lastUpdated: '2026-04-29',
-                    },
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-04-30',
-                        epsActual: '2.01',
-                        epsEstimated: '1.95',
-                        revenueActual: '111184000000',
-                        revenueEstimated: '109457600000',
-                        lastUpdated: '2026-05-10',
-                    },
-                ],
-                '2026-05-10'
-            ).map(item => [item.earningsDate, item.slot]);
-            expect(result).toEqual([
-                ['2026-01-29', 'past-1'],
-                ['2026-04-30', 'recent-or-future'],
-            ]);
-        });
-
-        it('미래 항목만 있고 과거 없으면 future 1개를 반환한다', () => {
-            const result = toComparisonItems(
-                [
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-07-30',
-                        epsActual: null,
-                        epsEstimated: '1.86',
-                        revenueActual: null,
-                        revenueEstimated: '107618800000',
-                        lastUpdated: '2026-05-10',
-                    },
-                ],
-                '2026-05-10'
-            );
-            expect(result).toHaveLength(1);
-            expect(result[0].period).toBe('future');
-            expect(result[0].slot).toBe('recent-or-future');
-        });
-
-        it('미래 항목이 2개 이상이면 가장 이른 미래를 future로 반환한다 (compareEarningsDateAsc 구동)', () => {
-            // 입력을 날짜 내림차순으로 넣어 upcoming.toSorted(asc) 비교 콜백이 실제 실행되는지 검증.
-            const result = toComparisonItems(
-                [
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-10-29',
-                        epsActual: null,
-                        epsEstimated: '2.10',
-                        revenueActual: null,
-                        revenueEstimated: '120000000000',
-                        lastUpdated: '2026-05-10',
-                    },
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-07-30',
-                        epsActual: null,
-                        epsEstimated: '1.86',
-                        revenueActual: null,
-                        revenueEstimated: '107618800000',
-                        lastUpdated: '2026-05-10',
-                    },
-                ],
-                '2026-05-10'
-            );
-            // 오름차순 정렬 → 가장 이른 2026-07-30이 선택된다(내림차순 입력이어도).
-            expect(result).toHaveLength(1);
-            expect(result[0].earningsDate).toBe('2026-07-30');
-            expect(result[0].period).toBe('future');
-            expect(result[0].slot).toBe('recent-or-future');
-        });
-
-        it('미래 항목 중 estimate 없으면 제외된다', () => {
-            const result = toComparisonItems(
-                [
-                    {
-                        symbol: 'AAPL',
-                        earningsDate: '2026-07-30',
-                        epsActual: null,
-                        epsEstimated: null,
-                        revenueActual: null,
-                        revenueEstimated: null,
-                        lastUpdated: '2026-05-10',
-                    },
-                ],
-                '2026-05-10'
-            );
-            expect(result).toEqual([]);
-        });
-
-        it('미래 항목이 없으면 최근 과거 3개를 오래된 순서부터 반환한다', () => {
-            expect(
-                toComparisonItems(
-                    [
-                        {
-                            symbol: 'AAPL',
-                            earningsDate: '2026-04-30',
-                            epsActual: '2.01',
-                            epsEstimated: '1.95',
-                            revenueActual: '111184000000',
-                            revenueEstimated: '109457600000',
-                            lastUpdated: '2026-05-10',
-                        },
-                        {
-                            symbol: 'AAPL',
-                            earningsDate: '2026-01-29',
-                            epsActual: '2.85',
-                            epsEstimated: '2.67',
-                            revenueActual: '143756000000',
-                            revenueEstimated: '138391000000',
-                            lastUpdated: '2026-04-29',
-                        },
-                        {
-                            symbol: 'AAPL',
-                            earningsDate: '2025-10-30',
-                            epsActual: '1.85',
-                            epsEstimated: '1.77',
-                            revenueActual: '102466000000',
-                            revenueEstimated: '102240000000',
-                            lastUpdated: '2026-01-01',
-                        },
-                    ],
-                    '2026-05-10'
-                ).map(item => [item.earningsDate, item.slot])
-            ).toEqual([
-                ['2025-10-30', 'past-2'],
-                ['2026-01-29', 'past-1'],
-                ['2026-04-30', 'recent-or-future'],
-            ]);
-        });
-    });
-
     describe('getNextForSymbol', () => {
         it('lastUpdated 가 null 인 행(yahoo 예정 행)도 버리지 않고 받아 온 날짜(KST)로 채운다', async () => {
             // 2026-05-20T16:00Z = KST 05-21 01:00 — UTC 날짜를 자르면 하루 이르게 찍힌다.
@@ -633,125 +460,6 @@ describe('DrizzleEarningsReportsRepository', () => {
         });
     });
 
-    describe('upcomingUnreportedDates', () => {
-        it('기준일 이후 실적 미발표 행의 날짜만 고른다', () => {
-            expect(
-                upcomingUnreportedDates(
-                    [
-                        upcomingInput,
-                        { ...upcomingInput, earningsDate: '2026-10-21' },
-                        {
-                            ...upcomingInput,
-                            earningsDate: '2026-12-01',
-                            revenueActual: 1,
-                        },
-                    ],
-                    '2026-10-22'
-                )
-            ).toEqual(['2026-11-05']);
-        });
-    });
-
-    describe('dateConfirmedFromPayload', () => {
-        it.each([
-            [{ isEstimate: true }, false],
-            [{ isEstimate: false }, true],
-            [{}, null],
-            [{ isEstimate: 'yes' }, null],
-            [null, null],
-            ['x', null],
-        ])('%j → %s', (payload, expected) => {
-            expect(dateConfirmedFromPayload(payload)).toBe(expected);
-        });
-    });
-
-    describe('toCalendarItem', () => {
-        it('core 계약 필드만 남기고 확정 여부는 싣지 않는다', () => {
-            const item = toCalendarItem({
-                symbol: 'COP',
-                earningsDate: '2026-11-05',
-                epsActual: null,
-                epsEstimated: 1.4,
-                revenueActual: null,
-                revenueEstimated: 1e10,
-                lastUpdated: '2026-10-21',
-                dateConfirmed: null,
-            });
-            expect(item).toEqual({
-                symbol: 'COP',
-                earningsDate: '2026-11-05',
-                epsActual: null,
-                epsEstimated: 1.4,
-                revenueActual: null,
-                revenueEstimated: 1e10,
-                lastUpdated: '2026-10-21',
-            });
-            expect(item).not.toHaveProperty('dateConfirmed');
-        });
-    });
-
-    describe('dedupeEarningsReportInputs', () => {
-        it('lastUpdated 가 같으면 값이 더 많이 채워진 항목을 남긴다', () => {
-            const sparse: EarningsReportUpsertInput = {
-                ...reportInput,
-                epsActual: null,
-                revenueActual: null,
-            };
-
-            expect(dedupeEarningsReportInputs([reportInput, sparse])).toEqual([
-                reportInput,
-            ]);
-        });
-
-        it('lastUpdated 와 populated count 가 동일하면 후순위 항목으로 교체', () => {
-            const first: EarningsReportUpsertInput = {
-                ...reportInput,
-                lastUpdated: '2025-08-02',
-            };
-            const second: EarningsReportUpsertInput = {
-                ...reportInput,
-                lastUpdated: '2025-08-02',
-            };
-
-            const result = dedupeEarningsReportInputs([first, second]);
-            expect(result).toHaveLength(1);
-            expect(result[0]).toBe(second);
-        });
-
-        it('candidate lastUpdated null 이면 교체하지 않는다', () => {
-            const existing: EarningsReportUpsertInput = {
-                ...reportInput,
-                lastUpdated: '2025-08-01',
-            };
-            const candidate: EarningsReportUpsertInput = {
-                ...reportInput,
-                lastUpdated: null,
-            };
-
-            const result = dedupeEarningsReportInputs([existing, candidate]);
-            expect(result).toHaveLength(1);
-            expect(result[0]).toBe(existing);
-        });
-
-        it('existing lastUpdated null 이고 candidate 는 non-null 이면 교체', () => {
-            const existing: EarningsReportUpsertInput = {
-                ...reportInput,
-                lastUpdated: null,
-            };
-            const candidate: EarningsReportUpsertInput = {
-                ...reportInput,
-                lastUpdated: '2025-08-02',
-            };
-
-            const result = dedupeEarningsReportInputs([existing, candidate]);
-            expect(result).toHaveLength(1);
-            expect(result[0]).toBe(candidate);
-        });
-    });
-
-    // upsertMany 가 DB_TRANSIENT_RETRY 정책을 실제로 통과시키는지 확인하는
-    // smoke 테스트. withRetry/isTransientDbError 자체의 동작은 각자의
-    // 단위 테스트에서 검증하므로 여기서는 "정책이 wire-up 됐다"만 보장한다.
     describe('DB transient retry wire-up', () => {
         it('transient 연결 에러(CONNECTION_CLOSED)가 발생하면 재시도해 결국 성공한다', async () => {
             const dbTransient = Object.assign(
@@ -793,6 +501,40 @@ describe('DrizzleEarningsReportsRepository', () => {
                 constraintError
             );
             expect(insert).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('toInsertRow null branches via upsertBatch', () => {
+        it('handles all null numeric fields in upsert', async () => {
+            const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+            const values = vi.fn(() => ({ onConflictDoUpdate }));
+            const insert = vi.fn(() => ({ values }));
+            const db = { insert } as unknown as SiglensDatabase;
+            const repo = new DrizzleEarningsReportsRepository(db);
+
+            const input: EarningsReportUpsertInput = {
+                symbol: 'AAPL',
+                earningsDate: '2025-08-01',
+                epsActual: null,
+                epsEstimated: null,
+                revenueActual: null,
+                revenueEstimated: null,
+                lastUpdated: null,
+                rawPayload: {},
+            };
+
+            await repo.upsertMany([input]);
+
+            expect(values).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        epsActual: null,
+                        epsEstimated: null,
+                        revenueActual: null,
+                        revenueEstimated: null,
+                    }),
+                ])
+            );
         });
     });
 });

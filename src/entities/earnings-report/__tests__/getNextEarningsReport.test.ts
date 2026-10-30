@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import {
-    DrizzleEarningsReportsRepository,
     EARNINGS_REPORT_FMP_LIMIT,
     getNextEarningsReport,
     getNextEarningsSchedule,
