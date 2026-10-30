@@ -1,24 +1,25 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
 import { reportClientError } from '@/shared/lib/reportClientError';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface NewsErrorProps {
+    /** `digest`는 서버 로그의 같은 에러 항목과 이 클라이언트 보고를 잇는다. */
     error: Error & { digest?: string };
     reset: () => void;
 }
 
 /**
- * Error boundary for the `/news` and `/news/[category]` subtree.
+ * `/news` 서브트리(허브·지역 허브·카테고리)의 에러 경계.
  *
- * `MarketNewsList` throws `pollError` when polling fails after the consecutive-
- * failure ceiling is reached. Without this boundary that error would propagate
- * to the root boundary — jarring UX for a recoverable polling failure.
- * `reset()` re-renders the segment so a transient outage can self-heal.
+ * `MarketNewsList`는 폴링이 연속 실패 상한에 닿으면 `pollError`를 던진다. 이 경계가 없으면
+ * 회복 가능한 폴링 실패가 루트 경계까지 올라가 페이지 전체가 바뀐다. `reset()`은 세그먼트를
+ * 다시 렌더해 일시 장애가 스스로 풀리게 한다. 메시지 묶음만 `role="alert"`로 알린다 —
+ * 버튼·링크까지 넣으면 스크린리더가 조작 라벨까지 에러 문구로 읽는다.
  */
 export default function NewsError({ error, reset }: NewsErrorProps) {
     const t = useTranslations('app.news');

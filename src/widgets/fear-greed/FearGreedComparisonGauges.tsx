@@ -1,73 +1,26 @@
-import { useTranslations } from 'next-intl';
-import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
-import { cn } from '@/shared/lib/cn';
-import { TRADING_DAYS_1Y } from '@/widgets/fear-greed/constants';
+import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
+import { buildComparisonTiles } from './utils/comparisonTiles';
+import { FearGreedComparisonTile } from './ui/gauges/FearGreedComparisonTile';
 
 interface FearGreedComparisonGaugesProps {
     history: FearGreedHistoryPoint[];
 }
 
-type PeriodKey = 'now' | '1w' | '1m' | '1y';
-
-interface PeriodDef {
-    key: PeriodKey;
-    daysBack: number;
-    label: string;
-}
-
-const TRADING_DAYS_1W = 5;
-const TRADING_DAYS_1M = 21;
-
-/** `label`은 `shared.ui.period` **키**다 — 표시는 렌더 쪽에서 `t()`로. */
-const PERIODS: ReadonlyArray<PeriodDef> = [
-    { key: 'now', daysBack: 0, label: 'now' },
-    { key: '1w', daysBack: TRADING_DAYS_1W, label: 'week' },
-    { key: '1m', daysBack: TRADING_DAYS_1M, label: 'month' },
-    { key: '1y', daysBack: TRADING_DAYS_1Y, label: 'year' },
-];
-
-/** Renders the 4 historical reference points as CNN-style mini gauges so the user
- *  can compare current sentiment to past windows visually (not just numerically). */
+/**
+ * 현재와 1주·1개월·1년 전 점수를 CNN 스타일 미니 게이지 네 칸으로 비교한다.
+ * 점수가 하나도 없으면(워밍업뿐) 그리지 않는다.
+ */
 export function FearGreedComparisonGauges({
     history,
 }: FearGreedComparisonGaugesProps) {
-    const tPeriod = useTranslations('shared.ui.period');
-    const valid = history.filter(
-        (p): p is FearGreedHistoryPoint & { score: number } => p.score !== null
-    );
-    if (valid.length === 0) return null;
-    const lastIdx = valid.length - 1;
+    const tiles = buildComparisonTiles(history);
+    if (tiles.length === 0) return null;
     return (
-        <ul className="flex flex-wrap items-end justify-around gap-2">
-            {PERIODS.map(p => {
-                // 0으로 클램프 — daysBack이 valid 길이를 초과하면 가장 오래된 entry로 폴백.
-                const idx = Math.max(0, lastIdx - p.daysBack);
-                const point = valid[idx];
-                const score = Math.round(point.score);
-                const label = point.label ?? scoreToLabel(score);
-                return (
-                    <li
-                        key={p.key}
-                        className={cn(
-                            'min-w-[100px] flex-1 rounded-lg border p-1',
-                            // `MarketFearGreedComparison`과 같은 수정 — 양쪽 다
-                            // `/40`이면 `현재` 강조 보더와 기본 보더가 대비상
-                            // 사실상 같아 보였다. 알파를 걷어내 둘을 실제로 벌린다.
-                            p.key === 'now'
-                                ? 'border-primary-500'
-                                : 'border-secondary-700'
-                        )}
-                    >
-                        <FearGreedGauge
-                            score={score}
-                            label={label}
-                            size="mini"
-                            periodLabel={tPeriod(p.label)}
-                        />
-                    </li>
-                );
-            })}
+        // 2열→4열 grid — flex-wrap은 4칸이 3+1로 갈라져 마지막 칸만 홀로 남는 폭이 생긴다.
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {tiles.map(tile => (
+                <FearGreedComparisonTile key={tile.key} tile={tile} />
+            ))}
         </ul>
     );
 }
