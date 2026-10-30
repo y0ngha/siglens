@@ -3,7 +3,7 @@
  */
 import type { FailsToDeliverPoint } from '@y0ngha/siglens-core';
 import { compareIsoDate } from '@/entities/investor-flows/lib/investorFlowsDates';
-import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/investorFlowsSnapshot';
+import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/snapshot/short';
 
 /** 발행주식 대비 %가 이 값(1%의 1/100) 미만이면 자리를 늘려 보인다. */
 const SMALL_PCT_THRESHOLD = 0.01;
