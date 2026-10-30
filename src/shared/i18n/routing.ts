@@ -29,7 +29,7 @@ import { DEFAULT_LOCALE, LOCALES } from './locales';
  *
  * **`localeCookie: false`** — 기본값은 `NEXT_LOCALE` 쿠키를 굽는 것이다.
  * `localeDetection: false`라 **읽지도 않는 쿠키**인데, `Set-Cookie`가 붙는 순간
- * Cloudflare가 해당 HTML을 캐시하지 않는다. PR #719로 HTML 히트율을
+ * Cloudflare가 해당 HTML을 캐시하지 않는다. HTML 히트율을
  * 13.8%→36.7%까지 올린 작업이 한국어 페이지 포함 전 페이지에서 무효화된다.
  */
 export const routing = defineRouting({

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { RouteMessages } from './RouteMessages';
 import { resolveLocale } from './locales';
 
@@ -17,7 +17,7 @@ interface RouteLayoutProps {
  * 루트 프로바이더 하나에 전 라우트 키의 합집합을 실으면 `/login`·`/terms` 같은
  * 가벼운 페이지가 `widgets.options`·`views.symbol`·`widgets.chat`을 통째로 들고
  * 다닌다. 실측: 전 라우트에 24,299바이트가 동일하게 실려 **first-load JS +28%,
- * RSC prefetch +45.8%**였다 — v0.58.0(first-load −38%)과 PR #719(RSC 페이로드)
+ * RSC prefetch +45.8%**였다 — v0.58.0(first-load −38%)과 RSC 페이로드 축소
  * 성과를 정면으로 되돌리는 크기다.
  *
  * ## 왜 페이지가 아니라 레이아웃인가
@@ -30,8 +30,13 @@ interface RouteLayoutProps {
  * `route` 문자열은 `messages/_meta/clientKeys.json`의 키와 일치해야 한다 —
  * 어긋나면 크롬으로 폴백하고, 그 누락은 `clientKeyCoverage` 테스트가 잡는다.
  */
-export function routeLayout(route: string) {
-    return async function RouteLayout({ children, params }: RouteLayoutProps) {
+export function routeLayout(
+    route: string
+): (props: RouteLayoutProps) => Promise<ReactElement> {
+    return async function RouteLayout({
+        children,
+        params,
+    }: RouteLayoutProps): Promise<ReactElement> {
         const { locale } = await params;
         return (
             <RouteMessages route={route} locale={resolveLocale(locale)}>

@@ -1,10 +1,26 @@
 'use client';
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import {
+    createContext,
+    useContext,
+    useMemo,
+    type ReactElement,
+    type ReactNode,
+} from 'react';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
+interface LocaleContextValue {
+    readonly locale: Locale;
+    readonly hrefBase: string;
+}
+
+const LocaleContext = createContext<LocaleContextValue>({
+    locale: DEFAULT_LOCALE,
+    hrefBase: '',
+});
+
 /**
- * 현재 로케일을 클라이언트 트리에 흘려보내는 컨텍스트.
+ * 현재 로케일(과 내부 링크 origin)을 클라이언트 트리에 흘려보내는 프로바이더.
  *
  * **왜 `useLocale()`(next-intl)이나 `usePathname()`이 아닌가**: 둘 다 "없으면
  * 던지거나 mock을 요구한다". `useLocale()`은 `NextIntlClientProvider` 밖에서
@@ -16,16 +32,6 @@ import { DEFAULT_LOCALE, type Locale } from './locales';
  * 조각 렌더 테스트는 기본 로케일로 조용히 동작하고, 런타임에는 루트 레이아웃이
  * 실제 값을 넣는다.
  */
-interface LocaleContextValue {
-    readonly locale: Locale;
-    readonly hrefBase: string;
-}
-
-const LocaleContext = createContext<LocaleContextValue>({
-    locale: DEFAULT_LOCALE,
-    hrefBase: '',
-});
-
 export function LocaleProvider({
     locale,
     hrefBase = '',
@@ -34,7 +40,7 @@ export function LocaleProvider({
     readonly locale: Locale;
     readonly hrefBase?: string;
     readonly children: ReactNode;
-}) {
+}): ReactElement {
     const value = useMemo(() => ({ locale, hrefBase }), [locale, hrefBase]);
     return (
         <LocaleContext.Provider value={value}>
@@ -49,9 +55,9 @@ export function useCurrentLocale(): Locale {
 }
 
 /**
- * Origin prepended to internal links. `''` on the main host (relative paths as
- * before); the ai.siglens.io layout sets the main site URL so the shared header's
- * `/market`, `/login`, search results etc. leave the ai host instead of 404-ing there.
+ * 내부 링크 앞에 붙일 origin. 메인 호스트에서는 `''`(상대 경로 그대로)이고,
+ * ai.siglens.io 레이아웃은 메인 사이트 URL을 넣어 공용 헤더의 `/market`·`/login`·
+ * 검색 결과 등이 ai 호스트에서 404가 되지 않고 메인 사이트로 나가게 한다.
  */
 export function useHrefBase(): string {
     return useContext(LocaleContext).hrefBase;

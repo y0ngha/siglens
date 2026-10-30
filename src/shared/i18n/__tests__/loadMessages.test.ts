@@ -70,4 +70,25 @@ describe('pickMessages', () => {
             pickMessages(CATALOG, ['widgets.layout.localeSwitcher.label.extra'])
         ).toEqual({});
     });
+
+    it('통째 네임스페이스와 그 하위 키가 겹쳐도 같은 결과를 낸다', () => {
+        expect(
+            pickMessages(CATALOG, [
+                'widgets.layout',
+                'widgets.layout.localeSwitcher',
+            ])
+        ).toEqual({
+            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+        });
+    });
+
+    it('입력 카탈로그를 바꾸지 않는다', () => {
+        const before = JSON.stringify(CATALOG);
+        pickMessages(CATALOG, [
+            'widgets.layout',
+            'widgets.layout.localeSwitcher.label',
+            'app.home',
+        ]);
+        expect(JSON.stringify(CATALOG)).toBe(before);
+    });
 });

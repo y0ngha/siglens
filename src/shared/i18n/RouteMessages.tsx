@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { ancestorClientPaths, routeClientPaths } from './clientNamespaces';
 import { loadMessages, pickMessages } from './loadMessages';
 import { MergedIntlProvider } from './MergedIntlProvider';
@@ -42,7 +42,7 @@ export async function RouteMessages({
     route,
     locale,
     children,
-}: RouteMessagesProps) {
+}: RouteMessagesProps): Promise<ReactElement> {
     const messages = await loadMessages(locale);
     const delta = omitMessages(
         pickMessages(messages, routeClientPaths(route)),

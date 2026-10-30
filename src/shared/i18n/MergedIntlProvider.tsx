@@ -5,7 +5,7 @@ import {
     NextIntlClientProvider,
     useMessages,
 } from 'next-intl';
-import { type ReactNode, useMemo } from 'react';
+import { type ReactElement, type ReactNode, useMemo } from 'react';
 import { mergeMessages } from './messageDiff';
 
 interface MergedIntlProviderProps {
@@ -26,7 +26,7 @@ export function MergedIntlProvider({
     locale,
     messages,
     children,
-}: MergedIntlProviderProps) {
+}: MergedIntlProviderProps): ReactElement {
     const parentMessages = useMessages();
     const merged = useMemo(
         () => mergeMessages(parentMessages, messages),

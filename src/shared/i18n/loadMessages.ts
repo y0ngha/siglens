@@ -1,6 +1,13 @@
 import type { AbstractIntlMessages } from 'next-intl';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
+type MessageTree = Record<string, unknown>;
+
+/** 배열도 통과시킨다 — 이전 `typeof` 순회와 같은 값을 받아들인다. */
+function isTree(value: unknown): value is MessageTree {
+    return typeof value === 'object' && value !== null;
+}
+
 /**
  * 로케일 메시지 카탈로그를 읽는다.
  *
@@ -45,24 +52,27 @@ export function pickMessages(
     messages: AbstractIntlMessages,
     namespaces: readonly string[]
 ): AbstractIntlMessages {
-    const picked: Record<string, unknown> = {};
+    const picked: MessageTree = {};
     for (const namespace of namespaces) {
         const segments = namespace.split('.');
-        let source: unknown = messages;
-        for (const segment of segments) {
-            source =
-                typeof source === 'object' && source !== null
-                    ? (source as Record<string, unknown>)[segment]
-                    : undefined;
-        }
+        const source = segments.reduce<unknown>(
+            (node, segment) => (isTree(node) ? node[segment] : undefined),
+            messages
+        );
         if (source === undefined) continue;
 
-        let target = picked;
-        for (const segment of segments.slice(0, -1)) {
-            target[segment] ??= {};
-            target = target[segment] as Record<string, unknown>;
-        }
-        target[segments[segments.length - 1]!] = source;
+        const leaf = segments[segments.length - 1] ?? namespace;
+        const parent = segments
+            .slice(0, -1)
+            .reduce<MessageTree>((target, segment) => {
+                const child = target[segment];
+                if (isTree(child)) return child;
+                const created: MessageTree = {};
+                target[segment] = created;
+                return created;
+            }, picked);
+        parent[leaf] = source;
     }
+    // safe: 입력 카탈로그의 서브트리만 같은 모양으로 되쌓은 객체다.
     return picked as AbstractIntlMessages;
 }
