@@ -9,7 +9,6 @@ import {
     useMemo,
     useRef,
     useState,
-    type ReactElement,
     type ReactNode,
 } from 'react';
 import { splitLocalePath } from '@/shared/i18n/locales';
@@ -103,7 +102,7 @@ export function NavigationPendingProvider({
     children,
 }: {
     children: ReactNode;
-}): ReactElement {
+}) {
     const pathname = useAppPathname();
     const [pending, setPending] = useState<PendingNavigation | null>(null);
 

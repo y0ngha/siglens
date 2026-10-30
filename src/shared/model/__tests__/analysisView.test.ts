@@ -10,17 +10,18 @@ describe('useAnalysisView', () => {
         localStorage.clear();
     });
 
-    it('persists under the literal storage key', () => {
+    // 저장된 사용자 데이터와의 호환을 위해 리터럴로 고정한다.
+    it('저장 키는 리터럴로 고정된다 — 바뀌면 기존 사용자의 저장 선택이 사라진다', () => {
         expect(ANALYSIS_VIEW_STORAGE_KEY).toBe('siglens:analysis-view');
     });
 
-    it('defaults to plain when nothing is stored', () => {
+    it('저장값이 없으면 기본값은 쉽게보기다', () => {
         const { result } = renderHook(() => useAnalysisView());
 
         expect(result.current[0]).toBe('plain');
     });
 
-    it('restores a stored raw mode', () => {
+    it('저장된 원본보기를 복원한다', () => {
         localStorage.setItem(ANALYSIS_VIEW_STORAGE_KEY, '"raw"');
 
         const { result } = renderHook(() => useAnalysisView());
@@ -28,7 +29,7 @@ describe('useAnalysisView', () => {
         expect(result.current[0]).toBe('raw');
     });
 
-    it('falls back to plain for an unknown stored value', () => {
+    it('알 수 없는 저장값은 쉽게보기로 돌아간다', () => {
         localStorage.setItem(ANALYSIS_VIEW_STORAGE_KEY, '"fancy"');
 
         const { result } = renderHook(() => useAnalysisView());
@@ -36,7 +37,7 @@ describe('useAnalysisView', () => {
         expect(result.current[0]).toBe('plain');
     });
 
-    it('writes the chosen mode to localStorage', () => {
+    it('선택한 모드를 localStorage에 기록한다', () => {
         const { result } = renderHook(() => useAnalysisView());
 
         act(() => {
