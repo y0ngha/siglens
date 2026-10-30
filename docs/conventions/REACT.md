@@ -179,6 +179,20 @@ Derive "is a member" in one exported place, not separately per consumer.
 //    const active = decision?.userId === userId ? decision.value : null;
 ```
 
+<a id="HK-6"></a>
+
+#### HK-6 — Functions returned from a custom hook have stable identity
+
+Handlers a hook returns (`dismiss`, `install`, `reset`) are wrapped in `useCallback` with correct deps. An inline
+closure gets a new identity every render, so consumers that put it in a dependency array or pass it to a memoized
+child re-run or re-render on every render.
+
+```tsx
+// ❌ return { dismiss: () => setOpen(false) };
+// ✅ const dismiss = useCallback(() => setOpen(false), []);
+//    return { dismiss };
+```
+
 <a id="HK-4"></a>
 
 #### HK-4 — State tied to a condition is reset when the condition goes false
@@ -355,6 +369,48 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-8"></a>
+
+#### CR-8 — Secret values never become React keys or extra props
+
+A one-time secret (API key, token, password) is rendered in exactly one place. Do not use it as a `key`, a `data-*` attribute, an `id`, or a prop forwarded to components that only need to know "a secret exists": keys and props show up in React DevTools and dev-mode warnings. To remount a subtree when a new secret arrives, key it on a counter or other non-secret identity. Clear the secret from state once the user dismisses it.
+
+```tsx
+// ❌
+<SecretPanel key={secret} secret={secret} />
+// ✅
+<SecretPanel key={secretVersion} secret={secret} />
+<a id="CR-6"></a>
+
+#### CR-6 — List keys are unique, non-blank and independent of display text
+
+A `key` built from a display string (title, label, name) renders blank rows when the string is empty and triggers duplicate-key warnings and state mix-ups when two items share it. Key by a stable id; when only display text exists, trim it, drop blank items (or fall back to a localized placeholder) and drop repeats before rendering, so the text is unique.
+
+```tsx
+// ❌ blank or repeated titles collide
+items.map(item => <li key={item.title}>{item.title}</li>)
+
+// ✅ blanks and repeats dropped first, so the title is a unique key
+distinctTitles(items).map(title => <li key={title}>{title}</li>)
+<a id="CR-7"></a>
+
+#### CR-7 — Swapping to a shared component preserves what the old one encoded
+
+Before replacing a hand-rolled element with a shared component, list the constraints the old one carried (accessible name, size limits, z-index, viewport clamping) and check the shared one meets each; pass the specific label and cap the size where it does not.
+
+- ❌ Swapping a fixed-width tooltip for the shared `InfoTooltip` and silently getting a generic accessible name and a width that overflows 320px screens.
+- ✅ Pass the specific `aria-label` and cap the width to the viewport minus padding.
+<a id="CR-5"></a>
+
+#### CR-5 — Swapping to a shared component keeps the constraints the old one encoded
+
+Before replacing a hand-rolled component with a shared one, list what the old one guaranteed — accessible name, size
+limits at the smallest viewport (320px), stacking, keyboard and touch behaviour — and check the shared one meets each.
+Pass a prop or extend the shared component instead of accepting its defaults: they silently replace the old specifics.
+
+- ❌ Swap a fixed `w-56` tooltip for the shared one (`max-w-xs`, positioned by clamping only the left edge): it overflows
+  a 320px screen, and its generic trigger name replaces "Reliability Score Explanation".
+- ✅ Cap the shared width to `min(20rem, 100vw - 2 × padding)` and pass the specific `label`.
 <a id="CR-4"></a>
 
 #### CR-4 — Pointer-anchored overlays measure the target at event time
@@ -453,6 +509,52 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 <button aria-label="Watchlist" aria-pressed={on} />
 ```
 
+<a id="AX-6"></a>
+
+#### AX-6 — Hand focus off when the focused element goes away, and focus newly revealed status
+
+- When the focused element unmounts itself (a dismiss button, a removed list row), move focus to the next logical target (neighbouring row, the list or empty-state heading, the control that opened it) in the same handler; otherwise focus falls to `<body>` and keyboard users restart from the top of the page.
+- A status or result panel that appears after an action and is not inside an existing live region gets `role="status"` (or is focused via `tabIndex={-1}` when it holds content to act on), so it is announced.
+
+```tsx
+// ❌ the button removes itself; focus drops to <body>
+<button onClick={() => setSecret(null)}>Dismiss</button>
+// ✅
+<button onClick={() => { setSecret(null); headingRef.current?.focus(); }}>Dismiss</button>
+<a id="AX-7"></a>
+
+#### AX-7 — ARIA references point at rendered elements; a combobox follows the WAI-ARIA pattern
+
+`aria-describedby`, `aria-controls`, `aria-labelledby` and `aria-activedescendant` name an id that exists in the DOM at that moment: set the attribute only while its target is rendered. A reference to an unrendered element is silently ignored and misleads assistive tech. For a combobox (search input with a suggestion popup):
+
+- `aria-expanded` is true only while the listbox with at least one option is rendered; `aria-controls` is set only then.
+- The `role="listbox"` has an accessible name and contains only `role="option"` children. Status, empty and loading text lives in a separate `role="status"` region outside the listbox, announced for every layout variant (desktop and mobile).
+- `aria-activedescendant` points at a rendered option and is cleared when the popup closes or the options change; Enter must not follow a hidden active option.
+- Options are not tab stops (`tabIndex={-1}`, keyboard moves through the input); blur and Escape close the popup.
+
+```tsx
+// ❌ listbox not rendered, status text inside it, active option hidden
+<input aria-expanded={open} aria-controls="results" aria-activedescendant={activeId} />
+// ✅
+<input
+  aria-expanded={open && options.length > 0}
+  aria-controls={open && options.length > 0 ? listId : undefined}
+  aria-activedescendant={open ? activeId : undefined}
+/>
+```
+
+<a id="CR-9"></a>
+
+#### CR-9 — A DOM id in a reusable component comes from `useId`
+
+A hard-coded `id` (for `htmlFor`, `aria-describedby`, `aria-controls`) is duplicated whenever the component renders twice on one page (desktop plus mobile sheet, list rows). Generate it with `useId()` and derive related ids from it; an id nothing references is removed.
+
+```tsx
+// ❌
+<label htmlFor="search-input">…</label><input id="search-input" />
+// ✅
+const inputId = useId();
+<label htmlFor={inputId}>…</label><input id={inputId} />
 <a id="AX-4"></a>
 
 #### AX-4 — Adjacent text parts get a real space, not only `gap`/margin

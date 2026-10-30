@@ -24,13 +24,12 @@ interface SearchResultRowProps {
  * LAX로 라우팅되어 RTT 165ms·실효 128KB/s인 상황(2026-08-20 실측)에서 그 왕복은
  * 실재 비용이다. 시세가 필요해지면 이 파일 하나만 바꾸면 된다.
  *
- * **2. prefetch를 걸지 않는다.** 데스크톱 `TickerAutocomplete`의 `ResultItem`은
+ * **2. prefetch를 걸지 않는다.** 데스크톱 자동완성 옵션(`AutocompleteOption`)은
  * `onMouseEnter`에 `router.prefetch`를 물려 두었는데, 그건 `prefetch={false}`를
- * **우회한다**. `/AAPL`의 RSC 페이로드는 1.71MB다(`docs/architecture/CDN_CACHING.md §1`).
- * 10행 목록에 걸면 오버레이를 한 번 열 때마다 ~17MB가 오리진에서 나가고, PR #719가
- * 막았던 프리페치 폭주가 그대로 되살아난다. 복사해 오지 말 것.
+ * **우회한다**. `/AAPL`의 RSC 페이로드는 1.71MB라 10행 목록에 걸면 오버레이를 한 번
+ * 열 때마다 ~17MB가 오리진에서 나간다. 복사해 오지 말 것.
  *
- * ARIA `role="option"`을 쓰지 않는 이유는 `SearchOverlay`의 결과 컨테이너 주석 참고 —
+ * ARIA `role="option"`을 쓰지 않는 이유는 `OverlayResults` JSDoc 참고 —
  * 방향키 모델 없이 역할만 빌려오면 스크린리더 경험이 오히려 나빠진다.
  *
  * `<Link>`가 아니라 `<button>`인 것도 의도다. `<Link>` 클릭은 `router.push`라
