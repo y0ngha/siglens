@@ -6,7 +6,7 @@ import {
     sec13fOptionPositions,
     sec13fPositions,
 } from '@/shared/db/schema';
-import { toValueK, type ApplyFilingInput } from '../../api/apply13fFiling';
+import type { ApplyFilingInput } from '../../api/apply13fFiling';
 import { Drizzle13fRepository } from '../../api/investorFlows13fRepository';
 import { callsOf, createFakeDb, renderSql } from '../fixtures/fakeDb';
 
@@ -38,18 +38,6 @@ const baseInput: ApplyFilingInput = {
 };
 
 const targets = (ops: { target: unknown }[]) => ops.map(op => op.target);
-
-describe('toValueK', () => {
-    it('rounds dollars to thousands', () => {
-        expect(toValueK(1_912_972)).toBe(1_913);
-        expect(toValueK(499)).toBe(0);
-        expect(toValueK(500)).toBe(1);
-    });
-
-    it('clamps to int4 so a huge position cannot fail the whole filing', () => {
-        expect(toValueK(9_000_000_000_000_000)).toBe(2_147_483_647);
-    });
-});
 
 describe('Drizzle13fRepository.applyFiling', () => {
     describe('replace mode', () => {

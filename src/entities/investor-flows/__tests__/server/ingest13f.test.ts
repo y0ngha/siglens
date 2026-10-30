@@ -8,12 +8,12 @@ import {
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
 import type { AmendmentFiling } from '../../lib/amendmentPlan';
-import {
-    CURSOR_OVERLAP_DAYS,
-    run13fIngest,
-    type Ingest13fDeps,
-    type Ingest13fRepository,
-} from '../../server/ingest13f';
+import { CURSOR_OVERLAP_DAYS } from '../../lib/sec13fIngestPlan';
+import { run13fIngest } from '../../server/ingest13f';
+import type {
+    Ingest13fDeps,
+    Ingest13fRepository,
+} from '../../server/ingest13fTypes';
 import type { AggregateMode } from '../../api/aggregateSql';
 import type { ApplyFilingInput } from '../../api/apply13fFiling';
 import type { DirtyBatch } from '../../api/investorFlows13fRepository';
