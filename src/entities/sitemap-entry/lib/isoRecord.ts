@@ -9,7 +9,7 @@ export function toIsoRecord(
     return Object.fromEntries(
         Object.entries<Date | undefined>(record).map(([key, value]) => {
             if (value === undefined) {
-                throw new TypeError(`toIsoRecord: "${key}" 값이 undefined다`);
+                throw new TypeError(`toIsoRecord: "${key}" is undefined`);
             }
             return [key, value.toISOString()];
         })
