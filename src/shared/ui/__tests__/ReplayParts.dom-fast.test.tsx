@@ -214,7 +214,7 @@ describe('ReplaySources', () => {
 });
 
 describe('ReplayPauseButton', () => {
-    it('shows the pause label and aria-pressed=false when not paused', () => {
+    it('shows the pause label without aria-pressed when not paused', () => {
         render(
             <ReplayPauseButton
                 paused={false}
@@ -224,10 +224,10 @@ describe('ReplayPauseButton', () => {
             />
         );
         const button = screen.getByRole('button', { name: '일시정지' });
-        expect(button).toHaveAttribute('aria-pressed', 'false');
+        expect(button).not.toHaveAttribute('aria-pressed');
     });
 
-    it('shows the resume label and aria-pressed=true when paused', () => {
+    it('shows the resume label without aria-pressed when paused', () => {
         render(
             <ReplayPauseButton
                 paused={true}
@@ -237,7 +237,7 @@ describe('ReplayPauseButton', () => {
             />
         );
         const button = screen.getByRole('button', { name: '재생' });
-        expect(button).toHaveAttribute('aria-pressed', 'true');
+        expect(button).not.toHaveAttribute('aria-pressed');
     });
 
     it('calls onToggle when clicked', () => {

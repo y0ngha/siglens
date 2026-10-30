@@ -10,11 +10,10 @@ import {
     type Segment,
 } from '@/shared/lib/replay/replayScript';
 
-/**
- * Presentational pieces both `/about` replays draw a `Frame` with
- * (`ChatReplay` on ai.siglens.io, `ReportReplay` on siglens.io). The replays
- * differ only in their chrome — a chat bubble vs. an address bar — so the
- * steps, streamed body, and sources line live here once.
+/*
+ * `/about` 리플레이 두 벌(ai.siglens.io의 `ChatReplay`, siglens.io의 `ReportReplay`)이
+ * `Frame` 안에 그리는 표현 조각. 두 리플레이는 크롬(채팅 말풍선 vs 주소창)만 다르므로
+ * 단계·스트리밍 본문·출처 줄을 여기 한 곳에 둔다.
  */
 
 const TONE_CLASS: Readonly<Record<Segment['tone'], string | null>> = {
@@ -41,6 +40,7 @@ function Segments({ segments }: SegmentsProps) {
     });
 }
 
+/** 스트리밍 중인 줄 끝의 깜빡이는 캐럿. 장식이라 보조기술에서 숨긴다. */
 export const ReplayCaret = () => (
     <span
         aria-hidden="true"
@@ -50,11 +50,11 @@ export const ReplayCaret = () => (
 
 interface ReplayStepsProps {
     readonly tools: readonly ReplayTool[];
-    /** How many of `tools` have finished. */
+    /** `tools` 중 끝난 단계의 수. */
     readonly done: number;
 }
 
-/** The lookups/steps lighting up one by one: pending pulses, done turns green. */
+/** 조회·단계가 하나씩 켜지는 줄: 진행 중이면 맥동하고, 끝나면 초록으로 바뀐다. */
 export function ReplaySteps({ tools, done }: ReplayStepsProps) {
     return (
         <ul className="flex flex-wrap gap-1.5">
@@ -95,23 +95,29 @@ interface ReplayLinesProps {
     readonly reveal: readonly LineReveal[];
 }
 
-/** The streamed body: paragraphs and bullet runs, each cut at its reveal point. */
+/** 스트리밍 본문: 문단과 불릿 묶음을 각각 공개된 글자 수까지만 그린다. */
 export function ReplayLines({ lines, reveal }: ReplayLinesProps) {
     return (
         <div className="flex flex-col gap-2">
             {groupLines(lines).map(group => {
-                const visible = group.items.filter(
-                    ({ index }) => reveal[index]!.shown > 0
-                );
-                if (visible.length === 0) return null;
-                const rendered = visible.map(({ line, index }) => {
-                    const { shown, caret } = reveal[index]!;
+                const visible = group.items.flatMap(({ line, index }) => {
+                    const state = reveal[index];
+                    return state !== undefined && state.shown > 0
+                        ? [{ line, index, state }]
+                        : [];
+                });
+                const [first] = visible;
+                if (first === undefined) return null;
+                const rendered = visible.map(({ line, index, state }) => {
                     const body = (
                         <>
                             <Segments
-                                segments={sliceSegments(line.segments, shown)}
+                                segments={sliceSegments(
+                                    line.segments,
+                                    state.shown
+                                )}
                             />
-                            {caret ? <ReplayCaret /> : null}
+                            {state.caret ? <ReplayCaret /> : null}
                         </>
                     );
                     return group.kind === 'li' ? (
@@ -120,7 +126,7 @@ export function ReplayLines({ lines, reveal }: ReplayLinesProps) {
                         <p key={index}>{body}</p>
                     );
                 });
-                const key = group.items[0]!.index;
+                const key = first.index;
                 return group.kind === 'li' ? (
                     <ul
                         key={key}
@@ -149,6 +155,7 @@ interface ReplaySourcesProps {
     readonly separator?: boolean;
 }
 
+/** 출처 칩과 기준 시각을 한 줄로 보여주는 푸터. */
 export function ReplaySources({
     label,
     sources,
@@ -186,6 +193,10 @@ interface ReplayPauseButtonProps {
     readonly resumeLabel: string;
 }
 
+/**
+ * 리플레이 일시정지/재생 버튼. 글자가 지금 누르면 일어날 동작을 말하므로 `aria-pressed`를
+ * 달지 않는다 — 이름이 바뀌는 버튼에 함께 달면 상태가 뒤집혀 두 번 읽힌다.
+ */
 export function ReplayPauseButton({
     paused,
     onToggle,
@@ -195,7 +206,6 @@ export function ReplayPauseButton({
     return (
         <button
             type="button"
-            aria-pressed={paused}
             onClick={onToggle}
             className="inline-flex min-h-8 items-center rounded-lg border border-border-control px-2.5 text-xs text-secondary-300 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
         >

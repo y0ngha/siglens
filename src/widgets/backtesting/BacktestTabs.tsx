@@ -38,6 +38,7 @@ export function BacktestTabs({ tickers, children }: BacktestTabsProps) {
                 ariaLabel={t('BacktestTabs.7425e7')}
                 size="xs"
                 idPrefix={TABS_ID_PREFIX}
+                panelMounting="active"
             />
 
             <div

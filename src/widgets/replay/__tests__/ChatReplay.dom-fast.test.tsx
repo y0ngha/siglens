@@ -116,10 +116,9 @@ describe('ChatReplay', () => {
         });
         const button = screen.getByRole('button', { name: 'Pause' });
         fireEvent.click(button);
-        expect(screen.getByRole('button', { name: 'Play' })).toHaveAttribute(
-            'aria-pressed',
-            'true'
-        );
+        expect(
+            screen.getByRole('button', { name: 'Play' })
+        ).toBeInTheDocument();
         const before = userBubbleText();
         await act(async () => {
             await vi.advanceTimersByTimeAsync(3000);

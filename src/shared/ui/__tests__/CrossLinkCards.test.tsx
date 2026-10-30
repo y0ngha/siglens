@@ -42,6 +42,18 @@ describe('CrossLinkCards', () => {
         expect(section.querySelectorAll('h3')).toHaveLength(9);
     });
 
+    it('두 번 렌더돼도 구역 제목 id가 겹치지 않는다', () => {
+        const { container } = render(
+            <>
+                <CrossLinkCards symbol="AAPL" current="chart" />
+                <CrossLinkCards symbol="MSFT" current="news" />
+            </>
+        );
+        const [first, second] = container.querySelectorAll('section h2');
+        expect(first?.id).not.toBe('');
+        expect(first?.id).not.toBe(second?.id);
+    });
+
     it('marks the current page card with aria-current="page"', () => {
         render(<CrossLinkCards symbol="AAPL" current="chart" />);
         const current = screen.getByText('차트 분석').closest('[aria-current]');
