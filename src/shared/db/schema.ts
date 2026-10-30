@@ -23,6 +23,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { FunnelEventContext } from '@/shared/lib/funnel/funnelEvents';
 import { LOCALES } from '@/shared/i18n/locales';
+import { EMAIL_MAX_LENGTH } from '@/shared/config/email';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
@@ -32,7 +33,6 @@ import {
     USER_TIER_VALUES,
 } from './constants';
 
-const EMAIL_MAX_LENGTH = 320;
 const SYMBOL_MAX_LENGTH = 32;
 const EXCHANGE_MAX_LENGTH = 32;
 const FMP_SYMBOL_MAX_LENGTH = 64;

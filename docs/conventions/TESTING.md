@@ -280,6 +280,7 @@ Use exact matchers when the value is deterministic, avoid compound boolean asser
 - Imprecise matchers (`toBeGreaterThan(0)`, `toBeDefined()`) let 0, 2 and 10 all pass when the count is always 1. ❌ `expect(items.length).toBeGreaterThan(0)` ✅ `expect(items.length).toBe(1)`.
 - `||`/`&&`/ternary inside `expect` passes on several failure modes. ❌ `expect(arg === undefined || arg.force !== true).toBe(true)` ✅ `expect(firstArgs?.[4]).toEqual({ force: false })`.
 - Additive behavior (layer A persists, layer B appended) asserts both parts.
+- Check that the serialized or compared value can carry the property under test. ❌ `expect(JSON.stringify(result)).not.toContain('boom')` to prove an `Error` is absent (an `Error` serializes to `{}`, so it always passes) ✅ assert on `result` directly (`expect(result).not.toBeInstanceOf(Error)`, or its `message`).
 - Regression bounds are tight: a `>=` bound that the broken code also satisfies is vacuous. Use equality or the narrowest bound, and revert-check it against the broken implementation.
 
 <a id="TE-10"></a>
