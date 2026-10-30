@@ -1,8 +1,8 @@
 import {
     KR_ECONOMY_INDICATORS,
     normalizeKrEventName,
+    type KrEconomyIndicatorMeta,
 } from '@/shared/config/economyIndicatorsKr';
-import type { KrEconomyIndicatorMeta } from '@/shared/config/economyIndicatorsKr';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
 
