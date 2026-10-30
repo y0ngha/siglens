@@ -1,16 +1,10 @@
-// getFinancialsSnapshot.ts pulls in server-only deps at import time; stub them
-// so the pure isEmptyFinancialsSnapshot can be imported and tested in isolation.
-vi.mock('@/shared/cache/staticSymbolCache', () => ({
-    staticSymbolCache: vi.fn(),
-}));
-vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
-    getFinancialStatementsProvider: vi.fn(),
-}));
-
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
-// same-slice internal segment → relative import (sibling getFinancialsSnapshot.test.ts와 동일)
-import { isEmptyFinancialsSnapshot } from '../getFinancialsSnapshot';
+import {
+    ANNUAL_LIMIT,
+    QUARTER_LIMIT,
+    isEmptyFinancialsSnapshot,
+} from '../financialsSnapshot';
 
 const make = (o: Partial<FinancialsSnapshot> = {}): FinancialsSnapshot => ({
     income: [],
@@ -28,6 +22,16 @@ const rowOf = <
     K extends keyof FinancialsSnapshot,
 >(): FinancialsSnapshot[K][number] =>
     ({}) as unknown as FinancialsSnapshot[K][number];
+
+describe('limit constants', () => {
+    it('ANNUAL_LIMIT는 5다', () => {
+        expect(ANNUAL_LIMIT).toBe(5);
+    });
+
+    it('QUARTER_LIMIT는 8이다', () => {
+        expect(QUARTER_LIMIT).toBe(8);
+    });
+});
 
 describe('isEmptyFinancialsSnapshot', () => {
     it('returns true when all three statement sections are empty', () => {

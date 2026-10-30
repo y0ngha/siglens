@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';

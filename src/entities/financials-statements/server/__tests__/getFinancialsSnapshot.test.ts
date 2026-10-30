@@ -54,14 +54,14 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import {
-    getFinancialsSnapshot,
     ANNUAL_LIMIT,
     QUARTER_LIMIT,
-} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+} from '@/entities/financials-statements/lib/financialsSnapshot';
 import { normalizeFinancialsSnapshot } from '@y0ngha/siglens-core';
 
-describe('getFinancialsSnapshot (entity lib — single source)', () => {
+describe('getFinancialsSnapshot (server — single source)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // 기본값: 빈 배열 (데이터 없는 심볼)
@@ -71,13 +71,6 @@ describe('getFinancialsSnapshot (entity lib — single source)', () => {
         mockGetIncomeStatementGrowths.mockResolvedValue([]);
         mockGetFinancialGrowths.mockResolvedValue([]);
         mockGetCashFlowGrowths.mockResolvedValue([]);
-    });
-
-    describe('limit constants', () => {
-        it('ANNUAL_LIMIT는 5, QUARTER_LIMIT는 8이다', () => {
-            expect(ANNUAL_LIMIT).toBe(5);
-            expect(QUARTER_LIMIT).toBe(8);
-        });
     });
 
     describe('cache key + tag contract (byte-identical)', () => {
