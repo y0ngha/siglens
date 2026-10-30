@@ -10,6 +10,9 @@ import type { SitemapEntry } from '../model';
 import { latestOf } from './latestOf';
 import { staticSitemapEntry } from './staticSitemapEntry';
 
+/** 카테고리 페이지가 ISR로 서빙할 수 있는 목록의 최대 나이(시간). */
+export const NEWS_PAGE_MAX_STALENESS_HOURS = 12;
+
 /**
  * 뉴스 카테고리를 sitemap에서 빼는 정체 기준 — **페이지의 색인 기준과 같은 창**이다.
  *
@@ -21,9 +24,6 @@ import { staticSitemapEntry } from './staticSitemapEntry';
  * sitemap에 남아 "sitemap에 있는데 noindex"(GSC 오류)였다. 2026-09-17 운영 크롤의
  * `/news/forex`(마지막 기사 3주 전)가 그 계열이다.
  */
-/** 카테고리 페이지가 ISR로 서빙할 수 있는 목록의 최대 나이(시간). */
-export const NEWS_PAGE_MAX_STALENESS_HOURS = 12;
-
 const STALE_NEWS_CATEGORY_MS =
     MARKET_NEWS_LOOKBACK_MS - NEWS_PAGE_MAX_STALENESS_HOURS * MS_PER_HOUR;
 
