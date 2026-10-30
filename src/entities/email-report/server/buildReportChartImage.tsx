@@ -5,7 +5,9 @@ import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
 import { OG_BG, OG_FG, OG_MUTED } from '@/shared/lib/og';
 import {
     computeChartGeometry,
+    isReportChartMaPeriod,
     REPORT_CHART_MA_PERIODS,
+    type ReportChartMaPeriod,
 } from '../lib/chartGeometry';
 
 /** 메일 본문 폭 600px의 2배 — 레티나에서 흐리지 않게 한다. */
@@ -16,7 +18,7 @@ const PLOT_HEIGHT = REPORT_CHART_HEIGHT - HEADER_HEIGHT;
 const PLOT_PADDING = 24;
 
 /** 기간별 이동평균선 색 — 사이트 차트와 같은 색을 쓴다. 키는 `REPORT_CHART_MA_PERIODS`와 같아야 한다. */
-const MA_COLORS: Readonly<Record<number, string>> = {
+const MA_COLORS: Readonly<Record<ReportChartMaPeriod, string>> = {
     20: CHART_COLORS_RAW_DARK.period20,
     60: CHART_COLORS_RAW_DARK.period60,
 };
@@ -173,7 +175,11 @@ export function buildReportChartImage(
                             key={line.period}
                             points={line.points}
                             fill="none"
-                            stroke={MA_COLORS[line.period]}
+                            stroke={
+                                isReportChartMaPeriod(line.period)
+                                    ? MA_COLORS[line.period]
+                                    : undefined
+                            }
                             strokeWidth={3}
                         />
                     ))}

@@ -49,7 +49,7 @@ export async function getReportSignalLabelResolver(
             has: key => tLabel.has(key),
             label: key => tLabel(key),
         },
-        message => console.warn(message)
+        console.warn
     );
 }
 
