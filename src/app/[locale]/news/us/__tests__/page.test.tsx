@@ -1,5 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+/** 미리보기 목의 기본값 — 목 팩토리(호이스팅)와 테스트별 복원이 같은 값을 쓴다. */
+const { DEFAULT_PREVIEWS } = vi.hoisted(() => ({
+    DEFAULT_PREVIEWS: ['헤드라인 1'],
+}));
 
 vi.mock('@/app/[locale]/news/_lib/categoryDigests', () => ({
     // 새 의존성 — mock하지 않으면 실제 peek가 테스트 DB를 건드려
@@ -10,7 +15,7 @@ vi.mock('@/app/[locale]/news/_lib/categoryDigests', () => ({
 }));
 
 vi.mock('@/app/[locale]/news/_lib/categoryPreviews', () => ({
-    fetchCategoryPreviews: vi.fn(async () => ['헤드라인 1']),
+    fetchCategoryPreviews: vi.fn(async () => DEFAULT_PREVIEWS),
 }));
 
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
@@ -55,6 +60,19 @@ describe('/news/us hub', () => {
                 })
             ).alternates?.canonical
         ).toBe('https://siglens.io/news/us');
+    });
+
+    it('비-ko 로케일의 공유 카드 이미지는 그 로케일의 허브 이미지를 가리킨다', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'en' }),
+        });
+
+        expect(meta.openGraph?.images).toEqual([
+            'https://siglens.io/en/news/opengraph-image',
+        ]);
+        expect(meta.twitter?.images).toEqual([
+            'https://siglens.io/en/news/opengraph-image',
+        ]);
     });
 
     it('inherits the legacy US news queries from the old /news hub', async () => {
@@ -130,6 +148,37 @@ describe('/news/us hub', () => {
             (i: { name: string }) => i.name
         );
         expect(names.slice(-2)).toEqual(['시장 뉴스 허브', '미국 시장 뉴스']);
+    });
+});
+
+function jsonLdTypes(container: HTMLElement): string[] {
+    return Array.from(
+        container.querySelectorAll('script[type="application/ld+json"]')
+    ).map(s => JSON.parse(s.textContent ?? '{}')['@type']);
+}
+
+describe('/news/us 미리보기가 전부 빈 렌더는', () => {
+    beforeEach(() => {
+        vi.mocked(fetchCategoryPreviews).mockResolvedValue([]);
+    });
+    afterEach(() => {
+        vi.mocked(fetchCategoryPreviews).mockResolvedValue(DEFAULT_PREVIEWS);
+    });
+
+    it('metadata는 noindex, follow다', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+
+        expect(meta.robots).toEqual({ index: false, follow: true });
+    });
+
+    it('같은 판정으로 WebPage·BreadcrumbList 구조화데이터를 내지 않는다', async () => {
+        const { container } = render(
+            await UsNewsHubPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
+
+        expect(jsonLdTypes(container)).toEqual([]);
     });
 });
 

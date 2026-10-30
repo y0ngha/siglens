@@ -1,6 +1,6 @@
 /**
- * 1년에 해당하는 거래일 수. 비교 게이지의 "1년 전" 기준점과 시계열 차트의
- * "최근 1년" 구간이 같은 값을 쓴다 — 서버는 1년 전 비교에 필요한 약 2년
- * (`CLIENT_FEAR_GREED_HISTORY_POINTS`)을 보내므로, 차트는 이 길이로 잘라 그린다.
+ * 추이 차트 높이(px). 차트 생성 옵션과, 차트가 붙기 전 컨테이너·지연 로드 자리가 모두 이
+ * 값을 쓴다 — 셋이 어긋나면 차트가 도착할 때 아래 내용이 밀린다. `lightweight-charts`를
+ * import하지 않는 모듈에 둬서, 지연 로드 자리를 그리는 페이지가 차트 번들을 끌어오지 않게 한다.
  */
-export const TRADING_DAYS_1Y = 252;
+export const FEAR_GREED_CHART_HEIGHT = 240;

@@ -1,3 +1,6 @@
+/**
+ * 확장 세션 체결 시각 포맷 헬퍼(ET 고정).
+ */
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 

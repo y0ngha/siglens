@@ -69,3 +69,11 @@ export const POPULAR_PREVIEW_GROUPS: readonly PopularPreviewGroup[] = [
         items: ['BTCUSD', 'ETHUSD', 'XRPUSD'],
     },
 ];
+
+/**
+ * 인기 종목 심볼의 `features.ticker-search.popularName` 키. 메시지 키에 `.`을 쓸 수 없어
+ * (`.`은 네임스페이스 구분자다) `005930.KS`는 `005930_KS`로 저장돼 있다.
+ */
+export function popularNameKey(symbol: string): string {
+    return symbol.replace(/\./g, '_');
+}

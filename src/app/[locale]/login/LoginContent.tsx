@@ -1,15 +1,18 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useLocalePath } from '@/shared/i18n/useLocalePath';
-import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth-login/ui/LoginForm';
 import { SocialLoginButtons } from '@/features/auth-oauth/ui/SocialLoginButtons';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import { loginErrorKey } from './_lib/loginErrorKey';
 
-// useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
-// page.tsx의 <Suspense> 경계가 빌드 타임 useSearchParams 요구를 충족시킨다.
+/**
+ * 로그인 폼·소셜 버튼과 쿼리 의존 상태(`next`·`error`·`password_reset`). `useSearchParams`를
+ * 읽어 이 서브트리만 CSR로 떨구고 라우트는 정적으로 남는다 — `page.tsx`의 Suspense 경계가 빌드
+ * 타임 `useSearchParams` 요구를 충족시킨다.
+ */
 export function LoginContent() {
     const params = useSearchParams();
     // `next`를 로케일 경로로 바꾼다. 이 값이 hidden 필드 → 로그인 액션 →
@@ -22,8 +25,7 @@ export function LoginContent() {
     // 의미 있는 값이므로 반드시 넘긴다 — 생략하면 로그인 후 ko 홈으로 떨어진다.
     const nextParam = next === '/' ? undefined : next;
     const tAuth = useTranslations('entities.auth');
-    const errorCode = params.get('error');
-    const errorKey = errorCode ? AUTH_ERROR_KEY[errorCode] : undefined;
+    const errorKey = loginErrorKey(params.get('error'));
     const initialError = errorKey ? tAuth(errorKey) : undefined;
     const passwordResetSuccess = params.get('password_reset') === '1';
     return (

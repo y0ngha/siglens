@@ -53,3 +53,26 @@ export function resolveTypedTarget(query: string): SubmitTarget | null {
     const typed = query.trim().toUpperCase();
     return typed ? { symbol: typed, label: typed } : null;
 }
+
+/** `resolvePendingSubmit`의 맥락. */
+export interface PendingSubmitContext {
+    /** false면 폼 모드다(`useAutocomplete`의 `navigateOnSelect`). */
+    navigateOnSelect: boolean;
+    /** 조회가 실패했는지. */
+    isError: boolean;
+}
+
+/**
+ * 결착된 검색 키 의도의 목적지. 폼 모드는 친 문자열 자체를 확정하고, 조회가 실패했으면
+ * 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가 아니라서 친 문자열 직행으로
+ * 떨어지면 안 된다.
+ */
+export function resolvePendingSubmit(
+    query: string,
+    results: readonly TickerSearchResult[],
+    { navigateOnSelect, isError }: PendingSubmitContext
+): SubmitTarget | null {
+    if (!navigateOnSelect) return resolveTypedTarget(query);
+    if (isError) return null;
+    return resolveSubmitTarget(query, results);
+}

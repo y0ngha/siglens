@@ -18,7 +18,7 @@ describe('developers SEO', () => {
 
     it('dateModified는 DEVELOPERS_UPDATED_AT의 ISO 문자열이다', () => {
         expect(buildDevelopersJsonLd(t, 'ko').dateModified).toBe(
-            '2026-10-15T15:00:00.000Z'
+            '2026-10-28T15:00:00.000Z'
         );
     });
 
