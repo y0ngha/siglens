@@ -5,7 +5,7 @@ const { mockFindByUser, mockUpsert } = vi.hoisted(() => ({
     mockUpsert: vi.fn(),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -22,7 +22,7 @@ vi.mock('@/entities/email-report/api', () => ({
         }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { getEmailReportSettingsAction } from '@/entities/email-report/actions/getEmailReportSettingsAction';
 import { saveEmailReportSettingsAction } from '@/entities/email-report/actions/saveEmailReportSettingsAction';

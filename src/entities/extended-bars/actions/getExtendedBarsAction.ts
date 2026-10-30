@@ -6,7 +6,7 @@ import {
     isTimeframeAllowed,
 } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
+import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
 import { loadExtendedBars } from '../api';
 import { parseExtendedBarsRequest } from '../lib/extendedBarsRequest';
 

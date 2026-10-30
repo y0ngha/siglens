@@ -37,7 +37,7 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
     return { m, RepoCtor, PortfolioCtor };
 });
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: m.user,
 }));
 vi.mock('@/shared/api/isBot', () => ({ isBot: m.isBot }));

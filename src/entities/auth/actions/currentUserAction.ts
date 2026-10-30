@@ -6,7 +6,7 @@ import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { logActionError } from '@/shared/lib/logActionError';
 import { applyAuthCookie } from '../lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '../lib/authHintCookie';
-import { getCurrentUser } from '../lib/getCurrentUser';
+import { getCurrentUser } from '../server/getCurrentUser';
 import { createExpiredSessionCookie } from '../lib/sessionCookie';
 import { isSecureCookieEnv } from '../lib/sessionCookieOptions';
 

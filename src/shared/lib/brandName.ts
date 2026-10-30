@@ -10,7 +10,7 @@ import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
  * `noTranslatorParamCall` 가드의 서버 전용 면제가 깨진다. 상수 import는 그 가드 대상이 아니다.
  *
  * 로고·워드마크(헤더 로고, OG 이미지)와 JSON-LD `name`은 이 함수를 쓰지 않고
- * `SITE_NAME`을 그대로 쓴다 — 표기 규칙(`CONVENTIONS.md#I18-11`)의 예외다.
+ * `SITE_NAME`을 그대로 쓴다 — 표기 규칙(`I18N.md#I18-11`)의 예외다.
  */
 export function brandName(locale: Locale): string {
     return locale === DEFAULT_LOCALE ? SITE_NAME_KO : SITE_NAME;

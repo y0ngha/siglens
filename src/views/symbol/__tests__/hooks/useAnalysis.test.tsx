@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { getReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { getReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type {
@@ -17,12 +17,15 @@ vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
 }));
 
 // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
-vi.mock('@/entities/analysis/lib/reanalyzeCooldown', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/entities/analysis/lib/reanalyzeCooldown')
-    >()),
-    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-}));
+vi.mock(
+    '@/entities/analysis/actions/getReanalyzeCooldownMs',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/analysis/actions/getReanalyzeCooldownMs')
+        >()),
+        getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+    })
+);
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),

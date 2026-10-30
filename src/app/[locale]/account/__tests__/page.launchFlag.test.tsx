@@ -27,7 +27,7 @@ vi.mock('@/entities/siglens-api-key/actions/listSiglensApiKeysAction', () => ({
 vi.mock('@/entities/siglens-api-key/actions/getApiDefaultModelAction', () => ({
     getApiDefaultModelAction: getDefaultModel,
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(async () => ({
         id: 'u1',
         email: 'a@b.c',
@@ -45,7 +45,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { renderToReadableStream } from 'react-dom/server';
 import ko from '../../../../../messages/ko.json';
 import AccountPage from '@/app/[locale]/account/page';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 
 /**
  * 본문(`AccountContent`)을 끝나지 않는 세션 조회로 붙잡아 Suspense fallback(`AccountContentSkeleton`)만

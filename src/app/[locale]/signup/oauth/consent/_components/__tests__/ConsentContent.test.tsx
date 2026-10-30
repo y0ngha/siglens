@@ -5,7 +5,7 @@
 vi.mock('@/features/auth-oauth-consent/ui/OAuthConsentForm', () => ({
     OAuthConsentForm: () => null,
 }));
-vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 vi.mock('@/features/auth-oauth/actions/cancelOAuthSignupAction', () => ({
@@ -24,7 +24,7 @@ vi.mock('@/shared/i18n/localeRedirect', () => ({
     }),
 }));
 
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { ConsentContent } from '../ConsentContent';
 

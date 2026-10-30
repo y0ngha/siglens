@@ -27,12 +27,12 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 // 세션 쿠키를 읽는 경로는 이 파일에 없어야 한다 — 읽으면 이 목이 호출된다.
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
 import { runNewsAnalysis, type ModelId } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 

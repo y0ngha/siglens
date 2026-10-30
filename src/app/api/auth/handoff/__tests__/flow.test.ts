@@ -27,7 +27,7 @@ const m = vi.hoisted(() => {
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => m.redis,
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: m.user,
 }));
 vi.mock('@/entities/auth/lib/sessionCookie', async importOriginal => ({

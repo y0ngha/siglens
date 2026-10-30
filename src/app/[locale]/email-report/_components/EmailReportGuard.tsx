@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
 import type { Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';

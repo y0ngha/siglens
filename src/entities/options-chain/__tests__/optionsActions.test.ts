@@ -28,7 +28,7 @@ vi.mock('../server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -53,7 +53,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
 import { fetchOptionsSnapshot } from '../server/optionsDataCache';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitOptionsAnalysisAction } from '../actions/optionsActions';

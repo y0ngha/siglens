@@ -8,7 +8,7 @@ const { mockFindByUser, mockUpsert, mockDeleteByUserAndSymbol } = vi.hoisted(
     })
 );
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -27,7 +27,7 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions/getPortfolioHoldingsAction';
 import { savePortfolioHoldingAction } from '@/entities/portfolio/actions/savePortfolioHoldingAction';

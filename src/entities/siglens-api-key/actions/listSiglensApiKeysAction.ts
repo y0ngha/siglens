@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';

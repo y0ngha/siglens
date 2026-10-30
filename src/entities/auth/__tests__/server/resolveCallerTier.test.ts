@@ -5,14 +5,14 @@ const { mockGetCurrentUser, mockResolveTierOnly } = vi.hoisted(() => ({
     mockResolveTierOnly: vi.fn(),
 }));
 
-vi.mock('../lib/getCurrentUser', () => ({
+vi.mock('../../server/getCurrentUser', () => ({
     getCurrentUser: mockGetCurrentUser,
 }));
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierOnly: mockResolveTierOnly,
 }));
 
-import { resolveCallerTier } from '../lib/resolveCallerTier';
+import { resolveCallerTier } from '../../server/resolveCallerTier';
 
 /** ISR/prerender에서 `getCurrentUser()`가 `cookies()`를 읽을 때 Next 16.4가 던지는 실제 메시지. */
 const CACHE_SCOPE_ERROR = new Error(

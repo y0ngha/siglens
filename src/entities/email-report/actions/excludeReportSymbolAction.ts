@@ -1,7 +1,7 @@
 'use server';
 
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzleEmailReportExclusionRepository } from '../api';

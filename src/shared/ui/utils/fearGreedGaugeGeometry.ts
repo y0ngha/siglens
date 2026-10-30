@@ -84,8 +84,13 @@ function tickDy(value: number): number {
     return value === SCORE_MIN || value === SCORE_MAX ? TICK_END_DROP : 0;
 }
 
+interface Point {
+    readonly x: number;
+    readonly y: number;
+}
+
 /** 눈금 라벨의 SVG 좌표. */
-export function tickLabelPosition(value: number): { x: number; y: number } {
+export function tickLabelPosition(value: number): Point {
     const a = scoreToRadians(value);
     return {
         x: GAUGE_CX + TICK_LABEL_RADIUS * Math.cos(a),

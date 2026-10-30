@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({ user: vi.fn(), issue: vi.fn() }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: m.user,
 }));
 vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({

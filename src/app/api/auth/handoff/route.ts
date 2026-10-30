@@ -1,6 +1,6 @@
 import 'server-only';
 import type { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import {
     handoffStartUrl,
     resolveHandoffNext,

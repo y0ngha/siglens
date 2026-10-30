@@ -76,7 +76,8 @@ For each recurring group, apply the root `CLAUDE.md` "Rule Homes" table (read it
 | Rule kind | Destination |
 |---|---|
 | Layer-specific (app, entities, features, shared, widgets, skills) | that layer's `CLAUDE.md` |
-| Cross-cutting code style, TypeScript, constants, i18n, comments, change synchronization | `docs/conventions/CONVENTIONS.md` |
+| Cross-cutting code style, TypeScript, constants, comments, change synchronization | `docs/conventions/CONVENTIONS.md` |
+| i18n (message catalogs, extraction, locale routing) | `docs/conventions/I18N.md` |
 | Hooks, components, a11y, effects, charts, Tailwind, React Query, URL state | `docs/conventions/REACT.md` |
 | Server Actions, route handlers, I/O, concurrency, server data cache, DB | `docs/conventions/SERVER.md` |
 | Tests, mocks, fixtures, e2e | `docs/conventions/TESTING.md` |

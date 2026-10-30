@@ -45,7 +45,7 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/entities/oauth-account/api', () => ({
@@ -60,7 +60,7 @@ vi.mock('@/entities/oauth-account/server/revoker', () => ({
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

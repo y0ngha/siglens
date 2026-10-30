@@ -1,6 +1,6 @@
 const { mockList } = vi.hoisted(() => ({ mockList: vi.fn() }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { listSiglensApiKeysAction } from '@/entities/siglens-api-key/actions/listSiglensApiKeysAction';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);

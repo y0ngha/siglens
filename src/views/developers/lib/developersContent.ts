@@ -15,7 +15,7 @@ export const DAYS_PER_WEEK = 7;
 /** 도구 요약 문구 하나: 카탈로그 키와, 문구에 넣는 ICU 인자. */
 export interface ToolSummaryMessage {
     readonly key: string;
-    /** 숫자는 도구가 쓰는 상수에서 읽는다 — 문구에 직접 적으면 상수를 바꿀 때 문서만 옛 값으로 남는다(CONVENTIONS.md#I18-6). */
+    /** 숫자는 도구가 쓰는 상수에서 읽는다 — 문구에 직접 적으면 상수를 바꿀 때 문서만 옛 값으로 남는다(I18N.md#I18-6). */
     readonly values?: Readonly<Record<string, number>>;
 }
 

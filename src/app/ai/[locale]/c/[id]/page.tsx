@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getConversationAction } from '@/entities/chat-conversation/actions/getConversationAction';
 import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { enterLocale } from '@/shared/lib/enterLocale';

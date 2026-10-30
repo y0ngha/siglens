@@ -1,7 +1,7 @@
 'use server';
 
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';

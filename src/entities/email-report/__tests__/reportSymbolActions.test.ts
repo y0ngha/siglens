@@ -5,7 +5,7 @@ const { mockExclude, mockInclude } = vi.hoisted(() => ({
     mockInclude: vi.fn(),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -20,7 +20,7 @@ vi.mock('@/entities/email-report/api', () => ({
         }),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { logActionError } from '@/shared/lib/logActionError';
 import { excludeReportSymbolAction } from '@/entities/email-report/actions/excludeReportSymbolAction';
 import { includeReportSymbolAction } from '@/entities/email-report/actions/includeReportSymbolAction';

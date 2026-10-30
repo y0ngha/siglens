@@ -652,7 +652,7 @@ with duplicate-schema risk. Each SQL file has a journal entry.
 
 Seed rows written with `onConflictDoNothing` (terms, privacy text) cannot be changed by editing the source file once
 the row exists. Publish a new version (new id, effective date) instead of editing the committed one. Generated
-manifests follow the same logic: after editing sources run the generator (see I18-1) so downstream output is not stale.
+manifests follow the same logic: after editing sources run the generator (see `I18N.md#I18-1`) so downstream output is not stale.
 
 <a id="DB-4"></a>
 

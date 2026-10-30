@@ -427,93 +427,93 @@
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 96,
+        "line": 101,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 97,
+        "line": 102,
         "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 98,
+        "line": 103,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 99,
+        "line": 104,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 100,
+        "line": 105,
         "reason": "seo-keywords-ko-only",
         "text": "시그렌즈 뉴스"
-    },
-    {
-        "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 74,
-        "reason": "seo-keywords-ko-only",
-        "text": "미국 시장 뉴스"
-    },
-    {
-        "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 76,
-        "reason": "seo-keywords-ko-only",
-        "text": "미국 마켓 뉴스"
-    },
-    {
-        "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 77,
-        "reason": "seo-keywords-ko-only",
-        "text": "미국 주식 뉴스"
-    },
-    {
-        "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 78,
-        "reason": "seo-keywords-ko-only",
-        "text": "미국 외환 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
         "line": 79,
         "reason": "seo-keywords-ko-only",
-        "text": "시장 뉴스 한국어"
-    },
-    {
-        "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 80,
-        "reason": "seo-keywords-ko-only",
-        "text": "미국 주식 뉴스 요약"
+        "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
         "line": 81,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 뉴스 다이제스트"
+        "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
         "line": 82,
         "reason": "seo-keywords-ko-only",
+        "text": "미국 주식 뉴스"
+    },
+    {
+        "file": "src/app/[locale]/news/us/page.tsx",
+        "line": 83,
+        "reason": "seo-keywords-ko-only",
+        "text": "미국 외환 뉴스"
+    },
+    {
+        "file": "src/app/[locale]/news/us/page.tsx",
+        "line": 84,
+        "reason": "seo-keywords-ko-only",
+        "text": "시장 뉴스 한국어"
+    },
+    {
+        "file": "src/app/[locale]/news/us/page.tsx",
+        "line": 85,
+        "reason": "seo-keywords-ko-only",
+        "text": "미국 주식 뉴스 요약"
+    },
+    {
+        "file": "src/app/[locale]/news/us/page.tsx",
+        "line": 86,
+        "reason": "seo-keywords-ko-only",
+        "text": "AI 뉴스 다이제스트"
+    },
+    {
+        "file": "src/app/[locale]/news/us/page.tsx",
+        "line": 87,
+        "reason": "seo-keywords-ko-only",
         "text": "시그렌즈 뉴스"
     },
     {
-        "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
-        "line": 31,
-        "reason": "developer-diagnostic",
-        "text": "[ReanalyzeCooldown] acquire 실패:"
-    },
-    {
-        "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
-        "line": 44,
+        "file": "src/entities/analysis/actions/getReanalyzeCooldownMs.ts",
+        "line": 19,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] pttl 조회 실패:"
+    },
+    {
+        "file": "src/entities/analysis/actions/tryAcquireReanalyzeCooldown.ts",
+        "line": 30,
+        "reason": "developer-diagnostic",
+        "text": "[ReanalyzeCooldown] acquire 실패:"
     },
     {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
@@ -1195,7 +1195,7 @@
     },
     {
         "file": "src/shared/api/dart/dartClient.ts",
-        "line": 297,
+        "line": 298,
         "reason": "developer-diagnostic",
         "text": "[dart] ip_not_allowed — DART returned 012; remove the IP restriction on the API "
     },

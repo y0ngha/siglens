@@ -78,7 +78,7 @@ vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     ]),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -159,7 +159,7 @@ import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';

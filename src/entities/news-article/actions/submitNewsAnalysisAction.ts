@@ -4,7 +4,7 @@ import type { Locale } from '@/shared/i18n/locales';
 import type { SubmitNewsAnalysisOptions } from '@y0ngha/siglens-core';
 import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/model';
 import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';

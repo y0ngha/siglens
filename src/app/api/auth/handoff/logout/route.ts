@@ -7,7 +7,7 @@ import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { aiSignedOutUrl } from '@/entities/auth/lib/handoffRedirect';
 import { consumeLogoutCode } from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';

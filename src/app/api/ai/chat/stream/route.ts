@@ -5,7 +5,7 @@ import {
     hashClientIp,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { readGuestId } from '@/shared/api/guestId';

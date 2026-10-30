@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
-import { getActiveNoticesMemoized } from '@/entities/notice/lib/activeNoticesMemo';
+import { getActiveNoticesMemoized } from '@/entities/notice/server/activeNoticesMemo';
 import type { NoticeWireRecord } from '@/entities/notice/model/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { resolveLocale } from '@/shared/i18n/locales';

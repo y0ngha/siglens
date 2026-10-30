@@ -20,7 +20,7 @@ import {
     needleRotationDeg,
     tickLabelPosition,
     tickTextAnchor,
-} from '@/shared/ui/fearGreedGaugeGeometry';
+} from '@/shared/ui/utils/fearGreedGaugeGeometry';
 
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =
     FEAR_GREED_LABEL_CUTOFFS;

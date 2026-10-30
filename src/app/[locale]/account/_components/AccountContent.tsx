@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getApiDefaultModelAction } from '@/entities/siglens-api-key/actions/getApiDefaultModelAction';
 import { listSiglensApiKeysAction } from '@/entities/siglens-api-key/actions/listSiglensApiKeysAction';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';

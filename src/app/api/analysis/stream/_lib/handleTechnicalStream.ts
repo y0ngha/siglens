@@ -1,6 +1,6 @@
 import type { AssembledPromptRecord } from '@y0ngha/siglens-core';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';

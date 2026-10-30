@@ -1,7 +1,7 @@
 'use server';
 
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import {
     authNextQuery,
     DEFAULT_REDIRECT_PATH,

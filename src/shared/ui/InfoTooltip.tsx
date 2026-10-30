@@ -48,6 +48,7 @@ export function InfoTooltip({ children, className, label }: InfoTooltipProps) {
     });
 
     // 닫힘 지연 타이머 해제. ref만 다루므로 렌더마다 같은 함수로 유지한다.
+    // 아래 effect·핸들러가 모두 이 함수를 쓰므로(const는 TDZ) 반드시 그보다 먼저 선언한다.
     const cancelClose = useCallback((): void => {
         if (closeTimerRef.current === null) return;
         clearTimeout(closeTimerRef.current);
