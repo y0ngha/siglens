@@ -13,7 +13,7 @@ vi.mock('@/shared/api/fmp/getCongressTradesProvider', () => ({
     getCongressTradesProvider: vi.fn(() => ({})),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -47,7 +47,7 @@ import {
     type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { runCongressTrendAction } from '../actions/runCongressTrendAction';

@@ -7,7 +7,7 @@ const { getUser, getDb, revalidate } = vi.hoisted(() => ({
     getDb: vi.fn(),
     revalidate: vi.fn(),
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: getUser,
 }));
 vi.mock('@/shared/db/client', () => ({ getDatabaseClient: getDb }));

@@ -21,7 +21,7 @@ const AI_LAYOUT_METADATA: Metadata = {
 
 /**
  * ai 루트 레이아웃의 `generateMetadata` 본문. 제목의 제품명은 로케일을 따른다 — ko
- * `시그렌즈 AI`, 그 외 `SIGLENS AI`(`CONVENTIONS.md#I18-11`). 그래서 정적 `metadata`가 아니다.
+ * `시그렌즈 AI`, 그 외 `SIGLENS AI`(`I18N.md#I18-11`). 그래서 정적 `metadata`가 아니다.
  */
 export function buildAiLayoutMetadata(locale: Locale): Metadata {
     const productName = brandAiName(locale);

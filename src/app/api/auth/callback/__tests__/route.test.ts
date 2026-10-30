@@ -21,7 +21,7 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
-vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 // getOAuthRedirectBaseUrl는 콜백 라우트의 모든 리다이렉트 base로 쓰인다.
@@ -60,7 +60,7 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import {
     getOAuthAdapter,
     isOAuthProvider,

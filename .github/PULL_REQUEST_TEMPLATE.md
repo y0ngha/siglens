@@ -13,6 +13,7 @@ closes #{이슈}
 - [ ] @docs/conventions/REACT.md 준수 확인 (클라이언트 코드를 건드린 경우)
 - [ ] @docs/conventions/SERVER.md 준수 확인 (서버 코드를 건드린 경우)
 - [ ] @docs/conventions/TESTING.md 준수 확인 (테스트를 건드린 경우)
+- [ ] @docs/conventions/I18N.md 준수 확인 (사용자 노출 문구·로케일 코드를 건드린 경우)
 - [ ] 변경한 레이어의 src/<layer>/CLAUDE.md 준수 확인
 - [ ] domain/: 외부 라이브러리 import 없음, 순수 함수만
 - [ ] 인디케이터 초기 구간 null 반환 (0, NaN 없음)

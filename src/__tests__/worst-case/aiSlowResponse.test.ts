@@ -31,7 +31,7 @@ vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: vi.fn().mockResolvedValue('203.0.113.1'),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/shared/api/isBot', () => ({

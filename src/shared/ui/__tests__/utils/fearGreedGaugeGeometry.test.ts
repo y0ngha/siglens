@@ -6,7 +6,17 @@ import {
     needleRotationDeg,
     tickLabelPosition,
     tickTextAnchor,
-} from '@/shared/ui/fearGreedGaugeGeometry';
+} from '@/shared/ui/utils/fearGreedGaugeGeometry';
+
+/** 호 path(`M x1 y1 A rx ry rotation large-arc sweep x2 y2`)의 숫자 9개를 뽑는다 — 개수가 다르면 그 자리에서 실패한다. */
+function arcNumbers(path: string): number[] {
+    const numbers = Array.from(
+        path.matchAll(/-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi),
+        match => Number(match[0])
+    );
+    expect(numbers).toHaveLength(9);
+    return numbers;
+}
 
 describe('needleRotationDeg', () => {
     it.each([
@@ -26,8 +36,11 @@ describe('NEEDLE_POINTS', () => {
 
 describe('describeSegmentArc', () => {
     it('50점에서 100점까지의 호는 위쪽 중앙에서 오른쪽 끝으로 간다', () => {
-        const parts = describeSegmentArc(50, 100).split(' ');
-        const [x1, y1, x2, y2] = [1, 2, 9, 10].map(i => Number(parts[i]));
+        // path 문자열 포맷(공백·구분자)에 묶이지 않도록 숫자만 뽑아 비교한다.
+        // M x1 y1 A rx ry rotation large-arc sweep x2 y2
+        const [x1, y1, , , , , , x2, y2] = arcNumbers(
+            describeSegmentArc(50, 100)
+        );
         expect(x1).toBeCloseTo(100, 8);
         expect(y1).toBeCloseTo(25, 8);
         expect(x2).toBeCloseTo(180, 8);
@@ -35,7 +48,10 @@ describe('describeSegmentArc', () => {
     });
 
     it('반지름 80으로 시계 방향(sweep=1) 호를 그린다', () => {
-        expect(describeSegmentArc(0, 50)).toMatch(/ A 80 80 0 0 1 /);
+        const [, , rx, ry, rotation, largeArc, sweep] = arcNumbers(
+            describeSegmentArc(0, 50)
+        );
+        expect([rx, ry, rotation, largeArc, sweep]).toEqual([80, 80, 0, 0, 1]);
     });
 });
 

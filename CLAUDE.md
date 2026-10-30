@@ -283,7 +283,8 @@ Guidance lives in exactly one place. Pick the home by the kind of rule:
 
 | Rule kind | Home | ID prefix |
 |---|---|---|
-| Cross-cutting code style, TypeScript, constants, comments, change synchronization, i18n | `docs/conventions/CONVENTIONS.md` | CP TS NC CM CS I18 |
+| Cross-cutting code style, TypeScript, constants, comments, change synchronization | `docs/conventions/CONVENTIONS.md` | CP TS NC CM CS |
+| i18n (catalogs, extract, client keys, locale handling) | `docs/conventions/I18N.md` | I18 |
 | Client: hooks, components, a11y, effects, charts, Tailwind, React Query, URL state | `docs/conventions/REACT.md` | HK CR AX EF LW TW RQ |
 | Server: Server Actions, route handlers, I/O, concurrency, data cache, DB | `docs/conventions/SERVER.md` | SA CC DC DB |
 | Tests (structure, mocking, assertions, fixtures, E2E, guards) | `docs/conventions/TESTING.md` | TE |

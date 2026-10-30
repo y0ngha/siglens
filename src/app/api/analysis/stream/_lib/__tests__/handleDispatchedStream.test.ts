@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import {
     DONE_STATUS_PROBE,
@@ -16,7 +16,7 @@ const { promptProbe, onPromptAssembled } = vi.hoisted(() => ({
     onPromptAssembled: vi.fn(),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/lib/sse/activeStreams', async importOriginal => ({

@@ -1,4 +1,4 @@
-import { getListboxNextIndex } from '@/shared/ui/modelListboxNav';
+import { getListboxNextIndex } from '@/shared/ui/utils/modelListboxNav';
 
 describe('getListboxNextIndex', () => {
     it.each([

@@ -221,7 +221,7 @@ exactly one of, appended once at the very end of the file, after the body:
 - Examples match the condition they illustrate: a "support holds, enter long" example must not use a price below the
   support; a pattern's description must match what it signals (a UTAD signals completed distribution, not buying).
 - Adding a skill or changing its display name/summary also updates the skill-card catalog keys in every locale; the
-  catalog and hash rules live in the "i18n Rules" section of `CONVENTIONS.md`.
+  catalog and hash rules live in `I18N.md#I18-2` and `I18N.md#I18-3`.
 
 <a id="SK-2"></a>
 

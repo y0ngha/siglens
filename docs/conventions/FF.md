@@ -5,7 +5,7 @@ Good frontend code is **code that is easy to modify**.
 
 **Rule IDs.** Principles below are positional (`1-E`, `2-C` …) and may be renumbered as the document grows.
 Rules added from review findings carry a stable, never-renumbered ID (`FF-N`) with an anchor, and are cited as
-`FF.md#FF-N`. Other docs use their own prefixes: `CONVENTIONS.md` (CP/TS/NC/CM/CS/I18), `REACT.md` (HK/CR/AX/EF/LW/TW/RQ), `SERVER.md` (SA/CC/DC/DB),
+`FF.md#FF-N`. Other docs use their own prefixes: `CONVENTIONS.md` (CP/TS/NC/CM/CS), `I18N.md` (I18), `REACT.md` (HK/CR/AX/EF/LW/TW/RQ), `SERVER.md` (SA/CC/DC/DB),
 `TESTING.md` (TE), `DESIGN.md` (DS), `TOOLCHAIN.md` (TC), `GIT_CONVENTIONS.md` (GC).
 
 ---

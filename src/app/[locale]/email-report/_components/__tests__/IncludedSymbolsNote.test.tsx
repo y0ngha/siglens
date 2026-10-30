@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/features/email-report-settings/ui/ReportSymbolChip', () => ({
@@ -19,7 +19,7 @@ vi.mock('@/app/[locale]/email-report/_lib/loadReportPreview', () => ({
 }));
 
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { ReportPreviewLoader } from '../IncludedSymbolsNote';
 
 describe('ReportPreviewLoader', () => {

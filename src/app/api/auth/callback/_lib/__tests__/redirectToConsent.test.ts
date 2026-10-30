@@ -1,5 +1,5 @@
 const { mockCreateStore } = vi.hoisted(() => ({ mockCreateStore: vi.fn() }));
-vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: mockCreateStore,
 }));
 vi.mock('@/features/auth-oauth/lib/providers', () => ({

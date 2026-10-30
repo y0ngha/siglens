@@ -19,7 +19,7 @@ import {
     drainIndexNow,
     enqueueIndexNow,
     type IndexNowQueueEntry,
-} from '@/shared/lib/indexNowQueue';
+} from '@/shared/api/indexNowQueue';
 import {
     diffStaticLastmod,
     readStaticLastmods,

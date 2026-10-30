@@ -28,7 +28,7 @@ vi.mock('@/entities/siglens-api-key/actions/listSiglensApiKeysAction', () => ({
 vi.mock('@/entities/siglens-api-key/actions/getApiDefaultModelAction', () => ({
     getApiDefaultModelAction: getDefaultModel,
 }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/entities/api-key/actions/getRegisteredProvidersAction', () => ({
@@ -43,7 +43,7 @@ vi.mock('next/navigation', () => ({
 
 import { redirect } from 'next/navigation';
 import { renderToReadableStream } from 'react-dom/server';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { AccountContent } from '../AccountContent';
 
 const MEMBER = {

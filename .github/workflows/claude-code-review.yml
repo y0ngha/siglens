@@ -113,7 +113,8 @@ jobs:
                         ## Project Principle Documents (Reference Pool)
                         Always derive review criteria from these files rather than general knowledge.
                         - CLAUDE.md: Project overview, layer dependency rules (the "Layer Dependency Rules" section is the source of truth for import direction).
-                        - /docs/conventions/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules, comments, change synchronization, server I/O, caching, i18n (Highest Priority). Rules carry stable IDs; cite violations as FILE#ID (e.g. CONVENTIONS.md#CS-5).
+                        - /docs/conventions/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules, comments, change synchronization, server I/O, caching (Highest Priority). Rules carry stable IDs; cite violations as FILE#ID (e.g. CONVENTIONS.md#CS-5).
+                        - /docs/conventions/I18N.md: i18n rules (message catalogs, extraction, locale routing).
                         - /docs/conventions/REACT.md: Hooks, components, a11y, effects, charts, Tailwind, React Query, URL state.
                         - /docs/conventions/SERVER.md: Server Actions, route handlers, I/O boundaries, concurrency, server data cache, DB.
                         - /docs/conventions/TESTING.md: Test rules (structure, mocking, fixtures, e2e).

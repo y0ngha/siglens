@@ -59,7 +59,7 @@ export function findSelectableModelId(
 /**
  * 키를 등록하면 모델을 고를 수 있는 회사들의 표시 이름 목록(예: "Claude (Anthropic), Gemini (Google), …").
  * 안내 문구에 회사 이름을 박아 두면 core 로스터가 바뀔 때 어긋나므로, 로스터에 모델이 실제로 있는
- * provider에서 파생한다(CONVENTIONS.md#I18-6: 문구에는 ICU 인자로 주입).
+ * provider에서 파생한다(I18N.md#I18-6: 문구에는 ICU 인자로 주입).
  */
 export function listApiKeyProviderLabels(): string {
     return API_MODEL_PROVIDERS.map(

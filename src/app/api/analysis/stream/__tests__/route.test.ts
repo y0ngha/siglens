@@ -53,7 +53,7 @@ vi.mock('@/shared/api/verifiedCrawler', () => ({
     isVerifiedCrawler: vi.fn().mockResolvedValue(false),
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
@@ -294,7 +294,7 @@ vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     // 기준 시점 계산은 analysis-plain 단위 테스트가 실물로 검증한다 — 여기서는 배선만 본다.
     resolvePriceAsOf: vi.fn(async () => '9월 29일 종가'),
 }));
-vi.mock('@/entities/analysis/lib/reanalyzeCooldown', () => ({
+vi.mock('@/entities/analysis/actions/tryAcquireReanalyzeCooldown', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
@@ -314,7 +314,7 @@ import {
 } from '@/shared/lib/byokGate';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import { resolvePriceAsOf } from '@/entities/analysis-plain/server/currentPrice';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
@@ -335,7 +335,7 @@ import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/sub
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import {
     MAX_CONCURRENT_ANALYSIS_STREAMS,

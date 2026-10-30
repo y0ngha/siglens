@@ -14,7 +14,7 @@ import { cookies } from 'next/headers';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getTranslations } from 'next-intl/server';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 

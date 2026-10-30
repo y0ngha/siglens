@@ -5,7 +5,7 @@ import {
     type Timeframe,
     isTimeframeAllowed,
 } from '@y0ngha/siglens-core';
-import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
+import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
 import { loadBarsData } from '../server/loadBarsData';
 

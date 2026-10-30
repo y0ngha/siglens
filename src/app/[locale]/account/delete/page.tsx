@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';

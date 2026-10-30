@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     __resetActiveNoticesMemoForTests,
     getActiveNoticesMemoized,
-} from '../lib/activeNoticesMemo';
+} from '../server/activeNoticesMemo';
 import type { NoticeWireRecord } from '../model/types';
 
 const NOTICES: NoticeWireRecord[] = [];

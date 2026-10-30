@@ -5,7 +5,7 @@ import {
     type RunOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { Locale } from '@/shared/i18n/locales';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';

@@ -22,7 +22,7 @@ import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /**
  * JSON-LD `name`과 워드마크에 쓰는 표기 고정 제품명. 제목·`og:site_name`·화면 문구는
- * `brandAiName(locale)`을 쓴다(ko `시그렌즈 AI`, `CONVENTIONS.md#I18-11`).
+ * `brandAiName(locale)`을 쓴다(ko `시그렌즈 AI`, `I18N.md#I18-11`).
  */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';
 

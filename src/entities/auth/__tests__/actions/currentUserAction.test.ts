@@ -4,11 +4,11 @@ const { cookieStore } = vi.hoisted(() => ({
     cookieStore: { get: vi.fn(), set: vi.fn() },
 }));
 vi.mock('next/headers', () => ({ cookies: async () => cookieStore }));
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 
 const mockGet = getCurrentUser as MockedFunction<typeof getCurrentUser>;

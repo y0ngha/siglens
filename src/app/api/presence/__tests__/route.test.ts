@@ -59,7 +59,7 @@ vi.mock('@/entities/visitor/lib/visitorHash', () => ({
         `hash(${pepper}|${ip}|${ua})`,
 }));
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: () =>
         auth.fail
             ? Promise.reject(new Error('session store down'))

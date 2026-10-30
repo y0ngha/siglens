@@ -1,5 +1,5 @@
 import { OAUTH_ERROR_REDIRECT } from '@/entities/auth/lib/errorMessages';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
 import { localeRedirect } from '@/shared/i18n/localeRedirect';

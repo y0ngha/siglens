@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';

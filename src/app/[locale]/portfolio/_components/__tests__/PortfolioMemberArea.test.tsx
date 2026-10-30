@@ -8,7 +8,7 @@
  * `PortfolioHoldingRecord` 모양(Date `updatedAt`)이다.
  */
 
-vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 const mockFindByUser = vi.fn();
@@ -37,7 +37,7 @@ vi.mock('@/app/[locale]/portfolio/_components/PortfolioManager', () => ({
 
 import { isValidElement, type ReactNode } from 'react';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { PortfolioSignupCta } from '@/features/portfolio-management/ui/PortfolioSignupCta';
 import type { PortfolioHoldingRecord } from '@/shared/db/types';
 import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';

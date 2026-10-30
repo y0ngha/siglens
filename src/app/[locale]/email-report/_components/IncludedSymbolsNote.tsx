@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import {
     EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
     EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS,

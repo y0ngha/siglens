@@ -5,7 +5,7 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { GET } from '../route';
-import { __resetActiveNoticesMemoForTests } from '@/entities/notice/lib/activeNoticesMemo';
+import { __resetActiveNoticesMemoForTests } from '@/entities/notice/server/activeNoticesMemo';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
 
