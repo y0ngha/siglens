@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     resolveReasoning,
@@ -29,7 +29,7 @@ vi.mock('@/entities/analysis/lib/reanalyzeCooldown', () => ({
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: vi.fn(),
 }));
 vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({

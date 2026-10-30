@@ -1,4 +1,18 @@
 import { cache } from 'react';
+import type {
+    FundamentalProfile,
+    FundamentalPeerInput,
+    FundamentalValuationMetrics,
+    FundamentalRatiosInput,
+    FundamentalGrowthInput,
+    FundamentalFinancialScoresInput,
+    FundamentalCashFlowInput,
+    FundamentalAnalystEstimateInput,
+    FundamentalGradesConsensusInput,
+    FundamentalPriceTargetConsensusInput,
+    FundamentalPriceTargetSummaryInput,
+} from '@y0ngha/siglens-core';
+
 import { getDatabaseClient } from '@/shared/db/client';
 import type { ProfileDescriptionTranslationRepository } from '@/shared/db/types';
 import { localizeContentRow } from '@/shared/db/localizeContent';
@@ -16,28 +30,15 @@ import {
 } from '@/entities/ticker/server/descriptionTranslationFailure';
 import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import type {
-    FundamentalProfile,
-    FundamentalPeerInput,
-    FundamentalValuationMetrics,
-    FundamentalRatiosInput,
-    FundamentalGrowthInput,
-    FundamentalFinancialScoresInput,
-    FundamentalCashFlowInput,
-    FundamentalAnalystEstimateInput,
-    FundamentalGradesConsensusInput,
-    FundamentalPriceTargetConsensusInput,
-    FundamentalPriceTargetSummaryInput,
-} from '@y0ngha/siglens-core';
 
-// Redis 캐싱(`fundamental:*` 키)·per/psr enrich는 CachedFundamentalProvider
-// (getFundamentalDataProvider가 반환)로 이관됐다. 페이지·core 분석 경로가 동일
-// provider를 통과해 같은 캐시를 공유한다. 이 파일은 provider 위임 + DB 번역
-// (getProfileDescription)만 담당한다.
+// 펀더멘털 탭 섹션 로더 — provider 위임과 회사 설명 번역(`getProfileDescription`)만 둔다. Redis 캐싱
+// (`fundamental:*` 키)·per/psr enrich는 `getFundamentalDataProvider`가 돌려주는 CachedFundamentalProvider가
+// 맡아, 페이지와 core 분석 경로가 같은 캐시를 공유한다.
 //
-// provider는 호출 시점에 심볼로 고른다 — 한국 종목(`005930.KS`)은 FMP 플랜이 커버하지
-// 않아 yahoo 백엔드로 가야 하므로, 모듈 레벨 상수 하나로 고정할 수 없다. 양쪽 provider
-// 모두 싱글턴이라 호출마다 인스턴스가 생기지는 않는다.
+// provider는 호출 시점에 심볼로 고른다 — 한국 종목(`005930.KS`)은 FMP 플랜이 커버하지 않아 yahoo
+// 백엔드로 가야 해서 모듈 레벨 상수 하나로 고정할 수 없다. 양쪽 provider 모두 싱글턴이다.
+
+/** 회사 프로필(프로필 카드·탭 게이트). 실존하지 않는 종목은 `null`, 인프라 실패는 throw. */
 export const getProfile = (
     symbol: string
 ): Promise<FundamentalProfile | null> =>
@@ -129,54 +130,64 @@ async function translateAndStoreDescription(
     return translated;
 }
 
+/** TTM 밸류에이션 지표(밸류에이션 카드). */
 export const getKeyMetricsTtm = (
     symbol: string
 ): Promise<FundamentalValuationMetrics | null> =>
     getFundamentalDataProvider(symbol).getKeyMetricsTtm(symbol);
 
-// 페이지 PeersTable은 티커·회사명·시총만 렌더하므로 per/psr enrich가 불필요하다 →
-// raw 경로로 위임해 peer valuation fan-out을 제거한다. enriched getStockPeers는
-// FactLayer(분석 프롬프트) 전용으로 남는다.
+/**
+ * 동종 기업 목록(동종 기업 표). 표는 티커·회사명·시총만 그려 per/psr enrich가 필요 없으므로 raw 경로로
+ * 위임해 peer 밸류에이션 fan-out을 없앤다 — enrich된 목록은 분석 프롬프트(FactLayer) 전용이다.
+ */
 export const getStockPeers = (
     symbol: string
 ): Promise<FundamentalPeerInput[]> =>
     getFundamentalDataProvider(symbol).getStockPeersRaw(symbol);
 
+/** TTM 재무비율(수익성·재무 건전성 카드가 함께 쓴다). */
 export const getRatiosTtm = (
     symbol: string
 ): Promise<FundamentalRatiosInput | null> =>
     getFundamentalDataProvider(symbol).getRatiosTtm(symbol);
 
+/** 손익 성장률(성장 차트). */
 export const getIncomeStatementGrowth = (
     symbol: string
 ): Promise<FundamentalGrowthInput | null> =>
     getFundamentalDataProvider(symbol).getIncomeStatementGrowth(symbol);
 
+/** 재무 점수(Altman Z·Piotroski 등, 재무 건전성 카드). */
 export const getFinancialScores = (
     symbol: string
 ): Promise<FundamentalFinancialScoresInput | null> =>
     getFundamentalDataProvider(symbol).getFinancialScores(symbol);
 
+/** 현금흐름표(재무 건전성 카드). */
 export const getCashFlowStatement = (
     symbol: string
 ): Promise<FundamentalCashFlowInput | null> =>
     getFundamentalDataProvider(symbol).getCashFlowStatement(symbol);
 
+/** 애널리스트 추정치(향후 방향 카드). */
 export const getAnalystEstimates = (
     symbol: string
 ): Promise<FundamentalAnalystEstimateInput | null> =>
     getFundamentalDataProvider(symbol).getAnalystEstimates(symbol);
 
+/** 투자의견 컨센서스(향후 방향 카드). */
 export const getGradesConsensus = (
     symbol: string
 ): Promise<FundamentalGradesConsensusInput | null> =>
     getFundamentalDataProvider(symbol).getGradesConsensus(symbol);
 
+/** 목표주가 컨센서스(향후 방향 카드). */
 export const getPriceTargetConsensus = (
     symbol: string
 ): Promise<FundamentalPriceTargetConsensusInput | null> =>
     getFundamentalDataProvider(symbol).getPriceTargetConsensus(symbol);
 
+/** 목표주가 요약(향후 방향 카드). */
 export const getPriceTargetSummary = (
     symbol: string
 ): Promise<FundamentalPriceTargetSummaryInput | null> =>

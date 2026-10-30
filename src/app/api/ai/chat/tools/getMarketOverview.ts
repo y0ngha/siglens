@@ -17,7 +17,7 @@ import {
     isDashboardScopeId,
     type DashboardScopeId,
 } from '@/shared/config/dashboardScope';
-import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { lastCompletedDailyClose } from '@/entities/bars/lib/quantizeBars';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor';

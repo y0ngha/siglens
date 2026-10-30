@@ -44,7 +44,7 @@ export function Breadcrumb({ trail }: BreadcrumbProps) {
                     <Link
                         href="/"
                         // 전 허브에 공통 렌더 — 진입 경로마다 다른 `_rsc` 해시로
-                        // `/`의 캐시를 파편화시킨다(CDN_CACHING.md §1).
+                        // `/`의 캐시를 파편화시킨다.
                         prefetch={false}
                         className="tap-target transition-colors hover:text-secondary-300"
                     >

@@ -1,9 +1,13 @@
+/**
+ * 미국 거시 지표를 결정론적 문장 몇 줄로 요약하는 SSR 사실 블록.
+ */
 import { useTranslations } from 'next-intl';
 import { computeYieldSpread, type EconomySnapshot } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { formatSignedFixed } from '../utils/signedFixed';
 
 interface EconomyMacroFactsProps {
     snapshot: EconomySnapshot;
@@ -57,7 +61,7 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
                   v2: fixed(year10, 2),
                   // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
                   // 달라져 번역이 어긋난다.
-                  v3: `${spread >= 0 ? '+' : ''}${fixed(spread, 2)}`,
+                  v3: formatSignedFixed(spread, 2, locale),
               })
             : federalFunds !== null
               ? tFacts('ratesOnly', { v0: fixed(federalFunds, 2) })

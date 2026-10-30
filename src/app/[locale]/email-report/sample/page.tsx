@@ -9,7 +9,7 @@ import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 
 const PATH = '/email-report/sample';
 
-// 샘플은 고정 데이터와 번역 카탈로그로만 만들어져 배포 자체가 갱신이다 — 하루 재검증이면 충분하다.
+/** 샘플은 고정 데이터와 번역 카탈로그로만 만들어져 배포 자체가 갱신이다 — 하루 재검증이면 충분하다. */
 export const revalidate = 86400; // 1d
 
 /**

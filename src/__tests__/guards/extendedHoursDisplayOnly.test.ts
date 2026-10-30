@@ -190,11 +190,11 @@ describe('프리·애프터마켓 가격은 표시 전용이다', () => {
             expect(
                 entityImportOffenders([
                     probe(
-                        'entities/bars/lib/loadBarsData.ts',
+                        'entities/bars/server/loadBarsData.ts',
                         "import { x } from '@/entities/extended-hours/lib/buildExtendedQuote';"
                     ),
                 ])
-            ).toEqual(['entities/bars/lib/loadBarsData.ts']);
+            ).toEqual(['entities/bars/server/loadBarsData.ts']);
         });
 
         it('주석의 언급은 위반이 아니다', () => {

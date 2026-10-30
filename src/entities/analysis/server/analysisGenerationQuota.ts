@@ -15,8 +15,8 @@ import type {
     AnalysisRateLimitAudience,
     AnalysisRateLimitReason,
 } from '@/shared/lib/sse/analysisRateLimit';
-import { normalizeQuotaIp } from '@/entities/analysis/lib/normalizeQuotaIp';
 import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
+import { normalizeQuotaIp } from '../lib/normalizeQuotaIp';
 
 /**
  * `/api/analysis/stream`의 **새 LLM 생성** 한도. 캐시 적중은 세지 않는다
@@ -69,6 +69,7 @@ const WARN_INTERVAL_MS = MS_PER_MINUTE;
 const ISO_HOUR_START = 11;
 const ISO_HOUR_END = 13;
 
+/** 한도를 세는 주체. 회원은 userId로, 비회원은 서명된 게스트 쿠키 id와 IP로 센다. */
 export type AnalysisQuotaIdentity =
     | { readonly kind: 'member'; readonly userId: string }
     | {
@@ -78,6 +79,7 @@ export type AnalysisQuotaIdentity =
           readonly clientIp: string;
       };
 
+/** {@link reserveAnalysisGeneration}의 결과. 호출자는 `ok`로 생성 허용·캐시 전용 강등을 가른다. */
 export type AnalysisQuotaReservation =
     | {
           readonly ok: true;

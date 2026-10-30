@@ -72,7 +72,7 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
 vi.mock('@/app/[locale]/[symbol]/fundamental/FundamentalDegraded', () => ({
     FundamentalDegraded: () => <div data-testid="fundamental-degraded" />,
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 // staticSymbolCache: call fetcher() directly so tests stay pure (no I/O).
@@ -223,6 +223,7 @@ vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import React, { isValidElement } from 'react';
 import {
     describe,
     it,
@@ -231,11 +232,10 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import React from 'react';
-import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import { PROFILE_DESCRIPTION_TIMEOUT_MS } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
-import FundamentalPage, {
+import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
+import {
     ProfileSection,
     ValuationSection,
     PeersSection,
@@ -243,7 +243,7 @@ import FundamentalPage, {
     GrowthSection,
     FinancialHealthSection,
     FutureDirectionSection,
-} from '@/app/[locale]/[symbol]/fundamental/page';
+} from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';

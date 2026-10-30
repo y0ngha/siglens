@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type { ConversationListItem } from '@/entities/chat-conversation/model';
 import { useConversationList } from '@/widgets/agent-chat/hooks/useConversationList';
 
 const initial: ConversationListItem[] = [

@@ -1,12 +1,12 @@
 import 'server-only';
 import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
-import type { DrizzleNewsRepository } from '../api';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from './newsAnalysisConstants';
+import type { DrizzleNewsRepository } from '../api';
 import {
     loadNewsCardFailures,
     recordNewsCardFailures,
-} from './newsCardFailureBackoff';
+} from '../server/newsCardFailureBackoff';
+import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from './newsAnalysisConstants';
 
 /**
  * 기사 한 건을 카드 분석(번역 + 라벨링)해 DB에 반영한다.
@@ -52,11 +52,12 @@ async function analyzeAndPersist(
     return true;
 }
 
+/** 건수 상한과 로그 접두 — 경로마다 값이 달라 호출부가 정한다. */
 export interface AnalyzeNewsCardsOptions {
     /**
      * 이번 호출에서 분석할 최대 건수. 최신순으로 자른다.
      *
-     * 두 호출자 모두 값을 넘기지만 근거가 다르다. prewarm cron은 유닛
+     * 호출자마다 값을 넘기고 근거가 다르다. prewarm cron은 유닛
      * 타임아웃(2분) 안에서 끝나야 해서 12건(`PREWARM_NEWS_CARD_LIMIT`),
      * 방문자 경로는 마감은 없지만 마운트당 LLM 왕복 비용이 있어
      * 25건(`VISITOR_NEWS_CARD_LIMIT`)이다. 생략하면 후보
@@ -77,12 +78,12 @@ export interface AnalyzeNewsCardsOptions {
  * `news.length === 0`을 보고 `{status:'error', code:'no_news'}`를 반환한다.
  * 그러면 `news`와 `overall` 두 탭의 SEO 스냅샷이 생성되지 않는다.
  *
- * 원래 이 로직은 `ensureNewsCardsAnalyzedAction`(방문자 경로) 안에만 있었다.
- * 그래서 **사람이 찾지 않는 종목은 영원히 보강되지 않았다** — 보강이 없으니
- * 스냅샷이 없고, 스냅샷이 없으니 페이지가 얇고, 얇으니 유입이 없어 다시 아무도
- * 찾지 않는다. 국내 종목은 신규 유입이 0에서 시작하므로 구조적으로 이 루프에
- * 100% 걸린다(실측: 프로덕션에서 국내 20종목 전부 보강 0건, 미국 저유동성
- * 종목·알트코인도 동일). prewarm cron이 같은 단계를 돌게 해서 끊는다.
+ * 방문자 경로(`ensureNewsCardsAnalyzedAction`)만 이 단계를 돌리면 **사람이 찾지 않는
+ * 종목은 영원히 보강되지 않는다** — 보강이 없으니 스냅샷이 없고, 스냅샷이 없으니
+ * 페이지가 얇고, 얇으니 유입이 없어 다시 아무도 찾지 않는다. 국내 종목은 신규 유입이
+ * 0에서 시작하므로 구조적으로 이 루프에 100% 걸린다(프로덕션 실측: 국내 20종목 전부
+ * 보강 0건, 미국 저유동성 종목·알트코인도 동일). prewarm cron이 같은 단계를 돌게 해서
+ * 끊는다.
  *
  * 실패는 건별로 로깅하고 삼킨다 — 한 기사의 LLM 실패가 나머지 기사와 상위
  * 배치를 죽이지 않는다.
@@ -90,7 +91,7 @@ export interface AnalyzeNewsCardsOptions {
  * **`lib/`에 두는 것은 의도된 예외다**(src/entities/CLAUDE.md#EN-1은 `entities/{slice}/lib/`를
  * 순수 함수로 제한한다). 같은 슬라이스의 `ingestNewsForSymbol.ts`가 이미 같은 형태다 —
  * 파이프라인의 인접 단계(적재 → 보강)이고, 저장소를 주입받아 부수효과를 호출자가
- * 통제하며, 두 호출자(방문자 액션 / prewarm cron)가 공유해야 한다. `api.ts`로 옮기면
+ * 통제하며, 여러 호출자(방문자 액션 / prewarm cron / 챗 수급)가 공유해야 한다. `api.ts`로 옮기면
  * 두 단계가 서로 다른 파일로 갈라져 순서 계약이 읽히지 않는다. 새 패턴을 만드는
  * 게 아니라 이미 있는 지역 예외에 맞추는 쪽을 택했다.
  */

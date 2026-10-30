@@ -3,7 +3,7 @@ import {
     readRecentSymbols,
     recordRecentSymbol,
 } from '@/features/watchlist/lib/recentSymbols';
-import type { StorageLike } from '@/features/watchlist/lib/localWatchlist';
+import type { StorageLike } from '@/features/watchlist/lib/browserStorage';
 import { RECENT_SYMBOLS_MAX } from '@/shared/config/watchlist';
 import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
 

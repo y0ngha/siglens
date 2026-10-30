@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
 
+/** `/lp/stock-chat` 광고 랜딩. 본문은 `StockChatLanding` 뷰가 그린다. */
 export default function StockChatLandingPage() {
     return <StockChatLanding />;
 }

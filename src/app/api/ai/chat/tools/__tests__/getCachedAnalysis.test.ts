@@ -36,7 +36,7 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
         return { findRecentForPrompt };
     }),
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
 vi.mock('@/entities/portfolio/api', () => ({

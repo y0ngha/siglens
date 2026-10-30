@@ -4,17 +4,17 @@ import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
-import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
-import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
+import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import {
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
-import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
-import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
+import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
+import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import {
     buildSymbolDirectory,
     type SymbolDirectorySection,
@@ -38,16 +38,15 @@ export interface FearGreedRouteSource {
     readonly load: () => Promise<FearGreedRouteView>;
     /**
      * 로더 실패 로그 접두사(`[FearGreedRoute] getMarketFearGreedStatic failed`).
-     * CloudWatch 메트릭 필터(`siglens-market-data-loader-failed`, 2026-09-14부터
-     * fear-greed us/kr + market-kr 통합)가 이 문자열을 본다 — 바꾸면 알람이 끊긴다.
+     * 운영 알람의 로그 메트릭 필터가 이 문자열을 본다 — 바꾸면 알람이 끊긴다.
      */
     readonly failureLog: string;
 }
 
 /**
- * 라우트 `generateMetadata` 본체.
+ * 세 라우트 `generateMetadata`의 본체.
  *
- * 외부 I/O(Redis/FMP/yahoo) 오류는 graceful 처리 — 판독값이 없으면(로더 실패 또는
+ * 외부 I/O(Redis/FMP/yahoo) 오류는 로그를 남기고 흡수한다 — 판독값이 없으면(로더 실패 또는
  * 표본 부족) noindex + self-canonical(hreflang 없음)로 설명문만 남는 화면을 색인시키지 않는다.
  */
 export async function fearGreedMetadata(
@@ -76,10 +75,10 @@ export async function fearGreedMetadata(
 /**
  * 본문용 판독값.
  *
- * 빈 ISR 캐시 동결을 막기 위해 throw 대신 빈 스냅샷으로 폴백한다(/market 페이지와
- * 동일 패턴). 본문은 `snapshot === null`을 "표본 부족"으로 정상 렌더한다 —
- * `notFound()`는 절대 쓰지 않는다(Suspense 안 notFound가 soft-404를 만든 이력이 있다).
- * 빌드 중 FMP가 실패했으면 이 prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
+ * throw가 전파되면 0-byte 결과가 ISR에 굳으므로 빈 스냅샷으로 폴백한다(/market과 같은
+ * 패턴). 본문은 `snapshot === null`을 "표본 부족"으로 정상 렌더한다 — `notFound()`는 쓰지
+ * 않는다(Suspense 안 notFound는 200짜리 soft-404를 만든다). 빌드 중 FMP가 실패했으면 이
+ * prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
  */
 export async function loadFearGreedView(
     source: FearGreedRouteSource
@@ -101,11 +100,10 @@ export type FearGreedSymbolLink = SymbolDirectorySection['items'][number];
 /**
  * 허브 하단 "종목별 공포·탐욕 지수" 목록 — **그 시장의 색인 종목 전부**.
  *
- * ## 왜 있는가 (2026-10-05 운영 크롤)
+ * ## 왜 있는가
  *
- * 색인되는 종목 공포탐욕 탭(`/{T}/fear-greed`)으로 들어가는 외부 유입 링크가 거의 없었다.
- * 허브(`/fear-greed`·`/kr`·`/crypto`)는 시장 전체 지수만 보여주고 종목 탭으로는 한 줄도
- * 잇지 않았다. 이 목록이 허브 → 종목 탭 간선을 만든다.
+ * 색인되는 종목 공포탐욕 탭(`/{T}/fear-greed`)은 이 목록이 아니면 허브에서 들어가는 내부
+ * 링크가 없다. 허브는 시장 전체 지수만 보여주므로 이 목록이 허브 → 종목 탭 간선을 만든다.
  *
  * ## 왜 점수를 싣지 않는가
  *

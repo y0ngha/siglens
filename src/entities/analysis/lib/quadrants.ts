@@ -7,6 +7,7 @@ import type {
     StockWithConflict,
 } from '@y0ngha/siglens-core';
 
+/** 4분면 모두 빈 배열인 초기 분류. 종목을 누적 분류하는 reduce의 시작값이다. */
 export const EMPTY_QUADRANTS: Record<
     QuadrantKey,
     readonly StockWithConflict[]
@@ -49,6 +50,10 @@ function signalToQuadrantKey(s: Signal): QuadrantKey {
     return SIGNAL_TO_QUADRANT[s.direction][s.phase];
 }
 
+/**
+ * 종목의 시그널을 방향·단계별 분면으로 나눠 `acc`에 누적한다. 한 종목이 여러 분면에
+ * 걸치면 분면마다 해당 시그널만 담은 사본이 들어간다.
+ */
 export function groupStockIntoQuadrants(
     acc: Record<QuadrantKey, readonly StockWithConflict[]>,
     stock: StockWithConflict
@@ -74,7 +79,11 @@ export function groupStockIntoQuadrants(
     );
 }
 
-// Anticipation signals만 trend가 반대/중립일 때 노출한다 (strict 모드).
+/**
+ * strict 모드 필터. 예상(expected) 시그널은 추세가 이미 그 방향이면 숨기고(상승 시그널은
+ * 상승 추세에서, 하락 시그널은 하락 추세에서) 추세가 반대·중립일 때만 노출한다. 확정
+ * 시그널은 그대로 두고, 시그널이 남지 않은 종목은 뺀다.
+ */
 export function filterStrictAnticipation(
     stocks: readonly StockSignalResult[]
 ): readonly StockSignalResult[] {

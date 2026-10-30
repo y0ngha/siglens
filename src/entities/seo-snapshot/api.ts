@@ -12,37 +12,47 @@ import {
     sql,
     type SQL,
 } from 'drizzle-orm';
-import { KR_SYMBOL_RE } from '@/shared/config/ticker';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { seoAnalysisSnapshots } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
-import type {
-    SeoAnalysisSnapshot,
-    SeoSnapshotTab,
-    SeoSnapshotUpsertInput,
-} from './model';
+import { KR_SYMBOL_RE } from '@/shared/config/ticker';
 import {
     CONTENT_LOCALE_FALLBACK,
     LEGACY_CONTENT_LOCALE,
     toContentLocale,
 } from '@/shared/db/contentLocale';
-import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
+import { seoAnalysisSnapshots } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { hasProseForTab, PROSE_SOURCE_FIELDS } from './lib/hasProseForTab';
+import {
+    anyLocaleChain,
+    pickFallbackRowPerSymbolTab,
+    pickFreshestPerTab,
+    pickSnapshotPerTab,
+} from './lib/pickSnapshots';
+import { detectedAmong, parseProjected } from './lib/projectedJson';
+import type {
+    SeoAnalysisSnapshot,
+    SeoSnapshotTab,
+    SeoSnapshotUpsertInput,
+} from './model';
 
 export interface FindBySymbolOptions {
-    /** See `DrizzleSeoSnapshotRepository.findBySymbol`. */
+    /** 의미는 `DrizzleSeoSnapshotRepository.findBySymbol`의 `options.anyLocale` 참고. */
     readonly anyLocale?: boolean;
 }
 
 /**
- * Drizzle ORM implementation backed by PostgreSQL. One row per
- * (symbol, tab); `upsert` relies on the `seo_analysis_snapshots_symbol_tab_uq`
- * unique index so repeat pre-warm cron runs overwrite the last-known-good
- * row instead of accumulating duplicates.
+ * `seo_analysis_snapshots`의 Drizzle/PostgreSQL 저장소. `(symbol, tab, locale)`마다 한 행이고,
+ * `upsert`는 그 unique 인덱스에 기대어 프리웜 cron이 반복 실행돼도 마지막 정상 행을 덮어쓸 뿐
+ * 중복 행을 쌓지 않는다. 서버 전용이라 같은 entity의 `server/`와 app 레이어에서만 import한다.
  */
 export class DrizzleSeoSnapshotRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /**
+     * 프리웜 결과를 `(symbol, tab, locale)` 행에 저장한다. 심볼은 대문자로 정규화하고,
+     * 충돌하면 본문·평이화·모델·생성 시각만 갱신한다(`firstGeneratedAt`은 보존).
+     */
     async upsert(input: SeoSnapshotUpsertInput): Promise<void> {
         const symbol = input.symbol.toUpperCase();
 
@@ -60,27 +70,23 @@ export class DrizzleSeoSnapshotRepository {
                 // `generatedAt`과 같은 값이 되고 발행일 신호가 무의미해진다.
                 firstGeneratedAt: input.generatedAt,
                 updatedAt: new Date(),
-                // 플래그로 가리지 않는다 — Drizzle이 스키마 컬럼을 값에서 빼도
-                // `default`로 항상 INSERT에 넣기 때문이다(§shared-analysis/api.ts).
+                // 플래그로 가리지 않는다 — Drizzle은 값에서 스키마 컬럼을 빼도 `default`로
+                // 항상 INSERT에 넣기 때문이다.
                 locale: input.locale,
             })
             .onConflictDoUpdate({
                 /**
-                 * 충돌 대상은 **항상** 로케일까지 넓다 — 아니면 en 프리웜이 ko
-                 * 행을 덮어써서 어느 언어가 남을지가 프리웜 순서로 정해진다.
+                 * 충돌 대상은 **항상** 로케일까지 넓다 — 아니면 en 프리웜이 ko 행을 덮어써서
+                 * 어느 언어가 남을지가 프리웜 순서로 정해진다.
                  *
-                 * 스위치로 가르지 **않는다**. 예전엔 꺼져 있으면
-                 * `(symbol, tab)`으로 돌아갔는데, 그러면 0030(구 unique 제거)을
-                 * 적용할 수 있는 시점이 "스위치가 전 인스턴스에서 켜진 뒤"로
-                 * 밀린다. 그런데 스위치가 켜지면 비-ko 스냅샷이 쓰이기 시작하고,
-                 * 구 unique `(symbol, tab)`가 아직 살아 있으면 그 쓰기가
-                 * **23505로 죽는다**(로컬 Postgres 17로 실측). 즉 어느 순서로
-                 * 해도 창이 남는 설계였다.
-                 *
-                 * 항상 3열 타깃을 쓰면 창이 사라진다: 0029가 그 인덱스를 만들고
-                 * 코드는 그 뒤에 배포되므로 타깃은 항상 존재하고, 배포가 끝나면
-                 * 스위치와 무관하게 0030을 적용할 수 있다. 스위치가 꺼진 동안엔
-                 * `locale`이 언제나 `ko`라 동작이 2열 타깃과 동일하다.
+                 * 스위치로 가르지 **않는다**. 꺼져 있을 때 `(symbol, tab)`으로 돌아가면 구
+                 * unique(`(symbol, tab)`)를 제거하는 마이그레이션(0030)을 적용할 수 있는
+                 * 시점이 "스위치가 전 인스턴스에서 켜진 뒤"로 밀리는데, 스위치가 켜지면
+                 * 비-ko 스냅샷이 쓰이기 시작하고 구 unique가 살아 있는 동안 그 쓰기는
+                 * **23505로 죽는다**(로컬 Postgres 17로 실측). 항상 3열 타깃을 쓰면 이
+                 * 창이 사라진다: 0029가 그 인덱스를 만들고 코드는 그 뒤에 배포되므로 타깃은
+                 * 항상 존재하고, 스위치가 꺼진 동안엔 `locale`이 언제나 `ko`라 동작이 2열
+                 * 타깃과 동일하다.
                  */
                 target: [
                     seoAnalysisSnapshots.symbol,
@@ -100,36 +106,26 @@ export class DrizzleSeoSnapshotRepository {
     }
 
     /**
-     * Consumed by `getSeoSnapshotsStatic` (entities/seo-snapshot/lib/getSnapshotStatic.ts)
-     * — the read path all 7 tab pages + `generateMetadata` use to surface
-     * pre-warmed snapshots. Do not remove as YAGNI without checking that caller first.
-     */
-    /**
-     * 심볼의 스냅샷을 **탭당 한 행**으로 돌려준다.
+     * 심볼의 스냅샷을 **탭당 한 행**으로 돌려준다. 페이지 읽기 경로 전체
+     * (`getSeoSnapshotsStatic` → 종목 페이지 탭들과 `generateMetadata`)가 쓴다.
      *
-     * `locale`이 필요한 이유: 스키마의 unique가 `(symbol, tab, locale)`이라
-     * 탭마다 로케일 수만큼 행이 존재할 수 있다. 로케일을 무시하고 읽으면
-     * `snapshots.find(s => s.tab === 'overall')`이 **먼저 온 행**을 집어,
-     * `/en/AAPL`이 한국어 분석 산문을 렌더한다(감사 라운드 1 required #2).
+     * `locale`이 필요한 이유: 스키마의 unique가 `(symbol, tab, locale)`이라 탭마다 로케일 수만큼
+     * 행이 존재할 수 있다. 로케일을 무시하고 읽으면 `snapshots.find(s => s.tab === 'overall')`이
+     * **먼저 온 행**을 집어 `/en/AAPL`이 한국어 분석 산문을 렌더한다.
      *
-     * 폴백은 `CONTENT_LOCALE_FALLBACK`을 따른다 — 요청 로케일 스냅샷이 아직
-     * 프리웜되지 않았으면 없는 것보다 다른 로케일이라도 보여주는 편이 낫다
-     * (색인 게이트가 `hasSnapshot`으로 색인 여부를 정하므로, 빈 결과는 그
-     * 페이지를 색인 대상에서 빼 버린다).
+     * 폴백은 `CONTENT_LOCALE_FALLBACK`을 따른다 — 요청 로케일 스냅샷이 아직 프리웜되지
+     * 않았으면 없는 것보다 다른 로케일이라도 보여주는 편이 낫다(색인 게이트가 `hasSnapshot`으로
+     * 색인 여부를 정하므로, 빈 결과는 그 페이지를 색인 대상에서 빼 버린다).
      *
-     * **컬럼을 명시해서 읽는다** — `select()`(전 컬럼)는 스키마에 컬럼이
-     * 추가되는 순간 마이그레이션 전 배포에서 통째로 실패한다.
-     */
-    /**
-     * @param options.anyLocale - Readers get only languages they can read
-     *   (`CONTENT_LOCALE_FALLBACK`). A consumer that re-expresses the analysis
-     *   in the reader's language itself (the SIGLENS AI agent) does not care
-     *   what language a row is in, so it gets the FRESHEST row per tab across
-     *   all languages; only an exact `generatedAt` tie falls back to
-     *   requested → Korean (the canonical one) → the rest. One row per tab,
-     *   never several: rows of the same tab in different languages are
-     *   translations or separate runs, and mixing them would feed the model
-     *   two analyses with different prices and levels.
+     * **컬럼을 명시해서 읽는다** — `select()`(전 컬럼)는 스키마에 컬럼이 추가되는 순간
+     * 마이그레이션 전 배포에서 통째로 실패한다.
+     *
+     * @param options.anyLocale - 독자는 읽을 수 있는 언어(`CONTENT_LOCALE_FALLBACK`)만 받는다.
+     *   분석을 독자의 언어로 스스로 다시 표현하는 소비자(SIGLENS AI 에이전트)는 행의 언어를
+     *   가리지 않으므로, 모든 언어를 통틀어 탭마다 **가장 최신** 행을 받는다. `generatedAt`이
+     *   정확히 같을 때만 요청 로케일 → 한국어(원본) → 나머지 순으로 고른다. 탭마다 한 행만 준다 —
+     *   같은 탭의 다른 언어 행은 번역이거나 별개의 실행이라, 섞으면 모델이 가격·레벨이 다른 두
+     *   분석을 받게 된다.
      */
     async findBySymbol(
         symbol: string,
@@ -153,7 +149,7 @@ export class DrizzleSeoSnapshotRepository {
 
         const snapshots = rows.map(row => ({
             symbol: row.symbol,
-            tab: row.tab as SeoSnapshotTab,
+            tab: asSnapshotTab(row.tab),
             content: row.content,
             plain: row.plain,
             model: row.model,
@@ -217,39 +213,31 @@ export class DrizzleSeoSnapshotRepository {
                 )
             );
 
-        // 같은 (symbol, tab)에 로케일별 행이 여러 개일 수 있다 — 폴백 체인에서 가장
-        // 앞선 로케일의 행 하나만 남긴다.
-        const ranked = rows
-            .map(row => ({
-                symbol: row.symbol,
-                tab: row.tab as SeoSnapshotTab,
-                generatedAt: row.generatedAt,
-                prose: row.prose,
-                rank: chain.indexOf(
-                    toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE
-                ),
-            }))
-            .toSorted((a, b) => a.rank - b.rank);
-        // 순위 순으로 (심볼, 탭)마다 첫 행만 남긴다. Set을 바꾸는 필터인 이유: 이전의
-        // `reduce` + `some`은 행마다 앞 결과를 훑어 O(N²)였다(CONVENTIONS.md#CP-6 예외).
-        const seenKeys = new Set<string>();
-        const firstPerKey = ranked.filter(row => {
-            const key = `${row.symbol}\u0000${row.tab}`;
-            if (seenKeys.has(key)) return false;
-            seenKeys.add(key);
-            return true;
-        });
-        return firstPerKey.map(({ symbol, tab, generatedAt, prose }) => ({
-            symbol,
-            tab,
-            generatedAt,
-            hasProse:
-                tab in PROSE_SOURCE_FIELDS
-                    ? hasProseForTab(tab, parseProjected(prose))
-                    : true,
+        const candidates = rows.map(row => ({
+            symbol: row.symbol,
+            tab: asSnapshotTab(row.tab),
+            locale: toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE,
+            generatedAt: row.generatedAt,
+            prose: row.prose,
         }));
+        return pickFallbackRowPerSymbolTab(candidates, chain).map(
+            ({ symbol, tab, generatedAt, prose }) => ({
+                symbol,
+                tab,
+                generatedAt,
+                hasProse:
+                    tab in PROSE_SOURCE_FIELDS
+                        ? hasProseForTab(tab, parseProjected(prose))
+                        : true,
+            })
+        );
     }
 
+    /**
+     * 프리웜 선별용: 심볼×탭의 `generatedAt`을 `${SYMBOL}:${tab}` 키 맵으로 돌려준다.
+     * 같은 키에 로케일별 행이 있으면 어느 로케일의 시각이 남을지는 정해져 있지 않다 —
+     * 프리웜은 `DEFAULT_LOCALE` 행만 굽는다는 전제다.
+     */
     async findGeneratedAtMap(symbols: string[]): Promise<Map<string, Date>> {
         if (symbols.length === 0) {
             return new Map();
@@ -350,28 +338,12 @@ export class DrizzleSeoSnapshotRepository {
 }
 
 /**
- * SQL이 이미 "탐지된 요청 패턴 이름"만 jsonb 배열로 투영해 오므로, 여기서는 문자열만 남기고 요청 순서로 정렬한다.
- * (jsonb 배열 안의 순서는 스냅샷 저장 순서라 호출부가 기대하는 대상 패턴 순서와 다를 수 있다.)
+ * DB `tab`(varchar)을 도메인 탭 유니온으로 좁힌다. 이 컬럼은 `SeoSnapshotTab`으로 타입이 걸린
+ * `upsert`만 쓰므로 단언한다(검증을 더하면 알 수 없는 탭 행의 노출 여부가 바뀐다).
  */
-function detectedAmong(
-    requested: readonly string[],
-    projected: unknown
-): string[] {
-    if (!Array.isArray(projected)) return [];
-    const detected = new Set(
-        projected.filter((name): name is string => typeof name === 'string')
-    );
-    return requested.filter(name => detected.has(name));
-}
-
-/** 드라이버가 jsonb 식 결과를 문자열로 줘도 같은 판정이 되도록 한 번 푼다. */
-function parseProjected(value: unknown): unknown {
-    if (typeof value !== 'string') return value;
-    try {
-        return JSON.parse(value);
-    } catch {
-        return null;
-    }
+function asSnapshotTab(tab: string): SeoSnapshotTab {
+    // safe: 쓰기 경로가 `SeoSnapshotTab`만 저장한다.
+    return tab as SeoSnapshotTab;
 }
 
 /**
@@ -408,57 +380,4 @@ function proseProjection(): SQL<unknown> {
         }
     );
     return sql<unknown>`case ${seoAnalysisSnapshots.tab} ${sql.join(branches, sql` `)} else null end`;
-}
-
-/** 동점 해소 순서: 요청 로케일 → 한국어(원본) → 나머지. */
-function anyLocaleChain(locale: Locale): readonly Locale[] {
-    return [...new Set<Locale>([locale, DEFAULT_LOCALE, ...LOCALES])];
-}
-
-/**
- * `anyLocale` 전용: 탭마다 언어와 무관하게 `generatedAt`이 가장 최신인 행 하나를
- * 남긴다. 생성 시각이 정확히 같을 때만 `tieBreak` 순서로 고른다.
- */
-function pickFreshestPerTab(
-    snapshots: readonly SeoAnalysisSnapshot[],
-    tieBreak: readonly Locale[]
-): SeoAnalysisSnapshot[] {
-    const best = new Map<SeoSnapshotTab, SeoAnalysisSnapshot>();
-    for (const snapshot of snapshots) {
-        const current = best.get(snapshot.tab);
-        const newer =
-            current === undefined ||
-            snapshot.generatedAt.getTime() > current.generatedAt.getTime() ||
-            (snapshot.generatedAt.getTime() === current.generatedAt.getTime() &&
-                tieBreak.indexOf(snapshot.locale) <
-                    tieBreak.indexOf(current.locale));
-        if (newer) best.set(snapshot.tab, snapshot);
-    }
-    return [...best.values()];
-}
-
-/**
- * 탭마다 폴백 체인에서 가장 앞선 로케일의 행 하나만 남긴다.
- *
- * 앱에서 고르는 이유: SQL로 하려면 `DISTINCT ON` + `array_position` 정렬이
- * 필요한데, 심볼당 행이 최대 (탭 7 × 로케일 4)라 정렬 비용보다 왕복 형태를
- * 단순하게 두는 편이 낫다. 무엇보다 폴백 순서의 단일 소스가
- * `CONTENT_LOCALE_FALLBACK` 한 곳에 남는다.
- */
-function pickSnapshotPerTab(
-    snapshots: readonly SeoAnalysisSnapshot[],
-    chain: readonly Locale[]
-): SeoAnalysisSnapshot[] {
-    const best = new Map<SeoSnapshotTab, SeoAnalysisSnapshot>();
-    for (const snapshot of snapshots) {
-        const rank = chain.indexOf(snapshot.locale);
-        // 체인에 없는 로케일(예: zh 요청에 ja 행)은 버린다 — 요청자가 읽을
-        // 가능성이 없는 언어를 보여 주느니 색인에서 빠지는 편이 낫다.
-        if (rank === -1) continue;
-        const current = best.get(snapshot.tab);
-        if (current === undefined || rank < chain.indexOf(current.locale)) {
-            best.set(snapshot.tab, snapshot);
-        }
-    }
-    return [...best.values()];
 }

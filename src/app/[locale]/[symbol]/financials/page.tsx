@@ -1,77 +1,81 @@
-import { getTranslations } from 'next-intl/server';
-import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
-import { resolveLocale } from '@/shared/i18n/locales';
-import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
-import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
-import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
-import { deriveStatementCurrency } from '@/widgets/financials/utils/statementCurrency';
-import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
-import { hasFinancialsProse } from '@/entities/seo-snapshot/lib/financialsContent';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { type SymbolRouteParams } from '@/shared/config/market';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import {
-    ALWAYS_NOINDEX_TAB_ROBOTS,
-    buildBreadcrumbJsonLd,
-    buildSymbolFinancialsSeoContent,
-    buildSymbolSeoContent,
-} from '@/shared/lib/seo';
-import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
-import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+
+import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
+import {
+    enterSymbolTabMetadata,
+    enterSymbolTabPage,
+    type SymbolTabParams,
+} from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
+import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
+import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
+import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
+import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
+import { hasFinancialsProse } from '@/entities/seo-snapshot/lib/financialsContent';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { type SymbolRouteParams } from '@/shared/config/market';
 import {
     marketProfileOf,
     profileIdForSymbol,
 } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import { enterLocale } from '@/shared/lib/enterLocale';
+import {
+    ALWAYS_NOINDEX_TAB_ROBOTS,
+    buildSymbolFinancialsSeoContent,
+} from '@/shared/lib/seo';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
+import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
+import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
+import { deriveStatementCurrency } from '@/widgets/financials/utils/statementCurrency';
 
-// 종목당 재무제표는 분기(약 45일) 단위로 갱신된다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
-// 다음 분기 공시 이전에 오래된 데이터를 서빙하지 않는 균형점이다.
-// app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for Next.js static analysis (the magic-number-extraction rule does not apply here).
+/**
+ * ISR 상한. 재무제표는 분기(약 45일) 단위로 갱신돼, 엣지 캐시를 최대한 쓰면서 다음 분기 공시 전에
+ * 묵은 데이터를 내지 않는 균형점이다.
+ */
 export const revalidate = 86400; // 24h
 
-// generateStaticParams가 없으면 revalidate가 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild
-// 없이, 첫 요청에 렌더+캐시 후 revalidate 주기로 재생성하는 on-demand ISR.
+/**
+ * 빈 배열 = 빌드 시 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand ISR. 없으면 동적 세그먼트가
+ * 매 요청 동적 렌더돼 `revalidate`가 무력화된다.
+ */
 export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
 
 interface Props {
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
 }
 
+/**
+ * 재무제표 탭 메타데이터 — **항상 noindex**. 이 탭의 산문은 더는 프리웜되지 않아, 남는 건 숫자만
+ * 바뀌는 재무표다(종목별 공포·탐욕 탭을 noindex로 돌렸던 근거와 같은 형태).
+ *
+ * 크립토엔 이 탭이 없다 — 본문과 같은 `isTabAllowedForSymbol` 판정으로 메타데이터 단계에서도 404다.
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = resolveLocale(rawLocale);
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const upper = symbol.toUpperCase();
-    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
-    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
-    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
-    if (!isAdmissibleSymbolShape(upper)) notFound();
-    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
-    const { assetInfo, degraded } = await requireResolvableAsset(upper);
-    // 본문 `isTabAllowedForSymbol` 가드와 같은 판정으로 메타데이터 단계에서도 404다(크립토엔
-    // 이 탭이 없다). 레이아웃·본문이 notFound()를 던져도 generateMetadata 결과가 이기므로,
-    // 여기서 탭 카피 + self-canonical을 돌려주면 404 응답이 정상 페이지 메타를 단다.
+    const {
+        locale,
+        ticker: upper,
+        tSeo,
+        assetInfo,
+        degraded,
+    } = await enterSymbolTabMetadata(params);
     if (!(await isTabAllowedForSymbol(upper, 'financials'))) notFound();
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
@@ -90,45 +94,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale,
     });
-    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
-    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 산문이 빠지면 남는 건
-    // 숫자만 바뀌는 재무표다 — 종목별 공포·탐욕 탭을 noindex로 돌렸던 근거(본문 92%
-    // 공통 문장)와 같은 형태라 색인하지 않는다. 이 탭은 예전에도 산문 게이트가 없어
-    // 재무표만으로 색인됐었다.
     return {
         ...symbolMetadataFromSeo(seo, locale),
         robots: ALWAYS_NOINDEX_TAB_ROBOTS,
     };
 }
 
+/**
+ * 재무제표 탭 본문 — 프로필 게이트(FMP profile) 뒤에 점수표·AI 요약·재무제표를 렌더한다.
+ *
+ * - 프로필 조회가 인프라 장애로 degrade되거나 재무 6종이 모두 비면(대개 FMP 일시 장애) 500 대신
+ *   안내 화면(200)을 렌더한다. 후자는 그 렌더가 24h 굳지 않게 revalidate를 짧게 낮춘다 — 재무가
+ *   정말 없는 종목도 같아지지만, ISR은 방문이 있어야 재생성해 비용은 방문당 최대 5분에 한 번이다.
+ * - AI 스냅샷 산문과 AI 위젯은 같은 결론을 그리므로 XOR이다 — 산문이 렌더 가능하면 위젯은
+ *   `hideView`로 화면만 끈 채 마운트를 유지한다(헤더 공유 버튼의 `useRegisterShareable`).
+ */
 export default async function FinancialsPage({ params }: Props) {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = enterLocale(rawLocale);
-    const t = await getTranslations('app.symbol');
-    const tSeo = await getTranslations('shared.seo');
-    const upper = symbol.toUpperCase();
-
-    if (!isAdmissibleSymbolShape(upper)) {
-        notFound();
-    }
-
-    // Hard-404 crypto symbols — this tab is equity-only.
-    if (!(await isTabAllowedForSymbol(upper, 'financials'))) notFound();
+    const { locale, ticker: upper } = await enterSymbolTabPage(params);
+    // 크립토는 이 탭이 없다(주식 전용) — 다른 읽기 전에 끊는다.
+    const [t, tSeo, tabAllowed] = await Promise.all([
+        getTranslations('app.symbol'),
+        getTranslations('shared.seo'),
+        isTabAllowedForSymbol(upper, 'financials'),
+    ]);
+    if (!tabAllowed) notFound();
 
     // 재무 6종 fetch는 profile·스냅샷 게이트를 기다리지 않는다 — 캐시된 자산 해석이 이 심볼을
-    // 실재(non-null, 비 degrade)로 확인하는 즉시 시작해 나머지 게이트와 겹친다(감사 L2,
-    // `startWhenResolvable` JSDoc). 존재하지 않는 심볼에는 FMP를 쏘지 않는다.
+    // 실재(non-null, 비 degrade)로 확인하는 즉시 시작해 나머지 게이트와 겹친다(`startWhenResolvable`
+    // JSDoc). 존재하지 않는 심볼에는 FMP를 쏘지 않는다.
     const assetPromise = getAssetInfoResilient(upper);
     const pageDataPromise = startWhenResolvable(assetPromise, () =>
         getFinancialsPageData(upper)
     );
 
-    // Gate via profile — same pattern as the fundamental page.
-    // getProfileResilient uses ['fundamental:profile', upper] key, shared with
-    // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
-    // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
-    // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-    // `export const revalidate` literal above.
+    // 프로필은 펀더멘털 탭과 같은 `fundamental:profile` 키라 FMP 왕복이 늘지 않는다. 스냅샷
+    // revalidate는 이 페이지 선언과 같은 값이라 색인 게이트의 읽기와 캐시를 공유한다.
     const [
         { profile, degraded: profileDegraded },
         { assetInfo, degraded },
@@ -143,39 +143,23 @@ export default async function FinancialsPage({ params }: Props) {
         'financials',
         locale
     );
-    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFinancialsProse)
-    // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
-    // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유
-    // 버튼이 이 탭의 분석 결과를 등록받지 못한다(review round 2 fix: 챗 발행이
-    // 아니라 공유 등록이 이 마운트를 필요로 한다).
-    // 두 소스가 동일 필드(overallConclusionKo/axisAssessments/riskFactorsKo)를
-    // 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에
-    // 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse
-    // .hasOverallProse` 패턴과 동일 — narrowFinancialsContent를 재사용해 프로즈
-    // 컴포넌트와 동일 판단.
+    // 프로즈 컴포넌트와 같은 `narrowFinancialsContent` 판정이라 둘이 어긋나지 않는다.
     const showFinancialsProse = hasFinancialsProse(financialsSnapshot?.content);
 
-    // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
-    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    // 두 데이터 소스가 동시에 죽어 형상만으로 실재를 보증할 수 없는 심볼 → 다른 탭과 같은 404.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
 
+    // 이 탭은 FMP 프로필만 있어도 렌더한다 — 자산 디렉터리에 없는 종목은 티커를 표시명으로 쓴다.
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
-    // CrossLinkCards에 넘길 시장 프로필. financials도 fundamental과 동일하게
-    // assetInfo가 optional이라(FMP profile만 있어도 렌더) marketProfileOf(assetInfo)를
-    // 못 쓸 수 있다 — 그 경우 심볼 형상으로 판정한다(`profileIdForSymbol`, marketProfileOf
-    // 내부 fallback과 동일 패턴). crypto는 isTabAllowedForSymbol('financials') 가드로
-    // 이미 걸러졌으므로 여기 남는 값은 us-equity/kr-equity뿐이다. SEO 감사(2026-08-18):
-    // 이 값을 넘기지 않으면 CrossLinkCards의 `marketProfile='us-equity'` 기본값으로
-    // 떨어져, 한국 종목 페이지에도 존재하지 않는 `/options`·`/congress` 링크가 노출됐다.
+    // 자산 정보가 없으면 심볼 형상으로 시장을 판정한다(`marketProfileOf` 내부 폴백과 같은 규칙).
+    // `CrossLinkCards` 기본값(us-equity)에 맡기면 한국 종목에 없는 `/options`·`/congress` 링크가 나간다.
     const marketProfile: MarketProfileId = assetInfo
         ? marketProfileOf(assetInfo)
         : profileIdForSymbol(upper);
 
-    // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
-    // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
-    // 크롤러에게 프로즈 콘텐츠를 보여준다(spec §7 — degraded 분기에서도 스냅샷 유지).
+    // 스냅샷이 있으면 degrade 화면에도 산문을 남겨 크롤 가능한 본문을 유지한다.
     if (profileDegraded) {
         return (
             <FinancialsDegraded
@@ -188,23 +172,17 @@ export default async function FinancialsPage({ params }: Props) {
         );
     }
 
-    // profile === null = FMP 200 + 빈 결과 = 실존하지 않는 종목 → 404.
+    // 프로필 "빈 결과"(FMP 200 + 빈 응답) = 실존하지 않는 종목 → 404.
     if (profile === null) {
         notFound();
     }
 
-    // Annual snapshot + scorecard — started above once the asset resolved; if it
-    // didn't (unresolved/degraded asset but a valid FMP profile), fetch it now.
+    // 위에서 자산 해석 직후 시작했다. 자산이 미해석·degrade라 시작하지 않았다면 지금 읽는다.
     const { snapshot, scorecard } =
         (await pageDataPromise) ?? (await getFinancialsPageData(upper));
 
-    // profile은 정상이나 6종 재무 fetch가 모두 비면(FMP 일시 장애) scorecard가 전 축 F로
-    // 오인 렌더되고 색인된다. all-empty면 degrade UI로 전환하고(메타도 noindex로 일치),
-    // 다음 revalidate에 데이터가 복구되면 자동 정상화된다. 스냅샷이 있으면 이 분기에서도 유지.
+    // 6종이 모두 비면 점수표가 전 축 F로 오인 렌더된다 — 안내 화면으로 바꾼다.
     if (isEmptyFinancialsSnapshot(snapshot)) {
-        // 빈 결과는 대개 FMP 일시 장애(렌더 예산 초과 포함)다 — degrade 렌더가 24h 굳지 않게
-        // 5분으로 낮춘다. 진짜로 재무가 없는 종목도 같은 값이 되지만, ISR은 방문이 있어야 재생성하므로
-        // 비용은 방문당 최대 5분에 한 번의 재렌더다.
         await shortenRevalidateForRuntimeDegrade();
         return (
             <FinancialsDegraded
@@ -228,9 +206,7 @@ export default async function FinancialsPage({ params }: Props) {
         }
     );
 
-    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
-    // undefined로 자연 생략된다. financials 페이지도 fundamental과 동일하게 assetInfo가
-    // optional이라 ticker를 fallback name으로 사용한다.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF·지수·모호한 종목은 undefined로 생략된다.
     const aboutNode = buildAssetAboutNode(
         upper,
         assetInfo ? pickAssetName(assetInfo, upper, locale) : upper,
@@ -243,23 +219,20 @@ export default async function FinancialsPage({ params }: Props) {
         description,
         about: aboutNode,
         locale,
-        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
-        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다.
         generatedAt: showFinancialsProse
             ? financialsSnapshot?.generatedAt
             : null,
     });
 
-    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
-    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
-    const tTab = await getTranslations('shared.symbolTab');
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [
-            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
-            { name: tTab('financials'), url },
-        ],
-        locale
-    );
+    const breadcrumbJsonLd = await buildSymbolTabBreadcrumbJsonLd({
+        ticker: upper,
+        displayName,
+        tab: 'financials',
+        tabUrl: url,
+        tSeo,
+        locale,
+    });
 
     return (
         <>
@@ -274,19 +247,8 @@ export default async function FinancialsPage({ params }: Props) {
                     currency={deriveStatementCurrency(snapshot, upper)}
                 />
 
-                {/* audit fix FIX 2: XOR — FinancialsAiSummary (client widget) and
-                    FinancialsSnapshotProse (SSR prose) both render the same AI
-                    conclusion (overallConclusionKo/axisAssessments/
-                    riskFactorsKo). Showing both duplicated the text for sighted
-                    users and screen readers and doubled as a duplicate-content
-                    SEO risk. When the snapshot is renderable, show the prose
-                    only; the widget stays mounted with `hideView` so
-                    `useRegisterShareable` keeps registering Share data, and
-                    renders its own view only when no snapshot exists —
-                    FinancialsAiSummary fetches its analysis via a client-side
-                    hook, so during ISR generation it bakes its loading skeleton
-                    into the static HTML (no crawlable AI text) until it
-                    hydrates. */}
+                {/* AI 위젯은 클라 훅으로 데이터를 받아 ISR HTML에 골격만 남긴다 — 크롤러가 읽는 AI
+                    문장은 이 스냅샷 산문뿐이다. */}
                 {showFinancialsProse && (
                     <FinancialsSnapshotProse
                         content={financialsSnapshot?.content}

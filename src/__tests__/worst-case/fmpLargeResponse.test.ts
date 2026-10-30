@@ -18,7 +18,7 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
-import { FmpNewsClient } from '@/entities/news-article/lib/fmpNewsClient';
+import { FmpNewsClient } from '@/entities/news-article/server/fmpNewsClient';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 
 const mockFmpGet = fmpGet as ReturnType<typeof vi.fn>;

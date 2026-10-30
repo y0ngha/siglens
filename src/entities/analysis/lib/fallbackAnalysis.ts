@@ -1,10 +1,9 @@
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 
 /**
- * Empty AnalysisResponse used as a placeholder when no chart analysis is available
- * (e.g. server-side AI failure, or initial render before useAnalysis triggers).
- * Components that consume this should check `isAnalysisReady` to decide whether
- * to enable user input.
+ * 차트 분석을 쓸 수 없을 때(서버 AI 실패, `useAnalysis`가 돌기 전 첫 렌더) 쓰는 빈
+ * `AnalysisResponse` 자리표시자. 소비 컴포넌트는 `isAnalysisReady`로 사용자 입력
+ * 활성화 여부를 판단한다.
  *
  * 상수가 아니라 빌더인 이유: `summary`가 화면에 그대로 나가는 문구라 요청
  * 로케일이 필요하다. 예전에는 한국어 리터럴이라 `/en/AAPL`이 분석 실패 시
@@ -13,7 +12,7 @@ import type { AnalysisResponse } from '@y0ngha/siglens-core';
  * 번역자가 아니라 **완성된 문구**를 받는다. 이 모듈은 `isFallbackAnalysis`를
  * 통해 클라이언트 번들에도 들어가는데, 번역자를 인자로 받으면서 그 안에서
  * `t('리터럴')`을 부르면 추출기가 파일을 통째로 건너뛰어 그 키가 클라이언트
- * 페이로드에서 빠진다(§noTranslatorParamCall.test.ts).
+ * 페이로드에서 빠진다(`noTranslatorParamCall.test.ts` 참고).
  *
  * @param summary `entities.analysis.fallback.unavailable`의 로케일 문구.
  */

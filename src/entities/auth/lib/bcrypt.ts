@@ -1,17 +1,17 @@
 import { compare, hash } from 'bcryptjs';
-import type { PasswordHasher, PasswordVerifier } from './types';
+import type { PasswordHasher, PasswordVerifier } from '@/shared/lib/auth/types';
 
-/** Salt rounds for the default bcrypt adapter — cost 12 balances brute-force resistance and per-request CPU cost. */
+/** bcrypt 솔트 라운드 — cost 12가 무차별 대입 저항과 요청당 CPU 비용의 균형점이다. */
 export const BCRYPT_DEFAULT_SALT_ROUNDS = 12;
 
-/** Default {@link PasswordHasher} backed by `bcryptjs` with cost {@link BCRYPT_DEFAULT_SALT_ROUNDS}. */
+/** 가입·비밀번호 재설정이 쓰는 기본 {@link PasswordHasher}. cost는 {@link BCRYPT_DEFAULT_SALT_ROUNDS}. */
 export const bcryptPasswordHasher: PasswordHasher = {
     hashPassword(password: string): Promise<string> {
         return hash(password, BCRYPT_DEFAULT_SALT_ROUNDS);
     },
 };
 
-/** Default {@link PasswordVerifier} backed by `bcryptjs`; compares plain-text against a stored hash in constant time. */
+/** 로그인·비밀번호 재설정이 쓰는 기본 {@link PasswordVerifier}. 평문과 저장된 해시를 `bcryptjs`의 상수 시간 비교로 검증한다. */
 export const bcryptPasswordVerifier: PasswordVerifier = {
     verifyPassword(password: string, passwordHash: string): Promise<boolean> {
         return compare(password, passwordHash);

@@ -18,7 +18,7 @@ const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/entities/ticker/api', () => ({
@@ -38,7 +38,7 @@ vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn(),
 }));
@@ -98,7 +98,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

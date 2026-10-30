@@ -8,7 +8,7 @@ import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
-import { usePageShowReload } from '@/shared/hooks/usePageShowReload';
+import { usePageShowReload } from '../hooks/usePageShowReload';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
 import { useFocusInvalidFieldOnError } from '../hooks/useFocusInvalidFieldOnError';
 import {

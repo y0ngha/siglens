@@ -18,7 +18,7 @@ const {
     getEconomy: vi.fn(),
     ensureSymbolNewsFresh: vi.fn(),
 }));
-vi.mock('@/entities/news-article/lib/ensureSymbolNewsFresh', () => ({
+vi.mock('@/entities/news-article/server/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh,
 }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({

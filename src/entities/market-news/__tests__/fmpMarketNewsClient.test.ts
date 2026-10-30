@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    FmpMarketNewsClient,
-    parseArticleTickers,
-} from '../lib/fmpMarketNewsClient';
+import { FmpMarketNewsClient } from '../api/fmpMarketNewsClient';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 
 const TEST_API_KEY = 'test-api-key';
@@ -358,24 +355,5 @@ describe('FmpMarketNewsClient.fetchCategoryNews — tryNormalizeFmpPublishedDate
         expect(warnSpy).toHaveBeenCalledTimes(1);
 
         warnSpy.mockRestore();
-    });
-});
-
-describe('parseArticleTickers는', () => {
-    it('EXCH: prefix를 제거하고 bare 티커를 반환한다', () => {
-        expect(parseArticleTickers('NASDAQ:AAPL,NYSE:MSFT')).toEqual([
-            'AAPL',
-            'MSFT',
-        ]);
-    });
-
-    it('null/undefined/빈 문자열이면 빈 배열을 반환한다', () => {
-        expect(parseArticleTickers(null)).toEqual([]);
-        expect(parseArticleTickers(undefined)).toEqual([]);
-        expect(parseArticleTickers('')).toEqual([]);
-    });
-
-    it('EXCH: 없는 bare 티커도 그대로 반환한다', () => {
-        expect(parseArticleTickers('AAPL,MSFT')).toEqual(['AAPL', 'MSFT']);
     });
 });

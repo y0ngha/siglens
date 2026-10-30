@@ -1,10 +1,12 @@
 import type { BacktestCase } from '@y0ngha/siglens-core';
 import type { BacktestStats } from '@/entities/backtest-case/model';
 
+/** 소수 첫째 자리까지 반올림한 백분율. 분모가 0이면 0. */
 function percent(count: number, total: number): number {
     return total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0;
 }
 
+/** 빈 배열은 0, 짝수 개는 가운데 두 값의 평균. */
 function median(values: readonly number[]): number {
     if (values.length === 0) return 0;
     const sorted = values.toSorted((a, b) => a - b);
@@ -14,7 +16,7 @@ function median(values: readonly number[]): number {
         : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-/** `cases`에서 화면에 쓰는 통계를 계산한다. `meta` 블록은 읽지 않는다. */
+/** 케이스 목록에서 화면용 통계를 계산한다. `meta` 블록은 읽지 않는다. 소비자: `BacktestHero`, `/backtesting` 페이지. */
 export function deriveBacktestStats(
     cases: readonly BacktestCase[]
 ): BacktestStats {
@@ -31,6 +33,7 @@ export function deriveBacktestStats(
                   ).toFixed(2)
               )
             : 0;
+    // ISO `YYYY-MM-DD`는 사전순 정렬이 곧 날짜순이다.
     const entryDates = cases.map(c => c.entryDate).toSorted();
 
     return {

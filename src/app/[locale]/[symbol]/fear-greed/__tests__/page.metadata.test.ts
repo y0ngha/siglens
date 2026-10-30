@@ -31,13 +31,13 @@ vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     // 페이지는 5년 일봉이 담긴 세션 키 축소 봉(revalidate 24h)을 쓴다 — 6h 봉 캐시를
     // 읽으면 이 탭(24h 선언)이 6h로 clamp된다.
     getSessionBarsStatic: mockGetSeedBarsStatic,
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 

@@ -7,6 +7,20 @@ import type { SnapshotConfidence } from '@/shared/lib/types';
 import { SENTIMENT_LABEL_KEY } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import {
+    GAUGE_CX,
+    GAUGE_CY,
+    GAUGE_STROKE_WIDTH,
+    GAUGE_VIEWBOX_H,
+    GAUGE_VIEWBOX_W,
+    NEEDLE_PIVOT_RADIUS,
+    NEEDLE_POINTS,
+    TICK_VALUES,
+    describeSegmentArc,
+    needleRotationDeg,
+    tickLabelPosition,
+    tickTextAnchor,
+} from '@/shared/ui/fearGreedGaugeGeometry';
 
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =
     FEAR_GREED_LABEL_CUTOFFS;
@@ -78,53 +92,6 @@ const SENTIMENT_TEXT_COLOR: Record<FearGreedLabel, string> = {
     EXTREME_GREED: 'text-ui-success-text',
 };
 
-const GAUGE_CX = 100;
-// Slight top padding so tick labels above the arc still fit the viewBox.
-const GAUGE_CY = 105;
-const GAUGE_RADIUS = 80;
-const GAUGE_STROKE_WIDTH = 14;
-const GAUGE_VIEWBOX_W = 200;
-// Bumped from 110 → 130 to fit tick labels rendered outside the arc.
-const GAUGE_VIEWBOX_H = 130;
-
-/** Triangular needle geometry — drawn at angle=0 and rotated to score angle. */
-const NEEDLE_TIP_LEN = 4;
-const NEEDLE_HALF_WIDTH = 6;
-const NEEDLE_INNER_GAP = 12;
-/** 게이지 회전 중심을 시각적으로 anchor하는 작은 피벗 원의 반지름 (SVG units). */
-const NEEDLE_PIVOT_RADIUS = 4;
-
-/** Tick label radial offset outside the arc, in SVG units. */
-const TICK_LABEL_OFFSET = 16;
-const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
-// 0과 100은 게이지 양 끝, 50은 시각적 중심선. EXTREME_FEAR_MAX/GREED_MAX 눈금은
-// FEAR_GREED_LABEL_CUTOFFS에서 가져오므로 core가 경계를 바꾸면 눈금도 따라 움직인다.
-const TICK_VALUES: ReadonlyArray<number> = [
-    0,
-    EXTREME_FEAR_MAX,
-    50,
-    GREED_MAX,
-    100,
-];
-
-/** Degrees per score unit — 180° gauge arc spans 100 score units (180 / 100). */
-const DEGREES_PER_SCORE_UNIT = 1.8;
-
-/**
- * 0과 100은 게이지 수평 끝(y=GAUGE_CY)과 같은 높이라 arc와 겹친다.
- * 아래로 14 units 내려 arc stroke 하단 바깥에 위치시킨다.
- */
-function tickDy(value: number): number {
-    return value === 0 || value === 100 ? 14 : 0;
-}
-
-/** 0과 100은 viewbox 경계 근처이므로 시작/끝 기준으로 anchor해 잘림을 방지한다. */
-function tickTextAnchor(value: number): 'start' | 'end' | 'middle' {
-    if (value === 0) return 'start';
-    if (value === 100) return 'end';
-    return 'middle';
-}
-
 /**
  * `sentimentText`는 호출부(컴포넌트 본문)가 이미 `tLabel(SENTIMENT_LABEL_KEY[...])`로
  * 조회해 넘긴 문자열이다 — 이 헬퍼가 번역자를 직접 받지 않는 이유는
@@ -195,19 +162,7 @@ export function FearGreedGauge({
     // 번들에 실린다(fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
     const tLabel = useTranslations('shared.enumLabel');
     const sentimentText = tLabel(SENTIMENT_LABEL_KEY[label]);
-    // needle은 오른쪽(score=100 위치)을 가리키도록 그려진다.
-    // score가 낮을수록 왼쪽(score=0 위치)으로 회전해야 하므로
-    // -(100 - score) * 1.8° 만큼 반시계 방향으로 회전시킨다.
-    const rotateDeg = -(100 - score) * DEGREES_PER_SCORE_UNIT;
-
-    const tipR = GAUGE_RADIUS + NEEDLE_TIP_LEN;
-    const baseR = NEEDLE_INNER_GAP;
-    const tipX = GAUGE_CX + tipR;
-    const tipY = GAUGE_CY;
-    const baseLeftX = GAUGE_CX + baseR;
-    const baseLeftY = GAUGE_CY - NEEDLE_HALF_WIDTH;
-    const baseRightX = GAUGE_CX + baseR;
-    const baseRightY = GAUGE_CY + NEEDLE_HALF_WIDTH;
+    const rotateDeg = needleRotationDeg(score);
 
     const tGauge = useTranslations('widgets.fear-greed.gauge');
     const isHero = size === 'hero';
@@ -232,37 +187,24 @@ export function FearGreedGauge({
                 role="img"
                 aria-label={ariaLabel}
             >
-                {SEGMENTS.map(seg => {
-                    const a1 = (1 - seg.from / 100) * Math.PI;
-                    const a2 = (1 - seg.to / 100) * Math.PI;
-                    const x1 = GAUGE_CX + GAUGE_RADIUS * Math.cos(a1);
-                    const y1 = GAUGE_CY - GAUGE_RADIUS * Math.sin(a1);
-                    const x2 = GAUGE_CX + GAUGE_RADIUS * Math.cos(a2);
-                    const y2 = GAUGE_CY - GAUGE_RADIUS * Math.sin(a2);
-                    return (
-                        <path
-                            key={seg.from}
-                            d={`M ${x1} ${y1} A ${GAUGE_RADIUS} ${GAUGE_RADIUS} 0 0 1 ${x2} ${y2}`}
-                            strokeWidth={GAUGE_STROKE_WIDTH}
-                            fill="none"
-                            stroke="currentColor"
-                            className={seg.strokeClass}
-                        />
-                    );
-                })}
+                {SEGMENTS.map(seg => (
+                    <path
+                        key={seg.from}
+                        d={describeSegmentArc(seg.from, seg.to)}
+                        strokeWidth={GAUGE_STROKE_WIDTH}
+                        fill="none"
+                        stroke="currentColor"
+                        className={seg.strokeClass}
+                    />
+                ))}
                 {isHero &&
                     TICK_VALUES.map(value => {
-                        const a = (1 - value / 100) * Math.PI;
-                        const lx = GAUGE_CX + TICK_LABEL_RADIUS * Math.cos(a);
-                        const ly =
-                            GAUGE_CY -
-                            TICK_LABEL_RADIUS * Math.sin(a) +
-                            tickDy(value);
+                        const { x, y } = tickLabelPosition(value);
                         return (
                             <text
                                 key={value}
-                                x={lx}
-                                y={ly}
+                                x={x}
+                                y={y}
                                 textAnchor={tickTextAnchor(value)}
                                 dominantBaseline="middle"
                                 className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
@@ -273,7 +215,7 @@ export function FearGreedGauge({
                     })}
                 <g transform={`rotate(${rotateDeg} ${GAUGE_CX} ${GAUGE_CY})`}>
                     <polygon
-                        points={`${tipX},${tipY} ${baseLeftX},${baseLeftY} ${baseRightX},${baseRightY}`}
+                        points={NEEDLE_POINTS}
                         className="fill-secondary-100"
                     />
                 </g>

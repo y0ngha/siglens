@@ -29,14 +29,14 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 // Heavy page-body dependencies — mock to prevent import-time side effects.
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn().mockResolvedValue(false),
 }));
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn().mockResolvedValue(false),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/widgets/options/OptionsPageClient', () => ({

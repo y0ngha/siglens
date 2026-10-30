@@ -10,7 +10,7 @@ const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
 }));
 
 // vi.mock은 hoist되지만 import/first와 가독성을 위해 모든 import 위에 둔다.
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/widgets/overall/OverallContent', () => ({

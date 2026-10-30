@@ -4,14 +4,14 @@ import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import {
     resolveCurrentPrice,
     resolvePriceAsOf,
-} from '@/entities/analysis-plain/lib/currentPrice';
+} from '@/entities/analysis-plain/server/currentPrice';
 import { withReaderViews } from '../readerViews';
 
 vi.mock('next-intl/server', () => ({ getTranslations: vi.fn() }));
 vi.mock('@/entities/analysis-plain/api', () => ({
     rewriteToPlainLanguage: vi.fn(),
 }));
-vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
+vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     resolveCurrentPrice: vi.fn(),
     resolvePriceAsOf: vi.fn(),
 }));

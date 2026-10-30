@@ -26,7 +26,7 @@ vi.mock('@/entities/siglens-api-key/server/rateLimit', async () => {
 vi.mock('@/entities/llm-provider/api/agent/router', () => ({
     AGENT_MODEL: 'deepseek-v4.1-flash',
 }));
-vi.mock('@/entities/news-article/lib/ensureSymbolNewsFresh', () => ({
+vi.mock('@/entities/news-article/server/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({

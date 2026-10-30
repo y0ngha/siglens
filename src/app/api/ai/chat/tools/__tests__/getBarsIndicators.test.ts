@@ -84,7 +84,7 @@ vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
 vi.mock('@/entities/earnings-report/api', () => ({
     listEarningsDates: resolveEarnings,
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
 vi.mock('@/entities/ticker/server/getAssetInfo', () => ({

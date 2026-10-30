@@ -50,7 +50,7 @@ vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -117,7 +117,7 @@ import { Suspense, isValidElement, type ReactNode } from 'react';
 import NewsPage from '@/app/[locale]/[symbol]/news/page';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';

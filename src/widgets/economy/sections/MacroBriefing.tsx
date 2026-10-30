@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * /economy 상단 거시 AI 브리핑 카드 — 로딩·오류·본문 상태를 그린다.
+ */
 import { useTranslations } from 'next-intl';
 import type {
     MacroBriefingCacheEntry,
@@ -104,10 +107,10 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             </p>
             {briefing.highlights.length > 0 && (
                 <ul className="space-y-1 text-sm text-secondary-300">
-                    {briefing.highlights.map(h => (
-                        // briefing 객체가 교체될 때 항목 수가 다르면 index key는
-                        // 잘못된 reconciliation을 유발한다 — content+index 결합으로 stable화.
-                        <li key={h} className="flex gap-2">
+                    {briefing.highlights.map((h, i) => (
+                        // 내용만으로 key를 잡으면 같은 문장이 둘일 때 겹친다 — 내용+순번으로
+                        // 잡는다(순번만 쓰면 briefing 교체 시 항목 수가 달라 잘못 재사용된다).
+                        <li key={`${i}:${h}`} className="flex gap-2">
                             <span aria-hidden>•</span>
                             <span>{h}</span>
                         </li>

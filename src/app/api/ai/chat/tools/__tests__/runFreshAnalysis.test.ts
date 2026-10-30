@@ -86,7 +86,7 @@ vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
         to: new Date('2026-08-01T00:00:00Z'),
     })),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
 

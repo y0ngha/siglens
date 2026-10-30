@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -43,9 +43,20 @@ describe('홈 — 스킬 쇼케이스', () => {
         expect(source).not.toMatch(/<Suspense\b/);
     });
 
+    /** 페이지가 섹션을 그리게 맡긴 홈 전용 컴포넌트도 같은 문서 셸이다 — 거기 둔 경계도 같은 비용을 낸다. */
+    it.each(
+        readdirSync(path.join(APP_DIR, '(home)/_components')).filter(file =>
+            file.endsWith('.tsx')
+        )
+    )('(home)/_components/%s에도 Suspense 경계가 없다', file => {
+        expect(readPageCode(`(home)/_components/${file}`)).not.toMatch(
+            /<Suspense\b/
+        );
+    });
+
     it('쇼케이스 목록을 스킬 개수와 같은 Promise.all에서 읽는다', () => {
         expect(source).toMatch(
-            /Promise\.all\(\[\s*countSkillFiles\(\)[\s\S]*?loadShowcase\(\),?\s*\]\)/
+            /Promise\.all\(\[\s*loadSkillCounts\(\),\s*loadShowcase\(\),?\s*\]\)/
         );
     });
 

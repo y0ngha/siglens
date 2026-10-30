@@ -3,6 +3,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import type { AssetInfo } from '@/shared/lib/types';
 
+/** 실재가 확인된 심볼의 자산 정보 — `assetInfo`가 non-null로 좁혀져 있다. */
 export interface ResolvableAsset {
     readonly assetInfo: AssetInfo;
     /** `getAssetInfoResilient`가 인프라 장애 폴백으로 푼 값인가. */

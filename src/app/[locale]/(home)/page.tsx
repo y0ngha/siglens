@@ -1,68 +1,49 @@
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { countSkillFiles, loadShowcaseSkills } from '@/entities/skill/api';
+import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
+import { HERO_QUICK_LINKS } from '@/widgets/home/utils/heroQuickLinks';
+import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
+import { StatsBar } from '@/widgets/home/StatsBar';
+import { TickerCategories } from '@/widgets/home/TickerCategories';
+import { toSkillShowcaseItems } from '@/widgets/home/utils/toSkillShowcaseItems';
+import { HomeWatchlistCard } from '@/features/watchlist/ui/HomeWatchlistCard';
+import { RSS_ALTERNATE_TYPES } from '@/shared/config/rssFeed';
+import { DEFAULT_LOCALE, resolveLocale } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import {
+    brandIntroName,
+    buildFaqJsonLd,
+    localizedAbsoluteUrl,
+    SITE_URL,
+} from '@/shared/lib/seo';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
 } from '@/shared/lib/seoAlternates';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import {
-    ABOUT_PATH,
-    OPERATOR_PERSON_JSON_LD_ID,
-    OPERATOR_SAME_AS,
-    SITE_OPERATOR,
-} from '@/shared/lib/legal';
-import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
-import {
-    brandIntroName,
-    buildFaqJsonLd,
-    buildWebPageJsonLd,
-    GITHUB_URL,
-    localizedAbsoluteUrl,
-    buildOrganizationCoreJsonLd,
-    ORGANIZATION_JSON_LD_ID,
-    SITE_URL,
-    VELOG_URL,
-    X_URL,
-} from '@/shared/lib/seo';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import {
-    DEFAULT_LOCALE,
-    LOCALE_HREFLANG,
-    localePath,
-    resolveLocale,
-} from '@/shared/i18n/locales';
-import { RSS_ALTERNATE_TYPES } from '@/shared/config/rssFeed';
-import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
-import { BetaBadge } from '@/shared/ui/BetaBadge';
-import { aiAskUrl } from '@/shared/config/aiHost';
-import { buildHomeFaq } from '../homeJsonLd';
-import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
-import { HeroIllustration } from '@/widgets/home/HeroIllustration';
-import { HERO_QUICK_LINKS } from '@/widgets/home/heroQuickLinks';
-import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
-import { HomeWatchlistCard } from '@/features/watchlist/ui/HomeWatchlistCard';
-import { StatsBar } from '@/widgets/home/StatsBar';
-import { TickerCategories } from '@/widgets/home/TickerCategories';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import type { Metadata } from 'next';
-import { cache } from 'react';
-import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
-import { brandAiName, brandName } from '@/shared/lib/brandName';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { buildHomeFaq } from './_lib/homeJsonLd';
+import { HomeBacktestingCta } from './_components/HomeBacktestingCta';
+import { HomeHero } from './_components/HomeHero';
+import { buildHomeJsonLdNodes } from './_lib/homeJsonLdNodes';
+import { loadShowcase, loadSkillCounts } from './_lib/homeSkills';
 
-// 루트 레이아웃에서 canonical을 제거했으므로 홈 페이지 자체가 명시적으로 self-canonical을 선언한다.
-// 다른 인덱서블 페이지들(economy, market, backtesting 등)은 이미 자체 canonical을 갖고 있다.
-interface LocaleMetadataParams {
+interface HomeRouteProps {
     readonly params: Promise<{ locale: string }>;
 }
 
+/**
+ * 홈 메타데이터. 루트 레이아웃은 canonical을 깔지 않으므로 홈이 self-canonical을 직접 선언한다.
+ *
+ * `openGraph`/`twitter`는 **완전히** 선언한다 — Next는 이 최상위 키를 부모와 병합하지 않고
+ * 교체하므로, 부분 선언하면 `images`·`type`·`url`이 통째로 빠져 공유 카드에 미리보기가 없다.
+ */
 export async function generateMetadata({
     params,
-}: LocaleMetadataParams): Promise<Metadata> {
+}: HomeRouteProps): Promise<Metadata> {
     const { locale: rawLocale } = await params;
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
@@ -73,20 +54,9 @@ export async function generateMetadata({
     // 번역 검증의 길이 게이트가 다른 로케일을 잘린 번역으로 본다(`brandIntroName` 주석).
     const title = tSeo('root.title', { v0: brandIntroName(locale) });
     const description = tSeo('root.description');
-    /**
-     * `openGraph`/`twitter`를 **완전히** 선언한다.
-     *
-     * Next는 이 최상위 키를 부모와 병합하지 않고 **교체**한다. 예전에
-     * `alternates`만 돌려줘서 제목·설명이 루트 레이아웃의 한국어 상수로
-     * 떨어졌고, 그걸 고치며 og를 부분 선언하자 이번엔 `images`·`type`·`url`이
-     * 통째로 사라져 공유 카드에서 미리보기 이미지가 없어졌다.
-     */
     return {
-        // `absolute`가 없으면 루트 레이아웃의 `title.template`(ko `%s | 시그렌즈`)이
-        // 먹는다 — v0.48.0에서 SERP 폭을 되찾으려고 일부러 뗀 접미사다.
-        // 마스터의 홈은 `title`을 아예 반환하지 않아 레이아웃의 `default`가
-        // 그대로 나갔고(템플릿 미적용), 로케일 카탈로그로 옮기면서 문자열을
-        // 돌려주는 순간 조용히 접미사가 돌아왔다.
+        // `absolute`가 없으면 루트 레이아웃의 `title.template`(ko `%s | 시그렌즈`)이 붙는다 —
+        // 홈 제목은 SERP 폭을 위해 접미사 없이 브랜드를 앞에 둔 문구 그대로 나간다.
         title: { absolute: title },
         description,
         // RSS 발견 링크는 색인 로케일(ko)에만 건다. 레이아웃에 두면 이 페이지가
@@ -120,156 +90,51 @@ export async function generateMetadata({
     };
 }
 
-// 랜딩은 ISR 정적 페이지로 운영 — proxy.ts가 ?q= 쿼리를 처리해 redirect하므로
-// 이 페이지 자체는 dynamic 의존성이 없다. revalidate로 skills 파일 변경 반영.
+// 랜딩은 ISR 정적 페이지다 — `?q=` 딥링크는 proxy.ts가 redirect로 처리하므로 이 페이지는
+// searchParams 등 dynamic 의존성이 없다. 소비하면 라우트가 dynamic으로 바뀌어 ISR이 꺼진다.
 export const revalidate = 86400; // 24h — skills는 배포 시 갱신되므로 장중 신선도와 무관
 
-// skills 파일시스템 읽기 오류는 graceful 처리 — 빈 배열/0으로 폴백해 페이지 렌더를
-// 계속한다. ISR 빈 캐시 동결 방지: throw하면 0-byte HTML이 캐시에 박힌다.
-//
-// 쇼케이스는 `_core/`(모델용 압축 요약)를 뺀 목록을 쓴다. 개수(`StatsBar`·히어로)는 위
-// `countSkillFiles`가 같은 기준(`_core` 제외)으로 센다.
-const loadShowcase = cache(async () => {
-    try {
-        return await loadShowcaseSkills();
-    } catch (e) {
-        console.error('[Home] loadShowcaseSkills failed:', e);
-        return [];
-    }
-});
-
-// `?q=` 딥링크(티커를 아는 사용자가 `/?q=AAPL`로 바로 들어오는 경로) 처리는 proxy.ts가
-// 담당한다. page.tsx에서 searchParams를 소비하면 라우트가 dynamic으로 바뀌어 ISR 캐싱이
-// 불가능하기 때문이다.
-//
-// 예전에는 이 핸들러가 `WebSite` SearchAction 마크업과 짝이었는데, 그 마크업은 지웠다 —
-// 구글이 사이트링크 검색창을 2023-11에 폐기했고 `?q=`는 검색 결과 페이지도 아니었다
-// (`SiteJsonLd.tsx` 주석). 핸들러는 딥링크로 여전히 쓰이므로 남는다.
-export default async function Home({
-    params,
-}: {
-    readonly params: Promise<{ locale: string }>;
-}) {
+/**
+ * 홈(`/`). 데이터(스킬 개수·쇼케이스·번역)를 모으고 섹션을 배치한다.
+ *
+ * 쇼케이스 목록은 `<Suspense>`로 감싼 별도 async 컴포넌트가 아니라 본문에서 스킬 개수와 함께
+ * 읽는다 — 서버 데이터 경계는 raw HTML에 스켈레톤과 숨김 청크를 남겨 JS 없는 크롤러에게 본문을
+ * 뒤로 밀고 하이드레이션 때 레이아웃을 흔든다. 로드는 파일시스템 읽기라 짧고 ISR이라 문서 셸이
+ * 기다려도 비용이 없다.
+ */
+export default async function Home({ params }: HomeRouteProps) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
-    // 넷은 서로 독립이다 — 직렬로 await하면 왕복이 4배가 된다.
-    // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
+    // 넷은 서로 독립이라 병렬로 푼다. 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
     const [t, tNav, tSeo, tJsonLd] = await Promise.all([
         getTranslations('app.home'),
         getTranslations(),
         getTranslations('shared.seo'),
         getTranslations('app.home.jsonLd'),
     ]);
-    // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
-    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
-    //
-    // 쇼케이스 스킬 목록도 **여기서 함께** 읽는다(둘은 독립이라 병렬). 예전엔 별도 async
-    // 서버 컴포넌트를 `<Suspense>`로 감쌌는데, 서버 데이터 경계는 raw HTML에 스켈레톤 +
-    // 숨김 `<template>` 청크를 남겨 JS 없는 크롤러에게 본문을 뒤로 밀고, 하이드레이션 때
-    // 스켈레톤→실제 목록 교체로 레이아웃이 흔들렸다. 로드는 파일시스템 읽기(+ 요청 스코프
-    // `cache`)라 짧고 ISR이므로 문서 셸이 기다려도 비용이 없다.
     // 번역 묶음과 합치지 않는다 — 가드(`serverDataSuspenseBoundaries`)가 스킬 개수와 쇼케이스를
     // 한 `Promise.all`에서 읽는 구조를 고정하고, 이미 각 묶음 안에서 병렬이다.
     // react-doctor-disable-next-line react-doctor/server-sequential-independent-await
     const [skillCounts, showcaseSkills] = await Promise.all([
-        countSkillFiles().catch(e => {
-            console.error('[Home] countSkillFiles failed:', e);
-            return {
-                indicators: 0,
-                candlesticks: 0,
-                patterns: 0,
-                strategies: 0,
-                supportResistance: 0,
-                fundamental: 0,
-                news: 0,
-            };
-        }),
+        loadSkillCounts(),
         loadShowcase(),
     ]);
 
-    // `@id`와 `inLanguage`가 로케일을 따른다 — 예전에는 네 로케일이 같은
-    // `@id`를 쓰면서 전부 `ko`를 자처했고, 형제 `WebPage`는 `inLanguage: en`을
-    // 선언해 **같은 문서가 두 언어를 주장**했다.
     // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.
     const homeFaq = buildHomeFaq(tJsonLd, locale);
-
-    const webApplicationId = `${localizedAbsoluteUrl(SITE_URL, locale)}#webapplication`;
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebApplication',
-        '@id': webApplicationId,
-        name: SITE_NAME,
+    const jsonLd = buildHomeJsonLdNodes({
+        locale,
+        title: tSeo('root.title', { v0: brandIntroName(locale) }),
         description: tSeo('root.description'),
-        url: localizedAbsoluteUrl(SITE_URL, locale),
-        inLanguage: LOCALE_HREFLANG[locale],
-        applicationCategory: 'FinanceApplication',
-        operatingSystem: 'Web',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'KRW',
-        },
-    };
-
-    // 홈 WebPage 노드 — SiteJsonLd의 WebSite와 jsonLd(WebApplication)를
-    // entity graph로 연결한다. 다른 모든 페이지가 WebPage @id 패턴을 따르므로
-    // 홈에도 동일 패턴을 둬야 cross-link가 일관된다.
-    const webPageJsonLd = {
-        // `@id`·`url`·`inLanguage`는 헬퍼가 로케일에 맞춰 만든다 — 여기서
-        // 직접 쓰면 `/en`의 WebPage가 `inLanguage: "ko"`를 달게 된다.
-        ...buildWebPageJsonLd({
-            url: SITE_URL,
-            // 카탈로그를 쓴다 — `SITE_DESCRIPTION`은 한국어 상수라
-            // `inLanguage: "en"`을 달고 한국어 산문을 내보내고 있었다.
-            name: tSeo('root.title', { v0: brandIntroName(locale) }),
-            description: tSeo('root.description'),
-            locale,
-        }),
-        mainEntity: { '@id': webApplicationId },
-        // 아래 Organization 노드를 그래프에 붙인다 — 이 참조가 없으면 그 노드는
-        // 아무와도 연결되지 않은 채 떠 있다.
-        publisher: { '@id': ORGANIZATION_JSON_LD_ID },
-    };
-
-    /**
-     * `@id`가 없어서 이 노드만 엔티티 그래프 밖에 떠 있었다 — 나머지 셋
-     * (`WebSite`/`WebApplication`/`WebPage`)은 `@id`로 서로를 참조하는데
-     * `Organization`은 아무도 가리키지 않고 자기도 가리키지 않았다. 파서는
-     * 같은 사이트의 발행 주체를 별개 엔티티로 읽는다.
-     *
-     * `@id`를 주고 `WebSite.publisher`가 그것을 가리키게 해서 그래프에 붙인다.
-     */
-    const organizationJsonLd = {
-        '@context': 'https://schema.org',
-        // 핵심 속성(@type·@id·name·url)은 전역 `SiteJsonLd`의 최소 노드와 같은 단일 소스다 —
-        // 같은 `@id`의 두 정의가 겹치는 속성에서 다른 값을 말하지 않게 한다.
-        ...buildOrganizationCoreJsonLd(),
-        // `WebSite.alternateName`과 같은 한글 표기 — 발행 주체 노드에도 실어
-        // "시그렌즈"가 이 Organization을 가리키게 한다.
-        alternateName: SITE_NAME_KO,
-        logo: `${SITE_URL}/icon512.png`,
-        description: tSeo('root.description'),
-        // 조직의 외부 프로필만 싣는다 — 서비스 저장소, 서비스 X 계정, 서비스 velog. 운영자
-        // 개인 GitHub은 사람의 프로필이라 `founder.sameAs`에만 둔다. 개인 계정을 조직
-        // 노드에 섞으면 파서가 조직과 운영자를 같은 주체로 읽는다(2026-10-05 감사).
-        sameAs: [GITHUB_URL, X_URL, VELOG_URL],
-        // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
-        // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
-        founder: {
-            '@type': 'Person',
-            '@id': OPERATOR_PERSON_JSON_LD_ID,
-            name: SITE_OPERATOR.name,
-            url: `${SITE_URL}${ABOUT_PATH}`,
-            sameAs: OPERATOR_SAME_AS,
-        },
-    };
+    });
 
     return (
         <>
-            <JsonLd data={jsonLd} />
-            <JsonLd data={webPageJsonLd} />
-            <JsonLd data={organizationJsonLd} />
+            <JsonLd data={jsonLd.webApplication} />
+            <JsonLd data={jsonLd.webPage} />
+            <JsonLd data={jsonLd.organization} />
             <JsonLd data={buildFaqJsonLd(homeFaq)} />
+            {/* 대상(`#search`)은 `HomeHero`의 검색 영역이다. */}
             <a
                 href="#search"
                 className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:bg-primary-600 focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
@@ -282,127 +147,24 @@ export default async function Home({
                         aria-hidden="true"
                         className="hero-report-lines pointer-events-none absolute inset-0"
                     />
-                    <div className="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-10">
-                        {/*
-                            HeroIllustration이 mobile에서 H1보다 먼저 등장(order-first)
-                            해야 above-the-fold에서 LCP 후보로 잡힌다. 인라인 SVG는
-                            추가 fetch가 없어 HTML 파싱 즉시 페인트되므로 폰트 의존
-                            텍스트 LCP보다 결정적으로 빠르다.
-                            (lg+에서는 order 해제 — 텍스트가 좌측, 일러스트가 우측)
-                        */}
-                        <div className="order-first lg:order-last">
-                            <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
-                        </div>
-                        <div className="text-center lg:text-left">
-                            {/* The one SIGLENS AI hook on the main home: a quiet
-                                announcement line above the eyebrow, not a banner.
-                                Product name follows the locale (ko `시그렌즈 AI`). */}
-                            <a
-                                href={aiAskUrl(localePath(locale, '/'))}
-                                className="mb-4 inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-border-control px-3 text-xs text-secondary-300 hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                            >
-                                <span className="inline-flex items-center gap-1.5 font-mono font-semibold tracking-[0.12em] text-primary-400 uppercase">
-                                    <span translate="no">
-                                        {brandAiName(locale)}
-                                    </span>
-                                    <BetaBadge />
-                                </span>
-                                <span className="truncate">
-                                    {t('page.aiTeaser')}
-                                </span>
-                                <span aria-hidden="true">→</span>
-                            </a>
-                            <p className="mb-5 text-xs font-semibold tracking-[0.01em] text-secondary-400">
-                                {t('page.c26658')}
-                            </p>
-                            {/*
-                                제목 크기는 뷰포트가 아니라 **자기 글상자 폭**을
-                                따라야 한다. `lg`에서 히어로가 2단으로 갈리며 텍스트
-                                컬럼이 975px에서 520px로 좁아지는데, `vw` 기준
-                                clamp은 그걸 볼 수 없어 컬럼이 좁아지는 순간에도
-                                글자는 계속 커진다 — 1024px 한 픽셀 경계에서 제목이
-                                2줄에서 4줄로 뛰었다.
-
-                                래퍼를 컨테이너로 삼고 `cqw`를 쓰면 한 규칙으로
-                                전 구간이 해결된다. 글상자 폭 288~672px 전 범위에서
-                                2줄을 유지하는 한계치를 1px 단위로 실측한 결과가
-                                7.50~7.64cqw로 거의 일정해, 7.4cqw는 모든 폭에서
-                                여유를 두고 2줄 안에 들어온다. 브레이크포인트 사다리가
-                                필요 없어진 이유다.
-
-                                하한 2.1rem은 모바일(글상자 288px)에서 7.4cqw가
-                                21px까지 떨어지는 걸 막는다 — 이 구간은 폭 자체가
-                                좁아 4줄로 흐르는 게 정상이다. 상한 3.25rem은 현재
-                                도달하지 않는다(글상자 최대치가 `max-w-2xl` 672px라
-                                실측 최대 폰트는 49.7px). 안전장치로만 남겨 둔 값이니,
-                                글상자를 더 넓히기 전에는 이 팔이 동작하지 않는다.
-
-                                수동 `<br>`과 em 대시도 걷어냈다. 강제 줄바꿈은
-                                컬럼 폭이 바뀌면 어색한 자리에서 끊기고, 대시는
-                                이미 색상 대비로 나뉜 두 구절을 한 번 더 나눈다.
-
-                                단, 두 구절의 분리는 `sm:` 이상이 아니라 **모든
-                                폭**에서 유지한다. 처음엔 `sm:block`이었는데,
-                                그러면 모바일에서만 두 구절이 한 줄로 붙어
-                                "분석 서비스 시그렌즈"가 한 덩어리로 읽힌다 — 대시를
-                                걷어낸 자리를 색상만으로는 못 메운다. 모바일이
-                                주 트래픽이므로 여기서 어긋나면 안 된다.
-
-                                둘째 구절은 브랜드명(`brandIntroName`)이다 — H1에
-                                한글 표기가 들어가야 "시그렌즈" 검색이 홈으로 온다.
-                            */}
-                            <div className="@container mx-auto max-w-sm sm:max-w-2xl lg:mx-0">
-                                <h1 className="text-[clamp(2.1rem,7.4cqw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-50">
-                                    {t('page.2f20c8')}{' '}
-                                    <span className="block text-primary-300">
-                                        {brandIntroName(locale)}
-                                    </span>
-                                </h1>
-                            </div>
-                            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary-400 sm:max-w-2xl sm:text-lg lg:mx-0">
-                                {t('page.eafd49', {
-                                    v0: skillCounts.indicators,
-                                })}
-                                 
-                                <br className="hidden sm:block" />
-                                {t('page.79bd8f')}
-                            </p>
-                            {/* `tabIndex={-1}` — 이게 없으면 위의 건너뛰기
-                                링크가 해시만 바꾸고 **DOM 포커스는 body에
-                                남는다**(실측). 링크가 하겠다고 적은 일을
-                                실제로 하게 만든다.
-
-                                남은 한계: 이 링크는 헤더 **뒤**에 있어 실제로
-                                아껴주는 탭 수가 적다. 앞으로 옮기려면 레이아웃이
-                                공용 대상 id를 갖고 각 페이지 `<main>`이 그걸
-                                받아야 해서 이 작업 범위 밖이다. SC 2.4.1 자체는
-                                랜드마크(main 1개 + 라벨된 nav 7개)로 충족된다. */}
-                            <div
-                                id="search"
-                                tabIndex={-1}
-                                className="mt-8 flex w-full justify-center focus:outline-none lg:justify-start"
-                            >
-                                <SymbolSearchPanel className="max-w-2xl lg:max-w-none" />
-                            </div>
-                            <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
-                                {HERO_QUICK_LINKS.map(({ href, labelKey }) => (
-                                    <Link
-                                        key={href}
-                                        href={href}
-                                        // 헤더 네비와 같은 목적지(/market·/news·/economy)를
-                                        // 랜딩에서 한 번 더 노출한다. prefetch를 켜두면 같은
-                                        // 목적지에 대해 진입 경로별로 다른 `_rsc` 키가 또
-                                        // 쌓인다 (docs/architecture/CDN_CACHING.md §1).
-                                        prefetch={false}
-                                        className="inline-flex items-center gap-1 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300"
-                                    >
-                                        {tNav(labelKey)}{' '}
-                                        <span aria-hidden="true">→</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <HomeHero
+                        locale={locale}
+                        copy={{
+                            aiTeaser: t('page.aiTeaser'),
+                            eyebrow: t('page.c26658'),
+                            headline: t('page.2f20c8'),
+                            intro: t('page.eafd49', {
+                                v0: skillCounts.indicators,
+                            }),
+                            introTail: t('page.79bd8f'),
+                        }}
+                        quickLinks={HERO_QUICK_LINKS.map(
+                            ({ href, labelKey }) => ({
+                                href,
+                                label: tNav(labelKey),
+                            })
+                        )}
+                    />
                     {/* 내 관심종목 — 히어로(검색) 바로 아래, StatsBar 위. 담기는 아래 인기 종목
                         알약의 ★가 맡고, 이 카드는 담은 종목·최근 본 종목의 시세를 보여 준다.
                         클라이언트 아일랜드라 서버 HTML에는 자리표시자만 있다 — 크롤러가 따라갈
@@ -411,42 +173,17 @@ export default async function Home({
                         <HomeWatchlistCard />
                     </div>
                     <div className="relative mt-10">
-                        {/* 위에서 이미 읽은 `skillCounts`(히어로 카피와 같은 소스)를 그대로 쓴다 —
-                            종목 페이지의 진행 문구·가입 업셀과 같은 수를 말한다. */}
+                        {/* 히어로 카피와 같은 `skillCounts`를 쓴다 — 종목 페이지의 진행 문구·가입
+                            업셀과 같은 수를 말한다. */}
                         <StatsBar counts={skillCounts} />
                     </div>
                 </section>
                 <section className="page-container pb-8">
-                    {/*
-                        백테스팅은 이 제품이 "믿을 만한가"에 답하는 유일한 실증인데
-                        회색 스트립에 12px 보조 텍스트로 묻혀 있었다. AI 분석의
-                        신뢰도가 곧 제품 가치이므로, 질문을 제목 크기로 올리고
-                        액센트 보더로 한 번 짚는다. 문구는 그대로 둔다.
-                    */}
-                    <div
-                        className={cn(
-                            SURFACE_CARD,
-                            'flex flex-col items-center gap-4 border-l-2 border-l-primary-500 px-6 py-6 text-center sm:flex-row sm:justify-between sm:text-left'
-                        )}
-                    >
-                        <div>
-                            <p className="text-lg font-semibold text-secondary-100">
-                                {t('page.dfbacd')}
-                            </p>
-                            <p className="mt-1 text-sm leading-relaxed text-secondary-400">
-                                {t('page.167f34')}
-                            </p>
-                        </div>
-                        <Link
-                            href="/backtesting"
-                            // 랜딩은 트래픽이 가장 많은 페이지라 이 링크 하나가 대량의
-                            // 파편화된 `_rsc` 요청을 만든다 (CDN_CACHING.md §1).
-                            prefetch={false}
-                            className="shrink-0 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        >
-                            {t('page.ee41ec')}
-                        </Link>
-                    </div>
+                    <HomeBacktestingCta
+                        question={t('page.dfbacd')}
+                        body={t('page.167f34')}
+                        ctaLabel={t('page.ee41ec')}
+                    />
                 </section>
                 {/* 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다. */}
                 <SkillsShowcase skills={toSkillShowcaseItems(showcaseSkills)} />

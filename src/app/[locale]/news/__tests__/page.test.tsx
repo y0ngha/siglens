@@ -188,6 +188,21 @@ describe('/news hub page JSON-LD는', () => {
     });
 });
 
+describe('/news 미리보기가 전부 빈 렌더는', () => {
+    it('metadata의 noindex와 같은 판정으로 WebPage·BreadcrumbList 구조화데이터를 내지 않는다', async () => {
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+        const { container } = render(
+            await NewsHubPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
+
+        expect(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        ).toHaveLength(0);
+    });
+});
+
 /**
  * 가시 브레드크럼과 `BreadcrumbList` 마크업은 **같은 문자열**이어야 한다 —
  * 구글은 둘이 다르면 마크업을 무시하고, 그 어긋남은 화면에 표시가 나지 않는다.

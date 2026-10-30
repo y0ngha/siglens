@@ -1,4 +1,4 @@
-import { AUTH_SESSION_COOKIE_NAME } from '@/entities/auth/lib/sessionCookie';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';

@@ -16,8 +16,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
  * `?symbol=`(`PositionCta`·옛 `/onboarding?symbol=` 리다이렉트가 싣고 온 종목)은 `next`에 그대로
  * 실어 보낸다 — 안 그러면 클릭 의도가 가입/로그인 홉에서 사라진다.
  * 서버 스냅샷은 null이라 정적 HTML은 심볼 없는 링크이고, 하이드레이션 직후 심볼이 붙는다.
- * 로그인 링크는 세션이 만료된
- * 기존 회원이 가입 화면으로 잘못 가지 않게 하는 출구이기도 하다.
+ * 로그인 링크는 세션이 만료된 기존 회원이 가입 화면으로 잘못 가지 않게 하는 출구이기도 하다.
  */
 export function PortfolioSignupCta() {
     const t = useTranslations('features.portfolio-management');

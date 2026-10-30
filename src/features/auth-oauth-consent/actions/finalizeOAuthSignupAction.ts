@@ -27,7 +27,7 @@ import {
 } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import {
     createPendingOAuthSignupStoreFromEnv,
     type PendingOAuthSignup,

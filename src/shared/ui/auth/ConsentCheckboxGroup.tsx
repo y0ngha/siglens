@@ -28,7 +28,7 @@ interface ConsentRowProps {
 
 interface CheckboxBoxProps {
     checked: boolean;
-    /** Omitted for individual consent items; used by the master checkbox to signal "some but not all checked". */
+    /** 개별 동의 항목에서는 생략한다. 마스터 체크박스가 "일부만 체크됨"을 나타낼 때만 쓴다. */
     indeterminate?: boolean;
     invalid: boolean;
     inputProps: React.InputHTMLAttributes<HTMLInputElement>;
@@ -151,9 +151,9 @@ function ConsentRow({
                 target="_blank"
                 rel="noopener noreferrer"
                 // `/privacy`·`/terms`로 가는 링크 — 회원가입·OAuth 동의 화면마다 렌더된다.
-                // `_rsc` 해시가 진입 경로마다 달라 캐시가 파편화되므로 prefetch를 끈다
-                // (docs/architecture/CDN_CACHING.md §1). `target="_blank"`라 어차피 새 탭
-                // 문서 요청으로 열리고, prefetch한 RSC 페이로드는 쓰이지도 않는다.
+                // `_rsc` 해시가 진입 경로마다 달라 캐시가 파편화되므로 prefetch를 끈다.
+                // `target="_blank"`라 어차피 새 탭 문서 요청으로 열리고, prefetch한 RSC
+                // 페이로드는 쓰이지도 않는다.
                 prefetch={false}
                 aria-label={detailLabel}
                 onClick={e => e.stopPropagation()}

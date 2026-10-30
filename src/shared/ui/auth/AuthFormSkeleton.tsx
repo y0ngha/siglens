@@ -11,9 +11,8 @@ interface AuthFormSkeletonProps {
  * 쿼리 의존부(폼)가 hydration 후 CSR로 채워지는 동안의 빈 화면 깜빡임을
  * 폼 레이아웃 높이를 근사한 스켈레톤으로 덮어 CLS를 최소화한다.
  *
- * 이 스켈레톤은 `AuthCardShell`의 **카드 위**에 놓인다. 한때 `bg-secondary-800`
- * 이었는데 그 값이 곧 카드 표면이라 1.00:1로 아무것도 안 보였다 — 로그인·가입·
- * 비밀번호 재설정의 로딩 화면이 통째로 빈 카드였다. 표면에 맞는 자리표시자
+ * 이 스켈레톤은 `AuthCardShell`의 **카드 위**에 놓인다. 카드 표면과 같은
+ * `bg-secondary-800`은 1.00:1이라 아무것도 보이지 않으므로, 표면에 맞는 자리표시자
  * 토큰을 쓴다(카드 면 위 1.218:1 다크 / 1.175:1 라이트 — `surfaceStyles.ts` 표).
  */
 export function AuthFormSkeleton({ rows = 2 }: AuthFormSkeletonProps) {

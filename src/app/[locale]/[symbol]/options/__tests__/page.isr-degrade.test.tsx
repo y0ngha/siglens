@@ -30,7 +30,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn(),
 }));
@@ -52,7 +52,7 @@ vi.mock('@/widgets/options/OptionsEmptyState', () => ({
         <section data-testid="options-empty-state" data-symbol={symbol} />
     ),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
@@ -103,7 +103,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

@@ -20,7 +20,7 @@ import {
     DrizzleUserRepository,
 } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
