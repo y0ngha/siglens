@@ -1,148 +1,37 @@
 import { getTranslations } from 'next-intl/server';
-import { countSkillFiles } from '@/entities/skill/api';
-import { resolveLocale } from '@/shared/i18n/locales';
-import {
-    localeAlternatesFrom,
-    localeOpenGraph,
-    localePageRobots,
-} from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import {
-    ABOUT_PATH,
-    ABOUT_UPDATED_AT,
-    aboutDescription,
-    aboutFullTitle,
-    aboutTitle,
-    formatKoreanDate,
-    OPERATOR_PERSON_JSON_LD_ID,
-    OPERATOR_SAME_AS,
-    SITE_OPERATOR,
-} from '@/shared/lib/legal';
-import {
-    buildBreadcrumbJsonLd,
-    buildFaqJsonLd,
-    buildWebPageJsonLd,
-    ORGANIZATION_JSON_LD_ID,
-    SITE_URL,
-    localizedAbsoluteUrl,
-} from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import type { SeoTranslator } from '@/shared/lib/seo';
-import type { Locale } from '@/shared/i18n/locales';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { countSkillFiles } from '@/entities/skill/api';
 import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import {
+    aboutTitle,
+    ABOUT_UPDATED_AT,
+    formatKoreanDate,
+} from '@/shared/lib/legal';
+import { buildFaqJsonLd } from '@/shared/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { AboutPage } from '@/views/about/AboutPage';
 import {
     EMPTY_SKILL_COUNTS,
     getAboutFaq,
 } from '@/views/about/lib/aboutContent';
-import { enterLocale } from '@/shared/lib/enterLocale';
-import { brandName } from '@/shared/lib/brandName';
+import {
+    buildAboutBreadcrumbJsonLd,
+    buildAboutJsonLd,
+    buildAboutPersonJsonLd,
+} from '@/app/[locale]/about/_lib/aboutJsonLd';
+import { buildAboutMetadata } from '@/app/[locale]/about/_lib/aboutMetadata';
 
-const PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
-
-// terms/privacy와 동일한 근거(§terms/page.tsx `revalidate` 주석) — 본문이
-// 메시지 카탈로그라 배포 자체가 갱신이므로, 하루 재검증이면 충분하다.
+// 본문이 메시지 카탈로그와 코드 상수라 배포 자체가 갱신이므로, 하루 재검증이면 충분하다
+// (`/methodology`·`/terms`·`/privacy`와 같은 근거). 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).
 export const revalidate = 86400;
-
-/**
- * `buildWebPageJsonLd`는 8개 심볼 페이지가 공유하는 범용 WebPage 노드를
- * 만든다. 여기서는 스프레드 뒤에 `@type`을 `AboutPage`로 덮어써 좁히고,
- * `mainEntity`로 홈 `Organization`(`ORGANIZATION_JSON_LD_ID`)을 가리킨다 —
- * 이 문서가 그 조직에 대한 소개 문서임을 명시한다. `dateModified`는 화면
- * 하단의 "마지막 업데이트"와 같은 `ABOUT_UPDATED_AT`이다.
- */
-function buildAboutJsonLd(
-    t: SeoTranslator,
-    locale: Locale
-): Record<string, unknown> {
-    return {
-        ...buildWebPageJsonLd({
-            url: PAGE_URL,
-            name: aboutFullTitle(t),
-            description: aboutDescription(t),
-            locale,
-        }),
-        '@type': 'AboutPage',
-        mainEntity: { '@id': ORGANIZATION_JSON_LD_ID },
-        dateModified: ABOUT_UPDATED_AT.toISOString(),
-    };
-}
-
-/**
- * `@id`가 홈 `Organization.founder`(`app/[locale]/(home)/_lib/homeJsonLdNodes.ts`)와 문자
- * 그대로 같아야 두 노드를 같은 개체로 크롤러가 묶는다 — 둘 다
- * `OPERATOR_PERSON_JSON_LD_ID` 상수를 공유해 오타로 갈릴 여지를 없앤다.
- */
-function buildAboutPersonJsonLd(): Record<string, unknown> {
-    return {
-        '@context': 'https://schema.org',
-        '@type': 'Person',
-        '@id': OPERATOR_PERSON_JSON_LD_ID,
-        name: SITE_OPERATOR.name,
-        email: `mailto:${SITE_OPERATOR.email}`,
-        url: `${SITE_URL}${ABOUT_PATH}`,
-        sameAs: OPERATOR_SAME_AS,
-        affiliation: { '@id': ORGANIZATION_JSON_LD_ID },
-    };
-}
-
-function buildAboutBreadcrumbJsonLd(
-    t: SeoTranslator,
-    locale: Locale
-): Record<string, unknown> {
-    return buildBreadcrumbJsonLd(
-        [{ name: aboutTitle(t), url: PAGE_URL }],
-        locale
-    );
-}
-
-interface LocaleMetadataParams {
-    readonly params: Promise<{ locale: string }>;
-}
 
 export async function generateMetadata({
     params,
-}: LocaleMetadataParams): Promise<Metadata> {
-    const { locale: rawLocale } = await params;
-    const locale = resolveLocale(rawLocale);
-    const tSeo = await getTranslations({
-        locale,
-        namespace: 'shared.seo',
-    });
-    const ogLocale = localeOpenGraph(locale);
-    return {
-        // 메타 타이틀은 이미 브랜드(ko는 `시그렌즈(SIGLENS)`)로 시작한다.
-        // 레이아웃 템플릿(ko `%s | 시그렌즈`)을 타면 브랜드가 두 번 붙어 SERP 폭만
-        // 먹으므로 `absolute`로 끊는다.
-        title: { absolute: aboutFullTitle(tSeo) },
-        description: aboutDescription(tSeo),
-        robots: localePageRobots(locale),
-        alternates: await localeAlternatesFrom(params, ABOUT_PATH),
-        openGraph: {
-            type: 'article',
-            siteName: brandName(locale),
-            title: aboutFullTitle(tSeo),
-            description: aboutDescription(tSeo),
-            url: localizedAbsoluteUrl(PAGE_URL, locale),
-            ...ogLocale,
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: aboutFullTitle(tSeo),
-                },
-            ],
-        },
-        twitter: buildTwitterMetadata({
-            card: 'summary',
-            title: aboutFullTitle(tSeo),
-            description: aboutDescription(tSeo),
-            images: ['/og-image.png'],
-        }),
-    };
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    return buildAboutMetadata(params);
 }
 
 export default async function AboutRoute({
@@ -152,15 +41,12 @@ export default async function AboutRoute({
 }) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
-    const tSeo = await getTranslations({
-        locale,
-        namespace: 'shared.seo',
-    });
 
     // countSkillFiles 오류는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/_lib/homeSkills.ts와 동일 근거).
     // FAQ는 화면 FaqSection과 FAQPage JSON-LD의 단일 소스 — 두 번 만들지 않는다.
-    const [counts, faq] = await Promise.all([
+    const [tSeo, counts, faq] = await Promise.all([
+        getTranslations({ locale, namespace: 'shared.seo' }),
         countSkillFiles().catch(e => {
             console.error('[AboutPage] countSkillFiles failed:', e);
             return EMPTY_SKILL_COUNTS;
