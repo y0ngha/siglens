@@ -81,6 +81,8 @@ export function daysToExpirationFrom(
     expirationDate: string,
     now: Date
 ): number {
+    // 만기일은 UTC 자정, 기준일(`refNoon`)은 UTC 정오라 차이가 항상 (N − 0.5)일이고
+    // `Math.round`가 이를 N으로 올린다. 그래서 두 변수 이름의 자정/정오 구분은 의도된 것이다.
     const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
     const refNoon = etNoonUtc(now);
     return Math.max(
