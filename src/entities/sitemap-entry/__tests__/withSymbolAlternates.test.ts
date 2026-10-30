@@ -1,6 +1,7 @@
 import { SITE_URL } from '@/shared/lib/seo';
 
 import type { SitemapEntry } from '../model';
+import { withSymbolAlternates } from '../lib/withSymbolAlternates';
 
 const mocks = vi.hoisted(() => ({ locales: ['ko'] as string[] }));
 
@@ -9,8 +10,6 @@ vi.mock('@/shared/i18n/indexableLocales', () => ({
         return mocks.locales;
     },
 }));
-
-import { withSymbolAlternates } from '../lib/withSymbolAlternates';
 
 const ENTRY: SitemapEntry = {
     url: `${SITE_URL}/AAPL/news`,

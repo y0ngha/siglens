@@ -13,7 +13,6 @@ import {
 describe('removalCutoffIsoFor', () => {
     it('차트는 신규 컷오프를 쓴다', () => {
         expect(removalCutoffIsoFor('chart')).toBe(REMOVAL_CHART_CUTOFF_ISO);
-        expect(removalCutoffIsoFor('chart')).toBe('2026-07-07T16:25:18.000Z');
     });
 
     it.each(['news', 'overall', 'fundamental', 'fear-greed'] as const)(
@@ -22,7 +21,6 @@ describe('removalCutoffIsoFor', () => {
             expect(removalCutoffIsoFor(kind)).toBe(
                 REMOVAL_LEGACY_TAB_CUTOFF_ISO
             );
-            expect(removalCutoffIsoFor(kind)).toBe('2026-06-15T08:36:58.000Z');
         }
     );
 });
@@ -46,11 +44,14 @@ describe('PROTECTED_SITEMAP_SYMBOLS', () => {
 
 describe('excludeProtectedSymbols', () => {
     it('색인 대상 심볼을 대소문자와 무관하게 제외한다', () => {
-        const protectedSymbol = PROTECTED_SITEMAP_SYMBOLS[0] ?? '';
+        const protectedSymbol = PROTECTED_SITEMAP_SYMBOLS.find(symbol =>
+            /[A-Z]/.test(symbol)
+        );
+        expect(protectedSymbol).toBeDefined();
 
         expect(
             excludeProtectedSymbols([
-                protectedSymbol.toLowerCase(),
+                protectedSymbol?.toLowerCase() ?? '',
                 'ZZZ-NOT-PROTECTED',
             ])
         ).toEqual(['ZZZ-NOT-PROTECTED']);

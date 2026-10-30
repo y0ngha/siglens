@@ -2,6 +2,7 @@ import {
     deserializePopularSitemapInputs,
     serializePopularSitemapInputs,
     type FreshSnapshotRow,
+    type SerializedPopularSitemapInputs,
 } from '../lib/popularSnapshotCache';
 
 const AT = new Date('2026-10-03T02:00:00.000Z');
@@ -44,14 +45,13 @@ describe('serializePopularSitemapInputs', () => {
 
 describe('deserializePopularSitemapInputs', () => {
     it('JSON 왕복 뒤에도 Map<string, Date>로 복원한다', () => {
-        const serialized: unknown = JSON.parse(
-            JSON.stringify(serializePopularSitemapInputs([row({})]))
+        const serialized = serializePopularSitemapInputs([row({})]);
+        const roundTripped: SerializedPopularSitemapInputs = JSON.parse(
+            JSON.stringify(serialized)
         );
-        const restored = deserializePopularSitemapInputs(
-            serializePopularSitemapInputs([row({})])
-        );
+        const restored = deserializePopularSitemapInputs(roundTripped);
 
-        expect(serialized).toEqual({
+        expect(roundTripped).toEqual({
             snapshotGeneratedAt: [['AAPL:technical', AT.toISOString()]],
         });
         expect(restored.snapshotGeneratedAt?.get('AAPL:technical')).toEqual(AT);

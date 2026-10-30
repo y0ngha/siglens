@@ -1,4 +1,7 @@
-import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import {
+    ALL_NAV_REGION_LINKS,
+    type NavRegionId,
+} from '@/shared/config/assetClassNav';
 
 import type { SitemapEntry } from '../model';
 import { staticSitemapEntry } from './staticSitemapEntry';
@@ -19,27 +22,34 @@ const isMarketLink = (link: NavRegionLink): boolean =>
     link.href.startsWith('/market');
 
 /**
+ * 봉이 입력인 페이지(`/market*`·`/fear-greed*`)의 지역별 lastmod 근거. 거래소가 다르므로
+ * 지역마다 다르다. 암호화폐는 24시간 거래라 세션 달력이 없다 — 지수는 마지막으로 닫힌
+ * UTC 일의 봉까지 먹으므로(`fetchCryptoDailyBars`) 그 날이 닫힌 순간, 곧 오늘 UTC 자정이
+ * 마지막 변경 시각이다. `Record`라 지역을 하나 더 열면 여기서 컴파일 오류로 잡힌다.
+ */
+const SESSION_BASIS_BY_REGION: Record<
+    NavRegionId,
+    keyof RegionLastModifiedBasis
+> = {
+    us: 'lastUsSessionClose',
+    kr: 'lastKrSessionClose',
+    crypto: 'todayUtc',
+};
+
+/**
  * 등급은 버티컬 성격을 따른다: `/market*`·`/fear-greed*`는 봉이 입력이라 직전 마감
  * (거래소가 다르므로 지역별로), `/economy*`는 하루 주기.
  */
 function lastModifiedFor(
     link: NavRegionLink,
-    {
-        todayUtc,
-        lastUsSessionClose,
-        lastKrSessionClose,
-    }: RegionLastModifiedBasis
+    basis: RegionLastModifiedBasis
 ): Date {
     if (!isMarketLink(link) && !link.href.startsWith('/fear-greed')) {
         // `/economy*`는 지표가 하루 주기로 갱신된다(페이지 FAQ가 그렇게 밝힌다).
         // 배포 시각을 쓰면 하루에 세 번 배포한 날 세 번 "바뀌었다"고 주장하게 된다.
-        return todayUtc;
+        return basis.todayUtc;
     }
-    // 암호화폐는 24시간 거래라 세션 달력이 없다. 지수는 마지막으로 닫힌 UTC 일의
-    // 봉까지 먹으므로(`fetchCryptoDailyBars`) 그 날이 닫힌 순간, 곧 오늘 UTC 자정이
-    // 마지막 변경 시각이다.
-    if (link.region === 'crypto') return todayUtc;
-    return link.region === 'kr' ? lastKrSessionClose : lastUsSessionClose;
+    return basis[SESSION_BASIS_BY_REGION[link.region]];
 }
 
 /**

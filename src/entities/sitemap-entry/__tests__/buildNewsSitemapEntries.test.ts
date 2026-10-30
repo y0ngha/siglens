@@ -1,7 +1,13 @@
-import { MS_PER_HOUR } from '@/shared/config/time';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+import { MS_PER_HOUR, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 
-import { buildNewsSitemapEntries } from '../lib/buildNewsSitemapEntries';
+import {
+    NEWS_PAGE_MAX_STALENESS_HOURS,
+    buildNewsSitemapEntries,
+} from '../lib/buildNewsSitemapEntries';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 const FALLBACK = new Date('2026-05-23T00:00:00.000Z');
@@ -85,5 +91,23 @@ describe('buildNewsSitemapEntries', () => {
 
         expect(result.usLastModified).toBe(stockAt);
         expect(result.hubLastModified).toBe(cryptoAt);
+    });
+});
+
+describe('NEWS_PAGE_MAX_STALENESS_HOURS', () => {
+    it('뉴스 카테고리 페이지의 revalidate 리터럴과 같은 길이다', () => {
+        const pageSource = readFileSync(
+            path.resolve(
+                __dirname,
+                '../../../app/[locale]/news/[category]/page.tsx'
+            ),
+            'utf8'
+        );
+        const declared = /^export const revalidate = (\d+);/m.exec(pageSource);
+
+        expect(declared).not.toBeNull();
+        expect(Number(declared?.[1])).toBe(
+            NEWS_PAGE_MAX_STALENESS_HOURS * SECONDS_PER_HOUR
+        );
     });
 });

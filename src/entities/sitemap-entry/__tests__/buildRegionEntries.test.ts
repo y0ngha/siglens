@@ -1,4 +1,7 @@
-import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import {
+    ALL_NAV_REGION_LINKS,
+    type NavRegionId,
+} from '@/shared/config/assetClassNav';
 import { SITE_URL } from '@/shared/lib/seo';
 
 import { buildRegionEntries } from '../lib/buildRegionEntries';
@@ -15,10 +18,20 @@ describe('buildRegionEntries', () => {
         entries.find(entry => entry.url === `${SITE_URL}${href}`);
 
     it('뉴스 지역 링크는 싣지 않는다 — 카테고리 엔트리와 URL이 겹친다', () => {
-        for (const link of ALL_NAV_REGION_LINKS) {
-            expect(entryOf(link.href) === undefined).toBe(
-                link.href.startsWith('/news/')
-            );
+        const isNews = (href: string): boolean => href.startsWith('/news/');
+        const newsLinks = ALL_NAV_REGION_LINKS.filter(link =>
+            isNews(link.href)
+        );
+        const otherLinks = ALL_NAV_REGION_LINKS.filter(
+            link => !isNews(link.href)
+        );
+
+        expect(newsLinks.length).toBeGreaterThan(0);
+        for (const link of newsLinks) {
+            expect(entryOf(link.href), link.href).toBeUndefined();
+        }
+        for (const link of otherLinks) {
+            expect(entryOf(link.href), link.href).toBeDefined();
         }
     });
 
@@ -53,7 +66,7 @@ describe('buildRegionEntries', () => {
                 link.href.startsWith('/market') ||
                 link.href.startsWith('/fear-greed')
         );
-        const expectedByRegion: Record<string, Date> = {
+        const expectedByRegion: Record<NavRegionId, Date> = {
             kr: BASIS.lastKrSessionClose,
             crypto: BASIS.todayUtc,
             us: BASIS.lastUsSessionClose,
