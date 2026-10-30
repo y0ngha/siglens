@@ -5364,7 +5364,6 @@
                 "e55475": "OI Data Delay"
             },
             "OverallContent": {
-                "0bb0bd": "An error occurred during analysis.",
                 "0c767c": "Retry",
                 "1c85d8": "An error occurred while preparing news card analysis.",
                 "8b7ae7": "AI Overall Analysis",
@@ -5385,15 +5384,14 @@
                 "99a89d": "Overall Summary"
             },
             "OverallTriggerCta": {
-                "2a1422": "Get AI conclusions integrating charts, options, fundamentals, news, and market sentiment.",
                 "51480a": "Get AI Overall Analysis",
                 "5f4a34": "Once individual news analysis is complete, you can automatically receive an overall analysis\n                    (usually takes 30 seconds to 1 minute).",
                 "8b7ae7": "AI Overall Analysis",
-                "ec0085": "Get AI conclusions integrating charts, news, and market sentiment.",
                 "ff9889": "Analyzing news cards..."
             },
             "ReanalyzeButton": {
-                "1d02c7": "Reanalyze"
+                "1d02c7": "Reanalyze",
+                "pending": "Reanalyzing…"
             },
             "RiskFactors": {
                 "af0480": "Risk Factors",
@@ -5409,7 +5407,12 @@
                 "938737": "Technical Analysis Summary",
                 "6d957a": "Technical Analysis Items"
             },
-            "axisFailed": " ({v0} axis failed)"
+            "axisFailed": " ({v0} axis failed)",
+            "ctaSubtitle": {
+                "crypto": "Get AI conclusions integrating charts, news, and market sentiment.",
+                "equity": "Get AI conclusions integrating charts, options, fundamentals, news, and market sentiment.",
+                "equityNoOptions": "Get AI conclusions integrating charts, fundamentals, news, and market sentiment."
+            }
         },
         "portfolio-position": {
             "PositionBuilding": {
