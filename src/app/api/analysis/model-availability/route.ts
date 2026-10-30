@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listDisabledServerKeyModels } from '@/entities/llm-provider/lib/serverKeyKillSwitch';
+import { listDisabledServerKeyModels } from '@/entities/llm-provider/api/serverKeyKillSwitch';
 import type { ModelAvailabilityResponse } from '@/shared/lib/modelAvailability';
 
 // 런타임 env를 읽으므로 빌드 시점에 굳으면 안 된다. 캐시는 아래 `Cache-Control`로 CDN이 맡는다.

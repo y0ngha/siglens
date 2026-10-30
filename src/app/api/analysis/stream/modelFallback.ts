@@ -1,6 +1,6 @@
 import 'server-only';
 import type { ModelId } from '@y0ngha/siglens-core';
-import { resolveServableModelId } from '@/entities/llm-provider/lib/serverKeyKillSwitch';
+import { resolveServableModelId } from '@/entities/llm-provider/api/serverKeyKillSwitch';
 import { isRosterModelId } from '@/shared/lib/modelAvailability';
 import {
     MODEL_FALLBACK_FIELD,
