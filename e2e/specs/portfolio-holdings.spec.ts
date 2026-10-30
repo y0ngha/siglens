@@ -2,21 +2,20 @@ import { test, expect } from '../support/fixtures';
 import type { Locator, Page } from '@playwright/test';
 
 /**
- * Authed Tier 2 spec — exercises the "Portfolio Holdings Foundation" CRUD
- * (docs/superpowers/specs/2026-07-17-portfolio-holdings-foundation-design.md)
- * end to end against the real local Postgres:
+ * Authed Tier 2 spec — exercises the portfolio holdings CRUD end to end
+ * against the real local Postgres:
  *   - the /portfolio management section (features/portfolio-management/PortfolioSection,
- *     wrapped by app/[locale]/portfolio/PortfolioManager) — moved off /account,
- *     which no longer has an add/edit/delete form (PR #883)
+ *     wrapped by app/[locale]/portfolio/_components/PortfolioManager) — the only
+ *     add/edit/delete form for holdings (/account has none)
  *   - the symbol-page header chip (features/portfolio-holding/PortfolioChip +
  *     PortfolioChipPopover), which reads the SAME React Query list cache
  *     (entities/portfolio usePortfolioHoldings, key ['portfolio-holdings']) —
  *     invalidated on every save/delete so both surfaces reflect one truth.
  *
  * Runs in the `authed` Playwright project (shared storageState, the seeded
- * e2e-auth-user) — playwright.config.ts's ACCOUNT_SPECS routing regex was
- * extended to also match this filename so both surfaces get a real session
- * without a UI login round-trip.
+ * e2e-auth-user) — playwright.config.ts's ACCOUNT_SPECS routing regex matches
+ * this filename so both surfaces get a real session without a UI login
+ * round-trip.
  *
  * Symbol choice — AAPL only: it is the ONE ticker seeded into
  * asset_translations (e2e/setup/seed.ts), so savePortfolioHoldingAction's

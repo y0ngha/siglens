@@ -11,7 +11,7 @@ import type { EnumLabelTranslator } from './enumLabelTranslator';
  * `messages/_meta/clientKeys.json`에 이 네임스페이스가 안 실린다 — 런타임
  * `MISSING_MESSAGE`로만 드러난다. 그런 소비자는 이 맵을 직접 import해
  * `t(SENTIMENT_LABEL_KEY[value])`로 **그 파일 안에서 직접 호출**한다
- * (`MarketNewsCard`/`MarketNewsDigest`/`EconomicCalendarGrid` 참고).
+ * (`MarketNewsCard`/`MarketNewsDigest`/경제 캘린더의 `DayEventItem` 참고).
  */
 export const SENTIMENT_LABEL_KEY: Record<NewsSentiment, string> = {
     bullish: 'sentiment.bullish',

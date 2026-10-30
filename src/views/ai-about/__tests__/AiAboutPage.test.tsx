@@ -78,6 +78,9 @@ describe('AiAboutPage', () => {
         expect(region).toHaveTextContent('삼성전자 요즘 흐름 어때?');
         expect(region).toHaveTextContent('71,800원');
         expect(region).toHaveTextContent('기준 2026-09-18 종가');
+        expect(region).toHaveTextContent(
+            '종목 검색, 시세, 차트와 지표 및 시그렌즈 분석 확인, 3.0초'
+        );
         // Markup tags are parsed, never shown as text.
         expect(region.textContent).not.toMatch(/<\/?(b|up|down)>/);
     });

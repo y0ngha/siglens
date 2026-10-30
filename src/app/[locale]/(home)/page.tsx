@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
-import { HERO_QUICK_LINKS } from '@/widgets/home/heroQuickLinks';
+import { HERO_QUICK_LINKS } from '@/widgets/home/utils/heroQuickLinks';
 import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
 import { StatsBar } from '@/widgets/home/StatsBar';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
-import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
+import { toSkillShowcaseItems } from '@/widgets/home/utils/toSkillShowcaseItems';
 import { HomeWatchlistCard } from '@/features/watchlist/ui/HomeWatchlistCard';
 import { RSS_ALTERNATE_TYPES } from '@/shared/config/rssFeed';
 import { DEFAULT_LOCALE, resolveLocale } from '@/shared/i18n/locales';

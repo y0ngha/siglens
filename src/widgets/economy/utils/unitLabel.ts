@@ -1,3 +1,6 @@
+/**
+ * 지표 값·변화량 단위의 로케일 표시 해석.
+ */
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 /**

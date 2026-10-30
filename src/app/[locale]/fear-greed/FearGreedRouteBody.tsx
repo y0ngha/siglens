@@ -1,31 +1,32 @@
 import { useTranslations } from 'next-intl';
-import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     CRYPTO_FEAR_GREED_FACTOR_KEYS,
     MARKET_FEAR_GREED_FACTOR_KEYS,
 } from '@y0ngha/siglens-core';
-import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { RegionTabs } from '@/shared/ui/RegionTabs';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
+import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
+import type { Locale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import {
     buildBreadcrumbJsonLd,
-    SITE_URL,
+    buildFaqJsonLd,
     buildWebPageJsonLd,
+    SITE_URL,
 } from '@/shared/lib/seo';
-import { type FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
-import { brandTitle } from '@/shared/lib/brandName';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
@@ -44,16 +45,6 @@ interface FearGreedRouteBodyProps {
 }
 
 /**
- * 미국·한국·암호화폐 공포·탐욕 라우트가 공유하는 본문.
- *
- * 두 페이지는 구조(지역 탭 → h1 → 설명 → 게이지·요인 → 읽는 법 → FAQ)가 완전히
- * 같고 문장만 다르다. 라우트마다 250줄을 복사하면 한쪽만 고쳐지는 순간
- * "읽는 법"이 실제 계산과 어긋나는데, 그건 화면상 아무 표시도 나지 않는다.
- * 문장은 `copy.ts`가, 구조는 여기가 소유한다.
- *
- * 서버 컴포넌트 — 활성 지역은 라우트가 알고 있으므로 `usePathname`이 필요 없다.
- */
-/**
  * "읽는 법"이 나열할 요인. 판독값이 없어도(표본 부족) 설명은 그대로 보여야 하므로
  * 스냅샷이 아니라 시장에서 정한다. 암호화폐는 요인 집합 자체가 다르다.
  */
@@ -63,6 +54,15 @@ const FACTOR_KEYS: Record<FearGreedMarketId, readonly string[]> = {
     crypto: CRYPTO_FEAR_GREED_FACTOR_KEYS,
 };
 
+/**
+ * 미국·한국·암호화폐 공포·탐욕 라우트가 공유하는 본문.
+ *
+ * 세 페이지는 구조(지역 탭 → h1 → 설명 → 게이지·요인 → 읽는 법 → FAQ → 종목 목록)가 같고
+ * 문장만 다르다. 라우트마다 복사하면 한쪽만 고쳐지는 순간 "읽는 법"이 실제 계산과
+ * 어긋나는데, 그건 화면상 아무 표시도 나지 않는다. 문장은 `copy.ts`가, 구조는 여기가 소유한다.
+ *
+ * 서버 컴포넌트 — 활성 지역은 라우트가 알고 있으므로 `usePathname`이 필요 없다.
+ */
 export function FearGreedRouteBody({
     market,
     view,
@@ -104,15 +104,8 @@ export function FearGreedRouteBody({
         locale
     );
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: copy.faq.map(({ question, answer }) => ({
-            '@type': 'Question',
-            name: question,
-            acceptedAnswer: { '@type': 'Answer', text: answer },
-        })),
-    };
+    // 화면 `<dl>`과 같은 배열(`copy.faq`)에서 만든다 — 두 벌이면 한쪽만 고쳐져 리치 결과 자격을 잃는다.
+    const faqJsonLd = buildFaqJsonLd(copy.faq);
 
     return (
         <>
@@ -219,8 +212,7 @@ export function FearGreedRouteBody({
                                     <Link
                                         href={`/${item.symbol}/fear-greed`}
                                         // 허브당 수백 개 링크 — prefetch가 붙으면 진입만으로
-                                        // 수백 개 `_rsc` 요청이 나간다
-                                        // (docs/architecture/CDN_CACHING.md §1).
+                                        // 수백 개 `_rsc` 요청이 나간다.
                                         prefetch={false}
                                         className="block truncate rounded text-sm text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >

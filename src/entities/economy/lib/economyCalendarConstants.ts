@@ -1,3 +1,5 @@
+import type { CalendarCountry } from '../model';
+
 import { SECONDS_PER_DAY, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /** revalidateTag 대상 — 캘린더 ISR 캐시만 무효화한다(스냅샷 캐시와 분리). */
@@ -47,20 +49,6 @@ export const CALENDAR_PAST_WINDOW_DAYS: Record<CalendarCountry, number> = {
  * 세 번 나눠 읽어야 하고, 전 국가 응답(조각당 ~1MB)이 시간마다 세 배가 된다.
  */
 export const CALENDAR_RECENT_PAST_DAYS = 30;
-
-/**
- * 캘린더를 수집·표시하는 국가 코드.
- *
- * `/economy`(미국)와 `/economy/kr`(한국)이 같은 `economic_calendar` 테이블을
- * `country` 컬럼으로 나눠 쓴다. FMP는 한 번의 호출로 전 국가를 돌려주고 우리가
- * 국가로 거른다.
- *
- * **왕복은 국가별로 따로 난다.** 매시간 창({@link CALENDAR_RECENT_PAST_DAYS} ~ 미래
- * {@link CALENDAR_INGESTION_WINDOW_DAYS}일)은 두 국가가 같지만 `fmpGet`에 데이터 캐시가 없어
- * 같은 전 국가 응답(~1MB)을 국가마다 한 번씩 받는다. 범위로 캐시해 두 국가가 나눠 쓰면 시간당
- * 한 번으로 줄일 수 있다(아직 하지 않았다). 한국만 쓰는 앞쪽 과거는 하루 한 번 따로 읽는다.
- */
-export type CalendarCountry = 'US' | 'KR';
 
 /** 'US' — 미국 경제 라우트가 쓰는 국가 코드. */
 export const CALENDAR_COUNTRY: CalendarCountry = 'US';
