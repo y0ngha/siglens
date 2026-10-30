@@ -15,6 +15,7 @@ export interface MemberNudgeRecord {
     lastSymbolNudgeAt: number | null;
 }
 
+/** 기록이 없거나 깨졌을 때 쓰는 빈 기록 — 아무 넛지도 띄운 적 없고 센 분석도 없다. */
 export const EMPTY_MEMBER_NUDGE_RECORD: MemberNudgeRecord = {
     setupShown: false,
     symbolCounts: {},
@@ -22,7 +23,9 @@ export const EMPTY_MEMBER_NUDGE_RECORD: MemberNudgeRecord = {
     lastSymbolNudgeAt: null,
 };
 
+/** {@link shouldShowSetupNudge}가 기록 밖에서 보는 회원의 현재 상태. */
 export interface SetupNudgeContext {
+    /** 이메일 인증 여부. 인증되지 않은 주소에는 리포트 메일이 나가지 않는다. */
     emailVerified: boolean;
     holdingsCount: number;
     /** 관심종목 수. 보유가 없어도 관심종목이 있으면 리포트 대상이다. */
@@ -49,8 +52,11 @@ export function shouldShowSetupNudge(
     );
 }
 
+/** {@link recordSymbolAnalysis}의 결과 — 호출자가 `record`를 저장하고 `shouldNudge`면 후보를 만든다. */
 export interface SymbolAnalysisOutcome {
+    /** 이번 분석을 센 기록(리포트 대상 안 종목이면 그대로). */
     record: MemberNudgeRecord;
+    /** 이번 분석으로 종목 넛지를 띄울 조건이 됐는지. */
     shouldNudge: boolean;
 }
 

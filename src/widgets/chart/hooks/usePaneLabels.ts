@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 보조 pane 좌상단에 지표 이름 라벨 DOM을 배치하고 갱신하는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';

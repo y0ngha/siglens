@@ -27,6 +27,8 @@ import type {
 // t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 호출에 재사용한다.
 let t: EnumLabelTranslator;
+/** 기본은 원본 이름 그대로 — 표시명 치환 자체는 별도 케이스가 검증한다. */
+const skillLabel = (name: string): string => name;
 beforeAll(async () => {
     t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
 });
@@ -149,6 +151,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('[AAPL] 기술적 분석 리포트');
@@ -198,6 +201,7 @@ describe('buildExpertAnalysisReport', () => {
                 poc: { price: 56_663, reason: 'POC' },
             },
             t,
+            skillLabel,
         });
 
         // 200,000–500,000원은 500원, 50,000–200,000원은 100원 단위.
@@ -225,6 +229,7 @@ describe('buildExpertAnalysisReport', () => {
                 analysis: baseAnalysis,
                 keyLevels: { resistance: [], support: [level] },
                 t,
+                skillLabel,
             });
 
         expect(build('etp')).toContain('40,125');
@@ -248,6 +253,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: analysisWithLongRiskReward,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain(
@@ -270,6 +276,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: bearishAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('보수적 관리가 더 적절합니다');
@@ -291,6 +298,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: bullishNoAction,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('지지 확인 이후의 분할 접근 여부를 검토');
@@ -311,6 +319,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: enterAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain(
@@ -335,6 +344,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: avoidAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain(
@@ -349,6 +359,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('목표 참고 구간:');
@@ -379,6 +390,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: analysisWithEmptyIndicator,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).not.toContain('should be filtered');
@@ -399,6 +411,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: onlyBearish,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('하방:');
@@ -433,6 +446,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: sparseAnalysis,
             keyLevels: sparseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('[TSLA] 기술적 분석 리포트');
@@ -468,6 +482,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: partialAnalysis,
             keyLevels: partialKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('[NVDA] 기술적 분석 리포트');
@@ -504,6 +519,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('무효화 기준: 199.40');
@@ -529,9 +545,101 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            skillLabel,
         });
 
         expect(result).toContain('진입 참고 구간: 205.80');
         expect(result).not.toContain('0.00, 205.80');
+    });
+    it('core가 레벨을 보정했으면 리스크 블록에 보정된 손익비를 싣는다', () => {
+        // 원본 riskReward는 core가 거부한 손절·목표 기준이라, 같은 리포트의
+        // 핵심 레벨 블록(보정값)과 모순된다.
+        const analysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                riskReward: 'R:R 1:3',
+                reconciledLevels: {
+                    stopLoss: 199.4,
+                    takeProfitPrices: [212.5],
+                    exit: '보정된 청산 전략',
+                    riskReward: 'R:R 1:0.8',
+                    reason: '손절가가 진입가 위에 있었습니다',
+                },
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'nvda',
+            analysis,
+            keyLevels: baseKeyLevels,
+            t,
+            skillLabel,
+        });
+
+        expect(result).toContain('R:R 1:0.8');
+        expect(result).not.toContain('R:R 1:3');
+    });
+
+    it('보정 손익비가 비어 있으면 AI 원본 손익비를 싣는다', () => {
+        const analysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                riskReward: 'R:R 1:3',
+                reconciledLevels: {
+                    stopLoss: 199.4,
+                    takeProfitPrices: [212.5],
+                    exit: '보정된 청산 전략',
+                    riskReward: '',
+                    reason: '목표가만 보정했습니다',
+                },
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'nvda',
+            analysis,
+            keyLevels: baseKeyLevels,
+            t,
+            skillLabel,
+        });
+
+        expect(result).toContain('R:R 1:3');
+    });
+
+    it('근거 블록은 스킬 표시명을 쓰고 패턴과 같은 이름의 전략·지표를 중복으로 싣지 않는다', () => {
+        const analysis: AnalysisResponse = {
+            ...baseAnalysis,
+            strategyResults: [
+                ...baseAnalysis.strategyResults,
+                {
+                    id: 'strategy-dup',
+                    strategyName: '상승 삼각형',
+                    trend: 'bullish',
+                    summary: '패턴과 이름이 같은 전략 요약',
+                    confidenceWeight: 0.5,
+                },
+            ],
+        };
+        const labels: Record<string, string> = {
+            '상승 삼각형': 'Ascending Triangle',
+        };
+
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'aapl',
+            analysis,
+            keyLevels: baseKeyLevels,
+            t,
+            skillLabel: name => labels[name] ?? name,
+        });
+
+        expect(result).toContain('- Ascending Triangle');
+        expect(result).not.toContain('- 상승 삼각형');
+        expect(result).not.toContain('패턴과 이름이 같은 전략 요약');
+        expect(result).toContain('- Breakout');
     });
 });

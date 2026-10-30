@@ -22,6 +22,7 @@ import { withRetry } from '@/shared/lib/withRetry';
 /** 메일 리포트 대상 등급 — 가입 회원 이상(무료 회원 포함). */
 const EMAIL_REPORT_TIERS = ['member', 'pro'] as const;
 
+/** 구독 행의 select 컬럼 — 조회·upsert 반환이 같은 `EmailReportSubscriptionRecord` 모양을 쓴다. */
 const columns = {
     userId: emailReportSubscriptions.userId,
     enabled: emailReportSubscriptions.enabled,
@@ -35,17 +36,17 @@ const columns = {
 };
 
 /**
- * Drizzle implementation of {@link EmailReportSubscriptionRepository}. One row
- * per user (`user_id` is the primary key), so `upsert` merges on it.
+ * {@link EmailReportSubscriptionRepository}의 Drizzle 구현. 회원당 한 행(`user_id`가 기본키)이라
+ * `upsert`는 그 키로 합친다. 모든 쿼리는 일시적 DB 오류에 한해 `withRetry`로 재시도한다.
  *
- * `consented_at` records the **last time the member turned delivery on**: an
- * upsert with `enabled = true` stamps it only when the stored row was off (or
- * absent). Re-saving an already-enabled subscription — changing the hour, say —
- * keeps the original consent time instead of silently moving it.
+ * `consented_at`은 **회원이 수신을 마지막으로 켠 시각**이다. `enabled = true` upsert는 저장돼 있던
+ * 행이 꺼져 있었거나(또는 없었을) 때만 이 값을 찍는다. 이미 켜진 구독을 다시 저장하면(예: 시각 변경)
+ * 동의 시각을 조용히 옮기지 않고 원래 값을 지킨다.
  */
 export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubscriptionRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /** 회원의 구독 행. 한 번도 저장하지 않았으면 `null`. */
     async findByUser(
         userId: string
     ): Promise<EmailReportSubscriptionRecord | null> {
@@ -61,6 +62,7 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
         return row ?? null;
     }
 
+    /** 설정을 저장하며, `consented_at` 규칙은 클래스 설명을 따른다. */
     async upsert(
         input: UpsertEmailReportSubscriptionInput
     ): Promise<EmailReportSubscriptionRecord> {
@@ -101,6 +103,7 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
         return row;
     }
 
+    /** 발송 cron의 대상 — 수신을 켠 구독 중 인증된 이메일을 가진 가입 회원 이상(무료 포함). */
     async findEnabledRecipients(): Promise<EmailReportRecipient[]> {
         return withRetry(
             () =>
@@ -131,6 +134,7 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
         );
     }
 
+    /** 수신을 끈다. 구독 행이 없으면 아무것도 바꾸지 않고 `false`. */
     async disable(userId: string): Promise<boolean> {
         const updated = await withRetry(
             () =>
@@ -146,15 +150,16 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
 }
 
 /**
- * Drizzle implementation of {@link EmailReportDeliveryRepository}.
+ * {@link EmailReportDeliveryRepository}의 Drizzle 구현.
  *
- * `claim` inserts first and lets the `(user_id, local_date)` unique index
- * decide — `ON CONFLICT DO NOTHING` returns no row for the loser, so two
- * overlapping cron runs can never both send the same member's report.
+ * `claim`은 먼저 삽입하고 `(user_id, local_date)` 유니크 인덱스가 승자를 정한다 —
+ * `ON CONFLICT DO NOTHING`은 진 쪽에 행을 돌려주지 않으므로, 겹쳐 도는 두 cron이 같은
+ * 회원의 리포트를 함께 보낼 수 없다. 모든 쿼리는 일시적 DB 오류에 한해 재시도한다.
  */
 export class DrizzleEmailReportDeliveryRepository implements EmailReportDeliveryRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /** 회원의 로컬 발송일 슬롯을 선점한다. 이미 누군가 잡았으면 `null`. */
     async claim(userId: string, localDate: string): Promise<string | null> {
         const [row] = await withRetry(
             () =>
@@ -173,6 +178,7 @@ export class DrizzleEmailReportDeliveryRepository implements EmailReportDelivery
         return row?.id ?? null;
     }
 
+    /** 선점한 발송 행에 결과(상태·실린 심볼·오류)를 기록한다. */
     async finish(
         id: string,
         outcome: EmailReportDeliveryOutcome,
@@ -194,6 +200,7 @@ export class DrizzleEmailReportDeliveryRepository implements EmailReportDelivery
         );
     }
 
+    /** `cutoff`보다 먼저 만들어진 발송 기록을 지우고 지운 행 수를 돌려준다. */
     async pruneOlderThan(cutoff: Date): Promise<number> {
         const deleted = await withRetry(
             () =>
@@ -208,12 +215,13 @@ export class DrizzleEmailReportDeliveryRepository implements EmailReportDelivery
 }
 
 /**
- * Drizzle implementation of {@link EmailReportExclusionRepository}. `(user_id, symbol)` is the
- * primary key, so a symbol is excluded at most once per member.
+ * {@link EmailReportExclusionRepository}의 Drizzle 구현. `(user_id, symbol)`이 기본키라
+ * 심볼은 회원당 최대 한 번만 제외된다. 모든 쿼리는 일시적 DB 오류에 한해 재시도한다.
  */
 export class DrizzleEmailReportExclusionRepository implements EmailReportExclusionRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /** 회원이 리포트에서 뺀 심볼 전부. */
     async findExcludedSymbols(userId: string): Promise<string[]> {
         const rows = await withRetry(
             () =>
@@ -269,6 +277,7 @@ export class DrizzleEmailReportExclusionRepository implements EmailReportExclusi
         );
     }
 
+    /** 뺀 심볼을 되돌린다. 뺀 적 없으면 `false`. */
     async includeSymbol(userId: string, symbol: string): Promise<boolean> {
         const deleted = await withRetry(
             () =>

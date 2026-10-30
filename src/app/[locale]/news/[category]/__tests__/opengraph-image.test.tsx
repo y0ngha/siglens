@@ -9,7 +9,7 @@ vi.mock('next/og', () => ({
         return {};
     }),
 }));
-vi.mock('@/entities/og-image/lib/loadOgFont', () => ({
+vi.mock('@/entities/og-image/server/loadOgFont', () => ({
     loadOgFont: vi.fn().mockResolvedValue(null),
 }));
 

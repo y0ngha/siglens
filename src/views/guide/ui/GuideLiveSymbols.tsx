@@ -8,7 +8,7 @@ import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
-import { SignalBadge } from '@/widgets/dashboard/SignalBadge';
+import { SignalBadge } from '@/widgets/dashboard/ui/signal/SignalBadge';
 import type {
     LiveMatch,
     LiveSymbolGroup,

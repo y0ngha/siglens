@@ -1,0 +1,274 @@
+import type { MockedFunction } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import {
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+    EMPTY_SNAPSHOT_MAX_POLLS,
+} from '@/shared/config/cardPollingConfig';
+import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+
+vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
+    getMarketNewsCardsAction: vi.fn(),
+}));
+vi.mock(
+    '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction',
+    () => ({
+        ensureMarketNewsCardsAnalyzedAction: vi.fn(),
+    })
+);
+vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
+    submitMarketNewsDigestAction: vi.fn(),
+}));
+
+const mockGetMarketNewsCardsAction = getMarketNewsCardsAction as MockedFunction<
+    typeof getMarketNewsCardsAction
+>;
+
+const ENRICHED_ITEM: MarketNewsCardItem = {
+    id: 'mn-1',
+    publishedAt: '2026-06-15T10:00:00.000Z',
+    titleEn: 'BTC hits record',
+    titleKo: 'BTC 신고가',
+    sentiment: 'bullish',
+    category: 'macro',
+    bodyKo: 'BTC가 신고가를 기록했습니다.',
+    summaryKo: 'BTC 강세.',
+    priceImpact: 'high',
+    url: 'https://example.com/btc',
+    source: 'CoinWire',
+    tickers: ['BTCUSD'],
+};
+
+const PENDING_ITEM: MarketNewsCardItem = {
+    ...ENRICHED_ITEM,
+    id: 'mn-pending',
+    sentiment: null,
+    priceImpact: null,
+    category: null,
+    bodyKo: null,
+    summaryKo: null,
+};
+
+/** Advance fake timers one poll interval at a time, flushing React commits via `act`. */
+async function advancePolls(count: number) {
+    for (let i = 0; i < count; i++) {
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+        });
+    }
+}
+
+/** 폴러가 `useQuery`로 돈다 — 테스트마다 새 QueryClient(캐시 공유 없음). */
+function makeQueryWrapper() {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return function QueryWrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+}
+
+describe('useMarketNewsCardPolling', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        mockGetMarketNewsCardsAction.mockReset();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('(a) 모든 카드가 enriched 상태가 되면 폴링을 멈춘다', async () => {
+        // First poll returns pending, second returns enriched.
+        mockGetMarketNewsCardsAction
+            .mockResolvedValueOnce({ ok: true, items: [PENDING_ITEM] })
+            .mockResolvedValue({ ok: true, items: [ENRICHED_ITEM] });
+
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('crypto', [PENDING_ITEM]),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        expect(result.current.isPolling).toBe(true);
+        expect(result.current.items).toEqual([PENDING_ITEM]);
+
+        // 마운트 조회(useQuery는 마운트 때 바로 한 번 조회한다) — still pending
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(result.current.items).toEqual([PENDING_ITEM]);
+        expect(result.current.isPolling).toBe(true);
+
+        // Second poll — all enriched → stops
+        await advancePolls(1);
+        expect(result.current.items).toEqual([ENRICHED_ITEM]);
+        expect(result.current.isPolling).toBe(false);
+        expect(result.current.pollError).toBeNull();
+    });
+
+    it('(b) 연속 실패 3회 후 폴링을 멈추고 pollError를 노출한다', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: false,
+            error: 'db unavailable',
+        });
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('stock', [ENRICHED_ITEM]),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        await advancePolls(MAX_CONSECUTIVE_FAILURES);
+
+        expect(result.current.isPolling).toBe(false);
+        expect(result.current.pollError).toBeInstanceOf(Error);
+        expect(result.current.pollError?.message).toBe('db unavailable');
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(
+            MAX_CONSECUTIVE_FAILURES
+        );
+
+        // Polling should not continue after failure cutoff.
+        await advancePolls(5);
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(
+            MAX_CONSECUTIVE_FAILURES
+        );
+
+        errorSpy.mockRestore();
+    });
+
+    it('실패 한 번 뒤 성공하면 pollError를 세팅하지 않고 폴링을 이어간다', async () => {
+        mockGetMarketNewsCardsAction
+            .mockResolvedValueOnce({ ok: false, error: 'transient' })
+            .mockResolvedValue({ ok: true, items: [PENDING_ITEM] });
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('stock', [PENDING_ITEM]),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(result.current.pollError).toBeNull();
+        await advancePolls(3);
+
+        expect(result.current.pollError).toBeNull();
+        expect(result.current.isPolling).toBe(true);
+
+        errorSpy.mockRestore();
+    });
+
+    it('빈 스냅샷 연속 20회 후 폴링을 멈춘다', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({ ok: true, items: [] });
+
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('general', []),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
+
+        expect(result.current.items).toEqual([]);
+        expect(result.current.isPolling).toBe(false);
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(
+            EMPTY_SNAPSHOT_MAX_POLLS
+        );
+    });
+
+    /**
+     * [회귀] 정체 종료는 순수 판정(당시 `pollMarketNewsCardsStep`, 지금 `decideCardListPoll`)만 테스트돼 있었고
+     * **훅의 배선**(`recordEnriched`/`getEnrichedCount`/`getStagnantPolls`)은
+     * 무커버리지였다 — 훅에서 정체 카운터를 못 올리게 만들어도 전건 통과한다
+     * (감사: 테스트 라운드 17). 그러면 기능이 통째로 죽은 채 초록이다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 접는다 — 훅 배선', async () => {
+        // 일부만 보강된 스냅샷이 계속 그대로다: 다른 종료 조건은 전부 죽어 있고
+        // (빈 스냅샷 아님, 전건 보강 아님, 실패 아님) 정체 종료만 남는다.
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM, PENDING_ITEM],
+        });
+
+        renderHook(() => useMarketNewsCardPolling('general', []), {
+            wrapper: makeQueryWrapper(),
+        });
+
+        await advancePolls(20);
+
+        // 리터럴로 고정한다 — 상수를 import해 단언하면 양변이 같이 움직인다.
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(12);
+    });
+
+    /**
+     * [회귀] 위 케이스는 1틱째에 보강되고 곧바로 멈추는 형상이라 정지 지점이 항상
+     * 하한이다 — "진전이 오면 정체 카운터를 0으로 되돌린다" 분기를 지워도 통과한다
+     * (감사: 코드 라운드 17). 진전이 늦게 오는 형상이라야 그 분기가 묶인다.
+     */
+    it('진전이 늦게 오면 그 시점부터 STAGNANT_POLL_LIMIT만큼 더 돈다', async () => {
+        let polls = 0;
+        mockGetMarketNewsCardsAction.mockImplementation(() => {
+            polls += 1;
+            if (polls < 13)
+                return Promise.resolve({ ok: true, items: [PENDING_ITEM] });
+            if (polls < 15)
+                return Promise.resolve({
+                    ok: true,
+                    items: [ENRICHED_ITEM, PENDING_ITEM],
+                });
+            return Promise.resolve({
+                ok: true,
+                items: [
+                    ENRICHED_ITEM,
+                    { ...ENRICHED_ITEM, id: 'enriched-2' },
+                    PENDING_ITEM,
+                ],
+            });
+        });
+
+        renderHook(() => useMarketNewsCardPolling('general', []), {
+            wrapper: makeQueryWrapper(),
+        });
+
+        await advancePolls(30);
+
+        // 마지막 진전이 15틱, 거기서 6틱 더 → 21틱에 정지.
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(21);
+    });
+
+    it('카테고리 변경 시 상태를 초기화하고 새 카테고리로 폴링한다', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM],
+        });
+
+        type Props = { category: 'crypto' | 'stock' };
+        const { result, rerender } = renderHook(
+            ({ category }: Props) => useMarketNewsCardPolling(category, []),
+            {
+                wrapper: makeQueryWrapper(),
+                initialProps: { category: 'crypto' } as Props,
+            }
+        );
+
+        await advancePolls(1);
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledWith('crypto');
+
+        rerender({ category: 'stock' });
+
+        expect(result.current.isPolling).toBe(true);
+        expect(result.current.pollError).toBeNull();
+    });
+});
