@@ -30,18 +30,14 @@ export function upcomingUnreportedDates(
 export function dedupeEarningsReportInputs(
     reports: EarningsReportUpsertInput[]
 ): EarningsReportUpsertInput[] {
-    const uniqueByKey = new Map<string, EarningsReportUpsertInput>();
-
-    for (const report of reports) {
+    const uniqueByKey = reports.reduce((acc, report) => {
         const key = toReportKey(report);
-        const existing = uniqueByKey.get(key);
-        if (
-            existing === undefined ||
+        const existing = acc.get(key);
+        return existing === undefined ||
             shouldReplaceReportInput(existing, report)
-        ) {
-            uniqueByKey.set(key, report);
-        }
-    }
+            ? acc.set(key, report)
+            : acc;
+    }, new Map<string, EarningsReportUpsertInput>());
 
     return Array.from(uniqueByKey.values());
 }

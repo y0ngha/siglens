@@ -59,7 +59,7 @@ const nextEarnings: EarningsCalendarItem = {
 };
 
 describe('getNextEarningsReport', () => {
-    // api.ts 내부에서 DrizzleEarningsReportsRepository를 같은 모듈로 직접 생성하므로
+    // api.ts가 DrizzleEarningsReportsRepository를 주입받지 않고 직접 `new`하므로
     // 모듈 모킹 대신 prototype 메서드를 spy한다(실제 DB 호출 없이 동작 검증).
     let getLatestFetchedAt: ReturnType<typeof vi.spyOn>;
     let upsertMany: ReturnType<typeof vi.spyOn>;
