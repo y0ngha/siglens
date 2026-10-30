@@ -25,7 +25,7 @@ import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
  * 이 포맷(연 숫자·월 이름·일 숫자) 옵션 조합을 브라우저 기대값과 직접 대조한다 —
  * 그래서 `formatToParts`로 재작성할 필요가 없다.
  */
-const SNAPSHOT_TIME_ZONE_BY_PROFILE: Record<MarketProfileId, string> = {
+export const SNAPSHOT_TIME_ZONE_BY_PROFILE: Record<MarketProfileId, string> = {
     'us-equity': 'America/New_York',
     'kr-equity': 'Asia/Seoul',
     crypto: 'UTC',

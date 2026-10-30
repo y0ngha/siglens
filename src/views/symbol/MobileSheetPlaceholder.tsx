@@ -1,10 +1,20 @@
 import type { CSSProperties } from 'react';
 import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
 
+interface MobileSheetPlaceholderProps {
+    /**
+     * 시트 제목. **번역은 호출부가 한다** — 이 컴포넌트를 `async`로 만들어
+     * `getTranslations`를 부르면 순수 컴포넌트가 아니게 되고, 그 순간
+     * 렌더 테스트가 next-intl 서버 컨텍스트를 요구한다. 문구 하나 때문에
+     * 치수·CSS 훅 계약을 검사하던 테스트를 통째로 비동기로 바꿀 이유가 없다.
+     */
+    label: string;
+}
+
 /**
  * 모바일 바텀시트의 **서버 렌더 껍데기**. 실제 vaul 시트가 마운트되기 전까지만 보인다.
  *
- * ## 왜 필요한가 (2026-08-20 실측)
+ * ## 왜 필요한가 (iPhone 390×844 / CPU 4배 스로틀 실측)
  *
  * 실제 시트(`MobileAnalysisSheet`)는 `dynamic(..., { ssr: false })`이고
  * `SymbolPageClient`의 `isHydrated && isMobileViewport` 게이트 뒤에 있다. 그래서
@@ -18,6 +28,10 @@ import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
  *  4,783ms  청크 도착 (다운로드는 190ms뿐)
  *  4,947ms  시트 등장
  * ```
+ *
+ * 재측정: Chrome DevTools Performance 패널에서 390×844 기기 에뮬레이션과 CPU 4× slowdown을
+ * 켜고 `/{symbol}` 첫 로드를 기록한 뒤, Network 트랙에서 `MobileAnalysisSheet` 청크의 요청
+ * 시작 시점을 본다.
  *
  * 네트워크가 아니라 **요청 시작까지의 4.6초**가 병목이다. 이 컴포넌트는 그 구간을
  * 시각적으로 메운다. 실제 시트는 `ssr: false`라 SSR HTML에 아무것도 남기지 않으므로
@@ -42,16 +56,6 @@ import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
  * 스크린리더에 동작하지 않는 컨트롤을 노출하지 않는다. 실제 시트가 뜨면 그쪽이
  * 접근성 트리를 담당한다.
  */
-interface MobileSheetPlaceholderProps {
-    /**
-     * 시트 제목. **번역은 호출부가 한다** — 이 컴포넌트를 `async`로 만들어
-     * `getTranslations`를 부르면 순수 컴포넌트가 아니게 되고, 그 순간
-     * 렌더 테스트가 next-intl 서버 컨텍스트를 요구한다. 문구 하나 때문에
-     * 치수·CSS 훅 계약을 검사하던 테스트를 통째로 비동기로 바꿀 이유가 없다.
-     */
-    label: string;
-}
-
 export function MobileSheetPlaceholder({ label }: MobileSheetPlaceholderProps) {
     return (
         <div

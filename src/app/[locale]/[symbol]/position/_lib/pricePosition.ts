@@ -7,12 +7,12 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     describeFloor,
     type PositionTranslator,
-} from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+} from '@/widgets/portfolio-position/utils/positionBuildingNotes';
 import {
     BAND_COUNT,
     computePosition,
-} from '@/widgets/portfolio-position/lib/positionGeometry';
-import { computeVolumeByBand } from '@/widgets/portfolio-position/lib/volumeByBand';
+} from '@/widgets/portfolio-position/utils/positionGeometry';
+import { computeVolumeByBand } from '@/widgets/portfolio-position/utils/volumeByBand';
 
 /** "내 위치" 탭이 SSR로 내리는 최근 가격 범위(공개 데이터만 — 평단·수익률은 클라 전용). */
 export interface PriceRange {

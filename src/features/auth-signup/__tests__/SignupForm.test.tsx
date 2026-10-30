@@ -480,4 +480,160 @@ describe('SignupForm', () => {
             );
         });
     });
+
+    describe('step transitions', () => {
+        let emailState: RequestEmailVerificationFormState;
+        let codeState: VerifyEmailFormState;
+        let signupState: SignupFormState;
+
+        beforeEach(() => {
+            emailState = { submitted: false, error: null };
+            codeState = { verified: false, error: null };
+            signupState = { error: null };
+            mockUseRequestEmailVerification.mockImplementation(() => [
+                emailState,
+                mockEmailFormAction,
+                false,
+            ]);
+            mockUseVerifyEmail.mockImplementation(() => [
+                codeState,
+                mockCodeFormAction,
+                false,
+            ]);
+            mockUseSignupForm.mockImplementation(() => [
+                signupState,
+                mockSignupFormAction,
+                false,
+            ]);
+        });
+
+        it('does not move focus on the first render', () => {
+            render(<SignupForm />);
+            expect(document.body).toHaveFocus();
+        });
+
+        it('moves focus to the code input when the code step opens', () => {
+            const { rerender } = render(<SignupForm />);
+            screen.getByRole('button', { name: '인증 코드 받기' }).focus();
+
+            emailState = { submitted: true, error: null };
+            rerender(<SignupForm />);
+
+            expect(screen.getByLabelText('인증 코드')).toHaveFocus();
+        });
+
+        it('moves focus to the name input when the details step opens', () => {
+            const { rerender } = render(<SignupForm />);
+            emailState = { submitted: true, error: null };
+            rerender(<SignupForm />);
+
+            codeState = { verified: true, error: null };
+            rerender(<SignupForm />);
+
+            expect(screen.getByLabelText('표시 이름 (선택)')).toHaveFocus();
+        });
+
+        it('moves focus to the email input after 이메일 수정', async () => {
+            const user = userEvent.setup();
+            const { rerender } = render(<SignupForm />);
+            emailState = { submitted: true, error: null };
+            rerender(<SignupForm />);
+
+            emailState = { submitted: false, error: null };
+            await user.click(
+                screen.getByRole('button', { name: '이메일 수정' })
+            );
+
+            expect(screen.getByLabelText('이메일')).toHaveFocus();
+        });
+
+        it('uses the email the code was requested for, not one edited while the request was pending', async () => {
+            const user = userEvent.setup();
+            const { rerender } = render(<SignupForm />);
+            const emailInput = screen.getByLabelText('이메일');
+            await user.type(emailInput, 'first@example.com');
+            await user.click(
+                screen.getByRole('button', { name: '인증 코드 받기' })
+            );
+            await user.type(emailInput, 'x');
+
+            emailState = { submitted: true, error: null };
+            rerender(<SignupForm />);
+
+            const hidden = document.querySelector(
+                'input[type="hidden"][name="email"]'
+            ) as HTMLInputElement;
+            expect(hidden.value).toBe('first@example.com');
+        });
+
+        it('shows invalid_email against the email input', () => {
+            emailState = {
+                submitted: false,
+                error: { code: 'invalid_email', message: 'bad email' },
+            };
+            render(<SignupForm />);
+
+            expect(screen.getByLabelText('이메일')).toHaveAttribute(
+                'aria-invalid',
+                'true'
+            );
+        });
+
+        it('moves focus to the email input when the request fails with invalid_email', () => {
+            const { rerender } = render(<SignupForm />);
+
+            emailState = {
+                submitted: false,
+                error: { code: 'invalid_email', message: 'bad email' },
+            };
+            rerender(<SignupForm />);
+
+            expect(screen.getByLabelText('이메일')).toHaveFocus();
+        });
+
+        it('moves focus to the code input when the code is rejected', () => {
+            const { rerender } = render(<SignupForm />);
+            emailState = { submitted: true, error: null };
+            rerender(<SignupForm />);
+            screen.getByRole('button', { name: '코드 확인' }).focus();
+
+            codeState = {
+                verified: false,
+                error: {
+                    code: 'invalid_verification_code',
+                    message: '인증 코드가 올바르지 않습니다.',
+                },
+            };
+            rerender(<SignupForm />);
+
+            expect(screen.getByLabelText('인증 코드')).toHaveFocus();
+        });
+
+        function renderUnexpectedVerificationFailure() {
+            const { rerender } = render(<SignupForm />);
+            emailState = { submitted: true, error: null };
+            rerender(<SignupForm />);
+
+            codeState = {
+                verified: false,
+                error: { code: 'unexpected', message: '검증 실패' },
+            };
+            rerender(<SignupForm />);
+        }
+
+        it('shows an unexpected verification failure as a banner', () => {
+            renderUnexpectedVerificationFailure();
+
+            expect(screen.getByRole('alert')).toHaveTextContent('검증 실패');
+        });
+
+        it('does not mark the code input invalid for an unexpected verification failure', () => {
+            renderUnexpectedVerificationFailure();
+
+            expect(screen.getByLabelText('인증 코드')).toHaveAttribute(
+                'aria-invalid',
+                'false'
+            );
+        });
+    });
 });

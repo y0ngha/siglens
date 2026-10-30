@@ -1,7 +1,6 @@
 /**
  * Investor Flows 데이터 수집 중 **SEC 클라이언트**(`shared/api/sec`)가 쓰는 상수. 13F 정책 상수는
  * `entities/investor-flows/lib/investorFlowsPolicy.ts`에 있다(shared는 entities를 import할 수 없다).
- * 설계: `docs/superpowers/specs/2026-10-15-investor-flows-design.md`.
  */
 
 /**

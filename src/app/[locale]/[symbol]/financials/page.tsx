@@ -13,7 +13,7 @@ import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/Financial
 import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
 import { hasFinancialsProse } from '@/entities/seo-snapshot/lib/financialsContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
@@ -25,7 +25,6 @@ import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { type SymbolRouteParams } from '@/shared/config/market';
 import {
-    currencyForSymbol,
     marketProfileOf,
     profileIdForSymbol,
 } from '@/shared/config/marketProfile/registry';
@@ -43,6 +42,7 @@ import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
+import { deriveStatementCurrency } from '@/widgets/financials/utils/statementCurrency';
 
 /**
  * ISR 상한. 재무제표는 분기(약 45일) 단위로 갱신돼, 엣지 캐시를 최대한 쓰면서 다음 분기 공시 전에
@@ -244,7 +244,7 @@ export default async function FinancialsPage({ params }: Props) {
                 </SymbolPageHeading>
                 <FinancialsScorecard
                     scorecard={scorecard}
-                    currency={currencyForSymbol(upper)}
+                    currency={deriveStatementCurrency(snapshot, upper)}
                 />
 
                 {/* AI 위젯은 클라 훅으로 데이터를 받아 ISR HTML에 골격만 남긴다 — 크롤러가 읽는 AI

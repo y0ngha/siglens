@@ -1,22 +1,30 @@
 'use client';
 
+/**
+ * AI 작도(`chartOverlays`) 스펙을 가격 차트 시리즈로 동기화하는 훅.
+ */
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import {
     createSeriesMarkers,
     LineSeries,
-    LineStyle,
     type IChartApi,
     type ISeriesApi,
+    type ISeriesMarkersPluginApi,
+    type ISeriesPrimitive,
+    type SeriesMarker,
     type Time,
 } from 'lightweight-charts';
 import type { OverlayLineSpec } from '../utils/chartOverlayUtils';
+import {
+    isSameOverlayStyle,
+    overlayGeometryKeys,
+    overlaySeriesStyle,
+    type OverlaySeriesStyle,
+} from '../utils/overlaySeriesSync';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { createRightExtendPrimitive } from '../utils/rightExtendPrimitive';
 import { visibleLevelLabels } from '../utils/levelLabelCulling';
-
-/** lightweight-charts `LineWidth` 상한. */
-const MAX_LINE_WIDTH = 4;
 
 const OVERLAY_SERIES_OPTIONS = {
     lastValueVisible: false,
@@ -39,12 +47,8 @@ interface TitledSeries {
     title: string;
     price: number;
     priority: number;
-    /**
-     * 지금 시리즈에 입혀 둔 제목 — 같은 값을 다시 `applyOptions`하지 않으려고 둔다.
-     * 불변성 규칙의 의도된 예외다: 렌더와 무관한 effect 안의 명령형 캐시이고, 이 배열은
-     * 그 effect 클로저 밖으로 나가지 않는다.
-     */
-    shown: string;
+    /** 이 시리즈의 엔트리 — 지금 입혀 둔 제목(`appliedTitle`)을 읽고 쓴다. */
+    entry: OverlayEntry;
 }
 
 /**
@@ -77,8 +81,8 @@ function attachLabelCulling(
         );
         titled.forEach((t, i) => {
             const next = visible.has(i) ? t.title : '';
-            if (next === t.shown) return;
-            t.shown = next;
+            if (next === t.entry.appliedTitle) return;
+            t.entry.appliedTitle = next;
             t.series.applyOptions({ title: next });
         });
     };
@@ -111,17 +115,165 @@ function attachLabelCulling(
     };
 }
 
-function withOpacity(hex: string, opacity: number): string {
-    if (opacity >= 1 || !/^#[0-9a-f]{6}$/i.test(hex)) return hex;
-    return `${hex}${Math.round(opacity * 255)
-        .toString(16)
-        .padStart(2, '0')}`;
-}
-
 interface UseChartOverlaysParams {
     chartRef: RefObject<IChartApi | null>;
     specs: readonly OverlayLineSpec[];
     lineWidth?: number;
+}
+
+/** 스펙 하나가 차트에 만든 것 — 기하가 같은 동안 재사용한다. */
+interface OverlayEntry {
+    series: ISeriesApi<'Line'>;
+    /** 라벨 전용 투명 시리즈와 그 마커 — 라벨이 없으면 null. */
+    label: {
+        series: ISeriesApi<'Line'>;
+        markers: ISeriesMarkersPluginApi<Time>;
+    } | null;
+    /** 레벨 오른쪽 연장 primitive — `extendRight`가 아니면 null. */
+    primitive: ISeriesPrimitive<Time> | null;
+    style: OverlaySeriesStyle;
+    /**
+     * 지금 시리즈에 입혀 둔 제목 — 겹침 판정(`attachLabelCulling`)이 숨기면 `''`. 엔트리를
+     * 재사용하는 동안 유지돼야 다음 판정이 "이미 숨김"을 알고 되살린다. 불변성 규칙의
+     * 의도된 예외다: 렌더와 무관한 effect 안의 명령형 캐시이고 훅 밖으로 나가지 않는다.
+     */
+    appliedTitle: string;
+}
+
+/** 라벨 마커 — 정렬된 마커 배열을 스펙 색으로 만든다. */
+function labelMarkers(
+    sortedMarkers: readonly OverlayLineSpec['markers'][number][],
+    color: string
+): SeriesMarker<Time>[] {
+    return sortedMarkers.map(m => ({
+        time: m.time as Time,
+        position: m.position,
+        shape: 'circle',
+        size: 0,
+        color,
+        text: m.text,
+    }));
+}
+
+/** 정렬된 마커 — 라벨 시리즈 데이터와 마커가 같은 순서를 공유한다. */
+function sortedMarkersOf(spec: OverlayLineSpec) {
+    return spec.markers.toSorted((a, b) => a.time - b.time);
+}
+
+function attachExtendPrimitive(
+    series: ISeriesApi<'Line'>,
+    spec: OverlayLineSpec,
+    style: OverlaySeriesStyle
+): ISeriesPrimitive<Time> | null {
+    if (!spec.extendRight) return null;
+    const [, end] = spec.points;
+    // core 작도 시각은 봉 시각과 같은 UTC 초(UTCTimestamp)라 `Time`으로 그대로 쓸 수 있다.
+    const primitive = createRightExtendPrimitive({
+        startTime: end.time as Time,
+        price: end.value,
+        color: style.color,
+        lineWidth: style.lineWidth,
+        dashed: style.dashed,
+    });
+    series.attachPrimitive(primitive);
+    return primitive;
+}
+
+/** 스펙 하나의 시리즈(+라벨 시리즈·연장 primitive)를 새로 만든다. */
+function createOverlayEntry(
+    chart: IChartApi,
+    spec: OverlayLineSpec,
+    style: OverlaySeriesStyle
+): OverlayEntry {
+    const series = chart.addSeries(
+        LineSeries,
+        {
+            ...OVERLAY_SERIES_OPTIONS,
+            color: style.color,
+            lineWidth: style.lineWidth,
+            lineStyle: style.lineStyle,
+            title: style.title,
+        },
+        spec.paneIndex
+    );
+    series.setData(
+        spec.points.map(p => ({ time: p.time as Time, value: p.value }))
+    );
+    const primitive = attachExtendPrimitive(series, spec, style);
+    if (spec.markers.length === 0)
+        return {
+            series,
+            label: null,
+            primitive,
+            style,
+            appliedTitle: style.title,
+        };
+
+    // 라벨 전용 투명 시리즈 — 값은 라벨 가격이다(0을 넣으면 aboveBar/belowBar 배치가 항상
+    // 바닥 기준이 된다).
+    const labelSeries = chart.addSeries(
+        LineSeries,
+        { ...OVERLAY_SERIES_OPTIONS, color: 'transparent', lineVisible: false },
+        spec.paneIndex
+    );
+    const sortedMarkers = sortedMarkersOf(spec);
+    // 시리즈 데이터는 시각이 엄격히 오름차순이어야 한다 — 같은 봉에 라벨이 둘(예: 한 봉의
+    // 고가·저가가 모두 피벗)이면 첫 점만 남긴다. 마커는 같은 시각에 여러 개 달 수 있다.
+    labelSeries.setData(
+        sortedMarkers
+            .filter((m, i, arr) => i === 0 || m.time !== arr[i - 1].time)
+            .map(m => ({ time: m.time as Time, value: m.price }))
+    );
+    const markers = createSeriesMarkers(
+        labelSeries,
+        labelMarkers(sortedMarkers, style.color)
+    );
+    return {
+        series,
+        label: { series: labelSeries, markers },
+        primitive,
+        style,
+        appliedTitle: style.title,
+    };
+}
+
+/** 기하가 같은 기존 시리즈에 바뀐 스타일만 입힌다. */
+function restyleOverlayEntry(
+    entry: OverlayEntry,
+    spec: OverlayLineSpec,
+    style: OverlaySeriesStyle
+): OverlayEntry {
+    if (isSameOverlayStyle(entry.style, style)) return entry;
+    entry.series.applyOptions({
+        color: style.color,
+        lineWidth: style.lineWidth,
+        lineStyle: style.lineStyle,
+        title: style.title,
+    });
+    entry.label?.markers.setMarkers(
+        labelMarkers(sortedMarkersOf(spec), style.color)
+    );
+    // primitive는 생성 시 스타일을 굳히므로 갈아 끼운다(그리기만 하는 가벼운 객체다).
+    if (entry.primitive !== null) entry.series.detachPrimitive(entry.primitive);
+    return {
+        ...entry,
+        primitive: attachExtendPrimitive(entry.series, spec, style),
+        style,
+        appliedTitle: style.title,
+    };
+}
+
+/** 차트에서 엔트리의 시리즈를 뗀다. 차트가 먼저 제거된 경우(언마운트 순서)는 무시한다. */
+function removeOverlayEntry(chart: IChartApi, entry: OverlayEntry): void {
+    [entry.series, entry.label?.series]
+        .filter(s => s !== undefined)
+        .forEach(s => {
+            try {
+                chart.removeSeries(s);
+            } catch {
+                // 차트가 먼저 제거됐다 — 시리즈도 함께 사라졌다.
+            }
+        });
 }
 
 /**
@@ -134,134 +286,76 @@ interface UseChartOverlaysParams {
  * 시리즈**에 마커로 단다 — 라벨 시각이 선분의 두 끝점 밖일 수 있어(예: 헤드
  * 라벨이 첫 세그먼트 범위 밖) lightweight-charts 마커가 그 시리즈 데이터에
  * 없는 시각을 그릴 수 없기 때문이다.
+ *
+ * 스펙이 바뀌면 **기하 key**(`overlayGeometryKeys`)로 맞춰 본다 — 기하가 같은 스펙은
+ * 시리즈를 재사용해 스타일만 갱신하고, 사라진 스펙만 지우고 새 스펙만 만든다. hover 강조나
+ * 실시간 종가 변화가 매번 수십 개 시리즈를 지웠다 다시 만들던 깜빡임을 없앤다.
  */
 export function useChartOverlays({
     chartRef,
     specs,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseChartOverlaysParams): void {
-    const seriesRef = useRef<ISeriesApi<'Line'>[]>([]);
+    const entriesRef = useRef<Map<string, OverlayEntry>>(new Map());
 
     useEffect(() => {
         const chart = chartRef.current;
         if (!chart) return;
 
-        const titled: TitledSeries[] = [];
-        const created = specs
-            .map(spec => {
-                // lightweight-charts `LineWidth`는 1~4 리터럴이다 — 양 끝을 잘라
-                // 그 범위를 보장하므로 캐스트가 안전하다(강조 배수·기본 두께가
-                // 커져도 5 이상이 새지 않는다).
-                const resolvedWidth = Math.min(
-                    MAX_LINE_WIDTH,
-                    Math.max(1, Math.round(lineWidth * spec.lineWidthMult))
-                ) as 1 | 2 | 3 | 4;
-                const color = withOpacity(spec.color, spec.opacity);
-                const series = chart.addSeries(
-                    LineSeries,
-                    {
-                        ...OVERLAY_SERIES_OPTIONS,
-                        color,
-                        lineWidth: resolvedWidth,
-                        lineStyle: spec.dashed
-                            ? LineStyle.Dashed
-                            : LineStyle.Solid,
-                        title: spec.title,
-                    },
-                    spec.paneIndex
-                );
-                series.setData(
-                    spec.points.map(p => ({
-                        time: p.time as Time,
-                        value: p.value,
-                    }))
-                );
-                if (spec.title !== '') {
-                    titled.push({
-                        series,
-                        title: spec.title,
-                        price: spec.points[1].value,
-                        priority: spec.labelPriority,
-                        shown: spec.title,
-                    });
-                }
-                if (spec.extendRight) {
-                    const [, end] = spec.points;
-                    // core 작도 시각은 봉 시각과 같은 UTC 초(UTCTimestamp)라 `Time`으로
-                    // 그대로 쓸 수 있다 — 위 `setData`의 `p.time as Time`과 같은 근거.
-                    series.attachPrimitive(
-                        createRightExtendPrimitive({
-                            startTime: end.time as Time,
-                            price: end.value,
-                            color,
-                            lineWidth: resolvedWidth,
-                            dashed: spec.dashed,
-                        })
-                    );
-                }
+        const keys = overlayGeometryKeys(specs);
+        const keySet = new Set(keys);
+        const previous = entriesRef.current;
+        [...previous]
+            .filter(([key]) => !keySet.has(key))
+            .forEach(([, entry]) => removeOverlayEntry(chart, entry));
 
-                if (spec.markers.length === 0) return [series];
-
-                // 라벨 전용 투명 시리즈 — 값은 라벨 가격이다(0을 넣으면 aboveBar/belowBar
-                // 배치가 항상 바닥 기준이 된다).
-                const labelSeries = chart.addSeries(
-                    LineSeries,
-                    {
-                        ...OVERLAY_SERIES_OPTIONS,
-                        color: 'transparent',
-                        lineVisible: false,
-                    },
-                    spec.paneIndex
-                );
-                // 시각 오름차순 정렬은 여기 한 곳에서만 한다 — 라벨 시리즈 데이터와
-                // 마커 둘 다 이 정렬된 배열을 재사용해, 시리즈 데이터(정렬 필요)와
-                // 마커(정렬 불필요)가 서로 다른 순서를 갖는 것을 방지한다.
-                const sortedMarkers = spec.markers.toSorted(
-                    (a, b) => a.time - b.time
-                );
-                // 시리즈 데이터는 시각이 엄격히 오름차순이어야 한다 — 같은 봉에 라벨이
-                // 둘(예: 한 봉의 고가·저가가 모두 피벗)이면 첫 점만 남긴다. 마커는 같은
-                // 시각에 여러 개 달 수 있으므로 그대로 둔다.
-                const labelPoints = sortedMarkers.filter(
-                    (m, i, arr) => i === 0 || m.time !== arr[i - 1].time
-                );
-                labelSeries.setData(
-                    labelPoints.map(m => ({
-                        time: m.time as Time,
-                        value: m.price,
-                    }))
-                );
-                createSeriesMarkers(
-                    labelSeries,
-                    sortedMarkers.map(m => ({
-                        time: m.time as Time,
-                        position: m.position,
-                        shape: 'circle',
-                        size: 0,
-                        color: withOpacity(spec.color, spec.opacity),
-                        text: m.text,
-                    }))
-                );
-                return [series, labelSeries];
+        const next = new Map(
+            specs.map((spec, i) => {
+                const style = overlaySeriesStyle(spec, lineWidth);
+                const existing = previous.get(keys[i]);
+                return [
+                    keys[i],
+                    existing === undefined
+                        ? createOverlayEntry(chart, spec, style)
+                        : restyleOverlayEntry(existing, spec, style),
+                ] as const;
             })
-            .flat();
+        );
+        entriesRef.current = next;
 
-        seriesRef.current = created;
+        const titled: TitledSeries[] = specs.flatMap((spec, i) =>
+            spec.title === ''
+                ? []
+                : [
+                      {
+                          series: next.get(keys[i])!.series,
+                          title: spec.title,
+                          price: spec.points[1].value,
+                          priority: spec.labelPriority,
+                          entry: next.get(keys[i])!,
+                      },
+                  ]
+        );
         const detachCulling = attachLabelCulling(chart, titled);
         return () => {
             try {
                 detachCulling();
             } catch {
-                // 차트가 먼저 제거된 경우(언마운트 순서) — 아래 시리즈 정리는 계속한다.
+                // 차트가 먼저 제거된 경우(언마운트 순서) — 무시.
             }
-            for (const s of seriesRef.current) {
-                try {
-                    chart.removeSeries(s);
-                } catch {
-                    // 차트가 먼저 제거된 경우(언마운트 순서) — 무시.
-                }
-            }
-            seriesRef.current = [];
         };
     }, [chartRef, specs, lineWidth]);
+
+    // 언마운트 시에만 모든 시리즈를 뗀다 — 스펙 변경 사이에는 위 effect가 차이만 반영한다.
+    useEffect(() => {
+        const chart = chartRef.current;
+        const entries = entriesRef;
+        return () => {
+            if (chart)
+                entries.current.forEach(entry =>
+                    removeOverlayEntry(chart, entry)
+                );
+            entries.current = new Map();
+        };
+    }, [chartRef]);
 }

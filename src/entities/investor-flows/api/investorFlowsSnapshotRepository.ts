@@ -15,7 +15,7 @@ import { withRetry } from '@/shared/lib/withRetry';
 import type {
     AggregateRecord,
     HolderRecord,
-} from '../lib/investorFlowsSnapshot';
+} from '../lib/snapshot/institutional';
 import type { OptionAggregateRecord } from '../model';
 import { cikToString } from '../lib/cik';
 import { previousQuarterEnd } from '../lib/investorFlowsDates';

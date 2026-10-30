@@ -40,8 +40,8 @@ interface NewsSnapshotProseProps {
 }
 
 /**
- * SEO pre-warm 스냅샷의 news 탭 프로즈 렌더러 — Task 6, 마지막(일곱 번째) 탭
- * 렌더러. `currentDriverKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
+ * SEO pre-warm 스냅샷의 news 탭 프로즈 렌더러.
+ * `currentDriverKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
  * 있으면 리드 문구로, `keyEventsKo`를 핵심 이벤트 목록으로,
  * `upcomingEventsKo`를 다가오는 주요 일정 목록으로 렌더한다.
  *

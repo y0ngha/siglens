@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listDisabledServerKeyModels } from '@/entities/llm-provider/lib/serverKeyKillSwitch';
+import { listDisabledServerKeyModels } from '@/entities/llm-provider/api/serverKeyKillSwitch';
 import type { ModelAvailabilityResponse } from '@/shared/lib/modelAvailability';
 
 // 런타임 env를 읽으므로 빌드 시점에 굳으면 안 된다. 캐시는 아래 `Cache-Control`로 CDN이 맡는다.
@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
  */
 const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300';
 
+/** `GET /api/analysis/model-availability` — 서버 키가 꺼진 모델 목록. 사용자와 무관한 공개 값이다. */
 export function GET(): Response {
     const body: ModelAvailabilityResponse = {
         disabledModels: listDisabledServerKeyModels(),

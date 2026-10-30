@@ -46,12 +46,14 @@ export async function loadStaticChildEntries(
     ];
 }
 
+/** `/api/sitemap/popular`의 엔트리 — 인기 종목 sitemap 입력으로 만든다. */
 export async function loadPopularChildEntries(
     now: Date
 ): Promise<SitemapEntry[]> {
     return buildPopularEntries(now, await loadPopularSitemapInputs());
 }
 
+/** `/api/sitemap/crypto`의 엔트리 — 인기 코인 sitemap 입력으로 만든다. */
 export async function loadCryptoChildEntries(
     now: Date
 ): Promise<SitemapEntry[]> {

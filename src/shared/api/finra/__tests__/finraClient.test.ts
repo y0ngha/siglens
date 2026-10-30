@@ -25,6 +25,19 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+/** 취소 여부를 관측할 수 있는 본문을 가진 응답. */
+function responseWithCancelSpy(status: number, onCancel: () => void): Response {
+    return new Response(
+        new ReadableStream({
+            pull(controller) {
+                controller.enqueue(new TextEncoder().encode('x'));
+            },
+            cancel: onCancel,
+        }),
+        { status }
+    );
+}
+
 describe('FINRA URLs', () => {
     it('builds the CNMS daily file URL', () => {
         expect(cnmsShortVolumeUrl('2026-10-14')).toBe(
@@ -71,6 +84,16 @@ describe('fetching', () => {
         // a blocked 403 is not transient: exactly one request, no retry
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
+
+    it.each([404, 500])(
+        'releases the unread body of a %i response',
+        async status => {
+            const onCancel = vi.fn();
+            fetchSpy.mockResolvedValue(responseWithCancelSpy(status, onCancel));
+            await fetchCnmsShortVolumeText('2026-10-14').catch(() => null);
+            expect(onCancel).toHaveBeenCalled();
+        }
+    );
 
     it('retries a 503 and then succeeds', async () => {
         fetchSpy

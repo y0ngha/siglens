@@ -1,10 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
-import {
-    BriefingCard,
-    BriefingLoadingCard,
-    BriefingErrorCard,
-} from '@/widgets/dashboard/BriefingCard';
+import { BriefingCard } from '@/widgets/dashboard/BriefingCard';
 import { TEST_SCOPE } from './helpers/testScope';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
@@ -117,6 +113,18 @@ describe('BriefingCard', () => {
         expect(screen.getByText(/기준/)).toBeInTheDocument();
     });
 
+    /** 시간대를 고정해 표시하므로, 어느 시간대 기준인지 문장이 밝혀야 한다. */
+    it('문장에 KST 표기를 함께 적는다', () => {
+        render(
+            <BriefingCard
+                scope={TEST_SCOPE}
+                briefing={BRIEFING}
+                generatedAt="2025-01-15T10:00:00Z"
+            />
+        );
+        expect(screen.getByText(/KST 기준/)).toBeInTheDocument();
+    });
+
     it('hides timestamp when generatedAt is empty string', () => {
         render(
             <BriefingCard
@@ -188,33 +196,9 @@ describe('BriefingCard', () => {
     });
 });
 
-describe('BriefingLoadingCard', () => {
-    it('renders loading state with status role', () => {
-        render(<BriefingLoadingCard />);
-        expect(screen.getByRole('status')).toBeInTheDocument();
-        expect(screen.getByText(/브리핑 생성 중/)).toBeInTheDocument();
-    });
-
-    it('reserves the estimated card height (min-h-64) so the panel below does not shift', () => {
-        render(<BriefingLoadingCard />);
-        expect(screen.getByRole('status')).toHaveClass('min-h-64');
-    });
-});
-
-describe('BriefingErrorCard', () => {
-    it('renders error state with alert role', () => {
-        render(<BriefingErrorCard />);
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText(/불러오지 못했어요/)).toBeInTheDocument();
-    });
-});
-
 /**
- * 예전 core 프롬프트가 섹터 필드를 `"섹터 ETF 티커 (예: 'XLK')"`로 설명해,
- * 한국 요약을 넣어도 모델이 미국 것을 돌려주는 일이 실제로 있었다
- * (2026-08-19 `/market/kr` 실측: `하락 섹터 XLK·XLV·XLY`, `VIX 18.30`).
- * core 0.48.0에서 프롬프트를 고쳤지만 출력은 여전히 모델 산물이라
- * 카드 앞단의 필터는 유지한다.
+ * 브리핑 출력은 모델 산물이라 한국 요약을 넣어도 미국 섹터·변동성 지수를 돌려줄 수 있다.
+ * 카드 앞단의 필터가 그 값을 막는다.
  */
 describe('BriefingCard — 근거 없는 값 차단', () => {
     it('scope에 없는 섹터명은 그리지 않는다', () => {

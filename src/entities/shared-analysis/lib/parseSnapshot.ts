@@ -4,46 +4,39 @@ import type { SharedAnalysisSnapshot } from '../types';
 function isShareableKind(v: unknown): v is SharedAnalysisSnapshot['kind'] {
     return (
         typeof v === 'string' &&
-        // const array widened to readonly string[] so .includes() accepts a plain string argument
+        // readonly 튜플을 string[]으로 넓혀야 임의 string을 includes에 넘길 수 있다
         (SHAREABLE_KIND_VALUES as readonly string[]).includes(v)
+    );
+}
+
+function isObjectValue(v: unknown): v is object {
+    return typeof v === 'object' && v !== null;
+}
+
+function isSnapshotShape(raw: unknown): raw is SharedAnalysisSnapshot {
+    return (
+        isObjectValue(raw) &&
+        'kind' in raw &&
+        isShareableKind(raw.kind) &&
+        'symbol' in raw &&
+        typeof raw.symbol === 'string' &&
+        'context' in raw &&
+        isObjectValue(raw.context) &&
+        'result' in raw &&
+        isObjectValue(raw.result)
     );
 }
 
 /**
  * jsonb로 저장된 스냅샷을 검증하고 타입을 좁힌다. 형태 불일치면 null.
+ * `getSharedAnalysisAction`이 읽기 경로에서 쓴다.
  *
- * Trust boundary: result-interior validation (e.g. that result.trend matches kind
- * 'chart') is intentionally delegated to the error boundary in app/share/error.tsx.
- * Snapshots are server-written from inputs already validated by isValidShareInput,
- * so per-kind structural checks here would be redundant defence-in-depth with no
- * practical benefit given the controlled write path.
- *
- * `chartBars` is optional and chart-specific; it passes through transparently
- * because the read path trusts server-written snapshots and the error boundary
- * handles any malformed structure at render time.
+ * 최상위 형태(kind, symbol, context, result 존재)만 확인한다. kind별 result 내부,
+ * `chartBars` 내부, 스냅샷 스키마 버전 드리프트는 의도적으로 `app/share/error.tsx`
+ * 에러 경계에 맡긴다: 스냅샷은 `isValidShareInput`을 통과한 입력으로 서버가 쓴 값이라
+ * 여기서 더 깊게 검사해도 중복 방어일 뿐이고, 렌더 오류는 경계가 폴백 화면으로 받는다.
+ * `chartBars`(선택)는 쓰기 시점에 `isValidShareInput`이 검증했으므로 그대로 통과한다.
  */
 export function parseSnapshot(raw: unknown): SharedAnalysisSnapshot | null {
-    if (typeof raw !== 'object' || raw === null) return null;
-    // guarded by the typeof + null check just above; safe to treat as a plain object map
-    const obj = raw as Record<string, unknown>;
-    if (!isShareableKind(obj.kind)) return null;
-    if (typeof obj.symbol !== 'string') return null;
-    if (typeof obj.context !== 'object' || obj.context === null) return null;
-    if (typeof obj.result !== 'object' || obj.result === null) return null;
-    // Only the top-level shape (kind, symbol, context, result presence) is
-    // validated here. Per-kind result-interior validation (e.g. that
-    // result.trend matches kind 'chart'), chartBars interior structure, and
-    // snapshot schema version drift are intentionally delegated to the error
-    // boundary in app/share/error.tsx.
-    //
-    // Rationale: snapshots are server-written from inputs already checked by
-    // isValidShareInput, so deeper structural checks here would be redundant.
-    // Version drift (future schema changes) is also handled by the error
-    // boundary — if a stale snapshot shape causes a render error, the boundary
-    // shows a graceful fallback rather than a hard crash.
-    //
-    // chartBars (optional Bar[]) passes through transparently — it is either
-    // absent (non-chart or pre-bars snapshots) or an array validated at write
-    // time by isValidBar inside isValidShareInput.
-    return obj as unknown as SharedAnalysisSnapshot;
+    return isSnapshotShape(raw) ? raw : null;
 }

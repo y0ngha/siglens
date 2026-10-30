@@ -1,7 +1,7 @@
 import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-import type { EmailTranslator } from './emailTranslator';
 import { brandName } from '@/shared/lib/brandName';
+import type { EmailTranslator } from './emailTranslator';
 
 interface BuildEmailVerificationEmailInput {
     to: string;
@@ -16,6 +16,11 @@ interface BuildEmailVerificationEmailInput {
     t: EmailTranslator;
 }
 
+/**
+ * 이메일 인증 코드 메일(제목·HTML·텍스트)을 만든다. 순수 함수로 발송은 하지 않으며,
+ * requestEmailVerificationAction이 반환값을 dispatcher에 넘긴다. `code`는 서버가 발급한 숫자
+ * 코드라 HTML에 이스케이프 없이 넣는다 — 사용자 입력을 넘기면 안 된다.
+ */
 export function buildEmailVerificationEmail({
     to,
     code,

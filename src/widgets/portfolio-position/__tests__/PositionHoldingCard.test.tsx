@@ -336,28 +336,32 @@ describe('PositionHoldingCard', () => {
         expect(readoutValue?.textContent).not.toContain('$');
     });
 
-    it('degrades to a muted note when computePosition cannot resolve (e.g. invalid avg price)', async () => {
-        mockGetBarsAction.mockResolvedValue(BARS_DATA as never);
-        const { wrapper } = createQueryClientWrapper();
+    it.each([
+        ['0', '0'],
+        ['NaN', 'abc'],
+    ])(
+        'asks to check the average price without fetching bars when it is invalid (%s)',
+        async (_label, averagePrice) => {
+            mockGetBarsAction.mockResolvedValue(BARS_DATA as never);
+            const { wrapper } = createQueryClientWrapper();
 
-        render(
-            <PositionHoldingCard
-                holding={{ ...HOLDING_AAPL, averagePrice: '0' }}
-            />,
-            { wrapper }
-        );
-        await waitFor(() => expect(mockObserve).toHaveBeenCalledTimes(1));
+            render(
+                <PositionHoldingCard
+                    holding={{ ...HOLDING_AAPL, averagePrice }}
+                />,
+                { wrapper }
+            );
+            await waitFor(() => expect(mockObserve).toHaveBeenCalledTimes(1));
+            fireIntersecting(true);
 
-        fireIntersecting(true);
-
-        await waitFor(() =>
+            const degraded = await screen.findByTestId('holding-card-degraded');
+            expect(degraded).toHaveTextContent('평단을 확인해 주세요');
+            // 보여 줄 평단이 없다 — "$NaN"/"$0" 같은 값을 찍지 않는다.
+            expect(degraded.textContent).not.toMatch(/\$|NaN/);
+            expect(mockGetBarsAction).not.toHaveBeenCalled();
             expect(
-                screen.getByTestId('holding-card-degraded')
-            ).toBeInTheDocument()
-        );
-        expect(screen.getByText('데이터 부족')).toBeInTheDocument();
-        expect(
-            screen.queryByTestId('position-building')
-        ).not.toBeInTheDocument();
-    });
+                screen.queryByTestId('position-building')
+            ).not.toBeInTheDocument();
+        }
+    );
 });

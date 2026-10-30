@@ -1,8 +1,8 @@
 /**
  * Branch coverage tests for useOverallAnalysis — targets uncovered branches:
- * miss_no_trigger (falls through to the generic unexpected error — this axis
- * hardcodes skipEnqueueIfMiss:false, so core never actually returns this
- * status), key_error, gate blocked error, non-string error in submit,
+ * miss_no_trigger on a generation request (a server contract violation, so it
+ * falls through to the generic unexpected error; only a cache-only request
+ * treats it as "waiting"), key_error, gate blocked error, non-string error in submit,
  * hydration gate, submitting state.
  *
  * Poll/cancel/pending_dependencies machinery has been removed; run* functions
@@ -61,7 +61,7 @@ describe('useOverallAnalysis — branch coverage', () => {
         queryClients.splice(0).forEach(client => client.clear());
     });
 
-    it('SSR seed는 마운트 key에만 적용된다 — tier 확정으로 modelId가 바뀌면 회원 모델로 새로 분석한다', async () => {
+    it('SSR seed는 마운트 key에만 적용된다 — tier 확정으로 modelId가 바뀌면 회원 모델 key의 캐시만 읽는다', async () => {
         // 회귀 가드: React Query는 `initialData`를 활성 queryKey에 다시 적용한다.
         // 가드가 없으면 DEFAULT 모델로 만든 SSR seed가 회원 모델 key까지 채우고
         // staleTime: Infinity가 그걸 fresh로 취급해 fetch가 영영 일어나지 않는다.
@@ -99,19 +99,24 @@ describe('useOverallAnalysis — branch coverage', () => {
             }
         );
 
-        // seed 덕분에 마운트 즉시 done, 생성은 트리거되지 않는다.
+        // seed 덕분에 마운트 즉시 done, 요청은 없다.
         expect(result.current.state.status).toBe('done');
         expect(mockSubmit).not.toHaveBeenCalled();
 
         // tier 확정 — modelId가 회원의 저장 모델로 넓어지고 게이트가 열린다.
         rerender({ modelId: 'claude-sonnet-5-5', settingsHydrated: true });
 
+        // 회원 모델 key는 캐시만 읽는다. 생성은 사용자가 누를 때만 시작된다.
         await waitFor(() => {
-            expect(mockSubmit).toHaveBeenCalledTimes(1);
+            expect(mockSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    params: expect.objectContaining({
+                        modelId: 'claude-sonnet-5-5',
+                        cacheOnly: true,
+                    }),
+                })
+            );
         });
-        expect(mockSubmit.mock.calls[0]?.[0]?.params?.modelId).toBe(
-            'claude-sonnet-5-5'
-        );
         await waitFor(() => {
             if (result.current.state.status !== 'done')
                 throw new Error('expected done');
@@ -121,11 +126,11 @@ describe('useOverallAnalysis — branch coverage', () => {
         });
     });
 
-    it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
-        // Core-only status: skipEnqueueIfMiss is hardcoded false for this
-        // axis (see api/analysis/stream/route.ts top invariant), so core
-        // never actually returns this in production. Verifies the
-        // exhaustiveness fallback resolves to a plain error, not dead UI.
+    it('falls through to the generic unexpected error when a generation request returns miss_no_trigger', async () => {
+        // A generation request never legitimately gets a cache miss back (the
+        // route only demotes to cache-only for the client's own cacheOnly
+        // request). Verifies the exhaustiveness fallback resolves to a plain
+        // error, not dead UI.
         mockSubmit.mockResolvedValue({
             status: 'miss_no_trigger',
         } as never);

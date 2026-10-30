@@ -1,0 +1,270 @@
+/**
+ * Tests for useWaitForMarketNewsCards hook.
+ *
+ * Uses vitest fake timers to control setInterval without real I/O.
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import type { MockedFunction } from 'vitest';
+import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import {
+    MAX_POLL_DURATION_MS,
+    POLL_INTERVAL_MS,
+} from '@/shared/config/cardPollingConfig';
+import { useWaitForMarketNewsCards } from '@/widgets/market-news/hooks/useWaitForMarketNewsCards';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+
+vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
+    getMarketNewsCardsAction: vi.fn(),
+}));
+vi.mock(
+    '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction',
+    () => ({
+        ensureMarketNewsCardsAnalyzedAction: vi.fn(),
+    })
+);
+vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
+    submitMarketNewsDigestAction: vi.fn(),
+}));
+
+const mockGetCards = getMarketNewsCardsAction as MockedFunction<
+    typeof getMarketNewsCardsAction
+>;
+
+const ENRICHED_ITEM: MarketNewsCardItem = {
+    id: 'mn-1',
+    publishedAt: '2026-06-15T10:00:00.000Z',
+    titleEn: 'BTC up',
+    titleKo: '비트코인 상승',
+    sentiment: 'bullish',
+    category: 'macro',
+    bodyKo: null,
+    summaryKo: '요약',
+    priceImpact: 'high',
+    url: 'https://example.com',
+    source: 'Reuters',
+    tickers: [],
+};
+
+/** 폴러가 `useQuery`로 돈다 — 테스트마다 새 QueryClient(캐시 공유 없음). */
+function makeQueryWrapper() {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return function QueryWrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+}
+
+describe('useWaitForMarketNewsCards', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        mockGetCards.mockReset();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('initiallyReady=true이면 isReady=true를 즉시 반환하고 polling을 하지 않는다', () => {
+        const { result } = renderHook(
+            () => useWaitForMarketNewsCards('general', true),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        expect(result.current.isReady).toBe(true);
+        expect(result.current.waitError).toBeNull();
+        expect(mockGetCards).not.toHaveBeenCalled();
+    });
+
+    it('initiallyReady=false이면 polling을 시작하고 enriched 아이템 감지 시 isReady=true가 된다', async () => {
+        mockGetCards.mockResolvedValue({ ok: true, items: [ENRICHED_ITEM] });
+
+        const { result } = renderHook(
+            () => useWaitForMarketNewsCards('crypto', false),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        // Initially not ready
+        expect(result.current.isReady).toBe(false);
+
+        // Advance past the poll interval
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(4000);
+        });
+
+        expect(result.current.isReady).toBe(true);
+        expect(mockGetCards).toHaveBeenCalled();
+    });
+
+    it('unmount 시 interval이 정리된다 (cleanup on unmount)', () => {
+        mockGetCards.mockResolvedValue({ ok: true, items: [] });
+
+        const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
+
+        const { unmount } = renderHook(
+            () => useWaitForMarketNewsCards('general', false),
+            { wrapper: makeQueryWrapper() }
+        );
+
+        unmount();
+
+        expect(clearIntervalSpy).toHaveBeenCalled();
+        clearIntervalSpy.mockRestore();
+    });
+
+    it('category가 바뀌면 isReady를 리셋하고 새 카테고리로 polling을 시작한다', async () => {
+        mockGetCards.mockResolvedValue({ ok: true, items: [ENRICHED_ITEM] });
+
+        const { result, rerender } = renderHook(
+            ({
+                category,
+                initiallyReady,
+            }: {
+                category: NewsFeedCategory;
+                initiallyReady: boolean;
+            }) => useWaitForMarketNewsCards(category, initiallyReady),
+            {
+                wrapper: makeQueryWrapper(),
+                initialProps: {
+                    category: 'crypto' as NewsFeedCategory,
+                    initiallyReady: true,
+                },
+            }
+        );
+
+        expect(result.current.isReady).toBe(true);
+
+        // Switch category with initiallyReady=false — polling restarts for 'general'
+        rerender({ category: 'general' as const, initiallyReady: false });
+
+        expect(result.current.isReady).toBe(false);
+
+        // Advance timers so the new poll interval fires
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(4000);
+        });
+
+        // getMarketNewsCardsAction should now be called with the new category
+        expect(mockGetCards).toHaveBeenCalledWith('general');
+        expect(result.current.isReady).toBe(true);
+    });
+
+    describe('5분 상한은 탭이 보이던 시간만 센다', () => {
+        const PENDING_ITEM: MarketNewsCardItem = {
+            ...ENRICHED_ITEM,
+            id: 'mn-pending',
+            sentiment: null,
+            priceImpact: null,
+        };
+        let visibility: 'visible' | 'hidden';
+
+        function setVisibility(next: 'visible' | 'hidden'): void {
+            visibility = next;
+            document.dispatchEvent(new Event('visibilitychange'));
+        }
+
+        beforeEach(() => {
+            visibility = 'visible';
+            vi.spyOn(document, 'visibilityState', 'get').mockImplementation(
+                () => visibility
+            );
+            mockGetCards.mockResolvedValue({
+                ok: true,
+                items: [PENDING_ITEM],
+            });
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('오래 숨겼다 돌아와도 대기 실패로 넘어가지 않는다', async () => {
+            const { result } = renderHook(
+                () => useWaitForMarketNewsCards('general', false),
+                { wrapper: makeQueryWrapper() }
+            );
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+            });
+            setVisibility('hidden');
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(
+                    MAX_POLL_DURATION_MS + 60_000
+                );
+            });
+            setVisibility('visible');
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 2);
+            });
+
+            expect(result.current.waitError).toBeNull();
+            expect(result.current.isReady).toBe(false);
+        });
+
+        it('숨은 시간은 상한에 합산되지 않고, 보이던 시간만으로 상한을 넘기면 실패한다', async () => {
+            const consoleError = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const TWO_MIN = 2 * 60_000;
+            const { result } = renderHook(
+                () => useWaitForMarketNewsCards('general', false),
+                { wrapper: makeQueryWrapper() }
+            );
+
+            // 보이던 2분 + 숨은 10분 + 보이던 2분 = 벽시계 14분이지만 보이던 시간은 4분(상한 5분 미만).
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(TWO_MIN);
+            });
+            setVisibility('hidden');
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(5 * TWO_MIN);
+            });
+            setVisibility('visible');
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(TWO_MIN);
+            });
+
+            expect(result.current.waitError).toBeNull();
+
+            // 보이던 시간이 6분이 되면 그때는 상한을 넘긴다.
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(TWO_MIN);
+            });
+
+            expect(result.current.waitError?.message).toBe('timeout');
+            consoleError.mockRestore();
+        });
+
+        it('보이는 채로 상한을 넘기면 대기 실패(timeout)가 된다', async () => {
+            const consoleError = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const { result } = renderHook(
+                () => useWaitForMarketNewsCards('general', false),
+                { wrapper: makeQueryWrapper() }
+            );
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(
+                    MAX_POLL_DURATION_MS + POLL_INTERVAL_MS * 2
+                );
+            });
+
+            expect(result.current.waitError?.message).toBe('timeout');
+            expect(consoleError).toHaveBeenCalledWith(
+                '[useWaitForMarketNewsCards] wait failed:',
+                expect.objectContaining({ message: 'timeout' })
+            );
+        });
+    });
+});

@@ -87,10 +87,10 @@ const TEXT_UTILITY_RE = new RegExp(
 const ALLOWED: ReadonlySet<string> = new Set([
     // 등급 게이지의 호(arc)는 SVG `stroke`다 — 글자가 아니라 그래픽이므로
     // 1.4.11의 3:1이 적용되고, 이 계열은 민 표면에서 4.1 이상이라 통과한다.
-    'widgets/financials/CompositeGradeGauge.tsx::SEGMENTS',
+    'widgets/financials/utils/gaugeGeometry.ts::SEGMENTS',
     // 큰 등급 글자는 `text-4xl font-bold`(36px)라 WCAG의 **큰 텍스트**에
     // 해당해 기준이 3:1이다. 같은 이유로 `-text` 짝이 필요 없다.
-    'widgets/financials/CompositeGradeGauge.tsx::GRADE_TEXT_COLOR',
+    'widgets/financials/utils/gradeStyles.ts::GRADE_TEXT_COLOR',
 ]);
 
 function offenders(): string[] {

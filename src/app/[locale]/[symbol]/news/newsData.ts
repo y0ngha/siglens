@@ -1,12 +1,12 @@
 import type { GradesEvent } from '@y0ngha/siglens-core';
 
 import { getDatabaseClient } from '@/shared/db/client';
+import { EARNINGS_REPORT_FMP_LIMIT } from '@/entities/earnings-report/api';
 import {
-    DrizzleEarningsReportsRepository,
-    EARNINGS_REPORT_FMP_LIMIT,
     isEarningsKnownEmpty,
     markEarningsEmpty,
-} from '@/entities/earnings-report/api';
+} from '@/entities/earnings-report/server/earningsEmptyMarker';
+import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { isEarningsReportStale } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {

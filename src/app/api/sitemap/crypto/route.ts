@@ -6,6 +6,7 @@ import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
 
 export const dynamic = 'force-dynamic';
 
+/** 인기 코인 sitemap XML. */
 export async function GET(request: Request): Promise<Response> {
     const aiHostRejection = rejectAiHost(request);
     if (aiHostRejection) return aiHostRejection;

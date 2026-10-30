@@ -29,7 +29,7 @@ import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { formatAmountAligned } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+import { formatAmountAligned } from '@/widgets/portfolio-position/utils/buildingPriceFormat';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 
 import {

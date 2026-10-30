@@ -26,7 +26,10 @@ interface UseAnalysisDerivedDataReturn {
     reconciledActionLines: ReconciledActionLineData | undefined;
 }
 
-// 여러 훅/컴포넌트가 동일 deps로 반복 메모하지 않도록 파생 데이터를 한 곳에 집중한다.
+/**
+ * 분석·봉에서 키 레벨 클러스터와 검증된 행동 가격·행동선을 한 번씩 메모한다. 차트와 AI 패널이
+ * 함께 쓰는 값이라, 여러 훅/컴포넌트가 동일 deps로 반복 메모하지 않도록 한 곳에 모은다.
+ */
 export function useAnalysisDerivedData(
     analysis: AnalysisResponse,
     bars: Bar[]

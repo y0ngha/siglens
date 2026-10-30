@@ -18,7 +18,7 @@ vi.mock('@/widgets/dashboard/hooks/useMarketBriefing', () => ({
  * 못했어요"라고 말하는 회귀) 아무 테스트가 안 깨진다 — `IndexCard` 목과 같은
  * 이유다.
  */
-vi.mock('@/widgets/dashboard/MarketDataErrorNotice', () => ({
+vi.mock('@/widgets/dashboard/ui/market-summary/MarketDataErrorNotice', () => ({
     MarketDataErrorNotice: ({
         variant,
         scopeId,
@@ -45,13 +45,13 @@ vi.mock('@/widgets/dashboard/MarketSummaryPanelSkeleton', () => ({
 }));
 
 /*
- * 목이 `href`·`currencySymbol`·`tickerIsReadable`을 DOM으로 흘려보낸다. 예전 목은
- * `data`만 받아 그것들을 삼켰는데, 그러면 `linkSectorCards: false`가 무시돼도
+ * 목이 `href`·`currencySymbol`·`tickerIsReadable`을 DOM으로 흘려보낸다. 목이
+ * `data`만 받으면 그것들을 삼켜, `linkSectorCards: false`가 무시돼도
  * (=한국 페이지가 KR 섹터 ETF로 가는 크롤 진입점 6개를 여는 회귀) 아무 테스트가
  * 안 깨진다. `tickerIsReadable`도 같다 — 삼키면 호출부를 `true` 리터럴로
  * 되돌려도(=한국 카드 제목이 다시 `091160.KS`가 되는 회귀) 전부 초록이다.
  */
-vi.mock('@/widgets/dashboard/IndexCard', () => ({
+vi.mock('@/widgets/dashboard/ui/market-summary/IndexCard', () => ({
     IndexCard: ({
         data,
         href,
@@ -76,7 +76,13 @@ vi.mock('@/widgets/dashboard/IndexCard', () => ({
 
 vi.mock('@/widgets/dashboard/BriefingCard', () => ({
     BriefingCard: () => <div data-testid="briefing">Briefing</div>,
+}));
+
+vi.mock('@/widgets/dashboard/ui/briefing/BriefingLoadingCard', () => ({
     BriefingLoadingCard: () => <div data-testid="briefing-loading" />,
+}));
+
+vi.mock('@/widgets/dashboard/ui/briefing/BriefingErrorCard', () => ({
     BriefingErrorCard: () => <div data-testid="briefing-error" />,
 }));
 
@@ -91,8 +97,8 @@ vi.mock('react-error-boundary', () => ({
 }));
 
 const defaultSummaryReturn = {
-    data: { summary: { indices: [], sectors: [] } },
     isPending: false,
+    isTotalFailure: false,
     sectorMap: new Map(),
     indices: [],
     hasMissingQuotes: false,
@@ -113,7 +119,6 @@ describe('MarketSummaryPanel', () => {
     it('renders skeleton while pending', () => {
         mockUseMarketSummary.mockReturnValue({
             ...defaultSummaryReturn,
-            data: undefined,
             isPending: true,
         });
         render(<MarketSummaryPanel scope={TEST_SCOPE} />);
@@ -142,10 +147,10 @@ describe('MarketSummaryPanel', () => {
         expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
     });
 
-    it('완전 실패(ok:false) 시 데이터 로드 실패 안내만 표시한다', () => {
+    it('완전 실패(isTotalFailure) 시 데이터 로드 실패 안내만 표시한다', () => {
         mockUseMarketSummary.mockReturnValue({
             ...defaultSummaryReturn,
-            data: { ok: false },
+            isTotalFailure: true,
         });
         render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         const notice = screen.getByTestId('data-error-notice');
@@ -159,7 +164,7 @@ describe('MarketSummaryPanel', () => {
     it('완전 실패 안내를 닫으면 아무것도 렌더하지 않는다', () => {
         mockUseMarketSummary.mockReturnValue({
             ...defaultSummaryReturn,
-            data: { ok: false },
+            isTotalFailure: true,
         });
         const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         fireEvent.click(screen.getByText('close-notice'));
@@ -317,8 +322,7 @@ describe('MarketSummaryPanel', () => {
     });
 
     it('done 상태면 브리핑 카드를 렌더한다', () => {
-        // 구 구조에서는 submitted(jobId) → 별도 폴링 훅이 done을 받아왔지만,
-        // 이제 한 번의 호출이 briefing 본문까지 싣고 온다.
+        // 한 번의 호출이 briefing 본문까지 싣고 온다.
         mockUseMarketBriefing.mockReturnValue({
             input: {
                 status: 'done',
@@ -355,6 +359,48 @@ describe('MarketSummaryPanel', () => {
         expect(screen.getByTestId('briefing-loading')).toBeInTheDocument();
         expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
         expect(screen.queryByTestId('briefing-error')).not.toBeInTheDocument();
+    });
+
+    /**
+     * 오류 카드(`role="alert"`)와 로딩 카드(`role="status"`)가 polite 라이브 영역 안에
+     * 중첩되면 낭독이 경쟁한다 — 브리핑 영역은 카드 그리드의 라이브 영역 밖에 있어야 한다.
+     */
+    describe('라이브 영역 범위', () => {
+        const SPY = {
+            symbol: 'SPY',
+            fmpSymbol: '^GSPC',
+            koreanName: 'S&P 500',
+            displayName: 'S&P 500',
+            price: 5000,
+            changesPercentage: 1,
+        };
+
+        it('지수 카드는 polite 라이브 영역 안에 있다', () => {
+            mockUseMarketSummary.mockReturnValue({
+                ...defaultSummaryReturn,
+                indices: [SPY],
+            });
+            render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+            expect(
+                screen.getByTestId('index-SPY').closest('[aria-live="polite"]')
+            ).not.toBeNull();
+        });
+
+        it.each([
+            ['briefing-loading', undefined],
+            ['briefing-error', 'error'],
+        ] as const)(
+            '%s 카드는 polite 라이브 영역 밖에 있다',
+            (testId, input) => {
+                mockUseMarketBriefing.mockReturnValue({ input });
+                mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
+                render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+                expect(screen.getByTestId(testId)).toBeInTheDocument();
+                expect(
+                    screen.getByTestId(testId).closest('[aria-live]')
+                ).toBeNull();
+            }
+        );
     });
 
     it('grid-cols-3 when sector group has 3 items', () => {
@@ -396,12 +442,10 @@ describe('MarketSummaryPanel', () => {
             sectorMap,
         });
         const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
-        /* 3개짜리 섹터 그룹은 `sm` 이상에서 3열이 된다. 이전에는 반응형 접두사
-           없는 `grid-cols-3`이라 320px에서도 3열이었고, 카드가 66px로 눌리면서
-           `shrink-0`인 등락률 배지가 카드를 33px 넘겨 가격이 잘렸다. */
+        /* 3개짜리 섹터 그룹은 `sm` 이상에서 3열이 된다. */
         const grids = container.querySelectorAll('.sm\\:grid-cols-3');
         expect(grids.length).toBeGreaterThan(0);
-        /* 모바일 2열 회귀 가드 — 이 클래스가 빠지면 위 결함이 그대로 돌아온다. */
+        /* 모바일은 2열이어야 한다 — 3열이면 320px에서 카드가 눌려 가격이 잘린다. */
         grids.forEach(g => {
             expect(g.className.split(/\s+/)).toContain('grid-cols-2');
         });
@@ -409,11 +453,9 @@ describe('MarketSummaryPanel', () => {
 });
 
 /**
- * `/market/kr`은 사이트맵 priority 0.9다. 섹터 카드에 링크가 붙으면 그 페이지가
- * `POPULAR_TICKERS`에도 prewarm 회전에도 없는 KR ETF 6종으로 가는 **새 크롤
- * 진입점**이 된다. 2026-07 노출 급감 당시엔 봇이 캐시 미스에 분석을 큐에 넣지
- * 않아 딱 thin 변형만 보였지만, 2026-09-27부터 봇도 캐시 미스에 생성을
- * 트리거하므로 지금은 크롤 유발 생성 비용 스파이크 쪽 위험이다
+ * `/market/kr`은 사이트맵 priority가 높다. 섹터 카드에 링크가 붙으면 그 페이지가
+ * 인기 종목 목록에도 prewarm 회전에도 없는 KR ETF 6종으로 가는 **새 크롤 진입점**이
+ * 되고, 봇이 캐시 미스에 분석 생성을 트리거해 비용이 튄다
  * (`dashboardScope.ts`의 `linkSectorCards` JSDoc 참고).
  */
 describe('MarketSummaryPanel — KR scope', () => {
@@ -471,7 +513,7 @@ describe('MarketSummaryPanel — KR scope', () => {
     it('실패 안내에 이 시장의 이름을 넘긴다', () => {
         mockUseMarketSummary.mockReturnValue({
             ...defaultSummaryReturn,
-            data: { ok: false },
+            isTotalFailure: true,
         });
 
         render(<MarketSummaryPanel scope={KR_SCOPE} />);
@@ -483,8 +525,8 @@ describe('MarketSummaryPanel — KR scope', () => {
 
     /**
      * 기본 픽스처는 `indices: []`라 상단 지수 카드가 아예 안 그려진다 — 그 호출부만
-     * 하드코딩으로 되돌려도 다른 단언이 전부 통과한다(변이 검증에서 실제로 빠져나갔다).
-     * 지수 카드를 실제로 그리게 해서 그 경로도 고정한다.
+     * 하드코딩으로 되돌려도 다른 단언이 전부 통과한다. 지수 카드를 실제로 그리게 해서
+     * 그 경로도 고정한다.
      */
     it('상단 지수 카드에도 scope 값을 그대로 넘긴다', () => {
         mockUseMarketSummary.mockReturnValue({
@@ -509,8 +551,7 @@ describe('MarketSummaryPanel — KR scope', () => {
 
     /**
      * 지수 값은 통화가 아니라 포인트다. `KOSPI ₩6,869`·`S&P 500 $6,740`·`VIX $18.3`은
-     * 틀린 표기인데, 지수 카드가 scope 통화 기호를 그대로 받아 붙이고 있었다. 환율
-     * (`KRW=X`)·ETF는 통화 값이라 기호를 유지해야 한다 — 지수만 빼고 나머지는 그대로.
+     * 틀린 표기다. 환율(`KRW=X`)·ETF는 통화 값이라 기호를 유지해야 한다 — 지수만 뺀다.
      */
     describe('지수 카드 가격 접두', () => {
         const quote = (symbol: string, fmpSymbol: string) => ({

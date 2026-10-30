@@ -121,6 +121,20 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
         ).toBeInTheDocument();
     });
 
+    it('제목과 "지난 AI 분석" 배지 사이에 실제 공백이 있다', () => {
+        const { container } = render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                asOf={new Date('2026-07-31T21:00:00Z')}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(container.textContent).toContain('최근 분석 요약 지난 AI 분석');
+    });
+
     it('기준일 캡션은 기계가 읽는 시각을 단 <time dateTime>이다', () => {
         render(
             <SnapshotSummarySection

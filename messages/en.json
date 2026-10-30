@@ -750,11 +750,13 @@
             }
         },
         "auth-oauth-consent": {
+            "OAuthAccountCard": {
+                "7af734": "Sign up with your {v0} account"
+            },
             "OAuthConsentForm": {
                 "19b2d1": "Cancel",
                 "6615ab": "Sign Up Complete",
-                "e6e1a2": "Processing...",
-                "ecb738": "Sign up with account"
+                "e6e1a2": "Processing..."
             }
         },
         "auth-oauth": {
@@ -956,6 +958,7 @@
                 "2b8afd": "Go to Sign Up",
                 "2d4880": "Premium Model Usage Information",
                 "2f2f6d": "API Key Registration Required",
+                "41b8c4": "Sign up to use this model — no API key needed.",
                 "671fa2": "After signing up, if you register an API key, you can use this model.",
                 "94b7db": "Close",
                 "e91c23": "Go to Register"
@@ -986,7 +989,7 @@
             "ReasoningToggle": {
                 "3592be": "This feature allows AI to reason more deeply in multiple steps before providing an answer.",
                 "c48ae3": "However, analysis may take a bit longer.",
-                "ddf353": "Enables a more thorough analysis considering indicators, news, and scenarios.\n                    "
+                "ddf353": "Enables a more thorough analysis considering indicators, news, and scenarios."
             },
             "a11y": {
                 "featureLabel": "Detailed analysis",
@@ -1472,11 +1475,15 @@
             "descriptionFlowsKr": "5% major-holder and insider ownership filings with an AI reading"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "Stop Loss",
+                "take_profit": "Take Profit",
+                "time": "Time Limit"
+            },
             "backtestRiskLevel": {
                 "extreme": "Extreme Risk",
                 "high": "High Risk",
                 "low": "Low Risk",
-                "medium": "Medium Risk",
                 "moderate": "Medium Risk"
             },
             "chamber": {
@@ -2692,7 +2699,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "(as of {v0} close)",
                 "fa167e": "Current Score",
-                "fabc11": "Fear & Greed Index summary"
+                "fabc11": "Fear & Greed Index summary",
+                "scoreValue": "{v0} / 100 ({v1})"
             },
             "FearGreedHeaderChip": {
                 "afe032": "Insufficient Fear & Greed Data",
@@ -2769,7 +2777,8 @@
                 "beae1d": "The above indicators are automatically calculated values based on the displayed chart data.",
                 "d8446c": "MACD Momentum",
                 "e532e4": "({v0} min delay)",
-                "recentBarsPosition": "Position over the last {v0} bars"
+                "recentBarsPosition": "Position over the last {v0} bars",
+                "rsiValue": "{v0} ({v1})"
             },
             "TechnicalSnapshotProse": {
                 "938737": "Technical Analysis Summary",
@@ -3234,6 +3243,8 @@
             "ctaBody": "Search a stock you follow to read its chart and analysis side by side.",
             "ctaButton": "Search stocks",
             "ctaHeading": "See it on a real stock",
+            "demoFallbackDescription": "Example chart of {count, plural, one {# candlestick} other {# candlesticks}}",
+            "demoFallbackDescriptionWithPanes": "Example chart of {count, plural, one {# candlestick} other {# candlesticks}} (indicator panes: {panes})",
             "emptyAiQuestion": "A term missing from the guide: {query}. Explain it simply with a chart example",
             "emptyAskAi": "Ask the AI",
             "emptyBody": "Try another name, or ask the AI directly.",
@@ -3487,7 +3498,6 @@
                 "edb872": "Entry Opinion",
                 "f0256c": "Sign up to receive detailed analysis with all skills applied.",
                 "f0cdeb": "AI Analysis",
-                "f744e1": "Hide Chart Price Lines",
                 "fb0cf0": "Key Prices",
                 "bcc718": "View on Chart",
                 "f66b28": "View {v0} on chart"
@@ -3638,11 +3648,9 @@
                 "456225": "Target Price:",
                 "06cf3e": "<n>{v0}</n> {v0, plural, one {day} other {days}}",
                 "0f8bf6": "AI Entry Recommendation",
-                "1e38a3": "Stop Loss",
                 "31e4d3": "Buy",
                 "540e42": "AI Hold Recommendation",
                 "58b71d": "AI Prediction Level",
-                "62a65c": "Sell",
                 "6c8ca5": "AI Avoid Recommendation",
                 "75a556": "Reason:",
                 "b19f09": "Loss",
@@ -3651,8 +3659,9 @@
                 "fa9de3": "✓ Reached"
             },
             "BacktestCaseList": {
-                "9018e2": "No cases for this stock.",
-                "caseCount": "{v0} cases"
+                "caseCount": "{v0} cases",
+                "emptyDataset": "No cases to display.",
+                "emptyFiltered": "No cases for the selected stock."
             },
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
@@ -3688,7 +3697,8 @@
             "l5": "Honesty and safety (L5)",
             "l5Note": "Neutral judges, average on a 0 to 1 scale",
             "more": "See the full benchmark results",
-            "sub": "Objective score gaps on the same {items, number} questions. A positive number means {subject} scored higher.",
+            "questions": "{n, number} shared questions",
+            "sub": "Objective score gaps on the same questions. A positive number means {subject} scored higher.",
             "title": "Benchmark results",
             "verdict": {
                 "ahead": "Clearly ahead",
@@ -3789,7 +3799,7 @@
         },
         "ask-ai-fab": {
             "label": "Ask SIGLENS AI",
-            "ariaLabel": "Ask SIGLENS AI (opens in a new tab)",
+            "newTab": "(opens in a new tab)",
             "question": "Give me an overall read on how {name} is doing right now",
             "shortLabel": "Ask AI",
             "guideQuestion": "Guide: {title}. Explain it simply with a chart example"
@@ -3804,7 +3814,6 @@
                 "0c2cd8": "Holder",
                 "1ed947": "Disclosure Date",
                 "26d466": "Disclosure",
-                "27edc1": "Senate",
                 "29c3ae": "Member",
                 "29efb6": "Type",
                 "5073ef": "Asset Description",
@@ -3812,7 +3821,6 @@
                 "af2fee": "Category",
                 "b488b1": "← Scroll horizontally →",
                 "c8eed2": "Amount Range",
-                "d8edd7": "House",
                 "de5545": "Congressional Trades Disclosure List",
                 "e6fa15": "Transaction Date",
                 "fdf8d2": "Disclosure Search"
@@ -3846,6 +3854,8 @@
             "disclosureDocument": "document",
             "disclosureLink": "{v0} {v1} {v2} disclosure: {v3}",
             "disclosureSearch": "search",
+            "ptrIdFull": "Full PTR ID: {v0}",
+            "ptrIdLabel": "PTR ID {v0}…",
             "tooltip": {
                 "amountRange": [
                     "The STOCK Act (2012) lets members disclose a range (e.g. $1,001–$15,000) instead of an exact amount.",
@@ -3870,22 +3880,25 @@
                 "senateDisclosure": [
                     "Senate filings (efdsearch) open only after an agreement page. Search again there by PTR ID. House filings are direct PDF links and open right away."
                 ]
-            }
+            },
+            "tradesCaptionTruncated": "Congressional trades disclosure list (showing the latest {v0} of {v1} trades)",
+            "tradesTruncated": "Showing only the latest {v0} trades · {v1} in total"
         },
         "dashboard": {
             "BriefingCard": {
                 "38eff4": "Generating AI Briefing...",
-                "39b300": "as of",
                 "7bd647": "Declining Sectors",
                 "8b256d": "Failed to load briefing.",
-                "e1760c": "Rising Sectors"
+                "e1760c": "Rising Sectors",
+                "generatedAt": "As of <time>{v0}</time> KST"
             },
             "IndexCard": {
-                "analyzeTitle": "{v0} analysis"
+                "analyzeTitle": "Analyze {v0}"
             },
             "MarketDataErrorNotice": {
                 "69afbd": "Please refresh and try again shortly.",
                 "76bb07": "Close Notice",
+                "marketLabelCrypto": "the crypto market",
                 "marketLabelKr": "the Korean stock market",
                 "marketLabelUs": "the U.S. stock market",
                 "partial": "Some {v0} data could not be loaded.",
@@ -3899,7 +3912,7 @@
             },
             "SectorFactsSummary": {
                 "581217": "Sector Signals Overview",
-                "9550ad": "No stocks with technical signals currently. Please check again shortly.\n                    ",
+                "9550ad": "No stocks with technical signals currently. Please check again shortly.",
                 "a39a24": "Sector Signal Summary",
                 "e6dcde": "{v0} {v0, plural, one {stock} other {stocks}} with bullish signals, {v1} {v1, plural, one {stock} other {stocks}} with bearish signals"
             },
@@ -3912,7 +3925,11 @@
                 "976db4": "Bullish Signs",
                 "9c8687": "The direction of movement is unclear, so it's advisable to be cautious.\n                                ",
                 "ab2e36": "No signals detected in this sector. Explore other sectors.",
-                "ede11c": "These are stocks where the strength of uptrend and downtrend signals is similar.\n                                "
+                "ede11c": "These are stocks where the strength of uptrend and downtrend signals is similar.\n                                ",
+                "loadFailed": "Couldn't load sector signals. Please try again shortly.",
+                "loading": "Loading sector signals.",
+                "retry": "Try again",
+                "statusSummary": "Stocks by group: uptrend signals {v0}, bullish signs {v1}, mixed {v2}, bearish signs {v3}, downtrend signals {v4}"
             },
             "SectorSignalPanelSkeleton": {
                 "f65a95": "Loading Sector Signals"
@@ -4161,7 +4178,8 @@
             },
             "periodToggle": {
                 "annual": "Annual",
-                "quarter": "Quarterly"
+                "quarter": "Quarterly",
+                "quarterUnavailable": "Quarterly financial statements couldn't be loaded, so annual figures are shown."
             },
             "section": {
                 "balanceSheet": "Balance sheet",
@@ -4198,6 +4216,22 @@
                     "Total debt minus the cash on hand.",
                     "A negative figure means cash exceeds debt: a “net cash” position, which is very solid."
                 ]
+            },
+            "signalType": {
+                "accrualWarning": "Earnings quality caution",
+                "capexHeavy": "Heavy capital spending",
+                "debtRising": "Debt rising",
+                "earningsQualityGood": "Strong earnings quality",
+                "fcfGrowth": "Free cash flow growth",
+                "fcfNegative": "Negative free cash flow",
+                "fcfSolid": "Solid free cash flow",
+                "growthDecline": "Revenue decline",
+                "marginContraction": "Margin contraction",
+                "marginExpansion": "Margin expansion",
+                "netCash": "Net cash position",
+                "operatingIncomeGrowth": "Operating income growth",
+                "operatingLeverage": "Operating leverage",
+                "revenueAccel": "Revenue growth accelerating"
             }
         },
         "fundamental": {
@@ -4505,6 +4539,7 @@
             },
             "dilution": {
                 "filing": "SEC filing",
+                "filingLabel": "SEC filing, {form} filed {date}",
                 "kind": {
                     "atm": "ATM",
                     "bestEfforts": "Best efforts",
@@ -4537,6 +4572,7 @@
                 "insiderCluster": "Cluster buy by {count} different insiders",
                 "insiderCounts": "{buys} buys, {sells} sells",
                 "insiderNetBuy": "Net buying of {amount} in the last {days} days",
+                "insiderNetFlat": "No net buying or selling in the last {days} days",
                 "insiderNetSell": "Net selling of {amount} in the last {days} days",
                 "insiderProposedSales": "Proposed sale notices (Form 144): {count}, {amount}",
                 "largeHolderCounts": "13D positions {d}, filings {df}; 13G positions {g}, filings {gf} (last {days} days)",
@@ -4582,6 +4618,7 @@
                 "colShares": "Shares",
                 "colValue": "Value",
                 "filing": "View filing",
+                "filingLabel": "View filing: Form 144 by {filer}",
                 "none": "No proposed sale notices on file.",
                 "omitted": "{count} older notices are left out of the list.",
                 "planBadge": "10b5-1 plan",
@@ -4623,6 +4660,7 @@
                 "title": "Number of Institutional Holders"
             },
             "insider": {
+                "afterWindowTitle": "Outside the scoring window (after {to})",
                 "buy": "Buy",
                 "buys": "Buys",
                 "clusterBadge": "Cluster buy: {count} insiders",
@@ -4633,6 +4671,7 @@
                 "colType": "Type",
                 "colValue": "Value",
                 "filing": "View filing",
+                "filingLabel": "View filing by {name}",
                 "net": "Net buying or selling",
                 "netBuy": "Net buy {amount}",
                 "netFlat": "No net buying or selling",
@@ -4641,6 +4680,7 @@
                 "noRecent": "No insider buys or sells were reported in the last {days} days.",
                 "noTrades": "There are no buy or sell filings to list.",
                 "noTradesInWindow": "No buy or sell filings in the last {days} days.",
+                "omitted": "{count} older trades are left out of the table.",
                 "omittedOther": "{count} other filings, such as gifts and option exercises, are left out of the table.",
                 "outsideWindowNote": "These trades are not counted in the summary above.",
                 "outsideWindowTitle": "Outside the scoring window (before {from})",
@@ -4674,6 +4714,7 @@
                 "colPercent": "Stake",
                 "colShares": "Shares",
                 "filing": "View filing",
+                "filingLabel": "View filing: {form} by {filer}",
                 "kind13d": "13D activist",
                 "kind13g": "13G passive",
                 "kindOther": "Other",
@@ -5071,7 +5112,8 @@
                 "242236": "No news in the last {v0} {v0, plural, one {day} other {days}}.",
                 "8e5a3a": "Show more ({v0} remaining)",
                 "b514aa": "Collecting news...",
-                "d107e1": "Latest Market News"
+                "d107e1": "Latest Market News",
+                "pollFailed": "We couldn't load the latest news. Please refresh the page in a moment."
             }
         },
         "news": {
@@ -5334,7 +5376,6 @@
                 "e55475": "OI Data Delay"
             },
             "OverallContent": {
-                "0bb0bd": "An error occurred during analysis.",
                 "0c767c": "Retry",
                 "1c85d8": "An error occurred while preparing news card analysis.",
                 "8b7ae7": "AI Overall Analysis",
@@ -5355,15 +5396,14 @@
                 "99a89d": "Overall Summary"
             },
             "OverallTriggerCta": {
-                "2a1422": "Get AI conclusions integrating charts, options, fundamentals, news, and market sentiment.",
                 "51480a": "Get AI Overall Analysis",
                 "5f4a34": "Once individual news analysis is complete, you can automatically receive an overall analysis\n                    (usually takes 30 seconds to 1 minute).",
                 "8b7ae7": "AI Overall Analysis",
-                "ec0085": "Get AI conclusions integrating charts, news, and market sentiment.",
                 "ff9889": "Analyzing news cards..."
             },
             "ReanalyzeButton": {
-                "1d02c7": "Reanalyze"
+                "1d02c7": "Reanalyze",
+                "pending": "Reanalyzing…"
             },
             "RiskFactors": {
                 "af0480": "Risk Factors",
@@ -5379,7 +5419,12 @@
                 "938737": "Technical Analysis Summary",
                 "6d957a": "Technical Analysis Items"
             },
-            "axisFailed": " ({v0} axis failed)"
+            "axisFailed": " ({v0} axis failed)",
+            "ctaSubtitle": {
+                "crypto": "Get AI conclusions integrating charts, news, and market sentiment.",
+                "equity": "Get AI conclusions integrating charts, options, fundamentals, news, and market sentiment.",
+                "equityNoOptions": "Get AI conclusions integrating charts, fundamentals, news, and market sentiment."
+            }
         },
         "portfolio-position": {
             "PositionBuilding": {
@@ -5404,9 +5449,9 @@
             },
             "PositionHoldingCard": {
                 "0ac914": "Avg. Price {v0}",
-                "0bafa3": "Insufficient Data",
                 "497d1e": "Current Price",
                 "900beb": "Avg. Price",
+                "avgInvalid": "Check your average price",
                 "ba09a5": "Loading {v0} position",
                 "fa94cf": "Failed to load range data.",
                 "fb64df": "Return Rate"
@@ -5469,7 +5514,6 @@
             "ShareSheet": {
                 "01660a": "Copy Link",
                 "4cb3cd": "Share on X",
-                "a46c88": "Share on X (Twitter)",
                 "c040b8": "Link copied",
                 "e4441b": "Share Link (Copy Manually)",
                 "e5c85b": "Copied"
@@ -5478,7 +5522,7 @@
                 "2d4e13": "Later",
                 "5481d6": "Preparing analysis before sharing",
                 "94b7db": "Close",
-                "b74ea2": "There's no AI analysis for this stock yet. It'll be ready in a moment.\n                        Once complete, we'll take you to the share screen.",
+                "b74ea2": "There's no AI analysis for this stock yet. It'll be ready in a moment. Once complete, we'll take you to the share screen.",
                 "cc6aae": "Analyze and Share"
             }
         },
@@ -5569,6 +5613,7 @@
                 "73e5a8": "Rename",
                 "9a7569": "Conversation list",
                 "backToSiglens": "Back to SIGLENS",
+                "deleteFailed": "Couldn't delete the conversation. Please try again.",
                 "empty": "No conversations yet.",
                 "fc81e2": "Delete",
                 "groupOlder": "Older",
@@ -5583,6 +5628,7 @@
                 "noMatch": "No matches.",
                 "privacy": "Privacy Policy",
                 "renameCancel": "Cancel rename",
+                "renameFailed": "Couldn't rename the conversation. Please try again.",
                 "terms": "Terms of Service"
             },
             "ToolActivity": {

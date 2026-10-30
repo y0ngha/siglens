@@ -10,7 +10,7 @@ import {
     resolvePriceRange,
 } from '@/app/[locale]/[symbol]/position/_lib/pricePosition';
 import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
-import type { PositionTranslator } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+import type { PositionTranslator } from '@/widgets/portfolio-position/utils/positionBuildingNotes';
 
 /** 키와 인자를 그대로 드러내는 번역자 — 어떤 키를 골랐는지 단언한다. */
 const echo: PositionTranslator = (key, values) =>

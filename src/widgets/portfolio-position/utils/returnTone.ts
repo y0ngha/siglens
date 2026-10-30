@@ -1,0 +1,40 @@
+/**
+ * 손익 부호 → 색 토큰. 이 위젯의 모든 손익 표시(빌딩 리드아웃·마커, 보유 카드, 내 위치 카드, 포지션
+ * 요약의 평가손익·수익률)가 같은 규칙을 쓴다 — 정확히 0은 이익도 손실도 아니라 중립색이다
+ * (`signColorClass`는 0을 이익색으로 칠한다).
+ */
+
+/** 0을 따로 두는 세 갈래 — 본전은 이익도 손실도 아니다. */
+export type ReturnSign = 'gain' | 'loss' | 'flat';
+
+/** 부호만 본다 — 수익률(%)이든 평가손익 금액이든 같은 규칙이다. */
+export function returnSign(signedValue: number): ReturnSign {
+    if (signedValue > 0) return 'gain';
+    if (signedValue < 0) return 'loss';
+    return 'flat';
+}
+
+const RETURN_TEXT_CLASS: Record<ReturnSign, string> = {
+    gain: 'text-ui-success-text',
+    loss: 'text-ui-danger-text',
+    flat: 'text-secondary-400',
+};
+
+/** 손익 글자 색 — 부호만 본다(수익률 %·평가손익 금액 모두). */
+export function returnTextClass(signedValue: number): string {
+    return RETURN_TEXT_CLASS[returnSign(signedValue)];
+}
+
+const MARKER_CLASS: Record<ReturnSign, string> = {
+    gain: 'text-ui-success-text',
+    loss: 'text-ui-danger-text',
+    flat: 'text-secondary-100',
+};
+
+/**
+ * ●현재가 마커 색. 평단이 없으면 수익/손실이 정의되지 않으므로 0%와 같은 중립색을 쓴다 —
+ * 색이 의미를 가진 척하지 않는다. 마커는 어두운 건물 위에 놓여 중립색이 리드아웃보다 밝다.
+ */
+export function currentMarkerClass(returnPct: number, hasAvg: boolean): string {
+    return MARKER_CLASS[hasAvg ? returnSign(returnPct) : 'flat'];
+}
