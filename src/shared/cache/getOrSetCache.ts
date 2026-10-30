@@ -1,10 +1,7 @@
 import 'server-only';
 import type { Redis } from '@upstash/redis';
-import { getRedisClient } from '@/shared/cache/redisClient';
-import {
-    decodeCacheValue,
-    encodeCacheValue,
-} from '@/shared/cache/cacheValueCodec';
+import { getRedisClient } from './redisClient';
+import { decodeCacheValue, encodeCacheValue } from './cacheValueCodec';
 
 interface CacheEnvelope<T> {
     data: T;
