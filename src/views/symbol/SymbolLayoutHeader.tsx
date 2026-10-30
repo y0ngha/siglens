@@ -138,6 +138,7 @@ export function SymbolLayoutHeader({
                 <PremiumModelGateModal
                     mode={gateModal.mode}
                     providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
+                    access={gateModal.access}
                     onClose={dismissGate}
                 />
             )}
