@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { RouteMessages } from './RouteMessages';
 import { resolveLocale } from './locales';
 
@@ -30,13 +30,8 @@ interface RouteLayoutProps {
  * `route` 문자열은 `messages/_meta/clientKeys.json`의 키와 일치해야 한다 —
  * 어긋나면 크롬으로 폴백하고, 그 누락은 `clientKeyCoverage` 테스트가 잡는다.
  */
-export function routeLayout(
-    route: string
-): (props: RouteLayoutProps) => Promise<ReactElement> {
-    return async function RouteLayout({
-        children,
-        params,
-    }: RouteLayoutProps): Promise<ReactElement> {
+export function routeLayout(route: string) {
+    return async function RouteLayout({ children, params }: RouteLayoutProps) {
         const { locale } = await params;
         return (
             <RouteMessages route={route} locale={resolveLocale(locale)}>

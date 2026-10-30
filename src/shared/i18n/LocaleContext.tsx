@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    createContext,
-    useContext,
-    useMemo,
-    type ReactElement,
-    type ReactNode,
-} from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
 interface LocaleContextValue {
@@ -40,7 +34,7 @@ export function LocaleProvider({
     readonly locale: Locale;
     readonly hrefBase?: string;
     readonly children: ReactNode;
-}): ReactElement {
+}) {
     const value = useMemo(() => ({ locale, hrefBase }), [locale, hrefBase]);
     return (
         <LocaleContext.Provider value={value}>
