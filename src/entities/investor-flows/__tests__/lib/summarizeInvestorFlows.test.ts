@@ -3,15 +3,17 @@ import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
 import type { ProposedSaleFormType, ProposedSaleWithForm } from '../../model';
 import {
     countProposedSales,
-    summarizeInvestorFlows,
     SUMMARY_MAX_INSIDER_TRANSACTIONS,
     SUMMARY_MAX_PROPOSED_SALES,
+} from '../../lib/summary/insider';
+import { summarizeInvestorFlows } from '../../lib/summarizeInvestorFlows';
+import {
     SUMMARY_MAX_QUARTERS,
-    SUMMARY_MAX_SQUEEZE_COMPONENTS,
-    SUMMARY_MAX_SIGNALS,
     SUMMARY_MAX_TOP_HOLDERS,
-    SUMMARY_RATIO_DIGITS,
-} from '../../lib/summarizeInvestorFlows';
+} from '../../lib/summary/institutional';
+import { SUMMARY_MAX_SQUEEZE_COMPONENTS } from '../../lib/summary/short';
+import { SUMMARY_MAX_SIGNALS } from '../../lib/summary/signals';
+import { SUMMARY_RATIO_DIGITS } from '../../lib/summary/format';
 import {
     makeExpandedSnapshot,
     makeFailsToDeliver,

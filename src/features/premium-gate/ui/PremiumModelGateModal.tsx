@@ -9,19 +9,39 @@ import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { LockIcon } from '@/shared/ui/StrokeIcons';
+import type { GatedModelAccess } from '../lib/resolveGateMode';
 
 interface PremiumModelGateModalProps {
     mode: GateMode;
     providerLabel?: string;
+    /**
+     * 고른 모델의 등급. `auth` 모드에서 member 모델은 가입만으로 열리므로 API 키 안내를
+     * 빼고, byok 모델(또는 생략)이면 가입 후 키 등록까지 안내한다.
+     */
+    access?: GatedModelAccess;
     onClose: () => void;
+}
+
+/** 모드별 아이콘 색·제목·본문·CTA. */
+interface GateContent {
+    iconColorClass: string;
+    title: string;
+    body: string;
+    ctaHref: string;
+    ctaLabel: string;
 }
 
 const TITLE_ID = 'premium-model-gate-title';
 const ACTION_SIZE = 'h-10 px-4 text-sm';
 
+/**
+ * 잠긴 모델을 골랐을 때 뜨는 게이트 모달. 비회원에게는 가입(`auth`), 키 없는 회원에게는
+ * API 키 등록(`byok`)을 안내한다. 열림 여부는 호출부가 정하고, 닫기는 `onClose`로 알린다.
+ */
 export function PremiumModelGateModal({
     mode,
     providerLabel,
+    access = 'byok',
     onClose,
 }: PremiumModelGateModalProps) {
     const t = useTranslations('features.premium-gate');
@@ -33,7 +53,6 @@ export function PremiumModelGateModal({
     // 비회원 퍼널에 넣지 않는다(노출·클릭 모두).
     useFunnelNudgeShown({ kind: 'model_gate' }, isAuth);
 
-    // auth는 가입 페이지로, byok는 계정 설정(API 키 등록)으로 보낸다.
     const handleCtaClick = (): void => {
         if (isAuth) {
             trackFunnelEvent('nudge_clicked', {
@@ -43,15 +62,29 @@ export function PremiumModelGateModal({
         }
         onClose();
     };
-    const iconColorClass = isAuth
-        ? 'text-ui-warning-text'
-        : 'text-ui-success-text';
-    const title = isAuth
-        ? t('PremiumModelGateModal.2d4880')
-        : t('PremiumModelGateModal.2f2f6d');
-    const body = isAuth
-        ? t('PremiumModelGateModal.671fa2')
-        : tMisc('byokUnlock', { v0: providerLabel ?? '' });
+
+    // auth는 가입 페이지로, byok는 계정 설정(API 키 등록)으로 보낸다. `Record`라 모드가
+    // 늘면 여기서 컴파일 오류로 드러난다.
+    const content: Record<GateMode, GateContent> = {
+        auth: {
+            iconColorClass: 'text-ui-warning-text',
+            title: t('PremiumModelGateModal.2d4880'),
+            body:
+                access === 'member'
+                    ? t('PremiumModelGateModal.41b8c4')
+                    : t('PremiumModelGateModal.671fa2'),
+            ctaHref: '/signup',
+            ctaLabel: t('PremiumModelGateModal.2b8afd'),
+        },
+        byok: {
+            iconColorClass: 'text-ui-success-text',
+            title: t('PremiumModelGateModal.2f2f6d'),
+            body: tMisc('byokUnlock', { v0: providerLabel ?? '' }),
+            ctaHref: '/account',
+            ctaLabel: t('PremiumModelGateModal.e91c23'),
+        },
+    };
+    const { iconColorClass, title, body, ctaHref, ctaLabel } = content[mode];
 
     return (
         <ModalShell
@@ -71,23 +104,13 @@ export function PremiumModelGateModal({
             </div>
 
             <div className="flex flex-col gap-2">
-                {isAuth ? (
-                    <Link
-                        href="/signup"
-                        onClick={handleCtaClick}
-                        className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
-                    >
-                        {t('PremiumModelGateModal.2b8afd')}
-                    </Link>
-                ) : (
-                    <Link
-                        href="/account"
-                        onClick={handleCtaClick}
-                        className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
-                    >
-                        {t('PremiumModelGateModal.e91c23')}
-                    </Link>
-                )}
+                <Link
+                    href={ctaHref}
+                    onClick={handleCtaClick}
+                    className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
+                >
+                    {ctaLabel}
+                </Link>
                 <button
                     type="button"
                     onClick={onClose}

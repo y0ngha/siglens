@@ -74,4 +74,8 @@ describe('routeKindOf', () => {
 
         expect(generic.toSorted()).toEqual(genericByDesign.toSorted());
     });
+
+    it('프로토타입 키(`constructor`)는 종류 표가 아니라 종목 형상으로 판정된다', () => {
+        expect(routeKindOf('/constructor')).toBe('symbol');
+    });
 });

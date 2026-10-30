@@ -11,10 +11,12 @@ import type {
 import {
     buildReportEmail,
     REPORT_EMAIL_MAX_HTML_BYTES,
-    type BuildReportEmailInput,
-    type ReportEmailTranslator,
-    type SignalLabelResolver,
 } from '@/entities/email-report/templates/reportEmail';
+import type {
+    BuildReportEmailInput,
+    ReportEmailTranslator,
+    SignalLabelResolver,
+} from '@/entities/email-report/templates/reportEmailTypes';
 
 /** 키와 인자를 그대로 드러내는 번역자 — 어떤 키가 쓰였는지 단언할 수 있다. */
 const t: ReportEmailTranslator = (key, values) =>

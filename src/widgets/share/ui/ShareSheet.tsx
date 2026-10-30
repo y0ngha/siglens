@@ -1,71 +1,39 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
-import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
-import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
-import { cn } from '@/shared/lib/cn';
-import { buildTweetIntentUrl } from '@/shared/lib/share';
-import { useEffect, useRef, useState } from 'react';
-import { CheckIcon, LinkIcon } from '@/shared/ui/StrokeIcons';
-import { XLogoIcon } from './icons';
+/** 데스크톱 공유 팝오버 — 링크 복사와 X 공유를 담은 비모달 패널. */
+
+import type { RefObject } from 'react';
+import { useShareSheet } from '../hooks/useShareSheet';
+import { ShareSheetCopyAction } from './sheet/ShareSheetCopyAction';
+import { ShareSheetXLink } from './sheet/ShareSheetXLink';
 
 interface ShareSheetProps {
     shareUrl: string;
+    /** X에 게시될 본문. 스크린리더용 설명으로도 읽힌다. */
     tweetText: string;
+    /** 패널의 접근 이름. */
     title: string;
-    description: string;
+    /** 시트를 연 트리거 버튼. 트리거 클릭은 바깥 클릭으로 치지 않는다. */
+    anchorRef: RefObject<HTMLElement | null>;
     onClose: () => void;
 }
 
-const ROW_BASE =
-    'flex w-full items-center gap-3 rounded px-3 py-2 text-sm text-secondary-200 hover:bg-secondary-800 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none transition-colors';
-
 /**
- * Desktop popover panel listing share actions.
- * Focus management: first actionable item receives focus on mount; Escape triggers onClose.
- * Click-outside dismissal: pointerdown anywhere outside the panel calls onClose (Spec §9-4).
+ * 공유 버튼 옆에 앵커되는 공유 시트. 열림 여부는 부모가 갖고, 마운트 = 열림이다.
  *
- * The component is "always-open presentational" — open/close state lives in the parent
- * (ShareButton via usePopoverToggle). ShareSheet only manages internal item focus.
- *
- * NON-modal popover: dismissed via click-outside (useOnClickOutside) + Escape
- * (useEscapeKey). Does NOT use a focus trap — unlike ShareTriggerDialog and
- * SharePreparingModal (which are true modal dialogs) this is an inline popover
- * where users can tab through OS affordances freely. The absence of useFocusTrap
- * is intentional, not an oversight.
+ * 포커스 트랩을 걸지 않는 것은 의도다. 트리거 옆 인라인 팝오버라 Tab으로 자유롭게
+ * 빠져나갈 수 있어야 하고, 닫기는 Esc·바깥 클릭·트리거 재클릭으로 한다. 진짜 모달인
+ * ShareTriggerDialog·SharePreparingModal과 달리 `ModalShell`을 쓰지 않는다.
  */
 export function ShareSheet({
     shareUrl,
     tweetText,
     title,
-    description,
+    anchorRef,
     onClose,
 }: ShareSheetProps) {
-    const t = useTranslations('widgets.share');
-    const { copied, copy } = useCopyToClipboard();
-    const [copyFailed, setCopyFailed] = useState(false);
-    const firstItemRef = useRef<HTMLButtonElement>(null);
-    const panelRef = useRef<HTMLDivElement>(null);
-
-    // Escape key closes the popover.
-    useEscapeKey(onClose, true);
-
-    // Click/tap outside the panel closes the popover (Spec §9-4).
-    useOnClickOutside([panelRef], onClose, { enabled: true });
-
-    // Focus the first actionable item on mount (a11y: keyboard users land here).
-    useEffect(() => {
-        firstItemRef.current?.focus();
-    }, []);
-
-    async function handleCopy() {
-        setCopyFailed(false);
-        // 실패 폴백(선택 가능한 입력)은 훅의 `failed`와 달리 시간이 지나도 사라지지 않는다.
-        if (!(await copy(shareUrl))) setCopyFailed(true);
-    }
-
-    const tweetUrl = buildTweetIntentUrl({ text: tweetText, shareUrl });
+    const { panelRef, firstItemRef, copied, copyFailed, tweetUrl, handleCopy } =
+        useShareSheet({ shareUrl, tweetText, anchorRef, onClose });
 
     return (
         <div
@@ -76,56 +44,15 @@ export function ShareSheet({
             role="dialog"
             aria-label={title}
         >
-            {/* Accessible live region for copy announcement */}
-            <div aria-live="polite" className="sr-only">
-                {copied ? t('ShareSheet.c040b8') : ''}
-            </div>
-
-            {/* 1. Copy link */}
-            <button
-                ref={firstItemRef}
-                type="button"
-                onClick={handleCopy}
-                className={cn(ROW_BASE, 'touch-manipulation')}
-            >
-                {copied ? (
-                    <CheckIcon className="size-5 text-primary-300" />
-                ) : (
-                    <LinkIcon className="size-5" />
-                )}
-                <span>
-                    {copied ? t('ShareSheet.e5c85b') : t('ShareSheet.01660a')}
-                </span>
-            </button>
-
-            {/* Fallback: selectable readonly input when clipboard API fails */}
-            {copyFailed && (
-                <div className="px-3 py-2">
-                    <input
-                        type="text"
-                        readOnly
-                        value={shareUrl}
-                        className="w-full rounded border border-border-control bg-secondary-800 px-2 py-1 text-xs text-secondary-200"
-                        onClick={e => (e.target as HTMLInputElement).select()}
-                        aria-label={t('ShareSheet.e4441b')}
-                    />
-                </div>
-            )}
-
-            {/* 2. X share */}
-            <a
-                href={tweetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(ROW_BASE, 'touch-manipulation')}
-                aria-label={t('ShareSheet.a46c88')}
-            >
-                <XLogoIcon className="h-5 w-5" />
-                <span>{t('ShareSheet.4cb3cd')}</span>
-            </a>
-
-            {/* Screen-reader-only description */}
-            <p className="sr-only">{description}</p>
+            <ShareSheetCopyAction
+                buttonRef={firstItemRef}
+                shareUrl={shareUrl}
+                copied={copied}
+                copyFailed={copyFailed}
+                onCopy={handleCopy}
+            />
+            <ShareSheetXLink href={tweetUrl} />
+            <p className="sr-only">{tweetText}</p>
         </div>
     );
 }

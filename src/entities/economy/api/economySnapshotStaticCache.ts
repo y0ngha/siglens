@@ -3,9 +3,8 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
-import { SECONDS_PER_DAY } from '@/shared/config/time';
-
 import { markSsrMiss } from '@/shared/cache/ssrMissMarker';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 import {
     ECONOMY_CONFIG_FINGERPRINT,
@@ -50,7 +49,7 @@ export const getEconomySnapshotStatic = cache(
                     const snapshot = await getEconomySnapshot();
                     // Redis 층(`getEconomySnapshot`)과 **같은 quorum**으로 거른다. 예전에는
                     // Redis만 걸러서, 소스가 전부 실패한 빈 스냅샷이 이 층에는 24h 그대로
-                    // 굳었다 — `EconomyDegraded` + noindex가 하루 내내(2026-10-01 허브 감사 B1).
+                    // 굳었다 — `EconomyDegraded` + noindex가 하루 내내(2026-10-01 확인).
                     if (!shouldCacheEconomySnapshot(snapshot)) {
                         throw new IncompleteSnapshotError(snapshot);
                     }

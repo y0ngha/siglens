@@ -17,9 +17,9 @@ export const KOSPI_INDEX_SYMBOL = '^KS11';
 /**
  * 의미(semantic) 키 → yahoo 티커. `vix`만 티커가 없고 파생값이라 여기 없다.
  *
- * core는 티커를 모르고 경제적 역할만 안다 — "a consumer backed by another provider
- * is free to map differently as long as the economic meaning holds"
- * (core `MarketFearGreedSeriesKey` JSDoc). 아래는 그 매핑의 한국판이다.
+ * core는 티커를 모르고 경제적 역할만 안다 — 다른 제공자를 쓰는 소비자는 경제적 의미만
+ * 유지되면 자유롭게 다르게 매핑해도 된다(core `MarketFearGreedSeriesKey` JSDoc). 아래는 그
+ * 매핑의 한국판이다.
  *
  * 2026-08-18 전부 실호출 확인(3년 창에서 720~722 거래일).
  *
@@ -47,7 +47,7 @@ export const MARKET_FEAR_GREED_KR_SYMBOLS = {
 } as const satisfies Record<Exclude<MarketFearGreedSeriesKey, 'vix'>, string>;
 
 /**
- * Calendar-day lookback requested from yahoo. 미국판·종목 지수와 같은 5년
+ * yahoo에 요청하는 달력일 조회 창. 미국판·종목 지수와 같은 5년
  * (core `FEAR_GREED_LOOKBACK_DAYS`) — 점수가 이 기간 대비 백분위라 모든 공포·탐욕
  * 지수가 같은 기간을 쓴다. 모멘텀 창 125세션 + `confidence: 'normal'` 60세션과
  * "1년 전" 비교도 덮는다.

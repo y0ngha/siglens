@@ -86,7 +86,7 @@ export const KR_SECTOR_GROUPS: readonly SectorGroupDef[] = [
  * 신호 스캔 대상 종목 — `shared/config/popular-tickers.ts`의 KR 블록 **20종 그대로**다.
  *
  * 새 심볼을 넣지 않은 것은 의도다. 국내 종목을 하나 추가하면 한글명 시드
- * (`CURATED_KOREAN_NAMES`), 사이트맵 범위(`docs/architecture/SITEMAP_SCOPE.md`),
+ * (`CURATED_KOREAN_NAMES`), 사이트맵 범위,
  * prewarm 회전 대상까지 함께 손봐야 하는데, 그건 이 작업(동선 재편)의 목적과 무관한
  * 파생 작업이다. 섹터당 2~5종으로 얇지만 정직하다 — 확장은 후속 과제.
  *

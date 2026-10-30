@@ -1,11 +1,12 @@
 import { useTranslations } from 'next-intl';
 import { LOCALE_NATIVE_LABEL, type Locale } from '@/shared/i18n/locales';
+import { LegalWarningNotice } from './ui/notice/LegalWarningNotice';
 
 interface UntranslatedNoticeProps {
     /** 사용자가 요청한 로케일. */
-    requested: Locale;
+    readonly requested: Locale;
     /** 실제로 본문을 제공한 로케일. */
-    served: Locale;
+    readonly served: Locale;
 }
 
 /**
@@ -24,17 +25,11 @@ export function UntranslatedNotice({
 }: UntranslatedNoticeProps) {
     const t = useTranslations('widgets.legal');
     return (
-        <div
-            role="note"
-            aria-label={t('untranslatedNoticeLabel')}
-            className="my-8 rounded-lg border border-ui-warning/30 bg-ui-warning/5 p-4"
-        >
-            <p className="text-sm leading-relaxed text-secondary-200">
-                {t('untranslatedNotice', {
-                    v0: LOCALE_NATIVE_LABEL[requested],
-                    v1: LOCALE_NATIVE_LABEL[served],
-                })}
-            </p>
-        </div>
+        <LegalWarningNotice role="note" label={t('untranslatedNoticeLabel')}>
+            {t('untranslatedNotice', {
+                v0: LOCALE_NATIVE_LABEL[requested],
+                v1: LOCALE_NATIVE_LABEL[served],
+            })}
+        </LegalWarningNotice>
     );
 }

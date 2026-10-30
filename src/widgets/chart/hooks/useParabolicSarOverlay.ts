@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 파라볼릭 SAR 오버레이 시리즈 생성·갱신과 표시 토글 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
@@ -99,7 +103,6 @@ export function useParabolicSarOverlay({
         if (!isVisible) return;
 
         const { parabolicSar } = indicators;
-        if (!parabolicSar.length) return;
 
         if (!upSeriesRef.current || !downSeriesRef.current) return;
 

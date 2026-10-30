@@ -1,10 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
-import koMessages from '../../../messages/ko.json';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { MESSAGE_CATALOGS } from './messageCatalogs';
 import type { ComponentType, ReactNode } from 'react';
 
 /**
@@ -20,7 +17,7 @@ export function IntlTestProvider({ children }: { children: ReactNode }) {
         <LocaleProvider locale={DEFAULT_LOCALE}>
             <NextIntlClientProvider
                 locale={DEFAULT_LOCALE}
-                messages={koMessages}
+                messages={MESSAGE_CATALOGS[DEFAULT_LOCALE]}
                 timeZone="Asia/Seoul"
             >
                 {children}
@@ -28,13 +25,6 @@ export function IntlTestProvider({ children }: { children: ReactNode }) {
         </LocaleProvider>
     );
 }
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-} as const;
 
 /**
  * **로케일을 지정해** 렌더한다 — 로케일별 동작을 검증하는 테스트용.
@@ -48,15 +38,12 @@ const CATALOGS = {
  * 순환이 생겨 테스트 러너가 멈춘다. 요소만 감싸서 돌려주고 호출부가 렌더한다:
  * `render(withLocale(<X />, 'en'))`.
  */
-export function withLocale(
-    ui: ReactNode,
-    locale: keyof typeof CATALOGS
-): ReactNode {
+export function withLocale(ui: ReactNode, locale: Locale): ReactNode {
     return (
         <LocaleProvider locale={locale}>
             <NextIntlClientProvider
                 locale={locale}
-                messages={CATALOGS[locale]}
+                messages={MESSAGE_CATALOGS[locale]}
                 timeZone="Asia/Seoul"
             >
                 {ui}
