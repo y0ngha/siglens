@@ -1,4 +1,14 @@
+/**
+ * 시장 공포·탐욕 비교 타일의 lookback → 기간 라벨 메시지 키 표.
+ */
 import type { MarketFearGreedComparisonKey } from '@/entities/market-fear-greed/model';
+
+/** 비교 타일이 쓰는 `shared.ui.period` 메시지 키. 키 오타가 타입 단계에서 걸리도록 유니온으로 좁힌다. */
+export type MarketComparisonPeriodKey =
+    | 'now'
+    | 'weekAgo'
+    | 'monthAgo'
+    | 'yearAgo';
 
 /**
  * Lookback → `shared.ui.period` 메시지 키. **표시 문자열이 아니다.**
@@ -11,9 +21,8 @@ import type { MarketFearGreedComparisonKey } from '@/entities/market-fear-greed/
  * 내보내면 Fast Refresh가 그 모듈을 컴포넌트 모듈로 보지 못해 편집할 때마다
  * 전체 리마운트가 된다(react-doctor/only-export-components).
  */
-export const MARKET_COMPARISON_LABEL_KEY: Record<
-    MarketFearGreedComparisonKey,
-    string
+export const MARKET_COMPARISON_LABEL_KEY: Readonly<
+    Record<MarketFearGreedComparisonKey, MarketComparisonPeriodKey>
 > = {
     now: 'now',
     '1w': 'weekAgo',

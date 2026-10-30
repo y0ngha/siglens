@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import type { MarketFearGreedComparisonPoint } from '@/entities/market-fear-greed/model';
-import { MarketFearGreedComparison } from '@/widgets/market-fear-greed/MarketFearGreedComparison';
+import { MarketFearGreedComparison } from '@/widgets/market-fear-greed/ui/comparison/MarketFearGreedComparison';
 
 const comparisons: MarketFearGreedComparisonPoint[] = [
     { key: 'now', date: '2026-08-14', score: 62, label: 'GREED' },
