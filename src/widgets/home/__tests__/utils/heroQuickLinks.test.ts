@@ -1,4 +1,4 @@
-import { HERO_QUICK_LINKS } from '../heroQuickLinks';
+import { HERO_QUICK_LINKS } from '../../utils/heroQuickLinks';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import {
     ALL_NAV_REGION_LINKS,

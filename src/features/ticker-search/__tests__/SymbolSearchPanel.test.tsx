@@ -293,4 +293,29 @@ describe('SymbolSearchPanel', () => {
         expect(mockRemoveSearch).toHaveBeenCalledWith('AAPL');
         expect(document.activeElement).not.toBe(document.body);
     });
+
+    it('마지막 칩을 지우면 포커스가 검색 트리거로 간다', async () => {
+        // 마지막 칩이면 행이 통째로 사라진다 — 행에 포커스를 두면 곧바로 <body>로
+        // 떨어진다(WCAG 2.4.3).
+        setRecentSearches(['AAPL']);
+        render(<SymbolSearchPanel />);
+
+        await userEvent.click(
+            screen.getByRole('button', { name: 'AAPL 최근 검색에서 제거' })
+        );
+
+        expect(mockRemoveSearch).toHaveBeenCalledWith('AAPL');
+        expect(
+            screen.getByRole('button', { name: SEARCH_PLACEHOLDER })
+        ).toHaveFocus();
+    });
+
+    it('모두 지우기 버튼은 키보드 포커스 링을 갖는다', () => {
+        setRecentSearches(['AAPL']);
+        render(<SymbolSearchPanel />);
+
+        expect(
+            screen.getByRole('button', { name: '모두 지우기' }).className
+        ).toContain('focus-visible:ring-1');
+    });
 });

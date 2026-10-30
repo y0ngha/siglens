@@ -1,7 +1,11 @@
+import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import {
+    IntlTestProvider,
+    withLocale,
+} from '@/shared/test-utils/intlRenderWrapper';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
@@ -288,6 +292,16 @@ describe('EconomicCalendarGrid — 그리드 구조', () => {
 });
 
 describe('EconomicCalendarGrid default selection from today', () => {
+    // 기본 선택은 마운트 후 갱신된 실제 오늘을 따른다 — 서버 `today`와 같은 날로 시계를 고정한다.
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-06-20T03:00:00Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     const ev = (date: string): EconomicCalendarEvent => ({
         date: `${date} 08:30:00`,
         event: `E ${date}`,
@@ -740,8 +754,33 @@ describe('EconomicCalendarGrid — 월 그리드 UX', () => {
             ).toHaveTextContent('E 2026-06-09');
         });
 
-        it('선택된 날이 든 주는 지난 주여도 접지 않는다 (선택한 칸이 사라지면 안 된다)', () => {
-            // ISR로 묵은 today(6/9)가 기본 선택을 6/9로 정했지만, 실제 오늘은 6/17이다.
+        it('선택된 날이 든 주는 지난 주여도 접지 않는다 (선택한 칸이 사라지면 안 된다)', async () => {
+            const user = userEvent.setup();
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={EVENTS}
+                    today="2026-06-17"
+                />
+            );
+            await user.click(
+                screen.getByRole('button', { name: '지난 일정 보기' })
+            );
+            await user.click(screen.getByRole('button', { name: /6월 9일/ }));
+            // 선택된 주는 지난 주로 치지 않는다 — 남은 지난 주가 없어 접기 토글도 사라진다.
+            expect(
+                screen.queryByRole('button', { name: '지난 일정 접기' })
+            ).not.toBeInTheDocument();
+            expect(
+                container.querySelector('#day-btn-2026-06-09')
+            ).toHaveAttribute('aria-pressed', 'true');
+            expect(
+                container.querySelector('#day-btn-2026-06-09')?.closest('tr')
+            ).not.toHaveAttribute('hidden');
+        });
+
+        // ISR로 묵은 `today`(6/9)로 기본 선택을 고르면 오늘 링(6/17)과 열린 패널이 갈렸다.
+        it('묵은 today prop이 아니라 갱신된 실제 오늘로 기본 선택한다', () => {
             const { container } = render(
                 <EconomicCalendarGrid
                     country="US"
@@ -749,12 +788,13 @@ describe('EconomicCalendarGrid — 월 그리드 UX', () => {
                     today="2026-06-09"
                 />
             );
+            // 실제 오늘(6/17)엔 이벤트가 없어 그 뒤 가장 가까운 6/18이 열린다 — 묵은 6/9가 아니다.
             expect(
-                container.querySelector('#day-btn-2026-06-09')
+                container.querySelector('#day-btn-2026-06-18')
             ).toHaveAttribute('aria-pressed', 'true');
             expect(
-                container.querySelector('#day-btn-2026-06-09')?.closest('tr')
-            ).not.toHaveAttribute('hidden');
+                container.querySelector('#day-btn-2026-06-09')
+            ).toHaveAttribute('aria-pressed', 'false');
         });
 
         it('앞으로 남은 이벤트가 없으면(전부 과거) 접지 않고 토글도 없다', () => {
@@ -953,5 +993,89 @@ describe('EconomicCalendarGrid — 월 그리드 UX', () => {
             renderOne({ estimate: 0.1, previous: null, actual: 0 });
             expect(screen.getByText('예상 0.1% | 실제 0%')).toBeInTheDocument();
         });
+    });
+});
+
+describe('EconomicCalendarGrid — 리뷰 회귀', () => {
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-06-20T03:00:00Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    const ev = (
+        date: string,
+        patch: Partial<EconomicCalendarEvent> = {}
+    ): EconomicCalendarEvent => ({
+        date: `${date} 08:30:00`,
+        event: `E ${date}`,
+        impact: 'High',
+        actual: null,
+        estimate: 1,
+        previous: 1,
+        unit: '%',
+        ...patch,
+    });
+
+    it('선택한 날의 이벤트가 모두 필터로 숨으면 빈 목록 대신 안내 문구를 보인다', () => {
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[ev('2026-06-20')]}
+                today="2026-06-20"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: '높음' }));
+        expect(
+            screen.getByText('선택한 중요도의 일정이 없어요.')
+        ).toBeInTheDocument();
+    });
+
+    // 기본 선택이 마운트 후 정해져, live region이면 누르지 않은 날의 패널 전체가 읽혔다.
+    it('상세 패널 묶음은 live region이 아니다', () => {
+        const { container } = render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[ev('2026-06-20')]}
+                today="2026-06-20"
+            />
+        );
+        expect(container.querySelector('[aria-live]')).toBeNull();
+    });
+
+    it('영어는 건수에 단수·복수를 가린다', () => {
+        render(
+            withLocale(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-20')]}
+                    today="2026-06-20"
+                />,
+                'en'
+            )
+        );
+        expect(screen.getByText('1 event')).toBeInTheDocument();
+    });
+
+    // 한국어 원문이 비어도 사이드카 번역이 있으면 그 문구로 판정·표시한다.
+    it('요약 노출은 실제로 보일 문구(로컬라이즈 우선)로 판정한다', () => {
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[
+                    {
+                        ...ev('2026-06-20'),
+                        sentiment: 'bullish',
+                        summaryKo: '',
+                        summaryLocalized: 'Localized summary',
+                    } as EconomicCalendarEvent,
+                ]}
+                today="2026-06-20"
+            />
+        );
+        expect(screen.getByText('Localized summary')).toBeInTheDocument();
     });
 });
