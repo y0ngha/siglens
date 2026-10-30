@@ -20,8 +20,8 @@ import {
     CALENDAR_ANALYZED_IMPACTS,
     CALENDAR_REGION_LABEL,
     economyCalendarCacheTag,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /** `analyzeEconomicEvents` 호출 옵션 — 방문자 경로는 `limit` 없이, 크론은 상한을 걸어 부른다. */
 export interface AnalyzeEconomicEventsOptions {

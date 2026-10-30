@@ -13,211 +13,211 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 51,
+        "line": 31,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 52,
+        "line": 32,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 53,
+        "line": 33,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 54,
+        "line": 34,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 55,
+        "line": 35,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 56,
+        "line": 36,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 57,
+        "line": 37,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 58,
+        "line": 38,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 74,
+        "line": 33,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 75,
+        "line": 34,
         "reason": "seo-keywords-ko-only",
         "text": "미국 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 76,
+        "line": 35,
         "reason": "seo-keywords-ko-only",
         "text": "FOMC 일정"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 77,
+        "line": 36,
         "reason": "seo-keywords-ko-only",
         "text": "CPI 발표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 78,
+        "line": 37,
         "reason": "seo-keywords-ko-only",
         "text": "미국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 79,
+        "line": 38,
         "reason": "seo-keywords-ko-only",
         "text": "경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 80,
+        "line": 39,
         "reason": "seo-keywords-ko-only",
         "text": "장단기 금리차"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 81,
+        "line": 40,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경기침체"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 82,
+        "line": 41,
         "reason": "seo-keywords-ko-only",
         "text": "2s10s 스프레드"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 83,
+        "line": 42,
         "reason": "seo-keywords-ko-only",
         "text": "10년물 국채 금리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 78,
+        "line": 77,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 79,
+        "line": 78,
         "reason": "seo-keywords-ko-only",
         "text": "시장 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 80,
+        "line": 79,
         "reason": "seo-keywords-ko-only",
         "text": "미국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 82,
+        "line": 81,
         "reason": "seo-keywords-ko-only",
         "text": "VIX 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 83,
+        "line": 82,
         "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 111,
+        "line": 110,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 112,
+        "line": 111,
         "reason": "seo-keywords-ko-only",
         "text": "한국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 113,
+        "line": 112,
         "reason": "seo-keywords-ko-only",
         "text": "국내 증시 투자심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 114,
+        "line": 113,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 115,
+        "line": 114,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 116,
+        "line": 115,
         "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 153,
+        "line": 152,
         "reason": "seo-keywords-ko-only",
         "text": "코인 공포탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 154,
+        "line": 153,
         "reason": "seo-keywords-ko-only",
         "text": "코인 공포지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 155,
+        "line": 154,
         "reason": "seo-keywords-ko-only",
         "text": "코인 탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 156,
+        "line": 155,
         "reason": "seo-keywords-ko-only",
         "text": "크립토 공포지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 157,
+        "line": 156,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 공포탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 158,
+        "line": 157,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 공포탐욕지수"
     },
@@ -229,277 +229,277 @@
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 40,
+        "line": 41,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 오늘"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 41,
+        "line": 42,
         "reason": "seo-keywords-ko-only",
         "text": "코스닥 오늘"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 42,
+        "line": 43,
         "reason": "seo-keywords-ko-only",
         "text": "한국 주식 시장 개요"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 43,
+        "line": 44,
         "reason": "seo-keywords-ko-only",
         "text": "국내 증시 신호"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 44,
+        "line": 45,
         "reason": "seo-keywords-ko-only",
         "text": "반도체 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 45,
+        "line": 46,
         "reason": "seo-keywords-ko-only",
         "text": "2차전지 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 46,
+        "line": 47,
         "reason": "seo-keywords-ko-only",
         "text": "바이오 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 47,
-        "reason": "seo-keywords-ko-only",
-        "text": "골든크로스 스캐너"
-    },
-    {
-        "file": "src/app/[locale]/market/copy.ts",
         "line": 48,
         "reason": "seo-keywords-ko-only",
-        "text": "RSI 다이버전스"
+        "text": "골든크로스 스캐너"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 49,
         "reason": "seo-keywords-ko-only",
-        "text": "볼린저 스퀴즈"
+        "text": "RSI 다이버전스"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
-        "line": 60,
+        "line": 50,
         "reason": "seo-keywords-ko-only",
-        "text": "미국 주식 시장 개요"
+        "text": "볼린저 스퀴즈"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 61,
         "reason": "seo-keywords-ko-only",
-        "text": "오늘의 종목"
+        "text": "미국 주식 시장 개요"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 62,
         "reason": "seo-keywords-ko-only",
-        "text": "거래량 급증"
+        "text": "오늘의 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 63,
         "reason": "seo-keywords-ko-only",
-        "text": "장중 신호"
+        "text": "거래량 급증"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 64,
         "reason": "seo-keywords-ko-only",
-        "text": "섹터 ETF 신호"
+        "text": "장중 신호"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 65,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 반도체 종목"
+        "text": "섹터 ETF 신호"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 66,
         "reason": "seo-keywords-ko-only",
-        "text": "빅테크 종목"
+        "text": "AI 반도체 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 67,
         "reason": "seo-keywords-ko-only",
-        "text": "헬스케어 종목"
+        "text": "빅테크 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 68,
         "reason": "seo-keywords-ko-only",
-        "text": "골든크로스 스캐너"
+        "text": "헬스케어 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 69,
         "reason": "seo-keywords-ko-only",
-        "text": "RSI 다이버전스"
+        "text": "골든크로스 스캐너"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 70,
         "reason": "seo-keywords-ko-only",
+        "text": "RSI 다이버전스"
+    },
+    {
+        "file": "src/app/[locale]/market/copy.ts",
+        "line": 71,
+        "reason": "seo-keywords-ko-only",
         "text": "볼린저 스퀴즈"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 78,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 9,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 78,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 9,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 79,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 10,
         "reason": "seo-keywords-ko-only",
         "text": "한국 증시 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 79,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 10,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 79,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 10,
         "reason": "seo-keywords-ko-only",
         "text": "코스닥 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 80,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 11,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 80,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 11,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 뉴스"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 239,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 21,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 240,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 22,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 최신 뉴스`"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 241,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 23,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스 분석`"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 245,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 25,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 246,
+        "file": "src/app/[locale]/news/[category]/_lib/categoryKeywords.ts",
+        "line": 26,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 107,
+        "line": 101,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 108,
+        "line": 102,
         "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 109,
+        "line": 103,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 110,
+        "line": 104,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 111,
+        "line": 105,
         "reason": "seo-keywords-ko-only",
         "text": "시그렌즈 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 83,
+        "line": 79,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 85,
+        "line": 81,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 86,
+        "line": 82,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 87,
+        "line": 83,
         "reason": "seo-keywords-ko-only",
         "text": "미국 외환 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 88,
+        "line": 84,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 89,
+        "line": 85,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스 요약"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 90,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 91,
+        "line": 87,
         "reason": "seo-keywords-ko-only",
         "text": "시그렌즈 뉴스"
     },
@@ -895,91 +895,91 @@
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 76,
+        "line": 78,
         "reason": "catalog-backed-data",
         "text": "미국 일반 시장"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 77,
+        "line": 79,
         "reason": "catalog-backed-data",
         "text": "미국 전반적인 시장 흐름과 거시 경제 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 88,
+        "line": 90,
         "reason": "catalog-backed-data",
         "text": "미국 주식"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 90,
+        "line": 92,
         "reason": "catalog-backed-data",
         "text": "미국 주식 시장의 주요 종목 뉴스와 실적 이슈를 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 101,
+        "line": 103,
         "reason": "catalog-backed-data",
         "text": "암호화폐"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 103,
+        "line": 105,
         "reason": "catalog-backed-data",
         "text": "비트코인, 이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 114,
+        "line": 116,
         "reason": "catalog-backed-data",
         "text": "미국 외환"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 116,
+        "line": 118,
         "reason": "catalog-backed-data",
         "text": "달러, 엔, 유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 127,
+        "line": 129,
         "reason": "catalog-backed-data",
         "text": "미국 마켓 아티클"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 129,
+        "line": 131,
         "reason": "catalog-backed-data",
         "text": "FMP 리서치팀이 작성한 심층 마켓 분석 아티클을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 139,
+        "line": 141,
         "reason": "catalog-backed-data",
         "text": "코스피"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 139,
+        "line": 141,
         "reason": "catalog-backed-data",
         "text": "코스닥"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 139,
+        "line": 141,
         "reason": "catalog-backed-data",
         "text": "국내 증시"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 143,
+        "line": 145,
         "reason": "catalog-backed-data",
         "text": "한국 증시"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 145,
+        "line": 147,
         "reason": "catalog-backed-data",
         "text": "코스피, 코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
@@ -1182,14 +1182,14 @@
         "text": "이더리움"
     },
     {
-        "file": "src/features/pwa-install/hooks/usePwaInstall.ts",
-        "line": 114,
+        "file": "src/features/pwa-install/lib/installPrompt.ts",
+        "line": 51,
         "reason": "developer-diagnostic",
         "text": "[PWA] prompt 실패"
     },
     {
         "file": "src/features/pwa-install/lib/registerServiceWorker.ts",
-        "line": 46,
+        "line": 51,
         "reason": "developer-diagnostic",
         "text": "[PWA] SW 등록 실패"
     },

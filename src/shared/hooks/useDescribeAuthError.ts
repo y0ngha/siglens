@@ -14,8 +14,7 @@ export interface AuthErrorLike {
  *
  * use-case가 함께 돌려주는 `message`는 로그·폴백용 한국어 원문이라, 그대로
  * 화면에 쓰면 `/en/login`·`/en/signup`·`/en/reset-password`가 영어 폼 위에
- * 한국어 오류를 띄운다(실제로 그렇게 나가고 있었다). 이 규칙이 로그인·회원가입·
- * 비밀번호 재설정 폼에 같은 주석과 함께 세 번 복사돼 있어 한곳으로 모았다.
+ * 한국어 오류를 띄운다. 이 규칙은 로그인·회원가입·비밀번호 재설정 폼이 함께 쓴다.
  *
  * 폴백이 원문이 아니라 **고정 키**인 폼(`DeleteAccountConfirm`,
  * `ForgotPasswordForm`)은 의미가 달라 이 훅을 쓰지 않는다.

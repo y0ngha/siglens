@@ -247,4 +247,26 @@ describe('HoldingForm', () => {
         // Submitting state resets and the form is still usable (did not crash / lock up).
         expect(screen.getByRole('button', { name: '추가' })).toBeEnabled();
     });
+
+    it('keeps the submit button focusable with aria-disabled instead of disabled while submitting', () => {
+        render(<HoldingForm onSubmit={vi.fn()} submitting />);
+
+        const button = screen.getByRole('button', { name: '저장 중…' });
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(button).toBeEnabled();
+    });
+
+    it('ignores a second click on the submit button while its save is in flight', async () => {
+        const user = userEvent.setup();
+        const onSubmit = vi.fn(() => new Promise<never>(() => {}));
+        render(<HoldingForm onSubmit={onSubmit} />);
+
+        await user.type(screen.getByLabelText('종목 티커 검색'), 'AAPL');
+        await user.type(screen.getByLabelText('수량'), '10');
+        await user.type(screen.getByLabelText('평단'), '150.5');
+        await user.click(screen.getByRole('button', { name: '추가' }));
+        await user.click(screen.getByRole('button', { name: '저장 중…' }));
+
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
 });

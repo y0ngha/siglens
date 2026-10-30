@@ -1,107 +1,47 @@
 import type { ReactNode } from 'react';
-import { RouteMessages } from '@/shared/i18n/RouteMessages';
 import { notFound } from 'next/navigation';
-import {
-    dehydrate,
-    HydrationBoundary,
-    QueryClient,
-} from '@tanstack/react-query';
+
+import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
+import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
-import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
-import {
-    SYMBOL_SUB_TAB_KEYS,
-    type SymbolSubTabKey,
-} from '@/views/symbol/utils/symbolTabsConfig';
-import { getTranslations } from 'next-intl/server';
-import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
-import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
-import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
-import { SymbolTabSkeleton } from './SymbolTabSkeleton';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { getSymbolFearGreedChipStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { pickAssetName } from '@/entities/ticker/lib/ticker';
-import { marketProfileOf } from '@/shared/config/marketProfile/registry';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
-import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
-import type { AssetInfo } from '@/shared/lib/types';
+import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { localePath } from '@/shared/i18n/locales';
+import { RouteMessages } from '@/shared/i18n/RouteMessages';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
-import { localePath, resolveLocale } from '@/shared/i18n/locales';
+
+import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 
 interface SymbolLayoutProps {
     children: ReactNode;
-    params: Promise<{ locale: string; symbol: string }>;
+    params: SymbolTabParams;
 }
 
-// Layout shell stays as an RSC: it composes a shared provider subtree (chat/model
-// contexts) around the chrome (header) and the active page subtree.
-//
-// Sticky-footer jail (SymbolLayoutJail): SymbolLayoutHeader + page main을 viewport
-// 잔여 영역에 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem)
-// 를 빼면 jail이 첫 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가
-// 자기 자리 + page main이 나머지를 차지한다. footer는 root layout에서 jail의 형제로
-// 위치하므로 자연스럽게 jail 아래로 push되어 스크롤해야 보인다.
-//
-// jail 높이는 라우트별로 다르다 (SymbolLayoutJail JSDoc 참조). 차트(index) 라우트는
-// definite `h-[calc(...)]` + overflow-hidden으로 chart+AI를 첫 viewport에 고정해 AI 패널이
-// 내부 스크롤되게 하고, sibling 탭은 `min-h-[calc(...)]`으로 콘텐츠 길이에 따라 자란다.
-//
-// `--header-h`는 globals.css의 @theme에서 3.5rem 기본값으로 정의되어 site Header h-14와
-// 동기화된다. PWA 설치 배너는 하단 고정 오버레이라 흐름 높이를 차지하지 않으므로
-// 계산식에 들어가지 않는다(예전 `--pwa-banner-h`는 배너가 흐름 위쪽에 삽입되던 시절의
-// 보정값이다 — `PwaBanner` JSDoc).
-//
-// `params` is async (Next.js 16). The chrome's remaining async work (bars → 공포·탐욕
-// 스냅샷) is awaited by the shell — 크롬은 Suspense 뒤에 두지 않는다(아래 설명).
-//
-// ⚠️ 이 레이아웃은 **의도적으로 blocking**이다 — `children`을 반환하기 전에 심볼 존재
-// 여부를 확정해야 하기 때문이다(바로 아래 soft 404 설명 참조). 예전 주석은 "children이
-// Suspense 밖이라 page LCP가 레이아웃 async 작업을 기다리지 않는다"고 했지만, 이제
-// `getAssetInfoResilient` **한 번**과 크롬의 `getSymbolFearGreedChipStatic`까지 문서
-// shell이 기다린다(2026-10-05부터 크롬을 감싸던 Suspense를 걷어냈다 — 서버 데이터 Suspense는
-// raw HTML에 `<template>` 숨김 청크를 남겨 JS 없는 크롤러에게 헤더·탭을 가린다).
-//
-// 비용이 감당 가능한 이유: 이 라우트들은 `generateStaticParams: []` ISR이라 blocking은
-// **cold-gen/재검증 렌더에만** 발생하고, 워엄 요청은 캐시된 HTML로 응답한다. 게다가
-// `getAssetInfoResilient`는 어차피 모든 자식 page.tsx가 await하던 값이라 크리티컬 패스에
-// 이미 있었다. 상태 코드 정확성(soft 404 제거)이 이 한 번의 blocking보다 가치가 크다.
-//
-// ⚠️ **심볼 존재 판정은 반드시 이 레이아웃 최상단에서 한다 — 자식 page.tsx가 아니라.**
-//
-// Next 16.2에서 `notFound()`가 Suspense 경계 **안쪽**에서 던져지면 HTTP 상태가 200으로
-// 남는다(soft 404). Flight 렌더가 이미 shell을 flush한 뒤라 app-render.js의 catch
-// (`res.statusCode = getAccessFallbackHTTPStatus(err)`)에 도달하지 못하고, 클라이언트
-// `HTTPAccessFallbackBoundary`가 404 UI만 그려주기 때문이다.
-//
-// 2026-07-26 로컬 프로덕션 빌드 실측(최소 재현 라우트 5종):
-//   page 직접 호출(경계 없음)          → 404 ✅
-//   layout 호출(loading.tsx 있어도)     → 404 ✅
-//   page 호출 + loading.tsx             → 200 ❌
-//   page 호출 + 명시적 <Suspense>       → 200 ❌
-//   page 호출 + client 컴포넌트 래핑    → 404 ✅  (client 래핑은 무관)
-//
-// 예전에는 index/news/overall/fundamental/options에 `loading.tsx`가 있고 레이아웃 크롬도
-// Suspense였기 때문에 page.tsx의 `notFound()`가 9개 탭 전부에서 200으로 새어 나갔다. 이제
-// `[symbol]` 아래에는 **`loading.tsx`가 하나도 없고**(`src/__tests__/guards/
-// symbolNoLoadingBoundaries.test.ts`가 목록을 고정한다) 레이아웃 크롬도 Suspense 밖이다 —
-// 내비게이션 중 골격은 클라 pending slot(`SymbolTabPendingSlot` → `SymbolTabSkeleton`,
-// 본문은 `views/symbol/skeletons/`)이 그린다. 그래서 page.tsx의 `notFound()`도 진짜 404가
-// 된다. 탭 전용 서버 섹션 Suspense(뉴스 탭의 목록·캘린더·의견)도 걷어냈고, 남은 Suspense는
-// 클라 전용 경계(NewsAiSummary 등)뿐이다.
-//
-// 📌 **심볼 존재 판정은 그래도 이 레이아웃 최상단에 둔다.** 이유는 비용이다: 존재하지 않는
-// 심볼이 페이지 렌더(AI·봉 조회)까지 가기 전에 한 번의 `getAssetInfoResilient`로 끊긴다.
-// 탭 가용성 판정(`isTabAllowedForSymbol`)은 탭이 어디인지 알아야 해서 레이아웃으로 올릴 수
-// 없고 자식 page.tsx에 남지만, 경계가 없어졌으므로 더는 soft 404가 아니다 — 크립토 ×
-// 주식 전용 탭(options/fundamental/financials/congress), KR × options/congress가 404를 낸다.
-// `e2e/specs/crypto-symbol.spec.ts`·`kr-equity-seo.spec.ts`가 이를 단언한다.
-// 노출 범위는 원래도 제한적이다 — 크립토 sitemap은 `/`,`/overall`,`/news`,`/fear-greed`만
-// 싣고 탭 바도 해당 탭을 숨기므로 내부 링크가 없다.
-//
-// 자식 page.tsx의 동일한 **심볼 존재** 가드는 제거하지 않았다. 그쪽은 `generateMetadata`와
-// 짝을 이루고, 레이아웃 없이 페이지 컴포넌트를 직접 렌더하는 단위 테스트 경로도 지켜야 한다.
+/**
+ * `/[symbol]/*` 9개 탭이 공유하는 셸 — 심볼 존재 판정, 크롬(헤더·탭), 탭 pending 골격, 관련 종목 칩,
+ * 조회수 비콘, `ai.siglens.io` 플로팅 링크.
+ *
+ * **심볼 존재 판정은 이 레이아웃 최상단에서 한다.** 존재하지 않는 심볼이 페이지 렌더(AI·봉 조회)까지
+ * 가기 전에 `getAssetInfoResilient` 한 번으로 끊긴다. 그래서 의도적으로 blocking이다 — `children`을
+ * 돌려주기 전에 존재를 확정한다. 비용은 감당 가능하다: `generateStaticParams: []` ISR이라 blocking은
+ * cold-gen·재검증 렌더에만 생기고, 그 조회는 모든 탭 본문이 어차피 기다리는 값이다. 탭 가용성
+ * (`isTabAllowedForSymbol`)은 탭을 알아야 해서 각 `page.tsx`에 남는다.
+ *
+ * **서버 데이터 Suspense를 두지 않는다**(크롬 포함, `[symbol]` 아래 `loading.tsx`도 없다 —
+ * `symbolNoLoadingBoundaries.test.ts`). Next 16.2는 Suspense 경계 안쪽에서 던진 `notFound()`의 상태를
+ * 200으로 남기고(soft 404), 서버 데이터 경계는 raw HTML에 숨김 청크를 남겨 JS 없는 크롤러에게 헤더·탭을
+ * 가린다. 내비게이션 중 골격은 클라 pending slot(`SymbolTabPendingSlot` → `SymbolTabSkeleton`)이 그린다.
+ *
+ * Sticky-footer jail(`SymbolLayoutJail`): 헤더 + 탭 본문을 첫 뷰포트 잔여 영역(viewport − site
+ * Header `--header-h`)에 맞춘 `min-h` 컨테이너로 감싼다. footer는 root layout에서 jail의 형제라 스크롤해야
+ * 보인다. `--header-h`는 `globals.css` `@theme`의 3.5rem 기본값으로 site Header `h-14`와 맞물린다.
+ */
 export default async function SymbolLayout({
     children,
     params,
@@ -111,25 +51,18 @@ export default async function SymbolLayout({
     const ticker = symbol.toUpperCase();
     // 형상 불합격(해외 거래소 접미사 포함)은 외부 호출 없이 즉시 404.
     if (!isAdmissibleSymbolShape(ticker)) notFound();
-    // `getAssetInfo` 해결 순서: 캐시 → crypto_assets → FMP 크립토 목록 → asset_translations
-    // → FMP `search-symbol`. 이 전부를 거쳐도 정체를 알 수 없는 심볼만 여기 걸린다.
-    //
-    // FMP 전면 장애 시에도 **DB가 살아 있는 한** AAPL 같은 실재 종목은 asset_translations에서
-    // 해결되므로 404가 되지 않는다(degraded=true + assetInfo 있음 → 기존 200+noindex 유지).
-    // FMP와 DB가 **동시에** 죽으면 `isUnresolvableDegraded`가 `VALID_TICKER_RE` 형상만
-    // 살려두므로, 자릿수 초과·숫자 시작 크립토(`1INCHUSD`, `1000SATSUSD`)는 하드 404가 된다.
-    // 그 404가 stale로 굳지는 않는다 — cache-handler가 `status >= 400` 엔트리를 저장하지
-    // 않으므로(cache-handler/index.mjs) 장애 복구 즉시 다음 요청에서 정상 렌더된다.
-    // 같은 판정을 모든 탭의 `generateMetadata`도 부른다(`requireResolvableAsset`).
+    // 해결 순서: 캐시 → crypto_assets → FMP 크립토 목록 → asset_translations → FMP `search-symbol`.
+    // FMP 전면 장애에도 DB가 살아 있으면 실재 종목은 asset_translations에서 풀려 degraded 200 + noindex가
+    // 된다. FMP와 DB가 동시에 죽으면 `isUnresolvableDegraded`가 `VALID_TICKER_RE` 형상만 살려 두어
+    // 자릿수 초과·숫자 시작 크립토는 404가 되지만, cache-handler가 `status >= 400` 엔트리를 저장하지
+    // 않아 복구 즉시 정상 렌더된다. 모든 탭의 `generateMetadata`도 같은 판정을 부른다.
     const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     return (
-        // 이 서브트리가 실제로 쓰는 메시지만 클라이언트로 내려보낸다 —
-        // 루트 레이아웃은 크롬만 싣는다(`RouteMessages` JSDoc 참고).
+        // 이 서브트리가 실제로 쓰는 메시지만 클라이언트로 내려보낸다 — 루트 레이아웃은 크롬만
+        // 싣는다(`RouteMessages` JSDoc).
         <RouteMessages route="[symbol]" locale={locale}>
             <SymbolLayoutProviders>
                 <SymbolLayoutJail>
-                    {/* 크롬(헤더 + 탭)은 Suspense로 감싸지 않는다 — 서버 데이터 경계는 raw
-                        HTML에 숨김 청크를 남기고 notFound()를 200으로 새게 한다(위 주석). */}
                     <SymbolLayoutChrome
                         assetInfo={assetInfo}
                         degraded={degraded}
@@ -139,192 +72,27 @@ export default async function SymbolLayout({
                         {children}
                     </SymbolTabPendingSlot>
                 </SymbolLayoutJail>
-                {/* 관련 종목 칩 — **jail 밖**이라 페이지 일반 스크롤로 닿는다.
-                푸터 바로 위 자리다.
+                {/* 관련 종목 칩 — **jail 밖**이라 페이지 일반 스크롤로 닿는다(푸터 바로 위). 차트 탭의
+                    `<main>` 안이면 AI 패널 스크롤러 쪽에 깔려 사람은 끝내 닿지 못한다. jail 높이 계산은
+                    건드리지 않는다 — 형제로 붙을 뿐이라 차트 세로폭은 그대로다.
 
-                예전엔 차트 페이지 `<main>` 안에 있었는데, 그 `<main>`은 차트
-                라우트에서 자체 `overflow-y-auto` 스크롤 컨테이너다(jail이
-                definite height + overflow-hidden이라 그 안에서 따로 스크롤된다).
-                그래서 칩이 **중첩 스크롤러 안쪽**에 깔려, 사용자가 페이지를 내려
-                푸터를 봐도 칩에는 영원히 도달하지 못했다 — DOM에는 있어서 크롤러는
-                봤지만 사람은 못 보는 상태였다(2026-08-25 사용자 제보).
-
-                ⚠️ jail의 높이 계산을 건드리지 않는다 — 형제로 뒤에 붙일 뿐이라
-                차트 세로폭은 그대로다. jail 안으로 되돌리면 같은 문제가 재발한다.
-
-                레이아웃으로 올라오면서 9개 탭 전부에 렌더된다. 칩 8개는 1KB
-                남짓이고, 오히려 모든 탭이 다른 종목으로 나가는 간선을 갖게 돼
-                내부링크 그래프가 촘촘해진다.
-
-                ⚠️ 이 이동으로 **새로 생긴 것**(리뷰 round 1 지적):
-
-                1. **탭 가용성 404 페이지에도 렌더된다?** 아니다 — `notFound()`가 이제 진짜
-                   404를 내므로 `app/not-found.tsx`가 응답을 대신한다. (예전엔 세그먼트
-                   `loading.tsx` 경계 때문에 200으로 새서 칩이 같이 떴다.)
-
-                2. **콜드젠 blocking I/O가 1탭 → 9탭으로 늘었다.** 칩은 피어 8종의
-                   한글명을 `getAssetInfoResilient`로 조회한다(`Promise.all` 1왕복).
-                   각 피어의 엔트리는 그 종목 자기 페이지가 이미 채운 `unstable_cache`를
-                   공유하므로 워엄에서는 비용이 관측되지 않았지만(실측 0.20~0.26초),
-                   그건 **차트 탭 1회 기준 측정**이었다. 이제 심볼당 최대 9번 콜드젠에서
-                   같은 비용을 치른다.
-                   `<Suspense>`로 감싸지 않는 이유는 그대로다 — 경계 뒤 콘텐츠는 raw
-                   HTML 끝쪽에 스트리밍돼 JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)
-                   에게 내부링크가 푸터 뒤로 밀린다. 한국어 검색이 주 유입이고 내부링크가
-                   이 컴포넌트의 존재 이유라 그 교환은 하지 않는다. */}
+                    9개 탭 전부에 렌더돼 모든 탭이 다른 종목으로 나가는 간선을 갖는다. 피어 8종의 이름 조회
+                    (`Promise.all` 1왕복, 각 종목 자기 페이지가 채운 캐시 공유)는 콜드젠마다 치른다.
+                    Suspense로 감싸지 않는다 — 경계 뒤 콘텐츠는 raw HTML 끝쪽으로 스트리밍돼 JS를 실행하지
+                    않는 크롤러(Naver Yeti·Daumoa)에게 내부링크가 푸터 뒤로 밀린다. 한국어 검색이 주
+                    유입이고 내부링크가 이 컴포넌트의 존재 이유다. */}
                 <RelatedSymbols symbol={ticker} />
-                {/* 조회수 비콘 — notFound() 판정 뒤라 실재 종목만 집계된다.
-                    레이아웃은 같은 종목의 탭 이동에서 유지되므로 탭마다 재전송하지 않는다. */}
+                {/* 조회수 비콘 — notFound() 판정 뒤라 실재 종목만 집계된다. 레이아웃은 같은 종목의 탭
+                    이동에서 유지되므로 탭마다 재전송하지 않는다. */}
                 <SymbolViewPing symbol={ticker} />
-                {/* `ai.siglens.io`로 보내는 플로팅 링크(위치·z-index는 `AskAiFab.tsx`의
-                    `FAB_POSITION` 주석). 패널을 열지 않고 새 탭에서 이동하는 순수 서버 렌더
-                    링크다. 값은 위에서 이미 확정한 `assetInfo`·`locale`에서 바로 계산한다 —
-                    `params`를 다시 await하는 async 컴포넌트로 감싸면 링크가 raw HTML 끝의
-                    숨김 청크로 밀려 스트리밍된다. */}
+                {/* `ai.siglens.io`로 보내는 플로팅 링크(위치·z-index는 `AskAiFab` JSDoc). 패널 없이 새 탭으로
+                    이동하는 순수 서버 렌더 링크라, 위에서 확정한 `assetInfo`·`locale`로 인라인 렌더한다 —
+                    경계 뒤에 두면 링크가 raw HTML 끝의 숨김 청크로 밀린다. */}
                 <AskAiFab
                     name={pickAssetName(assetInfo, assetInfo.symbol, locale)}
                     localePrefix={localePath(locale, '/')}
                 />
             </SymbolLayoutProviders>
         </RouteMessages>
-    );
-}
-
-// `params`를 받는 async RSC 세그먼트(chrome)의 베이스 — 여기에 `assetInfo`를 얹어 확장한다.
-interface SymbolLayoutSegmentProps {
-    params: Promise<{ locale: string; symbol: string }>;
-}
-
-interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
-    assetInfo: AssetInfo;
-    /** `getAssetInfoResilient`가 폴백으로 푼 값인가. 시드의 `updatedAt`을 가른다. */
-    degraded?: boolean;
-}
-
-/**
- * 레이아웃 chrome(헤더 + bars seed). 레이아웃 외부에서 쓰지 않으며, export는 ISR seed
- * quantize 단위 테스트를 위한 것이다.
- *
- * chrome은 심볼 존재 판정을 통과한 뒤에만 렌더되므로 레이아웃이 이미 확정한
- * `assetInfo`를 prop으로 받는다(그래서 non-null이 보장된다 — null이면 그 전에 notFound).
- *
- * 이전에는 여기서 `getAssetInfoResilient`를 다시 호출했다. 그건 FMP/DB 왕복은 아니었지만
- * (`unstable_cache` 데이터 캐시 HIT), **incremental-cache read 한 번**은 더 일어났고 —
- * S3로 외부화된 cache-handler에서는 그게 실제 네트워크 왕복이다. 게다가 "두 번째 호출이
- * 반드시 HIT"이라는 건 어떤 테스트도 고정하지 않는 암묵적 불변식이었다. prop으로 내리면
- * 의존 자체가 사라진다. 크롬은 더는 Suspense 뒤에 있지 않다 — 값은 크롬이 렌더되기 전에
- * 이미 확정돼 있고, 칩 스냅샷 조회(`getSymbolFearGreedChipStatic`)는 문서 shell이 함께 기다린다.
- */
-export async function SymbolLayoutChrome({
-    assetInfo,
-    degraded = false,
-    params,
-}: SymbolLayoutChromeProps) {
-    const { locale: rawLocale, symbol } = await params;
-    const locale = resolveLocale(rawLocale);
-
-    // 이 QueryClient는 이제 `assetInfo`만 seed한다. 헤더의 공포·탐욕 칩이 봉을
-    // 요구하던 것이 봉 seed의 유일한 이유였는데, 지금은 서버가 계산한 스냅샷을
-    // prop으로 받으므로 그 의존이 사라졌다(아래 `fearGreedSnapshot` 주석에 실측 근거).
-    //
-    // ISR static-safe: 칩 스냅샷 조회(`getSymbolFearGreedChipStatic`)는 `unstable_cache`로
-    // 감싸져 static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않는다.
-    const queryClient = new QueryClient({
-        defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
-    });
-
-    // assetInfo는 fundamental data로 거의 불변 — updatedAt을 고정값으로 심어 ISR HTML 결정성 보장.
-    // Date.now() 기본값은 매 ISR 재생성마다 다른 timestamp가 dehydrated state에 박혀 write churn 유발.
-    // 고정값은 정상 조회와 장애 폴백(degraded)이 다르다 — 클라이언트가 폴백 시드만 다시 받는다
-    // (`ASSET_INFO_SEED_UPDATED_AT`).
-    // (null 분기는 없다 — 레이아웃 가드가 null assetInfo를 이미 404로 끊는다.)
-    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
-        updatedAt: assetInfoSeedUpdatedAt(degraded),
-    });
-
-    // ## 왜 봉 캐시가 아니라 세션 키 칩 캐시를 읽는가 — 9탭 revalidate clamp
-    //
-    // 예전에는 여기서 `getQuantizedBarsStatic`(원본 봉 엔트리 ~700KB, revalidate 6h)을 읽어
-    // 칩을 계산했다. 레이아웃이라 **9개 탭 전부**가 그 엔트리를 읽었고, Next 16.3은 렌더 중
-    // 읽힌 `unstable_cache` revalidate의 최솟값으로 라우트를 clamp하므로 12h·24h를 선언한
-    // 탭이 전부 6h로 재생성됐다(2026-10 운영 실측: `/AAPL/fundamental` s-maxage 21600).
-    //
-    // `getSymbolFearGreedChipStatic`은 스냅샷(수십 바이트)만 담고, 키에 시장의 마지막 마감
-    // 세션 날짜를 넣어 revalidate를 24h로 둔다 — 세션이 넘어가면 다음 재생성이 새 키를
-    // 읽으므로 칩이 세션 롤을 넘겨 묵지 않는다(`sessionBarsStaticCache.ts` JSDoc).
-    // 값은 공포·탐욕 탭 본문과 같은 축소 봉·같은 세션 키에서 계산한다.
-    // 이 탭들의 revalidate 관계는 `src/__tests__/guards/symbolTabRevalidateClamp.test.ts`가 고정한다.
-    // 브레드크럼 라벨 번역은 칩 조회와 독립이라 같은 `Promise.all`에서 함께 기다린다.
-    const [fearGreedSnapshot, tUi, tTab] = await Promise.all([
-        getSymbolFearGreedChipStatic(
-            symbol.toUpperCase(),
-            marketProfileOf(assetInfo),
-            assetInfo.fmpSymbol
-        ).catch((e: unknown) => {
-            console.error(
-                '[SymbolLayout] getSymbolFearGreedChipStatic failed:',
-                e
-            );
-            return null;
-        }),
-        // 가시 브레드크럼 라벨은 서버에서 번역해 내린다. 셋째 마디(탭) 라벨은 각 탭 페이지의
-        // `BreadcrumbList` JSON-LD와 같은 `shared.symbolTab` 키에서 나와야 둘이 글자까지 같다.
-        getTranslations({ locale, namespace: 'shared.ui' }),
-        getTranslations({ locale, namespace: 'shared.symbolTab' }),
-    ]);
-    // 위에서 공포·탐욕 칩 값을 **서버에서 확정**했다. 계산은 공용 입구 `symbolFearGreedSnapshot`
-    // (5년 일봉, AI 호출 없음)이고, 공포·탐욕 페이지·색인 게이트와 같은 입력·같은 세션 키다.
-    //
-    // ## 왜 bars를 seed하지 않는가 — 9탭 × 76KB의 실측 낭비
-    //
-    // 예전엔 이 자리에서 `QUERY_KEYS.bars`에 일봉 500개 + buySellVolume을 seed했다.
-    // 레이아웃이라 **9탭 전부**에 실렸는데, 2026-08-24 프로덕션 실측 기준 raw 76KB
-    // (bars 52KB + buySellVolume 24KB)였고 `/[symbol]/position`에서는 RSC 페이로드의
-    // **47%**를 차지했다.
-    //
-    // 당시 그 seed가 필요한 소비자는 이 헤더 칩뿐이었다(차트 탭은 자기 page.tsx에서
-    // 직접 seed한다). 즉 나머지 탭은 헤더 배지 하나 때문에 76KB를 나르고 있었다.
-    // 칩이 서버 계산 스냅샷(수십 바이트)을 받으면 그 seed가 통째로 불필요해진다.
-    // 공포·탐욕 탭의 게이지도 이제 서버 계산 결과(`getSymbolFearGreedAction`)를 쓴다.
-    //
-    // ## 덤: 크롤러가 칩 값을 본다
-    //
-    // 예전 칩은 하이드레이션 전까지 스켈레톤이라(클라 계산값과 SSR 값이 갈려
-    // React #418 텍스트 mismatch가 났다) JS를 실행하지 않는 크롤러(Naver Yeti·
-    // Daumoa)에겐 아무것도 안 보였다. 서버 값은 SSR HTML에 그대로 박히고, 같은
-    // 값이 하이드레이션 후에도 렌더되므로 mismatch가 원천적으로 없다.
-    //
-    // ## 신선도 — 장중에는 값이 덜 민감해진다 (의도된 트레이드오프)
-    //
-    // 예전 클라 경로는 30초마다 refetch했고 그 응답에는 **형성 중인 당일 봉**이
-    // 포함됐다. 서버 경로는 마지막 마감 세션(마감 + EOD 발행 버퍼)까지의 봉만 쓰고
-    // (ISR HTML 결정성 때문에 필수다), 그 위에 페이지 ISR 6~24h가 얹힌다(칩 캐시 자체는
-    // 세션 롤마다 새 키라 그 이상 묵지 않는다).
-    // 즉 장이 열려 있는 동안 이 배지는 당일 거래량 흐름을 반영하지 않는다.
-    //
-    // 그래도 이 쪽을 택한 이유: (a) 공포·탐욕은 일봉 지표라 세션 중 갱신의 가치가
-    // 작고, (b) 같은 페이지의 다른 모든 숫자가 이미 동일한 ISR 상한에 묶여 있어
-    // 배지만 실시간이면 오히려 어긋나 보이며, (c) 실시간 값이 필요한 사용자를 위한
-    // `/[symbol]/fear-greed` 전용 페이지의 게이지는 `useFearGreedFromSymbol`
-    // (`getSymbolFearGreedAction`, quantize 없는 봉 캐시)로 계속 refetch한다.
-    // 배지는 그 페이지로 가는 입구일 뿐이다.
-    //
-    // 조회 실패(FMP 키 없음·degrade)나 점수 부족이면 스냅샷이 null → 칩이 기존
-    // "데이터 부족" 문구로 폴백한다.
-    // `Object.fromEntries`는 키 타입을 `string`으로 넓힌다 — 키가 `SYMBOL_SUB_TAB_KEYS` 전수라
-    // 레코드는 빠짐없이 채워진다.
-    const tabCrumbLabels = Object.fromEntries(
-        SYMBOL_SUB_TAB_KEYS.map(key => [key, tTab(key)])
-    ) as Record<SymbolSubTabKey, string>;
-
-    return (
-        <HydrationBoundary state={dehydrate(queryClient)}>
-            <SymbolLayoutHeader
-                symbol={symbol}
-                fearGreedSnapshot={fearGreedSnapshot}
-                breadcrumbLabel={tUi('Breadcrumb.46c31f')}
-                tabCrumbLabels={tabCrumbLabels}
-            />
-        </HydrationBoundary>
     );
 }

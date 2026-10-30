@@ -9,7 +9,7 @@ import { listEarningsDates } from '@/entities/earnings-report/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import type { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';

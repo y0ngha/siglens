@@ -154,9 +154,8 @@ vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
     },
 }));
 
-import SymbolLayout, {
-    SymbolLayoutChrome,
-} from '@/app/[locale]/[symbol]/layout';
+import SymbolLayout from '@/app/[locale]/[symbol]/layout';
+import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';

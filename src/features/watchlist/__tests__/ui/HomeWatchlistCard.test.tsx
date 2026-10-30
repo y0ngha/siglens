@@ -98,16 +98,38 @@ describe('HomeWatchlistCard', () => {
             'true'
         );
         // PC(기본 matchMedia 폴리필은 lg 미만이 아니다)는 카드 목록만 그린다: 카드 N개 + "종목 담기" 1개.
-        const lists = screen.getAllByRole('list');
-        expect(lists).toHaveLength(1);
-        expect(within(lists[0]!).getAllByRole('listitem')).toHaveLength(
-            HOME_WATCHLIST_DESKTOP_COUNT + 1
-        );
+        expect(
+            within(screen.getByRole('list')).getAllByRole('listitem')
+        ).toHaveLength(HOME_WATCHLIST_DESKTOP_COUNT + 1);
         expect(screen.queryByRole('link', { name: /개 더 보기/ })).toBeNull();
         expect(quote.useWatchlistQuote).not.toHaveBeenCalledWith(
             `S${HOME_WATCHLIST_DESKTOP_COUNT}`,
             true
         );
+    });
+
+    it('담은 것만 있고 최근 본 탭을 고르면 최근 본 빈 안내를 그린다', async () => {
+        setWatchlist(['AAPL']);
+        const user = userEvent.setup();
+        render(<HomeWatchlistCard />);
+        await user.click(screen.getByRole('tab', { name: '최근 본' }));
+        expect(
+            screen.getByText(/아직 둘러본 종목이 없어요/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/아직 담은 종목이 없어요/)).toBeNull();
+    });
+
+    it('최근 본 것만 있고 관심 탭을 고르면 관심 빈 안내를 그린다', async () => {
+        setWatchlist([]);
+        localStorage.setItem(
+            LOCAL_STORAGE_RECENT_SYMBOLS_KEY,
+            JSON.stringify([{ symbol: 'NVDA', label: '엔비디아', viewedAt: 1 }])
+        );
+        const user = userEvent.setup();
+        render(<HomeWatchlistCard />);
+        await user.click(screen.getByRole('tab', { name: /관심/ }));
+        expect(screen.getByText(/아직 담은 종목이 없어요/)).toBeInTheDocument();
+        expect(screen.queryByText(/아직 둘러본 종목이 없어요/)).toBeNull();
     });
 
     it('lg 미만이면 행 목록만 그리고 나머지는 "더 보기"로 보낸다', () => {
@@ -122,11 +144,9 @@ describe('HomeWatchlistCard', () => {
             const many = Array.from({ length: 5 }, (_, i) => `S${i}`);
             setWatchlist(many);
             render(<HomeWatchlistCard />);
-            const lists = screen.getAllByRole('list');
-            expect(lists).toHaveLength(1);
-            expect(within(lists[0]!).getAllByRole('listitem')).toHaveLength(
-                HOME_WATCHLIST_MOBILE_COUNT
-            );
+            expect(
+                within(screen.getByRole('list')).getAllByRole('listitem')
+            ).toHaveLength(HOME_WATCHLIST_MOBILE_COUNT);
             expect(
                 screen.getByRole('link', { name: '2개 더 보기' })
             ).toHaveAttribute('href', '/watchlist');

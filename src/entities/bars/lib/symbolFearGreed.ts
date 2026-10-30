@@ -6,10 +6,10 @@ import {
     type Bar,
     type BarsData,
     type BuySellVolumeResult,
-    type FearGreedHistoryPoint,
     type FearGreedInputs,
     type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
+import type { SymbolFearGreedSeries } from '../model';
 
 /**
  * 종목 공포·탐욕 점수가 계산되는 **유일한 입구**.
@@ -29,12 +29,6 @@ import {
 export const symbolFearGreedInputs = cache((data: BarsData): FearGreedInputs =>
     fearGreedInputs(data)
 );
-
-/** 서버가 5년 일봉으로 계산한 공포·탐욕 결과 — 최신 스냅샷과 history. 서버 액션 응답 모양이기도 하다. */
-export interface SymbolFearGreedSeries {
-    readonly snapshot: FearGreedSnapshot | null;
-    readonly history: FearGreedHistoryPoint[];
-}
 
 /** 같은 입력 배열이면 한 요청 안에서 한 번만 계산한다(`symbolFearGreedInputs` 참고). */
 export const computeSymbolFearGreedSeries = cache(

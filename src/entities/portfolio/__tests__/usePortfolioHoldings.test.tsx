@@ -99,6 +99,20 @@ describe('usePortfolioHoldings', () => {
         });
     });
 
+    it('refetch는 리렌더 사이에 같은 함수 참조를 유지한다', async () => {
+        const { result, rerender } = renderHook(() => usePortfolioHoldings(), {
+            wrapper: makeWrapper(),
+        });
+        await waitFor(() => {
+            expect(result.current.hasData).toBe(true);
+        });
+        const first = result.current.refetch;
+
+        rerender();
+
+        expect(result.current.refetch).toBe(first);
+    });
+
     it('hasData는 받아 오기 전 false, 받은 뒤(빈 목록이어도) true다', async () => {
         mockGetPortfolioHoldingsAction.mockResolvedValue([]);
 

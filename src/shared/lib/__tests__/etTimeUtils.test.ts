@@ -190,6 +190,18 @@ describe('kstDateKey', () => {
 describe('fmpCalendarDateTimeToKst — 로케일과 hour12', () => {
     const UTC_SAMPLE = '2026-01-12 18:30:00';
 
+    // 한 번의 파싱으로 짧은 자리용 표기를 함께 낸다 — 호출부가 두 번 파싱하지 않게.
+    it.each(['ko', 'en'] as const)(
+        '%s: kstCompactTimeLabel은 오전/오후 없는 같은 시각이다',
+        locale => {
+            const result = fmpCalendarDateTimeToKst(UTC_SAMPLE, locale);
+            expect(result.kstCompactTimeLabel).toBe(
+                fmpCalendarDateTimeToKst(UTC_SAMPLE, locale, false).kstTimeLabel
+            );
+            expect(result.kstCompactTimeLabel).not.toMatch(/오전|오후|AM|PM/);
+        }
+    );
+
     it('ko 기본은 오전/오후를 붙인다', () => {
         expect(fmpCalendarDateTimeToKst(UTC_SAMPLE, 'ko').kstTimeLabel).toMatch(
             /^오전|^오후/

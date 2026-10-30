@@ -1,44 +1,22 @@
 'use client';
 
-import {
-    startTransition,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { AgentRemaining } from '@y0ngha/siglens-core';
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
-import {
-    AGENT_TIME_ZONE_HEADER,
-    ANALYSIS_LOCALE_HEADER,
-    splitLocalePath,
-} from '@/shared/i18n/locales';
-import { browserTimeZone } from '../lib/browserTimeZone';
-import {
-    isAgentClientErrorCode,
-    type AgentClientErrorCode,
-} from '../lib/errorCodes';
-import { guestHistory } from '../lib/guestHistory';
-import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 import { trackAdsConversion } from '@/shared/lib/googleAds';
-import type { AgentUiMessage } from '../model/types';
+import type { AgentClientErrorCode } from '../lib/errorCodes';
+import { fromViews } from '../lib/fromViews';
+import { guestHistory } from '../lib/guestHistory';
+import { optimisticUserMessage } from '../lib/optimisticMessages';
+import {
+    runAgentTurn,
+    type AgentFailureKind,
+    type AgentTurnContext,
+} from '../lib/runAgentTurn';
+import type { AgentStreamStatus, AgentUiMessage } from '../model/types';
 
-/**
- * Text before a tool call shorter than this is narration ("시세를 확인해
- * 볼게요") and is dropped as before; longer text is a real answer the model
- * went back on, and becomes a `draft`.
- * Known limit: length heuristic; a model-side "answer started" signal would be exact.
- */
-const DRAFT_MIN_CHARS = 120;
-
-/** Daily allowance left; `null` = no daily limit for this tier (core `AgentRemaining`). */
-interface AgentRemaining {
-    turns: number | null;
-    fresh: number | null;
-    search: number | null;
-}
-type StreamStatus = 'idle' | 'streaming' | 'error';
-interface Options {
+/** `useAgentStream`'s input from the chat shell. */
+export interface UseAgentStreamOptions {
     conversationId: string | null;
     initialMessages: ChatMessageView[];
     onConversationCreated?: (id: string, title: string) => void;
@@ -50,175 +28,184 @@ interface Options {
     guest?: boolean;
 }
 
-/** SSE `error` frame — an `AgentErrorCode` the turn itself reported (spec §8). */
-class TurnFrameError extends Error {
-    constructor(readonly code: string) {
-        super(code);
-    }
-}
-/** Non-2xx HTTP response — the JSON `{ error }` body the route sent before any turn started. */
-class HttpError extends Error {
-    constructor(readonly code: string) {
-        super(code);
-    }
-}
-
-/**
- * A delimiter-less stream (proxy strips blank lines, provider hangs mid
- * write) must not let `buffer` grow forever between reads — that's an
- * unbounded string held in a component that keeps re-scanning it from
- * scratch every chunk. 1MB is far past any real turn's frame size.
- */
-const MAX_BUFFER_CHARS = 1_000_000;
-
-/**
- * 텍스트 조각을 한 프레임에 한 번만 화면에 반영한다(rAF). `requestAnimationFrame`이
- * 없는 환경(일부 테스트·워커)에서는 한 프레임 남짓한 타이머로 대신한다.
- */
-const FRAME_FALLBACK_MS = 16;
-type FrameHandle =
-    | { kind: 'raf'; id: number }
-    | { kind: 'timeout'; id: ReturnType<typeof setTimeout> };
-
-function scheduleFrame(callback: () => void): FrameHandle {
-    if (typeof requestAnimationFrame === 'function')
-        return { kind: 'raf', id: requestAnimationFrame(callback) };
-    return { kind: 'timeout', id: setTimeout(callback, FRAME_FALLBACK_MS) };
-}
-
-function cancelFrame(handle: FrameHandle): void {
-    if (handle.kind === 'raf') cancelAnimationFrame(handle.id);
-    else clearTimeout(handle.id);
-}
-
-/** `done` 프레임의 `followUps` — 문자열 배열만 받는다(그 밖의 값은 칩 없음). */
-function followUpsOf(raw: unknown): string[] {
-    return Array.isArray(raw)
-        ? raw.filter((item): item is string => typeof item === 'string')
-        : [];
-}
-
-/** DB rows → UI messages: tool rows fold into the preceding assistant bubble. */
-export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
-    const out: AgentUiMessage[] = [];
-    for (const v of views) {
-        const prev = out[out.length - 1];
-        if (v.role === 'tool') {
-            if (prev?.role === 'assistant') {
-                // The assistant row's `toolCalls` already produced a chip for this call
-                // (with its args); the `tool` row is that call's RESULT. Pushing it as a
-                // second chip rendered every tool twice — once "get_quote AAPL" from the
-                // args and once bare "get_quote" from here. Merge by name instead.
-                const existing = prev.tools.find(
-                    t =>
-                        t.name === (v.toolName ?? 'tool') &&
-                        t.summary === undefined
-                );
-                if (existing) existing.summary = v.content.slice(0, 120);
-                else
-                    prev.tools.push({
-                        id: v.id,
-                        name: v.toolName ?? 'tool',
-                        args: {},
-                        status: 'ok',
-                        summary: v.content.slice(0, 120),
-                    });
-            }
-            continue;
-        }
-        // A tool-carrying assistant row is a step, not an answer. Its `content`
-        // is the model narrating what it is about to fetch ("I'll fetch the
-        // quote…", often in English) — chat products hide that; rendering it
-        // produced stray narration bubbles and detached the tool chips from the
-        // final answer whenever DeepSeek talked before calling.
-        if (v.role === 'assistant' && v.toolCalls && v.toolCalls.length > 0) {
-            if (prev?.role === 'assistant' && prev.content === '')
-                prev.tools.push(
-                    ...v.toolCalls.map(c => ({
-                        id: c.id,
-                        name: c.name,
-                        args: c.args,
-                        status: 'ok' as const,
-                    }))
-                );
-            else
-                out.push({
-                    id: v.id,
-                    seq: v.seq,
-                    role: 'assistant',
-                    content: '',
-                    tools: v.toolCalls.map(c => ({
-                        id: c.id,
-                        name: c.name,
-                        args: c.args,
-                        status: 'ok' as const,
-                    })),
-                    status: 'complete',
-                });
-            continue;
-        }
-        if (
-            v.role === 'assistant' &&
-            prev?.role === 'assistant' &&
-            prev.content === ''
-        ) {
-            prev.id = v.id;
-            prev.seq = v.seq;
-            prev.content = v.content;
-            prev.status = v.status === 'aborted' ? 'aborted' : 'complete';
-            if (v.followUps) prev.followUps = v.followUps;
-            continue;
-        }
-        out.push({
-            id: v.id,
-            seq: v.seq,
-            role: v.role,
-            content: v.content,
-            tools: [],
-            status: v.status === 'aborted' ? 'aborted' : 'complete',
-            ...(v.followUps ? { followUps: v.followUps } : {}),
-        });
-    }
-    return out;
-}
-
+/** The transcript, turn state and actions the chat shell renders and wires to its controls. */
 export interface UseAgentStreamResult {
     readonly messages: AgentUiMessage[];
     readonly conversationId: string | null;
-    readonly status: StreamStatus;
+    readonly status: AgentStreamStatus;
     readonly error: AgentClientErrorCode | null;
+    /** Daily allowance left after the last turn; `null` until a `done` frame reports it. */
     readonly remaining: AgentRemaining | null;
     readonly send: (text: string) => Promise<void>;
     readonly regenerate: () => Promise<void>;
     readonly edit: (seq: number, text: string) => Promise<void>;
-    readonly retry: () => Promise<void> | undefined;
+    readonly retry: () => Promise<void>;
     readonly stop: () => void;
 }
 
-export function useAgentStream(options: Options): UseAgentStreamResult {
+/**
+ * SIGLENS AI chat state for one conversation: the transcript (seeded from the
+ * stored rows), the streamed turn in flight, and send / regenerate / edit /
+ * retry / stop. Each turn runs in `runAgentTurn`; this hook owns the state,
+ * keeps one turn current at a time and decides how a retry replays.
+ */
+export function useAgentStream(
+    options: UseAgentStreamOptions
+): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentUiMessage[]>(() =>
         fromViews(options.initialMessages)
     );
     const [conversationId, setConversationId] = useState(
         options.conversationId
     );
-    const [status, setStatus] = useState<StreamStatus>('idle');
+    const [status, setStatus] = useState<AgentStreamStatus>('idle');
     const [error, setError] = useState<AgentClientErrorCode | null>(null);
     const [remaining, setRemaining] = useState<AgentRemaining | null>(null);
 
     // Mirrors `messages` synchronously (state updates are async) so
     // `send`/`edit`/`regenerate` can snapshot "what the transcript looked
-    // like right before this optimistic mutation" and hand it to `run` for
-    // an exact rollback on an `HttpError` (nothing persisted server-side).
+    // like right before this optimistic mutation" and hand it to the turn for
+    // an exact rollback on an HTTP-stage failure (nothing persisted server-side).
     const messagesRef = useRef(messages);
     const controllerRef = useRef<AbortController | null>(null);
     const onConversationCreatedRef = useRef(options.onConversationCreated);
-    /** Body of the most recent `run()` call, replayed by `retry()` for an HTTP-stage failure (spec: retry must not turn into `regenerate` there). */
+    /** Body of the most recent turn, replayed by `retry()` for an HTTP-stage failure (retry must not turn into `regenerate` there). */
     const lastBodyRef = useRef<Record<string, unknown> | null>(null);
-    /** Which failure kind `retry()` is reacting to — only a `TurnFrameError` may map to `regenerate()` (a partial assistant row was actually persisted for that turn). */
-    const lastErrorKindRef = useRef<'http' | 'turn' | null>(null);
-    /** The last `run()` was a guest regenerate (sent as `send`) — `retry()` must replay it as one. */
+    /** Which failure kind `retry()` is reacting to — only a turn-stage failure may map to `regenerate()` (a partial assistant row was actually persisted for that turn). */
+    const lastErrorKindRef = useRef<AgentFailureKind>(null);
+    /** The last turn was a guest regenerate (sent as `send`) — `retry()` must replay it as one. */
     const guestRegenerateRef = useRef(false);
+
+    const guest = options.guest === true;
+
+    const run = useCallback(
+        (
+            body: Record<string, unknown>,
+            addsUserBubble: boolean,
+            restoreSnapshot: AgentUiMessage[]
+        ): Promise<void> => {
+            lastBodyRef.current = body;
+            controllerRef.current?.abort();
+            const controller = new AbortController();
+            controllerRef.current = controller;
+            const ctx: AgentTurnContext = {
+                conversationId,
+                controller,
+                isCurrent: () => controllerRef.current === controller,
+                setMessages,
+                setStatus,
+                setError,
+                setRemaining,
+                onConversationAssigned: (id, title) => {
+                    setConversationId(id);
+                    onConversationCreatedRef.current?.(id, title);
+                },
+                setFailureKind: kind => {
+                    lastErrorKindRef.current = kind;
+                },
+            };
+            return runAgentTurn(ctx, {
+                body,
+                addsUserBubble,
+                restoreSnapshot,
+            });
+        },
+        [conversationId]
+    );
+
+    /** Posts a user message. Untracked — `retry` replays through here so a retried question is not a second ad conversion. */
+    const submit = useCallback(
+        (message: string): Promise<void> => {
+            const snapshot = messagesRef.current;
+            guestRegenerateRef.current = false;
+            setMessages(prev => [...prev, optimisticUserMessage(message)]);
+            return run(
+                {
+                    action: 'send',
+                    message,
+                    ...(guest ? { history: guestHistory(snapshot) } : {}),
+                },
+                true,
+                snapshot
+            );
+        },
+        [run, guest]
+    );
+
+    /**
+     * A new question from the composer — the only path that records the
+     * `chatQuestion` ad conversion. `edit`, `regenerate` and `retry` re-ask an
+     * existing question, so they go through `run`/`submit` without counting.
+     */
+    const send = useCallback(
+        (message: string): Promise<void> => {
+            trackAdsConversion('chatQuestion');
+            return submit(message);
+        },
+        [submit]
+    );
+
+    const regenerate = useCallback((): Promise<void> => {
+        const snapshot = messagesRef.current;
+        setMessages(prev =>
+            prev.at(-1)?.role === 'assistant' ? prev.slice(0, -1) : prev
+        );
+        guestRegenerateRef.current = guest;
+        if (!guest) return run({ action: 'regenerate' }, false, snapshot);
+        // Same question again, with the turns before it as history.
+        const lastUser = snapshot.findLastIndex(m => m.role === 'user');
+        const question = snapshot[lastUser];
+        if (question === undefined) return Promise.resolve();
+        return run(
+            {
+                action: 'send',
+                message: question.content,
+                history: guestHistory(snapshot.slice(0, lastUser)),
+            },
+            false,
+            snapshot
+        );
+    }, [run, guest]);
+
+    const edit = useCallback(
+        (seq: number, message: string): Promise<void> => {
+            const snapshot = messagesRef.current;
+            setMessages(prev => {
+                const index = prev.findIndex(m => m.seq === seq);
+                return [
+                    ...(index >= 0 ? prev.slice(0, index) : prev),
+                    optimisticUserMessage(message),
+                ];
+            });
+            return run(
+                { action: 'edit', editSeq: seq, message },
+                true,
+                snapshot
+            );
+        },
+        [run]
+    );
+
+    const stop = useCallback(() => controllerRef.current?.abort(), []);
+
+    /**
+     * Replays the failed call for the banner's "재시도" button. HTTP-stage
+     * failures (nothing persisted) replay via `send`/`edit` so the user's
+     * text isn't lost and no turn is burned on the wrong question; only a
+     * turn-stage failure (a partial row was actually saved) maps to
+     * `regenerate()`.
+     */
+    const retry = useCallback((): Promise<void> => {
+        if (lastErrorKindRef.current === 'turn') return regenerate();
+        const body = lastBodyRef.current;
+        // A guest's regenerate goes out as `send` (see `regenerate`): replaying
+        // that body through `send` would put the question on screen twice.
+        if (!body || guestRegenerateRef.current) return regenerate();
+        if (body.action === 'send') return submit(String(body.message ?? ''));
+        if (body.action === 'edit')
+            return edit(Number(body.editSeq), String(body.message ?? ''));
+        return run({ action: 'regenerate' }, false, messagesRef.current);
+    }, [regenerate, submit, edit, run]);
 
     // Synced in an effect, not inside the updater: a state updater must stay pure
     // (React may re-run it). Handlers read this after commit, which is exactly the
@@ -236,412 +223,6 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     // conversation swap) — an orphaned reader loop would keep patching state
     // on an unmounted hook instance.
     useEffect(() => () => controllerRef.current?.abort(), []);
-
-    const patchLast = useCallback(
-        (fn: (m: AgentUiMessage) => AgentUiMessage) => {
-            setMessages(prev =>
-                prev.length === 0
-                    ? prev
-                    : [...prev.slice(0, -1), fn(prev[prev.length - 1]!)]
-            );
-        },
-        []
-    );
-
-    const run = useCallback(
-        async (
-            body: Record<string, unknown>,
-            addsUserBubble: boolean,
-            /** Transcript exactly as it was before this call's optimistic mutation — restored verbatim on an `HttpError` (spec: nothing persisted, so nothing should stay truncated/dropped on screen). */
-            restoreSnapshot: AgentUiMessage[]
-        ) => {
-            lastBodyRef.current = body;
-            controllerRef.current?.abort();
-            const controller = new AbortController();
-            controllerRef.current = controller;
-            let reader: ReadableStreamDefaultReader<string> | undefined;
-            /**
-             * `text` 조각 모으기. 조각마다 `setMessages`를 부르면 기본 우선순위 렌더가
-             * 조각 수만큼 돌고, 그때마다 마크다운이 자라는 답변 전체를 다시 파싱해
-             * Composer 타이핑과 경쟁했다. 프레임당 한 번만, 그것도 transition으로
-             * 반영해 입력이 먼저 처리되게 한다.
-             */
-            let pendingText = '';
-            let frame: FrameHandle | null = null;
-            /**
-             * 모아 둔 조각을 반영한다. `urgent`는 구조가 바뀌는 프레임(도구 시작·끝,
-             * done, 오류·중단) 직전의 동기 반영이다 — 그 처리가 지금까지의 글을 읽으므로
-             * (예: 도구 시작 시 `draft` 판정) transition으로 미뤄지면 안 된다.
-             */
-            const flushText = (urgent: boolean): void => {
-                if (frame !== null) {
-                    cancelFrame(frame);
-                    frame = null;
-                }
-                if (pendingText === '') return;
-                const delta = pendingText;
-                pendingText = '';
-                // 더 새 호출이 이미 자리를 차지했으면 그쪽 말풍선에 붙이지 않고 버린다.
-                if (controllerRef.current !== controller) return;
-                const apply = (): void =>
-                    patchLast(m => ({ ...m, content: m.content + delta }));
-                if (urgent) apply();
-                else startTransition(apply);
-            };
-            const queueText = (delta: string): void => {
-                pendingText += delta;
-                if (frame === null)
-                    frame = scheduleFrame(() => {
-                        frame = null;
-                        flushText(false);
-                    });
-            };
-            setStatus('streaming');
-            setError(null);
-            setMessages(prev => [
-                ...prev,
-                {
-                    id: `pending-${Date.now()}`,
-                    role: 'assistant',
-                    content: '',
-                    tools: [],
-                    status: 'streaming',
-                },
-            ]);
-            try {
-                const response = await fetch('/api/ai/chat/stream', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [ANALYSIS_LOCALE_HEADER]: splitLocalePath(
-                            window.location.pathname
-                        ).locale,
-                        [AGENT_TIME_ZONE_HEADER]: browserTimeZone(),
-                    },
-                    body: JSON.stringify({ conversationId, ...body }),
-                    signal: controller.signal,
-                });
-                if (!response.ok || response.body === null) {
-                    const payload = (await response
-                        .json()
-                        .catch(() => ({}))) as { error?: string };
-                    throw new HttpError(
-                        payload.error ?? `http_${response.status}`
-                    );
-                }
-                reader = response.body
-                    .pipeThrough(new TextDecoderStream())
-                    .getReader();
-                let buffer = '';
-                for (;;) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-                    buffer += value;
-                    const { frames, rest } = splitFrames(buffer);
-                    buffer = rest;
-                    if (buffer.length > MAX_BUFFER_CHARS) {
-                        throw new TurnFrameError('server_error');
-                    }
-                    for (const raw of frames) {
-                        const { event, data } = parseSseFrame(raw);
-                        if (data === null) continue;
-                        if (event === 'text') {
-                            queueText(String(data.delta ?? ''));
-                            continue;
-                        }
-                        flushText(true);
-                        if (event === 'meta') {
-                            if (
-                                typeof data.conversationId === 'string' &&
-                                data.conversationId !== conversationId
-                            ) {
-                                setConversationId(data.conversationId);
-                                onConversationCreatedRef.current?.(
-                                    data.conversationId,
-                                    String(data.title ?? '')
-                                );
-                            }
-                            // Attach the stored user row's `seq` to the optimistic bubble
-                            // `send`/`edit` already appended (right before the pending
-                            // assistant bubble this `run` just pushed) — without it, Edit
-                            // has nothing to key off of until a reload re-hydrates from
-                            // `ChatMessageView[]` (spec: seq required for Edit).
-                            if (
-                                addsUserBubble &&
-                                typeof data.userMessageSeq === 'number'
-                            ) {
-                                const seq = data.userMessageSeq;
-                                setMessages(prev => {
-                                    const userIndex = prev.length - 2;
-                                    const target = prev[userIndex];
-                                    if (
-                                        !target ||
-                                        target.role !== 'user' ||
-                                        target.seq !== undefined
-                                    )
-                                        return prev;
-                                    const next = [...prev];
-                                    next[userIndex] = { ...target, seq };
-                                    return next;
-                                });
-                            }
-                        } else if (event === 'tool_start') {
-                            // Text streamed before a tool call is narration, not the
-                            // answer (see `fromViews`) — drop it so the bubble shows
-                            // the tool steps and then the real reply.
-                            patchLast(m => ({
-                                ...m,
-                                content: '',
-                                draft:
-                                    m.content.trim().length >= DRAFT_MIN_CHARS
-                                        ? m.content
-                                        : m.draft,
-                                tools: [
-                                    ...m.tools,
-                                    {
-                                        id: String(data.id),
-                                        name: String(data.name),
-                                        args:
-                                            (data.args as Record<
-                                                string,
-                                                unknown
-                                            >) ?? {},
-                                        status: 'running',
-                                        estimatedSeconds:
-                                            typeof data.estimatedSeconds ===
-                                            'number'
-                                                ? data.estimatedSeconds
-                                                : undefined,
-                                    },
-                                ],
-                            }));
-                        } else if (event === 'tool_end') {
-                            patchLast(m => ({
-                                ...m,
-                                tools: m.tools.map(t =>
-                                    t.id === data.id
-                                        ? {
-                                              ...t,
-                                              status:
-                                                  data.status === 'ok'
-                                                      ? 'ok'
-                                                      : 'error',
-                                              ms: Number(data.ms),
-                                              summary: String(
-                                                  data.summary ?? ''
-                                              ),
-                                          }
-                                        : t
-                                ),
-                            }));
-                        } else if (event === 'done') {
-                            patchLast(m => ({
-                                ...m,
-                                // Not `?? m.id`: a guest turn is never stored, so
-                                // the server sends `assistantMessageId: ''`. Taking
-                                // that gave every guest answer the same React key
-                                // ("Encountered two children with the same key").
-                                id:
-                                    typeof data.assistantMessageId ===
-                                        'string' &&
-                                    data.assistantMessageId !== ''
-                                        ? data.assistantMessageId
-                                        : m.id,
-                                // 서버가 후속 질문 마커 줄을 뗀 최종 본문. 스트리밍 중엔
-                                // 마커일 수 있는 끝줄을 보류했으므로, 여기서 확정값으로 맞춘다.
-                                content:
-                                    typeof data.body === 'string'
-                                        ? data.body
-                                        : m.content,
-                                followUps: followUpsOf(data.followUps),
-                                draft: undefined,
-                                status: 'complete',
-                                truncated: data.stopReason === 'max_tokens',
-                            }));
-                            if (data.remaining)
-                                setRemaining(data.remaining as AgentRemaining);
-                        } else if (event === 'error') {
-                            throw new TurnFrameError(
-                                String(data.code ?? 'server_error')
-                            );
-                        }
-                    }
-                }
-                flushText(true);
-                setStatus('idle');
-            } catch (e) {
-                // A newer call already replaced this one (double submit, fast retry):
-                // its snapshot/status are the live ones, so a late failure here must not
-                // restore a stale transcript over the newer turn. The `finally` below still
-                // releases THIS call's stream (local `controller`, never the newer one).
-                if (controllerRef.current !== controller) return;
-                // 중단·오류여도 이미 받은 글은 남긴다(아래 상태 표시보다 먼저 반영).
-                flushText(true);
-                if (e instanceof TurnFrameError) {
-                    // The turn reported a failure after already streaming (partial
-                    // text may exist, and a partial assistant row may already be
-                    // persisted server-side) — surface it as a failed bubble plus a
-                    // code the shell can turn into copy/action (spec §8). `retry()`
-                    // maps this kind to `regenerate()`.
-                    lastErrorKindRef.current = 'turn';
-                    patchLast(m => ({ ...m, status: 'error' }));
-                    setStatus('error');
-                    setError(
-                        isAgentClientErrorCode(e.code) ? e.code : 'server_error'
-                    );
-                } else if (e instanceof HttpError) {
-                    // Never started — nothing was persisted server-side, so the
-                    // screen must not show anything this call changed: restore the
-                    // EXACT pre-mutation transcript rather than slicing off a fixed
-                    // count. Slicing only undid the bubbles `run` itself pushed and
-                    // left `edit`'s truncation / `regenerate`'s dropped answer in
-                    // place — a contended lock (409) on Edit made the original
-                    // message and everything after it vanish from the screen even
-                    // though the server deleted nothing. `retry()` re-adds the
-                    // user's intent via `send`/`edit` rather than `regenerate`
-                    // (which would either 400 on a conversation the server never
-                    // created, or supersede the PREVIOUS answer and re-ask the OLD
-                    // question).
-                    lastErrorKindRef.current = 'http';
-                    setMessages(() => restoreSnapshot);
-                    setStatus('error');
-                    setError(
-                        isAgentClientErrorCode(e.code) ? e.code : 'server_error'
-                    );
-                } else {
-                    // Either the caller aborted (stop button / unmount) or the
-                    // connection dropped mid-stream — both cases keep whatever
-                    // partial text/tools already streamed and just mark it
-                    // aborted rather than discarding progress or blaming the user.
-                    lastErrorKindRef.current = null;
-                    patchLast(m => ({ ...m, status: 'aborted' }));
-                    setStatus('idle');
-                }
-            } finally {
-                // Release the response body on every exit path — the buffer-cap
-                // and turn-stage-error throws happen mid-loop with the reader
-                // still locked and the server still streaming into a buffer
-                // nobody reads; without this the connection (and the server's
-                // slot for it) never closes. Aborting the LOCAL `controller` (not
-                // `controllerRef.current`, which a newer overlapping call may
-                // already have replaced) never cross-cancels a different call.
-                controller.abort();
-                void reader?.cancel().catch(() => {});
-                // 반영되지 않은 프레임 예약이 남았으면 거둔다(언마운트 뒤 setState 방지).
-                if (frame !== null) cancelFrame(frame);
-            }
-        },
-        [conversationId, patchLast]
-    );
-
-    const guest = options.guest === true;
-    /** Posts a user message. Untracked — `retry` replays through here so a retried question is not a second ad conversion. */
-    const submit = useCallback(
-        (message: string) => {
-            const snapshot = messagesRef.current;
-            guestRegenerateRef.current = false;
-            setMessages(prev => [
-                ...prev,
-                {
-                    id: `local-${Date.now()}`,
-                    role: 'user',
-                    content: message,
-                    tools: [],
-                    status: 'complete',
-                },
-            ]);
-            return run(
-                {
-                    action: 'send',
-                    message,
-                    ...(guest ? { history: guestHistory(snapshot) } : {}),
-                },
-                true,
-                snapshot
-            );
-        },
-        [run, guest]
-    );
-    /**
-     * A new question from the composer — the only path that records the
-     * `chatQuestion` ad conversion. `edit`, `regenerate` and `retry` re-ask an
-     * existing question, so they go through `run`/`submit` without counting.
-     */
-    const send = useCallback(
-        (message: string) => {
-            trackAdsConversion('chatQuestion');
-            return submit(message);
-        },
-        [submit]
-    );
-    const regenerate = useCallback(() => {
-        const snapshot = messagesRef.current;
-        setMessages(prev =>
-            prev[prev.length - 1]?.role === 'assistant'
-                ? prev.slice(0, -1)
-                : prev
-        );
-        guestRegenerateRef.current = guest;
-        if (guest) {
-            // Same question again, with the turns before it as history.
-            const lastUser = snapshot.map(m => m.role).lastIndexOf('user');
-            if (lastUser < 0) return Promise.resolve();
-            return run(
-                {
-                    action: 'send',
-                    message: snapshot[lastUser]!.content,
-                    history: guestHistory(snapshot.slice(0, lastUser)),
-                },
-                false,
-                snapshot
-            );
-        }
-        return run({ action: 'regenerate' }, false, snapshot);
-    }, [run, guest]);
-    const edit = useCallback(
-        (seq: number, message: string) => {
-            const snapshot = messagesRef.current;
-            setMessages(prev => {
-                const index = prev.findIndex(m => m.seq === seq);
-                return [
-                    ...(index >= 0 ? prev.slice(0, index) : prev),
-                    {
-                        id: `local-${Date.now()}`,
-                        role: 'user',
-                        content: message,
-                        tools: [],
-                        status: 'complete',
-                    },
-                ];
-            });
-            return run(
-                { action: 'edit', editSeq: seq, message },
-                true,
-                snapshot
-            );
-        },
-        [run]
-    );
-    const stop = useCallback(() => controllerRef.current?.abort(), []);
-
-    /**
-     * Replays the failed call for the banner's "재시도" button. HTTP-stage
-     * failures (nothing persisted) replay via `send`/`edit` so the user's
-     * text isn't lost and no turn is burned on the wrong question; only a
-     * turn-stage `TurnFrameError` (a partial row was actually saved) maps to
-     * `regenerate()`.
-     */
-    const retry = useCallback((): Promise<void> | undefined => {
-        if (lastErrorKindRef.current === 'turn') return regenerate();
-        const body = lastBodyRef.current;
-        // A guest's regenerate goes out as `send` (see `regenerate`): replaying
-        // that body through `send` would put the question on screen twice.
-        if (!body || guestRegenerateRef.current) return regenerate();
-        if (body.action === 'send') return submit(String(body.message ?? ''));
-        if (body.action === 'edit')
-            return edit(Number(body.editSeq), String(body.message ?? ''));
-        return run({ action: 'regenerate' }, false, messagesRef.current);
-    }, [regenerate, submit, edit, run]);
 
     return {
         messages,

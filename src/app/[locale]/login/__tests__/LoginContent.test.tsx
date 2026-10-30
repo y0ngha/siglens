@@ -97,4 +97,12 @@ describe('LoginContent', () => {
             expect.objectContaining({ initialError: undefined })
         );
     });
+
+    it('passes undefined initialError for a prototype-name error code', () => {
+        searchParamsRef.value = new URLSearchParams({ error: 'constructor' });
+        render(<LoginContent />);
+        expect(loginFormSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ initialError: undefined })
+        );
+    });
 });

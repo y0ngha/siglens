@@ -86,7 +86,7 @@ vi.mock('@/entities/options-chain/api', () => ({
 vi.mock('@/entities/analysis-plain/api', () => ({
     rewriteToPlainLanguage: mockRewriteToPlainLanguage,
 }));
-vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
+vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     resolveCurrentPrice: mockResolveCurrentPrice,
     resolvePriceAsOf: mockResolvePriceAsOf,
 }));

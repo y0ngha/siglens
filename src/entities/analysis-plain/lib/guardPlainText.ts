@@ -293,7 +293,7 @@ export function findAdvicePhrases(text: string, locale = 'ko'): string[] {
  * 기대지 않고 결과 문자열도 본다.
  *
  * **이 검사는 연성(soft)이다.** 걸리면 지적 문구와 함께 한 번만 다시 쓰게 하고, 그래도
- * 남으면(또는 재시도가 실패하면) 첫 글을 그대로 받아들인다(`api.ts`). 숫자 오류나 조언처럼
+ * 남으면(또는 재시도가 실패하면) 첫 글을 그대로 받아들인다(`server/plainGeneration.ts`). 숫자 오류나 조언처럼
  * 틀린 내용이 아니라 시점 표현이 거칠 뿐이라, 글 전체를 버려 쉽게보기가 사라지는 비용이 더
  * 크다. 그래서 문장 도려내기(`salvageByRemovingSentences`) 대상에도 넣지 않는다.
  *
