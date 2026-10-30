@@ -1,6 +1,6 @@
 import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
-/** Cookie descriptor returned by hint cookie factories. */
+/** 힌트 쿠키 팩토리가 돌려주는 `cookies().set()` 인자. 클라이언트가 읽어야 하므로 `httpOnly`는 항상 false다. */
 interface AuthHintCookieDescriptor {
     readonly name: string;
     readonly value: string;
@@ -11,7 +11,7 @@ interface AuthHintCookieDescriptor {
     readonly httpOnly: false;
 }
 
-/** Builds an active hint cookie to set alongside the session cookie on login. */
+/** 로그인 시 세션 쿠키와 같이 심는 활성 힌트 쿠키. `maxAgeSeconds`는 세션 수명과 맞춘다. `secure` 생략 시 true. */
 export function createAuthHintCookie(params: {
     maxAgeSeconds: number;
     secure?: boolean;
@@ -27,7 +27,7 @@ export function createAuthHintCookie(params: {
     };
 }
 
-/** Builds an expired hint cookie to clear the hint on logout. */
+/** 로그아웃·탈퇴·죽은 세션 정리 때 힌트를 지우는 만료 쿠키. `secure` 생략 시 true. */
 export function createExpiredAuthHintCookie(params?: {
     secure?: boolean;
 }): AuthHintCookieDescriptor {

@@ -1,17 +1,14 @@
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import type { AuthSessionRecord, SessionRepository } from '@/shared/db/types';
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
-
-export { AUTH_SESSION_COOKIE_NAME };
-
-/** Default session lifetime in seconds (30 days). */
+/** 세션 수명(초) 기본값 — 30일. DB 행의 `expiresAt`과 쿠키 `maxAge`가 모두 이 값에서 나온다. */
 export const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 
-/** Default cookie path applied to auth session cookies. */
+/** 세션 쿠키 `Path` 기본값 — 사이트 전체에 실린다. */
 export const DEFAULT_AUTH_COOKIE_PATH = '/';
 
-/** Default SameSite policy applied to auth session cookies. */
+/** 세션 쿠키 `SameSite` 기본값 — 외부 사이트에서의 top-level GET 이동(OAuth 콜백 복귀)에는 실리고 cross-site 하위 요청에는 실리지 않는다. */
 export const DEFAULT_AUTH_COOKIE_SAME_SITE = 'lax';
 
 const EXPIRED_COOKIE_DATE = new Date('1970-01-01T00:00:00.000Z');
@@ -21,7 +18,7 @@ function addSeconds(date: Date, seconds: number): Date {
     return new Date(date.getTime() + seconds * MILLISECONDS_PER_SECOND);
 }
 
-/** @internal Builds an active HTTP-only session cookie from token and expiry metadata. */
+/** @internal 토큰과 만료 정보로 활성 HttpOnly 세션 쿠키를 만든다. `secure`를 생략하면 true(fail-closed)다. */
 export function createSessionCookie(params: {
     token: string;
     expires: Date;
@@ -43,7 +40,7 @@ export function createSessionCookie(params: {
     };
 }
 
-/** @internal Builds a zero-maxAge, epoch-expired cookie for browser-side session clearing. */
+/** @internal 브라우저의 세션 쿠키를 지우는 `maxAge` 0·epoch 만료 쿠키(로그아웃·탈퇴·죽은 세션 정리). */
 export function createExpiredSessionCookie(params?: {
     name?: string;
     secure?: boolean;
@@ -61,13 +58,16 @@ export function createExpiredSessionCookie(params?: {
     });
 }
 
-/** Result of {@link createAuthSession}: the persisted session record paired with its outgoing cookie. */
+/** {@link createAuthSession}의 결과: 저장된 세션 행과 그 행의 id를 값으로 담은 응답 쿠키. */
 interface CreateAuthSessionResult {
     session: AuthSessionRecord;
     cookie: AuthSessionCookie;
 }
 
-/** @internal Shared session + cookie creation helper used by login use-cases. */
+/**
+ * @internal 로그인 계열 유스케이스가 공유하는 세션 행 + 쿠키 생성. 세션 id는 DB가 만드는
+ * 새 uuid라 로그인마다 새 토큰이 발급된다(이전 쿠키 값을 재사용하지 않는다).
+ */
 export async function createAuthSession(params: {
     userId: string;
     sessions: SessionRepository;

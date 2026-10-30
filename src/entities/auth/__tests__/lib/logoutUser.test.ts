@@ -1,4 +1,4 @@
-import { AUTH_SESSION_COOKIE_NAME } from '@/entities/auth/lib/sessionCookie';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import type { SessionRepository } from '@/shared/db/types';
 

@@ -1,10 +1,10 @@
 import 'server-only';
 import type { NextRequest } from 'next/server';
+import { resolveHandoffNext } from '@/entities/auth/lib/handoffRedirect';
 import {
     generateHandoffToken,
     handoffStateCookie,
-    resolveHandoffNext,
-} from '@/entities/auth/lib/handoffStore';
+} from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';

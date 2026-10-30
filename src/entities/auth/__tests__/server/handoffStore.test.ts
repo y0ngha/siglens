@@ -9,19 +9,16 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import {
-    aiSignedOutUrl,
     consumeHandoffCode,
     consumeLogoutCode,
     issueLogoutCode,
     generateHandoffToken,
     HANDOFF_STATE_TTL_SECONDS,
     handoffStateCookie,
-    handoffStartUrl,
     handoffStateCookieName,
     isHandoffToken,
     issueHandoffCode,
-    toHandoffAwareRedirect,
-} from '@/entities/auth/lib/handoffStore';
+} from '@/entities/auth/server/handoffStore';
 
 const STATE = 'b'.repeat(64);
 const CODE = 'a'.repeat(64);
@@ -197,42 +194,6 @@ describe('handoffStore', () => {
         });
     });
 
-    describe('handoffStartUrl', () => {
-        it('points at the ai-host start route with the locale carried in next', () => {
-            expect(handoffStartUrl('/en/c/abc').href).toBe(
-                'https://ai.siglens.io/api/auth/handoff/start?next=%2Fen%2Fc%2Fabc'
-            );
-        });
-
-        it('reduces an off-origin next to the locale root', () => {
-            expect(handoffStartUrl('https://evil.com/x').href).toBe(
-                'https://ai.siglens.io/api/auth/handoff/start?next=%2F'
-            );
-        });
-    });
-
-    describe('toHandoffAwareRedirect', () => {
-        it('turns the same-host issue path into the absolute ai start URL (hard navigation)', () => {
-            expect(
-                toHandoffAwareRedirect(
-                    '/api/auth/handoff?to=ai&next=%2Fen%2Fc%2Fabc'
-                )
-            ).toBe(
-                'https://ai.siglens.io/api/auth/handoff/start?next=%2Fen%2Fc%2Fabc'
-            );
-        });
-
-        it.each([
-            '/',
-            '/en/AAPL',
-            '/portfolio',
-            '/api/auth/handoff?to=other&next=%2Fc%2Fabc',
-            '/api/auth/handoff/start?next=%2Fc%2Fabc',
-        ])('leaves %j unchanged', target => {
-            expect(toHandoffAwareRedirect(target)).toBe(target);
-        });
-    });
-
     describe('logout code', () => {
         it('stores {userId, locale} under a 64-hex code with a 60s TTL', async () => {
             redis.set.mockResolvedValue('OK');
@@ -285,11 +246,5 @@ describe('handoffStore', () => {
             await expect(consumeLogoutCode('short')).resolves.toBeNull();
             expect(redis.getdel).not.toHaveBeenCalled();
         });
-    });
-
-    it('aiSignedOutUrl is the locale ai landing with ?sso=none', () => {
-        expect(aiSignedOutUrl('en').href).toBe(
-            'https://ai.siglens.io/en?sso=none'
-        );
     });
 });
