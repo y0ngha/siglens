@@ -2231,7 +2231,6 @@
                 "backtestMonth": "{v1}/{v0}",
                 "bulletListAria": "{v0} {v1} list",
                 "byokUnlock": "Register a {v0} API key to use this model.",
-                "calendarDayAria": "{v0}/{v1}, {v2} events",
                 "chartAria": "{v0} {v1} candlestick chart",
                 "contact": "Contact us",
                 "filterAll": "All",
@@ -4005,7 +4004,7 @@
                 "changeSinceRelease": "vs. Previous Release {v0}{v1}{v2}"
             },
             "EconomicCalendarGrid": {
-                "703910": "{v0} events",
+                "703910": "{v0, plural, one {# event} other {# events}}",
                 "490b3a": "{v0} {v1}",
                 "4ccace": "(KST)",
                 "596fce": "Economic Calendar",
@@ -4013,6 +4012,7 @@
                 "dc712b": "{v0} {v1} ({v2})",
                 "f9d9dc": "There are no upcoming {v0} economic announcements scheduled yet.",
                 "forecastPart": "Forecast {v0}",
+                "noVisibleEvents": "No events at the selected impact levels.",
                 "pastCollapse": "Hide past events",
                 "pastExpand": "Show past events",
                 "previousPart": "Previous {v0}"
@@ -4042,11 +4042,13 @@
                 "a0f763": "Loading Macro Economic Briefing",
                 "b5f759": "Macro Economic Briefing Information"
             },
-            "dayCellAriaImpacts": ", impact {v0}",
+            "dayCellAria": "{v0}/{v1}, {v2, plural, one {# event} other {# events}}",
+            "dayCellAriaWithImpacts": "{v0}/{v1}, {v2, plural, one {# event} other {# events}}, impact {v3}",
             "krMacroFacts": {
                 "cpiAndUnemployment": "The latest consumer price inflation is {v0}% and the unemployment rate is {v1}%.",
                 "cpiChange": "Consumer price inflation moved {v0}pp from the previous release.",
                 "cpiOnly": "The latest consumer price inflation is {v0}%.",
+                "cpiUnchanged": "CPI inflation is unchanged from the previous release.",
                 "ratesOnly": "The Bank of Korea base rate is currently {v0}%.",
                 "ratesWithKtb": "The Bank of Korea base rate is currently {v0}%, and the 10-year KTB auction yield is {v1}%.",
                 "unemploymentOnly": "The latest unemployment rate is {v0}%."
@@ -4073,6 +4075,9 @@
             "tradedAt": "{time} ET"
         },
         "fear-greed": {
+            "FearGreedComparisonTile": {
+                "sincePeriod": "{v0} (since {v1})"
+            },
             "FearGreedGroupBar": {
                 "groupNameFlow": "Flow",
                 "groupNameTrend": "Trend",
@@ -4383,14 +4388,13 @@
                 "158954": "AI Analysis Skills",
                 "0d2c24": "Collapse",
                 "7e6540": "Reliability Score Explanation",
-                "c266ba": "{v0}% is normal, {v1}% or more is high.",
+                "allGuides": "Browse the full guide",
                 "c78b79": "Skill Categories Tab",
+                "confidenceTiers": "Below {low}% is low, {low}% to under {high}% is normal, and {high}% or more is high.",
                 "e0f5c5": "Low scores are also considered for supplementary analysis.",
-                "e20b1b": "{v0}% or less is low, {v1}",
                 "ebff92": "Reliability score of the analysis technique.",
                 "guideLink": "View guide",
-                "guideLinkAria": "View guide: {name}",
-                "allGuides": "Browse the full guide"
+                "guideLinkAria": "View guide: {name}"
             },
             "StatsBar": {
                 "deac8e": "SIGLENS Analysis Scale"

@@ -7,8 +7,8 @@ import {
     CALENDAR_INGESTION_WINDOW_DAYS,
     CALENDAR_PAST_WINDOW_DAYS,
     CALENDAR_RECENT_PAST_DAYS,
-    type CalendarCountry,
 } from './economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /** 양끝 포함 'YYYY-MM-DD' 구간 — FMP economic-calendar의 `from`/`to`. */
 export interface CalendarDateRange {

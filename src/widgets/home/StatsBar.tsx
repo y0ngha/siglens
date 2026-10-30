@@ -1,5 +1,8 @@
+/**
+ * 홈 히어로 아래 분석 통계(지표·패턴·스킬 수) 한 줄.
+ */
+
 import { useTranslations } from 'next-intl';
-import { Fragment } from 'react';
 
 import type { SkillCounts } from '@y0ngha/siglens-core';
 import { DotSeparator } from '@/shared/ui/DotSeparator';
@@ -10,9 +13,13 @@ interface StatsBarProps {
     counts: SkillCounts;
 }
 
-// 시맨틱 list 래퍼로 분석 통계 그룹을 한 묶음으로 표현 — 스크린 리더가
-// "list, 6 items"로 안내해 단순 텍스트 나열보다 구조 인식이 명확해진다.
-// 시각 표현(가운뎃점 구분자, 가로 정렬)은 그대로 유지하기 위해 list-none 적용.
+/**
+ * 분석 통계 한 줄 — 시맨틱 list로 한 묶음임을 스크린 리더에 알린다("list, 6 items").
+ *
+ * `list-none`은 Safari/VoiceOver에서 list 의미를 지우므로 `role="list"`를 명시한다.
+ * 가운뎃점 구분자(`DotSeparator`)는 장식이라 스스로 `aria-hidden`이며, 항목 수를 흔들지 않도록 별도
+ * `<li>`가 아니라 각 통계 항목 **안**(앞쪽)에 둔다.
+ */
 export function StatsBar({ counts }: StatsBarProps) {
     const t = useTranslations('widgets.home');
     // `shared.lib.skillStats.count`는 카운트+라벨이 한 ICU 문자열로 합쳐져
@@ -24,22 +31,15 @@ export function StatsBar({ counts }: StatsBarProps) {
 
     return (
         <ul
+            role="list"
             aria-label={t('StatsBar.deac8e')}
             className="mt-6 flex list-none flex-wrap items-center justify-center gap-x-2 p-0 text-xs text-secondary-400 tabular-nums lg:justify-start"
         >
             {stats.map((stat, i) => (
-                <Fragment key={stat.key}>
-                    {i > 0 && (
-                        // 구분자는 시각 장식 — DotSeparator 내부에서 aria-hidden 처리되어 있어도
-                        // 의미 단위가 아니므로 list item 바깥에 둔다.
-                        <li aria-hidden="true" className="contents">
-                            <DotSeparator />
-                        </li>
-                    )}
-                    <li>
-                        {tStats(`count.${stat.key}`, { count: stat.value })}
-                    </li>
-                </Fragment>
+                <li key={stat.key} className="flex items-center gap-x-2">
+                    {i > 0 && <DotSeparator />}
+                    {tStats(`count.${stat.key}`, { count: stat.value })}
+                </li>
             ))}
         </ul>
     );
