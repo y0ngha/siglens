@@ -1,19 +1,17 @@
-import { getTranslations } from 'next-intl/server';
-import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { resolveLocale } from '@/shared/i18n/locales';
 import type { Metadata } from 'next';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ResetPasswordContent } from './ResetPasswordContent';
-import { enterLocale } from '@/shared/lib/enterLocale';
 
-// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**
- * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
- * 없어 `/en/reset-password`도 canonical이 `/reset-password`(한국어)로 나갔다. noindex 페이지에
- * 다른 URL을 canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ * 로케일별 메타데이터 — `/login`과 같은 이유로 정적 `metadata`가 아니고, noindex여도
+ * canonical·og:url을 자기 자신으로 둔다.
  */
 export async function generateMetadata({
     params,
@@ -40,7 +38,10 @@ export async function generateMetadata({
     };
 }
 
-// searchParams 읽기를 ResetPasswordContent('use client')로 격리해 이 라우트는 full-static(○)으로 prerender된다.
+/**
+ * 비밀번호 재설정 페이지(메일 링크로 들어오는 게스트 전용 화면). 쿼리(`email`·`token`) 읽기를
+ * `ResetPasswordContent`('use client')로 격리해 라우트는 정적으로 prerender된다.
+ */
 export default async function ResetPasswordPage({
     params,
 }: {

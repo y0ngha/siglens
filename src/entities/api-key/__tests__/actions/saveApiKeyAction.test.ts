@@ -164,6 +164,33 @@ describe('saveApiKeyAction', () => {
         consoleErrorSpy.mockRestore();
     });
 
+    it('저장 실패 시 암호문이 담긴 원본 오류 대신 name·code만 로그에 남긴다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockUpsert.mockRejectedValue(
+            Object.assign(new Error('Failed query: params: ciphertext-abc'), {
+                code: '23505',
+                cause: { code: '23505' },
+            })
+        );
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic', apiKey: 'sk-ant-test-1234' })
+        );
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[saveApiKeyAction] Database error during user API key upsert',
+            { name: 'Error', code: '23505' }
+        );
+        consoleErrorSpy.mockRestore();
+    });
+
     it('SQLSTATE 패턴이 아닌 예외 발생 시 unknown 코드를 반환한다', async () => {
         // Non-DB unexpected exceptions must NOT masquerade as storage_unavailable;
         // they fall through to `unknown` so the user sees a generic-error UX

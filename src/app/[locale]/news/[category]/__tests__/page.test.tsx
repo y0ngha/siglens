@@ -61,6 +61,7 @@ import { generateMetadata } from '../page';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import CategoryNewsPage from '../page';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 import { koMessage } from '@/shared/test-utils/koMessage';
 
 describe('/news/[category] generateMetadata는', () => {
@@ -291,7 +292,8 @@ describe('/news/kr 카테고리 페이지는', () => {
         });
 
         expect(meta.alternates?.canonical).toBe('https://siglens.io/news/kr');
-        expect(meta.robots).toBeUndefined();
+        // 루트 레이아웃 상속에 기대지 않고 색인 지시를 명시한다(AP-3).
+        expect(meta.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
     });
 
     it('h1에 한국 증시 라벨을 렌더한다', async () => {

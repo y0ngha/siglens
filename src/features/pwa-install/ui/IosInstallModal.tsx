@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib/cn';
 
 const MODAL_TITLE_ID = 'ios-modal-title';
 
+/** 단계 이미지(SVG)의 원본 높이(px) — 폭 300 기준 비율을 지켜 로드 전 자리를 잡는다. */
 const IOS_STEP_HEIGHTS = { step1: 70, step2: 120, step3: 80 } as const;
 
 // 문구는 `features.pwa-install.iosStep` **키**만 담는다 — 리터럴로 두면
@@ -38,9 +39,14 @@ const STEPS = [
 ] as const;
 
 interface IosInstallModalProps {
+    /** 닫기 버튼·Esc·배경 클릭에서 부른다. 설치 배너는 그대로 남는다. */
     onClose: () => void;
 }
 
+/**
+ * iOS Safari용 "홈 화면에 추가" 3단계 안내 모달. iOS에는 설치 프롬프트 API가 없어
+ * `PwaBanner`의 설치 버튼이 대신 이 모달을 연다.
+ */
 export function IosInstallModal({ onClose }: IosInstallModalProps) {
     const t = useTranslations('features.pwa-install');
     const tStep = useTranslations('features.pwa-install.iosStep');

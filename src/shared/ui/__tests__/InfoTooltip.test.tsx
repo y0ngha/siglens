@@ -16,6 +16,22 @@ describe('InfoTooltip', () => {
         ).toBeInTheDocument();
     });
 
+    it('uses the label prop as the trigger name when given', () => {
+        render(<InfoTooltip label="Score help">Tooltip content</InfoTooltip>);
+        expect(
+            screen.getByRole('button', { name: 'Score help' })
+        ).toBeInTheDocument();
+    });
+
+    it('caps the tooltip width to the viewport minus both side paddings', () => {
+        render(<InfoTooltip>Tooltip content</InfoTooltip>);
+        fireEvent.click(screen.getByRole('button'));
+        // 위치 계산은 왼쪽만 여백(8px)에 고정한다 — 폭이 화면 폭 - 16px을 넘지 않아야 오른쪽으로 넘치지 않는다.
+        expect(screen.getByRole('tooltip').className).toContain(
+            'max-w-[min(20rem,calc(100vw-1rem))]'
+        );
+    });
+
     it('does not show tooltip content initially', () => {
         render(<InfoTooltip>Tooltip content</InfoTooltip>);
         expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();

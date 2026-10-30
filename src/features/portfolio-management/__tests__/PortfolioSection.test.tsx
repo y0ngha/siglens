@@ -1,8 +1,15 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PortfolioSection } from '@/features/portfolio-management/ui/PortfolioSection';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
-import type { PortfolioHoldingView } from '@/entities/portfolio/model';
+import type {
+    PortfolioHoldingView,
+    SavePortfolioResult,
+} from '@/entities/portfolio/model';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 
@@ -43,7 +50,20 @@ const HOLDING: PortfolioHoldingView = {
     updatedAt: '2026-01-02T00:00:00.000Z',
 };
 
+const SECOND_HOLDING: PortfolioHoldingView = {
+    ...HOLDING,
+    symbol: 'MSFT',
+    companyName: 'Microsoft Corp.',
+    fmpSymbol: 'MSFT',
+};
+
 type Holdings = ReturnType<typeof usePortfolioHoldings>;
+
+function rowFor(label: string): HTMLElement {
+    const row = screen.getByText(label).closest('li');
+    if (!row) throw new Error(`holding row not found: ${label}`);
+    return row;
+}
 
 function setHoldings(
     overrides: Partial<Holdings> & { holdings: PortfolioHoldingView[] }
@@ -515,5 +535,182 @@ describe('PortfolioSection', () => {
 
         await user.click(screen.getByRole('button', { name: '다시 시도' }));
         expect(refetch).toHaveBeenCalled();
+    });
+
+    it('keeps the add form pending and ignores a re-click when a row edit opens during the add save', async () => {
+        const user = userEvent.setup();
+        const { save } = setHoldings({ holdings: [HOLDING] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockReturnValue(
+            new Promise<SavePortfolioResult>(() => {})
+        );
+        render(<PortfolioSection />);
+
+        await user.type(screen.getByLabelText('종목 티커 검색'), 'MSFT');
+        await user.type(screen.getAllByLabelText('수량')[0], '1');
+        await user.type(screen.getAllByLabelText('평단')[0], '10');
+        await user.click(screen.getByRole('button', { name: '추가' }));
+        await user.click(
+            within(rowFor('Apple Inc. (AAPL)')).getByRole('button', {
+                name: 'AAPL 보유종목 수정',
+            })
+        );
+        const addButtons = screen.getAllByRole('button', { name: '저장 중…' });
+        await user.click(addButtons[addButtons.length - 1]);
+
+        expect(save.mutateAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows an idle 저장 button on a row editor opened while the add save is in flight', async () => {
+        const user = userEvent.setup();
+        const { save } = setHoldings({ holdings: [HOLDING] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockReturnValue(
+            new Promise<SavePortfolioResult>(() => {})
+        );
+        render(<PortfolioSection />);
+
+        await user.type(screen.getByLabelText('종목 티커 검색'), 'MSFT');
+        await user.type(screen.getByLabelText('수량'), '1');
+        await user.type(screen.getByLabelText('평단'), '10');
+        await user.click(screen.getByRole('button', { name: '추가' }));
+        const row = rowFor('Apple Inc. (AAPL)');
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+        );
+
+        expect(
+            within(row).getByRole('button', { name: '저장' })
+        ).not.toHaveAttribute('aria-disabled');
+    });
+
+    it('returns focus to 수정 when an inline edit is cancelled', async () => {
+        const user = userEvent.setup();
+        setHoldings({ holdings: [HOLDING] });
+        render(<PortfolioSection />);
+        const row = rowFor('Apple Inc. (AAPL)');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+        );
+        await user.click(within(row).getByRole('button', { name: '취소' }));
+
+        expect(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+        ).toHaveFocus();
+    });
+
+    it('keeps focus on the newly opened delete confirm when a lower row was confirming', async () => {
+        const user = userEvent.setup();
+        setHoldings({ holdings: [HOLDING, SECOND_HOLDING] });
+        render(<PortfolioSection />);
+        const first = rowFor('Apple Inc. (AAPL)');
+        const second = rowFor('Microsoft Corp. (MSFT)');
+
+        await user.click(
+            within(second).getByRole('button', { name: 'MSFT 보유종목 삭제' })
+        );
+        await user.click(
+            within(first).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+
+        expect(
+            within(first).getByRole('button', { name: '삭제 확정' })
+        ).toHaveFocus();
+    });
+
+    it('shows 삭제 확정 (not 삭제 중…) on a row whose confirm opens while another row is deleting', async () => {
+        const user = userEvent.setup();
+        setHoldings({
+            holdings: [HOLDING, SECOND_HOLDING],
+            remove: {
+                mutateAsync: vi.fn(),
+                isPending: true,
+                variables: 'AAPL',
+            } as unknown as Holdings['remove'],
+        });
+        render(<PortfolioSection />);
+        const second = rowFor('Microsoft Corp. (MSFT)');
+
+        await user.click(
+            within(second).getByRole('button', { name: 'MSFT 보유종목 삭제' })
+        );
+
+        expect(
+            within(second).getByRole('button', { name: '삭제 확정' })
+        ).not.toHaveAttribute('aria-disabled');
+    });
+
+    it('keeps the pending 삭제 확정 focusable with aria-disabled instead of disabled', async () => {
+        const user = userEvent.setup();
+        setHoldings({
+            holdings: [HOLDING],
+            remove: {
+                mutateAsync: vi.fn(),
+                isPending: true,
+                variables: 'AAPL',
+            } as unknown as Holdings['remove'],
+        });
+        render(<PortfolioSection />);
+        const row = rowFor('Apple Inc. (AAPL)');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+
+        const pendingButton = within(row).getByRole('button', {
+            name: '삭제 중…',
+        });
+        expect(pendingButton).toHaveAttribute('aria-disabled', 'true');
+        expect(pendingButton).toBeEnabled();
+    });
+
+    it('does not move focus to the heading when another row opened its delete confirm before the delete resolved', async () => {
+        const user = userEvent.setup();
+        let resolveDelete: (value: { status: 'ok' }) => void = () => {};
+        const { remove } = setHoldings({ holdings: [HOLDING, SECOND_HOLDING] });
+        (remove.mutateAsync as ReturnType<typeof vi.fn>).mockReturnValue(
+            new Promise(resolve => {
+                resolveDelete = resolve;
+            })
+        );
+        render(<PortfolioSection />);
+        const first = rowFor('Apple Inc. (AAPL)');
+        const second = rowFor('Microsoft Corp. (MSFT)');
+        await user.click(
+            within(first).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(
+            within(first).getByRole('button', { name: '삭제 확정' })
+        );
+        await user.click(
+            within(second).getByRole('button', { name: 'MSFT 보유종목 삭제' })
+        );
+
+        await act(async () => {
+            resolveDelete({ status: 'ok' });
+        });
+
+        expect(
+            within(second).getByRole('button', { name: '삭제 확정' })
+        ).toHaveFocus();
+    });
+
+    it('styles the section heading with the shared h2 token', () => {
+        setHoldings({ holdings: [] });
+        render(<PortfolioSection />);
+
+        const heading = screen.getByRole('heading', { level: 2 });
+        for (const token of HEADING_SECTION.split(' ')) {
+            expect(heading).toHaveClass(token);
+        }
+    });
+
+    it('styles the add-form heading with the shared h3 token', () => {
+        setHoldings({ holdings: [] });
+        render(<PortfolioSection />);
+
+        const heading = screen.getByRole('heading', { level: 3 });
+        for (const token of HEADING_SUBSECTION.split(' ')) {
+            expect(heading).toHaveClass(token);
+        }
     });
 });
