@@ -4,7 +4,7 @@ import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
 } from '@/entities/api-key/api';
-import type { LlmProvider } from '@/entities/api-key/lib/constants';
+import type { LlmProvider } from '@/shared/config/llmProviders';
 import { getDatabaseClient } from '@/shared/db/client';
 
 /**
