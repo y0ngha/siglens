@@ -10,11 +10,9 @@ import {
     prewarmFinancials,
     prewarmCongress,
 } from '@/entities/analysis/api';
-import {
-    DrizzleNewsRepository,
-    prewarmNews,
-} from '@/entities/news-article/api';
-import { hasAnalyzableNews } from '@/entities/news-article/lib/hasAnalyzableNews';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { hasAnalyzableNews } from '@/entities/news-article/server/hasAnalyzableNews';
+import { prewarmNews } from '@/entities/news-article/server/prewarmNews';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import {
     resolveCurrentPrice,

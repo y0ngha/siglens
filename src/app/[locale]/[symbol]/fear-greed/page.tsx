@@ -17,7 +17,7 @@ import {
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import {
     clientSymbolFearGreed,
     symbolFearGreedInputs,

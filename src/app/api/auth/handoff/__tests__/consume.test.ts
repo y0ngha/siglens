@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({ consume: vi.fn(), createSession: vi.fn() }));
-vi.mock('@/entities/auth/lib/handoffStore', async importOriginal => ({
+vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({
     ...(await importOriginal<object>()),
     consumeHandoffCode: m.consume,
 }));

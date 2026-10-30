@@ -4,20 +4,20 @@ import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/widgets/layout/Header';
-import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
-import { type HeaderUserMenuUser } from '@/widgets/layout/types';
-import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import type { HeaderUserMenuUser } from '@/widgets/layout/types';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { setAuthHintAttribute } from '@/shared/lib/auth/authHintAttribute';
 
 /**
- * Root layout 헤더를 클라이언트에서 렌더한다.
+ * 메인·ai 호스트 루트 레이아웃의 헤더를 클라이언트에서 렌더한다.
  *
  * 서버 컴포넌트가 cookies()를 호출하면 (cacheComponents/PPR 비활성 상태에서)
  * Suspense 경계 안이라도 전 라우트가 dynamic으로 강제돼 ISR이 깨진다. 그래서
- * 인증 상태 조회를 클라이언트로 이전했다 — root layout 정적 셸에는 dynamic API가
- * 남지 않으므로 모든 라우트가 정적 캐시(ISR) 가능해진다.
+ * 인증 상태는 클라이언트에서 조회한다 — root layout 정적 셸에는 dynamic API가
+ * 남지 않으므로 모든 라우트가 정적 캐시(ISR) 가능하다.
  *
  * - hint 쿠키(siglens_auth='1', non-httpOnly)를 useAuthHint(document.cookie)로 읽어
  *   hydration 동안 낙관적 skeleton(loadingUserMenu)을 추정한다.
@@ -32,12 +32,6 @@ export function AuthSessionHeaderClient({
     authReturn,
     hideOnScrollDown = false,
 }: {
-    /**
-     * SSO handoff query forwarded to every `Header` this component renders.
-     * Set by the ai host (`src/app/ai/[locale]/layout.tsx`) so its login/
-     * signup CTAs return through the handoff instead of stranding the
-     * visitor on the main host. Undefined on the main host itself.
-     */
     /**
      * `'ai'` on ai.siglens.io: login/signup links carry the SSO handoff back
      * to the page the user is on (`/c/<id>` included), computed from the live

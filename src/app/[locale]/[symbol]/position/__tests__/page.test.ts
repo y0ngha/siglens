@@ -30,7 +30,7 @@ vi.mock('@/entities/ticker/api', () => ({
 }));
 // 이 탭(12h 선언)은 세션 키 축소 봉(revalidate 24h)을 읽는다 — 6h 봉 캐시
 // (`getSessionBarsStatic`)를 읽으면 Next 16.3이 라우트를 6h로 clamp한다.
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: vi.fn(),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
@@ -58,7 +58,7 @@ import {
 } from '@/app/[locale]/[symbol]/position/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';

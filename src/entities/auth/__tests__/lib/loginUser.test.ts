@@ -1,7 +1,5 @@
-import {
-    AUTH_SESSION_COOKIE_NAME,
-    DEFAULT_SESSION_TTL_SECONDS,
-} from '@/entities/auth/lib/sessionCookie';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { loginUser } from '@/entities/auth/lib/loginUser';
 import type { PasswordVerifier } from '@/shared/lib/auth/types';
 import type {

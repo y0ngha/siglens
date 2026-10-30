@@ -122,8 +122,10 @@ vi.mock('@/entities/analysis/api', () => ({
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
+    DrizzleNewsRepository: class {},
+}));
+vi.mock('@/entities/news-article/server/prewarmNews', () => ({
     prewarmNews: vi.fn(),
-    prewarmPollNews: vi.fn(),
 }));
 
 vi.mock('@/entities/options-chain/api', () => ({

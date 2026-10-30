@@ -45,7 +45,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
 import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
-import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import {
     roundIndicators,
     roundNumber,

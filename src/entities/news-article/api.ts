@@ -1,19 +1,7 @@
 import 'server-only';
-import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
-import { revalidateTag } from 'next/cache';
-
+import { and, desc, eq, gte, isNotNull, sql, type SQL } from 'drizzle-orm';
 import { cache } from 'react';
-import { and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
-import type {
-    NewsCardAnalysis,
-    NewsItem,
-    EnrichedNewsItem,
-    RunNewsAnalysisResult,
-} from '@y0ngha/siglens-core';
-import {
-    runNewsAnalysis,
-    DEEPSEEK_V4_1_FLASH_MODEL,
-} from '@y0ngha/siglens-core';
+import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { getDatabaseClient } from '@/shared/db/client';
 import { news } from '@/shared/db/schema';
@@ -21,63 +9,59 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
-import {
-    toNewsCategory,
-    toNewsImpact,
-    toNewsSentiment,
-} from '@/shared/lib/news/newsEnumCoercion';
 import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
 import { withRetry } from '@/shared/lib/withRetry';
-import {
-    NEWS_LOOKBACK_MS,
-    NEWS_ANALYSIS_LOOKBACK_MS,
-} from './lib/newsLookback';
-import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
-import { analyzeNewsCards } from './lib/analyzeNewsCards';
-import { withNewsCardAnalysisLock } from './lib/newsCardAnalysisLock';
-import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
-import { selectUnanalyzed } from './lib/selectUnanalyzed';
-import {
-    countChangedRows,
-    ingestNewsForSymbol,
-    NewsIngestWriteError,
-} from './lib/ingestNewsForSymbol';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
-import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
+import { NEWS_LOOKBACK_MS } from './lib/newsLookback';
+import { toNewsRow } from './lib/toNewsRow';
 
-/** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
+/** `news` 테이블 행의 도메인 표현. 표시용 투영(`NewsDisplayItem`)에 영속 전용 필드를 더한다. */
 export interface NewsRow extends NewsDisplayItem {
     /**
      * 항상 `null`이다 — 사유는 `toNewsRow`의 주석 참조.
      * core `EnrichedNewsItem` 형상을 맞추기 위한 placeholder다.
      */
     bodyEn: string | null;
-    /** Symbol/issuer the news belongs to — present on `NewsItem` but not in `NewsDisplayItem`. */
+    /** 기사가 속한 심볼 — core `NewsItem`에는 있지만 `NewsDisplayItem`에는 없다. */
     symbol: string;
-    /** Timestamp the LLM analysis was attached; null before analysis. */
+    /** LLM 분석이 붙은 시각. 분석 전에는 null. */
     analyzedAt: Date | null;
 }
 
+/**
+ * 심볼의 `sinceMs` 이내 기사만 고르는 조건. 읽기 쿼리가 모두 같은 창 의미를 쓰도록
+ * 한 곳에 둔다.
+ */
+function inWindow(symbol: string, sinceMs: number): SQL | undefined {
+    return and(
+        eq(news.symbol, symbol),
+        gte(news.publishedAt, new Date(Date.now() - sinceMs))
+    );
+}
+
+/**
+ * 최신순 정렬. 동률 tie-break로 `id`를 더한다: `publishedAt`만으로 정렬하면 같은 시각
+ * 행들의 상대 순서가 정해지지 않는다. 소비자가 앞에서 N개를 잘라 쓰기 때문에
+ * (`NEWS_ROW_SERIALIZATION_LIMIT`) 경계에 걸친 동률이 재생성마다 다른 행을 남겨 ISR
+ * 블롭이 흔들릴 수 있다.
+ */
+const NEWEST_FIRST = [desc(news.publishedAt), desc(news.id)] as const;
+
+/** `news` 테이블 접근 저장소. 쓰기(upsert·분석 부착)는 transient DB 오류를 재시도하고, 읽기는 재시도하지 않는다. */
 export class DrizzleNewsRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     /**
-     * Upserts a news item and returns whether the row was actually inserted or
-     * its content actually changed. Returns `false` when a re-fetch produces
-     * identical content (so the caller can skip a `revalidateTag` call).
+     * 기사를 upsert하고, 실제로 삽입됐거나 내용이 바뀌었는지를 돌려준다. 재fetch가 같은
+     * 내용을 만들면 `false`라 호출부가 `revalidateTag`를 건너뛸 수 있다.
      *
-     * Identity fields only on conflict — analysis columns (titleKo, sentiment,
-     * etc.) are written by attachAnalysis() and intentionally excluded from the
-     * conflict `set` to avoid overwriting LLM-translated content on every fetch.
+     * 충돌 시에는 식별 필드만 갱신한다 — 분석 컬럼(titleKo, sentiment 등)은
+     * `attachAnalysis()`가 쓰므로 `set`에서 의도적으로 뺀다. 매 fetch마다 LLM 번역
+     * 결과를 덮어쓰지 않기 위해서다.
      */
     async upsertNewsItem(item: NewsItem): Promise<boolean> {
-        // Wrapped in withRetry: the pooled DB connection can be
-        // closed mid-flight (`CONNECTION_CLOSED`/`ECONNRESET` on recycling); retrying transparently
-        // keeps single-item dropouts from leaving news cards permanently
-        // un-upserted in the 250-item batch.
+        // withRetry로 감싼다: 풀링된 DB 커넥션이 재활용 중에 끊길 수 있다
+        // (`CONNECTION_CLOSED`/`ECONNRESET`). 투명하게 재시도해야 250건 배치에서
+        // 한 건의 일시 장애가 뉴스 카드를 영구히 upsert되지 않은 채 남기지 않는다.
         const changed = await withRetry(
             () =>
                 this.db
@@ -92,19 +76,16 @@ export class DrizzleNewsRepository {
                         bodyEn: item.bodyEn ?? null,
                     })
                     /**
-                     * bodyKo intentionally NOT in the conflict `set` — it is
-                     * write-once via attachAnalysis() (the LLM translation step) to
-                     * avoid overwriting LLM-translated content with raw English on
-                     * every FMP refetch. The same reasoning applies to titleKo,
-                     * summaryKo, sentiment, category, priceImpact, and analyzedAt:
-                     * those columns belong to the analysis step, not the fetch step.
+                     * bodyKo는 충돌 `set`에 의도적으로 넣지 않는다 — LLM 번역 단계
+                     * (`attachAnalysis()`)가 한 번 쓰는 값이라, FMP를 다시 받을 때마다
+                     * 번역본을 원문 영어로 덮어쓰지 않기 위해서다. titleKo, summaryKo,
+                     * sentiment, category, priceImpact, analyzedAt도 같은 이유로
+                     * fetch 단계가 아니라 분석 단계의 컬럼이다.
                      *
-                     * `setWhere` makes the UPDATE fire only when at least one of the
-                     * five fetch-owned columns actually differs from the stored row.
-                     * Combined with `.returning({ id })`, a row is returned only on
-                     * a genuine insert or a real update; an unchanged re-fetch
-                     * returns an empty array, allowing the caller to skip ISR
-                     * `revalidateTag` when nothing changed.
+                     * `setWhere`는 fetch가 소유한 다섯 컬럼 중 하나라도 저장된 행과
+                     * 다를 때만 UPDATE가 일어나게 한다. `.returning({ id })`와 합치면 진짜
+                     * 삽입이나 실제 변경일 때만 행이 반환되고, 변화 없는 재fetch는 빈
+                     * 배열이라 호출부가 ISR `revalidateTag`를 건너뛸 수 있다.
                      */
                     .onConflictDoUpdate({
                         target: news.id,
@@ -129,6 +110,10 @@ export class DrizzleNewsRepository {
         return changed.length > 0;
     }
 
+    /**
+     * 기사 한 건에 LLM 카드 분석 결과를 기록한다. `analyzedAt`이 찍히면 이후 패스는 그
+     * 기사를 다시 분석하지 않는다.
+     */
     async attachAnalysis(
         id: string,
         analysis: NewsCardAnalysis,
@@ -155,9 +140,11 @@ export class DrizzleNewsRepository {
         );
     }
 
+    /**
+     * 집계 분석·보강 후보 선별용 전체 행(`symbol`·`analyzedAt` 포함)을 최신순으로 읽는다.
+     * 원문(`bodyEn`)은 읽지 않는다 — 사유는 `toNewsRow` 주석 참조.
+     */
     async listBySymbol(symbol: string, sinceMs: number): Promise<NewsRow[]> {
-        const cutoff = new Date(Date.now() - sinceMs);
-
         const rows = await this.db
             .select({
                 id: news.id,
@@ -175,12 +162,8 @@ export class DrizzleNewsRepository {
                 analyzedAt: news.analyzedAt,
             })
             .from(news)
-            .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
-            // 동률 tie-break: `publishedAt`만으로 정렬하면 같은 시각 행들의
-            // 상대 순서가 정해지지 않는다. 소비자가 앞에서 N개를 잘라 쓰기
-            // 시작한 뒤로는(NEWS_ROW_SERIALIZATION_LIMIT) 경계에 걸친 동률이
-            // 재생성마다 다른 행을 남겨 ISR 블롭이 흔들릴 수 있다.
-            .orderBy(desc(news.publishedAt), desc(news.id));
+            .where(inWindow(symbol, sinceMs))
+            .orderBy(...NEWEST_FIRST);
 
         return rows.map(toNewsRow);
     }
@@ -188,45 +171,34 @@ export class DrizzleNewsRepository {
     /**
      * 이 창에서 이미 분석된 기사 id만 읽는다.
      *
-     * 호출부는 "이미 분석됨" 집합만 필요한데 전 컬럼(본문 포함)을 읽어서 버리고
-     * 있었다 — 필터를 SQL로 내려 id만 오게 한다(감사: 비용 라운드 15).
+     * 호출부는 "이미 분석됨" 집합만 필요하므로, 전 컬럼(본문 포함)을 읽어서 버리는 대신
+     * 필터를 SQL로 내려 id만 가져온다.
      */
     async listAnalyzedIds(
         symbol: string,
         sinceMs: number
     ): Promise<Set<string>> {
-        const cutoff = new Date(Date.now() - sinceMs);
-
         const rows = await this.db
             .select({ id: news.id })
             .from(news)
-            .where(
-                and(
-                    eq(news.symbol, symbol),
-                    gte(news.publishedAt, cutoff),
-                    isNotNull(news.analyzedAt)
-                )
-            );
+            .where(and(inWindow(symbol, sinceMs), isNotNull(news.analyzedAt)));
 
         return new Set(rows.map(row => row.id));
     }
 
     /**
-     * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`(기사 원문)을 select에서 뺀다.
+     * 카드 표시에 필요한 컬럼만 최신순으로 읽어 로케일에 맞게 현지화한다.
      *
-     * `listBySymbol`과의 차이는 이제 원문 유무가 아니다 — 그쪽도 `bodyEn`을 읽지
-     * 않는다(`toNewsRow` 주석 참조). 차이는 집계 경로가 쓰는 `symbol`/`analyzedAt`을
-     * 싣느냐뿐이다. 3초 폴링(`getNewsCardsAction`)과 목록 렌더는 그 둘도 안 쓰므로
-     * 180일 창 × 수백 행에서 그만큼을 덜 실어 나른다(감사: 비용 라운드 14~15).
-     * 시장 뉴스 슬라이스도 같은 투영을 SELECT 단계에 두고 있다(`listCardsByCategory`).
+     * `listBySymbol`과의 차이는 집계 경로가 쓰는 `symbol`/`analyzedAt`을 싣느냐뿐이다
+     * (둘 다 `bodyEn`은 읽지 않는다). 3초 폴링(`getNewsCardsAction`)과 목록 렌더는 그 둘도
+     * 안 쓰므로 180일 창 × 수백 행에서 그만큼을 덜 실어 나른다. 시장 뉴스 슬라이스도 같은
+     * 투영을 SELECT 단계에 두고 있다(`listCardsByCategory`).
      */
     async listCardsBySymbol(
         symbol: string,
         sinceMs: number,
         locale: Locale
     ): Promise<NewsDisplayItem[]> {
-        const cutoff = new Date(Date.now() - sinceMs);
-
         const rows = await this.db
             .select({
                 id: news.id,
@@ -242,31 +214,27 @@ export class DrizzleNewsRepository {
                 priceImpact: news.priceImpact,
             })
             .from(news)
-            .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
-            // 동률 tie-break: `publishedAt`만으로 정렬하면 같은 시각 행들의
-            // 상대 순서가 정해지지 않는다. 소비자가 앞에서 N개를 잘라 쓰기
-            // 시작한 뒤로는(NEWS_ROW_SERIALIZATION_LIMIT) 경계에 걸친 동률이
-            // 재생성마다 다른 행을 남겨 ISR 블롭이 흔들릴 수 있다.
-            .orderBy(desc(news.publishedAt), desc(news.id));
+            .where(inWindow(symbol, sinceMs))
+            .orderBy(...NEWEST_FIRST);
 
         return toLocalizedDisplayItems(rows, locale, TRANSLATABLE_ENTITY.news);
     }
 }
 
 /**
- * 동일 라우트 요청 내 동시 호출(예: NewsPage 본문 + NewsListSection)이 cache MISS 시
- * 팩토리를 동시에 실행하려 할 때 `React.cache`로 per-request dedup해 DB 중복 조회를 막는다.
+ * 종목 뉴스 목록을 카드 투영으로 읽는다. `React.cache`로 같은 요청 안의 동시 호출(예:
+ * NewsPage 본문 + NewsListSection)을 dedup해 cache MISS 시 DB를 중복 조회하지 않는다.
  *
- * **scope**: React.cache는 단일 React 렌더 트리(= 단일 HTTP 요청) 내에서만 memoize한다.
- * /news와 /overall은 별개 HTTP 요청이므로 React.cache scope를 공유하지 않는다 —
- * 두 라우트 간 중복 방지는 호출자별 `staticSymbolCache` (ISR cross-request 캐시)가
- * 담당하고, React.cache는 같은 요청 내 factory 동시 호출에 대한 backstop이다.
+ * **scope**: React.cache는 단일 React 렌더 트리(= 단일 HTTP 요청) 안에서만 memoize한다.
+ * /news와 /overall은 별개 HTTP 요청이라 scope를 공유하지 않는다 — 두 라우트 사이의 중복
+ * 방지는 호출자별 `staticSymbolCache`(ISR cross-request 캐시)가 담당하고, 이 함수는 같은
+ * 요청 안의 factory 동시 호출에 대한 backstop이다.
  *
- * 같은 lookback window(NEWS_LOOKBACK_MS)로 listBySymbol을 감싸므로 호출자별 다른 윈도우가
- * 필요해지면 별도 함수로 분리해야 한다. cross-request 캐싱은 손실 — 이슈 #439 참조.
+ * 조회 창은 `NEWS_LOOKBACK_MS`로 고정이다. 호출자별로 다른 창이 필요해지면 별도 함수로
+ * 분리해야 한다.
  *
- * 사이드 이펙트(DB I/O)가 있으므로 entities/news-article/api.ts에 배치
- * (entities/{slice}/lib/은 순수 함수 전용 — src/entities/CLAUDE.md#EN-1).
+ * DB I/O가 있으므로 `lib/`(순수 함수 전용, src/entities/CLAUDE.md#EN-1)가 아니라
+ * `api.ts`에 둔다.
  */
 export const getNewsList = cache(
     async (symbol: string, locale: Locale): Promise<NewsDisplayItem[]> => {
@@ -275,221 +243,7 @@ export const getNewsList = cache(
         // 카드 투영으로 읽는다 — 이 함수의 소비자 셋(뉴스 목록, 뉴스 페이지 본문,
         // overall 페이지) 중 누구도 `bodyEn`/`symbol`/`analyzedAt`을 읽지 않는데,
         // 결과가 `staticSymbolCache`(=`unstable_cache`)로 S3 ISR 블롭에 굳는다.
-        // 클라이언트 경계에서만 걸러 내면 Neon 전송과 S3 블롭에는 그대로 남는다
-        // (감사: 비용 라운드 15).
+        // 클라이언트 경계에서만 걸러 내면 Neon 전송과 S3 블롭에는 그대로 남는다.
         return repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS, locale);
     }
 );
-
-/** Shape of a single row read from the `news` table. */
-interface NewsDbRow {
-    id: string;
-    symbol: string;
-    source: string;
-    url: string;
-    publishedAt: Date;
-    titleEn: string;
-    /** 이 경로에서는 select하지 않는다 — `toNewsRow`/`toMarketNewsRow` 주석 참조. */
-    bodyEn?: string | null;
-    titleKo: string | null;
-    bodyKo: string | null;
-    summaryKo: string | null;
-    sentiment: string | null;
-    category: string | null;
-    priceImpact: string | null;
-    analyzedAt: Date | null;
-}
-
-// DB는 sentiment/category/priceImpact를 raw text로 저장하므로 read 시점에 화이트리스트로 검증한다.
-// 잘못된 값(스키마 변경, 수동 SQL 등)은 null로 떨어뜨려 표시 단 fallback이 처리하도록 한다.
-function toNewsRow(row: NewsDbRow): NewsRow {
-    return {
-        id: row.id,
-        symbol: row.symbol,
-        source: row.source,
-        url: row.url,
-        publishedAt: row.publishedAt.toISOString(),
-        titleEn: row.titleEn,
-        // `body_en`은 읽지 않는다 — 이 경로의 소비자(집계 분석 프롬프트)가 그 값을
-        // 쓰지 않기 때문이다. core에서 `bodyEn`을 읽는 곳은 카드 프롬프트
-        // (`newsCardPrompt`)뿐인데, 그쪽 입력은 DB 행이 아니라 FMP 응답 객체다
-        // (`analyzeNewsCards(ingested.fresh)`). 즉 DB에서 원문을 실어 오면 전량
-        // 버려진다(감사: 비용 라운드 16).
-        //
-        // ⚠️ core가 집계/다이제스트 프롬프트에서 `bodyEn`을 읽기 시작하면 이 값이
-        // 조용히 null이 되어 품질만 떨어진다. core 업그레이드 시
-        // `grep -rn bodyEn node_modules/@y0ngha/siglens-core/dist`로 확인할 것.
-        bodyEn: null,
-        titleKo: row.titleKo,
-        bodyKo: row.bodyKo,
-        summaryKo: row.summaryKo,
-        sentiment: toNewsSentiment(row.sentiment),
-        category: toNewsCategory(row.category),
-        priceImpact: toNewsImpact(row.priceImpact),
-        analyzedAt: row.analyzedAt,
-    };
-}
-
-/**
- * SEO pre-warm 전용 news submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitNewsAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분 없음)를
- * 요청-컨텍스트 없이 재현한다(캐시 키 5축 정합: model default / tier free /
- * reasoning false / 동일 fingerprint). 차이는 force 뿐 — `skipEnqueueIfMiss`는
- * 액션에서도 항상 `false`다.
- *
- * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`
- * — `SymbolModelContext`의 `useSelectedModel` 기본값과 동일)을 명시 전달한다.
- * core의 news submit 옵션은 `modelId`를 그대로 캐시 키에 사용하고 내부
- * fallback이 없으므로, 생략하면 익명 writer가 쓰는 키와 어긋난다.
- *
- * DB I/O(DrizzleNewsRepository)·cross-entity 조합(earnings-report)·외부 core
- * submit 호출을 하는 orchestration seam이라 entities/{slice}/lib/(순수 함수
- * 전용)이 아니라 api.ts에 위치한다 — src/entities/CLAUDE.md#EN-1.
- *
- * ⚠️ 요청 헤더 읽기·세션 사용자 조회·봇 판별·쿠키 접근 금지 — cron의
- * after() 컨텍스트에서 실행되며 React 요청 스코프가 없다.
- *
- * **ingest-before-read (2026-07-26 감사)** — `listBySymbol`을 읽기 전에
- * `ingestNewsForSymbol`로 FMP news를 먼저 채운다. 원래는 사람이 news 탭을
- * 방문할 때만(`ensureNewsCardsAnalyzedAction`) news 테이블이 채워졌는데,
- * pre-warm cron은 그 방문을 절대 만들지 않으므로 최근 30일(`NEWS_ANALYSIS_LOOKBACK_MS`)
- * 안에 아무도 안 본 심볼은 `listBySymbol`이 항상 빈 배열을 반환해 news 분석이
- * 영구 실패했다 — `overall`도 news에 의존하므로 함께 실패했다. 실측: 하베스트된
- * 221개 심볼 중 44개(20%)가 이 창에 걸렸고, 저-트래픽 크립토 알트코인이 가장
- * 심했다(처리된 크립토 ~15개 중 11개가 적용 가능한 3개 탭 중 technical만 확보).
- * cron은 사람 방문에 기대지 않고 스스로 완결돼야 한다(self-sufficient).
- *
- * ingest 실패(FMP 장애/402 등)는 fail-open — 배치의 다른 단위 격리 철학과
- * 동일하게 여기서 삼켜서 DB에 이미 있는 뉴스만으로 분석을 진행한다. FMP
- * 신규 호출 비용: pre-warm 방문마다 심볼당 1회 추가. 유니버스 295개, FMP
- * 한도 분당 300req, 배치는 5분 tick당 12심볼(2026-10-02 이전 6)만 처리하므로 무시
- * 가능한 증가분이다.
- */
-export async function prewarmNews(
-    symbol: string,
-    companyName: string,
-    force: boolean
-): Promise<RunNewsAnalysisResult & { newsFetchFailed?: true }> {
-    // resolveMarketProfile()은 내부적으로 getAssetInfo()를 호출한다. 아래
-    // ingestNewsForSymbol에 profileId를 안 넘기면 다시 resolve해 심볼당 밤마다
-    // getAssetInfo Redis 왕복이 중복된다. 여기서 프로필을 한 번만 resolve하고
-    // assetClass는 그 결과에서 파생한 뒤 ingestNewsForSymbol에 그대로 전달한다.
-    const profileId = await resolveMarketProfile(symbol);
-    const descriptor = getDescriptor(profileId);
-    const { assetClass } = descriptor;
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleNewsRepository(db);
-
-    // cron은 방문 트래픽에 기대지 않는다 — 위 doc-comment "ingest-before-read" 참고.
-    //
-    // lookback을 분석 창(30일)으로 좁힌다: 사람 방문 경로는 뉴스 **목록**(180일)을
-    // 채워야 하지만 cron은 바로 아래 `listBySymbol(NEWS_ANALYSIS_LOOKBACK_MS)`로
-    // 30일치만 읽는다. 180일치를 받아 upsert하면 매일 밤 295심볼에 대해 읽지도 않을
-    // 기사를 Neon에 쓰게 되고, 그 왕복이 배치 데드라인을 갉아먹는다(감사 F5).
-    const ingested = await ingestNewsForSymbol(
-        symbol,
-        repo,
-        NEWS_ANALYSIS_LOOKBACK_MS,
-        profileId
-    ).catch((err: unknown) => {
-        // DB 광역 장애(과반 upsert 실패)는 삼키지 않고 올려보낸다 — 삼키면 비어 있는
-        // DB를 그대로 분석해 빈약한 스냅샷을 generatedAt=now로 굳혀버려 다음 거래일
-        // 경계까지 재시도조차 안 된다. 위로 던지면 배치의 유닛 단위 catch가 스냅샷을
-        // 쓰지 않고 다음 tick이 재시도한다(감사 F2).
-        if (err instanceof NewsIngestWriteError) throw err;
-        // FMP 장애·402 등은 fail-open — DB에 이미 있는 뉴스로 계속 진행한다.
-        console.error(`[prewarmNews] ingest failed for ${symbol}:`, err);
-        return null;
-    });
-
-    // 새로 적재된 기사가 있으면 news 목록 캐시를 무효화한다. 이게 없으면 cron이
-    // DB를 채워도 `getNewsList`의 staticSymbolCache(태그 `news:{SYMBOL}`, 12h)가
-    // 빈 목록을 계속 서빙해, Fix B의 최대 성과가 최대 12시간 노출되지 않는다(감사 F1).
-    // `revalidateTag('seo-snapshot:…')`는 다른 태그이고 전 탭 수렴 시에만 발화하므로
-    // 이 경로를 대신하지 못한다.
-    if (ingested !== null && countChangedRows(ingested) > 0) {
-        revalidateTag(newsCacheTag(symbol), 'max');
-    }
-
-    // `rows`만 가변이다 — 보강을 돌리면 그 결과를 반영해 다시 읽는다.
-    const [initialRows, next, macroCalendar] = await Promise.all([
-        repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-        getNextEarningsReport(symbol, db),
-        loadNewsMacroCalendar(),
-    ]);
-    let rows = initialRows;
-
-    // 카드 보강(번역 + 라벨링). **이 단계를 건너뛰면 아래 분석은 항상 실패한다** —
-    // `buildAnalysisNewsItems`가 `isEnrichedRow`로 미보강 행을 전부 걸러내고, core의
-    // `runNewsAnalysis`는 빈 입력을 보고 `{status:'error', code:'no_news'}`를 돌려준다.
-    // 그러면 `news`·`overall` 두 탭 스냅샷이 생성되지 않는다.
-    //
-    // 원래 보강은 방문자 경로(`ensureNewsCardsAnalyzedAction`)에만 있었다. 그래서
-    // 사람이 찾지 않는 종목은 영원히 보강되지 않았고, 보강이 없으니 스냅샷이 없고,
-    // 스냅샷이 없으니 페이지가 얇아 유입이 생기지 않는 자기강화 루프에 갇혔다.
-    // (프로덕션 실측: 국내 20종목 전부 보강 0건 / AAPL 288건.)
-    //
-    // 상한(`PREWARM_NEWS_CARD_LIMIT`)을 두는 이유와 숫자 근거는 그 상수의 주석에 있다 —
-    // 요지는 백로그가 큰 종목일수록 유닛 타임아웃에 걸린다는 것이고, 그게 바로 이
-    // 수정이 겨냥한 종목들이다.
-    //
-    // 후보를 `ingested.fresh`에서만 뽑는다. 적재가 실패한 밤(fail-open, `null`)에는
-    // 보강도 건너뛴다 — 그날은 새로 확인된 기사가 없으므로 DB의 어떤 행이 아직
-    // 유효한 후보인지 판단할 근거가 없다. `fetchNewsForPeriod`는 델타가 아니라 30일
-    // 창 전체를 매번 돌려주므로, 다음에 적재가 성공하면 남은 미보강 행이 그대로
-    // 후보로 다시 잡힌다(자기 회복).
-    //
-    // 후보 좁히기(미보강 ∩ DB 실재)는 `selectUnanalyzed`가 맡는다 — 근거는 그
-    // 함수의 주석에 있고, 챗 경로(`ensureSymbolNewsFresh`)와 같은 판단을 쓴다.
-    const unanalyzed =
-        ingested === null ? [] : selectUnanalyzed(ingested.fresh, rows);
-    //
-    // 방문자 경로가 같은 심볼을 분석 중이면 건너뛴다(`withNewsCardAnalysisLock`) —
-    // 겹치면 같은 기사에 LLM을 두 번 태운다. 그 tick은 이미 보강된 행으로 진행하고,
-    // 남은 기사는 다음 tick이 이어받는다.
-    if (unanalyzed.length > 0) {
-        const analyzed = await withNewsCardAnalysisLock(symbol, () =>
-            analyzeNewsCards(unanalyzed, repo, {
-                limit: PREWARM_NEWS_CARD_LIMIT,
-                logLabel: 'prewarmNews',
-            })
-        );
-        // 방금 채운 보강 결과를 반영해 다시 읽는다 — 이 재조회가 없으면 이번 tick은
-        // 보강 비용만 쓰고 여전히 빈 입력으로 분석을 부른다.
-        if (analyzed) {
-            rows = await repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS);
-        }
-    }
-
-    const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
-        buildAnalysisNewsItems(rows);
-
-    /**
-     * `newsFetchFailed`를 결과에 실어 보낸다.
-     *
-     * 적재는 fail-open이라(`ingested === null` = FMP 장애·402) 그 밤의 DB가
-     * 비어 있으면 core는 "뉴스가 없다"(`no_news`)와 "뉴스를 못 가져왔다"를
-     * 똑같이 본다. 호출부(`resolveHarvest`)가 그 둘에 서로 다른 backoff를
-     * 매기므로, 구분 가능한 유일한 지점인 여기서 신호를 붙인다 — 이게 없으면
-     * FMP 장애 중 신규·저커버리지 심볼이 30분이 아니라 24시간 묶인다.
-     */
-    const result = await runNewsAnalysis({
-        symbol,
-        companyName,
-        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        news: enrichedNews,
-        upcomingCalendar: next !== null ? [next] : [],
-        // 방문자 경로와 같은 헬퍼 — 캐시 키 일치 불변식.
-        macroCalendar,
-        tier: 'free',
-        reasoning: false,
-        providerFallback: PREWARM_PROVIDER_FALLBACK,
-        skipEnqueueIfMiss: false,
-        assetClass,
-        // 방문자 경로(submitNewsAnalysisAction)와 같은 값을 넘겨야 prewarm이 채운
-        // 캐시의 산출 텍스트가 갈리지 않는다.
-        currency: descriptor.priceFormat.currency,
-        ...(force ? { force: true } : {}),
-    });
-    return ingested === null ? { ...result, newsFetchFailed: true } : result;
-}

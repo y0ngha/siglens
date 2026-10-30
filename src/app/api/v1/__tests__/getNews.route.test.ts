@@ -51,7 +51,7 @@ vi.mock(
 vi.mock('@/entities/news-article/lib/analyzeNewsCards', () => ({
     analyzeNewsCards: mockAnalyzeCards,
 }));
-vi.mock('@/entities/news-article/lib/newsRefreshFlag', () => ({
+vi.mock('@/entities/news-article/server/newsRefreshFlag', () => ({
     isRecentlyFetched: mockIsRecentlyFetched,
 }));
 vi.mock('@/entities/news-article/lib/selectUnanalyzed', () => ({

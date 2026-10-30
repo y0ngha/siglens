@@ -1,4 +1,4 @@
-import { toNaverNewsItem } from '@/entities/news-article/lib/naverNewsClient';
+import { toNaverNewsItem } from '@/entities/news-article/lib/toNaverNewsItem';
 import type { NaverNewsItem } from '@/shared/api/naver/naverSearch';
 import type { MarketNewsItem } from './marketNewsClientPort';
 

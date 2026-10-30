@@ -50,6 +50,7 @@ export const CHART_DATA_INDICATOR_NAMES = [
     'regression',
 ] as const satisfies readonly (keyof IndicatorResult)[];
 
+/** `get_chart_data`가 받는 지표 이름 유니온. 요청 검증(enum)과 응답 키의 타입이다. */
 export type ChartDataIndicatorName =
     (typeof CHART_DATA_INDICATOR_NAMES)[number];
 

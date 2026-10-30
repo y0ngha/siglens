@@ -1,19 +1,20 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { getNewsCardsAction } from '../actions/getNewsCardsAction';
 import {
     type CardWaitPollPolicy,
     decideCardWaitPoll,
     hasAnyEnrichedCard,
     INITIAL_CARD_POLL_COUNTERS,
-} from '@/entities/news-article/lib/cardPollDecision';
+} from '../lib/cardPollDecision';
 
+/** {@link useWaitForNewsCards}의 반환값. */
 interface UseWaitForNewsCardsReturn {
     isReady: boolean;
     pollError: Error | null;
@@ -25,18 +26,14 @@ const WAIT_POLICY: CardWaitPollPolicy = {
 };
 
 /**
- * Returns `isReady = true` when at least one enriched news card (with AI
- * analysis) is available in the DB for `symbol`.
+ * DB에 `symbol`의 보강된(AI 분석이 붙은) 뉴스 카드가 하나라도 있으면 `isReady = true`.
  *
- * If `initiallyReady` is already `true` (the SSR snapshot contained enriched
- * cards), this resolves immediately without any polling.
+ * `initiallyReady`가 이미 `true`(SSR 스냅샷에 보강 카드가 있음)면 폴링 없이 즉시 준비된다.
+ * 아니면 보강 카드가 나타날 때까지 3초마다 `getNewsCardsAction`을 폴링한다 — 그때가 AI
+ * 집계 분석을 안전하게 트리거할 수 있는 시점이다.
  *
- * Otherwise, polls `getNewsCardsAction` every 3 s until an enriched card
- * appears — at which point the AI aggregate analysis can safely be triggered.
- *
- * `pollError` becomes non-null after `MAX_CONSECUTIVE_FAILURES` consecutive
- * polling errors so the consuming component can rethrow it for the surrounding
- * error boundary to catch.
+ * `pollError`는 `MAX_CONSECUTIVE_FAILURES`번 연속 폴링이 실패한 뒤에 non-null이 되어, 소비
+ * 컴포넌트가 다시 던져 주변 에러 바운더리가 잡게 할 수 있다.
  *
  * `enabled`가 `false`면 폴링하지 않는다 — 카드 보강(`useNewsAnalysisTrigger`)이 AI 자동
  * 실행 게이트로 미뤄진 동안에는 기다려도 카드가 생기지 않는다. 참이 되면 그때 시작한다.
@@ -52,7 +49,7 @@ export function useWaitForNewsCards(
     enabled = true
 ): UseWaitForNewsCardsReturn {
     const [pollError, setPollError] = useState<Error | null>(null);
-    // Reset on symbol change in render (React-recommended pattern).
+    // 렌더 중에 종목 변경을 감지해 초기화한다(React 권장 패턴).
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
     const [prevSymbol, setPrevSymbol] = useState(symbol);
     // 종목별 카운터. 종목이 바뀌면(같은 인스턴스가 남는 경우) 처음부터 센다.

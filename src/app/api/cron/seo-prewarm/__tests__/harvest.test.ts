@@ -64,10 +64,12 @@ vi.mock('@/entities/analysis/api', () => ({
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
-    prewarmNews: mockPrewarmNews,
     DrizzleNewsRepository: class {},
 }));
-vi.mock('@/entities/news-article/lib/hasAnalyzableNews', () => ({
+vi.mock('@/entities/news-article/server/prewarmNews', () => ({
+    prewarmNews: mockPrewarmNews,
+}));
+vi.mock('@/entities/news-article/server/hasAnalyzableNews', () => ({
     hasAnalyzableNews: mockHasAnalyzableNews,
 }));
 
