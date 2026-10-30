@@ -92,6 +92,7 @@ async function PrivacyContent({ locale, terms }: PrivacyContentProps) {
             intro={tLegal('privacyIntro', { v0: brandName(locale) })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
+            bodyLocale={terms.bodyLocale}
             topNotice={
                 terms.isTranslationFallback ? (
                     <UntranslatedNotice

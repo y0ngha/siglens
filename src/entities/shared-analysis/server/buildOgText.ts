@@ -8,21 +8,18 @@ import {
 export type { OgText, OgTranslator };
 
 /**
- * kind별 방향성+요약 텍스트. 스펙 §6-1 필드 매핑.
+ * 스냅샷의 kind에 맞는 OG description·트윗 문안을 만든다. 공유 페이지 메타데이터와
+ * OG 이미지가 같은 문안을 쓰도록 하는 단일 진입점이다.
  *
- * Thin dispatcher over `SHARE_KIND_OG_BUILDERS` — the per-kind logic lives in
- * `kindServerRegistry.ts` which enforces compile-time exhaustiveness via
- * `satisfies Record<ShareableKind, ...>`.
+ * kind별 로직은 `SHARE_KIND_OG_BUILDERS`에 있고 컴파일 시점 빠짐없음이 거기서 강제된다.
  */
 export function buildOgText(
     snapshot: SharedAnalysisSnapshot,
     t: OgTranslator
 ): OgText {
-    // snapshot.result is a server-written, isValidShareInput-validated *AnalysisResponse
-    // object persisted as jsonb. The double-cast (via unknown) is required because
-    // SnapshotResultOf<K> is not narrowed at this call site — each kind branch in
-    // SHARE_KIND_OG_BUILDERS reads only the fields that are valid for that kind.
-    const r = snapshot.result as unknown as Record<string, unknown>;
+    // kind 분기 안에서 `SnapshotResultOf<K>`가 좁혀지지 않으므로 각 빌더가 받는 느슨한
+    // 레코드로 얕게 복사한다. 필드 해석은 빌더가 런타임에 좁혀서 한다.
+    const r: Record<string, unknown> = { ...snapshot.result };
     const builder = SHARE_KIND_OG_BUILDERS[snapshot.kind];
     return builder(r, snapshot.symbol, t);
 }

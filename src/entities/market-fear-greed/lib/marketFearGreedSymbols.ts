@@ -5,16 +5,13 @@ import {
 } from '@y0ngha/siglens-core';
 
 /**
- * Semantic series key → FMP ticker. `siglens-core` deliberately speaks in
- * economic roles rather than tickers, so this table is the one place that knows
- * the index is backed by FMP at all (SCOPE.md §3 Step 3 — data-source knowledge
- * belongs to the consumer).
+ * 의미(semantic) 키 → FMP 티커. `siglens-core`는 일부러 티커가 아니라 경제적 역할로
+ * 말하므로, 이 지수가 FMP를 소스로 쓴다는 것을 아는 곳은 이 표뿐이다(데이터 소스 지식은
+ * 소비자 몫이다).
  *
- * `sp500` is SPY rather than the `^GSPC` index because three of the five
- * factors are return *differences* against ETFs (TLT / HYG / LQD / RSP). Mixing
- * an index level with ETF prices would compare a dividend-excluded series
- * against dividend-excluded ones on a different basis; using SPY keeps every
- * leg on the same footing.
+ * `sp500`이 `^GSPC` 지수가 아니라 SPY인 이유: 다섯 요인 중 셋이 ETF(TLT / HYG / LQD /
+ * RSP)와의 수익률 *차이*다. 지수 레벨과 ETF 가격을 섞으면 서로 다른 기준의 시리즈를
+ * 비교하게 되므로, SPY를 써서 모든 다리를 같은 기준에 둔다.
  */
 export const MARKET_FEAR_GREED_SYMBOLS = {
     sp500: 'SPY',
@@ -26,19 +23,17 @@ export const MARKET_FEAR_GREED_SYMBOLS = {
 } as const satisfies Record<MarketFearGreedSeriesKey, string>;
 
 /**
- * Calendar-day lookback requested from FMP. The index needs 125 sessions to
- * warm up the momentum window plus 60 more for `confidence: 'normal'`, and the
- * page renders a "1 year ago" comparison.
+ * FMP에 요청하는 달력일 조회 창. 지수는 모멘텀 창을 데우는 125세션에 더해
+ * `confidence: 'normal'`용 60세션이 필요하고, 페이지가 "1년 전" 비교를 그린다.
  *
- * Five years since core 2.10.0 (`FEAR_GREED_LOOKBACK_DAYS`): every reading is a
- * percentile against this history, so per-instrument and market-wide indices
- * share one window — two years left too few extreme-zone episodes to say
- * anything, and a longer past steadies the baseline. Changing this changes every
- * score, so it follows the core constant rather than a local number.
+ * core 2.10.0부터 5년(`FEAR_GREED_LOOKBACK_DAYS`): 모든 판독이 이 이력 대비 백분위라
+ * 종목별 지수와 시장 지수가 한 창을 공유한다 — 2년은 극단 구간 사례가 너무 적어 의미가
+ * 없었고, 과거가 길수록 기준선이 안정된다. 이 값을 바꾸면 모든 점수가 바뀌므로 로컬
+ * 숫자가 아니라 core 상수를 따른다.
  */
 export const MARKET_FEAR_GREED_LOOKBACK_DAYS = FEAR_GREED_LOOKBACK_DAYS;
 
-/** Every series key paired with its FMP ticker, in a stable order. */
+/** 모든 시리즈 키와 FMP 티커의 쌍, 안정된 순서. 캐시 계층이 이 순서로 fan-out한다. */
 export const MARKET_FEAR_GREED_SERIES = MARKET_FEAR_GREED_SERIES_KEYS.map(
     key => ({ key, symbol: MARKET_FEAR_GREED_SYMBOLS[key] })
 );

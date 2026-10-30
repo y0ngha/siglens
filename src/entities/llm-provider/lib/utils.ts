@@ -6,11 +6,13 @@ import type {
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import type { ProviderCallLimits } from '../model';
 
+/** OpenAI·Anthropic·DeepSeek 어댑터가 공유하는 `{ role, content }` 대화 턴. */
 export interface ProviderTurn {
     role: 'user' | 'assistant';
     content: string;
 }
 
+/** core의 provider-중립 `AiContents`를 `{ role, content }` 턴 배열로 바꾼다. 문자열이면 user 턴 하나다. */
 export function toProviderTurns(contents: AiContents): ProviderTurn[] {
     if (typeof contents === 'string') {
         return [{ role: 'user', content: contents }];
@@ -23,7 +25,7 @@ export function toProviderTurns(contents: AiContents): ProviderTurn[] {
 
 /**
  * apiModelId(예: 'claude-sonnet-5-5')로 ModelSpec을 역방향 조회한다.
- * anthropic.ts와 openai.ts 양쪽에서 동일하게 사용하던 로컬 함수를 통합.
+ * 어댑터는 라우터가 넘긴 provider API 모델 ID만 받으므로, 스펙(토큰 상한·추론 설정)은 이 조회로 되찾는다.
  *
  * `Object.values(MODEL_SPECS)`의 반환 타입은 `ModelSpec[]`으로 넓어지므로
  * 캐스트가 필요하다. MODEL_SPECS가 IndicatorKey → ModelSpec 형태임이
@@ -66,75 +68,4 @@ export function toSdkTransportOptions(limits: ProviderCallLimits | undefined): {
             ? { maxRetries: limits.maxRetries }
             : {}),
     };
-}
-
-/** 호출 전체 마감(`limits.timeoutMs`)을 넘겼을 때 던지는 오류. */
-export class ProviderCallTimeoutError extends Error {
-    constructor(readonly timeoutMs: number) {
-        super(`[llm-provider] call exceeded ${timeoutMs}ms deadline`);
-        this.name = 'ProviderCallTimeoutError';
-    }
-}
-
-/**
- * 호출 전체를 묶는 마감. 스트리밍 어댑터(DeepSeek·Anthropic)가 쓴다.
- *
- * SDK의 `timeout`은 **응답 헤더가 도착할 때까지만** 잰다(`fetchWithTimeout`이 fetch가 resolve되면
- * 타이머를 지운다). 스트림 본문 읽기는 마감이 없어, 토큰이 느리게 흐르면 호출이 `timeoutMs`를
- * 훨씬 넘겨 이어지고 그동안 호출자의 락·비용 계산이 깨진다. 그래서 헤더 전부터 본문 끝까지를
- * 이 마감이 한 번에 묶는다.
- *
- * - `signal`: SDK 요청에 넘겨 만료 시 실제 연결을 끊는다. `timeoutMs`가 없으면 `undefined`.
- * - `guard(work)`: `work`와 마감을 경주시킨다. 만료되면 {@link ProviderCallTimeoutError}로 거절한다.
- *   SDK가 abort에 반응하지 않는 경우에도 호출자는 마감에 풀려난다.
- * - `dispose()`: 정상·실패 종료 시 타이머를 정리한다(`finally`에서 호출).
- */
-export interface CallDeadline {
-    readonly signal: AbortSignal | undefined;
-    guard<T>(work: Promise<T>): Promise<T>;
-    dispose(): void;
-}
-
-export function createCallDeadline(
-    timeoutMs: number | undefined
-): CallDeadline {
-    if (timeoutMs === undefined) {
-        return {
-            signal: undefined,
-            guard: work => work,
-            dispose: () => {},
-        };
-    }
-    const controller = new AbortController();
-    // 마감은 abort 신호 하나로 표현한다 — 타이머가 abort를 걸고, 그 신호가 SDK 요청과 경주 둘 다를 끝낸다.
-    const expiry = new Promise<never>((_, reject) => {
-        controller.signal.addEventListener(
-            'abort',
-            () => reject(new ProviderCallTimeoutError(timeoutMs)),
-            { once: true }
-        );
-    });
-    // 아무도 경주시키지 않은 채 만료돼도 unhandled rejection이 되지 않게 한다.
-    expiry.catch(() => {});
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    return {
-        signal: controller.signal,
-        guard: work => Promise.race([work, expiry]),
-        dispose: () => clearTimeout(timer),
-    };
-}
-
-/**
- * `start`가 만든 호출을 마감과 경주시키고, 성공·실패·동기 throw 어느 경우에도 타이머를 푼다.
- * `start` 호출 자체를 try 안에서 하므로 요청 생성이 던져도 타이머가 남지 않는다.
- */
-export async function runWithCallDeadline<T>(
-    deadline: CallDeadline,
-    start: () => Promise<T>
-): Promise<T> {
-    try {
-        return await deadline.guard(start());
-    } finally {
-        deadline.dispose();
-    }
 }

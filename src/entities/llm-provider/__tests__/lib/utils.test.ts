@@ -1,8 +1,8 @@
 import {
-    createCallDeadline,
-    ProviderCallTimeoutError,
     findSpecByApiModelId,
+    resolveMaxOutputTokens,
     toProviderTurns,
+    toSdkTransportOptions,
 } from '@/entities/llm-provider/lib/utils';
 import type { ConversationTurn } from '@y0ngha/siglens-core';
 
@@ -66,39 +66,38 @@ describe('toProviderTurns', () => {
     });
 });
 
-describe('createCallDeadline', () => {
-    afterEach(() => {
-        vi.useRealTimers();
+describe('resolveMaxOutputTokens', () => {
+    it('limits가 없으면 스펙 상한 그대로다', () => {
+        expect(resolveMaxOutputTokens(1000, undefined)).toBe(1000);
     });
 
-    it('timeoutMs가 없으면 signal 없이 작업을 그대로 통과시킨다', async () => {
-        const deadline = createCallDeadline(undefined);
-
-        expect(deadline.signal).toBeUndefined();
-        await expect(deadline.guard(Promise.resolve('x'))).resolves.toBe('x');
+    it('호출자 상한이 더 작으면 그 값을 쓴다', () => {
+        expect(resolveMaxOutputTokens(1000, { maxOutputTokens: 200 })).toBe(
+            200
+        );
     });
 
-    it('마감이 지나면 signal을 abort하고 guard가 timeout 오류로 거절한다', async () => {
-        vi.useFakeTimers();
-        const deadline = createCallDeadline(1_000);
-        const assertion = expect(
-            deadline.guard(new Promise(() => {}))
-        ).rejects.toBeInstanceOf(ProviderCallTimeoutError);
+    it('호출자 상한이 스펙보다 커도 스펙 상한을 넘기지 않는다', () => {
+        expect(resolveMaxOutputTokens(1000, { maxOutputTokens: 5000 })).toBe(
+            1000
+        );
+    });
+});
 
-        await vi.advanceTimersByTimeAsync(1_000);
-        await assertion;
-
-        expect(deadline.signal?.aborted).toBe(true);
+describe('toSdkTransportOptions', () => {
+    it('limits가 없으면 빈 객체라 SDK 기본값이 유지된다', () => {
+        expect(toSdkTransportOptions(undefined)).toEqual({});
     });
 
-    it('마감 전에 dispose하면 타이머가 정리돼 abort되지 않는다', async () => {
-        vi.useFakeTimers();
-        const deadline = createCallDeadline(1_000);
+    it('지정한 필드만 싣는다', () => {
+        expect(toSdkTransportOptions({ timeoutMs: 3000 })).toEqual({
+            timeout: 3000,
+        });
+    });
 
-        await expect(deadline.guard(Promise.resolve(1))).resolves.toBe(1);
-        deadline.dispose();
-        await vi.advanceTimersByTimeAsync(5_000);
-
-        expect(deadline.signal?.aborted).toBe(false);
+    it('maxRetries 0도 그대로 싣는다(재시도 비활성)', () => {
+        expect(toSdkTransportOptions({ maxRetries: 0 })).toEqual({
+            maxRetries: 0,
+        });
     });
 });

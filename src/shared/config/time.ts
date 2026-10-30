@@ -11,7 +11,7 @@ export const MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND;
 export const KST_OFFSET_HOURS = 9;
 
 /**
- * 30min — 장 마감 뒤 EOD 데이터 정착 대기(spec §6). 스냅샷 신선도 경계
+ * 30min — 장 마감 뒤 EOD 데이터 정착 대기. 스냅샷 신선도 경계
  * (`seo-snapshot/lib/freshness`)와 캡션의 "직전 완료 세션" 판정(`formatSnapshotAsOf`)이
  * **같은 값**을 써야 한다 — 따로 두면 캡션이 말하는 세션과 신선도가 보는 세션이 갈린다.
  */
@@ -67,13 +67,11 @@ export const EXTENDED_QUOTE_CACHE_TTL_SECONDS = SECONDS_PER_MINUTE;
 export const EXTENDED_QUOTE_TIMEOUT_CACHE_TTL_SECONDS = 10;
 
 /**
- * `'YYYY-MM-DDTHH'` (length 13) → `new Date().toISOString().slice(0, 13)` gives
- * the current UTC hour string (e.g. `'2026-06-17T14'`), used as an
- * `unstable_cache`/cache-key hour bucket by multiple callers. Mirrors
- * `ISO_DATE_HOUR_PREFIX_LENGTH` in `@y0ngha/siglens-core` (internal, not
- * exported — e.g. `peekBriefingCache`'s own hour bucket; the macro briefing
- * moved to a UTC-date bucket, see `macroBriefingDayKey`) — must stay in sync
- * with that value.
+ * `'YYYY-MM-DDTHH'`(길이 13) — `new Date().toISOString().slice(0, 13)`이 현재 UTC 시
+ * 문자열(예: `'2026-06-17T14'`)을 돌려주며, 여러 호출부가 `unstable_cache`/캐시 키의
+ * 시간 버킷으로 쓴다. `@y0ngha/siglens-core`의 `ISO_DATE_HOUR_PREFIX_LENGTH`(비공개 —
+ * 예: `peekBriefingCache`의 자체 시간 버킷. 매크로 브리핑은 UTC 날짜 버킷으로 옮겨졌다,
+ * `macroBriefingDayKey` 참고)와 같은 값을 유지해야 한다.
  */
 export const ISO_DATE_HOUR_SLICE_END = 13;
 

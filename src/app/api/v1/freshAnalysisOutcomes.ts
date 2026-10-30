@@ -15,8 +15,10 @@ import {
     type PublicToolOutcome,
 } from './publicToolOutcome';
 
+/** `PublicToolOutcome`의 실패 갈래. */
 export type Failure = Extract<PublicToolOutcome, { ok: false }>;
 
+/** 실패 결과를 만든다. `details`가 없으면 키 자체를 두지 않는다. */
 export function fail(
     status: number,
     code: string,
@@ -32,6 +34,7 @@ export function fail(
     };
 }
 
+/** 캐시 적중 또는 새 생성의 분석 결과를 `unwrap`해 크기 상한을 적용한 성공 결과로 만든다. */
 export function success(
     kind: string,
     timeframe: Timeframe,
@@ -93,6 +96,7 @@ export function isKeyRequiredOutcome(outcome: Outcome): boolean {
     return outcome.status === 'key_error';
 }
 
+/** 분석이 결과를 내지 못한 상태를 422 `analysis_failed`로 바꾼다. 내부 상세 대신 상태 코드만 싣는다. */
 export function analysisFailed(
     kind: string,
     timeframe: Timeframe,

@@ -1,3 +1,7 @@
+/**
+ * provider 어댑터가 구현하고 콜백 라우트가 소비하는 타입. 어댑터는 실패를 throw하지 않고
+ * `OAuthProfileResult`로 돌려줘, provider를 추가해도 라우트의 오류 처리가 그대로 유지된다.
+ */
 import type { OAuthProvider } from '@/shared/lib/types';
 import type { SocialLoginUserInput } from '@/entities/auth/lib/authUseCaseTypes';
 

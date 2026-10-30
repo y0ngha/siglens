@@ -1,3 +1,4 @@
+/** 가이드 허브·분류 허브·항목 페이지의 JSON-LD(CollectionPage·TechArticle·BreadcrumbList·FAQPage) 빌더. */
 import type {
     GuideCategory,
     GuideEntry,

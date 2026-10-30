@@ -10,6 +10,10 @@ type SitemapChangeFrequency =
     | 'yearly'
     | 'never';
 
+/**
+ * `<urlset>`의 `<url>` 하나. `toUrlSetXml`이 직렬화하고 `maxLastModified`가 자식
+ * sitemap의 index lastmod를 뽑는 입력이다.
+ */
 export interface SitemapEntry {
     url: string;
     /**
@@ -41,6 +45,7 @@ export interface SitemapIndexEntry {
     lastModified: Date;
 }
 
+/** 임시 제거 sitemap의 종류 — `/sitemap-removal-{kind}.xml`의 `kind` 세그먼트와 같다. */
 export const REMOVAL_SITEMAP_KINDS = [
     'chart',
     'news',
@@ -51,11 +56,16 @@ export const REMOVAL_SITEMAP_KINDS = [
 
 export type RemovalSitemapKind = (typeof REMOVAL_SITEMAP_KINDS)[number];
 
+/** 제거 sitemap의 `<url>` 하나. lastmod는 날짜(YYYY-MM-DD)로만 직렬화된다. */
 export interface RemovalSitemapEntry {
     url: string;
     lastModified: Date;
 }
 
+/**
+ * 제거 sitemap 후보 심볼을 읽는 포트. `excludedSymbols`(색인 대상 심볼)는 쿼리에서
+ * 빠지며, 구현은 `api.ts`의 Drizzle 어댑터다.
+ */
 export interface RemovalSitemapCandidateSource {
     loadStockSymbolsBefore(
         cutoff: Date,
@@ -67,11 +77,16 @@ export interface RemovalSitemapCandidateSource {
     ): Promise<readonly string[]>;
 }
 
+/** 차트 URL 제거 후보의 `updatedAt` 컷오프. 이전에 갱신된 종목이 후보다. */
 export const REMOVAL_CHART_CUTOFF_ISO = '2026-07-07T16:25:18.000Z';
+/** 차트 외 탭(뉴스·종합·펀더멘털·공포탐욕) 제거 후보의 `updatedAt` 컷오프. */
 export const REMOVAL_LEGACY_TAB_CUTOFF_ISO = '2026-06-15T08:36:58.000Z';
+/** 제거 sitemap의 모든 엔트리가 광고하는 고정 lastmod. */
 export const REMOVAL_LAST_MODIFIED_ISO = '2026-07-08T00:00:00.000Z';
+/** 차트 제거 후보에 싣는 과거 크립토 심볼 수 상한(유통량 순). */
 export const REMOVAL_CRYPTO_LIMIT = 1_000;
 
+/** 라우트 파라미터 문자열을 {@link RemovalSitemapKind}로 좁히는 타입 가드. */
 export function isRemovalSitemapKind(
     value: string
 ): value is RemovalSitemapKind {

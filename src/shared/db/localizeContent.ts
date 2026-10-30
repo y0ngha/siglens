@@ -3,8 +3,10 @@ import 'server-only';
 import type { Locale } from '@/shared/i18n/locales';
 import type { LocalizedContent } from './contentLocale';
 import { getContentTranslationRepository } from './contentTranslationClient';
-import type { TranslatableEntity } from './contentTranslationFields';
-import type { TranslationSource } from './contentTranslationFields';
+import type {
+    TranslatableEntity,
+    TranslationSource,
+} from './contentTranslationFields';
 
 /**
  * 한 필드의 번역 소스 정의.
@@ -12,7 +14,7 @@ import type { TranslationSource } from './contentTranslationFields';
  * `legacy`는 **마이그레이션 전 원본 컬럼**을 로케일 맵으로 옮긴다. 뉴스처럼
  * `title_ko`/`title_en` 두 컬럼을 이미 갖고 있으면 두 로케일이 들어오고,
  * 공지처럼 한국어 컬럼 하나뿐이면 `{ ko: ... }` 하나만 들어온다. 사이드카에
- * 값이 있으면 그쪽이 이긴다(§ContentTranslations.resolve).
+ * 값이 있으면 그쪽이 이긴다(`ContentTranslations.resolve` 참고).
  */
 export interface LocalizedFieldSpec<TRow> {
     /** `CONTENT_FIELD` 상수 값. 문자열 리터럴을 직접 쓰지 않는다. */
@@ -99,6 +101,8 @@ export async function localizeContentRow<TRow, TFields extends string>(
     }
 ): Promise<LocalizedRow<TRow, TFields>> {
     const [only] = await localizeContent({ ...input, rows: [input.row] });
-    // `rows`가 정확히 1개이므로 결과도 1개다 — 방어적 `!`가 아니라 계약이다.
-    return only!;
+    if (only === undefined) {
+        throw new Error('localizeContent returned no row for a single input');
+    }
+    return only;
 }

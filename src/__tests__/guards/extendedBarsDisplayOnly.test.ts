@@ -50,12 +50,12 @@ const PROVIDER_TOKEN_ALLOWED = [
     'shared/api/market/CachedMarketDataProvider.ts',
     'shared/api/market/getCachedMarketDataProvider.ts',
 ];
-const CACHE_KEY_ALLOWED = ['shared/api/market/CachedMarketDataProvider.ts'];
+const CACHE_KEY_ALLOWED = ['shared/api/market/extendedBarsCache.ts'];
 /** 확장 봉 entity를 쓰는 곳: 종목 차트 뷰 한 곳(클라이언트 훅). */
 const ENTITY_IMPORT_ALLOWED = ['views/symbol/ChartContent.tsx'];
 /** 세션 규칙 모듈을 쓰는 곳: 확장 봉 entity·캐시 provider·차트 뷰·차트 위젯(표시). */
 const SESSION_IMPORT_ALLOWED_FILES = [
-    'shared/api/market/CachedMarketDataProvider.ts',
+    'shared/api/market/extendedBarsCache.ts',
     'views/symbol/ChartContent.tsx',
 ];
 const SESSION_IMPORT_ALLOWED_DIRS = [ENTITY_DIR, 'widgets/chart/'];
@@ -153,6 +153,7 @@ describe('프리·애프터마켓 봉은 표시 전용이다', () => {
     it('스캔 대상이 비어 있지 않고, 보호하려는 계통의 파일이 실제로 들어 있다', () => {
         const rels = files.map(f => f.rel);
         expect(rels).toContain('shared/api/market/CachedMarketDataProvider.ts');
+        expect(rels).toContain('shared/api/market/extendedBarsCache.ts');
         expect(rels).toContain('shared/api/fmp/FmpMarketProvider.ts');
         expect(rels.some(r => r.startsWith('entities/bars/'))).toBe(true);
         expect(rels.some(r => r.startsWith('entities/analysis/'))).toBe(true);

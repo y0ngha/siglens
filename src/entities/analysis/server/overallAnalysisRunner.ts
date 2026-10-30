@@ -21,7 +21,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 // Cross-entity(investor-flows): 종합 분석이 수급 점수표를 입력으로 받는다 — `src/entities/CLAUDE.md`
 // "의도적 예외" 표에 등재된 허용 경로.
 import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';

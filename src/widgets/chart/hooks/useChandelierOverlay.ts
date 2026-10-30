@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 샹들리에 엑싯 오버레이 시리즈 생성·갱신과 표시 토글 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
@@ -101,7 +105,6 @@ export function useChandelierOverlay({
         if (!isVisible) return;
 
         const { chandelierExit } = indicators;
-        if (!chandelierExit.length) return;
 
         if (!longSeriesRef.current || !shortSeriesRef.current) return;
 

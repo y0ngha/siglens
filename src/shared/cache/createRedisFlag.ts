@@ -47,7 +47,7 @@ export function createRedisFlag(
     keyOrFn: string | ((arg: unknown) => string),
     ttlSeconds: number,
     logPrefix = ''
-) {
+): RedisFlagHandle | RedisFlagHandleWithArg<unknown> {
     const resolveKey = (arg?: unknown): string =>
         typeof keyOrFn === 'function' ? keyOrFn(arg) : keyOrFn;
 

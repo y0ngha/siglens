@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/investorFlowsSnapshot';
+import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/snapshot/short';
 import { buildAxisEvidence } from '../../utils/axisEvidence';
 import { buildFailsToDeliverSeries } from '../../utils/failsToDeliver';
 import { buildOptionsRows, OPTIONS_QUARTERS_SHOWN } from '../../utils/options';

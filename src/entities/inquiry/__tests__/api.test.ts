@@ -1,8 +1,8 @@
 import type { Mock } from 'vitest';
 import { inquiries } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleContactRepository } from '@/entities/inquiry/api';
-import type { ContactInput } from '@/entities/inquiry/api';
+import { DrizzleContactRepository } from '../api';
+import type { ContactInput } from '../api';
 
 function makeInsertDb(): {
     db: SiglensDatabase;
