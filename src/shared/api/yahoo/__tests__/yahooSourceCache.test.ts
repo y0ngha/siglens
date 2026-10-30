@@ -100,7 +100,7 @@ describe('getYahooFundamentals dedup', () => {
 
     /**
      * [회귀] 어느 yahoo 모듈이 어느 제표 버킷을 채우는지는 어떤 테스트도 안 잡고
-     * 있었다 — `financials`와 `cash-flow`를 맞바꿔도 전건 통과한다(감사 라운드 12).
+     * 있었다 — `financials`와 `cash-flow`를 맞바꿔도 전건 통과한다.
      * `YahooFinancialStatementsProvider` 테스트는 이 모듈을 통째로 mock하므로
      * 배선이 관측되는 곳이 여기뿐이다. 뒤바뀌면 재무 탭의 매출·EBITDA 행에
      * 현금흐름 숫자가 들어가고 같은 값이 재무 AI 프롬프트로 나간다.
