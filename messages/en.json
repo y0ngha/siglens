@@ -2696,7 +2696,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "(as of {v0} close)",
                 "fa167e": "Current Score",
-                "fabc11": "Fear & Greed Index summary"
+                "fabc11": "Fear & Greed Index summary",
+                "scoreValue": "{v0} / 100 ({v1})"
             },
             "FearGreedHeaderChip": {
                 "afe032": "Insufficient Fear & Greed Data",
@@ -2773,7 +2774,8 @@
                 "beae1d": "The above indicators are automatically calculated values based on the displayed chart data.",
                 "d8446c": "MACD Momentum",
                 "e532e4": "({v0} min delay)",
-                "recentBarsPosition": "Position over the last {v0} bars"
+                "recentBarsPosition": "Position over the last {v0} bars",
+                "rsiValue": "{v0} ({v1})"
             },
             "TechnicalSnapshotProse": {
                 "938737": "Technical Analysis Summary",

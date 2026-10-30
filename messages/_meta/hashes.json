@@ -3708,6 +3708,8 @@
     "features.email-report-settings.EmailReportLinkCard.link": "8be32910f3bc",
     "widgets.chart.StockChart.extendedHoursLegend": "ac50c9550eef",
     "views.symbol.ChartContent.extendedHoursNotice": "e78c811a9fba",
+    "views.symbol.TechnicalFactsSummary.rsiValue": "092d27ce786c",
+    "views.symbol.FearGreedFactsSummary.scoreValue": "90f25b4ec014",
     "features.siglens-api-key-management.SiglensApiKeySection.docsLink": "c39b1e2084d3",
     "shared.seo.developers.description": "ad59b85022de",
     "shared.seo.developers.metaTitle": "86305b386f7c",

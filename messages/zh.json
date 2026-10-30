@@ -2696,7 +2696,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "(截至 {v0} 收盘)",
                 "fa167e": "当前分数",
-                "fabc11": "恐惧与贪婪指数摘要"
+                "fabc11": "恐惧与贪婪指数摘要",
+                "scoreValue": "{v0} / 100（{v1}）"
             },
             "FearGreedHeaderChip": {
                 "afe032": "恐惧与贪婪数据不足",
@@ -2773,7 +2774,8 @@
                 "beae1d": "以上指标是基于图表数据自动计算的值。",
                 "d8446c": "MACD 动量",
                 "e532e4": "（延迟{v0}分钟）",
-                "recentBarsPosition": "最近 {v0} 根K线的位置"
+                "recentBarsPosition": "最近 {v0} 根K线的位置",
+                "rsiValue": "{v0}（{v1}）"
             },
             "TechnicalSnapshotProse": {
                 "938737": "技术分析摘要",

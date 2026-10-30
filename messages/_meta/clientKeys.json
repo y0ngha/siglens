@@ -662,6 +662,7 @@
                 "views.symbol.TechnicalFactsSummary.d8446c",
                 "views.symbol.TechnicalFactsSummary.e532e4",
                 "views.symbol.TechnicalFactsSummary.recentBarsPosition",
+                "views.symbol.TechnicalFactsSummary.rsiValue",
                 "views.symbol.chartPageHeading.heading",
                 "widgets.analysis.AnalysisPanel.034be7",
                 "widgets.analysis.AnalysisPanel.06c8ed",

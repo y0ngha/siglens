@@ -2696,7 +2696,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "({v0} 終値基準)",
                 "fa167e": "現在のスコア",
-                "fabc11": "恐怖強欲指数の要約"
+                "fabc11": "恐怖強欲指数の要約",
+                "scoreValue": "{v0} / 100 ({v1})"
             },
             "FearGreedHeaderChip": {
                 "afe032": "恐怖強欲データ不足",
@@ -2773,7 +2774,8 @@
                 "beae1d": "上記の指標は、表示されたチャートデータに基づき自動計算された値です。",
                 "d8446c": "MACDモメンタム",
                 "e532e4": "({v0}分遅延)",
-                "recentBarsPosition": "直近{v0}本の位置"
+                "recentBarsPosition": "直近{v0}本の位置",
+                "rsiValue": "{v0} ({v1})"
             },
             "TechnicalSnapshotProse": {
                 "938737": "テクニカル分析サマリー",

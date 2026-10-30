@@ -24,6 +24,8 @@ const ROOT = process.cwd();
 describe('분석 훅은 core 원시 에러 문자열을 화면에 던지지 않는다', () => {
     const HOOKS = [
         'src/views/symbol/hooks/useAnalysis.ts',
+        // `useAnalysis`의 결과 분류·오류 매핑이 사는 곳.
+        'src/views/symbol/utils/analysisStream.ts',
         'src/widgets/options/hooks/useOptionsAnalysis.ts',
         'src/widgets/financials/hooks/useFinancialsAnalysis.ts',
         'src/widgets/fundamental/hooks/useFundamentalAnalysis.ts',

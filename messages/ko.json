@@ -3244,7 +3244,8 @@
             "FearGreedFactsSummary": {
                 "asOfClose": "({v0} 종가 기준)",
                 "fa167e": "현재 점수",
-                "fabc11": "공포 탐욕 지수 요약"
+                "fabc11": "공포 탐욕 지수 요약",
+                "scoreValue": "{v0} / 100 ({v1})"
             },
             "FearGreedHeaderChip": {
                 "afe032": "공포 탐욕 데이터 부족",
@@ -3321,7 +3322,8 @@
                 "beae1d": "위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.",
                 "d8446c": "MACD 모멘텀",
                 "e532e4": "({v0}분 지연)",
-                "recentBarsPosition": "최근 {v0}개 봉 위치"
+                "recentBarsPosition": "최근 {v0}개 봉 위치",
+                "rsiValue": "{v0} ({v1})"
             },
             "TechnicalSnapshotProse": {
                 "938737": "기술적 분석 요약",
