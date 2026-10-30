@@ -588,8 +588,8 @@
         "text": "인증 코드가 만료되었습니다."
     },
     {
-        "file": "src/entities/congress-trades/lib/getCongressTradesResilient.ts",
-        "line": 44,
+        "file": "src/entities/congress-trades/server/getCongressTradesResilient.ts",
+        "line": 36,
         "reason": "developer-diagnostic",
         "text": "[getCongressTradesResilient] FMP 의회 거래 장애, degrade:"
     },

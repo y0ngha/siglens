@@ -26,7 +26,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
+import { getCongressTradesResilient } from '@/entities/congress-trades/server/getCongressTradesResilient';
 
 describe('getCongressTradesResilient', () => {
     beforeEach(() => {
