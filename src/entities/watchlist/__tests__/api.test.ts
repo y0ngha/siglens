@@ -26,24 +26,26 @@ function selectChain(rows: unknown[]) {
     return { select, where };
 }
 
-/** insert(...).values(...).onConflictDoNothing(...).returning(...) → rows */
-function insertNothingChain(rows: unknown[]) {
-    const returning = vi.fn().mockResolvedValue(rows);
-    const onConflictDoNothing = vi.fn(() => ({ returning }));
-    const values = vi.fn(() => ({ onConflictDoNothing }));
-    const insert = vi.fn(() => ({ values }));
-    return { insert, values, onConflictDoNothing, returning };
-}
-
 describe('DrizzleWatchlistRepository', () => {
+    /** 트랜잭션 콜백에 실제 Drizzle SQL 캡처 DB를 넘기고, 쿼리 순서대로 결과를 준다. */
+    function txDb(results: unknown[][]) {
+        const { db: tx, captured } = createSqlCaptureDb(
+            (_query, index) => results[index] ?? []
+        );
+        const db = {
+            transaction: (cb: (t: SiglensDatabase) => Promise<unknown>) =>
+                cb(tx),
+        } as unknown as SiglensDatabase;
+        return { db, captured };
+    }
+
     describe('mergeSymbols', () => {
-        it('이미 있는 심볼은 빼고, 상한 안의 새 심볼만 넣고, 초과분을 skipped로 센다', async () => {
-            const { select } = selectChain([record('AAPL')]);
-            const { insert, values, returning } = insertNothingChain([
-                { id: 'a' },
-                { id: 'b' },
+        it('회원 행을 잠근 뒤 기존 심볼을 읽고, 상한 안의 새 심볼만 한 번에 넣고, 초과분을 skipped로 센다', async () => {
+            const { db, captured } = txDb([
+                [{ id: 'user-1' }],
+                [{ symbol: 'AAPL' }],
+                [{ id: 'a' }, { id: 'b' }],
             ]);
-            const db = { select, insert } as unknown as SiglensDatabase;
 
             const outcome = await new DrizzleWatchlistRepository(
                 db
@@ -59,22 +61,34 @@ describe('DrizzleWatchlistRepository', () => {
             );
 
             // 기존 1 + 신규 2 = 상한 3. TSLA가 밀린다.
-            expect(values).toHaveBeenCalledWith([
-                {
-                    userId: 'user-1',
-                    symbol: 'MSFT',
-                    companyName: 'Microsoft Corp.',
-                },
-                { userId: 'user-1', symbol: 'NVDA', companyName: null },
-            ]);
-            expect(returning).toHaveBeenCalledTimes(1);
             expect(outcome).toEqual({ added: 2, skipped: 1 });
+            expect(captured).toHaveLength(3);
+            expect(captured[0]).toEqual({
+                sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
+                params: ['user-1'],
+            });
+            expect(captured[1].sql).toBe(
+                'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1'
+            );
+            expect(captured[2].sql).toMatch(
+                /^insert into "watchlist_items" .* on conflict \("user_id","symbol"\) do nothing returning "id"$/
+            );
+            expect(captured[2].params).toEqual([
+                'user-1',
+                'MSFT',
+                'Microsoft Corp.',
+                'user-1',
+                'NVDA',
+                null,
+            ]);
         });
 
         it('후보가 중복되면 앞의 것만 센다', async () => {
-            const { select } = selectChain([]);
-            const { insert, values } = insertNothingChain([{ id: 'a' }]);
-            const db = { select, insert } as unknown as SiglensDatabase;
+            const { db, captured } = txDb([
+                [{ id: 'user-1' }],
+                [],
+                [{ id: 'a' }],
+            ]);
 
             await new DrizzleWatchlistRepository(db).mergeSymbols(
                 'user-1',
@@ -85,15 +99,14 @@ describe('DrizzleWatchlistRepository', () => {
                 50
             );
 
-            expect(values).toHaveBeenCalledWith([
-                { userId: 'user-1', symbol: 'MSFT', companyName: 'Microsoft' },
-            ]);
+            expect(captured[2].params).toEqual(['user-1', 'MSFT', 'Microsoft']);
         });
 
         it('넣을 것이 없으면 insert하지 않고 { added: 0 }을 돌려준다', async () => {
-            const { select } = selectChain([record('AAPL')]);
-            const { insert } = insertNothingChain([]);
-            const db = { select, insert } as unknown as SiglensDatabase;
+            const { db, captured } = txDb([
+                [{ id: 'user-1' }],
+                [{ symbol: 'AAPL' }],
+            ]);
 
             const outcome = await new DrizzleWatchlistRepository(
                 db
@@ -103,14 +116,12 @@ describe('DrizzleWatchlistRepository', () => {
                 50
             );
 
-            expect(insert).not.toHaveBeenCalled();
+            expect(captured.some(q => q.sql.startsWith('insert'))).toBe(false);
             expect(outcome).toEqual({ added: 0, skipped: 0 });
         });
 
         it('유니크 충돌로 DB가 덜 돌려주면 added는 실제 삽입 수다', async () => {
-            const { select } = selectChain([]);
-            const { insert } = insertNothingChain([{ id: 'a' }]);
-            const db = { select, insert } as unknown as SiglensDatabase;
+            const { db } = txDb([[{ id: 'user-1' }], [], [{ id: 'a' }]]);
 
             const outcome = await new DrizzleWatchlistRepository(
                 db
@@ -133,18 +144,6 @@ describe('DrizzleWatchlistRepository', () => {
             symbol: 'AAPL',
             companyName: 'Apple Inc.',
         };
-
-        /** 트랜잭션 콜백에 실제 Drizzle SQL 캡처 DB를 넘기고, 쿼리 순서대로 결과를 준다. */
-        function txDb(results: unknown[][]) {
-            const { db: tx, captured } = createSqlCaptureDb(
-                (_query, index) => results[index] ?? []
-            );
-            const db = {
-                transaction: (cb: (t: SiglensDatabase) => Promise<unknown>) =>
-                    cb(tx),
-            } as unknown as SiglensDatabase;
-            return { db, captured };
-        }
 
         it('회원 행을 FOR NO KEY UPDATE로 잠근 뒤 보유 심볼을 읽고 삽입한다(쿼리 순서 고정)', async () => {
             const { db, captured } = txDb([
