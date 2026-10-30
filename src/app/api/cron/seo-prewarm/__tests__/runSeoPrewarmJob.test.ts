@@ -17,7 +17,7 @@ vi.mock('../runPrewarmBatch', async importOriginal => ({
     ...(await importOriginal<typeof import('../runPrewarmBatch')>()),
     runPrewarmBatch: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/lib/warmOptionsLastGood', () => ({
+vi.mock('@/entities/options-chain/server/warmOptionsLastGood', () => ({
     warmOptionsLastGood: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -32,7 +32,7 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     }),
 }));
 
-import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
+import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptionsLastGood';
 import { releasePrewarmLock } from '@/app/api/cron/seo-prewarm/lock';
 import {
     BATCH_WALL_CLOCK_BUDGET_MS,

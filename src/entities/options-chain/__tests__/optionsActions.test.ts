@@ -24,7 +24,7 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     runOptionsAnalysis: vi.fn(),
 }));
 
-vi.mock('../lib/optionsDataCache', () => ({
+vi.mock('../server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -52,7 +52,7 @@ import {
     type OptionsChain,
 } from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
-import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '../server/optionsDataCache';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';

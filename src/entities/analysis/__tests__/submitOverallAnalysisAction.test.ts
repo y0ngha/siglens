@@ -94,7 +94,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -161,7 +161,7 @@ import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalys
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';

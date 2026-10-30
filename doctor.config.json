@@ -74,7 +74,7 @@
                     "src/entities/news-article/server/getNewsClient.ts",
                     "src/entities/market-news/api/getMarketNewsClient.ts",
                     "src/entities/options-chain/actions/optionsActions.ts",
-                    "src/entities/options-chain/lib/getOptionsProvider.ts"
+                    "src/entities/options-chain/server/getOptionsProvider.ts"
                 ],
                 "rules": ["typescript/no-require-imports"]
             },

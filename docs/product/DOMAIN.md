@@ -1660,10 +1660,11 @@ siglens 레포의 `entities/options-chain`과 `widgets/options`는 데이터 어
 ```
 src/entities/options-chain/
 ├── actions/optionsActions.ts
-├── lib/YahooOptionsAdapter.ts
+├── server/YahooOptionsAdapter.ts
 ├── lib/findNearestStrike.ts
 ├── lib/pickActiveChain.ts
-├── lib/optionsDataCache.ts
+├── server/optionsDataCache.ts
+├── server/optionsLastGoodStore.ts
 └── lib/yahooNormalize.ts
 ```
 
@@ -1744,10 +1745,11 @@ export function pickActiveChain(
 
 ```
 entities/options-chain/
-├── lib/YahooOptionsAdapter.ts   # OptionsDataProvider 구현 (yahoo-finance2)
+├── server/YahooOptionsAdapter.ts # OptionsDataProvider 구현 (yahoo-finance2)
 ├── lib/yahooNormalize.ts        # yahoo 응답 → siglens-core 타입
 ├── lib/optionsCacheLife.ts      # ET 시계 → open / closed / weekend 프로파일 선택
-├── lib/optionsDataCache.ts      # 'use cache' 래퍼 + hasOptionsMarket
+├── server/optionsDataCache.ts   # 'use cache' 래퍼 + hasOptionsMarket
+├── server/optionsLastGoodStore.ts # last-good 스냅샷 Redis 저장소
 └── actions/optionsActions.ts    # chain · signals · submit · poll · cancel Server Action
 ```
 

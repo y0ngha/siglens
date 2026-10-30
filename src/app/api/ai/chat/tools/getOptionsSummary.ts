@@ -4,7 +4,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundMoney } from '@/app/api/ai/chat/tools/roundMoney';

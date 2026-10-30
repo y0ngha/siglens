@@ -56,9 +56,12 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => ({ get: mockRedisGet, set: mockRedisSet }),
 }));
 
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
-    readLastGoodCapturedAtBatch: vi.fn(),
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     refreshLastGoodSnapshot: vi.fn(),
+}));
+
+vi.mock('@/entities/options-chain/server/optionsLastGoodStore', () => ({
+    readLastGoodCapturedAtBatch: vi.fn(),
 }));
 
 import { PATCH } from '@/app/api/cron/seo-prewarm/route';
@@ -67,11 +70,9 @@ import {
     releasePrewarmLock,
 } from '@/app/api/cron/seo-prewarm/lock';
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
-import {
-    readLastGoodCapturedAtBatch,
-    refreshLastGoodSnapshot,
-} from '@/entities/options-chain/lib/optionsDataCache';
-import { OPTIONS_WARM_REFRESH_TIMEOUT_MS } from '@/entities/options-chain/lib/warmOptionsLastGood';
+import { refreshLastGoodSnapshot } from '@/entities/options-chain/server/optionsDataCache';
+import { readLastGoodCapturedAtBatch } from '@/entities/options-chain/server/optionsLastGoodStore';
+import { OPTIONS_WARM_REFRESH_TIMEOUT_MS } from '@/entities/options-chain/server/warmOptionsLastGood';
 
 // 2026-10-05(월) 16:30 EDT — 옵션 워밍 구간 안.
 const IN_WINDOW = new Date('2026-10-05T20:30:00.000Z');

@@ -24,6 +24,7 @@ export type ClientOptionsContract = Pick<
     'strike' | 'bid' | 'ask' | 'volume' | 'openInterest' | 'impliedVolatility'
 >;
 
+/** 만기 하나의 클라이언트 투영 — 계약만 `ClientOptionsContract`로 좁히고 나머지는 core 체인과 같다. */
 export interface ClientOptionsChain extends Omit<
     OptionsChain,
     'calls' | 'puts'
@@ -32,6 +33,7 @@ export interface ClientOptionsChain extends Omit<
     puts: ReadonlyArray<ClientOptionsContract>;
 }
 
+/** RSC에서 옵션 탭 위젯으로 넘기는 스냅샷 — `toClientOptionsSnapshot`의 결과다. */
 export interface ClientOptionsSnapshot extends Omit<OptionsSnapshot, 'chains'> {
     chains: ReadonlyArray<ClientOptionsChain>;
 }

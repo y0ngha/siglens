@@ -4,7 +4,7 @@ const mockComputeFinancialsScorecard = vi.fn();
 const mockIsEtRegularSessionOpen = vi.fn();
 const mockIsOpenInterestSnapshotStale = vi.fn();
 
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: (...args: unknown[]) =>
         mockFetchOptionsSnapshot(...args),
 }));

@@ -29,7 +29,7 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 // Heavy page-body dependencies — mock to prevent import-time side effects.
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn().mockResolvedValue(false),
 }));

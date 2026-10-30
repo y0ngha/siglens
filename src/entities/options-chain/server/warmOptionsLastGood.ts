@@ -1,18 +1,21 @@
 import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
-import {
-    readLastGoodCapturedAtBatch,
-    refreshLastGoodSnapshot,
-    type LastGoodRefreshResult,
-} from './optionsDataCache';
-import { getOptionsWarmWindow } from './optionsWarmWindow';
+import { getOptionsWarmWindow } from '../lib/optionsWarmWindow';
 import {
     type OptionsWarmPick,
     OPTIONS_WARM_SYMBOLS_PER_TICK,
     buildOptionsWarmUniverse,
     selectOptionsWarmSymbols,
-} from './selectOptionsWarmSymbols';
+} from '../lib/selectOptionsWarmSymbols';
+import {
+    refreshLastGoodSnapshot,
+    type LastGoodRefreshResult,
+} from './optionsDataCache';
+import {
+    readLastGoodCapturedAtBatch,
+    type RedisClient,
+} from './optionsLastGoodStore';
 
 /**
  * 옵션 워밍 전용 회전 커서. seo-prewarm의 `rotation-cursor`와 **다른 키**다 — 저쪽은
@@ -29,9 +32,8 @@ export const OPTIONS_WARM_CURSOR_KEY = 'options-warm:last-good-cursor';
  * - **tick당 총 요청**: 6종목 × 7건 = 최대 42건(시간에 걸쳐 분산, 가이드와 무관).
  * 순간 동시 수가 가이드 안이라 종목 간 지연이나 백오프는 두지 않는다.
  *
- * 레포의 공용 청크 헬퍼(`fetchInChunks`)는 존재하지 않아 재사용하지 않는다(이 레포에
- * `FETCH_CONCURRENCY`·`fetchInChunks`는 없다). 필요한 건 "종목별 타임아웃 + 시작 마감"을
- * 가진 아주 작은 레인 풀이라 `runLane`으로 직접 둔다.
+ * 필요한 건 "종목별 타임아웃 + 시작 마감"을 가진 아주 작은 레인 풀이라 `runLane`으로
+ * 직접 둔다.
  */
 export const OPTIONS_WARM_CONCURRENCY = 2;
 
@@ -53,6 +55,7 @@ export const OPTIONS_WARM_DEADLINE_MS = 45 * MS_PER_SECOND;
  */
 export const OPTIONS_WARM_REFRESH_TIMEOUT_MS = 15 * MS_PER_SECOND;
 
+/** `warmOptionsLastGood`의 호출자(seo-prewarm 크론)가 락 예산을 넘기는 옵션. */
 export interface OptionsWarmOptions {
     /**
      * 이 step이 끝나 있어야 하는 절대 시각(epoch ms) — 호출자가 락 TTL에서 안전 여유를
@@ -70,6 +73,7 @@ export interface OptionsWarmOptions {
  */
 const COMPLETE_KEY_PREFIX = 'options-warm:complete:';
 
+/** tick 한 번에서 종목별 결과를 센 값 — 크론 로그가 그대로 직렬화한다. */
 export interface OptionsWarmCounts {
     written: number;
     stale: number;
@@ -79,6 +83,7 @@ export interface OptionsWarmCounts {
     deferred: number;
 }
 
+/** `warmOptionsLastGood`의 종료 사유 — 크론이 JSON으로 로그에 남겨 tick을 사후 진단한다. */
 export type OptionsWarmOutcome =
     | { status: 'out_of_window' }
     | { status: 'no_redis' }
@@ -90,9 +95,8 @@ export type OptionsWarmOutcome =
     | { status: 'timed_out' }
     | ({ status: 'ran' } & OptionsWarmCounts);
 
-async function readCursor(
-    redis: NonNullable<ReturnType<typeof getRedisClient>>
-): Promise<number> {
+/** 저장된 회전 커서. 없거나 음수·비정상이면 0에서 다시 시작한다. */
+async function readCursor(redis: RedisClient): Promise<number> {
     const stored = await redis.get<number | string>(OPTIONS_WARM_CURSOR_KEY);
     const parsed = Number(stored ?? 0);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
@@ -118,8 +122,22 @@ async function withTimeout<T>(
     }
 }
 
+/** 커서를 저장한다. 실패는 흡수한다 — 다음 tick이 이전 커서에서 다시 시작할 뿐이다. */
+async function writeCursor(redis: RedisClient, value: number): Promise<void> {
+    try {
+        await redis.set(OPTIONS_WARM_CURSOR_KEY, value);
+    } catch (error) {
+        console.error(
+            '[optionsWarm] cursor write failed for',
+            OPTIONS_WARM_CURSOR_KEY,
+            error
+        );
+    }
+}
+
+/** 오늘 마감 이후 후보 전체가 확보됐음을 표시한 키가 있는가. 읽기 실패는 "아직 아님"으로 본다. */
 async function isUniverseComplete(
-    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    redis: RedisClient,
     key: string
 ): Promise<boolean> {
     try {
@@ -134,8 +152,9 @@ async function isUniverseComplete(
     }
 }
 
+/** 완료 표식을 남긴다. 실패는 흡수한다 — 다음 tick이 후보를 한 번 더 훑을 뿐이다. */
 async function markUniverseComplete(
-    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    redis: RedisClient,
     key: string,
     ttlSeconds: number
 ): Promise<void> {
@@ -151,7 +170,7 @@ async function markUniverseComplete(
 }
 
 interface WarmStepContext {
-    redis: NonNullable<ReturnType<typeof getRedisClient>>;
+    redis: RedisClient;
     now: Date;
     /** 새 종목을 시작할 수 있는 마지막 시각(epoch ms). */
     startDeadlineMs: number;
@@ -259,18 +278,7 @@ async function runWarmStep({
         counts.deferred === 0 ? selection.examined : firstDeferredStep - 1;
     const universeLength = universe.length;
     if (universeLength > 0) {
-        try {
-            await redis.set(
-                OPTIONS_WARM_CURSOR_KEY,
-                (cursor + consumed) % universeLength
-            );
-        } catch (error) {
-            console.error(
-                '[optionsWarm] cursor write failed for',
-                OPTIONS_WARM_CURSOR_KEY,
-                error
-            );
-        }
+        await writeCursor(redis, (cursor + consumed) % universeLength);
     }
     // 한 바퀴를 전부 건너뛰었다 = 후보 전체가 오늘 마감 이후 값을 갖고 있다.
     if (universeLength > 0 && selection.skipped === universeLength) {

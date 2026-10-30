@@ -10,9 +10,12 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: mockGetRedisClient,
 }));
 
-vi.mock('../optionsDataCache', () => ({
-    readLastGoodCapturedAtBatch: vi.fn(),
+vi.mock('../../server/optionsDataCache', () => ({
     refreshLastGoodSnapshot: vi.fn(),
+}));
+
+vi.mock('../../server/optionsLastGoodStore', () => ({
+    readLastGoodCapturedAtBatch: vi.fn(),
 }));
 
 import {
@@ -21,15 +24,13 @@ import {
     OPTIONS_WARM_DEADLINE_MS,
     OPTIONS_WARM_REFRESH_TIMEOUT_MS,
     warmOptionsLastGood,
-} from '../warmOptionsLastGood';
-import {
-    readLastGoodCapturedAtBatch,
-    refreshLastGoodSnapshot,
-} from '../optionsDataCache';
+} from '../../server/warmOptionsLastGood';
+import { refreshLastGoodSnapshot } from '../../server/optionsDataCache';
+import { readLastGoodCapturedAtBatch } from '../../server/optionsLastGoodStore';
 import {
     OPTIONS_WARM_SYMBOLS_PER_TICK,
     buildOptionsWarmUniverse,
-} from '../selectOptionsWarmSymbols';
+} from '../../lib/selectOptionsWarmSymbols';
 
 const universe = buildOptionsWarmUniverse();
 // 2026-10-05(월) 16:30 EDT — 워밍 구간. 오늘 마감은 20:00Z.

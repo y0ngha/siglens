@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FakeOptionsDataProvider } from '../../lib/FakeOptionsDataProvider';
+import { FakeOptionsDataProvider } from '../../server/FakeOptionsDataProvider';
 
 describe('FakeOptionsDataProvider', () => {
     const provider = new FakeOptionsDataProvider();
