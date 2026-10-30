@@ -127,6 +127,40 @@ export function formatCompactAmount(
 }
 
 /**
+ * 임의 ISO 4217 통화로 축약 표기한다. USD·KRW는 기존 축약 포매터를 그대로 써 다른 카드와
+ * 표기가 같고, 그 밖의 통화(ADR의 본국 통화 TWD·JPY 등)는 `currencyDisplay: 'code'`로
+ * 통화 코드를 붙인다 — 기호는 `$`를 쓰는 통화(CAD·AUD·TWD…)끼리 서로 헷갈리고 엔진별
+ * CLDR 차이로 하이드레이션 불일치도 낼 수 있지만, 코드는 항상 같고 모호하지 않다.
+ *
+ * 형식이 잘못된 코드(`Intl`이 `RangeError`를 던지는 값)는 `null`을 돌려준다 — 호출부가
+ * 상장 통화 포매터로 폴백하도록 맡긴다. 소수 자릿수는 `compactFormatter`와 같은
+ * 하이드레이션 사유로 명시한다.
+ */
+export function formatCompactInCurrency(
+    value: number,
+    isoCurrency: string,
+    locale: Locale
+): string | null {
+    const currency = isoCurrency.trim().toUpperCase();
+    if (currency === 'USD' || currency === 'KRW') {
+        return formatCompactAmount(value, currency, locale);
+    }
+    try {
+        return cachedNumberFormat(INTL_LOCALE[locale], {
+            notation: 'compact',
+            style: 'currency',
+            currency,
+            currencyDisplay: 'code',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 1,
+        }).format(value);
+    } catch (error) {
+        if (error instanceof RangeError) return null;
+        throw error;
+    }
+}
+
+/**
  * 시가총액·현금흐름 같은 큰 금액을 통화 기호와 함께 축약 표기한다.
  *
  * **통화는 심볼에서 유도한다.** 예전에는 USD로 고정돼 있어서, 국내 상장 종목의 원화

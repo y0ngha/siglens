@@ -1,10 +1,16 @@
+/**
+ * 성장률 카드 — 매출·EPS 전년 대비 성장률을 인라인 SVG 막대로 보여 준다.
+ */
 import { useTranslations } from 'next-intl';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
-import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import {
+    growthBarView,
+    growthTextClass,
+} from '@/widgets/fundamental/utils/growthBar';
 
 const HEADING_ID = 'growth-heading';
 const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
@@ -19,13 +25,10 @@ interface GrowthBarProps {
     description: string;
 }
 
-/** Inline SVG bar for a single growth metric. Positive = green, negative = red; clamps at ±100%. */
+/** 성장 지표 하나의 인라인 SVG 막대. 양수는 초록, 음수는 빨강이며 ±100%에서 잘린다. */
 function GrowthBar({ label, value, description }: GrowthBarProps) {
-    const pct = value !== null ? value * 100 : null;
-    const formattedPct = pct !== null ? formatSignedPercent(pct) : '-';
-
-    const fillAbs = pct !== null ? Math.min(100, Math.abs(pct)) : 0;
-    const isPositive = pct !== null ? pct >= 0 : true;
+    const view = growthBarView(value);
+    const { fillAbs, isPositive } = view;
 
     return (
         <div className="py-3">
@@ -39,14 +42,10 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                 <span
                     className={cn(
                         'font-mono text-sm font-semibold tabular-nums',
-                        pct === null
-                            ? 'text-secondary-400'
-                            : isPositive
-                              ? 'text-ui-success-text'
-                              : 'text-ui-danger-text'
+                        growthTextClass(view)
                     )}
                 >
-                    {formattedPct}
+                    {view.formatted}
                 </span>
             </div>
 
@@ -74,7 +73,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                     className="stroke-secondary-700"
                     strokeWidth="1"
                 />
-                {pct !== null && (
+                {view.hasValue && (
                     <rect
                         x={isPositive ? '50%' : `${50 - fillAbs / 2}%`}
                         y="3"
@@ -93,7 +92,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
     );
 }
 
-/** RSC section: YoY revenue and EPS growth bars (inline SVG). */
+/** 매출·EPS 전년 대비 성장률 막대. 성장률이 없으면 빈 카드를 그린다. */
 export function GrowthChart({ growth }: GrowthChartProps) {
     const t = useTranslations('widgets.fundamental');
     if (growth === null) {
