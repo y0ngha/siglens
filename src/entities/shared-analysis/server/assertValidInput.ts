@@ -1,4 +1,5 @@
 import { SHAREABLE_KIND_VALUES, USER_TIER_VALUES } from '@/shared/db/constants';
+import { isRecord } from '@/shared/lib/isRecord';
 import type { CreateShareInput } from '../types';
 import { MAX_CHART_BARS } from '../types';
 
@@ -37,10 +38,6 @@ const REQUIRED_BAR_NUMERIC_KEYS = ['time', 'open', 'high', 'low', 'close'];
 
 function isNonEmptyString(v: unknown): v is string {
     return typeof v === 'string' && v.length > 0;
-}
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-    return typeof v === 'object' && v !== null;
 }
 
 function isFiniteNumber(v: unknown): boolean {

@@ -1,15 +1,4 @@
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
-
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 describe('TABS (symbolTabsConfig)', () => {
@@ -91,7 +80,7 @@ describe('TABS (symbolTabsConfig)', () => {
      */
     it('모든 탭 라벨 키가 네 로케일에 다 있다', () => {
         for (const tab of TABS) {
-            for (const [locale, catalog] of Object.entries(CATALOGS)) {
+            for (const [locale, catalog] of Object.entries(MESSAGE_CATALOGS)) {
                 expect(
                     catalog.shared.symbolTab[tab.key],
                     `${locale}: ${tab.key}`

@@ -1,5 +1,6 @@
 import type { FearGreedLabel, OptionsSignalKind } from '@y0ngha/siglens-core';
 import { truncateWithEllipsis } from '@/shared/lib/truncate';
+import { isRecord } from '@/shared/lib/isRecord';
 import type { ShareableKind } from '../types';
 
 /** OG 메타 description과 트윗 문안 한 쌍 — `buildOgText`가 돌려주고 공유 페이지 메타·OG 이미지가 쓴다. */
@@ -46,10 +47,6 @@ export type OgTranslator = (
 
 function firstLine(text: string): string {
     return text.split('\n')[0]?.trim() ?? '';
-}
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-    return typeof v === 'object' && v !== null;
 }
 
 /**

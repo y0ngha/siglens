@@ -1,5 +1,5 @@
 import type { IndicatorResult } from '@y0ngha/siglens-core';
-import { isRecord } from './isRecord';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 
 /**
  * 클라이언트로 내려보내는 지표값의 **유효숫자** 자릿수.
@@ -67,7 +67,7 @@ export function roundNumbersDeep<T>(value: T): T {
 function roundDeep(value: unknown): unknown {
     if (typeof value === 'number') return roundNumber(value);
     if (Array.isArray(value)) return value.map(roundDeep);
-    if (isRecord(value)) {
+    if (isPlainRecord(value)) {
         return Object.fromEntries(
             Object.entries(value).map(([k, v]) => [k, roundDeep(v)])
         );

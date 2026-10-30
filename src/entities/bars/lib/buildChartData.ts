@@ -1,10 +1,10 @@
 import type { Bar, IndicatorResult, Timeframe } from '@y0ngha/siglens-core';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import {
     CHART_DATA_PERIOD_KEYED_INDICATORS,
     CHART_DATA_SNAPSHOT_INDICATORS,
     type ChartDataIndicatorName,
 } from './chartDataIndicators';
-import { isRecord } from './isRecord';
 
 /** 봉마다 하나씩 정렬된 시리즈 — 워밍업 구간은 `null`. */
 type Series = readonly unknown[];
@@ -72,8 +72,8 @@ function sliceSeries(series: Series, size: number): unknown {
     const window = tail(series, size);
     const sample = window.find(item => item !== null && item !== undefined);
     // 값이 모두 null이면 모양을 알 수 없다 — 평면 시리즈로 둔다(객체 시리즈는 워밍업이 창 전체를 덮지 않는다).
-    return isRecord(sample)
-        ? transpose(window.map(item => (isRecord(item) ? item : {})))
+    return isPlainRecord(sample)
+        ? transpose(window.map(item => (isPlainRecord(item) ? item : {})))
         : window;
 }
 
@@ -96,7 +96,7 @@ function rebaseIndices(value: unknown, offset: number): unknown {
             .map(item => rebaseIndices(item, offset))
             .filter(item => item !== DROPPED);
     }
-    if (!isRecord(value)) return value;
+    if (!isPlainRecord(value)) return value;
     const indexes = new Map(
         Object.entries(value).flatMap(([key, item]): Array<[string, number]> =>
             INDEX_FIELDS.includes(key) && typeof item === 'number'
@@ -152,7 +152,7 @@ export function buildChartData({
         const value: unknown = indicators[name];
         if (snapshots.includes(name))
             return [name, snapshotFor(name, value, offset)];
-        if (periodKeyed.includes(name) && isRecord(value))
+        if (periodKeyed.includes(name) && isPlainRecord(value))
             return [
                 name,
                 Object.fromEntries(

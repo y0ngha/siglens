@@ -1,4 +1,5 @@
 /** Google OAuth 2.0 / OpenID Connect 어댑터 — 인가 URL을 만들고 code를 프로필로 바꾼다. */
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { OAuthProviderAdapter, OAuthProfileResult } from './types';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -21,11 +22,6 @@ interface GoogleUserInfoResponse {
     email?: string;
     name?: string;
     picture?: string;
-}
-
-/** 값이 `null`이 아닌 객체(배열 포함 안 함)일 때만 필드를 읽을 수 있게 좁힌다. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** 문자열일 때만 값을 쓰고, 그 외(누락·다른 타입)는 없는 것으로 본다. */
@@ -80,7 +76,9 @@ async function requestAccessToken(
         }),
     });
     // 빈 문자열이나 문자열이 아닌 access_token은 토큰이 없는 것으로 본다.
-    return (isRecord(body) && stringOrUndefined(body.access_token)) || null;
+    return (
+        (isPlainRecord(body) && stringOrUndefined(body.access_token)) || null
+    );
 }
 
 /** 액세스 토큰으로 OpenID userinfo를 읽는다. 요청이 실패하면 `null`. */
@@ -93,7 +91,7 @@ async function requestUserInfo(
     // 요청 실패(null)만 null이다. 필수인 sub·email 검사는 호출부가 하므로,
     // 객체가 아니거나 필드 타입이 틀린 응답은 필드가 빈 프로필로 넘긴다.
     if (body === null) return null;
-    const fields = isRecord(body) ? body : {};
+    const fields = isPlainRecord(body) ? body : {};
     return {
         sub: stringOrUndefined(fields.sub),
         email: stringOrUndefined(fields.email),

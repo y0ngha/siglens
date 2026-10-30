@@ -6,7 +6,8 @@ import type {
     StrategyOverlayKind,
 } from '@y0ngha/siglens-core';
 import { STRATEGY_OVERLAY_KINDS } from '@y0ngha/siglens-core';
-import { isOneOf, isRecord } from './guards';
+import { isRecord } from '@/shared/lib/isRecord';
+import { isOneOf } from './guards';
 import { parseGating } from './parseGating';
 import { parseUsageRoles } from './parseUsageRoles';
 

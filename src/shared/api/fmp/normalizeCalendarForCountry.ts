@@ -1,11 +1,9 @@
-import { toFiniteNumber } from './toFiniteNumber';
 import type {
     CalendarImpact,
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null;
+import { isRecord } from '@/shared/lib/isRecord';
+import { toFiniteNumber } from './toFiniteNumber';
 
 const IMPACTS: readonly CalendarImpact[] = ['Low', 'Medium', 'High'];
 

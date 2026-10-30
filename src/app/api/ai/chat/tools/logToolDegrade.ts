@@ -1,4 +1,5 @@
 import 'server-only';
+import { readErrorCode } from '@/shared/lib/readErrorCode';
 
 /**
  * The non-sensitive diagnostics a thrown value is safe to log — never the
@@ -13,10 +14,8 @@ export function safeErrorFields(error: unknown): {
     code: string | undefined;
 } {
     const errorName = error instanceof Error ? error.name : 'unknown';
-    const rawCode = (error as { cause?: { code?: unknown } } | null)?.cause
-        ?.code;
-    const code = typeof rawCode === 'string' ? rawCode : undefined;
-    return { errorName, code };
+    // cause.code 우선, 없으면 최상위 code — 서버 액션 로그와 같은 규칙(readErrorCode).
+    return { errorName, code: readErrorCode(error) };
 }
 
 /**

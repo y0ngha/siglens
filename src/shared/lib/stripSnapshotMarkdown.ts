@@ -21,12 +21,11 @@
  * function). Applied per-field, BEFORE a field is `\n`-split into paragraphs
  * so line-leading markers (`- `, `#`, `1. `) are recognized per line.
  *
- * Lives in `shared/lib` (moved from `views/symbol/snapshot/lib` on 2026-09-17)
- * because `buildSnapshotMetaDescription` in
+ * Lives in `shared/lib` because `buildSnapshotMetaDescription` in
  * `shared/lib/seoSnapshotDescription.ts` reads the same markdown fields for
- * `<meta name="description">`, and a shared module cannot import from `views`. Production crawl after v0.79.2: chart-tab descriptions
- * that fell back to the raw `summary` field started with a literal
- * `**종합 진단**:`.
+ * `<meta name="description">` (a shared module cannot import from `views`);
+ * without this stripping, a description that falls back to the raw `summary`
+ * field would start with a literal `**종합 진단**:`.
  */
 export function stripSnapshotMarkdown(text: string): string {
     return (

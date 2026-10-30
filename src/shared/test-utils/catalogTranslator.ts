@@ -1,4 +1,5 @@
 import { isLocale } from '@/shared/i18n/locales';
+import { isRecord } from '@/shared/lib/isRecord';
 import { MESSAGE_CATALOGS } from './messageCatalogs';
 
 /**
@@ -12,10 +13,6 @@ import { MESSAGE_CATALOGS } from './messageCatalogs';
 export interface CatalogTranslator {
     (key: string, values?: Record<string, string | number>): string;
     has: (key: string) => boolean;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
 }
 
 /** 점으로 구분한 경로를 카탈로그 트리에서 따라 내려간다. 중간에 객체가 아니면 `undefined`. */

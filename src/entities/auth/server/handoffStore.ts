@@ -3,6 +3,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import { isRecord } from '@/shared/lib/isRecord';
 import { isSecureCookieEnv } from '../lib/sessionCookieOptions';
 import type { ResponseCookie } from '../lib/types';
 
@@ -87,10 +88,6 @@ export function handoffStateCookie(value: string): ResponseCookie {
         expires: new Date(isClear ? 0 : Date.now() + maxAge * 1000),
         maxAge,
     };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
 }
 
 /**
