@@ -1,4 +1,6 @@
+import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
+import { chatConversations } from '@/shared/db/schema';
 import {
     CONVERSATION_TITLE_COLUMN_MAX,
     deriveTitle,
@@ -197,7 +199,16 @@ describe('toConversationListItem', () => {
 });
 
 describe('CONVERSATION_TITLE_COLUMN_MAX', () => {
-    it('chat_conversations.title varchar(120)과 같다', () => {
+    it('120으로 고정돼 있다', () => {
         expect(CONVERSATION_TITLE_COLUMN_MAX).toBe(120);
+    });
+
+    it('chat_conversations.title 컬럼 길이와 같다', () => {
+        const title = getTableConfig(chatConversations).columns.find(
+            column => column.name === 'title'
+        );
+        expect(title?.getSQLType()).toBe(
+            `varchar(${CONVERSATION_TITLE_COLUMN_MAX})`
+        );
     });
 });
