@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
-import { NoticeDialogBody } from '@/widgets/notice-popup/ui/dialog/NoticeDialogBody';
 import { stubNoticesFetch } from './noticesFetchStub';
 import type { NoticeRecord } from '@/entities/notice/model/types';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
@@ -29,25 +28,19 @@ function notice(overrides: Partial<NoticeRecord> = {}): NoticeRecord {
 
 /**
  * 본문 렌더러(`MarkdownText`)는 지연 청크다. 첫 공지를 그리는 케이스가 무거운 모듈
- * 그래프 적재와 lazy 경계의 첫 서스펜드를 함께 치르면, 병렬 부하에서 `findBy*`의 기본
- * 대기 시간을 넘긴다. 본문을 한 번 미리 그려 lazy 래퍼를 해소해 두면 이후 케이스는
+ * 그래프 적재와 lazy 경계의 첫 서스펜드를 함께 치르면, 병렬 부하에서 기본 대기
+ * 시간(`findBy*` 1초, 테스트 5초)을 넘긴다. 공지 한 건을 팝업 전체 경로로 한 번 미리
+ * 그려 두면(lazy 래퍼 해소, 마크다운 파이프라인·훅 첫 실행 포함) 이후 케이스는
  * 서스펜드 없이 곧바로 그린다(래퍼는 모듈 스코프라 파일 안에서 유지된다).
  */
 beforeAll(async () => {
-    const { unmount } = render(
-        <NoticeDialogBody
-            notice={{
-                body: '워밍업 본문',
-                createdAt: new Date(2026, 0, 1),
-                linkUrl: null,
-                linkLabel: null,
-            }}
-        />
-    );
-    await screen.findByText('워밍업 본문', undefined, {
+    stubNoticesFetch().mockResolvedValue([notice()]);
+    const { unmount } = render(<NoticePopup />);
+    await screen.findByText('오늘 23시', undefined, {
         timeout: MODULE_LOAD_TIMEOUT_MS,
     });
     unmount();
+    vi.unstubAllGlobals();
 }, MODULE_LOAD_TIMEOUT_MS);
 
 describe('NoticePopup', () => {
