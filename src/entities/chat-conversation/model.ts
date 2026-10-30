@@ -1,25 +1,28 @@
 import { splitAgentFollowUps, type AgentMessage } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 
-/** Max stored length of a conversation title (matches `chat_conversations.title` varchar(120) minus headroom; the derived title itself is capped shorter — see {@link deriveTitle}). */
+/** `deriveTitle`이 첫 메시지에서 잘라 내는 제목의 최대 코드 포인트 수 (DB 컬럼 상한은 {@link CONVERSATION_TITLE_COLUMN_MAX}). */
 const CONVERSATION_TITLE_MAX = 60;
 
 /**
- * `listConversationsAction`/`DrizzleChatConversationRepository.listForUser`
- * page size.
+ * `chat_conversations.title` varchar 길이 상한. 이름 변경 액션의 입력 검증과
+ * 저장소의 최종 절단이 같은 값을 쓰게 하는 단일 출처다.
+ */
+export const CONVERSATION_TITLE_COLUMN_MAX = 120;
+
+/**
+ * `listConversationsAction`과 `DrizzleChatConversationRepository.listForUser`의 페이지 크기.
  *
- * ponytail: no cursor paging in the pilot — this constant must stay ≥ the
- * largest tier's conversation cap (currently pro = 300) or a pro member's
- * older conversations silently disappear from the list. If tier caps grow
- * past 300, either raise this constant to match or add cursor paging (the
- * real long-term fix once a single flat LIMIT stops scaling).
+ * 커서 페이징이 없으므로 이 값은 가장 큰 티어의 대화 수 상한(현재 pro = 300) 이상이어야 한다.
+ * 작으면 pro 회원의 오래된 대화가 목록에서 조용히 사라진다. 티어 상한이 300을 넘으면 이 값을
+ * 맞춰 올리거나, 단일 LIMIT이 한계에 닿은 시점에 커서 페이징을 도입한다.
  */
 export const CONVERSATION_LIST_LIMIT = 300;
 
 type ChatMessageRole = 'user' | 'assistant' | 'tool';
 type ChatMessageStatus = 'complete' | 'aborted' | 'error' | 'superseded';
 
-/** A persisted SIGLENS AI conversation row (spec §6-1). */
+/** 저장된 SIGLENS AI 대화 행. */
 export interface ChatConversationRecord {
     id: string;
     userId: string;
@@ -32,7 +35,7 @@ export interface ChatConversationRecord {
     updatedAt: Date;
 }
 
-/** A persisted conversation message row. */
+/** 저장된 대화 메시지 행. */
 export interface ChatMessageRecord {
     id: string;
     conversationId: string;
@@ -48,7 +51,7 @@ export interface ChatMessageRecord {
     createdAt: Date;
 }
 
-/** One row to append; `seq` is assigned by the repository. */
+/** 추가할 메시지 한 건. `seq`는 저장소가 매긴다. */
 export interface NewChatMessage {
     role: ChatMessageRole;
     content: string;
@@ -60,7 +63,7 @@ export interface NewChatMessage {
     status?: ChatMessageStatus;
 }
 
-/** Client-facing message (no usage internals). */
+/** 클라이언트용 메시지 뷰 — `usage` 같은 서버 내부 필드가 없다. */
 export interface ChatMessageView {
     id: string;
     seq: number;
@@ -79,11 +82,8 @@ export interface ChatMessageView {
 }
 
 /**
- * Fallback title shown for a first message that trims to nothing (e.g. only
- * whitespace). Keyed by the conversation's own `locale` — the fallback is
- * user-visible UI copy, not the audit-only `locale` semantics that
- * `analysis_history` warns against reusing as a read filter (unrelated
- * concern; this is a straight display string lookup).
+ * 첫 메시지가 공백뿐이라 제목이 비었을 때 보여 줄 기본 제목. 대화 자신의 `locale`로 고른다 —
+ * 감사용 `analysis_history.locale`과 달리 화면에 그대로 보이는 문구다.
  */
 const DEFAULT_TITLE_BY_LOCALE: Record<Locale, string> = {
     ko: '새 대화',
@@ -93,13 +93,9 @@ const DEFAULT_TITLE_BY_LOCALE: Record<Locale, string> = {
 };
 
 /**
- * Derives a conversation title from the first user message: first line,
- * capped at {@link CONVERSATION_TITLE_MAX} *code points* (not UTF-16 code
- * units — slicing by `.length` can cut an emoji surrogate pair in half),
- * with `\r`/`\r\n` normalized to `\n` before splitting so a Windows-style
- * first line isn't left with a trailing `\r`. Falls back to a
- * locale-appropriate "new conversation" string when the trimmed first line
- * is empty.
+ * 첫 사용자 메시지에서 대화 제목을 만든다: 첫 줄을 {@link CONVERSATION_TITLE_MAX} *코드 포인트*로
+ * 자른다(`.length`로 자르면 이모지 서로게이트 쌍이 반쪽으로 잘린다). 분할 전에 `\r`/`\r\n`을
+ * `\n`으로 통일해 Windows식 줄바꿈의 `\r`이 남지 않게 한다. 첫 줄이 비면 로케일별 기본 제목을 쓴다.
  */
 export function deriveTitle(
     firstMessage: string,
@@ -114,7 +110,7 @@ export function deriveTitle(
         : line;
 }
 
-/** Rows → core transcript; superseded/error rows (regenerate/edit leftovers) are dropped, `aborted` rows are kept (a partial assistant reply is still valid context). */
+/** 행 → core 대화 기록. regenerate/edit 잔여인 superseded·error 행은 버리고, 부분 답변도 유효한 맥락이므로 `aborted` 행은 남긴다. */
 export function toAgentHistory(
     rows: readonly Pick<
         ChatMessageRecord,
@@ -135,9 +131,9 @@ export function toAgentHistory(
 }
 
 /**
- * Record → client view, dropping server-internal fields (`usage`, `toolCallId`, `modelId`).
- * An assistant row's follow-up marker line is split off here (server side) into
- * `followUps`; the stored `content` keeps it, since the model reads it back as history.
+ * 레코드 → 클라이언트 뷰. 서버 내부 필드(`usage`, `toolCallId`, `modelId`)를 뺀다.
+ * assistant 행의 후속 질문 마커 줄은 여기(서버)에서 `followUps`로 떼어 낸다. 저장된
+ * `content`에는 마커가 남는다 — 모델이 히스토리로 다시 읽기 때문이다.
  */
 export function toMessageView(r: ChatMessageRecord): ChatMessageView {
     const { body, followUps } =
@@ -155,5 +151,30 @@ export function toMessageView(r: ChatMessageRecord): ChatMessageView {
         createdAt: r.createdAt.toISOString(),
         // 빈 배열은 싣지 않는다 — RSC 페이로드에 메시지마다 `[]`가 붙을 이유가 없다.
         ...(followUps.length > 0 ? { followUps } : {}),
+    };
+}
+
+/** 사이드바 목록의 대화 한 줄. */
+export interface ConversationListItem {
+    id: string;
+    title: string;
+    lastMessageAt: string;
+}
+
+/** 대화 상세 화면용 페이로드 — `superseded`가 걸러진 메시지 뷰를 담는다. */
+export interface ConversationDetail {
+    id: string;
+    title: string;
+    messages: ChatMessageView[];
+}
+
+/** 대화 레코드 → 사이드바 목록 항목(시각은 ISO 문자열로 직렬화). */
+export function toConversationListItem(
+    r: Pick<ChatConversationRecord, 'id' | 'title' | 'lastMessageAt'>
+): ConversationListItem {
+    return {
+        id: r.id,
+        title: r.title,
+        lastMessageAt: r.lastMessageAt.toISOString(),
     };
 }

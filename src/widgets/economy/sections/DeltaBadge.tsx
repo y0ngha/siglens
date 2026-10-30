@@ -1,3 +1,6 @@
+/**
+ * 직전 값 대비 변화 배지(방향 셰브런 + 부호 붙은 변화량).
+ */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatFixed } from '@/shared/lib/formatNum';

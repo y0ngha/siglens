@@ -1,3 +1,4 @@
+import type { RegisterUserError } from '@/shared/lib/auth/types';
 import {
     normalizeEmail,
     validateEmail,
@@ -9,7 +10,6 @@ import {
 } from './authUseCaseConstants';
 import type {
     RegisterUserDependencies,
-    RegisterUserError,
     RegisterUserInput,
     RegisterUserResult,
 } from './authUseCaseTypes';
@@ -36,7 +36,12 @@ function emailNotVerifiedError(): RegisterUserError {
     };
 }
 
-/** Register a new user with email and password. */
+/**
+ * 이메일·비밀번호로 가입시키고 약관 동의를 기록한다. 이메일 인증 마커(`verified`)가 있어야 한다.
+ *
+ * 동의 기록이 실패하면 방금 만든 사용자를 지워(보상) 같은 이메일로 재시도할 수 있게 하고
+ * 원래 오류를 다시 던진다. 가입이 끝나면 인증 마커를 지운다.
+ */
 export async function registerUser(
     input: RegisterUserInput,
     dependencies: RegisterUserDependencies
@@ -62,9 +67,8 @@ export async function registerUser(
 
     const existingUser = await dependencies.users.findByEmail(email);
     if (existingUser !== null) {
-        // Existing account → keep the marker around so the user can hit
-        // "register" again without re-verifying. The marker will TTL-expire on
-        // its own. This intentionally does NOT delete the marker.
+        // 이미 있는 계정이면 마커를 남긴다 — 사용자가 재인증 없이 다시 "가입"을 눌러볼 수
+        // 있고, 마커는 TTL로 알아서 만료된다. 의도적으로 마커를 지우지 않는다.
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
@@ -85,9 +89,8 @@ export async function registerUser(
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
-    // Insert agreements after user creation. On failure, compensate by
-    // deleting the user so the registration can be retried without hitting
-    // email_already_exists on the next attempt.
+    // 동의 기록은 사용자 생성 뒤에 넣는다. 실패하면 사용자를 지워 보상해, 다음 시도가
+    // email_already_exists에 막히지 않고 가입을 재시도할 수 있게 한다.
     try {
         await dependencies.agreements.insertMany(
             input.agreedTermsIds.map(termsId => ({
@@ -98,7 +101,7 @@ export async function registerUser(
             }))
         );
     } catch (err) {
-        // Best-effort rollback — log secondary failure so degradation is observable.
+        // 최선 노력 롤백 — 보상 실패도 로그로 남겨 저하를 관측할 수 있게 한다.
         await dependencies.users.deleteUser(user.id).catch(deleteErr => {
             console.warn(
                 '[registerUser] compensating delete failed — user row may be orphaned',
@@ -108,7 +111,7 @@ export async function registerUser(
         throw err;
     }
 
-    // Registration succeeded — clear the verified marker now that it has served its purpose.
+    // 가입이 끝났으니 역할을 다한 인증 마커를 지운다.
     await dependencies.emailTokens.delete(PURPOSE, email);
     return { ok: true, user };
 }

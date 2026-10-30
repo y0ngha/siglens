@@ -42,11 +42,9 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
 }));
 
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
-import { hashApiKey } from '@/entities/siglens-api-key/lib/apiKeyToken';
-import {
-    authenticateApiKey,
-    revokeApiKeyAuth,
-} from '@/entities/siglens-api-key/server/apiKeyAuth';
+import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
+import { authenticateApiKey } from '@/entities/siglens-api-key/server/apiKeyAuth';
+import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 
 const RAW_KEY = `slk_${'d3L'.repeat(13)}x`;
 const HEADER = `Bearer ${RAW_KEY}`;

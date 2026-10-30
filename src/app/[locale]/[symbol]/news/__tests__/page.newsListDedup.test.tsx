@@ -1,5 +1,5 @@
 /**
- * `loadNewsList`(React.cache) 요청 내 dedup을 고정한다 — 본문과 `NewsListSection`이 같은 목록을
+ * `loadSymbolNewsList`(React.cache) 요청 내 dedup을 고정한다 — 본문과 `NewsListSection`이 같은 목록을
  * 읽어도 `staticSymbolCache`(캐시 핸들러·S3 GET)를 한 번만 거친다.
  *
  * vitest는 RSC 요청 스코프가 없어 실제 `React.cache`가 메모하지 않는다. 그래서 `cache`를
@@ -144,11 +144,11 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NewsListSection } from '@/app/[locale]/[symbol]/news/page';
+import { NewsListSection } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getNewsList } from '@/entities/news-article/api';
 
-describe('loadNewsList 요청 내 dedup', () => {
+describe('loadSymbolNewsList 요청 내 dedup', () => {
     beforeEach(() => {
         requestMemo.clear();
         vi.mocked(staticSymbolCache).mockClear();

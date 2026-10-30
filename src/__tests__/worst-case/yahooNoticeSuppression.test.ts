@@ -36,7 +36,7 @@ vi.mock('yahoo-finance2', () => ({
 
 describe('Yahoo Finance notice suppression', () => {
     it('constructs YahooFinance with suppressNotices config', async () => {
-        await import('@/entities/options-chain/lib/YahooOptionsAdapter');
+        await import('@/entities/options-chain/server/YahooOptionsAdapter');
 
         expect(mockConstructorArgs).toContainEqual(
             expect.objectContaining({
@@ -46,7 +46,7 @@ describe('Yahoo Finance notice suppression', () => {
     });
 
     it('constructs YahooFinance with validation.logErrors disabled to suppress schema-validation noise', async () => {
-        await import('@/entities/options-chain/lib/YahooOptionsAdapter');
+        await import('@/entities/options-chain/server/YahooOptionsAdapter');
 
         // validation.logErrors: false prevents multi-line "Failed Yahoo Schema
         // validation … This may happen intermittently…" messages that the library

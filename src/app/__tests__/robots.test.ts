@@ -4,7 +4,8 @@ vi.mock('@/shared/lib/seo', () => ({
 
 import type { MetadataRoute } from 'next';
 
-import robots, { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/robots';
+import { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/_lib/robotsRules';
+import robots from '@/app/robots';
 
 /**
  * `MetadataRoute.Robots['rules']`는 단일 그룹 객체 또는 배열, 두 형태를 모두 허용하는

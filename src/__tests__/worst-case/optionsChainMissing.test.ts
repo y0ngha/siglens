@@ -25,7 +25,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
     sanitizeOptionsChain: vi.fn((chain: unknown) => chain),
 }));
 
-import { YahooOptionsAdapter } from '@/entities/options-chain/lib/YahooOptionsAdapter';
+import { YahooOptionsAdapter } from '@/entities/options-chain/server/YahooOptionsAdapter';
 import { sanitizeOptionsChain } from '@y0ngha/siglens-core';
 
 const yahooModule = (await import('yahoo-finance2')) as Record<string, unknown>;

@@ -2,7 +2,7 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     runOptionsAnalysis: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 vi.mock('@/shared/lib/byokGate', () => ({
@@ -17,7 +17,7 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 import { runOptionsAnalysis, type ModelId } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
 import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 

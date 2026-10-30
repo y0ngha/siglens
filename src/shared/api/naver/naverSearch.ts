@@ -2,8 +2,8 @@
  * NAVER API HUB 뉴스·웹문서 검색의 저수준 클라이언트 — 엔드포인트·인증·HTML 정리·날짜 파싱.
  *
  * 세 소비자가 있다.
- * - `entities/news-article/lib/naverNewsClient.ts` — 종목 단위(`005930.KS` → "삼성전자")
- * - `entities/market-news/lib/naverMarketNewsClient.ts` — 시장 단위("코스피")
+ * - `entities/news-article/server/naverNewsClient.ts` — 종목 단위(`005930.KS` → "삼성전자")
+ * - `entities/market-news/api/naverMarketNewsClient.ts` — 시장 단위("코스피")
  * - `app/api/ai/chat/tools/webSearch.ts` — 에이전트 `web_search`(한국어 질의에서 Brave와 혼합)
  *
  * 소비자마다 엔드포인트·헤더·마크업 정리를 따로 갖고 있으면, 네이버가 또 한 번 이관할 때

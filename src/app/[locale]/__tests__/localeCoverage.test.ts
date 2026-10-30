@@ -1,6 +1,8 @@
 import {} from '@/shared/i18n/indexableLocales';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { blankComments } from '@/__tests__/guards/support/sourceScan';
 
 const APP_DIR = join(process.cwd(), 'src/app/[locale]');
 
@@ -19,6 +21,33 @@ function collectPages(dir: string, acc: string[] = []): string[] {
 }
 
 const PAGES = collectPages(APP_DIR);
+
+/** 페이지가 `@/app/[locale]/<route>/_lib/<name>Metadata`로 위임한 헬퍼 모듈의 경로 접미사. */
+const METADATA_HELPER_IMPORT =
+    /from '@\/app\/\[locale\]\/([^']*\/_lib\/[A-Za-z]+Metadata)'/g;
+
+/** 페이지의 `_lib/*Metadata` 임포트에서 유도한 헬퍼 경로를 돌려준다(존재 여부는 확인하지 않는다 — `sourceWithMetadataHelpers`가 단언한다). */
+function metadataHelperPaths(source: string): string[] {
+    return [...source.matchAll(METADATA_HELPER_IMPORT)].map(match =>
+        join(APP_DIR, `${match[1]}.ts`)
+    );
+}
+
+/** 페이지 소스 + 위임한 메타데이터 헬퍼 소스. 헬퍼 파일이 없으면 실패한다. */
+function sourceWithMetadataHelpers(page: string): string {
+    const source = readFileSync(page, 'utf8');
+    const helpers = metadataHelperPaths(source).map(path => {
+        expect(existsSync(path), `${path} 헬퍼가 있어야 한다`).toBe(true);
+        return readFileSync(path, 'utf8');
+    });
+    return [source, ...helpers].join('\n');
+}
+
+/** `[symbol]` 탭이 공유하는 진입 헬퍼(본문의 `enterLocale` 호출을 대신 맡는다). */
+const SYMBOL_TAB_ENTRY_FILE = join(APP_DIR, '[symbol]/_lib/symbolTabEntry.ts');
+/** 그 헬퍼의 import — 별칭(`@/app/[locale]/[symbol]/…`)이나 같은 폴더 상대 경로(`./_lib/…`). */
+const SYMBOL_TAB_ENTRY_IMPORT =
+    /from '(?:@\/app\/\[locale\]\/\[symbol\]|\.)\/_lib\/symbolTabEntry';/;
 
 /**
  * 무조건 noindex인 페이지(로그인·회원가입·계정·공유 링크 등)는 이 가드에서 제외한다.
@@ -95,6 +124,19 @@ describe('로케일 커버리지', () => {
         }
     );
 
+    it.each([
+        ['about', 'aboutMetadata'],
+        ['methodology', 'methodologyMetadata'],
+        ['developers', 'developersMetadata'],
+        ['backtesting', 'backtestingMetadata'],
+        ['symbols', 'symbolsMetadata'],
+    ])('%s 페이지는 %s 헬퍼를 임포트한다', (route, helper) => {
+        const page = join(APP_DIR, route, 'page.tsx');
+        expect(metadataHelperPaths(readFileSync(page, 'utf8'))).toEqual([
+            join(APP_DIR, route, '_lib', `${helper}.ts`),
+        ]);
+    });
+
     it('페이지 목록이 비어 있지 않다 — 비면 아래 가드가 통째로 무력화된다', () => {
         expect(PAGES.length).toBeGreaterThanOrEqual(30);
         expect(INDEXABLE_PAGES.length).toBeGreaterThanOrEqual(15);
@@ -139,7 +181,8 @@ describe('로케일 커버리지', () => {
         // 허브·약관 라우트는 공용 빌더를 거친다 — 전부 내부에서
         // `localeAlternatesFrom`을 부른다(`seoAlternates.buildHubMetadata`,
         // `fear-greed/fearGreedRoute`, `market/marketMetadata`, `_legal/legalPolicy`).
-        expect(source).toMatch(
+        // 같은 라우트의 `_lib/*Metadata` 헬퍼로 위임한 페이지는 그 헬퍼 소스까지 합쳐서 본다.
+        expect(sourceWithMetadataHelpers(page)).toMatch(
             /localeAlternatesFrom|localeAlternates\(|symbolMetadataFromSeo\(|buildHubMetadata\(|fearGreedMetadata\(|marketMetadata\(|legalPolicyMetadata\(/
         );
     });
@@ -156,10 +199,27 @@ describe('로케일 커버리지', () => {
      * 사라지고, 빌드는 성공하며 테스트도 통과한다 — 캐시 비용 청구서로만 드러난다.
      */
     it.each(SERVER_PAGES)('%s: setRequestLocale을 호출한다', page => {
+        // 주석을 비운다 — 주석·JSDoc 속 호출 언급이 검사를 통과시키면 안 된다.
+        const source = blankComments(readFileSync(page, 'utf8'));
         // `enterLocale`(shared/lib/enterLocale)이 `setRequestLocale`을 감싼다.
-        expect(readFileSync(page, 'utf8')).toMatch(
-            /\b(setRequestLocale|enterLocale)\(/
+        if (/\b(setRequestLocale|enterLocale)\(/.test(source)) return;
+        // `[symbol]` 탭은 본문 진입 헬퍼 `enterSymbolTabPage`(`[symbol]/_lib/symbolTabEntry`)가
+        // `enterLocale`을 부른다 — 그 헬퍼를 import해 호출해야만 인정한다(아래 테스트가 헬퍼를 고정한다).
+        // 메타데이터용 `enterSymbolTabMetadata`는 요청 로케일을 등록하지 않으므로 인정하지 않는다.
+        expect(source).toMatch(SYMBOL_TAB_ENTRY_IMPORT);
+        expect(source).toMatch(/\benterSymbolTabPage\(/);
+    });
+
+    it('[symbol] 탭 본문 진입 헬퍼 enterSymbolTabPage가 enterLocale을 호출한다', () => {
+        const source = blankComments(
+            readFileSync(SYMBOL_TAB_ENTRY_FILE, 'utf8')
         );
+        const body =
+            /export async function enterSymbolTabPage\([\s\S]*?\n\}/.exec(
+                source
+            )?.[0];
+        expect(body).toBeDefined();
+        expect(body).toMatch(/\benterLocale\(/);
     });
 
     /**

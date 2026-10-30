@@ -96,7 +96,11 @@ describe('getRegisteredProvidersAction', () => {
             id: 'user-1',
             email: 'test@example.com',
         } as never);
-        mockFindByUser.mockRejectedValue(new Error('DB connection failed'));
+        mockFindByUser.mockRejectedValue(
+            Object.assign(new Error('params: ciphertext-abc'), {
+                cause: { code: '08006' },
+            })
+        );
         const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -104,7 +108,10 @@ describe('getRegisteredProvidersAction', () => {
         const result = await getRegisteredProvidersAction();
 
         expect(result).toEqual([]);
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[getRegisteredProvidersAction] Failed to load registered providers',
+            { name: 'Error', code: '08006' }
+        );
         consoleErrorSpy.mockRestore();
     });
 

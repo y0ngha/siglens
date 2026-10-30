@@ -3,22 +3,6 @@
 import { useCallback, useRef, useSyncExternalStore } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
-/**
- * useState와 동일 시그니처의 localStorage 영속 상태. SSR-safe.
- *
- * localStorage를 **외부 스토어로 구독**한다(`useSyncExternalStore`):
- *  - 서버 렌더와 하이드레이션 렌더는 `getServerSnapshot`(= initial)을 쓰므로 마크업이 일치한다.
- *  - 하이드레이션이 끝나면 React가 클라이언트 스냅샷(저장값)으로 전환한다.
- *
- * 예전 구현은 마운트 effect에서 `setValue(저장값)`으로 복원해 렌더가 한 번 더 돌았다.
- * 외부 스토어 구독으로 바꾸면 복원 렌더가 사라지고, 같은 key를 쓰는 인스턴스끼리 자동으로
- * 동기화되며(중복 상태 제거), 다른 탭의 변경(`storage` 이벤트)도 반영된다.
- *
- * 저장은 **사용자 변경분만** 한다 — `initial`은 절대 기록하지 않는다(setValue 호출 시에만 write).
- *
- * `key`는 렌더 간 안정적인 상수여야 한다. `initial`은 첫 호출 값으로 고정된다(useState와 동일).
- */
-
 /** key별 구독자. 같은 key를 쓰는 훅 인스턴스가 함께 갱신된다. */
 const listenersByKey = new Map<string, Set<() => void>>();
 
@@ -69,6 +53,21 @@ function readStored<T>(key: string, initial: T): T {
     return value;
 }
 
+/**
+ * useState와 동일 시그니처의 localStorage 영속 상태. SSR-safe.
+ *
+ * localStorage를 **외부 스토어로 구독**한다(`useSyncExternalStore`):
+ *  - 서버 렌더와 하이드레이션 렌더는 `getServerSnapshot`(= initial)을 쓰므로 마크업이 일치한다.
+ *  - 하이드레이션이 끝나면 React가 클라이언트 스냅샷(저장값)으로 전환한다.
+ *
+ * 마운트 effect에서 `setValue(저장값)`으로 복원하면 렌더가 한 번 더 도는데, 외부 스토어
+ * 구독은 그 복원 렌더가 없고, 같은 key를 쓰는 인스턴스끼리 자동으로 동기화되며(중복 상태
+ * 제거), 다른 탭의 변경(`storage` 이벤트)도 반영된다.
+ *
+ * 저장은 **사용자 변경분만** 한다 — `initial`은 절대 기록하지 않는다(setValue 호출 시에만 write).
+ *
+ * `key`는 렌더 간 안정적인 상수여야 한다. `initial`은 첫 호출 값으로 고정된다(useState와 동일).
+ */
 export function usePersistentState<T>(
     key: string,
     initial: T
@@ -83,7 +82,8 @@ export function usePersistentState<T>(
             listenersByKey.set(key, listeners);
 
             const onStorage = (event: StorageEvent): void => {
-                if (event.key !== key) return;
+                // `key`가 null이면 다른 탭이 `localStorage.clear()`를 부른 것이다 — 모든 key가 지워진다.
+                if (event.key !== null && event.key !== key) return;
                 // 다른 탭이 바꾼 값을 다음 스냅샷에서 다시 읽도록 캐시를 비운다.
                 cacheByKey.delete(key);
                 onStoreChange();

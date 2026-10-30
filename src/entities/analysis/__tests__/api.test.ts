@@ -159,7 +159,7 @@ vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     ]),
 }));
 
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -222,7 +222,7 @@ import {
     listEarningsDates,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {
     prewarmTechnical,

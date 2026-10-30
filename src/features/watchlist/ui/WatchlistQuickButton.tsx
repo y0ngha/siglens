@@ -1,8 +1,8 @@
 'use client';
 
+import { useEffect, useId, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';

@@ -171,6 +171,21 @@ describe('usePersistentState', () => {
         expect(result.current[0]).toBe('changed-by-other-tab');
     });
 
+    it('resets to initial when another tab clears all of localStorage', () => {
+        localStorage.setItem('test.crossTabClear', JSON.stringify('stored'));
+        const { result } = renderHook(() =>
+            usePersistentState('test.crossTabClear', 'initial')
+        );
+        expect(result.current[0]).toBe('stored');
+
+        act(() => {
+            localStorage.clear();
+            window.dispatchEvent(new StorageEvent('storage', { key: null }));
+        });
+
+        expect(result.current[0]).toBe('initial');
+    });
+
     it('ignores storage events for unrelated keys', () => {
         const { result } = renderHook(() =>
             usePersistentState('test.crossTabIgnore', 'initial')

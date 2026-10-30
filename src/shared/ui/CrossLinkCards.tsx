@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
@@ -31,10 +32,10 @@ type PageKey = (typeof ALL_PAGES)[number];
 /**
  * 라벨·설명은 **키만** 여기 두고 `t()`는 컴포넌트에서 부른다.
  *
- * 예전에는 이 자리에 한국어 문자열 테이블이 박혀 있어서, 종목 탭 하단의
- * cross-link 카드가 네 로케일 전부 한국어로 나갔다 — `shared.symbolTab`과
- * 같은 결함이다. 번역자를 인자로 받는 헬퍼로 바꾸면 추출기가 이 파일을
- * 건너뛰므로(`noTranslatorParamCall` 가드 참고) 키만 내보낸다.
+ * 한국어 문자열 테이블을 두면 종목 탭 하단의 cross-link 카드가 네 로케일 전부
+ * 한국어로 나간다(`shared.symbolTab`도 같은 이유로 키만 둔다).
+ * 번역자를 인자로 받는 헬퍼로 바꾸면 추출기가 이 파일을 건너뛰므로
+ * (`noTranslatorParamCall` 가드 참고) 키만 내보낸다.
  *
  * `shared.crossLink`는 배열 조회라 추출기에는 동적이다 —
  * `manualKeys.preserve`에 등록돼 있어야 유지된다.
@@ -145,6 +146,7 @@ export function CrossLinkCards({
     indexableOnly = false,
 }: CrossLinkCardsProps) {
     const t = useTranslations('shared.ui');
+    const headingId = useId();
     // 전용 네임스페이스 — 카드 라벨·설명은 페이지 키로 조회한다.
     const tCard = useTranslations('shared.crossLink');
     const descriptor = getDescriptor(marketProfile);
@@ -157,18 +159,18 @@ export function CrossLinkCards({
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-labelledby="cross-link-heading"
+            aria-labelledby={headingId}
         >
             {/*
-             * 카드 제목이 h3인데 이 구역에 h2가 없어서, 문서 개요상 h3 여덟
-             * 개가 바로 앞 FAQ의 h2 밑으로 들어가 있었다(감사 실측: 심볼 탭
-             * 전역). 보이는 제목을 새로 만들 자리는 아니므로 sr-only h2를 두고
+             * 카드 제목이 h3인데 이 구역에 h2가 없으면, 문서 개요상 h3 여덟
+             * 개가 바로 앞 FAQ의 h2 밑으로 들어간다(심볼 탭 전역). 보이는 제목을
+             * 새로 만들 자리는 아니므로 sr-only h2를 두고
              * `aria-labelledby`로 랜드마크 이름까지 그쪽에 맡긴다 — `aria-label`을
              * 그대로 두면 이름은 있지만 개요는 여전히 비어 있다.
              *
              * `sr-only`는 `position: absolute`라 그리드 트랙을 차지하지 않는다.
              */}
-            <h2 id="cross-link-heading" className="sr-only">
+            <h2 id={headingId} className="sr-only">
                 {t('CrossLinkCards.be1af0')}
             </h2>
             {visiblePages.map(p => {
@@ -203,12 +205,12 @@ export function CrossLinkCards({
                         href={HREF[p](symbol)}
                         // SymbolTabs와 같은 형제 탭 집합을 카드로 한 번 더 노출하는
                         // 섹션이다. prefetch를 켜두면 같은 페이로드를 탭에 이어 두 번째로
-                        // 예약하게 되므로 끈다 (docs/architecture/CDN_CACHING.md §1).
+                        // 예약하게 되므로 끈다.
                         prefetch={false}
-                        // 예전에는 채움 없이 보더(`border-control`)만으로 배경과 갈렸다.
-                        // 이제 다른 카드처럼 떠 있는 면(`SURFACE_CARD`)이 카드를 드러내고,
+                        // 보더만으로 배경과 가르지 않는다 — 다른 카드처럼 떠 있는 면
+                        // (`SURFACE_CARD`)이 카드를 드러내고,
                         // 제목·설명 텍스트가 링크의 식별 수단이라 경계선이 필요 없다
-                        // (DESIGN.md §경계 예외). 현재 탭 카드와의 구분은 그쪽의
+                        // (DESIGN.md의 경계 예외). 현재 탭 카드와의 구분은 그쪽의
                         // 브랜드 경계·링이 맡는다.
                         className={cn(
                             CARD_LINK_CLASSES,

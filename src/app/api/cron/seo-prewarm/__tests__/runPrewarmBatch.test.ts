@@ -24,7 +24,6 @@ const {
     mockPrewarmPollFundamental,
     mockPrewarmPollFinancials,
     mockPrewarmPollCongress,
-    mockPrewarmPollNews,
     mockPrewarmPollOptions,
     mockBuildPrewarmUniverse,
 } = vi.hoisted(() => ({
@@ -53,7 +52,6 @@ const {
     mockPrewarmPollFundamental: vi.fn(),
     mockPrewarmPollFinancials: vi.fn(),
     mockPrewarmPollCongress: vi.fn(),
-    mockPrewarmPollNews: vi.fn(),
     mockPrewarmPollOptions: vi.fn(),
     mockBuildPrewarmUniverse: vi.fn(),
 }));
@@ -150,8 +148,10 @@ vi.mock('@/entities/analysis/api', () => ({
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
+    DrizzleNewsRepository: class {},
+}));
+vi.mock('@/entities/news-article/server/prewarmNews', () => ({
     prewarmNews: mockPrewarmNews,
-    prewarmPollNews: mockPrewarmPollNews,
 }));
 
 vi.mock('@/entities/options-chain/api', () => ({

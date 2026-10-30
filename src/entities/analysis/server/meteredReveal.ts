@@ -1,7 +1,6 @@
 import 'server-only';
 import { createHmac } from 'node:crypto';
 import type { MeteredRevealPolicy } from '@y0ngha/siglens-core';
-import { normalizeQuotaIp } from '@/entities/analysis/lib/normalizeQuotaIp';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     KST_OFFSET_HOURS,
@@ -11,6 +10,7 @@ import {
 } from '@/shared/config/time';
 import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { normalizeQuotaIp } from '../lib/normalizeQuotaIp';
 
 /**
  * 비회원 "하루 무료 전체 공개" 미터가 시작되는 시각(KST 2026-10-11 00:00).
@@ -77,6 +77,7 @@ redis.call('SREM', KEYS[2], ARGV[1])
 return 1
 `;
 
+/** {@link decideMeteredReveal}의 판정. 호출자(분석 SSE 라우트)가 `state`로 분기한다. */
 export type MeterDecision =
     | {
           readonly state: 'revealed';
@@ -92,6 +93,7 @@ export type MeterDecision =
     /** Redis·pepper 문제 — fail-closed라 호출자는 현행(잠금)으로 처리한다. */
     | { readonly state: 'unavailable' };
 
+/** {@link decideMeteredReveal} 입력. */
 export interface MeteredRevealInput {
     /** 서명 검증된 게스트 id. 쿠키 발급까지 실패해 없으면 null → unavailable. */
     readonly guestId: string | null;

@@ -1,48 +1,37 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runCongressTrend,
     type SubmitCongressTrendOptions,
     type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { runGatedAnalysis } from '../lib/runGatedAnalysis';
+import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { runGatedAnalysis } from '../server/runGatedAnalysis';
 
-/**
- * Final return type — core's congress result union + our siglens-side gate
- * errors (mirrors runFinancialsAnalysisAction / runFundamentalAnalysisAction).
- */
+/** core의 의회 거래 결과 유니온에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunCongressTrendActionResult =
     | RunCongressTrendResult
     | AnalysisGateBlockedResult;
 
 /**
- * Server Action: tier + BYOK gate, then submit a congressional-trade trend
- * analysis job via siglens-core. Returns `cached | submitted | no_trades |
- * miss_no_trigger | error`.
+ * Server Action: tier·BYOK 게이트를 거쳐 siglens-core로 의회 거래 동향 분석 job을
+ * 제출한다. `cached | submitted | no_trades | miss_no_trigger | error`를 돌려준다.
  *
- * §Public access vs. premium models: congress *filings* are public data — at
- * the type level, core's `SubmitCongressTrendOptions` has no `usage`/`now`
- * field at all, unlike `SubmitAnalysisOptions`/`SubmitFinancialsAnalysisOptions`,
- * so there is no daily usage-limit check to wire up here. But a
- * caller can still request a premium `modelId`, and `resolveTierAndByok`
- * gates exactly like every other submit action (free/anonymous + premium →
- * blocked unless the caller has a stored BYOK key; pro or a free model →
- * allowed). This was previously missing — congress was the only analysis
- * surface with no BYOK gate. The fix is two functional wins, not a cost or
- * security one: (a) the gate is what actually forwards the member's stored
- * key to core as `userApiKey` (→ `X-AI-API-KEY`), so a premium model works
- * at all here — without it a member with a registered key had no way to
- * reach a premium model through this action; and (b) an ungated call now
- * fails fast with a localized `tier_premium_blocked` message instead of
- * being submitted and only rejected later, at poll time, by the worker.
+ * 공개 접근과 프리미엄 모델: 의회 *공시*는 공개 데이터라 core의
+ * `SubmitCongressTrendOptions`에는 `SubmitAnalysisOptions`/`SubmitFinancialsAnalysisOptions`
+ * 와 달리 `usage`/`now` 필드가 아예 없어 여기서 연결할 일일 사용량 한도 검사가 없다.
+ * 그래도 호출자는 프리미엄 `modelId`를 고를 수 있고, `resolveTierAndByok`가 다른 제출
+ * 액션과 똑같이 게이트한다(무료·비회원 + 프리미엄 → 저장된 BYOK 키가 없으면 차단,
+ * pro 또는 무료 모델 → 허용). 게이트가 하는 일은 두 가지다. (a) 회원이 저장한 키를
+ * `userApiKey`(→ `X-AI-API-KEY`)로 core에 전달하므로 프리미엄 모델이 여기서 동작한다.
+ * (b) 게이트를 안 거친 호출은 제출된 뒤 worker 폴링 시점에야 거부되는 대신, 로케일
+ * 문구가 담긴 `tier_premium_blocked`로 즉시 실패한다.
  *
- * The gate, E2E short-circuit, bot parity (`skipEnqueueIfMiss: false`),
- * reasoning tier rule and catch-all live in `runGatedAnalysis`, shared with the
- * fundamental/financials actions.
+ * 게이트·E2E 단락·봇 동등성(`skipEnqueueIfMiss: false`)·추론 tier 규칙·catch-all은
+ * 다른 패널 액션과 공유하는 `runGatedAnalysis`에 있다.
  */
 export async function runCongressTrendAction(
     symbol: string,
@@ -54,10 +43,7 @@ export async function runCongressTrendAction(
      * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
      */
     locale: Locale,
-    /**
-     * Client-requested "깊은 생각" (deep-thinking) toggle value. Only honored
-     * for member/pro tiers.
-     */
+    /** 클라이언트가 요청한 "깊은 생각" 토글. 회원·pro tier에서만 반영된다. */
     reasoning?: boolean,
     signal?: AbortSignal,
     /**

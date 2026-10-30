@@ -5,8 +5,6 @@ import {
     runFundamentalAnalysis,
     runFinancialsAnalysis,
     runCongressTrend,
-    isEtRegularSessionOpen,
-    computeFinancialsScorecard,
     DEEPSEEK_V4_1_FLASH_MODEL,
     type AssembledPromptRecord,
     type RunAnalysisResult,
@@ -15,8 +13,6 @@ import {
     type RunFinancialsAnalysisResult,
     type RunCongressTrendResult,
     type EnrichedNewsItem,
-    type FinancialsScorecard,
-    type OptionsSnapshot,
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -31,7 +27,6 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
@@ -42,20 +37,20 @@ import {
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
-import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
-// Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
-// 동일한 의도적 예외(entities/CLAUDE.md).
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
-import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
-// analysisHistoryRepository는 server-only + node:crypto 의존이다(상단 JSDoc 참고).
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import {
     DrizzleAnalysisHistoryRepository,
     resolveGeneratedAt,
     type AnalysisHistoryTab,
-} from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
-import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+} from './analysisHistoryRepository';
+import { fetchQuotePriceForAnalysis } from './server/fetchQuotePriceForAnalysis';
+import {
+    isOptionsOiStale,
+    loadFinancialsScorecardOrUndefined,
+    loadOptionsSnapshotOrNull,
+} from './server/overallAxisInputs';
 
 /**
  * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_1_FLASH_MODEL`을 직접 명시 전달하는
@@ -68,15 +63,13 @@ import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
  * 축(fundamental/financials/congress/news/options/overall)은 `modelId`를
  * 캐시 키에 그대로 사용하므로 생략 시 실제 방문자가 쓰는 키와 어긋난다. 그래서
  * 모든 seam이 `DEEPSEEK_V4_1_FLASH_MODEL`을 명시적으로 전달해 anonymous writer와
- * 캐시 키를 맞춘다(스펙 §7 캐시 키 5축 정합).
+ * 캐시 키를 맞춘다(캐시 키 5축 정합).
  */
 
 /**
- * Task S3 (prior-analysis-context) — prewarm 결과를 `analysis_history`에
- * best-effort로 기록한다. SSE 경로
- * (`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`의
- * `schedulePersistAnalysisHistory`)와 같은 목적, 같은 컬럼 집합이지만
- * **`after()`로 감싸지 않는다.**
+ * prewarm 결과를 `analysis_history`에 best-effort로 기록한다. SSE 경로
+ * (`app/api/analysis/stream/_lib/persistAnalysisHistory.ts`의 `schedulePersistAnalysisHistory`)와 같은
+ * 목적, 같은 컬럼 집합이지만 **`after()`로 감싸지 않는다.**
  *
  * `prewarmTechnical`/`prewarmOverall`은 이미 seo-prewarm cron route의
  * `after()` 콜백 안에서 실행된다(`route.ts` PATCH → `after()` →
@@ -113,14 +106,12 @@ async function persistPrewarmAnalysis(input: {
             symbol: input.symbol,
             timeframe: input.timeframe,
             tab: input.tab,
-            // The requested model, not necessarily the one that generated: core
-            // 1.7.0's opt-in provider fallback can answer with Gemini instead
-            // when DeepSeek fails, but its result never reports which model
-            // actually ran, so there is nothing else to record here. This
-            // matches core's own usage-row policy (same limitation on its
-            // side); the fallback is still visible via the
-            // `[callAnalysisAi] DeepSeek failed; retrying once on fallback
-            // model` warn and the provider's `[Usage]` telemetry.
+            // 요청한 모델이지 실제로 생성한 모델이 아닐 수 있다: core 1.7.0의 opt-in
+            // provider 폴백은 DeepSeek 실패 시 Gemini로 답할 수 있지만 결과가 어느
+            // 모델이 돌았는지 알려 주지 않아 기록할 다른 값이 없다. core 자신의
+            // usage 행 정책과 같은 한계다. 폴백 여부는 `[callAnalysisAi] DeepSeek
+            // failed; retrying once on fallback model` 경고와 provider의 `[Usage]`
+            // 텔레메트리로 확인할 수 있다.
             modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             // 프리웜은 현재 한국어로만 생성한다(harvest.ts의 `resolveHarvest`가
             // 같은 이유로 스냅샷에 `DEFAULT_LOCALE`을 적는 것과 동일한 근거).
@@ -138,8 +129,7 @@ async function persistPrewarmAnalysis(input: {
 }
 
 /**
- * SEO pre-warm 전용 technical submit (spec 2026-07-24 §4 seam).
- * 익명 free 방문자의 submitAnalysisAction 익명 브랜치와 동일한 core 호출을
+ * SEO pre-warm 전용 technical submit. 익명 free 방문자의 submitAnalysisAction 익명 브랜치와 동일한 core 호출을
  * 재현한다(캐시 키 5축 정합: model default / tier free / reasoning false /
  * no bucket / 동일 core fingerprint). 차이는 skipEnqueueIfMiss:false와 force 뿐.
  * ⚠️ request-context 호출(요청 헤더 읽기·세션 사용자 조회·봇 판별·쿠키 접근)
@@ -161,17 +151,13 @@ export async function prewarmTechnical(
     const marketDataProvider = getCachedMarketDataProvider(session);
     const timeframe = '1Day';
 
-    // Task S3 (prior-analysis-context) — read BEFORE the core call,
-    // unconditionally (unlike the SSE route's crawler-request skip: prewarm
-    // has no request context to derive that signal from, and it always
-    // intends to trigger a generation, so there is no "will not generate"
-    // case to short-circuit for). core folds a fingerprint of this into the
-    // cache key (see `SubmitAnalysisOptions.priorAnalyses` JSDoc in core) —
-    // omitting it here once `analysis_history` starts accumulating rows
-    // (which this same change makes happen) would make prewarm compute a
-    // DIFFERENT cache key than the non-bot SSE path for the same
-    // (symbol, timeframe, tab), defeating the entire point of prewarming
-    // that cache entry for a real visitor to hit.
+    // core 호출 **전에** 무조건 읽는다(SSE 라우트의 크롤러 요청 skip과 달리: 프리웜은
+    // 그 신호를 끌어낼 요청 컨텍스트가 없고 항상 생성을 일으키려는 것이라 "생성하지 않을"
+    // 경우를 단락할 이유가 없다). core는 이 값의 지문을 캐시 키에 접는다(core의
+    // `SubmitAnalysisOptions.priorAnalyses` JSDoc 참고) — `analysis_history`에 행이
+    // 쌓이기 시작한 뒤 여기서 생략하면 같은 (symbol, timeframe, tab)에 대해 프리웜이
+    // 비봇 SSE 경로와 **다른** 캐시 키를 계산해, 실제 방문자가 적중하도록 그 캐시 항목을
+    // 데우는 목적 자체가 무너진다.
     // 스트림 경로와 **같은** lookback을 써야 한다 — 창이 갈리면 두 경로가
     // 서로 다른 이벤트 집합을 core에 넘기고, core가 그것을 캐시 키에 접으므로
     // pre-warm이 채운 캐시를 방문자가 맞히지 못한다.
@@ -248,21 +234,18 @@ export async function prewarmTechnical(
 }
 
 /**
- * SEO pre-warm 전용 fundamental submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitFundamentalAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
- * 없음)를 request-context 없이 재현한다.
+ * SEO pre-warm 전용 fundamental submit. `submitFundamentalAnalysisAction`의 기본
+ * 경로(2026-09-27부터 봇/사람 구분 없음)를 request-context 없이 재현한다.
  */
 export async function prewarmFundamental(
     symbol: string,
     force: boolean
 ): Promise<RunFundamentalAnalysisResult> {
-    // LAZY getter (core's `currentPrice?: number | null |
-    // (() => Promise<number | null>)`) — core only calls this on a cache
-    // MISS, so a cache hit never pays for this quote fetch. Same seam as
-    // `runFundamentalAnalysisAction`'s request path, so prewarm fills
-    // `## Derived Metrics`'s target-upside row too instead of leaving it
-    // out of most of the cache — but without the round-trip on every hit
-    // the previous eagerly-awaited shape always paid for.
+    // 지연 getter(core의 `currentPrice?: number | null | (() => Promise<number | null>)`)
+    // — core는 캐시 미스에서만 호출하므로 캐시 적중은 이 시세 조회 비용을 내지 않는다.
+    // `runFundamentalAnalysisAction`의 요청 경로와 같은 seam이라 프리웜도 `## Derived
+    // Metrics`의 목표가 상승여력 행을 채운다 — 즉시 await하던 예전 모양이 적중마다
+    // 치르던 왕복 없이.
     return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
@@ -280,9 +263,8 @@ export async function prewarmFundamental(
 }
 
 /**
- * SEO pre-warm 전용 financials submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitFinancialsAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
- * 없음)를 request-context 없이 재현한다.
+ * SEO pre-warm 전용 financials submit. `submitFinancialsAnalysisAction`의 기본
+ * 경로(2026-09-27부터 봇/사람 구분 없음)를 request-context 없이 재현한다.
  */
 export async function prewarmFinancials(
     symbol: string,
@@ -301,9 +283,8 @@ export async function prewarmFinancials(
 }
 
 /**
- * SEO pre-warm 전용 congress submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitCongressTrendAction`의 기본 경로(2026-09-27부터 봇/사람 구분 없음)를
- * request-context 없이 재현한다.
+ * SEO pre-warm 전용 congress submit. `submitCongressTrendAction`의 기본 경로
+ * (2026-09-27부터 봇/사람 구분 없음)를 request-context 없이 재현한다.
  * 이 경로는 액션 레이어(BYOK 게이트 포함)를 우회해 core를 직접 호출한다 — 실 사용자
  * 컨텍스트가 없는 pre-warm이라 gate 대상이 아니다. 항상 free-tier 비프리미엄 모델
  * (DEEPSEEK_V4_1_FLASH_MODEL)만 사용하므로 프리미엄/BYOK 상황 자체가 발생하지 않는다.
@@ -325,14 +306,13 @@ export async function prewarmCongress(
 }
 
 /**
- * SEO pre-warm 전용 overall(4축 종합) submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitOverallAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
- * 없음)를 request-context 없이 재현한다.
+ * SEO pre-warm 전용 overall(4축 종합) submit. `submitOverallAnalysisAction`의 기본
+ * 경로(2026-09-27부터 봇/사람 구분 없음)를 request-context 없이 재현한다.
  *
  * options snapshot·financials scorecard fetch는 prewarm에서도, 이제는 실 요청
- * (봇 포함)에서도 항상 실행된다 — 의도된 동작이다(spec §8 FMP 예산 산정에
- * 포함됨). 2026-09-27 이전엔 봇 트래픽만 이 fetch를 skip했지만, 그 skip이
- * 캐시 미스에서 사람과 다른(빈약한) 본문을 만들어 제거했다.
+ * (봇 포함)에서도 항상 실행된다 — 의도된 동작이며 FMP 예산 산정에 포함돼 있다.
+ * 2026-09-27 이전엔 봇 트래픽만 이 fetch를 skip했지만, 그 skip이 캐시 미스에서
+ * 사람과 다른(빈약한) 본문을 만들어 제거했다.
  */
 export async function prewarmOverall(
     symbol: string,
@@ -342,25 +322,14 @@ export async function prewarmOverall(
     const { db } = getDatabaseClient();
     const newsRepo = new DrizzleNewsRepository(db);
 
-    const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =
-        fetchOptionsSnapshot(symbol).catch(error => {
-            console.warn(
-                '[prewarmOverall] options snapshot fetch failed:',
-                error
-            );
-            return null;
-        });
-
-    const financialsScorecardPromise: Promise<FinancialsScorecard | undefined> =
-        getFinancialsSnapshot(symbol)
-            .then(snapshot => computeFinancialsScorecard(snapshot))
-            .catch(error => {
-                console.warn(
-                    '[prewarmOverall] financials scorecard fetch failed:',
-                    error
-                );
-                return undefined;
-            });
+    const optionsSnapshotPromise = loadOptionsSnapshotOrNull(
+        symbol,
+        '[prewarmOverall]'
+    );
+    const financialsScorecardPromise = loadFinancialsScorecardOrUndefined(
+        symbol,
+        '[prewarmOverall]'
+    );
 
     // 웹·공개 API 경로(`executeOverallAnalysis`)와 같은 함수 — 프리웜이 데운 캐시를 사용자가 맞히려면
     // inputHash에 접히는 수급 입력이 두 경로에서 같아야 한다.
@@ -401,11 +370,7 @@ export async function prewarmOverall(
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
 
-    // 정규장 시간대에는 OI=0 비율이 높아도 stale로 보지 않는다 (submitOverallAnalysisAction과 동일).
-    const optionsOiStale =
-        optionsSnapshot !== null &&
-        !isEtRegularSessionOpen(new Date()) &&
-        isOpenInterestSnapshotStale(optionsSnapshot);
+    const optionsOiStale = isOptionsOiStale(optionsSnapshot, new Date());
 
     const [marketProfile, krxTickTable] = await Promise.all([
         marketProfilePromise,
@@ -417,8 +382,7 @@ export async function prewarmOverall(
     const marketDataProvider = getCachedMarketDataProvider(session);
     const timeframe = '1Day';
 
-    // Task S3 (prior-analysis-context) — same cache-key parity rationale as
-    // `prewarmTechnical` (see that function's comment on the read call).
+    // `prewarmTechnical`과 같은 캐시 키 정합 근거다(그 함수의 읽기 호출 주석 참고).
     //
     // 두 벌을 따로 읽는다 — technical 탭과 overall의 technical 축은 recency
     // 윈도우가 다르다(`ANALYSIS_CACHE_TTL[timeframe]` vs

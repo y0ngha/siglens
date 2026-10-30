@@ -1,15 +1,11 @@
 import 'server-only';
 import type { Locale } from '@/shared/i18n/locales';
 import {
-    isEtRegularSessionOpen,
     runOverallAnalysis,
-    computeFinancialsScorecard,
     type AssembledPromptRecord,
     type EnrichedNewsItem,
     type MarketEvent,
     type PriorAnalysis,
-    type FinancialsScorecard,
-    type OptionsSnapshot,
     type SubmitOverallAnalysisOptions,
     type RunOverallAnalysisResult,
     type Timeframe,
@@ -21,7 +17,6 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 // Cross-entity(investor-flows): 종합 분석이 수급 점수표를 입력으로 받는다 — `src/entities/CLAUDE.md`
 // "의도적 예외" 표에 등재된 허용 경로.
 import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
@@ -34,15 +29,16 @@ import {
 } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveReasoning } from '@/shared/lib/byokGate';
-// Cross-entity(options-chain): overall은 옵션 스냅샷까지 조합하는 multi-entity
-// orchestration이다 — `src/entities/CLAUDE.md` "의도적 예외" 표에 등재된 허용 경로.
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
-import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import {
     resolveCallerKeyOptions,
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
+import {
+    isOptionsOiStale,
+    loadFinancialsScorecardOrUndefined,
+    loadOptionsSnapshotOrNull,
+} from './overallAxisInputs';
 
 /**
  * 재분석(force) 같이 axis 일반 인자가 아니라 호출자 의도를 전달하기 위한 옵션.
@@ -51,23 +47,22 @@ import {
 export interface SubmitOverallAnalysisActionOptions {
     force?: boolean;
     /**
-     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
-     * spec Part A). Only honored for member/pro tiers — forced `false` for
-     * anonymous/free callers by `resolveReasoning` regardless of this value.
+     * 클라이언트가 요청한 "깊은 생각" 토글 값. 회원·pro tier에서만 반영된다 —
+     * 비회원·무료 호출자는 이 값과 무관하게 `resolveReasoning`이 `false`로 강제한다.
      */
     reasoning?: boolean;
     /**
-     * Prior-analysis-context 히스토리 저장(Task S2)을 위해 그대로 core에
-     * 전달한다 — `OverallDependencyInputs.onPromptAssembled`와 동일 계약
-     * (캐시 미스에서 정확히 한 번, 프로바이더 호출 직전 동기 호출; 동시
-     * 요청의 패자는 호출받지 않음). 여기서 가공하지 않는다.
+     * 이전 분석 히스토리 저장을 위해 그대로 core에 전달한다 —
+     * `OverallDependencyInputs.onPromptAssembled`와 동일 계약(캐시 미스에서 정확히
+     * 한 번, 프로바이더 호출 직전 동기 호출; 동시 요청의 패자는 호출받지 않음).
+     * 여기서 가공하지 않는다.
      */
     onPromptAssembled?: (record: AssembledPromptRecord) => void | Promise<void>;
     /**
-     * Prior-analysis-context 히스토리(Task S3)를 core의 **overall 축**
-     * (top-level `priorAnalyses`)에 그대로 전달한다. `analysisHistoryQuery(timeframe,
-     * 'overall')`로 읽은 값이어야 한다 — technical 축과 recency 윈도우가 다르다
-     * (overall은 `OVERALL_CACHE_TTL_SECONDS`, technical은 `ANALYSIS_CACHE_TTL[timeframe]`).
+     * 이전 분석 히스토리를 core의 **overall 축**(top-level `priorAnalyses`)에 그대로
+     * 전달한다. `analysisHistoryQuery(timeframe, 'overall')`로 읽은 값이어야 한다 —
+     * technical 축과 recency 윈도우가 다르다(overall은 `OVERALL_CACHE_TTL_SECONDS`,
+     * technical은 `ANALYSIS_CACHE_TTL[timeframe]`).
      * 호출자(SSE 라우트)가 core 호출 **이전에** 읽어 넘긴다 — core가 이 값의
      * fingerprint를 캐시 키에 접기 때문에, 캐시 미스에서만 지연 조회하면 같은
      * 요청이 키 계산 시점과 프롬프트 렌더 시점에 서로 다른 히스토리 집합을
@@ -75,10 +70,10 @@ export interface SubmitOverallAnalysisActionOptions {
      */
     priorAnalyses?: readonly PriorAnalysis[];
     /**
-     * Prior-analysis-context 히스토리를 core의 **technical 축**
-     * (`technical.priorAnalyses`)에 전달한다. technical 탭 스트림 경로가
-     * `runAnalysis`에 넘기는 것과 **같은 값**(`analysisHistoryQuery(timeframe,
-     * 'technical')`로 읽은)이어야 그 축이 technical 탭과 캐시 키를 공유한다.
+     * 이전 분석 히스토리를 core의 **technical 축**(`technical.priorAnalyses`)에
+     * 전달한다. technical 탭 스트림 경로가 `runAnalysis`에 넘기는 것과 **같은 값**
+     * (`analysisHistoryQuery(timeframe, 'technical')`로 읽은)이어야 그 축이 technical
+     * 탭과 캐시 키를 공유한다.
      *
      * `priorAnalyses`(overall 축)와 별개 필드다 — 과거엔 하나의 배열을 두 곳에
      * 동시에 흘려보냈는데, 두 축의 recency 윈도우가 다르므로(overall이 하루,
@@ -100,6 +95,7 @@ export interface SubmitOverallAnalysisActionOptions {
     cacheOnly?: boolean;
 }
 
+/** 쿠키 액션과 공개 API가 함께 부르는 {@link executeOverallAnalysis}의 입력. */
 export interface ExecuteOverallAnalysisParams {
     /** 누구의 이름으로 어떤 키로 부르는지 — 쿠키 액션도 공개 API도 호출부가 정해 넘긴다. */
     readonly caller: AnalysisCaller;
@@ -173,29 +169,14 @@ export async function executeOverallAnalysis({
     //
     // news / earnings / options / financials 네 fetch는 서로 독립이므로
     // Promise.all로 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
-    const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =
-        fetchOptionsSnapshot(symbol).catch(error => {
-            console.warn(
-                '[runOverallAnalysisAction] options snapshot fetch failed:',
-                error
-            );
-            return null;
-        });
-
-    /**
-     * fetch/compute 실패 시 undefined로 graceful degradation — financials가
-     * 없어도 나머지 4축으로 종합 분석을 계속 진행한다.
-     */
-    const financialsScorecardPromise: Promise<FinancialsScorecard | undefined> =
-        getFinancialsSnapshot(symbol)
-            .then(snapshot => computeFinancialsScorecard(snapshot))
-            .catch(error => {
-                console.warn(
-                    '[runOverallAnalysisAction] financials scorecard fetch failed:',
-                    error
-                );
-                return undefined;
-            });
+    const optionsSnapshotPromise = loadOptionsSnapshotOrNull(
+        symbol,
+        '[runOverallAnalysisAction]'
+    );
+    const financialsScorecardPromise = loadFinancialsScorecardOrUndefined(
+        symbol,
+        '[runOverallAnalysisAction]'
+    );
 
     // 시장 프로필은 아래에서도 쓴다 — 수급 점수표가 미국 주식에만 붙으므로 먼저 시작해 다른 fetch와 겹친다.
     const marketProfilePromise = resolveMarketProfile(symbol);
@@ -239,24 +220,19 @@ export async function executeOverallAnalysis({
         earningsDatesPromise,
     ]);
 
-    // Overall news axis는 core 안에서 동일한 `runNewsAnalysis`를 호출한다
-    // (dependencyResolver → runNewsAnalysis). `/news` 페이지의 호출과 동일한
-    // news input을 보내야 cache key가 일치해 axis 분석을 그대로 hit한다 —
-    // 두 호출자 모두 `buildAnalysisNewsItems`를 통과해 input pipeline을 통일한다.
+    // 종합의 뉴스 축은 core 안에서 동일한 `runNewsAnalysis`를 호출한다
+    // (dependencyResolver → runNewsAnalysis). `/news` 페이지의 호출과 같은 뉴스 입력을
+    // 보내야 캐시 키가 일치해 축 분석을 그대로 적중한다 — 두 호출자 모두
+    // `buildAnalysisNewsItems`를 통과시켜 입력 파이프라인을 통일한다.
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
 
-    // 정규장 시간대에는 OI=0 비율이 높아도 stale로 보지 않는다 — deep OTM strike
-    // OI 0이 흔하므로 false positive 위험. 정규장 외에서만 stale 휴리스틱 적용.
-    const optionsOiStale =
-        optionsSnapshot !== null &&
-        !isEtRegularSessionOpen(new Date()) &&
-        isOpenInterestSnapshotStale(optionsSnapshot);
+    const optionsOiStale = isOptionsOiStale(optionsSnapshot, new Date());
 
-    // Resolve profile once; derive both assetClass and session spec from it
-    // to avoid a lossy assetClass→profileId round-trip at the sessionSpecFor call.
-    // assetClass lets core treat absent fundamentals/options/earnings as intentional
-    // for crypto (2-axis: technical + news) rather than missing stock data.
+    // 프로필을 한 번만 해석해 assetClass와 세션 스펙을 둘 다 거기서 도출한다 —
+    // `sessionSpecFor` 호출 시 assetClass→profileId로 되돌리며 정보가 손실되는 왕복을
+    // 피한다. assetClass 덕에 core는 암호화폐(technical + news 2축)에서 펀더멘털·옵션·
+    // 실적이 없는 것을 주식 데이터 누락이 아니라 의도로 취급한다.
     const [marketProfile, krxTickTable] = await Promise.all([
         marketProfilePromise,
         krxTickTablePromise,

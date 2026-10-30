@@ -1,36 +1,38 @@
-import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
-import { shareKrxTickTable } from './shareKrxTickTable';
-import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
-import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
-import { ShareKindPanel } from '@/views/share/ShareKindPanel';
-import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
-import { brandName } from '@/shared/lib/brandName';
-import { INVESTMENT_DISCLAIMER_KEY } from '@/shared/lib/legal';
+import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
+import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
 import { resolveLocale } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
+import { cn } from '@/shared/lib/cn';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
+import { INVESTMENT_DISCLAIMER_KEY } from '@/shared/lib/legal';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { ShareKindPanel } from '@/views/share/ShareKindPanel';
+import { shareKrxTickTable } from './shareKrxTickTable';
 
-// 공유 스냅샷은 id별로 달라 정적 생성 불가 → force-dynamic
+/** 공유 스냅샷은 id별로 달라 정적 생성 불가 → force-dynamic. */
 export const dynamic = 'force-dynamic';
 
 interface Props {
     params: Promise<{ locale: string; id: string }>;
 }
 
+/**
+ * 공유 스냅샷의 메타데이터(`buildShareMetadata`). 스냅샷이 없거나 만료됐으면 본문과 같은 판정으로
+ * 여기서도 404를 던진다.
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id, locale } = await params;
     const resolved = resolveLocale(locale);
     // 스냅샷 조회와 번역자 둘은 서로 독립이다 — 직렬로 두면 캐시 미스 시
     // DB 왕복이 끝날 때까지 번역자 로드가 시작조차 하지 않는다.
-    //
-    // OG description의 방향성 라벨도 같은 로케일로 — 예전엔 한국어 상수라
-    // 영어 제목 아래 `강세 · …`가 실려 나갔다.
+    // OG description의 방향성 라벨도 같은 로케일 번역자(`tOg`)로 낸다.
     const [lookup, tSeo, tOg] = await Promise.all([
         getCachedSharedAnalysis(id),
         getTranslations({
@@ -50,19 +52,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return buildShareMetadata(lookup, id, tSeo, resolved, tOg);
 }
 
+/**
+ * 공유된 AI 분석 스냅샷 페이지. 스냅샷이 없거나 만료됐으면 진짜 404를 낸다 — 200 + 만료 안내는
+ * 검색엔진이 soft-404로 분류한다. 만료 문구는 `[locale]/NotFoundMessage`가 `/share/` 경로를 보고
+ * 그린다.
+ */
 export default async function SharePage({ params }: Props) {
     const { locale: rawLocale, id } = await params;
     const locale = enterLocale(rawLocale);
-    const t = await getTranslations('app.share');
-    const lookup = await getCachedSharedAnalysis(id);
+    // 번역자와 스냅샷 조회는 서로 독립이라 함께 기다린다.
+    const [t, lookup] = await Promise.all([
+        getTranslations('app.share'),
+        getCachedSharedAnalysis(id),
+    ]);
 
-    if (lookup.status !== 'found') {
-        // 진짜 404를 낸다. 예전에는 200 + 친절한 만료 안내였는데, 그 조합이
-        // GSC에서 soft-404로 분류돼(2026-09 구글 정책 감사) 색인 품질 신호를 깎았다.
-        // 문구는 잃지 않는다 — `[locale]/NotFoundMessage`가 `/share/` 경로를 보고
-        // 같은 만료 안내를 그린다.
-        notFound();
-    }
+    if (lookup.status !== 'found') notFound();
 
     const { snapshot, createdAt } = lookup;
     const ticker = snapshot.symbol.toUpperCase();
@@ -132,8 +136,7 @@ export default async function SharePage({ params }: Props) {
             <div className="mt-8 text-center">
                 <Link
                     href={`/${ticker}`}
-                    // 종목 RSC(~1.7MB)를 페이지 열자마자 당기지 않는다 — 클릭 시점 로드
-                    // (docs/architecture/CDN_CACHING.md §1).
+                    // 종목 RSC(~1.7MB)를 페이지 열자마자 당기지 않는다 — 클릭 시점에 로드한다.
                     prefetch={false}
                     className="inline-flex items-center rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >

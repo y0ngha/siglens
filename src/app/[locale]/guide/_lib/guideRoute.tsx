@@ -6,17 +6,18 @@ import {
     type GuideCategory,
     type GuideEntry,
 } from '@/entities/guide/types';
+import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
 import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import type { Locale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
 import {
     localeAlternatesFrom,
     localePageRobots,
     localePageSocial,
 } from '@/shared/lib/seoAlternates';
-import { brandTitle } from '@/shared/lib/brandName';
-import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
 
+/** 가이드 라우트 공통 `params`(로케일 세그먼트). `localeAlternatesFrom`에 그대로 넘긴다. */
 export type GuideRouteParams = Promise<{ locale: string }>;
 
 /** 분류 세그먼트를 검증한다. 모르는 분류는 404 — 카탈로그를 읽기 전에 거른다. */
@@ -36,6 +37,17 @@ export function requireEntry(
     );
     if (entry === undefined) notFound();
     return entry;
+}
+
+/**
+ * 한 분류에 속한 항목만 고른다 — 분류 페이지의 `generateMetadata`(개수·404 판정)와 본문이
+ * 같은 술어를 보게 하는 단일 소스.
+ */
+export function entriesInCategory(
+    entries: readonly GuideEntry[],
+    category: GuideCategory
+): GuideEntry[] {
+    return entries.filter(entry => entry.category === category);
 }
 
 /**

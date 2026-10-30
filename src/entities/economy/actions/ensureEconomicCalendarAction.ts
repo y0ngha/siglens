@@ -5,9 +5,9 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { ingestEconomicCalendar } from '../api/ingestEconomicCalendar';
 import {
     CALENDAR_COUNTRY,
-    type CalendarCountry,
     isCalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * Server Action: 국가별 경제 캘린더를 FMP에서 적재한다. 본문은

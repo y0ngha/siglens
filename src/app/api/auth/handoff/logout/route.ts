@@ -8,10 +8,8 @@ import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    aiSignedOutUrl,
-    consumeLogoutCode,
-} from '@/entities/auth/lib/handoffStore';
+import { aiSignedOutUrl } from '@/entities/auth/lib/handoffRedirect';
+import { consumeLogoutCode } from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
