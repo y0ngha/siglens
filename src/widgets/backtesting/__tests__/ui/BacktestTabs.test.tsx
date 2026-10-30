@@ -33,10 +33,15 @@ vi.mock('@/features/backtest-filter/hooks/useBacktestFilter', () => ({
     useBacktestFilter: mockUseBacktestFilter,
 }));
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
-import { BacktestTabs } from '../BacktestTabs';
-import { UNFILTERED_TOKEN, visibilityAttrs } from '../lib/caseListVisibility';
+import { BacktestTabs } from '../../BacktestTabs';
+import {
+    cardAttrs,
+    EMPTY_ATTR,
+    UNFILTERED_TOKEN,
+    visibilityAttrs,
+} from '../../utils/caseListVisibility';
 
 function filterState(overrides: Record<string, unknown> = {}) {
     return {
@@ -56,6 +61,9 @@ function filterState(overrides: Record<string, unknown> = {}) {
 function ServerList() {
     return (
         <div>
+            <p data-testid="empty" hidden {...{ [EMPTY_ATTR]: '' }}>
+                비어 있음
+            </p>
             <details
                 data-testid="month-jun"
                 open
@@ -78,7 +86,7 @@ function ServerList() {
                 </summary>
                 <div
                     data-testid="card-aapl"
-                    {...visibilityAttrs([UNFILTERED_TOKEN, 'AAPL'])}
+                    {...cardAttrs([UNFILTERED_TOKEN, 'AAPL'])}
                 />
             </details>
             <details
@@ -88,7 +96,35 @@ function ServerList() {
                 <summary>May</summary>
                 <div
                     data-testid="card-nvda"
-                    {...visibilityAttrs([UNFILTERED_TOKEN, 'NVDA'])}
+                    {...cardAttrs([UNFILTERED_TOKEN, 'NVDA'])}
+                />
+            </details>
+        </div>
+    );
+}
+
+/** 서버 컴포넌트 새로고침으로 바뀐 뒤의 목록: 서버 HTML 그대로(전부 보임, 접힘) 들어온다. */
+function RefreshedList() {
+    return (
+        <div>
+            <details
+                data-testid="month-apr"
+                {...visibilityAttrs([UNFILTERED_TOKEN, 'AAPL'])}
+            >
+                <summary>Apr</summary>
+                <div
+                    data-testid="card-aapl-apr"
+                    {...cardAttrs([UNFILTERED_TOKEN, 'AAPL'])}
+                />
+            </details>
+            <details
+                data-testid="month-mar"
+                {...visibilityAttrs([UNFILTERED_TOKEN, 'NVDA'])}
+            >
+                <summary>Mar</summary>
+                <div
+                    data-testid="card-nvda-mar"
+                    {...cardAttrs([UNFILTERED_TOKEN, 'NVDA'])}
                 />
             </details>
         </div>
@@ -209,5 +245,90 @@ describe('BacktestTabs', () => {
         expect(
             (screen.getByTestId('month-jun') as HTMLDetailsElement).open
         ).toBe(false);
+    });
+
+    describe('서버 목록이 새로고침으로 바뀔 때', () => {
+        it('종목 탭이 켜져 있으면 새 요소도 다시 거르고 새 월은 펼친다', async () => {
+            mockUseBacktestFilter.mockReturnValue(
+                filterState({ activeTab: 'AAPL', isFiltered: true })
+            );
+            const { rerender } = renderTabs();
+
+            rerender(
+                <BacktestTabs tickers={['AAPL', 'NVDA']}>
+                    <RefreshedList />
+                </BacktestTabs>
+            );
+
+            await waitFor(() =>
+                expect(screen.getByTestId('card-nvda-mar')).toHaveAttribute(
+                    'hidden'
+                )
+            );
+            expect(screen.getByTestId('month-mar')).toHaveAttribute('hidden');
+            expect(screen.getByTestId('card-aapl-apr')).not.toHaveAttribute(
+                'hidden'
+            );
+            expect(
+                (screen.getByTestId('month-apr') as HTMLDetailsElement).open
+            ).toBe(true);
+        });
+
+        it('새로 들어온 월의 서버 펼침 상태를 기억해 전체 탭에서 되돌린다', async () => {
+            mockUseBacktestFilter.mockReturnValue(
+                filterState({ activeTab: 'AAPL', isFiltered: true })
+            );
+            const { rerender } = renderTabs();
+            rerender(
+                <BacktestTabs tickers={['AAPL', 'NVDA']}>
+                    <RefreshedList />
+                </BacktestTabs>
+            );
+            await waitFor(() =>
+                expect(
+                    (screen.getByTestId('month-apr') as HTMLDetailsElement).open
+                ).toBe(true)
+            );
+
+            mockUseBacktestFilter.mockReturnValue(filterState());
+            rerender(
+                <BacktestTabs tickers={['AAPL', 'NVDA']}>
+                    <RefreshedList />
+                </BacktestTabs>
+            );
+
+            expect(
+                (screen.getByTestId('month-apr') as HTMLDetailsElement).open
+            ).toBe(false);
+            expect(screen.getByTestId('month-mar')).not.toHaveAttribute(
+                'hidden'
+            );
+        });
+    });
+
+    describe('보이는 카드가 없을 때의 안내', () => {
+        it('고른 종목에 카드가 없으면 안내를 드러낸다', () => {
+            mockUseBacktestFilter.mockReturnValue(
+                filterState({ activeTab: 'ZZZ', isFiltered: true })
+            );
+            renderTabs();
+
+            expect(screen.getByTestId('empty')).not.toHaveAttribute('hidden');
+        });
+
+        it('카드가 하나라도 보이면 안내는 숨는다', () => {
+            mockUseBacktestFilter.mockReturnValue(
+                filterState({ activeTab: 'AAPL', isFiltered: true })
+            );
+            renderTabs();
+
+            expect(screen.getByTestId('empty')).toHaveAttribute('hidden');
+        });
+
+        it('전체 탭에서는 안내가 숨는다', () => {
+            renderTabs();
+
+            expect(screen.getByTestId('empty')).toHaveAttribute('hidden');
+        });
     });
 });

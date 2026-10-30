@@ -1472,11 +1472,15 @@
             "descriptionFlowsKr": "5%大量保有、役員所有の開示とAIの読み解き"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "損切り",
+                "take_profit": "利益確定",
+                "time": "期間満了"
+            },
             "backtestRiskLevel": {
                 "extreme": "リスク極高",
                 "high": "リスク高",
                 "low": "リスク低",
-                "medium": "リスク中",
                 "moderate": "リスク中"
             },
             "chamber": {
@@ -3637,11 +3641,9 @@
                 "456225": "目標価格:",
                 "06cf3e": "<n>{v0}</n>日",
                 "0f8bf6": "AIエントリー推奨",
-                "1e38a3": "損切り",
                 "31e4d3": "買い",
                 "540e42": "AIによる様子見推奨",
                 "58b71d": "AI予測レベル",
-                "62a65c": "売り",
                 "6c8ca5": "AI回避推奨",
                 "75a556": "根拠:",
                 "b19f09": "損失",
@@ -3650,8 +3652,9 @@
                 "fa9de3": "✓ 達成"
             },
             "BacktestCaseList": {
-                "9018e2": "該当銘柄のケースはありません。",
-                "caseCount": "{v0}件"
+                "caseCount": "{v0}件",
+                "emptyDataset": "表示できるケースがありません。",
+                "emptyFiltered": "選択した銘柄に該当するケースはありません。"
             },
             "BacktestHero": {
                 "116858": "実際の市場データで検証したバックテスト結果です。",

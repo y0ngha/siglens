@@ -1472,11 +1472,15 @@
             "descriptionFlowsKr": "5% major-holder and insider ownership filings with an AI reading"
         },
         "enumLabel": {
+            "backtestExitReason": {
+                "stop_loss": "Stop Loss",
+                "take_profit": "Take Profit",
+                "time": "Time Limit"
+            },
             "backtestRiskLevel": {
                 "extreme": "Extreme Risk",
                 "high": "High Risk",
                 "low": "Low Risk",
-                "medium": "Medium Risk",
                 "moderate": "Medium Risk"
             },
             "chamber": {
@@ -3637,11 +3641,9 @@
                 "456225": "Target Price:",
                 "06cf3e": "<n>{v0}</n> {v0, plural, one {day} other {days}}",
                 "0f8bf6": "AI Entry Recommendation",
-                "1e38a3": "Stop Loss",
                 "31e4d3": "Buy",
                 "540e42": "AI Hold Recommendation",
                 "58b71d": "AI Prediction Level",
-                "62a65c": "Sell",
                 "6c8ca5": "AI Avoid Recommendation",
                 "75a556": "Reason:",
                 "b19f09": "Loss",
@@ -3650,8 +3652,9 @@
                 "fa9de3": "✓ Reached"
             },
             "BacktestCaseList": {
-                "9018e2": "No cases for this stock.",
-                "caseCount": "{v0} cases"
+                "caseCount": "{v0} cases",
+                "emptyDataset": "No cases to display.",
+                "emptyFiltered": "No cases for the selected stock."
             },
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
