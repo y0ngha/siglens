@@ -3,13 +3,13 @@
 import { useSyncExternalStore } from 'react';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 
-/** Pixels of travel in one direction before the chrome flips — ignores jitter. */
+/** 크롬이 뒤집히기 전에 한 방향으로 움직여야 하는 픽셀 — 떨림을 무시한다. */
 const SCROLL_DIRECTION_THRESHOLD_PX = 8;
-/** Near the top of the page the chrome always shows. */
+/** 페이지 맨 위 근처에서는 크롬을 항상 보여 준다. */
 const ALWAYS_VISIBLE_TOP_PX = 56;
 /**
- * How long after the last touch/wheel/key input a scroll still counts as the
- * user's. Covers iOS momentum after the finger lifts (≈1–1.5s).
+ * 마지막 터치·휠·키 입력 뒤 이 시간 안의 스크롤만 사용자 스크롤로 본다.
+ * 손가락을 뗀 뒤 이어지는 iOS 관성 스크롤(≈1–1.5초)을 덮는다.
  */
 const USER_SCROLL_WINDOW_MS = 1_500;
 const USER_INPUT_EVENTS = [
@@ -38,7 +38,7 @@ function update(next: Partial<ScrollChromeState>): void {
     for (const listener of listeners) listener();
 }
 
-/** Attaches the window listeners once, for all subscribers. */
+/** 모든 구독자를 위해 window 리스너를 한 번만 단다. */
 function startListening(): () => void {
     // `lg` 경계여야 한다 — 호출부가 크롬을 숨기는 경계(`Header.tsx`의
     // `max-lg:-translate-y-full`, `ChatShell.tsx`의 `lg:hidden` 바)와 같아야 하기 때문이다.
@@ -66,18 +66,16 @@ function startListening(): () => void {
             return;
         }
         if (performance.now() - lastUserInputAt > USER_SCROLL_WINDOW_MS) {
-            // Programmatic scroll (auto-pin while streaming): follow it
-            // silently so the next user gesture measures from here.
+            // 프로그램이 일으킨 스크롤(스트리밍 중 자동 고정)은 상태를 바꾸지 않고
+            // 따라가기만 해서, 다음 사용자 제스처가 여기서부터 거리를 잰다.
             anchorY = y;
             return;
         }
         const delta = y - anchorY;
         if (Math.abs(delta) < SCROLL_DIRECTION_THRESHOLD_PX) return;
-        // `inert` blurs focus when it lands on the element it's applied to.
-        // Hiding while the user is mid-interaction with a control inside the
-        // chrome (the drawer trigger, a header link) would yank focus away
-        // under them — so a downward scroll only hides while focus is
-        // elsewhere.
+        // `inert`가 걸린 요소 안에 포커스가 있으면 포커스가 풀린다. 사용자가 크롬 안의
+        // 컨트롤(드로어 트리거, 헤더 링크)을 쓰는 도중에 숨기면 포커스를 빼앗게 되므로,
+        // 아래로 스크롤해도 포커스가 크롬 밖에 있을 때만 숨긴다.
         if (
             delta > 0 &&
             document.activeElement?.closest('[data-scroll-chrome]')
@@ -116,7 +114,7 @@ function subscribe(listener: () => void): () => void {
     };
 }
 
-// Ignores its listener: a disabled caller never subscribes to the window.
+// 리스너를 무시한다: 비활성 호출부는 window를 구독하지 않는다.
 const subscribeNothing =
     (_onStoreChange: () => void): (() => void) =>
     () => {};
@@ -124,28 +122,24 @@ const getSnapshot = (): ScrollChromeState => state;
 const getServerSnapshot = (): ScrollChromeState => INITIAL_STATE;
 
 /**
- * `true` while the window is being scrolled down, `false` once it scrolls back up
- * (or sits near the top). Drives "hide the header on the way down, bring it back
- * on the way up" so a phone keeps its height for the conversation but a small
- * upward flick reveals navigation again (2026-09-15 사용자 요청).
+ * 창이 아래로 스크롤되는 동안 `true`, 다시 위로 스크롤하거나 맨 위 근처면 `false`.
+ * "내려갈 때 헤더를 숨기고 올릴 때 되돌린다" — 폰에서는 대화에 높이를 내주되 살짝
+ * 위로 튕기면 내비게이션이 다시 나타난다.
  *
- * Window scroll only: the chat transcript grows the page and the composer is
- * `sticky bottom-0`, so the document is what scrolls.
+ * 창 스크롤만 본다: 채팅 대화록이 페이지를 키우고 입력창이 `sticky bottom-0`이라
+ * 스크롤되는 것은 문서다.
  *
- * Only scrolls that follow user input flip the state. The transcript pins itself
- * to the bottom with `scrollIntoView` on every streamed token, which moves the
- * window too; counting that as "scrolling down" would yank the header away on
- * every answer.
+ * 사용자 입력에 이어진 스크롤만 상태를 뒤집는다. 대화록은 토큰이 스트리밍될 때마다
+ * `scrollIntoView`로 맨 아래에 붙는데 이것도 창을 움직이므로, 이를 "아래로 스크롤"로
+ * 세면 답변마다 헤더가 사라진다.
  *
- * Always `false` at `lg` and above — see `BELOW_LG_MEDIA_QUERY`.
+ * `lg` 이상에서는 항상 `false` — `BELOW_LG_MEDIA_QUERY` 참고.
  *
- * **One shared state for every caller.** The site header (in the ai layout) and
- * ChatShell's conversation bar must move together, but they mount at different
- * times: ChatShell remounts on every conversation switch while the header stays.
- * With per-instance state the new bar started "shown" under a header that was
- * still "hidden" — the bar floated over the transcript with nothing above it
- * (2026-09-15 사용자 제보, mid-scroll conversation switch). A module-level store
- * read through `useSyncExternalStore` gives a late subscriber the current value.
+ * **모든 호출부가 상태 하나를 공유한다.** 사이트 헤더(ai 레이아웃)와 ChatShell의
+ * 대화 바는 함께 움직여야 하는데 마운트 시점이 다르다: 대화를 바꿀 때마다 ChatShell은
+ * 다시 마운트되지만 헤더는 그대로다. 인스턴스별 상태면 새 바가 "보임"으로 시작해 아직
+ * "숨김"인 헤더 아래에서 위에 아무것도 없이 대화록 위에 떠 있게 된다. 모듈 수준 스토어를
+ * `useSyncExternalStore`로 읽으면 늦게 구독한 쪽도 현재 값을 받는다.
  */
 export function useHideOnScrollDown({
     enabled = true,

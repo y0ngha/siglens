@@ -35,17 +35,20 @@ vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
             upsertMarketNewsItem: vi.fn(async () => true),
             attachAnalysis: vi.fn(async () => undefined),
             listByCategory: vi.fn(async () => []),
-            // 분석 여부 판정은 id 집합만 읽는다(감사: 비용 라운드 15).
+            // 분석 여부 판정은 id 집합만 읽는다.
             listAnalyzedIds: vi.fn(async () => new Set<string>()),
         };
     }),
     getMarketNewsList: vi.fn(),
     getMarketNewsCards: vi.fn(),
+}));
+
+vi.mock('../api/marketNewsRefreshFlags', () => ({
     isRecentlyFetched: vi.fn(async () => false),
     markFetched: vi.fn(async () => undefined),
 }));
 
-vi.mock('../lib/getMarketNewsClient', () => ({
+vi.mock('../api/getMarketNewsClient', () => ({
     getMarketNewsClient: vi.fn(() => ({
         fetchCategoryNews: vi.fn(async () => [
             {
@@ -65,8 +68,9 @@ vi.mock('../lib/getMarketNewsClient', () => ({
 // 2. Static imports — grouped after all vi.mock() calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ensureMarketNewsCardsAnalyzedAction } from '../actions/ensureMarketNewsCardsAnalyzedAction';
+import * as flags from '../api/marketNewsRefreshFlags';
 import * as api from '../api/marketNewsRepository';
-import * as getMarketNewsClientModule from '../lib/getMarketNewsClient';
+import * as getMarketNewsClientModule from '../api/getMarketNewsClient';
 import * as core from '@y0ngha/siglens-core';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 
@@ -109,8 +113,8 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset module-level mocks (isRecentlyFetched / markFetched)
-        vi.mocked(api.isRecentlyFetched).mockResolvedValue(false);
-        vi.mocked(api.markFetched).mockResolvedValue(undefined);
+        vi.mocked(flags.isRecentlyFetched).mockResolvedValue(false);
+        vi.mocked(flags.markFetched).mockResolvedValue(undefined);
         // Reset core mocks
         vi.mocked(core.runNewsCardAnalysis).mockResolvedValue({
             status: 'done',
@@ -267,7 +271,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     });
 
     it('refresh 플래그가 세팅돼 있으면(isRecentlyFetched=true) FMP fetch를 건너뛴다', async () => {
-        vi.mocked(api.isRecentlyFetched).mockResolvedValue(true);
+        vi.mocked(flags.isRecentlyFetched).mockResolvedValue(true);
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         expect(
@@ -276,7 +280,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     });
 
     it('refresh 플래그가 세팅돼 있으면 두 번째 호출도 FMP fetch를 건너뛴다', async () => {
-        vi.mocked(api.isRecentlyFetched).mockResolvedValue(true);
+        vi.mocked(flags.isRecentlyFetched).mockResolvedValue(true);
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         expect(
@@ -286,8 +290,8 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
 
     it('isRecentlyFetched=false면 markFetched를 fetch 전에 호출한다(dedup sentinel)', async () => {
         await ensureMarketNewsCardsAnalyzedAction('crypto');
-        expect(api.markFetched).toHaveBeenCalledWith('__NEWS_CRYPTO__');
-        expect(api.markFetched).toHaveBeenCalledTimes(1);
+        expect(flags.markFetched).toHaveBeenCalledWith('__NEWS_CRYPTO__');
+        expect(flags.markFetched).toHaveBeenCalledTimes(1);
     });
 
     it('정상 호출 시 FMP fetch와 upsert가 진행되고 LLM 분석도 트리거된다', async () => {
@@ -300,7 +304,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         // LLM analysis was triggered
         expect(core.runNewsCardAnalysis).toHaveBeenCalled();
         // Refresh flag was marked at the start (before fetch)
-        expect(api.markFetched).toHaveBeenCalledWith('__NEWS_CRYPTO__');
+        expect(flags.markFetched).toHaveBeenCalledWith('__NEWS_CRYPTO__');
     });
 
     /**
@@ -692,7 +696,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         ).toHaveBeenCalledTimes(1);
 
         // Simulate flag now set by first call
-        vi.mocked(api.isRecentlyFetched).mockResolvedValue(true);
+        vi.mocked(flags.isRecentlyFetched).mockResolvedValue(true);
 
         // Second concurrent-style call
         await ensureMarketNewsCardsAnalyzedAction('crypto');

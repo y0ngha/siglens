@@ -22,9 +22,10 @@ const summaryColumns = {
 };
 
 /**
- * Drizzle repository for `siglens_api_keys`. Reads that sit on the request path
- * (`findActivePrincipalByHash`) deliberately do NOT use `withRetry`: the auth caller already
- * degrades to 503, and a retry ladder would hold a bearer request for seconds.
+ * `siglens_api_keys`(와 `users.api_default_model`) Drizzle 저장소. 요청 경로에 놓인 읽기
+ * (`findActivePrincipalByHash`, `findApiDefaultModel`)와 쓰기(`touchLastUsed`)는 의도적으로
+ * `withRetry`를 쓰지 않는다 — 인증 호출부가 이미 503으로 낮추고, 재시도 사다리는 Bearer 요청을
+ * 수 초 붙잡는다.
  */
 export class DrizzleSiglensApiKeyRepository {
     constructor(private readonly db: SiglensDatabase) {}

@@ -1,47 +1,16 @@
 import 'server-only';
+import {
+    buildRateLimitSnapshot,
+    counterKey,
+    listRateSlots,
+    verdictFor,
+    windowId,
+    type RateLimitSnapshot,
+    type RateLimitVerdict,
+    type WindowId,
+} from '@/entities/siglens-api-key/lib/rateLimitWindow';
 import { getRedisClient } from '@/shared/cache/redisClient';
-import {
-    PUBLIC_API_RATE_BUCKETS,
-    PUBLIC_API_RATE_LIMITS,
-    type PublicApiRateBucket,
-} from '@/shared/config/publicApi';
-import {
-    MS_PER_SECOND,
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-    SECONDS_PER_MINUTE,
-} from '@/shared/config/time';
-
-const KEY_PREFIX = 'siglens-api:rl:';
-/** 창이 끝난 뒤에도 키가 잠시 남는 여유 — 시계 오차로 창 경계에서 키가 먼저 사라지지 않게. */
-const MINUTE_KEY_TTL_SECONDS = SECONDS_PER_MINUTE * 2;
-const DAY_KEY_TTL_SECONDS = SECONDS_PER_DAY + SECONDS_PER_HOUR;
-
-const RATE_LIMIT_WINDOWS = ['minute', 'day'] as const;
-export type RateLimitWindow = (typeof RATE_LIMIT_WINDOWS)[number];
-
-export interface RateLimitVerdict {
-    allowed: boolean;
-    /** 이번 응답 헤더가 가리키는 창. 허용이면 항상 `minute`, 거절이면 한도를 넘긴 창. */
-    window: RateLimitWindow;
-    limit: number;
-    remaining: number;
-    /** 창이 끝나는 시각(epoch seconds). */
-    resetAtEpochSeconds: number;
-    /** 거절일 때만 의미 있다: 다음 창까지 남은 초(≥1). */
-    retryAfterSeconds: number;
-}
-
-export interface RateWindowSnapshot {
-    limit: number;
-    remaining: number;
-    resetAtEpochSeconds: number;
-}
-
-export type RateLimitSnapshot = Record<
-    PublicApiRateBucket,
-    Record<RateLimitWindow, RateWindowSnapshot>
->;
+import type { PublicApiRateBucket } from '@/shared/config/publicApi';
 
 /**
  * 한도 저장소(Redis)를 쓸 수 없다. API는 외부 공개면이라 fail-open하지 않는다 —
@@ -52,42 +21,6 @@ export class RateLimiterUnavailableError extends Error {
         super('Rate limiter unavailable', options);
         this.name = 'RateLimiterUnavailableError';
     }
-}
-
-interface WindowId {
-    window: RateLimitWindow;
-    id: number;
-    resetAtEpochSeconds: number;
-    ttlSeconds: number;
-}
-
-function windowId(window: RateLimitWindow, now: Date): WindowId {
-    const nowSec = Math.floor(now.getTime() / MS_PER_SECOND);
-    const length = window === 'minute' ? SECONDS_PER_MINUTE : SECONDS_PER_DAY;
-    const id = Math.floor(nowSec / length);
-    return {
-        window,
-        id,
-        resetAtEpochSeconds: (id + 1) * length,
-        ttlSeconds:
-            window === 'minute' ? MINUTE_KEY_TTL_SECONDS : DAY_KEY_TTL_SECONDS,
-    };
-}
-
-function counterKey(
-    userId: string,
-    bucket: PublicApiRateBucket,
-    w: WindowId
-): string {
-    return `${KEY_PREFIX}${userId}:${bucket}:${w.window === 'minute' ? 'm' : 'd'}:${w.id}`;
-}
-
-function limitFor(
-    bucket: PublicApiRateBucket,
-    window: RateLimitWindow
-): number {
-    const limits = PUBLIC_API_RATE_LIMITS[bucket];
-    return window === 'minute' ? limits.perMinute : limits.perDay;
 }
 
 /**
@@ -117,28 +50,6 @@ async function incrementWindow(
         console.error('[publicApiRateLimit] redis error:', cause);
         throw new RateLimiterUnavailableError({ cause });
     }
-}
-
-function verdictFor(
-    bucket: PublicApiRateBucket,
-    w: WindowId,
-    count: number,
-    now: Date
-): RateLimitVerdict {
-    const limit = limitFor(bucket, w.window);
-    const allowed = count <= limit;
-    const retryAfterSeconds = Math.max(
-        1,
-        w.resetAtEpochSeconds - Math.floor(now.getTime() / MS_PER_SECOND)
-    );
-    return {
-        allowed,
-        window: w.window,
-        limit,
-        remaining: Math.max(0, limit - count),
-        resetAtEpochSeconds: w.resetAtEpochSeconds,
-        retryAfterSeconds,
-    };
 }
 
 /**
@@ -184,41 +95,12 @@ export async function peekRateLimits(
 ): Promise<RateLimitSnapshot | null> {
     const redis = getRedisClient();
     if (redis === null) return null;
-    const slots = PUBLIC_API_RATE_BUCKETS.flatMap(bucket =>
-        RATE_LIMIT_WINDOWS.map(window => ({
-            bucket,
-            window,
-            w: windowId(window, now),
-        }))
-    );
+    const slots = listRateSlots(now);
     try {
         const counts = await redis.mget<(number | string | null)[]>(
             ...slots.map(({ bucket, w }) => counterKey(userId, bucket, w))
         );
-        const snapshotOf = (
-            bucket: PublicApiRateBucket,
-            window: RateLimitWindow
-        ): RateWindowSnapshot => {
-            const index = slots.findIndex(
-                slot => slot.bucket === bucket && slot.window === window
-            );
-            const limit = limitFor(bucket, window);
-            return {
-                limit,
-                remaining: Math.max(0, limit - Number(counts[index] ?? 0)),
-                resetAtEpochSeconds: slots[index].w.resetAtEpochSeconds,
-            };
-        };
-        return {
-            data: {
-                minute: snapshotOf('data', 'minute'),
-                day: snapshotOf('data', 'day'),
-            },
-            ai: {
-                minute: snapshotOf('ai', 'minute'),
-                day: snapshotOf('ai', 'day'),
-            },
-        };
+        return buildRateLimitSnapshot(slots, counts);
     } catch (error) {
         console.error('[publicApiRateLimit] peek failed:', error);
         return null;

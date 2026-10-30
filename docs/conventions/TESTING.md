@@ -299,6 +299,8 @@ Use exact matchers when the value is deterministic, avoid compound boolean asser
 
 Import and exercise the real function; a local redefinition makes the test tautological. Expected values that the module exports (labels, thresholds) are imported too, not retyped.
 
+Exception: persisted or wire-level strings (storage keys, persisted event names, cookie names) are a contract with data already stored elsewhere. Pin them as literals in at least one test, especially when they are built by a factory or composed from a prefix; asserting against the same constant lets a rename pass while silently orphaning stored data.
+
 - ❌ `const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true)`.
 - ✅ `import { shouldShowAd } from '@/shared/lib/ads'`.
 - ❌ A fixed-window test hard-codes `2021-06-25`, or a guard asserts `version === 6`; changing the constant or adding a version leaves the test silently checking the old value. ✅ Derive the date from the exported constant and the latest version from the data.

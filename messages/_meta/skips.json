@@ -895,91 +895,91 @@
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 76,
+        "line": 78,
         "reason": "catalog-backed-data",
         "text": "미국 일반 시장"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 77,
+        "line": 79,
         "reason": "catalog-backed-data",
         "text": "미국 전반적인 시장 흐름과 거시 경제 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 88,
+        "line": 90,
         "reason": "catalog-backed-data",
         "text": "미국 주식"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 90,
+        "line": 92,
         "reason": "catalog-backed-data",
         "text": "미국 주식 시장의 주요 종목 뉴스와 실적 이슈를 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 101,
+        "line": 103,
         "reason": "catalog-backed-data",
         "text": "암호화폐"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 103,
+        "line": 105,
         "reason": "catalog-backed-data",
         "text": "비트코인, 이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 114,
+        "line": 116,
         "reason": "catalog-backed-data",
         "text": "미국 외환"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 116,
+        "line": 118,
         "reason": "catalog-backed-data",
         "text": "달러, 엔, 유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 127,
+        "line": 129,
         "reason": "catalog-backed-data",
         "text": "미국 마켓 아티클"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 129,
+        "line": 131,
         "reason": "catalog-backed-data",
         "text": "FMP 리서치팀이 작성한 심층 마켓 분석 아티클을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 139,
+        "line": 141,
         "reason": "catalog-backed-data",
         "text": "코스피"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 139,
+        "line": 141,
         "reason": "catalog-backed-data",
         "text": "코스닥"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 139,
+        "line": 141,
         "reason": "catalog-backed-data",
         "text": "국내 증시"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 143,
+        "line": 145,
         "reason": "catalog-backed-data",
         "text": "한국 증시"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 145,
+        "line": 147,
         "reason": "catalog-backed-data",
         "text": "코스피, 코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },

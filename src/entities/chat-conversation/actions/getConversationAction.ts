@@ -2,34 +2,25 @@
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleChatConversationRepository } from '../api';
-import { toMessageView, type ChatMessageView } from '../model';
 import { logActionError } from '@/shared/lib/logActionError';
-
-export interface ConversationDetail {
-    id: string;
-    title: string;
-    messages: ChatMessageView[];
-}
+import { DrizzleChatConversationRepository } from '../api';
+import { toMessageView, type ConversationDetail } from '../model';
 
 /**
- * Owner-scoped conversation lookup: `null` for missing, another user's
- * conversation, a malformed id, or a DB failure — no distinction is leaked
- * to the client between "doesn't exist" and "not yours" (or "storage
- * unavailable"). `superseded` rows (regenerate leftovers) are filtered out.
+ * 소유자 범위 대화 조회. 없는 대화·타인의 대화·형식이 틀린 id·세션/DB 실패는 모두 `null`이라
+ * 클라이언트는 "없음"과 "내 것이 아님"(또는 저장소 장애)을 구분할 수 없다. regenerate 잔여인
+ * `superseded` 행은 걸러 낸다.
  */
 export async function getConversationAction(
     id: string
 ): Promise<ConversationDetail | null> {
-    const user = await getCurrentUser();
-    if (!user) return null;
-
-    // Server-action args are attacker-controlled at runtime regardless of
-    // the declared `string` parameter type — a hostile client can post any
-    // JSON value.
-    if (typeof id !== 'string') return null;
-
     try {
+        const user = await getCurrentUser();
+        if (!user) return null;
+
+        // 서버 액션 인자는 선언 타입과 무관하게 런타임에 임의 JSON이 올 수 있다.
+        if (typeof id !== 'string') return null;
+
         const repo = new DrizzleChatConversationRepository(
             getDatabaseClient().db
         );

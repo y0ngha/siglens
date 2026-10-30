@@ -11,20 +11,24 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 }));
 vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: vi.fn(),
+}));
+vi.mock('../api/marketNewsRefreshFlags', () => ({
     isRecentlyFetched: vi.fn(),
     markFetched: vi.fn(),
 }));
-vi.mock('../lib/getMarketNewsClient', () => ({
+vi.mock('../api/getMarketNewsClient', () => ({
     getMarketNewsClient: vi.fn(),
 }));
 
 // 2. Static imports
+import { inspect } from 'node:util';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { revalidateTag } from 'next/cache';
 import * as core from '@y0ngha/siglens-core';
 import { ingestMarketNewsCategory } from '../api/ingestMarketNewsCategory';
+import * as flagsModule from '../api/marketNewsRefreshFlags';
 import * as repoModule from '../api/marketNewsRepository';
-import * as clientModule from '../lib/getMarketNewsClient';
+import * as clientModule from '../api/getMarketNewsClient';
 
 function makeItem(id: string) {
     return {
@@ -76,8 +80,8 @@ function setupFeed(
 describe('ingestMarketNewsCategory', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(repoModule.isRecentlyFetched).mockResolvedValue(false);
-        vi.mocked(repoModule.markFetched).mockResolvedValue(undefined);
+        vi.mocked(flagsModule.isRecentlyFetched).mockResolvedValue(false);
+        vi.mocked(flagsModule.markFetched).mockResolvedValue(undefined);
         vi.mocked(core.runNewsCardAnalysis).mockResolvedValue(DONE as never);
     });
 
@@ -129,6 +133,34 @@ describe('ingestMarketNewsCategory', () => {
         );
     });
 
+    it('보강 저장 DB 오류의 바인딩 값을 로그에 싣지 않고 실패는 analyzed에서 뺀다', async () => {
+        setupFeed([makeItem('a')]);
+        attachAnalysis.mockRejectedValue(
+            Object.assign(
+                new Error('Failed query: update ... params: 비밀 요약 본문'),
+                { cause: { code: '57014' } }
+            )
+        );
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await ingestMarketNewsCategory('forex', {
+            logLabel: 'test',
+        });
+
+        expect(result).toMatchObject({ status: 'ok', analyzed: 0 });
+        expect(errorSpy).toHaveBeenCalledWith('[test] attachAnalysis failed', {
+            name: 'Error',
+            code: '57014',
+        });
+        // Error의 message는 JSON.stringify에 안 잡히므로 inspect로 펼쳐 확인한다.
+        expect(inspect(errorSpy.mock.calls, { depth: 6 })).not.toContain(
+            '비밀'
+        );
+        errorSpy.mockRestore();
+    });
+
     it('빈 분석은 저장하지 않고 analyzed로 세지 않는다', async () => {
         setupFeed([makeItem('a')]);
         vi.mocked(core.runNewsCardAnalysis).mockResolvedValue({
@@ -151,7 +183,7 @@ describe('ingestMarketNewsCategory', () => {
     });
 
     it('10분 플래그가 서 있으면 피드를 부르지 않고 recently-fetched를 돌려준다', async () => {
-        vi.mocked(repoModule.isRecentlyFetched).mockResolvedValue(true);
+        vi.mocked(flagsModule.isRecentlyFetched).mockResolvedValue(true);
 
         const result = await ingestMarketNewsCategory('forex', {
             logLabel: 'test',
@@ -176,6 +208,44 @@ describe('ingestMarketNewsCategory', () => {
         });
 
         expect(result).toEqual({ status: 'fetch-failed' });
+        errorSpy.mockRestore();
+    });
+
+    it('upsert 실패 행은 오류 메시지(바인딩 값) 없이 이름만 로그에 남기고 계속 진행한다', async () => {
+        vi.mocked(clientModule.getMarketNewsClient).mockReturnValue({
+            fetchCategoryNews: vi.fn(async () => ['a', 'b', 'c'].map(makeItem)),
+        } as never);
+        vi.mocked(repoModule.DrizzleMarketNewsRepository).mockImplementation(
+            function (this: unknown) {
+                Object.assign(this as object, {
+                    upsertMarketNewsItem: vi
+                        .fn()
+                        .mockRejectedValueOnce(
+                            new Error('Failed query: bound param secret-body')
+                        )
+                        .mockResolvedValue(true),
+                    attachAnalysis: vi.fn(async () => undefined),
+                    listAnalyzedIds: vi.fn(async () => new Set<string>()),
+                });
+                return this;
+            } as never
+        );
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await ingestMarketNewsCategory('forex', {
+            logLabel: 'test',
+        });
+
+        expect(result).toMatchObject({ status: 'ok', analyzed: 2 });
+        expect(errorSpy).toHaveBeenCalledWith('[test] upsert failed', {
+            name: 'Error',
+            code: undefined,
+        });
+        expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(
+            'secret-body'
+        );
         errorSpy.mockRestore();
     });
 });

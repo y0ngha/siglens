@@ -657,6 +657,7 @@ file or the rule it describes changes:
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.
+- A JSDoc describes only what its own unit does: a reducer's doc does not claim UI behaviour (what is rendered, focused or announced), and a view's doc does not claim state-transition rules. Attribute each behaviour to the unit that implements it.
 - A JSDoc does not hardcode a count that another constant owns ("탭이 9개" vs `TABS.length`); say it generically or point at the constant. When a symbol is renamed or its nature changes (hardcoded text becoming translated keys), update every comment that cites it, including sibling references in test files.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
 - When a setup file, config or helper changes what a lane, module or option does (for example module-cache reuse
@@ -781,6 +782,19 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ❌ Pinned by sizeTest: ~4.2KB.   (the test only asserts size < 8KB, on a non-live fixture)
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
+
+<a id="CM-14"></a>
+
+#### CM-14 — Every export in a module gets JSDoc once its siblings do
+
+When a file's exports carry JSDoc (role, consumer, WHY), a newly added or split-out export gets one too, and a JSDoc
+that only restates the name or type does not count. A lone undocumented export reads as an oversight and hides its
+consumer.
+
+```typescript
+// ❌ siblings documented, this one bare
+export function rssNewsSurface() {}
+// ✅ /** Why this surface exists and who consumes it. */
 
 <a id="CM-13"></a>
 
@@ -1054,6 +1068,31 @@ complete. Show it as in-progress or leave it out.
 
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
+
+<a id="CS-26"></a>
+
+#### CS-26 — Removing a cast or assertion keeps the accepted values identical
+
+An `as` cast, `!` or loose parser hides a runtime decision (what `undefined`, `null`, `NaN`, or a wrong type does). When
+a refactor replaces it with a typed helper, compare every input class against the old behavior: throw vs skip, `null`
+becoming `Invalid Date` vs epoch, `NaN` propagated vs filtered. Keep the old result, or change it deliberately and
+say so in the PR and pin it with a test.
+
+- ❌ Swapping `new Date(row.at as string)` for a helper that skips `undefined` and turns `null` into `Invalid Date`.
+- ✅ A test table of `undefined`, `null`, `NaN` and a valid value run against old and new code before the cast goes.
+<a id="CS-25"></a>
+
+#### CS-25 — A refactor changes no behavior without a demonstrated bug
+
+In a structure-only change (SRP split, rename, move), do not add a guard, tighten validation, add a sort tiebreak or
+otherwise alter what input is accepted or what output is produced "while you are there". Such an edit needs a failing
+case that shows the bug (a test, a real data shape, a reproduction); without one it is speculation that changes accepted
+input or ordering and hides inside a diff reviewers read as a pure move. A change with a demonstrated bug is a behavior
+change: keep it separate from the move or list it in the PR body.
+
+- ❌ Adding a strict hex regex to a token check, or an `orderBy` tiebreak where the data never produces a tie, in an
+  extraction PR.
+- ✅ Move the code unchanged; fix a proven bug in its own commit with the test that failed.
 
 <a id="CS-22"></a>
 

@@ -10,57 +10,54 @@ import {
     isNull,
     max,
     sql,
+    type SQL,
 } from 'drizzle-orm';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
-import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { getDatabaseClient } from '@/shared/db/client';
+import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import { withRetry } from '@/shared/lib/withRetry';
-import type { MarketNewsCardItem } from '../lib/toCardItem';
 import type { Locale } from '@/shared/i18n/locales';
-import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
-// 종목 뉴스 슬라이스와 같은 강제 변환을 쓴다 — 두 벌을 두면 core가 enum 값을
-// 추가했을 때 한쪽만 갱신돼 그 슬라이스에서만 조용히 null로 떨어진다.
-import {
-    toNewsCategory,
-    toNewsImpact,
-    toNewsSentiment,
-} from '@/shared/lib/news/newsEnumCoercion';
-import { isLawFirmSolicitation } from '@/shared/lib/news/isLawFirmSolicitation';
 import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
-import { createRedisFlag } from '@/shared/cache/createRedisFlag';
-import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import { withRetry } from '@/shared/lib/withRetry';
+import { dropSolicitations } from '../lib/dropSolicitations';
 import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
+import { toMarketNewsRow } from '../lib/toMarketNewsRow';
+import type { MarketNewsCardItem } from '../lib/toCardItem';
 import type { MarketNewsRow } from '../model';
 
-/**
- * 읽기 경로의 로펌 원고 모집 광고 필터.
- *
- * 적재 시점(`FmpMarketNewsClient`)에서도 거르지만, 필터가 생기기 전에 이미 들어간 행이
- * 7일 창 안에 남아 있다. 판정은 **원제목(`titleEn`)** 에만 한다 — 화면에 나가는 제목은
- * 번역본(`titleKo`)일 수 있어 정규식이 맞지 않는다. 정규식은 SQL로 내릴 수 없어 받은 뒤
- * 거른다(7일 창 한 버킷 규모라 부담이 없다).
- */
-function dropSolicitations<T extends { titleEn: string }>(rows: T[]): T[] {
-    return rows.filter(row => !isLawFirmSolicitation(row.titleEn));
+/** 센티널 버킷의 조회 창(`cutoff` 이후 발행) 조건. 목록·카드 읽기가 공유한다. */
+function inBucketWindow(sentinel: string, cutoff: Date): SQL | undefined {
+    return and(
+        eq(marketNews.symbol, sentinel),
+        gte(marketNews.publishedAt, cutoff)
+    );
 }
 
+/**
+ * 최신순 정렬 + 동률 tie-break. `/news/[category]`가 앞에서 N개를 잘라 쓰므로 같은
+ * 시각 행들의 상대 순서가 정해지지 않으면 경계에 걸친 행이 재생성마다 바뀌어 ISR
+ * 블롭이 흔들린다.
+ */
+const NEWEST_FIRST = [desc(marketNews.publishedAt), desc(marketNews.id)];
+
+/**
+ * `market_news` 테이블 접근. 적재 경로(`ingestMarketNewsCategory`)와 읽기 경로
+ * (`getMarketNewsList` / `getMarketNewsCards`)가 공유한다. 모든 쿼리는 일시적 DB 오류에
+ * 한해 재시도한다(`DB_TRANSIENT_RETRY`).
+ */
 export class DrizzleMarketNewsRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     /**
-     * Upserts a market-news item and returns whether the row was actually
-     * inserted or its content actually changed. Returns `false` when a re-fetch
-     * produces identical content (so the caller can skip a `revalidateTag` call).
+     * 기사를 upsert하고, 행이 실제로 새로 들어갔거나 내용이 바뀌었는지 돌려준다.
+     * 재수신한 내용이 같으면 `false`라 호출부가 `revalidateTag`를 건너뛸 수 있다.
      *
-     * Per the DEDUP_DECISION (Phase 0 appendix A): feeds are URL-disjoint so
-     * `id = hashUrlToId(url)` is sufficient — no composite id needed.
-     * The conflict `set` intentionally EXCLUDES `symbol` to implement
-     * first-writer-wins bucket assignment — category ingestion must never steal
-     * a row from another bucket.
+     * 피드끼리 URL이 겹치지 않으므로 `id = hashUrlToId(url)`만으로 충분하다 —
+     * 복합 id가 필요 없다. 충돌 시 `set`은 `symbol`을 **의도적으로 제외**한다: 먼저
+     * 쓴 쪽이 버킷을 차지하고, 카테고리 적재가 다른 버킷의 행을 가져오지 못하게 한다.
      */
     async upsertMarketNewsItem(item: MarketNewsItem): Promise<boolean> {
         const changed = await withRetry(
@@ -78,17 +75,17 @@ export class DrizzleMarketNewsRepository {
                         tickers: item.tickers,
                     })
                     /**
-                     * `symbol` is intentionally EXCLUDED from both `set` and `setWhere`
-                     * — the bucket sentinel is fixed at first insert so that concurrent
-                     * category ingestion cannot move an article between buckets (DEDUP_DECISION).
+                     * `symbol`은 `set`과 `setWhere` 둘 다에서 의도적으로 뺀다 — 버킷
+                     * 센티널은 첫 insert에서 고정되므로 동시 카테고리 적재가 기사를
+                     * 버킷 사이로 옮길 수 없다.
                      *
-                     * Analysis columns (titleKo/bodyKo/summaryKo/sentiment/category/
-                     * priceImpact/analyzedAt) are write-once via `attachAnalysis()` and
-                     * are also excluded from `set` to protect LLM-translated content.
+                     * 분석 컬럼(titleKo/bodyKo/summaryKo/sentiment/category/
+                     * priceImpact/analyzedAt)은 `attachAnalysis()`로 한 번만 쓰이며,
+                     * LLM 번역 결과를 지키려고 `set`에서도 뺀다.
                      *
-                     * `setWhere IS DISTINCT FROM` + `.returning({id})` means the UPDATE
-                     * fires only on genuine content changes, allowing callers to skip
-                     * `revalidateTag` when nothing changed.
+                     * `setWhere IS DISTINCT FROM` + `.returning({id})`이라 내용이
+                     * 실제로 바뀐 경우에만 UPDATE가 나가고, 호출부는 바뀌지 않았을 때
+                     * `revalidateTag`를 건너뛴다.
                      */
                     .onConflictDoUpdate({
                         target: marketNews.id,
@@ -114,9 +111,8 @@ export class DrizzleMarketNewsRepository {
     }
 
     /**
-     * Attaches LLM analysis to an existing market-news row. Write-once at the
-     * DB layer: the UPDATE filters on `analyzedAt IS NULL`, so a concurrent
-     * second writer becomes a no-op rather than overwriting the first result.
+     * 기존 행에 LLM 분석을 붙인다. DB 층에서 write-once다: UPDATE가
+     * `analyzedAt IS NULL`로 거르므로 동시에 온 두 번째 쓰기는 덮어쓰지 않고 no-op이 된다.
      */
     async attachAnalysis(
         id: string,
@@ -147,8 +143,8 @@ export class DrizzleMarketNewsRepository {
     }
 
     /**
-     * List market-news rows for a sentinel bucket published within `sinceMs`
-     * milliseconds of now, ordered newest-first.
+     * 센티널 버킷에서 `sinceMs` 안에 발행된 기사를 최신순으로 읽는다. 로펌 원고 모집
+     * 광고(`dropSolicitations`)는 숨긴다.
      */
     async listByCategory(
         sentinel: string,
@@ -176,16 +172,8 @@ export class DrizzleMarketNewsRepository {
                         analyzedAt: marketNews.analyzedAt,
                     })
                     .from(marketNews)
-                    .where(
-                        and(
-                            eq(marketNews.symbol, sentinel),
-                            gte(marketNews.publishedAt, cutoff)
-                        )
-                    )
-                    // 동률 tie-break — `/news/[category]`가 앞에서 N개를 잘라
-                    // 쓰므로, 같은 시각 행들의 상대 순서가 정해지지 않으면
-                    // 경계에 걸친 행이 재생성마다 바뀌어 ISR 블롭이 흔들린다.
-                    .orderBy(desc(marketNews.publishedAt), desc(marketNews.id)),
+                    .where(inBucketWindow(sentinel, cutoff))
+                    .orderBy(...NEWEST_FIRST),
             DB_TRANSIENT_RETRY
         );
 
@@ -195,13 +183,10 @@ export class DrizzleMarketNewsRepository {
     /**
      * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`을 select에서 뺀다.
      *
-     * 종목 뉴스 슬라이스의 `listCardsBySymbol`과 같은 이유다: 3초 폴링과 목록
-     * 렌더는 본문을 받아서 버리는데, 예전의 JS 투영(`toMarketNewsCardItem`)은
-     * **받은 뒤** 거르는 방식이라 Neon 전송과 S3 ISR 블롭에는 그대로 남았다
-     * (감사: 비용 라운드 15). 그래서 그 함수는 지우고 SELECT로 옮겼다.
-     * `listByCategory`도 이제 본문을 읽지 않는다 — 그쪽 소비자(다이제스트 프롬프트)가
-     * 그 값을 안 쓰기 때문이다(`toMarketNewsRow` 주석 참조). 두 읽기의 차이는
-     * `symbol`/`analyzedAt` 유무뿐이다 — 필터·정렬·창은 동일하다.
+     * 3초 폴링과 목록 렌더는 본문을 받아서 버린다. 받은 **뒤** 거르면 Neon 전송과
+     * S3 ISR 블롭에는 그대로 남으므로 투영은 SELECT가 한다(종목 뉴스의
+     * `listCardsBySymbol`과 같은 이유). `listByCategory`와의 차이는 `symbol`/
+     * `analyzedAt` 유무뿐이고 필터·정렬·창은 같다.
      */
     async listCardsByCategory(
         sentinel: string,
@@ -228,20 +213,12 @@ export class DrizzleMarketNewsRepository {
                         tickers: marketNews.tickers,
                     })
                     .from(marketNews)
-                    .where(
-                        and(
-                            eq(marketNews.symbol, sentinel),
-                            gte(marketNews.publishedAt, cutoff)
-                        )
-                    )
-                    // 동률 tie-break — `/news/[category]`가 앞에서 N개를 잘라
-                    // 쓰므로, 같은 시각 행들의 상대 순서가 정해지지 않으면
-                    // 경계에 걸친 행이 재생성마다 바뀌어 ISR 블롭이 흔들린다.
-                    .orderBy(desc(marketNews.publishedAt), desc(marketNews.id)),
+                    .where(inBucketWindow(sentinel, cutoff))
+                    .orderBy(...NEWEST_FIRST),
             DB_TRANSIENT_RETRY
         );
 
-        // 거른 **뒤** 지역화한다 — `rows[index]`로 tickers를 되붙이므로 두 배열의
+        // 거른 **뒤** 지역화한다 — `visibleRows[index]`로 tickers를 되붙이므로 두 배열의
         // 길이·순서가 같아야 한다.
         const visibleRows = dropSolicitations(rows);
 
@@ -298,7 +275,7 @@ export class DrizzleMarketNewsRepository {
 
     /**
      * 이 창에서 이미 분석된 기사 id만 읽는다 — 필터를 SQL로 내려 id만 오게 한다
-     * (감사: 비용 라운드 15, 종목 뉴스 `listAnalyzedIds`와 대칭).
+     * (종목 뉴스 `listAnalyzedIds`와 대칭).
      */
     async listAnalyzedIds(
         sentinel: string,
@@ -313,8 +290,7 @@ export class DrizzleMarketNewsRepository {
                     .from(marketNews)
                     .where(
                         and(
-                            eq(marketNews.symbol, sentinel),
-                            gte(marketNews.publishedAt, cutoff),
+                            inBucketWindow(sentinel, cutoff),
                             isNotNull(marketNews.analyzedAt)
                         )
                     ),
@@ -326,21 +302,14 @@ export class DrizzleMarketNewsRepository {
 }
 
 /**
- * React.cache-memoized list reader for a sentinel category bucket.
+ * 카드 표시용 목록(`React.cache`로 한 요청 안에서 메모이즈).
  *
- * Deduplicates concurrent calls within the same React render tree (single HTTP
- * request). Cross-request caching is handled by `staticSymbolCache` /
- * `unstable_cache` at the page layer. Scope: `MARKET_NEWS_LOOKBACK_MS` (7 days).
+ * 같은 렌더 트리·같은 Server Action 호출 안의 동시 호출을 합친다. 요청 간 캐싱은
+ * 페이지 레이어(`staticSymbolCache` / `unstable_cache`)가 맡는다. 창은
+ * `MARKET_NEWS_LOOKBACK_MS`(7일).
  *
- * Placed in `api.ts` rather than `lib/` because it has a DB side effect and
- * is not a pure function (src/entities/CLAUDE.md#EN-1).
- */
-/**
- * 카드 표시용 목록.
- *
- * `getMarketNewsList`와의 차이는 `symbol`/`analyzedAt` 유무뿐이다 — 그쪽도 이제
- * 본문(`body_en`)을 읽지 않는다(`toMarketNewsRow` 주석 참조). 즉 "본문이 필요하면
- * 저쪽"이라는 구분은 더 이상 없고, 집계·다이제스트 프롬프트도 본문을 안 읽는다.
+ * `getMarketNewsList`와의 차이는 `symbol`/`analyzedAt` 유무뿐이다 — 둘 다 본문
+ * (`body_en`)을 읽지 않는다(`toMarketNewsRow` 참조).
  */
 export const getMarketNewsCards = cache(
     async (sentinel: string, locale: Locale): Promise<MarketNewsCardItem[]> => {
@@ -353,6 +322,10 @@ export const getMarketNewsCards = cache(
     }
 );
 
+/**
+ * 다이제스트 입력·집계·sitemap용 센티널 버킷 목록(`React.cache`로 한 요청 안에서
+ * 메모이즈). 창은 `MARKET_NEWS_LOOKBACK_MS`(7일).
+ */
 export const getMarketNewsList = cache(
     async (sentinel: string): Promise<MarketNewsRow[]> => {
         const { db } = getDatabaseClient();
@@ -362,94 +335,3 @@ export const getMarketNewsList = cache(
         );
     }
 );
-
-export interface MarketNewsDbRow {
-    id: string;
-    symbol: string;
-    source: string;
-    url: string;
-    publishedAt: Date;
-    titleEn: string;
-    /** 이 경로에서는 select하지 않는다 — `toNewsRow`/`toMarketNewsRow` 주석 참조. */
-    bodyEn?: string | null;
-    titleKo: string | null;
-    bodyKo: string | null;
-    summaryKo: string | null;
-    sentiment: string | null;
-    category: string | null;
-    priceImpact: string | null;
-    tickers: string[];
-    analyzedAt: Date | null;
-}
-
-function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
-    const displayItem: NewsDisplayItem = {
-        id: row.id,
-        publishedAt: row.publishedAt.toISOString(),
-        titleEn: row.titleEn,
-        titleKo: row.titleKo,
-        bodyKo: row.bodyKo,
-        summaryKo: row.summaryKo,
-        sentiment: toNewsSentiment(row.sentiment),
-        category: toNewsCategory(row.category),
-        priceImpact: toNewsImpact(row.priceImpact),
-        url: row.url,
-        source: row.source,
-    };
-    return {
-        ...displayItem,
-        // 읽지 않는다 — 사유는 `news-article/api.ts`의 `toNewsRow` 주석 참조
-        // (다이제스트 프롬프트도 이 필드를 읽지 않는다).
-        bodyEn: null,
-        symbol: row.symbol,
-        tickers: row.tickers,
-        analyzedAt: row.analyzedAt,
-    };
-}
-
-// Lives in api.ts (not lib/) per Architecture §0.7 — lib/ must be pure.
-
-const MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
-
-/**
- * Market-news refresh flag TTL — bots that re-crawl within this window skip
- * the FMP fetch+upsert to avoid unnecessary API calls. Mirrors `newsRefreshFlag`
- * in `news-article` but keyed by sentinel symbol to keep slice isolation.
- */
-export const MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS =
-    MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
-
-const _marketNewsFlag = createRedisFlag(
-    (sentinel: string) => `market-news:refresh:${sentinel}`,
-    MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS,
-    '[marketNewsRefreshFlag]'
-);
-
-/** Returns true if this sentinel bucket was fetched within the TTL. Redis failure → false (always fetch). */
-export const isRecentlyFetched = _marketNewsFlag.isSet;
-
-/** Mark this sentinel bucket as "recently fetched". Redis failure → noop. */
-export const markFetched = _marketNewsFlag.mark;
-
-/**
- * 허브 프리웜 크론의 카테고리 적재 간격(3시간).
- *
- * 방문자 경로의 10분 플래그와 따로 둔다. 크론은 5분마다 돌고, 적재로 새 기사가
- * 들어오면 다이제스트의 core 캐시 키(입력 기사 목록에서 파생)가 바뀌어 **다이제스트
- * LLM이 다시 돈다.** 10분 간격 그대로면 밤사이 카테고리당 수십 번
- * 재생성될 수 있다. 카테고리 페이지 ISR이 12시간이라 3시간이면 신선도는 충분하고,
- * 다이제스트 재생성도 카테고리당 하룻밤 몇 번으로 묶인다.
- */
-export const MARKET_NEWS_CRON_INGEST_INTERVAL_SECONDS = 3 * SECONDS_PER_HOUR;
-
-const _marketNewsCronIngestFlag = createRedisFlag(
-    (sentinel: string) => `market-news:cron-ingest:${sentinel}`,
-    MARKET_NEWS_CRON_INGEST_INTERVAL_SECONDS,
-    '[marketNewsCronIngestFlag]'
-);
-
-/** 크론이 이 버킷을 간격 안에 이미 적재했으면 true. Redis 장애 → false(적재 시도). */
-export const isCronIngestedRecently = _marketNewsCronIngestFlag.isSet;
-
-/** 크론 적재 완료 표시. Redis 장애 → noop. */
-export const markCronIngested = _marketNewsCronIngestFlag.mark;

@@ -83,4 +83,24 @@ describe('useLocalWatchlist', () => {
         rerender();
         expect(result.current.entries).toBe(first);
     });
+
+    describe('영속 문자열 계약', () => {
+        it('저장 키는 배포된 값과 같다', () => {
+            expect(LOCAL_STORAGE_WATCHLIST_KEY).toBe('siglens:watchlist:v1');
+        });
+
+        it('리터럴 키로 쓰고 리터럴 이벤트를 보내면 같은 탭 구독자가 갱신된다', () => {
+            const { result } = renderHook(() => useLocalWatchlist());
+            act(() => {
+                localStorage.setItem(
+                    'siglens:watchlist:v1',
+                    JSON.stringify([
+                        { symbol: 'NVDA', label: '엔비디아', addedAt: 1 },
+                    ])
+                );
+                window.dispatchEvent(new Event('siglens:watchlist-change'));
+            });
+            expect(result.current.entries.map(e => e.symbol)).toEqual(['NVDA']);
+        });
+    });
 });

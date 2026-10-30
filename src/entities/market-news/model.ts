@@ -1,9 +1,8 @@
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
 /**
- * Row from the `market_news` table — display projection + persistence fields + tickers.
- * Extends `NewsDisplayItem` with fields that are present in the DB row but
- * not surfaced as display-only metadata.
+ * `market_news` 행 — 표시 투영 + 저장 필드 + 티커. 표시 전용 메타데이터로는 내보내지
+ * 않는 DB 행 필드로 `NewsDisplayItem`을 확장한다.
  */
 export interface MarketNewsRow extends NewsDisplayItem {
     /**
@@ -12,10 +11,10 @@ export interface MarketNewsRow extends NewsDisplayItem {
      * core의 `EnrichedNewsItem` 형상을 맞추려고 필드만 남겨 둔다.
      */
     bodyEn: string | null;
-    /** Sentinel bucket symbol (e.g. `__NEWS_CRYPTO__`). Never shown in a URL. */
+    /** 센티널 버킷 심볼(예: `__NEWS_CRYPTO__`). URL에는 노출되지 않는다. */
     symbol: string;
-    /** Article's own ticker symbols for display chips; `[]` for general/articles. */
+    /** 표시 칩용 기사 자체 티커 심볼. general/articles는 `[]`. */
     tickers: string[];
-    /** Timestamp the LLM analysis was attached; null before analysis. */
+    /** LLM 분석이 붙은 시각. 분석 전에는 `null`. */
     analyzedAt: Date | null;
 }
