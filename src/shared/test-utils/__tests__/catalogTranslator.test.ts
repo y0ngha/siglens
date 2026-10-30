@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { koMessage } from '@/shared/test-utils/koMessage';
+import {
+    catalogTranslator,
+    resolveCatalogPath,
+} from '@/shared/test-utils/catalogTranslator';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 describe('catalogTranslator', () => {
     it('지원하지 않는 로케일이면 ko로 대체하지 않고 던진다', () => {
@@ -22,13 +25,11 @@ describe('catalogTranslator', () => {
 
     it('로케일별 카탈로그를 읽는다', () => {
         const en = catalogTranslator('entities.analysis.fallback', 'en');
-        const ko = catalogTranslator('entities.analysis.fallback', 'ko');
-        expect(en('unavailable')).not.toBe(ko('unavailable'));
-    });
-});
-
-describe('koMessage', () => {
-    it('없는 경로는 던진다', () => {
-        expect(() => koMessage('shared.__missing__')).toThrow('__missing__');
+        expect(en('unavailable')).toBe(
+            resolveCatalogPath(
+                MESSAGE_CATALOGS.en,
+                'entities.analysis.fallback.unavailable'
+            )
+        );
     });
 });

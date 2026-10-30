@@ -18,7 +18,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
 }
 
-function resolve(node: unknown, path: string): unknown {
+/** 점으로 구분한 경로를 카탈로그 트리에서 따라 내려간다. 중간에 객체가 아니면 `undefined`. */
+export function resolveCatalogPath(node: unknown, path: string): unknown {
     return path
         .split('.')
         .reduce<unknown>(
@@ -46,9 +47,9 @@ export function catalogTranslator(
     if (!isLocale(locale)) {
         throw new Error(`[catalogTranslator] 지원하지 않는 로케일: ${locale}`);
     }
-    const group = resolve(MESSAGE_CATALOGS[locale], namespace);
+    const group = resolveCatalogPath(MESSAGE_CATALOGS[locale], namespace);
     const t = ((key, values) => {
-        const template = resolve(group, key);
+        const template = resolveCatalogPath(group, key);
         if (typeof template !== 'string') {
             throw new Error(
                 `[catalogTranslator] ${locale} 카탈로그에 없는 키: ${namespace}.${key}`
@@ -60,7 +61,7 @@ export function catalogTranslator(
             template
         );
     }) as CatalogTranslator;
-    t.has = key => typeof resolve(group, key) === 'string';
+    t.has = key => typeof resolveCatalogPath(group, key) === 'string';
     return t;
 }
 

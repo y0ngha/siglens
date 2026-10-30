@@ -1,3 +1,4 @@
+import { resolveCatalogPath } from './catalogTranslator';
 import { MESSAGE_CATALOGS } from './messageCatalogs';
 
 /**
@@ -8,15 +9,7 @@ import { MESSAGE_CATALOGS } from './messageCatalogs';
  * 꺼내면 키가 빠졌을 때 `undefined`로 즉시 실패한다.
  */
 export function koMessage(path: string): string {
-    const value = path
-        .split('.')
-        .reduce<unknown>(
-            (node, segment) =>
-                typeof node === 'object' && node !== null
-                    ? Reflect.get(node, segment)
-                    : undefined,
-            MESSAGE_CATALOGS.ko
-        );
+    const value = resolveCatalogPath(MESSAGE_CATALOGS.ko, path);
     if (typeof value !== 'string') {
         throw new Error(`[koMessage] ko 카탈로그에 없는 키: ${path}`);
     }
