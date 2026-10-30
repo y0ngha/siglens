@@ -106,6 +106,12 @@ describe('dashboardScopeOf', () => {
         // 조용히 미국으로 폴백하면 한국 페이지가 미국 데이터를 그리고도 신호가 없다.
         expect(() => dashboardScopeOf('jp')).toThrow(/unknown scope id/);
     });
+
+    it('프로토타입 키는 던진다', () => {
+        expect(() => dashboardScopeOf('constructor')).toThrow(
+            /unknown scope id/
+        );
+    });
 });
 
 describe('isDashboardScopeId', () => {
