@@ -37,7 +37,7 @@ const mockOverallView = vi.fn((_props: Record<string, unknown>) => null);
 vi.mock('@/widgets/overall/OverallView', () => ({
     OverallView: (props: Record<string, unknown>) => mockOverallView(props),
 }));
-vi.mock('@/widgets/news/NewsAiSummary', () => ({
+vi.mock('@/widgets/news/ui/ai-summary/NewsAiSummaryView', () => ({
     NewsAiSummaryView: () => null,
 }));
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({

@@ -7,8 +7,8 @@ import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import type { CardListPollPolicy } from '@/entities/news-article/model';
 import {
-    type CardListPollPolicy,
     decideCardListPoll,
     INITIAL_CARD_POLL_COUNTERS,
 } from '@/entities/news-article/lib/cardPollDecision';

@@ -45,7 +45,9 @@ const OverallView = dynamic(() =>
     import('@/widgets/overall/OverallView').then(m => m.OverallView)
 );
 const NewsAiSummaryView = dynamic(() =>
-    import('@/widgets/news/NewsAiSummary').then(m => m.NewsAiSummaryView)
+    import('@/widgets/news/ui/ai-summary/NewsAiSummaryView').then(
+        m => m.NewsAiSummaryView
+    )
 );
 const FundamentalAiSummaryView = dynamic(() =>
     import('@/widgets/fundamental/FundamentalAiSummary').then(
