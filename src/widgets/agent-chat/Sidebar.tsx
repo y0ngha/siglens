@@ -1,34 +1,28 @@
 'use client';
 
-import {
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-    useTransition,
-    type KeyboardEvent,
-    type MouseEvent,
-} from 'react';
+/**
+ * 대화 레일 — 새 대화, 검색, 날짜별 대화 목록(이름 바꾸기·삭제 인라인), 레일 푸터를 배치하는
+ * 오케스트레이터. 서버 액션은 `useConversationMutations`, 이동은 `useRailNavigation`, 편집 상태는
+ * `useRenameMode`, 행 렌더는 `sidebar/`가 맡는다.
+ */
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { deleteConversationAction } from '@/entities/chat-conversation/actions/deleteConversationAction';
-import { renameConversationAction } from '@/entities/chat-conversation/actions/renameConversationAction';
-import { type ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
 import {
     groupConversationsByDay,
     type ConversationGroupKey,
 } from '@/features/agent-chat/lib/groupConversationsByDay';
 import { cn } from '@/shared/lib/cn';
-import { LABEL_KO } from '@/shared/lib/typographyStyles';
-import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
-import {
-    ArrowUpRightIcon,
-    CloseIcon,
-    PencilIcon,
-    PlusIcon,
-    TrashIcon,
-} from '@/shared/ui/StrokeIcons';
+import { PlusIcon } from '@/shared/ui/StrokeIcons';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
+import { useConversationMutations } from './hooks/useConversationMutations';
+import { useRailNavigation } from './hooks/useRailNavigation';
+import { useRenameMode } from './hooks/useRenameMode';
+import { ConversationGroup } from './sidebar/ConversationGroup';
+import { ConversationRow } from './sidebar/ConversationRow';
+import { GuestRail } from './sidebar/GuestRail';
+import { RailFooter } from './sidebar/RailFooter';
+import { RenameForm } from './sidebar/RenameForm';
 
 interface Props {
     readonly items: ConversationListItem[];
@@ -51,49 +45,14 @@ interface Props {
     readonly onNavigationStart?: (href: string) => void;
 }
 
-interface RailFooterProps {
-    readonly siteUrl: string;
-    readonly localePrefix: string;
-}
-
-/**
- * Bottom of the rail: the ai host has no site footer, so the terms, the
- * privacy policy and the way back to siglens.io live here.
- */
-function RailFooter({ siteUrl, localePrefix }: RailFooterProps) {
-    const t = useTranslations('widgets.agent-chat');
-    const link =
-        'rounded px-1 py-1 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
-    return (
-        <div className="px-1 pt-3 text-xs text-secondary-400">
-            <a
-                href={`${siteUrl}${localePrefix}/`}
-                className={cn(link, 'inline-flex items-center gap-1')}
-            >
-                {t('Sidebar.backToSiglens')}
-                <ArrowUpRightIcon className="size-3" />
-            </a>
-            <p className="mt-1 flex flex-wrap gap-x-2">
-                <a href={`${siteUrl}${localePrefix}/terms`} className={link}>
-                    {t('Sidebar.terms')}
-                </a>
-                <a href={`${siteUrl}${localePrefix}/privacy`} className={link}>
-                    {t('Sidebar.privacy')}
-                </a>
-            </p>
-        </div>
-    );
-}
-
-/** Icon-only row actions: reachable at all times, but on wide screens they fade in on hover/focus so the list reads as a list. */
-const ROW_ACTION =
-    'inline-flex size-7 shrink-0 items-center justify-center rounded text-secondary-400 hover:bg-secondary-700 hover:text-secondary-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100';
-
 /**
  * Conversation rail. Grouped by day the way chat products do, with rename and
  * delete inline (delete needs a second click — no modal, no accidental loss).
  * The rail's own controls are quiet by design: the conversation column is the
  * product, this is its table of contents.
+ *
+ * 지운 대화는 열려 있던 것이어도 목록에서 바로 뺀다 — 랜딩(`/`)에서 만든 대화는 새 대화로
+ * 이동해도 화면이 다시 마운트되지 않아(같은 라우트) 목록 갱신을 이동에 맡기면 지운 행이 남았다.
  */
 export function Sidebar({
     items,
@@ -108,139 +67,55 @@ export function Sidebar({
     onNavigationStart,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const router = useRouter();
-    const [isNavigating, startNavigation] = useTransition();
-    const [pendingHref, setPendingHref] = useState<string | null>(null);
     const [filter, setFilter] = useState('');
-    const [renaming, setRenaming] = useState<{
-        id: string;
-        title: string;
-    } | null>(null);
     const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
         null
     );
-    const renameInputRef = useRef<HTMLInputElement>(null);
-    const renameTriggerRef = useRef<HTMLButtonElement | null>(null);
-    const renameRowRef = useRef<HTMLLIElement>(null);
-    const wasNavigatingRef = useRef(false);
+    const rename = useRenameMode();
+    const mutations = useConversationMutations({ onRenamed, onDeleted });
+    const rail = useRailNavigation({ onNavigationStart, onNavigate });
+    const newChatHref = `${localePrefix}/`;
+    const hrefOf = (id: string): string => `${localePrefix}/c/${id}`;
 
-    // A press anywhere outside the row being renamed cancels the rename. Listens
-    // for `pointerdown`, not the input's `blur`: blur also fires when focus moves
-    // for reasons the user did not choose (a screen reader's virtual cursor), and
-    // a real press outside is the only signal that means "I'm done here". The row
-    // itself is excluded so the ✕ toggle and the input keep their own behaviour.
-    // No focus return here — the press already put focus where the user wanted it.
-    useOnClickOutside(renameRowRef, () => setRenaming(null), {
-        enabled: renaming !== null,
-    });
+    if (!signedIn) {
+        return (
+            <GuestRail
+                loginHref={loginHref}
+                siteUrl={siteUrl}
+                localePrefix={localePrefix}
+            />
+        );
+    }
 
-    // Wrapped so the parent's inline `onNavigate` arrow (new identity every
-    // render) never has to sit in the effect's deps.
-    const notifyNavigated = useEffectEvent(() => onNavigate?.());
-
-    const renamingId = renaming?.id ?? null;
-    const visible = items.filter(i =>
-        i.title.toLowerCase().includes(filter.toLowerCase())
-    );
-    const groups = groupConversationsByDay(visible);
     const groupLabel: Record<ConversationGroupKey, string> = {
         today: t('Sidebar.groupToday'),
         yesterday: t('Sidebar.groupYesterday'),
         week: t('Sidebar.groupWeek'),
         older: t('Sidebar.groupOlder'),
     };
+    const groups = groupConversationsByDay(
+        items.filter(i => i.title.toLowerCase().includes(filter.toLowerCase()))
+    );
+    const failureCopy = {
+        rename: t('Sidebar.renameFailed'),
+        delete: t('Sidebar.deleteFailed'),
+    } as const;
+    const failureMessage =
+        mutations.failure === null ? null : failureCopy[mutations.failure];
 
-    /**
-     * In-app navigation between conversations (and to a new chat). A plain
-     * `<a href>` reloaded the whole document, and the streamed response showed a
-     * loading skeleton before the conversation — a flash on every switch
-     * (2026-09-15 사용자 요청). `router.push` inside a transition keeps the
-     * current screen until the next one is ready; the clicked row is muted meanwhile.
-     */
-    function startNavigationTo(href: string): void {
-        setPendingHref(href);
-        onNavigationStart?.(href);
-        startNavigation(() => router.push(href));
-    }
+    const submitRename = (item: ConversationListItem): void => {
+        const title = rename.draft?.title.trim() ?? '';
+        rename.close();
+        if (title.length === 0 || title === item.title) return;
+        void mutations.rename(item.id, item.title, title);
+    };
 
-    // The `href` stays on the anchor so middle-click / ⌘-click still open a tab —
-    // only a plain left click is intercepted into the transition above.
-    function navigate(
-        event: MouseEvent<HTMLAnchorElement>,
-        href: string
-    ): void {
-        if (
-            event.defaultPrevented ||
-            event.button !== 0 ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.shiftKey ||
-            event.altKey
-        )
-            return;
-        event.preventDefault();
-        startNavigationTo(href);
-    }
-    const isPending = (href: string): boolean =>
-        isNavigating && pendingHref === href;
-
-    function closeRename(): void {
-        setRenaming(null);
-        // Return focus to the ✎ button that opened rename mode instead of
-        // letting it fall to <body> — the input is about to unmount.
-        renameTriggerRef.current?.focus();
-    }
-
-    // Focus the rename input exactly once when entering rename mode for a
-    // given item — not on every render (an inline `ref={el => el.focus()}`
-    // re-fires after each keystroke and steals the caret position).
-    useEffect(() => {
-        if (renaming) renameInputRef.current?.focus();
-        // Refocusing an already-focused input is a no-op (doesn't move the
-        // caret), so depending on the whole `renaming` object — not just its
-        // `id` — is safe and keeps `react-hooks/exhaustive-deps` honest.
-    }, [renaming]);
-
-    // `onNavigate` fires when the transition SETTLES, not when it starts. The
-    // mobile drawer closes on it, and closing the vaul drawer unmounts this rail
-    // at once — calling it up front took the `role="status"` announcement and
-    // the `aria-busy` row down with it before a screen reader could speak them.
-    // Deferring is safe: switching to a different conversation remounts
-    // ChatShell (keyed), which closes the drawer anyway, so the pending row and
-    // announcement stay until the next screen is ready; a same-URL click (no
-    // remount) still closes the drawer here once the transition settles.
-    useEffect(() => {
-        if (wasNavigatingRef.current && !isNavigating) notifyNavigated();
-        wasNavigatingRef.current = isNavigating;
-    }, [isNavigating]);
-
-    if (!signedIn) {
-        // A guest has no history to list; say what signing in gets them
-        // instead of rendering an empty search box over "no conversations".
-        return (
-            <nav
-                aria-label={t('Sidebar.9a7569')}
-                className="flex h-full flex-col gap-3 p-3"
-            >
-                <div className="surface-raised rounded-lg p-4">
-                    <p className="text-sm font-medium text-secondary-100">
-                        {t('Sidebar.guestTitle')}
-                    </p>
-                    <p className="mt-1.5 text-xs leading-5 text-secondary-400">
-                        {t('Sidebar.guestBody')}
-                    </p>
-                    <a
-                        href={loginHref}
-                        className="surface-accent mt-3 inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                    >
-                        {t('Sidebar.guestCta')}
-                    </a>
-                </div>
-                <div className="flex-1" />
-                <RailFooter siteUrl={siteUrl} localePrefix={localePrefix} />
-            </nav>
-        );
-    }
+    const confirmDelete = async (item: ConversationListItem): Promise<void> => {
+        setConfirmingDeleteId(null);
+        const deleted = await mutations.remove(item.id);
+        if (deleted && item.id === activeId)
+            rail.startNavigationTo(newChatHref);
+    };
 
     return (
         <nav
@@ -248,9 +123,9 @@ export function Sidebar({
             className="flex h-full flex-col gap-2 p-3"
         >
             <a
-                href={`${localePrefix}/`}
-                onClick={e => navigate(e, `${localePrefix}/`)}
-                aria-busy={isPending(`${localePrefix}/`) || undefined}
+                href={newChatHref}
+                onClick={e => rail.navigate(e, newChatHref)}
+                aria-busy={rail.isPending(newChatHref) || undefined}
                 className={cn(
                     AI_RAISED_CONTROL,
                     'inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-secondary-100 aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400'
@@ -260,7 +135,7 @@ export function Sidebar({
                 {t('Sidebar.newChat')}
             </a>
             <p role="status" className="sr-only">
-                {isNavigating ? t('Sidebar.navigating') : ''}
+                {rail.isNavigating ? t('Sidebar.navigating') : ''}
             </p>
             <input
                 type="search"
@@ -271,6 +146,11 @@ export function Sidebar({
                 autoComplete="off"
                 className="min-h-9 rounded-lg border border-border-control bg-transparent px-2.5 text-sm text-secondary-100 placeholder:text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             />
+            {failureMessage !== null && (
+                <p role="alert" className="px-1 text-xs text-ui-danger-text">
+                    {failureMessage}
+                </p>
+            )}
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {groups.length === 0 ? (
                     <p className="px-2 pt-6 text-center text-sm text-secondary-400">
@@ -280,203 +160,66 @@ export function Sidebar({
                     </p>
                 ) : null}
                 {groups.map(group => (
-                    <section
+                    <ConversationGroup
                         key={group.key}
-                        aria-labelledby={`sidebar-group-${group.key}`}
+                        label={groupLabel[group.key]}
                     >
-                        <p
-                            id={`sidebar-group-${group.key}`}
-                            className={cn(LABEL_KO, 'px-2 pt-4 pb-1')}
-                        >
-                            {groupLabel[group.key]}
-                        </p>
-                        <ul className="space-y-0.5">
-                            {group.items.map(item => (
-                                <li
+                        {group.items.map(item => {
+                            const isRenaming = rename.draft?.id === item.id;
+                            return (
+                                <ConversationRow
                                     key={item.id}
-                                    ref={
-                                        renamingId === item.id
-                                            ? renameRowRef
-                                            : undefined
+                                    item={item}
+                                    href={hrefOf(item.id)}
+                                    isActive={item.id === activeId}
+                                    isPending={rail.isPending(hrefOf(item.id))}
+                                    isRenaming={isRenaming}
+                                    isConfirmingDelete={
+                                        confirmingDeleteId === item.id
                                     }
-                                    className={cn(
-                                        'group relative flex min-h-9 items-center gap-0.5 rounded-lg pr-1 pl-2.5 text-sm',
-                                        item.id === activeId
-                                            ? 'bg-secondary-800 text-secondary-100 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary-400'
-                                            : 'text-secondary-300 hover:bg-secondary-800 hover:text-secondary-100'
-                                    )}
-                                >
-                                    {renaming?.id === item.id ? (
-                                        // 대화 이름 바꾸기 인라인 폼이다. 비동기 서버 액션 호출과 상태 정리를 클라이언트에서 직접 하므로 JS 없는 제출 경로가 없다.
-                                        // react-doctor-disable-next-line react-doctor/no-prevent-default
-                                        <form
-                                            className="flex-1"
-                                            onSubmit={async e => {
-                                                e.preventDefault();
-                                                const title =
-                                                    renaming.title.trim();
-                                                closeRename();
-                                                if (
-                                                    title.length === 0 ||
-                                                    title === item.title
-                                                )
-                                                    return;
-                                                // Optimistic: the new title shows at once and
-                                                // rolls back only if the server refuses it.
-                                                onRenamed(item.id, title);
-                                                const { ok } =
-                                                    await renameConversationAction(
-                                                        item.id,
-                                                        title
-                                                    );
-                                                if (!ok)
-                                                    onRenamed(
-                                                        item.id,
-                                                        item.title
-                                                    );
-                                            }}
-                                        >
-                                            <input
-                                                ref={renameInputRef}
-                                                value={renaming.title}
-                                                onChange={e =>
-                                                    setRenaming({
-                                                        id: item.id,
-                                                        title: e.target.value,
-                                                    })
+                                    rowRef={
+                                        isRenaming ? rename.rowRef : undefined
+                                    }
+                                    renameForm={
+                                        isRenaming ? (
+                                            <RenameForm
+                                                value={
+                                                    rename.draft?.title ?? ''
                                                 }
-                                                onKeyDown={(
-                                                    e: KeyboardEvent<HTMLInputElement>
-                                                ) => {
-                                                    // Cancel only on an explicit Escape — cancelling on
-                                                    // `onBlur` fires whenever focus moves for ANY reason
-                                                    // (e.g. a screen reader's virtual cursor), discarding
-                                                    // an in-progress rename the user never asked to abandon.
-                                                    if (e.key === 'Escape') {
-                                                        e.preventDefault();
-                                                        closeRename();
-                                                    }
-                                                }}
-                                                aria-label={t('Sidebar.586a5c')}
-                                                className="w-full rounded border border-border-control bg-secondary-900 px-1.5 py-0.5 text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                                inputRef={rename.inputRef}
+                                                onChange={rename.change}
+                                                onSubmit={() =>
+                                                    submitRename(item)
+                                                }
+                                                onCancel={rename.close}
                                             />
-                                        </form>
-                                    ) : (
-                                        <a
-                                            href={`${localePrefix}/c/${item.id}`}
-                                            onClick={e =>
-                                                navigate(
-                                                    e,
-                                                    `${localePrefix}/c/${item.id}`
-                                                )
-                                            }
-                                            aria-current={
-                                                item.id === activeId
-                                                    ? 'page'
-                                                    : undefined
-                                            }
-                                            aria-busy={
-                                                isPending(
-                                                    `${localePrefix}/c/${item.id}`
-                                                ) || undefined
-                                            }
-                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
-                                        >
-                                            {item.title}
-                                        </a>
-                                    )}
-                                    {confirmingDeleteId === item.id ? (
-                                        <span className="flex items-center gap-1 text-xs whitespace-nowrap text-ui-danger-text">
-                                            {t('Sidebar.14bb5e')}
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    setConfirmingDeleteId(null);
-                                                    const { ok } =
-                                                        await deleteConversationAction(
-                                                            item.id
-                                                        );
-                                                    if (!ok) return;
-                                                    if (item.id === activeId) {
-                                                        startNavigationTo(
-                                                            `${localePrefix}/`
-                                                        );
-                                                    } else onDeleted(item.id);
-                                                }}
-                                                className="rounded px-1 font-medium underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                            >
-                                                {t('Sidebar.fc81e2')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setConfirmingDeleteId(null)
-                                                }
-                                                className="rounded px-1 text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                            >
-                                                {t('Sidebar.19b2d1')}
-                                            </button>
-                                        </span>
-                                    ) : (
-                                        <>
-                                            {/* One button that toggles, not two that swap: the
-                                                element stays mounted, so `closeRename` can hand
-                                                focus back to it. */}
-                                            <button
-                                                type="button"
-                                                aria-label={
-                                                    renamingId === item.id
-                                                        ? t(
-                                                              'Sidebar.renameCancel'
-                                                          )
-                                                        : t('Sidebar.73e5a8')
-                                                }
-                                                onClick={e => {
-                                                    if (
-                                                        renamingId === item.id
-                                                    ) {
-                                                        closeRename();
-                                                        return;
-                                                    }
-                                                    renameTriggerRef.current =
-                                                        e.currentTarget;
-                                                    setRenaming({
-                                                        id: item.id,
-                                                        title: item.title,
-                                                    });
-                                                }}
-                                                // Stays visible while renaming: it is the only
-                                                // on-screen way out besides Escape.
-                                                className={cn(
-                                                    ROW_ACTION,
-                                                    renamingId === item.id &&
-                                                        'sm:opacity-100'
-                                                )}
-                                            >
-                                                {renamingId === item.id ? (
-                                                    <CloseIcon className="size-3.5" />
-                                                ) : (
-                                                    <PencilIcon className="size-3.5" />
-                                                )}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                aria-label={t('Sidebar.fc81e2')}
-                                                onClick={() =>
-                                                    setConfirmingDeleteId(
-                                                        item.id
-                                                    )
-                                                }
-                                                className={ROW_ACTION}
-                                            >
-                                                <TrashIcon className="size-3.5" />
-                                            </button>
-                                        </>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
+                                        ) : null
+                                    }
+                                    onNavigate={e =>
+                                        rail.navigate(e, hrefOf(item.id))
+                                    }
+                                    onToggleRename={trigger =>
+                                        isRenaming
+                                            ? rename.close()
+                                            : rename.open(
+                                                  item.id,
+                                                  item.title,
+                                                  trigger
+                                              )
+                                    }
+                                    onAskDelete={() =>
+                                        setConfirmingDeleteId(item.id)
+                                    }
+                                    onConfirmDelete={() =>
+                                        void confirmDelete(item)
+                                    }
+                                    onCancelDelete={() =>
+                                        setConfirmingDeleteId(null)
+                                    }
+                                />
+                            );
+                        })}
+                    </ConversationGroup>
                 ))}
             </div>
             <RailFooter siteUrl={siteUrl} localePrefix={localePrefix} />

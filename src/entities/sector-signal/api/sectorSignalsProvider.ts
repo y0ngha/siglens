@@ -14,7 +14,7 @@ import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor
 /**
  * 섹터 신호 스캔이 봉·시세를 읽을 provider.
  *
- * ## 왜 캐시 provider인가 (2026-10)
+ * ## 왜 캐시 provider인가
  *
  * 예전에는 raw provider(`marketDataProviderFor`)를 썼다. 미국 scope 일봉 스캔은 ~80종목
  * 각각에 `historical-price-eod/full`(400일) + `quote`(오늘 봉) + `quote`(getQuote, 같은 엔드포인트)를

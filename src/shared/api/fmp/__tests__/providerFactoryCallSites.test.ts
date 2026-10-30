@@ -10,7 +10,7 @@ import { join } from 'node:path';
  *
  * 팩토리 자체는 유닛 테스트가 지킨다(한국 심볼이 다른 provider로 간다). 지켜지지
  * 않던 건 **호출부 21곳**이다 — 위임 테스트들이 팩토리를 `() => mockProvider`로
- * mock해 인자를 버리기 때문에, 한 곳에서 인자를 지워도 전부 통과했다(감사 라운드 12).
+ * mock해 인자를 버리기 때문에, 한 곳에서 인자를 지워도 전부 통과했다.
  *
  * 호출부마다 단언을 붙이는 대신 소스를 훑는다. 새 호출부가 생겨도 자동으로 걸린다.
  */
@@ -52,7 +52,7 @@ describe('provider 팩토리 호출부', () => {
         const files = collectSourceFiles(SRC_ROOT);
 
         // 스캔이 실제로 호출부에 닿았는지 먼저 확인한다 — 테스트 파일이 옮겨지거나
-        // 탐색이 망가지면 offenders가 빈 채로 초록이 된다(감사 라운드 13).
+        // 탐색이 망가지면 offenders가 빈 채로 초록이 된다.
         const callSiteFiles = files.filter(f => {
             const src = readFileSync(f, 'utf8');
             return FACTORIES.some(factory => src.includes(`${factory}(`));

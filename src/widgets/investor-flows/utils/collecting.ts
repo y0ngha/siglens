@@ -1,6 +1,23 @@
+/**
+ * 수집 중·일시 조회 불가 판정 — 준비 상태와 스냅샷에서 "데이터 없음"과 구분해 말할 구간·축을 고른다.
+ */
 import type { InvestorFlowsAxisId } from '@y0ngha/siglens-core';
-import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
-import type { InvestorFlowsDegradedPart } from '@/entities/investor-flows/model';
+import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import type {
+    CollectingArms,
+    InvestorFlowsDegradedPart,
+    ResolveCollectingInput,
+} from '@/entities/investor-flows/model';
+
+/**
+ * 구간별 "수집 중" 판정. 위젯 `.tsx`가 엔티티 lib를 직접 부르지 않도록 이 util이 판정을 맡는다 — 초기 수집이 끝나기 전의 빈
+ * 구간은 종목에 데이터가 없다는 뜻이 아니다.
+ */
+export function resolveFlowsCollecting(
+    input: ResolveCollectingInput
+): CollectingArms {
+    return resolveCollectingArms(input);
+}
 
 /** 점수 카드에서 "데이터 부족" 대신 "수집 중"으로 표시할 축. */
 export function collectingAxes(state: CollectingArms): InvestorFlowsAxisId[] {

@@ -10,15 +10,18 @@
 import { constants } from 'node:http2';
 import { headers } from 'next/headers';
 import {
+    createDailyPruner,
+    noContent,
+} from '@/app/api/presence/_shared/dailyPruner';
+import { readSymbol } from '@/app/api/presence/symbol/_lib/readSymbol';
+import {
     DrizzleSymbolViewRepository,
     type SymbolViewRepository,
 } from '@/entities/symbol-view/api';
 import { isBot } from '@/shared/api/isBot';
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
-import { createDailyPruner, noContent } from '../_shared/dailyPruner';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
 
@@ -30,19 +33,7 @@ const RETENTION_DAYS = 90;
 /** `/api/presence`와 같은 패턴 — 별도 cron 없이 인스턴스당 KST 하루 1회 정리. */
 const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[symbol-views]');
 
-async function readSymbol(request: Request): Promise<string | null> {
-    try {
-        const body: unknown = await request.json();
-        if (typeof body !== 'object' || body === null) return null;
-        const { symbol } = body as { symbol?: unknown };
-        if (typeof symbol !== 'string') return null;
-        const upper = symbol.toUpperCase();
-        return isAdmissibleSymbolShape(upper) ? upper : null;
-    } catch {
-        return null;
-    }
-}
-
+/** 종목 조회 비콘 수신 — 형상이 맞는 심볼이면 기록을 응답 뒤로 미루고 204, 아니면 400이다. */
 export async function POST(request: Request): Promise<Response> {
     if (isBot(await headers())) return noContent();
     if (process.env.NODE_ENV !== 'production') return noContent();
@@ -59,7 +50,7 @@ export async function POST(request: Request): Promise<Response> {
 
 /**
  * 조회 기록 + 하루 1회 정리. **응답을 보낸 뒤**(`afterWithDrain`) 돈다 — 비콘은 결과를 읽지
- * 않으므로(늘 204) DB upsert 왕복을 응답 경로에 둘 이유가 없다(2026-10 서버 성능 감사 L8).
+ * 않으므로(늘 204) DB upsert 왕복을 응답 경로에 둘 이유가 없다.
  * 배포 중 SIGTERM drain은 이 작업을 기다린다.
  *
  * DB 클라이언트 생성까지 try 안에 둔다 — DATABASE_URL 부재로 던지면 이 작업이 통째로

@@ -16,6 +16,7 @@ import {
     PUBLIC_API_RATE_LIMITS,
 } from '@/shared/config/publicApi';
 import type { Locale } from '@/shared/i18n/locales';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
 import ko from '../../../../messages/ko.json';
@@ -488,6 +489,99 @@ describe('DevelopersPage', () => {
         expect(
             screen.getByText('마지막 업데이트 2026년 10월 15일')
         ).toBeInTheDocument();
+    });
+
+    it('styles the BYOK h3 under authentication with the shared h3 token, one step below its h2', async () => {
+        await renderPage();
+        const heading = screen.getByRole('heading', {
+            level: 3,
+            name: d.authentication.byokTitle,
+        });
+        expect(heading.className).toBe(HEADING_SUBSECTION);
+    });
+
+    it('keeps each tool card h4 smaller, dimmer and lighter than the card h3', async () => {
+        await renderPage();
+        const card = screen.getByRole('article', { name: /get_quote/ });
+        const h4 = within(card).getByRole('heading', {
+            level: 4,
+            name: d.tools.argsTitle,
+        });
+        expect(h4.className).toBe(
+            'mt-5 text-sm font-medium text-secondary-300'
+        );
+    });
+
+    it('pins the response examples grid to a shrinkable single column below sm', async () => {
+        await renderPage();
+        const section = document
+            .getElementById('responses')!
+            .closest('section')!;
+        const example = within(section).getByRole('region', {
+            name: d.responses.errorLabel,
+        });
+        const grid = example.closest('.grid')!;
+        expect(grid.className.split(' ')).toContain('grid-cols-1');
+    });
+
+    it('continues every line of the streaming example so the jq pipe is part of the curl command', async () => {
+        await renderPage();
+        const example = screen.getByRole('region', {
+            name: d.streaming.exampleLabel,
+        });
+        const lines = (example.textContent ?? '').split('\n');
+        expect(lines.at(-1)).toBe(
+            "  | jq 'if .error then {failed: .error} else .data end'"
+        );
+        expect(
+            lines.slice(0, -1).filter(line => !line.endsWith(' \\'))
+        ).toEqual([]);
+    });
+
+    it('separates the BYOK badge from the tool name in the text, not only with CSS', async () => {
+        await renderPage();
+        const heading = screen.getByRole('heading', {
+            level: 3,
+            name: /run_fresh_analysis/,
+        });
+        expect(heading.textContent).toBe(
+            `run_fresh_analysis ${d.tools.byokBadge}`
+        );
+    });
+
+    it('separates the argument name, type and requirement in the row header text', async () => {
+        await renderPage();
+        const card = screen.getByRole('article', { name: /get_quote/ });
+        const header = within(card).getByRole('rowheader', { name: /symbols/ });
+        expect(header.textContent).toBe(
+            `symbols array of string ${d.tools.required}`
+        );
+    });
+
+    it('separates the enum preview, the disclosure and the rest of a long enum in the row header text', async () => {
+        await renderPage();
+        const card = screen.getByRole('article', {
+            name: /run_fresh_analysis/,
+        });
+        const header = within(card).getByRole('rowheader', { name: /model/ });
+        expect(header.textContent).toBe(
+            `model "m1" | "m2" | "m3" ${d.tools.enumMore.replace('{count}', '5')} "m4" | "m5" | "m6" | "m7" | "m8" ${d.tools.optional}`
+        );
+    });
+
+    it('separates the streamed note from the error summary in the cell text', async () => {
+        await renderPage();
+        const table = screen.getByRole('table', {
+            name: d.responses.tableCaption,
+        });
+        const doc = API_ERROR_DOCS.find(item => item.code === 'tool_timeout')!;
+        const cell = within(table)
+            .getByRole('rowheader', { name: `${doc.status} ${doc.code}` })
+            .closest('tr')!
+            .querySelector('td')!;
+        expect(cell.textContent).toBe(
+            `${doc.summary} ${d.responses.streamedNote}`
+        );
     });
 
     it('renders in English with the same structure and formatted limits', async () => {

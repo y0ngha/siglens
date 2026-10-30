@@ -1,22 +1,18 @@
 'use client';
 
+/** The auto-playing example conversation on ai.siglens.io `/about` and the `/lp` chat landing. */
+
 import type { ReactNode } from 'react';
-import { useReplayPlayback } from '@/shared/hooks/useReplayPlayback';
-import {
-    revealLines,
-    type ReplayScenario,
-} from '@/shared/lib/replay/replayScript';
-import {
-    ReplayCaret,
-    ReplayLines,
-    ReplayPauseButton,
-    ReplaySources,
-    ReplaySteps,
-} from '@/shared/ui/ReplayParts';
+import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
+import { useReplayPlayback } from '@/widgets/replay/hooks/useReplayPlayback';
+import { deriveReplayView } from '@/widgets/replay/utils/replayView';
+import { ReplayAnswer } from '@/widgets/replay/ui/body/ReplayAnswer';
+import { ReplayCaret } from '@/widgets/replay/ui/body/ReplayCaret';
+import { ReplayPauseButton } from '@/widgets/replay/ui/controls/ReplayPauseButton';
 
 interface ChatReplayLabels {
     readonly region: string;
@@ -36,9 +32,8 @@ interface Props {
     readonly avatar: ReactNode;
     readonly doneIcon: ReactNode;
     /**
-     * `·` before the as-of time in the sources line. The ad landings (`/lp`)
-     * turn it off — their copy rules ban `·`
-     * (spec `2026-09-26-ad-landing-pages-design.md`).
+     * The `|` divider before the as-of time in the sources line. The ad
+     * landings (`/lp`) turn it off: their copy carries no divider symbols.
      */
     readonly sourcesSeparator?: boolean;
 }
@@ -49,8 +44,8 @@ interface Props {
  * summary line, then the answer streams in with its sources.
  *
  * Playback, SSR and pause rules live in `useReplayPlayback`; the steps, body
- * and sources are the shared `ReplayParts`. This component only owns the chat
- * chrome (the SIGLENS AI header, the user bubble, the avatar).
+ * and sources are `ReplayAnswer`. This component only owns the chat chrome
+ * (the SIGLENS AI header, the user bubble, the avatar).
  */
 export function ChatReplay({
     scenarios,
@@ -63,14 +58,7 @@ export function ChatReplay({
     const { frame, paused, togglePaused, animated, rootRef, threadRef } =
         useReplayPlayback(scenarios);
 
-    const scenario = scenarios[frame.index]!;
-    const typing = frame.typed < scenario.question.length;
-    const streaming = frame.summary && !frame.sources;
-    const reveal = revealLines(
-        scenario.lines,
-        frame.summary ? frame.chars : 0,
-        streaming
-    );
+    const view = deriveReplayView(scenarios, frame);
 
     return (
         <div
@@ -104,50 +92,29 @@ export function ChatReplay({
                 aria-live="off"
                 className="flex h-[520px] flex-col gap-4 overflow-hidden p-4 sm:h-[420px]"
             >
-                {frame.typed > 0 ? (
+                {view.typedQuestion ? (
                     <div
                         className={cn(
-                            // 리플레이 틀(SURFACE_CARD) 안이라 같은 면을 겹치면 말풍선이 묻힌다.
+                            // Inside the replay frame (SURFACE_CARD): the same surface again would bury the bubble.
                             SURFACE_NESTED,
                             'max-w-[85%] self-end px-4 py-2.5 text-[15px] leading-6 break-words text-secondary-100'
                         )}
                     >
-                        {scenario.question.slice(0, frame.typed)}
-                        {typing ? <ReplayCaret /> : null}
+                        {view.typedQuestion}
+                        {view.typing ? <ReplayCaret /> : null}
                     </div>
                 ) : null}
-                {frame.toolsShown > 0 || frame.summary ? (
+                {view.answerStarted ? (
                     <div className="flex items-start gap-3">
                         {avatar}
                         <div className="flex min-w-0 flex-1 flex-col gap-2.5 text-[15px] leading-7 text-secondary-200">
-                            {frame.summary ? (
-                                <p className="flex items-center gap-1.5 text-xs text-secondary-400">
-                                    {doneIcon}
-                                    {scenario.summary}
-                                </p>
-                            ) : (
-                                <ReplaySteps
-                                    tools={scenario.tools.slice(
-                                        0,
-                                        frame.toolsShown
-                                    )}
-                                    done={frame.toolsDone}
-                                />
-                            )}
-                            {frame.summary ? (
-                                <ReplayLines
-                                    lines={scenario.lines}
-                                    reveal={reveal}
-                                />
-                            ) : null}
-                            {frame.sources ? (
-                                <ReplaySources
-                                    label={labels.sources}
-                                    sources={scenario.sources}
-                                    asOf={scenario.asOf}
-                                    separator={sourcesSeparator}
-                                />
-                            ) : null}
+                            <ReplayAnswer
+                                view={view}
+                                frame={frame}
+                                doneIcon={doneIcon}
+                                sourcesLabel={labels.sources}
+                                sourcesSeparator={sourcesSeparator}
+                            />
                         </div>
                     </div>
                 ) : null}

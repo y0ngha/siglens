@@ -42,7 +42,7 @@ test.describe('account logout (isolated throwaway user)', () => {
         await expect(userMenu).toBeVisible();
         await userMenu.click();
 
-        await banner.getByRole('menuitem', { name: '로그아웃' }).click();
+        await banner.getByRole('button', { name: '로그아웃' }).click();
 
         // 회원가입 belongs to the guest header nav, so its presence (and the
         // user-menu button's absence) is the post-logout guest-state proof.

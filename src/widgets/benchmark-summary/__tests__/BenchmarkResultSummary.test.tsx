@@ -57,6 +57,33 @@ describe('BenchmarkResultSummary', () => {
         expect(within(items[2]!).getByText('0.880')).toBeTruthy();
     });
 
+    it('states each comparison own question count on its card', async () => {
+        await renderSummary({
+            release: {
+                ...BENCHMARK_FIXTURE,
+                headline: BENCHMARK_FIXTURE.headline.map(c =>
+                    c.target === 'gemini' ? { ...c, n: 27 } : c
+                ),
+            },
+        });
+        const items = screen.getAllByRole('listitem');
+        expect(within(items[0]!).getByText('공통 문항 40개')).toBeTruthy();
+        expect(within(items[1]!).getByText('공통 문항 27개')).toBeTruthy();
+    });
+
+    it('does not quote the release item count as the comparison basis', async () => {
+        const { container } = (await renderSummary())!;
+        const intro = screen.getByRole('heading', {
+            name: w.title,
+        }).nextElementSibling!;
+        expect(intro.textContent).toBe(
+            '같은 질문으로 잰 객관 점수 차이입니다. 양수면 시그렌즈 AI 쪽이 높습니다.'
+        );
+        expect(container.textContent).not.toContain(
+            `${BENCHMARK_FIXTURE.items.length}개`
+        );
+    });
+
     it('names the subject with the brand, not the data label', async () => {
         const { container } = (await renderSummary())!;
         expect(container.textContent).toContain('시그렌즈 AI');

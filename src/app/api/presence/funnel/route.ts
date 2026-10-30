@@ -13,64 +13,42 @@
 import { constants } from 'node:http2';
 import { headers } from 'next/headers';
 import {
+    createDailyPruner,
+    noContent,
+} from '@/app/api/presence/_shared/dailyPruner';
+import { resolveUserId } from '@/app/api/presence/_shared/resolveUserId';
+import {
+    rejectUncountedRequest,
+    resolveVisitorIdentity,
+} from '@/app/api/presence/_shared/visitorIdentity';
+import { readFunnelPayload } from '@/app/api/presence/funnel/_lib/readFunnelPayload';
+import {
     DrizzleFunnelEventRepository,
     type FunnelEventRecord,
 } from '@/entities/funnel/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import {
-    FUNNEL_BODY_MAX_BYTES,
-    isFunnelEventPayload,
-    type FunnelEventPayload,
-} from '@/shared/lib/funnel/funnelEvents';
-import { createDailyPruner, noContent } from '../_shared/dailyPruner';
-import { resolveUserId } from '../_shared/resolveUserId';
-import {
-    rejectUncountedRequest,
-    resolveVisitorIdentity,
-} from '../_shared/visitorIdentity';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
 
 export const dynamic = 'force-dynamic';
 
 /**
- * 개인정보처리방침 §4가 고지한 보존 기간 — `visitor_days`와 같은 근거(전년 동월 비교).
+ * 개인정보처리방침이 고지한 보존 기간 — `visitor_days`와 같은 근거(전년 동월 비교).
  * **바꾸면 방침 본문(`db/seeds/terms/privacy/`)도 같이 바꿔야 한다.**
  */
 const RETENTION_DAYS = 400;
 
 const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[funnel]');
 
-/**
- * 순서는 타입 → 크기 → 파싱(`SERVER.md#SA-7`). 본문이 상한을 넘으면 `JSON.parse` 전에
- * 거른다. 카탈로그 밖의 event·여분 키·잘못된 enum은 `isFunnelEventPayload`가 거부한다.
- */
-async function readPayload(
-    request: Request
-): Promise<FunnelEventPayload | null> {
-    // 선언된 길이로 먼저 거른다 — 본문을 메모리에 올리기 전에 끊는다. 헤더는 거짓일 수 있어
-    // 아래 바이트 검사는 그대로 둔다(백스톱).
-    const declared = Number(request.headers.get('content-length'));
-    if (declared > FUNNEL_BODY_MAX_BYTES) return null;
-    try {
-        const text = await request.text();
-        if (Buffer.byteLength(text, 'utf8') > FUNNEL_BODY_MAX_BYTES)
-            return null;
-        const body: unknown = JSON.parse(text);
-        return isFunnelEventPayload(body) ? body : null;
-    } catch {
-        return null;
-    }
-}
-
+/** 가입 퍼널 이벤트 수신 — 카탈로그에 맞는 이벤트 하나를 응답 뒤로 미뤄 기록하고 204, 본문이 틀리면 400이다. */
 export async function POST(request: Request): Promise<Response> {
     const headerList = await headers();
     const rejected = rejectUncountedRequest(headerList);
     if (rejected !== null) return rejected;
 
-    const payload = await readPayload(request);
+    const payload = await readFunnelPayload(request);
     if (payload === null) {
         return new Response(null, { status: HTTP_STATUS_BAD_REQUEST });
     }

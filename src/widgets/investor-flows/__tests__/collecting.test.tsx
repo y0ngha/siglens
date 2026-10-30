@@ -7,10 +7,8 @@ import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import { AsOfNotice } from '../sections/AsOfNotice';
 import { InstitutionalSection } from '../sections/InstitutionalSection';
 import { ScorecardCard } from '../sections/ScorecardCard';
-import {
-    resolveCollectingArms,
-    type CollectingArms,
-} from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
+import type { CollectingArms } from '@/entities/investor-flows/model';
 import {
     collectingAxes,
     temporarilyUnavailableAxes,
@@ -225,7 +223,7 @@ describe('InvestorFlowsContent — 수집 중 안내', () => {
         ).toBeNull();
     });
 
-    it('상태를 못 읽었을 때(unknown)도 예전 동작으로 돌아간다 — 장애를 수집 중이라고 말하지 않는다', () => {
+    it('상태를 못 읽었을 때(unknown)도 있는 그대로 그린다 — 장애를 수집 중이라고 말하지 않는다', () => {
         renderContent(UNKNOWN);
         expect(screen.queryByText(INSTITUTIONAL_TITLE)).toBeNull();
         expect(screen.queryByText(SHORT_TITLE)).toBeNull();
@@ -336,7 +334,7 @@ describe('ScorecardCard — 수집 중 라벨', () => {
         expect(screen.queryByText('수집 중')).toBeNull();
     });
 
-    it('collectingAxes를 안 주면 예전 라벨 그대로다', () => {
+    it('collectingAxes를 안 주면 "데이터 부족" 라벨 그대로다', () => {
         render(<ScorecardCard scorecard={evaluate(makeEmptySnapshot())} />);
         expect(screen.queryByText('수집 중')).toBeNull();
         expect(screen.getAllByText('데이터 부족').length).toBeGreaterThan(0);
@@ -432,13 +430,13 @@ describe('InvestorFlowsEmpty — 수집 중', () => {
         ).toBeVisible();
     });
 
-    it('공매도만 수집 중(13F는 준비)이면 수집 중 문구가 아니라 예전 빈 상태다', () => {
+    it('공매도만 수집 중(13F는 준비)이면 수집 중 문구가 아니라 일반 빈 상태다', () => {
         render(<InvestorFlowsEmpty shortCollecting />);
         expect(screen.getByText(/데이터 없음/)).toBeInTheDocument();
         expect(screen.queryByText(/모으는 중/)).toBeNull();
     });
 
-    it('기본값은 예전 "데이터 없음"이다', () => {
+    it('기본값은 "데이터 없음"이다', () => {
         render(<InvestorFlowsEmpty />);
         expect(screen.getByText(/데이터 없음/)).toBeInTheDocument();
         expect(screen.queryByText(/모으는 중/)).toBeNull();

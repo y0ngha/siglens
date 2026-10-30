@@ -24,6 +24,22 @@ describe('useDescribeAuthError', () => {
         ).toBe(koMessages.entities.auth.error.invalidCredentials);
     });
 
+    it('translates the email verification code errors verifyEmail emits', () => {
+        const describeAuthError = renderDescribe();
+        expect(
+            describeAuthError({
+                code: 'invalid_verification_code',
+                message: '원문',
+            })
+        ).toBe(koMessages.entities.auth.error.invalidCode);
+        expect(
+            describeAuthError({
+                code: 'expired_verification_code',
+                message: '원문',
+            })
+        ).toBe(koMessages.entities.auth.error.expiredCode);
+    });
+
     it('falls back to the raw message for an unknown or missing code', () => {
         const describeAuthError = renderDescribe();
         expect(describeAuthError({ code: 'unexpected', message: '원문' })).toBe(

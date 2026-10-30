@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * DMI(ADX·+DI·-DI) 보조 pane 시리즈를 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
@@ -128,7 +132,6 @@ export function useDMIChart({
         if (!isVisible) return;
 
         const { dmi } = indicators;
-        if (!dmi.length) return;
 
         if (
             !diPlusSeriesRef.current ||

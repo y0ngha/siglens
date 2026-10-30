@@ -8,17 +8,7 @@ import {
     type IndicatorBinding,
     type IndicatorKey,
 } from '../../model/indicatorRegistry';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
     return { meta: INDICATOR_META[key], active };
@@ -126,7 +116,7 @@ describe('indicatorRegistry', () => {
         '%s: 모든 카테고리 키가 카탈로그에 있다',
         locale => {
             const group = (
-                CATALOGS[locale].widgets.chart as unknown as Record<
+                MESSAGE_CATALOGS[locale].widgets.chart as unknown as Record<
                     string,
                     Record<string, string>
                 >

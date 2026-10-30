@@ -73,6 +73,32 @@ describe('useTimeframeFromUrl', () => {
         });
     });
 
+    it('free query 정규화는 tf만 바꾸고 다른 쿼리 파라미터를 지킨다', async () => {
+        realReplaceState(null, '', '/AAPL/overall?ref=newsletter&tf=1Hour&x=1');
+        renderHook(() => useTimeframeFromUrl('AAPL', true, true));
+
+        await waitFor(() => {
+            expect(replaceState).toHaveBeenCalledWith(
+                null,
+                '',
+                '/AAPL/overall?ref=newsletter&tf=1Day&x=1'
+            );
+        });
+    });
+
+    it('free query 정규화는 해시를 지킨다', async () => {
+        realReplaceState(null, '', '/AAPL/overall?tf=1Hour#risk-factors');
+        renderHook(() => useTimeframeFromUrl('AAPL', true, true));
+
+        await waitFor(() => {
+            expect(replaceState).toHaveBeenCalledWith(
+                null,
+                '',
+                '/AAPL/overall?tf=1Day#risk-factors'
+            );
+        });
+    });
+
     it('uses daily until tier hydration completes', () => {
         setSearch('tf=1Hour');
         const { result } = renderHook(() =>

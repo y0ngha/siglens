@@ -6,6 +6,7 @@ import {
     localePath,
     splitLocalePath,
     resolveLocale,
+    type Locale,
 } from './locales';
 
 /**
@@ -33,35 +34,45 @@ import {
  * @returns 로케일 접두사가 붙은 경로.
  */
 export async function localeHref(path: string): Promise<string> {
-    const raw = await getLocale();
-    const locale = resolveLocale(raw);
+    const locale = resolveLocale(await getLocale());
+    const { pathname, search, hash } = splitPathParts(path);
 
+    const strippedPathname = splitLocalePath(pathname).path;
+    if (isApiPath(strippedPathname)) {
+        return `${strippedPathname}${search ? `?${search}` : ''}${hash}`;
+    }
+
+    return `${localePath(locale, strippedPathname)}${localizeNextQuery(locale, search)}${hash}`;
+}
+
+/** `path`를 경로·쿼리(`?` 제외)·해시(`#` 포함)로 나눈다. 없는 부분은 `''`. */
+function splitPathParts(path: string): {
+    readonly pathname: string;
+    readonly search: string;
+    readonly hash: string;
+} {
     const hashIndex = path.indexOf('#');
     const hash = hashIndex === -1 ? '' : path.slice(hashIndex);
     const withoutHash = hashIndex === -1 ? path : path.slice(0, hashIndex);
 
     const queryIndex = withoutHash.indexOf('?');
-    const rawPathname =
-        queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
-    const search = queryIndex === -1 ? '' : withoutHash.slice(queryIndex + 1);
+    if (queryIndex === -1) return { pathname: withoutHash, search: '', hash };
+    return {
+        pathname: withoutHash.slice(0, queryIndex),
+        search: withoutHash.slice(queryIndex + 1),
+        hash,
+    };
+}
 
-    const strippedPathname = splitLocalePath(rawPathname).path;
-    if (isApiPath(strippedPathname)) {
-        return `${strippedPathname}${search ? `?${search}` : ''}${hash}`;
+/** 쿼리가 비면 `''`, 아니면 `next`(내부 경로일 때)에 로케일을 다시 붙인 `?…`. */
+function localizeNextQuery(locale: Locale, search: string): string {
+    if (!search) return '';
+    const params = new URLSearchParams(search);
+    const next = params.get('next');
+    if (next?.startsWith('/')) {
+        params.set('next', localePath(locale, splitLocalePath(next).path));
     }
-    const pathname = localePath(locale, strippedPathname);
-
-    let query = '';
-    if (search) {
-        const params = new URLSearchParams(search);
-        const next = params.get('next');
-        if (next?.startsWith('/')) {
-            params.set('next', localePath(locale, splitLocalePath(next).path));
-        }
-        query = `?${params.toString()}`;
-    }
-
-    return `${pathname}${query}${hash}`;
+    return `?${params.toString()}`;
 }
 
 /**

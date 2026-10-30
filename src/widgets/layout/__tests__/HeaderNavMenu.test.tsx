@@ -26,7 +26,7 @@ import { vi, describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 
 import { HeaderNavMenu } from '../HeaderNavMenu';
-import { NAV_TREE } from '../headerNavTree';
+import { NAV_TREE } from '../utils/headerNavTree';
 
 const NEWS = NAV_TREE.find(v => v.id === 'news')!;
 const MARKET = NAV_TREE.find(v => v.id === 'market')!;
@@ -96,15 +96,112 @@ describe('HeaderNavMenu 트리거는', () => {
         expect(trigger).toHaveAttribute('aria-expanded', 'true');
     });
 
-    it('Escape로 닫고 포커스를 트리거로 돌려준다', () => {
+    it('호버로 열린 메뉴를 클릭하면 닫히지 않고 열린 채 유지된다', () => {
+        const { trigger } = renderMenu();
+        const container = trigger.parentElement!;
+
+        fireEvent.pointerEnter(container, { pointerType: 'mouse' });
+        fireEvent.click(trigger);
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('클릭으로 연 메뉴는 다시 클릭할 때만 닫힌다', () => {
+        const { trigger } = renderMenu();
+        const container = trigger.parentElement!;
+
+        fireEvent.pointerEnter(container, { pointerType: 'mouse' });
+        fireEvent.click(trigger);
+        fireEvent.click(trigger);
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('창 전환처럼 도착 요소가 없는 포커스 이탈은 닫지 않는다', () => {
         const { trigger } = renderMenu();
 
         fireEvent.click(trigger);
-        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        fireEvent.focusOut(trigger, { relatedTarget: null });
 
-        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('포커스가 컨테이너 밖 요소로 옮겨가면 닫힌다', () => {
+        const { trigger } = renderMenu();
+        render(<button type="button">바깥</button>);
+        const outside = screen.getByRole('button', { name: '바깥' });
+
+        fireEvent.click(trigger);
+        fireEvent.focusOut(trigger, { relatedTarget: outside });
+
         expect(trigger).toHaveAttribute('aria-expanded', 'false');
-        expect(document.activeElement).toBe(trigger);
+    });
+
+    it('포커스가 패널 안 링크로 이동하는 동안은 열린 채 유지된다', () => {
+        const { trigger, panel } = renderMenu();
+
+        fireEvent.click(trigger);
+        fireEvent.focusOut(trigger, {
+            relatedTarget: within(panel as HTMLElement).getAllByRole('link')[0],
+        });
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('다른 메뉴의 트리거로 탭 이동하면 이전 패널이 닫힌다', () => {
+        render(
+            <>
+                <HeaderNavMenu vertical={MARKET} pathname="/" idScope="a" />
+                <HeaderNavMenu vertical={NEWS} pathname="/" idScope="b" />
+            </>
+        );
+        const [first, second] = screen.getAllByRole('button');
+
+        fireEvent.click(first!);
+        fireEvent.focusOut(first!, { relatedTarget: second });
+
+        expect(first).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    describe('Escape는', () => {
+        it('포커스가 메뉴 안에 있으면 닫고 포커스를 트리거로 돌려준다', () => {
+            const { trigger, panel } = renderMenu();
+
+            fireEvent.click(trigger);
+            within(panel as HTMLElement)
+                .getAllByRole('link')[0]!
+                .focus();
+            fireEvent.keyDown(document, { key: 'Escape' });
+
+            expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            expect(trigger).toHaveFocus();
+        });
+
+        it('트리거에 포커스가 있어도 닫고 포커스를 유지한다', () => {
+            const { trigger } = renderMenu();
+
+            fireEvent.click(trigger);
+            trigger.focus();
+            fireEvent.keyDown(document, { key: 'Escape' });
+
+            expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            expect(trigger).toHaveFocus();
+        });
+
+        it('호버로만 열린 메뉴라면 닫기만 하고 다른 곳의 포커스를 빼앗지 않는다', () => {
+            const { trigger } = renderMenu();
+            render(<input aria-label="검색" />);
+            const input = screen.getByLabelText('검색');
+
+            fireEvent.pointerEnter(trigger.parentElement!, {
+                pointerType: 'mouse',
+            });
+            input.focus();
+            fireEvent.keyDown(document, { key: 'Escape' });
+
+            expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            expect(input).toHaveFocus();
+        });
     });
 
     it('바깥 pointerdown으로 닫힌다', () => {
