@@ -369,6 +369,37 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-6"></a>
+
+#### CR-6 — List keys are unique, non-blank and independent of display text
+
+A `key` built from a display string (title, label, name) renders blank rows when the string is empty and triggers duplicate-key warnings and state mix-ups when two items share it. Key by a stable id; when only display text exists, trim it, drop blank items (or fall back to a localized placeholder) and drop repeats before rendering, so the text is unique.
+
+```tsx
+// ❌ blank or repeated titles collide
+items.map(item => <li key={item.title}>{item.title}</li>)
+
+// ✅ blanks and repeats dropped first, so the title is a unique key
+distinctTitles(items).map(title => <li key={title}>{title}</li>)
+<a id="CR-7"></a>
+
+#### CR-7 — Swapping to a shared component preserves what the old one encoded
+
+Before replacing a hand-rolled element with a shared component, list the constraints the old one carried (accessible name, size limits, z-index, viewport clamping) and check the shared one meets each; pass the specific label and cap the size where it does not.
+
+- ❌ Swapping a fixed-width tooltip for the shared `InfoTooltip` and silently getting a generic accessible name and a width that overflows 320px screens.
+- ✅ Pass the specific `aria-label` and cap the width to the viewport minus padding.
+<a id="CR-5"></a>
+
+#### CR-5 — Swapping to a shared component keeps the constraints the old one encoded
+
+Before replacing a hand-rolled component with a shared one, list what the old one guaranteed — accessible name, size
+limits at the smallest viewport (320px), stacking, keyboard and touch behaviour — and check the shared one meets each.
+Pass a prop or extend the shared component instead of accepting its defaults: they silently replace the old specifics.
+
+- ❌ Swap a fixed `w-56` tooltip for the shared one (`max-w-xs`, positioned by clamping only the left edge): it overflows
+  a 320px screen, and its generic trigger name replaces "Reliability Score Explanation".
+- ✅ Cap the shared width to `min(20rem, 100vw - 2 × padding)` and pass the specific `label`.
 <a id="CR-4"></a>
 
 #### CR-4 — Pointer-anchored overlays measure the target at event time
@@ -467,6 +498,40 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 <button aria-label="Watchlist" aria-pressed={on} />
 ```
 
+<a id="AX-7"></a>
+
+#### AX-7 — ARIA references point at rendered elements; a combobox follows the WAI-ARIA pattern
+
+`aria-describedby`, `aria-controls`, `aria-labelledby` and `aria-activedescendant` name an id that exists in the DOM at that moment: set the attribute only while its target is rendered. A reference to an unrendered element is silently ignored and misleads assistive tech. For a combobox (search input with a suggestion popup):
+
+- `aria-expanded` is true only while the listbox with at least one option is rendered; `aria-controls` is set only then.
+- The `role="listbox"` has an accessible name and contains only `role="option"` children. Status, empty and loading text lives in a separate `role="status"` region outside the listbox, announced for every layout variant (desktop and mobile).
+- `aria-activedescendant` points at a rendered option and is cleared when the popup closes or the options change; Enter must not follow a hidden active option.
+- Options are not tab stops (`tabIndex={-1}`, keyboard moves through the input); blur and Escape close the popup.
+
+```tsx
+// ❌ listbox not rendered, status text inside it, active option hidden
+<input aria-expanded={open} aria-controls="results" aria-activedescendant={activeId} />
+// ✅
+<input
+  aria-expanded={open && options.length > 0}
+  aria-controls={open && options.length > 0 ? listId : undefined}
+  aria-activedescendant={open ? activeId : undefined}
+/>
+```
+
+<a id="CR-9"></a>
+
+#### CR-9 — A DOM id in a reusable component comes from `useId`
+
+A hard-coded `id` (for `htmlFor`, `aria-describedby`, `aria-controls`) is duplicated whenever the component renders twice on one page (desktop plus mobile sheet, list rows). Generate it with `useId()` and derive related ids from it; an id nothing references is removed.
+
+```tsx
+// ❌
+<label htmlFor="search-input">…</label><input id="search-input" />
+// ✅
+const inputId = useId();
+<label htmlFor={inputId}>…</label><input id={inputId} />
 <a id="AX-4"></a>
 
 #### AX-4 — Adjacent text parts get a real space, not only `gap`/margin

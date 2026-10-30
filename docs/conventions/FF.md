@@ -395,6 +395,17 @@ const PANEL_AXIS_OFFSET_CLASS = 'lg:right-60';
   `TOOLTIP = { level: [...], text: [...] }` → ✅ `BADGE_DATA = { level: [{ icon, tooltip }, ...] }`. Adding a level then touches one constant.
 - Constants with different purposes or owners go into separate modules. ❌ SEO metadata and legal disclaimers in one file → ✅ one module each.
 
+<a id="FF-9"></a>
+
+#### FF-9 — Fields that must agree are derived from one value
+
+When a view model or component needs several facts that must always agree (a direction, its sign and its colour; a
+`linkable` flag and its `href`), compute them all from one source value and one predicate. Using the raw value for some
+and a rounded or differently-tested value for others lets them disagree (a flat move shown as up or down).
+
+- ❌ Sign and colour from `change > 0`, flatness from `Math.round(change) === 0`.
+- ✅ One `direction` ('up' | 'down' | 'flat') derived once; sign, colour and label are looked up from it.
+
 ### 3-C. Match form cohesion to the unit of change
 
 When building forms, the right cohesion level depends on **what unit of change you expect**.
