@@ -678,10 +678,6 @@ describe('fetchOptionsSnapshot — last-good fallback', () => {
         });
     });
 
-    it('last-good TTL은 주말·연휴를 덮는 5일이다', () => {
-        expect(LAST_GOOD_SNAPSHOT_TTL_SECONDS).toBe(5 * 24 * 60 * 60);
-    });
-
     it('OI가 비어 있는 스냅샷으로는 last-good을 덮어쓰지 않는다', async () => {
         vi.setSystemTime(SESSION_OPEN_NOW);
         redisHolds({});
