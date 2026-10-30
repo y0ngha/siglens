@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
@@ -25,6 +25,12 @@ interface InfoTooltipProps {
     readonly label?: string;
 }
 
+/**
+ * 트리거와 툴팁 사이에 `TOOLTIP_GAP`만큼 빈틈이 있어, 포인터가 그 틈을 건너는 동안
+ * 닫히지 않도록 두는 유예(ms). 툴팁 위로 올라가면 취소된다(WCAG 1.4.13 hoverable).
+ */
+export const TOOLTIP_CLOSE_DELAY_MS = 150;
+
 const DEFAULT_TRIGGER_CLASS =
     'inline-flex items-center justify-center min-h-6 min-w-6 text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-400 ml-1 cursor-help rounded text-xs leading-none transition-colors focus:outline-none focus-visible:ring-2';
 
@@ -35,23 +41,38 @@ export function InfoTooltip({ children, className, label }: InfoTooltipProps) {
     const [positioned, setPositioned] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
+    const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [position, setPosition] = useState<TooltipPosition>({
         top: 0,
         left: 0,
     });
 
-    useOnClickOutside([triggerRef, tooltipRef], () => setOpen(false), {
-        enabled: open,
-    });
+    // 닫힘 지연 타이머 해제. ref만 다루므로 렌더마다 같은 함수로 유지한다.
+    const cancelClose = useCallback((): void => {
+        if (closeTimerRef.current === null) return;
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+    }, []);
+
+    useOnClickOutside(
+        [triggerRef, tooltipRef],
+        () => {
+            cancelClose();
+            setOpen(false);
+        },
+        { enabled: open }
+    );
 
     // WCAG 2.1 SC 1.4.13 — 열린 툴팁은 Escape로 닫을 수 있어야 한다.
     // useOnClickOutside는 포인터 이벤트만 처리하므로 키보드 사용자용 경로가 별도로 필요하다.
     useEscapeKey(() => {
+        cancelClose();
         setOpen(false);
         setPositioned(false);
     }, open);
 
     const handleClick = (): void => {
+        cancelClose();
         if (open) {
             setOpen(false);
             setPositioned(false);
@@ -62,14 +83,22 @@ export function InfoTooltip({ children, className, label }: InfoTooltipProps) {
 
     const handlePointerEnter = (e: React.PointerEvent): void => {
         if (e.pointerType === 'touch') return;
+        cancelClose();
         setOpen(true);
     };
 
     const handlePointerLeave = (e: React.PointerEvent): void => {
         if (e.pointerType === 'touch') return;
-        setOpen(false);
-        setPositioned(false);
+        cancelClose();
+        closeTimerRef.current = setTimeout(() => {
+            closeTimerRef.current = null;
+            setOpen(false);
+            setPositioned(false);
+        }, TOOLTIP_CLOSE_DELAY_MS);
     };
+
+    // 언마운트 뒤 대기 중인 닫힘 타이머가 상태를 건드리지 않게 정리한다.
+    useEffect(() => cancelClose, [cancelClose]);
 
     return (
         <>
@@ -111,6 +140,10 @@ export function InfoTooltip({ children, className, label }: InfoTooltipProps) {
                         }}
                         id={tooltipId}
                         role="tooltip"
+                        // 트리거와 툴팁은 하나의 호버 영역이라 터치 제외와 지연 닫기를
+                        // 같은 핸들러로 공유한다.
+                        onPointerEnter={handlePointerEnter}
+                        onPointerLeave={handlePointerLeave}
                         // 폭은 화면 폭에서 좌우 여백(TOOLTIP_VIEWPORT_PADDING × 2)을 뺀 값을 넘지 않는다 —
                         // 위치 계산은 왼쪽만 여백에 고정하므로, 폭이 화면만큼 넓으면 오른쪽으로 넘친다(320px 화면).
                         className={cn(

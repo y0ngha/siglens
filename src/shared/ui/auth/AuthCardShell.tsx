@@ -11,6 +11,7 @@ interface AuthCardShellProps {
     footer?: ReactNode;
 }
 
+/** 로그인·회원가입·비밀번호 재설정이 공유하는 중앙 정렬 카드 셸. `<main>`을 직접 렌더한다. */
 export function AuthCardShell({
     title,
     subtitle,
@@ -18,12 +19,9 @@ export function AuthCardShell({
     footer,
 }: AuthCardShellProps) {
     /*
-     * 2026-08 리디자인: 장식 레이어를 걷어냈다. 이전에는 좌상단 글로우
-     * blob(`blur-3xl`)과 하드코딩 rgba 그리드 오버레이, 글래스모피즘
-     * 카드(`backdrop-blur-xl` + 30px 확산 그림자)가 겹쳐 있었는데, 세 요소
-     * 모두 2024~25년 AI 생성 랜딩 페이지의 대표 시그니처다. 로그인·회원가입·
-     * 비밀번호 재설정 4개 페이지가 이 셸을 공유하므로 여기 한 곳만 정리하면
-     * 사용자 진입 동선 전체의 인상이 바뀐다.
+     * 장식 레이어(글로우 blob·rgba 그리드·글래스모피즘 카드)를 두지 않는다. 로그인·회원가입·
+     * 비밀번호 재설정 4개 페이지가 이 셸을 공유하므로 여기 한 곳이 사용자 진입 동선 전체의
+     * 인상을 정한다.
      *
      * 깊이는 그림자가 아니라 표면값 차이(페이지 950 → 카드 800)와 헤어라인
      * 보더로 낸다. 라이트 테마에서 큰 확산 그림자는 즉시 지저분해 보이는데,
@@ -43,10 +41,9 @@ export function AuthCardShell({
                 <header className="mb-8 flex flex-col items-start gap-5">
                     <div className="flex items-center gap-2">
                         {/*
-                            Use the 96×96 PNG (not icon24) because a 24→32 upscale
-                            on a logo with sharp edges produces visible blurriness
-                            on 1× DPI displays; the auth page is not LCP-sensitive
-                            so the extra bytes are fine.
+                            icon24 대신 96×96 PNG를 쓴다 — 모서리가 날카로운 로고를 24→32로
+                            키우면 1× DPI 화면에서 흐려 보인다. 인증 페이지는 LCP에 민감하지
+                            않아 추가 바이트는 문제없다.
                         */}
                         <Image
                             src="/icon96.png"

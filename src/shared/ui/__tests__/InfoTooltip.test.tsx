@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { act, render, screen, fireEvent } from '@testing-library/react';
+import { InfoTooltip, TOOLTIP_CLOSE_DELAY_MS } from '@/shared/ui/InfoTooltip';
 
 // useEscapeKey/useOnClickOutside are left real (not mocked) so the tests below
 // can exercise the actual Escape/click-outside close paths, the same style
@@ -9,6 +9,14 @@ vi.mock('@/shared/lib/tooltipPosition', () => ({
 }));
 
 describe('InfoTooltip', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it('renders the trigger button', () => {
         render(<InfoTooltip>Tooltip content</InfoTooltip>);
         expect(
@@ -83,6 +91,41 @@ describe('InfoTooltip', () => {
         expect(screen.getByRole('tooltip')).toBeInTheDocument();
 
         fireEvent.pointerLeave(trigger, { pointerType: 'mouse' });
+        act(() => {
+            vi.advanceTimersByTime(TOOLTIP_CLOSE_DELAY_MS);
+        });
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
+
+    it('keeps the tooltip open when the pointer moves from the trigger onto the tooltip', () => {
+        render(<InfoTooltip>Tooltip content</InfoTooltip>);
+        const trigger = screen.getByRole('button', { name: '추가 정보' });
+
+        fireEvent.pointerEnter(trigger, { pointerType: 'mouse' });
+        fireEvent.pointerLeave(trigger, { pointerType: 'mouse' });
+        fireEvent.pointerEnter(screen.getByRole('tooltip'), {
+            pointerType: 'mouse',
+        });
+        act(() => {
+            vi.advanceTimersByTime(TOOLTIP_CLOSE_DELAY_MS * 2);
+        });
+
+        expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    });
+
+    it('closes once the pointer leaves the tooltip', () => {
+        render(<InfoTooltip>Tooltip content</InfoTooltip>);
+        const trigger = screen.getByRole('button', { name: '추가 정보' });
+
+        fireEvent.pointerEnter(trigger, { pointerType: 'mouse' });
+        const tooltip = screen.getByRole('tooltip');
+        fireEvent.pointerLeave(trigger, { pointerType: 'mouse' });
+        fireEvent.pointerEnter(tooltip, { pointerType: 'mouse' });
+        fireEvent.pointerLeave(tooltip, { pointerType: 'mouse' });
+        act(() => {
+            vi.advanceTimersByTime(TOOLTIP_CLOSE_DELAY_MS);
+        });
+
         expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 
