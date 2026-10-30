@@ -17,6 +17,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
 import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction';
 import { fetchMarketNewsDigest } from '@/widgets/market-news/utils/fetchMarketNewsDigest';
@@ -55,6 +56,21 @@ const mockEnsureMarketNewsCardsAnalyzedAction =
     ensureMarketNewsCardsAnalyzedAction as MockedFunction<
         typeof ensureMarketNewsCardsAnalyzedAction
     >;
+
+const ENRICHED_CARD: MarketNewsCardItem = {
+    id: 'mn-1',
+    publishedAt: '2026-06-15T10:00:00.000Z',
+    titleEn: 'Fed holds',
+    titleKo: '연준 동결',
+    sentiment: 'bullish',
+    category: 'macro',
+    bodyKo: null,
+    summaryKo: '요약',
+    priceImpact: 'medium',
+    url: 'https://example.com/fed',
+    source: 'Reuters',
+    tickers: [],
+};
 
 const DIGEST_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -224,9 +240,8 @@ describe('useMarketNewsDigest', () => {
         expect(mockFetchMarketNewsDigest).toHaveBeenCalledTimes(2);
     });
 
-    // peekSeed priority — mirrors useMarketBriefing's seed-wins-over-every-
-    // failure-branch coverage. Seed must win over loading, waitError, and
-    // query.isError; only a fresh query.data resolution replaces it.
+    // peekSeed는 쿼리의 초기 데이터다 — 시드가 있는 방문은 요청을 보내지 않고,
+    // 화면에 있는 결과는 대기 실패보다 우선한다.
     const PEEK_SEED: NewsAnalysisResponse = {
         overallSentiment: 'neutral',
         currentDriverKo: '시드로 노출된 다이제스트입니다.',
@@ -234,25 +249,29 @@ describe('useMarketNewsDigest', () => {
         upcomingEventsKo: [],
     };
 
-    it('(Happy) peekSeed 있음 + 아직 로딩 중 → status: done with seed (스켈레톤 대신)', async () => {
-        mockFetchMarketNewsDigest.mockImplementation(
-            () => new Promise(() => {})
-        );
+    it('(Happy) peekSeed 있음 → 첫 렌더부터 done이고 다이제스트 요청을 보내지 않는다', async () => {
+        mockFetchMarketNewsDigest.mockResolvedValue(DIGEST_RESULT);
 
-        const { result, unmount } = renderHook(
+        const { result } = renderHook(
             () => useMarketNewsDigest('articles', true, PEEK_SEED),
             { wrapper: makeWrapper() }
         );
 
+        expect(result.current).toMatchObject({
+            status: 'done',
+            result: PEEK_SEED,
+        });
+
+        // 하이드레이션 게이트와 쿼리 활성화가 모두 지나가도록 한 틱 흘린다.
         await act(async () => {
             await new Promise(resolve => setTimeout(resolve, 0));
         });
 
-        expect(result.current.status).toBe('done');
-        if (result.current.status !== 'done') throw new Error('expected done');
-        expect(result.current.result).toEqual(PEEK_SEED);
-
-        unmount();
+        expect(mockFetchMarketNewsDigest).not.toHaveBeenCalled();
+        expect(result.current).toMatchObject({
+            status: 'done',
+            result: PEEK_SEED,
+        });
     });
 
     it('(Worst) waitError가 나도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
@@ -273,33 +292,15 @@ describe('useMarketNewsDigest', () => {
             });
         }
 
-        expect(result.current.status).toBe('done');
-        if (result.current.status !== 'done') throw new Error('expected done');
-        expect(result.current.result).toEqual(PEEK_SEED);
+        expect(result.current).toMatchObject({
+            status: 'done',
+            result: PEEK_SEED,
+        });
 
         vi.useRealTimers();
     });
 
-    it('(Worst) React Query isError여도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
-        mockFetchMarketNewsDigest.mockRejectedValue(
-            new Error('network failure')
-        );
-
-        const { result } = renderHook(
-            () => useMarketNewsDigest('stock', true, PEEK_SEED),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(mockFetchMarketNewsDigest).toHaveBeenCalled();
-        });
-
-        expect(result.current.status).toBe('done');
-        if (result.current.status !== 'done') throw new Error('expected done');
-        expect(result.current.result).toEqual(PEEK_SEED);
-    });
-
-    it('(Happy) peekSeed 없음 → 기존과 동일하게 loading/error 상태를 그대로 노출', async () => {
+    it('(Happy) peekSeed 없음 → 기존과 동일하게 loading 상태를 그대로 노출', async () => {
         mockFetchMarketNewsDigest.mockImplementation(
             () => new Promise(() => {})
         );
@@ -314,25 +315,197 @@ describe('useMarketNewsDigest', () => {
         });
 
         expect(result.current.status).toBe('loading');
+        expect(mockFetchMarketNewsDigest).toHaveBeenCalledTimes(1);
 
         unmount();
     });
 
-    it('(Happy) 신선한 fetch 성공은 peekSeed를 대체한다', async () => {
-        mockFetchMarketNewsDigest.mockResolvedValue(DIGEST_RESULT);
+    describe('카테고리가 바뀌는 클라이언트 내비게이션', () => {
+        const OTHER_SEED: NewsAnalysisResponse = {
+            ...PEEK_SEED,
+            currentDriverKo: '다른 카테고리의 시드입니다.',
+        };
 
-        const { result } = renderHook(
-            () => useMarketNewsDigest('crypto', true, PEEK_SEED),
-            { wrapper: makeWrapper() }
-        );
+        type Props = {
+            category: 'articles' | 'general';
+            seed: NewsAnalysisResponse | null;
+        };
 
-        // seed shows as 'done' immediately (isFetching transiently true), so
-        // wait for the *fresh* result body specifically, not just any 'done'.
-        await waitFor(() => {
-            expect(result.current.status).toBe('done');
-            if (result.current.status !== 'done')
-                throw new Error('expected done');
-            expect(result.current.result).toEqual(DIGEST_RESULT);
+        it('새 카테고리의 시드가 있으면 그 시드를 보여 준다(옛 시드가 아니다)', async () => {
+            const { result, rerender } = renderHook(
+                ({ category, seed }: Props) =>
+                    useMarketNewsDigest(category, true, seed),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: {
+                        category: 'articles',
+                        seed: PEEK_SEED,
+                    } as Props,
+                }
+            );
+
+            rerender({ category: 'general', seed: OTHER_SEED });
+
+            expect(result.current).toMatchObject({
+                status: 'done',
+                result: OTHER_SEED,
+            });
+        });
+
+        it('새 카테고리의 시드가 없으면 옛 시드를 이어 쓰지 않고 조회한다', async () => {
+            mockFetchMarketNewsDigest.mockImplementation(
+                () => new Promise(() => {})
+            );
+            const { result, rerender } = renderHook(
+                ({ category, seed }: Props) =>
+                    useMarketNewsDigest(category, true, seed),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: {
+                        category: 'articles',
+                        seed: PEEK_SEED,
+                    } as Props,
+                }
+            );
+
+            rerender({ category: 'general', seed: null });
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            });
+
+            expect(result.current.status).toBe('loading');
+            expect(mockFetchMarketNewsDigest).toHaveBeenCalledWith(
+                'general',
+                expect.anything(),
+                expect.anything()
+            );
+        });
+    });
+
+    describe('카드 대기 실패', () => {
+        const WAIT_FAIL_STEPS = 3;
+
+        async function failWaitOnce(): Promise<void> {
+            for (let i = 0; i < WAIT_FAIL_STEPS; i++) {
+                await act(async () => {
+                    await vi.advanceTimersByTimeAsync(3000);
+                });
+            }
+        }
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('화면에 보여 줄 원문 대신 지역화된 일반 문구를 쓰고 원문은 콘솔에만 남긴다', async () => {
+            const consoleError = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                mockGetMarketNewsCardsAction.mockResolvedValue({
+                    ok: false,
+                    error: 'db error',
+                });
+
+                const { result } = renderHook(
+                    () => useMarketNewsDigest('general', false),
+                    { wrapper: makeWrapper() }
+                );
+                await failWaitOnce();
+
+                if (result.current.status !== 'error')
+                    throw new Error('expected error');
+                expect(result.current.error.message).toBe(
+                    'AI 다이제스트 생성 중 오류가 발생했어요.'
+                );
+                expect(consoleError).toHaveBeenCalledWith(
+                    '[useWaitForMarketNewsCards] poll failed:',
+                    expect.objectContaining({ message: 'db error' })
+                );
+            } finally {
+                consoleError.mockRestore();
+            }
+        });
+
+        it('retry()가 대기를 처음부터 다시 시작해 복구되고 수집 요청도 다시 보낸다', async () => {
+            const consoleError = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                mockGetMarketNewsCardsAction.mockResolvedValue({
+                    ok: false,
+                    error: 'db error',
+                });
+                mockFetchMarketNewsDigest.mockResolvedValue(DIGEST_RESULT);
+
+                const { result } = renderHook(
+                    () => useMarketNewsDigest('general', false),
+                    { wrapper: makeWrapper() }
+                );
+                await failWaitOnce();
+
+                expect(result.current.status).toBe('error');
+                expect(
+                    mockEnsureMarketNewsCardsAnalyzedAction
+                ).toHaveBeenCalledTimes(1);
+
+                // 복구된 서버: 이제 보강된 카드가 온다.
+                mockGetMarketNewsCardsAction.mockResolvedValue({
+                    ok: true,
+                    items: [ENRICHED_CARD],
+                });
+                const errorState = result.current;
+                if (errorState.status !== 'error')
+                    throw new Error('expected error');
+                act(() => {
+                    errorState.retry();
+                });
+
+                expect(result.current.status).toBe('loading');
+                expect(
+                    mockEnsureMarketNewsCardsAnalyzedAction
+                ).toHaveBeenCalledTimes(2);
+
+                await act(async () => {
+                    await vi.advanceTimersByTimeAsync(4000);
+                });
+
+                expect(result.current).toMatchObject({
+                    status: 'done',
+                    result: DIGEST_RESULT,
+                });
+            } finally {
+                consoleError.mockRestore();
+            }
+        });
+
+        it('다이제스트가 이미 화면에 있으면 뒤늦은 대기 실패가 본문을 가리지 않는다', async () => {
+            const consoleError = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                mockGetMarketNewsCardsAction.mockResolvedValue({
+                    ok: false,
+                    error: 'db error',
+                });
+
+                const { result } = renderHook(
+                    () => useMarketNewsDigest('general', false, PEEK_SEED),
+                    { wrapper: makeWrapper() }
+                );
+                await failWaitOnce();
+
+                expect(result.current).toMatchObject({
+                    status: 'done',
+                    result: PEEK_SEED,
+                });
+            } finally {
+                consoleError.mockRestore();
+            }
         });
     });
 });
