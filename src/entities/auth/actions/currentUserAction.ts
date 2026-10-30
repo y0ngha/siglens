@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { logActionError } from '@/shared/lib/logActionError';
 import { applyAuthCookie } from '../lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '../lib/authHintCookie';
 import { getCurrentUser } from '../lib/getCurrentUser';
@@ -11,7 +12,8 @@ import { isSecureCookieEnv } from '../lib/sessionCookieOptions';
 
 /**
  * 헤더·게이트가 `useCurrentUser`로 부르는 현재 사용자 조회 액션. 조회가 실패하면 던지지 않고
- * null을 돌려준다(게스트로 취급).
+ * null을 돌려준다(게스트로 취급). 실패 로그는 `logActionError`로 남긴다 — 세션 조회 쿼리의
+ * `DrizzleQueryError` 메시지에 바인딩 파라미터(= 세션 토큰 원문)가 박혀 있어 에러를 그대로 찍으면 안 된다.
  */
 export async function currentUserAction(): Promise<AuthUserRecord | null> {
     try {
@@ -19,7 +21,7 @@ export async function currentUserAction(): Promise<AuthUserRecord | null> {
         if (user === null) await clearStaleSessionCookie();
         return user;
     } catch (err) {
-        console.error('[currentUserAction] unexpected error:', err);
+        logActionError('[currentUserAction] unexpected error', err);
         return null;
     }
 }
