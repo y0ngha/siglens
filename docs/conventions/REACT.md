@@ -147,6 +147,8 @@ import { useState, useEffect } from 'react';
 
 A `run`/`poll`/`retry` function defined inside a hook's `useCallback`/`useEffect` body inherits its closure (alive flag, retry counter, timers, `setState`) implicitly, so it cannot be tested alone. Extract it to a module-level async function taking an explicit context object (`RunContext { symbol, setState, isAlive, setRetryHandle }`); the hook becomes a thin coordinator that builds the context and dispatches.
 
+The extracted function gets its own direct test file (drive it with a fake context and assert each transition, including the superseded/not-alive paths); testing it only through the hook leaves its branches unpinned.
+
 ```typescript
 // ❌
 const trigger = useCallback(() => {
