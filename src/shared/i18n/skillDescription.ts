@@ -1,13 +1,11 @@
-/**
- * `'use client'`를 붙이지 않는다 — 이 훅은 next-intl의 `useTranslations`만
- * 쓰고, 그건 RSC 진입점에도 있어 **경계와 무관**하다. 클라이언트 전용으로
- * 표시하면 서버 컴포넌트가 이 훅을 부르는 순간 그 서브트리 렌더가 죽는다
- * (라운드 12에 실제로 그렇게 냈다).
- */
 import { useTranslations } from 'next-intl';
 
 /**
  * 스킬 한 줄 설명(홈 쇼케이스 카드) → 로케일 문구.
+ *
+ * `'use client'`를 붙이지 않는다 — next-intl의 `useTranslations`만 쓰고, 그건 RSC
+ * 진입점에도 있어 경계와 무관하다. 클라이언트 전용으로 표시하면 서버 컴포넌트가
+ * 이 훅을 부르는 순간 그 서브트리 렌더가 죽는다.
  *
  * 카드에 보이는 문장은 `skills/**.md` front-matter의 `description`이 아니라
  * **스킬 이름으로 찾는 `shared.skillSummary`**다. `description`은 프롬프트 선택·

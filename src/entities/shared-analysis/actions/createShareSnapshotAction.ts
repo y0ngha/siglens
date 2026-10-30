@@ -1,17 +1,18 @@
 'use server';
 
 import { hashUsageIp } from '@y0ngha/siglens-core';
-import { getDatabaseClient } from '@/shared/db/client';
 import { getClientIp } from '@/shared/api/getClientIp';
+import { MS_PER_DAY } from '@/shared/config/time';
+import { getDatabaseClient } from '@/shared/db/client';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
+import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzleSharedAnalysisRepository } from '../api';
-import { isValidShareInput } from '../server/assertValidInput';
-import { checkShareRateLimit } from '../server/rateLimit';
 import { buildShareSnapshot } from '../lib/buildShareSnapshot';
 import { contentHash } from '../lib/contentHash';
 import { generateShareId } from '../lib/generateShareId';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { isValidShareInput } from '../server/assertValidInput';
+import { checkShareRateLimit } from '../server/rateLimit';
 import type { CreateShareResult } from '../types';
-import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 
 const SHARE_TTL_DAYS = 7;
 
@@ -36,9 +37,9 @@ export async function createShareSnapshotAction(
         const now = new Date();
         const ip = await getClientIp();
         const ipHash = hashUsageIp(ip, now);
-        // Rate-limit runs before content-hash dedupe intentionally: re-sharing identical
-        // content is uncommon and the token cost is acceptable; moving the dedupe check
-        // first would require a DB round-trip before every rate-limit decision.
+        // rate limit을 content-hash dedupe보다 먼저 건다: 같은 내용을 다시 공유하는
+        // 일은 드물어 그 비용은 감수할 만하고, dedupe를 앞세우면 매 rate limit 판단
+        // 전에 DB 왕복이 필요해진다.
         if (!(await checkShareRateLimit(ipHash))) {
             return { ok: false, code: 'rate_limited' };
         }
@@ -70,7 +71,8 @@ export async function createShareSnapshotAction(
         });
         return { ok: true, id };
     } catch (error) {
-        console.error(
+        // INSERT 실패 에러의 message에는 바인딩된 스냅샷 본문이 실리므로 원문을 로그에 남기지 않는다.
+        logActionError(
             '[createShareSnapshotAction] Failed to persist share snapshot',
             error
         );

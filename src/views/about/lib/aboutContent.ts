@@ -1,3 +1,8 @@
+/**
+ * Server-built content for `siglens.io/about`: the skill-count fallback, the
+ * FAQ shared with the `FAQPage` JSON-LD, and the example reports the replay
+ * plays.
+ */
 import 'server-only';
 import type { SkillCounts } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
@@ -9,8 +14,7 @@ import {
     type ReplayScenario,
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
-
-type AboutT = Awaited<ReturnType<typeof getTranslations>>;
+import type { AboutT } from './types';
 
 /**
  * `countSkillFiles()` failing must not take the page down (an ISR render that
@@ -55,6 +59,54 @@ const STEP_MS = {
 } as const;
 
 /**
+ * A replay body line. `t.raw` is typed loosely because a key could hold a
+ * nested object; every body line is a plain string in each catalog
+ * (`messages/*.json`, checked by `i18n:verify`), so a non-string can only be a
+ * catalog mistake and renders as an empty line rather than crashing the page.
+ */
+function replayLine(kind: ReplayLine['kind'], raw: unknown): ReplayLine {
+    return parseReplayLine(kind, typeof raw === 'string' ? raw : '');
+}
+
+/** The financials step, whose chip names the ticker it reads. */
+function fundamentalsStep(t: AboutT, subject: string): ReplayTool {
+    return {
+        label: t('replay.step.fundamentals'),
+        pendingLabel: t('replay.step.fundamentalsPending'),
+        subject,
+        ms: STEP_MS.fundamentals,
+    };
+}
+
+interface ScenarioInput {
+    readonly id: string;
+    readonly ticker: string;
+    readonly tools: readonly ReplayTool[];
+    readonly lines: readonly ReplayLine[];
+    readonly time: string;
+}
+
+/**
+ * One scenario. The report step is how the answer gets written, not data it
+ * rests on, so it is left out of `sources`.
+ */
+function buildScenario(
+    t: AboutT,
+    report: ReplayTool,
+    { id, ticker, tools, lines, time }: ScenarioInput
+): ReplayScenario {
+    return {
+        id,
+        question: ticker,
+        tools,
+        lines,
+        summary: t('replay.summary', { count: tools.length }),
+        sources: tools.filter(x => x !== report).map(x => x.label),
+        asOf: t('replay.asOf', { time }),
+    };
+}
+
+/**
  * Example reports for `ReportReplay`: a US stock, a Korean stock and a coin,
  * so the three markets SIGLENS covers each get a turn. The "question" is the
  * ticker typed into the address bar after `siglens.io/`.
@@ -67,112 +119,90 @@ export function buildReportScenarios(
     t: AboutT,
     counts: SkillCounts
 ): ReplayScenario[] {
-    // Body lines are plain strings in every catalog (`messages/*.json`,
-    // checked by `i18n:verify`); `t.raw` is typed loosely because a key could
-    // hold a nested object, which none of these do.
-    const tRaw = (key: string) => t.raw(key) as string;
-    const step = (
-        label: string,
-        pendingLabel: string,
-        subject: string,
-        ms: number
-    ): ReplayTool => ({ label, pendingLabel, subject, ms });
-
-    const bars = step(
-        t('replay.step.bars'),
-        t('replay.step.barsPending'),
-        t('replay.subject.daily'),
-        STEP_MS.bars
-    );
-    const indicators = step(
-        t('replay.step.indicators'),
-        t('replay.step.indicatorsPending'),
-        t('replay.subject.kinds', { count: counts.indicators }),
-        STEP_MS.indicators
-    );
-    const patterns = step(
-        t('replay.step.patterns'),
-        t('replay.step.patternsPending'),
-        t('replay.subject.kinds', {
+    const bars: ReplayTool = {
+        label: t('replay.step.bars'),
+        pendingLabel: t('replay.step.barsPending'),
+        subject: t('replay.subject.daily'),
+        ms: STEP_MS.bars,
+    };
+    const indicators: ReplayTool = {
+        label: t('replay.step.indicators'),
+        pendingLabel: t('replay.step.indicatorsPending'),
+        subject: t('replay.subject.kinds', { count: counts.indicators }),
+        ms: STEP_MS.indicators,
+    };
+    const patterns: ReplayTool = {
+        label: t('replay.step.patterns'),
+        pendingLabel: t('replay.step.patternsPending'),
+        subject: t('replay.subject.kinds', {
             count: counts.candlesticks + counts.patterns,
         }),
-        STEP_MS.patterns
-    );
-    const report = step(
-        t('replay.step.report'),
-        t('replay.step.reportPending'),
-        '',
-        STEP_MS.report
-    );
-    const fundamentals = (ticker: string) =>
-        step(
-            t('replay.step.fundamentals'),
-            t('replay.step.fundamentalsPending'),
-            ticker,
-            STEP_MS.fundamentals
-        );
-    const news = step(
-        t('replay.step.news'),
-        t('replay.step.newsPending'),
-        '',
-        STEP_MS.fundamentals
-    );
-
-    const scenario = (
-        id: string,
-        ticker: string,
-        tools: ReplayTool[],
-        lines: ReplayLine[],
-        time: string
-    ): ReplayScenario => ({
-        id,
-        question: ticker,
-        tools,
-        lines,
-        summary: t('replay.summary', { count: tools.length }),
-        sources: tools.filter(x => x !== report).map(x => x.label),
-        asOf: t('replay.asOf', { time }),
-    });
+        ms: STEP_MS.patterns,
+    };
+    const report: ReplayTool = {
+        label: t('replay.step.report'),
+        pendingLabel: t('replay.step.reportPending'),
+        subject: '',
+        ms: STEP_MS.report,
+    };
+    const news: ReplayTool = {
+        label: t('replay.step.news'),
+        pendingLabel: t('replay.step.newsPending'),
+        subject: '',
+        ms: STEP_MS.fundamentals,
+    };
 
     return [
-        scenario(
-            'aapl',
-            'AAPL',
-            [bars, indicators, patterns, fundamentals('AAPL'), report],
-            [
-                parseReplayLine('p', tRaw('replay.aapl.a1')),
-                parseReplayLine('li', tRaw('replay.aapl.a2')),
-                parseReplayLine('li', tRaw('replay.aapl.a3')),
-                parseReplayLine('li', tRaw('replay.aapl.a4')),
-                parseReplayLine('p', tRaw('replay.aapl.a5')),
+        buildScenario(t, report, {
+            id: 'aapl',
+            ticker: 'AAPL',
+            tools: [
+                bars,
+                indicators,
+                patterns,
+                fundamentalsStep(t, 'AAPL'),
+                report,
             ],
-            t('replay.aapl.asOf')
-        ),
-        scenario(
-            'samsung',
-            '005930.KS',
-            [bars, indicators, patterns, fundamentals('005930'), report],
-            [
-                parseReplayLine('p', tRaw('replay.samsung.a1')),
-                parseReplayLine('li', tRaw('replay.samsung.a2')),
-                parseReplayLine('li', tRaw('replay.samsung.a3')),
-                parseReplayLine('li', tRaw('replay.samsung.a4')),
-                parseReplayLine('p', tRaw('replay.samsung.a5')),
+            lines: [
+                replayLine('p', t.raw('replay.aapl.a1')),
+                replayLine('li', t.raw('replay.aapl.a2')),
+                replayLine('li', t.raw('replay.aapl.a3')),
+                replayLine('li', t.raw('replay.aapl.a4')),
+                replayLine('p', t.raw('replay.aapl.a5')),
             ],
-            t('replay.samsung.asOf')
-        ),
-        scenario(
-            'btc',
-            'BTCUSD',
-            [bars, indicators, patterns, news, report],
-            [
-                parseReplayLine('p', tRaw('replay.btc.a1')),
-                parseReplayLine('li', tRaw('replay.btc.a2')),
-                parseReplayLine('li', tRaw('replay.btc.a3')),
-                parseReplayLine('li', tRaw('replay.btc.a4')),
-                parseReplayLine('p', tRaw('replay.btc.a5')),
+            time: t('replay.aapl.asOf'),
+        }),
+        buildScenario(t, report, {
+            id: 'samsung',
+            ticker: '005930.KS',
+            tools: [
+                bars,
+                indicators,
+                patterns,
+                fundamentalsStep(t, '005930'),
+                report,
             ],
-            t('replay.btc.asOf')
-        ),
+            lines: [
+                replayLine('p', t.raw('replay.samsung.a1')),
+                replayLine('li', t.raw('replay.samsung.a2')),
+                replayLine('li', t.raw('replay.samsung.a3')),
+                replayLine('li', t.raw('replay.samsung.a4')),
+                replayLine('p', t.raw('replay.samsung.a5')),
+            ],
+            time: t('replay.samsung.asOf'),
+        }),
+        buildScenario(t, report, {
+            id: 'btc',
+            ticker: 'BTCUSD',
+            tools: [bars, indicators, patterns, news, report],
+            lines: [
+                replayLine('p', t.raw('replay.btc.a1')),
+                replayLine('li', t.raw('replay.btc.a2')),
+                replayLine('li', t.raw('replay.btc.a3')),
+                replayLine('li', t.raw('replay.btc.a4')),
+                replayLine('p', t.raw('replay.btc.a5')),
+            ],
+            time: t('replay.btc.asOf'),
+        }),
     ];
 }

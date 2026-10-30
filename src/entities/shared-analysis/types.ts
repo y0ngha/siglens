@@ -13,23 +13,21 @@ import type {
 import type { ShareableKind } from '@/shared/db/constants';
 
 /**
- * Maximum number of candlestick bars stored in a chart share snapshot.
+ * chart 공유 스냅샷에 실리는 캔들 수 상한(`isValidShareInput`이 강제).
  *
- * This is a COUNT cap on `chartBars` (enforced by `isValidShareInput`), not a
- * jsonb column size limit. The actual size constraint on the `result` field is
- * MAX_RESULT_BYTES (65 536 UTF-8 bytes), defined in server/assertValidInput.ts.
+ * jsonb 컬럼 크기 제한이 아니라 `chartBars`의 개수 상한이다. `result`의 크기 제약은
+ * `server/assertValidInput.ts`의 MAX_RESULT_BYTES(65,536 UTF-8 바이트)다.
  *
- * Size reasoning (worst case):
- *   - Largest legitimate AnalysisResponse (Korean text, 50 signals, 40 key levels): ~20 KB
- *   - 400 bars × ~101 bytes/bar (JSON): ~40 KB
- *   - Combined: ~60 KB — comfortably under MAX_RESULT_BYTES.
+ * 크기 근거(최악):
+ *   - 가장 큰 정상 AnalysisResponse(한국어, 시그널 50개, 핵심 가격대 40개): 약 20 KB
+ *   - 400봉 x 봉당 약 101바이트(JSON): 약 40 KB
+ *   - 합계 약 60 KB — MAX_RESULT_BYTES 아래다.
  *
- * Core's TIMEFRAME_BARS_LIMIT for 1Day is 500; we cap at 400 to leave a
- * comfortable safety margin. ChartContent slices to the last MAX_CHART_BARS
- * before sending (most recent candles are most relevant for the analysis).
+ * core의 1Day `TIMEFRAME_BARS_LIMIT`가 500이라 여유를 두고 400으로 자른다.
+ * ChartContent가 전송 전에 마지막 MAX_CHART_BARS개로 자른다(분석에 가장 관련 있는 최근 캔들).
  *
- * Declared here (client-safe module) rather than in server/assertValidInput.ts
- * so ShareButton ('use client') can import it without pulling in server-only code.
+ * `ShareButton`('use client')이 서버 전용 코드를 끌어오지 않고 import하도록
+ * server/assertValidInput.ts가 아닌 이 클라이언트 안전 모듈에 둔다.
  */
 export const MAX_CHART_BARS = 400;
 
@@ -66,10 +64,9 @@ export interface SharedAnalysisSnapshot<
     context: ShareContext;
     result: SnapshotResultOf<K>;
     /**
-     * Snapshot-time candlestick bars — chart kind only.
-     * Stored at snapshot level (not inside `result`) so the existing
-     * `MAX_RESULT_BYTES` guard on `result` remains unchanged.
-     * Capped to `MAX_CHART_BARS` (400) bars by `isValidShareInput`.
+     * 스냅샷 시점의 캔들 — chart kind 전용.
+     * `result` 안이 아닌 스냅샷 최상위에 두어 `result`의 `MAX_RESULT_BYTES` 검사를
+     * 그대로 유지한다. 개수는 `isValidShareInput`이 `MAX_CHART_BARS`로 제한한다.
      */
     chartBars?: Bar[];
     /**
@@ -95,18 +92,16 @@ export interface CreateShareInput<K extends ShareableKind = ShareableKind> {
     context: ShareContext;
     result: SnapshotResultOf<K>;
     /**
-     * Tier of the user who created the share, persisted to `shared_analyses.sharer_tier`.
+     * 공유한 사용자의 티어. `shared_analyses.sharer_tier`에 저장된다.
      *
-     * Not consumed on the current read path (getSharedAnalysisAction / ShareKindPanel / share page).
-     * Stored intentionally as cheap metadata for a documented follow-up: tier-based field masking
-     * on the viewer side (spec §12 — e.g. blurring premium fields for free-tier sharers).
-     * Removing and re-adding a DB column later would be churn, so this is kept in place.
+     * 현재 읽기 경로(getSharedAnalysisAction / ShareKindPanel / 공유 페이지)는 쓰지 않는다.
+     * 뷰어 쪽 티어별 필드 마스킹(무료 공유자의 프리미엄 필드 블러 등)을 위한 저렴한
+     * 메타데이터로 남겨 둔다 — 컬럼을 지웠다 다시 추가하는 것이 더 큰 변경이다.
      */
     sharerTier: Tier;
     /**
-     * Snapshot-time OHLCV bars to embed in the chart share snapshot.
-     * Only valid (and only sent) when `kind === 'chart'`.
-     * Validated server-side: must be an array with length ≤ MAX_CHART_BARS.
+     * chart 공유 스냅샷에 넣을 스냅샷 시점 OHLCV 캔들. `kind === 'chart'`일 때만
+     * 유효하며 서버가 배열이고 길이가 MAX_CHART_BARS 이하인지 검증한다.
      */
     chartBars?: Bar[];
     /**

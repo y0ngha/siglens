@@ -30,7 +30,7 @@ import { render, screen, within } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 
 import { HeaderNav } from '../HeaderNav';
-import { NAV_TREE } from '../headerNavTree';
+import { NAV_TREE } from '../utils/headerNavTree';
 
 /** 버티컬 1단 트리거(버튼)를 라벨로 집는다. */
 function trigger(label: string) {

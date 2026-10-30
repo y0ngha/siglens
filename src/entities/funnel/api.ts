@@ -31,6 +31,10 @@ function kstMidnight(dateKey: string): Date {
     return new Date(`${dateKey}T00:00:00+09:00`);
 }
 
+/** 노출 뒤 가입을 같은 방문자의 전환으로 치는 기간(일). `meterCohort` SQL과 리포트 문구가 함께 쓴다. */
+export const METER_CONVERSION_WINDOW_DAYS = 7;
+
+/** 퍼널 이벤트 테이블 접근 계약 — 기록·보존 정리(수집 라우트)와 리포트 집계(스크립트)를 담는다. */
 export interface FunnelEventRepository {
     record(event: FunnelEventRecord): Promise<void>;
     /** `cutoffDate`(KST) **이전** 행을 지운다. 개인정보처리방침 §4의 보존 기간 집행. */
@@ -65,9 +69,10 @@ export interface FunnelEventRepository {
     meterCohort(from: Date, toExclusive: Date): Promise<MeterCohortRow[]>;
 }
 
-/** 노출 뒤 가입을 같은 방문자의 전환으로 치는 기간(일). */
-export const METER_CONVERSION_WINDOW_DAYS = 7;
-
+/**
+ * 퍼널 이벤트 저장소의 Drizzle 구현. 수집 라우트(기록·정리)와 `scripts/funnel-report.ts`
+ * (리포트 쿼리)가 쓴다. server-only라 클라이언트에서 import하지 않는다.
+ */
 export class DrizzleFunnelEventRepository implements FunnelEventRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

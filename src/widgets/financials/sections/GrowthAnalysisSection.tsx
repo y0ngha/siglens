@@ -1,12 +1,15 @@
+/**
+ * 성장 분석 섹션 — 전년 대비 성장률 표와 최신 기준 다년 주당 매출 성장률 표.
+ */
 import { useTranslations } from 'next-intl';
 import type { FinancialGrowthRow } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
+import { StatementSectionFrame } from '../ui/statement-section/StatementSectionFrame';
+import { toPercent } from '../utils/growthFormat';
+import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
+import { statementColumnLabel } from '../utils/statementColumnLabel';
+import { toDisplayOrder } from '../utils/toDisplayOrder';
 import { StatementTable } from './StatementTable';
-import { toDisplayOrder } from './toDisplayOrder';
-import { HEADING_CLASS_NAME } from './constants';
-import { statementColumnLabel } from './statementColumnLabel';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
 
 interface GrowthAnalysisSectionProps {
     rows: FinancialGrowthRow[];
@@ -17,27 +20,12 @@ const HEADING_ID = 'growth-analysis-heading';
 const TITLE_KEY = 'growthAnalysis';
 
 /**
- * Convert a YoY growth fraction (e.g. 0.5) to a display percentage (50.0).
+ * 성장률을 표로 보여 준다.
  *
- * `StatementTable format: 'pct'` formats as `value.toFixed(1) + '%'`, so the
- * fraction must be multiplied by 100 before being handed to the table. Null
- * propagates unchanged (no data for that period).
- */
-function toPercent(v: number | null): number | null {
-    return v !== null ? v * 100 : null;
-}
-
-/**
- * Displays financial growth rates as a formatted table.
+ * 전년 대비 성장률(분수, 0.2 = +20%)은 퍼센트로 표기하고, 최신 행(`rows[0]`)의 3·5·10년 주당
+ * 매출 성장률은 단일 열 표로 아래에 덧붙인다.
  *
- * YoY growth rates (fractions, e.g. 0.2 = +20%) are formatted as percentages.
- * The latest row's 3Y/5Y/10Y per-share revenue growth is appended at the bottom.
- *
- * `rows` are newest→oldest (index 0 = latest). Display is oldest→newest
- * left-to-right.
- *
- * Per-share multi-year growth is taken from `rows[0]` (the latest data point)
- * and shown as single-column rows for context.
+ * `rows`는 최신→과거(index 0 = 최신)이고, 화면은 과거→최신(좌→우)으로 그린다.
  */
 export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     const t = useTranslations('widgets.financials');
@@ -58,53 +46,51 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     const yoyRows = [
         {
             labelKo: t('GrowthAnalysisSection.8a595b'),
-            values: displayRows.map(r => toPercent(r.revenueGrowth)),
-            format: 'pct' as const,
+            pick: (r: FinancialGrowthRow) => r.revenueGrowth,
         },
         {
             labelKo: t('GrowthAnalysisSection.5ee2d9'),
-            values: displayRows.map(r => toPercent(r.netIncomeGrowth)),
-            format: 'pct' as const,
+            pick: (r: FinancialGrowthRow) => r.netIncomeGrowth,
         },
         {
             labelKo: t('GrowthAnalysisSection.35f2dc'),
-            values: displayRows.map(r => toPercent(r.epsGrowth)),
-            format: 'pct' as const,
+            pick: (r: FinancialGrowthRow) => r.epsGrowth,
         },
         {
             labelKo: t('GrowthAnalysisSection.dd9f11'),
-            values: displayRows.map(r => toPercent(r.freeCashFlowGrowth)),
-            format: 'pct' as const,
+            pick: (r: FinancialGrowthRow) => r.freeCashFlowGrowth,
         },
-    ];
+    ].map(({ labelKo, pick }) => ({
+        labelKo,
+        values: displayRows.map(r => toPercent(pick(r))),
+        format: 'pct' as const,
+    }));
 
     const latest = rows[0];
     const perShareRows = [
         {
             labelKo: t('GrowthAnalysisSection.c0a3ad'),
-            values: [toPercent(latest.threeYRevenueGrowthPerShare)],
-            format: 'pct' as const,
+            growth: latest.threeYRevenueGrowthPerShare,
         },
         {
             labelKo: t('GrowthAnalysisSection.18de8f'),
-            values: [toPercent(latest.fiveYRevenueGrowthPerShare)],
-            format: 'pct' as const,
+            growth: latest.fiveYRevenueGrowthPerShare,
         },
         {
             labelKo: t('GrowthAnalysisSection.960ca9'),
-            values: [toPercent(latest.tenYRevenueGrowthPerShare)],
-            format: 'pct' as const,
+            growth: latest.tenYRevenueGrowthPerShare,
         },
-    ];
+    ].map(({ labelKo, growth }) => ({
+        labelKo,
+        values: [toPercent(growth)],
+        format: 'pct' as const,
+    }));
 
     return (
-        <section
-            aria-labelledby={HEADING_ID}
-            className={cn(SURFACE_CARD, 'p-6')}
+        <StatementSectionFrame
+            headingId={HEADING_ID}
+            title={tSection(TITLE_KEY)}
         >
-            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                {tSection(TITLE_KEY)}
-            </h2>
             <div className="mb-6">
                 <StatementTable
                     caption={tSection('growthAnalysisYoy')}
@@ -122,6 +108,6 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
                     rows={perShareRows}
                 />
             </div>
-        </section>
+        </StatementSectionFrame>
     );
 }

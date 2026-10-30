@@ -167,6 +167,25 @@ describe('MobileAnalysisSheet', () => {
         expect(screen.getByTestId('child')).toBeDefined();
     });
 
+    /**
+     * 하단 safe-area는 시트 상자 한 곳에서만 준다 — 안쪽 스크롤 영역에도 더하면 FULL에서
+     * 바닥 여백이 inset만큼 두 번 들어간다.
+     */
+    it('안쪽 스크롤 영역에는 safe-area 여백을 다시 더하지 않는다', () => {
+        render(
+            <MobileAnalysisSheet
+                activeSnap={SNAP_HALF}
+                onActiveSnapChange={vi.fn()}
+            >
+                <span data-testid="child">analysis content</span>
+            </MobileAnalysisSheet>
+        );
+
+        const content = screen.getByTestId('child').parentElement!;
+        expect(content.className).not.toContain('safe-area-inset-bottom');
+        expect(content.className).toContain('pb-4');
+    });
+
     it('renders accessible title and description', () => {
         render(
             <MobileAnalysisSheet

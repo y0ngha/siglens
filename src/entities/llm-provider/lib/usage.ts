@@ -1,37 +1,25 @@
 /**
- * Token-usage telemetry for the chat/translate provider adapters.
+ * 챗·번역·agent provider 어댑터의 토큰 사용량 정규화.
  *
- * `@y0ngha/siglens-core` emits an identical `[Usage]` line from its own
- * provider clients, but only on the **analysis** path — chat and translation go
- * through the adapters in this slice, which produced no telemetry at all. That
- * blind spot made a production cost question ("who is burning Opus 5 on our
- * key?") unanswerable from logs: analysis usage was fully attributable while
- * chat usage left no trace.
+ * `@y0ngha/siglens-core`는 자체 provider 클라이언트에서 동일한 `[Usage]` 줄을 내보내지만
+ * **분석** 경로에서만이다. 챗·번역은 이 슬라이스의 어댑터를 거치므로 텔레메트리가 없었고,
+ * "우리 키로 누가 Opus 5를 태우나?"를 로그에서 답할 수 없었다.
  *
- * Core's extractors are not part of its public API (and deep imports are
- * banned), so they are mirrored here. The **field names and the `[Usage]` tag
- * are deliberately identical to core's** so a single CloudWatch Logs Insights
- * query aggregates both paths:
- *
- *     filter @message like /\[Usage\]/
- *     | parse @message /"model":"(?<model>[^"]+)"/
- *     | stats count(*) by model
- *
- * If core's shape ever changes, change it here in the same commit.
+ * core의 추출기는 공개 API가 아니고 deep import도 금지라 여기에 미러링했다. **필드 이름과
+ * `[Usage]` 태그는 core와 의도적으로 같다** — CloudWatch Logs Insights 쿼리 하나가 두 경로를
+ * 함께 집계한다. core의 shape가 바뀌면 같은 커밋에서 여기도 바꾼다.
  */
 
 /**
- * Normalized per-call token counts.
+ * 호출당 정규화된 토큰 수.
  *
- * The three input buckets are disjoint and sum to the provider's reported total
- * input: `promptTokens + cachedTokens + cacheWriteTokens`.
+ * 세 입력 버킷은 서로 겹치지 않으며 합이 provider가 보고한 전체 입력이다:
+ * `promptTokens + cachedTokens + cacheWriteTokens`.
  *
- * - `promptTokens` — standard-price, non-cached input (1x).
- * - `cachedTokens` — cache **reads**, billed at roughly 0.1x by Anthropic.
- * - `cacheWriteTokens` — cache **writes**, billed at roughly 1.25x. Only Claude
- *   reports this separately; the other providers always report 0. Kept out of
- *   `promptTokens` so the standard-price bucket is not inflated by the write
- *   premium.
+ * - `promptTokens` — 표준 가격(1x)의 비캐시 입력.
+ * - `cachedTokens` — 캐시 **읽기**. Anthropic은 약 0.1x로 과금한다.
+ * - `cacheWriteTokens` — 캐시 **쓰기**(약 1.25x). Claude만 따로 보고하고 나머지는 항상 0이다.
+ *   쓰기 할증이 표준 가격 버킷을 부풀리지 않도록 `promptTokens`와 분리했다.
  */
 export interface NormalizedUsage {
     promptTokens: number;
@@ -47,6 +35,9 @@ const ZERO_USAGE: NormalizedUsage = Object.freeze({
     outputTokens: 0,
 });
 
+/** `callAiProviderRouter`로 보낸 호출의 기본 `jobId`. 직접 호출하는 어댑터 사용처는 자기 라벨을 넘긴다. */
+export const CHAT_JOB_ID = 'chat';
+
 /** Anthropic Messages API usage (`@anthropic-ai/sdk` `Message.usage`). */
 export interface ClaudeUsageLike {
     input_tokens?: number | null;
@@ -55,6 +46,7 @@ export interface ClaudeUsageLike {
     output_tokens?: number | null;
 }
 
+/** Claude 응답 usage를 정규화한다. 캐시 읽기·쓰기를 각자 버킷으로 나눈다. usage가 없으면 0이다. */
 export function extractClaudeUsage(
     usage: ClaudeUsageLike | undefined | null
 ): NormalizedUsage {
@@ -74,6 +66,7 @@ export interface GeminiUsageLike {
     candidatesTokenCount?: number;
 }
 
+/** Gemini usage를 정규화한다. `promptTokenCount`가 캐시분을 포함하므로 빼서 버킷을 겹치지 않게 한다. */
 export function extractGeminiUsage(
     usage: GeminiUsageLike | undefined | null
 ): NormalizedUsage {
@@ -84,18 +77,18 @@ export function extractGeminiUsage(
             (usage.promptTokenCount ?? 0) - (usage.cachedContentTokenCount ?? 0)
         ),
         cachedTokens: usage.cachedContentTokenCount ?? 0,
-        // Gemini reports no separate cache-write metric.
+        // Gemini는 캐시 쓰기 지표를 따로 보고하지 않는다.
         cacheWriteTokens: 0,
         outputTokens: usage.candidatesTokenCount ?? 0,
     };
 }
 
 /**
- * OpenAI **Responses API** usage (`openai.ts` calls `client.responses.create`).
+ * OpenAI **Responses API** usage (`openai.ts`가 `client.responses.create`를 부른다).
  *
- * The Responses API reports `input_tokens` / `input_tokens_details.cached_tokens`
- * / `output_tokens` — NOT the Chat Completions names (`prompt_tokens` /
- * `completion_tokens`). Using the latter here would silently extract all zeros.
+ * Responses API는 `input_tokens` / `input_tokens_details.cached_tokens` / `output_tokens`를
+ * 보고한다 — Chat Completions 이름(`prompt_tokens` / `completion_tokens`)이 아니다.
+ * 후자를 쓰면 조용히 전부 0이 추출된다.
  */
 export interface OpenAIUsageLike {
     input_tokens?: number;
@@ -103,6 +96,7 @@ export interface OpenAIUsageLike {
     output_tokens?: number;
 }
 
+/** OpenAI Responses usage를 정규화한다. 캐시 읽기분은 표준 가격 버킷에서 뺀다. */
 export function extractOpenAIUsage(
     usage: OpenAIUsageLike | undefined | null
 ): NormalizedUsage {
@@ -111,24 +105,20 @@ export function extractOpenAIUsage(
     return {
         promptTokens: Math.max(0, (usage.input_tokens ?? 0) - cached),
         cachedTokens: cached,
-        // OpenAI reports no separate cache-write metric.
+        // OpenAI는 캐시 쓰기 지표를 따로 보고하지 않는다.
         cacheWriteTokens: 0,
         outputTokens: usage.output_tokens ?? 0,
     };
 }
 
 /**
- * OpenAI-compatible `chat.completions` usage — the classic Chat Completions
- * shape, not the Responses shape above. Covers every provider whose adapter
- * calls `chat.completions.create` on this repo's OpenAI-compatible client:
- * DeepSeek (`deepseek.ts`, `prompt_cache_hit_tokens`) and Gemini's
- * OpenAI-compat endpoint (`agent/openAiCompatibleStream.ts`,
- * `prompt_tokens_details.cached_tokens`).
+ * OpenAI 호환 `chat.completions` usage — 위 Responses 모양이 아닌 고전적 Chat Completions
+ * 모양이다. 이 repo의 OpenAI 호환 클라이언트로 `chat.completions.create`를 부르는 모든
+ * provider를 덮는다: DeepSeek(`deepseek.ts`, `prompt_cache_hit_tokens`)와 Gemini의 OpenAI
+ * 호환 엔드포인트(`agent/openAiCompatibleStream.ts`, `prompt_tokens_details.cached_tokens`).
  *
- * Cache reads arrive either as DeepSeek's own `prompt_cache_hit_tokens` (where
- * `prompt_tokens = hit + miss`) or the OpenAI-compatible
- * `prompt_tokens_details.cached_tokens`; both are subtracted out of the
- * standard-price bucket.
+ * 캐시 읽기는 DeepSeek 고유의 `prompt_cache_hit_tokens`(`prompt_tokens = hit + miss`) 또는
+ * OpenAI 호환 `prompt_tokens_details.cached_tokens`로 오며, 둘 다 표준 가격 버킷에서 뺀다.
  */
 export interface OpenAiCompatibleUsageLike {
     prompt_tokens?: number;
@@ -137,6 +127,7 @@ export interface OpenAiCompatibleUsageLike {
     prompt_tokens_details?: { cached_tokens?: number };
 }
 
+/** OpenAI 호환 chat.completions usage를 정규화한다. DeepSeek 고유 캐시 필드를 우선한다. */
 export function extractOpenAiCompatibleUsage(
     usage: OpenAiCompatibleUsageLike | undefined | null
 ): NormalizedUsage {
@@ -148,36 +139,8 @@ export function extractOpenAiCompatibleUsage(
     return {
         promptTokens: Math.max(0, (usage.prompt_tokens ?? 0) - cached),
         cachedTokens: cached,
-        // DeepSeek bills cache writes as ordinary misses — no separate metric.
+        // DeepSeek은 캐시 쓰기를 일반 미스로 과금한다 — 따로 보고하는 지표가 없다.
         cacheWriteTokens: 0,
         outputTokens: usage.completion_tokens ?? 0,
     };
 }
-
-export interface UsageLogFields extends NormalizedUsage {
-    /**
-     * Which caller produced the call. `'chat'` for anything dispatched through
-     * `callAiProviderRouter`; direct adapter callers pass their own label (e.g.
-     * `'translate'`). Core uses `'<SYMBOL>:<jobType>'` on the analysis path, so
-     * the three surfaces stay distinguishable in one query.
-     */
-    jobId: string;
-    model: string;
-    latencyMs: number;
-}
-
-/**
- * Emits the single normalized `[Usage]` telemetry line as pure JSON (the
- * `tag` field carries the marker instead of a leading string argument) so a
- * CloudWatch JSON metric filter (`{ $.tag = "[Usage]" && $.jobId = "agent" }`)
- * can extract `outputTokens` directly. The literal text `[Usage]` still
- * appears in the log line, so the pre-existing `like /\[Usage\]/` Logs
- * Insights query keeps matching both this format and core's two-arg
- * `console.info('[Usage]', json)` analysis-path format unchanged.
- */
-export function logUsage(fields: UsageLogFields): void {
-    console.info(JSON.stringify({ tag: '[Usage]', ...fields }));
-}
-
-/** Default `jobId` for calls dispatched through the provider router. */
-export const CHAT_JOB_ID = 'chat';

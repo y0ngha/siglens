@@ -5,8 +5,8 @@
  * popular-tickers.ts의 POPULAR_TICKERS에 누적 추가합니다.
  *
  * 사용법:
- *   npx tsx scripts/update-popular-tickers.ts              # 개별 주식만
- *   npx tsx scripts/update-popular-tickers.ts --include-etf # ETF 포함
+ *   yarn update-popular-tickers              # 개별 주식만
+ *   yarn update-popular-tickers --include-etf # ETF 포함
  *
  * 환경변수 (.env.local):
  *   FMP_API_KEY
@@ -60,7 +60,7 @@ const SCREENER_MIN_VOLUME = 5_000_000;
 const EOD_LOOKBACK_DAYS = 10;
 const EOD_FETCH_CAP = 30;
 
-// 알려진 오탐 심볼 (SEO 감사 라운드 2 회귀 가드, popular-tickers.test.ts 참고).
+// 알려진 오탐 심볼 — 인기 종목 목록에 다시 들어오면 안 된다(popular-tickers.test.ts 참고).
 // 스크리너는 심볼 문자열만 보고 스캔하므로 이런 케이스를 자동으로 걸러내지 못한다.
 const EXCLUDED_TICKERS = new Set([
     'SPCX', // SpaceX 아님 — SPAC/신규 발행 ETF

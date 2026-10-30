@@ -1,15 +1,18 @@
+/**
+ * OAuth provider 레지스트리와 리다이렉트 URL 도출. 시작·콜백 라우트가 이 파일에서
+ * 어댑터와 redirect URI를 받아 두 라우트가 같은 값을 쓰게 한다.
+ */
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { googleOAuthAdapter } from './google';
 import { e2eFakeOAuthAdapter } from './E2eFakeOAuthAdapter';
 import type { OAuthProviderAdapter } from './types';
 import { isE2E } from '@/shared/api/e2eEnv';
 
-const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = ['google'];
-
 const ADAPTERS: Record<SupportedOAuthProvider, OAuthProviderAdapter> = {
     google: googleOAuthAdapter,
 };
 
+/** provider 어댑터를 고른다. E2E 실행에서는 provider와 무관하게 fake 어댑터다. */
 export function getOAuthAdapter(
     provider: SupportedOAuthProvider
 ): OAuthProviderAdapter {
@@ -21,12 +24,15 @@ export function getOAuthAdapter(
     return ADAPTERS[provider];
 }
 
-/** 라우트 파라미터로 들어온 임의 문자열이 활성화된 provider 인지 검증. */
+/**
+ * 라우트 파라미터로 들어온 임의 문자열이 활성화된 provider 인지 검증.
+ * `ADAPTERS`의 own key로 판정해 어댑터 없는 provider가 통과할 수 없고,
+ * `constructor` 같은 프로토타입 키도 걸러진다.
+ */
 export function isOAuthProvider(
     value: string
 ): value is SupportedOAuthProvider {
-    // SUPPORTED_PROVIDERS is a readonly string-literal list; widening to string[] is only for includes().
-    return (SUPPORTED_PROVIDERS as readonly string[]).includes(value);
+    return Object.hasOwn(ADAPTERS, value);
 }
 
 /**

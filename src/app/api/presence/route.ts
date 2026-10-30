@@ -10,23 +10,27 @@
  */
 import { headers } from 'next/headers';
 import {
+    createDailyPruner,
+    noContent,
+} from '@/app/api/presence/_shared/dailyPruner';
+import { landingPathOf } from '@/app/api/presence/_shared/landingPathOf';
+import { resolveUserId } from '@/app/api/presence/_shared/resolveUserId';
+import {
+    rejectUncountedRequest,
+    resolveVisitorIdentity,
+} from '@/app/api/presence/_shared/visitorIdentity';
+import {
     DrizzleVisitorRepository,
     type VisitorDayRecord,
 } from '@/entities/visitor/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
-import { createDailyPruner, noContent } from './_shared/dailyPruner';
-import { resolveUserId } from './_shared/resolveUserId';
-import {
-    rejectUncountedRequest,
-    resolveVisitorIdentity,
-} from './_shared/visitorIdentity';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * 개인정보처리방침 §4가 고지한 보존 기간.
+ * 개인정보처리방침이 고지한 보존 기간.
  *
  * **바꾸면 방침 본문(`db/seeds/terms/privacy/`)도 같이 바꿔야 한다.** 방침에
  * 적힌 기간과 실제 삭제 기준이 어긋나면 그 자체가 방침 위반이다.
@@ -35,18 +39,7 @@ const RETENTION_DAYS = 400;
 
 const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[visitor-metrics]');
 
-/**
- * 비콘이 뜬 페이지의 경로. 비콘은 same-origin `fetch`라 `Referer`에 현재 페이지
- * URL이 그대로 실린다 — 클라이언트가 본문을 보낼 필요가 없다.
- *
- * 쿼리스트링은 버린다. 검색어·추천 코드 같은 것이 섞여 들어오면 400일짜리
- * 통계 테이블이 그걸 같이 보관하게 된다.
- */
-function landingPathOf(referer: string | null): string | null {
-    if (referer === null || !URL.canParse(referer)) return null;
-    return new URL(referer).pathname;
-}
-
+/** 방문 비콘 수신 — 집계 대상이면 방문자당 하루 1행 기록을 응답 뒤로 미루고 언제나 204로 답한다. */
 export async function POST(): Promise<Response> {
     const headerList = await headers();
 
@@ -80,7 +73,7 @@ export async function POST(): Promise<Response> {
 
 /**
  * 방문 기록 + 하루 1회 정리. **응답을 보낸 뒤**(`afterWithDrain`) 돈다 — 비콘은 결과를 읽지
- * 않으므로(늘 204) DB upsert 왕복을 응답 경로에 둘 이유가 없다(2026-10 서버 성능 감사 L8).
+ * 않으므로(늘 204) DB upsert 왕복을 응답 경로에 둘 이유가 없다.
  * 배포 중 SIGTERM drain은 이 작업을 기다린다.
  *
  * DB 클라이언트 생성까지 try 안에 둔다. `getDatabaseClient()`는 `DATABASE_URL`이 없으면

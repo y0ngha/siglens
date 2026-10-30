@@ -1,8 +1,12 @@
+/**
+ * "내 위치" 수치 카드 — 최근 고/저·현재가·내 평단과 그 거리·수익률·범위 위치를 한 표로 보인다.
+ */
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';
-import { formatAmount } from '../lib/positionBuildingNotes';
-import type { PositionModel } from '../lib/positionGeometry';
+import { formatAmount } from '../utils/buildingPriceFormat';
+import type { PositionModel } from '../utils/positionGeometry';
+import { returnTextClass } from '../utils/returnTone';
 import { ReadoutRow } from './ReadoutRow';
 
 interface PositionCardProps {
@@ -74,7 +78,7 @@ export function PositionCard({
                 <ReadoutRow
                     label={t('PositionCard.fb64df')}
                     value={formatSignedPercent(model.returnPct)}
-                    valueClassName={signColorClass(model.returnPct)}
+                    valueClassName={returnTextClass(model.returnPct)}
                 />
                 <ReadoutRow
                     label={t('PositionCard.ffe45d')}

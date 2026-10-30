@@ -25,7 +25,7 @@ import {
  *    server/client tier mismatch to worry about.
  *
  * 2. Non-fallback analysis: the SSE route's `isE2E()` short-circuit
- *    (`src/app/api/analysis/stream/route.ts`) returns
+ *    (`src/app/api/analysis/stream/_lib/e2eTechnicalResponse.ts`) returns
  *    `e2eCachedTechnical(tier)`, which is `filterAnalysisResult(fixture.technical,
  *    tier)` — a real fixture-shaped `AnalysisResponse`
  *    (`e2e/fixtures/analysis.json`'s `technical` key: summary "E2E 고정 분석

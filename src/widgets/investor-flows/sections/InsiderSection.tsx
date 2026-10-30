@@ -1,3 +1,6 @@
+/**
+ * 내부자 거래 섹션 — 순매수 요약, 거래 목록(Form 4), 매도 예정 신고(Form 144).
+ */
 import { useTranslations } from 'next-intl';
 import type {
     InsiderMetrics,

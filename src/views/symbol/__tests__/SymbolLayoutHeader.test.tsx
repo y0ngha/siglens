@@ -153,7 +153,11 @@ vi.mock('@/views/symbol/FearGreedHeaderChip', () => ({
 }));
 
 vi.mock('@/features/premium-gate/ui/PremiumModelGateModal', () => ({
-    PremiumModelGateModal: () => <div data-testid="gate-modal">modal</div>,
+    PremiumModelGateModal: ({ access }: { access?: string }) => (
+        <div data-testid="gate-modal" data-access={access}>
+            modal
+        </div>
+    ),
 }));
 
 vi.mock('@/shared/lib/llmProviderLabels', () => ({
@@ -528,7 +532,11 @@ describe('SymbolLayoutHeader', () => {
     it('renders the premium gate modal when the context exposes one', () => {
         mockUseSymbolModel.mockReturnValue(
             symbolModelValue({
-                gateModal: { mode: 'upgrade', provider: 'google' },
+                gateModal: {
+                    mode: 'auth',
+                    provider: 'google',
+                    access: 'member',
+                },
             })
         );
 
@@ -540,7 +548,11 @@ describe('SymbolLayoutHeader', () => {
             />
         );
 
-        expect(screen.getByTestId('gate-modal')).toBeInTheDocument();
+        // 등급을 모달에 넘겨야 member 모델에서 API 키 안내가 빠진다.
+        expect(screen.getByTestId('gate-modal')).toHaveAttribute(
+            'data-access',
+            'member'
+        );
     });
 
     describe('모바일 헤더 축약(375px에서 종목명이 잘리던 문제)', () => {

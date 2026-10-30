@@ -7,7 +7,7 @@ const AI_HOSTS: ReadonlySet<string> = new Set([
 ]);
 /**
  * Public, indexable pages of the ai host: the sitemap (`proxy.ts`) and the
- * page metadata (`app/ai/[locale]/aiSeo.ts`) both read this list, so a page
+ * page metadata (`app/ai/[locale]/_lib/aiSeo.ts`) both read this list, so a page
  * cannot be indexable without being in the sitemap or the other way round.
  * Conversations (`/c/*`) are never here.
  *

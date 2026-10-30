@@ -21,6 +21,9 @@ describe('isOAuthProvider', () => {
         expect(isOAuthProvider('facebook')).toBe(false);
         expect(isOAuthProvider('')).toBe(false);
     });
+    it('객체 프로토타입 키는 provider로 통과하지 않는다', () => {
+        expect(isOAuthProvider('constructor')).toBe(false);
+    });
 });
 
 describe('getOAuthAdapter', () => {

@@ -180,4 +180,22 @@ describe('useMovingAverageOverlay', () => {
         rerender();
         expect(result.current.togglePeriod).toBe(firstToggle);
     });
+    // 기간 값이 없으면 이전 종목의 선이 남지 않도록 그 시리즈를 비운다.
+    it('empties the series of a period that has no data', () => {
+        const chart = makeChart();
+        renderHook(() =>
+            useMovingAverageOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: {
+                    ma: { 10: [50, 51] },
+                } as unknown as IndicatorResult,
+                storageKey: 'test.ma.empty',
+                defaultPeriods: [10, 20],
+                lineStyle: 0,
+                getIndicatorData: mockAccessor,
+            })
+        );
+        expect(mockSetData).toHaveBeenCalledWith([]);
+    });
 });

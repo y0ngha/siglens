@@ -1,13 +1,13 @@
 import type { CryptoDailyBar, MarketDailyClose } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
 
-/** Sessions per fixture series — comfortably past the 185 needed for `confidence: 'normal'`. */
+/** fixture 시리즈당 세션 수 — `confidence: 'normal'`에 필요한 185를 넉넉히 넘는다. */
 const FIXTURE_SESSIONS = 400;
 
-/** Anchor for fixture dates. Fixed, so the rendered `asOf` never drifts between runs. */
+/** fixture 날짜의 기준일. 고정이라 렌더되는 `asOf`가 실행마다 흔들리지 않는다. */
 const FIXTURE_ANCHOR_UTC = Date.UTC(2026, 0, 1);
 
-/** Deterministic LCG — E2E fixtures must never depend on `Math.random`. */
+/** 결정적 LCG — E2E fixture는 `Math.random`에 기대면 안 된다. */
 function lcg(seed: number): () => number {
     let state = seed;
     return () => {
@@ -16,7 +16,7 @@ function lcg(seed: number): () => number {
     };
 }
 
-/** Stable per-symbol seed so each series has its own shape but never changes run to run. */
+/** 심볼별 안정 시드 — 시리즈마다 모양은 다르지만 실행 간에는 바뀌지 않는다. */
 function seedFor(symbol: string): number {
     return (
         [...symbol].reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 7) % 100000
@@ -24,15 +24,13 @@ function seedFor(symbol: string): number {
 }
 
 /**
- * Deterministic stand-in for FMP daily closes, used only under `E2E_TEST`.
+ * `E2E_TEST`에서만 쓰는 FMP·yahoo 일별 종가의 결정적 대역(`fetchDailyCloses`,
+ * `fetchKrDailyCloses` 소비).
  *
- * CI runs the E2E suite with no FMP key on purpose, so without this the
- * `/fear-greed` page could only ever be exercised in its "insufficient data"
- * state — the gauge, the comparison row, and the factor bars would go
- * completely untested end to end. A random walk (seeded per symbol) gives every
- * factor a non-degenerate history to rank against, so a real score comes out
- * the other side; the exact number is not meaningful and specs should not
- * assert it.
+ * CI는 일부러 FMP 키 없이 E2E를 돌리므로, 이게 없으면 `/fear-greed` 페이지는 "표본 부족"
+ * 상태로만 검증되고 게이지·비교 행·요인 막대가 끝까지 검증되지 않는다. 심볼별로 시드한
+ * 랜덤 워크가 모든 요인에 순위를 매길 퇴화하지 않은 이력을 줘서 실제 점수가 나온다.
+ * 정확한 숫자는 의미가 없으니 spec이 단언하면 안 된다.
  */
 export function e2eDailyCloses(symbol: string): MarketDailyClose[] {
     const next = lcg(seedFor(symbol));
