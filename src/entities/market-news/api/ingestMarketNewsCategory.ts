@@ -98,7 +98,14 @@ async function analyzeAndPersist(
         );
         return false;
     }
-    await repo.attachAnalysis(item.id, analyzed.result, new Date());
+    try {
+        await repo.attachAnalysis(item.id, analyzed.result, new Date());
+    } catch (error) {
+        // Drizzle 오류 메시지는 바인딩된 값(번역·요약 본문)을 담는다. 원본은 안전 필드만
+        // 로그에 남기고, 호출부 로그에 실릴 reason은 본문이 없는 오류로 바꿔 던진다.
+        logActionError(`[${logLabel}] attachAnalysis failed`, error);
+        throw new Error(`attachAnalysis failed for ${item.id}`);
+    }
     return true;
 }
 

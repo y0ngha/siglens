@@ -21,6 +21,7 @@ vi.mock('../api/getMarketNewsClient', () => ({
 }));
 
 // 2. Static imports
+import { inspect } from 'node:util';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { revalidateTag } from 'next/cache';
 import * as core from '@y0ngha/siglens-core';
@@ -130,6 +131,34 @@ describe('ingestMarketNewsCategory', () => {
             'market-news:__NEWS_FOREX__',
             'max'
         );
+    });
+
+    it('보강 저장 DB 오류의 바인딩 값을 로그에 싣지 않고 실패는 analyzed에서 뺀다', async () => {
+        setupFeed([makeItem('a')]);
+        attachAnalysis.mockRejectedValue(
+            Object.assign(
+                new Error('Failed query: update ... params: 비밀 요약 본문'),
+                { cause: { code: '57014' } }
+            )
+        );
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await ingestMarketNewsCategory('forex', {
+            logLabel: 'test',
+        });
+
+        expect(result).toMatchObject({ status: 'ok', analyzed: 0 });
+        expect(errorSpy).toHaveBeenCalledWith('[test] attachAnalysis failed', {
+            name: 'Error',
+            code: '57014',
+        });
+        // Error의 message는 JSON.stringify에 안 잡히므로 inspect로 펼쳐 확인한다.
+        expect(inspect(errorSpy.mock.calls, { depth: 6 })).not.toContain(
+            '비밀'
+        );
+        errorSpy.mockRestore();
     });
 
     it('빈 분석은 저장하지 않고 analyzed로 세지 않는다', async () => {
