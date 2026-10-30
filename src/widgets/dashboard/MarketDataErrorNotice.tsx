@@ -13,8 +13,8 @@ interface MarketDataErrorNoticeProps {
      *
      * 문구를 `'미국 증시'`로 박아 두면 `/market/kr`이 한국 데이터가 빈 상황에서
      * 미국 얘기를 한다. 하필 **부분 실패가 예상되는 쪽이 한국**이다
-     * (`marketSummaryCache`의 `shouldCacheSummary` 주석 — KR 섹터 ETF는 얇아서
-     * 하나가 간헐적으로 빈다). `$`를 원화 종목에 붙였던 것과 같은 결함이다.
+     * (`shouldCacheMarketSummary` 주석 — KR 섹터 ETF는 얇아서 하나가
+     * 간헐적으로 빈다). `$`를 원화 종목에 붙였던 것과 같은 결함이다.
      */
     scopeId: DashboardScope['id'];
     /**
