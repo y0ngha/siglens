@@ -1,7 +1,8 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { DemoPane } from '@/views/guide/demos/types';
-import { GuideDemoPane, type PaneFrame } from '@/views/guide/ui/GuideDemoPane';
+import type { PaneFrame } from '@/views/guide/lib/demoChartLayout';
+import { GuideDemoPane } from '@/views/guide/ui/GuideDemoPane';
 
 const BARS = 5;
 const frame: PaneFrame = {

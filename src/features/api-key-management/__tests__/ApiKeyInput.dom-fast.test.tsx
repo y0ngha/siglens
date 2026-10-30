@@ -1,5 +1,7 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import { ApiKeyInput } from '@/features/api-key-management/ui/ApiKeyInput';
 
 describe('ApiKeyInput', () => {
@@ -63,6 +65,31 @@ describe('ApiKeyInput', () => {
             'input[name="apiKey"]'
         ) as HTMLInputElement;
         expect(input.required).toBe(true);
+    });
+
+    it('disables spellcheck so a revealed key is not sent to a spelling service', async () => {
+        const user = userEvent.setup();
+        render(<ApiKeyInput name="apiKey" />);
+        await user.click(screen.getByRole('button', { name: 'API 키 보이기' }));
+        const input = document.querySelector(
+            'input[name="apiKey"]'
+        ) as HTMLInputElement;
+        expect(input).toHaveAttribute('spellcheck', 'false');
+    });
+
+    it('disables autocorrect and autocapitalize', () => {
+        render(<ApiKeyInput name="apiKey" />);
+        const input = document.querySelector(
+            'input[name="apiKey"]'
+        ) as HTMLInputElement;
+        expect(input).toHaveAttribute('autocorrect', 'off');
+        expect(input).toHaveAttribute('autocapitalize', 'none');
+    });
+
+    it('attaches the ref to the key input', () => {
+        const ref = createRef<HTMLInputElement>();
+        render(<ApiKeyInput name="apiKey" ref={ref} />);
+        expect(ref.current?.name).toBe('apiKey');
     });
 
     it('updates aria-pressed on toggle button', async () => {

@@ -6,6 +6,7 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import ko from '../../../../messages/ko.json';
 
 vi.mock('next-intl/server', () => ({
@@ -148,6 +149,16 @@ describe('AboutPage', () => {
         expect(
             screen.getByRole('link', { name: '엔비디아 옵션 보기' })
         ).toHaveAttribute('href', '/NVDA/options');
+    });
+
+    it('draws every h3 with the subsection token, a step below its h2', async () => {
+        await renderPage();
+        const h3s = screen.getAllByRole('heading', { level: 3 });
+        for (const heading of h3s) {
+            for (const token of HEADING_SUBSECTION.split(' ')) {
+                expect(heading).toHaveClass(token);
+            }
+        }
     });
 
     it('renders the same FAQ the JSON-LD is built from', async () => {

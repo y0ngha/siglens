@@ -1,21 +1,13 @@
 'use server';
 
 import type { Locale } from '@/shared/i18n/locales';
-import {
-    type SubmitNewsAnalysisOptions,
-    type RunNewsAnalysisResult,
-} from '@y0ngha/siglens-core';
+import type { SubmitNewsAnalysisOptions } from '@y0ngha/siglens-core';
+import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/model';
 import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
-import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-
-/** Final return type — core's news result + our siglens-side gate errors. */
-export type SubmitNewsAnalysisActionResult =
-    | RunNewsAnalysisResult
-    | AnalysisGateBlockedResult;
 
 /** Server Action: tier + BYOK gate, then load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
 export async function submitNewsAnalysisAction(

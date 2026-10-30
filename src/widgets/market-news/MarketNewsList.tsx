@@ -1,81 +1,20 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+/**
+ * 폴링 상태가 화면 분기를 정하므로 이 컴포넌트는 분기만 맡는다.
+ */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
-import { useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news/lib/marketNewsConstants';
-
-import {
-    MARKET_NEWS_LIST_PAGE_SIZE,
-    NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
-} from '@/shared/config/newsSerialization';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
+import { useMarketNewsPagination } from './hooks/useMarketNewsPagination';
+import { capMarketNewsRows } from './utils/capMarketNewsRows';
+import { getMarketNewsLookbackDays } from './utils/marketNewsLookback';
 import { MarketNewsCard } from './MarketNewsCard';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
-
-const SKELETON_COUNT = 3;
-
-function MarketNewsListHeader() {
-    const t = useTranslations('widgets.market-news');
-    const tMisc = useTranslations('shared.ui.misc');
-    return (
-        <div className="flex items-center justify-between gap-2">
-            <h2 id="market-news-list-heading" className={HEADING_SECTION}>
-                {t('MarketNewsList.d107e1')}
-            </h2>
-            <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
-                {tMisc('lastNDays', { v0: MARKET_NEWS_LOOKBACK_DAYS })}
-            </span>
-        </div>
-    );
-}
-
-function MarketNewsCardSkeleton() {
-    return (
-        <article aria-hidden="true" className={cn(SURFACE_CARD, 'p-4')}>
-            <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-                <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-                <div className="h-5 w-24 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-                <div className="h-4 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            </div>
-            <div className="mt-3 space-y-1.5">
-                <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
-                <div className="h-3.5 w-2/3 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
-            </div>
-        </article>
-    );
-}
-
-function LoadingState() {
-    const t = useTranslations('widgets.market-news');
-    return (
-        <section
-            aria-labelledby="market-news-list-heading"
-            aria-busy="true"
-            className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
-        >
-            <MarketNewsListHeader />
-            <span
-                className="block text-xs text-secondary-400"
-                aria-live="polite"
-                aria-atomic="true"
-            >
-                {t('MarketNewsList.b514aa')}
-            </span>
-            <ul className="space-y-3">
-                {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-                    <li key={i}>
-                        <MarketNewsCardSkeleton />
-                    </li>
-                ))}
-            </ul>
-        </section>
-    );
-}
+import { MarketNewsListEmpty } from './ui/list/MarketNewsListEmpty';
+import { MarketNewsListHeader } from './ui/list/MarketNewsListHeader';
+import { MarketNewsListLoadingState } from './ui/list/MarketNewsListLoadingState';
+import { MarketNewsLoadMoreButton } from './ui/list/MarketNewsLoadMoreButton';
+import { MarketNewsPollNotice } from './ui/list/MarketNewsPollNotice';
 
 export interface MarketNewsListProps {
     category: NewsFeedCategoryId;
@@ -83,74 +22,39 @@ export interface MarketNewsListProps {
 }
 
 /**
- * Client-side market-news list with background polling for AI enrichment.
+ * SSR 스냅샷(`initialItems`)을 바로 그리고, AI 보강이 끝날 때까지 `useMarketNewsCardPolling`이
+ * 백그라운드로 갱신한다. 폴링이 도는 동안 섹션은 `aria-busy`다.
  *
- * Renders `initialItems` (SSR snapshot) immediately and polls
- * `getMarketNewsCardsAction(category)` every 3 s in the background via
- * `useMarketNewsCardPolling` until all cards are enriched or polling is
- * terminated (5-min ceiling, 3 consecutive failures, 20 empty snapshots).
- *
- * `aria-busy` on the section signals to assistive technology that the list
- * is updating while polling is active.
+ * 폴링이 연속으로 실패해도 페이지를 에러 바운더리로 넘기지 않는다 — 마지막으로 받은 목록을
+ * 그대로 두고, 보강 대기 스켈레톤은 걷어 보강 전 모습으로 보여 주며, 작은 안내만 덧붙인다.
  */
 export function MarketNewsList({
     category,
     initialItems,
 }: MarketNewsListProps) {
-    const t = useTranslations('widgets.market-news');
-    const [visibleCount, setVisibleCount] = useState(
-        MARKET_NEWS_LIST_PAGE_SIZE
-    );
-    const [prevCategory, setPrevCategory] = useState(category);
-
-    if (prevCategory !== category) {
-        setPrevCategory(category);
-        setVisibleCount(MARKET_NEWS_LIST_PAGE_SIZE);
-    }
-
+    const { visibleCount, showMore } = useMarketNewsPagination(category);
     const {
         items: polledItems,
         isPolling,
         pollError,
     } = useMarketNewsCardPolling(category, initialItems);
-
-    // 서버 렌더와 폴링 액션이 모두 같은 상한을 쓰지만, 렌더 직전에 한 번 더 맞춘다 —
-    // 어느 한쪽이 상한을 잃으면 첫 페인트의 "더보기 (40개 남음)"이 폴링 직후 실제
-    // 전체 개수로 튄다. 화면이 다루는 행 수를 한쪽에서만 제한할 이유가 없다.
-    const items =
-        polledItems.length > MARKET_NEWS_ROW_SERIALIZATION_LIMIT
-            ? polledItems.slice(0, MARKET_NEWS_ROW_SERIALIZATION_LIMIT)
-            : polledItems;
-
-    if (pollError !== null) {
-        throw pollError;
-    }
+    const items = capMarketNewsRows(polledItems);
+    const pollFailed = pollError !== null;
+    // 실패뿐 아니라 5분 상한·정체·빈 스냅샷 반복처럼 오류 없이 끝난 폴링도 더는 보강 결과가
+    // 오지 않는다. 첫 폴 전에는 isPolling이 true라 스켈레톤이 그대로 보인다.
+    const enrichmentStopped = !isPolling;
+    const lookbackDays = getMarketNewsLookbackDays();
 
     if (items.length === 0) {
-        if (isPolling) {
-            return <LoadingState />;
-        }
-
-        return (
-            <section
-                aria-labelledby="market-news-list-heading"
-                className={cn(
-                    SURFACE_CARD,
-                    'w-full max-w-full min-w-0 overflow-hidden p-6'
-                )}
-            >
-                <MarketNewsListHeader />
-                <p className="text-sm text-secondary-400">
-                    {t('MarketNewsList.242236', {
-                        v0: MARKET_NEWS_LOOKBACK_DAYS,
-                    })}
-                </p>
-            </section>
+        return isPolling ? (
+            <MarketNewsListLoadingState lookbackDays={lookbackDays} />
+        ) : (
+            <MarketNewsListEmpty
+                pollFailed={pollFailed}
+                lookbackDays={lookbackDays}
+            />
         );
     }
-
-    const visible = items.slice(0, visibleCount);
-    const hasMore = visibleCount < items.length;
 
     return (
         <section
@@ -158,26 +62,24 @@ export function MarketNewsList({
             aria-busy={isPolling}
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
-            <MarketNewsListHeader />
+            <MarketNewsListHeader lookbackDays={lookbackDays} />
             <ul className="space-y-3">
-                {visible.map(item => (
+                {items.slice(0, visibleCount).map(item => (
                     <li key={item.id}>
-                        <MarketNewsCard category={category} item={item} />
+                        <MarketNewsCard
+                            category={category}
+                            item={item}
+                            enrichmentStopped={enrichmentStopped}
+                        />
                     </li>
                 ))}
             </ul>
-            {hasMore && (
-                <button
-                    type="button"
-                    onClick={() =>
-                        setVisibleCount(c => c + MARKET_NEWS_LIST_PAGE_SIZE)
-                    }
-                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                >
-                    {t('MarketNewsList.8e5a3a', {
-                        v0: items.length - visibleCount,
-                    })}
-                </button>
+            {pollFailed && <MarketNewsPollNotice />}
+            {visibleCount < items.length && (
+                <MarketNewsLoadMoreButton
+                    remaining={items.length - visibleCount}
+                    onClick={showMore}
+                />
             )}
         </section>
     );

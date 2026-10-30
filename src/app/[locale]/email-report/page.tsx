@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
+    EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS,
     EMAIL_REPORT_MAX_SYMBOLS,
 } from '@/entities/email-report/lib/emailReportConstants';
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
@@ -70,6 +71,7 @@ export async function ReportPreviewLoader() {
     return (
         <ReportSymbolsPreview
             preview={user ? await loadReportPreview(user.id) : null}
+            excludedLimit={EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS}
         />
     );
 }

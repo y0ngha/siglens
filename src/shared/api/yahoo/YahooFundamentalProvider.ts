@@ -70,7 +70,7 @@ function toFmpShape(item: YahooEarningsItem): FmpEarningsReportItem {
  * 제공되지 않는 항목과 이유:
  * - **재무 건전성 점수**(Altman Z / Piotroski): yahoo가 산출해 주지 않는다. 두 지표
  *   모두 재무제표에서 계산 가능하지만 계산식은 분석 도메인이라 `siglens-core` 영역이다
- *   (`SCOPE.md §0`) — 어댑터에서 구현하면 지표 로직이 다시 siglens로 샌다.
+ *   — 어댑터에서 구현하면 지표 로직이 다시 siglens로 샌다.
  * - **동종업계 비교**(peers): yahoo에 대응 엔드포인트가 없다. 섹터로 유사 종목을
  *   추려낼 수는 있으나 종목 마스터가 필요해 KRX 시드 이후로 미룬다.
  * - **섹터 퍼포먼스**: `industryTrend`가 KRX 종목에 빈 배열을 돌려준다(실측).

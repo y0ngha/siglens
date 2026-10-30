@@ -1,3 +1,6 @@
+/**
+ * 현금흐름표 섹션 — 영업CF·FCF·CapEx 추세 차트와 전체 지표 표.
+ */
 import { useTranslations } from 'next-intl';
 import type { CashFlowRow } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
@@ -5,23 +8,21 @@ import {
     CapExTooltip,
     FcfTooltip,
     FcfMarginTooltip,
-} from '@/widgets/financials/financialsTooltips';
+} from '../financialsTooltips';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
-import { StatementTable } from './StatementTable';
+import { StatementSectionFrame } from '../ui/statement-section/StatementSectionFrame';
+import { TrendAndTable } from './TrendAndTable';
 import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
-} from '../utils/numberFormat';
-import { FinancialTrendChart } from './FinancialTrendChart';
-import { toDisplayOrder } from './toDisplayOrder';
-import { HEADING_CLASS_NAME } from './constants';
-import { statementColumnLabel } from './statementColumnLabel';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
+} from '../utils/statementCurrency';
+import { toDisplayOrder } from '../utils/toDisplayOrder';
+import { HEADING_CLASS_NAME } from '../utils/sectionHeading';
+import { statementColumnLabel } from '../utils/statementColumnLabel';
 
 interface CashFlowSectionProps {
     rows: CashFlowRow[];
-    /** 금액 표기에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    /** 금액 표기에 적용할 통화. 생략하면 USD — 미국 종목의 기본 동작. */
     currency?: StatementCurrency;
 }
 
@@ -30,17 +31,14 @@ const HEADING_ID = 'cash-flow-heading';
 const TITLE_KEY = 'cashFlow';
 
 /**
- * Displays cash flow statement data: operating CF / FCF / CapEx trend chart,
- * followed by a full metric table.
+ * 현금흐름표 데이터를 보여 준다: 영업CF·FCF·CapEx 추세 차트와 전체 지표 표.
  *
- * `rows` are newest→oldest (index 0 = latest). Display is oldest→newest
- * left-to-right.
+ * `rows`는 최신→과거(index 0 = 최신)이고, 화면은 과거→최신(좌→우)으로 그린다.
  *
- * CapEx and 배당 are structurally always-negative (capital outflows by
- * definition), so their sign is not a good/bad signal — both rows carry
- * `colorize: false` to suppress StatementTable's value-based red/green
- * coloring. The chart series still uses 'bearish' for CapEx to distinguish
- * it visually from 영업CF and FCF in the trend line.
+ * CapEx와 배당은 정의상 항상 음수(자본 유출)라 부호가 좋고 나쁨의 신호가 아니다 — 두 행은
+ * `colorize: false`로 표의 부호 기반 빨강/초록을 끈다. 차트에서는 CapEx 시리즈만 'bearish'로
+ * 선언해 영업CF·FCF와 구분한다. FCF는 'neutral'(파랑)로 선언하며, 음수 기간에도 그 색을
+ * 지키고 부호는 baseline 아래 방향으로 읽힌다.
  */
 export function CashFlowSection({
     rows,
@@ -113,26 +111,17 @@ export function CashFlowSection({
     ];
 
     return (
-        <section
-            aria-labelledby={HEADING_ID}
-            className={cn(SURFACE_CARD, 'p-6')}
+        <StatementSectionFrame
+            headingId={HEADING_ID}
+            title={tSection(TITLE_KEY)}
         >
-            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                {tSection(TITLE_KEY)}
-            </h2>
-            <div className="mb-6">
-                <FinancialTrendChart
-                    series={chartSeries}
-                    periods={columns}
-                    currency={currency}
-                />
-            </div>
-            <StatementTable
+            <TrendAndTable
                 caption={tSection(TITLE_KEY)}
                 columns={columns}
+                series={chartSeries}
                 rows={tableRows}
                 currency={currency}
             />
-        </section>
+        </StatementSectionFrame>
     );
 }

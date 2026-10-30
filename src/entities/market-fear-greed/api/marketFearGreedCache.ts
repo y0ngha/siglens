@@ -10,32 +10,31 @@ import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { secondsUntilSessionRoll } from '@/shared/lib/marketSessionDate';
 import { buildMarketFearGreedComparisons } from '../lib/buildMarketFearGreedComparisons';
-import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
+import { hasSnapshot } from '../lib/hasSnapshot';
 import {
-    fetchDailyCloses,
     lastPublishedSessionDate,
     lookbackStartDate,
-} from '../lib/fetchDailyCloses';
+} from '../lib/marketFearGreedWindows';
 import {
     MARKET_FEAR_GREED_LOOKBACK_DAYS,
     MARKET_FEAR_GREED_SERIES,
     MARKET_FEAR_GREED_SYMBOLS,
 } from '../lib/marketFearGreedSymbols';
+import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
 import type { MarketFearGreedView } from '../model';
+import { fetchDailyCloses } from './fetchDailyCloses';
 
 /**
- * Ticker-table fingerprint baked into the cache key so swapping a proxy ETF
- * invalidates the old reading instead of serving a score computed from a
- * different basket. The static cache imports this same constant, so the two
- * layers can never disagree about the serialisation format.
+ * 티커 표 fingerprint를 캐시 키에 박아, 대체 ETF를 갈아끼우면 옛 판독값이 그대로
+ * 서빙되지 않고 무효화되게 한다. 다른 시장 캐시와 같은 규약이다. 정적 캐시가 같은 상수를
+ * 가져가므로 두 계층의 직렬화 형식이 어긋날 수 없다.
  *
- * Old fingerprint keys are left to expire on their own TTL — config changes
- * ship with a deploy, so accumulation is negligible.
+ * 옛 fingerprint 키는 자기 TTL로 만료되게 둔다 — 설정 변경은 배포와 함께 나가므로 쌓이는
+ * 양은 무시할 만하다.
  *
- * `priceSource` is included so switching from unadjusted to dividend-adjusted
- * closes (see `fetchDailyCloses` — ETFs read `adjClose`, `^` index symbols keep
- * `light`'s `price`) invalidates readings computed from the old,
- * dividend-distorted series instead of serving them until TTL.
+ * `priceSource`도 포함한다: 미조정 종가에서 배당 조정 종가로 전환하면(ETF는 `adjClose`,
+ * `^` 지수 심볼은 `light`의 `price` — `fetchDailyCloses` 참고) 옛 배당 왜곡 시리즈로 만든
+ * 판독값이 TTL까지 서빙되지 않고 무효화되어야 한다.
  */
 export const MARKET_FEAR_GREED_CONFIG_FINGERPRINT =
     createCacheConfigFingerprint(
@@ -49,7 +48,7 @@ export const MARKET_FEAR_GREED_CONFIG_FINGERPRINT =
 const MARKET_FEAR_GREED_CACHE_KEY = `market:fear-greed:${MARKET_FEAR_GREED_CONFIG_FINGERPRINT}`;
 
 /**
- * Fetch all six series and reduce them to what the page renders.
+ * 여섯 시리즈를 받아 페이지가 그리는 형태로 줄인다.
  *
  * SERVER.md#CC-1 검토: 호출 수가 고정이라 별도 동시성 상수를 두지 않는다.
  * 동시성 정책은 peer 페이지들의 `Promise.all` 패턴이다 — `getMarketSummary`(지수 +
@@ -70,10 +69,9 @@ async function buildMarketFearGreedView(
         }))
     );
 
-    // safe: `series` is built by mapping MARKET_FEAR_GREED_SERIES, which is
-    // itself derived from core's MARKET_FEAR_GREED_SERIES_KEYS — so every key of
-    // the Record is present exactly once. `Object.fromEntries` just loses that
-    // in its return type.
+    // safe: `series`는 core의 `MARKET_FEAR_GREED_SERIES_KEYS`에서 파생된
+    // `MARKET_FEAR_GREED_SERIES`를 map한 것이라 Record의 모든 키가 정확히 한 번씩
+    // 들어간다. `Object.fromEntries`가 반환 타입에서 그 사실을 잃을 뿐이다.
     const input = Object.fromEntries(
         series.map(({ key, closes }) => [key, closes])
     ) as MarketFearGreedInput;
@@ -86,24 +84,17 @@ async function buildMarketFearGreedView(
     };
 }
 
-/** A view without a snapshot means insufficient data — never freeze that in the cache. */
-function hasSnapshot(view: MarketFearGreedView): boolean {
-    return view.snapshot !== null;
-}
-
 /**
- * Market-wide Fear & Greed reading, via `React.cache` → Redis → FMP.
+ * 미국 시장 공포·탐욕 판독값 — `React.cache` → Redis → FMP.
  *
- * The Redis key carries the last published session date (`to`): the reading is
- * a pure function of closes up to `to`, so it is fetched once per session and
- * kept until `to` rolls (`sessionKeyedTtlSeconds`). Deliberately NOT
- * `computeBarsEffectiveTtl`: that caps at "time until the next open", and the
- * closes land only *after* the close — the dated key handles that instead, since
- * the post-close reading lives under the next session's key.
+ * Redis 키에 마지막 발행 세션 날짜(`to`)를 넣는다. 판독값은 `to`까지의 종가만으로 정해지므로
+ * 세션당 한 번 받고 `to`가 넘어갈 때까지 둔다(`sessionKeyedTtlSeconds`). `computeBarsEffectiveTtl`은
+ * 일부러 쓰지 않는다: 그 함수는 "다음 개장까지"로 상한을 잡는데 종가는 마감 **뒤에야** 들어오므로,
+ * 마감 뒤 판독값이 다음 세션 키 아래 놓이는 날짜 키 방식이 그 문제를 푼다.
  *
- * A failed FMP call throws out of `Promise.all` rather than degrading to an
- * empty series — a partial basket would silently change what the score means,
- * and `getOrSetCache` never writes when the fetcher throws.
+ * FMP 호출이 하나라도 실패하면 빈 시리즈로 degrade하지 않고 `Promise.all`에서 그대로 던진다
+ * — 바스켓이 일부만 채워지면 점수의 의미가 조용히 바뀌고, `getOrSetCache`는 fetcher가 던지면
+ * 아무것도 쓰지 않는다.
  */
 export const getCachedMarketFearGreed = cache(
     (): Promise<MarketFearGreedView> => {

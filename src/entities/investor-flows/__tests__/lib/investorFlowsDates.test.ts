@@ -11,6 +11,7 @@ import {
     nextQuarterEnd,
     positionsRetentionFloor,
     previousQuarterEnd,
+    retainedPeriods,
 } from '../../lib/investorFlowsDates';
 
 describe('investorFlowsDates', () => {
@@ -122,5 +123,19 @@ describe('compareIsoDate', () => {
         expect(
             rows.toSorted((a, b) => compareIsoDate(a.d, b.d)).map(r => r.n)
         ).toEqual([1, 2]);
+    });
+});
+
+describe('retainedPeriods', () => {
+    it('lists quarter ends from the floor to the latest quarter end', () => {
+        expect(retainedPeriods('2025-06-30', '2026-02-10')).toEqual([
+            '2025-06-30',
+            '2025-09-30',
+            '2025-12-31',
+        ]);
+    });
+
+    it('is empty when the floor is after the latest quarter end', () => {
+        expect(retainedPeriods('2026-03-31', '2026-02-10')).toEqual([]);
     });
 });

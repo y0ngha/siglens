@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { AI_PRODUCT_NAME } from '@/app/ai/[locale]/aiSeo';
+import { AI_PRODUCT_NAME } from '@/app/ai/[locale]/_lib/aiSeo';
 import { SITE_NAME } from '@/shared/config/brand';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
 import { brandAiName, brandName } from '@/shared/lib/brandName';

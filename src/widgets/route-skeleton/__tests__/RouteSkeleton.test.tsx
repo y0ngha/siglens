@@ -55,4 +55,27 @@ describe('RouteSkeleton', () => {
             (container.firstElementChild as HTMLElement).className
         ).toContain('min-h-[calc(100dvh-var(--header-h))]');
     });
+
+    /**
+     * 회원 화면의 `<main>`(`AuthCardShell`, 계정·포트폴리오 페이지)은 본문 기본 바탕보다
+     * 어두운 `bg-secondary-950`이다. 골격이 바탕을 비워 두면 도착 순간 화면 전체가 바뀐다.
+     */
+    it.each(['auth', 'account', 'portfolio'] as const)(
+        '%s: 실제 페이지와 같은 바탕을 깐다',
+        kind => {
+            const { container } = render(<RouteSkeleton kind={kind} />);
+            expect(
+                (container.firstElementChild as HTMLElement).classList.contains(
+                    'bg-secondary-950'
+                )
+            ).toBe(true);
+        }
+    );
+
+    it('auth: 카드 안쪽 여백이 `AuthCardShell` 카드(p-8)와 같다', () => {
+        const { container } = render(<RouteSkeleton kind="auth" />);
+        const card = container.firstElementChild?.firstElementChild;
+        expect(card?.classList.contains('p-8')).toBe(true);
+        expect(card?.classList.contains('max-w-md')).toBe(true);
+    });
 });

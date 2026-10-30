@@ -225,7 +225,7 @@ const triggerVocabularyErrorHint = (vocabulary: TriggerVocabulary): string => {
 
 /**
  * Mirror of `SKILL_STATE_FEATURES` / `SKILL_STATE_PREDICATE_KINDS` in
- * src/entities/skill/api.ts. These two must stay in sync — when siglens-core's
+ * src/entities/skill/lib/parseGating.ts. These two must stay in sync — when siglens-core's
  * SkillStateFeature / SkillStatePredicateKind union gains a member, update BOTH.
  * (scripts/ is a build-time validator; src/ is the runtime parser — a build
  * script can't import from app `src/`, so there is no shared import. The
@@ -289,7 +289,7 @@ void _predicateKindsAreExhaustive;
  * Any other pairing returns `false` for every chart → the skill is unreachable,
  * so the validator rejects it even though each half is individually valid.
  *
- * Mirror of `VALID_STATE_PAIRS` in src/entities/skill/api.ts. These two must
+ * Mirror of `VALID_STATE_PAIRS` in src/entities/skill/lib/parseGating.ts. These two must
  * stay in sync — when the core's set of evaluated (feature, predicate) pairs
  * changes, update BOTH. (scripts/ is a build-time validator; src/ is the
  * runtime parser — no shared import.)
@@ -326,9 +326,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /**
- * Mirror of USAGE_ROLE_ORDER in src/entities/skill/api.ts and siglens-core's
+ * Mirror of USAGE_ROLE_ORDER in src/entities/skill/lib/parseUsageRoles.ts and siglens-core's
  * confidenceLevel module. Keep all three in sync: when the core adds a new
- * SkillUsageRole, update this array and the api.ts copy (+ its satisfies
+ * SkillUsageRole, update this array and the parseUsageRoles.ts copy (+ its satisfies
  * clause) in the same commit. The satisfies + exhaustiveness guard below fail
  * the build here if this copy drifts behind the core union.
  */
@@ -349,7 +349,7 @@ const _usageRolesAreExhaustive: MissingUsageRole extends never ? true : never =
 void _usageRolesAreExhaustive;
 
 // O(1) membership that accepts an arbitrary `string` directly — mirrors the
-// USAGE_ROLE_SET in src/entities/skill/api.ts and avoids a widening cast.
+// USAGE_ROLE_SET in src/entities/skill/lib/parseUsageRoles.ts and avoids a widening cast.
 const USAGE_ROLE_SET: ReadonlySet<string> = new Set<string>(USAGE_ROLE_ORDER);
 
 /**

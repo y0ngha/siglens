@@ -1,7 +1,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
-import { getRedisClient } from '@/shared/cache/redisClient';
+import { getRedisClient } from './redisClient';
 
 /**
  * 허브 본문이 **처음 나타난 시각**을 보관한다 — RSS `pubDate`의 근거다.
@@ -69,14 +69,13 @@ function compareCodeUnits(a: string, b: string): number {
 function stableStringify(value: unknown): string {
     if (value === null) return 'null';
     if (typeof value === 'object') {
-        const withToJson = value as { toJSON?: () => unknown };
-        if (typeof withToJson.toJSON === 'function') {
-            return stableStringify(withToJson.toJSON());
+        if ('toJSON' in value && typeof value.toJSON === 'function') {
+            return stableStringify(value.toJSON());
         }
         if (Array.isArray(value)) {
             return `[${value.map(item => stableStringify(item)).join(',')}]`;
         }
-        const entries = Object.entries(value as Record<string, unknown>)
+        const entries = Object.entries(value)
             .filter(([, v]) => v !== undefined && typeof v !== 'function')
             .toSorted(([a], [b]) => compareCodeUnits(a, b))
             .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`);
@@ -86,15 +85,22 @@ function stableStringify(value: unknown): string {
     return JSON.stringify(value);
 }
 
+/**
+ * 허브 본문의 안정 직렬화(`stableStringify`)를 sha256 hex로 만든다. 크론(core 객체)과
+ * 페이지(`unstable_cache` JSON 왕복 객체)가 같은 본문에서 같은 해시를 얻어야 스탬프 대조가 된다.
+ */
 export function hashHubBody(body: unknown): string {
     return createHash('sha256').update(stableStringify(body)).digest('hex');
 }
 
 function isStamp(value: unknown): value is HubContentStamp {
-    if (typeof value !== 'object' || value === null) return false;
-    const candidate = value as Record<string, unknown>;
     return (
-        typeof candidate.hash === 'string' && typeof candidate.at === 'string'
+        typeof value === 'object' &&
+        value !== null &&
+        'hash' in value &&
+        typeof value.hash === 'string' &&
+        'at' in value &&
+        typeof value.at === 'string'
     );
 }
 

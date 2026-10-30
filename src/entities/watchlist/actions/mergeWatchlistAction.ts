@@ -2,7 +2,6 @@
 
 import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import {
     WATCHLIST_MAX_LOCAL,
     WATCHLIST_MAX_MEMBER,
@@ -10,11 +9,17 @@ import {
 import { getDatabaseClient } from '@/shared/db/client';
 import type { MergeWatchlistCandidate } from '@/shared/db/types';
 import { logActionError } from '@/shared/lib/logActionError';
+import { DrizzleWatchlistRepository } from '../api';
 import { isRawWatchlistInput } from '../lib/isRawWatchlistInput';
 import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
 import { validateWatchlistSymbol } from '../lib/validateWatchlistSymbol';
 import type { MergeWatchlistResult, RawWatchlistInput } from '../model';
 
+/**
+ * 심볼 형상 검증을 통과한 항목만 후보 한 건으로, 아니면 빈 배열(`flatMap`으로 filter+map을
+ * 한 번에 한다). 라벨은 심볼 정규화 결과를 기준으로 {@link normalizeWatchlistLabel}에 맡기며,
+ * 심볼 존재 검증은 하지 않는다(`mergeWatchlistAction` JSDoc).
+ */
 function toCandidate(entry: RawWatchlistInput): MergeWatchlistCandidate[] {
     const validated = validateWatchlistSymbol(entry.symbol);
     if (!validated.ok) return [];
@@ -23,7 +28,7 @@ function toCandidate(entry: RawWatchlistInput): MergeWatchlistCandidate[] {
 }
 
 /**
- * 로그인 확정 직후 로컬 관심종목을 계정에 합친다(설계 §5). 입력은 **최근 담은 순**이어야
+ * 로그인 확정 직후 로컬 관심종목을 계정에 합친다. 입력은 **최근 담은 순**이어야
  * 상한 초과분이 오래된 것부터 버려진다. 심볼 존재 검증(`getAssetInfo`)은 하지 않는다 —
  * 가입 직후 첫 화면에서 최대 20건의 FMP 팬아웃을 돌리지 않기 위해서다. 형상이 깨진 항목만
  * 버리고, 로컬 상한을 넘는 꼬리는 받지 않는다(저장 용량 공격 방지).

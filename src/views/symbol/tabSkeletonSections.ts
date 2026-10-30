@@ -16,8 +16,10 @@ export const SYMBOL_TAB_SECTION_COUNT = {
     position: 3,
 } as const satisfies Readonly<Record<string, number>>;
 
+/** 섹션 카드 골격을 쓰는 탭 키. */
 export type SectionSkeletonTab = keyof typeof SYMBOL_TAB_SECTION_COUNT;
 
+/** 탭 세그먼트가 섹션 카드 골격을 쓰는 탭인가. */
 export function isSectionSkeletonTab(tab: string): tab is SectionSkeletonTab {
     return Object.hasOwn(SYMBOL_TAB_SECTION_COUNT, tab);
 }
