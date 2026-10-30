@@ -6,7 +6,7 @@
  *       causing the about node to be omitted from the JSON-LD output.
  *   (b) getSessionBarsStatic receives the right marketProfile string
  *       ('crypto' / 'us-equity'). 세션 spec 매핑 자체는 그 헬퍼 내부 책임이라
- *       src/entities/bars/__tests__/lib/sessionBarsStaticCache.test.ts가 검증한다.
+ *       src/entities/bars/__tests__/server/sessionBarsStaticCache.test.ts가 검증한다.
  *
  * Mirrors the mocking style of src/app/[symbol]/__tests__/layout.test.tsx.
  */
@@ -85,7 +85,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 vi.mock('@/entities/market-fear-greed/api/marketFearGreedReading', () => ({
     getMarketFearGreedReading: vi.fn(async () => null),
 }));
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     // 세션 spec 유도는 헬퍼 내부 책임이라 여기서는 위임 인자
     // (ticker, marketProfile, fmpSymbol)만 포착한다. 페이지는 5년 일봉이 담긴
     // 세션 키 축소 봉(getSessionBarsStatic, revalidate 24h)을 쓴다 — 6h 봉 캐시를 읽으면

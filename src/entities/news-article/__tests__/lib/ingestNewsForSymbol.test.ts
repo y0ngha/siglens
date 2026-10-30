@@ -2,12 +2,12 @@
 // DB upsert seam(prewarmNews도 재사용). 의존성 mock 전략은
 // ensureNewsCardsAnalyzedAction.test.ts와 동일하게 유지해 두 테스트가 같은
 // 로직을 다른 각도(호출부별)에서 검증한다.
-vi.mock('../../lib/newsRefreshFlag', () => ({
+vi.mock('../../server/newsRefreshFlag', () => ({
     isRecentlyFetched: vi.fn(),
     markFetched: vi.fn(),
 }));
 
-vi.mock('../../lib/getNewsClient', () => ({
+vi.mock('../../server/getNewsClient', () => ({
     getNewsClient: vi.fn(),
 }));
 
@@ -20,8 +20,8 @@ vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
 import type { Mock, MockedFunction } from 'vitest';
 import type { NewsItem } from '@y0ngha/siglens-core';
 import { ingestNewsForSymbol } from '../../lib/ingestNewsForSymbol';
-import { getNewsClient } from '../../lib/getNewsClient';
-import { markFetched } from '../../lib/newsRefreshFlag';
+import { getNewsClient } from '../../server/getNewsClient';
+import { markFetched } from '../../server/newsRefreshFlag';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import type { DrizzleNewsRepository } from '../../api';
 
@@ -126,7 +126,7 @@ describe('ingestNewsForSymbol 함수는', () => {
             expect(result).toBeNull();
             expect(mockUpsertNewsItem).not.toHaveBeenCalled();
             // 실패해도 플래그는 이미 찍혀 있다 — 표시를 FMP 왕복 **앞**으로 옮겼기
-            // 때문이다(감사: 비용 라운드 13). 뒤에 두면 유료 API가 429/402로 거절하는
+            // 때문이다. 뒤에 두면 유료 API가 429/402로 거절하는
             // 동안 스로틀이 통째로 사라져, 마운트마다 재시도 예산까지 포함한 4콜이
             // 무한 반복된다. 대가는 실패 후 TTL(10분) 동안 재시도가 없다는 것인데,
             // 이 경로는 fire-and-forget 보강이고 SEO는 prewarm cron이 따로 보장한다.

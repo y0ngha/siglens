@@ -80,7 +80,7 @@ vi.mock(
         }),
     })
 );
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: vi.fn(async () => undefined),
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

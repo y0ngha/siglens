@@ -1,17 +1,19 @@
 'use client';
 
 import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
-import { NotFoundLayout } from '@/app/_components/NotFoundLayout';
+import {
+    DEFAULT_LOCALE,
+    isLocale,
+    LOCALE_HREFLANG,
+    localePath,
+    type Locale,
+} from '@/shared/i18n/locales';
 import {
     DEFAULT_LOCATION_SURFACE,
     resolveLocationSurface,
     type LocationSurface,
 } from '@/shared/i18n/locationSurface';
-import {
-    LOCALE_HREFLANG,
-    localePath,
-    type Locale,
-} from '@/shared/i18n/locales';
+import { NotFoundLayout } from './NotFoundLayout';
 
 /**
  * 비기본 표면(다른 로케일·ai 호스트)이 쓰는 **최소 문구**. 이 객체는 클라이언트 props라
@@ -26,6 +28,7 @@ export interface NotFoundOverride {
     readonly homeLabel: string;
 }
 
+/** 표면별 최소 문구 묶음. 서버(`buildOverrides`)가 만들어 `NotFoundView`에 넘긴다. */
 export interface NotFoundOverrides {
     readonly site: Partial<Record<Locale, NotFoundOverride>>;
     readonly ai: Partial<Record<Locale, NotFoundOverride>>;
@@ -64,8 +67,11 @@ function locationSnapshot(): string {
 const DEFAULT_SNAPSHOT = encode(DEFAULT_LOCATION_SURFACE);
 
 function parseSnapshot(snapshot: string): LocationSurface {
-    const [locale, host] = snapshot.split(':');
-    return { locale: locale as Locale, onAiHost: host === 'ai' };
+    const [locale = '', host] = snapshot.split(':');
+    return {
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        onAiHost: host === 'ai',
+    };
 }
 
 /**

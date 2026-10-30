@@ -11,5 +11,3 @@ export interface ResponseCookie {
     expires: Date;
     maxAge: number;
 }
-
-export type { PasswordHasher, PasswordVerifier } from '@/shared/lib/auth/types';

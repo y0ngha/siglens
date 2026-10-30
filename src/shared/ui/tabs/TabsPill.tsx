@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { useTabs } from '@/shared/ui/tabs/hooks/useTabs';
+import { useTabs, type TabPanelMounting } from '@/shared/ui/tabs/hooks/useTabs';
 import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
 interface TabsPillProps<T extends string> {
@@ -12,6 +12,8 @@ interface TabsPillProps<T extends string> {
     idPrefix?: string;
     withHomeEnd?: boolean;
     className?: string;
+    /** 비활성 패널을 마운트하지 않는 소비자는 `'active'`를 넘긴다 — `useTabs` 참고. */
+    panelMounting?: TabPanelMounting;
 }
 
 export function TabsPill<T extends string>({
@@ -21,6 +23,7 @@ export function TabsPill<T extends string>({
     ariaLabel,
     idPrefix,
     withHomeEnd = false,
+    panelMounting,
     className,
 }: TabsPillProps<T>) {
     const values = tabs.map(t => t.value);
@@ -30,6 +33,7 @@ export function TabsPill<T extends string>({
         onChange,
         idPrefix,
         withHomeEnd,
+        panelMounting,
     });
 
     return (

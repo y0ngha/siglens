@@ -331,4 +331,25 @@ describe('TabsUnderline — 화살표 키보드 탐색 시 포커스 이동', ()
         // takes effect immediately, before any parent re-render.
         expect(screen.getByText('Chart')).toHaveFocus();
     });
+
+    it("panelMounting='active'면 비활성 탭은 존재하지 않는 패널을 가리키지 않는다", () => {
+        render(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="chart"
+                onChange={vi.fn()}
+                ariaLabel="Navigation"
+                size="xs"
+                idPrefix="nav"
+                panelMounting="active"
+            />
+        );
+        expect(screen.getByRole('tab', { name: 'Chart' })).toHaveAttribute(
+            'aria-controls',
+            'nav-panel-chart'
+        );
+        expect(screen.getByRole('tab', { name: 'News' })).not.toHaveAttribute(
+            'aria-controls'
+        );
+    });
 });

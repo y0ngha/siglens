@@ -13,7 +13,13 @@ import type {
 
 const PURPOSE = 'password_reset' as const;
 
-/** Issue a one-time password reset token and dispatch the reset email. */
+/**
+ * 1회용 비밀번호 재설정 토큰을 발급해 메일로 보낸다. 토큰은 해시만 저장한다.
+ *
+ * 잘못된 이메일·없는 계정·비밀번호 없는(OAuth 전용) 계정은 모두 `ok: true`
+ * (`tokenIssued: false`)로 같게 응답해 계정 존재 여부가 새지 않게 한다. 발송 실패는
+ * 던지지 않고 `emailDispatched: false`로 알린다.
+ */
 export async function requestPasswordReset(
     input: RequestPasswordResetInput,
     dependencies: RequestPasswordResetDependencies,

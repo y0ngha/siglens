@@ -1,8 +1,6 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 import {
     QUERY_GC_TIME_MS,
     QUERY_KEYS,
@@ -10,11 +8,13 @@ import {
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { readAuthHintCookie } from '@/shared/lib/auth/readAuthHintCookie';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { currentUserAction } from '../actions/currentUserAction';
 
 /**
  * 힌트 쿠키(`siglens_auth`)가 없으면 서버 액션을 **부르지 않고** 곧바로 `null`을 돌려준다.
  *
- * ## 왜 (2026-10-05 운영 크롤)
+ * ## 왜 (운영 크롤에서 확인)
  *
  * 비로그인 방문자(크롤러 렌더 포함)는 페이지마다 하이드레이션 직후 이 액션으로 POST 한 번을
  * 쏘고 있었다. 결과가 항상 `null`인 호출이다. 로그인(`loginAction`·OAuth 콜백·가입·핸드오프)은
@@ -32,6 +32,10 @@ async function fetchCurrentUser(): Promise<AuthUserRecord | null> {
     return currentUserAction();
 }
 
+/**
+ * 현재 로그인 사용자(비로그인이면 null)를 조회한다. 하이드레이션 전에는 돌지 않고,
+ * 힌트 쿠키가 없으면 서버 액션 없이 즉시 null로 확정한다({@link fetchCurrentUser}).
+ */
 export function useCurrentUser(): UseQueryResult<AuthUserRecord | null> {
     const isHydrated = useHydrated();
     return useQuery<AuthUserRecord | null>({

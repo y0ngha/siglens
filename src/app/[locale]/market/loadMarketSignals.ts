@@ -5,11 +5,12 @@ import type {
 } from '@y0ngha/siglens-core';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
-import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 
+/** 시장 허브 두 로더의 결과와 degrade 판정 — metadata·본문·구조화데이터가 같은 값을 본다. */
 export interface LoadMarketSignalsResult {
     summary: MarketSummaryData;
     sectorData: SectorSignalsResult;
@@ -51,6 +52,10 @@ const loadMarketSignalsOnce = cache(async (scope: DashboardScope) => {
     return { summary, sectorData };
 });
 
+/**
+ * 요청당 한 번 읽은 두 로더 결과에 호출부의 폴백 `computedAt`을 덧씌우고 degrade를 판정한다.
+ * 두 로더가 **모두** 빈 값일 때만 degraded다 — 한쪽에 콘텐츠가 있으면 비어 있지 않은 렌더다.
+ */
 export async function loadMarketSignals(
     scope: DashboardScope,
     /** 섹터 신호 폴백의 `computedAt`. 본문은 dateHour를, metadata는 빈 값을 쓴다. */
@@ -66,8 +71,6 @@ export async function loadMarketSignals(
     return {
         summary,
         sectorData,
-        // 두 로더가 **모두** 빈 값일 때만 degrade로 본다. 한쪽만 비어도 다른 쪽에
-        // 콘텐츠가 있으면 페이지는 여전히 비어있지 않은 렌더다.
         degraded:
             summary.indices.length === 0 &&
             summary.sectors.length === 0 &&

@@ -1,33 +1,30 @@
 'use server';
 
 import { getTranslations } from 'next-intl/server';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     peekMarketNewsDigestCache,
     runMarketNewsDigest,
-    type EnrichedNewsItem,
-    type NewsFeedCategory,
     type RunMarketNewsDigestResult,
     type SubmitMarketNewsDigestOptions,
 } from '@y0ngha/siglens-core';
-import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
-import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
-import {
-    CATEGORY_CONFIG,
-    type NewsFeedCategoryId,
-} from '../lib/categoryConfig';
-import {
-    DEFAULT_DIGEST_MODEL_ID,
-    DIGEST_REASONING,
-} from '../lib/marketNewsConstants';
-import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
-import { toEnrichedMarketNewsItem } from '../lib/toEnrichedMarketNewsItem';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     readLatestMarketNewsDigest,
     releaseMarketNewsDigestSlot,
     tryAcquireMarketNewsDigestSlot,
     writeLatestMarketNewsDigest,
 } from '../api/marketNewsDigestCooldown';
+import { getMarketNewsList } from '../api/marketNewsRepository';
+import {
+    CATEGORY_CONFIG,
+    type NewsFeedCategoryId,
+} from '../lib/categoryConfig';
+import { selectDigestNews, toCoreFeedCategory } from '../lib/digestInput';
+import {
+    DEFAULT_DIGEST_MODEL_ID,
+    DIGEST_REASONING,
+} from '../lib/marketNewsConstants';
+import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
 
 /**
  * runMarketNewsDigest를 부르고, 실제로 생성됐으면(`done`) 마지막 생성본으로 남긴다.
@@ -69,18 +66,17 @@ async function digestErrorMessage(locale: Locale): Promise<string> {
 }
 
 /**
- * Server Action: submit a market-news category digest job.
+ * Server Action: 시장 뉴스 카테고리 다이제스트를 생성(또는 캐시에서 조회)한다.
  *
- * No tier/BYOK gate — the category digest is public and uses a fixed shared
- * model. Reads enriched rows from DB, maps through `isEnrichedRow`, caps via
- * `selectAggregateNewsItems`, and delegates to core `runMarketNewsDigest`.
+ * 티어/BYOK 게이트가 없다 — 카테고리 다이제스트는 공개이고 고정된 공용 모델을 쓴다.
+ * DB의 보강된 행을 `selectDigestNews`로 상위 기사로 추려 core `runMarketNewsDigest`에
+ * 넘긴다.
  *
- * `skipEnqueueIfMiss` is hardcoded `false` (2026-09-27) — no longer derived
- * from `isBot(headers)`. Crawlers get the same digest a human would on a
- * cache miss; see the invariant at the top of
- * `src/app/api/analysis/stream/route.ts`.
+ * `skipEnqueueIfMiss`는 `false`로 고정이다(2026-09-27) — 더는 `isBot(headers)`에서
+ * 파생하지 않는다. 크롤러도 캐시 miss에서 사람과 같은 다이제스트를 받는다.
+ * `src/app/api/analysis/stream/route.ts` 상단의 불변식을 본다.
  *
- * 비용(2026-10 비용 감사): core 키는 기사 목록에서 파생돼 새 기사가 분석될 때마다
+ * 비용(2026-10): core 키는 기사 목록에서 파생돼 새 기사가 분석될 때마다
  * 갈린다. 그래서 키 miss일 때는 카테고리 × 로케일별 1시간 생성 슬롯
  * (`marketNewsDigestCooldown`)을 잡은 호출만 생성하고, 못 잡은 호출은 마지막 생성본을
  * `cached`로 돌려준다. 마지막 생성본도 없으면(배포 직후·만료 뒤) 슬롯 없이 생성한다 —
@@ -99,46 +95,19 @@ export async function submitMarketNewsDigestAction(
 ): Promise<SubmitMarketNewsDigestActionResult> {
     try {
         // 알 수 없는 카테고리는 CATEGORY_CONFIG 접근 전에 차단한다.
-        // TypeScript 타입으로는 방어되지만, 런타임 직렬화(SSE JSON 파라미터 등)에서
-        // 타입이 우회될 수 있으므로 명시적 가드를 추가한다.
+        // 타입으로는 막히지만 런타임 직렬화(SSE JSON 파라미터 등)에서 타입이 우회될 수
+        // 있으므로 명시적 가드를 둔다.
         if (!Object.hasOwn(CATEGORY_CONFIG, category)) {
             return { status: 'error', error: await digestErrorMessage(locale) };
         }
         const { sentinel, koLabel } = CATEGORY_CONFIG[category];
         const rows = await getMarketNewsList(sentinel);
 
-        const enrichedItems: EnrichedNewsItem[] = rows
-            .map(toEnrichedMarketNewsItem)
-            .filter((item): item is EnrichedNewsItem => item !== null);
-
-        // Cap to the top market-moving items to keep the digest prompt bounded.
-        const news = selectAggregateNewsItems(enrichedItems);
+        // 프롬프트 크기를 묶으려고 시장을 움직일 상위 기사만 남긴다.
+        const news = selectDigestNews(rows);
 
         const options: SubmitMarketNewsDigestOptions = {
-            /*
-             * core 경계에서의 유일한 캐스트.
-             *
-             * core는 `NewsFeedCategory`(general|stock|crypto|forex|articles)만 알고,
-             * siglens는 여기에 한국 증시(`'kr'`)를 더해 쓴다
-             * (`lib/categoryConfig.ts`의 `NewsFeedCategoryId`).
-             *
-             * **왜 안전한가**: core 안에서 이 값이 닿는 곳은 네 군데인데
-             * (installed 0.47.0 `runMarketNewsDigest` 확인) 어느 것도 값으로
-             * 분기하거나 룩업하지 않고 전부 문자열로 흘려보낸다.
-             *   1. `createSkillSamplingPlan(..., ['market-news-digest', category, modelId, …])`
-             *      — 샘플링 시드 성분
-             *   2. `buildMarketNewsDigestCacheKey(category, …)` — Redis 키에 그대로 보간
-             *   3. `correlationId: \`${category}:market-news-digest\`` — 로그 상관 id
-             *   4. 빈 다이제스트 경고의 `console.warn` 페이로드
-             * 프롬프트는 아래 `categoryLabel`만 본다(`buildMarketNewsDigestPrompt` 확인).
-             * 따라서 `'kr'`은 `…:market-news:kr:…`이라는 **정확한** 네임스페이스를
-             * 만들고, 다른 카테고리와 절대 충돌하지 않는다.
-             *
-             * core가 이 값으로 분기하기 시작하면 이 캐스트는 깨져야 한다 —
-             * union 확장을 core 후속 과제로 기록해 두었다
-             * (`docs/superpowers/specs/2026-08-19-asset-class-navigation-design.md` §7).
-             */
-            category: category as NewsFeedCategory,
+            category: toCoreFeedCategory(category),
             // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
             // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
             locale,

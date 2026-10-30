@@ -65,7 +65,7 @@ const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z$/;
  * 어긋난 절대 시각이 나온다. 그냥 `Z`를 붙이면 된다.
  *
  * 형식 가드는 여기(공유 헬퍼) 한 곳에 둔다 — 예전에는 `getEconomy.ts`가 자체
- * 정규식으로 이 함수 호출 **전에** 걸렀는데, `EconomicCalendarGrid`·
+ * 정규식으로 이 함수 호출 **전에** 걸렀는데, 경제 캘린더(`calendarGrouping`)·
  * `getKrIndicatorCards` 같은 다른 소비자는 그 가드 없이 이 함수를 직접 호출해서
  * 같은 보호를 못 받았다. 이미 ISO 인스턴트인 입력은 변환 없이 통과시키고(중복
  * `Z` 부여 방지), 그 외 인식 불가 형태는 **경고만 남기고 그대로 통과**시켜 호출부가
@@ -88,11 +88,17 @@ export function fmpCalendarDateTimeToIso(date: string): string {
  * - `iso`         : UTC ISO-8601 문자열 — HTML `<time dateTime>` 용도.
  * - `kstDateKey`  : KST 기준 날짜 'YYYY-MM-DD' — 캘린더 그룹핑 키.
  * - `kstTimeLabel`: KST 시각 레이블 '오전/오후 H:mm' (로케일별, 한국 표준시).
+ * - `kstCompactTimeLabel`: 오전/오후 없는 KST 시각(24시간) — 월 셀처럼 좁은 자리용.
  */
 export interface FmpCalendarKstResult {
     iso: string;
     kstDateKey: string;
     kstTimeLabel: string;
+    /**
+     * 오전/오후 없는 KST 시각(24시간) — 한 줄 폭인 월 셀처럼 짧은 자리용. 같은 파싱 결과로
+     * 함께 만들어, 두 표기가 필요한 호출부가 문자열을 두 번 파싱하지 않게 한다.
+     */
+    kstCompactTimeLabel: string;
 }
 
 /**
@@ -127,6 +133,14 @@ export function fmpCalendarDateTimeToKst(
     const kstDateKeyValue = kstDateKey(d);
 
     const kstTimeLabel = kstTimeLabelFormatter(locale, hour12).format(d);
+    const kstCompactTimeLabel = hour12
+        ? kstTimeLabelFormatter(locale, false).format(d)
+        : kstTimeLabel;
 
-    return { iso, kstDateKey: kstDateKeyValue, kstTimeLabel };
+    return {
+        iso,
+        kstDateKey: kstDateKeyValue,
+        kstTimeLabel,
+        kstCompactTimeLabel,
+    };
 }

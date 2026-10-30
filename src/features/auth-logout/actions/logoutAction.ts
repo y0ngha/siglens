@@ -18,10 +18,8 @@ import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    aiSignedOutUrl,
-    issueLogoutCode,
-} from '@/entities/auth/lib/handoffStore';
+import { aiSignedOutUrl } from '@/entities/auth/lib/handoffRedirect';
+import { issueLogoutCode } from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';

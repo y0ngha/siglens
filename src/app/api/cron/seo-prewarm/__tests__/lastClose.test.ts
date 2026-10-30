@@ -5,7 +5,7 @@ const { mockLoadBarsData, mockResolveMarketProfile } = vi.hoisted(() => ({
     mockResolveMarketProfile: vi.fn(),
 }));
 
-vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: mockLoadBarsData,
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

@@ -1,23 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
-import { useAutocomplete } from '@/features/ticker-search/hooks/useAutocomplete';
-import { isKoreanInput } from '@/entities/ticker/lib/ticker';
+import {
+    useAutocomplete,
+    type UseAutocompleteReturn,
+} from '@/features/ticker-search/hooks/useAutocomplete';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/features/ticker-search/hooks/useAutocomplete');
-vi.mock('@/entities/ticker/lib/ticker', async importOriginal => ({
-    // 부분 목 — 이 모듈의 다른 순수 함수까지 손으로 나열하면 모듈에 export가
-    // 하나 늘 때마다 무관한 테스트가 죽는다.
-    ...(await importOriginal<typeof import('@/entities/ticker/lib/ticker')>()),
-    isKoreanInput: vi.fn(() => false),
-}));
 
 const mockUseAutocomplete = vi.mocked(useAutocomplete);
-const mockIsKoreanInput = vi.mocked(isKoreanInput);
 
 const MOCK_RESULTS: TickerSearchResult[] = [
     {
@@ -36,14 +31,11 @@ const MOCK_RESULTS: TickerSearchResult[] = [
     },
 ];
 
-function setupAutocomplete(
-    overrides: Partial<ReturnType<typeof useAutocomplete>> = {}
-) {
-    const defaults: ReturnType<typeof useAutocomplete> = {
+function setupAutocomplete(overrides: Partial<UseAutocompleteReturn> = {}) {
+    const defaults: UseAutocompleteReturn = {
         query: '',
         results: [],
-        isSearching: false,
-        isError: false,
+        status: 'idle',
         selectedIndex: -1,
         isOpen: false,
         inputRef: { current: null },
@@ -51,6 +43,7 @@ function setupAutocomplete(
         handleChange: vi.fn(),
         handleKeyDown: vi.fn(),
         handleFocus: vi.fn(),
+        handleBlur: vi.fn(),
         handleSearchClick: vi.fn(),
         navigate: vi.fn(),
         prefetch: vi.fn(),
@@ -93,6 +86,7 @@ describe('TickerAutocomplete', () => {
         setupAutocomplete({
             query: 'A',
             isOpen: true,
+            status: 'results',
             results: MOCK_RESULTS,
         });
         render(<TickerAutocomplete />);
@@ -102,7 +96,10 @@ describe('TickerAutocomplete', () => {
     });
 
     it('shows searching indicator', () => {
-        setupAutocomplete({ isOpen: true, isSearching: true });
+        setupAutocomplete({
+            isOpen: true,
+            status: 'searching',
+        });
         render(<TickerAutocomplete />);
         expect(screen.getByText('검색 중…')).toBeInTheDocument();
     });
@@ -111,7 +108,7 @@ describe('TickerAutocomplete', () => {
         setupAutocomplete({
             query: 'xyz',
             isOpen: true,
-            isSearching: false,
+            status: 'empty',
             results: [],
         });
         render(<TickerAutocomplete />);
@@ -174,9 +171,8 @@ describe('TickerAutocomplete', () => {
         expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
 
         // 순서: 회사명 → 티커. DOM 순서로 확인한다.
-        const option = screen.getByText('애플').closest('[role="option"]');
-        expect(option).not.toBeNull();
-        const text = option!.textContent ?? '';
+        const text =
+            screen.getByRole('option', { name: /애플/ }).textContent ?? '';
         expect(text.indexOf('애플')).toBeLessThan(text.indexOf('AAPL'));
     });
 
@@ -251,8 +247,13 @@ describe('TickerAutocomplete', () => {
         expect(nasdaqElements.length).toBeGreaterThan(0);
     });
 
-    it('sets aria-expanded based on isOpen', () => {
-        setupAutocomplete({ isOpen: true });
+    it('sets aria-expanded when the listbox shows options', () => {
+        setupAutocomplete({
+            query: 'A',
+            isOpen: true,
+            status: 'results',
+            results: MOCK_RESULTS,
+        });
         render(<TickerAutocomplete />);
         expect(screen.getByRole('combobox')).toHaveAttribute(
             'aria-expanded',
@@ -292,12 +293,11 @@ describe('TickerAutocomplete', () => {
         ).toBeInTheDocument();
     });
 
-    it('shows the Korean-aware no-results hint when the query looks like Korean input', () => {
-        mockIsKoreanInput.mockReturnValueOnce(true);
+    it('shows the Korean-aware no-results hint for the emptyKorean status', () => {
         setupAutocomplete({
             query: '애플',
             isOpen: true,
-            isSearching: false,
+            status: 'emptyKorean',
             results: [],
         });
         render(<TickerAutocomplete />);
@@ -500,12 +500,189 @@ describe('TickerAutocomplete', () => {
         setupAutocomplete({
             query: '삼성',
             isOpen: true,
-            isError: true,
+            status: 'error',
             results: [],
         });
         render(<TickerAutocomplete />);
 
         expect(screen.getByText(/불러오지 못했어요/)).toBeInTheDocument();
         expect(screen.queryByText(/검색 결과 없음/)).toBeNull();
+    });
+
+    it('보이는 상태 행은 aria-hidden이고 라이브 리전이 같은 문구를 고지한다', () => {
+        // 둘 다 접근성 트리에 있으면 스크린리더가 같은 문구를 두 번 읽는다.
+        setupAutocomplete({
+            query: 'xyz',
+            isOpen: true,
+            status: 'empty',
+            results: [],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText('검색 결과 없음')).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+        expect(screen.getByRole('status')).toHaveTextContent(/결과/);
+    });
+
+    describe('combobox ARIA 배선', () => {
+        it('두 인스턴스가 서로 다른 listbox id를 쓴다', () => {
+            // 홈에는 헤더와 히어로에 자동완성이 동시에 뜬다. 고정 id면
+            // `aria-controls`가 다른 인스턴스의 listbox를 가리킨다.
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+            });
+            render(
+                <>
+                    <TickerAutocomplete />
+                    <TickerAutocomplete />
+                </>
+            );
+            const controls = screen
+                .getAllByRole('combobox')
+                .map(input => input.getAttribute('aria-controls'));
+            expect(controls).toHaveLength(2);
+            expect(new Set(controls).size).toBe(2);
+        });
+
+        it('aria-controls는 렌더된 listbox를 가리킨다', () => {
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+            });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('combobox')).toHaveAttribute(
+                'aria-controls',
+                screen.getByRole('listbox').id
+            );
+        });
+
+        it('닫혀 있으면 aria-controls를 두지 않는다', () => {
+            setupAutocomplete({ isOpen: false });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('combobox')).not.toHaveAttribute(
+                'aria-controls'
+            );
+        });
+
+        it('옵션이 없으면 listbox를 그리지 않고 상태 문구는 listbox 밖에 둔다', () => {
+            // listbox는 옵션만 소유해야 한다 — 상태 문구가 그 안에 있으면 보조기술이
+            // 옵션이 아닌 자식을 가진 목록을 만난다.
+            setupAutocomplete({
+                query: 'xyz',
+                isOpen: true,
+                status: 'empty',
+                results: [],
+            });
+            render(<TickerAutocomplete />);
+            expect(screen.getByText('검색 결과 없음')).toBeInTheDocument();
+            expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+            expect(screen.getByRole('combobox')).toHaveAttribute(
+                'aria-expanded',
+                'false'
+            );
+        });
+
+        it('listbox는 입력과 같은 접근 이름을 갖는다', () => {
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+            });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('listbox')).toHaveAccessibleName(
+                '종목 티커 검색'
+            );
+        });
+
+        it('aria-activedescendant는 활성 옵션의 id다', () => {
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+                selectedIndex: 1,
+            });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('combobox')).toHaveAttribute(
+                'aria-activedescendant',
+                screen.getByRole('option', { name: /AMZN/ }).id
+            );
+        });
+
+        it('활성 인덱스가 결과 범위를 벗어나면 aria-activedescendant를 두지 않는다', () => {
+            // 활성화한 뒤 더 짧은 결과가 도착한 경우다. 없는 id를 가리키면 안 된다.
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+                selectedIndex: 5,
+            });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('combobox')).not.toHaveAttribute(
+                'aria-activedescendant'
+            );
+        });
+
+        it('옵션은 탭 정지점이 아니다', () => {
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+            });
+            render(<TickerAutocomplete />);
+            for (const option of screen.getAllByRole('option')) {
+                expect(option).toHaveAttribute('tabindex', '-1');
+            }
+        });
+
+        it('드롭다운 안의 mousedown은 입력 포커스를 지키도록 기본 동작을 막는다', () => {
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+            });
+            render(<TickerAutocomplete />);
+            const option = screen.getByRole('option', { name: /AAPL/ });
+            // fireEvent는 preventDefault되면 false를 돌려준다.
+            expect(fireEvent.mouseDown(option)).toBe(false);
+        });
+
+        it('입력의 blur를 훅에 넘긴다', () => {
+            const handleBlur = vi.fn();
+            setupAutocomplete({ handleBlur });
+            render(<TickerAutocomplete />);
+            fireEvent.blur(screen.getByRole('combobox'));
+            expect(handleBlur).toHaveBeenCalledTimes(1);
+        });
+
+        it('열린 상태의 결과 수를 라이브 리전으로 고지한다', () => {
+            setupAutocomplete({
+                query: 'A',
+                isOpen: true,
+                status: 'results',
+                results: MOCK_RESULTS,
+            });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('status')).toHaveTextContent(
+                '검색 결과 2건'
+            );
+        });
+
+        it('닫혀 있으면 라이브 리전을 비워 둔다', () => {
+            setupAutocomplete({ isOpen: false, status: 'empty' });
+            render(<TickerAutocomplete />);
+            expect(screen.getByRole('status')).toBeEmptyDOMElement();
+        });
     });
 });

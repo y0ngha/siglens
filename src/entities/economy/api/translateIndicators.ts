@@ -11,7 +11,7 @@ import {
     markIndicatorTranslationPending,
 } from './indicatorTranslationFlag';
 import { etDateOf } from '../lib/calendarWindow';
-import type { CalendarCountry } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 import { INDICATOR_NAME_KO } from '../lib/indicatorNameKo';
 import { INDICATOR_TRANSLATION_CACHE_TAG } from '../lib/indicatorTranslationConstants';
 

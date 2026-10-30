@@ -7,8 +7,9 @@ import { sessions } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const expiresAt = new Date('2026-05-27T00:00:00.000Z');
+const SESSION_ID = '123e4567-e89b-12d3-a456-426614174000';
 const sessionRecord = {
-    id: 'session-1',
+    id: SESSION_ID,
     userId: 'user-1',
     expiresAt,
     createdAt: new Date('2026-04-27T00:00:00.000Z'),
@@ -101,7 +102,7 @@ describe('DrizzleSessionRepository', () => {
         ]);
         const repository = new DrizzleSessionRepository(db);
 
-        const result = await repository.findSession('session-1');
+        const result = await repository.findSession(SESSION_ID);
 
         expect(select).toHaveBeenCalledWith({
             id: sessions.id,
@@ -119,7 +120,9 @@ describe('DrizzleSessionRepository', () => {
         const { db } = makeSelectDb([]);
         const repository = new DrizzleSessionRepository(db);
 
-        const result = await repository.findSession('missing-session');
+        const result = await repository.findSession(
+            '00000000-0000-4000-8000-000000000000'
+        );
 
         expect(result).toBeNull();
     });
@@ -130,10 +133,10 @@ describe('DrizzleSessionRepository', () => {
             delete: deleteFn,
             where,
             returning,
-        } = makeDeleteDb([{ id: 'session-1' }]);
+        } = makeDeleteDb([{ id: SESSION_ID }]);
         const repository = new DrizzleSessionRepository(db);
 
-        const result = await repository.deleteSession('session-1');
+        const result = await repository.deleteSession(SESSION_ID);
 
         expect(deleteFn).toHaveBeenCalledWith(expect.any(Object));
         expect(where).toHaveBeenCalledWith(expect.any(Object));
@@ -145,9 +148,42 @@ describe('DrizzleSessionRepository', () => {
         const { db } = makeDeleteDb([]);
         const repository = new DrizzleSessionRepository(db);
 
-        const result = await repository.deleteSession('missing-session');
+        const result = await repository.deleteSession(
+            '00000000-0000-4000-8000-000000000000'
+        );
 
         expect(result).toBe(false);
+    });
+
+    it('createSession은 INSERT가 행을 돌려주지 않으면 던진다', async () => {
+        const { db } = makeInsertDb([]);
+        const repository = new DrizzleSessionRepository(db);
+
+        await expect(
+            repository.createSession({ userId: 'user-1', expiresAt })
+        ).rejects.toThrow('[createSession] insert returned no row');
+    });
+
+    describe('uuid가 아닌 세션 토큰', () => {
+        it('findSession은 DB를 거치지 않고 null이다 — Postgres 22P02로 던지지 않는다', async () => {
+            const { db, select } = makeSelectDb([sessionRecord]);
+            const repository = new DrizzleSessionRepository(db);
+
+            await expect(
+                repository.findSession('stale-token')
+            ).resolves.toBeNull();
+            expect(select).not.toHaveBeenCalled();
+        });
+
+        it('deleteSession은 DB를 거치지 않고 false이다 — 로그아웃이 쿠키 정리까지 진행할 수 있다', async () => {
+            const { db, delete: deleteFn } = makeDeleteDb([{ id: SESSION_ID }]);
+            const repository = new DrizzleSessionRepository(db);
+
+            await expect(repository.deleteSession('stale-token')).resolves.toBe(
+                false
+            );
+            expect(deleteFn).not.toHaveBeenCalled();
+        });
     });
 
     describe('pruneExpiredSessions', () => {

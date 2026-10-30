@@ -48,6 +48,21 @@ describe('chat-conversation actions', () => {
         });
     });
 
+    describe('세션 조회 실패', () => {
+        it('getCurrentUser가 던져도 액션은 던지지 않고 실패 결과를 돌려준다', async () => {
+            mockUser.mockRejectedValue(new Error('session db down'));
+            expect(await listConversationsAction()).toEqual([]);
+            expect(await getConversationAction(VALID_ID)).toBeNull();
+            expect(await deleteConversationAction(VALID_ID)).toEqual({
+                ok: false,
+            });
+            expect(await renameConversationAction(VALID_ID, 'title')).toEqual({
+                ok: false,
+            });
+            expect(RepoCtor).not.toHaveBeenCalled();
+        });
+    });
+
     describe('listConversationsAction', () => {
         it('행을 ISO 타임스탬프로 매핑하고 user.id로 조회한다', async () => {
             mockUser.mockResolvedValue({ id: VALID_USER });

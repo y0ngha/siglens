@@ -1,9 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
 import * as time from '@/shared/config/time';
+import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
+
+import { blankComments } from './support/sourceScan';
 
 /**
  * **`[symbol]` 탭이 읽는 `unstable_cache`의 revalidate는 그 탭의 선언값 이상이어야 한다.**
@@ -23,13 +26,14 @@ import * as time from '@/shared/config/time';
  * 레이아웃은 9탭 공유라 한 번의 짧은 읽기가 전 탭을 끌어내린다. 이 가드는 세 가지를 고정한다.
  *
  * 1. **구조** — 6h 캐시 모듈(봉·AI peek)과 시장 허브 1h 캐시 모듈을 레이아웃과 6h보다 긴 선언의
- *    탭이 import하지 않는다. 페이지와 그 **한 단계 로컬 헬퍼**(`@/app/[locale]/[symbol]/…`·`./…`
- *    import — 예: `financialData.ts`, `symbolIndexabilityMetadata.ts`)까지 본다. 6h 읽기 함수
- *    이름(`getQuantizedBarsStatic` 등)은 주석을 뺀 코드에 나타나지도 않아야 한다.
+ *    탭이 import하지 않는다. 페이지와 거기서 닿는 **`[symbol]` 안 로컬 헬퍼 전부**
+ *    (`@/app/[locale]/[symbol]/…`·상대 import를 전이적으로 — 예: `financialData.ts`,
+ *    `news/_components/NewsSections.tsx` → `newsData.ts`)를 본다. 6h 읽기 함수 이름
+ *    (`getQuantizedBarsStatic` 등)은 주석을 뺀 코드에 나타나지도 않아야 한다.
  * 2. **TTL 인자** — 페이지가 import하는 `SECONDS_PER_*`(= `staticSymbolCache` TTL 인자)는 선언 이상이다.
  * 3. **목록** — 각 탭 렌더가 읽는 `unstable_cache`와 그 revalidate를 아래 표에 적고, 전부 선언 이상인지
  *    확인한다. 표가 소스와 따로 놀지 않도록 각 행의 `token`(읽기 함수·키 리터럴)이 그 페이지(또는
- *    레이아웃)와 한 단계 로컬 헬퍼의 코드에 실제로 나타나는지 단언한다 — 읽기를 지우거나 바꾸면
+ *    레이아웃)와 로컬 헬퍼의 코드에 실제로 나타나는지 단언한다 — 읽기를 지우거나 바꾸면
  *    표도 같이 고치게 된다. 호출 그래프 전체를 정적으로 따라가지는 못하므로, **새 정적 캐시 읽기를
  *    추가하면 표에도 적는다.**
  *
@@ -42,19 +46,24 @@ const SRC_DIR = path.resolve(__dirname, '../..');
 const readFile = (abs: string): string => readFileSync(abs, 'utf8');
 const read = (rel: string): string => readFile(path.join(SYMBOL_DIR, rel));
 
-const TAB_PAGES = [
+/**
+ * 검사할 탭 페이지 — 차트 탭(`page.tsx`) + 탭 설정의 하위 탭 키마다 `<key>/page.tsx`. 손으로 적지 않고
+ * `SYMBOL_SUB_TAB_KEYS`(탭 바의 단일 소스)에서 유도해, 탭이 늘면 이 가드도 그 탭을 검사한다.
+ */
+const TAB_PAGES: readonly string[] = [
     'page.tsx',
-    'news/page.tsx',
-    'overall/page.tsx',
-    'fundamental/page.tsx',
-    'financials/page.tsx',
-    'congress/page.tsx',
-    'flows/page.tsx',
-    'options/page.tsx',
-    'position/page.tsx',
-    'fear-greed/page.tsx',
-] as const;
-type TabPage = (typeof TAB_PAGES)[number];
+    ...SYMBOL_SUB_TAB_KEYS.map(key => `${key}/page.tsx`),
+];
+
+/** 디렉터리에 실제로 있는 하위 탭 페이지(`[symbol]/<dir>/page.tsx`). */
+function subTabPagesOnDisk(): string[] {
+    return readdirSync(SYMBOL_DIR, { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && !entry.name.startsWith('_'))
+        .filter(entry => entry.name !== '__tests__')
+        .map(entry => `${entry.name}/page.tsx`)
+        .filter(rel => existsSync(path.join(SYMBOL_DIR, rel)))
+        .sort();
+}
 
 /** `export const revalidate = N` 리터럴(라우트 segment config는 리터럴이어야 한다 — app/CLAUDE.md). */
 function declaredRevalidate(source: string): number {
@@ -68,45 +77,68 @@ function stripComments(source: string): string {
     return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-/** 소스가 import하는 모듈 지정자. 주석 속 이름은 세지 않는다. */
+/** 모듈 간선 종류별 지정자 패턴 — 정적 import·재export·부수효과 import·동적 `import()`. */
+const MODULE_EDGE_PATTERNS: readonly RegExp[] = [
+    /^import\s[^;]*?from\s+'([^']+)';/gm,
+    /^export\s[^;]*?from\s+'([^']+)';/gm,
+    /^import\s+'([^']+)';/gm,
+    /\bimport\(\s*'([^']+)'\s*\)/g,
+];
+
+/**
+ * 소스가 의존하는 모듈 지정자 — 정적 import뿐 아니라 `export … from` 재export, 부수효과 `import '…'`,
+ * 동적 `import('…')`까지 센다(어느 간선이든 그 모듈의 `unstable_cache`가 렌더에서 읽힐 수 있다).
+ * 주석을 먼저 비워(`blankComments`) 주석 속 이름은 세지 않는다.
+ */
 function importedModules(source: string): string[] {
-    return [...source.matchAll(/^import[^;]*?from '([^']+)';/gm)].map(
-        m => m[1]
+    const code = blankComments(source);
+    return MODULE_EDGE_PATTERNS.flatMap(pattern =>
+        [...code.matchAll(pattern)].map(m => m[1] ?? '')
     );
 }
 
-/** `@/app/[locale]/[symbol]/…`·`./…` import를 실제 파일로 푼다(.ts/.tsx). 못 찾으면 건너뛴다. */
+/**
+ * `@/app/[locale]/[symbol]/…`·상대 경로(`./…`·`../…`) import를 실제 파일로 푼다(.ts/.tsx). `[symbol]`
+ * 슬라이스 밖이거나 못 찾으면 건너뛴다.
+ */
 function resolveLocalImport(specifier: string, fromAbs: string): string | null {
     const base = specifier.startsWith('@/app/[locale]/[symbol]/')
         ? path.join(SRC_DIR, specifier.slice('@/'.length))
-        : specifier.startsWith('./')
+        : specifier.startsWith('.')
           ? path.join(path.dirname(fromAbs), specifier)
           : null;
     if (base === null) return null;
+    if (!base.startsWith(`${SYMBOL_DIR}${path.sep}`)) return null;
     const found = ['.ts', '.tsx']
         .map(ext => `${base}${ext}`)
         .find(candidate => existsSync(candidate));
     return found ?? null;
 }
 
-/** 파일 자신 + 한 단계 로컬 헬퍼의 소스. */
+/**
+ * 파일 자신 + 거기서 닿는 `[symbol]` 슬라이스 안 로컬 헬퍼 전부(전이적). 라우트 파일이 섹션·로더를
+ * `_components/`·`_lib/`로 내리면 캐시 읽기가 두 단계 이상 아래로 내려가므로 깊이를 제한하지 않는다.
+ * 방문 집합으로 순환을 끊는다.
+ */
 function withLocalHelpers(rel: string): { rel: string; source: string }[] {
-    const abs = path.join(SYMBOL_DIR, rel);
-    const source = readFile(abs);
-    const helpers = importedModules(source)
-        .map(specifier => resolveLocalImport(specifier, abs))
-        .filter((file): file is string => file !== null)
-        .map(file => ({
-            rel: path.relative(SYMBOL_DIR, file),
-            source: readFile(file),
-        }));
-    return [{ rel, source }, ...helpers];
+    const visited = new Set<string>();
+    const visit = (abs: string): { rel: string; source: string }[] => {
+        if (visited.has(abs)) return [];
+        visited.add(abs);
+        const source = readFile(abs);
+        const children = importedModules(source)
+            .map(specifier => resolveLocalImport(specifier, abs))
+            .filter((file): file is string => file !== null)
+            .flatMap(visit);
+        return [{ rel: path.relative(SYMBOL_DIR, abs), source }, ...children];
+    };
+    return visit(path.join(SYMBOL_DIR, rel));
 }
 
 /** 6h 이하 revalidate의 `unstable_cache`를 두는 모듈 — 이 값보다 긴 선언의 탭·레이아웃은 import 금지. */
 const SHORT_REVALIDATE_MODULES: Readonly<Record<string, number>> = {
     // getBarsStatic / getQuantizedBarsStatic / getSeedBarsStatic
-    '@/entities/bars/lib/barsStaticCache': time.SECONDS_PER_QUARTER_DAY,
+    '@/entities/bars/server/barsStaticCache': time.SECONDS_PER_QUARTER_DAY,
     // peekAnalysisStatic
     '@/entities/analysis/lib/peekAnalysisStaticCache':
         time.SECONDS_PER_QUARTER_DAY,
@@ -129,7 +161,7 @@ const SHORT_REVALIDATE_READERS = [
 
 /**
  * 표의 한 행. `token`은 그 읽기가 소스에 있다는 증거(읽기 함수 이름 또는 캐시 키 리터럴)다 —
- * 페이지(또는 레이아웃)와 한 단계 로컬 헬퍼의 코드에서 찾는다.
+ * 페이지(또는 레이아웃)와 로컬 헬퍼(전이적)의 코드에서 찾는다.
  */
 interface CacheRead {
     readonly token: string;
@@ -167,7 +199,7 @@ type PageRead = Omit<CacheRead, 'revalidate'> & {
     readonly revalidate: number | typeof PAGE;
 };
 
-const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
+const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
     'page.tsx': [
         {
             token: 'getQuantizedBarsStatic',
@@ -286,7 +318,32 @@ const PAGE_READS: Readonly<Record<TabPage, readonly PageRead[]>> = {
 
 const LAYOUT = 'layout.tsx';
 
+describe('importedModules', () => {
+    it.each([
+        ["import { a } from '@/x';", ['@/x']],
+        ["import type { T } from '@/t';", ['@/t']],
+        ["export { a } from './a';", ['./a']],
+        ["export * from './star';", ['./star']],
+        ["import './side-effect';", ['./side-effect']],
+        ["const m = await import('@/dynamic');", ['@/dynamic']],
+        ["// import { a } from '@/commented';\n/* import('@/blocked') */", []],
+    ] as const)('%s → %j', (source, specifiers) => {
+        expect(importedModules(source)).toEqual(specifiers);
+    });
+});
+
 describe('[symbol] 탭 revalidate clamp 가드', () => {
+    it('탭 키마다 페이지가 있고, 탭 키에 없는 탭 페이지는 없다', () => {
+        expect(subTabPagesOnDisk()).toEqual(
+            SYMBOL_SUB_TAB_KEYS.map(key => `${key}/page.tsx`).sort()
+        );
+        expect(existsSync(path.join(SYMBOL_DIR, 'page.tsx'))).toBe(true);
+    });
+
+    it('읽기 표가 모든 탭 페이지를 덮는다(새 탭은 표에도 적는다)', () => {
+        expect(Object.keys(PAGE_READS).sort()).toEqual([...TAB_PAGES].sort());
+    });
+
     it('레이아웃(+로컬 헬퍼)은 짧은 revalidate 캐시 모듈을 import하지도, 6h 읽기 함수를 부르지도 않는다 (9탭 공유)', () => {
         for (const { rel, source } of withLocalHelpers(LAYOUT)) {
             const imports = importedModules(source);
@@ -303,10 +360,26 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
                 ).toBe(false);
             }
         }
-        expect(importedModules(read(LAYOUT))).toContain(
-            '@/entities/bars/lib/sessionBarsStaticCache'
-        );
+        expect(
+            withLocalHelpers(LAYOUT).flatMap(({ source }) =>
+                importedModules(source)
+            )
+        ).toContain('@/entities/bars/server/sessionBarsStaticCache');
     });
+
+    it.each([
+        ['news/page.tsx', 'news/newsData.ts'],
+        ['fundamental/page.tsx', 'fundamental/fundamentalData.ts'],
+        ['fundamental/page.tsx', 'fundamental/profileDescription.ts'],
+        ['layout.tsx', '_components/SymbolLayoutChrome.tsx'],
+    ])(
+        '%s의 스캔 대상에 두 단계 아래 헬퍼 %s가 들어간다(전이 탐색)',
+        (entry, helper) => {
+            expect(withLocalHelpers(entry).map(({ rel }) => rel)).toContain(
+                helper
+            );
+        }
+    );
 
     it.each(TAB_PAGES)(
         '%s (+로컬 헬퍼) — 선언보다 짧은 revalidate 캐시 모듈·읽기 함수를 쓰지 않는다',
@@ -376,7 +449,7 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
             const code = withLocalHelpers(page)
                 .map(({ source }) => stripComments(source))
                 .join('\n');
-            for (const { token } of PAGE_READS[page]) {
+            for (const { token } of PAGE_READS[page] ?? []) {
                 expect(code.includes(token), `${page}: ${token}`).toBe(true);
             }
         }
@@ -388,7 +461,7 @@ describe('[symbol] 탭 revalidate clamp 가드', () => {
             const declared = declaredRevalidate(read(page));
             const reads: CacheRead[] = [
                 ...LAYOUT_READS,
-                ...PAGE_READS[page].map(r => ({
+                ...(PAGE_READS[page] ?? []).map(r => ({
                     token: r.token,
                     revalidate: r.revalidate === PAGE ? declared : r.revalidate,
                 })),

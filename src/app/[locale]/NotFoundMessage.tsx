@@ -1,15 +1,14 @@
 'use client';
 
-import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { brandName } from '@/shared/lib/brandName';
 
 /**
- * 만료·미존재 공유 스냅샷은 `share/[id]/page.tsx`가 `notFound()`로 보낸다
- * (예전에는 200을 돌려줘 GSC가 soft-404로 분류했다). 상태 코드는 404로 정확해졌으니
- * 문구만 그 맥락으로 돌려준다 — 공유 링크를 눌러 온 사람에게 "주소가 바뀌었다"는
- * 일반 404 문구는 틀린 설명이다.
+ * 만료·미존재 공유 스냅샷은 `share/[id]/page.tsx`가 `notFound()`로 보낸다. 상태 코드는 404 그대로
+ * 두고 문구만 그 맥락으로 돌려준다 — 공유 링크를 눌러 온 사람에게 "주소가 바뀌었다"는 일반 404
+ * 문구는 틀린 설명이다.
  */
 const SHARE_PATH_SEGMENT = '/share/';
 

@@ -5,7 +5,7 @@ const m = vi.hoisted(() => ({
     getCurrentUser: vi.fn(),
     logoutUser: vi.fn(),
 }));
-vi.mock('@/entities/auth/lib/handoffStore', async importOriginal => ({
+vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({
     ...(await importOriginal<object>()),
     consumeLogoutCode: m.consume,
 }));

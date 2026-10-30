@@ -54,6 +54,42 @@ describe('useTabs', () => {
             expect(props['aria-controls']).toBe('pf-panel-tab1');
         });
 
+        it("panelMounting='all'(기본)이면 비활성 탭에도 aria-controls를 단다", () => {
+            const { result } = renderHook(() =>
+                useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'pf' })
+            );
+            expect(result.current.getTabProps('tab2')['aria-controls']).toBe(
+                'pf-panel-tab2'
+            );
+        });
+
+        it("panelMounting='active'면 활성 탭에만 aria-controls를 단다", () => {
+            const { result } = renderHook(() =>
+                useTabs({
+                    tabs,
+                    activeTab: 'tab1',
+                    onChange,
+                    idPrefix: 'pf',
+                    panelMounting: 'active',
+                })
+            );
+            expect(result.current.getTabProps('tab1')['aria-controls']).toBe(
+                'pf-panel-tab1'
+            );
+            expect(
+                result.current.getTabProps('tab2')['aria-controls']
+            ).toBeUndefined();
+        });
+
+        it('같은 탭의 ref 콜백은 렌더 사이에 동일하다', () => {
+            const { result, rerender } = renderHook(() =>
+                useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'pf' })
+            );
+            const first = result.current.getTabProps('tab1').ref;
+            rerender();
+            expect(result.current.getTabProps('tab1').ref).toBe(first);
+        });
+
         it('calls onChange on click', () => {
             const { result } = renderHook(() =>
                 useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'test' })

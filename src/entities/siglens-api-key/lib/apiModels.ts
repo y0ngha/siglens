@@ -31,6 +31,7 @@ export function listApiSelectableModels(
     );
 }
 
+/** `checkApiModel` 결과. 실패 사유가 화면 오류 코드로 그대로 쓰인다. */
 export type ApiModelCheck =
     | { ok: true; model: ModelId }
     | { ok: false; reason: 'invalid_model' | 'provider_key_missing' };

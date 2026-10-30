@@ -73,7 +73,7 @@ vi.mock('@/entities/earnings-report/api', () => ({
 vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
     getFinancialStatementsProvider: () => ({ getIncomeStatements }),
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
 vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({

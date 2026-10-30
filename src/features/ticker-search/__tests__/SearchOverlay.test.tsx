@@ -11,9 +11,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const replaceMock = vi.fn();
 const pushMock = vi.fn();
+const routeState = { pathname: '/NVDA' };
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: replaceMock, push: pushMock }),
-    usePathname: () => '/NVDA',
+    usePathname: () => routeState.pathname,
 }));
 
 const searchState = {
@@ -66,6 +67,7 @@ describe('SearchOverlay', () => {
         searchState.debouncedQuery = '';
         searchState.isError = false;
         recentState.recentSearches = [];
+        routeState.pathname = '/NVDA';
         onNavigateMock.mockClear();
     });
 
@@ -392,6 +394,19 @@ describe('SearchOverlay', () => {
         expect(onNavigateMock).not.toHaveBeenCalled();
     });
 
+    it('로케일 접두사가 붙은 경로에서도 보던 종목을 다시 고르면 이동 없이 닫는다', async () => {
+        // `/en/NVDA`를 `/NVDA`와 다르게 보면 같은 URL로 `onNavigate`가 나가고, 열 때 넣은
+        // 히스토리 항목이 남아 다음 닫기의 `history.back()`이 보던 페이지를 떠난다.
+        routeState.pathname = '/en/NVDA';
+        recentState.recentSearches = [{ symbol: 'NVDA', label: '엔비디아' }];
+        const { onClose } = renderOverlay();
+
+        await userEvent.click(screen.getByRole('button', { name: '엔비디아' }));
+
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(onNavigateMock).not.toHaveBeenCalled();
+    });
+
     it('티커 형태가 아니면 Enter로 이동하지 않는다', async () => {
         // 입력이 그대로 URL이 되므로 `../` 같은 값이 통과하면 안 된다.
         searchState.hasQuery = true;
@@ -494,11 +509,11 @@ describe('SearchOverlay', () => {
         expect(onNavigateMock).not.toHaveBeenCalled();
     });
 
-    it('디바운스 질의에 공백이 붙어도 첫 결과를 신뢰한다', async () => {
-        // 양쪽을 trim하지 않으면 `"apple "`은 `"apple"`과 영영 같아지지 않는다.
+    it('입력에 공백이 붙어도 첫 결과를 신뢰한다', async () => {
+        // 입력을 trim하지 않으면 `"apple "`은 디바운스 질의 `"apple"`과 영영 같아지지 않는다.
         // 그러면 화면에 첫 결과가 떠 있는데도 무시하고 `/APPLE`로 직행해 404가 난다.
         searchState.hasQuery = true;
-        searchState.debouncedQuery = 'apple ';
+        searchState.debouncedQuery = 'apple';
         searchState.results = [
             {
                 symbol: 'AAPL',
@@ -510,7 +525,7 @@ describe('SearchOverlay', () => {
         ];
         renderOverlay();
 
-        await userEvent.type(screen.getByRole('searchbox'), 'apple{Enter}');
+        await userEvent.type(screen.getByRole('searchbox'), 'apple {Enter}');
         expect(onNavigateMock).toHaveBeenCalledWith('AAPL');
     });
 

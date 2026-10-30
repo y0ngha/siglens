@@ -1,3 +1,6 @@
+/**
+ * 한국 거시 지표 카드 그리드(캘린더 발표 이력 기반).
+ */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';

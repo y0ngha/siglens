@@ -5,7 +5,7 @@ import {
     type ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { resolveAssetInfoOrNull } from '@/app/api/ai/chat/tools/resolveAssetInfo';
-import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { buildChartData } from '@/entities/bars/lib/buildChartData';
 import { resolveChartDataIndicators } from '@/entities/bars/lib/chartDataIndicators';
 import { shrinkToLimit } from '@/entities/bars/lib/shrinkToLimit';

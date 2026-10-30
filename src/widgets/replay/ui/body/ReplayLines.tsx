@@ -56,14 +56,19 @@ interface LineGroupProps {
 
 /** A run of same-kind lines: one `<ul>` of bullets or one stack of `<p>`. */
 function LineGroupView({ group, reveal }: LineGroupProps) {
-    const visible = group.items.filter(({ index }) => reveal[index]!.shown > 0);
+    const visible = group.items.flatMap(({ line, index }) => {
+        const state = reveal[index];
+        return state !== undefined && state.shown > 0
+            ? [{ line, index, state }]
+            : [];
+    });
     if (visible.length === 0) return null;
     if (group.kind === 'li') {
         return (
             <ul className="flex list-disc flex-col gap-1 pl-5 marker:text-secondary-400">
-                {visible.map(({ line, index }) => (
+                {visible.map(({ line, index, state }) => (
                     <li key={index}>
-                        <LineBody line={line} reveal={reveal[index]!} />
+                        <LineBody line={line} reveal={state} />
                     </li>
                 ))}
             </ul>
@@ -71,9 +76,9 @@ function LineGroupView({ group, reveal }: LineGroupProps) {
     }
     return (
         <div className="flex flex-col gap-2">
-            {visible.map(({ line, index }) => (
+            {visible.map(({ line, index, state }) => (
                 <p key={index}>
-                    <LineBody line={line} reveal={reveal[index]!} />
+                    <LineBody line={line} reveal={state} />
                 </p>
             ))}
         </div>
@@ -89,13 +94,18 @@ interface ReplayLinesProps {
 export function ReplayLines({ lines, reveal }: ReplayLinesProps) {
     return (
         <div className="flex flex-col gap-2">
-            {groupLines(lines).map(group => (
-                <LineGroupView
-                    key={group.items[0]!.index}
-                    group={group}
-                    reveal={reveal}
-                />
-            ))}
+            {groupLines(lines).flatMap(group => {
+                const [first] = group.items;
+                return first === undefined
+                    ? []
+                    : [
+                          <LineGroupView
+                              key={first.index}
+                              group={group}
+                              reveal={reveal}
+                          />,
+                      ];
+            })}
         </div>
     );
 }

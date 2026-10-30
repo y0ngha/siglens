@@ -4,8 +4,11 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { ResetPasswordForm } from '@/features/auth-password-reset/ui/ResetPasswordForm';
 
-// useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
-// token은 원래도 URL(client 가시) 값이라 client-read로 인한 신규 노출 없음.
+/**
+ * 재설정 링크의 `email`·`token`으로 새 비밀번호 폼을 그리고, 둘 중 하나라도 없으면 잘못된 링크
+ * 안내를 띄운다. `useSearchParams`를 읽어 이 서브트리만 CSR로 떨구고 라우트는 정적으로 남는다 —
+ * token은 원래 URL(클라이언트에 보이는) 값이라 클라이언트에서 읽어도 새로 노출되는 것은 없다.
+ */
 export function ResetPasswordContent() {
     const tAuth = useTranslations('entities.auth.error');
     const params = useSearchParams();

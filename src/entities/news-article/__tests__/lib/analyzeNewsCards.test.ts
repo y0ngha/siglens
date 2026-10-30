@@ -5,7 +5,7 @@ const { mockRunNewsCardAnalysis, mockLoadFailures, mockRecordFailures } =
         mockRecordFailures: vi.fn(),
     }));
 
-vi.mock('@/entities/news-article/lib/newsCardFailureBackoff', () => ({
+vi.mock('@/entities/news-article/server/newsCardFailureBackoff', () => ({
     loadNewsCardFailures: mockLoadFailures,
     recordNewsCardFailures: mockRecordFailures,
 }));

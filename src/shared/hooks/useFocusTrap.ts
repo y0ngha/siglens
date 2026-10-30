@@ -11,9 +11,10 @@ const FOCUSABLE_SELECTOR = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-// 모달용 포커스 트랩: 진입 시 포커스 이동 + Tab/Shift+Tab 순환 + 해제 시 트리거 복원.
-// 세 동작이 같은 lifecycle을 공유하므로 단일 훅으로 결합 (분리 시 active 가드 중복 발생).
-/** Modal focus trap (initial focus + Tab wrap + restore on deactivate). */
+/**
+ * 모달용 포커스 트랩: 진입 시 포커스 이동 + Tab/Shift+Tab 순환 + 해제 시 트리거 복원.
+ * 세 동작이 같은 lifecycle을 공유하므로 단일 훅으로 결합했다(분리하면 `active` 가드가 중복된다).
+ */
 export function useFocusTrap(
     ref: RefObject<HTMLElement | null>,
     active: boolean,
@@ -43,8 +44,9 @@ export function useFocusTrap(
             ref.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
         if (focusable.length === 0) return;
 
-        const first = focusable[0]!;
-        const last = focusable[focusable.length - 1]!;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (first === undefined || last === undefined) return;
 
         if (e.shiftKey) {
             if (
@@ -65,8 +67,8 @@ export function useFocusTrap(
     useEffect(() => {
         if (!active) return;
 
-        // Capture the trigger BEFORE we move focus into the dialog so
-        // we can restore it when the trap deactivates.
+        // 포커스를 다이얼로그 안으로 옮기기 **전에** 트리거를 잡아 둔다.
+        // 트랩이 해제될 때 되돌리기 위해서다.
         const previouslyFocused =
             document.activeElement instanceof HTMLElement
                 ? document.activeElement
@@ -86,11 +88,9 @@ export function useFocusTrap(
         document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
-            // Restore focus to the trigger that armed the trap — but
-            // only if it is still in the DOM. If the user clicked
-            // somewhere outside in the meantime, the dialog is being
-            // closed in response to that click and we should not
-            // steal focus back.
+            // 트랩을 건 트리거로 포커스를 되돌린다 — 단, 아직 DOM에 있을 때만.
+            // 그 사이 사용자가 바깥을 클릭했다면 다이얼로그는 그 클릭 때문에
+            // 닫히는 중이므로 포커스를 다시 빼앗지 않는다.
             if (
                 previouslyFocused &&
                 document.contains(previouslyFocused) &&

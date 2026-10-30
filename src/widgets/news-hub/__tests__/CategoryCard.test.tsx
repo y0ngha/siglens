@@ -30,7 +30,7 @@ describe('CategoryCard', () => {
     /**
      * 허브가 남의 기사 제목만 나열하면 스크랩 콘텐츠 쪽으로 기운다. 우리가 쓴
      * 다이제스트 한 줄이 그 페이지가 스스로 말하는 몫이다 — 없으면(다이제스트 미생성)
-     * 조용히 생략되고 카드는 예전 모양 그대로다.
+     * 조용히 생략된다.
      */
     it('다이제스트 줄이 있으면 렌더하고, 없으면 생략한다', () => {
         const { unmount } = render(
@@ -81,8 +81,8 @@ describe('CategoryCard', () => {
     });
 
     /**
-     * 앵커 텍스트가 곧 목적지에 대한 신호다. 예전에는 링크가 `더보기`뿐이라
-     * 이 카드가 거는 내부 링크에 키워드가 하나도 실리지 않았다.
+     * 앵커 텍스트가 곧 목적지에 대한 신호다. 키워드를 가진 것은 제목이라
+     * 제목이 링크여야 내부 링크에 카테고리 이름이 실린다.
      */
     it('제목이 링크이고 앵커 텍스트가 카테고리 이름이다', () => {
         render(<CategoryCard {...DEFAULTS} />);
@@ -100,10 +100,22 @@ describe('CategoryCard', () => {
         expect(screen.getAllByRole('link')).toHaveLength(1);
     });
 
-    it('aria-label에 koLabel을 포함한다', () => {
+    it('미리보기 목록의 접근성 이름에 카드 제목을 포함한다', () => {
         render(<CategoryCard {...DEFAULTS} />);
         expect(
-            screen.getByRole('link', { name: /암호화폐/ })
+            screen.getByRole('list', { name: '암호화폐 미리보기' })
         ).toBeInTheDocument();
+    });
+
+    it('제목은 h2 위계 토큰을 카드 크기로 낮춰 쓴다', () => {
+        render(<CategoryCard {...DEFAULTS} />);
+        expect(screen.getByRole('heading', { level: 2 })).toHaveClass(
+            'text-base',
+            'font-semibold',
+            'text-secondary-100'
+        );
+        expect(screen.getByRole('heading', { level: 2 })).not.toHaveClass(
+            'text-lg'
+        );
     });
 });
