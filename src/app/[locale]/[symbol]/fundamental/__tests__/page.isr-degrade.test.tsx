@@ -72,7 +72,7 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
 vi.mock('@/app/[locale]/[symbol]/fundamental/FundamentalDegraded', () => ({
     FundamentalDegraded: () => <div data-testid="fundamental-degraded" />,
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 // staticSymbolCache: call fetcher() directly so tests stay pure (no I/O).

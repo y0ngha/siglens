@@ -38,7 +38,7 @@ vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getSeedBarsStatic: vi.fn(),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -46,7 +46,7 @@ vi.mock('next/navigation', () => ({ notFound: vi.fn() }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata } from '@/app/[locale]/[symbol]/page';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 
 type Snapshots = Awaited<ReturnType<typeof getSeoSnapshotsStatic>>;
 

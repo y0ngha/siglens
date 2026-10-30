@@ -57,7 +57,7 @@ vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn(),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 

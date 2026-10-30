@@ -14,7 +14,7 @@ import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabi
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';

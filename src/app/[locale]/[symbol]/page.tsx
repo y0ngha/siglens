@@ -18,7 +18,7 @@ import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStati
 import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasTechnicalProse } from '@/entities/seo-snapshot/lib/technicalContent';
 import { countSkillFiles } from '@/entities/skill/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';

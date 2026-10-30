@@ -13,7 +13,7 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { resolveSnapshotSlots } from '@/entities/options-chain/lib/optionsSlots';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasOptionsProse } from '@/entities/seo-snapshot/lib/optionsContent';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';

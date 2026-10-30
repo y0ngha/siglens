@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { isPrewarmTab } from '@/entities/seo-snapshot/lib/applicability';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
 import {
     isSeoSnapshotTab,

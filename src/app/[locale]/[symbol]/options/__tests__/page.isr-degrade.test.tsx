@@ -52,7 +52,7 @@ vi.mock('@/widgets/options/OptionsEmptyState', () => ({
         <section data-testid="options-empty-state" data-symbol={symbol} />
     ),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({

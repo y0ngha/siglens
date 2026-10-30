@@ -71,7 +71,7 @@ vi.mock('next/navigation', () => ({
 }));
 // thin 게이트가 `hasCongressProse(snap?.content)`를 보므로 스냅샷 소스를 제어해야
 // "행은 있는데 내용이 비었다"는 경우를 재현할 수 있다.
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -84,7 +84,7 @@ import {
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { getCongressTradesResilient } from '@/entities/congress-trades/server/getCongressTradesResilient';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import type { MockedFunction } from 'vitest';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로

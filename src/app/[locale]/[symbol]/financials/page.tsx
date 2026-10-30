@@ -16,7 +16,7 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
 import { hasFinancialsProse } from '@/entities/seo-snapshot/lib/financialsContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
