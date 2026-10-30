@@ -425,6 +425,7 @@ Extract every magic number and constant value to a module-level constant, and le
 - Time math uses the shared constants (`MS_PER_HOUR`, `MS_PER_SECOND`, KST offset …) from `shared/config` or `@y0ngha/siglens-core`, not `hours * 60 * 60 * 1000`.
 - **Drift trap:** once a constant exists in a file, every literal use of the same value in that file (JSX text, error messages, JSDoc, tests) references it. A tests file converted halfway keeps the old literal and passes for the wrong reason.
 - A rounding factor and its `toFixed` digits are one constant, not two literals.
+- A fallback or a displayed maximum (`/ 100`) imports the constant the logic uses; it never re-declares the value in a sibling module or in JSX text.
 - Exception: Next.js route segment config (`revalidate`, `dynamic`, …) must stay a literal — see `src/app/CLAUDE.md#AP-1`.
 
 ```typescript

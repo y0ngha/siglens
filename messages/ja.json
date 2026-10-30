@@ -4162,7 +4162,8 @@
             },
             "periodToggle": {
                 "annual": "年次",
-                "quarter": "四半期"
+                "quarter": "四半期",
+                "quarterUnavailable": "四半期の財務諸表を取得できなかったため、年次の数値を表示しています。"
             },
             "section": {
                 "balanceSheet": "貸借対照表",
@@ -4199,6 +4200,22 @@
                     "総負債から保有現金を差し引いた値です。",
                     "マイナスであれば現金が負債を上回る「ネットキャッシュ」の状態で、財務が非常に健全だという意味です。"
                 ]
+            },
+            "signalType": {
+                "accrualWarning": "利益の質に注意",
+                "capexHeavy": "設備投資が過大",
+                "debtRising": "負債の増加",
+                "earningsQualityGood": "利益の質が良好",
+                "fcfGrowth": "フリーキャッシュフローの成長",
+                "fcfNegative": "フリーキャッシュフローが赤字",
+                "fcfSolid": "フリーキャッシュフローが堅調",
+                "growthDecline": "売上の減少",
+                "marginContraction": "マージンの悪化",
+                "marginExpansion": "マージンの改善",
+                "netCash": "ネットキャッシュ企業",
+                "operatingIncomeGrowth": "営業利益の成長",
+                "operatingLeverage": "営業レバレッジ",
+                "revenueAccel": "売上成長の加速"
             }
         },
         "fundamental": {

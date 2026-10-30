@@ -1,13 +1,9 @@
 /**
- * 뮤테이션 감사 생존자 회귀 가드: `FinancialsPage`의
- * `currency={currencyForSymbol(upper)}` → `'USD'` 하드코딩 뮤테이션이
- * 41/41 그린으로 살아남았다 — 기존 테스트는 `FinancialsScorecard`를
- * `() => null`로 mock하고 렌더 결과를 검사하지 않아, currency prop이 실제로
- * 심볼에서 유도돼 전달되는지는 아무도 확인하지 않았다. `.KS` 종목이면
- * 재무제표 히어로(scorecard)가 통째로 달러로 렌더될 수 있었다는 뜻이다.
+ * `FinancialsPage`가 `FinancialsScorecard`에 넘기는 `currency`를 고정한다. 위젯을 `() => null`로
+ * mock하므로 렌더 결과가 아니라 element props를 검사한다 — `.KS` 종목은 원화, 재무제표 행이 보고
+ * 통화를 알려 주면 그 통화여야 히어로(scorecard)의 금액이 맞는 통화로 나간다.
  *
- * `page.body.test.tsx`(overall 페이지)가 hasOptions/marketProfile에 쓴
- * findElementByType 패턴을 그대로 따른다.
+ * `page.body.test.tsx`(overall 페이지)가 쓰는 findElementByType 패턴을 따른다.
  */
 
 // vi.mock calls are hoisted above imports by vitest.
@@ -90,6 +86,7 @@ import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -121,7 +118,7 @@ const PROFILE_OK = {
     degraded: false,
 } as Awaited<ReturnType<typeof getProfileResilient>>;
 
-describe('FinancialsPage — FinancialsScorecard currency 전달 (뮤테이션 감사)', () => {
+describe('FinancialsPage — FinancialsScorecard currency 전달', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
@@ -141,7 +138,7 @@ describe('FinancialsPage — FinancialsScorecard currency 전달 (뮤테이션 �
         );
     });
 
-    it('미국 종목은 FinancialsScorecard에 currency="USD"를 전달한다 (회귀 아님 확인)', async () => {
+    it('미국 종목은 FinancialsScorecard에 currency="USD"를 전달한다', async () => {
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
 
         const tree = await FinancialsPage({
@@ -152,6 +149,30 @@ describe('FinancialsPage — FinancialsScorecard currency 전달 (뮤테이션 �
         expect(scorecard).not.toBeNull();
         expect((scorecard?.props as { currency?: string }).currency).toBe(
             'USD'
+        );
+    });
+
+    it('재무제표 행이 보고 통화(TWD)를 알려 주면 상장 통화 대신 그 통화를 전달한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        vi.mocked(getFinancialsPageData).mockResolvedValueOnce({
+            snapshot: {
+                income: [{ reportedCurrency: 'TWD' }],
+                balance: [],
+                cashFlow: [],
+                incomeGrowth: [],
+                financialGrowth: [],
+                cashFlowGrowth: [],
+            },
+            scorecard: null,
+        } as unknown as Awaited<ReturnType<typeof getFinancialsPageData>>);
+
+        const tree = await FinancialsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'tsm' }),
+        });
+
+        const scorecard = findElementByType(tree, FinancialsScorecard);
+        expect((scorecard?.props as { currency?: string }).currency).toBe(
+            'TWD'
         );
     });
 });

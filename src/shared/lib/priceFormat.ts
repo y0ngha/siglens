@@ -187,6 +187,41 @@ export function formatCompactCurrency(
 }
 
 /**
+ * 임의 ISO 4217 통화로 비축약 금액을 표기한다 — EPS처럼 축약하면 의미가 사라지는 주당 금액용.
+ * USD·KRW는 기존 표기(`$`·`₩`)를 그대로 쓰고, 그 밖의 통화는 `currencyDisplay: 'code'`로
+ * 통화 코드를 붙인다(`formatCompactInCurrency`와 같은 사유). 소수 자릿수는
+ * `currencyFractionDigits`를 따르며(원화 0, 그 외 2) 하이드레이션 일치를 위해 최소·최대를
+ * 함께 명시한다.
+ *
+ * 형식이 잘못된 코드(`Intl`이 `RangeError`를 던지는 값)는 `null`을 돌려준다 — 호출부가
+ * 상장 통화로 폴백하도록 맡긴다.
+ */
+export function formatInCurrency(
+    value: number,
+    isoCurrency: string,
+    locale: Locale
+): string | null {
+    const currency = isoCurrency.trim().toUpperCase();
+    const digits = currencyFractionDigits(currency);
+    const currencyDisplay =
+        currency === 'USD' || currency === 'KRW'
+            ? currencyDisplayFor(currency)
+            : 'code';
+    try {
+        return cachedNumberFormat(INTL_LOCALE[locale], {
+            style: 'currency',
+            currency,
+            currencyDisplay,
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        }).format(value);
+    } catch (error) {
+        if (error instanceof RangeError) return null;
+        throw error;
+    }
+}
+
+/**
  * Number of significant digits to preserve after the leading zeros when
  * formatting a sub-1 price (e.g. $0.000123 → 4 sig-figs → 8 decimal places).
  * Kept as a named constant so the intent is self-documenting and the value is

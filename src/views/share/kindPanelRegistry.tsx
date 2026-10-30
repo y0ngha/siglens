@@ -55,7 +55,7 @@ const FundamentalAiSummaryView = dynamic(() =>
     )
 );
 const FinancialsAiSummaryView = dynamic(() =>
-    import('@/widgets/financials/FinancialsAiSummary').then(
+    import('@/widgets/financials/ui/ai-summary/FinancialsAiSummaryView').then(
         m => m.FinancialsAiSummaryView
     )
 );

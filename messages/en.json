@@ -4162,7 +4162,8 @@
             },
             "periodToggle": {
                 "annual": "Annual",
-                "quarter": "Quarterly"
+                "quarter": "Quarterly",
+                "quarterUnavailable": "Quarterly financial statements couldn't be loaded, so annual figures are shown."
             },
             "section": {
                 "balanceSheet": "Balance sheet",
@@ -4199,6 +4200,22 @@
                     "Total debt minus the cash on hand.",
                     "A negative figure means cash exceeds debt: a “net cash” position, which is very solid."
                 ]
+            },
+            "signalType": {
+                "accrualWarning": "Earnings quality caution",
+                "capexHeavy": "Heavy capital spending",
+                "debtRising": "Debt rising",
+                "earningsQualityGood": "Strong earnings quality",
+                "fcfGrowth": "Free cash flow growth",
+                "fcfNegative": "Negative free cash flow",
+                "fcfSolid": "Solid free cash flow",
+                "growthDecline": "Revenue decline",
+                "marginContraction": "Margin contraction",
+                "marginExpansion": "Margin expansion",
+                "netCash": "Net cash position",
+                "operatingIncomeGrowth": "Operating income growth",
+                "operatingLeverage": "Operating leverage",
+                "revenueAccel": "Revenue growth accelerating"
             }
         },
         "fundamental": {

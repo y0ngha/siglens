@@ -127,6 +127,7 @@
         "widgets.financials.gradeGauge",
         "widgets.financials.periodToggle",
         "widgets.financials.section",
+        "widgets.financials.signalType",
         "widgets.financials.tooltip",
         "widgets.fundamental.analystRating",
         "widgets.home.categoryDescription",

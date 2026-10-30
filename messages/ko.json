@@ -4296,7 +4296,8 @@
             },
             "periodToggle": {
                 "annual": "연간",
-                "quarter": "분기"
+                "quarter": "분기",
+                "quarterUnavailable": "분기 재무제표를 불러오지 못해 연간 기준으로 보여 드려요."
             },
             "section": {
                 "balanceSheet": "재무상태표",
@@ -4306,6 +4307,22 @@
                 "growthAnalysisYoy": "성장 분석 전년 대비",
                 "incomeStatement": "손익계산서",
                 "tableScrollHint": "{v0} (좌우 스크롤 가능)"
+            },
+            "signalType": {
+                "accrualWarning": "이익의 질 주의",
+                "capexHeavy": "설비투자 과다",
+                "debtRising": "부채 증가",
+                "earningsQualityGood": "이익의 질 양호",
+                "fcfGrowth": "잉여현금흐름 성장",
+                "fcfNegative": "잉여현금흐름 적자",
+                "fcfSolid": "잉여현금흐름 견조",
+                "growthDecline": "매출 역성장",
+                "marginContraction": "마진 악화",
+                "marginExpansion": "마진 개선",
+                "netCash": "순현금 기업",
+                "operatingIncomeGrowth": "영업이익 성장",
+                "operatingLeverage": "영업 레버리지",
+                "revenueAccel": "매출 성장 가속"
             },
             "tooltip": {
                 "accruals": [
