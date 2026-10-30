@@ -18,7 +18,6 @@ export type Locale = (typeof LOCALES)[number];
  */
 export const DEFAULT_LOCALE = 'ko' satisfies Locale;
 
-/** 타입 가드 — 신뢰 경계(URL 세그먼트, 쿠키)에서 검증에 쓴다. */
 /**
  * `Intl` API에 넘길 BCP-47 태그.
  *
@@ -34,11 +33,12 @@ export const INTL_LOCALE: Record<Locale, string> = {
     zh: 'zh-Hans-CN',
 };
 
+/** 타입 가드 — 신뢰 경계(URL 세그먼트, 쿠키)에서 검증에 쓴다. */
 export function isLocale(value: string): value is Locale {
     return (LOCALES as readonly string[]).includes(value);
 }
 
-/** `isLocale(raw) ? raw : DEFAULT_LOCALE` — the route-level fallback, in one place. */
+/** `isLocale(raw) ? raw : DEFAULT_LOCALE` — 라우트 단위 폴백을 한 곳에 둔다. */
 export function resolveLocale(raw: string): Locale {
     return isLocale(raw) ? raw : DEFAULT_LOCALE;
 }
@@ -127,6 +127,13 @@ export function localePath(locale: Locale, path: string): string {
         : `/${locale}${normalized}`;
 }
 
+/** `splitLocalePath`의 결과. */
+export interface SplitLocalePathResult {
+    readonly locale: Locale;
+    /** 로케일 접두사를 뗀 경로. 항상 `/`로 시작한다. */
+    readonly path: string;
+}
+
 /**
  * 경로에서 로케일 접두사를 떼어낸다.
  *
@@ -141,12 +148,6 @@ export function localePath(locale: Locale, path: string): string {
  *
  * @returns 접두사가 없으면 기본 로케일과 원본 경로.
  */
-export interface SplitLocalePathResult {
-    readonly locale: Locale;
-    /** 로케일 접두사를 뗀 경로. 항상 `/`로 시작한다. */
-    readonly path: string;
-}
-
 export function splitLocalePath(
     pathname: string | null | undefined
 ): SplitLocalePathResult {

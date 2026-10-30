@@ -1,5 +1,13 @@
 import { execFileSync } from 'node:child_process';
 
+function hasExitStatus(error: unknown, status: number): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        Reflect.get(error, 'status') === status
+    );
+}
+
 /**
  * 소스 레벨 가드용 grep.
  *
@@ -17,8 +25,7 @@ export function grepFiles(pattern: string, paths: readonly string[]): string[] {
         );
         return out.split('\n').filter(Boolean);
     } catch (error) {
-        const status = (error as { status?: number }).status;
-        if (status === 1) return [];
+        if (hasExitStatus(error, 1)) return [];
         throw error;
     }
 }

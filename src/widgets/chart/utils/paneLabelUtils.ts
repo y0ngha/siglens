@@ -1,3 +1,7 @@
+/**
+ * pane 인덱스에 따라 보조 pane 이름 라벨 설정을 만드는 유틸.
+ */
+
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     CCI_DEFAULT_PERIOD,

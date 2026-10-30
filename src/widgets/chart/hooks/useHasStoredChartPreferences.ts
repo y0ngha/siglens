@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * localStorage에 저장된 차트 설정이 있는지 구독해 알려 주는 훅.
+ */
+
 import { useSyncExternalStore } from 'react';
 import { STORAGE_PREFIX } from '../constants';
 

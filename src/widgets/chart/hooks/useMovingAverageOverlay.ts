@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * MA·EMA가 공유하는 이동평균 오버레이 시리즈 생성·갱신, 기간 선택, 표시 상태 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { usePersistentState } from '@/shared/hooks/usePersistentState';
@@ -119,9 +123,8 @@ export function useMovingAverageOverlay({
             // 부모 전달이 아니다 — lightweight-charts 시리즈(외부 명령형 시스템)에 데이터를 동기화하는 effect다.
             // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent
             const data = stableGetIndicatorData(indicators, period);
-            if (!series || !data) continue;
-
-            series.setData(buildSeriesDataFromValues(bars, data));
+            // 값이 없으면 시리즈를 비운다 — 남겨 두면 이전 종목의 선과 시각이 남는다.
+            series?.setData(data ? buildSeriesDataFromValues(bars, data) : []);
         }
     }, [indicators, bars, visiblePeriods]);
 

@@ -142,7 +142,7 @@ describe('useSqueezeMomentumChart', () => {
         );
     });
 
-    it('does not set data when squeezeMomentum is empty', () => {
+    it('clears its series when squeezeMomentum has no values', () => {
         renderHook(() =>
             useSqueezeMomentumChart({
                 chartRef: makeChartRef(makeChart()),
@@ -152,7 +152,11 @@ describe('useSqueezeMomentumChart', () => {
                 paneIndex: 1,
             })
         );
-        expect(mockSetData).not.toHaveBeenCalled();
+        // 빈 값이면 이전 종목·타임프레임의 선이 남지 않도록 시리즈를 비운다.
+        expect(mockSetData).toHaveBeenCalled();
+        expect(
+            mockSetData.mock.calls.every(([data]) => data.length === 0)
+        ).toBe(true);
     });
 
     it('recreates series when paneIndex changes', () => {

@@ -106,9 +106,12 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
 
 const { mockResolveHoldingPositionBucket } = vi.hoisted(() => ({
     mockResolveHoldingPositionBucket: vi.fn(),
@@ -161,7 +164,7 @@ import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';

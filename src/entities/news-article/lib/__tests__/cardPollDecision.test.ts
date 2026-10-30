@@ -7,17 +7,20 @@ import {
 } from '@/shared/config/cardPollingConfig';
 import {
     CARD_WAIT_TIMEOUT_MESSAGE,
-    type CardListPollPolicy,
     type CardPollCounters,
     type CardPollOutcome,
     type CardWaitPollPolicy,
     decideCardListPoll,
     decideCardWaitPoll,
-    type EnrichableCard,
     hasAnyEnrichedCard,
     hasPendingCard,
+    isCardPending,
     INITIAL_CARD_POLL_COUNTERS,
 } from '@/entities/news-article/lib/cardPollDecision';
+import type {
+    CardListPollPolicy,
+    EnrichableCard,
+} from '@/entities/news-article/model';
 
 interface Card extends EnrichableCard {
     id: string;
@@ -70,6 +73,18 @@ beforeEach(() => {
 });
 afterEach(() => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+});
+
+describe('isCardPending', () => {
+    it('is pending when either field is null, enriched only when both are set', () => {
+        expect(isCardPending({ sentiment: null, priceImpact: 'high' })).toBe(
+            true
+        );
+        expect(isCardPending({ sentiment: 'x', priceImpact: null })).toBe(true);
+        expect(isCardPending({ sentiment: 'x', priceImpact: 'high' })).toBe(
+            false
+        );
+    });
 });
 
 describe('hasPendingCard / hasAnyEnrichedCard', () => {

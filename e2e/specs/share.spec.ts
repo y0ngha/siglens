@@ -245,10 +245,9 @@ test.describe('share: confirm → loading interactive flow', () => {
         await page.goto('/AAPL/options');
 
         // Deterministic error state — options registration status becomes 'error'.
+        // 스텁의 `no_chains_error` → 오류 카드는 원인 문구(옵션 없음)를 보인다.
         await expect(
-            page.getByText(
-                '옵션 분석을 가져오지 못했어요. 잠시 후 다시 시도해주세요.'
-            )
+            page.getByText('분석할 옵션 데이터가 없습니다.')
         ).toBeVisible();
 
         const shareButton = page.getByRole('button', {

@@ -1,17 +1,17 @@
-/** Email message payload passed to an {@link EmailDispatcher} implementation. */
+/** {@link EmailDispatcher}에 넘기는 메일 한 통의 내용. */
 export interface EmailMessage {
-    /** Recipient email address. */
+    /** 수신자 이메일 주소. */
     to: string;
-    /** Email subject line. */
+    /** 메일 제목. */
     subject: string;
-    /** HTML body of the email. */
+    /** HTML 본문. */
     html: string;
-    /** Plain-text body of the email. */
+    /** plain-text 본문. */
     text: string;
     /**
-     * Extra MIME headers (e.g. `List-Unsubscribe`). Transactional auth mail
-     * omits it; bulk-style mail such as the scheduled report needs it for
-     * one-click unsubscribe (RFC 8058) and inbox-provider requirements.
+     * 추가 MIME 헤더(예: `List-Unsubscribe`). 트랜잭셔널 인증 메일은 생략하고,
+     * 정기 리포트 같은 대량성 메일은 원클릭 구독 해지(RFC 8058)와 받은편지함
+     * 제공자 요구사항 때문에 싣는다.
      */
     headers?: Record<string, string>;
 }

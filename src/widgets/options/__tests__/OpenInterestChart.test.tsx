@@ -1,8 +1,9 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { OpenInterestChart } from '@/widgets/options/OpenInterestChart';
-import type {
-    OptionsChain,
-    OptionsExpirationMetrics,
+import {
+    aggregateOpenInterest,
+    type OptionsChain,
+    type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
@@ -10,24 +11,6 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
         <span>{children}</span>
     ),
 }));
-
-vi.mock('@y0ngha/siglens-core', async importOriginal => {
-    const mod = (await importOriginal()) as Record<string, unknown>;
-    return {
-        ...mod,
-        aggregateOpenInterest: (chain: {
-            calls: Array<{ strike: number; openInterest: number }>;
-            puts: Array<{ strike: number; openInterest: number }>;
-        }) =>
-            chain.calls.map(c => ({
-                strike: c.strike,
-                callOpenInterest: c.openInterest,
-                putOpenInterest:
-                    chain.puts.find(p => p.strike === c.strike)?.openInterest ??
-                    0,
-            })),
-    };
-});
 
 vi.mock('@/entities/options-chain/lib/findNearestStrike', () => ({
     findNearestStrikeIndex: (strikes: number[], target: number) => {
@@ -46,7 +29,6 @@ vi.mock('@/entities/options-chain/lib/findNearestStrike', () => ({
 
 vi.mock('@/widgets/options/utils/computeTooltipPos', () => ({
     computeTooltipPos: () => ({ x: 100, y: 100 }),
-    TOOLTIP_ELEMENT_ID: 'oi-chart-tooltip',
     TOOLTIP_MIN_WIDTH_PX: 160,
 }));
 
@@ -166,8 +148,9 @@ describe('OpenInterestChart', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={null}
+                oiByStrike={[]}
                 metrics={null}
+                oiStale={false}
             />
         );
         expect(screen.getByText(/OI 데이터가 없어요/)).toBeInTheDocument();
@@ -183,8 +166,9 @@ describe('OpenInterestChart', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={noStrikesChain}
+                oiByStrike={aggregateOpenInterest(noStrikesChain)}
                 metrics={null}
+                oiStale={false}
             />
         );
         expect(screen.getByText(/OI 데이터가 없어요/)).toBeInTheDocument();
@@ -200,8 +184,9 @@ describe('OpenInterestChart', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={zeroOiChain}
+                oiByStrike={aggregateOpenInterest(zeroOiChain)}
                 metrics={null}
+                oiStale={false}
             />
         );
         expect(screen.getByText(/OI 데이터가 없어요/)).toBeInTheDocument();
@@ -211,8 +196,9 @@ describe('OpenInterestChart', () => {
         const { container } = render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         const svg = container.querySelector('svg');
@@ -223,8 +209,9 @@ describe('OpenInterestChart', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         expect(
@@ -236,8 +223,9 @@ describe('OpenInterestChart', () => {
         const { container } = render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         const svg = container.querySelector('svg')!;
@@ -253,8 +241,9 @@ describe('OpenInterestChart', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         const table = screen.getByRole('table', { hidden: true });
@@ -265,8 +254,9 @@ describe('OpenInterestChart', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         expect(screen.getByText('Max Pain')).toBeInTheDocument();
@@ -277,8 +267,9 @@ describe('OpenInterestChart', () => {
         const { container } = render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         // Tooltip is hidden before any hover.
@@ -305,8 +296,9 @@ describe('OpenInterestChart', () => {
         const { container } = render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
             />
         );
         const tooltip = screen.getByRole('tooltip', { hidden: true });
@@ -335,12 +327,52 @@ describe('OpenInterestChart', () => {
         const { container } = render(
             <OpenInterestChart
                 underlyingPrice={150}
-                chain={manyStrikesChain}
+                oiByStrike={aggregateOpenInterest(manyStrikesChain)}
                 metrics={null}
+                oiStale={false}
             />
         );
         const rotated = container.querySelectorAll('text[transform]');
         expect(rotated.length).toBeGreaterThan(0);
         expect(rotated[0]).toHaveAttribute('text-anchor', 'end');
+    });
+
+    describe('Max Pain suppression when the OI snapshot is stale', () => {
+        function renderChart(oiStale: boolean) {
+            return render(
+                <OpenInterestChart
+                    underlyingPrice={150}
+                    oiByStrike={aggregateOpenInterest(CHAIN)}
+                    metrics={METRICS}
+                    oiStale={oiStale}
+                />
+            );
+        }
+
+        it('draws the dashed Max Pain line and legend entry when fresh', () => {
+            const { container } = renderChart(false);
+            expect(
+                container.querySelectorAll('line[stroke-dasharray]')
+            ).toHaveLength(1);
+            expect(screen.getByText('Max Pain')).toBeInTheDocument();
+        });
+
+        it('omits the Max Pain line and legend entry when stale', () => {
+            const { container } = renderChart(true);
+            expect(
+                container.querySelectorAll('line[stroke-dasharray]')
+            ).toHaveLength(0);
+            expect(screen.queryByText('Max Pain')).not.toBeInTheDocument();
+        });
+
+        it('keeps the bars and the current-price line when stale', () => {
+            const { container } = renderChart(true);
+            expect(
+                container.querySelectorAll(
+                    'rect[aria-describedby="oi-chart-tooltip"]'
+                )
+            ).toHaveLength(2);
+            expect(screen.getByText('현재가')).toBeInTheDocument();
+        });
     });
 });

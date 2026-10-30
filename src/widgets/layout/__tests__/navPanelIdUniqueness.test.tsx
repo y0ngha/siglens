@@ -7,7 +7,7 @@ import path from 'node:path';
 
 import { render } from '@testing-library/react';
 import { HeaderNav } from '../HeaderNav';
-import { NAV_TREE } from '../headerNavTree';
+import { NAV_TREE } from '../utils/headerNavTree';
 
 /**
  * 헤더 내비의 패널 id는 문서에서 하나뿐이어야 한다.

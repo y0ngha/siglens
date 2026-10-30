@@ -6,6 +6,7 @@ import {
 } from '@/shared/api/market/usSessionClock';
 import type { ExtendedSessionKind } from '../model';
 
+/** 확장 세션 한 개의 종류와 UTC 경계 — 체결·기준 종가가 이 창에 속하는지 판정하는 기준. */
 export interface ExtendedSessionWindow {
     kind: ExtendedSessionKind;
     /** 세션 시작 UTC epoch ms — 이보다 이른 체결은 이전 세션 것이다. */

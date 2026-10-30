@@ -5,7 +5,7 @@ import {
     CATEGORY_CONFIG,
     categoryFromSlug,
 } from '@/entities/market-news/lib/categoryConfig';
-import { loadOgFont } from '@/entities/og-image/lib/loadOgFont';
+import { loadOgFont } from '@/entities/og-image/server/loadOgFont';
 import {
     OG_BG,
     OG_FG,

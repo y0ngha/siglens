@@ -1,18 +1,29 @@
+/**
+ * @file 리포트 대상 종목 미리보기(서버 컴포넌트)와 그 데이터 모양. 데이터는 `/email-report`의
+ * `loadReportPreview`가 만든다.
+ */
+
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS } from '@/entities/email-report/lib/emailReportConstants';
 import type { ReportSymbolToggleMode } from '../hooks/useReportSymbolToggle';
+import {
+    type ReportPreviewSummary,
+    summarizeReportPreview,
+} from '../lib/reportPreviewSummary';
 import {
     REPORT_SYMBOLS_HEADING_ID,
     REPORT_SYMBOLS_PREVIEW_ID,
 } from '../lib/reportSymbolsPreviewIds';
 import { ReportSymbolChip } from './ReportSymbolChip';
 
+/** 미리보기 칩 하나의 데이터. 서버(`loadReportPreview`)가 만든다. */
 export interface ReportPreviewChip {
     symbol: string;
     /** 보유·관심종목 행의 표시명. 없으면 심볼만 보인다. */
     name: string | null;
 }
 
+/** 미리보기 전체 — 배치의 `selectReportSymbols`와 같은 선택을 서버가 계산한 결과. */
 export interface ReportSymbolsPreviewData {
     full: ReportPreviewChip[];
     brief: ReportPreviewChip[];
@@ -28,14 +39,25 @@ export interface ReportSymbolsPreviewData {
 interface ReportSymbolsPreviewProps {
     /** `null`이면 조회 실패 — 안내만 그린다. */
     preview: ReportSymbolsPreviewData | null;
+    /**
+     * 지운 종목의 제외 기록 안내에 보이는 한도 — 기록이 이 상한을 차지한다는 것을 알려 지우게
+     * 한다. 액션이 막는 상수를 호출 측(app)이 넘긴다.
+     */
+    excludedLimit: number;
 }
 
 interface ChipGroupProps {
+    /** 묶음 이름 — 보이는 라벨이자 `role="group"`의 이름. */
     label: string;
     chips: ReportPreviewChip[];
     mode: ReportSymbolToggleMode;
     /** 묶음 아래 한 줄 설명(버튼을 누르면 어떻게 되는지). */
     hint?: string;
+}
+
+/** 미리보기가 그리는 묶음 하나 — `id`는 목록 key다. */
+interface ChipGroupEntry extends ChipGroupProps {
+    id: 'full' | 'brief' | 'excluded' | 'staleExcluded';
 }
 
 function ChipGroup({ label, chips, mode, hint }: ChipGroupProps) {
@@ -62,11 +84,15 @@ function ChipGroup({ label, chips, mode, hint }: ChipGroupProps) {
     );
 }
 
+interface PreviewContainerProps {
+    children: ReactNode;
+}
+
 /**
  * 포커스 복귀 지점. 칩을 눌러 목록이 바뀌면 눌렀던 버튼이 사라지므로, 훅이 성공 후 이 컨테이너로
  * 포커스를 옮긴다(`tabIndex={-1}`은 프로그램 포커스만 허용). 섹션 제목을 이름으로 쓴다.
  */
-function PreviewContainer({ children }: { children: React.ReactNode }) {
+function PreviewContainer({ children }: PreviewContainerProps) {
     return (
         <div
             id={REPORT_SYMBOLS_PREVIEW_ID}
@@ -80,13 +106,54 @@ function PreviewContainer({ children }: { children: React.ReactNode }) {
     );
 }
 
+interface PreviewSummaryTextProps {
+    summary: ReportPreviewSummary;
+}
+
+/** 미리보기 위 요약 문장 — 담기는 종목 수, 모두 뺀 상태, 빈 상태 중 하나. */
+function PreviewSummaryText({ summary }: PreviewSummaryTextProps) {
+    const t = useTranslations('features.email-report-settings');
+    switch (summary.kind) {
+        case 'counts':
+            return (
+                <>
+                    <p className="text-sm leading-relaxed text-secondary-300">
+                        {t('ReportSymbolsPreview.715443', {
+                            v0: summary.total,
+                            v1: summary.full,
+                            v2: summary.brief,
+                        })}
+                    </p>
+                    <p className="text-xs leading-relaxed text-secondary-400">
+                        {t('ReportSymbolsPreview.removeHint')}
+                    </p>
+                </>
+            );
+        case 'allExcluded':
+            return (
+                <p className="text-sm leading-relaxed text-secondary-300">
+                    {t('ReportSymbolsPreview.allExcluded')}
+                </p>
+            );
+        case 'empty':
+            return (
+                <p className="text-sm text-secondary-400">
+                    {t('ReportSymbolsPreview.d406d7')}
+                </p>
+            );
+    }
+}
+
 /**
  * 설정 페이지의 "이번 리포트에 담기는 종목" 미리보기 — 배치가 쓰는 `selectReportSymbols`와 같은
  * 선택을 서버에서 한 번 계산해 받는다. 상세(전체 카드)·요약(표)·뺀 종목, 그리고 목록에서 지운 종목의 제외 기록 그룹.
  * 이 컴포넌트는 서버 컴포넌트로 렌더되고, 칩의 빼기·다시 넣기 버튼만 클라이언트 컴포넌트
  * (`ReportSymbolChip`)다.
  */
-export function ReportSymbolsPreview({ preview }: ReportSymbolsPreviewProps) {
+export function ReportSymbolsPreview({
+    preview,
+    excludedLimit,
+}: ReportSymbolsPreviewProps) {
     const t = useTranslations('features.email-report-settings');
     if (preview === null) {
         return (
@@ -97,55 +164,46 @@ export function ReportSymbolsPreview({ preview }: ReportSymbolsPreviewProps) {
             </PreviewContainer>
         );
     }
-    const total = preview.full.length + preview.brief.length;
-    const hasCandidates = total > 0 || preview.excluded.length > 0;
+    const summary = summarizeReportPreview({
+        full: preview.full.length,
+        brief: preview.brief.length,
+        excluded: preview.excluded.length,
+    });
+    const groups: readonly ChipGroupEntry[] = [
+        {
+            id: 'full',
+            label: t('ReportSymbolsPreview.bb4464'),
+            chips: preview.full,
+            mode: 'exclude',
+        },
+        {
+            id: 'brief',
+            label: t('ReportSymbolsPreview.3ea27a'),
+            chips: preview.brief,
+            mode: 'exclude',
+        },
+        {
+            id: 'excluded',
+            label: t('ReportSymbolsPreview.excludedGroup'),
+            chips: preview.excluded,
+            mode: 'include',
+        },
+        {
+            id: 'staleExcluded',
+            label: t('ReportSymbolsPreview.staleExcludedGroup'),
+            hint: t('ReportSymbolsPreview.staleExcludedHint', {
+                v0: excludedLimit,
+            }),
+            chips: preview.staleExcluded,
+            mode: 'clear',
+        },
+    ];
     return (
         <PreviewContainer>
-            {total > 0 ? (
-                <>
-                    <p className="text-sm leading-relaxed text-secondary-300">
-                        {t('ReportSymbolsPreview.715443', {
-                            v0: total,
-                            v1: preview.full.length,
-                            v2: preview.brief.length,
-                        })}
-                    </p>
-                    <p className="text-xs leading-relaxed text-secondary-400">
-                        {t('ReportSymbolsPreview.removeHint')}
-                    </p>
-                </>
-            ) : hasCandidates ? (
-                <p className="text-sm leading-relaxed text-secondary-300">
-                    {t('ReportSymbolsPreview.allExcluded')}
-                </p>
-            ) : (
-                <p className="text-sm text-secondary-400">
-                    {t('ReportSymbolsPreview.d406d7')}
-                </p>
-            )}
-            <ChipGroup
-                label={t('ReportSymbolsPreview.bb4464')}
-                chips={preview.full}
-                mode="exclude"
-            />
-            <ChipGroup
-                label={t('ReportSymbolsPreview.3ea27a')}
-                chips={preview.brief}
-                mode="exclude"
-            />
-            <ChipGroup
-                label={t('ReportSymbolsPreview.excludedGroup')}
-                chips={preview.excluded}
-                mode="include"
-            />
-            <ChipGroup
-                label={t('ReportSymbolsPreview.staleExcludedGroup')}
-                hint={t('ReportSymbolsPreview.staleExcludedHint', {
-                    v0: EMAIL_REPORT_MAX_EXCLUDED_SYMBOLS,
-                })}
-                chips={preview.staleExcluded}
-                mode="clear"
-            />
+            <PreviewSummaryText summary={summary} />
+            {groups.map(({ id, ...group }) => (
+                <ChipGroup key={id} {...group} />
+            ))}
         </PreviewContainer>
     );
 }

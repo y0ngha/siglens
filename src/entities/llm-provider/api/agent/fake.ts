@@ -11,19 +11,16 @@ const ZERO = {
 };
 
 /**
- * Heading core's `composeAgentUserMessage` puts between its per-turn `## Now`
- * note and the user's own words (core 2.14.0+). Core does not export it, so
- * it is mirrored here; if core renames it, `userWords` falls back to the
- * whole content and the e2e echo assertions fail loudly.
+ * core의 `composeAgentUserMessage`가 턴별 `## Now` 메모와 사용자 본인의 말 사이에 넣는 제목
+ * (core 2.14.0+). core가 export하지 않아 여기에 미러링했다. core가 이름을 바꾸면 `userWords`가
+ * 전체 content로 폴백하고 e2e 에코 단언이 눈에 띄게 실패한다.
  */
 const TURN_MESSAGE_HEADING = '\n## Message\n';
 
 /**
- * The user's own words from the latest user message. Since core 2.14.0 the
- * provider sees that message prefixed with a clock note ("## Now", UTC·ET·KST
- * times) — reading the whole content would pick "UTC" as the ticker and echo
- * the note back. SIGLENS persists the plain text, so only this fake (which
- * echoes its input) ever saw the note.
+ * 마지막 user 메시지에서 사용자 본인의 말만 뽑는다. core 2.14.0부터 provider는 그 메시지 앞에
+ * 시계 메모("## Now", UTC·ET·KST 시각)가 붙은 채 받는다 — 전체 content를 읽으면 "UTC"를 티커로
+ * 집어 메모를 그대로 에코한다. SIGLENS는 평문만 저장하므로 입력을 에코하는 이 fake만 메모를 본다.
  */
 function userWords(content: string): string {
     const at = content.indexOf(TURN_MESSAGE_HEADING);
@@ -32,7 +29,7 @@ function userWords(content: string): string {
         : content.slice(at + TURN_MESSAGE_HEADING.length);
 }
 
-/** Deterministic E2E provider: one get_quote call for the first uppercase ticker, then a fixed answer. */
+/** 결정적인 E2E provider: 처음 나온 대문자 티커로 get_quote를 한 번 부른 뒤 고정 답변을 돌려준다. */
 export async function fakeAgentProvider(
     o: CallAgentProviderOptions
 ): Promise<AgentProviderResult> {

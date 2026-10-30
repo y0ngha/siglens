@@ -2,6 +2,7 @@ import 'server-only';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
+import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import {
     QUOTE_LOOKUP_TIMEOUT_MS,
@@ -22,7 +23,6 @@ import {
     extendedSessionAt,
     type ExtendedSessionWindow,
 } from './lib/extendedSession';
-import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
 import type { ExtendedHoursQuote } from './model';
 
 /** `SYMBOL_EDGE_RE`가 허용하는 최대 길이 — 정규식 전에 길이부터 본다(SERVER.md#SA-7). */
@@ -73,11 +73,16 @@ async function tradeWithTimeout(
     }
 }
 
+/** `fetchExtendedQuote` 결과 — `timedOut`이 캐시 TTL(짧게 굳힘)을 가른다. */
 interface FetchOutcome {
     value: ExtendedHoursQuote | null;
     timedOut: boolean;
 }
 
+/**
+ * 체결 → 기준 종가 순으로 조회해 한 줄 시세를 만든다. 어떤 오류든 던지지 않고 `null`로 접는다
+ * (오류 객체 대신 이름만 로그).
+ */
 async function fetchExtendedQuote(
     fmpSymbol: string,
     window: ExtendedSessionWindow,

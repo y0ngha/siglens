@@ -44,6 +44,7 @@ interface UseTimeframeChangeResult {
     handleTimeframeChange: (nextTimeframe: Timeframe) => void;
 }
 
+/** 타임프레임 선택을 URL·tier 게이트와 맞추고, 새 봉이 올 때까지 이전 차트를 유지한다. */
 export function useTimeframeChange(
     symbol: string,
     isFreeTier: boolean,

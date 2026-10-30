@@ -13,6 +13,7 @@ import { LockIcon } from '@/shared/ui/StrokeIcons';
 interface AnalysisRateLimitSignupModalProps {
     /** 사용자 로케일로 포맷된 재시도 가능 시각. */
     retryAtLabel: string;
+    /** 닫기·CTA 클릭·Esc·배경 클릭 때 호출된다. */
     onClose: () => void;
 }
 

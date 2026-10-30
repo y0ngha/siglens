@@ -8,6 +8,8 @@ import {
     sanitizeNextPath,
 } from '@/shared/lib/auth/redirect';
 
+const LOG_PREFIX = '[cancelOAuthSignupAction]';
+
 /**
  * 대기 중인 OAuth 가입을 지우고, 로그인 화면에 되실을 `?next=` 쿼리를 돌려준다.
  *
@@ -23,17 +25,27 @@ async function discardPendingSignup(token: string): Promise<string> {
         // 돌아갈 곳을 못 읽어도 삭제는 시도한다.
         const next = await store.peek(token).then(
             pending => sanitizeNextPath(pending?.next),
-            () => DEFAULT_REDIRECT_PATH
+            (error: unknown) => {
+                console.warn(`${LOG_PREFIX} peek failed:`, error);
+                return DEFAULT_REDIRECT_PATH;
+            }
         );
-        await store.delete(token).catch(() => {
-            // Best-effort cleanup: if Redis is unavailable, the token will TTL-expire on its own.
+        // Best-effort cleanup: if Redis is unavailable, the token will TTL-expire on its own.
+        await store.delete(token).catch((error: unknown) => {
+            console.warn(`${LOG_PREFIX} delete failed:`, error);
         });
         return next === DEFAULT_REDIRECT_PATH ? '' : authNextQuery(next);
-    } catch {
+    } catch (error) {
+        console.warn(`${LOG_PREFIX} discard failed:`, error);
         return '';
     }
 }
 
+/**
+ * OAuth 가입 동의 화면의 "취소" 폼 액션. 회원 인증이 필요 없다 — 추측 불가능한
+ * 일회성 토큰을 가진 사람만 그 대기 가입을 지울 수 있고, 결과는 항상 로그인
+ * 화면으로의 리다이렉트다.
+ */
 export async function cancelOAuthSignupAction(
     formData: FormData
 ): Promise<void> {

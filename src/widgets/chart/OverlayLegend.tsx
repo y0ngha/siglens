@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 가격 pane 위에 오버레이 지표 값을 묶어 보여 주는 범례 컴포넌트.
+ */
+
 import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
 import type { OverlayLegendItem } from './types';

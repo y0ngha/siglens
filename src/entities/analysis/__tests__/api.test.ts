@@ -87,9 +87,12 @@ vi.mock(
     '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard',
     () => ({ getOverallInvestorFlowsScorecard: mockOverallFlows })
 );
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
 
 vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: vi.fn().mockImplementation(function () {
@@ -211,7 +214,7 @@ import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import {

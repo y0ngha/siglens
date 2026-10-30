@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 차트 렌더 오류 시 보여 주는 에러 폴백 UI(FMP 오류 문구 번역 포함).
+ */
+
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';

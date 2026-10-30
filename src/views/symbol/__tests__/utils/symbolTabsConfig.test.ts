@@ -55,7 +55,6 @@ describe('TABS (symbolTabsConfig)', () => {
     it('financials tab exists with correct href', () => {
         const tab = TABS.find(t => t.key === 'financials')!;
         expect(tab).toBeDefined();
-        expect(tab.labelKey).toBe('financials');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/financials');
     });
 
@@ -68,13 +67,11 @@ describe('TABS (symbolTabsConfig)', () => {
     it('congress tab exists with correct href', () => {
         const tab = TABS.find(t => t.key === 'congress')!;
         expect(tab).toBeDefined();
-        expect(tab.labelKey).toBe('congress');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/congress');
     });
 
     it('flows tab exists with correct href, right after congress', () => {
         const tab = TABS.find(t => t.key === 'flows')!;
-        expect(tab.labelKey).toBe('flows');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/flows');
         expect(TABS.findIndex(t => t.key === 'flows')).toBe(
             TABS.findIndex(t => t.key === 'congress') + 1
@@ -96,8 +93,8 @@ describe('TABS (symbolTabsConfig)', () => {
         for (const tab of TABS) {
             for (const [locale, catalog] of Object.entries(CATALOGS)) {
                 expect(
-                    catalog.shared.symbolTab[tab.labelKey],
-                    `${locale}: ${tab.labelKey}`
+                    catalog.shared.symbolTab[tab.key],
+                    `${locale}: ${tab.key}`
                 ).toBeTruthy();
             }
         }
@@ -106,7 +103,6 @@ describe('TABS (symbolTabsConfig)', () => {
     it('position tab href is /{symbol}/position', () => {
         const tab = TABS.find(t => t.key === 'position')!;
         expect(tab).toBeDefined();
-        expect(tab.labelKey).toBe('position');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/position');
     });
 

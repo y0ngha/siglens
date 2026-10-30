@@ -106,6 +106,13 @@ describe('RelatedSymbols', () => {
         ).not.toBeInTheDocument();
     });
 
+    /** CSS를 읽지 않는 크롤러에게 앵커 텍스트는 textContent 그대로다 — `gap`만으로는 붙는다. */
+    it('칩 앵커 텍스트는 이름과 티커를 실제 공백으로 띄운다', async () => {
+        await renderRelated('MSFT');
+        const link = screen.getByRole('link', { name: /NVDA/ });
+        expect(link.textContent).toBe('엔비디아 NVDA');
+    });
+
     it('큐레이션 한글명이 있으면 티커와 함께 노출한다 (DB 미스 폴백)', async () => {
         await renderRelated('MSFT');
         // NVDA는 메가캡 카테고리 형제라 반드시 목록에 있다.

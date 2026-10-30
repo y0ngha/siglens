@@ -30,6 +30,18 @@ describe('buildShareSnapshot', () => {
         expect(snap.kind).toBe('chart');
         expect(snap.result).toEqual({ trend: 'bullish', summary: '요약' });
     });
+    it('drops context keys that are not part of ShareContext', () => {
+        const snap = buildShareSnapshot({
+            ...input,
+            context: { ...input.context, blob: 'x'.repeat(1000) },
+        } as unknown as CreateShareInput);
+        expect(snap.context).toEqual({
+            symbol: 'AAPL',
+            displayName: 'Apple',
+            assetClass: 'us_equity',
+            analyzedAt: '2026-06-29T00:00:00Z',
+        });
+    });
     it('produces a JSON-stable object (no Date/undefined/functions)', () => {
         const snap = buildShareSnapshot(input);
         expect(JSON.parse(JSON.stringify(snap))).toEqual(snap);
