@@ -1,8 +1,5 @@
 import { splitSitePaths } from '@/shared/lib/splitSitePaths';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const paths = (text: string): string[] =>
     splitSitePaths(text)
@@ -112,12 +109,6 @@ describe('splitSitePaths', () => {
  * 문장이 바뀌어 경로가 링크가 되지 않게 되면 여기서 실패한다.
  */
 describe('splitSitePaths — 홈 FAQ 실제 답변', () => {
-    const CATALOGS = {
-        ko: koMessages,
-        en: enMessages,
-        ja: jaMessages,
-        zh: zhMessages,
-    } as const;
     const EXPECTED: Record<string, string[]> = {
         q2: ['/market'],
         q8: ['/NVDA/overall'],
@@ -125,26 +116,25 @@ describe('splitSitePaths — 홈 FAQ 실제 답변', () => {
         q11: ['/BTCUSD'],
     };
 
-    describe.each(Object.keys(CATALOGS) as (keyof typeof CATALOGS)[])(
-        '%s',
-        locale => {
-            const faq = CATALOGS[locale].app.home.jsonLd.faq as Record<
-                string,
-                { answer: string }
-            >;
+    describe.each(
+        Object.keys(MESSAGE_CATALOGS) as (keyof typeof MESSAGE_CATALOGS)[]
+    )('%s', locale => {
+        const faq = MESSAGE_CATALOGS[locale].app.home.jsonLd.faq as Record<
+            string,
+            { answer: string }
+        >;
 
-            it.each(Object.entries(EXPECTED))(
-                '%s 답변의 경로가 전부 링크가 된다',
-                (key, expected) => {
-                    expect(paths(faq[key].answer)).toEqual(expected);
-                }
-            );
+        it.each(Object.entries(EXPECTED))(
+            '%s 답변의 경로가 전부 링크가 된다',
+            (key, expected) => {
+                expect(paths(faq[key].answer)).toEqual(expected);
+            }
+        );
 
-            it('경로가 없는 답변은 링크가 없다', () => {
-                for (const key of ['q0', 'q10']) {
-                    expect(paths(faq[key].answer)).toEqual([]);
-                }
-            });
-        }
-    );
+        it('경로가 없는 답변은 링크가 없다', () => {
+            for (const key of ['q0', 'q10']) {
+                expect(paths(faq[key].answer)).toEqual([]);
+            }
+        });
+    });
 });

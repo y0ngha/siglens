@@ -9,7 +9,7 @@ import type { Locale } from '@/shared/i18n/locales';
  * 같은 표를 공유해, 로케일을 추가할 때 한 곳만 고치면 되고 헬퍼끼리 카탈로그가
  * 갈리지 않는다. `Record<Locale, …>`라 로케일 누락은 컴파일 단계에서 잡힌다.
  */
-export const MESSAGE_CATALOGS: Record<Locale, Record<string, unknown>> = {
+export const MESSAGE_CATALOGS: Record<Locale, typeof koMessages> = {
     ko: koMessages,
     en: enMessages,
     ja: jaMessages,
