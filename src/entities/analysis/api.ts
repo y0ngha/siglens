@@ -31,7 +31,7 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
