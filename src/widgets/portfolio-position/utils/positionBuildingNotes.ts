@@ -1,32 +1,10 @@
-import {
-    currencyForSymbol,
-    getDescriptor,
-} from '@/shared/config/marketProfile/registry';
-import {
-    dynamicDecimals,
-    formatPrice,
-    formatUsdCurrency,
-    formatUsdPrice,
-} from '@/shared/lib/priceFormat';
-import type { PositionModel, RangeClamp } from './positionGeometry';
-
 /**
- * "$300" / "₩274,500" 형태 — 통화는 심볼에서 유도한다(`currencyForSymbol`,
- * `shared/config/marketProfile/registry.ts`가 REGISTRY 전체를 exhaustive하게 갖는
- * 유일한 source). 예전 이름(`formatUsd`)은 항상 `$`를 찍어 한국 상장 종목
- * (`005930.KS`)에도 달러 기호가 붙었다 — symbol 파라미터를 받게 되며 이름을 바꿨다.
- *
- * 기존의 두 가지 의도적 동작은 그대로 유지한다:
- * - sub-$1 정밀도 자산군(암호화폐 등)은 고정 2자리 포맷이 "$0"으로 뭉개지므로
- *   (예: $0.0006 → "$0") shared/lib/priceFormat의 dynamicDecimals(이미 crypto
- *   지표 포맷에 쓰이는 유틸)로 유효자리를 보존한다. PositionGauge는 이 케이스를
- *   §6에서 스코프 밖으로 punt했지만, 이 컴포넌트는 misleading "$0"을 최소 방어선으로
- *   삼는다. 원화 종목은 이 분기를 타지 않는다(아래).
- * - 원화는 소수점이 없다 — `KR_EQUITY_DESCRIPTOR.priceFormat.precision`이 이미
- *   `{ kind: 'integer' }`라 `formatPrice`가 자동으로 0자리를 낸다
- *   (`FutureDirectionCard`의 `MONEY_FORMATTERS.KRW`가 `maximumFractionDigits: 0`을
- *   명시했던 것과 동일한 결정 — 여기서는 REGISTRY 값 하나로 자동 상속된다).
+ * 포지션 빌딩의 문구 — aria 요약, 층 안내(N층·옥상 위/지하 메타포), 범위 밖 안내, 층 툴팁 콘텐츠.
+ * 위치 서술만 한다 — 매수/매도 판단 언어는 쓰지 않는다(scope fence).
  */
+import type { PositionModel, RangeClamp } from './positionGeometry';
+import { formatAmount } from './buildingPriceFormat';
+
 /**
  * `widgets.portfolio-position.positionNote` 번역자.
  *
@@ -38,55 +16,7 @@ export type PositionTranslator = (
     values?: Record<string, string | number>
 ) => string;
 
-export function formatAmount(value: number, symbol: string): string {
-    if (currencyForSymbol(symbol) === 'KRW') {
-        return formatPrice(value, getDescriptor('kr-equity').priceFormat);
-    }
-    if (value !== 0 && Math.abs(value) < 1) {
-        return `$${value.toFixed(dynamicDecimals(value))}`;
-    }
-    return `$${formatUsdPrice(value)}`;
-}
-
-/**
- * 여러 가격을 **한 문장 안에** 나란히 쓰는 자리용. USD는 소수 2자리를 고정한다.
- *
- * `formatAmount`는 후행 0을 자른다 — 빌딩 UI의 층 라벨처럼 값 하나만 보여주는
- * 자리에서는 `$300`이 `$300.00`보다 낫고, 그 동작을 `PositionCard`·
- * `PositionBuilding` 테스트가 단언한다. 하지만 문장 안에 세 개가 붙으면
- * "최근 52주 범위는 $224.69 ~ $344.57이고, 현재가 $309.9는"처럼 자릿수가
- * 들쭉날쭉해져 오타처럼 읽힌다(실측).
- *
- * KRW와 1달러 미만은 `formatAmount`와 같은 분기를 그대로 쓴다 — 원화는 소수점이
- * 없고, sub-$1은 고정 2자리가 "$0"으로 뭉갠다.
- */
-export function formatAmountAligned(value: number, symbol: string): string {
-    if (currencyForSymbol(symbol) === 'KRW') {
-        return formatPrice(value, getDescriptor('kr-equity').priceFormat);
-    }
-    if (value !== 0 && Math.abs(value) < 1) {
-        return `$${value.toFixed(dynamicDecimals(value))}`;
-    }
-    return formatUsdCurrency(value);
-}
-
-/** in-SVG 라벨 폭이 고정 viewBox라 고가 종목(예: BRK.A $600,000+)에서 잘릴 수 있어
- * 이 라벨에서만 축약한다. aria-label은 정밀도를 위해 항상 전체 값을 쓴다. */
-const IN_SVG_COMPACT_THRESHOLD = 100_000;
-
-/** Exported so the clipping-regression test can build the exact string the
- * component renders (avoids a second, potentially-drifting copy in the test). */
-export function formatCompactForSvgLabel(
-    value: number,
-    symbol: string
-): string {
-    if (Math.abs(value) >= IN_SVG_COMPACT_THRESHOLD) {
-        const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
-        return `${currencyPrefix}${Math.round(value / 1000)}K`;
-    }
-    return formatAmount(value, symbol);
-}
-
+/** svg aria-label 요약 — 평단·현재가·수익률·범위 내 위치·층 안내를 전부 담는다(전체 값, 축약 없음). */
 export function buildAriaLabel(
     symbol: string,
     model: PositionModel,
@@ -128,6 +58,7 @@ export function buildAriaLabelCurrentOnly(
     });
 }
 
+/** 범위 밖 마커 안내 — 최근 고점 위/저점 아래면 그 문구, 범위 안이면 null. */
 export function outOfRangeNote(
     clamped: RangeClamp,
     t: PositionTranslator
@@ -155,6 +86,12 @@ function describeFloorTier(
     return floorIndex < midBoundary ? t('midFloor') : t('highFloor');
 }
 
+/** 범위 밖 ★평단의 아파트 메타포 phrase(방향만) — describeFloor(전체 문구)와
+ * avgFloorVisualNote(시각 노트, 폭 제약)가 함께 파생하는 단일 소스라 리터럴을
+ * 양쪽에 중복 선언하지 않는다. */
+const ROOFTOP_METAPHOR_KEY = 'rooftop';
+const BASEMENT_METAPHOR_KEY = 'basement';
+
 /**
  * ★평단이 건물의 몇 층에 해당하는지 위트 있게 서술한다 — 아파트 메타포의 연장.
  * 순수 포지셔닝 서술만 담당한다(scope fence): 매수/매도 판단이나 진입
@@ -168,12 +105,6 @@ function describeFloorTier(
  * 모든 소비처가 이 하나의 빌더를 거쳐 파생해 문구 드리프트를 막는다
  * (buildFloorTooltipContent와 동일 원칙).
  */
-/** 범위 밖 ★평단의 아파트 메타포 phrase(방향만) — describeFloor(전체 문구)와
- * avgFloorVisualNote(시각 노트, 폭 제약)가 함께 파생하는 단일 소스라 리터럴을
- * 양쪽에 중복 선언하지 않는다. */
-const ROOFTOP_METAPHOR_KEY = 'rooftop';
-const BASEMENT_METAPHOR_KEY = 'basement';
-
 export function describeFloor(
     avgPos: number,
     avgClamped: RangeClamp,
@@ -217,13 +148,10 @@ export function avgFloorVisualNote(
 }
 
 /**
- * ★평단 층 안내 앞에 붙는 방향 glyph — 범위 밖(above/below)이면 옥상/지하
- * 메타포에 대응하는 glyph를, 범위 안이면 빈 문자열을 반환한다(FF.md §1-E:
- * nested ternary 대신 early-return 헬퍼로 분기). currentClamped용 glyph(●
- * out-of-range note)는 이 함수와 별개로 렌더 지점에서 계산한다 — currentNote는
- * out-of-range일 때만 렌더되므로(above/below 둘 중 하나) null 분기가 필요 없다.
+ * 범위 밖 마커 안내 앞에 붙는 방향 glyph — 옥상 위(above)는 구름, 지하(below)는 B1, 범위 안이면
+ * 빈 문자열. ★평단 층 안내와 ●현재가 범위 밖 안내가 같이 쓴다.
  */
-export function avgFloorPrefixGlyph(clamped: RangeClamp): string {
+export function outOfRangeGlyph(clamped: RangeClamp): string {
     if (clamped === 'above') return '☁ ';
     if (clamped === 'below') return '▽B1 ';
     return '';
@@ -250,6 +178,7 @@ function bandPriceRange(
     };
 }
 
+/** 층 툴팁 두 줄 — 가격 구간·거주율(main)과 그 해석 한정어(qualifier). */
 export interface FloorTooltipContent {
     readonly main: string;
     readonly qualifier: string;
@@ -346,61 +275,11 @@ export function computeActiveFloorTooltipContent(
 }
 
 /**
- * SVG viewBox 가로폭 및 파생 상수 — label-width budget(SVG_LABEL_AVAILABLE_WIDTH)과
- * 컴포넌트의 아이소메트릭 드로잉(PositionBuilding.tsx의 ROOF_POLYGON,
- * computeFloorFaces, 마커/라벨 좌표 등)이 공유하는 값이라 여기 lib에 단일
- * source로 둔다(두 파일에 흩어지면 드리프트 위험, CONVENTIONS.md#CP-2). 280 → 360:
- * widened horizontally(audit finding #1) so the avg/current marker labels
- * never clip for realistic per-share prices (up to ~$99,999 before
- * IN_SVG_COMPACT_THRESHOLD kicks in). Building geometry in the component
- * (ISO_DY, FLOOR_H, ...) is unchanged — the extra width is pure side padding
- * for labels, which already lived in the margins by design.
- */
-export const VIEWBOX_W = 360;
-export const CENTER_X = VIEWBOX_W / 2;
-
-/** 지붕 마름모 반폭(가로) — SVG_LABEL_AVAILABLE_WIDTH와 컴포넌트의 아이소메트릭
- * 드로잉(ROOF_POLYGON, computeFloorFaces 등)이 공유하는 단일 소스. */
-export const ISO_DX = 50;
-
-/** 마커 라벨을 viewBox 정면 모서리에서 띄우는 가로 간격 — SVG_LABEL_AVAILABLE_WIDTH와
- * 컴포넌트의 라벨 x좌표(avg/current text) 계산이 공유하는 단일 소스. */
-export const LABEL_GAP = 12;
-
-/**
- * 마커 라벨의 텍스트 anchor(text-anchor="end"/"start")에서 viewBox 가장자리까지
- * 남은 여유 폭 — avg 라벨은 왼쪽(CENTER_X - ISO_DX - LABEL_GAP만큼 안쪽에서 anchor,
- * 거기서 왼쪽으로 텍스트가 자란다), current 라벨은 대칭으로 오른쪽. CENTER_X가
- * viewBox 중앙이므로 두 방향의 여유 폭은 같다.
- */
-export const SVG_LABEL_AVAILABLE_WIDTH = CENTER_X - ISO_DX - LABEL_GAP;
-
-/**
  * in-SVG 마커 라벨 prefix — aria-label(buildAriaLabel, "평단"/"현재가" 전체 표기,
  * 폭 제약 없음)과 별개로 고정 viewBox 폭 제약을 받는 시각 라벨 전용이다. "내
- * 평단"/"현재가"보다 짧게 둬(audit finding #1) 4자리 이상 가격에서도 라벨이
+ * 평단"/"현재가"보다 짧게 둬 4자리 이상 가격에서도 라벨이
  * viewBox를 벗어나지 않게 한다.
  */
 export const AVG_LABEL_PREFIX_KEY = 'avgPrefix';
+/** ●현재가 쪽 짝 — 위 ★평단 prefix와 같은 폭 제약을 받는다. */
 export const CURRENT_LABEL_PREFIX_KEY = 'currentPrefix';
-
-/**
- * 글자 하나당 대략적인 렌더 폭(px) 추정 — text-[10px] font-medium tabular-nums
- * 라벨 전용. jsdom에는 실제 텍스트 레이아웃 엔진이 없어(getBBox/
- * getComputedTextLength 모두 throw) 클리핑 회귀 테스트가 이 추정치로 "라벨이
- * viewBox 안에 들어가는가"를 검증한다. 한글/심볼(★●)은 정사각형에 가깝게
- * (~1em) 넓고, 숫자·구두점은 더 좁게(~0.6em) — 실제보다 과소평가하지 않도록
- * 보수적으로(넉넉하게) 잡는다.
- */
-function estimateGlyphWidthPx(ch: string): number {
-    if (ch === ' ') return 3;
-    if (/[ㄱ-힣★●]/.test(ch)) return 10; // 한글 + 마커 심볼(★●)
-    return 6; // 숫자, $, 쉼표, 마침표
-}
-
-export function estimateSvgLabelWidth(text: string): number {
-    return Array.from(text).reduce(
-        (sum, ch) => sum + estimateGlyphWidthPx(ch),
-        0
-    );
-}

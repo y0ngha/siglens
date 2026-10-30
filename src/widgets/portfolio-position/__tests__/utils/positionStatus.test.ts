@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     computePositionStatus,
     type PositionStatusInputs,
-} from '../lib/positionStatus';
+} from '@/widgets/portfolio-position/utils/positionStatus';
 
 // 기본 유효 입력 — 각 테스트는 필요한 필드만 override 한다.
 function inputs(

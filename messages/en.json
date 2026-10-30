@@ -5403,9 +5403,9 @@
             },
             "PositionHoldingCard": {
                 "0ac914": "Avg. Price {v0}",
-                "0bafa3": "Insufficient Data",
                 "497d1e": "Current Price",
                 "900beb": "Avg. Price",
+                "avgInvalid": "Check your average price",
                 "ba09a5": "Loading {v0} position",
                 "fa94cf": "Failed to load range data.",
                 "fb64df": "Return Rate"

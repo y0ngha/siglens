@@ -13,6 +13,7 @@
 
 import { computePosition } from './positionGeometry';
 
+/** 상태 계산 입력 — 평단·수량·현재가·최근 범위. */
 export interface PositionStatusInputs {
     avg: number; // 회원 평단
     quantity: number; // 회원 보유 수량
@@ -21,6 +22,7 @@ export interface PositionStatusInputs {
     high52w: number;
 }
 
+/** 요약 카드가 보이는 포지션 사실. */
 export interface PositionStatus {
     avg: number;
     quantity: number;

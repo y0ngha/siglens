@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { computePosition, type PositionInputs } from '../lib/positionGeometry';
+import {
+    computePosition,
+    type PositionInputs,
+} from '@/widgets/portfolio-position/utils/positionGeometry';
 
 // 기본 유효 입력 — 각 테스트는 필요한 필드만 override 한다.
 function inputs(partial: Partial<PositionInputs> = {}): PositionInputs {
