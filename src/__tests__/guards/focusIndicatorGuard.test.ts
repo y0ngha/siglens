@@ -98,9 +98,7 @@ describe('focus indicator guard', () => {
      * `ring-offset`이 있어야 둘이 갈린다.
      */
     it('달력 셀의 선택 표시와 포커스 표시가 구분된다', () => {
-        const source = read(
-            'widgets/economy/sections/EconomicCalendarGrid.tsx'
-        );
+        const source = read('widgets/economy/sections/calendar/DayCell.tsx');
         const selected = /ring-primary-500 ring-2/.test(source);
         expect(selected, '선택 표시가 바뀌었다면 이 가드도 함께 볼 것').toBe(
             true

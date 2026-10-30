@@ -24,10 +24,10 @@ import {
 } from '../../_lib/guideRoute';
 import { loadGuideLiveSymbols } from '../../_lib/loadGuideLiveSymbols';
 
-// 라이브 종목 모듈이 1시간 캐시(섹터 신호)를 읽으므로 그 주기에 맞춘다. 허브·카테고리는 86400 유지(AP-1: 리터럴).
+// 라이브 종목 모듈이 1시간 캐시(섹터 신호)를 읽으므로 그 주기에 맞춘다. 허브·카테고리는 86400 유지(src/app/CLAUDE.md#AP-1: 리터럴).
 export const revalidate = 3600; // 1h
 
-// 빈 배열 = on-demand ISR. 항목 90개를 빌드에서 미리 굽지 않는다 — 빌드는 DB가 없을 수 있다(AP-1).
+// 빈 배열 = on-demand ISR. 항목 90개를 빌드에서 미리 굽지 않는다 — 빌드는 DB가 없을 수 있다(src/app/CLAUDE.md#AP-1).
 export async function generateStaticParams() {
     return [];
 }
@@ -40,6 +40,7 @@ interface GuideEntryRouteProps {
     }>;
 }
 
+/** 항목 페이지 메타데이터 — 카탈로그 실패는 허브 제목으로 noindex, 없는 항목은 404. */
 export async function generateMetadata({
     params,
 }: GuideEntryRouteProps): Promise<Metadata> {
@@ -66,6 +67,7 @@ export async function generateMetadata({
     return guideEntryMetadata({ params, locale, entry });
 }
 
+/** 항목 페이지 — 본문·FAQ·관련 항목과 라이브 종목 모듈(데이터원 실패 시 생략). */
 export default async function GuideEntryRoute({
     params,
 }: GuideEntryRouteProps) {

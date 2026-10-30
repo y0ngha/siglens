@@ -8,8 +8,8 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     CALENDAR_COUNTRY,
     CALENDAR_COUNTRY_KR,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * 범위 캘린더 캐시 TTL(3시간). 발표 직후 `actual`이 붙고 예상치가 고쳐지므로 하루를 묵히지 않는다.

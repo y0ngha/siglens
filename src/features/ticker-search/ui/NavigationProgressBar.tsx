@@ -28,12 +28,8 @@ import { useTranslations } from 'next-intl';
  * 전체화면 모달에 갇히고(WCAG 2.1.2), 하드웨어 뒤로가기는 JS 가드를 우회한다.
  * 이 바는 순수 표시라 둘 다 구조적으로 불가능하다.
  *
- * (세 번째로 의심했던 "대기 중 뒤로가기 ↔ 늦게 온 응답" 경합은 Next 16.2.12에서
- * 성립하지 않는다. 근거는 `SearchOverlay`의 `handleSelect` JSDoc에 설치된
- * `node_modules/next/dist/client/components/app-router-instance.js`의 파일·라인과 함께
- * 적어 두었다. 다만 그 사실이 이 바의 존재 근거는 아니다 — 이 바는 **아무것도 막지
- * 않는 순수 표시**라 그 경합의 성립 여부와 무관하게 안전하고, 진행 상태는
- * 전역 `NavigationPendingContext`가 도착·뒤로가기로 풀어 폐기된 이동에도 남지 않게 한다.)
+ * 진행 상태는 전역 `NavigationPendingContext`가 도착·뒤로가기로 풀므로, 대기 중
+ * 뒤로가기로 폐기된 이동에도 바가 남지 않는다.
  */
 export function NavigationProgressBar() {
     const t = useTranslations('features.ticker-search');

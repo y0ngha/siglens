@@ -6,7 +6,7 @@
  * 요구하므로 그 상태는 리치 결과 자격이 없을 뿐 아니라 숨김 콘텐츠 판정 쪽에
  * 가깝다. 배열 하나에서 두 표면을 만들면 갈릴 수가 없다는 것을 여기서 못 박는다.
  */
-vi.mock('@/widgets/home/heroQuickLinks', () => ({
+vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
     HERO_QUICK_LINKS: [
         { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
     ],

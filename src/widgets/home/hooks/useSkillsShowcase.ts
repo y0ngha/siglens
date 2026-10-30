@@ -1,9 +1,11 @@
 'use client';
 
-import { useId, useState } from 'react';
-import type { SkillType } from '@y0ngha/siglens-core';
+/**
+ * 스킬 쇼케이스의 인터랙션 상태(활성 탭, 더 보기, 펼친 카드).
+ */
 
-export type SkillsActiveTab = 'all' | SkillType;
+import { useId, useState } from 'react';
+import type { SkillsActiveTab } from '../utils/skillTabs';
 
 interface UseSkillsShowcaseReturn {
     activeTab: SkillsActiveTab;
@@ -15,6 +17,7 @@ interface UseSkillsShowcaseReturn {
     toggleExpanded: (key: string) => void;
 }
 
+/** 탭·"더 보기"·카드 펼침 상태 — 세 상태는 서로 초기화 관계라 한 훅이 소유한다. */
 export function useSkillsShowcase(): UseSkillsShowcaseReturn {
     const [activeTab, setActiveTab] = useState<SkillsActiveTab>('all');
     const [showAll, setShowAll] = useState(false);
