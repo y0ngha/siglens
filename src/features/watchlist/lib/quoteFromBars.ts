@@ -1,5 +1,6 @@
 import type { Bar } from '@y0ngha/siglens-core';
 
+/** 관심종목 행 한 줄의 시세 — 봉 캐시에서 만든다. */
 export interface WatchlistQuote {
     price: number;
     /** 직전 종가 대비 %. 직전 종가가 0이면 null. */
@@ -14,9 +15,9 @@ export const QUOTE_TREND_LENGTH = 5;
 
 /** 봉 두 개로 "현재가·등락률"을 만든다 — 별도 시세 API 없이 봉 캐시(`QUERY_KEYS.bars`)를 재사용하기 위해서다. */
 export function quoteFromBars(bars: readonly Bar[]): WatchlistQuote | null {
-    if (bars.length < 2) return null;
-    const last = bars[bars.length - 1]!;
-    const prev = bars[bars.length - 2]!;
+    const last = bars[bars.length - 1];
+    const prev = bars[bars.length - 2];
+    if (last === undefined || prev === undefined) return null;
     const changePct =
         prev.close > 0
             ? ((last.close - prev.close) / prev.close) * PERCENT

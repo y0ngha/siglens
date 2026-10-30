@@ -1,13 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useSearchParams } from 'next/navigation';
-import { SignupForm } from '@/features/auth-signup/ui/SignupForm';
 import { SocialLoginButtons } from '@/features/auth-oauth/ui/SocialLoginButtons';
+import { SignupForm } from '@/features/auth-signup/ui/SignupForm';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
-// useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
+/**
+ * 가입 폼·소셜 버튼과 돌아갈 경로(`next`). `useSearchParams`를 읽어 이 서브트리만 CSR로 떨구고
+ * 라우트는 정적으로 남는다.
+ */
 export function SignupContent() {
     const t = useTranslations('app.signup');
     const params = useSearchParams();

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { EconomyKrMacroFacts } from '../EconomyKrMacroFacts';
-import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';
+import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import {
     KR_ECONOMY_INDICATORS,
     KR_INDICATOR_EVENT,
@@ -98,5 +98,23 @@ describe('EconomyKrMacroFacts', () => {
             level: 2,
         }).nextElementSibling;
         expect(paragraph?.textContent).not.toContain('%p');
+    });
+    // 표시 자릿수에서 0이면 "+0.0%p 움직였다" 대신 변화 없음 — 같은 화면의 DeltaBadge와 맞춘다.
+    it('반올림해 0인 변화는 변화 없음 문장으로 쓴다', () => {
+        render(
+            <EconomyKrMacroFacts
+                cards={[
+                    card(KR_INDICATOR_EVENT.cpi, {
+                        latest: 2.1,
+                        changeFromPrevious: 0.02,
+                    }),
+                ]}
+            />
+        );
+        const paragraph = screen.getByRole('heading', {
+            level: 2,
+        }).nextElementSibling;
+        expect(paragraph).toHaveTextContent('직전 발표와 같습니다');
+        expect(paragraph?.textContent).not.toContain('+0.0');
     });
 });

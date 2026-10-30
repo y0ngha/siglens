@@ -100,7 +100,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {}, sql: {} }),
 }));
 
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
 }));
 
@@ -122,8 +122,10 @@ vi.mock('@/entities/analysis/api', () => ({
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
+    DrizzleNewsRepository: class {},
+}));
+vi.mock('@/entities/news-article/server/prewarmNews', () => ({
     prewarmNews: vi.fn(),
-    prewarmPollNews: vi.fn(),
 }));
 
 vi.mock('@/entities/options-chain/api', () => ({
@@ -131,7 +133,7 @@ vi.mock('@/entities/options-chain/api', () => ({
     prewarmPollOptions: vi.fn(),
 }));
 
-vi.mock('@/shared/lib/indexNow', () => ({
+vi.mock('@/shared/api/indexNow', () => ({
     isIndexNowEnabled: mockIsIndexNowEnabled,
 }));
 vi.mock('@/shared/lib/indexNowQueue', () => ({

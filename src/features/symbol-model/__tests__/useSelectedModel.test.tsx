@@ -1,9 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { ModelId } from '@y0ngha/siglens-core';
-import {
-    pickFallbackModel,
-    useSelectedModel,
-} from '@/features/symbol-model/hooks/useSelectedModel';
+import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
 import {
     LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
     LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
@@ -149,6 +146,22 @@ describe('useSelectedModel', () => {
         expect(result.current[0]).toBe(PREMIUM_MODEL);
     });
 
+    it('기본 모델이 고를 수 있는 목록에 없어도(운영자가 끈 경우) 저장된 선택을 폴백으로 덮어쓰지 않는다', async () => {
+        // 회귀 가드: 재검증 effect가 읽기 effect와 같은 커밋에서 초기값(기본 모델)을 보고
+        // 폴백을 예약해, 방금 읽은 저장값을 덮어썼다.
+        const FREE_MODEL = 'gemini-3.6-flash' as ModelId;
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, PREMIUM_MODEL);
+
+        const { result } = renderHook(() =>
+            useSelectedModel([FREE_MODEL, PREMIUM_MODEL], true)
+        );
+
+        await waitFor(() => {
+            expect(result.current[2]).toBe(true);
+        });
+        expect(result.current[0]).toBe(PREMIUM_MODEL);
+    });
+
     it('becomes hydrated after effect runs', async () => {
         const { result } = renderHook(() =>
             useSelectedModel([DEFAULT_MODEL], true)
@@ -247,29 +260,5 @@ describe('useSelectedModel', () => {
             });
             expect(result.current[0]).toBe(PREMIUM_MODEL);
         });
-    });
-});
-
-describe('pickFallbackModel', () => {
-    it('기본 모델이 목록에 있으면 기본 모델', () => {
-        expect(
-            pickFallbackModel([PREMIUM_MODEL, DEFAULT_MODEL] as ModelId[])
-        ).toBe(DEFAULT_MODEL);
-    });
-
-    it('기본 모델이 빠졌으면(DeepSeek를 끈 경우) BYOK가 아닌 첫 free 모델', () => {
-        expect(
-            pickFallbackModel([
-                'claude-opus-5',
-                'gemini-3.6-flash',
-            ] as ModelId[])
-        ).toBe('gemini-3.6-flash');
-    });
-
-    it('free 모델이 없으면 첫 항목, 목록이 비면 기본 모델', () => {
-        expect(pickFallbackModel(['claude-opus-5'] as ModelId[])).toBe(
-            'claude-opus-5'
-        );
-        expect(pickFallbackModel([])).toBe(DEFAULT_MODEL);
     });
 });

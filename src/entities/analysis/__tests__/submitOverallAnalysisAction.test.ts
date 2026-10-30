@@ -94,7 +94,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -106,19 +106,22 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
 
 const { mockResolveHoldingPositionBucket } = vi.hoisted(() => ({
     mockResolveHoldingPositionBucket: vi.fn(),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: mockResolveHoldingPositionBucket,
 }));
 
 // 종목 호가표 조회는 yahoo를 탄다 — 테스트는 네트워크 없이 주식 표로 고정한다.
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
@@ -158,10 +161,10 @@ import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalys
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';

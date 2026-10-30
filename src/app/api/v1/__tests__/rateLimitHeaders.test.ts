@@ -11,10 +11,8 @@ import {
     prefixRateLimitHeaders,
     rateLimitHeaders,
 } from '@/app/api/v1/rateLimitHeaders';
-import {
-    RateLimiterUnavailableError,
-    type RateLimitVerdict,
-} from '@/entities/siglens-api-key/server/rateLimit';
+import type { RateLimitVerdict } from '@/entities/siglens-api-key/lib/rateLimitWindow';
+import { RateLimiterUnavailableError } from '@/entities/siglens-api-key/server/rateLimit';
 
 const allowed: RateLimitVerdict = {
     allowed: true,

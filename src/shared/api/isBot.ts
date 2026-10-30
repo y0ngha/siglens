@@ -7,7 +7,7 @@ import { userAgent } from 'next/server';
  * AI 크롤러 대부분과 기생 SEO 크롤러, 스크립트 클라이언트가 전부 통과한다 —
  * 그 구멍이 방문자 집계(`/api/presence`)를 부풀리고 AI 잡 큐를 낭비시킨다.
  *
- * 토큰 목록은 `src/app/robots.ts`의 그룹들과 의도적으로 겹친다. 그쪽은 크롤러에게
+ * 토큰 목록은 `src/app/_lib/robotsRules.ts`의 목록들과 의도적으로 겹친다. 그쪽은 크롤러에게
  * 보내는 *요청*이고 여기는 우리 쪽 *판정*이라 준수 여부와 무관하게 동작해야 한다.
  * robots.txt에 토큰을 추가할 때 여기도 같이 보는 것을 권한다.
  *
@@ -24,12 +24,12 @@ import { userAgent } from 'next/server';
  * 참고). 이 함수의 남은 호출부:
  * - `src/app/api/presence/route.ts`, `src/app/api/presence/symbol/route.ts` — 방문자/조회수 집계 제외
  * - `src/app/api/ai/chat/stream/route.ts` — 에이전트 챗을 봇에게 아예 막는다(403)
- * - `src/app/ai/[locale]/handoffRedirect.ts` — 봇은 인증 핸드오프 리디렉트를 건너뛴다
+ * - `src/app/ai/[locale]/_lib/handoffRedirect.ts` — 봇은 인증 핸드오프 리디렉트를 건너뛴다
  *
  * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은
  * 애초에 이 값을 쓴 적이 없다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고,
  * 봇 분기가 `/market`·`/economy` 렌더에 차단 안내문을 색인시키고 있었다
- * (2026-09-17 운영 감사).
+ * (2026-09-17 운영 점검).
  */
 const BOT_UA_RE = new RegExp(
     [
@@ -115,7 +115,7 @@ const BOT_UA_RE = new RegExp(
  * Current callers:
  * - `src/app/api/presence/route.ts` and `src/app/api/presence/symbol/route.ts` — exclude bots from visitor/view counting
  * - `src/app/api/ai/chat/stream/route.ts` — blocks bots from the agent chat entirely (403)
- * - `src/app/ai/[locale]/handoffRedirect.ts` — skips the auth handoff redirect bounce for bots
+ * - `src/app/ai/[locale]/_lib/handoffRedirect.ts` — skips the auth handoff redirect bounce for bots
  *
  * No longer used to suppress AI generation on a cache miss (removed
  * 2026-09-27), and no longer used for the analysis-stream concurrency-cap

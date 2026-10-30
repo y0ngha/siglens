@@ -6,7 +6,7 @@ const { profile, assetInfo, getQuote, spec } = vi.hoisted(() => ({
     getQuote: vi.fn(),
     spec: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

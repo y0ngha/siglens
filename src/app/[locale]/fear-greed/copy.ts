@@ -1,13 +1,14 @@
 import { FEAR_GREED_LABEL_CUTOFFS } from '@y0ngha/siglens-core';
-import { clampSeoDescription, type SeoTranslator } from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 
 /**
  * 시장별 공포·탐욕 지수 페이지 카피 — 메타데이터·본문·FAQ의 단일 소스.
  *
- * 미국·한국 라우트가 같은 구조를 그리되 문장만 다르므로, 라우트마다 프로즈를 복사하면
+ * 세 라우트가 같은 구조를 그리되 문장만 다르므로, 라우트마다 프로즈를 복사하면
  * 계산식을 바꿀 때 한쪽만 고쳐진다. 특히 한국 쪽은 변동성·신용 요인이 대체 자산으로
- * 채워져 있어서(§FAQ 참조) 그 설명이 화면에서 빠지면 지수가 사실과 다른 말을 하게 된다.
+ * 채워져 있어서(한국 FAQ가 설명한다) 그 설명이 화면에서 빠지면 지수가 사실과 다른 말을 하게 된다.
  */
 export interface FearGreedCopy {
     /** 라우트 경로. canonical·JSON-LD·breadcrumb가 공유한다. */
@@ -24,10 +25,10 @@ export interface FearGreedCopy {
 }
 
 /**
- * Score band → `shared.enumLabel` 카탈로그 키(`fearGreed.*`). `FEAR_GREED_LABEL_CUTOFFS`
- * (core)에서 파생하므로 `scoreToLabel`이 실제 쓰는 경계와 절대 어긋나지 않는다.
- * 시장과 무관하게 동일. `labelKey`는 `FearGreedRouteBody`가 `shared.enumLabel`에
- * 바인딩된 번역자로 조회한다 — 원래 `label` 필드는 한글 리터럴이었다.
+ * 점수 구간 → `shared.enumLabel` 카탈로그 키(`fearGreed.*`). `FEAR_GREED_LABEL_CUTOFFS`
+ * (core)에서 파생하므로 `scoreToLabel`이 실제 쓰는 경계와 어긋나지 않는다.
+ * 시장과 무관하게 동일하고, `labelKey`는 `FearGreedRouteBody`가 `shared.enumLabel`
+ * 번역자로 푼다.
  */
 export const FEAR_GREED_BANDS = [
     {
@@ -58,9 +59,8 @@ export const FEAR_GREED_BANDS = [
 ] as const;
 
 /**
- * `title`/`description`/`heading`은 `shared.seo` 카탈로그에서 온다 — `intro`/`faq`는
- * 계산식을 직접 설명하는 긴 프로즈라 title/description/h1 범위 밖이고(§design
- * "Only titles, descriptions, and the page <h1>s"), `keywords`/`path`도 그대로 둔다.
+ * 시장의 카피를 현재 로케일 번역자로 만든다(서버 전용 — 메타데이터와 서버 본문이 부른다).
+ * 문구는 전부 `shared.seo` 카탈로그에서 오고, `keywords`(ko 전용 SEO 데이터)와 `path`만 리터럴이다.
  */
 export function fearGreedCopyFor(
     market: FearGreedMarketId,
@@ -140,9 +140,9 @@ const KR_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
 });
 
 /**
- * 암호화폐. FAQ가 반드시 밝혀야 하는 다섯 가지(설계 문서 §Copy): alternative.me와 다른
- * 점(소셜·설문 없음), 오늘의 대형 코인 목록이라 생기는 생존 편향, 코인 7일·금 5일
- * 달력 차이, 00:00 UTC 기준 일 1회 갱신, 투자 조언 아님.
+ * 암호화폐. FAQ가 반드시 밝혀야 하는 다섯 가지: alternative.me와 다른 점(소셜·설문 없음),
+ * 오늘의 대형 코인 목록이라 생기는 생존 편향, 코인 7일·금 5일 달력 차이, 00:00 UTC 기준
+ * 일 1회 갱신, 투자 조언 아님.
  */
 const CRYPTO_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
     path: '/fear-greed/crypto',

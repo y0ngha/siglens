@@ -1,22 +1,26 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runFinancialsAnalysis,
     type SubmitFinancialsAnalysisOptions,
     type RunFinancialsAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { runGatedAnalysis } from '../lib/runGatedAnalysis';
+import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { runGatedAnalysis } from '../server/runGatedAnalysis';
 
-/** Final return type — core's financials result + our siglens-side gate errors. */
+/** core의 재무 분석 결과에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunFinancialsAnalysisActionResult =
     | RunFinancialsAnalysisResult
     | AnalysisGateBlockedResult;
 
-/** Server Action: tier + BYOK gate, then submit financials analysis via siglens-core with financial statements provider; returns `cached | submitted | error`. */
+/**
+ * Server Action: tier·BYOK 게이트를 거쳐 재무제표 provider로 siglens-core 재무 분석을
+ * 제출한다. `cached | submitted | error`를 돌려준다. 게이트·E2E 단락·catch-all은
+ * `runGatedAnalysis`가 맡는다.
+ */
 export async function runFinancialsAnalysisAction(
     symbol: string,
     modelId: SubmitFinancialsAnalysisOptions['modelId'],
@@ -27,10 +31,7 @@ export async function runFinancialsAnalysisAction(
      * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
      */
     locale: Locale,
-    /**
-     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
-     * spec Part A). Only honored for member/pro tiers.
-     */
+    /** 클라이언트가 요청한 "깊은 생각" 토글. 회원·pro tier에서만 반영된다. */
     reasoning?: boolean,
     signal?: AbortSignal,
     /**

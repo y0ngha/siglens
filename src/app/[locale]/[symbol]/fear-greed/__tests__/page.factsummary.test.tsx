@@ -108,7 +108,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));
@@ -116,10 +116,10 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 // 페이지는 5년 일봉이 담긴 세션 키 축소 봉(getSessionBarsStatic, revalidate 24h)을 쓴다.
 // 6h 봉 캐시(barsStaticCache)는 읽으면 이 탭(24h 선언)이 6h로 clamp되므로 둘 다 부르면 안 된다 —
 // 그 부재를 단언하려고 스파이로 남겨 둔다.
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: mockGetQuantizedBarsStatic,
 }));
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsSixHour,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
@@ -174,15 +174,18 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
-    buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
-    resolveSymbolFearGreedSeoContent: vi
-        .fn()
-        .mockReturnValue({ fullTitle: '', description: '', url: '' }),
     SITE_URL: 'https://siglens.io',
     NOINDEX_SYMBOL_METADATA: {
         robots: { index: false, follow: true },
         alternates: { canonical: null },
     },
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
+    buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
+    resolveSymbolFearGreedSeoContent: vi
+        .fn()
+        .mockReturnValue({ fullTitle: '', description: '', url: '' }),
 }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';

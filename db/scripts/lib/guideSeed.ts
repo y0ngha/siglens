@@ -18,7 +18,7 @@ import {
     parseHeadingLine,
     scanMarkdownLines,
 } from '@/shared/lib/markdownHeadings';
-import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seo';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 import type { SignalType } from '@y0ngha/siglens-core';
 
 /**

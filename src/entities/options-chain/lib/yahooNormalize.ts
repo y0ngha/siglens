@@ -1,10 +1,3 @@
-/**
- * Normalizes yahoo-finance2 options response shapes into siglens-core domain types.
- *
- * All field-level defaulting happens here — domain types treat `volume` and
- * `openInterest` as `number` (never null), so we apply `?? 0` at this boundary.
- * Nullable price/IV fields are preserved as `number | null`.
- */
 import type {
     OptionsChain,
     OptionsContract,
@@ -16,13 +9,10 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { ET_TIME_ZONE } from './etTimeZone';
 
 /**
- * Structural types mirroring yahoo-finance2 v3 CallOrPut / Option / OptionsResult.
- *
- * We use local structural interfaces rather than deep imports from the library
- * because the project uses `moduleResolution: "node"`, which does not resolve
- * subpath exports for type-only deep imports. The shapes below are verified
- * against the live introspection output (see implementation notes in
- * YahooOptionsAdapter.ts).
+ * yahoo-finance2 v3 `CallOrPut` 응답을 본뜬 구조적 타입. 라이브러리 deep import 대신 로컬
+ * 인터페이스를 쓰는 이유는 프로젝트가 `moduleResolution: "node"`라 type 전용 deep import의
+ * subpath export를 해석하지 못하기 때문이다. 필드 형태는 실제 응답의 introspection 결과로
+ * 확인했다(`YahooOptionsAdapter`가 이 타입으로 응답을 단언한다).
  */
 export interface YahooCallOrPut {
     contractSymbol: string;
@@ -42,6 +32,7 @@ export interface YahooCallOrPut {
     inTheMoney: boolean;
 }
 
+/** yahoo-finance2 `Option` — 만기 하나의 콜/풋 목록. */
 export interface YahooOption {
     expirationDate: Date;
     hasMiniOptions: boolean;
@@ -49,6 +40,7 @@ export interface YahooOption {
     puts: YahooCallOrPut[];
 }
 
+/** yahoo-finance2 `OptionsResult` — `normalizeYahooSnapshot`이 읽는 필드만 담는다. */
 export interface YahooOptionsResult {
     underlyingSymbol: string;
     expirationDates: Date[];
@@ -65,16 +57,14 @@ export interface YahooOptionsResult {
 const ET_NOON_UTC_HOUR = 12;
 
 /**
- * Returns an instant anchored at noon UTC on the same *calendar day in
- * America/New_York* as `now`. Using noon avoids DST-transition windows
- * (the few hours each spring/fall where a wall-clock value is ambiguous).
+ * `now`와 같은 *America/New_York 달력 날짜*의 정오(UTC) 인스턴트. 정오를 쓰면 DST 전이
+ * 윈도우(봄·가을에 벽시계 값이 모호한 몇 시간)를 피한다.
  *
- * The previous implementation hardcoded `-4h` (EDT), which off-by-one
- * for ~5 months of the year (EST is `-5h`). DTE math rounds to days, so
- * a 1h drift could still cross a midnight boundary — replaced with
- * IANA-aware `zonedDate` (shared/lib/marketSessionDate).
+ * ET 오프셋을 상수(-4h, EDT)로 박으면 EST(-5h)인 약 5개월 동안 하루가 어긋난다. DTE는
+ * 일 단위로 반올림하지만 1시간 어긋남도 자정 경계를 넘을 수 있어 IANA 타임존을 아는
+ * `zonedDate`(shared/lib/marketSessionDate)로 날짜를 구한다.
  */
-function etMidnight(now: Date): Date {
+function etNoonUtc(now: Date): Date {
     const [year, month, day] = zonedDate(now, ET_TIME_ZONE)
         .split('-')
         .map(Number);
@@ -82,29 +72,28 @@ function etMidnight(now: Date): Date {
 }
 
 /**
- * Calendar days from today (ET) to `expirationDate` (`YYYY-MM-DD`), floored at 0.
+ * 오늘(ET)부터 `expirationDate`(`YYYY-MM-DD`)까지의 달력 일수. 0 미만으로는 내려가지 않는다.
  *
- * Shared by the Yahoo normalizer and the last-good fallback
- * (`rebaseOptionsSnapshot`) so a re-served snapshot counts days the same way a
- * freshly normalized one does.
+ * Yahoo 정규화와 last-good 폴백(`rebaseOptionsSnapshot`)이 함께 써서, 다시 내보내는 스냅샷도
+ * 새로 정규화한 스냅샷과 같은 방식으로 일수를 센다.
  */
 export function daysToExpirationFrom(
     expirationDate: string,
     now: Date
 ): number {
+    // 만기일은 UTC 자정, 기준일(`refNoon`)은 UTC 정오라 차이가 항상 (N − 0.5)일이고
+    // `Math.round`가 이를 N으로 올린다. 그래서 두 변수 이름의 자정/정오 구분은 의도된 것이다.
     const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
-    const refMidnight = etMidnight(now);
+    const refNoon = etNoonUtc(now);
     return Math.max(
         0,
-        Math.round((expMidnight.getTime() - refMidnight.getTime()) / MS_PER_DAY)
+        Math.round((expMidnight.getTime() - refNoon.getTime()) / MS_PER_DAY)
     );
 }
 
 /**
- * Lowest annualized implied volatility (as a fraction) read as a real value.
- * In the one chain inspected (below), Yahoo returned `0.00001` and `0.0039…`
- * for contracts it had no quote for — values no listed US equity's ATM option
- * trades at.
+ * 실제 값으로 읽는 연율 내재변동성(분수)의 하한. 아래에서 살핀 체인 하나에서 Yahoo는 호가가
+ * 없는 계약에 `0.00001`과 `0.0039…`를 돌려줬다 — 상장 미국 주식의 ATM 옵션이 거래되는 값이 아니다.
  */
 export const MIN_PLAUSIBLE_IMPLIED_VOLATILITY = 0.01;
 
@@ -112,19 +101,16 @@ const hasQuote = (price: number | undefined): boolean =>
     typeof price === 'number' && Number.isFinite(price) && price > 0;
 
 /**
- * Yahoo's IV, or `null` when it is not a market reading (dev-2026-10-22 A9).
+ * Yahoo의 IV. 시장 값이 아니면 `null`이다.
  *
- * Observed once: the MSI 2026-11-20 chain fetched pre-market on 2026-10-22
- * (09:11 ET). Every contract near the $467.50 spot had bid = ask = 0 and an IV
- * between 0.00001 and 0.031. Core's `pickAtmIv` takes the nearest strike with
- * any non-null IV, so the 470 call's 0.0039 became the ATM IV and the agent
- * quoted a ±0.11% implied move (466.98–468.02) for a 29-day expiry. An IV
- * with neither a bid nor an ask behind it is therefore dropped, as is one
- * under {@link MIN_PLAUSIBLE_IMPLIED_VOLATILITY}; core then skips the contract.
+ * 관측 사례: 2026-10-22 09:11 ET(장전)에 받은 MSI 2026-11-20 만기 체인. 현물 $467.50 근처
+ * 모든 계약이 bid = ask = 0에 IV 0.00001~0.031이었다. core의 `pickAtmIv`는 null이 아닌 IV가
+ * 있는 가장 가까운 행사가를 고르므로 470 콜의 0.0039가 ATM IV가 되어, 에이전트가 29일 만기에
+ * ±0.11% 내재 변동폭(466.98–468.02)을 말했다. 그래서 bid도 ask도 없는 IV와
+ * {@link MIN_PLAUSIBLE_IMPLIED_VOLATILITY} 미만 IV는 버리고, core는 그 계약을 건너뛴다.
  *
- * Consequence, accepted: a chain fetched while Yahoo shows no quotes (outside
- * the session, for a symbol with no warmed last-good snapshot) reports a
- * `null` ATM IV and implied move — an honest "unknown" instead of a fake one.
+ * 감수한 결과: Yahoo가 호가를 보여주지 않는 시간대(정규장 밖이고 워밍된 last-good이 없는
+ * 종목)에 받은 체인은 ATM IV와 내재 변동폭이 `null`이다 — 가짜 수치 대신 정직한 "모름"이다.
  */
 function marketImpliedVolatility(c: YahooCallOrPut): number | null {
     const iv = c.impliedVolatility;
@@ -134,7 +120,11 @@ function marketImpliedVolatility(c: YahooCallOrPut): number | null {
     return iv;
 }
 
-/** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */
+/**
+ * 콜/풋 계약 하나를 `OptionsContract`로 바꾼다. 도메인 타입은 `volume`·`openInterest`를 null
+ * 없는 `number`로 다루므로 이 경계에서 `?? 0`을 적용하고, 가격·IV 필드는 `number | null`을
+ * 그대로 둔다.
+ */
 export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
     return {
         contractSymbol: c.contractSymbol,
@@ -149,11 +139,7 @@ export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
     };
 }
 
-/**
- * Normalize a single yahoo-finance2 Option (one expiration) into an OptionsChain.
- *
- * Contracts are sorted ascending by strike.
- */
+/** 만기 하나의 `YahooOption`을 `OptionsChain`으로 바꾼다. 계약은 행사가 오름차순이다. */
 export function normalizeYahooExpiration(
     yexp: YahooOption,
     now: Date
@@ -179,9 +165,8 @@ export function normalizeYahooExpiration(
 }
 
 /**
- * Normalize the top-level yahoo-finance2 OptionsResult into an OptionsSnapshot.
- *
- * Chains are sorted ascending by expirationDate.
+ * `YahooOptionsResult`를 `OptionsSnapshot`으로 바꾼다. 체인은 만기 오름차순이고, 현물가가
+ * 없으면 `underlyingPrice`는 0이다(어댑터가 0을 "데이터 없음"으로 거른다).
  */
 export function normalizeYahooSnapshot(
     response: YahooOptionsResult,

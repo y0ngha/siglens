@@ -11,7 +11,10 @@ interface UseRovingKeyboardNavOptions<T> {
     withHomeEnd?: boolean;
 }
 
-// Arrow L/R + Home/End 기반 roving tabindex 내비게이션 — focusItem/onChange는 useCallback으로 안정화 필요.
+/**
+ * Arrow L/R + Home/End 기반 roving tabindex 내비게이션의 `onKeyDown` 핸들러를 만든다.
+ * 활성 항목이 `items`에 없으면 아무것도 하지 않는다.
+ */
 export function useRovingKeyboardNav<T>({
     items,
     activeItem,

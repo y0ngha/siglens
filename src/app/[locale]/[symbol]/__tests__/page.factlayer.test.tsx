@@ -30,7 +30,7 @@ const {
     mockClassifyAsset: vi.fn((): string => 'stock'),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
@@ -78,7 +78,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn().mockResolvedValue({
         assetInfo: {
             symbol: 'AAPL',
@@ -93,11 +93,11 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 // return different bars data without going through the unstable_cache chain.
 // quantizeBarsDataToLastClosed는 별도 unit 테스트에서 완전 커버된다.
 // 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
-// production page.tsx가 import하는 정의 파일(`@/entities/bars/lib/barsStaticCache`)을 mock한다.
+// production page.tsx가 import하는 정의 파일(`@/entities/bars/server/barsStaticCache`)을 mock한다.
 // getSeedBarsStatic은 seed 경로 전용이다. FactLayer는 축소되지 않은 원본
 // (getQuantizedBarsStatic)을 계속 읽어야 하므로, 두 mock을 분리해 두면 페이지가
 // 실수로 축소판에서 fact를 만들 때 이 스위트가 잡아낸다.
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+vi.mock('@/entities/bars/server/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
@@ -132,6 +132,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',
         fullTitle: 'AAPL 차트 | SIGLENS',
@@ -139,7 +143,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL',
         keywords: ['AAPL'],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@tanstack/react-query', () => ({
     dehydrate: vi.fn().mockReturnValue({}),
@@ -154,7 +157,7 @@ vi.mock('next/navigation', () => ({
 }));
 // peekAnalysisStatic wraps peekAnalysisCache via unstable_cache(identity in tests).
 // Mocking the static cache directly gives cleaner control in this test suite.
-vi.mock('@/entities/analysis/lib/peekAnalysisStaticCache', () => ({
+vi.mock('@/entities/analysis/server/peekAnalysisStaticCache', () => ({
     peekAnalysisStatic: vi.fn().mockResolvedValue(null),
 }));
 
@@ -166,8 +169,8 @@ import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 

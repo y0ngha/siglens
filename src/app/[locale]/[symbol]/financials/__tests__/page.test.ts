@@ -32,10 +32,10 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -47,11 +47,16 @@ vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
-// isEmptyFinancialsSnapshot는 별도 단위 테스트(isEmptyFinancialsSnapshot.test.ts)에서
+// isEmptyFinancialsSnapshot는 별도 단위 테스트(financialsSnapshot.test.ts)에서
 // 실제 로직을 검증한다. 여기서는 vi.fn()으로 두고 케이스별 boolean을 직접 제어해
 // 인라인 재구현(동어반복)을 피한다.
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
+vi.mock('@/entities/financials-statements/lib/financialsSnapshot', () => ({
     isEmptyFinancialsSnapshot: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
@@ -61,6 +66,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         '@type': 'BreadcrumbList',
         itemListElement: [],
     }),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi
         .fn()
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
@@ -72,7 +81,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/financials',
         keywords: ['AAPL', 'AAPL 재무제표'],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
@@ -84,9 +92,9 @@ import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/financials/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import type { MockedFunction } from 'vitest';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로

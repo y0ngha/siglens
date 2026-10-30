@@ -1,7 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { beforeAll } from 'vitest';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
-import { buildSymbolSeoContent, type SeoTranslator } from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { buildSymbolSeoContent } from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 
 let t: SeoTranslator;

@@ -1,10 +1,10 @@
 import type { MockedFunction } from 'vitest';
 import { getAssetLabelsAction } from '../../actions/getAssetLabelsAction';
-import { getAssetInfo } from '../../lib/getAssetInfo';
+import { getAssetInfo } from '../../server/getAssetInfo';
 import { MAX_RECENT_SEARCHES } from '../../lib/recentSearches';
 import type { AssetInfo } from '@/shared/lib/types';
 
-vi.mock('../../lib/getAssetInfo', () => ({
+vi.mock('../../server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 

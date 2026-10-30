@@ -22,7 +22,8 @@ import FearGreedRoutePage, {
 } from '@/app/[locale]/fear-greed/page';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
-import { clampSeoDescription, SITE_URL } from '@/shared/lib/seo';
+import { SITE_URL } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const mockGetMarketFearGreedStatic = getMarketFearGreedStatic as MockedFunction<

@@ -1,7 +1,8 @@
-import {
-    TICKER_CATEGORY_DESCRIPTION_KEY,
-    TICKER_CATEGORY_LABEL_KEY,
-} from '@/shared/config/tickerCategoryLabel';
+/**
+ * 홈 업종별 인기 종목 섹션: 카테고리별 색 매핑과 미국/한국 분할을 소유하고 렌더는
+ * `CategoryCardGrid`에 맡긴다.
+ */
+
 import { useTranslations } from 'next-intl';
 import { HOME_POPULAR_ANCHOR_ID } from '@/shared/config/watchlist';
 import type { CategoryId } from '@/shared/lib/types';
@@ -14,6 +15,7 @@ import {
     type CategoryCard,
     type CardStyle,
 } from './ui/CategoryCardGrid';
+import { toCategoryCards } from './utils/toCategoryCards';
 
 const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
     megacap: {
@@ -86,15 +88,7 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
     },
 };
 
-const TICKER_CARDS: CategoryCard[] = TICKER_CATEGORIES.map(category => ({
-    id: category.id,
-    // 라벨은 렌더 시점에 번역한다 — config는 데이터, 표시는 카탈로그.
-    labelKey: TICKER_CATEGORY_LABEL_KEY[category.label],
-    descriptionKey: TICKER_CATEGORY_DESCRIPTION_KEY[category.label],
-    label: category.label,
-    ...CATEGORY_STYLES[category.id],
-    items: category.items,
-}));
+const TICKER_CARDS = toCategoryCards(TICKER_CATEGORIES, CATEGORY_STYLES);
 
 /**
  * 미국·한국을 별도 섹션으로 나눈다.
@@ -108,6 +102,7 @@ const isKrCard = (card: CategoryCard) =>
 const US_CARDS = TICKER_CARDS.filter(c => !isKrCard(c));
 const KR_CARDS = TICKER_CARDS.filter(isKrCard);
 
+/** 홈의 업종별 인기 종목 섹션 — 미국·한국 두 그리드로 나눠 그린다. */
 export function TickerCategories() {
     const t = useTranslations('widgets.home');
     return (

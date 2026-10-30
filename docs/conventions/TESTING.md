@@ -144,6 +144,15 @@ A new `describe`/`it` name uses the same language as the other tests in that fil
 - ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
 - ✅ `it('반 센트는 올림한다')` in the same file.
 
+<a id="TE-57"></a>
+
+#### TE-57 — New hooks and branchy components get their own tests
+
+A new custom hook, or a UI component with its own branches (states, empty/error paths, derived labels), gets a colocated test that drives it directly. Coverage through the parent's integration test alone leaves the branches unpinned and lets a regression in the extracted unit stay green.
+
+- ❌ A hook split out of a component, covered only by the parent component's test.
+- ✅ A `renderHook` test for the hook and a render test per branch of the component, next to the source.
+
 ## Required Test Cases
 
 <a id="TE-21"></a>
@@ -280,13 +289,17 @@ Use exact matchers when the value is deterministic, avoid compound boolean asser
 - Imprecise matchers (`toBeGreaterThan(0)`, `toBeDefined()`) let 0, 2 and 10 all pass when the count is always 1. ❌ `expect(items.length).toBeGreaterThan(0)` ✅ `expect(items.length).toBe(1)`.
 - `||`/`&&`/ternary inside `expect` passes on several failure modes. ❌ `expect(arg === undefined || arg.force !== true).toBe(true)` ✅ `expect(firstArgs?.[4]).toEqual({ force: false })`.
 - Additive behavior (layer A persists, layer B appended) asserts both parts.
+- Check that the serialized or compared value can carry the property under test. ❌ `expect(JSON.stringify(result)).not.toContain('boom')` to prove an `Error` is absent (an `Error` serializes to `{}`, so it always passes) ✅ assert on `result` directly (`expect(result).not.toBeInstanceOf(Error)`, or its `message`).
 - Regression bounds are tight: a `>=` bound that the broken code also satisfies is vacuous. Use equality or the narrowest bound, and revert-check it against the broken implementation.
+- A test exercises the path its title claims and asserts every half of that claim. A "throws/rejects" test makes the callee itself reject (a callee that catches the error never reaches the path), and a "shows X without Y" test asserts both X present and Y absent.
 
 <a id="TE-10"></a>
 
 #### TE-10 — Never redefine production code or values in tests
 
 Import and exercise the real function; a local redefinition makes the test tautological. Expected values that the module exports (labels, thresholds) are imported too, not retyped.
+
+Exception: persisted or wire-level strings (storage keys, persisted event names, cookie names) are a contract with data already stored elsewhere. Pin them as literals in at least one test, especially when they are built by a factory or composed from a prefix; asserting against the same constant lets a rename pass while silently orphaning stored data.
 
 - ❌ `const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true)`.
 - ✅ `import { shouldShowAd } from '@/shared/lib/ads'`.
@@ -306,6 +319,7 @@ A new `if (value < THRESHOLD)` branch needs a case for the branch taken and one 
 
 - ❌ Testing `formatImpliedMove(0.04)` for the floor branch with only `value <= 0` cases.
 - ✅ Below-floor, above-floor and exact-boundary cases.
+- A branch that only logs (a new failure log on a non-OK response) is a branch: assert the log call, and give each sibling step the same non-OK case.
 
 <a id="TE-33"></a>
 
@@ -366,6 +380,15 @@ Defensive guards, fallbacks, timeouts and degradations kept "because X" need a t
 
 - ❌ A fallback cache write kept "for DB failure absorption" with no test exercising a DB write failure.
 - ✅ A test that fails the DB write and asserts the fallback entry exists.
+
+<a id="TE-58"></a>
+
+#### TE-58 — Source-reading guards follow the code when it moves
+
+A test that reads source files (`readFileSync`, a glob over a slice) pins a path or file list. When code is split, renamed or moved, update the guard's file list in the same change and assert that each scanned file exists and the scan is non-empty; otherwise it keeps passing against the old files and stops guarding the moved code.
+
+- ❌ A scan of `Panel.tsx` keeps passing after its logic moves to `PanelRow.tsx` and `usePanel.ts`.
+- ✅ The scan derives its files from the directory (or lists the new files), and fails when a listed path is missing.
 
 ## Time, Flakes & Isolation
 
@@ -516,6 +539,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 - ❌ A cache's fetch window is widened and its fingerprint input changed with no test on either, or a flag that must be set only after the primary write succeeds has no test where that write fails. ✅ Assert the window width and the fingerprint input, and assert the flag is absent when the primary step fails, so moving the mark earlier or reverting the change fails the test.
 - ❌ A test mocks the collaborator that holds the behaviour under test (the function computing the value, the predicate deciding the branch) and asserts only the mock's canned output, so the production logic could be deleted. ✅ Mock only the I/O boundary, run the real derivation, and assert on values that differ per branch.
 - ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.
+- ❌ An "unsubscribes on unmount" hook test asserts on `renderHook`'s `result.current` after `unmount()`; the result stops updating after unmount, so the assertion passes whether or not cleanup runs. ✅ Spy on the unsubscribe function (or the underlying subscription) and assert it was called on unmount.
 
 <a id="TE-54"></a>
 

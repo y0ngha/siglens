@@ -3,10 +3,12 @@ import type { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     handoffStartUrl,
+    resolveHandoffNext,
+} from '@/entities/auth/lib/handoffRedirect';
+import {
     isHandoffToken,
     issueHandoffCode,
-    resolveHandoffNext,
-} from '@/entities/auth/lib/handoffStore';
+} from '@/entities/auth/server/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
@@ -14,7 +16,7 @@ import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
 export const dynamic = 'force-dynamic';
 
 /**
- * MAIN host only: issue a one-time code for the signed-in user (spec §8, §9-4).
+ * MAIN host only: issue a one-time code for the signed-in user.
  *
  * Not an open redirect: `to` is an enum (only `ai`), the target origin is always
  * the `AI_SITE_URL` constant, and `next` is reduced to a path before it is used.

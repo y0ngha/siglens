@@ -1,20 +1,16 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+/**
+ * `/portfolio` 그리드의 보유종목 카드 한 장 — 종목 이름, 포지션 빌딩, 숫자 표. 화면에 들어올 때만
+ * 봉을 받고(`useHoldingRangeFacts`), 그릴 수 없으면 카드 단위로 대체 본문을 보인다.
+ */
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { useQuery } from '@tanstack/react-query';
 import { useInViewOnce } from '@/shared/hooks/useInViewOnce';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
-import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
-import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
-import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
-import { computePosition } from '@/widgets/portfolio-position/lib/positionGeometry';
-import { formatAmount } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
-import { PositionBuilding } from '@/widgets/portfolio-position/ui/PositionBuilding';
-import { formatSignedPercent } from '@/shared/lib/priceFormat';
-import { cn } from '@/shared/lib/cn';
 import { symbolLabel } from '@/shared/lib/symbolLabel';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
+import { computePosition } from '../utils/positionGeometry';
+import { useHoldingRangeFacts } from '../hooks/useHoldingRangeFacts';
+import { HoldingCardBody } from './holding-card/HoldingCardBody';
 
 type HoldingCardData = Pick<
     PortfolioHoldingView,
@@ -25,86 +21,27 @@ interface PositionHoldingCardProps {
     holding: HoldingCardData;
 }
 
-// resolved 카드 본문(building min-h-280 + gap-3 + dl 3행)의 대략적 높이에 맞춰
-// skeleton/degraded도 같은 min-h를 잡는다 — 그렇지 않으면 lazy-resolve 시점에
-// 카드 높이가 확 늘어나 스크롤 위치가 튀는 CLS가 발생한다(audit finding #9).
-const CARD_BODY_MIN_H = 'min-h-[350px]';
-
-function CardSkeleton({ symbol }: { symbol: string }) {
-    const t = useTranslations('widgets.portfolio-position');
-    return (
-        <div
-            role="status"
-            aria-busy="true"
-            aria-live="polite"
-            data-testid="holding-card-loading"
-            className={cn(
-                CARD_BODY_MIN_H,
-                'flex w-full max-w-[200px] flex-col items-center justify-center gap-2'
-            )}
-        >
-            <span className="sr-only">
-                {t('PositionHoldingCard.ba09a5', { v0: symbol })}
-            </span>
-            <div
-                aria-hidden="true"
-                className="h-32 w-32 animate-pulse rounded bg-secondary-700"
-            />
-        </div>
-    );
-}
-
-interface CardDegradedProps {
-    symbol: string;
-    avg: number;
-    message: string;
-}
-
-function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
-    const t = useTranslations('widgets.portfolio-position');
-    return (
-        <div
-            data-testid="holding-card-degraded"
-            className={cn(
-                CARD_BODY_MIN_H,
-                'border-secondary-700 flex w-full max-w-[200px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center'
-            )}
-        >
-            <span className="text-xs text-secondary-400">{message}</span>
-            <span className="text-xs text-secondary-400 tabular-nums">
-                {t('PositionHoldingCard.0ac914', {
-                    v0: formatAmount(avg, symbol),
-                })}
-            </span>
-        </div>
-    );
+/** 평단 문자열을 수로 — 양의 유한수가 아니면 null(그릴 수 없다). */
+function validAverage(raw: string): number | null {
+    const avg = Number(raw);
+    return Number.isFinite(avg) && avg > 0 ? avg : null;
 }
 
 /**
- * 보유종목 하나에 대한 "포지션 빌딩" 카드 — `/portfolio` 그리드의 셀 하나.
- * 자기 종목의 최근 bars를 뷰포트 진입 시점에만 lazy fetch한다(기존
- * useBars/getBarsAction React-Query 캐시 키를 공유해 심볼 페이지를 먼저
- * 방문했다면 warm cache를 재사용). 실패/기하 계산 불가 어느 쪽이든 카드
- * 단위로 degrade하고 그리드 전체는 절대 깨지지 않는다(design §에러/엣지).
+ * 같은 쿼리 키(`useBars`와 공유)를 써 심볼 페이지를 먼저 방문했다면 캐시를 재사용한다. 평단이
+ * 잘못됐으면 봉을 받지 않고 곧바로 평단 확인 안내를 보인다 — 받아도 그릴 수 없다. 받기 실패와
+ * 범위 계산 불가는 카드 단위로 대체하고 그리드 전체는 깨지지 않는다.
  */
 export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
-    const t = useTranslations('widgets.portfolio-position');
     const [setNode, isVisible] = useInViewOnce<HTMLDivElement>();
-    const avg = Number(holding.averagePrice);
-    const fmpSymbol = holding.fmpSymbol ?? undefined;
-
-    const { data, isLoading, isError } = useQuery({
-        queryKey: QUERY_KEYS.bars(holding.symbol, DEFAULT_TIMEFRAME, fmpSymbol),
-        queryFn: () =>
-            getBarsAction(holding.symbol, DEFAULT_TIMEFRAME, fmpSymbol),
-        enabled: isVisible,
-        staleTime: BARS_STALE_TIME_MS,
-    });
-
-    const facts = data ? buildTechnicalFacts(data.bars, data.indicators) : null;
-    const isAvgValid = Number.isFinite(avg) && avg > 0;
+    const avg = validAverage(holding.averagePrice);
+    const { facts, isLoading, isError } = useHoldingRangeFacts(
+        holding.symbol,
+        holding.fmpSymbol ?? undefined,
+        isVisible && avg !== null
+    );
     const model =
-        facts !== null && isAvgValid
+        facts !== null && avg !== null
             ? computePosition({
                   low52w: facts.low52w,
                   high52w: facts.high52w,
@@ -113,18 +50,12 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
               })
             : null;
 
-    const isSettled = isVisible && !isLoading;
-    const isDegraded =
-        isSettled && (isError || facts === null || model === null);
-
     return (
-        // 그리드 카드 전체를 해당 종목의 "내 위치" 탭으로 가는 내비게이션 어포던스로
-        // 만든다(audit finding #8) — hover/focus-visible은 Link(바깥)에서, 실제
-        // 시각 chrome(ring/bg/padding)은 안쪽 div가 그대로 유지해 기존 시각을
-        // 보존한다. IntersectionObserver 대상(ref)도 안쪽 div에 그대로 둔다.
+        // 카드 전체가 그 종목의 "내 위치" 탭으로 가는 링크다 — hover/focus-visible은 바깥 Link가,
+        // 시각 chrome(ring/bg/padding)과 IntersectionObserver 대상(ref)은 안쪽 div가 맡는다.
         <Link
             href={`/${holding.symbol}/position`}
-            // 보유 종목 수만큼 카드가 렌더된다 — docs/architecture/CDN_CACHING.md §1
+            // 보유 종목 수만큼 카드가 렌더된다 — 카드마다 목적지 페이지를 미리 받으면 요청이 종목 수만큼 는다.
             prefetch={false}
             className="group block rounded-lg transition-shadow focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
         >
@@ -137,66 +68,14 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
                     {symbolLabel(holding.symbol, holding.companyName)}
                 </div>
 
-                {!isSettled && <CardSkeleton symbol={holding.symbol} />}
-
-                {isSettled && isDegraded && (
-                    <CardDegraded
-                        symbol={holding.symbol}
-                        avg={avg}
-                        message={
-                            isAvgValid
-                                ? t('PositionHoldingCard.fa94cf')
-                                : t('PositionHoldingCard.0bafa3')
-                        }
-                    />
-                )}
-
-                {isSettled &&
-                    !isDegraded &&
-                    facts !== null &&
-                    model !== null && (
-                        <>
-                            <PositionBuilding
-                                symbol={holding.symbol}
-                                model={model}
-                                low52w={facts.low52w}
-                                high52w={facts.high52w}
-                                current={facts.lastClose}
-                                avg={avg}
-                                className="max-w-[200px]"
-                            />
-                            <dl className="grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs text-secondary-300">
-                                <dt className="text-secondary-400">
-                                    {t('PositionHoldingCard.900beb')}
-                                </dt>
-                                <dd className="text-right tabular-nums">
-                                    {formatAmount(avg, holding.symbol)}
-                                </dd>
-                                <dt className="text-secondary-400">
-                                    {t('PositionHoldingCard.497d1e')}
-                                </dt>
-                                <dd className="text-right tabular-nums">
-                                    {formatAmount(
-                                        facts.lastClose,
-                                        holding.symbol
-                                    )}
-                                </dd>
-                                <dt className="text-secondary-400">
-                                    {t('PositionHoldingCard.fb64df')}
-                                </dt>
-                                <dd
-                                    className={cn(
-                                        'text-right tabular-nums',
-                                        model.returnPct >= 0
-                                            ? 'text-ui-success-text'
-                                            : 'text-ui-danger-text'
-                                    )}
-                                >
-                                    {formatSignedPercent(model.returnPct)}
-                                </dd>
-                            </dl>
-                        </>
-                    )}
+                <HoldingCardBody
+                    symbol={holding.symbol}
+                    avg={avg}
+                    isPending={!isVisible || isLoading}
+                    isError={isError}
+                    facts={facts}
+                    model={model}
+                />
             </div>
         </Link>
     );

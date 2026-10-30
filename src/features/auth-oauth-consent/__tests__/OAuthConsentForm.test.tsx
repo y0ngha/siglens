@@ -4,6 +4,7 @@ import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentF
 import { useFinalizeOAuthSignup } from '@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { CONSENT_DECLINED_VALUE } from '@/features/auth-oauth-consent/lib/readConsentForm';
 
 vi.mock(
     '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',
@@ -14,7 +15,7 @@ vi.mock(
 
 vi.mock('@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup');
 
-vi.mock('@/shared/hooks/usePageShowReload', () => ({
+vi.mock('../hooks/usePageShowReload', () => ({
     usePageShowReload: vi.fn(),
 }));
 
@@ -56,7 +57,7 @@ describe('OAuthConsentForm', () => {
         mockUseFormStatus.mockReturnValue({ pending: false });
     });
 
-    it('renders profile email and name', () => {
+    it('renders the account card with the profile email and name', () => {
         render(<OAuthConsentForm {...baseProps} />);
         expect(screen.getByText('new@example.com')).toBeInTheDocument();
         expect(screen.getByText('Hong Gildong')).toBeInTheDocument();
@@ -81,47 +82,13 @@ describe('OAuthConsentForm', () => {
         expect(tokenInput).not.toBeNull();
     });
 
-    it('renders 가입 완료 and 취소 buttons', () => {
+    it('renders the submit and cancel buttons', () => {
         render(<OAuthConsentForm {...baseProps} />);
         expect(
             screen.getByRole('button', { name: /가입 완료/ })
         ).toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: /취소/ })
-        ).toBeInTheDocument();
-    });
-
-    // Branch coverage: avatarUrl provided → renders <Image> instead of placeholder div
-    it('renders avatar image when avatarUrl is provided', () => {
-        const { container } = render(
-            <OAuthConsentForm
-                {...baseProps}
-                avatarUrl="https://example.com/avatar.png"
-            />
-        );
-        // next/image renders an <img> with alt="" (presentational), so query via tag
-        const img = container.querySelector('img');
-        expect(img).not.toBeNull();
-        expect(img).toHaveClass('rounded-full');
-    });
-
-    // Branch coverage: name omitted → name paragraph not rendered
-    it('does not render name paragraph when name prop is absent', () => {
-        render(<OAuthConsentForm {...baseProps} name={undefined} />);
-        expect(screen.queryByText('Hong Gildong')).toBeNull();
-    });
-
-    // Branch coverage: provider without a PROVIDER_LABEL entry → falls back to provider string
-    it('falls back to provider string when no label is defined', () => {
-        render(
-            <OAuthConsentForm
-                {...baseProps}
-                // cast to SupportedOAuthProvider to satisfy TS; tests the ?? fallback at runtime
-                provider={'unknown_provider' as 'google'}
-            />
-        );
-        expect(
-            screen.getByText(/unknown_provider 계정으로 가입/)
         ).toBeInTheDocument();
     });
 
@@ -143,7 +110,28 @@ describe('OAuthConsentForm', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('비한국어 로케일에서는 consent_required 에러를 해당 언어로 띄운다', () => {
+    /**
+     * 회귀: 제출 버튼이 전송 중 `disabled`가 되며 포커스를 잃어, 약관 미동의 오류가
+     * 와도 포커스가 빠진 항목과 무관한 곳에 남았다. 동의 안 한 첫 항목으로 옮긴다.
+     */
+    it('moves focus to the first unticked consent when a consent_required error arrives', () => {
+        const { rerender } = render(<OAuthConsentForm {...baseProps} />);
+        screen.getByRole('button', { name: /가입 완료/ }).focus();
+
+        setupHook({
+            error: {
+                code: 'consent_required',
+                message: '약관에 동의해 주세요.',
+            },
+        });
+        rerender(<OAuthConsentForm {...baseProps} />);
+
+        expect(document.activeElement).toBe(
+            screen.getByLabelText(/개인정보 수집 및 이용 동의/)
+        );
+    });
+
+    it('shows the consent_required error in the active non-Korean locale', () => {
         setupHook({
             error: {
                 code: 'consent_required',
@@ -162,12 +150,22 @@ describe('OAuthConsentForm', () => {
     });
 
     // 제출 중 상태는 SubmitButton이 감싼 form의 useFormStatus로 읽는다.
-    it('shows 처리 중... and disables submit button while the form is pending', () => {
+    it('shows the pending label and disables the submit button while the form is pending', () => {
         mockUseFormStatus.mockReturnValue({ pending: true });
         render(<OAuthConsentForm {...baseProps} />);
         const btn = screen.getByRole('button', { name: /처리 중/ });
         expect(btn).toBeInTheDocument();
-        expect(btn).toBeDisabled();
+        expect(btn).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    it('starts both consent hidden inputs at the declined value', () => {
+        const { container } = render(<OAuthConsentForm {...baseProps} />);
+        for (const name of ['agreed_privacy', 'agreed_tos']) {
+            const hiddenInput = container.querySelector(
+                `input[name="${name}"]`
+            ) as HTMLInputElement;
+            expect(hiddenInput.value).toBe(CONSENT_DECLINED_VALUE);
+        }
     });
 
     // Branch coverage: privacyChecked true → hidden input value becomes 'true'

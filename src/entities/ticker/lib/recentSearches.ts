@@ -68,37 +68,42 @@ function parse(raw: string | null): RecentSearchEntry[] {
     if (!raw) return [];
     try {
         const parsed: unknown = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed.flatMap((item): RecentSearchEntry[] => {
-            if (typeof item === 'string' && item.length > 0) {
-                return [{ symbol: item, label: item }];
-            }
-            if (
-                item !== null &&
-                typeof item === 'object' &&
-                typeof (item as RecentSearchEntry).symbol === 'string' &&
-                (item as RecentSearchEntry).symbol.length > 0
-            ) {
-                const entry = item as RecentSearchEntry;
-                // `trim()` 은 `addRecentSearch` 와 같은 판정을 쓰기 위한 것이다 —
-                // 저장 시엔 공백뿐인 라벨을 심볼로 바꾸는데 읽을 때 안 바꾸면
-                // 손으로 편집된 저장값이 빈 칩으로 렌더된다.
-                const label =
-                    typeof entry.label === 'string' ? entry.label.trim() : '';
-                return [
-                    {
-                        symbol: entry.symbol,
-                        label: label.length > 0 ? label : entry.symbol,
-                    },
-                ];
-            }
-            return [];
-        });
+        return Array.isArray(parsed) ? parsed.flatMap(toRecentSearchEntry) : [];
     } catch {
         return [];
     }
 }
 
+/** 저장 항목 하나(옛 문자열 또는 `{ symbol, label }`)를 정규화한다. 못 읽는 항목은 버린다. */
+function toRecentSearchEntry(item: unknown): RecentSearchEntry[] {
+    if (typeof item === 'string') {
+        return item.length > 0 ? [{ symbol: item, label: item }] : [];
+    }
+    if (!isStoredEntry(item) || item.symbol.length === 0) return [];
+    // `trim()` 은 `addRecentSearch` 와 같은 판정을 쓰기 위한 것이다 —
+    // 저장 시엔 공백뿐인 라벨을 심볼로 바꾸는데 읽을 때 안 바꾸면
+    // 손으로 편집된 저장값이 빈 칩으로 렌더된다.
+    const label = typeof item.label === 'string' ? item.label.trim() : '';
+    return [
+        { symbol: item.symbol, label: label.length > 0 ? label : item.symbol },
+    ];
+}
+
+function isStoredEntry(
+    item: unknown
+): item is { symbol: string; label?: unknown } {
+    return (
+        item !== null &&
+        typeof item === 'object' &&
+        'symbol' in item &&
+        typeof item.symbol === 'string'
+    );
+}
+
+/**
+ * 최근 검색을 최신순으로 읽는다. v2 키가 없을 때만 v1 키를 승격해 읽으며,
+ * 저장소가 없으면(SSR) 빈 배열이다.
+ */
 export function getRecentSearches(
     storage: StorageLike | null = getDefaultStorage()
 ): RecentSearchEntry[] {
@@ -153,6 +158,7 @@ export function addRecentSearch(
     return next;
 }
 
+/** 심볼 하나를 최근 검색에서 지우고 남은 목록을 돌려준다. 저장 실패는 무시한다. */
 export function removeRecentSearch(
     symbol: string,
     storage: StorageLike | null = getDefaultStorage()
@@ -172,6 +178,7 @@ export function removeRecentSearch(
     return next;
 }
 
+/** 최근 검색을 모두 지운다. v1 키도 함께 지워야 승격 경로로 되살아나지 않는다. */
 export function clearRecentSearches(
     storage: StorageLike | null = getDefaultStorage()
 ): void {

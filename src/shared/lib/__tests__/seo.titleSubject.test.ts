@@ -1,4 +1,4 @@
-import { buildTitleSubject } from '@/shared/lib/seo';
+import { buildTitleSubject } from '@/shared/lib/seoSymbol';
 
 describe('buildTitleSubject', () => {
     it('한국어명이 있으면 한국어명(티커) 형태로 만든다', () => {

@@ -1,4 +1,4 @@
-import type { ResilientAssetInfo } from '@/entities/ticker/lib/getAssetInfoResilient';
+import type { ResilientAssetInfo } from '@/entities/ticker/server/getAssetInfoResilient';
 
 /**
  * 탭 본문 데이터(재무 6종·의회 거래 등 FMP 묶음)를 **심볼이 실재한다고 확인된 뒤에만**,

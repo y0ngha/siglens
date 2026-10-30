@@ -36,7 +36,7 @@ import { getGuideTool } from './getGuide';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
-import { ensureSymbolNewsFresh } from '@/entities/news-article/lib/ensureSymbolNewsFresh';
+import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */
@@ -190,9 +190,10 @@ export function availableToolNames(): Set<string> {
  * `userId` or a symbol string built from raw model tool-call args — and a
  * thrown error's `message` becomes part of a tool-result message that is
  * stored in the conversation and rendered in the UI. Never forward it.
- * Mirrors `shared/lib/logActionError.ts`: only the
- * error's `name` and (if present) the driver's short SQLSTATE-ish
- * `cause.code` are safe, non-sensitive diagnostics.
+ * Same principle as `shared/lib/logActionError.ts`: only the error's `name`
+ * and the driver's short SQLSTATE-ish `cause.code` are safe, non-sensitive
+ * diagnostics. (`logActionError` additionally falls back to a top-level
+ * `code`; this helper reads `cause.code` only.)
  */
 function logToolError(name: string, error: unknown): void {
     console.error('[AgentTool]', name, safeErrorFields(error));
@@ -275,7 +276,7 @@ export function createToolExecutor(
         if (name === 'get_market_overview') return resultCaps.aggregate;
         if (name === 'get_economy') return resultCaps.economy;
         // `get_investor_flows`는 점수표 + 상위 보유 기관·내부자·Form 144·증자 공시 목록(`SUMMARY_MAX_*` 상한,
-        // `summarizeInvestorFlows.ts`)이라 종합 도구 상한(6,000자)도 넘는다 — 이미 상한 안으로 자른 결과를 더 작은 한도로
+        // `entities/investor-flows/lib/summary/`)이라 종합 도구 상한(6,000자)도 넘는다 — 이미 상한 안으로 자른 결과를 더 작은 한도로
         // 다시 자르면 앞부분 미리보기 덩어리로 무너진다.
         if (name === 'get_investor_flows') return resultCaps.investorFlows;
         if (name === 'get_guide') return resultCaps.guide;

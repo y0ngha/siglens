@@ -1,6 +1,6 @@
 'use server';
 
-import { getAssetInfo } from '../lib/getAssetInfo';
+import { getAssetInfo } from '../server/getAssetInfo';
 import { MAX_RECENT_SEARCHES } from '../lib/recentSearches';
 import { pickAssetName } from '../lib/ticker';
 import { resolveLocale, type Locale } from '@/shared/i18n/locales';

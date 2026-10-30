@@ -19,7 +19,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -27,7 +27,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
@@ -50,7 +50,7 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/FundamentalDegraded', () => ({
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn(),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 // Widget mocks to avoid deep import chains.
@@ -98,6 +98,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolFundamentalSeoContent: vi.fn().mockReturnValue({
         title: '',
@@ -106,7 +110,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
@@ -122,9 +125,9 @@ import {
 } from 'vitest';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { notFound } from 'next/navigation';
 import FundamentalPage, {
     generateMetadata,

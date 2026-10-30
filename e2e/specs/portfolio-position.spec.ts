@@ -5,14 +5,14 @@ import type { Locator, Page } from '@playwright/test';
  * Authed spec — exercises the CURRENT placement of the "내 위치" position
  * widget after the position-building redesign moved it OFF the analysis page
  * entirely and into two dedicated surfaces:
- *   - `[symbol]/position` — a symbol tab (`src/app/[symbol]/position/page.tsx`
+ *   - `[symbol]/position` — a symbol tab (`src/app/[locale]/[symbol]/position/page.tsx`
  *     → `PositionTabContent` → member-gated `PositionTabMemberContent` →
  *     `PositionBuilding` (SVG, `role="img"`, `data-testid="position-building"`)
  *     + `PositionCard` (readouts, an implicit `role="region"` section via
  *     `aria-labelledby` on its "내 위치" `<h2>`)).
- *   - `/portfolio` — a member page (`src/app/portfolio/page.tsx` →
- *     `PortfolioMemberArea` → one `PositionHoldingCard` per holding, each embedding
- *     the same `PositionBuilding`).
+ *   - `/portfolio` — a member page (`src/app/[locale]/portfolio/page.tsx` →
+ *     `_components/PortfolioMemberArea.tsx` → one `PositionHoldingCard` per
+ *     holding, each embedding the same `PositionBuilding`).
  *
  * This spec previously asserted the widget rendered directly ON `/AAPL`
  * (removed in `f1d41322`, "remove vertical gauge from analysis page") — it is
@@ -30,7 +30,7 @@ import type { Locator, Page } from '@playwright/test';
  * NOT pinning exact high/low/current literals (unlike the deleted spec):
  * `[symbol]/position`'s SSR range comes from `resolvePriceRange` →
  * `getBarsStatic` → `quantizeBarsDataToLastClosed(bars, new Date(), ...)`
- * (`src/app/[symbol]/position/page.tsx`), which — UNLIKE the deleted
+ * (`src/app/[locale]/[symbol]/position/page.tsx`), which — UNLIKE the deleted
  * analysis-page gauge's client-only `getBarsAction` path — drops the last
  * (still-forming) bar whenever the real wall-clock `now` falls inside a live
  * US equity regular session (`src/entities/bars/lib/quantizeBars.ts`). That

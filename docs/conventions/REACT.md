@@ -43,7 +43,7 @@ Include a step only when it is needed.
 
 Why: every hook call must happen before derived values and handlers so that the reading order matches the dependency order and no hook ends up between computations.
 
-**Documented exception.** A hook whose input is a derived value is declared immediately after that derived value, with a comment naming the dependency. Examples in the code: a query keyed on a derived `activeTimeframe`, or a tier-gated flag passed into a custom hook. Every other hook still precedes that derived variable.
+**Documented exception.** A hook whose input is a derived value is declared immediately after that derived value, with a comment naming the dependency. The comment sits on **each** hook the exception covers, not once above the first of several. Examples in the code: a query keyed on a derived `activeTimeframe`, or a tier-gated flag passed into a custom hook. Every other hook still precedes that derived variable.
 
 **After moving part of a hook**, re-check that the remaining pieces (effects, handlers, `useCallback`s) are still in their slot. If effects depend on each other's run order, keep them together in that order and say why in a comment.
 
@@ -147,6 +147,8 @@ import { useState, useEffect } from 'react';
 
 A `run`/`poll`/`retry` function defined inside a hook's `useCallback`/`useEffect` body inherits its closure (alive flag, retry counter, timers, `setState`) implicitly, so it cannot be tested alone. Extract it to a module-level async function taking an explicit context object (`RunContext { symbol, setState, isAlive, setRetryHandle }`); the hook becomes a thin coordinator that builds the context and dispatches.
 
+The extracted function gets its own direct test file (drive it with a fake context and assert each transition, including the superseded/not-alive paths); testing it only through the hook leaves its branches unpinned.
+
 ```typescript
 // ❌
 const trigger = useCallback(() => {
@@ -178,6 +180,61 @@ Derive "is a member" in one exported place, not separately per consumer.
 // ✅ const [decision, setDecision] = useState<{ userId: string; value: Decision } | null>(null);
 //    const active = decision?.userId === userId ? decision.value : null;
 ```
+
+<a id="HK-7"></a>
+
+#### HK-7 — Discard async results that no longer belong to the current identity or key
+
+An async result (a merge, a fetch, a late failure) is applied, and its side effects run (state, storage writes,
+notices, navigation), only if the identity or key that started it is still current when it resolves. Logout, an account
+switch, a symbol change or a navigation while the request was in flight make the result stale. Capture the identity/key
+at call time and compare it with the current one (a ref, or `isAlive()` from the run context) after every `await`,
+before the first side effect. Test every way the owner can change (logout and account switch, not just one).
+
+```ts
+// ❌ const merged = await mergeLocal(userId); setItems(merged); // applied after logout or a switch to user B
+// ✅ const merged = await mergeLocal(userId);
+//    if (currentUserIdRef.current !== userId) return;
+//    setItems(merged);
+<a id="HK-6"></a>
+
+#### HK-6 — Functions returned from a custom hook have stable identity
+
+Handlers a hook returns (`dismiss`, `install`, `reset`) are wrapped in `useCallback` with correct deps. An inline
+closure gets a new identity every render, so consumers that put it in a dependency array or pass it to a memoized
+child re-run or re-render on every render.
+
+```tsx
+// ❌ return { dismiss: () => setOpen(false) };
+// ✅ const dismiss = useCallback(() => setOpen(false), []);
+//    return { dismiss };
+```
+
+<a id="HK-4"></a>
+
+#### HK-4 — State tied to a condition is reset when the condition goes false
+
+Open/editing/popover state that is only meaningful while a condition holds (the last message is editable, a menu is
+available, a panel is visible) must be cleared when that condition stops holding. Otherwise the hidden UI reopens
+when the condition returns. Reset it during render by checking the condition itself, not in an effect; compare against
+the previous value (EF-1) only when the trigger is a changed prop rather than a condition you can read now.
+
+```tsx
+// ❌ const [editingSeq, setEditingSeq] = useState<number | null>(null); // survives canEdit -> false
+// ✅ if (!canEdit && editingSeq !== null) setEditingSeq(null);
+```
+
+<a id="HK-5"></a>
+
+#### HK-5 — An imperative cache lives with the object it describes and is cleared on every exit path
+
+A cache of facts about an imperative object (a chart series, a DOM node, a reused entry in a ref map) belongs on that
+object's entry, not re-seeded from props on every effect run while the object itself is reused. Clear or update the
+entry on every exit path (success and failure), not only the failure branch; otherwise the cache and the object
+disagree on the next run.
+
+- ❌ `cacheRef.current = fromProps(...)` on each run while the series is reused; `delete` only in `catch`.
+- ✅ The cache is a field on the reused entry, and the same reset runs in both `then` and `catch` (or `finally`).
 
 ---
 
@@ -329,6 +386,63 @@ import { KOREAN_SAFE_REMARK_PLUGINS } from '@/shared/ui/markdownPlugins';
 remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 ```
 
+<a id="CR-8"></a>
+
+#### CR-8 — Secret values never become React keys or extra props
+
+A one-time secret (API key, token, password) is rendered in exactly one place. Do not use it as a `key`, a `data-*` attribute, an `id`, or a prop forwarded to components that only need to know "a secret exists": keys and props show up in React DevTools and dev-mode warnings. To remount a subtree when a new secret arrives, key it on a counter or other non-secret identity. Clear the secret from state once the user dismisses it.
+
+```tsx
+// ❌
+<SecretPanel key={secret} secret={secret} />
+// ✅
+<SecretPanel key={secretVersion} secret={secret} />
+<a id="CR-6"></a>
+
+#### CR-6 — List keys are unique, non-blank and independent of display text
+
+A `key` built from a display string (title, label, name) renders blank rows when the string is empty and triggers duplicate-key warnings and state mix-ups when two items share it. Key by a stable id; when only display text exists, trim it, drop blank items (or fall back to a localized placeholder) and drop repeats before rendering, so the text is unique.
+
+```tsx
+// ❌ blank or repeated titles collide
+items.map(item => <li key={item.title}>{item.title}</li>)
+
+// ✅ blanks and repeats dropped first, so the title is a unique key
+distinctTitles(items).map(title => <li key={title}>{title}</li>)
+<a id="CR-7"></a>
+
+#### CR-7 — Swapping to a shared component preserves what the old one encoded
+
+Before replacing a hand-rolled element with a shared component, list the constraints the old one carried (accessible name, size limits, z-index, viewport clamping) and check the shared one meets each; pass the specific label and cap the size where it does not.
+
+- ❌ Swapping a fixed-width tooltip for the shared `InfoTooltip` and silently getting a generic accessible name and a width that overflows 320px screens.
+- ✅ Pass the specific `aria-label` and cap the width to the viewport minus padding.
+<a id="CR-5"></a>
+
+#### CR-5 — Swapping to a shared component keeps the constraints the old one encoded
+
+Before replacing a hand-rolled component with a shared one, list what the old one guaranteed — accessible name, size
+limits at the smallest viewport (320px), stacking, keyboard and touch behaviour — and check the shared one meets each.
+Pass a prop or extend the shared component instead of accepting its defaults: they silently replace the old specifics.
+
+- ❌ Swap a fixed `w-56` tooltip for the shared one (`max-w-xs`, positioned by clamping only the left edge): it overflows
+  a 320px screen, and its generic trigger name replaces "Reliability Score Explanation".
+- ✅ Cap the shared width to `min(20rem, 100vw - 2 × padding)` and pass the specific `label`.
+<a id="CR-4"></a>
+
+#### CR-4 — Pointer-anchored overlays measure the target at event time
+
+A tooltip or marker positioned from a `DOMRect` must read `getBoundingClientRect()` inside the pointer handler that uses it. A rect cached at `pointerenter` goes stale once the page or an ancestor scrolls, so the overlay drifts away from the element.
+
+```typescript
+// ❌ rect captured once at pointerenter, reused by pointermove
+const onEnter = (e: PointerEvent) => { rectRef.current = e.currentTarget.getBoundingClientRect(); };
+const onMove = (e: PointerEvent) => place(e.clientX - rectRef.current.left);
+
+// ✅ measured where it is used
+const onMove = (e: PointerEvent) => place(e.clientX - e.currentTarget.getBoundingClientRect().left);
+```
+
 #### Other props and state rules
 
 - **Pass gating props explicitly.** A component that consumes a tier-gating prop (`isFreeUser` …) receives it from every call site; relying on a permissive default leaks free-tier surfaces (ads) to paid users.
@@ -357,11 +471,12 @@ remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 - **Do not override native roles.** Use `<div role="note">`, not `<p role="note">` or `<aside role="note">`.
 - **No nested live regions with different urgency.** A `role="alert"` (assertive) inside `aria-live="polite"` produces competing announcements.
 - **Announce state changes.** A pending navigation signalled only visually (`aria-busy`) is invisible to screen readers: add an always-mounted `role="status"` (sr-only) region whose text changes.
+- **A live region exists before its text does.** A `role="status"` / `aria-live` node mounted together with its first text, or present in only one phase of a multi-phase surface (modal, wizard), is not announced. Keep one persistent region across all phases and change only its content.
 - **Dynamic validation uses a live region and `aria-invalid`.** `aria-describedby` pointing at a static hint announces nothing new; point it at `<div role="status" aria-live="polite" id="msg">{error || hint}</div>` and toggle `aria-invalid={!!error}`.
 - **No `aria-hidden` on content users must read or re-enter** (an email to confirm, instructions, data fields). Hide only decorative or duplicated content.
 - **Duplicated user-facing text is announced twice.** Render a message once; if a second copy is needed, hide it and reference the primary through `aria-describedby`.
 - **Accordion triggers carry `aria-expanded`.**
-- **`inert` for visually hidden interactives.** Controls moved off-screen with transform/opacity stay in the tab order; set `inert={isHidden}` in sync with visibility, but skip hiding while focus is inside the container so focus is not blurred mid-interaction.
+- **`inert` for visually hidden interactives.** Controls moved off-screen with transform/opacity stay in the tab order; set `inert={isHidden}` in sync with visibility, but skip hiding while focus is inside the container so focus is not blurred mid-interaction. `inert` alone does not remove a closed container from Playwright's role engine (`getByRole` still matches it), so keep `aria-hidden` on the closed container as well and drop it when open; check e2e role queries before removing it.
 - **Info icons are buttons, not `<span title>`.** Tooltips must be keyboard-reachable: a `<button aria-describedby>` pointing at a `role="tooltip"` element.
 - **Nested interactives keep native keyboard activation.** A parent `role="button"` with `onKeyDown` guards with `if (e.target !== e.currentTarget) return;`, or it swallows Enter/Space of nested buttons.
 - **Tablist:** roving `tabIndex` (`0` active, `-1` others) plus ArrowLeft/ArrowRight. **Listbox:** the same plus Up/Down/Home/End/Enter/Escape and real DOM `focus()` that follows the visual selection.
@@ -371,6 +486,7 @@ remarkPlugins={KOREAN_SAFE_REMARK_PLUGINS}
 #### AX-1 — An `aria-label` mirrors the visible heading or label
 
 A landmark/section `aria-label` matches or closely mirrors its visible text. Two different names for one section confuse screen-reader users.
+For a link or button whose text is visible, the accessible name must contain that visible text (WCAG 2.5.3 label-in-name), ideally starting with it, in every locale; otherwise voice-control users cannot target it by what they see.
 
 ```tsx
 // ❌
@@ -402,6 +518,9 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 - A control that becomes pending while it holds focus uses `aria-disabled`, not `disabled`, so focus does not fall to
   `body` (Tab then escapes a modal). On success move focus to a persistent live region or the next target.
 - An auto-dismissing toast that carries an action pauses its timer on hover and `focus-within`.
+- A flag that hands focus on after an action (e.g. "focus the heading after a delete") either names its target (the
+  row key) or is guarded by the current UI state (no other row editor or confirm open), is cleared once consumed, and
+  does not depend on sibling effect or commit order; otherwise a later remount or another row steals focus.
 
 ```tsx
 // ❌
@@ -410,7 +529,81 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 <button aria-label="Watchlist" aria-pressed={on} />
 ```
 
+<a id="AX-6"></a>
+
+#### AX-6 — Hand focus off when the focused element goes away, and focus newly revealed status
+
+- When the focused element unmounts itself (a dismiss button, a removed list row), move focus to the next logical target (neighbouring row, the list or empty-state heading, the control that opened it) in the same handler; otherwise focus falls to `<body>` and keyboard users restart from the top of the page.
+- A status or result panel that appears after an action and is not inside an existing live region gets `role="status"` (or is focused via `tabIndex={-1}` when it holds content to act on), so it is announced.
+
+```tsx
+// ❌ the button removes itself; focus drops to <body>
+<button onClick={() => setSecret(null)}>Dismiss</button>
+// ✅
+<button onClick={() => { setSecret(null); headingRef.current?.focus(); }}>Dismiss</button>
+<a id="AX-7"></a>
+
+#### AX-7 — ARIA references point at rendered elements; a combobox follows the WAI-ARIA pattern
+
+`aria-describedby`, `aria-controls`, `aria-labelledby` and `aria-activedescendant` name an id that exists in the DOM at that moment: set the attribute only while its target is rendered. A reference to an unrendered element is silently ignored and misleads assistive tech. For a combobox (search input with a suggestion popup):
+
+- `aria-expanded` is true only while the listbox with at least one option is rendered; `aria-controls` is set only then.
+- The `role="listbox"` has an accessible name and contains only `role="option"` children. Status, empty and loading text lives in a separate `role="status"` region outside the listbox, announced for every layout variant (desktop and mobile).
+- `aria-activedescendant` points at a rendered option and is cleared when the popup closes or the options change; Enter must not follow a hidden active option.
+- Options are not tab stops (`tabIndex={-1}`, keyboard moves through the input); blur and Escape close the popup.
+
+```tsx
+// ❌ listbox not rendered, status text inside it, active option hidden
+<input aria-expanded={open} aria-controls="results" aria-activedescendant={activeId} />
+// ✅
+<input
+  aria-expanded={open && options.length > 0}
+  aria-controls={open && options.length > 0 ? listId : undefined}
+  aria-activedescendant={open ? activeId : undefined}
+/>
+```
+
+<a id="CR-9"></a>
+
+#### CR-9 — A DOM id in a reusable component comes from `useId`
+
+A hard-coded `id` (for `htmlFor`, `aria-describedby`, `aria-controls`) is duplicated whenever the component renders twice on one page (desktop plus mobile sheet, list rows). Generate it with `useId()` and derive related ids from it; an id nothing references is removed.
+
+```tsx
+// ❌
+<label htmlFor="search-input">…</label><input id="search-input" />
+// ✅
+const inputId = useId();
+<label htmlFor={inputId}>…</label><input id={inputId} />
+<a id="AX-4"></a>
+
+#### AX-4 — Adjacent text parts get a real space, not only `gap`/margin
+
+When two inline or flex text parts (label + count, name + ticker, heading + badge) are separated only by CSS `gap` or margin, `textContent`, copy-paste, reader mode and some accessible-name computations join them ("전체90", "엔비디아NVDA"). Put a text space `{' '}` between them. Whitespace between flex items is not rendered, so the layout does not change.
+
+Test it through `textContent`: jsdom's accessible-name calculation inserts spaces by itself, so `toHaveAccessibleName` cannot catch a missing one.
+
+```tsx
+// ❌
+<span className="flex gap-1"><span>{label}</span><span>{count}</span></span>
+// ✅
+<span className="flex gap-1"><span>{label}</span>{' '}<span>{count}</span></span>
+```
+
 ---
+
+<a id="AX-5"></a>
+
+#### AX-5 — Move focus to the invalid field after a failed form action
+
+When a form action comes back with a field error, move focus to the first invalid field so its `aria-describedby`
+error is read. Focus has usually left the form by then (a pending control lost it, or the step remounted), and a
+keyboard user would otherwise restart from the top of the page. Key the effect on the new error object, never on
+mount: a form that renders with no error (or restores one from cache) must not take focus. Test the mount case by
+asserting right after render, without calling `focus()` yourself.
+
+- ❌ The error renders under the field while focus stays on `<body>`.
+- ✅ A small hook focuses the first `[aria-invalid="true"]` field when a new error object arrives.
 
 ## useEffect Side Effect Isolation
 
@@ -484,7 +677,7 @@ useSyncExternalStore(subscribePreference, getPreferenceSnapshot, getServerPrefer
 
 #### EF-2 — Effect dependencies are complete; stable references are excluded
 
-Every outer-scope value read in an effect body is in the dependency array; missing deps cause stale closures. Stable references are left out: refs and `useEffectEvent` functions. A callback **prop** that the effect calls must not sit in the deps (it changes identity each render and loops); wrap it with `useEffectEvent` and call that inside the effect. Never suppress `exhaustive-deps` with a lint comment — restructure instead.
+Every outer-scope value read in an effect body is in the dependency array; missing deps cause stale closures. Stable references are left out: refs and `useEffectEvent` functions. A callback **prop** that the effect calls must not sit in the deps (it changes identity each render and loops); wrap it with `useEffectEvent` and call that inside the effect. The same applies to a "latest value" ref kept in sync by an effect: read the value through `useEffectEvent` instead. Never suppress `exhaustive-deps` with a lint comment — restructure instead.
 
 ```typescript
 // ❌ slot is read but missing; snapToPoint (useEffectEvent) is stable and does not belong
@@ -494,11 +687,25 @@ useEffect(() => { /* slot, snapToPoint */ }, [isFullSnap, snapToPoint]);
 useEffect(() => { /* slot, snapToPoint */ }, [isFullSnap, slot]);
 ```
 
+<a id="EF-5"></a>
+
+#### EF-5 — Key an effect on the stable identity it reacts to, not on a derived value
+
+An effect keyed on a memoized or derived object re-runs whenever that object's identity changes for unrelated reasons (a route change, a hover, a live tick), redoing work such as refocusing a dialog or rebuilding chart series. Key it on the primitive (id, geometry, open flag) that actually matters, and apply only the difference.
+
+```typescript
+// ❌ refocuses on every navigation: `notice` gets a new identity per route change
+useEffect(() => { dialogRef.current?.focus(); }, [notice]);
+
+// ✅ runs only when the notice itself changes
+useEffect(() => { dialogRef.current?.focus(); }, [notice?.id]);
+```
+
 <a id="EF-3"></a>
 
 #### EF-3 — Keep `try/finally` and listener wiring out of hook bodies (React Compiler / React Doctor)
 
-`try … finally` inside a hook or handler body is rejected by React Doctor (`react-hooks-js/todo`), and `addEventListener`/`removeEventListener` written inline in a hook body is flagged too. Use `try/catch` followed by unconditional cleanup (or `.catch`), and hoist listener attach/detach into module-level function declarations that the effect calls. Reading a ref-object getter during render is flagged as well; keep the value in a plain ref and read it in effects or handlers (CR-2).
+`try … finally` inside a hook or handler body is rejected by React Doctor (`react-hooks-js/todo`), and `addEventListener`/`removeEventListener` written inline in a hook body is flagged too. Use `try/catch` followed by unconditional cleanup (or `.catch`); when the cleanup must run even if the task itself rejects, lift the `try/finally` into a module-level async helper the hook calls, and hoist listener attach/detach into module-level function declarations that the effect calls. Reading a ref-object getter during render is flagged as well; keep the value in a plain ref and read it in effects or handlers (CR-2).
 
 ```typescript
 // ❌ finally in a hook body
@@ -507,6 +714,23 @@ try { await run(); } finally { setBusy(false); }
 // ✅ catch, then cleanup on every path
 try { await run(); } catch (error) { report(error); }
 setBusy(false);
+
+// ✅ the release must run even if the task throws: lift try/finally to a module-level helper
+async function releaseAfter<T>(guard: { current: boolean }, task: () => Promise<T>) {
+    try { return await task(); } finally { guard.current = false; }
+}
+```
+
+<a id="EF-4"></a>
+
+#### EF-4 — No logical assignment (`??=`, `||=`, `&&=`) in components and hooks
+
+React Compiler bails out on logical assignment operators (react-doctor `react-hooks-js/todo`), which silently disables memoization for that component or hook. Write the check and the assignment explicitly.
+
+```typescript
+// ❌ cache.current ??= new Map();
+// ✅ const map = cache.current ?? new Map();
+//    cache.current = map;
 ```
 
 ---
@@ -700,6 +924,36 @@ deriving it differently.
 A seed marked never-stale removes the client's only self-healing path for a degraded (fallback) seed. Before
 changing staleness, list what the refetch used to repair and keep a replacement for it. Test seeds through
 `dehydrate` -> `hydrate`, the path production takes, not by writing directly to the cache.
+
+<a id="RQ-6"></a>
+
+#### RQ-6 — Pending state belongs to the request that owns it, not to a shared mutation
+
+A mutation hook shared by several forms or rows exposes one `isPending`. Deriving a form's "submitting" state from it
+(plus unrelated UI state) lets a second submit through while that form's own request is in flight, and shows every
+row as busy when only one is. Track the form's own in-flight request (a ref or local state set around `mutate`), and
+mark a row pending only when it matches `mutation.variables`.
+
+```tsx
+// ❌ every row spins, and the form can double-submit
+const busy = remove.isPending
+// ✅ only the row being removed
+const busy = remove.isPending && remove.variables === id
+```
+<a id="RQ-5"></a>
+
+#### RQ-5 — Sign-out and account deletion clear every member-scoped query
+
+Both flows end in a soft redirect, so the QueryClient survives: a member-keyed entry (watchlist, registered
+providers, holdings, settings) is served to the next member who signs in on the same tab until it goes stale, and a
+leftover registered-providers entry lets them skip the BYOK gate. Remove every member-scoped key, each by its exact
+key (a shared prefix such as `['llm']` also holds global queries), before the action runs, in every flow that ends a
+session. The logout action also expires the session and hint cookies on its error path; a failed account deletion
+keeps the account, so it keeps the session too.
+
+- ❌ One flow removes holdings and settings but not the watchlist or registered providers.
+- ✅ Each flow lists all member-scoped keys, and a test asserts the watchlist and registered-providers keys are removed
+  before the action.
 
 ---
 

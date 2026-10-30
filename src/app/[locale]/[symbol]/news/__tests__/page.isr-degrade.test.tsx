@@ -30,7 +30,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -57,7 +57,7 @@ vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn(),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -111,6 +111,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
         fullTitle: 'T | SIGLENS',
@@ -125,7 +129,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
@@ -133,6 +136,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     translateFmpError: vi.fn().mockReturnValue(null),
 }));
 
+import React from 'react';
 import {
     describe,
     it,
@@ -141,15 +145,15 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import NewsPage, {
+import NewsPage from '@/app/[locale]/[symbol]/news/page';
+import {
     NewsListSection,
     EventCalendarSection,
     AnalystActionsSection,
-} from '@/app/[locale]/[symbol]/news/page';
+} from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
 import {
     getEarningsReportComparison,
@@ -240,7 +244,9 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
             .mockImplementation(() => {});
 
         // Render the section directly — must not throw, must show generic message.
-        render(await EventCalendarSection({ symbol: 'AAPL' }));
+        render(
+            await EventCalendarSection({ symbol: 'AAPL', today: '2026-10-29' })
+        );
 
         expect(
             screen.getByText('실적 일정을 불러오지 못했어요.')
@@ -265,7 +271,9 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        render(await EventCalendarSection({ symbol: 'AAPL' }));
+        render(
+            await EventCalendarSection({ symbol: 'AAPL', today: '2026-10-29' })
+        );
 
         expect(
             screen.getByText('FMP 서비스가 일시 중단됐어요.')
@@ -337,7 +345,9 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
             screen.queryByText('실적 일정을 불러오지 못했어요.')
         ).not.toBeInTheDocument();
 
-        render(await EventCalendarSection({ symbol: 'AAPL' }));
+        render(
+            await EventCalendarSection({ symbol: 'AAPL', today: '2026-10-29' })
+        );
         expect(screen.getByTestId('event-calendar')).toBeInTheDocument();
         expect(
             screen.queryByText('실적 일정을 불러오지 못했어요.')

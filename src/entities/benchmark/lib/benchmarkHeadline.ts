@@ -17,12 +17,14 @@ export const BENCHMARK_SIGNIFICANCE_LEVEL = 0.05;
  */
 export type BenchmarkContrastVerdict = 'ahead' | 'behind' | 'tie' | 'untested';
 
+/** 헤드라인의 비교 한 줄: 대상·원자료 비교·해석. */
 export interface BenchmarkHeadlineEntry {
     readonly target: BenchmarkTarget;
     readonly contrast: BenchmarkContrast;
     readonly verdict: BenchmarkContrastVerdict;
 }
 
+/** `buildBenchmarkHeadline`의 결과. 헤드라인 문장·메타 설명·표가 읽는다. */
 export interface BenchmarkHeadline {
     readonly subject: BenchmarkTarget;
     /** 경쟁 모델(기준선 제외)과의 비교. */

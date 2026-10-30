@@ -16,7 +16,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/entities/ticker/lib/assetClassification', () => ({
@@ -30,7 +30,7 @@ vi.mock('@/entities/ticker/api', () => ({
 }));
 // 이 탭(12h 선언)은 세션 키 축소 봉(revalidate 24h)을 읽는다 — 6h 봉 캐시
 // (`getSessionBarsStatic`)를 읽으면 Next 16.3이 라우트를 6h로 clamp한다.
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: vi.fn(),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
@@ -38,7 +38,7 @@ vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
         children,
 }));
 // PositionTabContent is stubbed (client component, not under test here). The
-// pure lib modules (volumeByBand/positionGeometry/positionBuildingNotes) stay
+// pure utils modules (volumeByBand/positionGeometry/positionBuildingNotes) stay
 // real so the page's server data path and the Task 1 per-symbol content block
 // exercise the real aggregation/geometry, not a stub.
 vi.mock('@/widgets/portfolio-position/ui/PositionTabContent', () => ({
@@ -56,13 +56,13 @@ import {
     default as PositionPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/position/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<

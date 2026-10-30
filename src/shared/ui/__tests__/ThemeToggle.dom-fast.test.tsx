@@ -35,6 +35,15 @@ describe('ThemeToggle', () => {
         ).toEqual(['시스템 설정', '라이트', '다크']);
     });
 
+    it('열리는 것은 menu가 아니라 radiogroup이라 트리거에 aria-haspopup을 달지 않는다', () => {
+        renderWithIntl(<ThemeToggle />);
+        const trigger = screen.getByRole('button', { name: /테마:/ });
+
+        expect(trigger).not.toHaveAttribute('aria-haspopup');
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(trigger).not.toHaveAttribute('aria-controls');
+    });
+
     it('저장값이 없으면 시스템 설정가 선택돼 있다', () => {
         renderWithIntl(<ThemeToggle />);
         openMenu();

@@ -11,7 +11,7 @@ import type { MarketProfileId } from './types';
  *
  *  - us-equity: 시세·재무 FMP(`shared/api/market/getMarketDataProvider`,
  *    `shared/api/fmp/getFundamentalDataProvider`), 뉴스 FMP `news/stock`
- *    (`entities/news-article/lib/getNewsClient`)
+ *    (`entities/news-article/server/getNewsClient`)
  *  - kr-equity: 시세·재무 Yahoo Finance(`shared/api/yahoo/YahooMarketProvider`,
  *    `YahooFundamentalProvider`) — FMP 플랜에 KRX가 없다 — , 뉴스 네이버 뉴스 검색
  *    (`shared/api/naver/naverSearch`)

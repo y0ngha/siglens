@@ -101,6 +101,8 @@ return result;
 const result = condition ? newValue : value;
 ```
 
+In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
+
 <a id="CP-5"></a>
 
 #### CP-5 — Name complex inline expressions; turn repeated JSX into data + map
@@ -383,6 +385,7 @@ A cast is acceptable only when TypeScript cannot express a constraint the runtim
 - `Object.fromEntries(pairs) as Record<K, V>` and `Object.keys(record) as T[]` (keys widen to `string`, but `Record<T, …>` guarantees them) are the sanctioned safe-casts.
 - Test files are exempt from the comment for self-documenting mock casts such as `fn as MockedFunction<typeof fn>`.
 - Replace a post-check `value!` that repeats across call sites with a helper that returns the narrowed type (or throws), e.g. `requireDatabaseUrl()`.
+- Narrow external data (parsed JSON, a `Response` body, `unknown` input) with a type guard instead of asserting its shape (`body as Foo | null`); a double assertion (`as unknown as T`) needs the same WHY comment, in tests too, unless a typed fixture or guard removes the need.
 
 ```typescript
 // ❌ hides a possible null / wrong shape
@@ -401,6 +404,20 @@ const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 When you keep a local `readonly T[]` to back a `value is T` guard (for example `isSkillCategory`), it must list every member of the upstream union, and a `@y0ngha/siglens-core` bump that adds union members is a sync trigger. TypeScript cannot detect a strict subset — the failure shows up at runtime as silently filtered data.
 
 Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an upstream `Record<T, …>`, a compile-time exhaustiveness check paired with `satisfies`, or exporting the list from core itself.
+
+<a id="TS-4"></a>
+
+#### TS-4 — Narrow with a local binding instead of a non-null assertion
+
+Do not use `x!` (including `array.find(...)!` in tests). A `!` silences the compiler and fails later with an unhelpful `undefined` error. Bind the value to a local `const` and narrow it with a guard or an explicit assertion that fails with a readable message.
+
+```ts
+// ❌
+const row = rows.find(r => r.id === id)!;
+// ✅
+const row = rows.find(r => r.id === id);
+if (!row) throw new Error(`row ${id} not found`);
+```
 
 #### Other TypeScript rules
 
@@ -425,6 +442,7 @@ Extract every magic number and constant value to a module-level constant, and le
 - Time math uses the shared constants (`MS_PER_HOUR`, `MS_PER_SECOND`, KST offset …) from `shared/config` or `@y0ngha/siglens-core`, not `hours * 60 * 60 * 1000`.
 - **Drift trap:** once a constant exists in a file, every literal use of the same value in that file (JSX text, error messages, JSDoc, tests) references it. A tests file converted halfway keeps the old literal and passes for the wrong reason.
 - A rounding factor and its `toFixed` digits are one constant, not two literals.
+- A fallback or a displayed maximum (`/ 100`) imports the constant the logic uses; it never re-declares the value in a sibling module or in JSX text.
 - Exception: Next.js route segment config (`revalidate`, `dynamic`, …) must stay a literal — see `src/app/CLAUDE.md#AP-1`.
 
 ```typescript
@@ -485,13 +503,16 @@ Test rules live in [TESTING.md](./TESTING.md) (rule IDs `TE-N`).
 ## Import Path Rules
 
 ```typescript
-// ✅ Use path aliases
+// ✅ Use path aliases across slices and layers
 import { cn } from '@/shared/lib/cn';
 import { useBars } from '@/widgets/symbol-page/hooks/useBars';
 
-// ❌ No relative paths
+// ❌ Relative paths that climb out of the slice (../../..)
 import { cn } from '../../../shared/lib/cn';
 ```
+
+Inside the same slice, cross-segment imports stay relative (`../lib/resolveGateMode`, see "No Barrels" below); the
+alias is for crossing a slice or layer boundary.
 
 Consolidate imports from the same module into one statement (oxlint has no `no-duplicates` rule here, so review catches it):
 
@@ -502,6 +523,26 @@ import { formatPriceChange } from '@/shared/lib/priceFormat';
 
 // ✅
 import { formatUsdPrice, formatPriceChange } from '@/shared/lib/priceFormat';
+```
+
+<a id="CS-24"></a>
+
+#### CS-24 — Imports form one block: packages first, then `@/` aliases, then relative
+
+All `import` statements sit at the top of the file in a single block ordered package imports (`react` first), then `@/` alias imports, then relative imports. "One block" means no code between imports; a blank line between the three groups is allowed but not required — the order is the rule. Never place an import below a later group; the formatter does not reorder across groups, so review is the only guard.
+
+```typescript
+// ❌
+import { cn } from '@/shared/lib/cn';
+import { useState } from 'react';
+import { helper } from './helper';
+
+// ✅
+import { useState } from 'react';
+
+import { cn } from '@/shared/lib/cn';
+
+import { helper } from './helper';
 ```
 
 ### No Barrels — Import from the Defining File
@@ -561,7 +602,11 @@ the root `CLAUDE.md`. The rules below target comments that restate the code or s
 
 A comment earns its place by recording a reason, constraint or tradeoff the code cannot show. Delete comments that
 label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
-`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name, and
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options interface's name (`/** [[useX]] options. */` — say what the options control instead), and
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name (or a props
+JSDoc that only lists field names), a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
+export), comments framed as history ("회귀:", "previously…", "fixed in…"; state the current reason
+instead), and
 structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
 multi-line WHY blocks.
 
@@ -573,6 +618,12 @@ if (oauthRecord) return redirect('/dashboard');
 // ✅ WHY
 // Guard: a negative value breaks the log calculation downstream.
 if (value < 0) return null;
+
+// ❌ JSDoc that only restates the name
+/** 회원이 담은 건수. */
+export interface WatchlistCount { memberCount: number }
+
+// ✅ Delete it, or state what the name cannot (unit, source, edge case)
 ```
 
 <a id="CM-2"></a>
@@ -584,12 +635,16 @@ conversions) must match reality, and a false WHY is worse than none. Re-verify t
 file or the rule it describes changes:
 
 - "Only X uses this" claims go stale when a second caller appears; name callers explicitly or drop the claim.
+- Before writing a claim about consumers, callers, usage counts or per-method behavior ("used in two places", "both validate at import time", "all queries retry", "reason is used for logging"), grep the repo for the actual callers and read each method; a claim that holds for one member does not hold for the group.
 - When a function's processing order or workload changes (a step appended, steps reordered), re-read its JSDoc and the
   route or caller doc that describes it, for example a "short, no lock needed" claim.
 - When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
   JSDoc and test names that mention it and update them in the same change (see CS-8).
 - When a method gains a cache or otherwise changes behavior, re-read the class- or module-level summary and sibling
   files that describe it, not only the method's own JSDoc; a summary listing the method under its old behavior goes stale.
+- When a symbol moves or is renamed (a function removed, a class relocated to another module), grep the old name and
+  every "lives in the same module" style location claim in comments and test files, and update them in the same change.
+  ❌ A test comment saying the repo class is "in the same module" after it moved to `server/`. ✅ The comment names the new location or is dropped.
 - After reversing a layout contract, grep the whole repo (`src/`, `e2e/`, `docs/`) for the old wording, including
   test names.
 - A time-zone comment must match the literal exactly; check DST dates with
@@ -598,14 +653,18 @@ file or the rule it describes changes:
   sentence is cut in the middle or loses a field the next paragraph relies on.
 - Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
 - A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
+- A "stable" / "memoized" claim in a JSDoc must match the hook's dependency list; if the deps change when the inputs change, say what the identity depends on instead of calling it stable.
 - Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
 - A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
 - A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.
+- A JSDoc describes only what its own unit does: a reducer's doc does not claim UI behaviour (what is rendered, focused or announced), and a view's doc does not claim state-transition rules. Attribute each behaviour to the unit that implements it.
+- A JSDoc does not hardcode a count that another constant owns ("탭이 9개" vs `TABS.length`); say it generically or point at the constant. When a symbol is renamed or its nature changes (hardcoded text becoming translated keys), update every comment that cites it, including sibling references in test files.
 - A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
 - When a setup file, config or helper changes what a lane, module or option does (for example module-cache reuse
   becoming a per-test reset), re-read the config or JSDoc that describes the old behavior (`vitest.config.ts` lane
   docs, header comments) in the same edit; grep the old wording repo-wide, and its concept and paraphrases too ("module cache" also hides as "evaluated module"), not only the exact phrase. Re-read the header doc of every file you
   touched, including the file that holds the change itself, not only the config that points at it.
+- A comment about when an effect, callback or request runs (on mount, after commit, before the response) is checked against the actual hook or call order; a comment stating the opposite of the code's timing is worse than none.
 - After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
 
 <a id="CM-3"></a>
@@ -618,6 +677,10 @@ the conditions and units (a size measured as gzip S3 object size is not the unco
 compares; two residency figures with different binding conditions say so), and for version-dependent claims give the
 version, the check date and the command to re-check. Schedules and windows come from the schedule source, cited by
 file, not from assumptions about business hours. When there is no measurement, say so ("no baseline yet").
+
+When moving code or trimming history comments, keep the measured evidence (figures, conditions, re-check command); drop
+only the narration of the past fix.
+When rewriting a comment, drop only the pointer to local audit or history notes (CM-9) and keep the measured figures (rates, counts, sizes) with their conditions; a figure removed together with its pointer leaves the claim unsourced.
 
 ```typescript
 // ❌ unverifiable
@@ -670,6 +733,7 @@ otherwise a later sweep "fixes" it. Examples: a call site that skips a new param
 deliberate omission from a title, a status code that differs from its siblings, shared state with
 last-event-wins semantics, work started early for parallelism (state its discard cost on early return). A temporary
 workaround names its removal condition and the tracking link.
+A hook or function that is only correct under a caller assumption (e.g. an `enabled` flag never flipped after mount) states that assumption in its JSDoc.
 
 <a id="CM-7"></a>
 
@@ -721,6 +785,51 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-14"></a>
+
+#### CM-14 — Every export in a module gets JSDoc once its siblings do
+
+When a file's exports carry JSDoc (role, consumer, WHY), a newly added or split-out export gets one too, and a JSDoc
+that only restates the name or type does not count. A lone undocumented export reads as an oversight and hides its
+consumer.
+
+```typescript
+// ❌ siblings documented, this one bare
+export function rssNewsSurface() {}
+// ✅ /** Why this surface exists and who consumes it. */
+
+<a id="CM-13"></a>
+
+#### CM-13 — One comment language per file
+
+Match the language of the comments already in the file you edit: a new JSDoc or comment follows the file's existing
+language, never introducing a second one. A mixed file reads as two authors and makes a grep for a concept miss half of it.
+
+```typescript
+// ❌ English JSDoc throughout the file, one new block written in Korean
+// ✅ the new block is English like its neighbours
+<a id="CM-12"></a>
+
+#### CM-12 — Every exported component, hook and helper carries its own JSDoc
+
+A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one.
+
+- ❌ A new `useEconomyFilter` exported under only the file's header comment.
+- ✅ A short JSDoc above `useEconomyFilter` naming what it owns and returns.
+<a id="CM-11"></a>
+
+#### CM-11 — Comments describe the current design and WHY, not history
+
+A comment or JSDoc states the present constraint and reason. It does not narrate PRs, audits, review rounds or what
+the code used to do. When a refactor changes a strategy (for example how a chart is remounted on theme change), re-read
+the comments and helpers that describe the old strategy and rewrite or delete them; a comment that contradicts the code
+is worse than none.
+
+```typescript
+// ❌ Added in the audit round; previously remounted via useThemeVersion().
+// ✅ The chart is recreated on theme change because series colours are fixed at creation.
+```
+
 ---
 
 ## Change Synchronization
@@ -746,8 +855,19 @@ The same applies to derived logic, not only literals: one window boundary (for e
 "last completed daily close" rule computed in two places drifts apart. Keep one function in the lowest layer that
 needs it and have the other callers delegate to it.
 
+Extracting a shared rule (a validation predicate, a locale or formatting helper) is finished only when every existing
+copy, including hand-rolled duplicates and constant aliases at the original call site, is migrated to it. Grep for the
+old logic before calling the extraction done.
+
 - ❌ Two helpers each re-derive "the previous trading day" with their own weekend handling.
 - ✅ One exported helper owns the boundary; both callers import it, and one test pins its edge cases.
+
+A condition that must hold in both a route's `generateMetadata` and its body component (a "degraded"/"empty" state
+that switches the robots directive and the rendered content) is one `_lib` predicate that both call. A comment saying
+"same expression as the body" is not enforcement.
+
+- ❌ `page.tsx` metadata and `_components/Body` each spell out the degrade condition, with a comment promising they match.
+- ✅ `_lib/isDegraded(data)` is imported by both.
 
 A summary label follows the same rule: derive it from the aggregate it summarizes, never copy it from one component.
 Validate label/aggregate consistency where the data enters, and regenerate bundled copies (an archive of the same data)
@@ -767,7 +887,7 @@ files (Redis key layouts) get a block comment naming their origin.
 
 ```typescript
 // ✅ shared/config/marketProfile/usEquity.ts
-/** Mirrors `US_EXCHANGES` in `entities/ticker/lib/fmpTickerApi.ts`; change both together. */
+/** Mirrors `US_EXCHANGES` in `entities/ticker/server/fmpTickerApi.ts`; change both together. */
 const US_EXCHANGES: ReadonlySet<string> = new Set(['NYSE', 'NASDAQ' /* ... */]);
 ```
 
@@ -950,6 +1070,70 @@ complete. Show it as in-progress or leave it out.
 
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
+
+<a id="CS-26"></a>
+
+#### CS-26 — Removing a cast or assertion keeps the accepted values identical
+
+An `as` cast, `!` or loose parser hides a runtime decision (what `undefined`, `null`, `NaN`, or a wrong type does). When
+a refactor replaces it with a typed helper, compare every input class against the old behavior: throw vs skip, `null`
+becoming `Invalid Date` vs epoch, `NaN` propagated vs filtered. Keep the old result, or change it deliberately and
+say so in the PR and pin it with a test.
+
+- ❌ Swapping `new Date(row.at as string)` for a helper that skips `undefined` and turns `null` into `Invalid Date`.
+- ✅ A test table of `undefined`, `null`, `NaN` and a valid value run against old and new code before the cast goes.
+<a id="CS-25"></a>
+
+#### CS-25 — A refactor changes no behavior without a demonstrated bug
+
+In a structure-only change (SRP split, rename, move), do not add a guard, tighten validation, add a sort tiebreak or
+otherwise alter what input is accepted or what output is produced "while you are there". Such an edit needs a failing
+case that shows the bug (a test, a real data shape, a reproduction); without one it is speculation that changes accepted
+input or ordering and hides inside a diff reviewers read as a pure move. A change with a demonstrated bug is a behavior
+change: keep it separate from the move or list it in the PR body.
+
+- ❌ Adding a strict hex regex to a token check, or an `orderBy` tiebreak where the data never produces a tie, in an
+  extraction PR.
+- ✅ Move the code unchanged; fix a proven bug in its own commit with the test that failed.
+
+<a id="CS-22"></a>
+
+#### CS-22 — Export only what another module imports
+
+A constant, type or helper with no importer outside its own file stays private. Do not export a symbol only so a test can
+read it; test through the public behaviour, or move the symbol to a non-component module that a consumer really imports.
+
+- ❌ `export const FLAT_EPSILON = 0.005` that nothing imports.
+- ✅ `const FLAT_EPSILON = 0.005`, exercised through the component's rendered output.
+<a id="CS-20"></a>
+
+#### CS-20 — Visibility and emptiness checks use the value the UI renders
+
+When a block is shown or hidden based on a text or value, the check reads the same resolver, field and rounding the rendered output uses. Testing a different field (a raw or non-localized one) than the one printed makes the block appear empty, or hide when it has content. Derive both from one shared value.
+
+- ❌ `summaryKo ? <Summary text={resolveSummary(item, locale)} /> : null`
+- ✅ `const text = resolveSummary(item, locale); text ? <Summary text={text} /> : null`
+
+<a id="CS-21"></a>
+
+#### CS-21 — Compute a value only on the path that uses it
+
+A value that only one branch reads is computed inside that branch (or behind the same condition), not on every render or
+call and then discarded when the condition is off. Deriving it unconditionally does work the user never sees and hides
+which branch actually depends on it.
+
+- ❌ `const hasVisible = visibleOf(group).length > 0;` … `{isSelected && !hasVisible && <EmptyNote />}`
+- ✅ `const showEmptyNote = isSelected && visibleOf(group).length === 0;`
+<a id="CS-23"></a>
+
+#### CS-23 — Sign, colour and prefix come from the rounded value that is printed
+
+When a number is displayed at fixed precision, decide its sign, "+" prefix, colour and zero state from the rounded
+value, not the raw one. Otherwise a value that rounds to zero prints as "-0.00%" or is coloured as a loss while the
+text shows nothing.
+
+- ❌ `value < 0 ? '-' : '+'` on the raw `-0.004`, printing `-0.00%`.
+- ✅ Round first (`const r = Number(value.toFixed(2))`), then derive sign and colour from `r`; `0` gets the neutral colour and the same prefix as an exact zero.
 
 ---
 
@@ -1300,6 +1484,64 @@ const label = (item: Item, locale?: Locale) => item.names[locale ?? 'ko'];
 
 // ✅ required locale, one shared fallback helper
 const label = (item: Item, locale: Locale) => pickLocalized(item.names, locale);
+```
+
+<a id="I18-16"></a>
+
+#### I18-16 — Translator keys are string literals, never built from templates
+
+`i18n:extract` finds keys by static analysis. A key assembled with a template string or concatenation is invisible to it, so the extractor either misses the key or widens the whole namespace into the client bundle. Map the variants through a literal record of keys and look the record up.
+
+```typescript
+// ❌ extractor cannot see these keys
+t(`category.${kind}`)
+
+// ✅ every key is a literal
+const LABEL_KEY = { stock: 'category.stock', etf: 'category.etf' } as const;
+t(LABEL_KEY[kind]);
+```
+
+<a id="I18-17"></a>
+
+#### I18-17 — Records of translator keys are typed as literal unions, not `string`
+
+A lookup record that maps a domain value to a translator key (`labelKey`, `descriptionKey`) is typed with the literal key type, so a typo or a key missing from the catalog is a compile error instead of a runtime fallback. Derive the type from the catalog namespace or a template literal over the domain union.
+
+```typescript
+// ❌ any string compiles, typos surface only at runtime
+const EXIT: Record<ExitReason, { labelKey: string }> = { stop: { labelKey: 'exit.stopp' } };
+
+// ✅ the key must be a real literal of the namespace
+type ExitKey = `exit.${ExitReason}`;
+const EXIT: Record<ExitReason, { labelKey: ExitKey }> = { stop: { labelKey: 'exit.stop' } };
+<a id="I18-14"></a>
+
+#### I18-14 — One full-sentence key per message; never join translated fragments
+
+Tooltips, aria-labels and other copy are a single catalog key with ICU arguments, not several keys concatenated in code
+(`${t('a')}~${t('b')}`, `[t('x'), t('y')].join(' ')`). Word order, separators and ranges differ per locale, and a joined
+string also drifts from the logic it describes when a boundary changes.
+
+```typescript
+// ❌ two keys glued with a hardcoded separator
+`${t('rangeMin')}~${t('rangeMax')}`
+
+// ✅ one key, locale decides the shape
+t('range', { min, max })
+<a id="I18-15"></a>
+
+#### I18-15 — Catalog values carry no layout whitespace
+
+A message value is the exact text shown to the user. Never bake JSX line-wrapping into it (a newline plus indentation
+spaces copied from a multi-line `t(...)` call or a wrapped JSX string). HTML collapses it in ko/en but it surfaces as
+stray spaces in ja/zh, which have no inter-word spaces. Keep each value on one line with only the spaces the sentence
+needs, and let the formatter wrap the call site, not the value.
+
+```json
+// ❌ indentation copied into the value
+"disclaimer": "Data is delayed\n        by 15 minutes."
+// ✅
+"disclaimer": "Data is delayed by 15 minutes."
 ```
 
 ---

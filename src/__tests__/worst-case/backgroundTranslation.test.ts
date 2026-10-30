@@ -5,17 +5,17 @@ vi.mock('@/entities/llm-provider/lib/parseJsonResponse', () => ({
     parseJsonResponse: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/config', () => ({
+vi.mock('@/entities/ticker/server/config', () => ({
     tryReadTranslatorConfig: vi.fn(),
 }));
 
 import {
     translateCompanyNames,
     translateCompanyDescription,
-} from '@/entities/ticker/lib/koreanTranslator';
+} from '@/entities/ticker/server/koreanTranslator';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 import { parseJsonResponse } from '@/entities/llm-provider/lib/parseJsonResponse';
-import { tryReadTranslatorConfig } from '@/entities/ticker/lib/config';
+import { tryReadTranslatorConfig } from '@/entities/ticker/server/config';
 
 const mockCallGemini = callGeminiChat as ReturnType<typeof vi.fn>;
 const mockParseJson = parseJsonResponse as ReturnType<typeof vi.fn>;

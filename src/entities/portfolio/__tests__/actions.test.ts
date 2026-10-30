@@ -23,12 +23,12 @@ vi.mock('@/entities/portfolio/api', () => ({
         };
     }),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions/getPortfolioHoldingsAction';
 import { savePortfolioHoldingAction } from '@/entities/portfolio/actions/savePortfolioHoldingAction';
 import { deletePortfolioHoldingAction } from '@/entities/portfolio/actions/deletePortfolioHoldingAction';

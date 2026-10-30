@@ -1,7 +1,7 @@
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 import type { ResponseCookie } from './types';
 
-/** siglens-core의 AuthSessionCookie를 next/headers cookies().set() 형태로 변환한다. */
+/** 유스케이스가 돌려준 `AuthSessionCookie`(`maxAgeSeconds`)를 `cookies().set()` 인자(`maxAge`)로 바꾼다. */
 export function applyAuthCookie(cookie: AuthSessionCookie): ResponseCookie {
     return {
         name: cookie.name,

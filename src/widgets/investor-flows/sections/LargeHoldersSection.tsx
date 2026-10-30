@@ -1,3 +1,6 @@
+/**
+ * 5% 이상 대량보유(13D·13G) 공시 섹션.
+ */
 import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsWindow,
@@ -5,31 +8,14 @@ import type {
 } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import {
-    formatCompact,
-    formatInteger,
-    formatPercent,
-} from '../utils/flowFormat';
-import {
-    buildLargeHolderRows,
-    largeHolderKind,
-    type LargeHolderKind,
-} from '../utils/largeHolders';
+import { formatInteger } from '../utils/flowFormat';
+import { buildLargeHolderRows, largeHolderKey } from '../utils/largeHolders';
+import { LargeHolderCard } from '../ui/large-holders/LargeHolderCard';
 
 const HEADING_ID = 'flows-large-holders-heading';
-
-const KIND_CLASS: Record<LargeHolderKind, string> = {
-    '13d': 'bg-ui-warning/10 text-ui-warning-text',
-    '13g': 'bg-secondary-700 text-secondary-300',
-    other: 'bg-secondary-700 text-secondary-300',
-};
-
-const LINK_CLASS =
-    'tap-target rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 interface LargeHoldersSectionProps {
     /** `null` = 13D/13G 조회 실패(없음 `[]`과 다르다). */
@@ -40,94 +26,12 @@ interface LargeHoldersSectionProps {
     readonly temporarilyUnavailable?: boolean;
 }
 
-function FilingRow({ filing }: { readonly filing: LargeHolderFiling }) {
-    const t = useTranslations('widgets.investor-flows');
-    const locale = useResolvedLocale();
-    const kind = largeHolderKind(filing.form);
-    const kindLabels: Record<LargeHolderKind, string> = {
-        '13d': t('largeHolders.kind13d'),
-        '13g': t('largeHolders.kind13g'),
-        other: t('largeHolders.kindOther'),
-    };
-    const href = toSafeHttpUrl(filing.url);
-    return (
-        <li className={cn(SURFACE_NESTED, 'p-3')}>
-            <div className="flex flex-wrap items-start justify-between gap-2">
-                <p className="min-w-0 text-sm font-medium break-words text-secondary-100">
-                    {filing.filer === ''
-                        ? t('largeHolders.unknownFiler')
-                        : filing.filer}
-                </p>
-                <span
-                    className={cn(
-                        'rounded px-1.5 py-0.5 text-xs font-medium',
-                        KIND_CLASS[kind]
-                    )}
-                >
-                    {kindLabels[kind]}
-                </span>
-            </div>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-4">
-                <div>
-                    <dt className="text-secondary-400">
-                        {t('largeHolders.colDate')}
-                    </dt>
-                    <dd className="font-mono text-secondary-200 tabular-nums">
-                        {filing.filingDate}
-                    </dd>
-                </div>
-                <div>
-                    <dt className="text-secondary-400">
-                        {t('largeHolders.colForm')}
-                    </dt>
-                    <dd className="font-mono text-secondary-200">
-                        {filing.form}
-                    </dd>
-                </div>
-                <div>
-                    <dt className="text-secondary-400">
-                        {t('largeHolders.colPercent')}
-                    </dt>
-                    <dd className="font-mono text-secondary-200 tabular-nums">
-                        {filing.percentOfClass === null
-                            ? '–'
-                            : formatPercent(filing.percentOfClass, locale, 2)}
-                    </dd>
-                </div>
-                <div>
-                    <dt className="text-secondary-400">
-                        {t('largeHolders.colShares')}
-                    </dt>
-                    <dd className="text-secondary-200 tabular-nums">
-                        {filing.shares === null
-                            ? '–'
-                            : formatCompact(filing.shares, locale)}
-                    </dd>
-                </div>
-            </dl>
-            {href !== null && (
-                <div className="mt-2 text-right">
-                    <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={LINK_CLASS}
-                    >
-                        {t('largeHolders.filing')}
-                    </a>
-                </div>
-            )}
-        </li>
-    );
-}
-
+/** 조회 실패(일시 오류 포함) → 공시 없음 → 카드 목록 순으로 첫 해당 분기만 그린다. */
 function LargeHoldersBody({
     filings,
-    rows,
     temporarilyUnavailable,
 }: {
     readonly filings: readonly LargeHolderFiling[] | null;
-    readonly rows: readonly LargeHolderFiling[];
     readonly temporarilyUnavailable: boolean;
 }) {
     const t = useTranslations('widgets.investor-flows');
@@ -140,6 +44,7 @@ function LargeHoldersBody({
             </p>
         );
     }
+    const rows = buildLargeHolderRows(filings);
     if (rows.length === 0) {
         return (
             <p className="text-sm text-secondary-300">
@@ -150,10 +55,7 @@ function LargeHoldersBody({
     return (
         <ul className="grid gap-2 md:grid-cols-2">
             {rows.map(filing => (
-                <FilingRow
-                    key={`${filing.filingDate}-${filing.filer}-${filing.form}-${filing.url}`}
-                    filing={filing}
-                />
+                <LargeHolderCard key={largeHolderKey(filing)} filing={filing} />
             ))}
         </ul>
     );
@@ -172,7 +74,6 @@ export function LargeHoldersSection({
 }: LargeHoldersSectionProps) {
     const t = useTranslations('widgets.investor-flows');
     const locale = useResolvedLocale();
-    const rows = filings === null ? [] : buildLargeHolderRows(filings);
     return (
         <section
             aria-labelledby={HEADING_ID}
@@ -200,7 +101,6 @@ export function LargeHoldersSection({
             </div>
             <LargeHoldersBody
                 filings={filings}
-                rows={rows}
                 temporarilyUnavailable={temporarilyUnavailable}
             />
         </section>

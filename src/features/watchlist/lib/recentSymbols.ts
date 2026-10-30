@@ -7,21 +7,13 @@
  */
 import { RECENT_SYMBOLS_MAX } from '@/shared/config/watchlist';
 import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
-import type { StorageLike } from './localWatchlist';
+import { getDefaultLocalStorage, type StorageLike } from './browserStorage';
 
+/** 최근 본 종목 한 건(저장 형식 그대로). `viewedAt`은 epoch ms. */
 export interface RecentSymbolEntry {
     symbol: string;
     label: string;
     viewedAt: number;
-}
-
-function getDefaultStorage(): StorageLike | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        return window.localStorage;
-    } catch {
-        return null;
-    }
 }
 
 function toEntry(item: unknown): RecentSymbolEntry[] {
@@ -42,6 +34,7 @@ function toEntry(item: unknown): RecentSymbolEntry[] {
     return [{ symbol, label: label.length > 0 ? label : symbol, viewedAt }];
 }
 
+/** 저장된 원문을 최근 본 순 목록으로(심볼 중복 제거·상한까지). 깨진 값은 빈 목록이다. */
 export function parseRecentSymbols(raw: string | null): RecentSymbolEntry[] {
     if (!raw) return [];
     try {
@@ -63,8 +56,9 @@ export function parseRecentSymbols(raw: string | null): RecentSymbolEntry[] {
     }
 }
 
+/** 저장소에서 읽어 파싱한다. 저장소가 없거나 읽기가 던지면 빈 목록. */
 export function readRecentSymbols(
-    storage: StorageLike | null = getDefaultStorage()
+    storage: StorageLike | null = getDefaultLocalStorage()
 ): RecentSymbolEntry[] {
     if (!storage) return [];
     try {
@@ -84,7 +78,7 @@ export function readRecentSymbols(
 export function recordRecentSymbol(
     entry: { symbol: string; label: string },
     now: number,
-    storage: StorageLike | null = getDefaultStorage()
+    storage: StorageLike | null = getDefaultLocalStorage()
 ): boolean {
     if (!storage) return false;
     const symbol = entry.symbol.trim().toUpperCase();

@@ -1,5 +1,5 @@
 /**
- * `loadNewsList`(React.cache) 요청 내 dedup을 고정한다 — 본문과 `NewsListSection`이 같은 목록을
+ * `loadSymbolNewsList`(React.cache) 요청 내 dedup을 고정한다 — 본문과 `NewsListSection`이 같은 목록을
  * 읽어도 `staticSymbolCache`(캐시 핸들러·S3 GET)를 한 번만 거친다.
  *
  * vitest는 RSC 요청 스코프가 없어 실제 `React.cache`가 메모하지 않는다. 그래서 `cache`를
@@ -40,7 +40,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -67,7 +67,7 @@ vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn(),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -121,6 +121,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
         fullTitle: 'T | SIGLENS',
@@ -135,7 +139,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
@@ -144,11 +147,11 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NewsListSection } from '@/app/[locale]/[symbol]/news/page';
+import { NewsListSection } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getNewsList } from '@/entities/news-article/api';
 
-describe('loadNewsList 요청 내 dedup', () => {
+describe('loadSymbolNewsList 요청 내 dedup', () => {
     beforeEach(() => {
         requestMemo.clear();
         vi.mocked(staticSymbolCache).mockClear();

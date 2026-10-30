@@ -1,5 +1,5 @@
 const { mockLoadBarsData } = vi.hoisted(() => ({ mockLoadBarsData: vi.fn() }));
-vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: mockLoadBarsData,
 }));
 vi.mock('@/entities/bars/lib/symbolFearGreed', () => ({

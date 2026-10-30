@@ -2,7 +2,7 @@ import 'server-only';
 import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import {
     lastBarIsForming,
     lastCompletedDailyClose,
@@ -32,8 +32,8 @@ import {
 import {
     getNextEarningsSchedule,
     listReportedEarningsDates,
-    type NextEarningsSchedule,
 } from '@/entities/earnings-report/api';
+import type { NextEarningsSchedule } from '@/entities/earnings-report/model';
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';

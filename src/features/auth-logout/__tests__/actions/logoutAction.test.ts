@@ -17,9 +17,8 @@ vi.mock('next/headers', () => ({
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
-// 핸드오프 스토어는 Redis 발급만 가짜로 두고 URL 빌더는 실제 것을 쓴다.
-vi.mock('@/entities/auth/lib/handoffStore', async () => ({
-    ...(await vi.importActual('@/entities/auth/lib/handoffStore')),
+// Redis 발급만 가짜로 둔다. URL 빌더(handoffRedirect)는 실제 것을 쓴다.
+vi.mock('@/entities/auth/server/handoffStore', () => ({
     issueLogoutCode: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -63,7 +62,7 @@ import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { issueLogoutCode } from '@/entities/auth/lib/handoffStore';
+import { issueLogoutCode } from '@/entities/auth/server/handoffStore';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockLogout = logoutUser as MockedFunction<typeof logoutUser>;
@@ -125,6 +124,26 @@ describe('logoutAction', () => {
             '[logoutAction] unexpected error:',
             expect.any(Error)
         );
+
+        errorSpy.mockRestore();
+    });
+
+    it('logoutUser가 실패해도 세션·힌트 쿠키를 만료시킨다', async () => {
+        getSpy.mockReturnValue({ value: 'tok' });
+        mockLogout.mockRejectedValue(new Error('DB connection lost'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT:/');
+        expect(setSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_session',
+                value: '',
+                maxAgeSeconds: 0,
+            })
+        );
+        expect(setSpy).toHaveBeenCalledWith({ name: 'auth_hint', value: '' });
 
         errorSpy.mockRestore();
     });
@@ -233,6 +252,12 @@ describe('logoutAction', () => {
             await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT');
             expect(mockRedirect).toHaveBeenLastCalledWith(
                 'https://ai.siglens.io/?sso=none'
+            );
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_session',
+                    maxAgeSeconds: 0,
+                })
             );
             errorSpy.mockRestore();
         });

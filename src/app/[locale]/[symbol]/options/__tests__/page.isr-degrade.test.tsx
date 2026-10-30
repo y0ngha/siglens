@@ -22,7 +22,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -30,7 +30,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
     hasOptionsMarket: vi.fn(),
 }));
@@ -52,7 +52,7 @@ vi.mock('@/widgets/options/OptionsEmptyState', () => ({
         <section data-testid="options-empty-state" data-symbol={symbol} />
     ),
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
@@ -78,6 +78,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolOptionsSeoContent: vi.fn().mockReturnValue({
         title: '',
@@ -86,7 +90,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 
 import {
@@ -99,11 +102,11 @@ import {
 } from 'vitest';
 import { isValidElement, type ReactNode } from 'react';
 import OptionsPage from '@/app/[locale]/[symbol]/options/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
-} from '@/entities/options-chain/lib/optionsDataCache';
+} from '@/entities/options-chain/server/optionsDataCache';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

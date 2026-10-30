@@ -54,3 +54,31 @@ export function resolveCalendarInterpretation(
 ): string | null {
     return event.interpretationLocalized ?? event.interpretationKo ?? null;
 }
+
+/**
+ * 캘린더를 수집·표시하는 국가 코드.
+ *
+ * `/economy`(미국)와 `/economy/kr`(한국)이 같은 `economic_calendar` 테이블을
+ * `country` 컬럼으로 나눠 쓴다. FMP는 한 번의 호출로 전 국가를 돌려주고 우리가
+ * 국가로 거른다.
+ *
+ * **왕복은 국가별로 따로 난다.** 매시간 창(`CALENDAR_RECENT_PAST_DAYS` ~ 미래
+ * `CALENDAR_INGESTION_WINDOW_DAYS`일)은 두 국가가 같지만 `fmpGet`에 데이터 캐시가 없어
+ * 같은 전 국가 응답(~1MB)을 국가마다 한 번씩 받는다. 범위로 캐시해 두 국가가 나눠 쓰면 시간당
+ * 한 번으로 줄일 수 있다(아직 하지 않았다). 한국만 쓰는 앞쪽 과거는 하루 한 번 따로 읽는다.
+ */
+export type CalendarCountry = 'US' | 'KR';
+
+/**
+ * 발표가 끝난 이벤트 한 건 — 한국 지표 카드(`buildKrIndicatorCards`)가 소비하는 최소 형상.
+ * 리포지토리 `listAnnouncedSince`가 `actual IS NOT NULL`로 걸러 돌려준다.
+ */
+export interface AnnouncedEventPoint {
+    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(존 표시 없는 UTC — ET 아님. 컬럼명만 과거 오인대로 남아 있다). */
+    dateEt: string;
+    event: string;
+    /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */
+    actual: number;
+    previous: number | null;
+    unit: string;
+}

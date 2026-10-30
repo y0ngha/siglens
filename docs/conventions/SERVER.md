@@ -120,6 +120,10 @@ misconfiguration that makes every request pay the full provider cost shows up in
 cause is lost. Do not leave debug
 `console.log` calls in actions, API modules or adapters; logging belongs at the boundary that handles the failure.
 
+`logActionError` is for DB (Drizzle) failures only: it logs just the error `name` and driver `cause.code` so bound
+params never reach the logs. A catch that mostly receives LLM, core, Redis or provider errors keeps
+`console.error(tag, err)`, because those errors carry the message and status that explain the failure.
+
 ```typescript
 // ❌ no trace of the cause
 catch (err) { return { error: 'service_unavailable' }; }
@@ -286,6 +290,35 @@ and states it as fact.
 - ❌ `catch { return [] }` in a tool's data read, so the model reports "no indicators this period".
 - ✅ The catch returns `{ unavailable: true }` (or the field is flagged), and the tool result says the data could not
   be loaded.
+
+A refactor or "defensive" touch-up of a provider parser keeps the same failure mode. Skipping a malformed row
+(`if (!row?.title) continue`, `?? []`) where the code used to throw turns a provider contract break into silently
+missing data, and the caller can no longer degrade or retry. Add a tolerance only when the provider is known to emit
+that shape, and pin it with a test.
+
+- ❌ Adding `.filter((row) => row?.title)` to a news mapper that used to throw on a title-less row.
+- ✅ Keep the throw (or return the error result); the surrounding catch logs and degrades per SA-4.
+<a id="SA-19"></a>
+
+#### SA-19 — Log database errors through `logActionError`, never the raw error
+
+A `DrizzleQueryError` message embeds the failed statement's bound parameters, so `console.error(tag, error)` writes
+user input (ciphertext of a stored key, free-text titles, personal data) into server logs. Log a caught DB error with
+`logActionError(tag, error)` from `shared/lib/logActionError`, which records only the error name and the driver code.
+This refines SA-4: the failure is still logged before degrading, just not with the raw object.
+
+- ❌ `catch (error) { console.error('[saveKeyAction]', error); return { ok: false }; }`
+- ✅ `catch (error) { logActionError('[saveKeyAction]', error); return { ok: false }; }`
+
+<a id="SA-20"></a>
+
+#### SA-20 — Validators check semantic validity, not only shape
+
+A format regex proves the shape, not that the value exists. Validate the meaning too (a real calendar date, an email
+that parses, an error code that something actually emits) before acting on it or showing a success state.
+
+- ❌ `/^\d{4}-\d{2}-\d{2}$/.test(date)` accepts `2026-13-45`.
+- ✅ The pattern check is followed by a calendar check (round-trip the parsed date) before the value is used.
 
 ---
 

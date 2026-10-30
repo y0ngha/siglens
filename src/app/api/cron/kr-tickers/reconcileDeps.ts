@@ -7,9 +7,9 @@ import {
     DrizzleKoreanTickerRepository,
     DrizzleProfileDescriptionTranslationRepository,
 } from '@/entities/ticker/api';
-import { invalidateKoreanTickerCache } from '@/entities/ticker/lib/koreanNameStore';
-import { translateCompanyNames } from '@/entities/ticker/lib/koreanTranslator';
-import type { ReconcileUsTickerNamesDeps } from '@/entities/ticker/lib/reconcileUsTickerNames';
+import { invalidateKoreanTickerCache } from '@/entities/ticker/server/koreanNameStore';
+import { translateCompanyNames } from '@/entities/ticker/server/koreanTranslator';
+import type { ReconcileUsTickerNamesDeps } from '@/entities/ticker/server/reconcileUsTickerNames';
 
 /**
  * `reconcileUsTickerNames`의 실제 의존을 만든다. I/O 구성(DB 클라이언트·FMP·태그 무효화)을

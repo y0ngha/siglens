@@ -9,7 +9,7 @@ vi.mock('@/entities/ticker/api', () => ({
             upsert: vi.fn().mockResolvedValue(undefined),
         })),
 }));
-vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
+vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
     translateCompanyDescription: vi.fn().mockResolvedValue('translated desc'),
 }));
 // 모킹된 FmpFundamentalClient의 단일 인스턴스 메서드 핸들. getFundamentalDataProvider가

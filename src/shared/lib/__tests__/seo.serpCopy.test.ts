@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
     buildSymbolFearGreedSeoContent,
     buildSymbolNewsSeoContent,
+} from '../seoSymbol';
+import {
     clampSeoDescription,
     SEO_TITLE_MAX_WIDTH,
     seoTitleWidth,
-} from '../seo';
+} from '../seoClamp';
 import koMessages from '@/../messages/ko.json';
 import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';

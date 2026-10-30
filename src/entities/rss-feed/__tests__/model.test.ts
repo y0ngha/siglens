@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
+import {
+    CATEGORY_CONFIG,
+    NEWS_CATEGORY_SLUGS,
+} from '@/entities/market-news/lib/categoryConfig';
 import {
     economyHubPath,
     marketHubPath,
@@ -22,9 +25,9 @@ describe('허브 경로 helper', () => {
     });
 
     it('뉴스 허브는 카테고리 slug 경로다 — 모든 카테고리', () => {
-        for (const [category, config] of Object.entries(CATEGORY_CONFIG)) {
-            expect(newsHubPath(category as keyof typeof CATEGORY_CONFIG)).toBe(
-                `/news/${config.slug}`
+        for (const category of NEWS_CATEGORY_SLUGS) {
+            expect(newsHubPath(category)).toBe(
+                `/news/${CATEGORY_CONFIG[category].slug}`
             );
         }
     });

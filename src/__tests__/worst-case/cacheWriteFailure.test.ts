@@ -28,20 +28,20 @@ vi.mock('@/shared/db/client', async importOriginal => ({
     tryGetDatabaseClient: vi.fn().mockReturnValue(null),
 }));
 
-vi.mock('@/entities/ticker/lib/fmpTickerApi', () => ({
+vi.mock('@/entities/ticker/server/fmpTickerApi', () => ({
     searchBySymbol: vi.fn().mockResolvedValue([]),
     searchByName: vi.fn().mockResolvedValue([]),
     filterUsExchanges: vi.fn().mockReturnValue([]),
     toTickerSearchResult: vi.fn((r: unknown) => r),
 }));
 
-vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
+vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     getKoreanNames: vi.fn().mockResolvedValue({}),
     setKoreanTickers: vi.fn().mockResolvedValue(undefined),
     searchByKoreanName: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
+vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
     translateCompanyNames: vi.fn().mockResolvedValue({}),
 }));
 
@@ -59,7 +59,7 @@ vi.mock('@/shared/lib/backgroundTask', () => ({
 import {
     searchTicker,
     _resetInFlightTranslationsForTest,
-} from '@/entities/ticker/lib/searchTicker';
+} from '@/entities/ticker/server/searchTicker';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 
 const mockCreateCacheProvider = createCacheProvider as ReturnType<typeof vi.fn>;

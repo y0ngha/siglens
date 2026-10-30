@@ -4,10 +4,12 @@ import {
     CHART_DATA_SNAPSHOT_INDICATORS,
     type ChartDataIndicatorName,
 } from './chartDataIndicators';
+import { isRecord } from './isRecord';
 
 /** 봉마다 하나씩 정렬된 시리즈 — 워밍업 구간은 `null`. */
 type Series = readonly unknown[];
 
+/** `get_chart_data` 응답의 OHLCV 열 — 각 배열이 `time`과 같은 길이·순서다. */
 export interface ChartDataOhlcv {
     open: number[];
     high: number[];
@@ -16,6 +18,7 @@ export interface ChartDataOhlcv {
     volume: number[];
 }
 
+/** `get_chart_data` 응답 본문. */
 export interface ChartData {
     symbol: string;
     timeframe: Timeframe;
@@ -27,6 +30,7 @@ export interface ChartData {
     indicators: Record<string, unknown>;
 }
 
+/** `buildChartData`의 입력 — 전체 룩백으로 계산된 봉·지표와 내보낼 구간·지표 선택. */
 export interface BuildChartDataInput {
     symbol: string;
     timeframe: Timeframe;
@@ -45,10 +49,6 @@ export interface BuildChartDataInput {
 function tail(series: Series, size: number): unknown[] {
     if (series.length >= size) return series.slice(series.length - size);
     return [...Array<null>(size - series.length).fill(null), ...series];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**

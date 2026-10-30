@@ -23,6 +23,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { FunnelEventContext } from '@/shared/lib/funnel/funnelEvents';
 import { LOCALES } from '@/shared/i18n/locales';
+import { EMAIL_MAX_LENGTH } from '@/shared/config/email';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
@@ -32,7 +33,6 @@ import {
     USER_TIER_VALUES,
 } from './constants';
 
-const EMAIL_MAX_LENGTH = 320;
 const SYMBOL_MAX_LENGTH = 32;
 const EXCHANGE_MAX_LENGTH = 32;
 const FMP_SYMBOL_MAX_LENGTH = 64;
@@ -879,7 +879,7 @@ const CONTENT_HASH_LENGTH = 64; // sha256 hex
  * - `userId`는 SET NULL on delete — 탈퇴한 사용자의 공유 링크는 사라지지 않고
  *   익명 스냅샷으로 유지된다(링크가 살아있으면 내용은 보여야 함).
  * - `expiresAt` 만료 행은 현재 앱 레벨의 `isExpired()` 필터로 읽기 시 걸러지며,
- *   DB 물리 삭제 크론은 아직 미구현이다(tracked follow-up: docs/reference/CRON.md §pending).
+ *   DB 물리 삭제 크론은 아직 미구현이다(후속 작업으로 남아 있다).
  *   만료 행이 누적되어도 쿼리 결과에는 노출되지 않는다.
  */
 export const sharedAnalyses = pgTable(
@@ -898,7 +898,7 @@ export const sharedAnalyses = pgTable(
         /**
          * Tier of the user who created the share — stored as cheap metadata.
          * Not read on the current view path; reserved for tier-based field masking
-         * on the viewer side (spec §12 follow-up). Column is intentionally kept
+         * on the viewer side (follow-up). Column is intentionally kept
          * to avoid a destructive migration once the follow-up ships.
          */
         sharerTier: userTierEnum('sharer_tier').notNull().default('free'),
@@ -927,7 +927,7 @@ export const sharedAnalyses = pgTable(
 );
 
 /**
- * SEO 분석 스냅샷 — 심볼×탭당 last-known-good 1행 (spec 2026-07-24 §5).
+ * SEO 분석 스냅샷 — 심볼×탭당 last-known-good 1행.
  * SSR "최근 분석 요약" 섹션의 유일한 데이터 소스. pre-warm cron만 write하고
  * 실패 시 이전 행이 유지된다(fail-open). content는 core 정규화 타입드 결과
  * (탭별 스키마 상이 — HTML 아님, 렌더러가 산문 변환).
@@ -1012,7 +1012,7 @@ export const seoAnalysisSnapshots = pgTable(
  *   한국어로 닫은 공지가 영어로 다시 뜬다. 사이드카는 원본 `id`를 유지한다.
  * - `shared_analyses`는 `content_hash` 단독 unique로 dedupe한다. 원본 행에
  *   `locale`을 더하면 먼저 저장된 한국어 행을 영어 사용자가 물려받는다
- *   (설계 §2.5 주의). 사이드카는 그 제약을 건드리지 않는다.
+ *   (먼저 저장된 행이 다른 로케일 사용자에게 노출된다). 사이드카는 그 제약을 건드리지 않는다.
  *
  * **한계(의도적)**
  * - 원본 행과의 FK가 없다 — `entity_id`가 테이블마다 타입이 달라(uuid/text)

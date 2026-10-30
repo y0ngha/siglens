@@ -7,6 +7,7 @@ import {
 } from '@/shared/config/time';
 import { prewarmSessionSpecFor } from './applicability';
 import { snapshotCloseBoundaryFor } from './freshness';
+import { asRecord } from './narrowJson';
 
 const CRYPTO_SETTLE_BUFFER_MS = SETTLE_BUFFER_MINUTES * MS_PER_MINUTE;
 
@@ -22,6 +23,28 @@ function isCryptoBasisStale(
     const analyzedAfterItCompleted =
         analyzedAtMs !== null && analyzedAtMs >= dayStartMs;
     return !(usedLastCompletedBar && analyzedAfterItCompleted);
+}
+
+/** 스냅샷 글이 어느 데이터 시점의 것인지(`readSnapshotBasis`가 읽은 결과). */
+export interface SnapshotBasis {
+    /** 분석에 쓴 마지막 봉의 시작 시각(ms). 없으면 null. */
+    readonly barTimeMs: number | null;
+    /** 분석 실행 시각(ms). 없으면 null. */
+    readonly analyzedAtMs: number | null;
+    /** 글의 기준 가격(`dataAsOf.close`, 없으면 `planCheck.currentPrice`). 없으면 null. */
+    readonly close: number | null;
+}
+
+function positiveFinite(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0
+        ? value
+        : null;
+}
+
+function parseInstantMs(value: unknown): number | null {
+    if (typeof value !== 'string') return null;
+    const ms = new Date(value).getTime();
+    return Number.isNaN(ms) ? null : ms;
 }
 
 /**
@@ -40,33 +63,6 @@ function isCryptoBasisStale(
  * 설치된 core 타입에 `dataAsOf`가 없을 수 있어(core 릴리스 순서와 무관하게 배포 가능해야
  * 한다) 타입 단언 없이 `unknown`을 좁혀 읽는다. 어느 필드가 없어도 던지지 않는다.
  */
-export interface SnapshotBasis {
-    /** 분석에 쓴 마지막 봉의 시작 시각(ms). 없으면 null. */
-    readonly barTimeMs: number | null;
-    /** 분석 실행 시각(ms). 없으면 null. */
-    readonly analyzedAtMs: number | null;
-    /** 글의 기준 가격(`dataAsOf.close`, 없으면 `planCheck.currentPrice`). 없으면 null. */
-    readonly close: number | null;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null
-        ? (value as Record<string, unknown>)
-        : null;
-}
-
-function positiveFinite(value: unknown): number | null {
-    return typeof value === 'number' && Number.isFinite(value) && value > 0
-        ? value
-        : null;
-}
-
-function parseInstantMs(value: unknown): number | null {
-    if (typeof value !== 'string') return null;
-    const ms = new Date(value).getTime();
-    return Number.isNaN(ms) ? null : ms;
-}
-
 export function readSnapshotBasis(content: unknown): SnapshotBasis {
     const root = asRecord(content);
     if (root === null) {

@@ -4,10 +4,8 @@ import {
     type ApiErrorDoc,
     type ApiErrorScope,
 } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
-import {
-    buildApiToolReference,
-    type ApiToolReference,
-} from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import { buildApiToolReference } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
+import type { ApiToolReference } from '@/entities/siglens-api-key/model';
 import {
     FRESH_ANALYSIS_TOOL,
     renderChartDataNotes,
@@ -28,13 +26,16 @@ import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
 import { USER_TIER_VALUES } from '@/shared/db/constants';
 import type { YamlValue } from '@/shared/lib/toYaml';
 
+/** 생성 문서가 따르는 OpenAPI 명세 버전. */
 export const OPENAPI_VERSION = '3.1.0';
 
 /** `info.version` — API 계약의 버전이다(경로 접두 `/v1`과 함께 움직인다). 앱 버전이 아니다. */
 export const OPENAPI_API_VERSION = '1.0.0';
 
+/** YAML 직렬화(`toYaml`)에 그대로 넘길 수 있는 OpenAPI 객체. `undefined` 값은 직렬화에서 빠진다. */
 export type OpenApiObject = { [key: string]: YamlValue | undefined };
 
+/** `buildOpenApiDocument`가 만드는 최상위 문서. */
 export interface OpenApiDocument extends OpenApiObject {
     openapi: string;
     info: OpenApiObject;
@@ -45,6 +46,7 @@ export interface OpenApiDocument extends OpenApiObject {
     components: OpenApiObject;
 }
 
+/** `buildOpenApiDocument` 입력. */
 export interface BuildOpenApiDocumentInput {
     /** 사이트 origin(끝 슬래시 없음). 예: `https://siglens.io` */
     baseUrl: string;

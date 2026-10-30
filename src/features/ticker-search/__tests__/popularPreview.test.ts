@@ -1,23 +1,16 @@
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
 import { describe, expect, it } from 'vitest';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
-import { POPULAR_PREVIEW_GROUPS } from '@/features/ticker-search/lib/popularPreview';
+import {
+    POPULAR_PREVIEW_GROUPS,
+    popularNameKey,
+} from '@/features/ticker-search/lib/popularPreview';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /**
  * 이 목록의 계약은 두 가지다 — **세 자산군을 대표할 것**, 그리고 **손으로 적은 네 번째
  * 목록이 되지 않을 것**. 아래 테스트가 그 둘을 고정한다.
  */
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
-
 describe('POPULAR_PREVIEW_GROUPS', () => {
     it('미국·한국·암호화폐를 모두 담는다', () => {
         // 첫 방문자(최근 검색 없음)가 보는 유일한 화면이다. 미국 종목만 있으면
@@ -53,14 +46,14 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
     it.each(['ko', 'en', 'ja', 'zh'] as const)(
         '%s 카탈로그에 인기 종목 이름이 다 있다',
         locale => {
-            const table = CATALOGS[locale].shared.assetName as Record<
+            const table = MESSAGE_CATALOGS[locale].shared.assetName as Record<
                 string,
                 string
             >;
             for (const group of POPULAR_PREVIEW_GROUPS) {
                 for (const symbol of group.items) {
                     // next-intl은 `.`를 중첩 구분자로 쓴다 — `useAssetLabel`과 같은 치환.
-                    const key = symbol.replace(/\./g, '_');
+                    const key = popularNameKey(symbol);
                     expect(table[key], `${locale}: ${symbol}`).toBeTruthy();
                 }
             }
@@ -76,21 +69,23 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
     it.each(['ko', 'en', 'ja', 'zh'] as const)(
         '%s: popularName 표가 assetName과 같은 값이다',
         locale => {
-            const wide = CATALOGS[locale].shared.assetName as Record<
+            const wide = MESSAGE_CATALOGS[locale].shared.assetName as Record<
                 string,
                 string
             >;
             const narrow = (
-                CATALOGS[locale].features['ticker-search'] as unknown as {
+                MESSAGE_CATALOGS[locale].features[
+                    'ticker-search'
+                ] as unknown as {
                     popularName: Record<string, string>;
                 }
             ).popularName;
             const symbols = POPULAR_PREVIEW_GROUPS.flatMap(g => g.items);
             expect(Object.keys(narrow).toSorted()).toEqual(
-                symbols.map(s => s.replace(/\./g, '_')).toSorted()
+                symbols.map(popularNameKey).toSorted()
             );
             for (const symbol of symbols) {
-                const key = symbol.replace(/\./g, '_');
+                const key = popularNameKey(symbol);
                 expect(narrow[key], `${locale}: ${symbol}`).toBe(wide[key]);
             }
         }
@@ -98,13 +93,13 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
 
     it('비-ko 카탈로그의 인기 종목 이름에 한글이 없다', () => {
         for (const locale of ['en', 'ja', 'zh'] as const) {
-            const table = CATALOGS[locale].shared.assetName as Record<
+            const table = MESSAGE_CATALOGS[locale].shared.assetName as Record<
                 string,
                 string
             >;
             for (const group of POPULAR_PREVIEW_GROUPS) {
                 for (const symbol of group.items) {
-                    const key = symbol.replace(/\./g, '_');
+                    const key = popularNameKey(symbol);
                     expect(table[key], `${locale}: ${symbol}`).not.toMatch(
                         /[가-힣]/
                     );
@@ -116,5 +111,9 @@ describe('POPULAR_PREVIEW_GROUPS', () => {
     it('한국 그룹은 실제 국내 종목을 담는다', () => {
         const kr = POPULAR_PREVIEW_GROUPS.find(g => g.labelKey === 'kr');
         expect(kr?.items.every(s => /\.(KS|KQ)$/.test(s))).toBe(true);
+    });
+
+    it('popularNameKey는 심볼의 `.`을 `_`로 바꾼다', () => {
+        expect(popularNameKey('005930.KS')).toBe('005930_KS');
     });
 });

@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { constants } from 'node:http2';
-import { getClientIp } from '@/shared/api/getClientIp';
-import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
-import { searchLimiter } from './searchLimiter';
+import { resolveLimiterKey } from '@/app/api/_shared/limiterKey';
+import { searchLimiter } from '@/app/api/search/searchLimiter';
 import {
     MAX_SEARCH_QUERY_LENGTH,
     searchTickerQuery,
-} from '@/entities/ticker/lib/searchTickerQuery';
+} from '@/entities/ticker/server/searchTickerQuery';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 // 요청 URL(`?q=`)을 읽으므로 빌드 시점에 굳을 수 없다. 캐시는 아래 `Cache-Control`이 맡는다.
@@ -32,18 +31,6 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const { HTTP_STATUS_TOO_MANY_REQUESTS } = constants;
 
 /**
- * 한도 키로 쓸 IP. 던지지 않는다 — IP 해석이 실패하면 공용 버킷 하나로 센다
- * (`/api/client-error`의 `reporterKey`와 같은 처리).
- */
-async function clientKey(): Promise<string> {
-    try {
-        return await getClientIp();
-    } catch {
-        return UNKNOWN_CLIENT_IP;
-    }
-}
-
-/**
  * 티커 검색 — `?q=`. 결과는 `TickerSearchResult[]`.
  *
  * Server Action(POST)에서 옮긴 이유는 `searchTickerQuery` JSDoc 참고: GET이면 브라우저·CDN이
@@ -56,7 +43,7 @@ async function clientKey(): Promise<string> {
  * IP별 상한(`searchLimiter`)을 넘으면 검색하지 않고 **429**(no-store)로 답한다.
  */
 export async function GET(request: Request): Promise<Response> {
-    if (!searchLimiter.admit(await clientKey(), Date.now())) {
+    if (!searchLimiter.admit(await resolveLimiterKey(), Date.now())) {
         return NextResponse.json(
             { error: 'rate_limited' },
             {

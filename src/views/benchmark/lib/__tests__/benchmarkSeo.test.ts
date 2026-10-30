@@ -1,12 +1,7 @@
 import { createTranslator } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import ko from '../../../../../messages/ko.json';
-import en from '../../../../../messages/en.json';
-import ja from '../../../../../messages/ja.json';
-import zh from '../../../../../messages/zh.json';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
-
-const CATALOGS = { ko, en, ja, zh } as const;
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 vi.mock('next-intl/server', () => ({
     getTranslations: vi.fn(
@@ -19,7 +14,7 @@ vi.mock('next-intl/server', () => ({
         }) =>
             createTranslator({
                 locale,
-                messages: CATALOGS[locale],
+                messages: MESSAGE_CATALOGS[locale],
                 namespace,
             } as never)
     ),

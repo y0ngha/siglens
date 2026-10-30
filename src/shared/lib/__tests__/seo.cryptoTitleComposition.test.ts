@@ -1,14 +1,13 @@
 import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { type SeoTranslator } from '@/shared/lib/seo';
 import {
     buildCryptoSymbolSeoContent,
     buildCryptoSymbolNewsSeoContent,
     buildCryptoSymbolOverallSeoContent,
     buildCryptoSymbolFearGreedSeoContent,
-    seoTitleWidth,
-    SEO_TITLE_MAX_WIDTH,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
+import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '@/shared/lib/seoClamp';
 import {
     SEO_WORST_CASE_KOREAN_NAME,
     SEO_WORST_CASE_TICKER,

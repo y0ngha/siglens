@@ -28,7 +28,7 @@ import {
     drainIndexNow,
     enqueueIndexNow,
 } from '../indexNowQueue';
-import type { IndexNowOutcome, IndexNowResult } from '../indexNow';
+import type { IndexNowOutcome, IndexNowResult } from '@/shared/api/indexNow';
 
 const NOW = new Date('2026-10-05T12:00:00Z');
 const DAY = 86_400_000;

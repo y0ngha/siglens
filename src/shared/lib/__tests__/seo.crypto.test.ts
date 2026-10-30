@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { type SeoTranslator } from '../seo';
 import {
     buildCryptoSymbolSeoContent,
     buildCryptoSymbolNewsSeoContent,
@@ -12,9 +13,8 @@ import {
     buildSymbolNewsSeoContent,
     buildSymbolOverallSeoContent,
     buildSymbolFearGreedSeoContent,
-    SEO_DESCRIPTION_MAX_LENGTH,
-    type SeoTranslator,
-} from '../seo';
+} from '../seoSymbol';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '../seoClamp';
 
 // t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 builder 호출에 재사용한다.

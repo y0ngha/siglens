@@ -23,12 +23,12 @@ vi.mock('@/entities/watchlist/api', () => ({
         };
     }),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
 import { addWatchlistItemAction } from '@/entities/watchlist/actions/addWatchlistItemAction';
 import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';

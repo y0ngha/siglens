@@ -1,16 +1,40 @@
+/**
+ * Server-side copy for `ai.siglens.io/about`: the metadata copy, the FAQ shared
+ * with the `FAQPage` JSON-LD, and the example conversations for the replay.
+ */
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
 import type { AiSeoCopy } from '@/shared/config/aiHost';
-import type { Locale } from '@/shared/i18n/locales';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { FaqItem } from '@/shared/lib/seo';
-import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/guestTurnLimit';
+import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/utils/guestTurnLimit';
 import {
     parseReplayLine,
+    type ReplayLine,
     type ReplayScenario,
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
 
-type AboutT = Awaited<ReturnType<typeof getTranslations>>;
+/** The `views.ai-about` translator the builders below read from. */
+export type AboutT = Awaited<ReturnType<typeof getTranslations>>;
+
+/**
+ * Every example answer has the same shape: a lead paragraph, three bullets and
+ * a closing paragraph. Fixing it here keeps the five scenarios from drifting.
+ */
+const ANSWER_LINE_KINDS = ['p', 'li', 'li', 'li', 'p'] as const;
+
+/**
+ * One `unknown` per element of `T`. The type parameter is what keeps the
+ * result a tuple: a mapped type over a concrete `typeof tuple` maps the keys
+ * into a plain object with `length: unknown`, so extra elements slip through.
+ */
+type RawsFor<T extends readonly unknown[]> = {
+    readonly [K in keyof T]: unknown;
+};
+
+/** One `t.raw` value per entry of {@link ANSWER_LINE_KINDS}, exactly as many. */
+export type AnswerRaws = RawsFor<typeof ANSWER_LINE_KINDS>;
 
 /** Title, description and OG label for `/about`'s metadata. */
 export async function getAboutSeoCopy(locale: Locale): Promise<AiSeoCopy> {
@@ -45,16 +69,36 @@ export async function getAboutFaq(locale: Locale): Promise<FaqItem[]> {
 }
 
 /**
- * Example conversations for the replay. Every string is a literal `t()` /
- * `t.raw()` call so the i18n extractor sees the keys as used. Answer lines go
- * through `t.raw` because they carry `<b>`/`<up>`/`<down>` markup that
- * `replayScript` parses, not ICU rich text.
+ * The list format for the tool labels in a replay summary. The summary is a
+ * translated sentence, so its list follows the locale too: a fixed `', '` puts
+ * Latin commas into the ja/zh sentences, which separate list items with `、`.
  */
-export function buildScenarios(t: AboutT): ReplayScenario[] {
-    // Answer lines are plain strings in every catalog (`messages/*.json`,
-    // checked by `i18n:verify`); `t.raw` is typed loosely because a key could
-    // hold a nested object, which none of these do.
-    const tRaw = (key: string) => t.raw(key) as string;
+function toolListFormat(locale: Locale): Intl.ListFormat {
+    return new Intl.ListFormat(INTL_LOCALE[locale], {
+        style: 'long',
+        type: 'conjunction',
+    });
+}
+
+/**
+ * Parses one answer's raw catalog strings into replay lines. Answer lines are
+ * read with `t.raw` because they carry `<b>`/`<up>`/`<down>` markup that
+ * `replayScript` parses, not ICU rich text; every catalog holds them as plain
+ * strings (checked by `i18n:verify`), `t.raw` is only typed loosely because a
+ * key could hold a nested object.
+ */
+function answerLines(raws: AnswerRaws): ReplayLine[] {
+    return ANSWER_LINE_KINDS.map((kind, i) =>
+        parseReplayLine(kind, raws[i] as string)
+    );
+}
+
+/**
+ * Example conversations for the replay. Every string is a literal `t()` /
+ * `t.raw()` call so the i18n extractor sees the keys as used.
+ */
+export function buildScenarios(t: AboutT, locale: Locale): ReplayScenario[] {
+    const toolList = toolListFormat(locale);
     const tool = (label: string, subject: string, ms: number): ReplayTool => ({
         label,
         pendingLabel: t('replay.checking', { label }),
@@ -74,7 +118,7 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
         tools,
         lines,
         summary: t('replay.summary', {
-            tools: tools.map(x => x.label).join(', '),
+            tools: toolList.format(tools.map(x => x.label)),
             seconds: (tools.reduce((sum, x) => sum + x.ms, 0) / 1000).toFixed(
                 1
             ),
@@ -95,13 +139,13 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
                 tool(bars, '005930', 1100),
                 tool(t('tool.analysis'), '005930', 780),
             ],
-            [
-                parseReplayLine('p', tRaw('samsung.a1')),
-                parseReplayLine('li', tRaw('samsung.a2')),
-                parseReplayLine('li', tRaw('samsung.a3')),
-                parseReplayLine('li', tRaw('samsung.a4')),
-                parseReplayLine('p', tRaw('samsung.a5')),
-            ],
+            answerLines([
+                t.raw('samsung.a1'),
+                t.raw('samsung.a2'),
+                t.raw('samsung.a3'),
+                t.raw('samsung.a4'),
+                t.raw('samsung.a5'),
+            ]),
             [quote, bars, t('tool.analysis')],
             t('samsung.asOf')
         ),
@@ -113,13 +157,13 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
                 tool(t('tool.company'), 'NVDA', 1000),
                 tool(news, 'NVDA', 820),
             ],
-            [
-                parseReplayLine('p', tRaw('nvda.a1')),
-                parseReplayLine('li', tRaw('nvda.a2')),
-                parseReplayLine('li', tRaw('nvda.a3')),
-                parseReplayLine('li', tRaw('nvda.a4')),
-                parseReplayLine('p', tRaw('nvda.a5')),
-            ],
+            answerLines([
+                t.raw('nvda.a1'),
+                t.raw('nvda.a2'),
+                t.raw('nvda.a3'),
+                t.raw('nvda.a4'),
+                t.raw('nvda.a5'),
+            ]),
             [quote, t('tool.company'), t('nvda.news')],
             t('nvda.asOf')
         ),
@@ -131,13 +175,13 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
                 tool(t('tool.economy'), 'CPI, FOMC', 760),
                 tool(news, t('market.subjectNews'), 900),
             ],
-            [
-                parseReplayLine('p', tRaw('market.a1')),
-                parseReplayLine('li', tRaw('market.a2')),
-                parseReplayLine('li', tRaw('market.a3')),
-                parseReplayLine('li', tRaw('market.a4')),
-                parseReplayLine('p', tRaw('market.a5')),
-            ],
+            answerLines([
+                t.raw('market.a1'),
+                t.raw('market.a2'),
+                t.raw('market.a3'),
+                t.raw('market.a4'),
+                t.raw('market.a5'),
+            ]),
             [t('tool.market'), t('tool.economy'), t('market.news')],
             t('market.asOf')
         ),
@@ -149,13 +193,13 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
                 tool(bars, 'BTC-USD', 1000),
                 tool(t('tool.web'), t('btc.subjectWeb'), 1150),
             ],
-            [
-                parseReplayLine('p', tRaw('btc.a1')),
-                parseReplayLine('li', tRaw('btc.a2')),
-                parseReplayLine('li', tRaw('btc.a3')),
-                parseReplayLine('li', tRaw('btc.a4')),
-                parseReplayLine('p', tRaw('btc.a5')),
-            ],
+            answerLines([
+                t.raw('btc.a1'),
+                t.raw('btc.a2'),
+                t.raw('btc.a3'),
+                t.raw('btc.a4'),
+                t.raw('btc.a5'),
+            ]),
             [quote, bars, t('btc.web')],
             t('btc.asOf')
         ),
@@ -163,13 +207,13 @@ export function buildScenarios(t: AboutT): ReplayScenario[] {
             'nvdaPro',
             t('nvdaPro.q'),
             [tool(quote, 'NVDA', 600), tool(t('tool.options'), 'NVDA', 1200)],
-            [
-                parseReplayLine('p', tRaw('nvdaPro.a1')),
-                parseReplayLine('li', tRaw('nvdaPro.a2')),
-                parseReplayLine('li', tRaw('nvdaPro.a3')),
-                parseReplayLine('li', tRaw('nvdaPro.a4')),
-                parseReplayLine('p', tRaw('nvdaPro.a5')),
-            ],
+            answerLines([
+                t.raw('nvdaPro.a1'),
+                t.raw('nvdaPro.a2'),
+                t.raw('nvdaPro.a3'),
+                t.raw('nvdaPro.a4'),
+                t.raw('nvdaPro.a5'),
+            ]),
             [quote, t('tool.options')],
             t('nvdaPro.asOf')
         ),

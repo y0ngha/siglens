@@ -1,5 +1,6 @@
 import type { ShareableStatus } from '../model/ShareableAnalysisContext';
 
+/** Chart widget flags that decide its share status (passed by ChartContent). */
 export interface DeriveChartStatusInput {
     isAnalyzing: boolean;
     analysisError: boolean;

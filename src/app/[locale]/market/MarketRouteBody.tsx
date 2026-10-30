@@ -1,108 +1,67 @@
-import type { ReactElement } from 'react';
-import { Suspense } from 'react';
+import { Suspense, type ReactElement } from 'react';
 import { getTranslations } from 'next-intl/server';
-import {
-    dehydrate,
-    HydrationBoundary,
-    QueryClient,
-    type DehydratedState,
-} from '@tanstack/react-query';
+import { HydrationBoundary } from '@tanstack/react-query';
+import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
 import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
 import { SectorFactsSummary } from '@/widgets/dashboard/SectorFactsSummary';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
-import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
-import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import {
     toClientScope,
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
-import { RegionTabs } from '@/shared/ui/RegionTabs';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Locale } from '@/shared/i18n/locales';
+import { brandTitle } from '@/shared/lib/brandName';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    localizedAbsoluteUrl,
     SITE_URL,
     SYMBOLS_PATH,
 } from '@/shared/lib/seo';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
-import { isPopularSymbol } from '@/entities/ticker/lib/searchRelevance';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { buildMarketItemListJsonLd } from './_lib/marketItemListJsonLd';
+import { buildMarketDehydratedSeed } from './_lib/marketSeed';
 import { marketCopyFor } from './copy';
-import {
-    loadMarketSignals,
-    type LoadMarketSignalsResult,
-} from './loadMarketSignals';
-import { brandTitle } from '@/shared/lib/brandName';
+import { loadMarketSignals } from './loadMarketSignals';
 
-/**
- * SSR seed를 만들어 dehydrate한다.
- *
- * **컴포넌트 밖에 두는 이유**: `new QueryClient()`를 컴포넌트 본문에서 만들면
- * 클라이언트 컴포넌트에서는 매 렌더 캐시가 날아가는 실수라, 정적 분석이 이를
- * 잡아낸다(react-doctor `query-stable-query-client`). 여기는 서버 컴포넌트라
- * 요청당 새 클라이언트가 **오히려 맞지만**, 규칙이 그 구분을 하지 못한다.
- * 함수로 빼면 의도(요청 스코프 1회용 시드)가 코드에 드러나고 경고도 사라진다.
- *
- * `updatedAt`을 명시하는 이유: React Query `dehydrate` 기본값이 `Date.now()`라
- * 매 ISR 재생성마다 다른 timestamp가 HTML에 박혀 ISR write churn이 생긴다.
- * dateHour 버킷의 시작 시각으로 고정해 같은 시간 안에서는 결정적이 되게 한다.
- */
-function buildDehydratedSeed(
-    scope: DashboardScope,
-    summary: LoadMarketSignalsResult['summary'],
-    sectorDataSeed: LoadMarketSignalsResult['sectorData'],
-    dateHour: string
-): DehydratedState {
-    const stableUpdatedAt = new Date(`${dateHour}:00:00.000Z`).getTime();
-    const queryClient = new QueryClient();
-    queryClient.setQueryData(
-        QUERY_KEYS.marketSummary(scope.id),
-        marketSummarySeed(scope.id, summary),
-        { updatedAt: stableUpdatedAt }
-    );
-    queryClient.setQueryData(
-        QUERY_KEYS.sectorSignals(scope.id, DEFAULT_DASHBOARD_TIMEFRAME),
-        sectorDataSeed,
-        { updatedAt: stableUpdatedAt }
-    );
-    return dehydrate(queryClient);
-}
-
-/**
- * ISR-safe market content. No server searchParams — timeframe/sector are read on
- * the client via `useUrlSearchParam` in SectorSignalPanel. That hook's server
- * snapshot is `null`, so the panel server-renders the default sector/timeframe from
- * the seed below (no CSR bailout) and applies a deep link right after hydration.
- *
- * Static data flow:
- *   1. getMarketSummaryStatic / getSectorSignalsStatic — unstable_cache (1h)
- *   2. peekBriefingStatic — read cached briefing for SSR seed (no side effects)
- *   3. QueryClient.setQueryData — seeds React Query for instant hydration
- *   4. SectorFactsSummary — 영구 서버 sibling(패널 아래), 전 섹터 요약 crawl text
- */
 interface MarketScopeProps {
     readonly scope: DashboardScope;
 }
 
+/**
+ * ISR-safe 시장 본문(패널 2개 + 전 섹터 크롤 텍스트). 서버 searchParams를 읽지 않는다 —
+ * timeframe/sector는 `SectorSignalPanel`이 클라에서 `useUrlSearchParam`으로 읽는다. 그 훅의
+ * 서버 스냅샷이 `null`이라 패널은 아래 seed의 기본 섹터/timeframe으로 서버 렌더되고(CSR
+ * bailout 없음) 딥링크는 하이드레이션 직후 반영된다.
+ *
+ * 데이터 흐름:
+ *   1. getMarketSummaryStatic / getSectorSignalsStatic — unstable_cache (1h)
+ *   2. peekBriefingStatic — 캐시된 브리핑을 SSR seed로 읽는다(부수효과 없음)
+ *   3. QueryClient.setQueryData — React Query에 seed를 넣어 즉시 하이드레이션
+ *   4. SectorFactsSummary — 영구 서버 sibling(패널 아래), 전 섹터 요약 crawl text
+ */
 export async function MarketContent({
     scope,
 }: MarketScopeProps): Promise<ReactElement> {
-    // ISR date-hour key: same hour = same cached briefing peek. Avoids hashing
-    // the full summary object on every ISR render.
+    // ISR date-hour 키: 같은 시간대면 같은 캐시 브리핑 peek를 읽는다 — 매 렌더 summary 전체를
+    // 해싱하지 않는다.
     const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
 
     const { summary, sectorData } = await loadMarketSignals(scope, dateHour);
-    // peekBriefingStatic is read-only — null on cache miss (client will trigger submit)
+    // peek는 읽기 전용 — 캐시 miss면 null이고 클라가 submit한다. 실패도 null로 흡수하되
+    // 조용히 삼키지 않고 로그를 남긴다(SERVER.md#SA-4).
     const peekSeed = await peekBriefingStatic(summary, dateHour, scope).catch(
-        () => null
+        (e: unknown) => {
+            console.error('[MarketContent] peekBriefingStatic failed:', e);
+            return null;
+        }
     );
 
     /**
@@ -117,7 +76,7 @@ export async function MarketContent({
      */
     const sectorDataSeed = { ...sectorData, computedAt: dateHour };
 
-    const dehydratedState = buildDehydratedSeed(
+    const dehydratedState = buildMarketDehydratedSeed(
         scope,
         summary,
         sectorDataSeed,
@@ -147,7 +106,7 @@ export async function MarketContent({
                     />
                 </Suspense>
             </HydrationBoundary>
-            {/* 패널은 이제 서버에서 렌더된다(`useUrlSearchParam` — CSR bailout 없음). 이 경계는
+            {/* 패널은 서버에서 렌더된다(`useUrlSearchParam` — CSR bailout 없음). 이 경계는
                 **안전망**으로만 남긴다: 서버 렌더가 예외적으로 suspend하면 같은 높이의
                 스켈레톤이 자리를 지킨다. fallback엔 스켈레톤만 둔다 — 크롤 텍스트는 fallback이
                 아니라 아래 영구 sibling이 맡는다(fallback은 경계가 resolve되면 클라에서 파괴되고
@@ -162,11 +121,10 @@ export async function MarketContent({
                     initialData={sectorDataSeed}
                 />
             </Suspense>
-            {/* SSR crawl text for **every** sector. The panel above is server-rendered too,
-                but it shows only the active sector; SectorFactsSummary lists all sectors as
-                static text (with `이름 (TICKER)` anchors) so crawlers see the whole snapshot and
-                its `/{symbol}` links without JS. Not cloaking — users see the same data. */}
-            <SectorFactsSummary data={sectorDataSeed} />
+            {/* **전 섹터** SSR 크롤 텍스트. 위 패널도 서버 렌더되지만 활성 섹터만 보여 준다 —
+                SectorFactsSummary가 전 섹터를 `이름 (TICKER)` 앵커와 함께 정적 텍스트로 나열해
+                크롤러가 JS 없이 스냅샷 전체와 `/{symbol}` 링크를 본다. 사용자도 같은 데이터를 본다. */}
+            <SectorFactsSummary data={sectorDataSeed} scope={clientScope} />
             <SignalTypeGuide />
         </>
     );
@@ -196,7 +154,6 @@ export async function MarketRouteBody({
     const tLayout = await getTranslations('widgets.layout');
     const copy = marketCopyFor(scope.id, t);
     const url = `${SITE_URL}${copy.path}`;
-    const fullTitle = brandTitle(copy.title, locale);
 
     // metadata가 noindex를 거는 것과 **같은 술어**로 구조화데이터를 끈다. 빈 렌더에
     // "이 URL은 정식 WebPage이고 섹터 ETF 11종을 담은 ItemList"라고 주장하면
@@ -205,44 +162,19 @@ export async function MarketRouteBody({
 
     const jsonLd = buildWebPageJsonLd({
         url,
-        name: fullTitle,
+        name: brandTitle(copy.title, locale),
         description: copy.description,
         locale,
     });
-
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [{ name: copy.breadcrumb, url }],
         locale
     );
-
-    // ItemList 항목의 url은 그 종목 페이지(`/{symbol}`)다 — 이 허브 자신(`?sector=` 변형은
-    // 비-canonical)을 모든 항목이 가리키게 하지 않는다. 색인되는 큐레이션 종목에만 싣고,
-    // 나머지는 ListItem name(괄호 안 symbol)으로만 식별한다.
-    // name도 개수를 표기하지 않는다(설정이 바뀌면 고정 개수는 쉽게 낡는다).
-    //
-    // **`signalSectors`가 아니라 `sectorEtfs`를 싣는다.** 전자는 스캐너 탭 목록이라
-    // ETF가 없는 가상 테마(QNTM·SPACE)까지 들어 있는데, 그 심볼은 조회되는 자산이
-    // 아니다. 존재하지 않는 티커를 ListItem으로 선언하는 건 구조화데이터가 화면·
-    // 실물과 어긋나는 것이다. 가상 테마는 스캐너 UI에 그대로 남는다.
-    const itemListJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'ItemList',
-        name: copy.itemListName,
-        itemListElement: scope.sectorEtfs.map((sector, idx) => ({
-            '@type': 'ListItem',
-            position: idx + 1,
-            name: `${sector.koreanName} (${sector.sectorName}, ${sector.symbol})`,
-            // 색인되는 종목(`isPopularSymbol`)에만 `url`을 단다. sitemap에 없는 종목 페이지는
-            // 큐레이션 밖이라 noindex다 — 색인 안 되는 URL을 ListItem 대상으로 선언하면
-            // 구조화데이터가 크롤 예산만 그쪽으로 보낸다.
-            ...(isPopularSymbol(sector.symbol) && {
-                url: localizedAbsoluteUrl(
-                    `${SITE_URL}/${sector.symbol}`,
-                    locale
-                ),
-            }),
-        })),
-    };
+    const itemListJsonLd = buildMarketItemListJsonLd(
+        scope,
+        copy.itemListName,
+        locale
+    );
 
     return (
         <>
@@ -253,10 +185,8 @@ export async function MarketRouteBody({
                     <JsonLd data={itemListJsonLd} />
                 </>
             )}
-            {/* main 랜드마크: 이전엔 h1 + Suspense가 fragment 아래 직접 노출돼
-                의미론적 랜드마크가 빠져 있었다. backtesting/page.tsx가 같은
-                패턴으로 회귀했었던 이력 — sibling 페이지(/[symbol]/*) 6개와의
-                일관성을 맞춰 둔다. */}
+            {/* main 랜드마크 — h1과 본문이 fragment 아래 직접 노출되면 의미론적 랜드마크가
+                빠진다. 형제 페이지(/[symbol]/*)와 같은 구조를 둔다. */}
             <main className="flex-1">
                 <div className="page-container pt-6">
                     <RegionTabs
@@ -274,7 +204,7 @@ export async function MarketRouteBody({
                     </h1>
                 </div>
                 {/* 서버 데이터(`MarketContent`)는 Suspense로 감싸지 않는다 — 서버 데이터 경계는
-                    raw HTML에 숨김 청크를 남겨 JS 없는 크롤러에게 본문을 가린다(2026-10-05).
+                    raw HTML에 숨김 청크를 남겨 JS 없는 크롤러에게 본문을 가린다.
                     클라 전용 경계(`MarketSummaryPanel`·`SectorSignalPanel`)는 `MarketContent`
                     안에서 유지한다. */}
                 <MarketContent scope={scope} />

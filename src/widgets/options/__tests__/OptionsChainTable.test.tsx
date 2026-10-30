@@ -1,9 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OptionsChainTable } from '@/widgets/options/OptionsChainTable';
-import type {
-    OptionsChain,
-    OptionsExpirationMetrics,
+import {
+    aggregateOpenInterest,
+    type OptionsChain,
+    type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
@@ -19,37 +20,6 @@ vi.mock('@/widgets/options/utils/optionsTooltips', () => ({
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
-
-vi.mock('@y0ngha/siglens-core', async importOriginal => {
-    const mod = (await importOriginal()) as Record<string, unknown>;
-    return {
-        ...mod,
-        // Union of call+put strikes, matching the real aggregateOpenInterest
-        // contract — a strike that only has a put quote (or vice versa) must
-        // still surface as a row so OptionsChainTable's null-fallback cells
-        // ('-') are exercised on both sides.
-        aggregateOpenInterest: (chain: {
-            calls: Array<{ strike: number; openInterest: number }>;
-            puts: Array<{ strike: number; openInterest: number }>;
-        }) => {
-            const strikes = [
-                ...new Set([
-                    ...chain.calls.map(c => c.strike),
-                    ...chain.puts.map(p => p.strike),
-                ]),
-            ].toSorted((a, b) => a - b);
-            return strikes.map(strike => ({
-                strike,
-                callOpenInterest:
-                    chain.calls.find(c => c.strike === strike)?.openInterest ??
-                    0,
-                putOpenInterest:
-                    chain.puts.find(p => p.strike === strike)?.openInterest ??
-                    0,
-            }));
-        },
-    };
-});
 
 vi.mock('@/entities/options-chain/lib/findNearestStrike', () => ({
     findNearestStrikeIndex: (strikes: number[], target: number) =>
@@ -113,7 +83,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={150}
                 chain={null}
+                oiByStrike={[]}
                 metrics={null}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -127,7 +99,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={150}
                 chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -142,7 +116,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={150}
                 chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -161,7 +137,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={150}
                 chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -176,7 +154,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={150}
                 chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -193,7 +173,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="all"
                 underlyingPrice={150}
                 chain={CHAIN}
+                oiByStrike={aggregateOpenInterest(CHAIN)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -291,7 +273,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={150}
                 chain={chainWithMismatchedStrikes}
+                oiByStrike={aggregateOpenInterest(chainWithMismatchedStrikes)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -366,7 +350,9 @@ describe('OptionsChainTable', () => {
                 expirationDate="2025-06-20"
                 underlyingPrice={2280}
                 chain={chain}
+                oiByStrike={aggregateOpenInterest(chain)}
                 metrics={METRICS}
+                oiStale={false}
                 nearestExpiry="2025-06-20"
             />
         );
@@ -375,5 +361,74 @@ describe('OptionsChainTable', () => {
         expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(
             '$1,234.50/$1,240.00'
         );
+    });
+
+    describe('Max Pain marker when the OI snapshot is stale', () => {
+        async function renderExpanded(oiStale: boolean) {
+            const user = userEvent.setup();
+            render(
+                <OptionsChainTable
+                    symbol="AAPL"
+                    expirationDate="2025-06-20"
+                    underlyingPrice={150}
+                    chain={CHAIN}
+                    oiByStrike={aggregateOpenInterest(CHAIN)}
+                    metrics={METRICS}
+                    oiStale={oiStale}
+                    nearestExpiry="2025-06-20"
+                />
+            );
+            await user.click(screen.getByRole('button'));
+        }
+
+        it('marks the Max Pain row when fresh', async () => {
+            await renderExpanded(false);
+            expect(screen.getByText('📍')).toBeInTheDocument();
+        });
+
+        it('does not mark any row but keeps the rows when stale', async () => {
+            await renderExpanded(true);
+            expect(screen.queryByText('📍')).not.toBeInTheDocument();
+            expect(screen.queryByText('Max Pain')).not.toBeInTheDocument();
+            expect(screen.getByText('$150')).toBeInTheDocument();
+        });
+    });
+
+    describe('sr-only caption', () => {
+        it('names the rendered chain expiration, not the "all" selector', () => {
+            const { container } = render(
+                <OptionsChainTable
+                    symbol="AAPL"
+                    expirationDate="all"
+                    underlyingPrice={150}
+                    chain={CHAIN}
+                    oiByStrike={aggregateOpenInterest(CHAIN)}
+                    metrics={METRICS}
+                    oiStale={false}
+                    nearestExpiry="2025-06-20"
+                />
+            );
+            const caption = container.querySelector('caption')!;
+            expect(caption).toHaveTextContent('2025-06-20');
+            expect(caption).not.toHaveTextContent('all');
+        });
+
+        it('names the chain expiration when the selector date is absent from the snapshot', () => {
+            const { container } = render(
+                <OptionsChainTable
+                    symbol="AAPL"
+                    expirationDate="2099-01-01"
+                    underlyingPrice={150}
+                    chain={CHAIN}
+                    oiByStrike={aggregateOpenInterest(CHAIN)}
+                    metrics={METRICS}
+                    oiStale={false}
+                    nearestExpiry="2025-06-20"
+                />
+            );
+            expect(container.querySelector('caption')).toHaveTextContent(
+                '2025-06-20'
+            );
+        });
     });
 });

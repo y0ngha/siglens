@@ -44,6 +44,9 @@ export const PLAIN_MEASURED_MIN_TOKENS_PER_SECOND = 75;
 /** 실측 하한 처리량에서 얼마나 더 느려져도 상한까지 쓴 글이 끝나야 하는지(비율). */
 export const PLAIN_THROUGHPUT_SAFETY_FACTOR = 0.6;
 
+/** 호출 상한을 올려 잡는 단위(ms) — 산식 결과를 운영 로그에서 읽기 쉬운 값으로 맞춘다. */
+const PLAIN_CALL_TIMEOUT_ROUNDING_MS = 10_000;
+
 /**
  * 한 번의 LLM 호출 상한(ms). 어댑터가 **스트림 본문 읽기까지 포함한 호출 전체**의 마감으로
  * 건다(`createCallDeadline`) — SDK의 `timeout`은 응답 헤더가 도착할 때까지만 재므로, 어댑터가
@@ -62,9 +65,6 @@ export const PLAIN_THROUGHPUT_SAFETY_FACTOR = 0.6;
  * 이 값이 곧 락 TTL(아래)의 기준이다 — TTL이 보유자가 죽었을 때 다른 인스턴스가 평이화를
  * 못 받는 시간이다.
  */
-/** 호출 상한을 올려 잡는 단위(ms) — 산식 결과를 운영 로그에서 읽기 쉬운 값으로 맞춘다. */
-const PLAIN_CALL_TIMEOUT_ROUNDING_MS = 10_000;
-
 export const PLAIN_CALL_TIMEOUT_MS =
     Math.ceil(
         ((PLAIN_MAX_OUTPUT_TOKENS /
@@ -88,10 +88,10 @@ export const PLAIN_LOCK_MARGIN_SECONDS = 10;
  * 다른 인스턴스가 같은 좌표를 중복 생성·중복 과금한다.
  *
  * 2회를 유지하는 이유: 재시도는 첫 호출이 **정상 반환한 뒤 가드가 거부했을 때만** 일어난다.
- * 첫 호출이 마감으로 던지면 재시도하지 않으므로(`api.ts`의 `generate`) 그 경로의 최악은 1회지만,
+ * 첫 호출이 마감으로 던지면 재시도하지 않으므로(`server/plainGeneration.ts`의 `startPlainGeneration`) 그 경로의 최악은 1회지만,
  * 느린 호출이 가드 거부로 끝나 재시도까지 느린 경우는 여전히 2회다.
  *
- * 정상 경로는 생성이 끝나는 즉시 락을 푼다. SIGTERM 종료 때도 `api.ts`의 `runOwnedGeneration`이
+ * 정상 경로는 생성이 끝나는 즉시 락을 푼다. SIGTERM 종료 때도 `server/plainFlights.ts`의 `runOwnedGeneration`이
  * 정리 체인(생성 → 락 해제)을 `fireAndForget`으로 SIGTERM 드레인에 등록해 두므로 락이 풀린 뒤에
  * 프로세스가 내려간다. 이 값은 SIGKILL·크래시처럼 드레인이 못 지킨 경우에만 의미가 있고, 그동안 같은 좌표의 다른 인스턴스는 평이화를 받지 못한다(원본 노출).
  */

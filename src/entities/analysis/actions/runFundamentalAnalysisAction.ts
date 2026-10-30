@@ -1,6 +1,5 @@
 'use server';
 
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runFundamentalAnalysis,
     type SubmitFundamentalAnalysisOptions,
@@ -8,16 +7,21 @@ import {
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
-import { fetchQuotePriceForAnalysis } from '../lib/fetchQuotePriceForAnalysis';
-import { runGatedAnalysis } from '../lib/runGatedAnalysis';
+import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { fetchQuotePriceForAnalysis } from '../server/fetchQuotePriceForAnalysis';
+import { runGatedAnalysis } from '../server/runGatedAnalysis';
 
-/** Final return type — core's fundamental result + our siglens-side gate errors. */
+/** core의 펀더멘털 분석 결과에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunFundamentalAnalysisActionResult =
     | RunFundamentalAnalysisResult
     | AnalysisGateBlockedResult;
 
-/** Server Action: tier + BYOK gate, then submit fundamental analysis via siglens-core with FMP provider; returns `cached | submitted | error`. */
+/**
+ * Server Action: tier·BYOK 게이트를 거쳐 FMP provider로 siglens-core 펀더멘털 분석을
+ * 제출한다. `cached | submitted | error`를 돌려준다. 게이트·E2E 단락·catch-all은
+ * `runGatedAnalysis`가 맡는다.
+ */
 export async function runFundamentalAnalysisAction(
     symbol: string,
     modelId: SubmitFundamentalAnalysisOptions['modelId'],
@@ -28,10 +32,7 @@ export async function runFundamentalAnalysisAction(
      * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
      */
     locale: Locale,
-    /**
-     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
-     * spec Part A). Only honored for member/pro tiers.
-     */
+    /** 클라이언트가 요청한 "깊은 생각" 토글. 회원·pro tier에서만 반영된다. */
     reasoning?: boolean,
     signal?: AbortSignal,
     /**
@@ -61,11 +62,10 @@ export async function runFundamentalAnalysisAction(
                 dataProvider: getFundamentalDataProvider(symbol),
                 // `## Derived Metrics`의 price-relative 행(target upside 등)이
                 // 계산되도록 시세를 넘긴다 — core는 자체 quote provider가 없다.
-                // 캐시 키에는 포함되지 않는다(point-in-time 값). LAZY getter
-                // (core's `currentPrice?: number | null |
-                // (() => Promise<number | null>)`) — core only calls this AFTER
-                // a cache miss, so a cache HIT never pays for this quote fetch.
-                // 조회 실패는 분석 자체를 막지 않는다
+                // 캐시 키에는 포함되지 않는다(시점 값). 지연 getter(core의
+                // `currentPrice?: number | null | (() => Promise<number | null>)`)
+                // — core는 캐시 미스 **뒤에만** 호출하므로 캐시 적중은 이 시세 조회
+                // 비용을 내지 않는다. 조회 실패는 분석 자체를 막지 않는다
                 // (`fetchQuotePriceForAnalysis`가 `undefined`로 감싼다 → `null`).
                 currentPrice: () =>
                     fetchQuotePriceForAnalysis(symbol).then(

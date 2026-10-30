@@ -12,6 +12,7 @@ import type { ModelId } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';
+import { getListboxNextIndex } from '@/shared/ui/modelListboxNav';
 
 export interface ModelListboxGroup {
     /** 그룹 머리글(예: provider 이름). */
@@ -140,31 +141,20 @@ export function ModelListbox({
     };
 
     const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
-        const current = navigable.indexOf(selected);
-        const count = navigable.length;
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                moveTo((current + 1) % count);
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                moveTo((current - 1 + count) % count);
-                break;
-            case 'Home':
-                e.preventDefault();
-                moveTo(0);
-                break;
-            case 'End':
-                e.preventDefault();
-                moveTo(count - 1);
-                break;
-            case 'Escape':
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-                break;
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+            return;
         }
+        const next = getListboxNextIndex(
+            e.key,
+            navigable.indexOf(selected),
+            navigable.length
+        );
+        if (next === null) return;
+        e.preventDefault();
+        moveTo(next);
     };
 
     const optionClass = (isSelected: boolean): string =>

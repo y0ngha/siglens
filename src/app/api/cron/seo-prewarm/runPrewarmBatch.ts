@@ -19,7 +19,7 @@ import { type SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { HarvestedUnits } from '@/entities/sitemap-entry/lib/indexNowUrls';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
@@ -853,7 +853,7 @@ async function processSymbol(
      * 무효화는 멱등이고, 새 행이 하나도 없는 심볼에는 털 이유가 없다.
      *
      * FIX B(감사) — 이 태그는 더 이상 소비자 없는 no-op이 아니다. Phase 2가
-     * `getSeoSnapshotsStatic`(entities/seo-snapshot/lib/getSnapshotStatic.ts)에서
+     * `getSeoSnapshotsStatic`(entities/seo-snapshot/server/getSnapshotStatic.ts)에서
      * `seo-snapshot:{SYMBOL}` 태그로 읽고, 7개 탭 페이지 + `generateMetadata`가
      * 전부 그걸 구독한다. 즉 이 호출이 없으면 새로 harvest한 스냅샷이 각
      * 페이지의 `revalidate` TTL(6~24h)까지 조용히 지연 노출된다 — 이 라인이

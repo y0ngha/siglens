@@ -34,8 +34,11 @@ export interface LegalPolicy {
     readonly kind: 'tos' | 'privacy';
     /** 로케일 접두사 없는 경로(`TERMS_PATH`·`PRIVACY_PATH`). */
     readonly path: string;
+    /** 화면 제목·브레드크럼 이름(브랜드 없는 짧은 형태). */
     readonly title: (t: SeoTranslator) => string;
+    /** 브랜드를 붙인 제목 — OG·WebPage `name`이 쓴다. */
     readonly fullTitle: (t: SeoTranslator, locale: Locale) => string;
+    /** 메타·JSON-LD 공통 설명. */
     readonly description: (t: SeoTranslator) => string;
 }
 
@@ -129,8 +132,8 @@ export async function legalPolicyMetadata(
 /**
  * 문서의 `WebPage` JSON-LD.
  *
- * 모듈 스코프 상수였다 — 번역자도 로케일도 없는 자리라 JSON-LD가 항상
- * 한국어·기본 로케일 URL로 굳었다. 렌더 시점 함수로 둔다.
+ * 번역자와 로케일을 받는 렌더 시점 함수다 — 모듈 스코프 상수로 두면 JSON-LD가 항상
+ * 한국어·기본 로케일 URL로 굳는다.
  */
 export function legalPolicyWebPageJsonLd(
     policy: LegalPolicy,
@@ -145,6 +148,7 @@ export function legalPolicyWebPageJsonLd(
     });
 }
 
+/** 문서의 `BreadcrumbList` JSON-LD — 마디 이름은 화면 제목(`policy.title`)과 같다. */
 export function legalPolicyBreadcrumbJsonLd(
     policy: LegalPolicy,
     t: SeoTranslator,

@@ -3,10 +3,10 @@ const { profile, assetInfo, getCachedBars } = vi.hoisted(() => ({
     assetInfo: vi.fn(),
     getCachedBars: vi.fn(),
 }));
-vi.mock('@/entities/bars/lib/barsDataCache', () => ({
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: getCachedBars,
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({

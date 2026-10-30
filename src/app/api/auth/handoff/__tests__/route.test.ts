@@ -4,7 +4,7 @@ const m = vi.hoisted(() => ({ user: vi.fn(), issue: vi.fn() }));
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: m.user,
 }));
-vi.mock('@/entities/auth/lib/handoffStore', async importOriginal => ({
+vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({
     ...(await importOriginal<object>()),
     issueHandoffCode: m.issue,
 }));

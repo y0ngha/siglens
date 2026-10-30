@@ -64,10 +64,12 @@ vi.mock('@/entities/analysis/api', () => ({
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
-    prewarmNews: mockPrewarmNews,
     DrizzleNewsRepository: class {},
 }));
-vi.mock('@/entities/news-article/lib/hasAnalyzableNews', () => ({
+vi.mock('@/entities/news-article/server/prewarmNews', () => ({
+    prewarmNews: mockPrewarmNews,
+}));
+vi.mock('@/entities/news-article/server/hasAnalyzableNews', () => ({
     hasAnalyzableNews: mockHasAnalyzableNews,
 }));
 
@@ -86,7 +88,7 @@ vi.mock('@/entities/options-chain/api', () => ({
 vi.mock('@/entities/analysis-plain/api', () => ({
     rewriteToPlainLanguage: mockRewriteToPlainLanguage,
 }));
-vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
+vi.mock('@/entities/analysis-plain/server/currentPrice', () => ({
     resolveCurrentPrice: mockResolveCurrentPrice,
     resolvePriceAsOf: mockResolvePriceAsOf,
 }));

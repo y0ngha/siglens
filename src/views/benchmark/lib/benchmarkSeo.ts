@@ -8,7 +8,7 @@ import type { AiSeoCopy } from '@/shared/config/aiHost';
 import { SITE_NAME } from '@/shared/config/brand';
 import { LOCALE_HREFLANG, type Locale } from '@/shared/i18n/locales';
 import { brandAiName } from '@/shared/lib/brandName';
-import { clampSeoDescription } from '@/shared/lib/seo';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
 import { BENCHMARK_DATA_LICENSE_URL } from '@/shared/config/benchmark';
 

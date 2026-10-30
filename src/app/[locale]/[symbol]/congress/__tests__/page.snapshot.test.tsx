@@ -18,7 +18,7 @@ const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
 }));
 vi.mock('@/entities/ticker/api', () => ({
@@ -32,13 +32,13 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -46,7 +46,7 @@ vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
         .fn()
         .mockResolvedValue({ trades: [], degraded: false }),
 }));
-vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
+vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/widgets/congress/CongressTrendSummary', () => ({
@@ -66,6 +66,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolCongressSeoContent: vi.fn().mockReturnValue({
         title: '',
@@ -74,15 +78,14 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CongressPage from '@/app/[locale]/[symbol]/congress/page';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';

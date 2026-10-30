@@ -56,11 +56,11 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveKrxTickTable', () => ({
+vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
     resolveKrxTickTable: vi.fn().mockResolvedValue('share'),
 }));
 
-vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue(null),
 }));
 
@@ -87,9 +87,12 @@ vi.mock(
     '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard',
     () => ({ getOverallInvestorFlowsScorecard: mockOverallFlows })
 );
-vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
-    getFinancialsSnapshot: vi.fn(),
-}));
+vi.mock(
+    '@/entities/financials-statements/server/getFinancialsSnapshot',
+    () => ({
+        getFinancialsSnapshot: vi.fn(),
+    })
+);
 
 vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: vi.fn().mockImplementation(function () {
@@ -156,7 +159,7 @@ vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     ]),
 }));
 
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -206,12 +209,12 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import {
@@ -219,7 +222,7 @@ import {
     listEarningsDates,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
-import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {
     prewarmTechnical,

@@ -4,8 +4,9 @@ import {
     SUPPORTED_ASSET_IDS,
     SUPPORTED_ASSET_TERMS,
 } from '@/shared/config/supportedAssets';
-import { clampSeoDescription, ROOT_KEYWORDS } from '@/shared/lib/seo';
-import { buildHomeFaq } from '@/app/[locale]/homeJsonLd';
+import { clampSeoDescription } from '@/shared/lib/seoClamp';
+import { ROOT_KEYWORDS } from '@/shared/lib/seo';
+import { buildHomeFaq } from '@/app/[locale]/(home)/_lib/homeJsonLd';
 // newsHubTitle/newsHubDescription은 shared.seo 카탈로그를 받는 함수로 바뀌었다
 // (요구사항: 로케일별 번역자 필수 인자). 이 테스트는 자산군 커버리지가 ko
 // 소스 카피에서 완전한지만 확인하므로, 카탈로그 ko 원문을 직접 읽어 검사한다

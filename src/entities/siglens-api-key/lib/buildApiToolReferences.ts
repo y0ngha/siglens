@@ -1,5 +1,9 @@
 import type { AgentToolSpec, JsonSchemaProperty } from '@y0ngha/siglens-core';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
+import type {
+    ApiToolArgument,
+    ApiToolReference,
+} from '@/entities/siglens-api-key/model';
 import {
     FRESH_ANALYSIS_TOOL,
     typeLabel,
@@ -10,34 +14,6 @@ import {
     PUBLIC_API_BASE_PATH,
 } from '@/shared/config/publicApi';
 import type { YamlValue } from '@/shared/lib/toYaml';
-
-export interface ApiToolArgument {
-    readonly name: string;
-    /** `"1Day" | "1Hour"`, `integer (10..60)` 같은 사람용 표기. */
-    readonly type: string;
-    readonly required: boolean;
-    readonly description: string;
-    /** 열거형 인자의 허용값 전체. 화면이 긴 목록을 접을 때 쓴다. */
-    readonly enumValues?: readonly string[];
-    /** 배열 인자인가. 열거값이 원소의 허용값(`array of "a" | "b"`)임을 화면이 밝힐 때 쓴다. */
-    readonly array?: true;
-}
-
-/** 도구 하나의 문서용 표현. OpenAPI 문서의 경로와 `/developers`의 도구 레퍼런스가 같이 쓴다. */
-export interface ApiToolReference {
-    readonly name: string;
-    readonly description: string;
-    /** 기본 경로(`/api/v1`) 아래의 경로: `/tools/get_quote`. */
-    readonly path: string;
-    /** 호출 URL 전체: `https://siglens.io/api/v1/tools/get_quote`. */
-    readonly url: string;
-    readonly arguments: readonly ApiToolArgument[];
-    /** 필수 인자만으로 만든 예시 본문. */
-    readonly exampleArgs: Readonly<Record<string, YamlValue>>;
-    readonly curl: string;
-    /** 새 분석 생성이 사용자 BYOK 키를 쓰는 도구인가. */
-    readonly byok: boolean;
-}
 
 export interface BuildApiToolReferencesInput {
     /** 사이트 origin(끝 슬래시 없음). */
@@ -106,11 +82,13 @@ export function exampleArgumentsFor(
     return args;
 }
 
+/** `buildCurlExample` 옵션. */
 export interface CurlExampleOptions {
     /** 오래 걸리는 호출(새 분석 생성)용 `--max-time`. 도구 마감보다 짧으면 클라이언트가 먼저 끊는다. */
     readonly maxTimeSeconds?: number;
 }
 
+/** 도구 호출 curl 예시. API 키는 환경 변수 이름으로만 적어 원문이 문서에 들어가지 않는다. */
 export function buildCurlExample(
     url: string,
     args: Readonly<Record<string, YamlValue>>,
@@ -171,6 +149,7 @@ export function buildApiToolReference({
     };
 }
 
+/** 노출 도구 전체의 레퍼런스(`/developers` 화면용). 입력 순서를 유지한다. */
 export function buildApiToolReferences({
     baseUrl,
     tools,

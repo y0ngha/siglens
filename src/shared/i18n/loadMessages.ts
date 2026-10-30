@@ -1,6 +1,16 @@
 import type { AbstractIntlMessages } from 'next-intl';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
+type MessageTree = Record<string, unknown>;
+
+/**
+ * 카탈로그 노드 판정. 카탈로그에는 배열 값(툴팁 문단 목록 등)도 있어 배열도 통과시킨다 —
+ * 경로가 그런 노드에서 끝나면 값을 그대로 복사하면 되고, 별도 분기를 둘 이유가 없다.
+ */
+function isTree(value: unknown): value is MessageTree {
+    return typeof value === 'object' && value !== null;
+}
+
 /**
  * 로케일 메시지 카탈로그를 읽는다.
  *
@@ -32,9 +42,8 @@ export async function loadMessages(
 /**
  * 클라이언트 프로바이더에 넘길 네임스페이스만 골라낸다.
  *
- * 전체 카탈로그(2천여 키)를 주입하면 first-load JS가 회귀한다 — 2026-08에
- * 서버 SDK 누출을 잡아 first-load를 38% 줄인 작업의 성과를 그대로 되돌린다.
- * 라우트가 실제로 쓰는 네임스페이스만 명시적으로 넘긴다.
+ * 전체 카탈로그(2천여 키)를 주입하면 모든 라우트의 first-load JS가 카탈로그
+ * 크기만큼 커진다. 라우트가 실제로 쓰는 네임스페이스만 명시적으로 넘긴다.
  *
  * 네임스페이스는 `widgets.layout`처럼 **점으로 구분된 경로**이고 카탈로그는
  * 그에 맞게 중첩돼 있다 — next-intl은 네임스페이스와 키를 항상 `.`로 쪼개
@@ -45,24 +54,32 @@ export function pickMessages(
     messages: AbstractIntlMessages,
     namespaces: readonly string[]
 ): AbstractIntlMessages {
-    const picked: Record<string, unknown> = {};
-    for (const namespace of namespaces) {
+    const picked: MessageTree = {};
+    // 상위 네임스페이스가 이미 통째로 복사되면 하위 경로는 같은 값을 다시 쓸 뿐이다.
+    const roots = namespaces.filter(
+        namespace =>
+            !namespaces.some(other => namespace.startsWith(`${other}.`))
+    );
+    for (const namespace of roots) {
         const segments = namespace.split('.');
-        let source: unknown = messages;
-        for (const segment of segments) {
-            source =
-                typeof source === 'object' && source !== null
-                    ? (source as Record<string, unknown>)[segment]
-                    : undefined;
-        }
+        const source = segments.reduce<unknown>(
+            (node, segment) => (isTree(node) ? node[segment] : undefined),
+            messages
+        );
         if (source === undefined) continue;
 
-        let target = picked;
-        for (const segment of segments.slice(0, -1)) {
-            target[segment] ??= {};
-            target = target[segment] as Record<string, unknown>;
-        }
-        target[segments[segments.length - 1]!] = source;
+        const leaf = segments[segments.length - 1];
+        const parent = segments
+            .slice(0, -1)
+            .reduce<MessageTree>((target, segment) => {
+                const child = target[segment];
+                if (isTree(child)) return child;
+                const created: MessageTree = {};
+                target[segment] = created;
+                return created;
+            }, picked);
+        parent[leaf] = source;
     }
+    // safe: 입력 카탈로그의 서브트리만 같은 모양으로 되쌓은 객체다.
     return picked as AbstractIntlMessages;
 }

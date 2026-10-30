@@ -29,10 +29,10 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -43,7 +43,7 @@ vi.mock('@/app/[locale]/[symbol]/congress/CongressDegraded', () => ({
 }));
 // `getCongressTradesResilient`는 generateMetadata가 page body와 동일한 envelope를
 // 한 번 더 호출(React.cache로 메모이즈됨)하므로 mock으로 케이스별 degrade를 제어한다.
-vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
+vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
@@ -53,6 +53,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         '@type': 'BreadcrumbList',
         itemListElement: [],
     }),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi
         .fn()
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
@@ -64,14 +68,13 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL/congress',
         keywords: ['AAPL', 'AAPL 의회 거래'],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 // thin 게이트가 `hasCongressProse(snap?.content)`를 보므로 스냅샷 소스를 제어해야
 // "행은 있는데 내용이 비었다"는 경우를 재현할 수 있다.
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
@@ -81,10 +84,10 @@ import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/congress/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
-import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { getCongressTradesResilient } from '@/entities/congress-trades/server/getCongressTradesResilient';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import type { MockedFunction } from 'vitest';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로

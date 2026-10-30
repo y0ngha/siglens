@@ -1,15 +1,14 @@
+/**
+ * 캔들 데모는 손으로 정한 OHLC 몇 개 + 앞쪽 추세 봉이다.
+ * 각 항목이 core `detectCandlePatternEntries`로 실제 그 패턴으로 잡히는지는
+ * `__tests__/candlesticks.test.ts`가 단언한다 (설명과 그림이 엔진과 어긋나지 않게).
+ */
 import { candle, concatBars, trendBars } from '@/views/guide/demos/generators';
 import type {
     DemoBar,
     DemoOverlay,
     GuideDemo,
 } from '@/views/guide/demos/types';
-
-/**
- * 캔들 데모는 손으로 정한 OHLC 몇 개 + 앞쪽 추세 봉이다.
- * 각 항목이 core `detectCandlePatternEntries`로 실제 그 패턴으로 잡히는지는
- * `__tests__/candlesticks.test.ts`가 단언한다 (설명과 그림이 엔진과 어긋나지 않게).
- */
 
 type Direction = 'up' | 'down';
 
@@ -438,6 +437,7 @@ const candleBasics = (): GuideDemo => ({
     ],
 });
 
+/** 캔들 패턴 slug → 데모 생성 함수. 값이 아니라 함수라 요청된 항목의 데모만 만든다(`getGuideDemo`). */
 export const CANDLESTICK_DEMOS: Record<string, () => GuideDemo> = {
     'abandoned-baby-tri-star': abandonedBaby,
     'advance-block-ladder-bottom': advanceBlockLadderBottom,

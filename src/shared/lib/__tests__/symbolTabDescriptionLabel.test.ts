@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { type SeoTranslator } from '@/shared/lib/seo';
 import {
     buildSymbolCongressSeoContent,
     buildSymbolFinancialsSeoContent,
@@ -13,10 +14,9 @@ import {
     resolveSymbolOverallSeoContent,
     resolveSymbolSeoContent,
     symbolTabDescriptionLabel,
-    type SeoTranslator,
     type SymbolSeoContent,
     type SymbolSeoTab,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
 
 let t: SeoTranslator;
 beforeAll(async () => {

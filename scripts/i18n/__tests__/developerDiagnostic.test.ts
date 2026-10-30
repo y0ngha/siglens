@@ -103,7 +103,7 @@ describe('log-fallback-message 분류', () => {
  * 같은 파일의 다른 문자열은 여전히 잡혀야 한다.
  */
 describe('ai-prompt 분류', () => {
-    const TICKER_LIB = 'src/entities/ticker/lib/koreanTranslator.ts';
+    const TICKER_LIB = 'src/entities/ticker/server/koreanTranslator.ts';
 
     it('`build*Prompt()` 안의 문자열은 면제된다', () => {
         expect(

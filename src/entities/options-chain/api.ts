@@ -4,31 +4,25 @@ import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     type RunOptionsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { resolveSnapshotSlots } from './lib/optionsSlots';
-import { fetchOptionsSnapshot } from './lib/optionsDataCache';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
+import { resolveSnapshotSlots } from './lib/optionsSlots';
+import { fetchOptionsSnapshot } from './server/optionsDataCache';
 
 /**
- * SEO pre-warm 전용 options submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitOptionsAnalysisAction`의 기본(`cacheOnly`가 아닌) 경로를
- * 요청-컨텍스트 없이 재현한다. 차이는 skipEnqueueIfMiss:false와 force 뿐.
+ * SEO pre-warm 전용 options submit. `submitOptionsAnalysisAction`의 기본(`cacheOnly`가 아닌)
+ * 경로를 요청 컨텍스트 없이 재현한다. 차이는 `skipEnqueueIfMiss: false`와 `force`뿐이다.
  *
- * 만기(`expirationDate`) 기본값은 `OptionsPageClient.tsx`의 초기 client
- * mount 로직을 그대로 재현한다:
- * `useState<OptionsExpirationSelector>(() => slots.find(isSlotMapping)?.expirationDate ?? 'all')`
- * (widgets/options/OptionsPageClient.tsx:58-61). `slots`는 `[symbol]/options/page.tsx`가
- * `mapExpirationsToSlots(expirations, new Date())`로 만든 것과 동일하게, 이
- * 함수도 스냅샷의 만기 목록을 같은 헬퍼에 통과시켜 재현한다 — `mapExpirationsToSlots`가
- * 반환하는 첫 non-null 슬롯(가장 가까운 만기, `EXPIRATION_SLOTS`의 `0D` 우선)을
- * 선택하고, 매핑되는 슬롯이 하나도 없으면 `'all'`로 폴백한다. 이렇게 해야
- * 익명 방문자의 initial page mount가 만드는 cache key와 정합한다.
+ * 만기(`expirationDate`) 기본값은 `OptionsPageClient`의 초기 마운트와 같다 — 스냅샷의 첫
+ * 슬롯 만기(가장 가까운 만기, `0D` 우선), 매핑되는 슬롯이 없으면 `'all'`. 이렇게 해야 익명
+ * 방문자의 첫 마운트가 만드는 캐시 키와 맞는다. 슬롯은 `resolveSnapshotSlots`로 구해
+ * 페이지가 그리는 첫 chip과 같은 만기를 보장한다.
  *
- * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`)을
- * 명시 전달한다 — core의 options submit 옵션은 modelId를 그대로 캐시 키에
- * 쓰고 내부 fallback이 없다.
+ * modelId는 익명·free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`)을 명시
+ * 전달한다 — core의 options submit은 modelId를 그대로 캐시 키에 쓰고 내부 fallback이 없다.
  *
- * ⚠️ 요청 헤더 읽기·세션 사용자 조회·봇 판별·쿠키 접근 금지 — cron의
- * after() 컨텍스트에서 실행되며 React 요청 스코프가 없다.
+ * 요청 헤더·세션 사용자·봇 판별·쿠키 접근 금지 — cron의 `after()` 컨텍스트에서 실행되며
+ * React 요청 스코프가 없다. 옵션 데이터가 없는 종목(스냅샷 `null`)이면 submit을 건너뛰고
+ * `null`을 돌려준다.
  */
 export async function prewarmOptions(
     symbol: string,
@@ -36,11 +30,8 @@ export async function prewarmOptions(
     force: boolean
 ): Promise<RunOptionsAnalysisResult | null> {
     const snapshot = await fetchOptionsSnapshot(symbol);
-    // 옵션 데이터가 없으면(NoChains) 스냅샷 생성 대상이 아니다 — submit 자체를 스킵한다.
     if (snapshot === null) return null;
 
-    // 수집 시점에 확정한 슬롯 매핑을 쓴다(`SlottedOptionsSnapshot`) — 페이지가 그리는 첫 chip과
-    // 같은 만기여야 방문자의 초기 마운트가 만드는 캐시 키와 맞는다.
     const expirationDate =
         resolveSnapshotSlots(snapshot, new Date())[0]?.expirationDate ?? 'all';
 

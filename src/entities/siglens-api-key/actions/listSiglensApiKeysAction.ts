@@ -5,6 +5,7 @@ import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
+import { logActionError } from '@/shared/lib/logActionError';
 
 /**
  * 본인의 활성 API 키 목록(오래된 순). 비로그인은 `[]`, 조회 실패는 `null` — 빈 목록과
@@ -25,7 +26,7 @@ export async function listSiglensApiKeysAction(): Promise<
             getDatabaseClient().db
         ).listActiveByUser(user.id);
     } catch (error) {
-        console.error('[listSiglensApiKeysAction] failed:', error);
+        logActionError('[listSiglensApiKeysAction] failed:', error);
         return null;
     }
 }

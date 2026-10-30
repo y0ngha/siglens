@@ -44,7 +44,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
 }));
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -52,7 +52,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
@@ -72,7 +72,7 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
 vi.mock('@/app/[locale]/[symbol]/fundamental/FundamentalDegraded', () => ({
     FundamentalDegraded: () => <div data-testid="fundamental-degraded" />,
 }));
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 // staticSymbolCache: call fetcher() directly so tests stay pure (no I/O).
@@ -209,6 +209,10 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seoSymbol')>()),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolFundamentalSeoContent: vi.fn().mockReturnValue({
         title: '',
@@ -217,12 +221,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: '',
         keywords: [],
     }),
-    SITE_URL: 'https://siglens.io',
 }));
 vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import React, { isValidElement } from 'react';
 import {
     describe,
     it,
@@ -231,11 +235,10 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import React from 'react';
-import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import { PROFILE_DESCRIPTION_TIMEOUT_MS } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
-import FundamentalPage, {
+import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
+import {
     ProfileSection,
     ValuationSection,
     PeersSection,
@@ -243,9 +246,9 @@ import FundamentalPage, {
     GrowthSection,
     FinancialHealthSection,
     FutureDirectionSection,
-} from '@/app/[locale]/[symbol]/fundamental/page';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+} from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import {
     getProfile,

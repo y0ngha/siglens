@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from '../seo';
-import {
-    SEO_DESCRIPTION_MAX_LENGTH,
-    type SeoTranslator,
-} from '@/shared/lib/seo';
+import { type SeoTranslator } from '@/shared/lib/seo';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 
 // `t`는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 재사용한다 — 카탈로그 키 존재 자체도 함께 검증된다.

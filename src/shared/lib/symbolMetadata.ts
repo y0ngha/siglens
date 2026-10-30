@@ -4,21 +4,26 @@ import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { brandName } from '@/shared/lib/brandName';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
 import {
-    buildSymbolTabSeoContent,
     NOINDEX_SYMBOL_METADATA,
     SITE_URL,
-    type BuildSymbolSeoOptions,
     type SeoTranslator,
+} from '@/shared/lib/seo';
+import {
+    buildSymbolTabSeoContent,
+    type BuildSymbolSeoOptions,
     type SymbolSeoContent,
     type SymbolSeoTab,
-} from '@/shared/lib/seo';
+} from '@/shared/lib/seoSymbol';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /*
- * 종목 탭 페이지의 `Metadata` 조립. `seo.ts`(카피·URL)와 `seoAlternates.ts`(로케일 대체 URL)를
- * 둘 다 쓰므로 그 위에 따로 둔다. `seoAlternates`가 `seo`를 쓰기 때문에, 이 조립을 `seo.ts`에
- * 두면 런타임 순환이 된다(`src/__tests__/guards/importCycles.test.ts`).
+ * 종목 탭 페이지의 `Metadata` 조립. `seo.ts`(URL·noindex 상수),
+ * `seoSymbol.ts`(탭 카피)와 `seoAlternates.ts`(로케일 대체 URL)를 모두 쓰므로
+ * 그 위에 따로 둔다. `seoAlternates`가 `seo.ts`의 `SITE_URL`을 import하기 때문에,
+ * 이 조립을 `seo.ts`에 두면 런타임 순환이 된다
+ * (`src/__tests__/guards/importCycles.test.ts`). `seoSymbol.ts`는 카피 빌더만
+ * 두어 `Metadata`·alternates·twitter 의존이 없게 유지한다.
  */
 
 /**

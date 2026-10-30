@@ -85,7 +85,7 @@ vi.mock('@/widgets/options/OptionsPageClient', () => ({
 vi.mock('@/widgets/options/OptionsEmptyState', () => ({
     OptionsEmptyState: () => null,
 }));
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     hasOptionsMarket: vi.fn().mockResolvedValue(true),
     fetchOptionsSnapshot: vi.fn().mockResolvedValue(null),
 }));
@@ -125,7 +125,7 @@ vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
+vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
 }));
 vi.mock('@/entities/ticker/lib/ticker', () => ({
@@ -160,7 +160,7 @@ vi.mock(
 
 // fundamental 페이지 본문이 import한다. generateMetadata는 2026-10-01부터 호출하지 않는다
 // (항상 noindex라 profile 게이트가 사라졌다).
-vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: mockGetProfileResilient,
 }));
 
@@ -186,7 +186,7 @@ vi.mock('@/entities/bars/actions/getBarsAction', () => ({
  * 조회가 실패하면(목이 없으면) 그 렌더는 degrade로 간주돼 noindex + canonical
  * null이 된다 — 이 파일의 관심사는 canonical URL이므로 정상 봉을 준다.
  */
-vi.mock('@/entities/bars/lib/barsStaticCache', () => {
+vi.mock('@/entities/bars/server/barsStaticCache', () => {
     // vi.mock은 hoist되므로 픽스처를 팩토리 **안**에 둔다.
     const barsFixture = {
         bars: [
@@ -205,7 +205,7 @@ vi.mock('@/entities/bars/lib/barsStaticCache', () => {
     };
 });
 // fear-greed 탭의 `generateMetadata`는 세션 키 축소 봉(`getSessionBarsStatic`)을 읽는다.
-vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSessionBarsStatic: vi.fn().mockResolvedValue({
         bars: [
             { time: 1, open: 1, high: 2, low: 1, close: 1, volume: 10 },
@@ -230,7 +230,7 @@ vi.mock(
 // `/news`는 산문·감정 카드가 둘 다 없으면 noindex다. 이 파일의 관심사는 canonical
 // URL이지 색인성이 아니므로, 그 게이트를 통과할 최소 픽스처를 준다. (`/overall`·
 // `/fundamental`은 2026-10-01부터 항상 noindex라 스냅샷을 읽지 않는다.)
-vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([
         // `/news`도 산문·감정 카드가 둘 다 없으면 noindex다.
         {
