@@ -26,6 +26,7 @@ import {
     type AnalysisCaller,
 } from '@/shared/lib/byokOnly';
 
+/** `prepareRunner`가 입력을 모으는 데 쓰는 요청 정보. */
 export interface RunnerInput {
     symbol: string;
     kind: string;
@@ -35,12 +36,14 @@ export interface RunnerInput {
     principal: ApiKeyPrincipal;
 }
 
+/** 러너 한 번의 실행 옵션. 캐시 확인이면 `cacheOnly`, 생성이면 BYOK 전용 `caller`가 필수다. */
 export interface RunArgs {
     cacheOnly: boolean;
     signal: AbortSignal;
     caller: AnalysisCaller;
 }
 
+/** 종류와 무관하게 core를 같은 입력으로 부르는 실행기. */
 export interface Runner {
     /** 공개 API 호출자는 항상 BYOK 전용이다. 키가 없으면(캐시 확인) `userKey`를 비운다. */
     callerFor(userKey: string | undefined): AnalysisCaller;
