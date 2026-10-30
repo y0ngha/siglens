@@ -1,12 +1,16 @@
 'use client';
 
+/**
+ * 탐색기가 쓰는 판정·시장 이름 조회 훅.
+ */
 import { useTranslations } from 'next-intl';
 import type {
     BenchmarkLabel,
     BenchmarkMarket,
 } from '@/entities/benchmark/types';
 
-interface BenchmarkEnumText {
+/** 판정·시장 enum 값 → 번역된 이름. */
+export interface BenchmarkEnumText {
     readonly label: Readonly<Record<BenchmarkLabel, string>>;
     readonly market: Readonly<Record<BenchmarkMarket, string>>;
 }

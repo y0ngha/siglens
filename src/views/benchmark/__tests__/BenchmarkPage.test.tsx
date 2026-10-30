@@ -233,7 +233,7 @@ describe('BenchmarkPage', () => {
     describe('methodology', () => {
         it('reports pool sizes and the vendor mismatch count from the data', async () => {
             await renderPage();
-            expect(screen.getByText(/A 3, B 1/)).toBeTruthy();
+            expect(screen.getByText(/A 3 및 B 1/)).toBeTruthy();
             expect(
                 screen.getByText(
                     '공식값으로 다시 확인한 미국 문항 중 잠정값과 달랐던 문항은 2개입니다.'
@@ -409,6 +409,28 @@ describe('BenchmarkPage', () => {
             expect(screen.getByRole('note').textContent).toBe(
                 en.views.benchmark.koreanNote
             );
+        });
+
+        it('is a named note that does not override a paragraph role', async () => {
+            await renderPage({ locale: 'en' });
+            const note = screen.getByRole('note', {
+                name: en.views.benchmark.koreanNoteLabel,
+            });
+            expect(note.tagName).toBe('DIV');
+        });
+    });
+
+    describe('table scrolling', () => {
+        it('puts every table in a keyboard-reachable region named by its caption', async () => {
+            await renderPage();
+            const tables = screen.getAllByRole('table');
+            expect(tables).toHaveLength(7);
+            for (const table of tables) {
+                const region = table.closest('[role="region"]')!;
+                const caption = table.querySelector('caption')!.textContent;
+                expect(region.getAttribute('tabindex')).toBe('0');
+                expect(region.getAttribute('aria-label')).toBe(caption);
+            }
         });
     });
 });

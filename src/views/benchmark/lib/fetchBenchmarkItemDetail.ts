@@ -1,3 +1,6 @@
+/**
+ * 문항 상세 정적 JSON을 받아 형태를 검증하는 fetch.
+ */
 import {
     benchmarkItemDetailPath,
     isBenchmarkItemDetail,

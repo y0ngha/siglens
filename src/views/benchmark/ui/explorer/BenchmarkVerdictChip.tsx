@@ -1,3 +1,6 @@
+/**
+ * 판정 칩(대상 이름 + 판정 이름). 목록과 상세 패널이 같이 쓴다.
+ */
 import type { BenchmarkLabel } from '@/entities/benchmark/types';
 import { cn } from '@/shared/lib/cn';
 
@@ -24,6 +27,10 @@ interface Props {
     readonly className?: string;
 }
 
+/**
+ * 판정 하나. 대상 이름과 판정 이름 사이 간격이 CSS(`gap`)뿐이라 공백 텍스트 노드를 둔다 —
+ * 없으면 `textContent`가 `AlphaAI정답`처럼 붙는다(inline-flex라 화면에는 안 그려진다).
+ */
 export function BenchmarkVerdictChip({
     label,
     text,
@@ -40,9 +47,11 @@ export function BenchmarkVerdictChip({
             )}
         >
             {target ? (
-                <span className="font-semibold" translate="no">
-                    {target}
-                </span>
+                <>
+                    <span className="font-semibold" translate="no">
+                        {target}
+                    </span>{' '}
+                </>
             ) : null}
             <span>{text}</span>
         </span>
