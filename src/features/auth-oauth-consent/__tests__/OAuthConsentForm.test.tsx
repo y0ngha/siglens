@@ -162,12 +162,12 @@ describe('OAuthConsentForm', () => {
     });
 
     // 제출 중 상태는 SubmitButton이 감싼 form의 useFormStatus로 읽는다.
-    it('shows 처리 중... and disables submit button while the form is pending', () => {
+    it('shows 처리 중... and marks submit button aria-disabled while the form is pending', () => {
         mockUseFormStatus.mockReturnValue({ pending: true });
         render(<OAuthConsentForm {...baseProps} />);
         const btn = screen.getByRole('button', { name: /처리 중/ });
         expect(btn).toBeInTheDocument();
-        expect(btn).toBeDisabled();
+        expect(btn).toHaveAttribute('aria-disabled', 'true');
     });
 
     // Branch coverage: privacyChecked true → hidden input value becomes 'true'

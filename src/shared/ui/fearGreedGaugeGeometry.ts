@@ -8,7 +8,7 @@ export const GAUGE_CY = 105;
 const GAUGE_RADIUS = 80;
 export const GAUGE_STROKE_WIDTH = 14;
 export const GAUGE_VIEWBOX_W = 200;
-// 호 바깥에 그리는 눈금 라벨이 들어가도록 110에서 130으로 키웠다.
+// 호 바깥에 그리는 눈금 라벨이 들어갈 여유.
 export const GAUGE_VIEWBOX_H = 130;
 
 /** 삼각 바늘 형상 — 각도 0(오른쪽 끝)에서 그린 뒤 점수 각도로 회전한다. */
@@ -17,6 +17,9 @@ const NEEDLE_HALF_WIDTH = 6;
 const NEEDLE_INNER_GAP = 12;
 /** 게이지 회전 중심을 시각적으로 anchor하는 작은 피벗 원의 반지름 (SVG units). */
 export const NEEDLE_PIVOT_RADIUS = 4;
+
+/** 양 끝 눈금 라벨을 호 끝 높이에서 아래로 내리는 거리 (SVG units). */
+const TICK_END_DROP = 14;
 
 /** 호 바깥쪽으로 띄운 눈금 라벨의 반경 오프셋 (SVG units). */
 const TICK_LABEL_OFFSET = 16;
@@ -37,9 +40,12 @@ export const TICK_VALUES: ReadonlyArray<number> = [
 /** 점수 한 단위당 각도 — 180° 반원이 점수 100단위에 걸친다 (180 / 100). */
 const DEGREES_PER_SCORE_UNIT = 1.8;
 
+const SCORE_MIN = 0;
+const SCORE_MAX = 100;
+
 /** 점수(0..100)를 반원 위의 각(라디안)으로 바꾼다. 0이 왼쪽 끝(π), 100이 오른쪽 끝(0)이다. */
 function scoreToRadians(score: number): number {
-    return (1 - score / 100) * Math.PI;
+    return (1 - score / SCORE_MAX) * Math.PI;
 }
 
 /** `from`..`to` 점수 구간을 잇는 호의 SVG path `d`. 구간 색 호를 그릴 때 쓴다. */
@@ -72,10 +78,10 @@ export const NEEDLE_POINTS: string = [
 
 /**
  * 0과 100은 게이지 수평 끝(y=GAUGE_CY)과 같은 높이라 호와 겹친다.
- * 아래로 14 units 내려 호 stroke 하단 바깥에 위치시킨다.
+ * 아래로 `TICK_END_DROP` units 내려 호 stroke 하단 바깥에 위치시킨다.
  */
 function tickDy(value: number): number {
-    return value === 0 || value === 100 ? 14 : 0;
+    return value === SCORE_MIN || value === SCORE_MAX ? TICK_END_DROP : 0;
 }
 
 /** 눈금 라벨의 SVG 좌표. */

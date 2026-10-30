@@ -1,3 +1,4 @@
+import { FEAR_GREED_LABEL_CUTOFFS } from '@y0ngha/siglens-core';
 import {
     NEEDLE_POINTS,
     TICK_VALUES,
@@ -66,5 +67,12 @@ describe('TICK_VALUES', () => {
         expect(TICK_VALUES).toContain(0);
         expect(TICK_VALUES).toContain(50);
         expect(TICK_VALUES).toContain(100);
+    });
+
+    it('core의 극단 공포·탐욕 경계를 눈금으로 포함한다', () => {
+        expect(TICK_VALUES).toContain(
+            FEAR_GREED_LABEL_CUTOFFS.EXTREME_FEAR_MAX
+        );
+        expect(TICK_VALUES).toContain(FEAR_GREED_LABEL_CUTOFFS.GREED_MAX);
     });
 });
