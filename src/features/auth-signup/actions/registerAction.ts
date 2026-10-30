@@ -7,7 +7,6 @@ import { redirect } from 'next/navigation';
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
 import {
     resolvePostSignupDestination,
-    sanitizeNextPath,
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
 import { createSignupConversionCookie } from '@/shared/lib/googleAds';
@@ -38,7 +37,14 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { readSignupForm } from '../lib/readSignupForm';
 
+/**
+ * 회원가입 3단계의 Server Action. 필수 동의 → 활성 약관 → `registerUser`
+ * (이메일 인증 여부·중복 확인 포함) → 자동 로그인 순으로 진행하고, 성공하면
+ * 세션·전환 쿠키를 심은 뒤 같은-오리진 경로로 리다이렉트한다. 실패는 폼 상태의
+ * 오류 **코드**로 돌려주고, 예상하지 못한 예외의 내용은 로그에만 남긴다.
+ */
 export async function registerAction(
     _prev: SignupFormState,
     formData: FormData
@@ -46,16 +52,10 @@ export async function registerAction(
     // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
     const tAuth = await getTranslations('entities.auth.error');
     try {
-        const email = String(formData.get('email') ?? '').trim();
-        const password = String(formData.get('password') ?? '');
-        const rawName = String(formData.get('name') ?? '').trim();
-        const name = rawName ? rawName : undefined;
-        const next = sanitizeNextPath(formData.get('next')?.toString());
-        // null (field absent) and 'false' (unchecked) both fail the !== 'true' check
-        const agreedPrivacy = formData.get('agreed_privacy');
-        const agreedTos = formData.get('agreed_tos');
+        const { email, password, name, next, hasRequiredConsent } =
+            readSignupForm(formData);
 
-        if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
+        if (!hasRequiredConsent) {
             return {
                 error: {
                     code: 'consent_required',
