@@ -11,7 +11,7 @@ import type { Locale } from '@/shared/i18n/locales';
 import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import { logActionError } from '@/shared/lib/logActionError';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { resolveKrxTickTable } from '@/entities/ticker/lib/resolveKrxTickTable';

@@ -113,7 +113,7 @@ vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
 const { mockResolveHoldingPositionBucket } = vi.hoisted(() => ({
     mockResolveHoldingPositionBucket: vi.fn(),
 }));
-vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: mockResolveHoldingPositionBucket,
 }));
 

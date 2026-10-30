@@ -38,7 +38,7 @@ import { resolveReasoning } from '@/shared/lib/byokGate';
 // orchestration이다 — `src/entities/CLAUDE.md` "의도적 예외" 표에 등재된 허용 경로.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 import {
     resolveCallerKeyOptions,
     type AnalysisCaller,

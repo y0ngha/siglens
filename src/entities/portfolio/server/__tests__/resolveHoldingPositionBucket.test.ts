@@ -14,7 +14,7 @@ vi.mock('@/entities/portfolio/api', () => ({
     },
 }));
 
-import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
 
 function holding(fmpSymbol: string | null, averagePrice = '100') {
     return {

@@ -1,14 +1,14 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
+import { DrizzlePortfolioRepository } from '../api';
 import type { DeletePortfolioResult } from '../model';
-import { getTranslations } from 'next-intl/server';
 
-/** Deletes a member's holding by symbol. Never redirects — unauthenticated callers get an `unauthenticated` error result. */
+/** 회원의 보유종목을 심볼로 삭제한다. 리다이렉트하지 않는다 — 비로그인은 `unauthenticated` 에러 결과를 받는다. */
 export async function deletePortfolioHoldingAction(
     symbol: string
 ): Promise<DeletePortfolioResult> {
@@ -22,9 +22,8 @@ export async function deletePortfolioHoldingAction(
         };
     }
 
-    // Server-action args are attacker-controlled at runtime regardless of the
-    // declared `string` parameter type — a hostile client can post any JSON
-    // value. Guard before `.trim()`, which throws a TypeError on non-strings.
+    // 서버 액션 인자는 선언된 `string` 타입과 무관하게 런타임에 공격자가 통제한다 — 악의적
+    // 클라이언트는 임의의 JSON 값을 보낼 수 있다. 비문자열에서 TypeError를 내는 `.trim()` 전에 거른다.
     if (typeof symbol !== 'string') {
         return {
             status: 'error',
@@ -60,7 +59,7 @@ export async function deletePortfolioHoldingAction(
         );
         return { status: 'ok' };
     } catch (error) {
-        // Raw Drizzle errors embed bound params (user id, symbol, amounts) in `.message`.
+        // Drizzle 원본 에러의 `.message`에는 바인딩 파라미터(사용자 id, 심볼, 금액)가 들어 있다.
         logActionError('[deletePortfolioHoldingAction] delete failed', error);
         return {
             status: 'error',
