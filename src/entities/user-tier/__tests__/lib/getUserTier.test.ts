@@ -27,4 +27,13 @@ describe('getUserTier', () => {
         expect(getUserTierMock).toHaveBeenCalledWith('missing-user');
         expect(result).toBe('free');
     });
+
+    it('propagates repository failures instead of degrading to free', async () => {
+        const { repository, getUserTierMock } = makeUserTierRepositoryMock();
+        getUserTierMock.mockRejectedValue(new Error('db down'));
+
+        await expect(
+            getUserTier({ userId: 'user-1' }, { users: repository })
+        ).rejects.toThrow('db down');
+    });
 });

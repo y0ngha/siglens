@@ -10,7 +10,7 @@ vi.mock('@/shared/cache/cacheNonEmpty', () => ({
 vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsCards: mocks.getMarketNewsCards,
 }));
-vi.mock('@/widgets/news-hub/CategoryCard', () => ({
+vi.mock('@/widgets/news-hub/utils/previewHeadlines', () => ({
     PREVIEW_HEADLINE_LIMIT: 2,
 }));
 vi.mock('@/shared/lib/news/resolveNewsTitle', () => ({

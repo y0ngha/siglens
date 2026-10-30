@@ -248,6 +248,8 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 #### RT-1 — Verify gates by running them, and verify claims exhaustively
 
 - "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
+- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
+- Source-scanning guards also live in route/slice `__tests__` folders outside `src/__tests__/guards` (`src/app/[locale]/__tests__`, `src/shared/i18n/__tests__`). When a change moves calls, directives (`'use client'`) or exports into a helper, include those folders in the scope and update the guard to follow the moved code.
 - Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards` and `src/shared/i18n/__tests__` (e.g. `noClientHookInServerComponent`), because scoped runs skip the repo-wide guards. Before removing a `'use client'` directive, confirm the component calls no client-only hook.
 - Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
 - Rerun every gate covering a file after each code-changing review fix, React Doctor included; a pass on the earlier version does not carry over to the fixed one.

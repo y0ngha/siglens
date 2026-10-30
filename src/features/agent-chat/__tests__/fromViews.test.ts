@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
-import { fromViews } from '@/features/agent-chat/hooks/useAgentStream';
+import { fromViews } from '@/features/agent-chat/lib/fromViews';
 
 const view = (v: Partial<ChatMessageView>): ChatMessageView =>
     ({
@@ -113,5 +113,134 @@ describe('fromViews', () => {
             'run_fresh_analysis',
         ]);
         expect(out.some(m => m.content.includes("I'll fetch"))).toBe(false);
+    });
+});
+
+function rowView(
+    seq: number,
+    role: ChatMessageView['role'],
+    content: string
+): ChatMessageView {
+    return {
+        id: `m${seq}`,
+        seq,
+        role,
+        content,
+        toolCalls: null,
+        toolName: null,
+        status: 'complete',
+        createdAt: new Date(2026, 0, 1).toISOString(),
+    };
+}
+
+function toolCallsView(
+    seq: number,
+    toolCalls: { id: string; name: string; args: Record<string, unknown> }[]
+): ChatMessageView {
+    return {
+        id: `m${seq}`,
+        seq,
+        role: 'assistant',
+        content: '',
+        toolCalls,
+        toolName: null,
+        status: 'complete',
+        createdAt: new Date(2026, 0, 1).toISOString(),
+    };
+}
+
+function toolResultView(
+    seq: number,
+    toolName: string | null,
+    content: string
+): ChatMessageView {
+    return {
+        id: `m${seq}`,
+        seq,
+        role: 'tool',
+        content,
+        toolCalls: null,
+        toolName,
+        status: 'complete',
+        createdAt: new Date(2026, 0, 1).toISOString(),
+    };
+}
+
+describe('fromViews — tool rows, statuses and follow-ups', () => {
+    it('drops a tool row that has no preceding assistant bubble to attach to', () => {
+        expect(fromViews([toolResultView(1, 'get_quote', 'result')])).toEqual(
+            []
+        );
+    });
+
+    it('a tool row with no matching tool call by name is appended as a new chip (not merged)', () => {
+        const out = fromViews([
+            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
+            toolResultView(2, 'weird', 'result'),
+        ]);
+        expect(out[0]!.tools.map(t => [t.name, t.summary])).toEqual([
+            ['search', undefined],
+            ['weird', 'result'],
+        ]);
+    });
+
+    it('a tool row with a null toolName falls back to the literal name "tool", both when matching and when pushed fresh', () => {
+        const out = fromViews([
+            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
+            toolResultView(2, null, 'result'),
+        ]);
+        // No existing call named "tool" — pushed as a new chip named "tool".
+        expect(out[0]!.tools.map(t => [t.name, t.summary])).toEqual([
+            ['search', undefined],
+            ['tool', 'result'],
+        ]);
+    });
+
+    it('a second empty-content assistant tool-call bubble merges an aborted status', () => {
+        const out = fromViews([
+            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
+            {
+                id: 'm2',
+                seq: 2,
+                role: 'assistant',
+                content: 'partial answer',
+                toolCalls: null,
+                toolName: null,
+                status: 'aborted',
+                createdAt: new Date(2026, 0, 1).toISOString(),
+            },
+        ]);
+        expect(out).toHaveLength(1);
+        expect(out[0]!.content).toBe('partial answer');
+        expect(out[0]!.status).toBe('aborted');
+    });
+
+    it('a standalone aborted assistant row (no merge) keeps the aborted status', () => {
+        const out = fromViews([
+            {
+                id: 'm1',
+                seq: 1,
+                role: 'assistant',
+                content: 'partial',
+                toolCalls: null,
+                toolName: null,
+                status: 'aborted',
+                createdAt: new Date(2026, 0, 1).toISOString(),
+            },
+        ]);
+        expect(out).toEqual([
+            expect.objectContaining({ content: 'partial', status: 'aborted' }),
+        ]);
+    });
+
+    it('저장된 대화의 followUps(서버가 나눈 값)를 메시지에 싣는다', () => {
+        const answer = {
+            ...rowView(2, 'assistant', '본문'),
+            followUps: ['A', 'B'],
+        };
+        expect(fromViews([rowView(1, 'user', 'q'), answer])[1]).toMatchObject({
+            content: '본문',
+            followUps: ['A', 'B'],
+        });
     });
 });
