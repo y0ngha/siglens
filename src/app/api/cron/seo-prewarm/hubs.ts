@@ -73,8 +73,8 @@ import {
     CALENDAR_COUNTRY,
     CALENDAR_COUNTRY_KR,
     economyCalendarCacheTag,
-    type CalendarCountry,
 } from '@/entities/economy/lib/economyCalendarConstants';
+import type { CalendarCountry } from '@/entities/economy/model';
 
 /**
  * 허브 페이지의 AI 콘텐츠를 **서버에서 미리 굽는다**.

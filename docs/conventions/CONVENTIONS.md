@@ -778,6 +778,14 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-12"></a>
+
+#### CM-12 — Every exported component, hook and helper carries its own JSDoc
+
+A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one.
+
+- ❌ A new `useEconomyFilter` exported under only the file's header comment.
+- ✅ A short JSDoc above `useEconomyFilter` naming what it owns and returns.
 <a id="CM-11"></a>
 
 #### CM-11 — Comments describe the current design and WHY, not history
@@ -1026,6 +1034,25 @@ complete. Show it as in-progress or leave it out.
 - ❌ Labelling the net flow of a quarter that has only a few filings as "net selling".
 - ✅ Marking the in-progress quarter as collecting, and deriving that state from period completeness rather than from an empty result.
 
+<a id="CS-20"></a>
+
+#### CS-20 — Visibility and emptiness checks use the value the UI renders
+
+When a block is shown or hidden based on a text or value, the check reads the same resolver, field and rounding the rendered output uses. Testing a different field (a raw or non-localized one) than the one printed makes the block appear empty, or hide when it has content. Derive both from one shared value.
+
+- ❌ `summaryKo ? <Summary text={resolveSummary(item, locale)} /> : null`
+- ✅ `const text = resolveSummary(item, locale); text ? <Summary text={text} /> : null`
+
+<a id="CS-21"></a>
+
+#### CS-21 — Compute a value only on the path that uses it
+
+A value that only one branch reads is computed inside that branch (or behind the same condition), not on every render or
+call and then discarded when the condition is off. Deriving it unconditionally does work the user never sees and hides
+which branch actually depends on it.
+
+- ❌ `const hasVisible = visibleOf(group).length > 0;` … `{isSelected && !hasVisible && <EmptyNote />}`
+- ✅ `const showEmptyNote = isSelected && visibleOf(group).length === 0;`
 <a id="CS-23"></a>
 
 #### CS-23 — Sign, colour and prefix come from the rounded value that is printed

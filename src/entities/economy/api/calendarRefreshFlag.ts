@@ -4,8 +4,8 @@ import {
     CALENDAR_BACKFILL_FLAG_TTL_SECONDS,
     CALENDAR_REFRESH_FLAG_KEY,
     CALENDAR_REFRESH_FLAG_TTL_SECONDS,
-    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
+import type { CalendarCountry } from '../model';
 
 /**
  * 국가별 키. 하나의 전역 키를 쓰면 미국 인제스션이 마킹한 플래그 때문에 한국
