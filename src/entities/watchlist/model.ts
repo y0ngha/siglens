@@ -48,7 +48,10 @@ export type AddWatchlistResult =
     | { status: 'ok'; item: WatchlistItemView; created: boolean }
     | WatchlistActionError;
 
-/** `removeWatchlistItemAction`의 결과. */
+/**
+ * `removeWatchlistItemAction`의 결과. 없는 심볼을 지워도 `ok`(멱등)라 성공 분기에 삭제 여부가
+ * 실리지 않으며, 실패는 던지지 않고 {@link WatchlistActionError}로 돌아온다.
+ */
 export type RemoveWatchlistResult = { status: 'ok' } | WatchlistActionError;
 
 /** `skipped`는 상한 때문에 버린 새 심볼 수. 이미 계정에 있던 심볼은 added에도 skipped에도 들지 않는다. */

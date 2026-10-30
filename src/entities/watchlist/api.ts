@@ -13,6 +13,8 @@ import type {
 import { withRetry } from '@/shared/lib/withRetry';
 import { planWatchlistMerge } from './lib/planWatchlistMerge';
 
+type WatchlistTx = Parameters<Parameters<SiglensDatabase['transaction']>[0]>[0];
+
 const columns = {
     id: watchlistItems.id,
     userId: watchlistItems.userId,
@@ -20,8 +22,6 @@ const columns = {
     companyName: watchlistItems.companyName,
     createdAt: watchlistItems.createdAt,
 };
-
-type WatchlistTx = Parameters<Parameters<SiglensDatabase['transaction']>[0]>[0];
 
 /**
  * 회원 행을 `FOR NO KEY UPDATE`로 잠가 같은 회원의 동시 쓰기를 직렬화한다. "개수 조회 →
@@ -58,7 +58,10 @@ export class DrizzleWatchlistRepository implements WatchlistItemRepository {
         );
     }
 
-    /** 회원이 담은 건수. */
+    /**
+     * 표시용 건수 조회. 잠금 없는 읽기라 상한 판정에 쓰면 동시 쓰기에서 상한을 넘길 수
+     * 있다 — 상한 검사는 {@link lockMember} 안의 `addWithinLimit`·`mergeSymbols`가 맡는다.
+     */
     async countByUser(userId: string): Promise<number> {
         const [row] = await withRetry(
             () =>

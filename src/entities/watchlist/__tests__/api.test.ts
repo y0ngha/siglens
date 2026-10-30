@@ -62,24 +62,28 @@ describe('DrizzleWatchlistRepository', () => {
 
             // 기존 1 + 신규 2 = 상한 3. TSLA가 밀린다.
             expect(outcome).toEqual({ added: 2, skipped: 1 });
-            expect(captured).toHaveLength(3);
-            expect(captured[0]).toEqual({
-                sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
-                params: ['user-1'],
-            });
-            expect(captured[1].sql).toBe(
-                'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1'
-            );
-            expect(captured[2].sql).toMatch(
-                /^insert into "watchlist_items" .* on conflict \("user_id","symbol"\) do nothing returning "id"$/
-            );
-            expect(captured[2].params).toEqual([
-                'user-1',
-                'MSFT',
-                'Microsoft Corp.',
-                'user-1',
-                'NVDA',
-                null,
+            expect(captured).toEqual([
+                {
+                    sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
+                    params: ['user-1'],
+                },
+                {
+                    sql: 'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1',
+                    params: ['user-1'],
+                },
+                {
+                    sql: expect.stringMatching(
+                        /^insert into "watchlist_items" .* on conflict \("user_id","symbol"\) do nothing returning "id"$/
+                    ),
+                    params: [
+                        'user-1',
+                        'MSFT',
+                        'Microsoft Corp.',
+                        'user-1',
+                        'NVDA',
+                        null,
+                    ],
+                },
             ]);
         });
 
@@ -99,7 +103,11 @@ describe('DrizzleWatchlistRepository', () => {
                 50
             );
 
-            expect(captured[2].params).toEqual(['user-1', 'MSFT', 'Microsoft']);
+            expect(captured.map(q => q.params)).toEqual([
+                ['user-1'],
+                ['user-1'],
+                ['user-1', 'MSFT', 'Microsoft'],
+            ]);
         });
 
         it('넣을 것이 없으면 insert하지 않고 { added: 0 }을 돌려준다', async () => {
@@ -161,23 +169,21 @@ describe('DrizzleWatchlistRepository', () => {
                 item: record('AAPL'),
                 created: true,
             });
-            expect(captured).toHaveLength(3);
-            expect(captured[0]).toEqual({
-                sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
-                params: ['user-1'],
-            });
-            expect(captured[1]).toEqual({
-                sql: 'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1',
-                params: ['user-1'],
-            });
-            expect(captured[2].sql).toMatch(
-                /^insert into "watchlist_items" \("id", "user_id", "symbol", "company_name", "created_at"\) values \(default, \$1, \$2, \$3, default\) on conflict \("user_id","symbol"\) do update set "company_name" = coalesce\("watchlist_items"\."company_name", \$4\) returning /
-            );
-            expect(captured[2].params).toEqual([
-                'user-1',
-                'AAPL',
-                'Apple Inc.',
-                'Apple Inc.',
+            expect(captured).toEqual([
+                {
+                    sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
+                    params: ['user-1'],
+                },
+                {
+                    sql: 'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1',
+                    params: ['user-1'],
+                },
+                {
+                    sql: expect.stringMatching(
+                        /^insert into "watchlist_items" \("id", "user_id", "symbol", "company_name", "created_at"\) values \(default, \$1, \$2, \$3, default\) on conflict \("user_id","symbol"\) do update set "company_name" = coalesce\("watchlist_items"\."company_name", \$4\) returning /
+                    ),
+                    params: ['user-1', 'AAPL', 'Apple Inc.', 'Apple Inc.'],
+                },
             ]);
         });
 
@@ -192,8 +198,10 @@ describe('DrizzleWatchlistRepository', () => {
             ).addWithinLimit(input, 2);
 
             expect(outcome).toEqual({ status: 'limit_reached' });
-            expect(captured).toHaveLength(2);
-            expect(captured.some(q => q.sql.startsWith('insert'))).toBe(false);
+            expect(captured.map(q => q.sql.split(' ')[0])).toEqual([
+                'select',
+                'select',
+            ]);
         });
 
         it('이미 담긴 심볼은 상한이어도 상한을 적용하지 않고 upsert로 성공한다', async () => {
@@ -212,10 +220,13 @@ describe('DrizzleWatchlistRepository', () => {
                 item: record('AAPL'),
                 created: false,
             });
-            expect(captured).toHaveLength(3);
-            expect(captured[2].sql).toContain(
-                'on conflict ("user_id","symbol") do update'
-            );
+            expect(captured.map(q => q.sql)).toEqual([
+                expect.stringContaining('for no key update'),
+                expect.stringContaining('from "watchlist_items"'),
+                expect.stringContaining(
+                    'on conflict ("user_id","symbol") do update'
+                ),
+            ]);
         });
 
         it('상한보다 하나 적으면(limit-1) 넣는다 — 경계', async () => {
