@@ -18,10 +18,10 @@ import {
 } from '@/app/api/ai/chat/tools/krInvestorTrend';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type {
+    CollectingArms,
     InvestorFlowsDegradedPart,
     InvestorFlowsPipelineReadiness,
 } from '@/entities/investor-flows/model';
-import type { CollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 
 const BASE_SOURCE =

@@ -1,3 +1,7 @@
+/**
+ * 가격 시리즈용 priceFormat(천 단위 구분자) 생성 유틸.
+ */
+
 import type { PriceFormatCustom } from 'lightweight-charts';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';

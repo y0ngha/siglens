@@ -1,14 +1,18 @@
+/**
+ * 시장(미국·한국·암호화폐) 공포·탐욕 지수 위젯의 조합 컴포넌트.
+ */
 import { useTranslations } from 'next-intl';
 import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
-import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
-import { MarketFearGreedComparison } from './MarketFearGreedComparison';
-import { MarketFearGreedFactorBar } from './MarketFearGreedFactorBar';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { MarketFearGreedComparison } from './ui/comparison/MarketFearGreedComparison';
+import { MarketFearGreedEmptyState } from './ui/empty/MarketFearGreedEmptyState';
+import { MarketFearGreedFactorBar } from './ui/factors/MarketFearGreedFactorBar';
+import { MarketFearGreedFootnote } from './ui/footer/MarketFearGreedFootnote';
+import { MarketFearGreedHero } from './ui/hero/MarketFearGreedHero';
 
 interface MarketFearGreedPageProps {
     /** 미국·한국(`MarketFearGreedSnapshot`)과 암호화폐 스냅샷을 모두 받는다 — 요인은 스냅샷 자신의 것을 그린다. */
@@ -17,68 +21,25 @@ interface MarketFearGreedPageProps {
     market: FearGreedMarketId;
 }
 
-/** `asOf` is an ISO `YYYY-MM-DD` calendar date → `YYYY년 M월 D일 종가 기준`. */
-function formatAsOf(
-    asOf: string,
-    t: (key: string, values?: Record<string, string | number>) => string
-): string {
-    const [year, month, day] = asOf.split('-').map(Number);
-    return t('asOfClose', { v0: year!, v1: month!, v2: day! });
-}
-
-// Each market's index is computed independently, so each gets a disclosure
-// naming what readers are likely to compare it against:
-// - us: CNN Fear & Greed. Ours uses 5 daily-close-derivable factors instead of
-//   7 (put/call ratio and NYSE 52-week high/low breadth have no data source).
-// - kr: no widely cited reference index; the note explains the KR proxies.
-// - crypto: alternative.me Crypto Fear & Greed. Ours has no social or survey
-//   inputs and is built from prices and volume only.
-/** 시장별 면책 문구 키 — 문구는 `widgets.market-fear-greed.page`에 있다. */
-const CNN_DIFFERENCE_KEY: Record<FearGreedMarketId, string> = {
-    us: 'cnnDifference',
-    kr: 'krDifference',
-    crypto: 'cryptoDifference',
-};
-
 /**
- * Market-wide Fear & Greed page. Server component — the snapshot is precomputed
- * server-side (no bars fetch, no client-side score recompute), so there is no
- * hydration-timing hazard here unlike the per-stock `FearGreedPage`.
+ * 시장 공포·탐욕 페이지 본문. 서버 컴포넌트 — 스냅샷은 서버에서 미리 계산돼
+ * 오므로(봉 fetch·클라이언트 재계산 없음) 종목 탭 `FearGreedPage`와 달리
+ * 하이드레이션 시점 문제가 없다.
  */
 export function MarketFearGreedPage({
     view,
     market,
 }: MarketFearGreedPageProps) {
     const t = useTranslations('widgets.market-fear-greed');
-    const tPage = useTranslations('widgets.market-fear-greed.page');
     const { snapshot, comparisons } = view;
 
-    if (!snapshot) {
-        return (
-            <div className="flex flex-col gap-2 py-6 text-sm text-secondary-400">
-                <p>{t('MarketFearGreedPage.1d7b3e')}</p>
-                <p className="text-xs text-secondary-500">
-                    {t('MarketFearGreedPage.e446f9')}
-                </p>
-            </div>
-        );
-    }
+    if (!snapshot) return <MarketFearGreedEmptyState />;
 
     return (
         // 가로 여백은 라우트가 소유한다 — 이 위젯은 세로 리듬만 책임진다.
         // (여기서 좌우 padding을 또 주면 페이지 프로즈와 들여쓰기가 어긋난다.)
         <div className="flex flex-col gap-6 py-6">
-            <section className="flex flex-col items-center gap-2">
-                <FearGreedGauge
-                    score={Math.round(snapshot.score)}
-                    label={snapshot.label}
-                    size="hero"
-                    confidence={snapshot.confidence}
-                />
-                <p className="text-xs text-secondary-500">
-                    {formatAsOf(snapshot.asOf, tPage)}
-                </p>
-            </section>
+            <MarketFearGreedHero snapshot={snapshot} />
 
             <section className="flex flex-col gap-3">
                 <h2 className={HEADING_SECTION}>
@@ -100,15 +61,11 @@ export function MarketFearGreedPage({
                 ))}
             </section>
 
-            <footer className="flex flex-col gap-1 text-xs text-secondary-500">
-                <p>{tPage(CNN_DIFFERENCE_KEY[market])}</p>
-                <p>
-                    <SampleFooterText
-                        confidence={snapshot.confidence}
-                        sampleSize={snapshot.sampleSize}
-                    />
-                </p>
-            </footer>
+            <MarketFearGreedFootnote
+                market={market}
+                confidence={snapshot.confidence}
+                sampleSize={snapshot.sampleSize}
+            />
         </div>
     );
 }

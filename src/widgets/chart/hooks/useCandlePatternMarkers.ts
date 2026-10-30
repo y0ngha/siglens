@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 캔들 패턴 탐지 결과를 캔들 시리즈 마커로 표시하는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
@@ -124,11 +128,18 @@ export function useCandlePatternMarkers({
     const markersPluginRef =
         useRef<ISeriesMarkersPluginApi<UTCTimestamp> | null>(null);
 
-    const markers = useMemo(() => {
-        const entries = detectCandlePatternEntries(bars);
-        const detectionBars = getDetectionBars(bars);
-        return toMarkerEntries(entries, detectionBars);
-    }, [bars]);
+    // 숨겨져 있으면 스캔하지 않는다 — 장중 봉 갱신(약 30초)마다 결과를 버릴 전체 스캔을
+    // 돌리던 낭비다.
+    const markers = useMemo(
+        () =>
+            isVisible
+                ? toMarkerEntries(
+                      detectCandlePatternEntries(bars),
+                      getDetectionBars(bars)
+                  )
+                : [],
+        [bars, isVisible]
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
@@ -139,7 +150,13 @@ export function useCandlePatternMarkers({
         if (!seriesRef.current) return;
         markersPluginRef.current = createSeriesMarkers(seriesRef.current, []);
         return () => {
-            markersPluginRef.current?.detach();
+            // 차트 생성 effect의 cleanup(`chart.remove()`)이 먼저 돌면 이미 제거된 시리즈에서
+            // detach가 던진다 — useChartOverlays·useExtendedSessionBand와 같은 순서 문제다.
+            try {
+                markersPluginRef.current?.detach();
+            } catch {
+                // 시리즈가 이미 제거됐다 — 붙은 플러그인도 함께 사라졌다.
+            }
             markersPluginRef.current = null;
         };
     }, [seriesRef]);
@@ -147,10 +164,8 @@ export function useCandlePatternMarkers({
     // Data synchronization
     useEffect(() => {
         if (!markersPluginRef.current) return;
-        markersPluginRef.current.setMarkers(
-            isVisible ? markers.map(toMarker) : []
-        );
-    }, [markers, isVisible]);
+        markersPluginRef.current.setMarkers(markers.map(toMarker));
+    }, [markers]);
 
     return { isVisible, toggle };
 }

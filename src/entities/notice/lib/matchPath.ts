@@ -4,7 +4,7 @@
  *  2. '/prefix/*'    → 접두 일치 ('/prefix' 자신과 '/prefix/...' 하위)
  *  3. 그 외          → 정확 일치
  * 양쪽 경로의 trailing slash는 비교 전 제거한다(길이 > 1인 경우만).
- * 정규식은 의도적으로 지원하지 않는다(설계 §2).
+ * 정규식은 의도적으로 지원하지 않는다.
  */
 export function matchPath(pattern: string | null, pathname: string): boolean {
     if (pattern === null || pattern === '/*') return true;

@@ -1,3 +1,7 @@
+/**
+ * 차트 위젯 공용 상수(선 두께, pane 인덱스, localStorage 키 등).
+ */
+
 export const DEFAULT_LINE_WIDTH = 1;
 /** 알파 0 — 시간외 캔들의 속 빈 몸통과 지표 선의 숨긴 선분이 같은 값을 쓴다(테마 팔레트 색이 아니다). */
 export const TRANSPARENT_COLOR = 'rgba(0, 0, 0, 0)';

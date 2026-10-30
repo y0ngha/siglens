@@ -54,7 +54,7 @@ const KEEPS_BORDER_RE =
 const ALLOWED_FILES: ReadonlySet<string> = new Set([
     // 공유 페이지의 캔들 차트 프레임. 차트 캔버스가 면 전체를 덮어 표면 그림자가 보이지
     // 않으므로 프레임은 선이 맡는다.
-    path.join('views', 'share', 'kindPanelRegistry.tsx'),
+    path.join('views', 'share', 'ui', 'chart', 'ChartSharePanel.tsx'),
 ]);
 
 const DEFINING_FILE = path.join('shared', 'lib', 'surfaceStyles.ts');

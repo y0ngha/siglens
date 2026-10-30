@@ -1,3 +1,6 @@
+/**
+ * 미국 종목 수급 탭 본문 조립.
+ */
 import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
 import type {
     InvestorFlowsPipelineReadiness,
@@ -10,8 +13,11 @@ import { InstitutionalSection } from './sections/InstitutionalSection';
 import { LargeHoldersSection } from './sections/LargeHoldersSection';
 import { ScorecardCard } from './sections/ScorecardCard';
 import { ShortSection } from './sections/ShortSection';
-import { resolveCollectingArms } from '@/entities/investor-flows/lib/investorFlowsReadiness';
-import { collectingAxes, temporarilyUnavailableAxes } from './utils/collecting';
+import {
+    collectingAxes,
+    resolveFlowsCollecting,
+    temporarilyUnavailableAxes,
+} from './utils/collecting';
 import { hasShortData } from './utils/short';
 
 interface InvestorFlowsContentProps {
@@ -35,8 +41,8 @@ interface InvestorFlowsContentProps {
  * Reg SHO 플래그를 따른다(꺼졌을 때 빈 껍데기·"데이터 없음" 문구도 남기지 않는다). 공매도 섹션 자체는 SEC 결제 불이행(FTD)이
  * 늘 들어가므로 항상 그린다. 순수 렌더라 데이터 fetch는 페이지가 한다.
  *
- * 초기 수집이 끝나기 전의 빈 구간은 "데이터 없음"/생략 대신 "모으는 중" 안내를 낸다(`resolveCollectingArms`) — 이 시점의 빈
- * 구간은 종목에 데이터가 없다는 뜻이 아니다. 준비가 끝났거나 상태를 못 읽으면 예전 동작 그대로다.
+ * 초기 수집이 끝나기 전의 빈 구간은 "데이터 없음"/생략 대신 "모으는 중" 안내를 낸다(`resolveFlowsCollecting`) — 이 시점의 빈
+ * 구간은 종목에 데이터가 없다는 뜻이 아니다. 준비가 끝났거나 상태를 못 읽으면 "수집 중"을 말하지 않는다.
  */
 export function InvestorFlowsContent({
     snapshot,
@@ -50,7 +56,7 @@ export function InvestorFlowsContent({
         snapshot.shortInterest,
         snapshot.shortVolume
     );
-    const collecting = resolveCollectingArms({
+    const collecting = resolveFlowsCollecting({
         readiness,
         snapshot,
         finraEnabled,

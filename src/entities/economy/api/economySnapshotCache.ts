@@ -1,16 +1,17 @@
 import 'server-only';
 import { cache } from 'react';
 
+import type {
+    EconomicIndicatorSeries,
+    EconomySnapshot,
+} from '@y0ngha/siglens-core';
+
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
 import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 import { MS_PER_DAY, SECONDS_PER_DAY } from '@/shared/config/time';
-import type {
-    EconomicIndicatorSeries,
-    EconomySnapshot,
-} from '@y0ngha/siglens-core';
 
 import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 import { etDateOf } from '../lib/calendarWindow';
@@ -20,10 +21,9 @@ import { etDateOf } from '../lib/calendarWindow';
  * static/runtime 캐시 양 계층이 import해 동일 fingerprint를 공유(드리프트 방지).
  */
 export const ECONOMY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
-    // The unit is part of the snapshot shape since core 1.11 (rate-type series
-    // carry `unit: '%'` for pp formatting), so it is part of the fingerprint:
-    // otherwise a snapshot cached before the change keeps serving unit-less
-    // series for up to a day after deploy.
+    // 단위는 core 1.11부터 스냅샷 형상의 일부다(금리형 시리즈는 pp 표기를 위해
+    // `unit: '%'`를 가진다). 그래서 fingerprint에도 넣는다 — 빼면 변경 전에
+    // 캐시된 스냅샷이 배포 후 최대 하루 동안 단위 없는 시리즈를 계속 내보낸다.
     JSON.stringify({
         indicators: ECONOMY_INDICATORS.map(i => ({
             name: i.name,

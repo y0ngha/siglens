@@ -1,9 +1,9 @@
-import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 
 import { getDatabaseClient } from '@/shared/db/client';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 import { DrizzleIndicatorTranslationRepository } from './indicatorTranslationRepository';
 import {
@@ -17,14 +17,14 @@ import {
 } from '../lib/indicatorTranslationConstants';
 
 /**
- * Module-level `unstable_cache` — ISR cold-gen 안전: DB 쿼리는 drizzle 로거(`noStoreQueryLogger`)의
+ * 모듈 레벨 `unstable_cache` — ISR cold-gen 안전: DB 쿼리는 drizzle 로거(`noStoreQueryLogger`)의
  * `unstable_noStore`로 static generate에서 `DYNAMIC_SERVER_USAGE`를 throw하므로 `unstable_cache`로
  * 감싼다(src/app/CLAUDE.md 4축 축1). revalidate=24h + `economy:indicator-translation` 태그로
  * `ensureIndicatorTranslatedAction`이 on-demand 무효화 가능.
  *
  * **DB 실패를 여기서 잡지 않는다.** 예전에는 이 콜백 안에서 `{}`로 흡수했는데, 그러면
  * `unstable_cache`가 그 빈 맵을 정상 결과로 저장해 일시 장애 한 번이 24h 동안 영어
- * 레이블로 굳었다(2026-10-01 허브 감사). 던지면 저장을 건너뛰므로, 흡수는 바깥
+ * 레이블로 굳었다(2026-10-01 확인). 던지면 저장을 건너뛰므로, 흡수는 바깥
  * (`readDbMap`)에서 한다 — `cacheNonEmpty`와 같은 원리다.
  *
  * `sortedNames`를 인자로 받아 Next.js가 자동으로 캐시 키에 포함시킨다

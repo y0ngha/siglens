@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, type MockInstance } from 'vitest';
 import { getTranslations } from 'next-intl/server';
-import { MarketNewsCard } from '../MarketNewsCard';
+import { MarketNewsCard } from '@/widgets/market-news/MarketNewsCard';
 import { sentimentLabel, SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
@@ -294,5 +294,58 @@ describe('MarketNewsCard는', () => {
         expect(chips).toHaveLength(2);
         expect(chips[0]).toHaveAttribute('href', '/AAPL/news');
         expect(chips[1]).toHaveAttribute('href', '/MSFT/news');
+    });
+
+    describe('중복 값', () => {
+        let consoleError: MockInstance<typeof console.error>;
+        beforeEach(() => {
+            consoleError = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+        });
+        afterEach(() => {
+            consoleError.mockRestore();
+        });
+
+        it('같은 티커가 두 번 와도 칩을 모두 그리고 중복 key 경고가 없다', () => {
+            render(
+                <MarketNewsCard
+                    category="stock"
+                    item={{ ...BASE, tickers: ['AAPL', 'AAPL'] }}
+                />
+            );
+            expect(screen.getAllByTestId('ticker-chip')).toHaveLength(2);
+            const logged = consoleError.mock.calls
+                .map(args => String(args[0]))
+                .join('\n');
+            expect(logged).not.toContain('same key');
+        });
+    });
+
+    describe('enrichmentStopped', () => {
+        const PENDING = {
+            ...BASE,
+            sentiment: null,
+            priceImpact: null,
+            category: null,
+            summaryKo: null,
+        };
+
+        it('보강 전 카드는 기본적으로 스켈레톤을 보인다', () => {
+            render(<MarketNewsCard category="general" item={PENDING} />);
+            expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
+        });
+
+        it('true이면 보강 전 카드도 스켈레톤 없이 그리고 출처를 보인다', () => {
+            render(
+                <MarketNewsCard
+                    category="general"
+                    item={PENDING}
+                    enrichmentStopped
+                />
+            );
+            expect(screen.queryByText('AI 분석 중…')).not.toBeInTheDocument();
+            expect(screen.getByText('CoinWire')).toBeInTheDocument();
+        });
     });
 });

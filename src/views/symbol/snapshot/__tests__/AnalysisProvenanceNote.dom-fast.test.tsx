@@ -117,6 +117,15 @@ describe('AnalysisProvenanceNote', () => {
             }
         });
 
+        it('separates the two links with real whitespace in the text', () => {
+            const { container } = render(
+                <AnalysisProvenanceNote marketProfile="us-equity" />
+            );
+            expect(container.textContent).toContain(
+                `${NOTE.methodLink} ${NOTE.reportLink}`
+            );
+        });
+
         it('is a compact text-xs paragraph in the secondary text token', () => {
             const { container } = render(
                 <AnalysisProvenanceNote marketProfile="us-equity" />

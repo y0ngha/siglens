@@ -36,8 +36,8 @@ import {
  * ⚠️ abort는 **브라우저 쪽 연결만** 끊는다. 라우트는 클라이언트의 `request.signal`을
  * core에 넘기지 않는다(의도적) — core는 같은 캐시 키의 호출자들이 `dedupeInFlight`로
  * 하나의 promise를 공유하므로, 한 명의 이탈이 SEO prewarm 크론까지 실패시킨다.
- * 자세한 근거는 `src/app/api/analysis/stream/route.ts`의 관련 주석 참고.
- * 서버 쪽 상한은 라우트의 `withDeadline`(`STREAM_DEADLINE_MS`)이 담당한다.
+ * 서버 쪽 상한과 그 근거는 `src/app/api/analysis/stream/_lib/withDeadline.ts`의
+ * `withDeadline`(`STREAM_DEADLINE_MS`)이 담당한다.
  */
 
 export interface RunAnalysisStreamOptions {

@@ -41,16 +41,11 @@ import { strToU8, zipSync } from 'fflate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     __resetDartClientForTests,
-    DART_DAILY_CALL_BUDGET,
-    DART_DAILY_QUOTA,
     DART_LIST_PAGE_COUNT,
-    DART_QUOTA_BREAKER_KEY,
-    DART_QUOTA_WARN_RATIO,
     DartApiError,
     DartDisabledError,
     DartIpNotAllowedError,
     DartQuotaError,
-    dartDailyCallCounterKey,
     dartFatalReason,
     fetchCorpCodeZip,
     fetchDisclosureList,
@@ -58,8 +53,14 @@ import {
     fetchExecutiveStock,
     fetchMajorStock,
     isDartEnabled,
-    secondsUntilNextKstMidnight,
 } from '../dartClient';
+import {
+    DART_DAILY_CALL_BUDGET,
+    DART_DAILY_QUOTA,
+    DART_QUOTA_BREAKER_KEY,
+    DART_QUOTA_WARN_RATIO,
+    dartDailyCallCounterKey,
+} from '../dartQuotaGuard';
 
 const KEY = 'a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6a7b8c9d0';
 /** 2026-10-16 10:00 KST(01:00 UTC). */
@@ -520,20 +521,6 @@ describe('dartClient', () => {
             await expect(fetchCorpCodeZip()).rejects.toThrow(
                 'status 000 without a zip'
             );
-        });
-    });
-
-    describe('secondsUntilNextKstMidnight', () => {
-        it('counts to the next 00:00 KST', () => {
-            expect(
-                secondsUntilNextKstMidnight(new Date('2026-10-16T14:00:00Z'))
-            ).toBe(60 * 60); // 23:00 KST
-        });
-
-        it('never returns less than a minute', () => {
-            expect(
-                secondsUntilNextKstMidnight(new Date('2026-10-16T14:59:59Z'))
-            ).toBe(60);
         });
     });
 });

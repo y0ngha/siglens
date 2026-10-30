@@ -20,7 +20,7 @@ export const STATIC_SYMBOL_CACHE_VERSION = 'ssc-v1';
  * `symbol:${SYMBOL}` 태그로 on-demand 무효화를 지원한다.
  *
  * 전제: root layout cookies() 제거(축 0)가 선결돼야 효과가 있다 — PoC에서 layout이
- * 전 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력했다(phase0-1 plan Task 1).
+ * 전 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력했다.
  *
  * keyParts는 호출 결과를 유일하게 식별해야 한다(symbol + 추가 인자 모두 포함). fetcher는
  * 인자 없는 closure로 넘긴다(키잉은 keyParts가 담당).
@@ -31,9 +31,9 @@ export const STATIC_SYMBOL_CACHE_VERSION = 'ssc-v1';
  * 다른 호출부마다(`() => getProfile(symbol)` vs `() => provider.getProfile(upper)`) 엔트리가
  * 갈라져, 같은 keyParts를 쓰는 곳끼리 공유한다는 전제(예: `fundamental:profile`을
  * `getProfileResilient`와 `ProfileSection`이, 뉴스 목록 키를 news·overall 탭이 공유)가
- * 조용히 깨졌다 — cold render마다 같은 FMP/DB 읽기가 키 수만큼 반복됐다(2026-10 서버 성능
- * 감사 M4). 그래서 여기서 **고정된 래퍼**로 감싸 넘긴다. 대가로 **같은 keyParts는 어디서
- * 부르든 같은 데이터여야 한다** — 다른 데이터를 같은 키 접두사로 캐시하면 서로 덮는다.
+ * 조용히 깨졌다 — cold render마다 같은 FMP/DB 읽기가 키 수만큼 반복됐다(2026-10).
+ * 그래서 여기서 **고정된 래퍼**로 감싸 넘긴다. 대가로 **같은 keyParts는 어디서 부르든
+ * 같은 데이터여야 한다** — 다른 데이터를 같은 키 접두사로 캐시하면 서로 덮는다.
  * 새 키를 만들 때 `rg "staticSymbolCache|cacheNonEmpty"`로 접두사 충돌을 확인할 것.
  *
  * **키 안정성은 호출부 책임이다**(데이터 캐시가 배포를 넘어 공유되므로 — SERVER.md

@@ -20,7 +20,7 @@ import {
  * `max(filing_date)`이라 원장 행이 사라지면 sec-13f가 창 시작일부터 다시 훑고(최초 백필과 똑같이), 지워진 accession은
  * 처리 전이라 다시 내려받아 반영한다. 이 스크립트는 포지션·집계를 직접 지우지 않으며, 재수집은 **덮어쓰기가 아니라 병합**으로
  * 반영된다: 원장이 비었는데 그 (cik, 분기)의 포지션이 이미 있으면(`hasPositions`) 원본 13F-HR을 `replace`가 아니라 `merge`로
- * 반영한다(`ingest13f.ts`). 그래서 같은 값의 행은 그대로이고(`IS DISTINCT FROM` 가드) 새 CUSIP의 행만 추가·dirty 표시되며, 이미
+ * 반영한다(`ingest13fFiling.ts`). 그래서 같은 값의 행은 그대로이고(`IS DISTINCT FROM` 가드) 새 CUSIP의 행만 추가·dirty 표시되며, 이미
  * 병합돼 있던 NEW HOLDINGS 정정 행도 지워지지 않는다 — 재수집이 도는 며칠 동안 보유 기관·수량이 줄어드는 구간이 없다.
  * 재수집된 제출의 `universe_stamp`는 새 유니버스 시각으로 갱신된다.
  * 남는 한계: **RESTATEMENT** 필러는 정의상 교체라, 교체본을 다시 읽는 순간 그 뒤에 병합됐던 정정 행이 정정을 다시 읽을 때까지

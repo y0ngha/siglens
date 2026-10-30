@@ -1,16 +1,14 @@
 'use client';
 
+/**
+ * The four options metric cards (Max Pain, P/C ratio, ATM IV, implied move)
+ * plus the previous-session and combined-expiry captions.
+ */
+
 import { useTranslations } from 'next-intl';
 import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
-import {
-    formatAtmIv,
-    formatImpliedMove,
-    formatMaxPain,
-    formatPutCallRatio,
-    METRIC_PLACEHOLDER,
-} from '@/entities/options-chain/lib/optionsFormatters';
 import {
     AtmIvTooltip,
     ImpliedMoveTooltip,
@@ -21,6 +19,7 @@ import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatCapturedAtKst } from './utils/formatCapturedAtKst';
+import { buildMetricCardValues } from './utils/metricsRowCards';
 
 interface MetricCardProps {
     label: string;
@@ -70,6 +69,7 @@ interface OptionsMetricsRowProps {
     showCapturedCaption: boolean;
 }
 
+/** 옵션 지표 카드 네 장 — OI가 stale하면 Max Pain은 값 대신 대시로 가린다. */
 export function OptionsMetricsRow({
     expirationDate,
     metrics,
@@ -83,36 +83,26 @@ export function OptionsMetricsRow({
     const capturedAtKst = showCapturedCaption
         ? formatCapturedAtKst(capturedAt, locale)
         : null;
-    // siglens-core R12: maxPain / putCallRatio are now `number | null`
-    // (formatters tolerate the union explicitly), so pass through directly
-    // without the legacy `?? NaN` coercion.
+    const values = buildMetricCardValues(metrics, oiStale);
     const metricCards = [
         {
             label: t('OptionsMetricsRow.maxPain'),
-            value: oiStale
-                ? METRIC_PLACEHOLDER
-                : formatMaxPain(metrics?.maxPain ?? null),
+            value: values.maxPain,
             tooltip: MaxPainTooltip,
         },
         {
             label: t('OptionsMetricsRow.putCallRatio'),
-            value: oiStale
-                ? METRIC_PLACEHOLDER
-                : formatPutCallRatio(metrics?.putCallRatio ?? null),
+            value: values.putCallRatio,
             tooltip: PutCallRatioTooltip,
         },
         {
             label: t('OptionsMetricsRow.atmIv'),
-            value: oiStale
-                ? METRIC_PLACEHOLDER
-                : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
+            value: values.atmIv,
             tooltip: <AtmIvTooltip />,
         },
         {
             label: t('OptionsMetricsRow.impliedMove'),
-            value: oiStale
-                ? METRIC_PLACEHOLDER
-                : formatImpliedMove(metrics?.impliedMovePercent ?? null),
+            value: values.impliedMove,
             tooltip: <ImpliedMoveTooltip />,
         },
     ] as const;

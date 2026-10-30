@@ -1,55 +1,27 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
+/**
+ * 사이트 공지 팝업 — 공지 큐의 첫 공지를 모달(모바일은 바텀시트)로 띄운다.
+ */
+import { useRef } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
-import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { formatNoticeDate } from '@/entities/notice/lib/formatNoticeDate';
-import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
-import {
-    BUTTON_GHOST,
-    BUTTON_OUTLINE,
-    BUTTON_PRIMARY,
-} from '@/shared/lib/buttonStyles';
-import { CloseIcon } from '@/shared/ui/StrokeIcons';
+import { useNoticeDialogFocus } from '../hooks/useNoticeDialogFocus';
 import { useNoticePopup } from '../hooks/useNoticePopup';
+import { NoticeDialogBody } from './dialog/NoticeDialogBody';
+import { NoticeDialogFooter } from './dialog/NoticeDialogFooter';
+import { NoticeDialogHeader } from './dialog/NoticeDialogHeader';
 
 const MODAL_TITLE_ID = 'notice-modal-title';
 
 /**
- * 마크다운 렌더러를 **띄울 공지가 실제로 있을 때만** 내려받는다.
- *
- * 이 팝업은 루트 레이아웃에서 항상 마운트되는데(`NoticePopupLoader`), `react-markdown`
- * + `remark-gfm` + `rehype-slug` 체인이 정적 import로 묶여 있어서 **공지가 하나도 없는
- * 페이지에서도** 그 청크가 초기 로드에 딸려 왔다(실측: 홈이 markdown 청크 113KB /
- * 전송 34KB를 받고 그중 26KB가 unused).
- *
- * 본문(`current`)이 없으면 이 컴포넌트는 그 위에서 `null`을 반환하므로, 아래 렌더에
- * 도달했다는 것 자체가 "보여줄 공지가 있다"는 뜻이다 — 그 시점에만 청크를 가져온다.
- *
- * `loading`을 주지 않는다 = 이 `dynamic()`이 **Suspense 경계를 만들지 않는다**
- * (`hasSuspenseBoundary = !opts.ssr || !!opts.loading`). 따라서 청크를 기다리는 동안
- * 멈추는 것은 본문만이 아니라 팝업 전체이고, 대기 지점은 `NoticePopupLoader`가
- * `{ssr:false}`로 만든 바깥 경계(fallback `null`)다. 모달은 페이지 흐름 밖이라
- * 레이아웃을 밀지 않고, 원래도 비동기로 뜨는 화면이라 이 편이 단순하다.
- */
-const MarkdownText = dynamic(() =>
-    import('@/shared/ui/MarkdownText').then(m => m.MarkdownText)
-);
-
-/**
- * 사이트 공지 팝업. 데이터/큐 로직은 useNoticePopup 훅에 위임하고, 이 컴포넌트는
- * 모달 렌더링과 포커스/키보드 접근성만 담당한다.
- * - X / 배경 클릭 / Esc = 임시 닫기(다음 방문 시 재노출)
+ * 사이트 공지 팝업. 데이터/큐 로직은 `useNoticePopup`, 키보드·포커스는
+ * `useNoticeDialogFocus`에 위임하고, 이 컴포넌트는 모달 껍데기와 조립만 담당한다.
+ * - X / 배경 클릭 / Esc / "닫기" = 임시 닫기(다음 방문 시 재노출)
  * - "다시 보지 않기" = localStorage에 ID 영구 저장
  */
 export function NoticePopup() {
-    const t = useTranslations('widgets.notice-popup');
-    const tMisc = useTranslations('shared.ui.misc');
     const dialogRef = useRef<HTMLDivElement>(null);
     // `notices.path_pattern`은 운영자가 넣는 접두사 없는 경로(`/market`, `/symbol/*`)다.
     // 접두사가 붙은 경로로 매칭하면 비-ko 사용자에게 **경로 지정 공지가 전부 사라진다**
@@ -57,27 +29,20 @@ export function NoticePopup() {
     const pathname = useAppPathname();
     const { queue, advance, dontShowAgain } = useNoticePopup(pathname);
 
-    useEscapeKey(advance, queue.length > 0);
-    useFocusTrap(dialogRef, queue.length > 0);
-
     const current = queue[0] ?? null;
-
-    useEffect(() => {
-        if (queue.length > 0) dialogRef.current?.focus();
-    }, [queue]);
+    // 열림 여부와 포커스 이동 기준이 지금 보이는 공지(`current`)라 그 파생 직후에 둔다.
+    useNoticeDialogFocus(dialogRef, current?.id ?? null, advance);
 
     if (current === null) return null;
-
-    const safeLinkUrl = toSafeHttpUrl(current.linkUrl);
 
     return (
         <div
             role="presentation"
             data-testid="notice-modal-backdrop"
             // 모바일(<640px)은 전체 화면을 덮지 않는다 — 검색 유입의 첫 화면을
-            // 가리는 오버레이가 구글의 모바일 인터스티셜 판정 대상이다(2026-09
-            // 구글 정책 감사 L21). 화면 아래에 붙는 시트라 뒤 콘텐츠가 보인다.
-            // 데스크톱은 기존 중앙 오버레이 그대로(딤 + blur는 sm 이상에서만).
+            // 가리는 오버레이가 구글의 모바일 인터스티셜 판정 대상이다. 화면 아래에
+            // 붙는 시트라 뒤 콘텐츠가 보인다. 데스크톱은 중앙 오버레이(딤 + blur는
+            // sm 이상에서만).
             className="fixed inset-x-0 bottom-0 z-9999 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:bg-secondary-950/80 sm:px-4 sm:backdrop-blur-sm"
             // 배경 클릭 닫기는 편의 기능(닫기 경로는 Escape + 닫기 버튼). target 비교로
             // 처리해 내부 컨테이너에 stopPropagation 핸들러를 달지 않는다 — role="dialog"에
@@ -104,78 +69,16 @@ export function NoticePopup() {
                     'flex max-h-[85dvh] w-full flex-col rounded-b-none p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:max-w-md sm:rounded-b-lg sm:pb-5'
                 )}
             >
-                <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
-                    <h2
-                        id={MODAL_TITLE_ID}
-                        className="text-base font-bold text-secondary-100"
-                    >
-                        {current.title}
-                    </h2>
-                    <button
-                        onClick={advance}
-                        aria-label={t('NoticePopup.a5ce49')}
-                        // 44px 타깃을 유지하면서 음수 여백으로 제목 줄 높이는 그대로 둔다.
-                        className="-my-2.5 -mr-2.5 flex size-11 shrink-0 items-center justify-center rounded-lg text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                    >
-                        <CloseIcon className="size-5" />
-                    </button>
-                </div>
-                {/* 긴 마크다운이 푸터(버튼)를 화면 밖으로 밀지 않도록 본문만 스크롤시킨다.
-                    min-h-0은 flex 자식이 기본 min-height:auto여서, 없으면 overflow가 동작하지
-                    않아(자식이 콘텐츠 높이만큼 늘어남) 반드시 필요하다.
-                    tabIndex/role/aria-label은 키보드 접근성용: 본문에 포커스 가능한 자손(링크)이
-                    없으면 키보드 사용자가 스크롤 영역에 진입할 수 없어 방향키/PageUp·Down으로
-                    긴 본문을 스크롤할 수 없다(WCAG 2.1.1). 컨테이너를 포커스 가능하게 만든다. */}
-                <div
-                    tabIndex={0}
-                    role="region"
-                    aria-label={t('NoticePopup.ca2829')}
-                    data-testid="notice-body-scroller"
-                    className="-mr-2 min-h-0 flex-1 overflow-y-auto rounded pr-2 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                >
-                    <p className="mb-3 text-xs text-secondary-500">
-                        {(() => {
-                            const parts = formatNoticeDate(current.createdAt);
-                            return parts === null
-                                ? ''
-                                : tMisc('noticeWrittenOn', {
-                                      v0: parts.year,
-                                      v1: parts.month,
-                                      v2: parts.day,
-                                  });
-                        })()}
-                    </p>
-                    <MarkdownText className="text-sm text-secondary-300">
-                        {current.body}
-                    </MarkdownText>
-                    {safeLinkUrl !== null && (
-                        <a
-                            href={safeLinkUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                                BUTTON_PRIMARY,
-                                'mt-4 px-4 py-2 text-sm'
-                            )}
-                        >
-                            {current.linkLabel ?? safeLinkUrl}
-                        </a>
-                    )}
-                </div>
-                <div className="mt-5 flex shrink-0 items-center justify-end gap-3">
-                    <button
-                        onClick={dontShowAgain}
-                        className={cn(BUTTON_GHOST, 'text-sm')}
-                    >
-                        {t('NoticePopup.e83def')}
-                    </button>
-                    <button
-                        onClick={advance}
-                        className={cn(BUTTON_OUTLINE, 'px-4 py-2 text-sm')}
-                    >
-                        {t('NoticePopup.94b7db')}
-                    </button>
-                </div>
+                <NoticeDialogHeader
+                    titleId={MODAL_TITLE_ID}
+                    title={current.title}
+                    onClose={advance}
+                />
+                <NoticeDialogBody notice={current} />
+                <NoticeDialogFooter
+                    onDontShowAgain={dontShowAgain}
+                    onClose={advance}
+                />
             </div>
         </div>
     );

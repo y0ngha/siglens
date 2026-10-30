@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { SignalStockCard } from '@/widgets/dashboard/SignalStockCard';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
 
@@ -36,7 +37,7 @@ vi.mock('@/shared/lib/priceFormat', () => ({
     formatUsdPrice: (price: number) => price.toFixed(2),
 }));
 
-vi.mock('@/widgets/dashboard/SignalBadge', () => ({
+vi.mock('@/widgets/dashboard/ui/signal/SignalBadge', () => ({
     SignalBadge: ({ type }: { type: string }) => (
         <span data-testid={`badge-${type}`}>{type}</span>
     ),
@@ -93,11 +94,28 @@ describe('SignalStockCard', () => {
         render(
             <SignalStockCard tickerIsReadable currencySymbol="$" data={STOCK} />
         );
-        // 티커를 쓴다 — `koreanName`은 로케일과 무관하게 한국어라
-        // `/en`에서도 `애플 분석`이 나갔다.
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/AAPL');
-        expect(link).toHaveAttribute('title', 'AAPL 분석');
+    });
+
+    /**
+     * 링크 제목은 카드에 보이는 이름과 같은 소스(`assetLabel`)를 써야 한다 — 카드는
+     * 이름인데 툴팁만 티커면 한 카드가 두 이름으로 읽힌다.
+     */
+    it.each([
+        ['ko', '애플 분석'],
+        ['en', 'Analyze Apple'],
+        ['ja', 'Appleを分析'],
+    ] as const)('%s: 링크 제목이 표시 이름을 쓴다', (locale, title) => {
+        renderWithIntl(
+            <SignalStockCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={STOCK}
+            />,
+            { locale }
+        );
+        expect(screen.getByRole('link')).toHaveAttribute('title', title);
     });
 
     it('renders signal badges', () => {
@@ -124,7 +142,7 @@ describe('SignalStockCard', () => {
         expect(screen.getByText(/하락 2건/)).toBeInTheDocument();
     });
 
-    /** 카드가 prop을 QuoteHeader로 넘기는지 — 그 한 줄이 빠지면 조용히 옛 배치로 돌아간다. */
+    /** 카드가 prop을 QuoteHeader로 넘기는지 — 그 한 줄이 빠지면 조용히 티커 우선 배치로 돌아간다. */
     it('tickerIsReadable=false면 한국어명이 먼저 렌더된다', () => {
         render(
             <SignalStockCard

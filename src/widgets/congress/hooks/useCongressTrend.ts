@@ -160,6 +160,9 @@ export function useCongressTrend(
         if (query.error instanceof NoCongressTradesError) {
             return { status: 'no_trades', trigger: retry };
         }
+        // 오류 뒤 retry()가 도는 동안 React Query는 직전 오류를 유지한다 — 그대로 두면
+        // 재시도 피드백이 없고 연속 클릭이 스트림을 취소·재시작한다.
+        if (query.isFetching) return { status: 'loading', trigger: retry };
         return {
             status: 'error',
             error:

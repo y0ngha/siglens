@@ -8,6 +8,7 @@ import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
 // prerender 불가. CDN max-age 1h + SWR 1h로 traffic 보호.
 export const dynamic = 'force-dynamic';
 
+/** 정적 페이지·가이드 sitemap XML. */
 export async function GET(request: Request): Promise<Response> {
     const aiHostRejection = rejectAiHost(request);
     if (aiHostRejection) return aiHostRejection;

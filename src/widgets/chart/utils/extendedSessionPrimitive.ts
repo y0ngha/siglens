@@ -1,3 +1,7 @@
+/**
+ * 프리·애프터마켓 구간을 pane 배경 음영으로 그리는 시리즈 프리미티브.
+ */
+
 import type {
     IPrimitivePaneRenderer,
     IPrimitivePaneView,
