@@ -1,5 +1,8 @@
 'use client';
 
+/**
+ * 분석 모델 선택 드롭다운 — 트리거 버튼(현재 모델 표시)과 `ModelListbox` 팝오버를 묶는다.
+ */
 import { useTranslations } from 'next-intl';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
