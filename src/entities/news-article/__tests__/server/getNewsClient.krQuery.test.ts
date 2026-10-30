@@ -9,7 +9,7 @@ vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
     getKoreanNames: mockGetKoreanNames,
 }));
 
-vi.mock('../lib/naverNewsClient', () => ({
+vi.mock('../../server/naverNewsClient', () => ({
     NaverNewsClient: class {
         constructor(resolveQuery: (symbol: string) => Promise<string | null>) {
             capturedResolvers.push(resolveQuery);
@@ -17,7 +17,7 @@ vi.mock('../lib/naverNewsClient', () => ({
     },
 }));
 
-import { getNewsClient } from '../lib/getNewsClient';
+import { getNewsClient } from '../../server/getNewsClient';
 
 /**
  * 국내 종목 뉴스 검색어는 한글 종목명이어야 한다 — 종목코드로 검색하면 기사가 거의
@@ -52,7 +52,7 @@ describe('getNewsClient — 국내 종목 검색어 해석', () => {
     }
 
     it('DB에 한글명이 있으면 그 값을 쓴다 — 카탈로그보다 우선', async () => {
-        // 카탈로그와 같은 문자열을 주면 `??` 순서를 뒤집어도 통과한다(감사 라운드 12).
+        // 카탈로그와 같은 문자열을 주면 `??` 순서를 뒤집어도 통과한다.
         // `CURATED_KOREAN_NAMES`는 소스에 박힌 상수인 반면 `korean_tickers`는 KRX
         // 마스터에서 매일 갱신되므로, 사명이 바뀌면 뒤집힌 순서가 옛 이름으로
         // 네이버를 계속 조회한다.

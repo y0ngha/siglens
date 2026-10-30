@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FakeNewsClient } from '../../lib/FakeNewsClient';
+import { FakeNewsClient } from '../../server/FakeNewsClient';
 
 describe('FakeNewsClient', () => {
     const client = new FakeNewsClient();

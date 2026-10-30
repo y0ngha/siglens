@@ -36,7 +36,7 @@ import { getGuideTool } from './getGuide';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
-import { ensureSymbolNewsFresh } from '@/entities/news-article/lib/ensureSymbolNewsFresh';
+import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */

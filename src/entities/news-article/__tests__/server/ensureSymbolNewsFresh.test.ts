@@ -39,7 +39,7 @@ vi.mock(
         NewsIngestWriteError: FakeNewsIngestWriteError,
     })
 );
-vi.mock('@/entities/news-article/lib/newsRefreshFlag', () => ({
+vi.mock('@/entities/news-article/server/newsRefreshFlag', () => ({
     isRecentlyFetched: mockIsRecentlyFetched,
 }));
 vi.mock('@/entities/news-article/lib/analyzeNewsCards', () => ({
@@ -56,7 +56,7 @@ vi.mock('@/shared/db/client', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
 
-import { ensureSymbolNewsFresh } from '@/entities/news-article/lib/ensureSymbolNewsFresh';
+import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
 
 /** `after()`가 받아 둔 콜백들. `flushAfter()`가 순서대로 실행한다. */
 const scheduled: Array<() => Promise<void>> = [];

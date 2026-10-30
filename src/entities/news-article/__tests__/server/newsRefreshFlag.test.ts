@@ -18,7 +18,7 @@ async function loadWithEnv(opts: { url?: string; token?: string }) {
     process.env.UPSTASH_REDIS_REST_URL = opts.url ?? '';
     process.env.UPSTASH_REDIS_REST_TOKEN = opts.token ?? '';
     vi.resetModules();
-    return import('../lib/newsRefreshFlag');
+    return import('../../server/newsRefreshFlag');
 }
 describe('newsRefreshFlag', () => {
     beforeEach(() => vi.clearAllMocks());

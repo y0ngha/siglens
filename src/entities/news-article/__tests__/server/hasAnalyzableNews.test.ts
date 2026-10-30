@@ -1,4 +1,4 @@
-import { hasAnalyzableNews } from '../../lib/hasAnalyzableNews';
+import { hasAnalyzableNews } from '../../server/hasAnalyzableNews';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../../lib/newsLookback';
 
 /**

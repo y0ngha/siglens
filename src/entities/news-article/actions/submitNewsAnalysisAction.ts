@@ -1,31 +1,30 @@
 'use server';
 
-import type { Locale } from '@/shared/i18n/locales';
 import {
     type SubmitNewsAnalysisOptions,
     type RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
+import type { Locale } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { executeNewsAnalysis } from '../server/newsAnalysisRunner';
 
-/** Final return type — core's news result + our siglens-side gate errors. */
+/** core 뉴스 결과에 siglens 쪽 게이트 거절(tier·BYOK)을 더한 최종 반환 타입. */
 export type SubmitNewsAnalysisActionResult =
     | RunNewsAnalysisResult
     | AnalysisGateBlockedResult;
 
-/** Server Action: tier + BYOK gate, then load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
+/**
+ * Server Action: tier·BYOK 게이트를 통과시킨 뒤 `executeNewsAnalysis`로 뉴스 분석을
+ * 제출한다. 게이트 거절과 예기치 못한 예외는 던지지 않고 `error` 결과로 돌려준다.
+ */
 export async function submitNewsAnalysisAction(
     symbol: string,
     companyName: string,
     modelId: SubmitNewsAnalysisOptions['modelId'],
-    /**
-     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
-     * spec Part A). Only honored for member/pro tiers.
-     */
     /**
      * 요청 로케일. 게이트 거부 문구가 사용자에게 그대로 보이는데
      * `/api/*`는 next-intl matcher 밖이라 액션이 스스로 알 수 없다.
@@ -33,6 +32,7 @@ export async function submitNewsAnalysisAction(
      * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
      */
     locale: Locale,
+    /** 클라이언트가 요청한 "깊은 생각" 토글. member/pro tier에서만 반영된다. */
     reasoning?: boolean,
     signal?: AbortSignal,
     /**
@@ -42,12 +42,11 @@ export async function submitNewsAnalysisAction(
     cacheOnly?: boolean
 ): Promise<SubmitNewsAnalysisActionResult> {
     try {
-        // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
-        // (see e2eAnalysisStub). The stub + JSON fixture load via a DYNAMIC import
-        // under the inline E2E guard so they sit in a lazy chunk (not the prod main
-        // bundle) and the branch stays resolvable by the vitest runner. Lives inside
-        // try so a load failure can't propagate to the client (mirrors
-        // SSE 분석 라우트의 technical 분기).
+        // E2E는 LLM/worker를 건너뛰고 결정적인 캐시 픽스처를 돌려준다(e2eAnalysisStub).
+        // 스텁과 JSON 픽스처는 인라인 E2E 가드 아래에서 동적 import로 불러와 프로덕션
+        // 메인 번들이 아닌 lazy 청크에 두고, vitest 러너가 분기를 해석할 수 있게 한다.
+        // 로드 실패가 클라이언트로 전파되지 않도록 try 안에 둔다(SSE 분석 라우트의
+        // technical 분기와 같다).
         if (isE2E()) {
             const { e2eCachedNews } =
                 await import('@/shared/api/e2eAnalysisStub');

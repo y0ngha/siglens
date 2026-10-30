@@ -23,10 +23,12 @@ export interface EnrichableCard {
     priceImpact: unknown;
 }
 
+/** 폴 한 번의 결과 — 성공이면 받은 목록, 실패면 오류. */
 export type CardPollOutcome<T> =
     | { ok: true; data: readonly T[] }
     | { ok: false; error: Error };
 
+/** 폴링 판정이 폴 사이에 넘겨받는 누적 상태. 호출부가 ref로 들고 있다가 `step.counters`로 갱신한다. */
 export interface CardPollCounters {
     pollCount: number;
     consecutiveFailures: number;
@@ -36,6 +38,7 @@ export interface CardPollCounters {
     stagnantPolls: number;
 }
 
+/** 폴링을 시작하거나 종목이 바뀔 때 쓰는 0 상태. */
 export const INITIAL_CARD_POLL_COUNTERS: CardPollCounters = {
     pollCount: 0,
     consecutiveFailures: 0,
@@ -43,12 +46,14 @@ export const INITIAL_CARD_POLL_COUNTERS: CardPollCounters = {
     stagnantPolls: 0,
 };
 
+/** AI 보강이 끝나지 않은 카드가 하나라도 있는가 — 목록 폴러가 계속 돌지 정한다. */
 export function hasPendingCard(items: readonly EnrichableCard[]): boolean {
     return items.some(
         item => item.sentiment === null || item.priceImpact === null
     );
 }
 
+/** 보강된 카드가 하나라도 있는가 — 대기 폴러가 AI 집계 분석을 열 시점이다. */
 export function hasAnyEnrichedCard(
     items: readonly Pick<EnrichableCard, 'sentiment'>[]
 ): boolean {
@@ -68,6 +73,7 @@ export interface CardListPollPolicy {
     completeOnTimeout: boolean;
 }
 
+/** {@link decideCardListPoll}이 돌려주는 다음 걸음. */
 export interface CardListPollStep<T> {
     counters: CardPollCounters;
     stop: boolean;
@@ -201,6 +207,7 @@ export interface CardWaitPollPolicy {
     timeoutIsError: boolean;
 }
 
+/** {@link decideCardWaitPoll}이 돌려주는 다음 걸음. */
 export interface CardWaitPollStep {
     counters: CardPollCounters;
     stop: boolean;

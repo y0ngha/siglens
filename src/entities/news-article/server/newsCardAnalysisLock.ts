@@ -8,7 +8,7 @@ import { SECONDS_PER_MINUTE } from '@/shared/config/time';
  *
  * 방문자 경로(`ensureNewsCardsAnalyzedAction`)와 SEO prewarm(`prewarmNews`)이 같은
  * 미분석 기사를 동시에 집으면 둘 다 LLM을 태운다 — 행이 `analyzedAt === null`인 채로
- * 분석이 끝날 때까지 남아 있어서다(감사 L1). 두 경로가 이 잠금을 먼저 잡는다.
+ * 분석이 끝날 때까지 남아 있어서다. 두 경로가 이 잠금을 먼저 잡는다.
  *
  * TTL은 방문자 상한(25건 ÷ 동시성 4 = 7청크)이 한 청크의 재시도 예산을 감안해도 들어올
  * 만큼이다. 넘기면 잠금이 먼저 풀려 겹칠 수 있지만, 그건 지금의 기본 동작일 뿐이다.
@@ -18,6 +18,7 @@ const LOCK_TTL_SECONDS = 10 * SECONDS_PER_MINUTE;
 const RELEASE_LOCK_SCRIPT =
     "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
 
+/** 심볼 대소문자와 무관하게 같은 잠금이 되도록 대문자로 정규화한다. */
 function lockKey(symbol: string): string {
     return `news:cards:inflight:${symbol.toUpperCase()}`;
 }

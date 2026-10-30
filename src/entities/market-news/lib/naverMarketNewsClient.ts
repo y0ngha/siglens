@@ -1,4 +1,4 @@
-import { toNaverNewsItem } from '@/entities/news-article/lib/naverNewsClient';
+import { toNaverNewsItem } from '@/entities/news-article/lib/toNaverNewsItem';
 import { searchNaverNews } from '@/shared/api/naver/naverSearch';
 import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
