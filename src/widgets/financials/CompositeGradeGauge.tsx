@@ -1,96 +1,28 @@
+/**
+ * 재무 종합 점수(0–100) 반원 게이지 — 호·눈금·바늘은 `ui/gauge`가 그린다.
+ */
 import { useTranslations } from 'next-intl';
 import type { FinancialsGrade } from '@y0ngha/siglens-core';
-import { cn } from '@/shared/lib/cn';
+import { GaugeArc } from './ui/gauge/GaugeArc';
+import { GaugeNeedle } from './ui/gauge/GaugeNeedle';
+import { GaugeReadout } from './ui/gauge/GaugeReadout';
+import { GaugeTicks } from './ui/gauge/GaugeTicks';
+import { GAUGE_VIEWBOX_H, GAUGE_VIEWBOX_W } from './utils/gaugeGeometry';
 
 interface CompositeGradeGaugeProps {
-    /** Composite score 0–100; null renders "-" in place of the number. */
+    /** 종합 점수 0–100. `null`이면 숫자 자리에 "-"를 보인다. */
     score: number | null;
-    /** Letter grade derived from score. */
+    /** 점수에서 산출한 등급 글자. */
     grade: FinancialsGrade;
-    /** Korean one-line summary naming the strongest and weakest axis. */
+    /** 가장 강한 축과 약한 축을 짚는 한국어 한 줄 요약. */
     summaryKo: string;
 }
 
 /**
- * Segment definition for the semicircle gauge arc.
- * Each segment maps a score range to a Tailwind semantic stroke color.
- */
-interface SegmentDef {
-    from: number;
-    to: number;
-    /** Tailwind text-color class applied via stroke="currentColor". */
-    strokeClass: string;
-}
-
-/**
- * 5-segment palette using the grade-ramp design tokens.
- * Each band maps exactly to the grade cutoffs from financialsScorecard (core):
- *   0–34   → text-grade-f  (F — red)
- *   35–49  → text-grade-d  (D — orange)
- *   50–64  → text-grade-c  (C — yellow)
- *   65–79  → text-grade-b  (B — lime)
- *   80–100 → text-grade-a  (A — green)
- */
-const SEGMENTS: ReadonlyArray<SegmentDef> = [
-    { from: 0, to: 35, strokeClass: 'text-grade-f' },
-    { from: 35, to: 50, strokeClass: 'text-grade-d' },
-    { from: 50, to: 65, strokeClass: 'text-grade-c' },
-    { from: 65, to: 80, strokeClass: 'text-grade-b' },
-    { from: 80, to: 100, strokeClass: 'text-grade-a' },
-];
-
-/** Grade → large letter text color (grade-ramp tokens). */
-const GRADE_TEXT_COLOR: Record<FinancialsGrade, string> = {
-    A: 'text-grade-a',
-    B: 'text-grade-b',
-    C: 'text-grade-c',
-    D: 'text-grade-d',
-    F: 'text-grade-f',
-};
-
-const GAUGE_CX = 100;
-/** Slight top padding so tick labels above the arc still fit the viewBox. */
-const GAUGE_CY = 105;
-const GAUGE_RADIUS = 80;
-const GAUGE_STROKE_WIDTH = 14;
-const GAUGE_VIEWBOX_W = 200;
-const GAUGE_VIEWBOX_H = 130;
-
-/** Triangular needle geometry — drawn at angle=0 and rotated to score angle. */
-const NEEDLE_TIP_LEN = 4;
-const NEEDLE_HALF_WIDTH = 6;
-const NEEDLE_INNER_GAP = 12;
-/** Pivot circle radius anchoring the needle visually. */
-const NEEDLE_PIVOT_RADIUS = 4;
-
-/** Degrees per score unit — 180° gauge arc spans 100 score units. */
-const DEGREES_PER_SCORE_UNIT = 1.8;
-
-/** Tick values rendered as labels outside the arc. */
-const TICK_VALUES: ReadonlyArray<number> = [0, 25, 50, 75, 100];
-
-function tickDy(value: number): number {
-    return value === 0 || value === 100 ? 14 : 0;
-}
-
-function tickTextAnchor(value: number): 'start' | 'end' | 'middle' {
-    if (value === 0) return 'start';
-    if (value === 100) return 'end';
-    return 'middle';
-}
-
-const TICK_LABEL_OFFSET = 16;
-const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
-
-/**
- * Semicircle SVG gauge showing composite financials score 0–100.
+ * FearGreedGauge의 반원 패턴을 재무 스코어카드에 맞춘 게이지. 0점이 왼쪽(최악), 100점이
+ * 오른쪽(최고)이다.
  *
- * Adapts the FearGreedGauge semicircle pattern for the financials scorecard.
- * Score 0 = left (worst), 100 = right (best). Includes a needle pointer,
- * tick labels, large grade letter, and a Korean summary line.
- *
- * Accessibility: `role="img"` + `aria-label` on the SVG.
- * Null score renders "-" in place of the numeric value.
+ * 접근성: SVG에 `role="img"` + `aria-label`을 둔다. 점수가 없으면 점수 없는 문구를 쓴다.
  */
 export function CompositeGradeGauge({
     score,
@@ -98,27 +30,10 @@ export function CompositeGradeGauge({
     summaryKo,
 }: CompositeGradeGaugeProps) {
     const tGauge = useTranslations('widgets.financials.gradeGauge');
-    // Clamp to [0,100] for needle rotation; default 0 when score is null.
-    const clampedScore = score !== null ? Math.min(100, Math.max(0, score)) : 0;
-
-    // Needle drawn pointing right (score=100); rotate left by (100 - score) * 1.8°
-    const rotateDeg = -(100 - clampedScore) * DEGREES_PER_SCORE_UNIT;
-
-    const tipR = GAUGE_RADIUS + NEEDLE_TIP_LEN;
-    const baseR = NEEDLE_INNER_GAP;
-    const tipX = GAUGE_CX + tipR;
-    const tipY = GAUGE_CY;
-    const baseLeftX = GAUGE_CX + baseR;
-    const baseLeftY = GAUGE_CY - NEEDLE_HALF_WIDTH;
-    const baseRightX = GAUGE_CX + baseR;
-    const baseRightY = GAUGE_CY + NEEDLE_HALF_WIDTH;
-
     const ariaLabel =
-        score !== null
-            ? tGauge('aria', { v0: score, v1: grade })
-            : tGauge('ariaNoScore', { v0: grade });
-
-    const gradeColorClass = GRADE_TEXT_COLOR[grade];
+        score === null
+            ? tGauge('ariaNoScore', { v0: grade })
+            : tGauge('aria', { v0: score, v1: grade });
 
     return (
         <div className="flex flex-col items-center gap-2">
@@ -128,80 +43,11 @@ export function CompositeGradeGauge({
                 role="img"
                 aria-label={ariaLabel}
             >
-                {SEGMENTS.map(seg => {
-                    const a1 = (1 - seg.from / 100) * Math.PI;
-                    const a2 = (1 - seg.to / 100) * Math.PI;
-                    const x1 = GAUGE_CX + GAUGE_RADIUS * Math.cos(a1);
-                    const y1 = GAUGE_CY - GAUGE_RADIUS * Math.sin(a1);
-                    const x2 = GAUGE_CX + GAUGE_RADIUS * Math.cos(a2);
-                    const y2 = GAUGE_CY - GAUGE_RADIUS * Math.sin(a2);
-                    return (
-                        <path
-                            key={seg.from}
-                            d={`M ${x1} ${y1} A ${GAUGE_RADIUS} ${GAUGE_RADIUS} 0 0 1 ${x2} ${y2}`}
-                            strokeWidth={GAUGE_STROKE_WIDTH}
-                            fill="none"
-                            stroke="currentColor"
-                            className={seg.strokeClass}
-                        />
-                    );
-                })}
-                {TICK_VALUES.map(value => {
-                    const a = (1 - value / 100) * Math.PI;
-                    const lx = GAUGE_CX + TICK_LABEL_RADIUS * Math.cos(a);
-                    const ly =
-                        GAUGE_CY -
-                        TICK_LABEL_RADIUS * Math.sin(a) +
-                        tickDy(value);
-                    return (
-                        <text
-                            key={value}
-                            x={lx}
-                            y={ly}
-                            textAnchor={tickTextAnchor(value)}
-                            dominantBaseline="middle"
-                            className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
-                        >
-                            {value}
-                        </text>
-                    );
-                })}
-                <g transform={`rotate(${rotateDeg} ${GAUGE_CX} ${GAUGE_CY})`}>
-                    <polygon
-                        points={`${tipX},${tipY} ${baseLeftX},${baseLeftY} ${baseRightX},${baseRightY}`}
-                        className="fill-secondary-100"
-                    />
-                </g>
-                <circle
-                    cx={GAUGE_CX}
-                    cy={GAUGE_CY}
-                    r={NEEDLE_PIVOT_RADIUS}
-                    className="fill-secondary-100"
-                />
+                <GaugeArc />
+                <GaugeTicks />
+                <GaugeNeedle score={score} />
             </svg>
-            <div className="text-center">
-                <div className="flex items-baseline justify-center gap-1.5">
-                    <span className="font-mono text-5xl font-bold text-secondary-100 tabular-nums">
-                        {score !== null ? score : '-'}
-                    </span>
-                    {score !== null && (
-                        <span className="text-xs text-secondary-400">
-                            / 100
-                        </span>
-                    )}
-                </div>
-                <div
-                    className={cn(
-                        'text-4xl font-bold tracking-tight',
-                        gradeColorClass
-                    )}
-                >
-                    {grade}
-                </div>
-                <div className="mt-1 text-sm text-secondary-300">
-                    {summaryKo}
-                </div>
-            </div>
+            <GaugeReadout score={score} grade={grade} summaryKo={summaryKo} />
         </div>
     );
 }

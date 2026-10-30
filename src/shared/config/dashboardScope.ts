@@ -136,7 +136,7 @@ export interface DashboardScope {
 export const US_DASHBOARD_SCOPE: DashboardScope = {
     id: 'us',
     hasHubPage: true,
-    // 화면 문구가 아니라 **core 프롬프트로 가는 값**이다(§marketBriefingContext).
+    // 화면 문구가 아니라 **core 프롬프트로 가는 값**이다(`marketBriefingContext`).
     // 영어로 두는 이유는 `CALENDAR_REGION_LABEL`과 같다 — 모델 지시문이
     // 로케일로 갈리면 프롬프트만 흔들린다. 화면은 `MarketDataErrorNotice`처럼
     // 별도 메시지 키를 쓴다.
@@ -209,22 +209,18 @@ export const DASHBOARD_SCOPES: Record<DashboardScopeId, DashboardScope> = {
  * 한국 페이지가 미국 데이터를 그리고도 아무 신호가 없다.
  */
 export function dashboardScopeOf(id: string): DashboardScope {
-    // `Object.hasOwn` — 평범한 객체 리터럴이라 `DASHBOARD_SCOPES['constructor']`가
-    // 프로토타입 멤버를 truthy로 돌려준다. 지금은 모든 호출부가 앞서
-    // `isDashboardScopeId`로 좁히지만, 이 함수의 계약("알 수 없는 id는 던진다")이
-    // 앞으로의 호출부를 지키는 것이라 여기서도 막는다.
-    const scope = Object.hasOwn(DASHBOARD_SCOPES, id)
-        ? DASHBOARD_SCOPES[id as DashboardScopeId]
-        : undefined;
-    if (!scope) {
+    // `isDashboardScopeId`는 `Object.hasOwn` 기반이라 `constructor` 같은 프로토타입 키를
+    // 거른다. 모든 호출부가 앞서 좁히지 않아도 이 함수의 계약("알 수 없는 id는 던진다")이
+    // 지켜진다.
+    if (!isDashboardScopeId(id)) {
         throw new Error(`[dashboardScope] unknown scope id: ${id}`);
     }
-    return scope;
+    return DASHBOARD_SCOPES[id];
 }
 
 /** 런타임 값이 유효한 scope id인지. Server Action 경계에서 좁힐 때 쓴다. */
 export function isDashboardScopeId(value: unknown): value is DashboardScopeId {
-    return value === 'us' || value === 'kr' || value === 'crypto';
+    return typeof value === 'string' && Object.hasOwn(DASHBOARD_SCOPES, value);
 }
 
 /**
@@ -249,7 +245,7 @@ export function isPageDashboardScopeId(
  * 그런데 `scope`를 통째로 `'use client'` 패널에 넘기면 그 표(미국 97행)가 RSC
  * Flight 페이로드와 ISR HTML에 매 렌더 실려 나간다. 예전에는 클라가 이 표를 JS
  * 번들에서 읽어 내비게이션 간에 재사용했으니, 배선을 prop으로 바꾸면서 생긴
- * 순수한 회귀다(`docs/architecture/CDN_CACHING.md` — RSC 페이로드 비용).
+ * 순수한 회귀다(RSC 페이로드 비용).
  */
 export type ClientDashboardScope = Omit<DashboardScope, 'sectorStocks'>;
 

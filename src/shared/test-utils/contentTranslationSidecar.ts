@@ -1,13 +1,13 @@
+import type { ContentTranslationRepository } from '@/shared/db/contentTranslationRepository';
 import {
     ContentTranslations,
-    type ContentTranslationRepository,
-} from '@/shared/db/contentTranslationRepository';
+    type TranslationIndex,
+} from '@/shared/db/contentTranslations';
 import { TRANSLATION_SOURCE } from '@/shared/db/contentTranslationFields';
 import type { Locale } from '@/shared/i18n/locales';
 
 type ContentTranslationClient =
     typeof import('@/shared/db/contentTranslationClient');
-type TranslationIndex = ConstructorParameters<typeof ContentTranslations>[0];
 
 /** 사이드카에 들어 있는 번역 한 칸 — (행, 필드, 로케일) → 값. */
 export interface SidecarCell {

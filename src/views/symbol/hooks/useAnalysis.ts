@@ -10,96 +10,32 @@ import {
     useRef,
     useState,
 } from 'react';
-import {
-    TIER_CONFIG,
-    type AnalysisResponse,
-    type ModelId,
-    type RunAnalysisResult,
-    type Tier,
-    type TierInfoDepth,
-    type Timeframe,
+import type {
+    AnalysisResponse,
+    ModelId,
+    Tier,
+    TierInfoDepth,
+    Timeframe,
 } from '@y0ngha/siglens-core';
-import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
-import type {
-    AnalysisGateBlockedResult,
-    AnalysisMeter,
-} from '@/shared/lib/types';
-
-/**
- * Final return type for the technical analysis SSE stream — core's gated
- * result extended with `personalized`, or a siglens-side gate error.
- *
- * `personalized` is a server-authoritative flag: true when the server
- * used a position-bucket cache key for THIS submission. Optional because
- * `AnalysisGateBlockedResult` never carries it.
- */
-type RunAnalysisActionResult =
-    | (RunAnalysisResult & {
-          personalized?: boolean;
-          /**
-           * 평이화("쉽게보기") 산문. SSE 라우트의 `withReaderViews`가 붙인다.
-           *
-           * `null`은 재작성 실패(가드 거부·마감 초과·설정 없음)를 뜻하고,
-           * `undefined`는 롤링 배포 중 구버전 인스턴스가 필드 자체를 안 보낸 경우다.
-           * 둘 다 "원본만 보여준다"로 같게 처리한다.
-           */
-          plain?: string | null;
-          /**
-           * 비회원 하루 무료 전체 공개 미터 판정. 필드가 없으면 미터가 적용되지 않은
-           * 응답이다(회원·정책 없음·크롤러·저장소 장애, 롤링 배포 중 구버전 인스턴스).
-           */
-          meter?: AnalysisMeter;
-      })
-    | AnalysisGateBlockedResult
-    /**
-     * 재분석 의도로 보낸 요청인데 서버가 쿨다운을 획득하지 못했다 — 새 분석을
-     * 태우지 않고 남은 시간만 알려준다. 쿨다운 획득은 서버가 단독으로 하므로
-     * (클라이언트가 미리 잡으면 서버 획득이 반드시 실패한다) 이 응답이 클라이언트가
-     * 쿨다운 상태를 알게 되는 유일한 경로다.
-     */
-    | { status: 'reanalyze_cooldown'; remainingMs: number };
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
-
-interface AnalyzeMutationVariables {
-    symbol: string;
-    companyName: string;
-    force: boolean;
-    fmpSymbol?: string;
-    modelId?: ModelId;
-    reasoning?: boolean;
-    /**
-     * 캐시만 읽고 미스면 생성하지 않는다. 큐레이션 밖 종목의 첫 신뢰 입력 전,
-     * 마운트 재시도에서만 쓴다(`autoRunAllowed` 옵션 참고).
-     */
-    cacheOnly?: boolean;
-}
-
-/**
- * 재분석 쿨다운 (5분).
- * 진실값은 Redis(서버)이며 클라이언트는 표시 목적으로만 카운트다운한다.
- */
-const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
-
-/** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
-const CACHE_HIT_COOLDOWN_MS = 30 * MS_PER_SECOND;
-
-// 자유 티어에서 잠기는 TierInfoDepth 전체 집합. `@y0ngha/siglens-core`의
-// `TIER_CONFIG.infoDepth`(free/member/pro allow-list)에서 직접 파생시킨다.
-// 로컬 리터럴 배열로 TierInfoDepth 유니온을 다시 나열하면, core가 새 depth
-// 값을 추가하거나 free의 allow-list를 바꿔도 이 파일이 조용히 드리프트한다
-// (CONVENTIONS.md#TS-2). member/pro가 현재 모든 TierInfoDepth
-// 값을 허용하므로 세 tier의 allow-list 합집합이 곧 전체 TierInfoDepth
-// 집합이며, 거기서 free가 허용하는 값만 제외하면 free가 잠그는 집합이 된다.
-const ALL_INFO_DEPTHS = Array.from(
-    new Set(Object.values(TIER_CONFIG.infoDepth).flat())
-);
-const FREE_LOCKED_INFO_DEPTH: readonly TierInfoDepth[] = ALL_INFO_DEPTHS.filter(
-    depth => !TIER_CONFIG.infoDepth.free.includes(depth)
-);
+// symbol-page → analysis는 허용된 하향 의존(views → widgets).
+import type { CooldownNotice } from '@/widgets/analysis/model/types';
+import {
+    CACHE_HIT_COOLDOWN_MS,
+    COOLDOWN_TICK_MS,
+    FREE_LOCKED_INFO_DEPTH,
+    REANALYZE_COOLDOWN_MS,
+    cooldownKeyOf,
+    rethrowStreamError,
+    toAnalysisOutcome,
+    type AnalysisSubmitOutcome,
+    type AnalyzeMutationVariables,
+    type RunAnalysisActionResult,
+} from '../utils/analysisStream';
 
 interface UseAnalysisOptions {
     symbol: string;
@@ -130,8 +66,7 @@ interface UseAnalysisOptions {
      */
     isModelHydrated?: boolean;
     /**
-     * 효과적(tier-gated) "깊은 생각" reasoning 값 (member-reasoning-toggle spec
-     * Part A). SymbolModelContext에서 온다 — 회원이 아니면 항상 `false`.
+     * 효과적(tier-gated) "깊은 생각" reasoning 값. SymbolModelContext에서 온다 — 회원이 아니면 항상 `false`.
      */
     reasoning?: boolean;
     /**
@@ -154,9 +89,7 @@ interface UseAnalysisOptions {
     autoRunAllowed?: boolean;
 }
 
-// symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
-import type { CooldownNotice } from '@/widgets/analysis/model/types';
-
+/** `useAnalysis`가 돌려주는 분석 상태와 핸들러. */
 export interface UseAnalysisResult {
     analysis: AnalysisResponse;
     /** 새 분석이 완료됐을 때만 값이 세팅됨. initialAnalysis 기반 초기 로드엔 null. */
@@ -175,9 +108,8 @@ export interface UseAnalysisResult {
      */
     plain: string | null;
     /**
-     * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부
-     * (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성
-     * 감사 이후). SSE 분석 라우트가 반환하는 `personalized` 플래그를 그대로
+     * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부.
+     * SSE 분석 라우트가 반환하는 `personalized` 플래그를 그대로
      * 미러링한다 — 홀딩 존재 여부가 아니라, 서버가 실제로 `:pos=<bucket>` 키로
      * 분석을 조회/제출했는지가 유일한 진실값이다. `AnalysisPanel`의 배지가 이
      * 값으로 게이트되어야 한다(holding 존재만으로는 안 됨 — 서버 쿼트 읽기 실패나
@@ -200,7 +132,7 @@ export interface UseAnalysisResult {
      *
      * 진행 화면의 마무리 애니메이션(`useAnalysisProgress`의 `FINISHING_*` 상수 합)은 응답이
      * 온 뒤에도 약 9초를
-     * 더 도는데, 회원은 tier 확정 직후 마운트 재제출(§9 tier effect)을 매 방문마다 보내고
+     * 더 도는데, 회원은 tier 확정 직후 마운트 재제출(아래 tier effect)을 매 방문마다 보내고
      * 그 응답은 대부분 캐시 히트다. 이미 화면에 있던 분석을 9초간 가짜 진행 화면으로
      * 덮을 근거가 없으므로 호출부는 이 값이 참이면 마무리 애니메이션을 건너뛴다.
      */
@@ -212,6 +144,10 @@ export interface UseAnalysisResult {
     syncReanalyzeCooldown: () => void;
 }
 
+/**
+ * 기술적 분석 상태 머신. SSR seed(`initialAnalysis`)로 시작해, 하이드레이션·tier·모델·reasoning·
+ * 타임프레임·보유 평단이 바뀌면 SSE 제출을 다시 보내고, 재분석 쿨다운은 서버가 단독으로 판정한다.
+ */
 export function useAnalysis({
     symbol,
     companyName,
@@ -238,8 +174,8 @@ export function useAnalysis({
     >(initialLockedInfoDepth);
     const [reanalyzeCooldownMs, setReanalyzeCooldownMs] = useState<number>(0);
     /** 카운트다운이 가리키는 `symbol|timeframe`. 바뀌면 이전 대상의 카운트다운을 버린다. */
-    const [cooldownTargetKey, setCooldownTargetKey] = useState(
-        () => `${symbol}|${timeframe}`
+    const [cooldownTargetKey, setCooldownTargetKey] = useState(() =>
+        cooldownKeyOf(symbol, timeframe)
     );
     const [cooldownNotice, setCooldownNotice] = useState<CooldownNotice | null>(
         null
@@ -254,7 +190,7 @@ export function useAnalysis({
     const [plain, setPlain] = useState<string | null>(null);
     // 서버가 THIS 제출에서 개인화(포지션 버킷) 캐시 키를 실제로 썼는지 여부.
     // SSE 분석 라우트의 `personalized` 플래그를 그대로 미러링 — 배지의
-    // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
+    // 유일한 진실값.
     const [isPersonalized, setIsPersonalized] = useState(false);
     const [meter, setMeter] = useState<MeterState | null>(null);
     const [isAwaitingInteraction, setIsAwaitingInteraction] = useState(false);
@@ -271,7 +207,7 @@ export function useAnalysis({
         /**
          * 평이화 산문도 함께 스냅샷한다. 담지 않으면 쿨다운으로 거절됐을 때
          * `analysisResult`만 복원되고 `plain`은 `onMutate`가 비운 `null`로 남아,
-         * **같은 분석을 보고 있는데 쉽게보기 토글만 사라진다**(리뷰 라운드 1).
+         * **같은 분석을 보고 있는데 쉽게보기 토글만 사라진다**.
          */
         plain: string | null;
     } | null>(null);
@@ -305,6 +241,12 @@ export function useAnalysis({
      * 버튼 위를 오갈 때마다 Server Action이 줄을 서지 않게.
      */
     const cooldownSyncedKeyRef = useRef<string | null>(null);
+    /**
+     * 지금 보고 있는 `symbol|timeframe`(커밋된 렌더 기준). 늦게 온 쿨다운 응답이 여전히 그
+     * 대상의 것인지 판정하고, 대상이 바뀌면 `cooldownSyncedKeyRef`를 비워 돌아왔을 때 다시
+     * 읽게 한다 — 렌더 중에는 ref를 쓸 수 없어 아래 useLayoutEffect가 갱신한다.
+     */
+    const currentCooldownKeyRef = useRef(cooldownTargetKey);
     /**
      * SSR 시드 실패 시 마운트 재시도의 게이트 단계. `cache_only`는 게이트가 닫힌 채
      * 캐시만 물어본 상태이고, 그 조회가 HIT이면 `done`이 된다. 게이트가 닫혀 있는
@@ -349,7 +291,7 @@ export function useAnalysis({
         variables: submitVariables,
         reset,
         mutate,
-    } = useMutation<RunAnalysisActionResult, Error, AnalyzeMutationVariables>({
+    } = useMutation<AnalysisSubmitOutcome, Error, AnalyzeMutationVariables>({
         mutationFn: ({
             force: mutForce,
             symbol: mutSymbol,
@@ -387,56 +329,15 @@ export function useAnalysis({
                 },
                 signal: controller.signal,
             })
-                .then(result => {
-                    // Throw for non-success outcomes so they reach onError and
-                    // surface via submitError. Only 'cached', 'done',
-                    // 'reanalyze_cooldown' and 'miss_no_trigger' are returned.
-                    // `miss_no_trigger` comes back only for a `cacheOnly`
-                    // submit (AI 자동 실행 게이트가 닫힌 마운트 재시도) and
-                    // means "waiting for input", not a failure.
-                    if (
-                        result.status === 'cached' ||
-                        result.status === 'done' ||
-                        result.status === 'reanalyze_cooldown' ||
-                        result.status === 'miss_no_trigger'
-                    ) {
-                        return result;
-                    }
-                    if (result.status === 'key_error') {
-                        // core가 만든 문구는 **전 로케일 한국어**다.
-                        throw new Error(streamMessages.keyRequired);
-                    }
-                    if (result.status === 'error') {
-                        const msg =
-                            typeof result.error === 'object' &&
-                            result.error !== null
-                                ? ((result.error as { message?: string })
-                                      .message ?? streamMessages.generic)
-                                : streamMessages.generic;
-                        throw new Error(msg);
-                    }
-                    throw new Error(streamMessages.unexpected);
-                })
-                .catch((err: unknown) => {
-                    /**
-                     * Map the core retry-exhaustion sentinel to a user-facing message.
-                     * Thrown by `withRetry` when the AI provider stays unavailable after
-                     * all attempts; surfaces through SSE as an error event, then
-                     * re-thrown by `runAnalysisStream`. The `.then()` branch above handles
-                     * result-level errors; this catch covers SSE-level thrown errors only.
-                     */
-                    const msg =
-                        err instanceof Error ? err.message : String(err);
-                    if (msg === 'AI_SERVER_UNSTABLE') {
-                        throw new Error(streamMessages.unstable);
-                    }
-                    throw err;
-                });
+                .then(result => toAnalysisOutcome(result, streamMessages))
+                .catch((err: unknown) =>
+                    rethrowStreamError(err, streamMessages)
+                );
         },
         onMutate: () => {
             // 대기 상태는 "캐시 미스, 입력을 기다리는 중"이라는 뜻이라 그 입력으로 시작한
             // 제출보다 오래 남으면 안 된다. 여기서 내리지 않으면 뒤이은 제출이 실패했을 때
-            // 오류 배너 대신 이미 열린 게이트의 "AI 분석 시작" 버튼이 남는다(리뷰 라운드 1).
+            // 오류 배너 대신 이미 열린 게이트의 "AI 분석 시작" 버튼이 남는다.
             setIsAwaitingInteraction(false);
             // 서버가 쿨다운을 이유로 새 분석을 거절할 수 있다(`reanalyze_cooldown`).
             // 그 경우 화면을 비운 채 아무 결과도 오지 않으므로, 되돌릴 수 있도록
@@ -525,16 +426,15 @@ export function useAnalysis({
         },
     });
 
-    // 4. useSymbolHolding — personalized-analysis-by-position-bucket spec
-    // (Subsystem C). Source of the member's holding for THIS symbol. The SSR
+    // 4. useSymbolHolding — source of the member's holding for THIS symbol. The SSR
     // `initialAnalysis` seed on mount is the shared no-bucket peek — a static
-    // ISR page (`src/app/[symbol]/page.tsx`'s `peekAnalysisStatic`) can't read
+    // ISR page (`src/app/[locale]/[symbol]/page.tsx`'s `peekAnalysisStatic`) can't read
     // the member's cookie, so that seed is NEVER personalized. A member's
     // personalized analysis only ever arrives via a CLIENT re-submit: the
-    // tier-hydration effect below (§9) forces one on mount for members
+    // tier-hydration effect below forces one on mount for members
     // (`tier !== 'free'`), and this hook additionally catches a *later*
     // holding edit (the member sets/edits their avg via the holding chip
-    // while already viewing the page) via its own effect (§9).
+    // while already viewing the page) via its own effect below.
     const {
         holding,
         isHydrated: isHoldingHydrated,
@@ -572,27 +472,27 @@ export function useAnalysis({
     /**
      * 서버 쿨다운 진실값을 재분석 버튼에 다가갈 때 한 번 읽는다.
      *
-     * 예전에는 마운트(그리고 symbol·timeframe 변경)마다 읽었다. 그 Server Action은 게스트와
-     * 크롤러 렌더를 포함해 **모든 차트 조회**마다 나갔고, Server Action은 한 번에 하나씩만
-     * 나가므로 같은 시점의 다른 액션을 한 왕복만큼 밀었다. 쿨다운 값이 쓰이는 곳은 재분석
+     * 마운트마다 읽으면 게스트와 크롤러 렌더를 포함해 **모든 차트 조회**마다 Server Action이
+     * 나가고, Server Action은 한 번에 하나씩만 나가므로 같은 시점의 다른 액션을 한 왕복만큼
+     * 민다. 쿨다운 값이 쓰이는 곳은 재분석
      * 버튼 하나뿐이고, 버튼을 그냥 눌러도 서버가 `reanalyze_cooldown`으로 남은 시간을 돌려준다
      * (onSuccess) — 미리 읽는 것은 버튼에 카운트다운을 먼저 띄우기 위한 표시용이다.
      *
      * tier 확정 전에는 읽지 않는다: 그 구간에는 버튼이 동작하지 않고(`handleReanalyze`),
      * 이 요청이 `currentUser`보다 먼저 줄을 서면 첫 분석 요청이 한 왕복 늦어진다.
      *
-     * 대상 키는 아래 파생 변수 `cooldownKey`와 같은 `${symbol}|${timeframe}` 형식이다.
-     * 훅 순서(REACT.md#HK-1)상 useCallback이 파생 변수보다 먼저 와야 해서 안에서 직접 만든다.
+     * 대상 키는 아래 파생 변수 `cooldownKey`와 같은 `cooldownKeyOf`로 만든다 — 훅 순서
+     * (REACT.md#HK-1)상 useCallback이 파생 변수보다 먼저 와야 해서 안에서 직접 만든다.
      */
     const syncReanalyzeCooldown = useCallback((): void => {
         if (isTierHydrated === false) return;
-        const syncKey = `${symbol}|${timeframe}`;
+        const syncKey = cooldownKeyOf(symbol, timeframe);
         if (cooldownSyncedKeyRef.current === syncKey) return;
         cooldownSyncedKeyRef.current = syncKey;
         fetchReanalyzeCooldownMs(symbol, timeframe)
             .then(remaining => {
                 // 응답이 오는 사이 보고 있는 종목·타임프레임이 바뀌었으면 버린다.
-                if (cooldownSyncedKeyRef.current !== syncKey) return;
+                if (currentCooldownKeyRef.current !== syncKey) return;
                 setReanalyzeCooldownMs(remaining);
             })
             .catch(() => {
@@ -612,7 +512,7 @@ export function useAnalysis({
     // 같은 이유로, 설정 하이드레이션을 기다리는 마운트 직후 구간도 게이트가 닫혀 있으면
     // 분석 중이 아니다 — 그 뒤에 오는 것은 생성이 아니라 캐시 조회다. 이 구간에 한 번이라도
     // 참이 되면 진행 화면이 마무리 애니메이션(`useAnalysisProgress`, 약 10초)을 끝까지 돌아
-    // 캐시 미스 대기 화면이 그만큼 늦게 뜬다(운영 실측 2026-10-05: 응답 1.5초, 화면 ~15초).
+    // 캐시 미스 대기 화면이 그만큼 늦게 뜬다.
     const isAnalyzing =
         (isSubmitting && !isCacheOnlySubmit) ||
         (initialAnalysisFailedAtMount &&
@@ -625,11 +525,10 @@ export function useAnalysis({
     const isInstantResponse =
         submitData?.status === 'cached' ||
         submitData?.status === 'reanalyze_cooldown';
-    // 쿨다운은 종목·타임프레임별이다. 예전에는 대상이 바뀔 때마다 서버 값을 다시 읽어
-    // 덮어썼는데, 이제 그 조회는 버튼에 다가갈 때로 미뤘으므로(`syncReanalyzeCooldown`)
-    // 대상이 바뀌는 렌더에서 이전 대상의 카운트다운을 직접 비운다 — 그대로 두면 소프트
-    // 내비게이션으로 넘어간 새 종목 버튼에 이전 종목의 남은 시간이 뜬다.
-    const cooldownKey = `${symbol}|${timeframe}`;
+    // 쿨다운은 종목·타임프레임별이다. 서버 조회는 버튼에 다가갈 때로 미뤘으므로
+    // (`syncReanalyzeCooldown`) 대상이 바뀌는 렌더에서 이전 대상의 카운트다운을 직접 비운다 —
+    // 그대로 두면 소프트 내비게이션으로 넘어간 새 종목 버튼에 이전 종목의 남은 시간이 뜬다.
+    const cooldownKey = cooldownKeyOf(symbol, timeframe);
     if (cooldownTargetKey !== cooldownKey) {
         setCooldownTargetKey(cooldownKey);
         setReanalyzeCooldownMs(0);
@@ -689,6 +588,11 @@ export function useAnalysis({
         analysisResultRef.current = analysisResult;
         isPersonalizedRef.current = isPersonalized;
         plainRef.current = plain;
+        if (currentCooldownKeyRef.current !== cooldownKey) {
+            currentCooldownKeyRef.current = cooldownKey;
+            // 다른 대상으로 넘어갔다 — 돌아왔을 때 비워진 카운트다운을 서버 값으로 다시 채운다.
+            cooldownSyncedKeyRef.current = null;
+        }
     });
 
     // 8. useEffect
@@ -697,7 +601,7 @@ export function useAnalysis({
     // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
     // isReasoningHydrated도 동일하게 대기한다 — 그렇지 않으면 회원의 저장된 reasoning=true가
     // 반영되기 전에 reasoning=false(기본값)로 초기 재시도가 나가버린다. isHoldingResolved도
-    // 동일한 이유로 대기한다(personalized-analysis-by-position-bucket spec, Subsystem C) —
+    // 동일한 이유로 대기한다 —
     // 서버가 이 재시도에서도 자체적으로 홀딩을 다시 읽어 개인화하므로 정합성 문제는 아니지만,
     // 다른 hydration 게이트와 일관되게 홀딩 쿼리가 아직 진행 중인 채로 재시도가 나가는 것을
     // 피한다.
@@ -799,8 +703,7 @@ export function useAnalysis({
     }, [reasoning, isReasoningHydrated, isTierHydrated, restartAnalysis]);
 
     // 회원의 보유 평단이 하이드레이션 이후 실제로 변경되면 재분석(다른 캐시 키) —
-    // reasoning 변경 effect와 완전히 동일한 패턴(personalized-analysis-by-position-bucket
-    // spec, Subsystem C). 홀딩 쿼리의 hydration/loading으로 인한 초기 값 세팅(마운트 직후
+    // reasoning 변경 effect와 완전히 동일한 패턴. 홀딩 쿼리의 hydration/loading으로 인한 초기 값 세팅(마운트 직후
     // null → 실제 홀딩, 또는 그 반대)은 사용자 의도 변경이 아니므로 재분석을 트리거하지
     // 않는다 — 초기 마운트 분석은 이미 서버가 자체적으로 홀딩을 읽어 개인화했다. force를
     // 주지 않는다 — 같은 버킷의 다른 회원과 캐시를 공유하고 싶기 때문.
@@ -895,8 +798,10 @@ export function useAnalysis({
     useEffect(() => {
         if (!isCountdownActive) return;
         const intervalId = window.setInterval(() => {
-            setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000));
-        }, 1000);
+            setReanalyzeCooldownMs(prev =>
+                Math.max(0, prev - COOLDOWN_TICK_MS)
+            );
+        }, COOLDOWN_TICK_MS);
         return () => {
             window.clearInterval(intervalId);
         };

@@ -1,3 +1,7 @@
+/**
+ * 피보나치 레벨 id를 파싱해 종류(되돌림·확장)와 비율 라벨을 만드는 유틸.
+ */
+
 import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
     firstSegmentDirection,

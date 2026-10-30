@@ -1,18 +1,15 @@
-import type { EmailDispatcher, EmailMessage } from './types';
-import { Resend } from 'resend';
-import { E2eEmailDispatcher } from './E2eEmailDispatcher';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { isE2E } from '@/shared/api/e2eEnv';
+import type { EmailDispatcher } from './types';
+import { E2eEmailDispatcher } from './E2eEmailDispatcher';
+import {
+    ResendEmailDispatcher,
+    type ResendConfig,
+} from './ResendEmailDispatcher';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
-const EMAIL_SEND_TIMEOUT_MS = 10_000;
 const EMAIL_FROM_ENV = 'EMAIL_FROM';
 const DEFAULT_FROM = 'SIGLENS <noreply@siglens.io>';
-
-interface ResendConfig {
-    apiKey: string;
-    from: string;
-}
 
 function readResendConfig(): ResendConfig | null {
     const apiKey = process.env[RESEND_API_KEY_ENV];
@@ -21,50 +18,7 @@ function readResendConfig(): ResendConfig | null {
     return { apiKey, from };
 }
 
-export class ResendEmailDispatcher implements EmailDispatcher {
-    private readonly client: Resend;
-    private readonly from: string;
-
-    constructor(config: ResendConfig) {
-        this.client = new Resend(config.apiKey);
-        this.from = config.from;
-    }
-
-    async sendEmail(message: EmailMessage): Promise<boolean> {
-        const signal = AbortSignal.timeout(EMAIL_SEND_TIMEOUT_MS);
-        let cleanup: (() => void) | undefined;
-        const timeoutPromise = new Promise<never>((_, reject) => {
-            if (signal.aborted) {
-                reject(signal.reason);
-                return;
-            }
-            const listener = (): void => reject(signal.reason);
-            signal.addEventListener('abort', listener, { once: true });
-            cleanup = () => signal.removeEventListener('abort', listener);
-        });
-        try {
-            const { error } = await Promise.race([
-                this.client.emails.send({
-                    from: this.from,
-                    to: message.to,
-                    subject: message.subject,
-                    html: message.html,
-                    text: message.text,
-                    // 헤더가 없는 메일(인증 메일)은 키 자체를 싣지 않는다 — 빈 객체를
-                    // 보내면 SDK 버전에 따라 빈 헤더 블록이 생길 수 있다.
-                    ...(message.headers ? { headers: message.headers } : {}),
-                }),
-                timeoutPromise,
-            ]);
-            return error === null;
-        } catch {
-            return false;
-        } finally {
-            cleanup?.();
-        }
-    }
-}
-
+/** 발송 수단이 설정되지 않은 환경(키 없음, E2E인데 Redis 없음)에서 항상 거절(false)하는 대체 구현. */
 class NoopEmailDispatcher implements EmailDispatcher {
     async sendEmail(): Promise<boolean> {
         return false;
@@ -72,27 +26,22 @@ class NoopEmailDispatcher implements EmailDispatcher {
 }
 
 /**
- * Returns the transactional email dispatcher: under `E2E_TEST=1` an
- * {@link E2eEmailDispatcher} that captures the plain code/token to Redis (so
- * specs can read them back — the real token store only keeps a hash), else the
- * real Resend dispatcher (or a noop when no Resend key is configured).
+ * 트랜잭셔널 메일 dispatcher를 고른다. `E2E_TEST=1`이면 코드/토큰을 Redis에
+ * 캡처하는 {@link E2eEmailDispatcher}(실제 토큰 저장소는 해시만 보관), 아니면
+ * Resend dispatcher, Resend 키가 없으면(E2E에서 Redis가 없을 때도) noop이다.
  *
- * DELIBERATE — the E2E fake is a STATIC import, not require-gated like the
- * other E2E fakes (FakeMarketProvider etc.). It carries no heavy / test-only
- * deps: only a type-only `@upstash/redis` import plus `getRedisClient`, both
- * already in the prod bundle via the email-token store, so its bundle footprint
- * is negligible. The static import keeps this function's E2E branch
- * unit-testable — Vitest's vmThreads pool cannot resolve a relative CJS
- * `require('./E2eEmailDispatcher')` (`.ts`) inside a require-gated factory. This
- * mirrors the documented rationale for `getOAuthAdapter`'s static
- * `e2eFakeOAuthAdapter` import. The prod path is unchanged when `E2E_TEST` is
- * unset.
+ * E2E 가짜를 require로 게이트하지 않고 정적 import로 두는 것은 의도적이다.
+ * 번들에 이미 있는 `getRedisClient`와 타입 전용 `@upstash/redis`만 쓰므로
+ * 번들 비용이 무시할 만하고, Vitest의 vmThreads 풀은 require-게이트 팩토리 안의
+ * 상대 경로 CJS `require('./E2eEmailDispatcher')`(.ts)를 해석하지 못해 E2E
+ * 분기를 단위 테스트할 수 없게 되기 때문이다. `getOAuthAdapter`의 정적
+ * `e2eFakeOAuthAdapter` import와 같은 근거이며, `E2E_TEST`가 없으면 운영 경로는
+ * 그대로다.
  */
 export function createEmailDispatcher(): EmailDispatcher {
     if (isE2E()) {
         const redis = getRedisClient();
-        // Falls back to noop when Redis is not configured (the fake needs a
-        // client to write the captured code/token to).
+        // 가짜는 캡처 값을 쓸 Redis 클라이언트가 필요하므로 없으면 noop으로 폴백한다.
         return redis
             ? new E2eEmailDispatcher(redis)
             : new NoopEmailDispatcher();

@@ -1,4 +1,4 @@
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { staticSymbolCache } from './staticSymbolCache';
 
 /**
  * `cacheNonEmpty`가 빈 결과를 캐싱 우회용으로 throw할 때 쓰는 내부 sentinel.

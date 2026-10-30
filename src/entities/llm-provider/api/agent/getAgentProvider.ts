@@ -5,14 +5,12 @@ import { fakeAgentProvider } from './fake';
 import { createAgentProvider, type AgentProviderState } from './router';
 
 /**
- * E2E → fake; otherwise the fixed-model DeepSeek provider.
+ * E2E면 fake, 아니면 모델이 고정된 DeepSeek provider(실패 시 Gemini 폴백).
  *
- * `AGENT_REAL_PROVIDER=1` opts back into the real provider while `E2E_TEST=1` is
- * still set. That combination exists because `E2E_TEST` also selects the local
- * postgres driver (`shared/db/client.ts`): without this escape hatch, pointing a
- * dev server at the local database forced the fake model too, so a real DeepSeek
- * round-trip could only be exercised against the production database. CI never
- * sets it, so the e2e suite keeps the deterministic fake.
+ * `AGENT_REAL_PROVIDER=1`은 `E2E_TEST=1`이 켜진 채로 실제 provider로 되돌린다. `E2E_TEST`가
+ * 로컬 postgres 드라이버(`shared/db/client.ts`)도 고르기 때문에 이 탈출구가 필요하다: 없으면
+ * dev 서버를 로컬 DB에 붙일 때 fake 모델까지 강제돼, 실제 DeepSeek 왕복을 운영 DB로만 시험할 수 있다.
+ * CI는 이 값을 켜지 않으므로 e2e 스위트는 결정적인 fake를 유지한다.
  */
 export function getAgentProvider(
     state?: AgentProviderState

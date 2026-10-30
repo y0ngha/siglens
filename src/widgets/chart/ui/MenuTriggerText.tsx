@@ -1,3 +1,7 @@
+/**
+ * 차트 헤더 글자 트리거의 라벨·개수·▾ 표시.
+ */
+
 interface MenuTriggerTextProps {
     /** 개수 없는 이름("차트 작도"). */
     base: string;

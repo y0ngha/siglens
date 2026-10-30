@@ -102,7 +102,7 @@ export interface RelatedSymbol {
  * 현재 소스 간 값이 어긋나는 심볼은 없다. 다만 그건 우연이 아니라 **테스트가
  * 고정하는 계약**이다 — `relatedSymbols.test.ts`의 "소스 간 한글명이 어긋나지
  * 않는다"가 충돌을 즉시 실패로 만든다. 소스를 추가할 때 이름이 예고 없이 바뀌는
- * 회귀를 그 테스트가 잡는다(claude-review PR #765 제안).
+ * 회귀를 그 테스트가 잡는다.
  */
 const KOREAN_NAMES: ReadonlyMap<string, string> = new Map<string, string>([
     ...CURATED_KOREAN_NAMES,
@@ -218,7 +218,7 @@ const CROSS_MARKET_THEME_GROUPS: readonly LabeledGroup[] = [
  *
  * 시장을 넘지 않는다(전부 미국 심볼) — 그래서 `CROSS_MARKET_THEME_GROUPS`와
  * 분리한다. 이름과 내용이 어긋나면 다음 사람이 여기에 한국 종목을 넣어도
- * 되는지 판단할 근거를 잃는다(claude-review PR #768 지적).
+ * 되는지 판단할 근거를 잃는다.
  *
  * ## 왜 필요한가
  *

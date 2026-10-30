@@ -3,9 +3,9 @@
 import { getTranslations } from 'next-intl/server';
 import { getDatabaseClient } from '@/shared/db/client';
 import { logActionError } from '@/shared/lib/logActionError';
-import { DrizzleEmailReportSubscriptionRepository } from '@/entities/email-report/api';
-import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
-import { unsubscribeWithSignature } from '@/entities/email-report/unsubscribeWithSignature';
+import { DrizzleEmailReportSubscriptionRepository } from '../api';
+import { readEmailReportSecret } from '../emailReportSecret';
+import { unsubscribeWithSignature } from '../unsubscribeWithSignature';
 import type {
     UnsubscribeEmailReportInput,
     UnsubscribeEmailReportResult,
