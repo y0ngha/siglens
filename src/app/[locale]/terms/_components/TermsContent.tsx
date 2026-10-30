@@ -66,6 +66,7 @@ export async function TermsContent({ locale, terms }: TermsContentProps) {
             intro={tLegal('termsIntro', { v0: brandName(locale) })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
+            bodyLocale={terms.bodyLocale}
             topNotice={
                 <>
                     {terms.isTranslationFallback && (

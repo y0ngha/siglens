@@ -4,43 +4,10 @@ import {
     NOTICE_IDLE_FALLBACK_MS,
     useDeferredReveal,
 } from '../hooks/useDeferredReveal';
+import { type IdleCallbackStub, stubIdleCallback } from './idleCallbackStub';
 
-interface IdleCallbackStub {
-    flush: () => void;
-    pendingCount: () => number;
-    restore: () => void;
-}
-
-/** `requestIdleCallback`을 수동으로 흘려보낼 수 있게 대체한다. */
-function stubIdleCallback(): IdleCallbackStub {
-    const pending = new Map<number, IdleRequestCallback>();
-    let nextId = 1;
-    const originalRequest = window.requestIdleCallback;
-    const originalCancel = window.cancelIdleCallback;
-    window.requestIdleCallback = (callback: IdleRequestCallback): number => {
-        const id = nextId;
-        nextId += 1;
-        pending.set(id, callback);
-        return id;
-    };
-    window.cancelIdleCallback = (id: number): void => {
-        pending.delete(id);
-    };
-    return {
-        flush: () => {
-            const callbacks = [...pending.values()];
-            pending.clear();
-            callbacks.forEach(callback =>
-                callback({ didTimeout: false, timeRemaining: () => 50 })
-            );
-        },
-        pendingCount: () => pending.size,
-        restore: () => {
-            window.requestIdleCallback = originalRequest;
-            window.cancelIdleCallback = originalCancel;
-        },
-    };
-}
+/** Lighthouse 측정 창 안쪽 시점 — 폴백이 이보다 늦어야 입력 없는 측정에서 모달이 뜨지 않는다. */
+const LIGHTHOUSE_WINDOW_PROBE_MS = 8_000;
 
 describe('useDeferredReveal', () => {
     beforeEach(() => {
@@ -70,12 +37,11 @@ describe('useDeferredReveal', () => {
         expect(result.current).toBe(true);
     });
 
-    /** 예전 8초 폴백은 Lighthouse 측정 창 안이라 입력 없는 측정에서 모달이 떴다. */
-    it('폴백은 30초다 — 옛 8초 시점에는 아직 드러내지 않는다', () => {
+    it('폴백은 30초다 — Lighthouse 측정 창 안인 시점에는 아직 드러내지 않는다', () => {
         expect(NOTICE_IDLE_FALLBACK_MS).toBe(30_000);
         const { result } = renderHook(() => useDeferredReveal());
         act(() => {
-            vi.advanceTimersByTime(8_000);
+            vi.advanceTimersByTime(LIGHTHOUSE_WINDOW_PROBE_MS);
         });
         expect(result.current).toBe(false);
     });

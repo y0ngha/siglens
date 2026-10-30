@@ -7,6 +7,7 @@ export interface LinePoint {
     y: number;
 }
 
+/** 선 그래프의 구간별 점·끝점·평균선 좌표. */
 export interface LineGeometry {
     /** `null` 값에서 끊긴 구간별 점. */
     segments: LinePoint[][];

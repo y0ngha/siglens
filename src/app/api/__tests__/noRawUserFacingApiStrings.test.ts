@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -25,8 +25,12 @@ describe('SSE 사용자 노출 문구 가드', () => {
      * 렌더한다. 실측: `submitMarketNewsDigestAction`이 영어 리터럴
      * `'Failed to submit digest'`를 전 로케일에 내보내고 있었는데 가드는 초록이었다.
      */
+    const STREAM_DIR = 'src/app/api/analysis/stream';
     const FILES = [
-        'src/app/api/analysis/stream/route.ts',
+        `${STREAM_DIR}/route.ts`,
+        ...readdirSync(join(process.cwd(), STREAM_DIR, '_lib'))
+            .filter(name => name.endsWith('.ts'))
+            .map(name => `${STREAM_DIR}/_lib/${name}`),
         'src/entities/analysis/actions/runOverallAnalysisAction.ts',
         'src/entities/analysis/actions/runFundamentalAnalysisAction.ts',
         'src/entities/analysis/actions/runFinancialsAnalysisAction.ts',

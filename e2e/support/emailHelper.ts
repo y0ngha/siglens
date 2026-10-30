@@ -17,7 +17,7 @@
 
 import { srhCommand } from './srhClient';
 
-/** Captured-email payload, mirroring `EmailDebugRecord` in E2eEmailDispatcher.ts. */
+/** Captured-email payload, mirroring `EmailDebugRecord` in src/shared/email/emailDebugRecord.ts. */
 export interface EmailDebug {
     /** 6-digit verification code (verification emails). */
     code?: string;

@@ -13,13 +13,12 @@ vi.mock('@upstash/redis', () => {
 import type { Mock } from 'vitest';
 import { Redis } from '@upstash/redis';
 import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
-import {
-    buildEmailTokenKey,
-    createEmailTokenStore,
-    type EmailTokenValue,
-} from '../api';
+import { createEmailTokenStore } from '../api';
+import type { EmailTokenValue } from '../types';
 
 const MockRedis = Redis as unknown as Mock;
+
+const PENDING_HASH = 'b'.repeat(64);
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -32,18 +31,6 @@ function setEnv(vars: Record<string, string>): void {
         }
     }
 }
-
-describe('buildEmailTokenKey', () => {
-    it('namespaces password reset and email verification keys separately', () => {
-        const email = 'user@example.com';
-        expect(buildEmailTokenKey('password_reset', email)).toBe(
-            'email_token:password_reset:user@example.com'
-        );
-        expect(buildEmailTokenKey('email_verification', email)).toBe(
-            'email_token:email_verification:user@example.com'
-        );
-    });
-});
 
 describe('createEmailTokenStore', () => {
     beforeEach(() => {
@@ -142,7 +129,7 @@ describe('createEmailTokenStore', () => {
             const store = createEmailTokenStore()!;
             const value: EmailTokenValue = {
                 status: 'pending',
-                tokenHash: 'hash',
+                tokenHash: PENDING_HASH,
             };
             await store.set(
                 'email_verification',
@@ -199,7 +186,7 @@ describe('createEmailTokenStore', () => {
         it('consume delegates to writer.getdel with the namespaced key and returns the value', async () => {
             const stored: EmailTokenValue = {
                 status: 'pending',
-                tokenHash: 'hash',
+                tokenHash: PENDING_HASH,
             };
             const mockGetdel = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(function () {
@@ -261,7 +248,7 @@ describe('createEmailTokenStore', () => {
         it('atomically returns and deletes the value via writer.getdel', async () => {
             const stored: EmailTokenValue = {
                 status: 'pending',
-                tokenHash: 'hash',
+                tokenHash: PENDING_HASH,
             };
             const mockGetdel = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(function () {
@@ -325,6 +312,53 @@ describe('createEmailTokenStore', () => {
             );
             expect(value).toEqual(stored);
         });
+
+        it('returns null when the stored value is malformed', async () => {
+            const mockGetdel = vi
+                .fn()
+                .mockResolvedValue({ status: 'pending', tokenHash: 7 });
+            MockRedis.mockImplementation(function () {
+                return {
+                    get: vi.fn(),
+                    set: vi.fn(),
+                    del: vi.fn(),
+                    getdel: mockGetdel,
+                };
+            });
+
+            const store = createEmailTokenStore();
+            expect(store).not.toBeNull();
+            const value = await store?.consume(
+                'password_reset',
+                'user@example.com'
+            );
+            expect(value).toBeNull();
+        });
+    });
+
+    it('get returns null when the stored value is malformed', async () => {
+        setEnv({
+            UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+            UPSTASH_REDIS_REST_TOKEN: 'master-token',
+            UPSTASH_REDIS_REST_READONLY_TOKEN: '',
+        });
+        const mockGet = vi.fn().mockResolvedValue({ status: 'pending' });
+        MockRedis.mockImplementation(function () {
+            return {
+                get: mockGet,
+                set: vi.fn(),
+                del: vi.fn(),
+                getdel: vi.fn(),
+            };
+        });
+
+        const store = createEmailTokenStore();
+        expect(store).not.toBeNull();
+        const value = await store?.get(
+            'email_verification',
+            'user@example.com'
+        );
+        expect(value).toBeNull();
     });
 
     it('reader uses readonly client when readonly token is set', async () => {

@@ -1,3 +1,6 @@
+/**
+ * 점수표 축 제목의 카탈로그 키.
+ */
 import type {
     InvestorFlowsAxisId,
     InvestorFlowsMarket,
@@ -16,8 +19,8 @@ export const AXIS_TITLE_KEY: Record<InvestorFlowsAxisId, string> = {
 };
 
 /**
- * 시장별 축 제목 키. 한국은 내부자 슬롯이 DART 임원·주요주주 소유보고라 그 이름을 쓴다(core가 KR 평가 결과를 같은 슬롯에 넣는다,
- * 설계 §4.4). 나머지 축은 시장과 무관하다.
+ * 시장별 축 제목 키. 한국은 내부자 슬롯이 DART 임원·주요주주 소유보고라 그 이름을 쓴다(core가 KR 평가 결과를 같은 슬롯에 넣는다).
+ * 나머지 축은 시장과 무관하다.
  */
 export function axisTitleKey(
     axis: InvestorFlowsAxisId,

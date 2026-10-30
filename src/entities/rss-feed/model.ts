@@ -4,6 +4,7 @@ import {
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 
+/** RSS 항목 한 건. 라우트(`sources.ts`)가 만들고 `buildRssXml`이 직렬화한다. */
 export interface RssItem {
     readonly title: string;
     /** 절대 허브 URL. */
@@ -21,6 +22,7 @@ export interface RssItem {
     readonly paragraphs?: readonly string[];
 }
 
+/** RSS 채널 한 개와 그 항목들. `buildRssXml`의 입력이다. */
 export interface RssChannel {
     readonly title: string;
     readonly link: string;
@@ -43,8 +45,14 @@ export function rssMarketSurface(scopeId: string): string {
     return `rss:market:${scopeId}`;
 }
 
+/** 경제 허브의 스탬프 표면 이름. 크론 기록과 RSS 읽기가 공유한다. */
 export const RSS_ECONOMY_SURFACE = 'rss:economy';
 
+/**
+ * 뉴스 카테고리 허브의 스탬프 표면 이름. 크론(`seo-prewarm/hubs.ts`)이 기록하고 RSS
+ * 라우트(`rss/sources.ts`)가 읽는다 — `rssMarketSurface`·`RSS_ECONOMY_SURFACE`와 같은
+ * `rss:<허브>:<범위>` 체계를 따라야 두 쪽 스탬프가 맞물린다.
+ */
 export function rssNewsSurface(category: string): string {
     return `rss:news:${category}`;
 }
@@ -61,10 +69,12 @@ export function marketHubPath(region: NavRegionId): string | null {
     return regionHrefOf('market', region);
 }
 
+/** 경제 허브의 지역별 공개 경로. 화면이 없는 지역은 `null`. */
 export function economyHubPath(region: NavRegionId): string | null {
     return regionHrefOf('economy', region);
 }
 
+/** 뉴스 카테고리 허브의 공개 경로(카테고리 slug 기반). */
 export function newsHubPath(category: NewsFeedCategoryId): string {
     return `/news/${CATEGORY_CONFIG[category].slug}`;
 }

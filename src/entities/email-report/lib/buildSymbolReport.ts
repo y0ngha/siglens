@@ -19,6 +19,7 @@ export interface OptionsProseSource {
     summary: string;
 }
 
+/** `buildSymbolReport`의 입력 — 스냅샷·뉴스·옵션을 이미 읽어 온 호출자가 넘긴다. */
 export interface BuildSymbolReportInput {
     symbol: string;
     technical: TechnicalSource | null;

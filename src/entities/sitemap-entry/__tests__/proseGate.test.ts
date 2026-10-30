@@ -5,6 +5,7 @@
  */
 import {
     PROSE_GATED_SITEMAP_TABS,
+    isProseGatedSitemapTab,
     makeProseGate,
     makeSnapshotTimeLookup,
     snapshotKey,
@@ -82,5 +83,16 @@ describe('makeSnapshotTimeLookup', () => {
         const timeOf = makeSnapshotTimeLookup({});
 
         expect(timeOf('AAPL', 'news')).toBeUndefined();
+    });
+});
+
+describe('isProseGatedSitemapTab', () => {
+    it('차트·뉴스 탭만 게이트 대상이다', () => {
+        expect(isProseGatedSitemapTab('technical')).toBe(true);
+        expect(isProseGatedSitemapTab('news')).toBe(true);
+    });
+
+    it('항상 noindex인 탭은 게이트 대상이 아니다', () => {
+        expect(isProseGatedSitemapTab('overall')).toBe(false);
     });
 });

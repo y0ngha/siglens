@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import type { Locale } from '@/shared/i18n/locales';
-import { localeOpenGraph } from '@/shared/lib/seoAlternates';
-import { localizedAbsoluteUrl } from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import type { SharedAnalysisLookup } from '../types';
-import { buildOgText, type OgTranslator } from '../server/buildOgText';
 import { brandName } from '@/shared/lib/brandName';
+import { localizedAbsoluteUrl } from '@/shared/lib/seo';
+import { localeOpenGraph } from '@/shared/lib/seoAlternates';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
+import { buildOgText, type OgTranslator } from '../server/buildOgText';
+import type { SharedAnalysisLookup } from '../types';
 
 /** `entities.shared-analysis.seo` 네임스페이스 번역자. */
 type ShareSeoTranslator = (

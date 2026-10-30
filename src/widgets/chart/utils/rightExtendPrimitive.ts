@@ -1,3 +1,7 @@
+/**
+ * 수평 레벨선을 오른쪽 끝까지 연장해 그리는 시리즈 프리미티브.
+ */
+
 import {
     LineStyle,
     type IPrimitivePaneRenderer,

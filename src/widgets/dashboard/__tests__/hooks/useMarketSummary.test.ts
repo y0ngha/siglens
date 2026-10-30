@@ -82,7 +82,7 @@ describe('useMarketSummary', () => {
             expect(result.current.isPending).toBe(false);
         });
 
-        expect(result.current.data).toEqual(SUMMARY_DATA);
+        expect(result.current.isTotalFailure).toBe(false);
         expect(result.current.sectorMap.get('XLK')).toBeDefined();
         expect(result.current.indices).toHaveLength(1);
         expect(result.current.indices[0]?.symbol).toBe('SPY');
@@ -130,7 +130,52 @@ describe('useMarketSummary', () => {
         expect(result.current.sectorMap.size).toBe(0);
         expect(result.current.indices).toHaveLength(0);
         expect(result.current.hasMissingQuotes).toBe(false);
+        expect(result.current.isTotalFailure).toBe(true);
         client.clear();
+    });
+
+    /**
+     * 조회가 끝났는데 쓸 요약이 없으면 총체적 실패다. 응답이 `{ok:false}`가 아니라
+     * 조회 자체가 던지거나 다른 시장 응답이라 버려지는 경우도 같다.
+     */
+    describe('isTotalFailure', () => {
+        it('조회 중에는 false다', () => {
+            mockAction.mockImplementation(() => new Promise(() => {}));
+            const { client, wrapper } = makeWrapper();
+            const { result } = renderHook(() => useMarketSummary('us'), {
+                wrapper,
+            });
+            expect(result.current.isTotalFailure).toBe(false);
+            client.clear();
+        });
+
+        it('조회가 던져 끝나면 true다', async () => {
+            mockAction.mockRejectedValue(new Error('network error'));
+            const { client, wrapper } = makeWrapper();
+            const { result } = renderHook(() => useMarketSummary('us'), {
+                wrapper,
+            });
+
+            await waitFor(() => {
+                expect(result.current.isPending).toBe(false);
+            });
+            expect(result.current.isTotalFailure).toBe(true);
+            client.clear();
+        });
+
+        it('다른 시장의 응답을 버렸으면 true다', async () => {
+            mockAction.mockResolvedValue(SUMMARY_DATA);
+            const { client, wrapper } = makeWrapper();
+            const { result } = renderHook(() => useMarketSummary('kr'), {
+                wrapper,
+            });
+
+            await waitFor(() => {
+                expect(result.current.isPending).toBe(false);
+            });
+            expect(result.current.isTotalFailure).toBe(true);
+            client.clear();
+        });
     });
 
     it('(Worst-E2E) isE2EClient=true → staleTime 0 적용 (즉시 refetch)', async () => {

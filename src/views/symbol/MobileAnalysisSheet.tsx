@@ -19,7 +19,7 @@ interface MobileAnalysisSheetProps {
 }
 
 /**
- * 모바일 분석 바텀시트.
+ * 모바일 분석 바텀시트(vaul) — 차트 탭 AI 분석 패널을 담는 비모달 시트.
  *
  * `modal={false}`는 반드시 Radix Dialog까지 도달해야 한다. vaul 1.1.2는 이 prop을
  * 내부 `DialogPrimitive.Root`에 전달하지 않는 회귀가 있어(업스트림 이슈
@@ -30,9 +30,8 @@ interface MobileAnalysisSheetProps {
  *
  * 그래서 `.yarn/patches/vaul-npm-1.1.2-*.patch`로 passthrough를 복구했고,
  * `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`가 패치 유실을 감시한다.
- * 패치 덕분에 예전의 body pointer-events 복구용 MutationObserver 핵은 제거했다.
  *
- * D2(감사) — 이 패치의 제거 조건: 업스트림 이슈 #496이 closed되고 vaul이
+ * 이 패치의 제거 조건: 업스트림 이슈 #496이 closed되고 vaul이
  * `modal` passthrough를 정식으로 릴리스하면, 다음을 전부 제거한다 —
  * (1) `.yarn/patches/vaul-npm-1.1.2-*.patch` 파일 자체, (2) `package.json`
  * `dependencies.vaul`의 `patch:vaul@npm%3A1.1.2#~/.yarn/patches/...` 지정자를
@@ -40,6 +39,14 @@ interface MobileAnalysisSheetProps {
  * `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`. vaul을 업그레이드하는
  * 순간 그 테스트는 설계상 실패한다(같은 파일의 JSDoc 참고) — 그것이 바로 이
  * 제거를 수행할 신호다.
+ *
+ * 비모달이라 포커스 트랩·스크롤 잠금·배경 `inert`가 없다 — 시트가 떠 있는 동안에도 차트와
+ * 헤더를 계속 조작한다. `dismissible={false}`라 Escape·바깥 클릭으로 닫히지 않고 PEEK로
+ * 내려갈 뿐이다(`handleOpenChange`).
+ *
+ * 하단 safe-area는 시트 상자(`Drawer.Content`)의 `pb-[env(safe-area-inset-bottom)]` 한 곳에서만
+ * 준다. 안쪽 스크롤 영역은 그 위에 놓이므로 `pb-4`면 마지막 줄이 홈 인디케이터에 닿지 않는다 —
+ * 안쪽에도 inset을 더하면 FULL에서 바닥 여백이 inset만큼 두 번 들어간다.
  */
 export function MobileAnalysisSheet({
     activeSnap,
@@ -104,7 +111,7 @@ export function MobileAnalysisSheet({
                     <div
                         ref={contentRef}
                         className={cn(
-                            'min-h-0 flex-1 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]',
+                            'min-h-0 flex-1 px-4 pt-3 pb-4',
                             isFullSnap ? 'overflow-y-auto' : 'overflow-hidden'
                         )}
                     >

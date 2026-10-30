@@ -14,6 +14,7 @@ import { loadGuideCategoryCopy } from './lib/guideCopy';
 import { countByCategory, toGuideSummary } from './lib/guideBrowse';
 import { GuideBrowser } from './ui/GuideBrowser';
 import { GuideCategoryTiles } from './ui/GuideCategoryTiles';
+import { GuidePageHeader } from './ui/GuidePageHeader';
 
 const OTHER_HEADING_ID = 'guide-other-categories';
 
@@ -53,17 +54,10 @@ export async function GuideCategoryPage({
                 ]}
             />
 
-            <header className="max-w-2xl pb-8 sm:pb-10">
-                <p className="font-mono text-xs tracking-widest text-primary-400">
-                    CHART GUIDE
-                </p>
-                <h1 className="mt-3 text-3xl font-bold tracking-tight text-secondary-50 sm:text-4xl">
-                    {copy.label[category]}
-                </h1>
-                <p className="mt-4 text-[15px] leading-7 text-secondary-300 sm:text-base">
-                    {copy.intro[category]}
-                </p>
-            </header>
+            <GuidePageHeader
+                title={copy.label[category]}
+                intro={copy.intro[category]}
+            />
 
             <GuideBrowser
                 entries={entries

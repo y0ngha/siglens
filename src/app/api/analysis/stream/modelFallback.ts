@@ -1,12 +1,13 @@
 import 'server-only';
 import type { ModelId } from '@y0ngha/siglens-core';
-import { resolveServableModelId } from '@/entities/llm-provider/lib/serverKeyKillSwitch';
+import { resolveServableModelId } from '@/entities/llm-provider/api/serverKeyKillSwitch';
 import { isRosterModelId } from '@/shared/lib/modelAvailability';
 import {
     MODEL_FALLBACK_FIELD,
     type AnalysisModelFallback,
 } from '@/shared/lib/sse/analysisModelFallback';
 
+/** `resolveRequestModel`의 결과 — 실제로 돌릴 모델과 대체 표시. */
 export interface RequestModel {
     /** 실제로 돌릴 모델. 요청에 모델이 없었으면 `undefined` 그대로다. */
     modelId: ModelId | undefined;
