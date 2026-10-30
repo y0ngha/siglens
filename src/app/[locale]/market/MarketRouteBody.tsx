@@ -124,7 +124,7 @@ export async function MarketContent({
             {/* **전 섹터** SSR 크롤 텍스트. 위 패널도 서버 렌더되지만 활성 섹터만 보여 준다 —
                 SectorFactsSummary가 전 섹터를 `이름 (TICKER)` 앵커와 함께 정적 텍스트로 나열해
                 크롤러가 JS 없이 스냅샷 전체와 `/{symbol}` 링크를 본다. 사용자도 같은 데이터를 본다. */}
-            <SectorFactsSummary data={sectorDataSeed} />
+            <SectorFactsSummary data={sectorDataSeed} scope={clientScope} />
             <SignalTypeGuide />
         </>
     );

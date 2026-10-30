@@ -1,17 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import koMessages from '@/../messages/ko.json';
-import enMessages from '@/../messages/en.json';
-import jaMessages from '@/../messages/ja.json';
-import zhMessages from '@/../messages/zh.json';
 import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { formatMarketFactorRaw } from '../marketFearGreedLabels';
-
-const CATALOGS = {
-    ko: koMessages,
-    en: enMessages,
-    ja: jaMessages,
-    zh: zhMessages,
-};
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /**
  * 팩터 라벨·설명은 카탈로그(`shared.lib.fearGreedFactor`)로 옮겼다 — 예전에는
@@ -22,9 +12,13 @@ const CATALOGS = {
  * 네 로케일에 다 있는지를 본다. 새 팩터를 추가하고 번역을 빠뜨리면 실패한다.
  */
 describe('market fear-greed 팩터 카탈로그', () => {
-    const group = (locale: keyof typeof CATALOGS) =>
-        (CATALOGS[locale].shared.lib as unknown as Record<string, unknown>)
-            .fearGreedFactor as {
+    const group = (locale: keyof typeof MESSAGE_CATALOGS) =>
+        (
+            MESSAGE_CATALOGS[locale].shared.lib as unknown as Record<
+                string,
+                unknown
+            >
+        ).fearGreedFactor as {
             label: Record<string, string>;
             descriptionUs: Record<string, string>;
             descriptionKr: Record<string, string>;
@@ -33,8 +27,8 @@ describe('market fear-greed 팩터 카탈로그', () => {
     it.each(MARKET_FEAR_GREED_FACTOR_KEYS)(
         '%s: 라벨이 네 로케일에 다 있다',
         key => {
-            for (const locale of Object.keys(CATALOGS) as Array<
-                keyof typeof CATALOGS
+            for (const locale of Object.keys(MESSAGE_CATALOGS) as Array<
+                keyof typeof MESSAGE_CATALOGS
             >) {
                 const labels = group(locale).label;
                 // `junk_bond`만 시장별로 이름이 갈린다(미국=하이일드, 한국=신용 스프레드).
@@ -52,8 +46,8 @@ describe('market fear-greed 팩터 카탈로그', () => {
     it.each(MARKET_FEAR_GREED_FACTOR_KEYS)(
         '%s: 설명이 두 시장 × 네 로케일에 다 있다',
         key => {
-            for (const locale of Object.keys(CATALOGS) as Array<
-                keyof typeof CATALOGS
+            for (const locale of Object.keys(MESSAGE_CATALOGS) as Array<
+                keyof typeof MESSAGE_CATALOGS
             >) {
                 expect(
                     group(locale).descriptionUs[key],

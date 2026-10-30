@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { getTranslations } from 'next-intl/server';
-import { loadOgFont } from '@/entities/og-image/lib/loadOgFont';
+import { loadOgFont } from '@/entities/og-image/server/loadOgFont';
 import { SITE_NAME } from '@/shared/config/brand';
 import { resolveLocale } from '@/shared/i18n/locales';
 import {

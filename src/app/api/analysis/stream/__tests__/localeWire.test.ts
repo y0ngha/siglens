@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locale } from '@/shared/i18n/locales';
 import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
@@ -115,7 +115,10 @@ describe('로케일 배선 판별', () => {
      */
     it('withPlainLanguage가 에러 봉투를 평이화에서 제외한다', () => {
         const source = readFileSync(
-            join(process.cwd(), 'src/app/api/analysis/stream/route.ts'),
+            join(
+                process.cwd(),
+                'src/app/api/analysis/stream/_lib/readerViews.ts'
+            ),
             'utf8'
         );
         const at = source.indexOf('function withPlainLanguage');
@@ -135,11 +138,20 @@ describe('로케일 배선 판별', () => {
      * 조용히 같은 상태로 돌아간다.
      */
     it('라우트가 사후 번역 계층을 다시 부르지 않는다', () => {
-        const source = readFileSync(
-            join(process.cwd(), 'src/app/api/analysis/stream/route.ts'),
-            'utf8'
+        const streamDir = join(process.cwd(), 'src/app/api/analysis/stream');
+        const files = [
+            join(streamDir, 'route.ts'),
+            ...readdirSync(join(streamDir, '_lib'))
+                .filter(name => name.endsWith('.ts'))
+                .map(name => join(streamDir, '_lib', name)),
+        ];
+        const calls = files.flatMap(
+            file =>
+                readFileSync(file, 'utf8').match(
+                    /translateAnalysisForLocale\s*\(/g
+                ) ?? []
         );
-        const calls = source.match(/translateAnalysisForLocale\s*\(/g) ?? [];
+        expect(files.length).toBeGreaterThan(5);
         expect(calls).toHaveLength(0);
     });
 });

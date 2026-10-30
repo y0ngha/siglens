@@ -87,6 +87,22 @@ describe('useOptionsChainMetrics', () => {
         expect(result.current.chain?.expirationDate).toBe('2025-06-20');
     });
 
+    it('returns oiByStrike aggregated from the chain, sorted by strike', () => {
+        const { result } = renderHook(() =>
+            useOptionsChainMetrics(SNAPSHOT, '2025-06-20')
+        );
+        expect(result.current.oiByStrike).toEqual([
+            { strike: 150, callOpenInterest: 1000, putOpenInterest: 800 },
+        ]);
+    });
+
+    it('returns an empty oiByStrike when the chain is absent', () => {
+        const { result } = renderHook(() =>
+            useOptionsChainMetrics(SNAPSHOT, '2099-01-01')
+        );
+        expect(result.current.oiByStrike).toEqual([]);
+    });
+
     it('memoizes result across re-renders with same inputs', () => {
         const { result, rerender } = renderHook(() =>
             useOptionsChainMetrics(SNAPSHOT, '2025-06-20')

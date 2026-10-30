@@ -591,6 +591,8 @@ describe('ChatShell — 대화 전환 골격', () => {
 
     it('지금 열린 대화를 다시 누르면 골격을 그리지 않는다', () => {
         holdNavigation();
+        // 열린 대화는 스트림이 쥔 대화 id로 판정한다 — `/c/c9`에서는 라우트와 같다.
+        mockStream.conversationId = 'c9';
         wrap(
             <ChatShell
                 conversationId="c9"
@@ -611,6 +613,34 @@ describe('ChatShell — 대화 전환 골격', () => {
         );
 
         expect(skeleton()).toBeNull();
+        mockStream.conversationId = 'c1';
+    });
+
+    // 랜딩(`/`)에서 만든 대화는 라우트 prop이 계속 null이다 — 그 대화를 다시 눌러도 골격이 없어야 한다.
+    it('랜딩에서 만든 대화를 다시 눌러도 골격을 그리지 않는다', () => {
+        holdNavigation();
+        mockStream.conversationId = 'c9';
+        wrap(
+            <ChatShell
+                conversationId={null}
+                initialMessages={[]}
+                conversations={[
+                    { id: 'c9', title: '대화 아홉', lastMessageAt: '' },
+                ]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/"
+            />
+        );
+
+        fireEvent.click(
+            within(desktopRail()).getByRole('link', { name: '대화 아홉' }),
+            { button: 0 }
+        );
+
+        expect(skeleton()).toBeNull();
+        mockStream.conversationId = 'c1';
     });
 
     it('새 대화로 가는 이동에는 골격을 그리지 않는다', () => {
@@ -1062,7 +1092,9 @@ describe('ChatShell sidebar rename/delete wiring', () => {
         mockStream.conversationId = 'c1';
     });
 
-    it('deleting the active conversation navigates home instead of splicing the rail entry', async () => {
+    // 랜딩(`/`)에서 만든 대화는 새 대화로 이동해도 셸이 다시 마운트되지 않는다 — 목록 갱신을
+    // 이동에 맡기면 지운 행이 남았다. 열린 대화도 목록에서 바로 빼고 새 대화로 간다.
+    it('deleting the active conversation removes its rail entry and navigates home', async () => {
         mockStream.conversationId = 'c1';
         wrap(
             <ChatShell
@@ -1087,12 +1119,9 @@ describe('ChatShell sidebar rename/delete wiring', () => {
             fireEvent.click(confirmButtons[confirmButtons.length - 1]!);
         });
         expect(deleteConversationAction).toHaveBeenCalledWith('c1');
-        // Deleting the open conversation navigates away — the row is left
-        // in place (`onDeleted` is not the path taken) since the app is
-        // about to leave this screen entirely.
         expect(
-            screen.getAllByRole('link', { name: 'Old title' }).length
-        ).toBeGreaterThan(0);
+            screen.queryAllByRole('link', { name: 'Old title' })
+        ).toHaveLength(0);
         expect(router.push).toHaveBeenCalledWith('/');
         mockStream.conversationId = 'c1';
     });
@@ -1138,5 +1167,63 @@ describe('ChatShell — ?sso=none 주소창 정리', () => {
 
         expect(replaceState).not.toHaveBeenCalled();
         expect(window.location.search).toBe('?q=hi');
+    });
+});
+
+/**
+ * 랜딩(`/`)의 셸에는 key가 없어, 첫 전송이 URL을 `/c/<id>`로 옮긴 뒤 "새 대화"(`router.push('/')`)를
+ * 눌러도 같은 라우트라 다시 마운트되지 않았다 — 이전 대화가 남고 다음 질문이 그 대화로 이어졌다.
+ */
+describe('ChatShell — 랜딩에서 만든 대화', () => {
+    afterEach(() => {
+        mockStream.conversationId = 'c1';
+        router.push.mockReset();
+    });
+
+    const landing = (signedIn = true) => (
+        <ChatShell
+            conversationId={null}
+            initialMessages={[]}
+            conversations={[
+                { id: 'c9', title: '대화 아홉', lastMessageAt: '' },
+            ]}
+            signedIn={signedIn}
+            localePrefix=""
+            siteUrl="https://siglens.io"
+            currentPath="/"
+        />
+    );
+
+    it('새 대화를 누르면 세션을 다시 시작한다(입력 중이던 초안도 비워진다)', () => {
+        mockStream.conversationId = 'c9';
+        wrap(landing());
+        const rail = document.querySelector('aside') as HTMLElement;
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: '쓰다 만 질문' },
+        });
+
+        const optionsBefore = captured.options;
+        fireEvent.click(
+            within(rail)
+                .getAllByRole('link')
+                .find(link => link.getAttribute('href') === '/')!,
+            { button: 0 }
+        );
+
+        expect(screen.getByRole('textbox')).toHaveValue('');
+        // 다시 마운트된 세션이 스트림 훅을 새 대화로 다시 만든다.
+        expect(captured.options).not.toBe(optionsBefore);
+    });
+
+    it('로그인 링크는 서버 경로(`/`)가 아니라 지금 대화로 돌아온다', () => {
+        mockStream.conversationId = 'c9';
+        wrap(landing(false));
+        const link = screen
+            .getAllByRole('link')
+            .find(a => a.getAttribute('href')?.includes('/login'))!;
+        // 핸드오프 경로 안에 한 번 더 인코딩돼 있다.
+        expect(
+            decodeURIComponent(decodeURIComponent(link.getAttribute('href')!))
+        ).toContain('next=/c/c9');
     });
 });

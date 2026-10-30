@@ -1,13 +1,17 @@
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+/**
+ * 섹터 신호 종목 카드 — 시세·신호 배지·상충 안내를 담고, 큐레이션 종목이면 종목 페이지로 링크한다.
+ */
 import { useTranslations } from 'next-intl';
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
-import type { StockWithConflict } from '@y0ngha/siglens-core';
-import { SignalBadge } from './SignalBadge';
-import { QuoteHeader } from './QuoteHeader';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { QuoteHeader } from './ui/quote/QuoteHeader';
+import { ConflictNote } from './ui/signal/ConflictNote';
+import { SignalBadgeList } from './ui/signal/SignalBadgeList';
+import { signalStockHref } from './utils/signalStockLink';
 
 interface SignalStockCardProps {
     data: StockWithConflict;
@@ -17,6 +21,13 @@ interface SignalStockCardProps {
     tickerIsReadable: boolean;
 }
 
+/**
+ * 링크 제목은 카드에 보이는 이름과 **같은 소스**(`assetLabel`)를 쓴다 — 카드는 이름인데
+ * 툴팁만 티커면 한 카드가 두 이름으로 읽힌다.
+ *
+ * 큐레이션 밖 종목은 링크 없는 카드다(`signalStockHref`가 `null`). 같은 시각 틀을 유지해
+ * 그리드가 흔들리지 않는다.
+ */
 export function SignalStockCard({
     data,
     currencySymbol,
@@ -24,57 +35,34 @@ export function SignalStockCard({
 }: SignalStockCardProps) {
     const t = useTranslations('widgets.dashboard');
     const assetLabel = useAssetLabel();
+    const displayName = assetLabel(data.symbol, data.koreanName);
+    const href = signalStockHref(data.symbol);
     const content = (
         <div className="flex flex-col gap-1">
             <QuoteHeader
                 layout="signal"
                 data={{
                     symbol: data.symbol,
-                    // `koreanName`은 한국어 데이터다 — 표시는 카탈로그로.
-                    displayName: assetLabel(data.symbol, data.koreanName),
+                    displayName,
                     price: data.price,
                     changePercent: data.changePercent,
                 }}
                 currencySymbol={currencySymbol}
                 tickerIsReadable={tickerIsReadable}
             />
-            {data.signals.length > 0 && (
-                <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">
-                    {data.signals.map((s, i) => (
-                        <span key={s.type} className="contents">
-                            {i > 0 && (
-                                <span
-                                    className="text-secondary-500"
-                                    aria-hidden="true"
-                                >
-                                    |
-                                </span>
-                            )}
-                            <SignalBadge type={s.type} />
-                        </span>
-                    ))}
-                </div>
-            )}
-            {data.conflict && (
-                <p className="mt-1 text-xs text-secondary-500">
-                    {t('SignalStockCard.fe2ec0', {
-                        v0: data.conflict.bullishCount,
-                        v1: data.conflict.bearishCount,
-                    })}
-                </p>
-            )}
+            <SignalBadgeList signals={data.signals} />
+            {data.conflict && <ConflictNote conflict={data.conflict} />}
         </div>
     );
-    // 큐레이션 밖 종목은 링크 없는 카드다 — 그 페이지는 noindex 롱테일이라 링크는 크롤 예산만
-    // 쓴다(`isCuratedSymbol`, 2026-10-05 크롤 감사). 같은 시각 틀을 유지해 그리드가 흔들리지 않는다.
-    if (!isCuratedSymbol(data.symbol)) {
+
+    if (href === null) {
         return <div className={cn(SURFACE_CARD, 'block p-3')}>{content}</div>;
     }
     return (
         <Link
-            href={`/${data.symbol}`}
-            title={t('SignalStockCard.analyzeTitle', { v0: data.symbol })}
-            // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+            href={href}
+            title={t('SignalStockCard.analyzeTitle', { v0: displayName })}
+            // 카드 그리드로 다수 렌더 — 기본 prefetch면 뷰포트 진입마다 RSC를 당긴다.
             prefetch={false}
             className={cn(CARD_LINK_CLASSES, 'p-3')}
         >

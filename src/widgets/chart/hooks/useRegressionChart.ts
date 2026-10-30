@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 선형 회귀 보조 pane 시리즈를 그리는 훅.
+ */
+
 import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
@@ -71,7 +75,6 @@ export function useRegressionChart({
         if (!isVisible) return;
 
         const { regression } = indicators;
-        if (!regression.length) return;
 
         if (!slopeSeriesRef.current) return;
 

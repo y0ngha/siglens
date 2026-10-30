@@ -1,249 +1,88 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ApiKeyInput } from './ApiKeyInput';
-import { useApiKeyForms } from '../hooks/useApiKeyForms';
-import type { ApiKeyActionState } from '@/shared/lib/types';
+
 import {
     LLM_PROVIDER_VALUES,
     type LlmProvider,
 } from '@/shared/config/llmProviders';
-import { cn } from '@/shared/lib/cn';
-import {
-    BUTTON_GHOST,
-    BUTTON_OUTLINE,
-    BUTTON_OUTLINE_DANGER,
-} from '@/shared/lib/buttonStyles';
-import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
-const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
-    anthropic: 'sk-ant-...',
-    google: 'AIza...',
-    openai: 'sk-...',
-    deepseek: 'sk-...',
-};
+import { ProviderCard } from './ProviderCard';
 
-interface StatusMessageProps {
-    id: string;
-    state: ApiKeyActionState;
-    className?: string;
-}
-
-function StatusMessage({ id, state, className }: StatusMessageProps) {
-    return (
-        <div
-            id={id}
-            role="status"
-            aria-live="polite"
-            className={cn('min-h-5 text-sm', className)}
-        >
-            {state.status === 'success' && (
-                <span className="text-ui-success-text">{state.message}</span>
-            )}
-            {state.status === 'error' && (
-                <span className="text-ui-danger-text">{state.message}</span>
-            )}
-        </div>
-    );
-}
-
-interface PendingLabelSubmitProps {
-    label: string;
-    pendingLabel: string;
-    className: string;
-    'aria-describedby'?: string;
-}
-
-/**
- * 카드 안의 작은 아웃라인 제출 버튼. 공용 `SubmitButton`은 전폭 채움 + 흰 스피너라
- * 이 자리(인라인 아웃라인, 문구만 바뀜)에 맞지 않아 톤 상수만 공유한다.
- */
-function PendingLabelSubmit({
-    label,
-    pendingLabel,
-    className,
-    'aria-describedby': ariaDescribedby,
-}: PendingLabelSubmitProps) {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            aria-busy={pending}
-            aria-describedby={ariaDescribedby}
-            className={className}
-        >
-            {pending ? pendingLabel : label}
-        </button>
-    );
-}
-
-interface ProviderCardProps {
+/** 포커스를 이어받을 카드. 카드 `key`와 같은 두 값으로 집는다. */
+interface FocusTarget {
     provider: LlmProvider;
     isRegistered: boolean;
 }
 
-function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
-    const t = useTranslations('features.api-key-management');
-    // editMode: true only when an already-registered provider's "재등록" is active
-    const [editMode, setEditMode] = useState(false);
-    const { saveState, saveFormAction, deleteState, deleteFormAction } =
-        useApiKeyForms();
-
-    // when isRegistered changes (e.g. deletion → false), the parent key
-    // remounts this component, so editMode resets to false and the form opens via !isRegistered.
-
-    // for re-registration, close the form optimistically on submit.
-    // On failure, the error appears in the status region below; user can click 재등록 to retry.
-    const handleSave = (formData: FormData): void => {
-        if (isRegistered) setEditMode(false);
-        saveFormAction(formData);
-    };
-
-    const showSaveInput = !isRegistered || editMode;
-
-    const saveStatusId = `api-key-save-status-${provider}`;
-    const deleteStatusId = `api-key-delete-status-${provider}`;
-
-    return (
-        // E2E가 카드를 반경 클래스(`div.rounded-xl`)로 집고 있었다. 반경 어휘를
-        // 세 단계로 통일하면서 그 셀렉터가 조용히 아무것도 못 찾게 됐다 —
-        // 스타일 클래스는 테스트가 기대도 되는 계약이 아니다. 안정된 앵커를 준다.
-        <div
-            data-testid={`api-key-card-${provider}`}
-            className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700"
-        >
-            <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-secondary-100">
-                        {LLM_PROVIDER_LABELS[provider]}
-                    </span>
-                    {isRegistered ? (
-                        <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success-text ring-1 ring-ui-success/30">
-                            {t('ApiKeySection.e848ed')}
-                        </span>
-                    ) : (
-                        <span className="rounded-full bg-secondary-800 px-2 py-0.5 text-xs text-secondary-400">
-                            {t('ApiKeySection.363c34')}
-                        </span>
-                    )}
-                </div>
-                {isRegistered && !showSaveInput && (
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setEditMode(true)}
-                            className={cn(
-                                BUTTON_OUTLINE,
-                                'px-3 py-1.5 text-xs'
-                            )}
-                        >
-                            {t('ApiKeySection.fc669b')}
-                        </button>
-                        <form action={deleteFormAction} noValidate>
-                            <input
-                                type="hidden"
-                                name="provider"
-                                value={provider}
-                            />
-                            <PendingLabelSubmit
-                                label={t('ApiKeySection.fc81e2')}
-                                pendingLabel={t('ApiKeySection.283e16')}
-                                aria-describedby={deleteStatusId}
-                                className={cn(
-                                    BUTTON_OUTLINE_DANGER,
-                                    'h-7 px-3 text-xs'
-                                )}
-                            />
-                        </form>
-                    </div>
-                )}
-            </div>
-
-            {showSaveInput && (
-                <form
-                    action={handleSave}
-                    className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center"
-                    noValidate
-                >
-                    <input type="hidden" name="provider" value={provider} />
-                    <ApiKeyInput
-                        name="apiKey"
-                        placeholder={PROVIDER_PLACEHOLDERS[provider]}
-                        aria-label={t('ApiKeySection.apiKeyLabel', {
-                            v0: LLM_PROVIDER_LABELS[provider],
-                        })}
-                        aria-describedby={saveStatusId}
-                    />
-                    <PendingLabelSubmit
-                        label={t('ApiKeySection.1f1712')}
-                        pendingLabel={t('ApiKeySection.9f6785')}
-                        className={cn(
-                            BUTTON_OUTLINE,
-                            'h-10 shrink-0 px-4 text-sm'
-                        )}
-                    />
-                    {isRegistered && (
-                        <button
-                            type="button"
-                            onClick={() => setEditMode(false)}
-                            className={cn(
-                                BUTTON_GHOST,
-                                'h-10 shrink-0 px-2 text-sm'
-                            )}
-                        >
-                            {t('ApiKeySection.19b2d1')}
-                        </button>
-                    )}
-                </form>
-            )}
-
-            {showSaveInput && (
-                <StatusMessage
-                    id={saveStatusId}
-                    state={saveState}
-                    className="mt-1.5"
-                />
-            )}
-
-            {isRegistered && deleteState.status !== 'idle' && (
-                <StatusMessage
-                    id={deleteStatusId}
-                    state={deleteState}
-                    className="mt-1"
-                />
-            )}
-        </div>
-    );
-}
-
 interface ApiKeySectionProps {
+    /** 서버가 읽은 등록 프로바이더. 저장·삭제 후 `revalidatePath`로 다시 내려온다. */
     registeredProviders: LlmProvider[];
 }
 
+/**
+ * `/account`의 "AI 모델 API 키"(BYOK) 섹션. 프로바이더마다 카드 하나를 그린다.
+ *
+ * 카드 `key`에 등록 여부를 넣어, 저장·삭제로 등록 여부가 바뀌면 카드를 새로
+ * 마운트한다(편집 상태 초기화). 그 재마운트가 조작하던 버튼을 없애므로, 성공한
+ * 카드가 알려 준 "바뀐 뒤의 카드"(프로바이더 + 새 등록 여부)를 여기서 기억해 그
+ * 카드가 포커스를 이어받게 한다.
+ *
+ * 프로바이더만이 아니라 새 등록 여부까지 맞아야 이어받는다. 그래서 액션 성공이
+ * 목록 갱신보다 먼저 커밋돼도 옛 카드는 요청을 가져가지 않고, 나중에 커밋돼도
+ * 이미 마운트된 새 카드가 가져간다. 새 카드가 포커스를 넘겨받으면 요청을 지워,
+ * 이후 이 카드의 조작과 무관한 재마운트(다른 탭에서 바꾼 뒤의 갱신 등)는
+ * 포커스를 빼앗지 않는다.
+ */
 export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
     const t = useTranslations('features.api-key-management');
+    const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
     const registeredSet = new Set(registeredProviders);
+
+    const handleRegistrationChange = (
+        provider: LlmProvider,
+        isRegistered: boolean
+    ): void => setFocusTarget({ provider, isRegistered });
+    // 넘겨받은 카드의 요청일 때만 지운다. 그사이 다른 카드가 새 요청을 남겼으면 둔다.
+    const clearFocusTarget = (
+        provider: LlmProvider,
+        isRegistered: boolean
+    ): void =>
+        setFocusTarget(current =>
+            current?.provider === provider &&
+            current.isRegistered === isRegistered
+                ? null
+                : current
+        );
 
     return (
         <div className="space-y-4">
             <div>
-                <h2 className="text-lg font-semibold text-secondary-100">
-                    {t('ApiKeySection.64f90b')}
-                </h2>
+                <h2 className={HEADING_SECTION}>{t('ApiKeySection.64f90b')}</h2>
                 <p className="mt-1 text-sm text-secondary-400">
                     {t('ApiKeySection.017638')}
                 </p>
             </div>
-            {LLM_PROVIDER_VALUES.map(provider => (
-                <ProviderCard
-                    key={`${provider}-${String(registeredSet.has(provider))}`}
-                    provider={provider}
-                    isRegistered={registeredSet.has(provider)}
-                />
-            ))}
+            {LLM_PROVIDER_VALUES.map(provider => {
+                const isRegistered = registeredSet.has(provider);
+                return (
+                    <ProviderCard
+                        key={`${provider}-${String(isRegistered)}`}
+                        provider={provider}
+                        isRegistered={isRegistered}
+                        restoreFocus={
+                            focusTarget?.provider === provider &&
+                            focusTarget.isRegistered === isRegistered
+                        }
+                        onFocusRestored={() =>
+                            clearFocusTarget(provider, isRegistered)
+                        }
+                        onRegistrationChange={handleRegistrationChange}
+                    />
+                );
+            })}
         </div>
     );
 }

@@ -1,3 +1,6 @@
+/**
+ * 공매도 구간(FINRA 잔고·일별 비중)의 화면용 데이터 — 시계열 정리, 증감 방향, 급증/급감 표식.
+ */
 import type {
     InvestorFlowsScorecard,
     ShortInterestPoint,
@@ -10,6 +13,7 @@ import type { PreviousSettlementChange } from '@/entities/investor-flows/model';
 /** 일별 공매도 비중 그래프가 그리는 최대 거래일 수와, 평균선의 기준 거래일 수. */
 export const SHORT_VOLUME_CHART_DAYS = 60;
 
+/** 공매도 잔고 행 하나(결제일 기준). */
 export interface ShortInterestRow {
     settlementDate: string;
     shortQty: number;
@@ -40,6 +44,7 @@ export function buildShortInterestRows(
     }));
 }
 
+/** 공매도 잔고 블록이 쓰는 데이터. */
 export interface ShortInterestView {
     /** 결제일 오름차순 행(추이 그래프용). */
     rows: ShortInterestRow[];
@@ -58,6 +63,7 @@ export function buildShortInterestView(
     };
 }
 
+/** 증감 배지 방향. */
 export type ChangeDirection = 'up' | 'down' | 'flat';
 
 /** 증감 배지 방향. 소수 첫째 자리에서 0이면 "변화 없음"으로 본다. */
@@ -68,16 +74,20 @@ export function changeDirection(changePct: number): ChangeDirection {
     return 'flat';
 }
 
+/** 일별 공매도 비중 행 하나. */
 export interface ShortVolumeRow {
     date: string;
     /** 장외(TRF) 공매도 거래량 / 전체 거래량(0~1). 거래량이 0이면 `null`. */
     ratio: number | null;
 }
 
+/** 일별 공매도 비중 시계열과 평균. */
 export interface ShortVolumeSeries {
     rows: ShortVolumeRow[];
     /** 그려진 구간의 평균 비중(0~1). 비중을 계산할 수 있는 날이 없으면 `null`. */
     average: number | null;
+    /** 평균에 실제로 들어간 거래일 수 — 비중을 계산할 수 있던 날만 센다(`rows` 길이와 다를 수 있다). */
+    averagedDays: number;
     latest: ShortVolumeRow | null;
 }
 
@@ -100,6 +110,7 @@ export function buildShortVolumeSeries(
         .filter((ratio): ratio is number => ratio !== null);
     return {
         rows,
+        averagedDays: ratios.length,
         average:
             ratios.length === 0
                 ? null
@@ -108,6 +119,7 @@ export function buildShortVolumeSeries(
     };
 }
 
+/** 최근 비중의 급증/급감 표식. */
 export type ShortVolumeMarker = 'surge' | 'drop' | null;
 
 /**

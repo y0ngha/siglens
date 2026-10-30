@@ -1,6 +1,7 @@
 /** `Date#getDay()` 값 — 0=일요일 … 6=토요일. */
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
+/** 설정 저장 액션의 실패 코드. 코드→문구 매핑은 액션이 번역자와 함께 쥔다. */
 export type EmailReportActionErrorCode =
     | 'unauthenticated'
     | 'invalid_days'
@@ -42,6 +43,7 @@ export type ValidateEmailReportSettingsResult =
       }
     | { ok: false; code: EmailReportActionErrorCode };
 
+/** 설정 저장 액션의 결과. 성공이면 저장된 행에서 다시 만든 화면 값을 함께 돌려준다. */
 export type SaveEmailReportSettingsResult =
     | { status: 'ok'; settings: EmailReportSettingsView }
     | { status: 'error'; code: EmailReportActionErrorCode; message: string };
@@ -52,6 +54,7 @@ export interface UnsubscribeEmailReportInput {
     signature: string;
 }
 
+/** 수신거부 액션의 결과. 서명이 틀린 링크(`invalid_link`)와 저장소 장애를 구분한다. */
 export type UnsubscribeEmailReportResult =
     | { status: 'ok' }
     | {
@@ -60,6 +63,7 @@ export type UnsubscribeEmailReportResult =
           message: string;
       };
 
+/** 리포트 종목 빼기·넣기 액션의 실패 코드. `limit_reached`는 빼기에만 나온다. */
 export type ReportSymbolActionErrorCode =
     | 'unauthenticated'
     | 'invalid_symbol'
@@ -71,6 +75,7 @@ export interface RawReportSymbolInput {
     symbol: string;
 }
 
+/** 리포트 종목 빼기·넣기 액션의 결과. */
 export type ReportSymbolActionResult =
     | { status: 'ok' }
     | {

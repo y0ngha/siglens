@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * 차트 헤더 메뉴 트리거 아래에 뜨는 팝오버 패널 컨테이너.
+ */
+
 import { type ReactNode, type RefObject, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
