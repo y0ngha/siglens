@@ -3770,9 +3770,9 @@
             }
         },
         "ask-ai-fab": {
-            "ariaLabel": "시그렌즈 AI에게 물어보기 (새 탭)",
             "guideQuestion": "가이드: {title}. 차트 예시와 함께 쉽게 설명해 줘",
             "label": "시그렌즈 AI에게 물어보기",
+            "newTab": "(새 탭)",
             "question": "{name} 지금 어떤 상황인지 종합적으로 알려줘",
             "shortLabel": "AI에게 묻기"
         },
