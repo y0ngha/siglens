@@ -1,15 +1,15 @@
-vi.mock('@/entities/oauth-account/lib/googleRevoker', () => ({
+vi.mock('@/entities/oauth-account/server/googleRevoker', () => ({
     googleOAuthRevokerAdapter: {
         revokeToken: vi.fn().mockResolvedValue(undefined),
     },
 }));
 
-import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
+import { compositeOAuthRevoker } from '@/entities/oauth-account/server/revoker';
 
 describe('compositeOAuthRevoker', () => {
     it('delegates to the registered adapter for a known provider', async () => {
         const { googleOAuthRevokerAdapter } =
-            await import('@/entities/oauth-account/lib/googleRevoker');
+            await import('@/entities/oauth-account/server/googleRevoker');
 
         await compositeOAuthRevoker.revokeToken('google', {
             accessToken: 'access-token',
