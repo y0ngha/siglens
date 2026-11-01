@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.114.1](https://github.com/y0ngha/siglens/compare/v0.114.0...v0.114.1) (2026-11-01)
+
+### Bug Fixes
+
+* 수신 거부 처리 중 확인 버튼 포커스 유지 ([#1161](https://github.com/y0ngha/siglens/issues/1161)) ([edf7761](https://github.com/y0ngha/siglens/commit/edf7761c7c6387bc450a27cc39441019c5f2c40a))
+* 재분석 쿨다운이 AI 패널을 매초 다시 그리지 않게 한다 ([#1121](https://github.com/y0ngha/siglens/issues/1121)) ([adc23e0](https://github.com/y0ngha/siglens/commit/adc23e05df748eccca91a6b34cb7aae91e61b17b))
+* **entities/news-article:** 소문자 심볼 덮어쓰기 수정·I/O를 server로 ([#1245](https://github.com/y0ngha/siglens/issues/1245)) ([dc1ec33](https://github.com/y0ngha/siglens/commit/dc1ec33b2ebe835a5187e7cfa0332cc224c02bec))
+* **entities/shared-analysis:** 입력 검증·로그 누출 수정 ([#1229](https://github.com/y0ngha/siglens/issues/1229)) ([ca3f2ad](https://github.com/y0ngha/siglens/commit/ca3f2add74f38ecb1855ac00b9dfba203aa5f5d7))
+* **entities/siglens-api-key:** DB 오류 로그 노출 수정·분리 ([#1236](https://github.com/y0ngha/siglens/issues/1236)) ([eb334d4](https://github.com/y0ngha/siglens/commit/eb334d4ef207d0b58cdbed913623f4785440e824))
+* **entities/watchlist:** 병합 시 회원 행 잠금으로 한도 보장 ([#1226](https://github.com/y0ngha/siglens/issues/1226)) ([641a2a5](https://github.com/y0ngha/siglens/commit/641a2a513999163e2d46084eb515505d3fc99b07))
+* **entities:** agent-suggestions 캐시 값 타입 가드와 순수 로직 분리 ([#1216](https://github.com/y0ngha/siglens/issues/1216)) ([3a426d4](https://github.com/y0ngha/siglens/commit/3a426d46307de8de65b1ef8aad30deead05acf82))
+* **entities:** backtest-case 검증을 타입 가드로 나누고 null 케이스 크래시 수정 ([#1206](https://github.com/y0ngha/siglens/issues/1206)) ([f1ace2e](https://github.com/y0ngha/siglens/commit/f1ace2e7d5db6ff5ed0ca19eac22106810358c8a))
+* **entities:** chat-conversation 세션 조회 실패를 action 실패 형태로, supersede 조회 축소 ([#1220](https://github.com/y0ngha/siglens/issues/1220)) ([4c7547c](https://github.com/y0ngha/siglens/commit/4c7547c3c600a1c28becbcb377283053b166866f))
+* **entities:** inquiry 저장 실패 로그의 개인정보 유출과 이메일 길이 검증 누락 수정 ([#1209](https://github.com/y0ngha/siglens/issues/1209)) ([61710a6](https://github.com/y0ngha/siglens/commit/61710a65bc595bc7a4845898f8ad261b3ad4400c))
+* **entities:** oauth-account 토큰 폐기를 본문 전송으로, Redis 읽기를 타입 가드로 ([#1205](https://github.com/y0ngha/siglens/issues/1205)) ([35ec890](https://github.com/y0ngha/siglens/commit/35ec890b0a09cc1bbef7bfee36d8fcc6d449fdbc))
+* **features/auth-email-verification:** 인증 코드 오류 번역, 이메일 형식 검사 ([#1171](https://github.com/y0ngha/siglens/issues/1171)) ([14f9ead](https://github.com/y0ngha/siglens/commit/14f9eada3ea59513cf5b76ffbb54b40f6a7766d2))
+* **features/auth-password-reset:** 서버 오류 표시, 이메일 입력 유지 ([#1174](https://github.com/y0ngha/siglens/issues/1174)) ([857f40c](https://github.com/y0ngha/siglens/commit/857f40cc5b5264a48d09f9eeb2aea3b32eed6169))
+* **shared/api:** 실패 응답 본문 취소·시세 캐시와 DART 가드 분리 ([#1254](https://github.com/y0ngha/siglens/issues/1254)) ([f6527bc](https://github.com/y0ngha/siglens/commit/f6527bc3bd0d153b18c64a0732a8e5a039706ba2))
+* **shared/hooks:** 탭 간 clear·복사 타이머 수정, 단일 소비 hook 이동 ([#1251](https://github.com/y0ngha/siglens/issues/1251)) ([f325f76](https://github.com/y0ngha/siglens/commit/f325f761977ef9095aa62ed10e393d34774dccef))
+* **shared/test-utils:** 미지원 로케일의 ko 대체 제거·카탈로그 표 통합 ([#1252](https://github.com/y0ngha/siglens/issues/1252)) ([505206c](https://github.com/y0ngha/siglens/commit/505206c46e58f460f05c5b8392ab0a6246208fa1))
+
 # [0.114.0](https://github.com/y0ngha/siglens/compare/v0.113.0...v0.114.0) (2026-10-26)
 
 ### Features
