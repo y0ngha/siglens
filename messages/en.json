@@ -1796,7 +1796,7 @@
             "accountDeleteTitle": "Delete account",
             "backtesting": {
                 "description": "A two-year backtest of daily AI analysis on 10 US large caps including NVDA, AAPL and TSLA. Returns and drawdowns from following the entry zones, targets and stop losses are compared with buy and hold. Past results do not guarantee future performance.",
-                "title": "AI Stock Analysis Backtest: 10 US Large Caps Over Two Years"
+                "title": "AI Stock Analysis Backtest: 10 US Large Caps, 2 Years"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
             "developers": {

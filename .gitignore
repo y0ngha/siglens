@@ -160,3 +160,6 @@ infra/aws/.ami
 
 .claude/scheduled_tasks.lock
 infra/aws/.tunnel_id
+
+# `copy:backtesting`이 predev/prebuild마다 src/entities/backtest-case/data/data.json에서 다시 만든다.
+/public/backtesting/

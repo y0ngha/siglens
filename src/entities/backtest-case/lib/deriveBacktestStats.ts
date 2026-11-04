@@ -31,12 +31,13 @@ function median(values: readonly number[]): number {
 
 /** 시작 1.0에서 각 값까지의 고점 대비 최저(%). */
 function maxDrawdownPct(curve: readonly number[]): number {
-    let peak = 1;
-    let worst = 0;
-    for (const value of curve) {
-        peak = Math.max(peak, value);
-        worst = Math.min(worst, value / peak - 1);
-    }
+    const { worst } = curve.reduce(
+        (acc, value) => {
+            const peak = Math.max(acc.peak, value);
+            return { peak, worst: Math.min(acc.worst, value / peak - 1) };
+        },
+        { peak: 1, worst: 0 }
+    );
     return worst * 100;
 }
 
@@ -51,15 +52,23 @@ function equityOn(
     dates: readonly string[],
     trades: readonly BacktestTrade[]
 ): number[] {
-    const factorByDate = new Map<string, number>();
-    for (const t of trades) {
-        factorByDate.set(
-            t.exitDate,
-            (factorByDate.get(t.exitDate) ?? 1) * (1 + t.returnPct / 100)
-        );
-    }
-    let equity = 1;
-    return dates.map(d => (equity *= factorByDate.get(d) ?? 1));
+    const factorByDate = new Map(
+        Array.from(
+            Map.groupBy(trades, t => t.exitDate),
+            ([date, sameDay]) => [
+                date,
+                sameDay.reduce((f, t) => f * (1 + t.returnPct / 100), 1),
+            ]
+        )
+    );
+    // 불변 누적(CONVENTIONS.md#CP-6). 청산일은 수백 개라 전개 비용이 작아 가변 누적의 예외를 쓰지 않는다.
+    return dates.reduce<number[]>(
+        (curve, d) => [
+            ...curve,
+            (curve.at(-1) ?? 1) * (factorByDate.get(d) ?? 1),
+        ],
+        []
+    );
 }
 
 function exitPathStats(trades: readonly BacktestTrade[]): ExitPathStat[] {
