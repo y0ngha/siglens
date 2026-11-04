@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.115.0](https://github.com/y0ngha/siglens/compare/v0.114.1...v0.115.0) (2026-11-04)
+
+### Bug Fixes
+
+* 백테스트 청산 경로 라벨을 "손절선"으로 바꿔 손익을 단정하지 않는다 ([#1262](https://github.com/y0ngha/siglens/issues/1262)) ([f6359a4](https://github.com/y0ngha/siglens/commit/f6359a458961a393f78f6405b095d1cf46fdb7b7))
+* 백테스팅 페이지 크기 줄이고 보유 비교 제거, OG 문구 정리 ([#1263](https://github.com/y0ngha/siglens/issues/1263)) ([4abcce8](https://github.com/y0ngha/siglens/commit/4abcce8da4fb4b980dcc180b26adb0f5813dd478))
+
+### Features
+
+* 백테스팅 페이지를 일일 AI 분석 백테스트(v8) 결과로 교체 ([#1261](https://github.com/y0ngha/siglens/issues/1261)) ([0becf26](https://github.com/y0ngha/siglens/commit/0becf2654835c9460938196d481662aea5581cf7))
+
 ## [0.114.1](https://github.com/y0ngha/siglens/compare/v0.114.0...v0.114.1) (2026-11-01)
 
 ### Bug Fixes
