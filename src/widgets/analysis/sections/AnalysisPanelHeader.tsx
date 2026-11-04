@@ -80,7 +80,7 @@ export function AnalysisPanelHeader({
                             aria-hidden
                         />
                     )}
-                    {!hideTrend && <TrendBadge trend={trend} />}
+                    {!hideTrend && <TrendBadge trend={trend} asCurrentTrend />}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
                     {showPersonalizedBadge && <PersonalizedAnalysisBadge />}

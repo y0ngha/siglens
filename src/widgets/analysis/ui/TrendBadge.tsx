@@ -10,10 +10,18 @@ import { resolveTrendDisplay } from '../utils/trendUtils';
 
 interface TrendBadgeProps {
     trend: Trend | null | undefined;
+    /**
+     * 분석 전체의 추세 배지에 켠다 — "현재 추세 강세"처럼 시점을 붙인다. 이 값은 분석 시점까지의
+     * 흐름을 설명할 뿐 앞으로의 방향 예측이 아니다(2026-11 백테스트: 직전 10거래일 방향과 89%
+     * 일치, 이후 10거래일 방향과는 50%). 배지만 두면 전망으로 읽힌다. 패턴·전략·신호 배지는
+     * 그 항목의 방향이라 붙이지 않는다.
+     */
+    asCurrentTrend?: boolean;
 }
 
-export function TrendBadge({ trend }: TrendBadgeProps) {
+export function TrendBadge({ trend, asCurrentTrend = false }: TrendBadgeProps) {
     const tLabel = useTranslations('shared.enumLabel');
+    const tPanel = useTranslations('widgets.analysis.AnalysisPanel');
     const display = resolveTrendDisplay(trend, tLabel);
     if (display === null) return null;
 
@@ -25,7 +33,9 @@ export function TrendBadge({ trend }: TrendBadgeProps) {
                 display.bgColor
             )}
         >
-            {display.label}
+            {asCurrentTrend
+                ? tPanel('currentTrend', { v0: display.label })
+                : display.label}
         </span>
     );
 }
