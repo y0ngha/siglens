@@ -40,12 +40,14 @@ The AI strategy's drawdown is measured on closed trades only. Open-position mark
 | Exit path | Trades | Mean return |
 |---|---|---|
 | First target + final target | 94 | +5.59% |
-| First target + updated stop | 70 | +2.41% |
-| First stop + final target | 37 | +1.95% |
+| First target + raised stop loss line | 70 | +2.41% |
+| First stop loss line + final target | 37 | +1.95% |
 | First target + breakeven stop | 199 | +0.38% |
-| First stop + second stop | 241 | −2.57% |
+| First stop loss line + second stop loss line | 241 | −2.57% |
 | Sell-off rule: MA5 recovery exit | 30 | +3.01% |
 | Sell-off rule: stop | 19 | −2.55% |
+
+The AI can raise the stop loss line during holding reviews, so some trades closed at a stop loss line still ended in profit.
 
 ### AI decisions
 

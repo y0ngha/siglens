@@ -83,7 +83,7 @@ describe('BacktestStrategy', () => {
         expect(win).toHaveTextContent('94');
         expect(win).toHaveTextContent('+5.59%');
         const loss = screen
-            .getByRole('rowheader', { name: '1차 손절 + 2차 손절' })
+            .getByRole('rowheader', { name: '1차 손절선 + 2차 손절선' })
             .closest('tr');
         expect(loss).toHaveTextContent('-2.57%');
     });

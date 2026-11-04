@@ -3704,10 +3704,10 @@
             },
             "exitPath": {
                 "tp1_tpFinal": "第一目标止盈 + 最终目标止盈",
-                "tp1_trailing": "第一目标止盈 + 上移止损",
+                "tp1_trailing": "第一目标止盈 + 上移止损线",
                 "tp1_breakeven": "第一目标止盈 + 保本平仓",
-                "sl1_tpFinal": "第一止损 + 最终目标止盈",
-                "sl1_sl2": "第一止损 + 第二止损",
+                "sl1_tpFinal": "第一止损线 + 最终目标止盈",
+                "sl1_sl2": "第一止损线 + 第二止损线",
                 "selloff_recovered": "急跌买入：反弹平仓",
                 "selloff_stopped": "急跌买入：止损",
                 "other": "其他（到期或仍持有）"
@@ -3726,8 +3726,8 @@
                 "legReason": {
                     "tp1": "第一目标止盈",
                     "tp_final": "最终目标止盈",
-                    "sl1": "止损",
-                    "sl2": "第二止损",
+                    "sl1": "止损线",
+                    "sl2": "第二止损线",
                     "breakeven": "保本平仓",
                     "selloff_ma5": "回到5日均线上方",
                     "selloff_time": "到期",

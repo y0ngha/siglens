@@ -3704,10 +3704,10 @@
             },
             "exitPath": {
                 "tp1_tpFinal": "First take profit + final take profit",
-                "tp1_trailing": "First take profit + raised stop loss",
+                "tp1_trailing": "First take profit + raised stop loss line",
                 "tp1_breakeven": "First take profit + breakeven",
-                "sl1_tpFinal": "First stop loss + final take profit",
-                "sl1_sl2": "First stop loss + second stop loss",
+                "sl1_tpFinal": "First stop loss line + final take profit",
+                "sl1_sl2": "First stop loss line + second stop loss line",
                 "selloff_recovered": "Sell-off rule: recovery exit",
                 "selloff_stopped": "Sell-off rule: stop loss",
                 "other": "Other (time limit or still open)"
@@ -3726,8 +3726,8 @@
                 "legReason": {
                     "tp1": "take profit at the first target",
                     "tp_final": "take profit at the final target",
-                    "sl1": "stop loss",
-                    "sl2": "second stop loss",
+                    "sl1": "stop loss line",
+                    "sl2": "second stop loss line",
                     "breakeven": "breakeven stop",
                     "selloff_ma5": "close above the 5-day average",
                     "selloff_time": "time limit",

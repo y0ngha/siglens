@@ -3807,8 +3807,8 @@
                 "other": "기타 (기간 만료·보유 중)",
                 "selloff_recovered": "급락 매수: 회복 정리",
                 "selloff_stopped": "급락 매수: 손절",
-                "sl1_sl2": "1차 손절 + 2차 손절",
-                "sl1_tpFinal": "1차 손절 + 최종 익절",
+                "sl1_sl2": "1차 손절선 + 2차 손절선",
+                "sl1_tpFinal": "1차 손절선 + 최종 익절",
                 "tp1_breakeven": "1차 익절 + 본전 정리",
                 "tp1_tpFinal": "1차 익절 + 최종 익절",
                 "tp1_trailing": "1차 익절 + 올라간 손절선"
@@ -3874,7 +3874,7 @@
                     "selloff_ma5": "5일선 회복",
                     "selloff_stop": "손절가",
                     "selloff_time": "기한 도달",
-                    "sl1": "손절가",
+                    "sl1": "손절선",
                     "sl2": "2차 손절선",
                     "tp1": "1차 목표가 익절",
                     "tp_final": "최종 목표가 익절"
