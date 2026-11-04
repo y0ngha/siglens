@@ -363,8 +363,8 @@ describe('MethodologyPage', () => {
             expect(section).toHaveTextContent(
                 '앞으로의 성과를 보장하지 않아요'
             );
-            expect(ko.widgets.backtesting.methodology.noCosts).toContain(
-                '수수료와 슬리피지'
+            expect(ko.widgets.backtesting.strategy.step7).toContain(
+                '수수료·슬리피지'
             );
         });
     });

@@ -1,584 +1,192 @@
 import backtestData from '@/entities/backtest-case/data/data.json';
-import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
+import { validateBacktestRunData } from '@/entities/backtest-case/lib/validate';
 
-describe('validateBacktestData', () => {
-    const validCase = {
-        ticker: 'NVDA',
-        entryDate: '2025-04-11',
-        entryPrice: 98.31,
-        exitDate: '2025-04-19',
-        exitPrice: 121.42,
-        holdingDays: 8,
-        returnPct: 23.5,
-        signalType: 'buy',
-        result: 'win',
-        exitReason: 'take_profit',
-        aiResult: 'win',
-        aiTrendHit: true,
-        aiAnalysis: {
-            summary: 'RSI 반등',
-            tags: ['RSI 과매도'],
-            entryRecommendation: 'enter',
-            bullishTargets: [{ price: 125.0, basis: '직전 저항선' }],
-            stopLoss: 95.0,
-            takeProfit: 125.0,
-            riskLevel: 'moderate',
+const validTrade = {
+    ticker: 'NVDA',
+    entryType: 'wait_limit',
+    decisionDate: '2025-03-11',
+    entryDate: '2025-03-12',
+    entryPrice: 100,
+    exitDate: '2025-03-19',
+    holdingDays: 5,
+    returnPct: 3,
+    legs: [
+        {
+            name: 'A',
+            size: 0.5,
+            exitDate: '2025-03-14',
+            exitPrice: 102,
+            reason: 'tp1',
+            returnPct: 2,
         },
-    };
+        {
+            name: 'B',
+            size: 0.5,
+            exitDate: '2025-03-19',
+            exitPrice: 104,
+            reason: 'tp_final',
+            returnPct: 4,
+        },
+    ],
+    initialPlan: { tp1: 102, tpFinal: 104, sl1: 97, sl2: 95, source: 'ai' },
+    holdingReviews: 4,
+    summary: '눌림 구간에서 지지가 확인됐습니다.',
+    promptFile: 'prompts/NVDA/2025-03-11_entry.json',
+    responseFile: 'responses/NVDA/2025-03-11_entry.json',
+};
 
-    const validData = {
-        meta: {},
-        cases: [validCase],
-    };
-
-    describe('bundled data', () => {
-        it('accepts the shipped data.json', () => {
-            expect(() => validateBacktestData(backtestData)).not.toThrow();
-        });
-    });
-
-    describe('valid input', () => {
-        it('returns data unchanged when input is valid', () => {
-            expect(validateBacktestData(validData)).toEqual(validData);
-        });
-
-        it('accepts aiResult = neutral', () => {
-            const data = {
-                ...validData,
-                cases: [{ ...validCase, aiResult: 'neutral' }],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-
-        it('accepts exitReason = stop_loss', () => {
-            const data = {
-                ...validData,
-                cases: [{ ...validCase, exitReason: 'stop_loss' }],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-
-        it('accepts exitReason = time', () => {
-            const data = {
-                ...validData,
-                cases: [{ ...validCase, exitReason: 'time' }],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-
-        it('accepts aiTrendHit = false', () => {
-            const data = {
-                ...validData,
-                cases: [{ ...validCase, aiTrendHit: false }],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-    });
-
-    describe('invalid input', () => {
-        it('throws when data is null', () => {
-            expect(() => validateBacktestData(null)).toThrow(
-                'BacktestData must be an object'
-            );
-        });
-
-        it('throws when data is not an object', () => {
-            expect(() => validateBacktestData('string')).toThrow(
-                'BacktestData must be an object'
-            );
-        });
-
-        it('throws when meta is missing', () => {
-            expect(() => validateBacktestData({ cases: [] })).toThrow(
-                'meta must be an object'
-            );
-        });
-
-        it('throws when meta is null', () => {
-            expect(() =>
-                validateBacktestData({ meta: null, cases: [] })
-            ).toThrow('meta must be an object');
-        });
-
-        it('throws when cases is not an array', () => {
-            expect(() =>
-                validateBacktestData({ ...validData, cases: null })
-            ).toThrow('cases must be an array');
-        });
-
-        it('throws a descriptive error when a case is null', () => {
-            expect(() =>
-                validateBacktestData({ ...validData, cases: [null] })
-            ).toThrow('cases[0] must be an object');
-        });
-
-        it('throws a descriptive error when a case is a primitive', () => {
-            expect(() =>
-                validateBacktestData({ ...validData, cases: [validCase, 1] })
-            ).toThrow('cases[1] must be an object');
-        });
-
-        it('throws when a bullishTargets entry is null', () => {
-            const data = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            bullishTargets: [null],
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(data)).toThrow(
-                'cases[0].aiAnalysis.bullishTargets[0] must be an object'
-            );
-        });
-
-        it('throws when a case has invalid returnPct type', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, returnPct: '23.5' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].returnPct must be a number'
-            );
-        });
-
-        it('throws when signalType is not buy', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, signalType: 'sell' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].signalType must be 'buy'"
-            );
-        });
-
-        it('throws when result is not win or loss', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, result: 'maybe' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].result must be 'win' or 'loss'"
-            );
-        });
-
-        it('throws when result is neutral (only allowed on aiResult)', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, result: 'neutral' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].result must be 'win' or 'loss'"
-            );
-        });
-
-        it('throws when aiResult is not win, loss, or neutral', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, aiResult: 'maybe' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].aiResult must be 'win', 'loss', or 'neutral'"
-            );
-        });
-
-        it('throws when exitReason is invalid', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, exitReason: 'signal' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].exitReason must be 'take_profit', 'stop_loss', or 'time'"
-            );
-        });
-
-        it('throws when aiTrendHit is not a boolean', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, aiTrendHit: 'yes' }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiTrendHit must be a boolean'
-            );
-        });
-
-        it('throws when aiTrendHit is missing', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, aiTrendHit: undefined }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiTrendHit must be a boolean'
-            );
-        });
-
-        it('throws when aiAnalysis.tags is not an array', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    { ...validCase, aiAnalysis: { summary: 'x', tags: 'x' } },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.tags must be an array'
-            );
-        });
-
-        it('throws when aiAnalysis is null', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, aiAnalysis: null }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.tags must be an array'
-            );
-        });
-
-        it('throws when aiAnalysis is not an object', () => {
-            const bad = {
-                ...validData,
-                cases: [{ ...validCase, aiAnalysis: 42 }],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.tags must be an array'
-            );
-        });
-
-        it('throws when aiAnalysis.entryRecommendation is missing', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            entryRecommendation: undefined,
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].aiAnalysis.entryRecommendation must be 'enter', 'wait', or 'avoid'"
-            );
-        });
-
-        it('throws when aiAnalysis.entryRecommendation is an invalid value', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            entryRecommendation: 'maybe',
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                "cases[0].aiAnalysis.entryRecommendation must be 'enter', 'wait', or 'avoid'"
-            );
-        });
-
-        it('throws when aiAnalysis.bullishTargets is missing', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            bullishTargets: undefined,
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.bullishTargets must be an array'
-            );
-        });
-
-        it('throws when aiAnalysis.bullishTargets is not an array', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            bullishTargets: 'not-array',
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.bullishTargets must be an array'
-            );
-        });
-
-        it('throws when aiAnalysis.bullishTargets[0].price is not a number', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            bullishTargets: [{ price: '125', basis: 'x' }],
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.bullishTargets[0].price must be a number'
-            );
-        });
-
-        it('throws when aiAnalysis.bullishTargets[0].basis is not a string', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            bullishTargets: [{ price: 125, basis: 42 }],
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.bullishTargets[0].basis must be a string'
-            );
-        });
-
-        it('throws when aiAnalysis.stopLoss is present but not a number', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            stopLoss: '95.0',
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.stopLoss must be a number when present'
-            );
-        });
-
-        it('throws when aiAnalysis.takeProfit is present but not a number', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            takeProfit: '125.0',
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.takeProfit must be a number when present'
-            );
-        });
-
-        it('throws when aiAnalysis.riskLevel is present but not a string', () => {
-            const bad = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            riskLevel: 42,
-                        },
-                    },
-                ],
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'cases[0].aiAnalysis.riskLevel must be a string when present'
-            );
-        });
-    });
-
-    describe('valid input (extended aiAnalysis)', () => {
-        it('accepts aiAnalysis with stopLoss/takeProfit/riskLevel omitted', () => {
-            const { stopLoss, takeProfit, riskLevel, ...rest } =
-                validCase.aiAnalysis;
-            void stopLoss;
-            void takeProfit;
-            void riskLevel;
-            const data = {
-                ...validData,
-                cases: [{ ...validCase, aiAnalysis: rest }],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-
-        it('accepts aiAnalysis with empty bullishTargets array', () => {
-            const data = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            bullishTargets: [],
-                        },
-                    },
-                ],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-
-        it('accepts entryRecommendation = avoid', () => {
-            const data = {
-                ...validData,
-                cases: [
-                    {
-                        ...validCase,
-                        aiAnalysis: {
-                            ...validCase.aiAnalysis,
-                            entryRecommendation: 'avoid',
-                        },
-                    },
-                ],
-            };
-            expect(validateBacktestData(data)).toEqual(data);
-        });
-    });
+const baseline = (ticker: string) => ({
+    ticker,
+    buyHoldPct: 10,
+    buyHoldMaxDrawdownPct: -20,
+    tradingDays: 501,
 });
 
-describe('validateBacktestData — riskLevel 정규화', () => {
-    const baseCase = {
-        ticker: 'NVDA',
-        entryDate: '2025-04-11',
-        entryPrice: 98.31,
-        exitDate: '2025-04-19',
-        exitPrice: 121.42,
-        holdingDays: 8,
-        returnPct: 23.5,
-        signalType: 'buy',
-        result: 'win',
-        exitReason: 'take_profit',
-        aiResult: 'win',
-        aiTrendHit: true,
-        aiAnalysis: {
-            summary: 'RSI 반등',
-            tags: [],
-            entryRecommendation: 'enter',
-            bullishTargets: [],
+function validData(overrides: Record<string, unknown> = {}) {
+    return {
+        run: {
+            runId: '2026-11-daily-ai',
+            periodStart: '2024-11-01',
+            periodEnd: '2026-11-02',
+            tickers: ['NVDA', 'SPY'],
+            model: 'deepseek-v4.1-flash',
+            coreVersion: '2.29.0',
+            promptVersion: 'p32',
+            siglensVersion: '0.114.1',
+            generatedAt: '2026-11-04T00:00:00.000Z',
+            resultsUrl:
+                'https://github.com/y0ngha/siglens/tree/master/backtest-results/2026-11-daily-ai',
+            releaseUrl:
+                'https://github.com/y0ngha/siglens/releases/tag/backtest-2026-11-daily-ai',
         },
+        baselines: [baseline('NVDA'), baseline('SPY')],
+        spy: baseline('SPY'),
+        trendRecognition: {
+            windowDays: 10,
+            directionalCalls: 2,
+            matchRatePct: 50,
+            byTrend: {
+                bullish: { calls: 1, priorMeanPct: 5, priorUpRatePct: 100 },
+                bearish: { calls: 1, priorMeanPct: 3, priorUpRatePct: 100 },
+                neutral: { calls: 0, priorMeanPct: 0, priorUpRatePct: 0 },
+            },
+        },
+        trades: [validTrade],
+        ...overrides,
     };
-    const withRisk = (riskLevel: unknown) => ({
-        meta: {},
-        cases: [
-            { ...baseCase, aiAnalysis: { ...baseCase.aiAnalysis, riskLevel } },
+}
+
+const withTrade = (patch: Record<string, unknown>) =>
+    validData({ trades: [{ ...validTrade, ...patch }] });
+
+const withLeg = (index: 0 | 1, patch: Record<string, unknown>) =>
+    withTrade({
+        legs: validTrade.legs.map((leg, i) =>
+            i === index ? { ...leg, ...patch } : leg
+        ),
+    });
+
+describe('validateBacktestRunData', () => {
+    it('accepts the shipped data.json', () => {
+        expect(() => validateBacktestRunData(backtestData)).not.toThrow();
+    });
+
+    it('returns the trades of a valid payload', () => {
+        expect(validateBacktestRunData(validData()).trades).toHaveLength(1);
+    });
+
+    it.each([
+        ['a non-object payload', null, 'BacktestRunData must be an object'],
+        [
+            'a missing run',
+            validData({ run: undefined }),
+            'run must be an object',
         ],
-    });
-
-    it('데이터의 medium을 core 정식 값 moderate로 바꾼다', () => {
-        const result = validateBacktestData(withRisk('medium'));
-        expect(result.cases[0].aiAnalysis.riskLevel).toBe('moderate');
-    });
-
-    it.each(['low', 'moderate', 'high', 'extreme'])(
-        '정식 값 %s는 그대로 둔다',
-        level => {
-            const result = validateBacktestData(withRisk(level));
-            expect(result.cases[0].aiAnalysis.riskLevel).toBe(level);
-        }
-    );
-
-    it('입력 객체를 변형하지 않는다', () => {
-        const input = withRisk('medium');
-        validateBacktestData(input);
-        expect(input.cases[0].aiAnalysis.riskLevel).toBe('medium');
-    });
-
-    it('riskLevel이 없는 케이스는 그대로 통과한다', () => {
-        const input = { meta: {}, cases: [baseCase] };
-        expect(validateBacktestData(input)).toEqual(input);
-    });
-
-    it.each(['mystery', 'HIGH', 'constructor', ''])(
-        '모르는 값 %j은 던진다',
-        level => {
-            expect(() => validateBacktestData(withRisk(level))).toThrow(
-                /cases\[0\]\.aiAnalysis\.riskLevel must be 'low'/
-            );
-        }
-    );
-});
-
-describe('validateBacktestData — 날짜 형식', () => {
-    const base = {
-        ticker: 'NVDA',
-        entryDate: '2025-04-11',
-        entryPrice: 98.31,
-        exitDate: '2025-04-19',
-        exitPrice: 121.42,
-        holdingDays: 8,
-        returnPct: 23.5,
-        signalType: 'buy',
-        result: 'win',
-        exitReason: 'take_profit',
-        aiResult: 'win',
-        aiTrendHit: true,
-        aiAnalysis: {
-            summary: '',
-            tags: [],
-            entryRecommendation: 'enter',
-            bullishTargets: [],
-        },
-    };
-    const withDates = (overrides: Record<string, unknown>) => ({
-        meta: {},
-        cases: [{ ...base, ...overrides }],
-    });
-
-    it('YYYY-MM-DD 날짜는 통과한다', () => {
-        expect(() => validateBacktestData(withDates({}))).not.toThrow();
-    });
-
-    it.each(['entryDate', 'exitDate'])('%s가 잘못된 형식이면 던진다', field => {
-        for (const bad of ['2025-4-11', '2025/04/11', '', 20250411, null]) {
-            expect(() =>
-                validateBacktestData(withDates({ [field]: bad }))
-            ).toThrow(`cases[0].${field} must be a YYYY-MM-DD string`);
-        }
-    });
-
-    it.each(['entryDate', 'exitDate'])(
-        '%s가 달력에 없는 날짜면 던진다',
-        field => {
-            for (const bad of [
-                '2026-13-45',
-                '2026-00-10',
-                '2026-04-31',
-                '2026-02-30',
-                '2025-02-29',
-            ]) {
-                expect(() =>
-                    validateBacktestData(withDates({ [field]: bad }))
-                ).toThrow(`cases[0].${field} must be a YYYY-MM-DD string`);
-            }
-        }
-    );
-
-    it('윤일은 통과한다', () => {
-        expect(() =>
-            validateBacktestData(withDates({ entryDate: '2024-02-29' }))
-        ).not.toThrow();
+        [
+            'non-array trades',
+            validData({ trades: {} }),
+            'trades must be an array',
+        ],
+        [
+            'a non-calendar date',
+            withTrade({ entryDate: '2025-02-30' }),
+            'trades[0].entryDate must be a YYYY-MM-DD string',
+        ],
+        [
+            'an unknown entry type',
+            withTrade({ entryType: 'market' }),
+            'trades[0].entryType',
+        ],
+        [
+            'an unknown leg reason',
+            withLeg(1, { reason: 'trailing' }),
+            'trades[0].legs[1].reason',
+        ],
+        [
+            'a single leg',
+            withTrade({ legs: [validTrade.legs[0]] }),
+            'trades[0].legs must have exactly 2 entries',
+        ],
+        [
+            'leg sizes that do not sum to 1',
+            withLeg(0, { size: 0.4 }),
+            'trades[0].legs sizes must sum to 1',
+        ],
+        [
+            'a returnPct that is not the weighted leg mean',
+            withTrade({ returnPct: 3.05 }),
+            'trades[0].returnPct must equal the size-weighted leg return',
+        ],
+        [
+            'an unknown plan source',
+            withTrade({
+                initialPlan: { ...validTrade.initialPlan, source: 'x' },
+            }),
+            'trades[0].initialPlan.source',
+        ],
+        [
+            'two trades with the same ticker and entry date',
+            validData({ trades: [validTrade, { ...validTrade }] }),
+            'trades[1] duplicates trade key NVDA|2025-03-12',
+        ],
+        [
+            'legs out of order',
+            withTrade({ legs: [validTrade.legs[1], validTrade.legs[0]] }),
+            'trades[0].legs must be ordered [A, B]',
+        ],
+        [
+            'run tickers that differ from the baselines',
+            validData({
+                run: { ...validData().run, tickers: ['NVDA', 'SPY', 'QQQ'] },
+            }),
+            'run.tickers must equal the baseline tickers (mismatch: QQQ)',
+        ],
+        [
+            'a missing trend recognition block',
+            validData({ trendRecognition: undefined }),
+            'trendRecognition must be an object',
+        ],
+        [
+            'a trend label without stats',
+            validData({
+                trendRecognition: {
+                    windowDays: 10,
+                    directionalCalls: 0,
+                    matchRatePct: 0,
+                    byTrend: {},
+                },
+            }),
+            'trendRecognition.byTrend.bullish must be an object',
+        ],
+        [
+            'a trade ticker without a baseline',
+            validData({
+                run: { ...validData().run, tickers: ['SPY'] },
+                baselines: [baseline('SPY')],
+            }),
+            'baselines must include every traded ticker (missing: NVDA)',
+        ],
+    ])('rejects %s', (_label, input, message) => {
+        expect(() => validateBacktestRunData(input)).toThrow(message);
     });
 });

@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI 技术分析回测数据集",
-                "variableMeasured": "股票技术信号命中率与 AI 情景事后验证结果"
+                "variableMeasured": "按每日 AI 分析交易的胜率、收益率、最大回撤及与持有策略的对比"
             }
         },
         "economy": {
@@ -1795,8 +1795,8 @@
             "accountDeleteFullTitle": "{v0} 注销账户",
             "accountDeleteTitle": "注销账户",
             "backtesting": {
-                "description": "涵盖AAPL、NVDA、TSLA等10只个股的历史数据事后验证回测。基于历史数据对RSI、MACD、Supertrend技术信号与AI情景进行验证，结果不保证未来表现。",
-                "title": "AAPL、NVDA、TSLA 回测：技术信号事后验证"
+                "description": "对 NVDA、AAPL、TSLA 等 10 只美国大盘股应用两年每日 AI 分析的回测。将按入场区间、目标价和止损价操作的收益率与回撤同持有策略进行对比。过往结果不代表未来表现。",
+                "title": "AI 股票分析回测：美国大盘股 10 只，两年结果"
             },
             "backtestingOgAlt": "{v0} AI 回测结果",
             "developers": {
@@ -2548,8 +2548,8 @@
                 "benchmarkLink": "查看基准测试结果"
             },
             "backtesting": {
-                "body": "回测页面是将 SIGLENS 的 AI 分析应用于过去时点的数据，并事后验证实际结果的页面。对象是预先选定的一部分大型股，计算方式为：入场后，如果在最多 10 个交易日内首先触及止损价或目标价，则在该点结束；如果未触及，则在第 10 个交易日的收盘价结束。",
-                "caveat": "未计入手续费和滑点，由于事后选择标的，可能存在幸存者偏差。案例数量和期间已与结果一同列出，历史结果不保证未来表现。",
+                "body": "回测页面在过去两年的每个交易日运行 SIGLENS 的 AI 分析，计算完全按照页面给出的入场区间、目标价和止损价操作会得到什么结果。仓位分成两半，分别在第一目标价和最终目标价平仓，触及止损价则平仓。",
+                "caveat": "未计入手续费和滑点，且标的是事后选定的，可能存在幸存者偏差。交易笔数、期间以及与持有策略的对比与结果一同列出，过往结果不代表未来表现。",
                 "link": "查看回测结果",
                 "title": "回测"
             },
@@ -3500,7 +3500,8 @@
                 "f0cdeb": "AI 分析",
                 "fb0cf0": "关键价格",
                 "bcc718": "在图表中查看",
-                "f66b28": "在图表中查看{v0}"
+                "f66b28": "在图表中查看{v0}",
+                "currentTrend": "当前趋势：{v0}"
             },
             "AnalysisProgress": {
                 "784c44": "AI 分析进行中"
@@ -3643,53 +3644,121 @@
             }
         },
         "backtesting": {
-            "BacktestCaseCard": {
-                "315575": "止损价:",
-                "456225": "目标价:",
-                "06cf3e": "<n>{v0}</n> 天",
-                "0f8bf6": "AI 入场建议",
-                "31e4d3": "买入",
-                "540e42": "AI建议观望",
-                "58b71d": "AI 预测级别",
-                "6c8ca5": "AI 规避建议",
-                "75a556": "依据:",
-                "b19f09": "亏损",
-                "bd6b14": "收益",
-                "efb7c2": "止盈价:",
-                "fa9de3": "✓ 达成"
-            },
-            "BacktestCaseList": {
-                "caseCount": "{v0}例",
-                "emptyDataset": "没有可显示的案例。",
-                "emptyFiltered": "所选股票没有相关案例。"
-            },
-            "BacktestHero": {
-                "116858": "这是通过实际市场数据验证的回测结果。",
-                "394fff": "指标信号命中率（历史）",
-                "5a254c": "AI 情景命中率（历史）",
-                "caee31": "展示将 SIGLENS 当前提供的 AI 分析原样应用于过去数据时的结果。基于历史数据，不保证未来表现。",
-                "d8b543": "回测：基于历史数据的事后验证",
-                "f92294": "总案例",
-                "aiTrendHitRateLabel": "AI 趋势方向命中率（历史）",
-                "meanReturnLabel": "平均收益率（全部案例）",
-                "medianHoldingDaysLabel": "持有天数中位数"
-            },
             "BacktestTabs": {
                 "7425e7": "股票代码筛选"
             },
             "hero": {
-                "caseCount": "{v0} 例",
-                "tickerCount": "{v0} 只",
-                "aiSubLabel": "决定性案例 {v0}/{v1}，排除中立 {v2} 例",
-                "medianHoldingDays": "{v0}天"
+                "title": "如果 {v0} 年来一直照着 AI 分析操作",
+                "lead": "我们每个交易日运行 SIGLENS 的 AI 技术分析，并完全按照页面给出的入场区间、目标价和止损价操作。标的是美国大盘股和指数 ETF 共 {v0} 只。",
+                "disclaimer": "以上是基于历史数据的结果，不代表未来表现。",
+                "portfolioLabel": "组合收益率（{v0} 只等权）",
+                "maxDrawdownLabel": "最大回撤（按平仓）",
+                "winRateLabel": "胜率",
+                "winRateSub": "{v0}/{v1} 笔",
+                "tradesLabel": "交易笔数",
+                "tradesValue": "{v0} 笔",
+                "meanReturnLabel": "每笔平均收益率",
+                "meanHoldingLabel": "平均持有时间",
+                "tradingDays": "{v0} 个交易日",
+                "vsBenchmarks": "持有 {v0} 只 {v1} · SPY {v2}",
+                "drawdownVsSpy": "持有 SPY {v0}（按每日收盘）"
             },
-            "methodology": {
-                "heading": "回测方法论",
-                "winDefinition": "获胜定义：平仓时收益率达到0%或以上即计为获胜。",
-                "exitRule": "平仓规则：入场后最多持有10个交易日。若先触及止损价或目标价，则在该时点平仓（同日同时触及时止损优先）。若未触及，则在第10个交易日收盘价平仓。",
-                "noCosts": "未计入交易手续费与滑点。",
-                "universe": "仅覆盖AAPL、NVDA、TSLA等固定的10只大盘股，且为事后选定，可能存在选择偏差。",
-                "dataSource": "价格数据来源：Financial Modeling Prep（FMP）。"
+            "comparison": {
+                "heading": "与持有策略对比",
+                "note": "与同期从头到尾持有各标的的结果对比。AI 策略的最大回撤只按已平仓交易计算，可能小于真实账户的回撤。",
+                "colTicker": "标的",
+                "colTrades": "交易",
+                "colWinRate": "胜率",
+                "colStrategy": "AI 策略",
+                "colStrategyMdd": "最大回撤",
+                "colExposure": "持仓时间占比",
+                "colBuyHold": "持有",
+                "colBuyHoldMdd": "持有时最大回撤",
+                "rowPortfolio": "{v0} 只标的组合",
+                "notApplicable": "不适用",
+                "tableRegion": "持有策略对比表"
+            },
+            "strategy": {
+                "heading": "使用的策略",
+                "step1Title": "每日分析",
+                "step1": "每个交易日收盘后运行一次与网站会员相同的技术分析。模型为 {v0}，只输入截至当天的K线，不会看到未来数据。",
+                "step2Title": "参考此前分析",
+                "step2": "此前的分析按网站相同规则作为参考输入下一次分析：最近 {v0} 个交易日内最多 {v1} 条。",
+                "step3Title": "入场",
+                "step3": "AI 建议入场时按当日收盘价买入；建议观望时，在其给出的入场区间挂次日限价单，未成交则由当天的分析换成新区间；建议回避时不买入。",
+                "step4Title": "分两半平仓",
+                "step4": "买入的仓位分成两半：一半在第一目标价或止损价平仓，另一半持有到最终目标价。第一目标止盈后，剩余部分的止损上移到成本价；若先被止损，则下移到 AI 给出的下一个支撑位。",
+                "step5Title": "持仓期间重新分析",
+                "step5": "持仓期间每天带上持仓信息重新分析，并用新的目标价和止损价更新计划。",
+                "step6Title": "急跌买入规则",
+                "step6": "在长期上升趋势中出现短期大幅下跌的日子，分析会按固定规则给出入场。这类交易不分仓，在收盘价回到5日均线上方的当天或第 {v0} 个交易日平仓。",
+                "step7Title": "成交假设与局限",
+                "step7": "成交按日K线的最高价和最低价判断，同一天同时触及止损价和目标价时按止损处理。未计入手续费、滑点以及新闻和财报日程。标的是当前的大盘股，存在幸存者偏差。最长持有 {v0} 个交易日。",
+                "exitPathsHeading": "按平仓路径的结果",
+                "colPath": "路径",
+                "colTrades": "笔数",
+                "colMean": "平均收益率",
+                "dataHeading": "数据",
+                "dataResults": "评分记录（CSV）与详细结果",
+                "dataRelease": "每次调用的完整提示词与 AI 回复"
+            },
+            "exitPath": {
+                "tp1_tpFinal": "第一目标止盈 + 最终目标止盈",
+                "tp1_trailing": "第一目标止盈 + 上移止损",
+                "tp1_breakeven": "第一目标止盈 + 保本平仓",
+                "sl1_tpFinal": "第一止损 + 最终目标止盈",
+                "sl1_sl2": "第一止损 + 第二止损",
+                "selloff_recovered": "急跌买入：反弹平仓",
+                "selloff_stopped": "急跌买入：止损",
+                "other": "其他（到期或仍持有）"
+            },
+            "tradeList": {
+                "count": "{v0} 笔",
+                "emptyDataset": "没有可显示的交易。",
+                "emptyFiltered": "所选标的没有交易。"
+            },
+            "tradeRow": {
+                "entryType": {
+                    "enter_close": "收盘价入场",
+                    "enter_selloff": "急跌买入",
+                    "wait_limit": "限价入场"
+                },
+                "legReason": {
+                    "tp1": "第一目标止盈",
+                    "tp_final": "最终目标止盈",
+                    "sl1": "止损",
+                    "sl2": "第二止损",
+                    "breakeven": "保本平仓",
+                    "selloff_ma5": "回到5日均线上方",
+                    "selloff_time": "到期",
+                    "selloff_stop": "止损",
+                    "max_hold": "最长持有期",
+                    "open": "仍持有"
+                },
+                "period": "{v0} → {v1}（{v2} 个交易日）",
+                "decision": "{v0} 收盘后判断，{v1} 以 {v2} 美元买入",
+                "leg": "一半 {v0}：{v1} 以 {v2} 美元平仓（{v3}）{v4}",
+                "plan": "入场时的计划：第一目标价 {v0} 美元，最终目标价 {v1} 美元，止损价 {v2} 美元，第二止损 {v3} 美元",
+                "reviews": "持仓期间重新分析 {v0} 次",
+                "summaryHeading": "入场判断时的 AI 摘要",
+                "files": "提示词 {v0} · 回复 {v1}",
+                "symbolLink": "查看 {v0} 分析",
+                "loading": "正在加载交易详情…",
+                "loadError": "无法加载交易详情。也可以在结果文件夹的 trades.csv 中查看。"
+            },
+            "trendRecognition": {
+                "heading": "趋势识别",
+                "note": "我们统计了每次分析给出的趋势（上升或下降）是否与判断前 {v0} 个交易日的实际走势方向一致。这衡量的是是否读懂了到目前为止的走势，而不是是否预测了之后的方向。",
+                "matchLabel": "趋势识别一致率（{v0} 次上升或下降判断）",
+                "colTrend": "AI 给出的趋势",
+                "colCalls": "次数",
+                "colPriorMean": "前 {v0} 个交易日均值",
+                "colPriorUp": "前 {v0} 个交易日上涨比例",
+                "row": {
+                    "bullish": "上升趋势",
+                    "bearish": "下降趋势",
+                    "neutral": "中性"
+                }
             }
         },
         "benchmark-summary": {

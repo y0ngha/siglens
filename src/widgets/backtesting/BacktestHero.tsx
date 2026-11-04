@@ -2,14 +2,14 @@ import { useTranslations } from 'next-intl';
 import type { BacktestStats } from '@/entities/backtest-case/model';
 import { StatGrid } from './ui/hero/StatGrid';
 import { formatPeriodMonth } from './utils/formatPeriodMonth';
+import { periodYears } from './utils/periodYears';
 
 interface BacktestHeroProps {
     stats: BacktestStats;
 }
 
-/** 백테스트 페이지 머리말 — 기간 키커, 제목, 설명, 핵심 지표 그리드. */
 export function BacktestHero({ stats }: BacktestHeroProps) {
-    const t = useTranslations('widgets.backtesting');
+    const t = useTranslations('widgets.backtesting.hero');
     const period = `${formatPeriodMonth(stats.periodStart)} – ${formatPeriodMonth(stats.periodEnd)}`;
 
     return (
@@ -19,12 +19,14 @@ export function BacktestHero({ stats }: BacktestHeroProps) {
                     BACKTESTING RESULTS | {period}
                 </p>
                 <h1 className="mb-3 text-2xl font-bold text-balance text-secondary-50 sm:text-3xl">
-                    {t('BacktestHero.d8b543')}
+                    {t('title', {
+                        v0: periodYears(stats.periodStart, stats.periodEnd),
+                    })}
                 </h1>
-                <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-secondary-400 sm:text-base">
-                    {t('BacktestHero.116858')}
+                <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-pretty text-secondary-400 sm:text-base">
+                    {t('lead', { v0: stats.perTicker.length })}
                     <br />
-                    {t('BacktestHero.caee31')}
+                    {t('disclaimer')}
                 </p>
                 <StatGrid stats={stats} />
             </div>

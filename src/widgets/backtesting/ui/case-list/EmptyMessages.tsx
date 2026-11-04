@@ -6,7 +6,7 @@ const EMPTY_CLASS = 'py-10 text-center text-sm text-secondary-500';
 /** 데이터셋 자체에 케이스가 없을 때의 안내. */
 export function DatasetEmptyMessage() {
     const t = useTranslations('widgets.backtesting');
-    return <p className={EMPTY_CLASS}>{t('BacktestCaseList.emptyDataset')}</p>;
+    return <p className={EMPTY_CLASS}>{t('tradeList.emptyDataset')}</p>;
 }
 
 /**
@@ -18,7 +18,7 @@ export function FilteredEmptyMessage() {
     const t = useTranslations('widgets.backtesting');
     return (
         <p hidden role="status" {...emptyAttrs()} className={EMPTY_CLASS}>
-            {t('BacktestCaseList.emptyFiltered')}
+            {t('tradeList.emptyFiltered')}
         </p>
     );
 }

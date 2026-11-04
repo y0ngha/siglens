@@ -12,7 +12,7 @@ import {
 } from '../utils/monthOpenState';
 
 /**
- * 서버에서 렌더된 케이스 목록(`BacktestCaseList`) 안에서 지금 탭에 맞는 요소만 보이게 한다.
+ * 서버에서 렌더된 매매 목록(`BacktestTradeList`) 안에서 지금 탭에 맞는 요소만 보이게 한다.
  *
  * 목록은 서버 컴포넌트라 React가 클라이언트에서 다시 그리지 않는다(`BacktestTabs`의
  * `children`은 탭이 바뀌어도 같은 엘리먼트다). 그래서 보이는 범위는 DOM의 `hidden`과

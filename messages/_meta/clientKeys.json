@@ -760,6 +760,7 @@
                 "widgets.analysis.AnalysisPanel.c68843",
                 "widgets.analysis.AnalysisPanel.c80f22",
                 "widgets.analysis.AnalysisPanel.cfbeac",
+                "widgets.analysis.AnalysisPanel.currentTrend",
                 "widgets.analysis.AnalysisPanel.d39704",
                 "widgets.analysis.AnalysisPanel.d930e0",
                 "widgets.analysis.AnalysisPanel.db5809",
@@ -3510,6 +3511,8 @@
                 "shared.ui.misc.submitting",
                 "shared.ui.toast.close",
                 "widgets.backtesting.BacktestTabs.7425e7",
+                "widgets.backtesting.tradeRow.loadError",
+                "widgets.backtesting.tradeRow.loading",
                 "widgets.layout.ContactDialog.531f6a",
                 "widgets.layout.ContactDialog.79bb9f",
                 "widgets.layout.ContactDialog.94b7db",
@@ -3558,6 +3561,8 @@
                 "shared.lib.skillStats.count",
                 "shared.ui",
                 "shared.ui.themeOption",
+                "widgets.backtesting.tradeRow",
+                "widgets.backtesting.tradeRow.legReason",
                 "widgets.layout",
                 "widgets.layout.localeSwitcher"
             ]
@@ -7918,6 +7923,7 @@
                 "widgets.analysis.AnalysisPanel.c68843",
                 "widgets.analysis.AnalysisPanel.c80f22",
                 "widgets.analysis.AnalysisPanel.cfbeac",
+                "widgets.analysis.AnalysisPanel.currentTrend",
                 "widgets.analysis.AnalysisPanel.d39704",
                 "widgets.analysis.AnalysisPanel.d930e0",
                 "widgets.analysis.AnalysisPanel.db5809",

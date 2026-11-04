@@ -7,7 +7,7 @@
 // via act() and would hide this bug). Before the fix, the visible case list was
 // derived synchronously from useSearchParams() during render,
 // so a Suspense boundary wrapping that subtree caused Next.js to statically bake
-// only the "로딩 중..." fallback — the 100 cases never reached crawlers.
+// only the "로딩 중..." fallback — the cases never reached crawlers.
 //
 // This test renders the real page tree (no widget mocks) with renderToStaticMarkup
 // and asserts real data.json case content is present in that first, effect-free
@@ -44,22 +44,27 @@ vi.mock('next/navigation', () => ({
 
 import BacktestingPage from '@/app/[locale]/backtesting/page';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import backtestData from '@/entities/backtest-case/data/data.json';
 
 describe('/backtesting SSR output', () => {
     it('renders every real case ticker in the effect-free first render pass', async () => {
         // `renderToStaticMarkup`은 RTL을 거치지 않아 전역 i18n wrapper가 닿지
         // 않는다(vitest.setup.dom.ts는 `render`/`renderHook`만 감싼다). 직접 감싼다.
+        // 실제 앱은 루트 레이아웃이 QueryClientProvider를 둔다(매매 상세 호스트가 쓴다).
+        const { wrapper: QueryWrapper } = createQueryClientWrapper();
         const html = renderToStaticMarkup(
-            <IntlTestProvider>
-                {await BacktestingPage({
-                    params: Promise.resolve({ locale: 'ko' }),
-                })}
-            </IntlTestProvider>
+            <QueryWrapper>
+                <IntlTestProvider>
+                    {await BacktestingPage({
+                        params: Promise.resolve({ locale: 'ko' }),
+                    })}
+                </IntlTestProvider>
+            </QueryWrapper>
         );
 
-        const tickers = [...new Set(backtestData.cases.map(c => c.ticker))];
-        // Full 100-case list must reach the static shell — not just the first
+        const tickers = [...new Set(backtestData.trades.map(t => t.ticker))];
+        // Full trade list must reach the static shell — not just the first
         // ticker, since a partial (e.g. pre-filtered) render would still pass
         // a single-ticker assertion.
         for (const ticker of tickers) {
@@ -76,15 +81,19 @@ describe('/backtesting SSR output', () => {
 
         // `renderToStaticMarkup`은 RTL을 거치지 않아 전역 i18n wrapper가 닿지
         // 않는다(vitest.setup.dom.ts는 `render`/`renderHook`만 감싼다). 직접 감싼다.
+        // 실제 앱은 루트 레이아웃이 QueryClientProvider를 둔다(매매 상세 호스트가 쓴다).
+        const { wrapper: QueryWrapper } = createQueryClientWrapper();
         const html = renderToStaticMarkup(
-            <IntlTestProvider>
-                {await BacktestingPage({
-                    params: Promise.resolve({ locale: 'ko' }),
-                })}
-            </IntlTestProvider>
+            <QueryWrapper>
+                <IntlTestProvider>
+                    {await BacktestingPage({
+                        params: Promise.resolve({ locale: 'ko' }),
+                    })}
+                </IntlTestProvider>
+            </QueryWrapper>
         );
 
-        const otherTickerCase = backtestData.cases.find(
+        const otherTickerCase = backtestData.trades.find(
             c => c.ticker !== 'GOOGL'
         );
         expect(otherTickerCase).toBeDefined();

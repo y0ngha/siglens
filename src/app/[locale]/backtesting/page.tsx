@@ -3,14 +3,17 @@ import type { Metadata } from 'next';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { BacktestCaseList } from '@/widgets/backtesting/BacktestCaseList';
+import { BacktestComparison } from '@/widgets/backtesting/BacktestComparison';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
-import { BacktestMethodology } from '@/widgets/backtesting/BacktestMethodology';
+import { BacktestStrategy } from '@/widgets/backtesting/BacktestStrategy';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
+import { BacktestTradeList } from '@/widgets/backtesting/BacktestTradeList';
+import { BacktestTrendRecognition } from '@/widgets/backtesting/BacktestTrendRecognition';
 import {
-    BACKTEST_DATA,
+    BACKTEST_RUN,
     BACKTEST_STATS,
     BACKTEST_TICKERS,
+    BACKTEST_TRADE_ROWS,
 } from '@/app/[locale]/backtesting/_lib/backtestingData';
 import { buildBacktestingJsonLd } from '@/app/[locale]/backtesting/_lib/backtestingJsonLd';
 import { buildBacktestingMetadata } from '@/app/[locale]/backtesting/_lib/backtestingMetadata';
@@ -54,14 +57,22 @@ export default async function BacktestingPage({
                     <Breadcrumb trail={[{ label: breadcrumbLabel }]} />
                 </div>
                 <BacktestHero stats={BACKTEST_STATS} />
-                <BacktestMethodology />
-                {/* 케이스 목록은 서버 컴포넌트로 렌더해 탭(클라이언트)에 children으로
-                    넘긴다 — 케이스 데이터가 RSC 페이로드로 넘어가 카드 트리가 하이드레이션되지
+                <BacktestComparison stats={BACKTEST_STATS} />
+                <BacktestTrendRecognition stats={BACKTEST_STATS} />
+                <BacktestStrategy
+                    run={BACKTEST_RUN.run}
+                    stats={BACKTEST_STATS}
+                />
+                {/* 매매 목록은 서버 컴포넌트로 렌더해 탭(클라이언트)에 children으로
+                    넘긴다 — 매매 데이터가 RSC 페이로드로 넘어가 행 트리가 하이드레이션되지
                     않는다. 탭은 보이는 범위만 고른다(BacktestTabs JSDoc). BacktestTabs는
                     useSearchParams()를 렌더 중 호출하지 않으므로(useBacktestFilter 참고)
                     Suspense 경계가 필요 없다. */}
                 <BacktestTabs tickers={BACKTEST_TICKERS}>
-                    <BacktestCaseList cases={BACKTEST_DATA.cases} />
+                    <BacktestTradeList
+                        runId={BACKTEST_RUN.run.runId}
+                        rows={BACKTEST_TRADE_ROWS}
+                    />
                 </BacktestTabs>
                 <div
                     role="note"

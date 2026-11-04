@@ -1,11 +1,11 @@
-import type { BacktestCase } from '@y0ngha/siglens-core';
 import {
     groupCasesByMonth,
+    type MonthGroupable,
     splitMonthKey,
 } from '../../utils/groupCasesByMonth';
 
-function makeCase(ticker: string, entryDate: string): BacktestCase {
-    return { ticker, entryDate } as BacktestCase;
+function makeCase(ticker: string, entryDate: string): MonthGroupable {
+    return { ticker, entryDate };
 }
 
 describe('splitMonthKey', () => {
