@@ -16,13 +16,11 @@ const percent = (value: number) => `${value.toFixed(1)}%`;
 
 interface RowProps {
     label: string;
-    trades?: number;
-    winRate?: number;
-    strategyPct?: number;
-    strategyMaxDrawdownPct?: number;
-    exposurePct?: number;
-    buyHoldPct: number;
-    buyHoldMaxDrawdownPct?: number;
+    trades: number;
+    winRate: number;
+    strategyPct: number;
+    strategyMaxDrawdownPct: number;
+    exposurePct: number;
     emphasis?: boolean;
 }
 
@@ -33,20 +31,8 @@ function Row({
     strategyPct,
     strategyMaxDrawdownPct,
     exposurePct,
-    buyHoldPct,
-    buyHoldMaxDrawdownPct,
     emphasis = false,
 }: RowProps) {
-    const t = useTranslations('widgets.backtesting.comparison');
-    // 값이 없는 칸. 대시만 두면 스크린리더가 기호로 읽으므로 뜻을 함께 싣는다.
-    const empty = (
-        <>
-            <span aria-hidden="true" className="text-secondary-500">
-                –
-            </span>
-            <span className="sr-only">{t('notApplicable')}</span>
-        </>
-    );
     return (
         <tr
             className={cn(
@@ -61,45 +47,21 @@ function Row({
             >
                 {label}
             </th>
-            <td className={CELL}>{trades ?? empty}</td>
-            <td className={CELL}>
-                {winRate === undefined ? empty : percent(winRate)}
+            <td className={CELL}>{trades}</td>
+            <td className={CELL}>{percent(winRate)}</td>
+            <td className={cn(CELL, signColorClass(strategyPct))}>
+                {formatSignedPercent(strategyPct)}
             </td>
-            <td
-                className={cn(
-                    CELL,
-                    strategyPct !== undefined && signColorClass(strategyPct)
-                )}
-            >
-                {strategyPct === undefined
-                    ? empty
-                    : formatSignedPercent(strategyPct)}
-            </td>
-            <td className={CELL}>
-                {strategyMaxDrawdownPct === undefined
-                    ? empty
-                    : percent(strategyMaxDrawdownPct)}
-            </td>
-            <td className={CELL}>
-                {exposurePct === undefined ? empty : percent(exposurePct)}
-            </td>
-            <td className={cn(CELL, signColorClass(buyHoldPct))}>
-                {formatSignedPercent(buyHoldPct)}
-            </td>
-            <td className={CELL}>
-                {buyHoldMaxDrawdownPct === undefined
-                    ? empty
-                    : percent(buyHoldMaxDrawdownPct)}
-            </td>
+            <td className={CELL}>{percent(strategyMaxDrawdownPct)}</td>
+            <td className={CELL}>{percent(exposurePct)}</td>
         </tr>
     );
 }
 
 /**
- * 보유 전략 대비 표. 첫 행은 포트폴리오, 그 아래는 종목별(SPY 포함)이다. 포트폴리오의 보유
- * 수익률은 리밸런싱 없는 균등 분할이라 종목 보유 수익률의 평균과 같다. 보유 포트폴리오의
- * 최대 낙폭은 일별 시세가 있어야 계산되므로 비운다(종목 낙폭의 최악값은 그 값이 아니다).
- * 좁은 화면에서는 표만 가로로 스크롤한다 — 페이지 전체가 가로로 밀리지 않게 래퍼가 막는다.
+ * 종목별 결과 표. 첫 행은 포트폴리오, 그 아래는 종목별(SPY 포함)이다. AI 전략의 결과만 싣고
+ * 단순 보유와의 비교는 싣지 않는다. 좁은 화면에서는 표만 가로로 스크롤한다 — 페이지 전체가
+ * 가로로 밀리지 않게 래퍼가 막는다.
  */
 export function BacktestComparison({ stats }: BacktestComparisonProps) {
     const t = useTranslations('widgets.backtesting.comparison');
@@ -126,7 +88,7 @@ export function BacktestComparison({ stats }: BacktestComparisonProps) {
                     aria-label={t('tableRegion')}
                     className="-mx-4 overflow-x-auto px-4 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:mx-0 sm:px-0"
                 >
-                    <table className="w-full min-w-[40rem] text-sm text-secondary-300">
+                    <table className="w-full min-w-[32rem] text-sm text-secondary-300">
                         <thead className="text-xs text-secondary-400">
                             <tr>
                                 <th
@@ -150,12 +112,6 @@ export function BacktestComparison({ stats }: BacktestComparisonProps) {
                                 <th scope="col" className={HEAD_CELL}>
                                     {t('colExposure')}
                                 </th>
-                                <th scope="col" className={HEAD_CELL}>
-                                    {t('colBuyHold')}
-                                </th>
-                                <th scope="col" className={HEAD_CELL}>
-                                    {t('colBuyHoldMdd')}
-                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -171,7 +127,6 @@ export function BacktestComparison({ stats }: BacktestComparisonProps) {
                                     stats.portfolioMaxDrawdownPct
                                 }
                                 exposurePct={stats.meanExposurePct}
-                                buyHoldPct={stats.buyHoldMeanPct}
                             />
                             {stats.perTicker.map(p => (
                                 <Row
@@ -184,10 +139,6 @@ export function BacktestComparison({ stats }: BacktestComparisonProps) {
                                         p.strategyMaxDrawdownPct
                                     }
                                     exposurePct={p.exposurePct}
-                                    buyHoldPct={p.buyHoldPct}
-                                    buyHoldMaxDrawdownPct={
-                                        p.buyHoldMaxDrawdownPct
-                                    }
                                 />
                             ))}
                         </tbody>

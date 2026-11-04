@@ -28,6 +28,33 @@ describe('buildOgText', () => {
         expect(out.description).toContain('상승');
         expect(out.description).not.toContain('둘째 줄');
     });
+    it('chart: frames the trend as the current trend, not a forecast', () => {
+        const out = buildOgText(
+            snap('chart', { trend: 'bullish', summary: '상승 추세' }),
+            tOg
+        );
+        expect(out.description).toBe('현재 추세 강세: 상승 추세');
+        expect(out.tweet).toBe('AAPL 현재 추세 강세: 상승 추세');
+    });
+    it('chart: every locale frames the trend without a second colon', () => {
+        for (const locale of ['ko', 'en', 'ja', 'zh'] as const) {
+            const out = buildOgText(
+                snap('chart', { trend: 'bullish', summary: 'S' }),
+                catalogTranslator('entities.shared-analysis.og', locale)
+            );
+            expect(out.description.match(/[:：]/g)).toHaveLength(1);
+        }
+    });
+    it('non-chart kinds keep the bare direction label', () => {
+        const out = buildOgText(
+            snap('news', {
+                overallSentiment: 'bullish',
+                currentDriverKo: '호재',
+            }),
+            tOg
+        );
+        expect(out.description).toBe('강세: 호재');
+    });
     it('news: uses overallSentiment + currentDriverKo', () => {
         const out = buildOgText(
             snap('news', {
@@ -154,8 +181,8 @@ describe('buildOgText', () => {
 
     it('chart: {} (no trend / no summary) → direction "중립", empty summary', () => {
         const out = buildOgText(snap('chart', {}), tOg);
-        // trend ?? 'neutral' → '중립'; summary ?? '' → empty → description is just '중립'
-        expect(out.description).toBe('중립');
+        // trend ?? 'neutral' → '현재 추세 중립'; summary ?? '' → empty → description is the label alone
+        expect(out.description).toBe('현재 추세 중립');
     });
 
     it('overall: integratedConclusionKo used when headlineKo is absent', () => {

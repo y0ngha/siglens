@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AIテクニカル分析バックテストデータセット",
-                "variableMeasured": "毎日のAI分析に従った取引の勝率・収益率・最大ドローダウンと保有戦略との比較"
+                "variableMeasured": "毎日のAI分析に従った取引の銘柄別の勝率・収益率・最大ドローダウン"
             }
         },
         "economy": {
@@ -662,7 +662,8 @@
                 "fearGreedSummaryNoScore": "恐怖強欲指数",
                 "greed": "強欲",
                 "neutral": "中立",
-                "volatility": "ボラティリティ"
+                "volatility": "ボラティリティ",
+                "currentTrend": "{v0}（現在のトレンド）"
             },
             "seo": {
                 "title": "{v0} AI分析結果"
@@ -1795,7 +1796,7 @@
             "accountDeleteFullTitle": "{v0} 退会",
             "accountDeleteTitle": "退会",
             "backtesting": {
-                "description": "NVDA・AAPL・TSLAなど米国大型株10銘柄に毎日のAI分析を2年間適用したバックテストです。エントリー帯・目標価格・損切り価格どおりに売買した収益率とドローダウンを保有戦略と比較しました。将来の成果を保証するものではありません。",
+                "description": "NVDA・AAPL・TSLAなど米国大型株10銘柄に毎日のAI分析を2年間適用したバックテストです。エントリー帯・目標価格・損切り価格どおりに売買した勝率・収益率・ドローダウンを銘柄別にまとめました。将来の成果を保証するものではありません。",
                 "title": "AI株式分析バックテスト：米国大型株10銘柄・2年間の結果"
             },
             "backtestingOgAlt": "{v0} AIバックテスト結果",
@@ -2549,7 +2550,7 @@
             },
             "backtesting": {
                 "body": "バックテストページは、SIGLENSのAI分析を過去2年間の毎営業日に実行し、画面に出たエントリー帯・目標価格・損切り価格をそのまま守っていたらどうなったかを計算した結果です。買った数量は半分に分けて1次目標と最終目標で決済し、損切り価格に達したら決済したものとみなします。",
-                "caveat": "手数料とスリッページは入れておらず、銘柄を後から選んだため生存者バイアスがあり得ます。取引数と期間、保有戦略との比較を結果と一緒に載せており、過去の結果は将来の成果を保証しません。",
+                "caveat": "手数料とスリッページは入れておらず、銘柄を後から選んだため生存者バイアスがあり得ます。取引数と期間を結果と一緒に載せており、過去の結果は将来の成果を保証しません。",
                 "link": "バックテスト結果を見る",
                 "title": "バックテスト"
             },
@@ -3659,24 +3660,19 @@
                 "tradesValue": "{v0}件",
                 "meanReturnLabel": "1取引あたりの平均収益率",
                 "meanHoldingLabel": "平均保有期間",
-                "tradingDays": "{v0}営業日",
-                "vsBenchmarks": "{v0}銘柄保有 {v1} ・ SPY {v2}",
-                "drawdownVsSpy": "SPY保有 {v0}（日次終値ベース）"
+                "tradingDays": "{v0}営業日"
             },
             "comparison": {
-                "heading": "保有戦略との比較",
-                "note": "同じ期間、各銘柄を最初から最後まで保有した場合と比較しています。AI戦略の最大ドローダウンは決済済みの取引だけで計算しているため、実際の口座より小さく出ることがあります。",
+                "heading": "銘柄別の結果",
+                "note": "銘柄ごとに同じ金額を割り当て、AI分析どおりに売買した結果です。最大ドローダウンは決済済みの取引だけで計算しているため、実際の口座より小さく出ることがあります。",
                 "colTicker": "銘柄",
                 "colTrades": "取引",
                 "colWinRate": "勝率",
                 "colStrategy": "AI戦略",
                 "colStrategyMdd": "最大DD",
                 "colExposure": "投資比率",
-                "colBuyHold": "保有",
-                "colBuyHoldMdd": "保有時の最大DD",
                 "rowPortfolio": "{v0}銘柄ポートフォリオ",
-                "notApplicable": "該当なし",
-                "tableRegion": "保有戦略の比較表"
+                "tableRegion": "銘柄別の結果表"
             },
             "strategy": {
                 "heading": "使った戦略",
@@ -3715,7 +3711,9 @@
             "tradeList": {
                 "count": "{v0}件",
                 "emptyDataset": "表示する取引がありません。",
-                "emptyFiltered": "選択した銘柄の取引はありません。"
+                "emptyFiltered": "選択した銘柄の取引はありません。",
+                "monthLoading": "この月の取引を読み込んでいます…",
+                "monthLoadError": "この月の取引を読み込めませんでした。結果フォルダのtrades.csvでも確認できます。"
             },
             "tradeRow": {
                 "entryType": {

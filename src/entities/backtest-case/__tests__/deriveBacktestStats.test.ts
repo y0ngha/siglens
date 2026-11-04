@@ -114,18 +114,12 @@ describe('deriveBacktestStats', () => {
         expect(aaa?.strategyPct).toBe(-12);
         expect(aaa?.strategyMaxDrawdownPct).toBe(-20);
         expect(aaa?.exposurePct).toBe(50);
-        expect(aaa?.buyHoldPct).toBe(5);
     });
 
     it('averages equal-weight sleeves for the portfolio', () => {
         // 날짜별 평균: 1/10 (1.1+1)/2=1.05, 1/15 (1.1+1.05)/2=1.075, 1/20 (0.88+1.05)/2=0.965
         expect(stats.portfolioReturnPct).toBe(-3.5);
         expect(stats.portfolioMaxDrawdownPct).toBe(-10.23);
-        expect(stats.spy.buyHoldPct).toBe(3);
-    });
-
-    it('averages ticker buy-and-hold for the same-universe benchmark', () => {
-        expect(stats.buyHoldMeanPct).toBe(0);
     });
 
     it('leaves still-open trades out of the equity curves and the win rate', () => {
@@ -174,7 +168,6 @@ describe('deriveBacktestStats', () => {
                 strategyPct: expected.strategyPct,
                 strategyMaxDrawdownPct: expected.strategyMaxDrawdownPct,
                 exposurePct: expected.exposurePct,
-                buyHoldPct: expected.buyHoldPct,
             });
         }
     });

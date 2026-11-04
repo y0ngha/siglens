@@ -167,16 +167,31 @@ describe('BacktestTradeList — 월별 접이식', () => {
         ]);
     });
 
-    it('접힌 월의 카드도 DOM에 남아 있다 (크롤러 색인)', () => {
+    it('펼친 최신 3개월만 행을 그리고, 접힌 월은 펼칠 때 그릴 자리만 둔다', () => {
         render(<TradeList trades={FIVE_MONTHS} />);
 
-        for (const ticker of ['JAN', 'FEB', 'MAR', 'APR', 'MAY']) {
+        for (const ticker of ['MAR', 'APR', 'MAY']) {
             expect(screen.getByTestId(`case-${ticker}`)).toBeInTheDocument();
         }
-        // JAN은 접힌 <details> 안에 있다.
-        expect(
-            screen.getByTestId('case-JAN').closest('details')
-        ).not.toHaveAttribute('open');
+        // 690행을 모두 서버에서 그리면 HTML과 RSC 페이로드에 두 번씩 실려 1.2MB였다.
+        expect(screen.queryByTestId('case-FEB')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('case-JAN')).not.toBeInTheDocument();
+        const slots = Array.from(
+            document.querySelectorAll('[data-lazy-month]')
+        ).map(el => el.getAttribute('data-lazy-month'));
+        expect(slots).toEqual(['2024-02', '2024-01']);
+    });
+
+    it('접힌 월의 자리에 그 달 종목 토큰과 행 표식을 단다(종목 탭의 빈 목록 안내가 잘못 뜨지 않게)', () => {
+        render(
+            <TradeList
+                trades={[...FIVE_MONTHS, makeCase('AAPL', '2024-01-20')]}
+            />
+        );
+
+        const slot = document.querySelector('[data-lazy-month="2024-01"]');
+        expect(slot).toHaveAttribute('data-backtest-show', '* AAPL JAN');
+        expect(slot).toHaveAttribute('data-backtest-card');
     });
 
     it('카드·월·건수에 어느 탭에서 보이는지 표기한다(전체 토큰 + 종목)', () => {

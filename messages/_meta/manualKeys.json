@@ -178,6 +178,8 @@
         "widgets.investor-flows.split": ["[symbol]/flows"],
         "widgets.investor-flows.squeeze.component": ["[symbol]/flows"],
         "widgets.investor-flows.tooltip": ["[symbol]/flows"],
+        "widgets.backtesting.exitPath": ["backtesting"],
+        "widgets.backtesting.tradeRow.entryType": ["backtesting"],
         "widgets.backtesting.tradeRow.legReason": ["backtesting"]
     }
 }

@@ -125,8 +125,6 @@ export function deriveBacktestStats(data: BacktestRunData): BacktestStats {
                     b.tradingDays
                 )
             ),
-            buyHoldPct: b.buyHoldPct,
-            buyHoldMaxDrawdownPct: b.buyHoldMaxDrawdownPct,
         };
     });
     const portfolio = dates.map((_, i) => mean(curves.map(c => c[i])));
@@ -142,11 +140,6 @@ export function deriveBacktestStats(data: BacktestRunData): BacktestStats {
         portfolioReturnPct: round2(((portfolio.at(-1) ?? 1) - 1) * 100),
         portfolioMaxDrawdownPct: round2(maxDrawdownPct(portfolio)),
         meanExposurePct: round2(mean(perTicker.map(p => p.exposurePct))),
-        buyHoldMeanPct: round2(mean(data.baselines.map(b => b.buyHoldPct))),
-        spy: {
-            buyHoldPct: data.spy.buyHoldPct,
-            buyHoldMaxDrawdownPct: data.spy.buyHoldMaxDrawdownPct,
-        },
         perTicker,
         exitPaths: exitPathStats(data.trades),
         trendRecognition: data.trendRecognition,

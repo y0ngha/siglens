@@ -3,15 +3,13 @@ import type { BacktestStats } from '@/entities/backtest-case/model';
 
 import { BacktestComparison } from '../../BacktestComparison';
 
-const ticker = (name: string, strategyPct: number, buyHoldPct: number) => ({
+const ticker = (name: string, strategyPct: number) => ({
     ticker: name,
     trades: 65,
     winRate: 60,
     strategyPct,
     strategyMaxDrawdownPct: -14.44,
     exposurePct: 66.87,
-    buyHoldPct,
-    buyHoldMaxDrawdownPct: -34.91,
 });
 
 const STATS: BacktestStats = {
@@ -25,9 +23,7 @@ const STATS: BacktestStats = {
     portfolioReturnPct: 29.09,
     portfolioMaxDrawdownPct: -9.29,
     meanExposurePct: 62.5,
-    buyHoldMeanPct: 27.65,
-    spy: { buyHoldPct: 31.71, buyHoldMaxDrawdownPct: -19 },
-    perTicker: [ticker('MSFT', 47.08, 23.58), ticker('SPY', 4.95, 31.71)],
+    perTicker: [ticker('MSFT', 47.08), ticker('SPY', 4.95)],
     exitPaths: [],
     trendRecognition: {
         windowDays: 10,
@@ -47,7 +43,7 @@ describe('BacktestComparison', () => {
     it('renders a headed table with the portfolio row first', () => {
         render(<BacktestComparison stats={STATS} />);
         expect(
-            screen.getByRole('heading', { level: 2, name: '보유 전략과 비교' })
+            screen.getByRole('heading', { level: 2, name: '종목별 결과' })
         ).toBeInTheDocument();
         const rows = screen.getAllByRole('row');
         expect(rows).toHaveLength(4); // header + portfolio + 2 tickers
@@ -58,32 +54,21 @@ describe('BacktestComparison', () => {
         expect(rows[1]).toHaveTextContent('-9.3%');
     });
 
-    it('uses the mean of ticker buy-and-hold for the portfolio and leaves its drawdown blank', () => {
-        render(<BacktestComparison stats={STATS} />);
-        const portfolio = screen.getAllByRole('row')[1];
-        // (23.58 + 31.71) / 2 = 27.645
-        expect(portfolio).toHaveTextContent('+27.6%');
-        expect(within(portfolio).getAllByText('–')).toHaveLength(1);
-    });
-
     it('renders one row per ticker including SPY', () => {
         render(<BacktestComparison stats={STATS} />);
         const msft = screen
             .getByRole('rowheader', { name: 'MSFT' })
             .closest('tr');
         expect(msft).toHaveTextContent('+47.1%');
-        expect(msft).toHaveTextContent('+23.6%');
         expect(
             screen.getByRole('rowheader', { name: 'SPY' })
         ).toBeInTheDocument();
     });
 
-    it('gives blank cells a screen-reader label and keeps the table scrollable by keyboard', () => {
+    it('keeps the table scrollable by keyboard', () => {
         render(<BacktestComparison stats={STATS} />);
-        const portfolio = screen.getAllByRole('row')[1];
-        expect(within(portfolio).getByText('해당 없음')).toHaveClass('sr-only');
         expect(
-            screen.getByRole('region', { name: '보유 전략 비교 표' })
+            screen.getByRole('region', { name: '종목별 결과 표' })
         ).toHaveAttribute('tabindex', '0');
     });
 
@@ -98,8 +83,6 @@ describe('BacktestComparison', () => {
             'AI 전략',
             '최대 낙폭',
             '투자 비중',
-            '보유',
-            '보유 시 최대 낙폭',
         ]);
     });
 });

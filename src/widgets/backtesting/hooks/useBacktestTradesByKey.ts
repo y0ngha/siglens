@@ -23,7 +23,7 @@ export function useBacktestTradesByKey(
 ): UseQueryResult<ReadonlyMap<string, BacktestTrade>> {
     return useQuery({
         queryKey: QUERY_KEYS.backtestRun(runId),
-        queryFn: fetchBacktestRunData,
+        queryFn: () => fetchBacktestRunData(runId),
         select: toTradesByKey,
         enabled,
         staleTime: Infinity,

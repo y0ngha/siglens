@@ -67,6 +67,7 @@ function ServerList() {
                 비어 있음
             </p>
             <details
+                data-month-section=""
                 data-testid="month-jun"
                 open
                 {...visibilityAttrs([UNFILTERED_TOKEN, 'AAPL'])}
@@ -92,6 +93,7 @@ function ServerList() {
                 />
             </details>
             <details
+                data-month-section=""
                 data-testid="month-may"
                 {...visibilityAttrs([UNFILTERED_TOKEN, 'NVDA'])}
             >
@@ -99,7 +101,11 @@ function ServerList() {
                 <div
                     data-testid="card-nvda"
                     {...cardAttrs([UNFILTERED_TOKEN, 'NVDA'])}
-                />
+                >
+                    <details data-testid="row-nvda">
+                        <summary>NVDA</summary>
+                    </details>
+                </div>
             </details>
         </div>
     );
@@ -110,6 +116,7 @@ function RefreshedList() {
     return (
         <div>
             <details
+                data-month-section=""
                 data-testid="month-apr"
                 {...visibilityAttrs([UNFILTERED_TOKEN, 'AAPL'])}
             >
@@ -120,6 +127,7 @@ function RefreshedList() {
                 />
             </details>
             <details
+                data-month-section=""
                 data-testid="month-mar"
                 {...visibilityAttrs([UNFILTERED_TOKEN, 'NVDA'])}
             >
@@ -187,6 +195,10 @@ describe('BacktestTabs', () => {
         expect(
             (screen.getByTestId('month-may') as HTMLDetailsElement).open
         ).toBe(true);
+        // 매매 행도 `<details>`지만 월이 아니다 — 종목 탭이 행까지 펼치면 안 된다.
+        expect(
+            (screen.getByTestId('row-nvda') as HTMLDetailsElement).open
+        ).toBe(false);
     });
 
     it('종목 탭에서 전체 탭으로 돌아오면 숨김과 떠나기 전 펼침 상태를 되돌린다', () => {

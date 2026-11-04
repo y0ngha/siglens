@@ -1,4 +1,7 @@
-import { subscribeTradeDetailsOpen } from '../../utils/tradeDetailsToggle';
+import {
+    subscribeLazyMonthOpen,
+    subscribeTradeDetailsOpen,
+} from '../../utils/tradeDetailsToggle';
 
 /** `open`을 바꾸면 브라우저(jsdom 포함)가 `toggle`을 비동기로 한 번 낸다. 그 태스크를 기다린다. */
 const nextTask = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -68,6 +71,66 @@ describe('subscribeTradeDetailsOpen', () => {
         const { onOpen, unsubscribe, toggle } = setup();
         unsubscribe();
         await toggle('row', true);
+        expect(onOpen).not.toHaveBeenCalled();
+    });
+});
+
+describe('subscribeLazyMonthOpen', () => {
+    function setupMonth(monthOpen = false) {
+        document.body.innerHTML = `
+            <div id="root">
+                <details id="month" data-month-section ${monthOpen ? 'open' : ''}><summary>m</summary>
+                    <section><div><div data-lazy-month="2025-03"></div></div></section>
+                </details>
+                <details id="plain"><summary>p</summary><div data-lazy-month="2025-04"></div></details>
+                <details id="row"><summary>r</summary><div data-trade-detail="AAA|2025-01-02"></div></details>
+            </div>`;
+        const onOpen = vi.fn();
+        const unsubscribe = subscribeLazyMonthOpen(
+            document.getElementById('root')!,
+            onOpen
+        );
+        return { onOpen, unsubscribe };
+    }
+
+    it('reports the month key and slot when a lazy month opens', async () => {
+        const { onOpen } = setupMonth();
+        (document.getElementById('month') as HTMLDetailsElement).open = true;
+        await nextTask();
+        expect(onOpen).toHaveBeenCalledTimes(1);
+        expect(onOpen).toHaveBeenCalledWith(
+            '2025-03',
+            document.querySelector('[data-lazy-month]')
+        );
+    });
+
+    it('ignores details that are not month sections', async () => {
+        const { onOpen } = setupMonth();
+        (document.getElementById('plain') as HTMLDetailsElement).open = true;
+        await nextTask();
+        expect(onOpen).not.toHaveBeenCalled();
+    });
+
+    it('ignores trade rows', async () => {
+        const { onOpen } = setupMonth();
+        (document.getElementById('row') as HTMLDetailsElement).open = true;
+        await nextTask();
+        expect(onOpen).not.toHaveBeenCalled();
+    });
+
+    it('reports a lazy month that was already open when it subscribed', () => {
+        const { onOpen } = setupMonth(true);
+        expect(onOpen).toHaveBeenCalledWith(
+            '2025-03',
+            document.querySelector('[data-lazy-month]')
+        );
+    });
+
+    it('stops listening after unsubscribe', async () => {
+        const { onOpen, unsubscribe } = setupMonth();
+        unsubscribe();
+        (document.getElementById('month') as HTMLDetailsElement).open = true;
+        await nextTask();
         expect(onOpen).not.toHaveBeenCalled();
     });
 });
