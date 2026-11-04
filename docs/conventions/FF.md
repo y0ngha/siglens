@@ -316,6 +316,30 @@ at the call site.
 - **Option names state the consequence.** A parameter that aborts or throws must name the consequence, not the check.
   ❌ `maxDelayMs` (looks like a cap, actually aborts) → ✅ `abortIfCumulativeDelayReachesMs`.
 
+### 2-E. Subscriptions start from existing state
+
+<a id="FF-10"></a>
+
+#### FF-10 — A subscription starts from the state that already exists
+
+An effect or listener that only reacts to future changes misses what is already true when it attaches. Seed it from the value
+the component rendered with, and reconcile pre-existing state on attach. Do not re-read an external source (clock, DOM) inside
+the effect to decide whether to start; the render and the effect can disagree.
+
+❌ A document-level `toggle` listener that only handles future events, so `<details>` already open (before hydration or
+restored by history) never loads. ✅ On subscribe, also scan `details[open]` and handle those.
+
+<a id="FF-11"></a>
+
+#### FF-11 — A bucket or label claims only what its value measures
+
+A classifier must not fold cases into a bucket that its own contract says they do not belong to, and two figures with different
+measurement bases (different universe, benchmark or drawdown definition) are never shown side by side under labels that hide the
+difference. State the basis in the label, and give unclassifiable cases their documented `other` bucket instead of the nearest one.
+
+❌ An exit classifier returns "recovered" for every non-stop exit, although open and max-hold exits are documented as `other`.
+✅ Map only the cases the definition covers to "recovered"; return `other` for the rest, and label the stat "closed-trade drawdown" next to a differently based "buy-and-hold drawdown".
+
 ---
 
 ## 3. Cohesion

@@ -10,7 +10,7 @@ import { useCaseListVisibility } from './hooks/useCaseListVisibility';
 interface BacktestTabsProps {
     tickers: string[];
     /**
-     * 서버에서 렌더된 케이스 목록(`BacktestCaseList`).
+     * 서버에서 렌더된 매매 목록(`BacktestTradeList`).
      *
      * 클라이언트 컴포넌트가 케이스 배열을 받아 카드를 그리면 배열 전체가 RSC 페이로드에
      * 실리고 카드가 전부 하이드레이션된다. 상호작용은 종목 탭 하나뿐이라 목록은 서버가

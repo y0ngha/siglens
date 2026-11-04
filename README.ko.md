@@ -85,6 +85,22 @@ flowchart LR
 
 로그인한 회원은 관심 있는 종목의 분석을 정기 메일 리포트로 받을 수 있고, 비회원은 [샘플 페이지](https://siglens.io/email-report/sample)에서 어떤 메일이 오는지 미리 볼 수 있습니다.
 
+## 백테스트
+
+운영 AI 분석을 과거 2년치(2024-11-01 ~ 2026-11-02) 일봉에 매일 돌리고, 화면에 나온 진입 구간·목표가·손절가를 그대로 따랐을 때의 결과입니다. 대상은 미국 대형주 8개와 SPY·QQQ이고, 모델은 DeepSeek V4.1 Flash입니다.
+
+| | AI 전략 | SPY 보유 |
+|---|---|---|
+| 2년 수익률 (10종목 균등 분할) | +29.1% | +31.7% |
+| 최대 낙폭 (AI는 청산 기준, SPY는 일별 종가) | −9.3% | −19.0% |
+| 매매 수 / 승률 | 690건 / 57.4% | — |
+
+수수료·슬리피지는 넣지 않았고, 과거 결과는 앞으로의 성과를 보장하지 않습니다. 전략, 종목별 결과, 한계는 [백테스트 결과](./backtest-results/2026-11-daily-ai/README.ko.md)에 있습니다.
+
+- 채점 기록: [`trades.csv`](./backtest-results/2026-11-daily-ai/trades.csv), [`decisions.csv`](./backtest-results/2026-11-daily-ai/decisions.csv), [`summary.json`](./backtest-results/2026-11-daily-ai/summary.json)
+- 호출별 프롬프트·응답 전문: [Release 첨부파일](https://github.com/y0ngha/siglens/releases/tag/backtest-2026-11-daily-ai)
+- 원본 데이터(일봉, 지표·패턴 계산 결과, 요청·응답 원문): [siglens-backtest-data](https://github.com/y0ngha/siglens-backtest-data)
+
 ## 지원 시장
 
 모든 종목은 하나의 시장에 속하며, 시장에 따라 통화, 거래 시간, 사용할 수 있는 시간 단위, 보이는 탭이 정해집니다.

@@ -5,6 +5,13 @@ vi.mock('@/app/[locale]/backtesting/_lib/backtestingData', () => ({
     get BACKTEST_STATS() {
         return statsState.stats;
     },
+    BACKTEST_RUN: {
+        run: {
+            runId: '2026-11-daily-ai',
+            resultsUrl:
+                'https://github.com/y0ngha/siglens/tree/master/backtest-results/2026-11-daily-ai',
+        },
+    },
 }));
 
 import { buildBacktestingJsonLd } from '@/app/[locale]/backtesting/_lib/backtestingJsonLd';
@@ -48,12 +55,30 @@ describe('backtesting JSON-LD', () => {
         expect(build().datasetJsonLd).not.toHaveProperty('dateModified');
     });
 
-    it('distribution은 data.json 다운로드 URL을 가리킨다', () => {
+    it('identifier는 실행 id를 담는다', () => {
+        expect(build().datasetJsonLd.identifier).toBe(
+            'siglens-backtesting-2026-11-daily-ai'
+        );
+    });
+
+    it('distribution은 data.json과 공개 채점 기록 CSV 두 개를 가리킨다', () => {
+        const raw =
+            'https://raw.githubusercontent.com/y0ngha/siglens/master/backtest-results/2026-11-daily-ai';
         expect(build().datasetJsonLd.distribution).toEqual([
             {
                 '@type': 'DataDownload',
                 encodingFormat: 'application/json',
                 contentUrl: 'https://siglens.io/backtesting/data.json',
+            },
+            {
+                '@type': 'DataDownload',
+                encodingFormat: 'text/csv',
+                contentUrl: `${raw}/trades.csv`,
+            },
+            {
+                '@type': 'DataDownload',
+                encodingFormat: 'text/csv',
+                contentUrl: `${raw}/decisions.csv`,
             },
         ]);
     });

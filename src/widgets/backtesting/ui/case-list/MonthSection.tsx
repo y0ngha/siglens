@@ -62,7 +62,7 @@ export function MonthSection({
                     {...visibilityAttrs([UNFILTERED_TOKEN])}
                     className="text-xs text-secondary-400 tabular-nums"
                 >
-                    {t('BacktestCaseList.caseCount', {
+                    {t('tradeList.count', {
                         v0: group.items.length,
                     })}
                 </span>
@@ -73,7 +73,7 @@ export function MonthSection({
                         {...visibilityAttrs([ticker])}
                         className="text-xs text-secondary-400 tabular-nums"
                     >
-                        {t('BacktestCaseList.caseCount', { v0: count })}
+                        {t('tradeList.count', { v0: count })}
                     </span>
                 ))}
             </summary>

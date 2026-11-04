@@ -1,8 +1,7 @@
-import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
-import type { BacktestCase } from '@y0ngha/siglens-core';
+import type { BacktestRunData } from '@y0ngha/siglens-core';
 
 /**
- * `/backtesting` sitemap 엔트리의 lastmod — 정적 데이터셋의 마지막 진입일.
+ * `/backtesting` sitemap 엔트리의 lastmod — 정적 데이터셋이 다루는 기간의 마지막 날.
  *
  * 이 페이지의 본문은 `src/entities/backtest-case/data/data.json` 고정 산출물이라
  * 배포로 바뀌지 않는다. 릴리스 시각(`SITE_BUILD_DATE`)을 lastmod로 쓰면 배포마다
@@ -13,9 +12,9 @@ import type { BacktestCase } from '@y0ngha/siglens-core';
  * `Invalid Date`를 내보내는 것보다 덜 정확한 값이 낫다.
  */
 export function backtestingDataDate(
-    cases: readonly BacktestCase[]
+    data: Pick<BacktestRunData, 'run'>
 ): Date | undefined {
-    const { periodEnd } = deriveBacktestStats(cases);
+    const { periodEnd } = data.run;
     if (periodEnd === '') return undefined;
     const parsed = new Date(`${periodEnd}T00:00:00.000Z`);
     return Number.isNaN(parsed.getTime()) ? undefined : parsed;

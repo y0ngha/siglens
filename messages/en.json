@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI technical-analysis backtesting dataset",
-                "variableMeasured": "Hit rate of technical-analysis signals and back-tested AI scenario results"
+                "variableMeasured": "Win rate, return and maximum drawdown of trades that follow a daily AI analysis, compared with buy and hold"
             }
         },
         "economy": {
@@ -1795,8 +1795,8 @@
             "accountDeleteFullTitle": "{v0}: delete account",
             "accountDeleteTitle": "Delete account",
             "backtesting": {
-                "description": "A historical backtest across 10 stocks including AAPL, NVDA, and TSLA. RSI, MACD, and Supertrend technical signals and AI scenarios are checked against past data. Results are based on historical data and do not guarantee future performance.",
-                "title": "AAPL, NVDA, TSLA Backtest: Signal Review"
+                "description": "A two-year backtest of daily AI analysis on 10 US large caps including NVDA, AAPL and TSLA. Returns and drawdowns from following the entry zones, targets and stop losses are compared with buy and hold. Past results do not guarantee future performance.",
+                "title": "AI Stock Analysis Backtest: 10 US Large Caps, 2 Years"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
             "developers": {
@@ -2548,8 +2548,8 @@
                 "benchmarkLink": "See the benchmark results"
             },
             "backtesting": {
-                "body": "The Backtesting page shows the results of applying SIGLENS' AI analysis to data as of past dates and subsequently verifying what actually happened. The targets are a selection of pre-determined large-cap stocks. If the Stop Loss or Take Profit price is reached first within a maximum of 10 trading days after entry, the trade is considered closed there; otherwise, it's closed at the closing price on the 10th trading day.",
-                "caveat": "Fees and slippage were not included, and there may be survivorship bias due to ex-post stock selection. The number of cases and period are stated with the results, and past results do not guarantee future performance.",
+                "body": "The backtest page runs the SIGLENS AI analysis on every trading day of the past two years and computes what would have happened if you had followed the entry zones, targets and stop losses it showed. Each position is split in half and closed at the first and final targets, or at the stop loss.",
+                "caveat": "Commissions and slippage are not included, and because the tickers were picked later, survivorship bias may remain. The trade count, period and a buy-and-hold comparison are shown with the results, and past results do not guarantee future performance.",
                 "link": "View Backtesting Results",
                 "title": "Backtesting"
             },
@@ -3500,7 +3500,8 @@
                 "f0cdeb": "AI Analysis",
                 "fb0cf0": "Key Prices",
                 "bcc718": "View on Chart",
-                "f66b28": "View {v0} on chart"
+                "f66b28": "View {v0} on chart",
+                "currentTrend": "Current trend: {v0}"
             },
             "AnalysisProgress": {
                 "784c44": "AI Analysis in Progress"
@@ -3643,53 +3644,121 @@
             }
         },
         "backtesting": {
-            "BacktestCaseCard": {
-                "315575": "Stop Loss:",
-                "456225": "Target Price:",
-                "06cf3e": "<n>{v0}</n> {v0, plural, one {day} other {days}}",
-                "0f8bf6": "AI Entry Recommendation",
-                "31e4d3": "Buy",
-                "540e42": "AI Hold Recommendation",
-                "58b71d": "AI Prediction Level",
-                "6c8ca5": "AI Avoid Recommendation",
-                "75a556": "Reason:",
-                "b19f09": "Loss",
-                "bd6b14": "Profit",
-                "efb7c2": "Take Profit:",
-                "fa9de3": "✓ Reached"
-            },
-            "BacktestCaseList": {
-                "caseCount": "{v0} cases",
-                "emptyDataset": "No cases to display.",
-                "emptyFiltered": "No cases for the selected stock."
-            },
-            "BacktestHero": {
-                "116858": "Backtesting results verified with actual market data.",
-                "394fff": "Indicator Signal Hit Rate (Historical)",
-                "5a254c": "AI Scenario Hit Rate (Historical)",
-                "caee31": "Shows what happened when the AI analysis SIGLENS provides today is applied, as-is, to past data. Based on historical data; it does not guarantee future results.",
-                "d8b543": "Backtest: Verified Against Historical Data",
-                "f92294": "Total Cases",
-                "aiTrendHitRateLabel": "AI Trend Direction Hit Rate (Historical)",
-                "meanReturnLabel": "Average Return (All Cases)",
-                "medianHoldingDaysLabel": "Median Holding Days"
-            },
             "BacktestTabs": {
                 "7425e7": "Ticker Filter"
             },
             "hero": {
-                "caseCount": "{v0}",
-                "tickerCount": "{v0} tickers",
-                "aiSubLabel": "Decisive cases {v0}/{v1}, excludes {v2} neutral",
-                "medianHoldingDays": "{v0} days"
+                "title": "If you had followed the AI analysis for {v0, plural, one {# year} other {# years}}",
+                "lead": "We ran the SIGLENS AI technical analysis every trading day and followed the entry zones, targets and stop losses it showed. The universe is {v0} US large caps and index ETFs.",
+                "disclaimer": "These are results on past data and do not guarantee future performance.",
+                "portfolioLabel": "Portfolio return ({v0} tickers, equal weight)",
+                "maxDrawdownLabel": "Max drawdown (closed trades)",
+                "winRateLabel": "Win rate",
+                "winRateSub": "{v0} of {v1}",
+                "tradesLabel": "Trades",
+                "tradesValue": "{v0}",
+                "meanReturnLabel": "Mean return per trade",
+                "meanHoldingLabel": "Mean holding period",
+                "tradingDays": "{v0} trading days",
+                "vsBenchmarks": "{v0}-ticker buy and hold {v1} · SPY {v2}",
+                "drawdownVsSpy": "SPY buy and hold {v0} (daily closes)"
             },
-            "methodology": {
-                "heading": "Backtest Methodology",
-                "winDefinition": "Win definition: a case counts as a win when its return at exit is 0% or higher.",
-                "exitRule": "Exit rule: positions are held for up to 10 trading days. If the stop loss or take profit level is hit first, the position exits then (stop loss takes priority on same-day ties). Otherwise, it exits at the close of day 10.",
-                "noCosts": "Transaction costs and slippage are not modeled.",
-                "universe": "Limited to a fixed set of 10 large-cap tickers (AAPL, NVDA, TSLA, and others) chosen after the fact, so results may reflect selection bias.",
-                "dataSource": "Price data source: Financial Modeling Prep (FMP)."
+            "comparison": {
+                "heading": "Compared with buy and hold",
+                "note": "Each ticker is compared with holding it for the whole period. The AI strategy drawdown counts closed trades only, so a real account would show a deeper drawdown.",
+                "colTicker": "Ticker",
+                "colTrades": "Trades",
+                "colWinRate": "Win rate",
+                "colStrategy": "AI strategy",
+                "colStrategyMdd": "Max drawdown",
+                "colExposure": "Time in market",
+                "colBuyHold": "Buy and hold",
+                "colBuyHoldMdd": "Buy and hold max drawdown",
+                "rowPortfolio": "{v0}-ticker portfolio",
+                "notApplicable": "Not applicable",
+                "tableRegion": "Buy-and-hold comparison table"
+            },
+            "strategy": {
+                "heading": "Strategy",
+                "step1Title": "Daily analysis",
+                "step1": "Once after every close, we ran the same technical analysis the site serves to members. The model is {v0}, and it only sees bars up to that day.",
+                "step2Title": "Prior analyses",
+                "step2": "Earlier analyses were fed back as reference under the same rules the site uses: up to {v1} from the last {v0} trading days.",
+                "step3Title": "Entry",
+                "step3": "When the AI said enter, we bought at the close. When it said wait, we placed a limit order for the next day inside the entry zone it gave; an unfilled order was replaced by that day's analysis. When it said avoid, we did nothing.",
+                "step4Title": "Split exit",
+                "step4": "Each position was split in half. One half takes profit at the first target or exits at the stop loss; the other half rides to the final target. After the first take profit the remaining stop loss moves to breakeven; after a stop loss it moves down to the next support the AI listed.",
+                "step5Title": "Reviews while holding",
+                "step5": "While holding, we re-ran the analysis daily with the position status included and updated the plan with the new targets and stop losses.",
+                "step6Title": "Sell-off rule",
+                "step6": "On a sharp short-term sell-off inside a long-term uptrend, the analysis returns enter under a fixed rule. These trades are not split; they close on the first close above the 5-day average or on trading day {v0}.",
+                "step7Title": "Fill assumptions and limits",
+                "step7": "Fills are judged from daily highs and lows, and a bar that touches both the stop loss and the target counts as a stop loss. Commissions, slippage, news and earnings dates are not included. The tickers are today's large caps, so survivorship bias remains. Maximum holding is {v0} trading days.",
+                "exitPathsHeading": "Results by exit path",
+                "colPath": "Path",
+                "colTrades": "Trades",
+                "colMean": "Mean return",
+                "dataHeading": "Data",
+                "dataResults": "Scoring records (CSV) and detailed results",
+                "dataRelease": "Full per-call prompts and AI responses"
+            },
+            "exitPath": {
+                "tp1_tpFinal": "First take profit + final take profit",
+                "tp1_trailing": "First take profit + raised stop loss",
+                "tp1_breakeven": "First take profit + breakeven",
+                "sl1_tpFinal": "First stop loss + final take profit",
+                "sl1_sl2": "First stop loss + second stop loss",
+                "selloff_recovered": "Sell-off rule: recovery exit",
+                "selloff_stopped": "Sell-off rule: stop loss",
+                "other": "Other (time limit or still open)"
+            },
+            "tradeList": {
+                "count": "{v0} trades",
+                "emptyDataset": "No trades to show.",
+                "emptyFiltered": "No trades for the selected ticker."
+            },
+            "tradeRow": {
+                "entryType": {
+                    "enter_close": "Close entry",
+                    "enter_selloff": "Sell-off rule",
+                    "wait_limit": "Limit entry"
+                },
+                "legReason": {
+                    "tp1": "take profit at the first target",
+                    "tp_final": "take profit at the final target",
+                    "sl1": "stop loss",
+                    "sl2": "second stop loss",
+                    "breakeven": "breakeven stop",
+                    "selloff_ma5": "close above the 5-day average",
+                    "selloff_time": "time limit",
+                    "selloff_stop": "stop loss",
+                    "max_hold": "maximum holding period",
+                    "open": "still open"
+                },
+                "period": "{v0} → {v1} ({v2} trading days)",
+                "decision": "Decided after the {v0} close, bought {v1} at ${v2}",
+                "leg": "Half {v0}: closed {v1} at ${v2} ({v3}) {v4}",
+                "plan": "Plan at entry: first target ${v0}, final target ${v1}, stop loss ${v2}, second stop loss ${v3}",
+                "reviews": "{v0} reviews while holding",
+                "summaryHeading": "AI summary at the entry decision",
+                "files": "Prompt {v0} · Response {v1}",
+                "symbolLink": "View {v0} analysis",
+                "loading": "Loading the trade details…",
+                "loadError": "Could not load the trade details. They are also in trades.csv in the results folder."
+            },
+            "trendRecognition": {
+                "heading": "Trend recognition",
+                "note": "We counted whether each trend call (bullish or bearish) pointed the same way as the actual move over the {v0} trading days before it. This measures whether the analysis read the move so far, not whether it predicted what came next.",
+                "matchLabel": "trend recognition match rate ({v0} bullish or bearish calls)",
+                "colTrend": "Trend call",
+                "colCalls": "Calls",
+                "colPriorMean": "Previous {v0} days, mean",
+                "colPriorUp": "Previous {v0} days, share up",
+                "row": {
+                    "bullish": "Bullish",
+                    "bearish": "Bearish",
+                    "neutral": "Neutral"
+                }
             }
         },
         "benchmark-summary": {

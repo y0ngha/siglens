@@ -122,6 +122,8 @@ export const QUERY_KEYS = {
     disabledServerKeyModels: () =>
         ['llm', 'disabled-server-key-models'] as const,
     portfolioHoldings: () => ['portfolio-holdings'] as const,
+    /** `/backtesting` 매매 상세 — 공개 정적 파일(`/backtesting/data.json`)이라 실행 id 하나로 충분하다. */
+    backtestRun: (runId: string) => ['backtest-run', runId] as const,
     watchlist: () => ['watchlist'] as const,
     emailReportSettings: () => ['email-report-settings'] as const,
     // exact same key they always have — only a member's explicit `true` value

@@ -12,7 +12,17 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { BACKTEST_STATS } from './backtestingData';
+import { BACKTEST_RUN, BACKTEST_STATS } from './backtestingData';
+
+/**
+ * 공개 채점 기록(CSV)의 원본 URL. siglens 레포 master의 `backtest-results/<runId>/`를 가리킨다 —
+ * 실행 결과 폴더는 실행마다 새로 만들고 덮어쓰지 않으므로 master 경로가 그 실행의 기록이다.
+ */
+const RESULTS_RAW_BASE =
+    'https://raw.githubusercontent.com/y0ngha/siglens/master/backtest-results';
+function rawResultsFileUrl(file: string): string {
+    return `${RESULTS_RAW_BASE}/${BACKTEST_RUN.run.runId}/${file}`;
+}
 
 /** `/backtesting` 페이지가 `<JsonLd>`로 각각 내보내는 세 노드. */
 export interface BacktestingJsonLd {
@@ -65,7 +75,7 @@ export function buildBacktestingJsonLd(
             // 로케일별 URL — 같은 Dataset을 네 URL이 각자 자기 주소로 선언해야
             // 크롤러가 언어 클러스터를 하나로 접지 않는다.
             url: localizedAbsoluteUrl(BACKTESTING_URL, locale),
-            identifier: 'siglens-backtesting-2024-2026',
+            identifier: `siglens-backtesting-${BACKTEST_RUN.run.runId}`,
             creator: {
                 '@type': 'Organization',
                 name: SITE_NAME,
@@ -77,11 +87,7 @@ export function buildBacktestingJsonLd(
             temporalCoverage: `${BACKTEST_STATS.periodStart}/${BACKTEST_STATS.periodEnd}`,
             /*
              * Dataset은 신선도를 `dateModified`로 읽는다. 정적 데이터셋이라 값은
-             * "언제 배포했는지"가 아니라 **데이터의 마지막 진입일**이다.
-             *
-             * `periodEnd` 문자열을 그대로 쓴다 — `Date`로 바꾸면 연-월(`2026-03`)이
-             * 3월 1일로 파싱돼 우리가 모르는 날짜를 주장하게 된다. schema.org의
-             * Date는 `YYYY-MM`도 허용하므로 통계가 말하는 정밀도 그대로 내보낸다.
+             * "언제 배포했는지"가 아니라 **데이터 기간의 마지막 날**(`run.periodEnd`)이다.
              * 값이 없으면(`''`) 필드를 싣지 않는다.
              */
             ...(BACKTEST_STATS.periodEnd !== '' && {
@@ -92,9 +98,9 @@ export function buildBacktestingJsonLd(
             keywords: [
                 'AI stock analysis backtesting',
                 'US stock technical analysis backtest',
-                'RSI MACD signal backtest results',
+                'daily AI analysis backtest',
                 'Magnificent 7 backtest',
-                'AAPL NVDA TSLA backtest',
+                'NVDA AAPL TSLA backtest',
                 '주식 기술적 분석 백테스팅',
                 'AI 주식 분석 백테스트',
             ],
@@ -103,6 +109,16 @@ export function buildBacktestingJsonLd(
                     '@type': 'DataDownload',
                     encodingFormat: 'application/json',
                     contentUrl: `${SITE_URL}/backtesting/data.json`,
+                },
+                {
+                    '@type': 'DataDownload',
+                    encodingFormat: 'text/csv',
+                    contentUrl: rawResultsFileUrl('trades.csv'),
+                },
+                {
+                    '@type': 'DataDownload',
+                    encodingFormat: 'text/csv',
+                    contentUrl: rawResultsFileUrl('decisions.csv'),
                 },
             ],
         },

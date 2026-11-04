@@ -1,159 +1,181 @@
-import type { BacktestCase } from '@y0ngha/siglens-core';
+import type {
+    BacktestLegExitReason,
+    BacktestRunData,
+    BacktestTrade,
+} from '@y0ngha/siglens-core';
+import summary from '../../../../backtest-results/2026-11-daily-ai/summary.json';
 import backtestData from '@/entities/backtest-case/data/data.json';
-import { deriveBacktestStats } from '../lib/deriveBacktestStats';
+import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
+import { validateBacktestRunData } from '@/entities/backtest-case/lib/validate';
 
-function makeCase(overrides: Partial<BacktestCase>): BacktestCase {
+function trade(
+    ticker: string,
+    exitDate: string,
+    returnPct: number,
+    holdingDays: number,
+    reasons: readonly [BacktestLegExitReason, BacktestLegExitReason] = [
+        'tp1',
+        'tp_final',
+    ]
+): BacktestTrade {
     return {
-        ticker: 'TEST',
-        entryDate: '2025-01-01',
+        ticker,
+        entryType: 'wait_limit',
+        decisionDate: '2025-01-01',
+        entryDate: '2025-01-02',
         entryPrice: 100,
-        exitDate: '2025-01-05',
-        exitPrice: 101,
-        holdingDays: 4,
-        returnPct: 1,
-        signalType: 'buy',
-        result: 'win',
-        exitReason: 'time',
-        aiResult: 'neutral',
-        aiTrendHit: false,
-        aiAnalysis: {
-            summary: '',
-            tags: [],
-            entryRecommendation: 'wait',
-            bullishTargets: [],
-        },
-        ...overrides,
+        exitDate,
+        holdingDays,
+        returnPct,
+        legs: [
+            {
+                name: 'A',
+                size: 0.5,
+                exitDate,
+                exitPrice: 100,
+                reason: reasons[0],
+                returnPct,
+            },
+            {
+                name: 'B',
+                size: 0.5,
+                exitDate,
+                exitPrice: 100,
+                reason: reasons[1],
+                returnPct,
+            },
+        ],
+        initialPlan: { tp1: 101, tpFinal: 102, sl1: 99, sl2: 98, source: 'ai' },
+        holdingReviews: 0,
+        summary: '',
     };
 }
 
-// Synthetic fixture: covers win/loss/neutral, an odd holdingDays sample for
-// the median, and a distinct entryDate min/max for the period range.
-const CASES: BacktestCase[] = [
-    makeCase({
-        entryDate: '2025-02-10',
-        result: 'win',
-        aiResult: 'win',
-        aiTrendHit: true,
-        returnPct: 4,
-        holdingDays: 3,
-    }),
-    makeCase({
-        entryDate: '2025-01-01',
-        result: 'loss',
-        aiResult: 'loss',
-        aiTrendHit: false,
-        returnPct: -2,
-        holdingDays: 1,
-    }),
-    makeCase({
-        entryDate: '2025-03-20',
-        result: 'win',
-        aiResult: 'neutral',
-        aiTrendHit: true,
-        returnPct: 1,
-        holdingDays: 5,
-    }),
-];
-
-describe('deriveBacktestStats', () => {
-    it('derives indicator win rate over all cases', () => {
-        const stats = deriveBacktestStats(CASES);
-
-        expect(stats.totalCases).toBe(3);
-        expect(stats.indicatorWins).toBe(2);
-        expect(stats.indicatorWinRate).toBe(66.7);
-    });
-
-    it('derives the AI decisive win rate together with the counts the label discloses', () => {
-        const stats = deriveBacktestStats(CASES);
-
-        // 1 win, 1 loss decisive (the neutral case is excluded from the rate).
-        expect(stats.aiDecisiveCount).toBe(2);
-        expect(stats.aiWins).toBe(1);
-        expect(stats.aiWinRateDecisive).toBe(50);
-        expect(stats.aiNeutralCount).toBe(1);
-    });
-
-    it('derives the AI trend hit rate over all cases, decisive or not', () => {
-        const stats = deriveBacktestStats(CASES);
-
-        expect(stats.aiTrendHitRate).toBe(66.7);
-    });
-
-    it('derives the period from entryDate min/max', () => {
-        const stats = deriveBacktestStats(CASES);
-
-        expect(stats.periodStart).toBe('2025-01-01');
-        expect(stats.periodEnd).toBe('2025-03-20');
-    });
-
-    it('derives the mean return across all cases', () => {
-        const stats = deriveBacktestStats(CASES);
-
-        expect(stats.meanReturnPct).toBe(1);
-    });
-
-    it('derives the median holding days for an odd case count', () => {
-        const stats = deriveBacktestStats(CASES);
-
-        // sorted holdingDays: [1, 3, 5] -> middle value.
-        expect(stats.medianHoldingDays).toBe(3);
-    });
-
-    it('derives a fractional median holding days for an even case count', () => {
-        const evenCases = [
-            ...CASES,
-            makeCase({ entryDate: '2025-04-01', holdingDays: 9 }),
-        ];
-        const stats = deriveBacktestStats(evenCases);
-
-        // sorted holdingDays: [1, 3, 5, 9] -> (3 + 5) / 2.
-        expect(stats.medianHoldingDays).toBe(4);
-    });
-
-    it('returns zeroed stats for an empty case list without dividing by zero', () => {
-        const stats = deriveBacktestStats([]);
-
-        expect(stats).toEqual({
-            totalCases: 0,
-            indicatorWins: 0,
-            indicatorWinRate: 0,
-            aiDecisiveCount: 0,
-            aiWins: 0,
-            aiWinRateDecisive: 0,
-            aiNeutralCount: 0,
-            aiTrendHitRate: 0,
-            meanReturnPct: 0,
-            medianHoldingDays: 0,
-            periodStart: '',
-            periodEnd: '',
-        });
-    });
+const baseline = (ticker: string, buyHoldPct: number) => ({
+    ticker,
+    buyHoldPct,
+    buyHoldMaxDrawdownPct: -10,
+    tradingDays: 10,
 });
 
-describe('deriveBacktestStats (real data.json smoke test)', () => {
-    // No hardcoded numbers here — data.json is regenerable and its values
-    // drift. This only checks structural invariants the UI depends on.
-    it('produces internally consistent stats for the real dataset', () => {
-        const realCases = backtestData.cases as unknown as BacktestCase[];
-        const stats = deriveBacktestStats(realCases);
+function run(trades: BacktestTrade[]): BacktestRunData {
+    return {
+        run: {
+            runId: 't',
+            periodStart: '2025-01-01',
+            periodEnd: '2025-01-31',
+            tickers: ['AAA', 'BBB'],
+            model: 'm',
+            coreVersion: '0',
+            promptVersion: 'p',
+            siglensVersion: '0',
+            generatedAt: '',
+            resultsUrl: '',
+            releaseUrl: '',
+        },
+        baselines: [baseline('AAA', 5), baseline('BBB', -5)],
+        spy: baseline('SPY', 3),
+        trendRecognition: {
+            windowDays: 10,
+            directionalCalls: 0,
+            matchRatePct: 0,
+            byTrend: {
+                bullish: { calls: 0, priorMeanPct: 0, priorUpRatePct: 0 },
+                bearish: { calls: 0, priorMeanPct: 0, priorUpRatePct: 0 },
+                neutral: { calls: 0, priorMeanPct: 0, priorUpRatePct: 0 },
+            },
+        },
+        trades,
+    };
+}
 
-        expect(stats.totalCases).toBe(realCases.length);
-        expect(stats.aiDecisiveCount + stats.aiNeutralCount).toBe(
-            stats.totalCases
+describe('deriveBacktestStats', () => {
+    // AAA: +10% (1/10) → −20% (1/20) ⇒ 1.1 × 0.8 = 0.88. BBB: +5% (1/15).
+    const stats = deriveBacktestStats(
+        run([
+            trade('AAA', '2025-01-10', 10, 2),
+            trade('BBB', '2025-01-15', 5, 4, ['sl1', 'sl2']),
+            trade('AAA', '2025-01-20', -20, 3, ['sl1', 'sl2']),
+        ])
+    );
+
+    it('counts wins over closed trades', () => {
+        expect(stats.totalTrades).toBe(3);
+        expect(stats.closedTrades).toBe(3);
+        expect(stats.winningTrades).toBe(2);
+        expect(stats.winRate).toBe(66.67);
+        expect(stats.meanReturnPct).toBe(-1.67);
+        expect(stats.medianReturnPct).toBe(5);
+        expect(stats.meanHoldingDays).toBe(3);
+    });
+
+    it('compounds each ticker on its exit dates', () => {
+        const aaa = stats.perTicker.find(p => p.ticker === 'AAA');
+        expect(aaa?.strategyPct).toBe(-12);
+        expect(aaa?.strategyMaxDrawdownPct).toBe(-20);
+        expect(aaa?.exposurePct).toBe(50);
+        expect(aaa?.buyHoldPct).toBe(5);
+    });
+
+    it('averages equal-weight sleeves for the portfolio', () => {
+        // 날짜별 평균: 1/10 (1.1+1)/2=1.05, 1/15 (1.1+1.05)/2=1.075, 1/20 (0.88+1.05)/2=0.965
+        expect(stats.portfolioReturnPct).toBe(-3.5);
+        expect(stats.portfolioMaxDrawdownPct).toBe(-10.23);
+        expect(stats.spy.buyHoldPct).toBe(3);
+    });
+
+    it('averages ticker buy-and-hold for the same-universe benchmark', () => {
+        expect(stats.buyHoldMeanPct).toBe(0);
+    });
+
+    it('leaves still-open trades out of the equity curves and the win rate', () => {
+        const withOpen = deriveBacktestStats(
+            run([
+                trade('AAA', '2025-01-10', 10, 2),
+                trade('AAA', '2025-01-31', 50, 5, ['open', 'open']),
+            ])
         );
-        expect(stats.indicatorWins).toBeLessThanOrEqual(stats.totalCases);
-        expect(stats.aiWins).toBeLessThanOrEqual(stats.aiDecisiveCount);
+        expect(withOpen.totalTrades).toBe(2);
+        expect(withOpen.closedTrades).toBe(1);
+        expect(
+            withOpen.perTicker.find(p => p.ticker === 'AAA')?.strategyPct
+        ).toBe(10);
+    });
 
-        for (const rate of [
-            stats.indicatorWinRate,
-            stats.aiWinRateDecisive,
-            stats.aiTrendHitRate,
-        ]) {
-            expect(rate).toBeGreaterThanOrEqual(0);
-            expect(rate).toBeLessThanOrEqual(100);
+    it('groups exit paths in display order', () => {
+        expect(stats.exitPaths).toEqual([
+            { path: 'tp1_tpFinal', trades: 1, meanReturnPct: 10 },
+            { path: 'sl1_sl2', trades: 2, meanReturnPct: -7.5 },
+        ]);
+    });
+
+    it('reproduces the published summary.json from the shipped data.json', () => {
+        const shipped = deriveBacktestStats(
+            validateBacktestRunData(backtestData)
+        );
+        expect(shipped.totalTrades).toBe(summary.overall.trades);
+        expect(shipped.winRate).toBe(summary.overall.winRate);
+        expect(shipped.meanReturnPct).toBe(summary.overall.meanRet);
+        expect(shipped.medianReturnPct).toBe(summary.overall.medianRet);
+        expect(shipped.meanHoldingDays).toBe(summary.overall.meanHoldDays);
+        expect(shipped.portfolioReturnPct).toBe(summary.portfolio.returnPct);
+        expect(shipped.portfolioMaxDrawdownPct).toBe(
+            summary.portfolio.maxDrawdownPct
+        );
+        expect(shipped.meanExposurePct).toBe(summary.portfolio.meanExposurePct);
+        expect(shipped.trendRecognition).toEqual(summary.trendRecognition);
+        for (const expected of summary.perTicker) {
+            const actual = shipped.perTicker.find(
+                p => p.ticker === expected.ticker
+            );
+            expect(actual).toMatchObject({
+                trades: expected.trades,
+                winRate: expected.winRate,
+                strategyPct: expected.strategyPct,
+                strategyMaxDrawdownPct: expected.strategyMaxDrawdownPct,
+                exposurePct: expected.exposurePct,
+                buyHoldPct: expected.buyHoldPct,
+            });
         }
-
-        expect(stats.periodStart <= stats.periodEnd).toBe(true);
     });
 });

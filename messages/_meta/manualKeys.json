@@ -156,7 +156,11 @@
         "widgets.options.tooltip",
         "widgets.overall.ctaSubtitle",
         "widgets.portfolio-position.positionNote",
-        "widgets.portfolio-position.statusSummary"
+        "widgets.portfolio-position.statusSummary",
+        "widgets.backtesting.exitPath",
+        "widgets.backtesting.tradeRow.entryType",
+        "widgets.backtesting.tradeRow.legReason",
+        "widgets.backtesting.trendRecognition.row"
     ],
     "chromeWide": [
         "widgets.layout.localeSwitcher",
@@ -173,6 +177,7 @@
         "widgets.investor-flows.label": ["[symbol]/flows"],
         "widgets.investor-flows.split": ["[symbol]/flows"],
         "widgets.investor-flows.squeeze.component": ["[symbol]/flows"],
-        "widgets.investor-flows.tooltip": ["[symbol]/flows"]
+        "widgets.investor-flows.tooltip": ["[symbol]/flows"],
+        "widgets.backtesting.tradeRow.legReason": ["backtesting"]
     }
 }

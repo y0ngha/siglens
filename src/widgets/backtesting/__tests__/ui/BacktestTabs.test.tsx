@@ -59,7 +59,7 @@ function filterState(overrides: Record<string, unknown> = {}) {
     };
 }
 
-/** 서버 렌더 `BacktestCaseList`와 같은 표기를 단 최소 목록. */
+/** 서버 렌더 `BacktestTradeList`와 같은 표기를 단 최소 목록. */
 function ServerList() {
     return (
         <div>

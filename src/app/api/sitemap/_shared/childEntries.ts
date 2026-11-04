@@ -10,7 +10,7 @@ import {
     loadPopularSitemapInputs,
     loadStaticSitemapInputs,
 } from '@/entities/sitemap-entry/server';
-import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
+import { validateBacktestRunData } from '@/entities/backtest-case/lib/validate';
 import backtestData from '@/entities/backtest-case/data/data.json';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
@@ -32,10 +32,10 @@ export async function loadStaticChildEntries(
     ]);
     const staticEntries = buildStaticEntries(now, {
         ...inputs,
-        // 화면이 쓰는 것과 같은 파생값 — `/backtesting` 본문은 이 정적 데이터가
-        // 전부라 마지막 케이스 진입일이 곧 콘텐츠 갱신 시각이다.
+        // 화면이 쓰는 것과 같은 데이터 — `/backtesting` 본문은 이 정적 데이터가
+        // 전부라 데이터 기간의 끝이 곧 콘텐츠 기준일이다.
         backtestingDataDate: backtestingDataDate(
-            validateBacktestData(backtestData).cases
+            validateBacktestRunData(backtestData)
         ),
     });
     // 차트 가이드는 항목이 DB에서 와서 `buildStaticEntries`(순수·상수)에 못 담는다.

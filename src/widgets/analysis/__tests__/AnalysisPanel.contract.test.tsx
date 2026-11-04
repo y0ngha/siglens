@@ -326,7 +326,7 @@ describe('AnalysisPanel — core output contract', () => {
         // 페이지 전체 getByText는 두 요소를 모두 매치해 모호해진다.
         const header = screen.getByText('AI 분석').closest('div');
         if (header === null) throw new Error('header container not found');
-        expect(within(header).getByText('보합')).toBeInTheDocument();
+        expect(within(header).getByText('현재 추세 보합')).toBeInTheDocument();
         expect(
             screen.getByText(/중기 상승 추세가 유지되는/)
         ).toBeInTheDocument();

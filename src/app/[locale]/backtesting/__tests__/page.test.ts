@@ -24,50 +24,39 @@ vi.mock('@/shared/lib/legal', () => ({
 vi.mock('@/widgets/backtesting/BacktestHero', () => ({
     BacktestHero: () => null,
 }));
+vi.mock('@/widgets/backtesting/BacktestComparison', () => ({
+    BacktestComparison: () => null,
+}));
+vi.mock('@/widgets/backtesting/BacktestTrendRecognition', () => ({
+    BacktestTrendRecognition: () => null,
+}));
+vi.mock('@/widgets/backtesting/BacktestStrategy', () => ({
+    BacktestStrategy: () => null,
+}));
 vi.mock('@/widgets/backtesting/BacktestTabs', () => ({
     BacktestTabs: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/entities/backtest-case/data/data.json', () => ({
     default: {
-        meta: { totalCases: 10, totalTickers: 5 },
-        // `validateBacktestData`가 항등함수로 mock되므로 이 픽스처가 곧 런타임 shape다.
-        cases: [
-            {
-                ticker: 'AAPL',
-                date: '2025-01-01',
-                signal: 'buy',
-                aiAnalysis: {
-                    bullishTargets: [
-                        { price: 125, basis: '직전 저항선' },
-                        { price: 140, basis: '전고점' },
-                    ],
-                },
-            },
-            {
-                ticker: 'TSLA',
-                date: '2025-01-01',
-                signal: 'buy',
-                aiAnalysis: { bullishTargets: [] },
-            },
-        ],
+        // `validateBacktestRunData`가 항등함수로 mock되므로 이 픽스처가 곧 런타임 shape다.
+        run: {
+            runId: '2026-11-daily-ai',
+            tickers: ['AAPL', 'TSLA'],
+            resultsUrl:
+                'https://github.com/y0ngha/siglens/tree/master/backtest-results/2026-11-daily-ai',
+        },
+        baselines: [],
+        trades: [],
     },
 }));
 vi.mock('@/entities/backtest-case/lib/validate', () => ({
-    validateBacktestData: vi.fn().mockImplementation((data: unknown) => data),
+    validateBacktestRunData: vi
+        .fn()
+        .mockImplementation((data: unknown) => data),
 }));
 vi.mock('@/entities/backtest-case/lib/deriveBacktestStats', () => ({
     deriveBacktestStats: vi.fn().mockReturnValue({
-        totalCases: 0,
-        indicatorWins: 0,
-        indicatorWinRate: 0,
-        aiDecisiveCount: 0,
-        aiWins: 0,
-        aiWinRateDecisive: 0,
-        aiNeutralCount: 0,
-        aiTrendHitRate: 0,
-        meanReturnPct: 0,
-        medianHoldingDays: 0,
         periodStart: '',
         periodEnd: '',
     }),

@@ -9,19 +9,15 @@ interface StatGridProps {
     stats: BacktestStats;
 }
 
-/** 평균 수익률 표시 소수 자릿수. 1자리면 0.36이 0.4로 뭉개진다. */
 const MEAN_RETURN_DIGITS = 2;
 
 /**
- * 여섯 지표 그리드.
- *
- * wrap flex가 아니라 **그리드**다. flex는 카드를 내용 폭대로 흘려보내 열이 줄마다 어긋난다.
- * 그리드는 열 폭과 각 셀의 시작선을 고정해 여섯 지표가 표처럼 읽힌다. 구분선(`w-px`)은
- * 두지 않는다 — 대비가 3:1에 한참 못 미쳐 사실상 보이지 않는 장식이다.
+ * 히어로 통계 6개. 포트폴리오 수익률에는 같은 종목 보유와 SPY 보유를 함께 붙인다 — 아래 비교 표와
+ * 같은 기준(같은 종목 균등 보유)을 먼저 보여 주고 시장(SPY)을 덧붙인다. 최대 낙폭은 청산 기준
+ * 곡선이라 일별 종가로 잰 SPY 낙폭과 기준이 다르다는 것을 라벨과 서브라벨에 적는다.
  */
 export function StatGrid({ stats }: StatGridProps) {
-    const t = useTranslations('widgets.backtesting');
-    const tHero = useTranslations('widgets.backtesting.hero');
+    const t = useTranslations('widgets.backtesting.hero');
 
     return (
         <div
@@ -31,44 +27,50 @@ export function StatGrid({ stats }: StatGridProps) {
             )}
         >
             <StatCard
-                value={`${stats.indicatorWinRate}%`}
-                label={t('BacktestHero.394fff')}
-                valueClassName="text-ui-success-text"
-                subLabel={`${stats.indicatorWins}/${stats.totalCases}`}
-            />
-            <StatCard
-                value={`${stats.aiWinRateDecisive}%`}
-                label={t('BacktestHero.5a254c')}
-                valueClassName="text-primary-400"
-                subLabel={tHero('aiSubLabel', {
-                    v0: stats.aiWins,
-                    v1: stats.aiDecisiveCount,
-                    v2: stats.aiNeutralCount,
+                value={formatSignedPercent(stats.portfolioReturnPct)}
+                label={t('portfolioLabel', { v0: stats.perTicker.length })}
+                valueClassName={signColorClass(stats.portfolioReturnPct)}
+                subLabel={t('vsBenchmarks', {
+                    v0: stats.perTicker.length,
+                    v1: formatSignedPercent(stats.buyHoldMeanPct),
+                    v2: formatSignedPercent(stats.spy.buyHoldPct),
                 })}
             />
             <StatCard
-                value={`${stats.aiTrendHitRate}%`}
-                label={t('BacktestHero.aiTrendHitRateLabel')}
-                valueClassName="text-secondary-300"
+                value={`${stats.portfolioMaxDrawdownPct.toFixed(1)}%`}
+                label={t('maxDrawdownLabel')}
+                valueClassName="text-ui-warning-text"
+                subLabel={t('drawdownVsSpy', {
+                    v0: `${stats.spy.buyHoldMaxDrawdownPct.toFixed(1)}%`,
+                })}
+            />
+            <StatCard
+                value={`${stats.winRate.toFixed(1)}%`}
+                label={t('winRateLabel')}
+                valueClassName="text-primary-400"
+                subLabel={t('winRateSub', {
+                    v0: stats.winningTrades,
+                    v1: stats.closedTrades,
+                })}
+            />
+            <StatCard
+                value={t('tradesValue', { v0: stats.totalTrades })}
+                label={t('tradesLabel')}
+                valueClassName="text-secondary-200"
             />
             <StatCard
                 value={formatSignedPercent(
                     stats.meanReturnPct,
                     MEAN_RETURN_DIGITS
                 )}
-                label={t('BacktestHero.meanReturnLabel')}
+                label={t('meanReturnLabel')}
                 valueClassName={signColorClass(stats.meanReturnPct)}
             />
             <StatCard
-                value={tHero('caseCount', { v0: stats.totalCases })}
-                label={t('BacktestHero.f92294')}
-                valueClassName="text-ui-warning-text"
-            />
-            <StatCard
-                value={tHero('medianHoldingDays', {
-                    v0: stats.medianHoldingDays,
+                value={t('tradingDays', {
+                    v0: stats.meanHoldingDays.toFixed(1),
                 })}
-                label={t('BacktestHero.medianHoldingDaysLabel')}
+                label={t('meanHoldingLabel')}
                 valueClassName="text-secondary-300"
             />
         </div>
