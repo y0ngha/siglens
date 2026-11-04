@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI 技术分析回测数据集",
-                "variableMeasured": "按每日 AI 分析交易的胜率、收益率、最大回撤及与持有策略的对比"
+                "variableMeasured": "按每日 AI 分析交易的各标的胜率、收益率和最大回撤"
             }
         },
         "economy": {
@@ -662,7 +662,8 @@
                 "fearGreedSummaryNoScore": "恐惧与贪婪指数",
                 "greed": "贪婪",
                 "neutral": "中性",
-                "volatility": "波动率"
+                "volatility": "波动率",
+                "currentTrend": "{v0}（当前趋势）"
             },
             "seo": {
                 "title": "{v0} AI分析结果"
@@ -1795,7 +1796,7 @@
             "accountDeleteFullTitle": "{v0} 注销账户",
             "accountDeleteTitle": "注销账户",
             "backtesting": {
-                "description": "对 NVDA、AAPL、TSLA 等 10 只美国大盘股应用两年每日 AI 分析的回测。将按入场区间、目标价和止损价操作的收益率与回撤同持有策略进行对比。过往结果不代表未来表现。",
+                "description": "对 NVDA、AAPL、TSLA 等 10 只美国大盘股应用两年每日 AI 分析的回测。按入场区间、目标价和止损价操作的胜率、收益率和回撤按标的整理。过往结果不代表未来表现。",
                 "title": "AI 股票分析回测：美国大盘股 10 只，两年结果"
             },
             "backtestingOgAlt": "{v0} AI 回测结果",
@@ -2549,7 +2550,7 @@
             },
             "backtesting": {
                 "body": "回测页面在过去两年的每个交易日运行 SIGLENS 的 AI 分析，计算完全按照页面给出的入场区间、目标价和止损价操作会得到什么结果。仓位分成两半，分别在第一目标价和最终目标价平仓，触及止损价则平仓。",
-                "caveat": "未计入手续费和滑点，且标的是事后选定的，可能存在幸存者偏差。交易笔数、期间以及与持有策略的对比与结果一同列出，过往结果不代表未来表现。",
+                "caveat": "未计入手续费和滑点，且标的是事后选定的，可能存在幸存者偏差。交易笔数和期间与结果一同列出，过往结果不代表未来表现。",
                 "link": "查看回测结果",
                 "title": "回测"
             },
@@ -3659,24 +3660,19 @@
                 "tradesValue": "{v0} 笔",
                 "meanReturnLabel": "每笔平均收益率",
                 "meanHoldingLabel": "平均持有时间",
-                "tradingDays": "{v0} 个交易日",
-                "vsBenchmarks": "持有 {v0} 只 {v1} · SPY {v2}",
-                "drawdownVsSpy": "持有 SPY {v0}（按每日收盘）"
+                "tradingDays": "{v0} 个交易日"
             },
             "comparison": {
-                "heading": "与持有策略对比",
-                "note": "与同期从头到尾持有各标的的结果对比。AI 策略的最大回撤只按已平仓交易计算，可能小于真实账户的回撤。",
+                "heading": "各标的结果",
+                "note": "每个标的投入相同金额，并按 AI 分析进行交易的结果。最大回撤只按已平仓交易计算，可能小于真实账户的回撤。",
                 "colTicker": "标的",
                 "colTrades": "交易",
                 "colWinRate": "胜率",
                 "colStrategy": "AI 策略",
                 "colStrategyMdd": "最大回撤",
                 "colExposure": "持仓时间占比",
-                "colBuyHold": "持有",
-                "colBuyHoldMdd": "持有时最大回撤",
                 "rowPortfolio": "{v0} 只标的组合",
-                "notApplicable": "不适用",
-                "tableRegion": "持有策略对比表"
+                "tableRegion": "各标的结果表"
             },
             "strategy": {
                 "heading": "使用的策略",
@@ -3715,7 +3711,9 @@
             "tradeList": {
                 "count": "{v0} 笔",
                 "emptyDataset": "没有可显示的交易。",
-                "emptyFiltered": "所选标的没有交易。"
+                "emptyFiltered": "所选标的没有交易。",
+                "monthLoading": "正在加载本月的交易…",
+                "monthLoadError": "无法加载本月的交易。也可以在结果文件夹的 trades.csv 中查看。"
             },
             "tradeRow": {
                 "entryType": {

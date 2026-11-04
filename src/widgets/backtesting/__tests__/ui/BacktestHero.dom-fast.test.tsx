@@ -14,8 +14,6 @@ const STATS: BacktestStats = {
     portfolioReturnPct: 29.09,
     portfolioMaxDrawdownPct: -9.29,
     meanExposurePct: 62.5,
-    buyHoldMeanPct: 27.65,
-    spy: { buyHoldPct: 31.71, buyHoldMaxDrawdownPct: -19 },
     perTicker: Array.from({ length: 10 }, (_, i) => ({
         ticker: `T${i}`,
         trades: 69,
@@ -23,8 +21,6 @@ const STATS: BacktestStats = {
         strategyPct: 10,
         strategyMaxDrawdownPct: -10,
         exposurePct: 60,
-        buyHoldPct: 20,
-        buyHoldMaxDrawdownPct: -30,
     })),
     exitPaths: [],
     trendRecognition: {
@@ -58,17 +54,14 @@ describe('BacktestHero', () => {
         expect(screen.getByText(/지수 ETF 10종목이에요/)).toBeInTheDocument();
     });
 
-    it('shows portfolio return and drawdown next to the SPY baseline', () => {
+    it('shows portfolio return and drawdown without a buy-and-hold baseline', () => {
         render(<BacktestHero stats={STATS} />);
         expect(screen.getByText('+29.1%')).toBeInTheDocument();
-        expect(
-            screen.getByText('10종목 보유 +27.6% · SPY +31.7%')
-        ).toBeInTheDocument();
         expect(screen.getByText('-9.3%')).toBeInTheDocument();
-        expect(
-            screen.getByText('SPY 보유 -19.0% (일별 종가 기준)')
-        ).toBeInTheDocument();
         expect(screen.getByText('최대 낙폭 (청산 기준)')).toBeInTheDocument();
+        expect(
+            screen.queryByText(/보유 [+-]|SPY [+-]/)
+        ).not.toBeInTheDocument();
     });
 
     it('shows win rate with its exact counts', () => {

@@ -12,9 +12,8 @@ interface StatGridProps {
 const MEAN_RETURN_DIGITS = 2;
 
 /**
- * 히어로 통계 6개. 포트폴리오 수익률에는 같은 종목 보유와 SPY 보유를 함께 붙인다 — 아래 비교 표와
- * 같은 기준(같은 종목 균등 보유)을 먼저 보여 주고 시장(SPY)을 덧붙인다. 최대 낙폭은 청산 기준
- * 곡선이라 일별 종가로 잰 SPY 낙폭과 기준이 다르다는 것을 라벨과 서브라벨에 적는다.
+ * 히어로 통계 6개. AI 전략 자체의 결과만 싣는다 — 단순 보유와의 비교는 싣지 않는다. 최대 낙폭은
+ * 청산된 매매만으로 그린 곡선이라 그 기준을 라벨에 적는다.
  */
 export function StatGrid({ stats }: StatGridProps) {
     const t = useTranslations('widgets.backtesting.hero');
@@ -30,19 +29,11 @@ export function StatGrid({ stats }: StatGridProps) {
                 value={formatSignedPercent(stats.portfolioReturnPct)}
                 label={t('portfolioLabel', { v0: stats.perTicker.length })}
                 valueClassName={signColorClass(stats.portfolioReturnPct)}
-                subLabel={t('vsBenchmarks', {
-                    v0: stats.perTicker.length,
-                    v1: formatSignedPercent(stats.buyHoldMeanPct),
-                    v2: formatSignedPercent(stats.spy.buyHoldPct),
-                })}
             />
             <StatCard
                 value={`${stats.portfolioMaxDrawdownPct.toFixed(1)}%`}
                 label={t('maxDrawdownLabel')}
                 valueClassName="text-ui-warning-text"
-                subLabel={t('drawdownVsSpy', {
-                    v0: `${stats.spy.buyHoldMaxDrawdownPct.toFixed(1)}%`,
-                })}
             />
             <StatCard
                 value={`${stats.winRate.toFixed(1)}%`}

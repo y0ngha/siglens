@@ -44,8 +44,6 @@ export interface TickerStats {
     strategyMaxDrawdownPct: number;
     /** 보유일 합 ÷ 시뮬레이션 거래일. */
     exposurePct: number;
-    buyHoldPct: number;
-    buyHoldMaxDrawdownPct: number;
 }
 
 import type {
@@ -78,9 +76,6 @@ export interface BacktestStats {
     portfolioReturnPct: number;
     portfolioMaxDrawdownPct: number;
     meanExposurePct: number;
-    /** 같은 종목을 같은 금액으로 나눠 계속 들고 있었을 때(리밸런싱 없음) — 종목 보유 수익률의 평균. */
-    buyHoldMeanPct: number;
-    spy: { buyHoldPct: number; buyHoldMaxDrawdownPct: number };
     perTicker: TickerStats[];
     exitPaths: ExitPathStat[];
     /** 생성기가 일봉으로 계산해 넣은 값을 그대로 넘긴다(거래 목록만으로는 계산할 수 없다). */

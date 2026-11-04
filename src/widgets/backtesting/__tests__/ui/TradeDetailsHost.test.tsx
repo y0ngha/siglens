@@ -51,7 +51,7 @@ describe('TradeDetailsHost', () => {
     it('does not fetch until a row is opened', () => {
         const { wrapper } = createQueryClientWrapper();
         render(
-            <TradeDetailsHost runId="test">
+            <TradeDetailsHost runId={DATA.run.runId}>
                 <Rows />
             </TradeDetailsHost>,
             { wrapper }
@@ -65,7 +65,7 @@ describe('TradeDetailsHost', () => {
         );
         const { wrapper } = createQueryClientWrapper();
         render(
-            <TradeDetailsHost runId="test">
+            <TradeDetailsHost runId={DATA.run.runId}>
                 <Rows />
             </TradeDetailsHost>,
             { wrapper }
@@ -87,7 +87,7 @@ describe('TradeDetailsHost', () => {
         fetchSpy.mockReturnValue(new Promise<Response>(() => {}));
         const { wrapper } = createQueryClientWrapper();
         render(
-            <TradeDetailsHost runId="test">
+            <TradeDetailsHost runId={DATA.run.runId}>
                 <Rows />
             </TradeDetailsHost>,
             { wrapper }
@@ -102,7 +102,7 @@ describe('TradeDetailsHost', () => {
         );
         const { wrapper } = createQueryClientWrapper();
         render(
-            <TradeDetailsHost runId="test">
+            <TradeDetailsHost runId={DATA.run.runId}>
                 <Rows />
             </TradeDetailsHost>,
             { wrapper }
@@ -119,7 +119,7 @@ describe('TradeDetailsHost', () => {
         fetchSpy.mockResolvedValue(new Response('nope', { status: 500 }));
         const { wrapper } = createQueryClientWrapper();
         render(
-            <TradeDetailsHost runId="test">
+            <TradeDetailsHost runId={DATA.run.runId}>
                 <Rows />
             </TradeDetailsHost>,
             { wrapper }
@@ -130,5 +130,138 @@ describe('TradeDetailsHost', () => {
                 '불러오지 못했어요'
             )
         );
+    });
+
+    describe('lazy months', () => {
+        const MONTH = FIRST.entryDate.slice(0, 7);
+        const MONTH_TRADES = DATA.trades.filter(trade =>
+            trade.entryDate.startsWith(MONTH)
+        );
+
+        function Month() {
+            return (
+                <details data-testid="month" data-month-section="">
+                    <summary>month</summary>
+                    <div>
+                        <div data-lazy-month={MONTH} />
+                    </div>
+                </details>
+            );
+        }
+
+        async function openMonth() {
+            const details = screen.getByTestId('month') as HTMLDetailsElement;
+            await act(async () => {
+                details.open = true;
+                await new Promise(resolve => setTimeout(resolve, 0));
+            });
+        }
+
+        it('does not fetch until a lazy month is opened', () => {
+            const { wrapper } = createQueryClientWrapper();
+            render(
+                <TradeDetailsHost runId={DATA.run.runId}>
+                    <Month />
+                </TradeDetailsHost>,
+                { wrapper }
+            );
+            expect(fetchSpy).not.toHaveBeenCalled();
+        });
+
+        it('renders the month rows into the slot once the data loads', async () => {
+            fetchSpy.mockResolvedValue(
+                new Response(JSON.stringify(DATA), { status: 200 })
+            );
+            const { wrapper } = createQueryClientWrapper();
+            render(
+                <TradeDetailsHost runId={DATA.run.runId}>
+                    <Month />
+                </TradeDetailsHost>,
+                { wrapper }
+            );
+            await openMonth();
+            const slot = document.querySelector('[data-lazy-month]')!;
+            await waitFor(() =>
+                expect(slot.querySelectorAll('[data-trade-row]')).toHaveLength(
+                    MONTH_TRADES.length
+                )
+            );
+            expect(slot.querySelector('[data-backtest-card]')).toHaveAttribute(
+                'data-backtest-show'
+            );
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('renders details for a row drawn into a lazy month', async () => {
+            fetchSpy.mockResolvedValue(
+                new Response(JSON.stringify(DATA), { status: 200 })
+            );
+            const { wrapper } = createQueryClientWrapper();
+            render(
+                <TradeDetailsHost runId={DATA.run.runId}>
+                    <Month />
+                </TradeDetailsHost>,
+                { wrapper }
+            );
+            await openMonth();
+            const slot = document.querySelector('[data-lazy-month]')!;
+            await waitFor(() =>
+                expect(slot.querySelector('[data-trade-row]')).not.toBeNull()
+            );
+            const row = slot.querySelector<HTMLDetailsElement>(
+                `[data-trade-row]:has([data-trade-detail="${KEY}"])`
+            )!;
+            await act(async () => {
+                row.open = true;
+                await new Promise(resolve => setTimeout(resolve, 0));
+            });
+            await waitFor(() => expect(row).toHaveTextContent(FIRST.summary));
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('shows a loading status in the month slot while the data is in flight', async () => {
+            fetchSpy.mockReturnValue(new Promise<Response>(() => {}));
+            const { wrapper } = createQueryClientWrapper();
+            render(
+                <TradeDetailsHost runId={DATA.run.runId}>
+                    <Month />
+                </TradeDetailsHost>,
+                { wrapper }
+            );
+            await openMonth();
+            expect(screen.getByRole('status')).toHaveTextContent(
+                '이 달의 매매를 불러오는 중'
+            );
+        });
+
+        it('shows a month-level error when the served data is from another run', async () => {
+            fetchSpy.mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        ...DATA,
+                        run: { ...DATA.run, runId: 'stale-run' },
+                    }),
+                    { status: 200 }
+                )
+            );
+            const { wrapper } = createQueryClientWrapper();
+            render(
+                <TradeDetailsHost runId={DATA.run.runId}>
+                    <Month />
+                </TradeDetailsHost>,
+                { wrapper }
+            );
+            await openMonth();
+            await waitFor(() =>
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    '이 달의 매매를 불러오지 못했어요'
+                )
+            );
+            expect(
+                fetchSpy.mock.calls.find(c =>
+                    String(c[0]).includes('/backtesting/data.json')
+                )?.[0]
+            ).toContain(`run=${encodeURIComponent(DATA.run.runId)}`);
+        });
     });
 });

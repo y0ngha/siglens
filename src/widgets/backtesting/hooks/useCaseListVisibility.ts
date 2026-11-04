@@ -6,6 +6,7 @@ import {
     UNFILTERED_TOKEN,
 } from '../utils/caseListVisibility';
 import {
+    MONTH_SECTION_ATTR,
     type MonthOpenSnapshot,
     openAllMonths,
     restoreMonths,
@@ -48,7 +49,12 @@ export function useCaseListVisibility(
 
         const sync = (): void => {
             applyCaseListVisibility(panel, token);
-            const months = Array.from(panel.querySelectorAll('details'));
+            // 월만 고른다 — 매매 행도 `<details>`라 태그로 고르면 종목 탭에서 모든 행이 펼쳐진다.
+            const months = Array.from(
+                panel.querySelectorAll<HTMLDetailsElement>(
+                    `details[${MONTH_SECTION_ATTR}]`
+                )
+            );
             if (activeTicker !== null) {
                 // 컴파일러가 `??=`를 못 다뤄 풀어 쓴다.
                 const saved = savedOpenRef.current ?? new Map();

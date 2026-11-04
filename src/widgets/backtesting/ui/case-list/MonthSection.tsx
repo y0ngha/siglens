@@ -4,6 +4,7 @@ import {
     UNFILTERED_TOKEN,
     visibilityAttrs,
 } from '../../utils/caseListVisibility';
+import { MONTH_SECTION_ATTR } from '../../utils/monthOpenState';
 import {
     type CaseMonthGroup,
     splitMonthKey,
@@ -34,6 +35,7 @@ export function MonthSection({
 
     return (
         <details
+            {...{ [MONTH_SECTION_ATTR]: '' }}
             open={defaultOpen}
             {...visibilityAttrs([
                 UNFILTERED_TOKEN,

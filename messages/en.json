@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI technical-analysis backtesting dataset",
-                "variableMeasured": "Win rate, return and maximum drawdown of trades that follow a daily AI analysis, compared with buy and hold"
+                "variableMeasured": "Win rate, return and maximum drawdown by ticker of trades that follow a daily AI analysis"
             }
         },
         "economy": {
@@ -662,7 +662,8 @@
                 "fearGreedSummaryNoScore": "Fear & Greed Index",
                 "greed": "Greed",
                 "neutral": "Neutral",
-                "volatility": "Volatility"
+                "volatility": "Volatility",
+                "currentTrend": "{v0} (current trend)"
             },
             "seo": {
                 "title": "{v0} AI analysis"
@@ -1795,7 +1796,7 @@
             "accountDeleteFullTitle": "{v0}: delete account",
             "accountDeleteTitle": "Delete account",
             "backtesting": {
-                "description": "A two-year backtest of daily AI analysis on 10 US large caps including NVDA, AAPL and TSLA. Returns and drawdowns from following the entry zones, targets and stop losses are compared with buy and hold. Past results do not guarantee future performance.",
+                "description": "A two-year backtest of daily AI analysis on 10 US large caps including NVDA, AAPL and TSLA. Win rate, return and drawdown from following the entry zones, targets and stop losses, by ticker. Past results do not guarantee future performance.",
                 "title": "AI Stock Analysis Backtest: 10 US Large Caps, 2 Years"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
@@ -2549,7 +2550,7 @@
             },
             "backtesting": {
                 "body": "The backtest page runs the SIGLENS AI analysis on every trading day of the past two years and computes what would have happened if you had followed the entry zones, targets and stop losses it showed. Each position is split in half and closed at the first and final targets, or at the stop loss.",
-                "caveat": "Commissions and slippage are not included, and because the tickers were picked later, survivorship bias may remain. The trade count, period and a buy-and-hold comparison are shown with the results, and past results do not guarantee future performance.",
+                "caveat": "Commissions and slippage are not included, and because the tickers were picked later, survivorship bias may remain. The trade count and period are shown with the results, and past results do not guarantee future performance.",
                 "link": "View Backtesting Results",
                 "title": "Backtesting"
             },
@@ -3659,24 +3660,19 @@
                 "tradesValue": "{v0}",
                 "meanReturnLabel": "Mean return per trade",
                 "meanHoldingLabel": "Mean holding period",
-                "tradingDays": "{v0} trading days",
-                "vsBenchmarks": "{v0}-ticker buy and hold {v1} · SPY {v2}",
-                "drawdownVsSpy": "SPY buy and hold {v0} (daily closes)"
+                "tradingDays": "{v0} trading days"
             },
             "comparison": {
-                "heading": "Compared with buy and hold",
-                "note": "Each ticker is compared with holding it for the whole period. The AI strategy drawdown counts closed trades only, so a real account would show a deeper drawdown.",
+                "heading": "Results by ticker",
+                "note": "Each ticker gets the same amount and trades as the AI analysis says. The drawdown counts closed trades only, so a real account would show a deeper drawdown.",
                 "colTicker": "Ticker",
                 "colTrades": "Trades",
                 "colWinRate": "Win rate",
                 "colStrategy": "AI strategy",
                 "colStrategyMdd": "Max drawdown",
                 "colExposure": "Time in market",
-                "colBuyHold": "Buy and hold",
-                "colBuyHoldMdd": "Buy and hold max drawdown",
                 "rowPortfolio": "{v0}-ticker portfolio",
-                "notApplicable": "Not applicable",
-                "tableRegion": "Buy-and-hold comparison table"
+                "tableRegion": "Results by ticker table"
             },
             "strategy": {
                 "heading": "Strategy",
@@ -3715,7 +3711,9 @@
             "tradeList": {
                 "count": "{v0} trades",
                 "emptyDataset": "No trades to show.",
-                "emptyFiltered": "No trades for the selected ticker."
+                "emptyFiltered": "No trades for the selected ticker.",
+                "monthLoading": "Loading this month's trades…",
+                "monthLoadError": "Could not load this month's trades. They are also in trades.csv in the results folder."
             },
             "tradeRow": {
                 "entryType": {

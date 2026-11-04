@@ -95,12 +95,14 @@ function buildOgParts(
     symbol: string,
     direction: string,
     summary: string,
-    t: OgTranslator
+    t: OgTranslator,
+    framing?: string
 ): OgText {
     // 알 수 없는 방향성은 원문 그대로 — 저장된 스냅샷에 새 값이 들어와도
     // 빈 문자열이 되지 않게 한다.
     const key = DIRECTION_KEY[direction];
-    const dir = key ? t(key) : direction;
+    const label = key ? t(key) : direction;
+    const dir = framing ? t(framing, { v0: label }) : label;
     const description = truncateWithEllipsis(
         summary ? `${dir}: ${summary}` : dir,
         200
@@ -127,7 +129,10 @@ export const SHARE_KIND_OG_BUILDERS = {
     ): OgText => {
         const direction = String(r.trend ?? 'neutral');
         const summary = firstLine(String(r.summary ?? ''));
-        return buildOgParts(symbol, direction, summary, t);
+        // 기술 분석의 `trend`는 앞으로의 방향 예측이 아니라 지금까지의 추세다(백테스트에서
+        // 직전 10거래일 방향과 89% 일치, 이후 10거래일과는 ~50%). 분석 화면 배지와 같이
+        // "현재 추세"로 감싸 공유 카드가 전망처럼 읽히지 않게 한다.
+        return buildOgParts(symbol, direction, summary, t, 'currentTrend');
     },
 
     overall: (

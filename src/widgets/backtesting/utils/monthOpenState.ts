@@ -1,3 +1,9 @@
+/**
+ * 월 섹션(`MonthSection`의 `<details>`) 표식. 목록 안에는 매매 행도 `<details>`라, 월만 고를 때
+ * 태그 이름이 아니라 이 속성으로 고른다.
+ */
+export const MONTH_SECTION_ATTR = 'data-month-section';
+
 /** 월(`<details>`)별로 떠나기 전 펼침 상태를 기억하는 맵. */
 export type MonthOpenSnapshot = Map<HTMLDetailsElement, boolean>;
 

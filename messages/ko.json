@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI 기술적 분석 백테스팅 데이터셋",
-                "variableMeasured": "AI 일일 분석을 따른 매매의 승률·수익률·최대 낙폭과 보유 전략 대비 결과"
+                "variableMeasured": "AI 일일 분석을 따른 매매의 종목별 승률·수익률·최대 낙폭"
             }
         },
         "economy": {
@@ -655,6 +655,7 @@
                 "bearish": "약세",
                 "bullish": "강세",
                 "cautious": "주의",
+                "currentTrend": "현재 추세 {v0}",
                 "extremeFear": "극심한 공포",
                 "extremeGreed": "극심한 탐욕",
                 "fear": "공포",
@@ -1795,7 +1796,7 @@
             "accountDeleteFullTitle": "{v0} 회원 탈퇴",
             "accountDeleteTitle": "회원 탈퇴",
             "backtesting": {
-                "description": "NVDA·AAPL·TSLA 등 미국 대형주 10종목에 AI 일일 분석을 2년 동안 적용한 백테스트입니다. 진입 구간·목표가·손절가를 그대로 따랐을 때의 수익률과 낙폭을 보유 전략과 비교했고, 미래 성과를 보장하지 않습니다.",
+                "description": "NVDA·AAPL·TSLA 등 미국 대형주 10종목에 AI 일일 분석을 2년 동안 적용한 백테스트입니다. 진입 구간·목표가·손절가를 그대로 따랐을 때의 승률·수익률·낙폭을 종목별로 정리했고, 미래 성과를 보장하지 않습니다.",
                 "title": "AI 주식 분석 백테스트: 미국 대형주 10종목 2년 결과"
             },
             "backtestingOgAlt": "{v0} AI 백테스팅 결과",
@@ -3097,7 +3098,7 @@
             },
             "backtesting": {
                 "body": "백테스트 페이지는 시그렌즈의 AI 분석을 과거 2년 동안 매 거래일 돌리고, 화면에 나온 진입 구간·목표가·손절가를 그대로 따랐다면 어땠을지 계산한 결과예요. 산 물량은 절반씩 나눠 1차 목표가와 최종 목표가에서 정리하고, 손절가에 닿으면 정리한 것으로 봐요.",
-                "caveat": "수수료와 슬리피지는 넣지 않았고, 종목을 나중에 골랐기 때문에 생존 편향이 있을 수 있어요. 매매 수와 기간, 보유 전략과의 비교가 결과와 함께 적혀 있고, 과거 결과는 앞으로의 성과를 보장하지 않아요.",
+                "caveat": "수수료와 슬리피지는 넣지 않았고, 종목을 나중에 골랐기 때문에 생존 편향이 있을 수 있어요. 매매 수와 기간이 결과와 함께 적혀 있고, 과거 결과는 앞으로의 성과를 보장하지 않아요.",
                 "link": "백테스트 결과 보기",
                 "title": "백테스트"
             },
@@ -3789,19 +3790,16 @@
                 "7425e7": "티커 필터"
             },
             "comparison": {
-                "colBuyHold": "보유",
-                "colBuyHoldMdd": "보유 시 최대 낙폭",
                 "colExposure": "투자 비중",
                 "colStrategy": "AI 전략",
                 "colStrategyMdd": "최대 낙폭",
                 "colTicker": "종목",
                 "colTrades": "매매",
                 "colWinRate": "승률",
-                "heading": "보유 전략과 비교",
-                "notApplicable": "해당 없음",
-                "note": "같은 기간 각 종목을 처음부터 끝까지 들고 있었을 때와 비교했어요. AI 전략의 최대 낙폭은 정리된 매매만으로 계산해서 실제 계좌의 낙폭보다 작게 나올 수 있어요.",
+                "heading": "종목별 결과",
+                "note": "종목마다 같은 금액을 나눠 넣고 AI 분석대로 매매했을 때의 결과예요. 최대 낙폭은 정리된 매매만으로 계산해서 실제 계좌의 낙폭보다 작게 나올 수 있어요.",
                 "rowPortfolio": "{v0}종목 포트폴리오",
-                "tableRegion": "보유 전략 비교 표"
+                "tableRegion": "종목별 결과 표"
             },
             "exitPath": {
                 "other": "기타 (기간 만료·보유 중)",
@@ -3815,7 +3813,6 @@
             },
             "hero": {
                 "disclaimer": "과거 데이터 기준이라 앞으로의 성과를 보장하지는 않아요.",
-                "drawdownVsSpy": "SPY 보유 {v0} (일별 종가 기준)",
                 "lead": "시그렌즈 AI 기술 분석을 매 거래일 돌리고, 화면에 나온 진입 구간·목표가·손절가를 그대로 따랐을 때의 결과예요. 대상은 미국 대형주와 지수 ETF {v0}종목이에요.",
                 "maxDrawdownLabel": "최대 낙폭 (청산 기준)",
                 "meanHoldingLabel": "평균 보유 기간",
@@ -3825,7 +3822,6 @@
                 "tradesLabel": "매매 수",
                 "tradesValue": "{v0}건",
                 "tradingDays": "{v0}거래일",
-                "vsBenchmarks": "{v0}종목 보유 {v1} · SPY {v2}",
                 "winRateLabel": "승률",
                 "winRateSub": "{v0}/{v1}건"
             },
@@ -3856,7 +3852,9 @@
             "tradeList": {
                 "count": "{v0}건",
                 "emptyDataset": "표시할 매매가 없습니다.",
-                "emptyFiltered": "선택한 종목의 매매가 없습니다."
+                "emptyFiltered": "선택한 종목의 매매가 없습니다.",
+                "monthLoadError": "이 달의 매매를 불러오지 못했어요. 결과 폴더의 trades.csv에서도 볼 수 있어요.",
+                "monthLoading": "이 달의 매매를 불러오는 중이에요…"
             },
             "tradeRow": {
                 "decision": "{v0} 장 마감 뒤 판단, {v1} {v2}달러에 매수",
