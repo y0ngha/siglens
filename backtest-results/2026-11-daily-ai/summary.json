@@ -1,0 +1,1255 @@
+{
+    "generatedAt": "2026-11-04T02:00:16.887Z",
+    "tickers": 10,
+    "simStart": "2024-11-01",
+    "fwdDays": 10,
+    "portfolio": {
+        "method": "equal-weight sleeves (1/N capital per ticker, no rebalancing, closed-trade equity)",
+        "returnPct": 29.09,
+        "maxDrawdownPct": -9.29,
+        "meanExposurePct": 62.5
+    },
+    "overall": {
+        "trades": 690,
+        "closed": 690,
+        "winRate": 57.39,
+        "meanRet": 0.39,
+        "medianRet": 0.43,
+        "sumRet": 265.99,
+        "meanHoldDays": 4.54,
+        "byReason": {
+            "selloff_ma5": {
+                "n": 30,
+                "meanRet": 3.01
+            },
+            "selloff_stop": {
+                "n": 19,
+                "meanRet": -2.55
+            },
+            "sl1+sl2": {
+                "n": 241,
+                "meanRet": -2.57
+            },
+            "sl1+tp_final": {
+                "n": 37,
+                "meanRet": 1.95
+            },
+            "tp1+breakeven": {
+                "n": 199,
+                "meanRet": 0.38
+            },
+            "tp1+sl1": {
+                "n": 70,
+                "meanRet": 2.41
+            },
+            "tp1+tp_final": {
+                "n": 94,
+                "meanRet": 5.59
+            }
+        },
+        "byLeg": {
+            "A:selloff_ma5": {
+                "n": 30,
+                "meanRet": 3.01
+            },
+            "A:selloff_stop": {
+                "n": 19,
+                "meanRet": -2.55
+            },
+            "A:sl1": {
+                "n": 278,
+                "meanRet": -2.25
+            },
+            "A:tp1": {
+                "n": 363,
+                "meanRet": 2.07
+            },
+            "B:breakeven": {
+                "n": 199,
+                "meanRet": -0.67
+            },
+            "B:selloff_ma5": {
+                "n": 30,
+                "meanRet": 3.01
+            },
+            "B:selloff_stop": {
+                "n": 19,
+                "meanRet": -2.55
+            },
+            "B:sl1": {
+                "n": 70,
+                "meanRet": 2.5
+            },
+            "B:sl2": {
+                "n": 241,
+                "meanRet": -2.87
+            },
+            "B:tp_final": {
+                "n": 131,
+                "meanRet": 7.42
+            }
+        },
+        "byEntryType": {
+            "enter_close": {
+                "n": 0,
+                "winRate": null,
+                "meanRet": null
+            },
+            "enter_selloff": {
+                "n": 49,
+                "winRate": 61.22,
+                "meanRet": 0.85
+            },
+            "wait_limit": {
+                "n": 641,
+                "winRate": 57.1,
+                "meanRet": 0.35
+            }
+        },
+        "planSource": {
+            "ai": 679,
+            "fallback": 11
+        },
+        "reviewsPerTrade": 3.61,
+        "planUpdatedOnReview": 2416
+    },
+    "entryDecisions": {
+        "enter": {
+            "n": 49,
+            "fwd10MeanRet": 0.58,
+            "fwd10UpRate": 59.18
+        },
+        "wait": {
+            "n": 1108,
+            "fwd10MeanRet": 1.3,
+            "fwd10UpRate": 58.39
+        },
+        "avoid": {
+            "n": 1,
+            "fwd10MeanRet": 2.07,
+            "fwd10UpRate": 100
+        },
+        "ERROR": {
+            "n": 0,
+            "fwd10MeanRet": null,
+            "fwd10UpRate": null
+        },
+        "?": {
+            "n": 10,
+            "fwd10MeanRet": 2.69,
+            "fwd10UpRate": 70
+        }
+    },
+    "trendRecognition": {
+        "windowDays": 10,
+        "directionalCalls": 2284,
+        "matchRatePct": 89.19,
+        "byTrend": {
+            "bullish": {
+                "calls": 1562,
+                "priorMeanPct": 5.47,
+                "priorUpRatePct": 90.72
+            },
+            "bearish": {
+                "calls": 722,
+                "priorMeanPct": -5.28,
+                "priorUpRatePct": 14.13
+            },
+            "neutral": {
+                "calls": 1377,
+                "priorMeanPct": 0.57,
+                "priorUpRatePct": 50.11
+            }
+        }
+    },
+    "sellOffDecisions": 49,
+    "benchmark": {
+        "spyBuyHoldPct": 31.71,
+        "spyBuyHoldMaxDrawdownPct": -19,
+        "meanTickerBuyHoldPct": 44.29
+    },
+    "perTicker": [
+        {
+            "ticker": "NVDA",
+            "trades": 68,
+            "closed": 68,
+            "winRate": 63.24,
+            "meanRet": 0.86,
+            "medianRet": 1.05,
+            "sumRet": 58.44,
+            "meanHoldDays": 4.5,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 4.01
+                },
+                "sl1+sl2": {
+                    "n": 20,
+                    "meanRet": -2.15
+                },
+                "sl1+tp_final": {
+                    "n": 6,
+                    "meanRet": 0.15
+                },
+                "tp1+breakeven": {
+                    "n": 18,
+                    "meanRet": 0.24
+                },
+                "tp1+sl1": {
+                    "n": 11,
+                    "meanRet": 2.57
+                },
+                "tp1+tp_final": {
+                    "n": 8,
+                    "meanRet": 6
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 4.01
+                },
+                "A:sl1": {
+                    "n": 26,
+                    "meanRet": -2.39
+                },
+                "A:tp1": {
+                    "n": 37,
+                    "meanRet": 2.32
+                },
+                "B:breakeven": {
+                    "n": 18,
+                    "meanRet": -0.97
+                },
+                "B:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 4.01
+                },
+                "B:sl1": {
+                    "n": 11,
+                    "meanRet": 2.31
+                },
+                "B:sl2": {
+                    "n": 20,
+                    "meanRet": -2.01
+                },
+                "B:tp_final": {
+                    "n": 14,
+                    "meanRet": 6.1
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 5,
+                    "winRate": 100,
+                    "meanRet": 4.01
+                },
+                "wait_limit": {
+                    "n": 63,
+                    "winRate": 60.32,
+                    "meanRet": 0.61
+                }
+            },
+            "planSource": {
+                "ai": 67,
+                "fallback": 1
+            },
+            "reviewsPerTrade": 3.57,
+            "planUpdatedOnReview": 229,
+            "decisions": 124,
+            "strategyPct": 71.06,
+            "strategyMaxDrawdownPct": -18.03,
+            "exposurePct": 61.08,
+            "buyHoldPct": 49.23,
+            "buyHoldMaxDrawdownPct": -36.89
+        },
+        {
+            "ticker": "TSLA",
+            "trades": 78,
+            "closed": 78,
+            "winRate": 51.28,
+            "meanRet": -0.08,
+            "medianRet": 0.36,
+            "sumRet": -5.96,
+            "meanHoldDays": 3.51,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 1,
+                    "meanRet": 3.15
+                },
+                "selloff_stop": {
+                    "n": 2,
+                    "meanRet": -5.26
+                },
+                "sl1+sl2": {
+                    "n": 36,
+                    "meanRet": -4.04
+                },
+                "sl1+tp_final": {
+                    "n": 6,
+                    "meanRet": 1.91
+                },
+                "tp1+breakeven": {
+                    "n": 15,
+                    "meanRet": 1.11
+                },
+                "tp1+sl1": {
+                    "n": 4,
+                    "meanRet": 3.8
+                },
+                "tp1+tp_final": {
+                    "n": 14,
+                    "meanRet": 7.4
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 1,
+                    "meanRet": 3.15
+                },
+                "A:selloff_stop": {
+                    "n": 2,
+                    "meanRet": -5.26
+                },
+                "A:sl1": {
+                    "n": 42,
+                    "meanRet": -3.25
+                },
+                "A:tp1": {
+                    "n": 33,
+                    "meanRet": 3.24
+                },
+                "B:breakeven": {
+                    "n": 15,
+                    "meanRet": -0.37
+                },
+                "B:selloff_ma5": {
+                    "n": 1,
+                    "meanRet": 3.15
+                },
+                "B:selloff_stop": {
+                    "n": 2,
+                    "meanRet": -5.26
+                },
+                "B:sl1": {
+                    "n": 4,
+                    "meanRet": 5.1
+                },
+                "B:sl2": {
+                    "n": 36,
+                    "meanRet": -4.71
+                },
+                "B:tp_final": {
+                    "n": 20,
+                    "meanRet": 9.37
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 3,
+                    "winRate": 33.33,
+                    "meanRet": -2.46
+                },
+                "wait_limit": {
+                    "n": 75,
+                    "winRate": 52,
+                    "meanRet": 0.02
+                }
+            },
+            "planSource": {
+                "ai": 76,
+                "fallback": 2
+            },
+            "reviewsPerTrade": 2.62,
+            "planUpdatedOnReview": 198,
+            "decisions": 142,
+            "strategyPct": -14.95,
+            "strategyMaxDrawdownPct": -42.45,
+            "exposurePct": 54.69,
+            "buyHoldPct": 62.19,
+            "buyHoldMaxDrawdownPct": -53.77
+        },
+        {
+            "ticker": "AAPL",
+            "trades": 59,
+            "closed": 59,
+            "winRate": 66.1,
+            "meanRet": 0.47,
+            "medianRet": 0.67,
+            "sumRet": 27.82,
+            "meanHoldDays": 5.9,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 2,
+                    "meanRet": 2.49
+                },
+                "selloff_stop": {
+                    "n": 2,
+                    "meanRet": -2.2
+                },
+                "sl1+sl2": {
+                    "n": 17,
+                    "meanRet": -1.78
+                },
+                "sl1+tp_final": {
+                    "n": 3,
+                    "meanRet": 1.29
+                },
+                "tp1+breakeven": {
+                    "n": 16,
+                    "meanRet": 0.06
+                },
+                "tp1+sl1": {
+                    "n": 8,
+                    "meanRet": 2.08
+                },
+                "tp1+tp_final": {
+                    "n": 11,
+                    "meanRet": 3.28
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 2,
+                    "meanRet": 2.49
+                },
+                "A:selloff_stop": {
+                    "n": 2,
+                    "meanRet": -2.2
+                },
+                "A:sl1": {
+                    "n": 20,
+                    "meanRet": -1.77
+                },
+                "A:tp1": {
+                    "n": 35,
+                    "meanRet": 1.43
+                },
+                "B:breakeven": {
+                    "n": 16,
+                    "meanRet": -1.05
+                },
+                "B:selloff_ma5": {
+                    "n": 2,
+                    "meanRet": 2.49
+                },
+                "B:selloff_stop": {
+                    "n": 2,
+                    "meanRet": -2.2
+                },
+                "B:sl1": {
+                    "n": 8,
+                    "meanRet": 2.39
+                },
+                "B:sl2": {
+                    "n": 17,
+                    "meanRet": -1.75
+                },
+                "B:tp_final": {
+                    "n": 14,
+                    "meanRet": 4.81
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 4,
+                    "winRate": 50,
+                    "meanRet": 0.15
+                },
+                "wait_limit": {
+                    "n": 55,
+                    "winRate": 67.27,
+                    "meanRet": 0.5
+                }
+            },
+            "planSource": {
+                "ai": 59,
+                "fallback": 0
+            },
+            "reviewsPerTrade": 4.98,
+            "planUpdatedOnReview": 283,
+            "decisions": 97,
+            "strategyPct": 29.57,
+            "strategyMaxDrawdownPct": -11.8,
+            "exposurePct": 69.46,
+            "buyHoldPct": 51.77,
+            "buyHoldMaxDrawdownPct": -33.43
+        },
+        {
+            "ticker": "MSFT",
+            "trades": 65,
+            "closed": 65,
+            "winRate": 60,
+            "meanRet": 0.64,
+            "medianRet": 0.45,
+            "sumRet": 41.79,
+            "meanHoldDays": 5.15,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 1,
+                    "meanRet": 2.83
+                },
+                "selloff_stop": {
+                    "n": 1,
+                    "meanRet": -1.46
+                },
+                "sl1+sl2": {
+                    "n": 23,
+                    "meanRet": -2.05
+                },
+                "sl1+tp_final": {
+                    "n": 1,
+                    "meanRet": 5.43
+                },
+                "tp1+breakeven": {
+                    "n": 21,
+                    "meanRet": 0.49
+                },
+                "tp1+sl1": {
+                    "n": 7,
+                    "meanRet": 2.37
+                },
+                "tp1+tp_final": {
+                    "n": 11,
+                    "meanRet": 5.01
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 1,
+                    "meanRet": 2.83
+                },
+                "A:selloff_stop": {
+                    "n": 1,
+                    "meanRet": -1.46
+                },
+                "A:sl1": {
+                    "n": 24,
+                    "meanRet": -1.9
+                },
+                "A:tp1": {
+                    "n": 39,
+                    "meanRet": 1.96
+                },
+                "B:breakeven": {
+                    "n": 21,
+                    "meanRet": -0.51
+                },
+                "B:selloff_ma5": {
+                    "n": 1,
+                    "meanRet": 2.83
+                },
+                "B:selloff_stop": {
+                    "n": 1,
+                    "meanRet": -1.46
+                },
+                "B:sl1": {
+                    "n": 7,
+                    "meanRet": 2.49
+                },
+                "B:sl2": {
+                    "n": 23,
+                    "meanRet": -2.31
+                },
+                "B:tp_final": {
+                    "n": 12,
+                    "meanRet": 8.04
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 2,
+                    "winRate": 50,
+                    "meanRet": 0.69
+                },
+                "wait_limit": {
+                    "n": 63,
+                    "winRate": 60.32,
+                    "meanRet": 0.64
+                }
+            },
+            "planSource": {
+                "ai": 65,
+                "fallback": 0
+            },
+            "reviewsPerTrade": 4.17,
+            "planUpdatedOnReview": 269,
+            "decisions": 97,
+            "strategyPct": 47.08,
+            "strategyMaxDrawdownPct": -14.44,
+            "exposurePct": 66.87,
+            "buyHoldPct": 23.58,
+            "buyHoldMaxDrawdownPct": -34.91
+        },
+        {
+            "ticker": "META",
+            "trades": 77,
+            "closed": 77,
+            "winRate": 59.74,
+            "meanRet": 0.58,
+            "medianRet": 0.79,
+            "sumRet": 44.88,
+            "meanHoldDays": 3.83,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 2.45
+                },
+                "selloff_stop": {
+                    "n": 1,
+                    "meanRet": -2.42
+                },
+                "sl1+sl2": {
+                    "n": 28,
+                    "meanRet": -2.78
+                },
+                "sl1+tp_final": {
+                    "n": 5,
+                    "meanRet": 2.4
+                },
+                "tp1+breakeven": {
+                    "n": 20,
+                    "meanRet": 0.7
+                },
+                "tp1+sl1": {
+                    "n": 5,
+                    "meanRet": 1.25
+                },
+                "tp1+tp_final": {
+                    "n": 13,
+                    "meanRet": 6.22
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 2.45
+                },
+                "A:selloff_stop": {
+                    "n": 1,
+                    "meanRet": -2.42
+                },
+                "A:sl1": {
+                    "n": 33,
+                    "meanRet": -2.29
+                },
+                "A:tp1": {
+                    "n": 38,
+                    "meanRet": 2.84
+                },
+                "B:breakeven": {
+                    "n": 20,
+                    "meanRet": -0.46
+                },
+                "B:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 2.45
+                },
+                "B:selloff_stop": {
+                    "n": 1,
+                    "meanRet": -2.42
+                },
+                "B:sl1": {
+                    "n": 5,
+                    "meanRet": 0.08
+                },
+                "B:sl2": {
+                    "n": 28,
+                    "meanRet": -3.23
+                },
+                "B:tp_final": {
+                    "n": 18,
+                    "meanRet": 7.63
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 6,
+                    "winRate": 83.33,
+                    "meanRet": 1.63
+                },
+                "wait_limit": {
+                    "n": 71,
+                    "winRate": 57.75,
+                    "meanRet": 0.49
+                }
+            },
+            "planSource": {
+                "ai": 76,
+                "fallback": 1
+            },
+            "reviewsPerTrade": 2.94,
+            "planUpdatedOnReview": 218,
+            "decisions": 126,
+            "strategyPct": 47.85,
+            "strategyMaxDrawdownPct": -14.71,
+            "exposurePct": 58.88,
+            "buyHoldPct": 6.98,
+            "buyHoldMaxDrawdownPct": -34.21
+        },
+        {
+            "ticker": "AMZN",
+            "trades": 70,
+            "closed": 70,
+            "winRate": 51.43,
+            "meanRet": -0.01,
+            "medianRet": 0.13,
+            "sumRet": -0.67,
+            "meanHoldDays": 4.31,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 2.05
+                },
+                "selloff_stop": {
+                    "n": 3,
+                    "meanRet": -2.61
+                },
+                "sl1+sl2": {
+                    "n": 24,
+                    "meanRet": -2.3
+                },
+                "sl1+tp_final": {
+                    "n": 3,
+                    "meanRet": 2.24
+                },
+                "tp1+breakeven": {
+                    "n": 25,
+                    "meanRet": -0.1
+                },
+                "tp1+sl1": {
+                    "n": 3,
+                    "meanRet": 4.1
+                },
+                "tp1+tp_final": {
+                    "n": 7,
+                    "meanRet": 5.09
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 2.05
+                },
+                "A:selloff_stop": {
+                    "n": 3,
+                    "meanRet": -2.61
+                },
+                "A:sl1": {
+                    "n": 27,
+                    "meanRet": -2
+                },
+                "A:tp1": {
+                    "n": 35,
+                    "meanRet": 1.64
+                },
+                "B:breakeven": {
+                    "n": 25,
+                    "meanRet": -1
+                },
+                "B:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 2.05
+                },
+                "B:selloff_stop": {
+                    "n": 3,
+                    "meanRet": -2.61
+                },
+                "B:sl1": {
+                    "n": 3,
+                    "meanRet": 3.5
+                },
+                "B:sl2": {
+                    "n": 24,
+                    "meanRet": -2.49
+                },
+                "B:tp_final": {
+                    "n": 10,
+                    "meanRet": 6.45
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 8,
+                    "winRate": 62.5,
+                    "meanRet": 0.3
+                },
+                "wait_limit": {
+                    "n": 62,
+                    "winRate": 50,
+                    "meanRet": -0.05
+                }
+            },
+            "planSource": {
+                "ai": 69,
+                "fallback": 1
+            },
+            "reviewsPerTrade": 3.4,
+            "planUpdatedOnReview": 228,
+            "decisions": 130,
+            "strategyPct": -3.55,
+            "strategyMaxDrawdownPct": -20.09,
+            "exposurePct": 60.28,
+            "buyHoldPct": 24.1,
+            "buyHoldMaxDrawdownPct": -30.88
+        },
+        {
+            "ticker": "GOOGL",
+            "trades": 65,
+            "closed": 65,
+            "winRate": 66.15,
+            "meanRet": 0.93,
+            "medianRet": 0.81,
+            "sumRet": 60.58,
+            "meanHoldDays": 5.06,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 3,
+                    "meanRet": 3.9
+                },
+                "selloff_stop": {
+                    "n": 1,
+                    "meanRet": -1.04
+                },
+                "sl1+sl2": {
+                    "n": 19,
+                    "meanRet": -2.53
+                },
+                "sl1+tp_final": {
+                    "n": 6,
+                    "meanRet": 2.52
+                },
+                "tp1+breakeven": {
+                    "n": 22,
+                    "meanRet": 0.75
+                },
+                "tp1+sl1": {
+                    "n": 3,
+                    "meanRet": 3.97
+                },
+                "tp1+tp_final": {
+                    "n": 11,
+                    "meanRet": 4.94
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 3,
+                    "meanRet": 3.9
+                },
+                "A:selloff_stop": {
+                    "n": 1,
+                    "meanRet": -1.04
+                },
+                "A:sl1": {
+                    "n": 25,
+                    "meanRet": -2.22
+                },
+                "A:tp1": {
+                    "n": 36,
+                    "meanRet": 2.04
+                },
+                "B:breakeven": {
+                    "n": 22,
+                    "meanRet": -0.17
+                },
+                "B:selloff_ma5": {
+                    "n": 3,
+                    "meanRet": 3.9
+                },
+                "B:selloff_stop": {
+                    "n": 1,
+                    "meanRet": -1.04
+                },
+                "B:sl1": {
+                    "n": 3,
+                    "meanRet": 5.65
+                },
+                "B:sl2": {
+                    "n": 19,
+                    "meanRet": -2.74
+                },
+                "B:tp_final": {
+                    "n": 17,
+                    "meanRet": 7.11
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 4,
+                    "winRate": 75,
+                    "meanRet": 2.67
+                },
+                "wait_limit": {
+                    "n": 61,
+                    "winRate": 65.57,
+                    "meanRet": 0.82
+                }
+            },
+            "planSource": {
+                "ai": 65,
+                "fallback": 0
+            },
+            "reviewsPerTrade": 4.09,
+            "planUpdatedOnReview": 262,
+            "decisions": 103,
+            "strategyPct": 77.31,
+            "strategyMaxDrawdownPct": -11.6,
+            "exposurePct": 65.67,
+            "buyHoldPct": 62.88,
+            "buyHoldMaxDrawdownPct": -30.71
+        },
+        {
+            "ticker": "AVGO",
+            "trades": 79,
+            "closed": 79,
+            "winRate": 54.43,
+            "meanRet": 0.56,
+            "medianRet": 0.81,
+            "sumRet": 44.37,
+            "meanHoldDays": 3.7,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 4.07
+                },
+                "selloff_stop": {
+                    "n": 4,
+                    "meanRet": -3.83
+                },
+                "sl1+sl2": {
+                    "n": 28,
+                    "meanRet": -3.42
+                },
+                "sl1+tp_final": {
+                    "n": 5,
+                    "meanRet": 2.98
+                },
+                "tp1+breakeven": {
+                    "n": 17,
+                    "meanRet": 0.56
+                },
+                "tp1+sl1": {
+                    "n": 11,
+                    "meanRet": 2.75
+                },
+                "tp1+tp_final": {
+                    "n": 9,
+                    "meanRet": 8.92
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 4.07
+                },
+                "A:selloff_stop": {
+                    "n": 4,
+                    "meanRet": -3.83
+                },
+                "A:sl1": {
+                    "n": 33,
+                    "meanRet": -2.77
+                },
+                "A:tp1": {
+                    "n": 37,
+                    "meanRet": 3.05
+                },
+                "B:breakeven": {
+                    "n": 17,
+                    "meanRet": -1.43
+                },
+                "B:selloff_ma5": {
+                    "n": 5,
+                    "meanRet": 4.07
+                },
+                "B:selloff_stop": {
+                    "n": 4,
+                    "meanRet": -3.83
+                },
+                "B:sl1": {
+                    "n": 11,
+                    "meanRet": 2.7
+                },
+                "B:sl2": {
+                    "n": 28,
+                    "meanRet": -3.96
+                },
+                "B:tp_final": {
+                    "n": 14,
+                    "meanRet": 11.65
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 9,
+                    "winRate": 55.56,
+                    "meanRet": 0.56
+                },
+                "wait_limit": {
+                    "n": 70,
+                    "winRate": 54.29,
+                    "meanRet": 0.56
+                }
+            },
+            "planSource": {
+                "ai": 77,
+                "fallback": 2
+            },
+            "reviewsPerTrade": 2.77,
+            "planUpdatedOnReview": 204,
+            "decisions": 132,
+            "strategyPct": 43.03,
+            "strategyMaxDrawdownPct": -17.32,
+            "exposurePct": 58.28,
+            "buyHoldPct": 90.76,
+            "buyHoldMaxDrawdownPct": -41.48
+        },
+        {
+            "ticker": "SPY",
+            "trades": 64,
+            "closed": 64,
+            "winRate": 57.81,
+            "meanRet": 0.09,
+            "medianRet": 0.21,
+            "sumRet": 5.64,
+            "meanHoldDays": 5.06,
+            "byReason": {
+                "selloff_ma5": {
+                    "n": 3,
+                    "meanRet": 1.55
+                },
+                "selloff_stop": {
+                    "n": 3,
+                    "meanRet": -0.82
+                },
+                "sl1+sl2": {
+                    "n": 20,
+                    "meanRet": -1.41
+                },
+                "sl1+tp_final": {
+                    "n": 2,
+                    "meanRet": 0.92
+                },
+                "tp1+breakeven": {
+                    "n": 25,
+                    "meanRet": 0.19
+                },
+                "tp1+sl1": {
+                    "n": 5,
+                    "meanRet": 1.31
+                },
+                "tp1+tp_final": {
+                    "n": 6,
+                    "meanRet": 3.07
+                }
+            },
+            "byLeg": {
+                "A:selloff_ma5": {
+                    "n": 3,
+                    "meanRet": 1.55
+                },
+                "A:selloff_stop": {
+                    "n": 3,
+                    "meanRet": -0.82
+                },
+                "A:sl1": {
+                    "n": 22,
+                    "meanRet": -1.25
+                },
+                "A:tp1": {
+                    "n": 36,
+                    "meanRet": 0.96
+                },
+                "B:breakeven": {
+                    "n": 25,
+                    "meanRet": -0.3
+                },
+                "B:selloff_ma5": {
+                    "n": 3,
+                    "meanRet": 1.55
+                },
+                "B:selloff_stop": {
+                    "n": 3,
+                    "meanRet": -0.82
+                },
+                "B:sl1": {
+                    "n": 5,
+                    "meanRet": 1.16
+                },
+                "B:sl2": {
+                    "n": 20,
+                    "meanRet": -1.56
+                },
+                "B:tp_final": {
+                    "n": 8,
+                    "meanRet": 4.08
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 6,
+                    "winRate": 50,
+                    "meanRet": 0.37
+                },
+                "wait_limit": {
+                    "n": 58,
+                    "winRate": 58.62,
+                    "meanRet": 0.06
+                }
+            },
+            "planSource": {
+                "ai": 60,
+                "fallback": 4
+            },
+            "reviewsPerTrade": 4.13,
+            "planUpdatedOnReview": 261,
+            "decisions": 112,
+            "strategyPct": 4.95,
+            "strategyMaxDrawdownPct": -11.96,
+            "exposurePct": 64.67,
+            "buyHoldPct": 31.71,
+            "buyHoldMaxDrawdownPct": -19
+        },
+        {
+            "ticker": "QQQ",
+            "trades": 65,
+            "closed": 65,
+            "winRate": 46.15,
+            "meanRet": -0.17,
+            "medianRet": -0.28,
+            "sumRet": -10.9,
+            "meanHoldDays": 5.02,
+            "byReason": {
+                "selloff_stop": {
+                    "n": 2,
+                    "meanRet": -1.48
+                },
+                "sl1+sl2": {
+                    "n": 26,
+                    "meanRet": -1.83
+                },
+                "tp1+breakeven": {
+                    "n": 20,
+                    "meanRet": 0.06
+                },
+                "tp1+sl1": {
+                    "n": 13,
+                    "meanRet": 1.92
+                },
+                "tp1+tp_final": {
+                    "n": 4,
+                    "meanRet": 3.36
+                }
+            },
+            "byLeg": {
+                "A:selloff_stop": {
+                    "n": 2,
+                    "meanRet": -1.48
+                },
+                "A:sl1": {
+                    "n": 26,
+                    "meanRet": -1.59
+                },
+                "A:tp1": {
+                    "n": 37,
+                    "meanRet": 1.22
+                },
+                "B:breakeven": {
+                    "n": 20,
+                    "meanRet": -0.64
+                },
+                "B:selloff_stop": {
+                    "n": 2,
+                    "meanRet": -1.48
+                },
+                "B:sl1": {
+                    "n": 13,
+                    "meanRet": 2.27
+                },
+                "B:sl2": {
+                    "n": 26,
+                    "meanRet": -2.07
+                },
+                "B:tp_final": {
+                    "n": 4,
+                    "meanRet": 4.39
+                }
+            },
+            "byEntryType": {
+                "enter_close": {
+                    "n": 0,
+                    "winRate": null,
+                    "meanRet": null
+                },
+                "enter_selloff": {
+                    "n": 2,
+                    "winRate": 0,
+                    "meanRet": -1.48
+                },
+                "wait_limit": {
+                    "n": 63,
+                    "winRate": 47.62,
+                    "meanRet": -0.13
+                }
+            },
+            "planSource": {
+                "ai": 65,
+                "fallback": 0
+            },
+            "reviewsPerTrade": 4.12,
+            "planUpdatedOnReview": 264,
+            "decisions": 105,
+            "strategyPct": -11.49,
+            "strategyMaxDrawdownPct": -14.98,
+            "exposurePct": 65.07,
+            "buyHoldPct": 39.73,
+            "buyHoldMaxDrawdownPct": -22.88
+        }
+    ]
+}

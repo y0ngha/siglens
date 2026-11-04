@@ -87,6 +87,22 @@ How accurate is it? We asked the agent and three general AI models (GPT, Gemini,
 
 Signed-in members can also receive a regular email report on the symbols they follow. Guests can preview what it looks like on the [sample page](https://siglens.io/email-report/sample).
 
+## Backtest
+
+We ran the production AI analysis once per trading day over two years of daily bars (2024-11-01 to 2026-11-02) and followed the entry zones, targets, and stops it showed. The universe is eight US large caps plus SPY and QQQ, and the model is DeepSeek V4.1 Flash.
+
+| | AI strategy | SPY buy and hold |
+|---|---|---|
+| 2-year return (equal split across 10 tickers) | +29.1% | +31.7% |
+| Max drawdown (AI on closed trades, SPY on daily closes) | −9.3% | −19.0% |
+| Trades / win rate | 690 / 57.4% | — |
+
+Commissions and slippage are not included, and past results do not guarantee future performance. The strategy, per-ticker results, and limitations are in [the backtest results](./backtest-results/2026-11-daily-ai/README.md).
+
+- Scoring records: [`trades.csv`](./backtest-results/2026-11-daily-ai/trades.csv), [`decisions.csv`](./backtest-results/2026-11-daily-ai/decisions.csv), [`summary.json`](./backtest-results/2026-11-daily-ai/summary.json)
+- Full per-call prompts and responses: [release asset](https://github.com/y0ngha/siglens/releases/tag/backtest-2026-11-daily-ai)
+- Raw data (daily bars, computed indicators and patterns, raw requests and responses): [siglens-backtest-data](https://github.com/y0ngha/siglens-backtest-data)
+
 ## Supported markets
 
 Each symbol belongs to one market, and the market decides the currency, trading hours, available timeframes, and which tabs appear.
