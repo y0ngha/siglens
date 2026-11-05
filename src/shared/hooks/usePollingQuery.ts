@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { type Query, type QueryKey, useQuery } from '@tanstack/react-query';
+import { SKIP_VERSION_SKEW_RELOAD_META } from '@/shared/lib/reloadOnVersionSkew';
 
 /** 한 번의 폴링 결과. */
 export type PollOutcome<T> =
@@ -115,6 +116,11 @@ function evaluatePoll<T>(
  *
  * - **낡은 캐시가 스냅샷을 이기지 않음**: `gcTime: 0` + `initialData`(서버 스냅샷) — 이전
  *   방문의 캐시가 남아 이번 렌더의 스냅샷을 덮는 일이 없다.
+ * - **떠나는 중의 실패로 새로고침하지 않음**: `SKIP_VERSION_SKEW_RELOAD_META` — 폴러의 Server
+ *   Action은 그 라우트에만 등록돼 있어, 사용자가 탭을 옮기는 사이 나간 틱은 다음 라우트 주소로
+ *   POST되고 "action not found"로 실패한다. 이 실패에 버전 차이 새로고침이 걸리면 사용자가 막
+ *   시작한 이동이 취소된다(`reloadOnVersionSkew`). 폴러는 표시용이라 한 틱 실패의 비용이 없고,
+ *   진짜 빌드 차이는 그 페이지의 다른 액션이 잡는다.
  *
  * 종료 조건은 호출부마다 달라서 `onSettled`가 정한다(결과마다 한 번).
  */
@@ -140,6 +146,7 @@ export function usePollingQuery<T>({
         // 화면에 동시에 떠 있는 폴러끼리만 필요하다.
         gcTime: 0,
         retry: false,
+        meta: SKIP_VERSION_SKEW_RELOAD_META,
         refetchOnWindowFocus: false,
         refetchIntervalInBackground: false,
         refetchInterval: query =>

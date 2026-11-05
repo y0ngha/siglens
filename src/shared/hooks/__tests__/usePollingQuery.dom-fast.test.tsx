@@ -9,6 +9,7 @@ import {
     type OnPollSettled,
     usePollingQuery,
 } from '@/shared/hooks/usePollingQuery';
+import { skipsVersionSkewReload } from '@/shared/lib/reloadOnVersionSkew';
 
 const INTERVAL_MS = 3_000;
 const KEY = ['poll-test'] as const;
@@ -295,6 +296,25 @@ describe('usePollingQuery', () => {
         });
 
         expect(second.result.current).toEqual(['fresh']);
+    });
+
+    it('폴링 쿼리는 버전 차이 새로고침에서 빠진다', () => {
+        const { client, Wrapper } = makeWrapper();
+
+        renderHook(
+            () =>
+                usePollingQuery({
+                    queryKey: KEY,
+                    queryFn: vi.fn().mockResolvedValue(['fetched']),
+                    intervalMs: INTERVAL_MS,
+                    enabled: false,
+                    onSettled: () => 'continue',
+                }),
+            { wrapper: Wrapper }
+        );
+
+        const query = client.getQueryCache().find({ queryKey: KEY });
+        expect(skipsVersionSkewReload(query?.meta)).toBe(true);
     });
 
     it('initialData는 곧바로 낡은 값이라 마운트 때 다시 조회한다', async () => {
