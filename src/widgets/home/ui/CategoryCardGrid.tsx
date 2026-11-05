@@ -5,6 +5,7 @@
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import type { WatchlistSource } from '@/entities/watchlist/model';
+import { WatchlistPillScope } from '@/features/watchlist/ui/WatchlistPillScope';
 import { WatchlistPillToggle } from '@/features/watchlist/ui/WatchlistPillToggle';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -58,6 +59,94 @@ export function CategoryCardGrid({
 }: CategoryCardGridProps) {
     const t = useTranslations('widgets.home');
     const assetLabel = useAssetLabel();
+    const grid = (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {cards.map(card => {
+                const title = card.labelKey ? t(card.labelKey) : card.label;
+                return (
+                    <div
+                        key={card.id}
+                        className={cn(
+                            SURFACE_CARD,
+                            'p-5',
+                            'border-l-2',
+                            card.borderColor
+                        )}
+                    >
+                        <h3
+                            className={cn(
+                                'mb-3 text-sm font-semibold tracking-[0.01em]',
+                                card.textColor
+                            )}
+                        >
+                            {title}
+                        </h3>
+                        {card.descriptionKey && (
+                            <p className="mb-3 text-xs leading-relaxed text-secondary-400">
+                                {t(card.descriptionKey)}
+                            </p>
+                        )}
+                        <ul
+                            className="flex touch-manipulation flex-wrap gap-2"
+                            aria-label={t('CategoryCardGrid.tickerListLabel', {
+                                v0: title,
+                            })}
+                        >
+                            {card.items.map(item => (
+                                <li
+                                    key={item.symbol}
+                                    className={
+                                        watchlistSource
+                                            ? 'inline-flex items-center rounded-full border border-border-control transition-colors hover:border-primary-500'
+                                            : undefined
+                                    }
+                                >
+                                    <Link
+                                        href={`/${item.symbol}`}
+                                        title={t(
+                                            'CategoryCardGrid.analyzeTitle',
+                                            { v0: item.symbol }
+                                        )}
+                                        // 랜딩 그리드는 종목 링크를 수십 개 렌더한다.
+                                        // 스크롤만 해도 그 수만큼 1.7MB짜리 RSC 페이로드를
+                                        // origin에서 당겨오므로 prefetch를 끈다.
+                                        prefetch={false}
+                                        className={cn(
+                                            'inline-flex items-baseline gap-1.5 rounded-full py-1 text-xs text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                                            // ★가 붙으면 테두리는 알약(`li`)이 갖고 링크는 왼쪽 몫만 쓴다.
+                                            watchlistSource
+                                                ? 'pr-0.5 pl-3'
+                                                : 'border border-border-control px-3 hover:border-primary-500'
+                                        )}
+                                    >
+                                        {/* config의 `name`은 한국어 데이터다 —
+                                                표시는 `shared.assetName` 카탈로그를
+                                                심볼로 조회한다(`useAssetLabel`). */}
+                                        <span>
+                                            {assetLabel(item.symbol, item.name)}
+                                        </span>
+                                        <span className="text-[10px] text-secondary-500">
+                                            {item.symbol}
+                                        </span>
+                                    </Link>
+                                    {watchlistSource && (
+                                        <WatchlistPillToggle
+                                            symbol={item.symbol}
+                                            label={assetLabel(
+                                                item.symbol,
+                                                item.name
+                                            )}
+                                            source={watchlistSource}
+                                        />
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                );
+            })}
+        </div>
+    );
     return (
         <nav
             id={sectionId}
@@ -68,98 +157,12 @@ export function CategoryCardGrid({
                 (`shared/lib/typographyStyles.ts`). 한글 제목이라 uppercase·넓은
                 자간을 쓰지 않는 근거도 그 상수의 주석에 있다. */}
             <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {cards.map(card => {
-                    const title = card.labelKey ? t(card.labelKey) : card.label;
-                    return (
-                        <div
-                            key={card.id}
-                            className={cn(
-                                SURFACE_CARD,
-                                'p-5',
-                                'border-l-2',
-                                card.borderColor
-                            )}
-                        >
-                            <h3
-                                className={cn(
-                                    'mb-3 text-sm font-semibold tracking-[0.01em]',
-                                    card.textColor
-                                )}
-                            >
-                                {title}
-                            </h3>
-                            {card.descriptionKey && (
-                                <p className="mb-3 text-xs leading-relaxed text-secondary-400">
-                                    {t(card.descriptionKey)}
-                                </p>
-                            )}
-                            <ul
-                                className="flex touch-manipulation flex-wrap gap-2"
-                                aria-label={t(
-                                    'CategoryCardGrid.tickerListLabel',
-                                    {
-                                        v0: title,
-                                    }
-                                )}
-                            >
-                                {card.items.map(item => (
-                                    <li
-                                        key={item.symbol}
-                                        className={
-                                            watchlistSource
-                                                ? 'inline-flex items-center rounded-full border border-border-control transition-colors hover:border-primary-500'
-                                                : undefined
-                                        }
-                                    >
-                                        <Link
-                                            href={`/${item.symbol}`}
-                                            title={t(
-                                                'CategoryCardGrid.analyzeTitle',
-                                                { v0: item.symbol }
-                                            )}
-                                            // 랜딩 그리드는 종목 링크를 수십 개 렌더한다.
-                                            // 스크롤만 해도 그 수만큼 1.7MB짜리 RSC 페이로드를
-                                            // origin에서 당겨오므로 prefetch를 끈다.
-                                            prefetch={false}
-                                            className={cn(
-                                                'inline-flex items-baseline gap-1.5 rounded-full py-1 text-xs text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
-                                                // ★가 붙으면 테두리는 알약(`li`)이 갖고 링크는 왼쪽 몫만 쓴다.
-                                                watchlistSource
-                                                    ? 'pr-0.5 pl-3'
-                                                    : 'border border-border-control px-3 hover:border-primary-500'
-                                            )}
-                                        >
-                                            {/* config의 `name`은 한국어 데이터다 —
-                                            표시는 `shared.assetName` 카탈로그를
-                                            심볼로 조회한다(`useAssetLabel`). */}
-                                            <span>
-                                                {assetLabel(
-                                                    item.symbol,
-                                                    item.name
-                                                )}
-                                            </span>
-                                            <span className="text-[10px] text-secondary-500">
-                                                {item.symbol}
-                                            </span>
-                                        </Link>
-                                        {watchlistSource && (
-                                            <WatchlistPillToggle
-                                                symbol={item.symbol}
-                                                label={assetLabel(
-                                                    item.symbol,
-                                                    item.name
-                                                )}
-                                                source={watchlistSource}
-                                            />
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    );
-                })}
-            </div>
+            {watchlistSource ? (
+                // ★들이 관심종목 상태를 그리드 단위로 한 번만 구독하게 한다(WatchlistPillScope).
+                <WatchlistPillScope>{grid}</WatchlistPillScope>
+            ) : (
+                grid
+            )}
         </nav>
     );
 }

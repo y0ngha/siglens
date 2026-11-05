@@ -30,6 +30,11 @@ vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
         source: string;
     }) => <button data-testid={`star-${symbol}`}>{source}</button>,
 }));
+vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
+    WatchlistPillScope: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="pill-scope">{children}</div>
+    ),
+}));
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
@@ -186,5 +191,24 @@ describe('CategoryCardGrid 카테고리 설명', () => {
     it('watchlistSource가 없으면 ★를 그리지 않는다', () => {
         render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
         expect(screen.queryByTestId('star-BTCUSD')).toBeNull();
+    });
+
+    it('watchlistSource가 있으면 ★들을 관심종목 스코프 하나로 감싼다', () => {
+        render(
+            <CategoryCardGrid
+                heading="h"
+                ariaLabel="a"
+                cards={CARDS}
+                watchlistSource="home_popular"
+            />
+        );
+        const scopes = screen.getAllByTestId('pill-scope');
+        expect(scopes).toHaveLength(1);
+        expect(scopes[0]).toContainElement(screen.getByTestId('star-BTCUSD'));
+    });
+
+    it('watchlistSource가 없으면 관심종목 스코프를 두지 않는다', () => {
+        render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
+        expect(screen.queryByTestId('pill-scope')).toBeNull();
     });
 });
