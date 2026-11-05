@@ -3,6 +3,7 @@ vi.mock('@/features/watchlist/hooks/useWatchlist');
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
+import { WatchlistPillScope } from '@/features/watchlist/ui/WatchlistPillScope';
 import { WatchlistPillToggle } from '@/features/watchlist/ui/WatchlistPillToggle';
 
 type Watchlist = ReturnType<typeof useWatchlist>;
@@ -30,11 +31,13 @@ describe('WatchlistPillToggle', () => {
         const wl = setWatchlist();
         const user = userEvent.setup();
         render(
-            <WatchlistPillToggle
-                symbol="AAPL"
-                label="애플"
-                source="home_popular"
-            />
+            <WatchlistPillScope>
+                <WatchlistPillToggle
+                    symbol="AAPL"
+                    label="애플"
+                    source="home_popular"
+                />
+            </WatchlistPillScope>
         );
         const button = screen.getByRole('button', { name: '관심종목: 애플' });
         expect(button).toHaveAttribute('aria-pressed', 'false');
@@ -48,11 +51,13 @@ describe('WatchlistPillToggle', () => {
     it('담겨 있으면 눌린 상태다', () => {
         setWatchlist({ has: () => true });
         render(
-            <WatchlistPillToggle
-                symbol="AAPL"
-                label="애플"
-                source="home_popular"
-            />
+            <WatchlistPillScope>
+                <WatchlistPillToggle
+                    symbol="AAPL"
+                    label="애플"
+                    source="home_popular"
+                />
+            </WatchlistPillScope>
         );
         expect(screen.getByRole('button')).toHaveAttribute(
             'aria-pressed',
@@ -63,11 +68,13 @@ describe('WatchlistPillToggle', () => {
     it('하이드레이션 전에는 같은 자리에 비활성으로 그린다', () => {
         setWatchlist({ isHydrated: false });
         render(
-            <WatchlistPillToggle
-                symbol="AAPL"
-                label="애플"
-                source="home_popular"
-            />
+            <WatchlistPillScope>
+                <WatchlistPillToggle
+                    symbol="AAPL"
+                    label="애플"
+                    source="home_popular"
+                />
+            </WatchlistPillScope>
         );
         expect(screen.getByRole('button')).toBeDisabled();
     });

@@ -2,6 +2,13 @@
 vi.mock('@/features/watchlist/ui/WatchlistPillToggle', () => ({
     WatchlistPillToggle: () => null,
 }));
+vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
+    WatchlistPillScope: ({
+        children,
+    }: {
+        children: import('react').ReactNode;
+    }) => children,
+}));
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
