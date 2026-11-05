@@ -364,6 +364,26 @@ export function ChartContent({
 
     const analysisStatus = getAnalysisStatus(displayAnalyzing, analysisError);
 
+    // 상태 배너와 지표 요약은 분석 진행 값(단계·팁·쿨다운)과 무관하다. `analysisContent`가 진행
+    // 값마다 다시 만들어질 때 이 두 요소까지 새로 만들면 props가 그대로인데도 다시 그려지므로,
+    // 자기 props로만 따로 만들어 같은 요소를 재사용하게 한다.
+    const statusBanner = useMemo(
+        () => <AnalysisStatusBanner status={analysisStatus} />,
+        [analysisStatus]
+    );
+    const factsSummary = useMemo(
+        () => (
+            <TechnicalFactsSummary
+                symbol={symbol}
+                subject={factsSubject}
+                bars={bars}
+                indicators={indicators}
+                marketProfile={marketProfile}
+            />
+        ),
+        [symbol, factsSubject, bars, indicators, marketProfile]
+    );
+
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
@@ -491,26 +511,14 @@ export function ChartContent({
                         onStart={grantAutoRun}
                     />
                 ) : (
-                    <AnalysisStatusBanner status={analysisStatus} />
+                    statusBanner
                 )}
-                <TechnicalFactsSummary
-                    symbol={symbol}
-                    subject={factsSubject}
-                    bars={bars}
-                    indicators={indicators}
-                    marketProfile={marketProfile}
-                />
+                {factsSummary}
             </div>
         ) : (
             <div className="flex flex-col gap-3">
-                <AnalysisStatusBanner status={analysisStatus} />
-                <TechnicalFactsSummary
-                    symbol={symbol}
-                    subject={factsSubject}
-                    bars={bars}
-                    indicators={indicators}
-                    marketProfile={marketProfile}
-                />
+                {statusBanner}
+                {factsSummary}
                 <AnalysisPanel
                     symbol={symbol}
                     krxTickTable={krxTickTable}
@@ -555,12 +563,8 @@ export function ChartContent({
             </div>
         );
     }, [
-        bars,
-        indicators,
         isAnalyzing,
         symbol,
-        factsSubject,
-        analysisStatus,
         analysis,
         fallbackSummary,
         clusteredKeyLevels,
@@ -577,7 +581,6 @@ export function ChartContent({
         cooldownNotice,
         actionPricesVisible,
         setActionPricesVisible,
-        marketProfile,
         krxTickTable,
         indicatorCount,
         skillCount,
@@ -593,6 +596,8 @@ export function ChartContent({
         handleToggleOverlay,
         setHighlightedOverlay,
         clearHighlightedOverlay,
+        statusBanner,
+        factsSummary,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
