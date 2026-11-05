@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import type { WatchlistSource } from '@/entities/watchlist/model';
 import { cn } from '@/shared/lib/cn';
 import { StarIcon } from '@/shared/ui/StrokeIcons';
-import { useWatchlist } from '../hooks/useWatchlist';
+import { useWatchlistPill } from './WatchlistPillScope';
 
 interface WatchlistPillToggleProps {
     symbol: string;
@@ -18,7 +18,8 @@ interface WatchlistPillToggleProps {
  * 이동하지 않는다. 링크 목록은 서버 렌더 그대로(크롤러가 따라가는 내부 링크)이고 이 버튼만
  * 클라이언트에서 붙는다 — 하이드레이션 전에도 같은 크기로 그려 알약 폭이 변하지 않는다.
  *
- * 상한에 걸리면 `useWatchlist`가 토스트로 알리므로 여기서는 따로 막지 않는다.
+ * 상한에 걸리면 `useWatchlist`가 토스트로 알리므로 여기서는 따로 막지 않는다. 관심종목 상태는
+ * 그리드의 `WatchlistPillScope`가 한 번 구독해 내려준다 — 알약마다 구독하지 않는다.
  */
 export function WatchlistPillToggle({
     symbol,
@@ -26,7 +27,7 @@ export function WatchlistPillToggle({
     source,
 }: WatchlistPillToggleProps) {
     const t = useTranslations('features.watchlist');
-    const { has, toggle, isHydrated } = useWatchlist();
+    const { has, toggle, isHydrated } = useWatchlistPill();
     const pressed = isHydrated && has(symbol);
     return (
         <button
