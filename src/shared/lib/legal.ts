@@ -27,14 +27,21 @@ export const SITE_OPERATOR = {
     name: 'y0ngha',
     email: 'dev.y0ngha@gmail.com',
     githubUrl: 'https://github.com/y0ngha',
+    velogUrl: 'https://velog.io/@y0ngha',
 } as const;
 
 /**
  * 홈 `Organization.founder`와 `/about` `Person`이 공유하는 `sameAs`.
  * 두 노드는 `@id`가 같아 크롤러가 하나의 개체로 합치므로, 배열이 갈리면
  * 같은 사람이 서로 다른 프로필 목록을 주장하게 된다 — 한 상수로 묶는다.
+ *
+ * velog는 운영자 개인 블로그라 여기(사람)에만 싣는다 — 서비스 공식 블로그가 아니므로 조직
+ * `sameAs`와 푸터에는 두지 않는다.
  */
-export const OPERATOR_SAME_AS: readonly string[] = [SITE_OPERATOR.githubUrl];
+export const OPERATOR_SAME_AS: readonly string[] = [
+    SITE_OPERATOR.githubUrl,
+    SITE_OPERATOR.velogUrl,
+];
 
 /**
  * `/about` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.about`)을 고치면

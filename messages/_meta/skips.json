@@ -121,103 +121,103 @@
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 78,
+        "line": 84,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 79,
+        "line": 85,
         "reason": "seo-keywords-ko-only",
         "text": "시장 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 80,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "미국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 82,
+        "line": 88,
         "reason": "seo-keywords-ko-only",
         "text": "VIX 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 83,
+        "line": 89,
         "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 111,
+        "line": 118,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 112,
+        "line": 119,
         "reason": "seo-keywords-ko-only",
         "text": "한국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 113,
+        "line": 120,
         "reason": "seo-keywords-ko-only",
         "text": "국내 증시 투자심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 114,
+        "line": 121,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 115,
+        "line": 122,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 116,
+        "line": 123,
         "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 153,
+        "line": 161,
         "reason": "seo-keywords-ko-only",
         "text": "코인 공포탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 154,
+        "line": 162,
         "reason": "seo-keywords-ko-only",
         "text": "코인 공포지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 155,
+        "line": 163,
         "reason": "seo-keywords-ko-only",
         "text": "코인 탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 156,
+        "line": 164,
         "reason": "seo-keywords-ko-only",
         "text": "크립토 공포지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 157,
+        "line": 165,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 공포탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 158,
+        "line": 166,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 공포탐욕지수"
     },
@@ -3469,199 +3469,199 @@
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 265,
+        "line": 258,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 266,
+        "line": 259,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 267,
+        "line": 260,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 펀더멘털"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 268,
+        "line": 261,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 269,
+        "line": 262,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 옵션"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 270,
+        "line": 263,
         "reason": "seo-keywords-ko-only",
         "text": "AI 종합 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 271,
+        "line": 264,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 272,
+        "line": 265,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 273,
+        "line": 266,
         "reason": "seo-keywords-ko-only",
         "text": "오늘의 미국 주식"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 274,
+        "line": 267,
         "reason": "seo-keywords-ko-only",
         "text": "섹터별 주식 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 275,
+        "line": 268,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 PER"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 276,
+        "line": 269,
         "reason": "seo-keywords-ko-only",
         "text": "한국 주식 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 277,
+        "line": 270,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 종목 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 278,
+        "line": 271,
         "reason": "seo-keywords-ko-only",
         "text": "코스닥 종목 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 279,
+        "line": 272,
         "reason": "seo-keywords-ko-only",
         "text": "국내 주식 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 280,
+        "line": 273,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 281,
+        "line": 274,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 시세"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 282,
+        "line": 275,
         "reason": "seo-keywords-ko-only",
         "text": "이더리움 시세"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 283,
+        "line": 276,
         "reason": "seo-keywords-ko-only",
         "text": "코인 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 284,
+        "line": 277,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 285,
+        "line": 278,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 차트"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 429,
+        "line": 422,
         "reason": "seo-keywords-ko-only",
         "text": "주식 AI 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 430,
+        "line": 423,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 431,
+        "line": 424,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 분석 백테스트"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 432,
+        "line": 425,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스트 결과"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 433,
+        "line": 426,
         "reason": "seo-keywords-ko-only",
         "text": "RSI 신호 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 434,
+        "line": 427,
         "reason": "seo-keywords-ko-only",
         "text": "MACD 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 435,
+        "line": 428,
         "reason": "seo-keywords-ko-only",
         "text": "AI 분석 백테스트 방법론"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 436,
+        "line": 429,
         "reason": "seo-keywords-ko-only",
         "text": "Magnificent 7 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 437,
+        "line": 430,
         "reason": "seo-keywords-ko-only",
         "text": "AI 시나리오 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 438,
+        "line": 431,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스트 무료"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 439,
+        "line": 432,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 신호 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 440,
+        "line": 433,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 백테스트"
     },

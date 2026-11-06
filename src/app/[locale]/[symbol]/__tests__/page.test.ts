@@ -299,10 +299,13 @@ describe('Symbol page', () => {
             expect(metadata.description).toBe(
                 '애플(AAPL) 주가 분석: AAPL은 200일선 위에서 상승 추세입니다.'
             );
-            // og/twitter keep the templated copy — only the search-facing
-            // <meta name="description"> is overridden (spec 2026-07-24 Task 8).
+            // og/twitter carry the same snapshot sentence: AI search engines
+            // and link cards read og:description, so a template there hides
+            // the answer from them.
             const og = metadata.openGraph as Record<string, unknown>;
-            expect(og.description).toBe('desc');
+            expect(og.description).toBe(metadata.description);
+            const twitter = metadata.twitter as Record<string, unknown>;
+            expect(twitter.description).toBe(metadata.description);
         });
 
         it('falls back to the templated description when no technical snapshot exists', async () => {

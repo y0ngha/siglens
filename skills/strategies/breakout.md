@@ -10,7 +10,7 @@ gating:
   signal_kind: event
   triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
 token_cost: 1174
-digest_hash: "c9ca05db"
+digest_hash: "f91fb5b5"
 ---
 
 ## Overview
@@ -190,8 +190,8 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 **거래량 확인**: [거래량 상태, 예: "돌파 봉 거래량 20일 평균 대비 180% — 유효한 돌파 확인" / "거래량 미확인"]
 **필터 통과 여부**: [적용된 필터와 결과, 예: "종가 확인(통과) + 거래량(통과) + RSI 방향(통과) = 3/3 필터 충족"]
 **리테스트 상태**: [해당 시, 예: "돌파 후 리테스트 진행 중 — $175.50 지지 전환 테스트" / "리테스트 미발생"]
-**매매 신호**: [현재 신호, 예: "레인지 상단 돌파 확인 + 거래량 급증 — 매수 진입 적합" / "돌파 대기 중 — 아직 진입 시점 아님"]
-**상세 분석**: [돌파 맥락, 레인지/패턴 특성, 거짓 돌파 가능성, 목표가(패턴 측정치), 손절 레벨, 주의사항을 포함한 상세 분석 문단]
+**신호 상태**: [현재 신호, 예: "레인지 상단 돌파 확인 + 거래량 급증 — 유효한 돌파 조건 충족" / "돌파 대기 중 — 종가 확인 전"]
+**상세 분석**: [돌파 맥락, 레인지/패턴 특성, 거짓 돌파 가능성, 패턴 측정 목표, 돌파 실패로 보는 무효화 가격, 주의사항을 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
@@ -240,8 +240,8 @@ Caveats: overnight gap breakouts valid but slippage significant; well-known leve
 **거래량 확인**: [예: 돌파 봉 20일 평균 대비 180% — 유효 / 거래량 미확인]
 **필터 통과 여부**: [적용 필터와 결과, 예: 종가+거래량+RSI = 3/3 충족]
 **리테스트 상태**: [해당 시 / 리테스트 미발생]
-**매매 신호**: [현재 신호]
-**상세 분석**: [돌파 맥락, 레인지/패턴 특성, 거짓 돌파 가능성, 목표가(패턴 측정치), 손절 레벨, 주의사항]
+**신호 상태**: [현재 신호]
+**상세 분석**: [돌파 맥락, 레인지/패턴 특성, 거짓 돌파 가능성, 패턴 측정 목표, 무효화 가격, 주의사항]
 - If approaching but not broken: describe setup + conditions for valid breakout.
 - If broken: evaluate all filters (volume, close, momentum) and state how many satisfied.
 - If false breakout (reversal back into range): identify explicitly.

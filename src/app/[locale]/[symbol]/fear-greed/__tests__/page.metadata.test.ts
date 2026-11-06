@@ -101,6 +101,11 @@ describe('fear-greed generateMetadata — 색인 대상 (콘텐츠 게이트 통
         // 기존 템플릿 문구가 아니다.
         expect(metadata.description).not.toContain('매수세');
         expect(metadata.description).not.toMatch(/매수|매도|매매/);
+        // 링크 카드(og·twitter)도 같은 점수 문장을 쓴다.
+        const og = metadata.openGraph as Record<string, unknown>;
+        expect(og.description).toBe(metadata.description);
+        const twitter = metadata.twitter as Record<string, unknown>;
+        expect(twitter.description).toBe(metadata.description);
     });
 
     it('설명을 만들려고 봉을 다시 읽지 않는다(요청 단위 캐시를 그대로 쓴다)', async () => {

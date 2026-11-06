@@ -286,10 +286,12 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
         expect(metadata.description).toBe(
             `애플(AAPL) 뉴스: ${SNAPSHOT_CONTENT.currentDriverKo}`
         );
-        // og description keeps the templated copy — only the search-facing
-        // <meta name="description"> is overridden.
+        // og/twitter carry the same snapshot sentence — link cards and AI
+        // search read og:description.
         const og = metadata.openGraph as Record<string, unknown>;
-        expect(og.description).toBe('d');
+        expect(og.description).toBe(metadata.description);
+        const twitter = metadata.twitter as Record<string, unknown>;
+        expect(twitter.description).toBe(metadata.description);
     });
 
     // 2026-10-05: 뉴스 탭은 산문이 없으면 noindex(no-prose)다 — 차단 메타는 템플릿 설명을 쓰고,

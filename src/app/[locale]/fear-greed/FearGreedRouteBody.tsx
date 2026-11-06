@@ -27,6 +27,8 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
+import { composeMarketFearGreedAnswer } from './_lib/marketFearGreedAnswer';
+import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
@@ -86,18 +88,33 @@ export function FearGreedRouteBody({
      * FAQ는 예외다 — 질문·답변이 판독값과 무관하게 화면에 그대로 있다.
      */
     const degraded = view.snapshot === null;
+    // 오늘 점수를 말하는 답 문장 — 첫 문단과 meta 설명(`fearGreedMetadata`)이 같은 문장이다.
+    const answer = composeMarketFearGreedAnswer(
+        view,
+        copy.answerSubject,
+        tSeo,
+        tLabel
+    );
 
     const webPageJsonLd = {
         ...buildWebPageJsonLd({
             url,
             name: brandTitle(copy.title, locale),
-            description: copy.description,
+            description: answer ?? copy.description,
             locale,
         }),
         // snapshot이 있을 때만 실제 세션 날짜를 노출한다 — 표본 부족(snapshot: null)
         // 상태에서는 가짜 날짜를 지어내지 않고 필드 자체를 생략한다.
         ...(view.snapshot ? { dateModified: view.snapshot.asOf } : {}),
     };
+
+    const datasetJsonLd = buildMarketFearGreedDatasetJsonLd({
+        view,
+        name: copy.heading,
+        description: copy.description,
+        url,
+        locale,
+    });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [{ name: copy.heading, url }],
@@ -113,6 +130,7 @@ export function FearGreedRouteBody({
                 <>
                     <JsonLd data={webPageJsonLd} />
                     <JsonLd data={breadcrumbJsonLd} />
+                    {datasetJsonLd && <JsonLd data={datasetJsonLd} />}
                 </>
             )}
             <JsonLd data={faqJsonLd} />
@@ -133,6 +151,13 @@ export function FearGreedRouteBody({
                     </h1>
                 </div>
                 <section className="page-container space-y-3 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
+                    {/* 답 문장이 정의 문단보다 먼저 온다 — 질문에 대한 답을 첫 문장에서 찾는
+                        독자·AI 검색 모두를 위해서다. 판독값이 없으면 정의 문단만 남는다. */}
+                    {answer && (
+                        <p className="font-medium text-secondary-200">
+                            {answer}
+                        </p>
+                    )}
                     {copy.intro.map(paragraph => (
                         <p key={paragraph}>{paragraph}</p>
                     ))}

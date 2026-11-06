@@ -7,8 +7,8 @@ indicators: ['ma', 'rsi', 'macd']
 confidence_weight: 0.8
 gating:
   tier: always_on
-token_cost: 335
-digest_hash: "346cafa9"
+token_cost: 329
+digest_hash: "8a9a2cb3"
 ---
 
 ## Overview
@@ -41,7 +41,7 @@ confidence_weight: 0.8 — trading with the dominant trend is a near-universal p
 ## Caveats
 
 - Long MAs on one timeframe are a proxy for a higher-timeframe chart, not a substitute. If MA(200) is unavailable, say the estimate is weak.
-- Lower-timeframe entry timing cannot be judged from this input; if it matters, recommend the user check a lower timeframe.
+- Lower-timeframe timing cannot be judged from this input. Leave it out of the summary rather than adding a stock sentence about it.
 - Alignment does not predict: aligned setups still fail on unexpected catalysts.
 
 ## AI Analysis Instructions
@@ -52,7 +52,7 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 **상위 시간대 추세**: [장기 이평·가격 구조로 추정한 지배 추세, 예: "상승 추세 — 가격이 MA(120)/MA(200) 상방, MA(60) 상승, Higher High/Higher Low"]
 **시간대 정렬도**: [가용 데이터 기준 정렬, 예: "강함 — 장기 이평·단기 구조·모멘텀 모두 상승" / "부분 — 장기 상승, 단기 조정 중" / "충돌"]
 **방향성 판단**: [종합 방향, 예: "상승 우위 — 매수 방향 신호에 가중, 역추세 매도 신호는 추가 확인 필요"]
-**상세 분석**: [추세 추정 근거, 정렬 상태, 장기 지지·저항, 역추세 경고, 하위 시간대 확인 권고(필요 시)를 포함한 상세 분석 문단]
+**상세 분석**: [추세 추정 근거, 정렬 상태, 장기 지지·저항, 역추세 경고를 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
@@ -64,12 +64,12 @@ Additional output rules:
 다중 시간대 분석 (confidence_weight 0.8)
 Input is a single timeframe. Use this skill as a higher-timeframe trend FILTER: estimate the dominant trend from the long MAs on the `- MA:` line (MA60/MA120/MA200) and the swing structure, then weigh other skills' signals against it.
 Uptrend: price above MA120/MA200, MA60 above MA200 and rising, HH/HL. Downtrend: mirror. Range: price between long MAs, MAs flat/crossing, no clear swings.
-Rules: signals with the dominant trend weigh more; counter-trend signals need more confirmation — label them counter-trend. Long-horizon S/R outweighs a short-term signal into it. Range → lower conviction both ways. Late-stage exhaustion → warn even if aligned. MA200 unavailable → say the estimate is weak. Lower-TF entry timing can't be judged here — recommend checking a lower timeframe if needed.
+Rules: signals with the dominant trend weigh more; counter-trend signals need more confirmation — label them counter-trend. Long-horizon S/R outweighs a short-term signal into it. Range → lower conviction both ways. Late-stage exhaustion → warn even if aligned. MA200 unavailable → say the estimate is weak. Lower-TF timing can't be judged here — leave it out rather than adding a stock sentence.
 Alignment layers: long-MA trend; short/medium structure (MA5/MA20, recent swings); momentum (RSI vs 50, MACD vs zero). 3 agree = 강함, 2 = 부분, long trend contradicted = 충돌.
 Output (one **label**: value per line):
 **상위 시간대 추세**: [예: 상승 — MA120/MA200 상방, MA60 상승, HH/HL]
 **시간대 정렬도**: [강함 / 부분 / 충돌 — 가용 데이터 기준]
 **방향성 판단**: [예: 상승 우위 — 역추세 매도 신호는 추가 확인 필요]
-**상세 분석**: [추세 근거, 정렬, 장기 S/R, 역추세 경고, 하위 시간대 확인 권고(필요 시)]
+**상세 분석**: [추세 근거, 정렬, 장기 S/R, 역추세 경고]
 trend: bullish if dominant trend up and ≥2 layers agree, bearish if down and ≥2 agree, else neutral.
 <!-- PROMPT_DIGEST:END -->

@@ -199,7 +199,7 @@ describe('/fear-greed/crypto page', () => {
     });
 
     describe('JSON-LD', () => {
-        it('emits WebPage (dateModified = asOf), BreadcrumbList and FAQPage when ready', async () => {
+        it('emits WebPage (dateModified = asOf), BreadcrumbList, Dataset and FAQPage when ready', async () => {
             mockLoader.mockResolvedValue(READY);
 
             const { container } = await renderPage();
@@ -208,10 +208,13 @@ describe('/fear-greed/crypto page', () => {
             expect(blocks.map(b => b['@type'])).toEqual([
                 'WebPage',
                 'BreadcrumbList',
+                'Dataset',
                 'FAQPage',
             ]);
             const webPage = blocks.find(b => b['@type'] === 'WebPage');
             expect(webPage?.dateModified).toBe('2026-09-24');
+            const dataset = blocks.find(b => b['@type'] === 'Dataset');
+            expect(dataset?.dateModified).toBe('2026-09-24');
             const faq = blocks.find(b => b['@type'] === 'FAQPage') as {
                 mainEntity: unknown[];
             };

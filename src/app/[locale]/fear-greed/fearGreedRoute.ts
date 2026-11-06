@@ -14,12 +14,14 @@ import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
+import type { SeoTranslator } from '@/shared/lib/seo';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import {
     buildSymbolDirectory,
     type SymbolDirectorySection,
 } from '@/shared/lib/symbolDirectory';
 import { fearGreedCopyFor } from './copy';
+import { composeMarketFearGreedAnswer } from './_lib/marketFearGreedAnswer';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
 
@@ -48,6 +50,8 @@ export interface FearGreedRouteSource {
  *
  * 외부 I/O(Redis/FMP/yahoo) 오류는 로그를 남기고 흡수한다 — 판독값이 없으면(로더 실패 또는
  * 표본 부족) noindex + self-canonical(hreflang 없음)로 설명문만 남는 화면을 색인시키지 않는다.
+ * 판독값이 있으면 description(og·twitter 포함)은 오늘 점수를 말하는 답 문장이다 — 본문 첫
+ * 문단과 같은 문장(`composeMarketFearGreedAnswer`).
  */
 export async function fearGreedMetadata(
     params: Promise<{ locale: string }>,
@@ -61,15 +65,38 @@ export async function fearGreedMetadata(
         console.error(`${source.failureLog} (metadata):`, e);
         return null;
     });
+    const answer = await loadMetadataAnswer(
+        view,
+        copy.answerSubject,
+        locale,
+        t
+    );
     return buildHubMetadata({
         params,
         locale,
         path: copy.path,
         title: copy.title,
-        description: copy.description,
+        description: answer ?? copy.description,
         keywords: copy.keywords,
         degraded: view === null || view.snapshot === null,
     });
+}
+
+/**
+ * 메타데이터용 답 문장. 판독값이 없으면 `null` — 실패 경로에서 라벨 번역자를 읽지 않는다.
+ */
+async function loadMetadataAnswer(
+    view: FearGreedRouteView | null,
+    subject: string,
+    locale: Locale,
+    tSeo: SeoTranslator
+): Promise<string | null> {
+    if (view === null || view.snapshot === null) return null;
+    const tLabel = await getTranslations({
+        locale,
+        namespace: 'shared.enumLabel',
+    });
+    return composeMarketFearGreedAnswer(view, subject, tSeo, tLabel);
 }
 
 /**

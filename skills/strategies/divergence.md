@@ -10,8 +10,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_bullish_divergence, rsi_bearish_divergence, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
-token_cost: 1069
-digest_hash: "0e6e6e10"
+token_cost: 1070
+digest_hash: "842f768d"
 ---
 
 ## Overview
@@ -168,8 +168,8 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 **감지된 다이버전스**: [Regular Bullish / Regular Bearish / Hidden Bullish / Hidden Bearish / 감지 없음]
 **관련 오실레이터**: [다이버전스를 보이는 오실레이터 목록, 예: "RSI + MACD 동시 다이버전스"]
 **가격 패턴**: [다이버전스 구성 설명, 예: "가격 Lower Low($142→$138) + RSI Higher Low(28→32)"]
-**확인 상태**: [확인 완료 / 확인 대기 중 / 미확인, 예: "RSI 30선 상향 돌파 확인 — 진입 조건 충족"]
-**매매 신호**: [구체적 진입 신호, 예: "Regular Bullish 확인 — RSI+MACD 동시 다이버전스로 높은 신뢰도 매수 신호" / "명확한 다이버전스 신호 없음"]
+**확인 상태**: [확인 완료 / 확인 대기 중 / 미확인, 예: "RSI 30선 상향 돌파 확인 — 확인 조건 충족"]
+**신호 상태**: [다이버전스 신호의 방향과 확인 정도, 예: "Regular Bullish 확인 — RSI+MACD 동시 다이버전스로 상승 반전 신호의 신뢰도가 높음" / "명확한 다이버전스 신호 없음"]
 **상세 분석**: [다이버전스 맥락, 지지/저항 수렴 여부, 멀티 오실레이터 일치 여부, 주의사항을 포함한 상세 분석 문단]
 ```
 
@@ -217,7 +217,7 @@ Caveats: NEVER trade divergence alone — it is a warning, always require confir
 **관련 오실레이터**: [예: RSI + MACD 동시]
 **가격 패턴**: [예: 가격 LL($142→$138) + RSI HL(28→32)]
 **확인 상태**: [확인 완료 / 확인 대기 중 / 미확인]
-**매매 신호**: [구체적 진입 신호 / 명확한 신호 없음]
+**신호 상태**: [신호의 방향과 확인 정도 / 명확한 신호 없음]
 **상세 분석**: [맥락, 지지/저항 수렴, 멀티 오실레이터 일치, 주의사항]
 - Multiple oscillators same divergence → note explicitly as higher confidence.
 - Confirmation pending → state specific condition needed (e.g. "RSI가 30선을 상향 돌파하면 확인 완료").

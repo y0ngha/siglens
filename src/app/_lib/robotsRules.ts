@@ -58,7 +58,6 @@ export const AI_TRAINING_CRAWLER_USER_AGENTS = [
     'omgili',
     'Omgilibot',
     'Meta-ExternalAgent',
-    'Meta-ExternalFetcher',
     'cohere-ai',
     'cohere-training-data-crawler',
     'anthropic-ai',
@@ -95,6 +94,9 @@ export const USER_TRIGGERED_FETCHER_USER_AGENTS = [
     'ChatGPT-User',
     'Claude-User',
     'Perplexity-User',
+    // Meta AI가 사용자 요청으로 링크를 열 때 쓴다(Meta 크롤러 문서). 학습 크롤러인
+    // `Meta-ExternalAgent`와 달리 배경 수집이 아니라 다른 세 토큰과 같은 부류다.
+    'Meta-ExternalFetcher',
 ];
 
 /**
