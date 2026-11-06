@@ -4225,5 +4225,9 @@
     "widgets.backtesting.trendRecognition.row.neutral": "6640f095550b",
     "entities.shared-analysis.og.currentTrend": "709a0edcc3e4",
     "widgets.backtesting.tradeList.monthLoading": "f4cec03cee72",
-    "widgets.backtesting.tradeList.monthLoadError": "91ea4ec72820"
+    "widgets.backtesting.tradeList.monthLoadError": "91ea4ec72820",
+    "views.symbol.TechnicalFactsSummary.guideLinksLabel": "2f2e1ba7cf34",
+    "views.symbol.TechnicalFactsSummary.guideRsi": "bc2f66bc260f",
+    "views.symbol.TechnicalFactsSummary.guideMacd": "14b0782fe39f",
+    "views.symbol.TechnicalFactsSummary.guideIndicators": "509f41eaddbc"
 }

@@ -228,6 +228,47 @@ describe('TechnicalFactsSummary', () => {
         ).toBeInTheDocument();
     });
 
+    it('지표 가이드 링크 3개를 보조 내비로 렌더한다(prefetch 없음)', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={emptyIndicators}
+            />
+        );
+        const nav = screen.getByRole('navigation', { name: '지표 가이드' });
+        const links = Array.from(nav.querySelectorAll('a')).map(a => [
+            a.textContent,
+            a.getAttribute('href'),
+        ]);
+        expect(links).toEqual([
+            ['RSI 뜻과 기준', '/guide/indicators/rsi'],
+            ['MACD 보는 법', '/guide/indicators/macd'],
+            ['보조지표 가이드 전체', '/guide/indicators'],
+        ]);
+    });
+
+    it('en에서는 가이드 링크 문구가 en 카탈로그를 따른다', () => {
+        renderWithIntl(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={emptyIndicators}
+            />,
+            { locale: 'en' }
+        );
+        const nav = screen.getByRole('navigation', {
+            name: 'Indicator guides',
+        });
+        expect(
+            Array.from(nav.querySelectorAll('a')).map(a => a.textContent)
+        ).toEqual([
+            'What RSI means and its levels',
+            'How to read MACD',
+            'All indicator guides',
+        ]);
+    });
+
     it('데이터 부족 시 아무것도 렌더하지 않는다', () => {
         const { container } = render(
             <TechnicalFactsSummary

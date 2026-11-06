@@ -2781,6 +2781,10 @@
                 "beae1d": "上記の指標は、表示されたチャートデータに基づき自動計算された値です。",
                 "d8446c": "MACDモメンタム",
                 "e532e4": "({v0}分遅延)",
+                "guideIndicators": "テクニカル指標ガイド一覧",
+                "guideLinksLabel": "指標ガイド",
+                "guideMacd": "MACDの見方",
+                "guideRsi": "RSIの意味と基準",
                 "recentBarsPosition": "直近{v0}本の位置",
                 "rsiValue": "{v0} ({v1})"
             },

@@ -2781,6 +2781,10 @@
                 "beae1d": "以上指标是基于图表数据自动计算的值。",
                 "d8446c": "MACD 动量",
                 "e532e4": "（延迟{v0}分钟）",
+                "guideIndicators": "全部技术指标指南",
+                "guideLinksLabel": "指标指南",
+                "guideMacd": "如何看MACD",
+                "guideRsi": "RSI的含义与标准",
                 "recentBarsPosition": "最近 {v0} 根K线的位置",
                 "rsiValue": "{v0}（{v1}）"
             },
