@@ -74,7 +74,10 @@ export default async function AiRootLayout({
             // 의도된 차이라 이 요소에서만 억제한다(자식 트리에는 영향 없음).
             suppressHydrationWarning
         >
-            <body className="flex min-h-full flex-col bg-secondary-900">
+            {/* 앱 같은 터치 감각(ai 호스트만): iOS 탭 하이라이트(누를 때마다 번쩍이는 회색 사각형)를
+                끄고 — 눌림 신호는 각 버튼의 `active:` 상태가 맡는다(`AI_PRESS_FEEDBACK`) — 버튼을
+                길게 눌러도 버튼 글자가 선택되지 않게 한다. 답변 본문은 그대로 선택·복사된다. */}
+            <body className="flex min-h-full flex-col bg-secondary-900 [-webkit-tap-highlight-color:transparent] [&_button]:select-none">
                 {/* 하이드레이션 전의 첫 탭·키를 기억한다 — 설치 배너가 effect보다 먼저 온 입력을
                     놓치지 않게. `next/script`가 아니라 인라인이어야 파싱 즉시 실행된다(근거는
                     `features/pwa-install/lib/firstInputProbe.ts`). 루트 레이아웃은 클라이언트에서

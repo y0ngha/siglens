@@ -45,6 +45,15 @@ function setup(state: RowState = {}) {
 }
 
 describe('ConversationRow', () => {
+    it('행 동작은 마우스 기기에서만 hover로 숨긴다 — iPad처럼 hover 없는 넓은 화면에서도 보인다', () => {
+        setup();
+        const rename = screen.getByRole('button', { name: labels['73e5a8'] });
+        expect(rename.className).toMatch(
+            /(^|\s)sm:pointer-fine:opacity-0(\s|$)/
+        );
+        expect(rename.className).not.toMatch(/(^|\s)sm:opacity-0(\s|$)/);
+    });
+
     describe('기본 상태', () => {
         it('대화 링크와 이름 변경·삭제 버튼을 그린다', () => {
             const handlers = setup();

@@ -8,10 +8,13 @@ import type { MouseEvent, ReactNode, Ref } from 'react';
 import type { ConversationListItem } from '@/entities/chat-conversation/model';
 import { cn } from '@/shared/lib/cn';
 import { CloseIcon, PencilIcon, TrashIcon } from '@/shared/ui/StrokeIcons';
+import { AI_HOVER_REVEAL } from '../aiSurfaceStyles';
 
-/** 아이콘 행 동작 — 언제나 닿지만, 넓은 화면에서는 hover/focus 때만 떠올라 목록이 목록으로 읽힌다. */
-const ROW_ACTION =
-    'inline-flex size-7 shrink-0 items-center justify-center rounded text-secondary-400 hover:bg-secondary-700 hover:text-secondary-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100';
+/** 아이콘 행 동작 — 언제나 닿지만, 마우스 기기의 넓은 화면에서는 hover/focus 때만 떠올라 목록이 목록으로 읽힌다(터치 기기는 항상 보인다). */
+const ROW_ACTION = cn(
+    'inline-flex size-7 shrink-0 items-center justify-center rounded text-secondary-400 hover:bg-secondary-700 hover:text-secondary-100 active:bg-secondary-700 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+    AI_HOVER_REVEAL
+);
 
 interface ConversationRowProps {
     readonly item: ConversationListItem;
@@ -55,7 +58,7 @@ export function ConversationRow({
                 'group relative flex min-h-9 items-center gap-0.5 rounded-lg pr-1 pl-2.5 text-sm',
                 isActive
                     ? 'bg-secondary-800 text-secondary-100 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary-400'
-                    : 'text-secondary-300 hover:bg-secondary-800 hover:text-secondary-100'
+                    : 'text-secondary-300 hover:bg-secondary-800 hover:text-secondary-100 active:bg-secondary-800'
             )}
         >
             {isRenaming ? (
@@ -66,7 +69,7 @@ export function ConversationRow({
                     onClick={onNavigate}
                     aria-current={isActive ? 'page' : undefined}
                     aria-busy={isPending || undefined}
-                    className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
+                    className="min-w-0 flex-1 truncate py-1.5 select-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
                 >
                     {item.title}
                 </a>

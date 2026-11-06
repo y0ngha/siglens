@@ -154,7 +154,7 @@ export function Sidebar({
                     {failureMessage}
                 </p>
             )}
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {groups.length === 0 ? (
                     <p className="px-2 pt-6 text-center text-sm text-secondary-400">
                         {items.length === 0

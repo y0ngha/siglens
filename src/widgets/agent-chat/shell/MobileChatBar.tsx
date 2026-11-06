@@ -55,7 +55,7 @@ export function MobileChatBar({
                 }
                 aria-expanded={drawerOpen}
                 // 긴 제목 옆에서 이 버튼까지 줄어 "대화 목록"이 두 줄로 꺾였다 — 줄어드는 쪽은 제목이다.
-                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded px-2 text-sm whitespace-nowrap text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded px-2 text-sm whitespace-nowrap text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none active:bg-secondary-800"
             >
                 <MenuIcon className="size-4" />
                 {t('ChatShell.openConversations')}
