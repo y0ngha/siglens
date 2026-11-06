@@ -1855,7 +1855,8 @@
                     "copy_intro1": "Each of the five factors is converted to a percentile within its own history, then averaged with equal weights. A lower score means fear dominates; a higher score means greed does.",
                     "description": "Combining recent moves in KOSPI 200, government bonds, corporate bonds, and an equal-weight ETF, this shows overall Korean market buying sentiment as a 0–100 score with a 5-level label.",
                     "heading": "Korea Fear & Greed Index",
-                    "title": "Today's KOSPI Market Sentiment: Fear & Greed Index"
+                    "title": "Today's KOSPI Market Sentiment: Fear & Greed Index",
+                    "answerSubject": "Korean market"
                 },
                 "us": {
                     "copy_faq0a": "It combines recent closes of five factors (the S&P 500, VIX, long-dated Treasuries, high-yield versus investment-grade corporates, and the equal-weight index) into a 0–100 score for short-term buying sentiment across US equities.",
@@ -1868,7 +1869,8 @@
                     "copy_intro1": "Each of the five factors is converted to a percentile within its own history, then averaged with equal weights. A lower score means fear dominates; a higher score means greed does.",
                     "description": "S&P 500, VIX, Treasuries, corporate bonds, and an equal-weight index combine into a 0–100 score and 5-level label for overall US buying sentiment.",
                     "heading": "US Fear & Greed Index",
-                    "title": "Today's US Market Sentiment: Fear & Greed Index"
+                    "title": "Today's US Market Sentiment: Fear & Greed Index",
+                    "answerSubject": "US market"
                 },
                 "crypto": {
                     "title": "Crypto Fear and Greed Index - Today's Crypto Market Sentiment",
@@ -1885,7 +1887,8 @@
                     "copy_faq3q": "How often does the score update?",
                     "copy_faq3a": "It updates once a day, based on the daily bar that closes at 00:00 UTC; live prices from the day still in progress are never used. The page itself is cached for up to an hour.",
                     "copy_faq4q": "Can I trade based on this score?",
-                    "copy_faq4a": "This index is a reference that summarizes market sentiment, not investment advice. Extreme fear or greed does not by itself signal an imminent rebound or decline, so investment decisions and their consequences remain your own."
+                    "copy_faq4a": "This index is a reference that summarizes market sentiment, not investment advice. Extreme fear or greed does not by itself signal an imminent rebound or decline, so investment decisions and their consequences remain your own.",
+                    "answerSubject": "Crypto market"
                 }
             },
             "forgotPassword": {
@@ -5134,7 +5137,6 @@
                 "current": "Language: {v0}",
                 "label": "Select Language"
             },
-            "velogBlogAria": "{v0} velog blog (opens in a new tab)",
             "xAccountAria": "{v0} X (Twitter) Account (opens in new tab)"
         },
         "legal": {

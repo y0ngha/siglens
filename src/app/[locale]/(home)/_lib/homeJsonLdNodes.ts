@@ -13,7 +13,6 @@ import {
     localizedAbsoluteUrl,
     ORGANIZATION_JSON_LD_ID,
     SITE_URL,
-    VELOG_URL,
     X_URL,
 } from '@/shared/lib/seo';
 
@@ -84,9 +83,9 @@ export function buildHomeJsonLdNodes({
             alternateName: SITE_NAME_KO,
             logo: `${SITE_URL}/icon512.png`,
             description,
-            // 조직의 외부 프로필만 싣는다. 운영자 개인 GitHub은 사람의 프로필이라
+            // 조직의 외부 프로필만 싣는다. 운영자 개인 GitHub·velog는 사람의 프로필이라
             // `founder.sameAs`에만 둔다 — 섞으면 파서가 조직과 운영자를 같은 주체로 읽는다.
-            sameAs: [GITHUB_URL, X_URL, VELOG_URL],
+            sameAs: [GITHUB_URL, X_URL],
             // `/about`의 `Person` 노드와 같은 `@id`라 두 페이지의 사람이 하나로 합쳐진다.
             founder: {
                 '@type': 'Person',

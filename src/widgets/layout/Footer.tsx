@@ -19,9 +19,8 @@ import {
     TERMS_PATH,
     termsTitle,
 } from '@/shared/lib/legal';
-import { GITHUB_URL, SYMBOLS_PATH, VELOG_URL, X_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, SYMBOLS_PATH, X_URL } from '@/shared/lib/seo';
 import { GithubIcon } from '@/shared/ui/GithubIcon';
-import { VelogIcon } from '@/shared/ui/VelogIcon';
 import { XIcon } from '@/shared/ui/XIcon';
 import { AiNavLink } from './AiNavLink';
 import { ContactDialog } from './ContactDialog';
@@ -83,12 +82,6 @@ export function Footer() {
                             label={t('xAccountAria', { v0: brand })}
                         >
                             <XIcon className="h-5 w-5" />
-                        </FooterSocialLink>
-                        <FooterSocialLink
-                            href={VELOG_URL}
-                            label={t('velogBlogAria', { v0: brand })}
-                        >
-                            <VelogIcon className="h-5 w-5" />
                         </FooterSocialLink>
                         <nav
                             aria-label={t('Footer.5f5d12')}

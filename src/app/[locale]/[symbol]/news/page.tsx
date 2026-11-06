@@ -71,7 +71,7 @@ interface Props {
 /**
  * 뉴스 탭 메타데이터. 색인 판정(렌더 가능한 AI 스냅샷 산문 기준 — sitemap과 같은 `hasProseForTab`)은
  * `getBlockedSymbolMetadata`가 하고, 차단 시 canonical은 살아 있는 자기 URL(self-canonical)이다.
- * 스냅샷이 있으면 검색 결과용 description만 스냅샷 문장으로 바꾼다.
+ * 스냅샷이 있으면 description·og·twitter 설명을 스냅샷 문장으로 바꾼다.
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const {
@@ -99,8 +99,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
     const { description: snapshotDescription } = await loadTabSnapshotMeta({
         symbol: upper,
         tab: 'news',
@@ -111,9 +109,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         assetClass,
         tSeo,
     });
-    return snapshotDescription
-        ? { ...metadata, description: snapshotDescription }
-        : metadata;
+    // 스냅샷 문장은 og:description·twitter:description에도 싣는다 — AI 검색·공유 카드는
+    // 링크 미리보기에 og 문구를 쓰므로 템플릿이 남으면 그쪽에만 답이 빠진다.
+    return symbolMetadataFromSeo(
+        snapshotDescription
+            ? { ...seo, description: snapshotDescription }
+            : seo,
+        locale
+    );
 }
 
 /**

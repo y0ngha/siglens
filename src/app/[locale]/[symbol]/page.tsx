@@ -72,7 +72,7 @@ interface Props {
 /**
  * 차트 탭(종목 랜딩) 메타데이터. 색인 판정에 봉 유무를 넘기려고 봉을 여기서 먼저 확정한다 — 본문이
  * 같은 인자로 부르는 `getQuantizedBarsStatic`은 `React.cache`라 요청 안에서 왕복이 늘지 않는다.
- * 스냅샷이 있으면 검색 결과용 description만 스냅샷 문장(평이화 우선)으로 바꾼다.
+ * 스냅샷이 있으면 description·og·twitter 설명을 스냅샷 문장(평이화 우선)으로 바꾼다.
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale, ticker, tSeo, assetInfo, degraded } =
@@ -115,8 +115,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
     const { description: snapshotDescription } = await loadTabSnapshotMeta({
         symbol: ticker,
         tab: 'technical',
@@ -128,9 +126,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tSeo,
         preferPlain: true,
     });
-    return snapshotDescription
-        ? { ...metadata, description: snapshotDescription }
-        : metadata;
+    // 스냅샷 문장은 og:description·twitter:description에도 싣는다(뉴스 탭과 같은 이유).
+    return symbolMetadataFromSeo(
+        snapshotDescription
+            ? { ...seo, description: snapshotDescription }
+            : seo,
+        locale
+    );
 }
 
 /**

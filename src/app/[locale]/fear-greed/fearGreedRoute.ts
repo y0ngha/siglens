@@ -20,6 +20,7 @@ import {
     type SymbolDirectorySection,
 } from '@/shared/lib/symbolDirectory';
 import { fearGreedCopyFor } from './copy';
+import { composeMarketFearGreedAnswer } from './_lib/marketFearGreedAnswer';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
 
@@ -48,6 +49,8 @@ export interface FearGreedRouteSource {
  *
  * 외부 I/O(Redis/FMP/yahoo) 오류는 로그를 남기고 흡수한다 — 판독값이 없으면(로더 실패 또는
  * 표본 부족) noindex + self-canonical(hreflang 없음)로 설명문만 남는 화면을 색인시키지 않는다.
+ * 판독값이 있으면 description(og·twitter 포함)은 오늘 점수를 말하는 답 문장이다 — 본문 첫
+ * 문단과 같은 문장(`composeMarketFearGreedAnswer`).
  */
 export async function fearGreedMetadata(
     params: Promise<{ locale: string }>,
@@ -61,12 +64,25 @@ export async function fearGreedMetadata(
         console.error(`${source.failureLog} (metadata):`, e);
         return null;
     });
+    // 판독값이 없으면 답 문장도 없다 — 실패 경로에서 라벨 번역자를 읽지 않는다.
+    const answer =
+        view === null || view.snapshot === null
+            ? null
+            : composeMarketFearGreedAnswer(
+                  view,
+                  copy.answerSubject,
+                  t,
+                  await getTranslations({
+                      locale,
+                      namespace: 'shared.enumLabel',
+                  })
+              );
     return buildHubMetadata({
         params,
         locale,
         path: copy.path,
         title: copy.title,
-        description: copy.description,
+        description: answer ?? copy.description,
         keywords: copy.keywords,
         degraded: view === null || view.snapshot === null,
     });

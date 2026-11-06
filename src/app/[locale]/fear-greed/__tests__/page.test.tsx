@@ -392,3 +392,115 @@ describe('/fear-greed 가시 브레드크럼', () => {
         );
     });
 });
+
+const ANSWER_VIEW: MarketFearGreedView = {
+    snapshot: {
+        score: 24,
+        label: 'EXTREME_FEAR',
+        factors: [],
+        confidence: 'normal',
+        sampleSize: 200,
+        asOf: '2026-11-05',
+    },
+    comparisons: [
+        { key: 'now', date: '2026-11-05', score: 24, label: 'EXTREME_FEAR' },
+        { key: '1w', date: '2026-10-29', score: 36, label: 'FEAR' },
+        { key: '1m', date: '2026-10-06', score: 51, label: 'NEUTRAL' },
+        { key: '1y', date: '2025-11-05', score: 34, label: 'FEAR' },
+    ],
+};
+
+const ANSWER =
+    '미국 시장 공포 탐욕 지수는 11월 5일 종가 기준 24점(극심한 공포)입니다. 1주 전 36점, 1개월 전 51점, 1년 전 34점이었습니다.';
+
+/**
+ * 판독값이 있으면 허브가 오늘 점수를 한 문장으로 먼저 말한다 — AI 검색이 인용하는 답 문장이다.
+ * 같은 문장이 본문 첫 문단·meta·og·twitter 설명·WebPage description에 실린다.
+ */
+describe('/fear-greed 답 문장', () => {
+    beforeEach(() => {
+        mockGetMarketFearGreedStatic.mockResolvedValue(ANSWER_VIEW);
+    });
+
+    it('본문 설명 문단보다 먼저 답 문장을 그린다', async () => {
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+        const firstParagraph = container.querySelector('main section p');
+        expect(firstParagraph?.textContent).toBe(ANSWER);
+    });
+
+    it('meta·og·twitter 설명이 같은 답 문장이다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        expect(metadata.description).toBe(ANSWER);
+        const og = metadata.openGraph as Record<string, unknown>;
+        expect(og.description).toBe(ANSWER);
+        const twitter = metadata.twitter as Record<string, unknown>;
+        expect(twitter.description).toBe(ANSWER);
+    });
+
+    it('Dataset JSON-LD가 판독일·기간·점수를 싣는다', async () => {
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+        const blocks = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        ).map(s => JSON.parse(s.textContent ?? '{}'));
+        const dataset = blocks.find(d => d['@type'] === 'Dataset');
+        expect(dataset).toMatchObject({
+            url: `${SITE_URL}/fear-greed`,
+            dateModified: '2026-11-05',
+            temporalCoverage: '2025-11-05/2026-11-05',
+            variableMeasured: { minValue: 0, maxValue: 100, value: 24 },
+            license: `${SITE_URL}/terms`,
+        });
+        const webPage = blocks.find(d => d['@type'] === 'WebPage');
+        expect(webPage.description).toBe(ANSWER);
+    });
+
+    it('Dataset url·creator는 로케일 주소와 인라인 조직이다', async () => {
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'en' }),
+            })
+        );
+        const dataset = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        )
+            .map(s => JSON.parse(s.textContent ?? '{}'))
+            .find(d => d['@type'] === 'Dataset');
+        expect(dataset.url).toBe(`${SITE_URL}/en/fear-greed`);
+        expect(dataset.creator).toMatchObject({
+            '@type': 'Organization',
+            name: 'SIGLENS',
+            url: SITE_URL,
+        });
+    });
+
+    it('판독값이 없으면 답 문장·Dataset 없이 템플릿 설명으로 떨어진다', async () => {
+        mockGetMarketFearGreedStatic.mockResolvedValue({
+            snapshot: null,
+            comparisons: [],
+        });
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        expect(metadata.description).not.toContain('점(');
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+        expect(container.textContent).not.toContain('종가 기준 24점');
+        const types = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        ).map(s => JSON.parse(s.textContent ?? '{}')['@type']);
+        expect(types).not.toContain('Dataset');
+    });
+});

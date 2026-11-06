@@ -174,7 +174,6 @@ describe('robots', () => {
             'omgili',
             'Omgilibot',
             'Meta-ExternalAgent',
-            'Meta-ExternalFetcher',
             'cohere-ai',
             'cohere-training-data-crawler',
             'anthropic-ai',
@@ -200,7 +199,12 @@ describe('robots', () => {
         const result = robots();
 
         expect(result.rules).toContainEqual({
-            userAgent: ['ChatGPT-User', 'Claude-User', 'Perplexity-User'],
+            userAgent: [
+                'ChatGPT-User',
+                'Claude-User',
+                'Perplexity-User',
+                'Meta-ExternalFetcher',
+            ],
             allow: ['/', '/api/analysis/stream'],
             disallow: ['/api/'],
         });
@@ -210,7 +214,12 @@ describe('robots', () => {
             ...getFullyDisallowedAgents(result),
             ...getCrawlDelayAgents(result),
         ];
-        for (const bot of ['ChatGPT-User', 'Claude-User', 'Perplexity-User']) {
+        for (const bot of [
+            'ChatGPT-User',
+            'Claude-User',
+            'Perplexity-User',
+            'Meta-ExternalFetcher',
+        ]) {
             expect(blockedOrThrottled).not.toContain(bot);
         }
     });

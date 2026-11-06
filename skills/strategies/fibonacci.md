@@ -9,7 +9,7 @@ overlay_kind: fibonacci
 gating:
   tier: always_on
 token_cost: 663
-digest_hash: "8bb92dc0"
+digest_hash: "cc9a5ed1"
 ---
 
 ## Overview
@@ -87,7 +87,7 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 **현재 가격 위치**: [가격이 어느 레벨 근처에 있는지, 예: "Fib 50%($156.50) 근처에서 지지 테스트 중"]
 **클러스터 존**: [감지된 피보나치 클러스터, 예: "$155-157 구간에 2개 호라이즌의 Fib 38.2%와 Fib 61.8%가 수렴" / "클러스터 미감지"]
 **확장 목표가**: [Point C가 있으면 ## Market Reference의 Fib ABC ext N% 행(및 Fib ABC anchor) 우선 인용, 없으면 Fib ext N% 행 인용, 예: "Fib ABC ext 127.2%=$185.10, Fib ABC ext 161.8%=$197.83" / "Fib ext 161.8%=$197.83"]
-**매매 신호**: [현재 신호, 예: "Fib 61.8%에서 망치형 캔들 확인 — 반등 매수 적합" / "명확한 피보나치 신호 없음"]
+**신호 상태**: [현재 신호, 예: "Fib 61.8%에서 망치형 캔들 확인 — 되돌림 지지 신호" / "명확한 피보나치 신호 없음"]
 **상세 분석**: [스윙 구조, 되돌림 깊이 해석, 지지·저항 수렴 여부, 엘리어트 파동과의 관계(해당 시), 주의사항을 포함한 상세 분석 문단]
 ```
 
@@ -114,7 +114,7 @@ Output (one **label**: value per line):
 **현재 가격 위치**: [어느 레벨 근처]
 **클러스터 존**: [수렴 구간 / 클러스터 미감지]
 **확장 목표가**: [Point C 있으면 Fib ABC ext N% 우선, 없으면 Fib ext N%]
-**매매 신호**: [현재 신호 / 명확한 신호 없음]
+**신호 상태**: [현재 신호 / 명확한 신호 없음]
 **상세 분석**: [스윙 구조, 되돌림 깊이, S/R 수렴, 엘리어트 관계(해당 시), 주의사항]
 Within ~1% of a listed level → describe the reaction. trend: bullish if bouncing from a retracement in an uptrend, bearish if rejecting in a downtrend, else neutral.
 <!-- PROMPT_DIGEST:END -->

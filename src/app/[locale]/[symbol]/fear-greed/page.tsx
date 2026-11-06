@@ -122,28 +122,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
     // 점수에서 만든 종목별 설명 — 본문과 같은 봉·같은 계산이고(`computeSymbolFearGreedSeries`는 요청 안에서
     // `React.cache`), 점수를 못 내면 템플릿 설명을 그대로 둔다.
     const metaFacts =
         metadataBars === null
             ? null
             : buildFearGreedMetaFactsFromBars(metadataBars);
-    if (metaFacts === null) return metadata;
+    if (metaFacts === null) return symbolMetadataFromSeo(seo, locale);
     const tLabel = await getTranslations({
         locale,
         namespace: 'shared.enumLabel',
     });
-    return {
-        ...metadata,
-        description: composeFearGreedDescription(
-            metaFacts,
-            symbolFactsSubject(ticker, assetInfo.koreanName, locale),
-            tSeo,
-            tLabel
-        ),
-    };
+    // 점수 문장은 og:description·twitter:description에도 싣는다 — 링크 카드에도 답이 보이게.
+    return symbolMetadataFromSeo(
+        {
+            ...seo,
+            description: composeFearGreedDescription(
+                metaFacts,
+                symbolFactsSubject(ticker, assetInfo.koreanName, locale),
+                tSeo,
+                tLabel
+            ),
+        },
+        locale
+    );
 }
 
 /**
