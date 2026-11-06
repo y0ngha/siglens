@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { isSendableMessage } from '@/features/agent-chat/lib/messageLimits';
+import { AI_FIELD_TOUCH_TEXT } from '../aiSurfaceStyles';
 
 const EDIT_ACTION_SIZE = 'min-h-9 px-3 text-sm';
 
@@ -43,7 +44,10 @@ export function EditMessageForm({
                 onChange={e => setText(e.target.value)}
                 rows={3}
                 aria-label={t('MessageList.e6b008')}
-                className="min-h-20 w-full resize-y bg-transparent px-2 py-1.5 text-[15px] leading-6 text-secondary-100 focus-visible:outline-none"
+                className={cn(
+                    'min-h-20 w-full resize-y bg-transparent px-2 py-1.5 text-[15px] leading-6 text-secondary-100 focus-visible:outline-none',
+                    AI_FIELD_TOUCH_TEXT
+                )}
             />
             <div className="flex justify-end gap-1.5">
                 <button

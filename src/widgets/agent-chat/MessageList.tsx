@@ -158,7 +158,9 @@ export function MessageList({
                 // forced-colors fallback outline.
                 tabIndex={-1}
                 aria-label={t('MessageList.logLabel')}
-                className="absolute inset-0 overflow-y-auto focus:outline-hidden"
+                // `overscroll-contain`: 끝에서 더 당겨도 바깥 페이지가 출렁이거나 Android의
+                // 당겨서 새로고침이 걸리지 않는다 — 스크롤이 이 목록 안에서 끝난다.
+                className="absolute inset-0 overflow-y-auto overscroll-contain focus:outline-hidden"
                 onScroll={handleScroll}
             >
                 <div

@@ -1,8 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { removeMatchMedia } from '@/shared/test-utils/matchMedia';
 import { Composer } from '@/widgets/agent-chat/Composer';
 import ko from '../../../../messages/ko.json';
+
+/** 주 입력이 손가락인 기기(`(pointer: coarse)`)로 보이게 하는 matchMedia 스텁. */
+function stubCoarsePointer(): void {
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: (query: string) => ({
+            matches: query === '(pointer: coarse)',
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+        }),
+    });
+}
 
 const wrap = (ui: React.ReactElement) =>
     render(
@@ -27,6 +42,32 @@ function renderComposer(
 }
 
 describe('Composer', () => {
+    afterEach(() => {
+        removeMatchMedia();
+    });
+
+    it('on a touch device Enter is a newline and only the button sends', () => {
+        stubCoarsePointer();
+        const { onSend } = renderComposer();
+        const box = screen.getByRole('textbox');
+        expect(box).toHaveAttribute('enterkeyhint', 'enter');
+        fireEvent.change(box, { target: { value: '첫 줄' } });
+        const notPrevented = fireEvent.keyDown(box, { key: 'Enter' });
+        // The default (inserting the newline) is left to the browser.
+        expect(notPrevented).toBe(true);
+        expect(onSend).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: '전송' }));
+        expect(onSend).toHaveBeenCalledWith('첫 줄');
+    });
+
+    it('with a mouse and keyboard Enter is labelled send on the soft keyboard', () => {
+        renderComposer();
+        expect(screen.getByRole('textbox')).toHaveAttribute(
+            'enterkeyhint',
+            'send'
+        );
+    });
+
     it('Enter sends, Shift+Enter does not, over 4,000 chars disables send', () => {
         const { onSend } = renderComposer();
         const box = screen.getByRole('textbox');
@@ -88,6 +129,13 @@ describe('Composer', () => {
         expect(send.querySelector('svg')).toHaveAttribute(
             'aria-hidden',
             'true'
+        );
+    });
+
+    it('uses 16px text on touch devices so iOS Safari does not zoom on focus', () => {
+        renderComposer();
+        expect(screen.getByRole('textbox').className).toMatch(
+            /(^|\s)pointer-coarse:text-base(\s|$)/
         );
     });
 

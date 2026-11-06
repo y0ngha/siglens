@@ -29,8 +29,19 @@ export const dynamic = 'force-dynamic';
  * 이 레이아웃은 ai 서브트리의 **루트**라 메인 호스트 `[locale]/layout.tsx`의 `viewport`를
  * 상속하지 않는다. 없으면 모바일 주소창 띠가 브라우저 기본색으로 떠 헤더와 갈라지고,
  * `viewport-fit=cover`가 빠져 노치 영역이 비었다. 메인과 같은 값을 쓴다.
+ *
+ * `interactiveWidget: 'resizes-content'`만 ai 호스트에 더한다. Android Chrome(108+)의 기본값
+ * `resizes-visual`은 키보드가 떠도 레이아웃 뷰포트를 줄이지 않아, 하단 sticky 컴포저가
+ * 키보드 뒤로 가려지고 `dvh`도 그대로였다. 이 값이면 키보드만큼 레이아웃이 줄어 컴포저가
+ * 네이티브 채팅 앱처럼 키보드 바로 위에 붙는다. iOS Safari는 이 키를 무시한다(포커스 시
+ * 확대는 입력 글자 크기로 막는다 — `widgets/agent-chat/aiSurfaceStyles.ts`의
+ * `AI_FIELD_TOUCH_TEXT`). 메인 호스트에 넣지 않는 이유: 심볼 페이지 모바일 시트가
+ * `window.innerHeight`로 스냅 오프셋을 잡아, 키보드가 innerHeight를 바꾸면 시트가 튄다.
  */
-export const viewport: Viewport = SITE_VIEWPORT;
+export const viewport: Viewport = {
+    ...SITE_VIEWPORT,
+    interactiveWidget: 'resizes-content',
+};
 
 export async function generateMetadata({
     params,
@@ -63,7 +74,10 @@ export default async function AiRootLayout({
             // 의도된 차이라 이 요소에서만 억제한다(자식 트리에는 영향 없음).
             suppressHydrationWarning
         >
-            <body className="flex min-h-full flex-col bg-secondary-900">
+            {/* 앱 같은 터치 감각(ai 호스트만): iOS 탭 하이라이트(누를 때마다 번쩍이는 회색 사각형)를
+                끄고 — 눌림 신호는 각 버튼의 `active:` 상태가 맡는다(`AI_PRESS_FEEDBACK`) — 버튼을
+                길게 눌러도 버튼 글자가 선택되지 않게 한다. 답변 본문은 그대로 선택·복사된다. */}
+            <body className="flex min-h-full flex-col bg-secondary-900 [-webkit-tap-highlight-color:transparent] [&_button]:select-none">
                 {/* 하이드레이션 전의 첫 탭·키를 기억한다 — 설치 배너가 effect보다 먼저 온 입력을
                     놓치지 않게. `next/script`가 아니라 인라인이어야 파싱 즉시 실행된다(근거는
                     `features/pwa-install/lib/firstInputProbe.ts`). 루트 레이아웃은 클라이언트에서

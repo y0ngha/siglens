@@ -5,6 +5,8 @@
  */
 import { useTranslations } from 'next-intl';
 import type { KeyboardEvent, RefObject } from 'react';
+import { cn } from '@/shared/lib/cn';
+import { AI_FIELD_TOUCH_TEXT } from '../aiSurfaceStyles';
 
 interface RenameFormProps {
     readonly value: string;
@@ -46,7 +48,10 @@ export function RenameForm({
                     onCancel();
                 }}
                 aria-label={t('Sidebar.586a5c')}
-                className="w-full rounded border border-border-control bg-secondary-900 px-1.5 py-0.5 text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className={cn(
+                    'w-full rounded border border-border-control bg-secondary-900 px-1.5 py-0.5 text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                    AI_FIELD_TOUCH_TEXT
+                )}
             />
         </form>
     );

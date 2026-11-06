@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 // `next/font` 로더는 Next 컴파일러 밖(vitest)에서 함수가 아니다. 이 테스트는 메타데이터만 본다.
 vi.mock('@/app/fontVariables', () => ({ FONT_VARIABLE_CLASSES: '' }));
-import { generateMetadata } from '@/app/ai/[locale]/layout';
+import { generateMetadata, viewport } from '@/app/ai/[locale]/layout';
 import { aiManifestPath } from '@/app/ai/[locale]/_lib/aiManifest';
 import { brandAiName } from '@/shared/lib/brandName';
 import { LOCALES } from '@/shared/i18n/locales';
@@ -30,4 +30,19 @@ describe('ai layout generateMetadata — PWA', () => {
             });
         }
     );
+});
+
+/**
+ * Android Chrome 기본값(`resizes-visual`)은 키보드가 떠도 레이아웃을 줄이지 않아 하단 컴포저가
+ * 키보드 뒤로 숨는다. 공용 값(테마색·노치)은 메인 호스트와 같아야 한다.
+ */
+describe('ai layout viewport', () => {
+    it('키보드가 뜨면 레이아웃을 줄여 컴포저를 키보드 위에 둔다', () => {
+        expect(viewport.interactiveWidget).toBe('resizes-content');
+    });
+
+    it('테마색·노치 처리는 메인 호스트와 같은 값을 쓴다', () => {
+        expect(viewport.themeColor).toBe('#09090b');
+        expect(viewport.viewportFit).toBe('cover');
+    });
 });

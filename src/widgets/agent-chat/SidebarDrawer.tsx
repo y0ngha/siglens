@@ -19,7 +19,7 @@ interface SidebarDrawerProps {
 }
 
 const HEADER_ACTION =
-    'inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-sm text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+    'inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-sm text-secondary-200 hover:bg-secondary-800 active:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 /**
  * 모바일(`lg` 미만) 대화 목록 서랍. `vaul`을 이 파일에만 두는 이유는 번들이다 —

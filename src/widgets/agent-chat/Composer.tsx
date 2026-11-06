@@ -2,11 +2,17 @@
 
 import { useTranslations } from 'next-intl';
 import { useRef, useState, type KeyboardEvent } from 'react';
+import { COARSE_POINTER_MEDIA_QUERY } from '@/shared/config/viewport';
 import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
-import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
+import {
+    AI_FIELD_TOUCH_TEXT,
+    AI_PRESS_FEEDBACK,
+    AI_RAISED_CONTROL,
+} from './aiSurfaceStyles';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import {
     isSendableMessage,
     MESSAGE_MAX_CHARS,
@@ -61,6 +67,10 @@ export function Composer({
         initialValue.slice(0, MESSAGE_MAX_CHARS)
     );
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    // 터치 키보드에는 Shift가 없어 Enter 전송이면 여러 줄 질문을 쓸 수 없다. 네이티브 채팅 앱처럼
+    // 터치 기기의 Enter는 줄바꿈이고 전송은 버튼으로만 한다. 하이드레이션 전에는 `false`라
+    // 데스크톱 동작으로 시작하지만, 그 사이에는 입력 이벤트가 붙지 않아 차이가 없다.
+    const isTouch = useMediaQuery(COARSE_POINTER_MEDIA_QUERY);
     const overLimit = text.length > MESSAGE_MAX_CHARS;
     const canSend = !disabled && !streaming && isSendableMessage(text);
     const submit = (): void => {
@@ -76,6 +86,7 @@ export function Composer({
         }
     };
     const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
+        if (isTouch) return;
         if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
             e.preventDefault();
             submit();
@@ -110,11 +121,14 @@ export function Composer({
                     rows={1}
                     disabled={disabled}
                     autoComplete="off"
-                    enterKeyHint="send"
+                    enterKeyHint={isTouch ? 'enter' : 'send'}
                     aria-label={t('Composer.fdad68')}
                     aria-invalid={overLimit || undefined}
                     placeholder={t('Composer.placeholder')}
-                    className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-secondary-100 placeholder:text-secondary-400 focus-visible:outline-none"
+                    className={cn(
+                        'max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-secondary-100 placeholder:text-secondary-400 focus-visible:outline-none',
+                        AI_FIELD_TOUCH_TEXT
+                    )}
                     onInput={e => {
                         const el = e.currentTarget;
                         el.style.height = 'auto';
@@ -147,7 +161,8 @@ export function Composer({
                         className={cn(
                             BUTTON_PRIMARY,
                             ACTION_SIZE,
-                            'surface-accent'
+                            'surface-accent',
+                            AI_PRESS_FEEDBACK
                         )}
                     >
                         <ArrowUpIcon className="size-5" />
@@ -171,7 +186,8 @@ export function Composer({
                             })}
                         </span>
                     ) : (
-                        <span className="hidden sm:inline">
+                        // Enter·Shift+Enter 안내는 물리 키보드 기기에만 맞는 말이다.
+                        <span className="hidden sm:pointer-fine:inline">
                             {t('Composer.keyHint')}
                         </span>
                     )}

@@ -5,10 +5,11 @@
  */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { AI_HOVER_REVEAL } from '../aiSurfaceStyles';
 
 /** 32px 높이 — 조용한 줄이지만 패딩과 함께 손가락 최소 크기에 닿는다. */
 const ACTION =
-    'inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-secondary-400 hover:bg-secondary-800 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+    'inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-secondary-400 hover:bg-secondary-800 hover:text-secondary-200 active:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 interface MessageActionsProps {
     readonly align: 'user' | 'assistant';
@@ -20,7 +21,7 @@ interface MessageActionsProps {
     readonly onEdit?: () => void;
 }
 
-/** 동작 버튼은 언제나 DOM에 있다(키보드·스크린 리더). 넓은 화면에서만 hover/focus 때 떠오른다. */
+/** 동작 버튼은 언제나 DOM에 있다(키보드·스크린 리더). 마우스 기기의 넓은 화면에서만 hover/focus 때 떠오르고, 터치 기기에서는 항상 보인다. */
 export function MessageActions({
     align,
     copied,
@@ -34,7 +35,8 @@ export function MessageActions({
             className={cn(
                 'mt-1 flex gap-0.5',
                 align === 'user' ? 'justify-end' : 'ml-10',
-                'sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:focus-within:opacity-100 motion-reduce:transition-none'
+                AI_HOVER_REVEAL,
+                'sm:pointer-fine:transition-opacity motion-reduce:transition-none'
             )}
         >
             <button type="button" onClick={onCopy} className={ACTION}>

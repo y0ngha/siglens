@@ -14,7 +14,7 @@ import {
 } from '@/features/agent-chat/lib/groupConversationsByDay';
 import { cn } from '@/shared/lib/cn';
 import { PlusIcon } from '@/shared/ui/StrokeIcons';
-import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
+import { AI_FIELD_TOUCH_TEXT, AI_RAISED_CONTROL } from './aiSurfaceStyles';
 import { useConversationMutations } from './hooks/useConversationMutations';
 import { useRailNavigation } from './hooks/useRailNavigation';
 import { useRenameMode } from './hooks/useRenameMode';
@@ -144,14 +144,17 @@ export function Sidebar({
                 placeholder={t('Sidebar.4cbbe4')}
                 aria-label={t('Sidebar.4cbbe4')}
                 autoComplete="off"
-                className="min-h-9 rounded-lg border border-border-control bg-transparent px-2.5 text-sm text-secondary-100 placeholder:text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className={cn(
+                    'min-h-9 rounded-lg border border-border-control bg-transparent px-2.5 text-sm text-secondary-100 placeholder:text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                    AI_FIELD_TOUCH_TEXT
+                )}
             />
             {failureMessage !== null && (
                 <p role="alert" className="px-1 text-xs text-ui-danger-text">
                     {failureMessage}
                 </p>
             )}
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {groups.length === 0 ? (
                     <p className="px-2 pt-6 text-center text-sm text-secondary-400">
                         {items.length === 0

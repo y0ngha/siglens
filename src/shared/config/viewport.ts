@@ -19,6 +19,12 @@ export const MOBILE_VIEWPORT_MEDIA_QUERY = '(max-width: 767px)';
 export const BELOW_LG_MEDIA_QUERY = '(max-width: 1023.98px)';
 
 /**
+ * 주 입력 장치가 손가락인 기기(휴대폰·태블릿). Tailwind `pointer-coarse:` 변형과 같은 조건이라
+ * CSS와 JS 판정이 어긋나지 않는다. 화면 폭과 무관하다 — iPad는 `sm` 이상이지만 hover가 없다.
+ */
+export const COARSE_POINTER_MEDIA_QUERY = '(pointer: coarse)';
+
+/**
  * 두 호스트(siglens.io·ai.siglens.io)의 루트 레이아웃이 함께 쓰는 `viewport`.
  * ai 호스트는 별도 루트 레이아웃이라 메인의 값을 상속하지 않는다 — 한곳에서 내보내야
  * 주소창 띠 색과 노치 처리가 두 호스트에서 어긋나지 않는다.
