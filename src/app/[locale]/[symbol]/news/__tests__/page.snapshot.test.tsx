@@ -286,8 +286,8 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
         expect(metadata.description).toBe(
             `애플(AAPL) 뉴스: ${SNAPSHOT_CONTENT.currentDriverKo}`
         );
-        // og/twitter carry the same snapshot sentence (2026-11-06) — link
-        // cards and AI search read og:description.
+        // og/twitter carry the same snapshot sentence — link cards and AI
+        // search read og:description.
         const og = metadata.openGraph as Record<string, unknown>;
         expect(og.description).toBe(metadata.description);
         const twitter = metadata.twitter as Record<string, unknown>;

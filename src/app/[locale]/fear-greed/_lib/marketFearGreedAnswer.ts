@@ -23,7 +23,12 @@ const PERIOD_BY_KEY: Record<
  * 기간 이름을 붙여도 되는 최소 달력일. 비교점은 이력이 짧으면 점수가 있는 가장 이른 세션으로
  * 당겨지는데(`resolveSessionComparisons`의 `clamped`), 시장 뷰는 그 표시를 싣지 않는다
  * (`buildMarketFearGreedComparisons`). 그래서 날짜 간격으로 되짚는다 — 5세션·21세션·252세션은
- * 휴장일이 있어도 각각 7일·29일·364일 안팎이고, 당겨진 점은 이 하한에 못 미친다.
+ * 휴장일이 있어도 각각 7일·29일·364일 안팎이고(크립토 달력일 오프셋은 7·30·365일), 당겨진 점은
+ * 이 하한에 못 미친다.
+ *
+ * 하한은 그 오프셋에서 휴장 여유를 뺀 값이라 오프셋에 묶여 있다. `COMPARISON_OFFSETS`나
+ * `CALENDAR_COMPARISON_OFFSETS`(`buildMarketFearGreedComparisons.ts`)를 바꾸면 여기도 다시
+ * 맞추고, `__tests__/marketFearGreedAnswer.test.ts`의 당겨진 점 케이스로 확인한다.
  */
 const MIN_DAYS_BEFORE: Record<
     FearGreedMetaFacts['past'][number]['period'],
@@ -71,9 +76,9 @@ export function marketFearGreedMetaFacts(
  * `미국 시장 공포 탐욕 지수는 11월 5일 종가 기준 24점(극심한 공포)입니다. 1주 전 36점, …이었습니다.`
  *
  * 허브의 첫 문단과 meta·og 설명이 함께 쓰는 **답 문장**. AI 검색은 페이지에서 질문("오늘 공포
- * 탐욕 지수")에 바로 답하는 한 문장을 인용하는데, 예전 허브는 정의 문단이 먼저 오고 점수·날짜는
- * 게이지 숫자로 흩어져 있었다. 종목 탭과 같은 문장 빌더(`composeFearGreedDescription`)를 써
- * 두 표면의 문형이 갈리지 않는다. 판독값이 없으면 `null`(호출부가 정의 문단·템플릿 설명을 쓴다).
+ * 탐욕 지수")에 바로 답하는 한 문장을 인용하므로, 점수·날짜를 게이지 숫자로만 두지 않고 정의
+ * 문단보다 먼저 한 문장으로 말한다. 종목 탭과 같은 문장 빌더(`composeFearGreedDescription`)를
+ * 써 두 표면의 문형이 갈리지 않는다. 판독값이 없으면 `null`(호출부가 정의 문단·템플릿 설명을 쓴다).
  */
 export function composeMarketFearGreedAnswer(
     view: MarketFearGreedView<MarketFearGreedViewSnapshot>,

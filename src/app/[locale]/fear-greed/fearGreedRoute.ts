@@ -14,6 +14,7 @@ import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
+import type { SeoTranslator } from '@/shared/lib/seo';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import {
     buildSymbolDirectory,
@@ -64,19 +65,12 @@ export async function fearGreedMetadata(
         console.error(`${source.failureLog} (metadata):`, e);
         return null;
     });
-    // 판독값이 없으면 답 문장도 없다 — 실패 경로에서 라벨 번역자를 읽지 않는다.
-    const answer =
-        view === null || view.snapshot === null
-            ? null
-            : composeMarketFearGreedAnswer(
-                  view,
-                  copy.answerSubject,
-                  t,
-                  await getTranslations({
-                      locale,
-                      namespace: 'shared.enumLabel',
-                  })
-              );
+    const answer = await loadMetadataAnswer(
+        view,
+        copy.answerSubject,
+        locale,
+        t
+    );
     return buildHubMetadata({
         params,
         locale,
@@ -86,6 +80,23 @@ export async function fearGreedMetadata(
         keywords: copy.keywords,
         degraded: view === null || view.snapshot === null,
     });
+}
+
+/**
+ * 메타데이터용 답 문장. 판독값이 없으면 `null` — 실패 경로에서 라벨 번역자를 읽지 않는다.
+ */
+async function loadMetadataAnswer(
+    view: FearGreedRouteView | null,
+    subject: string,
+    locale: Locale,
+    tSeo: SeoTranslator
+): Promise<string | null> {
+    if (view === null || view.snapshot === null) return null;
+    const tLabel = await getTranslations({
+        locale,
+        namespace: 'shared.enumLabel',
+    });
+    return composeMarketFearGreedAnswer(view, subject, tSeo, tLabel);
 }
 
 /**

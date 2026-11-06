@@ -12,17 +12,13 @@ import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
-import { METHODOLOGY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import {
     buildBreadcrumbJsonLd,
     buildFaqJsonLd,
     buildWebPageJsonLd,
-    localizedAbsoluteUrl,
-    ORGANIZATION_JSON_LD_ID,
     SITE_URL,
 } from '@/shared/lib/seo';
-import { SITE_NAME } from '@/shared/config/brand';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
@@ -32,6 +28,7 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
 import { composeMarketFearGreedAnswer } from './_lib/marketFearGreedAnswer';
+import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
@@ -111,44 +108,13 @@ export function FearGreedRouteBody({
         ...(view.snapshot ? { dateModified: view.snapshot.asOf } : {}),
     };
 
-    /*
-     * 지수 자체를 데이터셋으로 선언한다 — 이 사이트가 직접 계산하는 1차 데이터라 AI 검색·
-     * 데이터셋 검색이 출처로 집을 수 있는 유일한 표면이다. 다운로드 파일은 아직 없어
-     * `distribution`은 싣지 않는다(공개 API를 열 때 함께 붙인다). 기간은 화면의 비교 시점 중
-     * 가장 이른 세션부터 최신 판독일까지 — 화면이 실제로 보여 주는 범위만 말한다.
-     */
-    const earliestDate = view.comparisons
-        .map(point => point.date)
-        .toSorted()
-        .at(0);
-    const datasetJsonLd = view.snapshot && {
-        '@context': 'https://schema.org',
-        '@type': 'Dataset',
+    const datasetJsonLd = buildMarketFearGreedDatasetJsonLd({
+        view,
         name: copy.heading,
         description: copy.description,
-        // 로케일별 URL — 같은 Dataset을 네 URL이 각자 자기 주소로 선언해야 크롤러가 언어
-        // 클러스터를 하나로 접지 않는다(`backtestingJsonLd.ts`와 같은 이유).
-        url: localizedAbsoluteUrl(url, locale),
-        // 리치 결과 검사기는 다른 페이지에 정의된 `@id`를 따라가지 않는다 — 이름·종류를 인라인으로.
-        creator: {
-            '@type': 'Organization',
-            '@id': ORGANIZATION_JSON_LD_ID,
-            name: SITE_NAME,
-            url: SITE_URL,
-        },
-        isAccessibleForFree: true,
-        license: `${SITE_URL}${TERMS_PATH}`,
-        measurementTechnique: `${SITE_URL}${METHODOLOGY_PATH}`,
-        dateModified: view.snapshot.asOf,
-        temporalCoverage: `${earliestDate ?? view.snapshot.asOf}/${view.snapshot.asOf}`,
-        variableMeasured: {
-            '@type': 'PropertyValue',
-            name: copy.heading,
-            minValue: 0,
-            maxValue: 100,
-            value: view.snapshot.score,
-        },
-    };
+        url,
+        locale,
+    });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [{ name: copy.heading, url }],

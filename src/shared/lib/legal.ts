@@ -35,8 +35,8 @@ export const SITE_OPERATOR = {
  * 두 노드는 `@id`가 같아 크롤러가 하나의 개체로 합치므로, 배열이 갈리면
  * 같은 사람이 서로 다른 프로필 목록을 주장하게 된다 — 한 상수로 묶는다.
  *
- * velog는 운영자 개인 블로그다(2026-11-06 사용자 결정 — 서비스 공식 블로그를 따로 두지 않고,
- * 조직 `sameAs`·푸터에서 뺐다).
+ * velog는 운영자 개인 블로그라 여기(사람)에만 싣는다 — 서비스 공식 블로그가 아니므로 조직
+ * `sameAs`와 푸터에는 두지 않는다.
  */
 export const OPERATOR_SAME_AS: readonly string[] = [
     SITE_OPERATOR.githubUrl,

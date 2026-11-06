@@ -121,103 +121,103 @@
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 78,
+        "line": 84,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 79,
+        "line": 85,
         "reason": "seo-keywords-ko-only",
         "text": "시장 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 80,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "미국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 82,
+        "line": 88,
         "reason": "seo-keywords-ko-only",
         "text": "VIX 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 83,
+        "line": 89,
         "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 111,
+        "line": 118,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 112,
+        "line": 119,
         "reason": "seo-keywords-ko-only",
         "text": "한국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 113,
+        "line": 120,
         "reason": "seo-keywords-ko-only",
         "text": "국내 증시 투자심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 114,
+        "line": 121,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 115,
+        "line": 122,
         "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 116,
+        "line": 123,
         "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 153,
+        "line": 161,
         "reason": "seo-keywords-ko-only",
         "text": "코인 공포탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 154,
+        "line": 162,
         "reason": "seo-keywords-ko-only",
         "text": "코인 공포지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 155,
+        "line": 163,
         "reason": "seo-keywords-ko-only",
         "text": "코인 탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 156,
+        "line": 164,
         "reason": "seo-keywords-ko-only",
         "text": "크립토 공포지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 157,
+        "line": 165,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 공포탐욕지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
-        "line": 158,
+        "line": 166,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 공포탐욕지수"
     },
