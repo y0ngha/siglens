@@ -9,6 +9,8 @@ import {
     RSI_ZONE_LABEL_KEY,
 } from './utils/technicalFacts';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { guideCategoryPath, guideEntryPath } from '@/shared/lib/guidePaths';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /** `TechnicalFactsSummary`가 그려지는 자리(`placement` JSDoc). */
 export type TechnicalFactsPlacement = 'panel' | 'page';
@@ -76,6 +78,21 @@ export function TechnicalFactsSummary({
     );
     if (!model) return null;
     const { facts, change } = model;
+    // 번역자를 키 리터럴로 직접 부른다 — extract.mjs가 이 호출만 보고 키를 라우트 번들에 싣는다.
+    const guideLinks = [
+        {
+            href: guideEntryPath('indicators', 'rsi'),
+            label: t('TechnicalFactsSummary.guideRsi'),
+        },
+        {
+            href: guideEntryPath('indicators', 'macd'),
+            label: t('TechnicalFactsSummary.guideMacd'),
+        },
+        {
+            href: guideCategoryPath('indicators'),
+            label: t('TechnicalFactsSummary.guideIndicators'),
+        },
+    ];
 
     return (
         <section
@@ -168,6 +185,24 @@ export function TechnicalFactsSummary({
                     </dd>
                 </div>
             </dl>
+            {/* 표의 지표를 설명하는 가이드로 보내는 보조 내비. 색인 차트 탭(sitemap 전체)이
+                가이드로 내부 링크를 보내는 자리다. 대상은 4개 로케일 모두 있는 항목만 —
+                howto는 ko 전용이라 넣지 않는다. 사본이 panel·page 두 개라 prefetch를 끈다. */}
+            <nav
+                aria-label={t('TechnicalFactsSummary.guideLinksLabel')}
+                className="flex flex-wrap gap-x-4 gap-y-1 text-xs"
+            >
+                {guideLinks.map(({ href, label }) => (
+                    <Link
+                        key={href}
+                        href={href}
+                        prefetch={false}
+                        className="text-primary-400 hover:text-primary-300"
+                    >
+                        {label}
+                    </Link>
+                ))}
+            </nav>
             <p className="text-xs text-secondary-400">
                 {t('TechnicalFactsSummary.beae1d')}
             </p>
