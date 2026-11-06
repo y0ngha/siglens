@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.115.1](https://github.com/y0ngha/siglens/compare/v0.115.0...v0.115.1) (2026-11-06)
+
+### Bug Fixes
+
+* 뉴스 폴링이 이동 중 버전 차이 새로고침을 일으키지 않게 한다 ([#1267](https://github.com/y0ngha/siglens/issues/1267)) ([11d94ed](https://github.com/y0ngha/siglens/commit/11d94edc85da549a9ddbd4b7bc790ff6a9e63e31))
+* SIGLENS AI 모바일 입력 줌·터치 사용성 개선 ([#1270](https://github.com/y0ngha/siglens/issues/1270)) ([c83a3d1](https://github.com/y0ngha/siglens/commit/c83a3d1072d7ba2826bf3ac8ae6b9f972f83dbb6))
+
 # [0.115.0](https://github.com/y0ngha/siglens/compare/v0.114.1...v0.115.0) (2026-11-04)
 
 ### Bug Fixes
