@@ -29,8 +29,19 @@ export const dynamic = 'force-dynamic';
  * 이 레이아웃은 ai 서브트리의 **루트**라 메인 호스트 `[locale]/layout.tsx`의 `viewport`를
  * 상속하지 않는다. 없으면 모바일 주소창 띠가 브라우저 기본색으로 떠 헤더와 갈라지고,
  * `viewport-fit=cover`가 빠져 노치 영역이 비었다. 메인과 같은 값을 쓴다.
+ *
+ * `interactiveWidget: 'resizes-content'`만 ai 호스트에 더한다. Android Chrome(108+)의 기본값
+ * `resizes-visual`은 키보드가 떠도 레이아웃 뷰포트를 줄이지 않아, 하단 sticky 컴포저가
+ * 키보드 뒤로 가려지고 `dvh`도 그대로였다. 이 값이면 키보드만큼 레이아웃이 줄어 컴포저가
+ * 네이티브 채팅 앱처럼 키보드 바로 위에 붙는다. iOS Safari는 이 키를 무시한다(포커스 시
+ * 확대는 입력 글자 크기로 막는다 — `widgets/agent-chat/aiSurfaceStyles.ts`의
+ * `AI_FIELD_TOUCH_TEXT`). 메인 호스트에 넣지 않는 이유: 심볼 페이지 모바일 시트가
+ * `window.innerHeight`로 스냅 오프셋을 잡아, 키보드가 innerHeight를 바꾸면 시트가 튄다.
  */
-export const viewport: Viewport = SITE_VIEWPORT;
+export const viewport: Viewport = {
+    ...SITE_VIEWPORT,
+    interactiveWidget: 'resizes-content',
+};
 
 export async function generateMetadata({
     params,

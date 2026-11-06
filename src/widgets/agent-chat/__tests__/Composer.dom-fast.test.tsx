@@ -91,6 +91,13 @@ describe('Composer', () => {
         );
     });
 
+    it('uses 16px text on touch devices so iOS Safari does not zoom on focus', () => {
+        renderComposer();
+        expect(screen.getByRole('textbox').className).toMatch(
+            /(^|\s)pointer-coarse:text-base(\s|$)/
+        );
+    });
+
     it('an entry-link draft is prefilled but only sent when the user presses send', () => {
         const { onSend } = renderComposer({ initialValue: 'NVDA 지금 어때?' });
         expect(screen.getByRole('textbox')).toHaveValue('NVDA 지금 어때?');

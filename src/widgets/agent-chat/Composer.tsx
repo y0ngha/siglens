@@ -6,7 +6,7 @@ import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
-import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
+import { AI_FIELD_TOUCH_TEXT, AI_RAISED_CONTROL } from './aiSurfaceStyles';
 import {
     isSendableMessage,
     MESSAGE_MAX_CHARS,
@@ -114,7 +114,10 @@ export function Composer({
                     aria-label={t('Composer.fdad68')}
                     aria-invalid={overLimit || undefined}
                     placeholder={t('Composer.placeholder')}
-                    className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-secondary-100 placeholder:text-secondary-400 focus-visible:outline-none"
+                    className={cn(
+                        'max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-secondary-100 placeholder:text-secondary-400 focus-visible:outline-none',
+                        AI_FIELD_TOUCH_TEXT
+                    )}
                     onInput={e => {
                         const el = e.currentTarget;
                         el.style.height = 'auto';
