@@ -3326,6 +3326,10 @@
                 "beae1d": "위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.",
                 "d8446c": "MACD 모멘텀",
                 "e532e4": "({v0}분 지연)",
+                "guideIndicators": "보조지표 가이드 전체",
+                "guideLinksLabel": "지표 가이드",
+                "guideMacd": "MACD 보는 법",
+                "guideRsi": "RSI 뜻과 기준",
                 "recentBarsPosition": "최근 {v0}개 봉 위치",
                 "rsiValue": "{v0} ({v1})"
             },

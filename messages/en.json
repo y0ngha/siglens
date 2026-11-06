@@ -2778,6 +2778,10 @@
                 "beae1d": "The above indicators are automatically calculated values based on the displayed chart data.",
                 "d8446c": "MACD Momentum",
                 "e532e4": "({v0} min delay)",
+                "guideIndicators": "All indicator guides",
+                "guideLinksLabel": "Indicator guides",
+                "guideMacd": "How to read MACD",
+                "guideRsi": "What RSI means and its levels",
                 "recentBarsPosition": "Position over the last {v0} bars",
                 "rsiValue": "{v0} ({v1})"
             },
