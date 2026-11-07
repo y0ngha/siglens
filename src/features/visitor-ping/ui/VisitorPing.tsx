@@ -83,7 +83,8 @@ export function VisitorPing(): null {
     const isMember = useAuthHint();
     const originRef = useRef<EntryOrigin | null>(null);
     useEffect(() => {
-        originRef.current ??= readEntryOrigin();
+        // `??=`는 React Compiler가 지원하지 않는다(react-hooks-js/todo).
+        if (originRef.current === null) originRef.current = readEntryOrigin();
         const origin = originRef.current;
         return sendOnHumanInteraction(() => sendPresence(isMember, origin));
     }, [isMember]);

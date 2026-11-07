@@ -56,34 +56,40 @@ const GOOGLE_HOST =
  * `utm_source` → 분류. ChatGPT 검색은 링크에 `utm_source=chatgpt.com`을 붙이고, 앱 내 브라우저는
  * Referer를 비우기도 해서 Referer보다 이 값이 더 믿을 만하다. 정해진 값만 받고 나머지는 무시한다
  * (자유 입력 문자열을 분류값으로 저장하지 않는다).
+ *
+ * 한계: `utm_source`는 링크를 만든 쪽이 정한다. 다른 사이트가 우리 링크에 `utm_source=chatgpt`를
+ * 붙이면 그 유입은 chatgpt로 잡힌다 — 집계를 읽을 때 소수의 오염은 감안한다.
  */
-const UTM_RULES: Readonly<Record<string, EntrySource>> = {
-    'chatgpt.com': 'chatgpt',
-    chatgpt: 'chatgpt',
-    openai: 'chatgpt',
-    'perplexity.ai': 'perplexity',
-    perplexity: 'perplexity',
-    gemini: 'gemini',
-    copilot: 'copilot',
-    'copilot.com': 'copilot',
-    claude: 'claude',
-    'claude.ai': 'claude',
-    deepseek: 'deepseek',
-    grok: 'grok',
-    google: 'google',
-    naver: 'naver',
-    naver_blog: 'naver-blog',
-    'naver-blog': 'naver-blog',
-    bing: 'bing',
-    daum: 'daum',
-    x: 'x',
-    twitter: 'x',
-    threads: 'threads',
-    facebook: 'facebook',
-    instagram: 'instagram',
-    youtube: 'youtube',
-    reddit: 'reddit',
-};
+const UTM_RULES: ReadonlyMap<string, EntrySource> = new Map<
+    string,
+    EntrySource
+>([
+    ['chatgpt.com', 'chatgpt'],
+    ['chatgpt', 'chatgpt'],
+    ['openai', 'chatgpt'],
+    ['perplexity.ai', 'perplexity'],
+    ['perplexity', 'perplexity'],
+    ['gemini', 'gemini'],
+    ['copilot', 'copilot'],
+    ['copilot.com', 'copilot'],
+    ['claude', 'claude'],
+    ['claude.ai', 'claude'],
+    ['deepseek', 'deepseek'],
+    ['grok', 'grok'],
+    ['google', 'google'],
+    ['naver', 'naver'],
+    ['naver_blog', 'naver-blog'],
+    ['naver-blog', 'naver-blog'],
+    ['bing', 'bing'],
+    ['daum', 'daum'],
+    ['x', 'x'],
+    ['twitter', 'x'],
+    ['threads', 'threads'],
+    ['facebook', 'facebook'],
+    ['instagram', 'instagram'],
+    ['youtube', 'youtube'],
+    ['reddit', 'reddit'],
+]);
 
 function hostMatches(host: string, domain: string): boolean {
     return host === domain || host.endsWith(`.${domain}`);
@@ -117,9 +123,8 @@ export function classifyEntrySource({
     ownHost,
 }: EntrySourceInput): EntrySource | null {
     const utm = utmSource?.trim().toLowerCase();
-    if (utm !== undefined && Object.hasOwn(UTM_RULES, utm)) {
-        return UTM_RULES[utm];
-    }
+    const fromUtm = utm === undefined ? undefined : UTM_RULES.get(utm);
+    if (fromUtm !== undefined) return fromUtm;
 
     const host = referrerHost?.trim().toLowerCase().replace(/\.$/, '');
     if (host === undefined || host === '') return null;

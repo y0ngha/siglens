@@ -23,7 +23,13 @@ async function readSmallJson(request: Request): Promise<unknown> {
     const declared = Number(request.headers.get('content-length'));
     if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return null;
     const text = await request.text().catch(() => '');
-    if (text === '' || text.length > MAX_BODY_BYTES) return null;
+    // 헤더가 없거나 틀릴 수 있어 실제 바이트 수로 한 번 더 본다.
+    if (
+        text === '' ||
+        new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES
+    ) {
+        return null;
+    }
     try {
         return JSON.parse(text);
     } catch {
