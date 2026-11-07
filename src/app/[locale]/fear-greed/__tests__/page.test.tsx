@@ -58,8 +58,17 @@ describe('/fear-greed page', () => {
     });
 
     describe('generateMetadata', () => {
-        it('returns a Korean title mentioning the fear-greed index', async () => {
+        it('판독값이 있으면 점수·단계·기준일을 담은 제목을 브랜드 접미사 없이 쓴다', async () => {
             mockGetMarketFearGreedStatic.mockResolvedValue(SAMPLE_SNAPSHOT);
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ locale: 'ko' }),
+            });
+            expect(metadata.title).toEqual({
+                absolute: '미국 공포탐욕지수 62점(탐욕) 8월 14일 기준',
+            });
+        });
+
+        it('판독값이 없으면 템플릿 제목으로 돌아간다', async () => {
             const metadata = await generateMetadata({
                 params: Promise.resolve({ locale: 'ko' }),
             });
@@ -430,6 +439,47 @@ describe('/fear-greed 답 문장', () => {
         );
         const firstParagraph = container.querySelector('main section p');
         expect(firstParagraph?.textContent).toBe(ANSWER);
+    });
+
+    it('요인 백분위가 양쪽에 걸치면 답 문장 다음 문단에 가장 공포·탐욕 쪽 요인을 말한다', async () => {
+        mockGetMarketFearGreedStatic.mockResolvedValue({
+            ...ANSWER_VIEW,
+            snapshot: {
+                ...ANSWER_VIEW.snapshot!,
+                factors: [
+                    { key: 'momentum', rawValue: -0.03, percentile: 13 },
+                    { key: 'breadth', rawValue: 0.07, percentile: 100 },
+                ],
+            },
+        });
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+        const [first, second] = Array.from(
+            container.querySelectorAll('main section p')
+        );
+        expect(first?.textContent).toBe(ANSWER);
+        expect(second?.textContent).toMatch(
+            /^지금 가장 공포 쪽에 있는 요인은 .+\(백분위 13\)이고, 가장 탐욕 쪽에 있는 요인은 .+\(백분위 100\)입니다\.$/
+        );
+    });
+
+    it('WebPage JSON-LD 이름이 점수형 제목과 같다', async () => {
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+        const webPage = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        )
+            .map(el => JSON.parse(el.textContent ?? '{}'))
+            .find(d => d['@type'] === 'WebPage');
+        expect(webPage.name).toContain(
+            '미국 공포탐욕지수 24점(극심한 공포) 11월 5일 기준'
+        );
     });
 
     it('meta·og·twitter 설명이 같은 답 문장이다', async () => {

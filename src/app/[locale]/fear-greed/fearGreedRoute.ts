@@ -20,8 +20,11 @@ import {
     buildSymbolDirectory,
     type SymbolDirectorySection,
 } from '@/shared/lib/symbolDirectory';
-import { fearGreedCopyFor } from './copy';
-import { composeMarketFearGreedAnswer } from './_lib/marketFearGreedAnswer';
+import { fearGreedCopyFor, type FearGreedCopy } from './copy';
+import {
+    composeMarketFearGreedAnswer,
+    composeMarketFearGreedTitle,
+} from './_lib/marketFearGreedAnswer';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
 
@@ -65,38 +68,49 @@ export async function fearGreedMetadata(
         console.error(`${source.failureLog} (metadata):`, e);
         return null;
     });
-    const answer = await loadMetadataAnswer(
-        view,
-        copy.answerSubject,
-        locale,
-        t
-    );
+    const answer = await loadMetadataAnswer(view, copy, locale, t);
     return buildHubMetadata({
         params,
         locale,
         path: copy.path,
-        title: copy.title,
-        description: answer ?? copy.description,
+        title: answer?.title ?? copy.title,
+        absoluteTitle: answer !== null,
+        description: answer?.description ?? copy.description,
         keywords: copy.keywords,
         degraded: view === null || view.snapshot === null,
     });
 }
 
 /**
- * 메타데이터용 답 문장. 판독값이 없으면 `null` — 실패 경로에서 라벨 번역자를 읽지 않는다.
+ * 메타데이터용 점수형 제목과 답 문장. 판독값이 없으면 `null` — 실패 경로에서 라벨 번역자를 읽지
+ * 않고, 호출부는 템플릿 제목·설명(브랜드 접미사 포함)으로 돌아간다. 둘 다 같은 판독값에서 나온다.
  */
 async function loadMetadataAnswer(
     view: FearGreedRouteView | null,
-    subject: string,
+    copy: FearGreedCopy,
     locale: Locale,
     tSeo: SeoTranslator
-): Promise<string | null> {
+): Promise<{ title: string; description: string } | null> {
     if (view === null || view.snapshot === null) return null;
     const tLabel = await getTranslations({
         locale,
         namespace: 'shared.enumLabel',
     });
-    return composeMarketFearGreedAnswer(view, subject, tSeo, tLabel);
+    const title = composeMarketFearGreedTitle(
+        view,
+        copy.titleSubject,
+        tSeo,
+        tLabel
+    );
+    const description = composeMarketFearGreedAnswer(
+        view,
+        copy.answerSubject,
+        tSeo,
+        tLabel
+    );
+    return title === null || description === null
+        ? null
+        : { title, description };
 }
 
 /**

@@ -133,7 +133,9 @@
                 "e533f3": "Failed to load Fear & Greed Index",
                 "eb2523": "{v0} Home"
             },
-            "symbolListTitle": "Fear & Greed Index by Symbol"
+            "symbolListTitle": "Fear & Greed Index by Symbol",
+            "factorExtremes": "The factor leaning furthest toward fear right now is {fear}, and the one leaning furthest toward greed is {greed}.",
+            "factorExtremeItem": "{factor} (percentile {percentile})"
         },
         "forgot-password": {
             "page": {
@@ -1856,7 +1858,8 @@
                     "description": "Combining recent moves in KOSPI 200, government bonds, corporate bonds, and an equal-weight ETF, this shows overall Korean market buying sentiment as a 0–100 score with a 5-level label.",
                     "heading": "Korea Fear & Greed Index",
                     "title": "Today's KOSPI Market Sentiment: Fear & Greed Index",
-                    "answerSubject": "Korean market"
+                    "answerSubject": "Korean market",
+                    "titleSubject": "KOSPI Fear & Greed Index"
                 },
                 "us": {
                     "copy_faq0a": "It combines recent closes of five factors (the S&P 500, VIX, long-dated Treasuries, high-yield versus investment-grade corporates, and the equal-weight index) into a 0–100 score for short-term buying sentiment across US equities.",
@@ -1870,7 +1873,8 @@
                     "description": "S&P 500, VIX, Treasuries, corporate bonds, and an equal-weight index combine into a 0–100 score and 5-level label for overall US buying sentiment.",
                     "heading": "US Fear & Greed Index",
                     "title": "Today's US Market Sentiment: Fear & Greed Index",
-                    "answerSubject": "US market"
+                    "answerSubject": "US market",
+                    "titleSubject": "US Fear & Greed Index"
                 },
                 "crypto": {
                     "title": "Crypto Fear and Greed Index - Today's Crypto Market Sentiment",
@@ -1888,8 +1892,10 @@
                     "copy_faq3a": "It updates once a day, based on the daily bar that closes at 00:00 UTC; live prices from the day still in progress are never used. The page itself is cached for up to an hour.",
                     "copy_faq4q": "Can I trade based on this score?",
                     "copy_faq4a": "This index is a reference that summarizes market sentiment, not investment advice. Extreme fear or greed does not by itself signal an imminent rebound or decline, so investment decisions and their consequences remain your own.",
-                    "answerSubject": "Crypto market"
-                }
+                    "answerSubject": "Crypto market",
+                    "titleSubject": "Crypto Fear & Greed Index"
+                },
+                "answerTitle": "{subject} {score} ({label}), {date}"
             },
             "forgotPassword": {
                 "description": "Send a SIGLENS password reset link",

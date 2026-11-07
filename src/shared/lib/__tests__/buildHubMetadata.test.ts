@@ -141,4 +141,32 @@ describe('buildHubMetadata', () => {
         });
         expect(without.alternates).not.toHaveProperty('types');
     });
+
+    it('absoluteTitle이면 <title>에 템플릿을 붙이지 않고, 소셜 카드 제목은 브랜드를 붙인다', async () => {
+        const base = {
+            params: Promise.resolve({ locale: 'ko' }),
+            locale: 'ko',
+            path: '/fear-greed',
+            title: '미국 공포탐욕지수 24점(극심한 공포) 11월 6일 기준',
+            description: 'd',
+            keywords: [],
+            degraded: false,
+        } as const;
+        const absolute = await buildHubMetadata({
+            ...base,
+            absoluteTitle: true,
+        });
+        const templated = await buildHubMetadata(base);
+
+        expect(absolute.title).toEqual({ absolute: base.title });
+        // 기본값(false)은 예전처럼 문자열 — 레이아웃 템플릿이 브랜드를 붙인다.
+        expect(templated.title).toBe(base.title);
+        const brandedTitle = `${base.title} | ${SITE_NAME_KO}`;
+        expect((absolute.openGraph as { title?: string }).title).toBe(
+            brandedTitle
+        );
+        expect((absolute.twitter as { title?: string }).title).toBe(
+            brandedTitle
+        );
+    });
 });

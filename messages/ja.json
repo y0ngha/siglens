@@ -133,7 +133,9 @@
                 "e533f3": "恐怖強欲指数を読み込めませんでした",
                 "eb2523": "{v0} ホームへ"
             },
-            "symbolListTitle": "銘柄別の恐怖強欲指数"
+            "symbolListTitle": "銘柄別の恐怖強欲指数",
+            "factorExtremes": "現在もっとも恐怖寄りの要因は{fear}で、もっとも強欲寄りの要因は{greed}です。",
+            "factorExtremeItem": "{factor}(パーセンタイル{percentile})"
         },
         "forgot-password": {
             "page": {
@@ -1856,7 +1858,8 @@
                     "description": "KOSPI200、国庫債、社債、均等加重ETFの最近の動きを組み合わせ、韓国市場全体の買い意欲を0〜100点のスコアと5段階のラベルで示します。",
                     "heading": "韓国恐怖強欲指数",
                     "title": "本日のKOSPI市場心理｜恐怖強欲指数で確認",
-                    "answerSubject": "韓国市場"
+                    "answerSubject": "韓国市場",
+                    "titleSubject": "KOSPI恐怖強欲指数"
                 },
                 "us": {
                     "copy_faq0a": "S&P500、VIX、長期国債、ハイイールド／投資適格社債、均等加重指数という5要因の直近終値の動きをまとめ、米国株式市場全体の短期的な買い意欲を0〜100のスコアで示します。",
@@ -1870,7 +1873,8 @@
                     "description": "S&P500、VIX、長期国債、社債、均等加重指数の最近の動きを組み合わせ、米国市場全体の買い意欲を0〜100点のスコアと5段階のラベルで示します。",
                     "heading": "米国恐怖強欲指数",
                     "title": "本日の米国市場心理｜恐怖強欲指数で確認",
-                    "answerSubject": "米国市場"
+                    "answerSubject": "米国市場",
+                    "titleSubject": "米国恐怖強欲指数"
                 },
                 "crypto": {
                     "title": "暗号資産の恐怖強欲指数 - 今日の暗号資産市場の心理",
@@ -1888,8 +1892,10 @@
                     "copy_faq3a": "毎日00:00 UTC（日本時間午前9時）に確定する日足を基準に1日1回更新され、まだ終わっていない日のリアルタイム相場は使いません。ページ自体は最大1時間キャッシュされます。",
                     "copy_faq4q": "このスコアを見て売買してもよいですか？",
                     "copy_faq4a": "この指数は市場心理を要約した参考指標にすぎず、投資助言ではありません。極端な恐怖や強欲がすぐに反発や下落を意味するわけでもないため、投資判断とその責任はご自身にあります。",
-                    "answerSubject": "暗号資産市場"
-                }
+                    "answerSubject": "暗号資産市場",
+                    "titleSubject": "暗号資産恐怖強欲指数"
+                },
+                "answerTitle": "{subject} {score}点（{label}） {date}時点"
             },
             "forgotPassword": {
                 "description": "SIGLENSのパスワード再設定リンクを送信",

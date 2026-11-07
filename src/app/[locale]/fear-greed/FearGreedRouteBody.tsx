@@ -27,7 +27,11 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
-import { composeMarketFearGreedAnswer } from './_lib/marketFearGreedAnswer';
+import {
+    composeMarketFearGreedAnswer,
+    composeMarketFearGreedTitle,
+    pickFactorExtremes,
+} from './_lib/marketFearGreedAnswer';
 import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd';
 
 interface FearGreedRouteBodyProps {
@@ -95,11 +99,35 @@ export function FearGreedRouteBody({
         tSeo,
         tLabel
     );
+    const scoreTitle = composeMarketFearGreedTitle(
+        view,
+        copy.titleSubject,
+        tSeo,
+        tLabel
+    );
+    const extremes =
+        view.snapshot === null
+            ? null
+            : pickFactorExtremes(view.snapshot.factors);
+    const extremesSentence =
+        extremes === null
+            ? null
+            : t('factorExtremes', {
+                  fear: t('factorExtremeItem', {
+                      factor: factorLabel(extremes.fear.key),
+                      percentile: extremes.fear.percentile,
+                  }),
+                  greed: t('factorExtremeItem', {
+                      factor: factorLabel(extremes.greed.key),
+                      percentile: extremes.greed.percentile,
+                  }),
+              });
 
     const webPageJsonLd = {
         ...buildWebPageJsonLd({
             url,
-            name: brandTitle(copy.title, locale),
+            // `<title>`과 같은 이름 — 판독값이 있으면 점수형 제목이다.
+            name: brandTitle(scoreTitle ?? copy.title, locale),
             description: answer ?? copy.description,
             locale,
         }),
@@ -157,6 +185,11 @@ export function FearGreedRouteBody({
                         <p className="font-medium text-secondary-200">
                             {answer}
                         </p>
+                    )}
+                    {/* 점수의 이유 — 요인 양 끝. 답 문장과 같은 판독값에서 나오고, 번역 문장을 코드로
+                        잇지 않도록 별도 문단으로 둔다(I18N.md#I18-14). */}
+                    {extremesSentence && (
+                        <p className="text-secondary-300">{extremesSentence}</p>
                     )}
                     {copy.intro.map(paragraph => (
                         <p key={paragraph}>{paragraph}</p>
