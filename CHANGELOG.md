@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.116.0](https://github.com/y0ngha/siglens/compare/v0.115.1...v0.116.0) (2026-11-07)
+
+### Bug Fixes
+
+* **i18n:** 바뀐 한국어 문구의 번역 해시를 갱신해 기존 번역 재번역을 막는다 ([#1277](https://github.com/y0ngha/siglens/issues/1277)) ([3d9450f](https://github.com/y0ngha/siglens/commit/3d9450fcdd461aa6584d3abca06fc24e82ead67f))
+
+### Features
+
+* 차트 탭 기술 요약에 보조지표 가이드 링크 추가 ([#1272](https://github.com/y0ngha/siglens/issues/1272)) ([46e7d62](https://github.com/y0ngha/siglens/commit/46e7d62e53359111fc8be169a47f8c1f1330c2eb))
+* **metrics:** AI 답변 서비스 유입을 첫 진입 출처 분류로 집계한다 ([#1274](https://github.com/y0ngha/siglens/issues/1274)) ([bd9fc30](https://github.com/y0ngha/siglens/commit/bd9fc30c9ad00e70e0709ba726e29887ac95c45b))
+* **seo:** 공포탐욕 허브 제목에 오늘 점수와 기준일을 싣고 점수의 이유를 말한다 ([#1276](https://github.com/y0ngha/siglens/issues/1276)) ([d30fab1](https://github.com/y0ngha/siglens/commit/d30fab10aec1c48a4468370753c9d45843108481))
+* **seo:** AI 검색 크롤러가 noindex 유틸리티 페이지에 쓰는 수집량을 줄인다 ([#1275](https://github.com/y0ngha/siglens/issues/1275)) ([9d2679f](https://github.com/y0ngha/siglens/commit/9d2679f2d5a2384c85b0e6f8434c077515827fe7))
+* **seo:** AI 검색이 인용할 답 문장과 조언 없는 산문으로 GEO를 보강한다 ([#1273](https://github.com/y0ngha/siglens/issues/1273)) ([1b71d43](https://github.com/y0ngha/siglens/commit/1b71d435068dc17cc55a6d9ddb0d4b05a7cde917))
+
 ## [0.115.1](https://github.com/y0ngha/siglens/compare/v0.115.0...v0.115.1) (2026-11-06)
 
 ### Bug Fixes
