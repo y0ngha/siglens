@@ -238,7 +238,7 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
         {
             token: 'getFundamentalFacts',
-            via: 'entities/fundamental-facts → getInvestorFlowsScorecard (staticSymbolCache 12h, flows 탭과 같은 키) + getFinancialsSnapshot (cacheNonEmpty 24h); 목표가·의견은 provider Redis, 실적은 DB 직접 읽기라 unstable_cache가 아니다',
+            via: 'entities/fundamental-facts → getInvestorFlowsScorecard (staticSymbolCache 12h, flows 탭과 같은 키) + getFinancialsSnapshot (cacheNonEmpty 24h) + 실적 staticSymbolCache(fundamental-facts:earnings) 12h; 목표가·의견은 섹션과 같은 staticSymbolCache 키(fundamental:pt-consensus 등) 24h',
             revalidate: time.SECONDS_PER_HALF_DAY,
         },
     ],

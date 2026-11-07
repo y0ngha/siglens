@@ -36,6 +36,15 @@ vi.mock('@/entities/earnings-report/server/earningsReportsRepository', () => ({
         listReportedEps = mockListReportedEps;
     },
 }));
+const { mockStaticSymbolCache } = vi.hoisted(() => ({
+    mockStaticSymbolCache: vi.fn(
+        (_key: readonly string[], _symbol: string, fetcher: () => unknown) =>
+            fetcher()
+    ),
+}));
+vi.mock('@/shared/cache/staticSymbolCache', () => ({
+    staticSymbolCache: mockStaticSymbolCache,
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
@@ -147,6 +156,23 @@ describe('getFundamentalFacts', () => {
             'LAES',
             '2026-11-07',
             8
+        );
+        // 실적은 DB 직접 읽기라 `unstable_cache`(staticSymbolCache) 안에서만 읽는다 — 밖이면 ISR이 동적으로 뒤집힌다.
+        expect(mockStaticSymbolCache).toHaveBeenCalledWith(
+            ['fundamental-facts:earnings', 'LAES', '2026-11-07'],
+            'LAES',
+            expect.any(Function),
+            [],
+            43200
+        );
+        // 목표가·의견은 펀더멘털 섹션과 같은 키(캐시 공유)로 읽는다.
+        const keys = mockStaticSymbolCache.mock.calls.map(([key]) => key[0]);
+        expect(keys).toEqual(
+            expect.arrayContaining([
+                'fundamental:pt-consensus',
+                'fundamental:pt-summary',
+                'fundamental:grades-consensus',
+            ])
         );
     });
 

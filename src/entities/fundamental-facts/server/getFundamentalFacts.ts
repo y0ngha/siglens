@@ -5,6 +5,8 @@ import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/ser
 import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_DAY, SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
@@ -108,16 +110,46 @@ export const getFundamentalFacts = cache(
                 settle('investor-flows', symbol, () =>
                     getInvestorFlowsScorecard(symbol)
                 ),
+                // 펀더멘털 섹션(`FundamentalSections.tsx` loadSection)과 같은 키·TTL — 캐시를 공유하고,
+                // provider의 FMP no-store fetch가 `unstable_cache` 밖에서 ISR을 동적으로 뒤집지 않게 한다.
                 settle('price-target-consensus', symbol, () =>
-                    provider.getPriceTargetConsensus(symbol)
+                    staticSymbolCache(
+                        ['fundamental:pt-consensus', symbol],
+                        symbol,
+                        () => provider.getPriceTargetConsensus(symbol),
+                        [],
+                        SECONDS_PER_DAY
+                    )
                 ),
                 settle('price-target-summary', symbol, () =>
-                    provider.getPriceTargetSummary(symbol)
+                    staticSymbolCache(
+                        ['fundamental:pt-summary', symbol],
+                        symbol,
+                        () => provider.getPriceTargetSummary(symbol),
+                        [],
+                        SECONDS_PER_DAY
+                    )
                 ),
                 settle('grades', symbol, () =>
-                    provider.getGradesConsensus(symbol)
+                    staticSymbolCache(
+                        ['fundamental:grades-consensus', symbol],
+                        symbol,
+                        () => provider.getGradesConsensus(symbol),
+                        [],
+                        SECONDS_PER_DAY
+                    )
                 ),
-                settle('earnings', symbol, () => loadEarnings(symbol, today)),
+                // DB 직접 읽기는 `unstable_cache` 밖이면 ISR 렌더를 동적으로 뒤집는다
+                // (`noStoreQueryLogger` → DYNAMIC_SERVER_USAGE). 뉴스 탭 EventCalendar와 같은 12h.
+                settle('earnings', symbol, () =>
+                    staticSymbolCache(
+                        ['fundamental-facts:earnings', symbol, today],
+                        symbol,
+                        () => loadEarnings(symbol, today),
+                        [],
+                        SECONDS_PER_HALF_DAY
+                    )
+                ),
             ]);
         const flowsValue = valueOf(flows);
         const earningsValue = valueOf(earnings);
