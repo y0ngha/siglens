@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.116.1](https://github.com/y0ngha/siglens/compare/v0.116.0...v0.116.1) (2026-11-07)
+
+### Bug Fixes
+
+* **seo:** 공포탐욕 허브 제목·답 문장·Dataset의 점수를 정수로 반올림한다 ([#1278](https://github.com/y0ngha/siglens/issues/1278)) ([b948b13](https://github.com/y0ngha/siglens/commit/b948b133efa723d6d3a5e625c4d1c27ef536373a))
+
 # [0.116.0](https://github.com/y0ngha/siglens/compare/v0.115.1...v0.116.0) (2026-11-07)
 
 ### Bug Fixes
