@@ -13,6 +13,7 @@ import {
     createDailyPruner,
     noContent,
 } from '@/app/api/presence/_shared/dailyPruner';
+import { entrySourceOf } from '@/app/api/presence/_shared/entrySourceOf';
 import { landingPathOf } from '@/app/api/presence/_shared/landingPathOf';
 import { resolveUserId } from '@/app/api/presence/_shared/resolveUserId';
 import {
@@ -39,8 +40,11 @@ const RETENTION_DAYS = 400;
 
 const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[visitor-metrics]');
 
-/** 방문 비콘 수신 — 집계 대상이면 방문자당 하루 1행 기록을 응답 뒤로 미루고 언제나 204로 답한다. */
-export async function POST(): Promise<Response> {
+/**
+ * 방문 비콘 수신 — 집계 대상이면 방문자당 하루 1행 기록을 응답 뒤로 미루고 언제나 204로 답한다.
+ * 본문(`{ referrerHost, utmSource }`)은 첫 진입 출처 분류에만 쓰고 원본은 저장하지 않는다.
+ */
+export async function POST(request?: Request): Promise<Response> {
     const headerList = await headers();
 
     // 봇 필터 2층. 1층은 이 라우트에 도달하지도 않는다 — 비콘이 JS 실행을
@@ -56,6 +60,12 @@ export async function POST(): Promise<Response> {
     if (!identity.ok) return identity.response;
 
     const today = kstDateKey(new Date());
+    // 본문 읽기와 회원 확인은 서로 무관하다 — 겹쳐서 응답 경로를 줄인다.
+    const [entrySource, userId] = await Promise.all([
+        entrySourceOf(request),
+        // 회원 D7/D30 재방문의 축. 세션 쿠키가 없으면 DB 왕복 없이 null이다.
+        resolveUserId('[visitor-metrics]'),
+    ]);
 
     const visit: VisitorDayRecord = {
         visitorHash: identity.visitorHash,
@@ -63,8 +73,8 @@ export async function POST(): Promise<Response> {
         userAgent: identity.userAgent,
         country: headerList.get('cf-ipcountry'),
         landingPath: landingPathOf(headerList.get('referer')),
-        // 회원 D7/D30 재방문의 축. 세션 쿠키가 없으면 DB 왕복 없이 null이다.
-        userId: await resolveUserId('[visitor-metrics]'),
+        entrySource,
+        userId,
     };
     // 헤더는 위에서 다 읽었다 — 기록은 응답 뒤로 미룬다(`recordVisitAndPrune`).
     afterWithDrain(() => recordVisitAndPrune(visit));

@@ -115,8 +115,61 @@ describe('POST /api/presence', () => {
             country: 'KR',
             // 쿼리스트링은 버린다.
             landingPath: '/ko/AAPL',
+            // 본문 없는 비콘(옛 클라이언트·직접 방문)은 출처가 없다.
+            entrySource: null,
             userId: null,
         });
+    });
+
+    function beaconRequest(body: string): Request {
+        return new Request('https://siglens.io/api/presence', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body,
+        });
+    }
+
+    it('본문의 Referer 호스트·utm_source를 분류값으로만 남긴다', async () => {
+        const { POST } = await importRoute();
+        await POST(
+            beaconRequest(
+                JSON.stringify({
+                    referrerHost: 'www.google.com',
+                    utmSource: 'chatgpt.com',
+                })
+            )
+        );
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ entrySource: 'chatgpt' })
+        );
+        // 원본 값은 어떤 필드에도 남지 않는다.
+        expect(JSON.stringify(vi.mocked(recordVisit).mock.calls)).not.toContain(
+            'www.google.com'
+        );
+    });
+
+    it('본문이 깨졌거나 모양이 다르거나 너무 커도 방문은 출처 없이 기록한다', async () => {
+        const { POST } = await importRoute();
+        expect((await POST(beaconRequest('{not json'))).status).toBe(
+            HTTP_STATUS_NO_CONTENT
+        );
+        await POST(beaconRequest(JSON.stringify({ referrerHost: 42 })));
+        await POST(
+            beaconRequest(
+                JSON.stringify({
+                    referrerHost: 'chatgpt.com',
+                    pad: 'x'.repeat(2048),
+                })
+            )
+        );
+        await flushAfter();
+        // 세 방문 모두 기록된다 — 루프가 0번 돌아 통과하지 않게 횟수부터 고정한다.
+        expect(recordVisit).toHaveBeenCalledTimes(3);
+        // 큰 본문(1KB 초과)은 읽지 않으므로 chatgpt로 분류되지 않는다.
+        for (const [visit] of vi.mocked(recordVisit).mock.calls) {
+            expect(visit).toMatchObject({ entrySource: null });
+        }
     });
 
     it('로그인 회원이면 user_id를 함께 남긴다', async () => {

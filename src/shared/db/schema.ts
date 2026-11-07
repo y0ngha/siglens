@@ -168,6 +168,13 @@ export const visitorDays = pgTable(
          */
         landingPath: text('landing_path'),
         /**
+         * 그날 첫 진입의 출처 분류(`EntrySource`, 예: `chatgpt`·`google`·`other`). 원본 Referer
+         * 호스트·`utm_source`는 저장하지 않는다 — 분류는 `classifyEntrySource`가 수신 시점에 한다.
+         * 같은 사이트 안의 이동·직접 방문은 null. 같은 날 다시 와도 첫 행의 값을 바꾸지 않는다.
+         * 개인정보처리방침 §2 접속 통계 항목에 고지돼 있어야 한다.
+         */
+        entrySource: text('entry_source'),
+        /**
          * 비콘을 보낸 시점에 로그인한 회원이면 그 id. 회원 D7/D30 재방문율의 축이다
          * (`scripts/funnel-report.ts`). 탈퇴하면 SET NULL — 방문 행(익명 집계)은 남고 회원
          * 연결만 끊긴다. 같은 날 익명으로 먼저 왔다가 로그인하면 행이 이미 있으므로

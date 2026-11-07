@@ -26,19 +26,25 @@ async function main(): Promise<void> {
     const { db } = getDatabaseClient();
     const repo = new DrizzleVisitorRepository(db);
 
-    const [daily, mau, total, userAgents, guideLandings] = await Promise.all([
-        repo.dailyActiveUsers(kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS)),
-        repo.monthlyActiveUsers(kstDateKeyDaysBefore(today, MAU_WINDOW_DAYS)),
-        repo.totalRows(),
-        repo.topUserAgents(
-            kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS),
-            USER_AGENT_SAMPLE_ROWS
-        ),
-        repo.landingSectionCounts(
-            kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS),
-            'guide'
-        ),
-    ]);
+    const [daily, mau, total, userAgents, guideLandings, entrySources] =
+        await Promise.all([
+            repo.dailyActiveUsers(kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS)),
+            repo.monthlyActiveUsers(
+                kstDateKeyDaysBefore(today, MAU_WINDOW_DAYS)
+            ),
+            repo.totalRows(),
+            repo.topUserAgents(
+                kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS),
+                USER_AGENT_SAMPLE_ROWS
+            ),
+            repo.landingSectionCounts(
+                kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS),
+                'guide'
+            ),
+            repo.entrySourceCounts(
+                kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS)
+            ),
+        ]);
 
     console.log('날짜         DAU');
     for (const row of daily) {
@@ -54,6 +60,15 @@ async function main(): Promise<void> {
     );
     for (const row of guideLandings) {
         console.log(`${row.date}   ${row.count.toLocaleString('ko-KR')}`);
+    }
+
+    // 첫 진입 출처(AI 답변 서비스·검색·SNS). 컬럼 도입 전 행은 출처 없음으로 잡힌다.
+    console.log('');
+    console.log(`첫 진입 출처 (${DAU_WINDOW_DAYS}일, 방문 행 수)`);
+    for (const row of entrySources) {
+        console.log(
+            `${String(row.count).padStart(6)}  ${row.entrySource ?? '(없음: 직접 방문·사이트 내부·도입 전)'}`
+        );
     }
 
     console.log('');

@@ -89,6 +89,76 @@ describe('VisitorPing', () => {
         });
     });
 
+    describe('첫 진입 출처', () => {
+        afterEach(() => {
+            window.history.replaceState(null, '', '/');
+            Object.defineProperty(document, 'referrer', {
+                value: '',
+                configurable: true,
+            });
+        });
+
+        function sentBody(): unknown {
+            const init = vi
+                .mocked(fetch)
+                .mock.calls.find(([url]) => url === '/api/presence')?.[1];
+            return typeof init?.body === 'string'
+                ? JSON.parse(init.body)
+                : undefined;
+        }
+
+        it('Referer도 utm_source도 없으면 본문 없이 보낸다', async () => {
+            render(<VisitorPing />);
+            fireInteraction();
+
+            await waitFor(() => {
+                expect(fetch).toHaveBeenCalledTimes(1);
+            });
+            const init = vi
+                .mocked(fetch)
+                .mock.calls.find(([url]) => url === '/api/presence')?.[1];
+            expect(init).toBeDefined();
+            expect(init).not.toHaveProperty('body');
+            expect(init).not.toHaveProperty('headers');
+        });
+
+        it('Referer 호스트와 utm_source만 본문에 싣는다(경로·다른 쿼리는 보내지 않는다)', async () => {
+            Object.defineProperty(document, 'referrer', {
+                value: 'https://www.google.com/search?q=secret',
+                configurable: true,
+            });
+            window.history.replaceState(
+                null,
+                '',
+                '/AAPL?utm_source=chatgpt.com&ref=private'
+            );
+            render(<VisitorPing />);
+            fireInteraction();
+
+            await waitFor(() => {
+                expect(sentBody()).toEqual({
+                    referrerHost: 'www.google.com',
+                    utmSource: 'chatgpt.com',
+                });
+            });
+        });
+
+        it('마운트 뒤 사이트 안에서 옮겨도 처음 연 문서의 출처를 보낸다', async () => {
+            window.history.replaceState(null, '', '/?utm_source=perplexity');
+            render(<VisitorPing />);
+            // 첫 입력 전에 클라이언트 내비게이션으로 쿼리가 사라진다.
+            window.history.replaceState(null, '', '/MSFT');
+            fireInteraction();
+
+            await waitFor(() => {
+                expect(sentBody()).toEqual({
+                    referrerHost: null,
+                    utmSource: 'perplexity',
+                });
+            });
+        });
+    });
+
     it('성공하면 오늘 날짜를 기록해 다시 보내지 않는다', async () => {
         const { unmount } = render(<VisitorPing />);
         fireInteraction();

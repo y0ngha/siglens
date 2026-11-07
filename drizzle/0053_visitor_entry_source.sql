@@ -1,0 +1,1 @@
+ALTER TABLE "visitor_days" ADD COLUMN "entry_source" text;

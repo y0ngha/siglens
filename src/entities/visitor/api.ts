@@ -18,6 +18,8 @@ import { withRetry } from '@/shared/lib/withRetry';
 import type {
     DailyActiveUsers,
     DailyLandingCount,
+    EntrySource,
+    EntrySourceTally,
     UserAgentTally,
 } from './types';
 
@@ -38,6 +40,8 @@ export interface VisitorDayRecord {
     country: string | null;
     /** 쿼리스트링을 뺀 경로. */
     landingPath: string | null;
+    /** 그날 첫 진입의 출처 분류. 같은 사이트 이동·직접 방문은 null. */
+    entrySource: EntrySource | null;
     /** 비콘 시점의 로그인 회원 id. 비회원이면 null. 회원 D7/D30 재방문의 축. */
     userId: string | null;
 }
@@ -70,6 +74,11 @@ interface VisitorRepository {
         fromDate: string,
         section: string
     ): Promise<DailyLandingCount[]>;
+    /**
+     * `fromDate` 이후 구간의 첫 진입 출처별 방문 행 수(많은 순). AI 답변 서비스·검색엔진·SNS
+     * 중 어디서 들어오는지 보는 용도. 출처 없음(직접 방문·같은 사이트)은 `entrySource: null`.
+     */
+    entrySourceCounts(fromDate: string): Promise<EntrySourceTally[]>;
 }
 
 /**
@@ -179,5 +188,15 @@ export class DrizzleVisitorRepository implements VisitorRepository {
             )
             .groupBy(visitorDays.date)
             .orderBy(desc(visitorDays.date));
+    }
+
+    async entrySourceCounts(fromDate: string): Promise<EntrySourceTally[]> {
+        const tally = count();
+        return this.db
+            .select({ entrySource: visitorDays.entrySource, count: tally })
+            .from(visitorDays)
+            .where(gte(visitorDays.date, fromDate))
+            .groupBy(visitorDays.entrySource)
+            .orderBy(desc(tally));
     }
 }
