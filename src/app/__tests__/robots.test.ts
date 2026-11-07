@@ -2,6 +2,8 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import type { MetadataRoute } from 'next';
 
 import { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/_lib/robotsRules';
@@ -148,13 +150,75 @@ describe('robots', () => {
                 'ClaudeBot',
                 'Claude-SearchBot',
                 'PerplexityBot',
-                'Google-Extended',
-                'Applebot-Extended',
             ],
+            allow: ['/', '/api/analysis/stream'],
+            disallow: [
+                '/api/',
+                ...[
+                    'signup',
+                    'login',
+                    'forgot-password',
+                    'reset-password',
+                    'account',
+                    'email-report',
+                    'watchlist',
+                    'portfolio',
+                ].flatMap(page => [
+                    `/${page}`,
+                    `/en/${page}`,
+                    `/ja/${page}`,
+                    `/zh/${page}`,
+                ]),
+            ],
+            crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
+        });
+        // 사용 권한 토큰은 자체 fetch가 없어 baseline 그대로다.
+        expect(result.rules).toContainEqual({
+            userAgent: ['Google-Extended', 'Applebot-Extended'],
             allow: ['/', '/api/analysis/stream'],
             disallow: ['/api/'],
             crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
         });
+    });
+
+    /**
+     * AI 검색 그룹이 막는 페이지는 전부 `noindex`인 유틸리티 페이지여야 한다 — 색인 대상 페이지를
+     * 막으면 인용 기회를 잃는다. 각 라우트 소스에서 **주석을 뺀 코드**가 `index: false`를 선언하는지
+     * 본다(주석 속 "noindex" 낱말로 통과하지 않게).
+     */
+    it('AI 검색 그룹이 막는 페이지는 noindex 페이지뿐이다', () => {
+        const result = robots();
+        const aiGroup = toRulesArray(result.rules).find(rule =>
+            toUserAgents(rule).includes('OAI-SearchBot')
+        );
+        const blockedPages = [aiGroup?.disallow ?? []]
+            .flat()
+            .filter(rule => rule !== '/api/' && !/^\/(en|ja|zh)\//.test(rule));
+        expect(blockedPages.length).toBeGreaterThan(0);
+        for (const page of blockedPages) {
+            const source = readFileSync(
+                path.join(process.cwd(), 'src/app/[locale]', page, 'page.tsx'),
+                'utf8'
+            );
+            const code = source
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\/\/[^\n]*/g, '');
+            expect(code, page).toMatch(/index:\s*false/);
+        }
+    });
+
+    it('AI 검색 그룹의 로케일 접두사 규칙은 기본 로케일 규칙과 짝이 맞고 와일드카드를 쓰지 않는다', () => {
+        const result = robots();
+        const aiGroup = toRulesArray(result.rules).find(rule =>
+            toUserAgents(rule).includes('OAI-SearchBot')
+        );
+        const rules = [aiGroup?.disallow ?? []].flat();
+        expect(rules.some(rule => rule.includes('*'))).toBe(false);
+        for (const prefixed of rules.filter(rule =>
+            /^\/(en|ja|zh)\//.test(rule)
+        )) {
+            expect(rules).toContain(prefixed.replace(/^\/(en|ja|zh)/, ''));
+        }
     });
 
     /**
