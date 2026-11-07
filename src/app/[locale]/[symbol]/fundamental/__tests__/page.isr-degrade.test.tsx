@@ -342,6 +342,21 @@ describe('Fundamental page ISR empty-cache prevention — top-level guard', () =
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
         expect(isValidElement(tree)).toBe(true);
+        expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+    });
+
+    it('사실 입력이 불완전하면 이 렌더의 revalidate를 낮춘다 — 장애 중 noindex가 12h 굳지 않게', async () => {
+        mockGetFundamentalFacts.mockResolvedValueOnce({
+            facts: [],
+            complete: false,
+            indexable: false,
+        });
+
+        await FundamentalPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+        });
+
+        expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
     });
 });
 

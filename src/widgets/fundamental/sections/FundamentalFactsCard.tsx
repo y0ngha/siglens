@@ -35,6 +35,23 @@ interface FundamentalFactsCardProps {
 
 const HEADING_ID = 'fundamental-facts-heading';
 
+/**
+ * 공매도 문장. 빌더는 비율·상환일수 중 하나가 있을 때만 이 사실을 내므로 둘 다 `null`인 경우는 없다 —
+ * 타입상 남는 그 경우는 빈 숫자를 문장에 끼우지 않고 출처 문구만 낸다.
+ */
+function shortInterestSentence(
+    t: Translator,
+    pct: string | null,
+    days: string | null
+): string {
+    if (pct !== null && days !== null) {
+        return t('FundamentalFactsCard.shortBoth', { pct, days });
+    }
+    if (pct !== null) return t('FundamentalFactsCard.shortPct', { pct });
+    if (days !== null) return t('FundamentalFactsCard.shortDays', { days });
+    return t('FundamentalFactsCard.shortSource');
+}
+
 function toLine(
     fact: FundamentalFact,
     t: Translator,
@@ -131,16 +148,7 @@ function toLine(
                 fact.daysToCover === null
                     ? null
                     : formatFactDecimal(fact.daysToCover, locale);
-            let sentence: string;
-            if (pct !== null && days !== null) {
-                sentence = t('FundamentalFactsCard.shortBoth', { pct, days });
-            } else if (pct !== null) {
-                sentence = t('FundamentalFactsCard.shortPct', { pct });
-            } else {
-                sentence = t('FundamentalFactsCard.shortDays', {
-                    days: days ?? '',
-                });
-            }
+            const sentence = shortInterestSentence(t, pct, days);
             return {
                 key: fact.kind,
                 sentences: [sentence],

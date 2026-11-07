@@ -12,6 +12,7 @@ import {
 } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
 import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
@@ -185,6 +186,9 @@ export default async function FundamentalPage({ params }: Props) {
     }
     // 404·degrade 분기 뒤에 읽는다 — 없는 종목(봇이 찍는 임의 티커)이 실적·수급·목표가 입력원을 때리지 않게.
     const factsResult = await getFundamentalFacts(upper);
+    // 입력원 장애로 불완전한 렌더(메타는 noindex)가 12h 동안 굳지 않게, 섹션 degrade와 같이
+    // 이 렌더의 revalidate를 짧게 낮춘다 — 복구되면 다음 재생성에서 다시 판정한다.
+    if (!factsResult.complete) await shortenRevalidateForRuntimeDegrade();
     // sitemap 스탬프는 여기서 쓰지 않는다 — 렌더 중 Redis 쓰기(Upstash REST no-store fetch)는 ISR을
     // 동적으로 뒤집는다(e2e 실측). 스탬프는 SEO 프리웜이 같은 판정으로 채운다(`fundamentalStamps.ts`).
 

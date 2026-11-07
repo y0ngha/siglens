@@ -28,8 +28,8 @@ import {
 
 const TICKERS = Array.from({ length: 20 }, (_, i) => `T${i}`);
 const notPast = () => false;
-/** 타임아웃이 나지 않는 sleep — 판정이 항상 먼저 끝난다. */
-const never = () => new Promise<void>(() => {});
+/** 판정이 항상 먼저 끝나는 상한 — 이 스위트의 판정 목은 즉시 끝난다. */
+const never = 60_000;
 
 function fakeRedis(cursor: unknown) {
     return {
@@ -116,12 +116,10 @@ describe('refreshFundamentalStamps', () => {
 
     it('판정이 상한을 넘기면 기다리기를 포기하고 다음 종목으로 간다', async () => {
         mockGetRedisClient.mockReturnValue(fakeRedis(0));
-        // 판정이 끝나지 않는다(FMP가 매달린 상황) — sleep만 끝나므로 결과가 시점과 무관하게 정해진다.
+        // 판정이 끝나지 않는다(FMP가 매달린 상황) — 상한 0ms 타이머만 끝나므로 결과가 시점과 무관하게 정해진다.
         mockGetFundamentalFacts.mockImplementation(() => new Promise(() => {}));
 
-        const counts = await refreshFundamentalStamps(notPast, TICKERS, () =>
-            Promise.resolve()
-        );
+        const counts = await refreshFundamentalStamps(notPast, TICKERS, 0);
 
         // 모든 종목이 타임아웃으로 처리된다 — 하나도 기록하지 않고, 루프가 멈추지도 않는다.
         expect(counts).toEqual({ checked: 8, recorded: 0 });

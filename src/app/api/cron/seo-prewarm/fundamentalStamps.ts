@@ -31,9 +31,21 @@ export interface FundamentalStampCounts {
     readonly recorded: number;
 }
 
-type Sleep = (ms: number) => Promise<void>;
-const defaultSleep: Sleep = ms =>
-    new Promise(resolve => setTimeout(resolve, ms));
+/** `ms` 안에 끝나지 않으면 `'timeout'`. 어느 쪽이든 끝나면 타이머를 지운다(남은 타이머가 프로세스를 붙잡지 않게). */
+async function withTimeout<T>(
+    work: Promise<T>,
+    ms: number
+): Promise<T | 'timeout'> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<'timeout'>(resolve => {
+        timer = setTimeout(() => resolve('timeout'), ms);
+    });
+    try {
+        return await Promise.race([work, timeout]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 /** 페이지 메타데이터와 같은 판정. `null`이면 판정할 수 없어 스탬프를 남기지 않는다. */
 async function decide(symbol: string): Promise<boolean | null> {
@@ -47,7 +59,7 @@ async function decide(symbol: string): Promise<boolean | null> {
 export async function refreshFundamentalStamps(
     isPastDeadline: () => boolean,
     tickers: readonly string[] = POPULAR_TICKERS,
-    sleep: Sleep = defaultSleep
+    timeoutMs: number = FUNDAMENTAL_STAMP_TIMEOUT_MS
 ): Promise<FundamentalStampCounts> {
     const redis = getRedisClient();
     if (redis === null || tickers.length === 0) {
@@ -76,12 +88,7 @@ export async function refreshFundamentalStamps(
         if (symbol === undefined) break;
         checked += 1;
         try {
-            const verdict = await Promise.race([
-                decide(symbol),
-                sleep(FUNDAMENTAL_STAMP_TIMEOUT_MS).then(
-                    () => 'timeout' as const
-                ),
-            ]);
+            const verdict = await withTimeout(decide(symbol), timeoutMs);
             if (verdict === 'timeout') {
                 console.warn(
                     `[seo-prewarm] fundamental stamp ${symbol} timed out — abandoned wait`
