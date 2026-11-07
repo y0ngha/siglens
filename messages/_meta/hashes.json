@@ -4229,5 +4229,14 @@
     "views.symbol.TechnicalFactsSummary.guideLinksLabel": "2f2e1ba7cf34",
     "views.symbol.TechnicalFactsSummary.guideRsi": "bc2f66bc260f",
     "views.symbol.TechnicalFactsSummary.guideMacd": "14b0782fe39f",
-    "views.symbol.TechnicalFactsSummary.guideIndicators": "509f41eaddbc"
+    "views.symbol.TechnicalFactsSummary.guideIndicators": "509f41eaddbc",
+    "app.fear-greed.factorExtremeItem": "e90e32406906",
+    "app.fear-greed.factorExtremes": "b4ae0ee6398e",
+    "shared.seo.fearGreedPage.answerTitle": "fb369733086c",
+    "shared.seo.fearGreedPage.crypto.answerSubject": "81fdb4e6b40d",
+    "shared.seo.fearGreedPage.crypto.titleSubject": "a89c3955312c",
+    "shared.seo.fearGreedPage.kr.answerSubject": "f356a8e0baf8",
+    "shared.seo.fearGreedPage.kr.titleSubject": "b83405ecf4b9",
+    "shared.seo.fearGreedPage.us.answerSubject": "aea2f4a886f3",
+    "shared.seo.fearGreedPage.us.titleSubject": "40f78194a0df"
 }

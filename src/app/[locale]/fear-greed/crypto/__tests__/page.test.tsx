@@ -79,13 +79,22 @@ describe('/fear-greed/crypto page', () => {
 
             const meta = await generateMetadata(PARAMS);
 
-            expect(meta.title).toBe(
-                '코인 공포탐욕지수 - 오늘 암호화폐 시장 심리'
-            );
+            // 판독값이 있으면 점수형 제목(브랜드 접미사 없음).
+            expect(meta.title).toEqual({
+                absolute: '코인 공포탐욕지수 28점(공포) 9월 24일 기준',
+            });
             expect(meta.keywords).toContain('코인 공포지수');
             expect(meta.openGraph?.images).toEqual([
                 expect.objectContaining({ url: '/og-image.png' }),
             ]);
+        });
+
+        it('판독값이 없으면 템플릿 제목으로 돌아간다', async () => {
+            mockLoader.mockResolvedValue(EMPTY);
+            const meta = await generateMetadata(PARAMS);
+            expect(meta.title).toBe(
+                '코인 공포탐욕지수 - 오늘 암호화폐 시장 심리'
+            );
         });
 
         it('self-canonicals when the reading is available', async () => {

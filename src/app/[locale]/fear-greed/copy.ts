@@ -24,6 +24,11 @@ export interface FearGreedCopy {
      * 허브 첫 문단·meta·og 설명이 이 주어로 오늘 점수를 말한다(`marketFearGreedAnswer.ts`).
      */
     readonly answerSubject: string;
+    /**
+     * 점수형 제목의 주어(`코스피 공포탐욕지수`) — 실제 검색어처럼 붙여 쓴다. 판독값이 있을 때
+     * `<title>`이 `{titleSubject} 24점(극심한 공포) 11월 6일 기준`이 된다(`composeMarketFearGreedTitle`).
+     */
+    readonly titleSubject: string;
     /** h1 아래 설명 문단. */
     readonly intro: readonly string[];
     readonly faq: ReadonlyArray<{ question: string; answer: string }>;
@@ -80,6 +85,7 @@ const US_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
     description: clampSeoDescription(t('fearGreedPage.us.description')),
     heading: t('fearGreedPage.us.heading'),
     answerSubject: t('fearGreedPage.us.answerSubject'),
+    titleSubject: t('fearGreedPage.us.titleSubject'),
     keywords: [
         '공포 탐욕 지수',
         '시장 심리 지수',
@@ -114,6 +120,7 @@ const KR_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
     description: clampSeoDescription(t('fearGreedPage.kr.description')),
     heading: t('fearGreedPage.kr.heading'),
     answerSubject: t('fearGreedPage.kr.answerSubject'),
+    titleSubject: t('fearGreedPage.kr.titleSubject'),
     keywords: [
         '코스피 공포 탐욕 지수',
         '한국 증시 심리',
@@ -157,6 +164,7 @@ const CRYPTO_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
     description: clampSeoDescription(t('fearGreedPage.crypto.description')),
     heading: t('fearGreedPage.crypto.heading'),
     answerSubject: t('fearGreedPage.crypto.answerSubject'),
+    titleSubject: t('fearGreedPage.crypto.titleSubject'),
     keywords: [
         '코인 공포탐욕지수',
         '코인 공포지수',

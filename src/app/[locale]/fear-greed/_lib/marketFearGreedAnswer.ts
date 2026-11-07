@@ -5,9 +5,14 @@ import type {
 } from '@/entities/market-fear-greed/model';
 import { MS_PER_DAY } from '@/shared/config/time';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
 import type { SeoTranslator } from '@/shared/lib/seo';
+import { clampSeoTitle } from '@/shared/lib/seoClamp';
 import type { FearGreedMetaFacts } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
-import { composeFearGreedDescription } from '@/views/symbol/fearGreed/utils/fearGreedMetaDescription';
+import {
+    composeFearGreedDescription,
+    formatFactsDate,
+} from '@/views/symbol/fearGreed/utils/fearGreedMetaDescription';
 
 /** 비교 시점 키 → 메타 사실의 기간. `now`는 현재 점수 자체라 과거 목록에 넣지 않는다. */
 const PERIOD_BY_KEY: Record<
@@ -90,4 +95,92 @@ export function composeMarketFearGreedAnswer(
     return facts === null
         ? null
         : composeFearGreedDescription(facts, subject, tSeo, tLabel);
+}
+
+/**
+ * 점수형 `<title>` — `코스피 공포탐욕지수 24점(극심한 공포) 11월 6일 기준`. 판독값이 없으면 `null`
+ * (호출부가 템플릿 제목을 쓴다).
+ *
+ * "오늘 공포탐욕지수"류 질의에 답하는 데이터 페이지는 제목에 그날 점수·단계·기준일을 싣는 것이
+ * 일반적이고, AI 검색은 제목으로 질의와 페이지를 맞춘다. 날짜는 렌더 시각이 아니라 **판독값의
+ * 기준일**(`snapshot.asOf`)이다 —
+ * ISR·CDN이 한두 주기 늦게 내보내도 제목과 본문·description·Dataset이 같은 판독값을 말한다.
+ * 브랜드 접미사 없이(absolute) 쓰므로 폭 상한을 이 문자열 하나로 맞춘다.
+ */
+export function composeMarketFearGreedTitle(
+    view: MarketFearGreedView<MarketFearGreedViewSnapshot>,
+    subject: string,
+    tSeo: SeoTranslator,
+    tLabel: EnumLabelTranslator
+): string | null {
+    const { snapshot } = view;
+    if (snapshot === null) return null;
+    return clampSeoTitle(
+        tSeo('fearGreedPage.answerTitle', {
+            subject,
+            score: snapshot.score,
+            label: sentimentLabelText(snapshot.label, tLabel),
+            date: formatFactsDate(snapshot.asOf, tSeo),
+        })
+    );
+}
+
+/** 요인 하나의 이름 키와 반올림한 백분위. */
+export interface FactorExtreme {
+    readonly key: string;
+    readonly percentile: number;
+}
+
+/** 백분위 중앙. 이 아래가 공포 쪽, 위가 탐욕 쪽이다. */
+const PERCENTILE_MIDPOINT = 50;
+
+/**
+ * 지금 가장 공포 쪽(백분위 최저)과 가장 탐욕 쪽(백분위 최고)에 있는 요인. 반올림한 최저가 50 미만이고
+ * 최고가 50 초과일 때만 낸다 — 모든 요인이 한쪽에 몰려 있으면 "백분위 70이 공포 쪽"처럼 사실과
+ * 어긋난 문장이 되고, 반올림 뒤 같은 값이면 말할 차이가 없다. 그 밖에는 `null`.
+ *
+ * 인용되는 경쟁 페이지는 점수만이 아니라 "왜 이 점수인가"를 데이터로 말한다. 우리는 요인별
+ * 백분위를 이미 계산하므로, 그중 양 끝을 한 문장으로 올려 같은 질문에 답한다(LLM 없이 결정적).
+ */
+export function pickFactorExtremes(
+    factors: MarketFearGreedViewSnapshot['factors']
+): { fear: FactorExtreme; greed: FactorExtreme } | null {
+    if (factors.length < 2) return null;
+    const sorted = factors.toSorted((a, b) => a.percentile - b.percentile);
+    const low = sorted[0];
+    const high = sorted[sorted.length - 1];
+    if (low === undefined || high === undefined) return null;
+    const fear = Math.round(low.percentile);
+    const greed = Math.round(high.percentile);
+    if (fear >= PERCENTILE_MIDPOINT || greed <= PERCENTILE_MIDPOINT)
+        return null;
+    return {
+        fear: { key: low.key, percentile: fear },
+        greed: { key: high.key, percentile: greed },
+    };
+}
+
+/**
+ * 한 판독값에서 점수형 제목과 답 문장을 함께 만든다(라벨 변환을 한 번만). 판독값이 없으면 `null`.
+ * 메타데이터와 본문이 같은 함수를 써서 두 표면이 같은 문장·같은 기준일을 말한다.
+ */
+export function composeMarketFearGreedReading(
+    view: MarketFearGreedView<MarketFearGreedViewSnapshot>,
+    subjects: { readonly titleSubject: string; readonly answerSubject: string },
+    tSeo: SeoTranslator,
+    tLabel: EnumLabelTranslator
+): { title: string; answer: string } | null {
+    const title = composeMarketFearGreedTitle(
+        view,
+        subjects.titleSubject,
+        tSeo,
+        tLabel
+    );
+    const answer = composeMarketFearGreedAnswer(
+        view,
+        subjects.answerSubject,
+        tSeo,
+        tLabel
+    );
+    return title === null || answer === null ? null : { title, answer };
 }
