@@ -54,6 +54,17 @@ function secondSentence(
 }
 
 /**
+ * 판독값 기준일(`YYYY-MM-DD`)을 문장용 날짜(`11월 5일`)로. 답 문장과 점수형 제목이 같은 표기를 쓴다.
+ */
+export function formatFactsDate(isoDate: string, tSeo: SeoTranslator): string {
+    const [, m, d] = isoDate.split('-');
+    return tSeo('symbol.fearGreed.factsDate', {
+        month: Number(m),
+        day: Number(d),
+    });
+}
+
+/**
  * `애플(AAPL) 공포 탐욕 지수는 10월 2일 종가 기준 68점(탐욕)입니다. 1주 전 77점, 1개월 전
  * 66점이었고 최근 1년 동안 21~89점 사이에서 움직였습니다.`
  *
@@ -68,11 +79,7 @@ export function composeFearGreedDescription(
     tSeo: SeoTranslator,
     tLabel: EnumLabelTranslator
 ): string {
-    const [, m, d] = facts.date.split('-');
-    const date = tSeo('symbol.fearGreed.factsDate', {
-        month: Number(m),
-        day: Number(d),
-    });
+    const date = formatFactsDate(facts.date, tSeo);
     const lead = tSeo('symbol.fearGreed.factsLead', {
         subject,
         date,
@@ -82,8 +89,8 @@ export function composeFearGreedDescription(
 
     const second = secondSentence(facts, tSeo);
 
-    // 문장 사이 공백은 로마자 종결부호(`.`) 뒤에서만 둔다 — 한·일·중 종결(`。`·`다.`)은 공백 없이
-    // 이어 붙는 쪽이 자연스럽고, 로케일 카탈로그가 문장부호를 정한다.
+    // 문장 사이 공백은 `.`·`!`·`?` 뒤에서만 둔다 — 한국어(`다.`)와 영어는 공백을 두고, 일·중 전각
+    // 종결(`。`) 뒤는 붙여 쓴다. 로케일 카탈로그가 문장부호를 정한다.
     const gap = /[.!?]$/.test(lead) ? ' ' : '';
     const full = second === '' ? lead : `${lead}${gap}${second}`;
     return [...full].length <= SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH

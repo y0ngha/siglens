@@ -133,7 +133,9 @@
                 "e533f3": "无法加载恐惧与贪婪指数",
                 "eb2523": "{v0} 主页"
             },
-            "symbolListTitle": "各标的恐惧与贪婪指数"
+            "symbolListTitle": "各标的恐惧与贪婪指数",
+            "factorExtremes": "目前最偏向恐惧的因素是{fear},最偏向贪婪的因素是{greed}。",
+            "factorExtremeItem": "{factor}(百分位{percentile})"
         },
         "forgot-password": {
             "page": {
@@ -1856,7 +1858,8 @@
                     "description": "结合KOSPI200、国债、公司债与等权重ETF的近期走势,以0-100分及5档标签呈现韩股整体买盘情绪。",
                     "heading": "韩股恐惧与贪婪指数",
                     "title": "今日KOSPI市场情绪：恐惧与贪婪指数",
-                    "answerSubject": "韩国股市"
+                    "answerSubject": "韩国股市",
+                    "titleSubject": "韩国KOSPI恐惧与贪婪指数"
                 },
                 "us": {
                     "copy_faq0a": "综合标普500、VIX、长期国债、高收益/投资级公司债与等权指数这五个因子的近期收盘走势，用 0~100 的分数呈现美股整体的短期买入情绪。",
@@ -1870,7 +1873,8 @@
                     "description": "结合标普500、VIX、长期美债、公司债与等权重指数的近期走势,以0-100分及5档标签呈现美股整体买盘情绪。",
                     "heading": "美股恐惧与贪婪指数",
                     "title": "今日美股市场情绪：恐惧与贪婪指数",
-                    "answerSubject": "美股市场"
+                    "answerSubject": "美股市场",
+                    "titleSubject": "美股恐惧与贪婪指数"
                 },
                 "crypto": {
                     "title": "加密货币恐惧与贪婪指数 - 今日加密市场情绪",
@@ -1888,8 +1892,10 @@
                     "copy_faq3a": "以每天 00:00 UTC（北京时间上午8点）收盘的日K线为准，每天更新一次，不使用尚未结束当日的实时行情。页面本身最多缓存1小时。",
                     "copy_faq4q": "可以根据这个分数进行交易吗？",
                     "copy_faq4a": "本指数只是概括市场情绪的参考指标，并非投资建议。极端恐惧或贪婪并不代表马上会反弹或下跌，投资决策及其后果由您本人承担。",
-                    "answerSubject": "加密货币市场"
-                }
+                    "answerSubject": "加密货币市场",
+                    "titleSubject": "加密货币恐惧与贪婪指数"
+                },
+                "answerTitle": "{subject} {score}分（{label}） 截至{date}"
             },
             "forgotPassword": {
                 "description": "发送SIGLENS密码重置链接",
