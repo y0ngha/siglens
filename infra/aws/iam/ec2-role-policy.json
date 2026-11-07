@@ -64,6 +64,51 @@
             "Resource": "arn:aws:logs:ap-northeast-2:ACCOUNT_ID:log-group:/siglens/*"
         },
         {
+            "Sid": "DashboardEcrPull",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer"
+            ],
+            "Resource": "arn:aws:ecr:ap-northeast-2:ACCOUNT_ID:repository/dashboard-*"
+        },
+        {
+            "Sid": "ReadDashboardSecrets",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParametersByPath",
+                "ssm:GetParameters",
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/dashboard/*"
+        },
+        {
+            "Sid": "DenyDashboardRdsSecrets",
+            "Effect": "Deny",
+            "Action": [
+                "ssm:GetParameter",
+                "ssm:GetParameters",
+                "ssm:GetParametersByPath",
+                "ssm:GetParameterHistory"
+            ],
+            "Resource": [
+                "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/dashboard-rds",
+                "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/dashboard-rds/*"
+            ]
+        },
+        {
+            "Sid": "DashboardLogs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup",
+                "logs:DescribeLogStreams"
+            ],
+            "Resource": "arn:aws:logs:ap-northeast-2:ACCOUNT_ID:log-group:/dashboard/*"
+        },
+        {
             "Sid": "CloudWatchAgent",
             "Effect": "Allow",
             "Action": ["cloudwatch:PutMetricData", "ec2:DescribeTags"],
