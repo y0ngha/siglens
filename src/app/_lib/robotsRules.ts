@@ -122,10 +122,9 @@ export const BASELINE_ALLOW = ['/', '/api/analysis/stream'];
 /**
  * API 라우트는 JSON·이미지 등 SEO 가치 없는 자원이라 crawl budget 절약을 위해 막는다.
  *
- * 인증 페이지와 `/account`는 막지 않는다(AI 검색·인용 그룹만 예외 — `AI_SEARCH_DISALLOW`) — 페이지
- * metadata의 `noindex`로 충분하고, robots.txt로도
+ * 인증 페이지와 `/account`는 막지 않는다 — 페이지 metadata의 `noindex`로 충분하고, robots.txt로도
  * 막으면 Googlebot이 그 `noindex`를 보지 못해 외부 백링크가 생겼을 때 "Indexed though blocked by
- * robots.txt" 빈 카드로 노출될 수 있다.
+ * robots.txt" 빈 카드로 노출될 수 있다. AI 검색·인용 그룹만 예외다(`AI_SEARCH_DISALLOW`).
  */
 export const BASELINE_DISALLOW = ['/api/'];
 
