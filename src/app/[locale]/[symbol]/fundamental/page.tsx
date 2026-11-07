@@ -13,7 +13,6 @@ import {
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
-import { recordFundamentalIndexable } from '@/entities/fundamental-facts/server/indexableStamp';
 import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
@@ -186,11 +185,8 @@ export default async function FundamentalPage({ params }: Props) {
     }
     // 404·degrade 분기 뒤에 읽는다 — 없는 종목(봇이 찍는 임의 티커)이 실적·수급·목표가 입력원을 때리지 않게.
     const factsResult = await getFundamentalFacts(upper);
-    // sitemap이 이 렌더의 판정을 읽는다(`readFundamentalIndexableMap`). 장애로 입력이 빠진 렌더는
-    // 임시 판정이라 남기지 않는다. 실패는 스탬프 안에서 삼키므로 기다리지 않는다.
-    if (factsResult.complete) {
-        void recordFundamentalIndexable(upper, factsResult.indexable);
-    }
+    // sitemap 스탬프는 여기서 쓰지 않는다 — 렌더 중 Redis 쓰기(Upstash REST no-store fetch)는 ISR을
+    // 동적으로 뒤집는다(e2e 실측). 스탬프는 SEO 프리웜이 같은 판정으로 채운다(`fundamentalStamps.ts`).
 
     const sector = profile.sector ?? '';
     const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(

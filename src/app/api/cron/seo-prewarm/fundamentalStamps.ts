@@ -8,9 +8,9 @@ import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 /**
  * 펀더멘털 탭 색인 판정 스탬프(`fundamental-indexable:v1:*`)를 크론이 직접 채운다.
  *
- * sitemap은 이 스탬프로만 `/{ticker}/fundamental`을 싣는다. 페이지 렌더도 스탬프를 남기지만,
- * 이 탭은 2026-11-07까지 noindex라 크롤도 방문도 드물어 렌더만 믿으면 스탬프가 비거나 7일 TTL로
- * 사라진다. 그래서 프리웜 tick마다 인기 종목을 커서로 `FUNDAMENTAL_STAMPS_PER_TICK`개씩 돌며
+ * sitemap은 이 스탬프로만 `/{ticker}/fundamental`을 싣고, 스탬프를 쓰는 곳은 여기뿐이다(페이지
+ * 렌더 중 Redis 쓰기는 ISR을 동적으로 뒤집는다). 이 탭은 2026-11-07까지 noindex라 방문도 드물다.
+ * 그래서 프리웜 tick마다 인기 종목을 커서로 `FUNDAMENTAL_STAMPS_PER_TICK`개씩 돌며
  * 페이지 `generateMetadata`와 같은 판정(프로필 degrade·부재 → noindex, 아니면 사실 게이트)을 낸다
  * — 하루 tick(≈109) × 8이면 하루에 두 바퀴 넘게 돈다.
  *

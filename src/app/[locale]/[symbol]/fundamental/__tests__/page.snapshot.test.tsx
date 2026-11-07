@@ -73,21 +73,15 @@ vi.mock('@/widgets/fundamental/FundamentalAiSummaryError', () => ({
 vi.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => null,
 }));
-const { mockGetFundamentalFacts, mockRecordFundamentalIndexable } = vi.hoisted(
-    () => ({
-        mockGetFundamentalFacts: vi.fn(
-            async (): Promise<
-                import('@/entities/fundamental-facts/model').FundamentalFactsResult
-            > => ({ facts: [], complete: true, indexable: false })
-        ),
-        mockRecordFundamentalIndexable: vi.fn(async () => undefined),
-    })
-);
+const { mockGetFundamentalFacts } = vi.hoisted(() => ({
+    mockGetFundamentalFacts: vi.fn(
+        async (): Promise<
+            import('@/entities/fundamental-facts/model').FundamentalFactsResult
+        > => ({ facts: [], complete: true, indexable: false })
+    ),
+}));
 vi.mock('@/entities/fundamental-facts/server/getFundamentalFacts', () => ({
     getFundamentalFacts: mockGetFundamentalFacts,
-}));
-vi.mock('@/entities/fundamental-facts/server/indexableStamp', () => ({
-    recordFundamentalIndexable: mockRecordFundamentalIndexable,
 }));
 vi.mock('@/widgets/fundamental/sections/FundamentalFactsCard', () => ({
     FundamentalFactsCard: () => null,
@@ -350,7 +344,7 @@ describe('FundamentalPage — 재무·수급 사실 블록', () => {
         latestDate: '2026-10-30',
     };
 
-    it('사실을 카드에 넘기고, 입력이 완전하면 판정을 스탬프에 남긴다', async () => {
+    it('사실을 카드에 넘긴다', async () => {
         mockGetFundamentalFacts.mockResolvedValueOnce({
             facts: [FACT],
             complete: true,
@@ -366,24 +360,6 @@ describe('FundamentalPage — 재무·수급 사실 블록', () => {
             facts: [FACT],
             symbol: 'AAPL',
         });
-        expect(mockRecordFundamentalIndexable).toHaveBeenCalledWith(
-            'AAPL',
-            false
-        );
-    });
-
-    it('입력이 불완전한 렌더는 스탬프를 남기지 않는다', async () => {
-        mockGetFundamentalFacts.mockResolvedValueOnce({
-            facts: [],
-            complete: false,
-            indexable: true,
-        });
-
-        await FundamentalPage({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(mockRecordFundamentalIndexable).not.toHaveBeenCalled();
     });
 });
 

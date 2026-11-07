@@ -102,21 +102,15 @@ vi.mock('@/widgets/fundamental/FundamentalAiSummaryError', () => ({
 vi.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => null,
 }));
-const { mockGetFundamentalFacts, mockRecordFundamentalIndexable } = vi.hoisted(
-    () => ({
-        mockGetFundamentalFacts: vi.fn(
-            async (): Promise<
-                import('@/entities/fundamental-facts/model').FundamentalFactsResult
-            > => ({ facts: [], complete: true, indexable: false })
-        ),
-        mockRecordFundamentalIndexable: vi.fn(async () => undefined),
-    })
-);
+const { mockGetFundamentalFacts } = vi.hoisted(() => ({
+    mockGetFundamentalFacts: vi.fn(
+        async (): Promise<
+            import('@/entities/fundamental-facts/model').FundamentalFactsResult
+        > => ({ facts: [], complete: true, indexable: false })
+    ),
+}));
 vi.mock('@/entities/fundamental-facts/server/getFundamentalFacts', () => ({
     getFundamentalFacts: mockGetFundamentalFacts,
-}));
-vi.mock('@/entities/fundamental-facts/server/indexableStamp', () => ({
-    recordFundamentalIndexable: mockRecordFundamentalIndexable,
 }));
 vi.mock('@/widgets/fundamental/sections/FundamentalFactsCard', () => ({
     FundamentalFactsCard: () => null,
