@@ -101,8 +101,9 @@ export function composeMarketFearGreedAnswer(
  * 점수형 `<title>` — `코스피 공포탐욕지수 24점(극심한 공포) 11월 6일 기준`. 판독값이 없으면 `null`
  * (호출부가 템플릿 제목을 쓴다).
  *
- * AI 검색이 "오늘 공포탐욕지수" 질의에 인용하는 페이지는 제목에 그날 점수·단계·기준일을 싣는다
- * (2026-11-07 인용 프로브). 날짜는 렌더 시각이 아니라 **판독값의 기준일**(`snapshot.asOf`)이다 —
+ * "오늘 공포탐욕지수"류 질의에 답하는 데이터 페이지는 제목에 그날 점수·단계·기준일을 싣는 것이
+ * 일반적이고, AI 검색은 제목으로 질의와 페이지를 맞춘다. 날짜는 렌더 시각이 아니라 **판독값의
+ * 기준일**(`snapshot.asOf`)이다 —
  * ISR·CDN이 한두 주기 늦게 내보내도 제목과 본문·description·Dataset이 같은 판독값을 말한다.
  * 브랜드 접미사 없이(absolute) 쓰므로 폭 상한을 이 문자열 하나로 맞춘다.
  */
@@ -157,4 +158,29 @@ export function pickFactorExtremes(
         fear: { key: low.key, percentile: fear },
         greed: { key: high.key, percentile: greed },
     };
+}
+
+/**
+ * 한 판독값에서 점수형 제목과 답 문장을 함께 만든다(라벨 변환을 한 번만). 판독값이 없으면 `null`.
+ * 메타데이터와 본문이 같은 함수를 써서 두 표면이 같은 문장·같은 기준일을 말한다.
+ */
+export function composeMarketFearGreedReading(
+    view: MarketFearGreedView<MarketFearGreedViewSnapshot>,
+    subjects: { readonly titleSubject: string; readonly answerSubject: string },
+    tSeo: SeoTranslator,
+    tLabel: EnumLabelTranslator
+): { title: string; answer: string } | null {
+    const title = composeMarketFearGreedTitle(
+        view,
+        subjects.titleSubject,
+        tSeo,
+        tLabel
+    );
+    const answer = composeMarketFearGreedAnswer(
+        view,
+        subjects.answerSubject,
+        tSeo,
+        tLabel
+    );
+    return title === null || answer === null ? null : { title, answer };
 }

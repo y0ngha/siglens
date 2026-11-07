@@ -402,15 +402,17 @@ describe('/fear-greed 가시 브레드크럼', () => {
     });
 });
 
+const ANSWER_SNAPSHOT = {
+    score: 24,
+    label: 'EXTREME_FEAR',
+    factors: [],
+    confidence: 'normal',
+    sampleSize: 200,
+    asOf: '2026-11-05',
+} as const satisfies NonNullable<MarketFearGreedView['snapshot']>;
+
 const ANSWER_VIEW: MarketFearGreedView = {
-    snapshot: {
-        score: 24,
-        label: 'EXTREME_FEAR',
-        factors: [],
-        confidence: 'normal',
-        sampleSize: 200,
-        asOf: '2026-11-05',
-    },
+    snapshot: ANSWER_SNAPSHOT,
     comparisons: [
         { key: 'now', date: '2026-11-05', score: 24, label: 'EXTREME_FEAR' },
         { key: '1w', date: '2026-10-29', score: 36, label: 'FEAR' },
@@ -445,7 +447,7 @@ describe('/fear-greed 답 문장', () => {
         mockGetMarketFearGreedStatic.mockResolvedValue({
             ...ANSWER_VIEW,
             snapshot: {
-                ...ANSWER_VIEW.snapshot!,
+                ...ANSWER_SNAPSHOT,
                 factors: [
                     { key: 'momentum', rawValue: -0.03, percentile: 13 },
                     { key: 'breadth', rawValue: 0.07, percentile: 100 },

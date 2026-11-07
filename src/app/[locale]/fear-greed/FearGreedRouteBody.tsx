@@ -28,8 +28,7 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
 import {
-    composeMarketFearGreedAnswer,
-    composeMarketFearGreedTitle,
+    composeMarketFearGreedReading,
     pickFactorExtremes,
 } from './_lib/marketFearGreedAnswer';
 import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd';
@@ -92,19 +91,11 @@ export function FearGreedRouteBody({
      * FAQ는 예외다 — 질문·답변이 판독값과 무관하게 화면에 그대로 있다.
      */
     const degraded = view.snapshot === null;
-    // 오늘 점수를 말하는 답 문장 — 첫 문단과 meta 설명(`fearGreedMetadata`)이 같은 문장이다.
-    const answer = composeMarketFearGreedAnswer(
-        view,
-        copy.answerSubject,
-        tSeo,
-        tLabel
-    );
-    const scoreTitle = composeMarketFearGreedTitle(
-        view,
-        copy.titleSubject,
-        tSeo,
-        tLabel
-    );
+    // 점수형 제목과 답 문장 — 메타데이터(`fearGreedMetadata`)와 같은 함수·같은 판독값이라
+    // 첫 문단·meta 설명·`<title>`·JSON-LD가 같은 문장과 기준일을 말한다.
+    const reading = composeMarketFearGreedReading(view, copy, tSeo, tLabel);
+    const answer = reading?.answer ?? null;
+    const scoreTitle = reading?.title ?? null;
     const extremes =
         view.snapshot === null
             ? null
@@ -186,8 +177,9 @@ export function FearGreedRouteBody({
                             {answer}
                         </p>
                     )}
-                    {/* 점수의 이유 — 요인 양 끝. 답 문장과 같은 판독값에서 나오고, 번역 문장을 코드로
-                        잇지 않도록 별도 문단으로 둔다(I18N.md#I18-14). */}
+                    {/* 점수의 이유 — 요인 양 끝. 답 문장과 같은 판독값에서 나온다. 요인 항목은
+                        `factorExtremeItem`을 `factorExtremes`의 ICU 인자로 넣어 한 문장 키로 만들고,
+                        답 문장과는 코드로 잇지 않고 별도 문단으로 둔다(I18N.md#I18-14). */}
                     {extremesSentence && (
                         <p className="text-secondary-300">{extremesSentence}</p>
                     )}

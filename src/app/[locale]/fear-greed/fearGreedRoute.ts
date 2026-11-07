@@ -21,10 +21,7 @@ import {
     type SymbolDirectorySection,
 } from '@/shared/lib/symbolDirectory';
 import { fearGreedCopyFor, type FearGreedCopy } from './copy';
-import {
-    composeMarketFearGreedAnswer,
-    composeMarketFearGreedTitle,
-} from './_lib/marketFearGreedAnswer';
+import { composeMarketFearGreedReading } from './_lib/marketFearGreedAnswer';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
 
@@ -96,21 +93,10 @@ async function loadMetadataAnswer(
         locale,
         namespace: 'shared.enumLabel',
     });
-    const title = composeMarketFearGreedTitle(
-        view,
-        copy.titleSubject,
-        tSeo,
-        tLabel
-    );
-    const description = composeMarketFearGreedAnswer(
-        view,
-        copy.answerSubject,
-        tSeo,
-        tLabel
-    );
-    return title === null || description === null
+    const reading = composeMarketFearGreedReading(view, copy, tSeo, tLabel);
+    return reading === null
         ? null
-        : { title, description };
+        : { title: reading.title, description: reading.answer };
 }
 
 /**
