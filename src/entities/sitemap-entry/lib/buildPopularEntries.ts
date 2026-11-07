@@ -115,6 +115,20 @@ export function buildPopularEntries(
                     changeFrequency: 'daily',
                     priority: 0.75,
                 },
+                // 펀더멘털 탭은 사실 블록이 3개 이상일 때만 index다(2026-11-07,
+                // `[symbol]/fundamental/page.tsx` generateMetadata). 빌더는 사실 입력을 읽지 않고,
+                // 페이지가 렌더 때 남긴 판정(`fundamentalIndexable`)이 `true`인 종목만 싣는다.
+                // lastmod는 세션 마감 — 사실 중 다음 실적 D-n이 매일 바뀐다.
+                ...(options.fundamentalIndexable?.get(ticker) === true
+                    ? [
+                          {
+                              url: `${SITE_URL}/${ticker}/fundamental`,
+                              lastModified: todayClose,
+                              changeFrequency: 'daily' as const,
+                              priority: 0.7,
+                          },
+                      ]
+                    : []),
             ];
         })
     );

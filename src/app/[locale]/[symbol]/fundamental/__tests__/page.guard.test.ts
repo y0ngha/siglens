@@ -63,6 +63,19 @@ vi.mock('@/widgets/fundamental/FundamentalAiSummaryError', () => ({
 vi.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => null,
 }));
+const { mockGetFundamentalFacts } = vi.hoisted(() => ({
+    mockGetFundamentalFacts: vi.fn(
+        async (): Promise<
+            import('@/entities/fundamental-facts/model').FundamentalFactsResult
+        > => ({ facts: [], complete: true, indexable: false })
+    ),
+}));
+vi.mock('@/entities/fundamental-facts/server/getFundamentalFacts', () => ({
+    getFundamentalFacts: mockGetFundamentalFacts,
+}));
+vi.mock('@/widgets/fundamental/sections/FundamentalFactsCard', () => ({
+    FundamentalFactsCard: () => null,
+}));
 vi.mock('@/widgets/fundamental/sections/FinancialHealthCard', () => ({
     FinancialHealthCard: () => null,
 }));
@@ -149,9 +162,9 @@ const mockGetSeoSnapshotsStatic = getSeoSnapshotsStatic as MockedFunction<
 >;
 
 describe('Fundamental page ISR route config', () => {
-    it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
+    it('exports revalidate = 43200 (literal — required for Next.js static analysis)', () => {
         // app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for Next.js static analysis (the magic-number-extraction rule does not apply here)
-        expect(revalidate).toBe(86400);
+        expect(revalidate).toBe(43200);
     });
 });
 
@@ -237,7 +250,7 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
         expect(mockNotFound).toHaveBeenCalled();
     });
 
-    it('equity symbol (isTabAllowedForSymbol → true) → noindex(follow 유지)이되 canonical은 null이 아니다', async () => {
+    it('사실이 모자란 equity symbol → noindex(follow 유지)이되 canonical은 null이 아니다', async () => {
         mockIsTabAllowed.mockResolvedValue(true);
 
         mockGetAssetInfoResilient.mockResolvedValue({
@@ -255,7 +268,7 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
         });
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'fundamental');
-        // 2026-10-01 SEO 감사: 이 탭은 항상 noindex다. 하드 sentinel
+        // 사실 블록이 3개 미만이면 noindex다(2026-11-07 게이트). 하드 sentinel
         // (NOINDEX_SYMBOL_METADATA)과 갈리는 신호는 `canonical`이다 — sentinel은
         // null이지만 이 경로는 self-canonical을 유지한다. (이 파일의 seo 목은 url을
         // ''로 스텁하므로 사이트 루트로 해석된다 — null이 아님이 계약이다.)
@@ -266,7 +279,61 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
         expect(result.title).toBeDefined();
     });
 
-    it('스냅샷 산문이 있어도 noindex이고 description은 템플릿 그대로다 (스냅샷을 읽지 않는다)', async () => {
+    it('사실 게이트를 통과하면 robots를 덮지 않는다(기본 index) — 같은 함수로 판정한다', async () => {
+        mockIsTabAllowed.mockResolvedValue(true);
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'LAES',
+                name: 'SEALSQ Corp',
+                koreanName: '실스큐',
+                fmpSymbol: 'LAES',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+        mockGetProfileResilient.mockResolvedValue({
+            profile: { sector: 'Technology', description: null },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getProfileResilient>>);
+        mockGetFundamentalFacts.mockResolvedValueOnce({
+            facts: [],
+            complete: true,
+            indexable: true,
+        });
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'LAES' }),
+        });
+
+        expect(mockGetFundamentalFacts).toHaveBeenCalledWith('LAES');
+        expect(result.robots).toBeUndefined();
+        expect(result.alternates?.canonical).toBeDefined();
+    });
+
+    it('프로필이 degrade면 사실을 읽지 않고 noindex다 — 본문이 안내 화면이다', async () => {
+        mockIsTabAllowed.mockResolvedValue(true);
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'LAES',
+                name: 'SEALSQ Corp',
+                koreanName: '실스큐',
+                fmpSymbol: 'LAES',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+        mockGetProfileResilient.mockResolvedValue({
+            profile: null,
+            degraded: true,
+        } as Awaited<ReturnType<typeof getProfileResilient>>);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'LAES' }),
+        });
+
+        expect(result.robots).toEqual({ index: false, follow: true });
+        expect(mockGetFundamentalFacts).not.toHaveBeenCalled();
+    });
+
+    it('스냅샷 산문이 있어도 사실 게이트로만 판정하고 description은 템플릿 그대로다 (스냅샷을 읽지 않는다)', async () => {
         mockIsTabAllowed.mockResolvedValue(true);
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {

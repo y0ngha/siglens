@@ -37,6 +37,7 @@ import {
     TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
+import { refreshFundamentalStamps } from './fundamentalStamps';
 
 /**
  * `IndexNowCounts`(`indexNowSubmitted`·`indexNowOk`·`indexNowFailed`)를 함께 싣는다 —
@@ -572,6 +573,21 @@ export async function runPrewarmBatch(
     counts.indexNowSubmitted = indexNow.indexNowSubmitted;
     counts.indexNowOk = indexNow.indexNowOk;
     counts.indexNowFailed = indexNow.indexNowFailed;
+
+    // 펀더멘털 탭 색인 판정 스탬프 — 심볼 배치·IndexNow 뒤 남은 시간에만 돈다(`fundamentalStamps.ts`).
+    // FMP 예산 집계(아래)에 이 단계의 호출도 들어가도록 그보다 앞에 둔다.
+    if (!isPastDeadline()) {
+        // 단계 자체가 던지지 않게 만들었지만, 예산 집계·결과 반환은 무슨 일이 있어도 가야 한다.
+        const stamps = await refreshFundamentalStamps(isPastDeadline).catch(
+            error => {
+                console.error('[seo-prewarm] fundamental stamps threw', error);
+                return { checked: 0, recorded: 0 };
+            }
+        );
+        console.log(
+            `[seo-prewarm] fundamental stamps: checked ${stamps.checked}, recorded ${stamps.recorded}`
+        );
+    }
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
     counts.durationMs = clock.now() - batchStartedAt;

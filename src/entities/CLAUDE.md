@@ -21,6 +21,7 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 | `entities/investor-flows/server/getInvestorFlowsEvaluationOptions.ts` | `entities/bars/server/sessionBarsStaticCache` (`getSessionBarsStatic`) | 숏스퀴즈 점수(core `squeezeContext`)의 완결 일봉. 화면 점수표·AI 해석·에이전트 도구·종합 분석 프리웜이 같은 세션 키 봉을 읽어야 core 캐시 키·inputHash가 맞고, 6h 봉 캐시를 읽으면 12h 수급 탭이 clamp된다(`symbolTabRevalidateClamp`) — server-only 지연 import |
 | `entities/sitemap-entry/server.ts` | `entities/market-news/api/marketNewsRepository` (`DrizzleMarketNewsRepository`), `entities/terms/api` (`DrizzleTermsRepository`) | `loadStaticSitemapInputs`이 sitemap `lastmod`를 채우려 뉴스 최신 게시일(market-news)과 활성 약관 발효일(terms)을 조합하는 multi-entity orchestration |
 | `entities/analysis` (`server/overallAnalysisRunner.ts`, `api.ts`), `entities/news-article` (`server/newsAnalysisRunner.ts`, `api.ts`) | `entities/economy/api/loadNewsMacroCalendar` | 뉴스 분석과 종합 분석의 뉴스 축이 동일한 매크로 캘린더를 넘겨야 core의 뉴스 캐시 키가 두 경로에서 일치한다 — server-only deep import, `economy` barrel 제외 대상 |
+| `entities/fundamental-facts/server/getFundamentalFacts.ts` | `entities/earnings-report/api` (`getNextEarningsSchedule`), `entities/earnings-report/server/earningsReportsRepository`, `entities/financials-statements/server/getFinancialsSnapshot`, `entities/investor-flows/server/getInvestorFlowsScorecard` | 펀더멘털 탭 사실 블록이 실적·재무·수급을 조합하는 multi-entity orchestration. 페이지 본문·메타데이터·프리웜 스탬프가 같은 함수를 불러야 색인 판정이 갈리지 않고, 각 탭과 같은 캐시 키를 읽는다 — server-only deep import |
 
 이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.
 

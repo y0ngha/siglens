@@ -38,6 +38,10 @@ const {
 
 // 의도적으로 '../lock'은 mock하지 않는다 — 이 테스트의 핵심은 실제 lock.ts
 // 구현을 통과하는 것이다. 그 아래 redis 클라이언트만 가짜로 대체한다.
+vi.mock('../fundamentalStamps', () => ({
+    // 실제 단계는 FMP·DB·Redis를 친다 — 이 스위트는 그 단계를 보지 않는다(TESTING.md#TE-2).
+    refreshFundamentalStamps: vi.fn(async () => ({ checked: 0, recorded: 0 })),
+}));
 vi.mock('../hubs', () => ({
     // 이 함수는 LLM·Redis를 실제로 친다. 목하지 않으면 이 파일의 모든
     // `runPrewarmBatch()` 호출이 그 경로를 타고, 전역 fetch 스텁이 **우연히**

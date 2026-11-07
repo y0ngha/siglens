@@ -460,6 +460,17 @@ then still `await` the original so the error reaches the real handler.
 - ❌ `const p = load(); await Promise.all(others); await p;` (a rejection of `p` during `Promise.all` is unhandled).
 - ✅ `const p = load(); void p.catch(() => undefined); await Promise.all(others); await p;`
 
+<a id="CC-15"></a>
+
+#### CC-15 — A rotation or scan cursor advances only by the units actually attempted
+
+A cursor over a rotating or paged backlog moves by the number of units processed in this run, not by the planned tick or
+page size. A run cut short by a deadline, cap or overflow that advances the full size skips the unprocessed units for a
+whole rotation.
+
+- ❌ `cursor += TICK_SIZE;` after a loop that broke out at the deadline.
+- ✅ `cursor += attemptedCount;`
+
 ---
 
 ## Server Data Cache Rules (`unstable_cache` / `fetch`)

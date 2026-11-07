@@ -21,6 +21,15 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
     CrossLinkCards: () => null,
 }));
+// 펀더멘털 탭 색인은 사실 블록 게이트(`getFundamentalFacts`)로 정한다. 이 파일은 canonical 회귀만
+// 보므로 게이트는 "사실 부족 → noindex"로 고정한다(게이트 자체는 page.guard.test.ts가 본다).
+vi.mock('@/entities/fundamental-facts/server/getFundamentalFacts', () => ({
+    getFundamentalFacts: vi.fn(async () => ({
+        facts: [],
+        complete: true,
+        indexable: false,
+    })),
+}));
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
     FundamentalAiSummary: () => null,
 }));
@@ -158,8 +167,8 @@ vi.mock(
     })
 );
 
-// fundamental 페이지 본문이 import한다. generateMetadata는 2026-10-01부터 호출하지 않는다
-// (항상 noindex라 profile 게이트가 사라졌다).
+// fundamental 페이지 본문과 generateMetadata(2026-11-07부터 — degrade·없는 종목이면 사실을
+// 읽지 않고 noindex)가 읽는다.
 vi.mock('@/entities/ticker/server/getProfileResilient', () => ({
     getProfileResilient: mockGetProfileResilient,
 }));
@@ -306,6 +315,10 @@ function makeParamsWithSearch(
 describe('generateMetadata — canonical URL 회귀 가드', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetProfileResilient.mockResolvedValue({
+            profile: { sector: 'Technology', description: 'A tech company.' },
+            degraded: false,
+        });
         // happy-path 기본값: 실존하는 종목(assetInfo 존재, 비-degraded).
         // canonical은 ticker(params) 기반이라 assetInfo 유무와 무관하므로,
         // 회귀 가드(플레이스홀더 누출)에는 generic assetInfo로 충분하다.
@@ -648,8 +661,8 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         );
     });
 
-    describe('항상 noindex 탭 — 데이터 상태와 무관하다 (2026-10-01)', () => {
-        it('fundamental: profile 조회 없이 noindex + self-canonical', async () => {
+    describe('펀더멘털 탭 — 사실 게이트 미달이면 noindex (2026-11-07)', () => {
+        it('fundamental: noindex + self-canonical', async () => {
             const metadata = await generateFundamentalMetadata(
                 makeParams('aapl')
             );
@@ -657,7 +670,6 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/AAPL/fundamental'
             );
-            expect(mockGetProfileResilient).not.toHaveBeenCalled();
         });
     });
 });

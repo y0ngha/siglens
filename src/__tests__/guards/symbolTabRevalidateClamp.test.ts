@@ -236,6 +236,11 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
         { token: "'fundamental:profile'", revalidate: time.SECONDS_PER_DAY },
         { token: "'fundamental:metrics-v2'", revalidate: time.SECONDS_PER_DAY },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
+        {
+            token: 'getFundamentalFacts',
+            via: 'entities/fundamental-facts → getInvestorFlowsScorecard (staticSymbolCache 12h, flows 탭과 같은 키) + getFinancialsSnapshot (cacheNonEmpty 24h) + 실적 staticSymbolCache(fundamental-facts:earnings) 12h; 목표가·의견은 섹션과 같은 staticSymbolCache 키(fundamental:pt-consensus 등) 24h',
+            revalidate: time.SECONDS_PER_HALF_DAY,
+        },
     ],
     'financials/page.tsx': [
         {

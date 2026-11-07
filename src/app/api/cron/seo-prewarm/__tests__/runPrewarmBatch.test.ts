@@ -56,6 +56,14 @@ const {
     mockBuildPrewarmUniverse: vi.fn(),
 }));
 
+const { mockRefreshFundamentalStamps } = vi.hoisted(() => ({
+    mockRefreshFundamentalStamps: vi.fn(),
+}));
+vi.mock('../fundamentalStamps', () => ({
+    // 실제 단계는 FMP·DB·Redis를 친다 — 배선(호출 여부·순서)만 여기서 본다.
+    refreshFundamentalStamps: mockRefreshFundamentalStamps,
+}));
+
 vi.mock('../hubs', () => ({
     // 이 함수는 LLM·Redis를 실제로 친다. 목하지 않으면 이 파일의 모든
     // `runPrewarmBatch()` 호출이 그 경로를 타고, 전역 fetch 스텁이 **우연히**
@@ -229,6 +237,10 @@ describe('runPrewarmBatch', () => {
         vi.useFakeTimers();
         vi.setSystemTime(FIXED_NOW);
 
+        mockRefreshFundamentalStamps.mockResolvedValue({
+            checked: 0,
+            recorded: 0,
+        });
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         // 이 스위트는 대부분 구조적 불가 집합을 다루지 않는다(= 수정 이전과 동일한
         // 판정). 집합 자체의 계약은 `runPrewarmBatch.structuralUnavailable.test.ts`가
@@ -598,6 +610,36 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch();
 
         expect(counts.fmpBudgetUsed).toBe(123);
+    });
+
+    it('심볼 배치 뒤 펀더멘털 스탬프 단계를 돌리고, FMP 예산 집계보다 먼저 돈다', async () => {
+        universe({ symbol: 'F', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: ANY_TAB_PROSE,
+        });
+        mockRefreshFundamentalStamps.mockResolvedValue({
+            checked: 8,
+            recorded: 8,
+        });
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(mockRefreshFundamentalStamps).toHaveBeenCalledTimes(1);
+        expect(mockRefreshFundamentalStamps).toHaveBeenCalledWith(
+            expect.any(Function)
+        );
+        expect(
+            mockRefreshFundamentalStamps.mock.invocationCallOrder[0]
+        ).toBeLessThan(mockGetFmpBudgetUsed.mock.invocationCallOrder[0]!);
+        expect(mockPrewarmTechnical.mock.invocationCallOrder[0]).toBeLessThan(
+            mockRefreshFundamentalStamps.mock.invocationCallOrder[0]!
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] fundamental stamps: checked 8, recorded 8'
+        );
+        logSpy.mockRestore();
     });
 
     it('청크 내 한 심볼이 예외를 던져도(getAssetInfoResilient throw) 형제 심볼들은 정상 처리된다', async () => {
@@ -1323,6 +1365,8 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch(clock);
 
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        // 데드라인이 지났으면 스탬프 단계도 시작하지 않는다(락 TTL 불변식).
+        expect(mockRefreshFundamentalStamps).not.toHaveBeenCalled();
         expect(counts.remaining).toBe(SYMBOL_CONCURRENCY);
         expect(warnSpy).toHaveBeenCalledWith(
             `[seo-prewarm] batch deadline reached — 0 symbols processed, ${SYMBOL_CONCURRENCY} remaining`

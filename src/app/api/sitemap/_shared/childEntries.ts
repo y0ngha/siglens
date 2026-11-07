@@ -13,6 +13,8 @@ import {
 import { validateBacktestRunData } from '@/entities/backtest-case/lib/validate';
 import backtestData from '@/entities/backtest-case/data/data.json';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { readFundamentalIndexableMap } from '@/entities/fundamental-facts/server/indexableStamp';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 
 /**
  * 자식 sitemap(static/popular/crypto)의 엔트리 목록을 만드는 **유일한** 경로.
@@ -50,7 +52,12 @@ export async function loadStaticChildEntries(
 export async function loadPopularChildEntries(
     now: Date
 ): Promise<SitemapEntry[]> {
-    return buildPopularEntries(now, await loadPopularSitemapInputs());
+    // 펀더멘털 판정 스탬프는 Redis MGET 한 번이라 1시간 캐시 블롭에 넣지 않고 매번 읽는다.
+    const [inputs, fundamentalIndexable] = await Promise.all([
+        loadPopularSitemapInputs(),
+        readFundamentalIndexableMap(POPULAR_TICKERS),
+    ]);
+    return buildPopularEntries(now, { ...inputs, fundamentalIndexable });
 }
 
 /** `/api/sitemap/crypto`의 엔트리 — 인기 코인 sitemap 입력으로 만든다. */

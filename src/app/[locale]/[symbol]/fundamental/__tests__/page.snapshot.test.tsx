@@ -5,7 +5,7 @@
  * client-side hook, so during ISR generation it bakes its loading skeleton
  * into the static HTML (no crawlable AI text). This suite verifies that
  * `FundamentalSnapshotProse` is mounted as a plain SSR sibling, reads the
- * snapshot with the page's exact revalidate literal (86400), and stays wired
+ * snapshot with the page's exact revalidate literal (43200), and stays wired
  * through the FMP-profile-degraded branch (spec 2026-07-24 §7).
  *
  * Strategy: invoke the RSC directly (no render) and traverse the returned
@@ -73,6 +73,19 @@ vi.mock('@/widgets/fundamental/FundamentalAiSummaryError', () => ({
 vi.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => null,
 }));
+const { mockGetFundamentalFacts } = vi.hoisted(() => ({
+    mockGetFundamentalFacts: vi.fn(
+        async (): Promise<
+            import('@/entities/fundamental-facts/model').FundamentalFactsResult
+        > => ({ facts: [], complete: true, indexable: false })
+    ),
+}));
+vi.mock('@/entities/fundamental-facts/server/getFundamentalFacts', () => ({
+    getFundamentalFacts: mockGetFundamentalFacts,
+}));
+vi.mock('@/widgets/fundamental/sections/FundamentalFactsCard', () => ({
+    FundamentalFactsCard: () => null,
+}));
 vi.mock('@/widgets/fundamental/sections/FinancialHealthCard', () => ({
     FinancialHealthCard: () => null,
 }));
@@ -130,6 +143,7 @@ import FundamentalPage from '@/app/[locale]/[symbol]/fundamental/page';
 import { FundamentalDegraded } from '@/app/[locale]/[symbol]/fundamental/FundamentalDegraded';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
+import { FundamentalFactsCard } from '@/widgets/fundamental/sections/FundamentalFactsCard';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
@@ -276,7 +290,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         expect(findElementByType(tree, FundamentalAiSummary)).not.toBeNull();
     });
 
-    it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(86400)로 호출된다', async () => {
+    it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(43200)로 호출된다', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
 
         await FundamentalPage({
@@ -285,7 +299,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
 
         expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
             'AAPL',
-            86400,
+            43200,
             'ko'
         );
     });
@@ -312,6 +326,40 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         expect(
             (degraded?.props as { snapshotContent: unknown }).snapshotContent
         ).toEqual(SNAPSHOT_CONTENT);
+    });
+});
+
+describe('FundamentalPage — 재무·수급 사실 블록', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+    });
+
+    const FACT = {
+        kind: 'epsStreak' as const,
+        direction: 'beat' as const,
+        count: 3,
+        latestDate: '2026-10-30',
+    };
+
+    it('사실을 카드에 넘긴다', async () => {
+        mockGetFundamentalFacts.mockResolvedValueOnce({
+            facts: [FACT],
+            complete: true,
+            indexable: false,
+        });
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const card = findElementByType(tree, FundamentalFactsCard);
+        expect(card?.props).toMatchObject({
+            facts: [FACT],
+            symbol: 'AAPL',
+        });
     });
 });
 

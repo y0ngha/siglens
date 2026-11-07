@@ -12,6 +12,8 @@ import {
 } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
 import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
@@ -37,6 +39,7 @@ import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { FundamentalAiSummaryError } from '@/widgets/fundamental/FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from '@/widgets/fundamental/FundamentalAiSummarySkeleton';
+import { FundamentalFactsCard } from '@/widgets/fundamental/sections/FundamentalFactsCard';
 
 import {
     FinancialHealthSection,
@@ -49,8 +52,11 @@ import {
 } from './_components/FundamentalSections';
 import { FundamentalDegraded } from './FundamentalDegraded';
 
-/** ISR 상한. FMP 재무는 분기(약 45일) 단위로 바뀌어 길게 둔다. */
-export const revalidate = 86400; // 24h
+/**
+ * ISR 상한 — 사실 블록이 읽는 수급 스냅샷(`getInvestorFlowsSnapshot`, `unstable_cache` 12h)과 맞춘다.
+ * 더 길게 선언해도 렌더 중 읽힌 가장 짧은 `unstable_cache`로 내려간다(`symbolTabRevalidateClamp`).
+ */
+export const revalidate = 43200; // 12h
 
 /**
  * 빈 배열 = 빌드 시 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand ISR. 없으면 동적 세그먼트가
@@ -65,9 +71,10 @@ interface Props {
 }
 
 /**
- * 펀더멘털 탭 메타데이터 — **항상 noindex**. 이 탭의 산문은 더는 프리웜되지 않고, 남는 프로필·지표
- * 카드는 전 종목이 같은 표를 채울 뿐이라 종목 고유 텍스트가 없다. 조건부로 두면 사용자 방문이 만든
- * 캐시 유무에 따라 색인 여부가 흔들린다.
+ * 펀더멘털 탭 메타데이터 — **사실 블록이 3개 이상 그려질 때만 색인**(2026-11-07, 그전엔 항상 noindex).
+ * 프로필·지표 카드는 전 종목이 같은 표를 채울 뿐이라, 종목 고유 텍스트인 "재무·수급 요약" 사실 수를
+ * 게이트로 쓴다(`getFundamentalFacts` — 본문과 같은 함수·같은 요청 캐시, CP-2). 입력은 데이터뿐이고
+ * 방문자가 채우는 캐시(AI 산문)는 읽지 않아 색인 여부가 방문 이력에 따라 흔들리지 않는다.
  *
  * 크립토엔 이 탭이 없다 — 본문과 같은 `isTabAllowedForSymbol` 판정으로 메타데이터 단계에서도
  * 404다(탭 카피 + self-canonical이 404 응답에 얹히지 않게).
@@ -98,6 +105,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale,
     });
+    // 본문이 degrade 안내(`FundamentalDegraded`)나 404를 그리는 경우엔 사실을 읽지 않고 noindex다.
+    // 프로필은 본문과 같은 캐시 키라 추가 비용이 없고, 없는 종목이 사실 입력원(FMP·DB)을 때리지 않는다.
+    const { profile, degraded: profileDegraded } =
+        await getProfileResilient(upper);
+    const { indexable } =
+        profileDegraded || profile === null
+            ? { indexable: false }
+            : await getFundamentalFacts(upper);
+    if (indexable) return symbolMetadataFromSeo(seo, locale);
     return {
         ...symbolMetadataFromSeo(seo, locale),
         robots: ALWAYS_NOINDEX_TAB_ROBOTS,
@@ -168,6 +184,13 @@ export default async function FundamentalPage({ params }: Props) {
     if (profile === null) {
         notFound();
     }
+    // 404·degrade 분기 뒤에 읽는다 — 없는 종목(봇이 찍는 임의 티커)이 실적·수급·목표가 입력원을 때리지 않게.
+    const factsResult = await getFundamentalFacts(upper);
+    // 입력원 장애로 불완전한 렌더(메타는 noindex)가 12h 동안 굳지 않게, 섹션 degrade와 같이
+    // 이 렌더의 revalidate를 짧게 낮춘다 — 복구되면 다음 재생성에서 다시 판정한다.
+    if (!factsResult.complete) await shortenRevalidateForRuntimeDegrade();
+    // sitemap 스탬프는 여기서 쓰지 않는다 — 렌더 중 Redis 쓰기(Upstash REST no-store fetch)는 ISR을
+    // 동적으로 뒤집는다(e2e 실측). 스탬프는 SEO 프리웜이 같은 판정으로 채운다(`fundamentalStamps.ts`).
 
     const sector = profile.sector ?? '';
     const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
@@ -217,6 +240,12 @@ export default async function FundamentalPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.9e0659', { v0: displayName })}
                 </SymbolPageHeading>
+                {/* 종목 고유 문장이라 프로필(FMP 회사 소개 — 웹 전체에 같은 글)보다 앞에 둔다. */}
+                <FundamentalFactsCard
+                    facts={factsResult.facts}
+                    symbol={upper}
+                    displayName={displayName}
+                />
                 {/* 서버 데이터 섹션은 Suspense로 감싸지 않는다 — 서버 데이터 경계는 raw HTML에
                     스켈레톤 + 숨김 청크를 남겨 JS 없는 크롤러에게 본문을 뒤로 밀고, 교체 순간 레이아웃이
                     흔들린다. 형제 async 섹션은 서버에서 병렬로 렌더되고, 실패는 섹션마다 흡수한다.

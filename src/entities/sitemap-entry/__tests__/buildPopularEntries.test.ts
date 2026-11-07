@@ -56,9 +56,9 @@ describe('buildPopularEntries', () => {
         expect(fearGreed?.priority).toBe(0.75);
     });
 
-    // 종합·펀더멘털·재무제표·옵션·의회거래·수급·내위치 탭은 페이지가 항상 noindex다.
-    // noindex URL이 sitemap에 실리면 크롤 예산만 태우므로 한 건도 나가지 않는지
-    // (한국 종목·ETF 포함) 고정한다.
+    // 종합·재무제표·옵션·의회거래·수급·내위치 탭은 페이지가 항상 noindex다. 펀더멘털은
+    // 판정 스탬프가 없으면(아래 별도 describe) 싣지 않는다. noindex URL이 sitemap에 실리면
+    // 크롤 예산만 태우므로 한 건도 나가지 않는지(한국 종목·ETF 포함) 고정한다.
     it.each([
         'overall',
         'fundamental',
@@ -351,5 +351,34 @@ describe('buildPopularEntries — 스냅샷 generatedAt lastmod', () => {
                 `${SITE_URL}/${US_TICKER}/fear-greed`
             ).toISOString()
         ).toBe(LAST_SESSION_CLOSE.toISOString());
+    });
+});
+
+describe('buildPopularEntries — 펀더멘털 탭 판정 스탬프', () => {
+    it('스탬프가 true인 종목만 /fundamental을 싣는다(false·기록 없음은 뺀다)', () => {
+        const [yes, no, unknown] = POPULAR_TICKERS;
+        const entries = buildPopularEntries(NOW, {
+            fundamentalIndexable: new Map([
+                [yes, true],
+                [no, false],
+            ]),
+        });
+        const urls = entries.map(e => e.url);
+
+        expect(urls).toContain(`${SITE_URL}/${yes}/fundamental`);
+        expect(urls).not.toContain(`${SITE_URL}/${no}/fundamental`);
+        expect(urls).not.toContain(`${SITE_URL}/${unknown}/fundamental`);
+        expect(
+            entries.filter(e => e.url.endsWith('/fundamental'))
+        ).toHaveLength(1);
+
+        const fundamental = entries.find(
+            e => e.url === `${SITE_URL}/${yes}/fundamental`
+        );
+        expect(fundamental).toMatchObject({
+            changeFrequency: 'daily',
+            priority: 0.7,
+            lastModified: LAST_SESSION_CLOSE,
+        });
     });
 });

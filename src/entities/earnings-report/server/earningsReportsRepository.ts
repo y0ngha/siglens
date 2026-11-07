@@ -6,6 +6,7 @@ import {
     gte,
     isNotNull,
     isNull,
+    lte,
     notInArray,
     or,
     sql,
@@ -216,6 +217,45 @@ export class DrizzleEarningsReportsRepository {
             .orderBy(asc(earningsReports.earningsDate));
 
         return rows.map(row => row.earningsDate);
+    }
+
+    /**
+     * `today`(KST 날짜 키)까지 실제 EPS가 발표된 행을 최신순으로 `limit`개 — 펀더멘털 탭 사실 블록의
+     * "EPS 연속 상회/하회"와 직전 서프라이즈 입력이다. 예상치가 없는 행도 돌려주고 판정은 호출부가 한다.
+     */
+    async listReportedEps(
+        symbol: string,
+        today: string,
+        limit: number
+    ): Promise<
+        {
+            earningsDate: string;
+            epsActual: number | null;
+            epsEstimated: number | null;
+        }[]
+    > {
+        const rows = await this.db
+            .select({
+                earningsDate: earningsReports.earningsDate,
+                epsActual: earningsReports.epsActual,
+                epsEstimated: earningsReports.epsEstimated,
+            })
+            .from(earningsReports)
+            .where(
+                and(
+                    eq(earningsReports.symbol, symbol),
+                    lte(earningsReports.earningsDate, today),
+                    isNotNull(earningsReports.epsActual)
+                )
+            )
+            .orderBy(desc(earningsReports.earningsDate))
+            .limit(limit);
+
+        return rows.map(row => ({
+            earningsDate: row.earningsDate,
+            epsActual: toNumberOrNull(row.epsActual),
+            epsEstimated: toNumberOrNull(row.epsEstimated),
+        }));
     }
 
     /** `symbol`의 가장 최근 `fetched_at`. 행이 없으면 `null` — 24h 신선도 게이트의 입력이다. */
