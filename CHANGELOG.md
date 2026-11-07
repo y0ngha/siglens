@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.117.0](https://github.com/y0ngha/siglens/compare/v0.116.2...v0.117.0) (2026-11-07)
+
+### Features
+
+* **seo:** 펀더멘털 탭에 재무·수급 사실 블록을 싣고 사실이 3개 이상이면 색인한다 ([#1282](https://github.com/y0ngha/siglens/issues/1282)) ([14b26d6](https://github.com/y0ngha/siglens/commit/14b26d61e70b0603c7a34a25c9cc4e353628b11c))
+
 ## [0.116.2](https://github.com/y0ngha/siglens/compare/v0.116.1...v0.116.2) (2026-11-07)
 
 ## [0.116.1](https://github.com/y0ngha/siglens/compare/v0.116.0...v0.116.1) (2026-11-07)
