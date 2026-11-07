@@ -70,7 +70,8 @@ export function buildMarketFearGreedDatasetJsonLd({
             name,
             minValue: 0,
             maxValue: 100,
-            value: snapshot.score,
+            // 화면·제목과 같은 정수(판독값은 반올림 전 실수다).
+            value: Math.round(snapshot.score),
         },
     };
 }

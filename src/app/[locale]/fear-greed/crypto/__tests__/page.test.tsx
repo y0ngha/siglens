@@ -36,7 +36,7 @@ const mockLoader = getMarketFearGreedCryptoStatic as MockedFunction<
 
 const READY: MarketFearGreedCryptoView = {
     snapshot: {
-        score: 28,
+        score: 27.877412031782065,
         label: 'FEAR',
         factors: [],
         confidence: 'normal',

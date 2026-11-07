@@ -75,6 +75,34 @@ describe('marketFearGreedMetaFacts', () => {
     });
 });
 
+describe('운영 판독값(반올림 전 실수 점수)', () => {
+    it('제목과 메타 사실의 점수를 화면처럼 정수로 반올림한다', () => {
+        const view: MarketFearGreedView = {
+            snapshot: { ...SNAPSHOT, score: 24.48367166813769 },
+            comparisons: [
+                {
+                    key: '1w',
+                    date: '2026-10-29',
+                    score: 28.67021276595745,
+                    label: 'FEAR',
+                },
+            ],
+        };
+        expect(
+            composeMarketFearGreedTitle(
+                view,
+                '미국 공포탐욕지수',
+                catalogTranslator('shared.seo'),
+                catalogTranslator('shared.enumLabel')
+            )
+        ).toBe('미국 공포탐욕지수 24점(극심한 공포) 11월 5일 기준');
+        expect(marketFearGreedMetaFacts(view)).toMatchObject({
+            score: 24,
+            past: [{ period: 'week', score: 29 }],
+        });
+    });
+});
+
 describe('composeMarketFearGreedTitle', () => {
     const tSeo = catalogTranslator('shared.seo');
     const tLabel = catalogTranslator('shared.enumLabel');

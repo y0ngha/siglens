@@ -63,14 +63,15 @@ export function marketFearGreedMetaFacts(
     if (snapshot === null) return null;
     return {
         date: snapshot.asOf,
-        score: snapshot.score,
+        // 판독값 점수는 반올림 전 실수(예: 24.48367…)다 — 화면 게이지·비교 타일과 같이 정수로 말한다.
+        score: Math.round(snapshot.score),
         label: snapshot.label,
         past: view.comparisons.flatMap(point => {
             if (point.key === 'now') return [];
             const period = PERIOD_BY_KEY[point.key];
             return daysBetween(point.date, snapshot.asOf) >=
                 MIN_DAYS_BEFORE[period]
-                ? [{ period, score: point.score }]
+                ? [{ period, score: Math.round(point.score) }]
                 : [];
         }),
         range: null,
@@ -118,7 +119,7 @@ export function composeMarketFearGreedTitle(
     return clampSeoTitle(
         tSeo('fearGreedPage.answerTitle', {
             subject,
-            score: snapshot.score,
+            score: Math.round(snapshot.score),
             label: sentimentLabelText(snapshot.label, tLabel),
             date: formatFactsDate(snapshot.asOf, tSeo),
         })
