@@ -107,9 +107,10 @@ export const USER_TRIGGERED_FETCHER_USER_AGENTS = [
 export const AI_USAGE_CONTROL_TOKENS = ['Google-Extended', 'Applebot-Extended'];
 
 /**
- * 허용 그룹 넷(`*`, `Googlebot`, 사용자 트리거 fetcher, AI 검색·인용)이 공유하는 baseline.
+ * 허용 그룹(`*`, `Googlebot`, 사용자 트리거 fetcher, AI 사용 권한 토큰)이 공유하는 baseline. AI 검색·인용
+ * 크롤러 그룹도 같은 Allow를 쓰고 Disallow만 넓힌다(`AI_SEARCH_DISALLOW`).
  * robots.txt 그룹 배타성 때문에 이름 붙은 그룹은 `*`를 상속하지 않으므로 매 그룹이 이걸 복제해야
- * `/api/` 보호가 유지된다. ⚠️ 여기를 고치면 네 그룹이 함께 바뀐다.
+ * `/api/` 보호가 유지된다. ⚠️ 여기를 고치면 다섯 그룹(AI 검색·인용 그룹 포함)이 함께 바뀐다.
  *
  * `/api/analysis/stream`만 예외로 허용한다 — 분석 요청이 이 라우트로 가므로, 막히면 Googlebot
  * 렌더러가 요청을 못 보내 렌더된 DOM에 에러 배너만 남는다. 비용은 UA가 아니라 사람과 공유하는
@@ -123,9 +124,44 @@ export const BASELINE_ALLOW = ['/', '/api/analysis/stream'];
  *
  * 인증 페이지와 `/account`는 막지 않는다 — 페이지 metadata의 `noindex`로 충분하고, robots.txt로도
  * 막으면 Googlebot이 그 `noindex`를 보지 못해 외부 백링크가 생겼을 때 "Indexed though blocked by
- * robots.txt" 빈 카드로 노출될 수 있다.
+ * robots.txt" 빈 카드로 노출될 수 있다. AI 검색·인용 그룹만 예외다(`AI_SEARCH_DISALLOW`).
  */
 export const BASELINE_DISALLOW = ['/api/'];
+
+/**
+ * AI 검색·인용 크롤러에서만 막는 noindex 유틸리티 페이지(로그인·가입·계정·메일 리포트·관심종목·
+ * 포트폴리오). 전부 `robots: { index: false }`다 — `robots.test.ts`가 각 라우트 소스에서 확인한다.
+ *
+ * Cloudflare 집계로 OAI-SearchBot이 이 페이지들을 주 3,800건 가까이 가져갔다(2026-11-07) — 전역
+ * 헤더·푸터 링크라 매 페이지에서 다시 발견된다. Googlebot·`*` 그룹에서는 막지 않는다
+ * (`BASELINE_DISALLOW` JSDoc: robots로 막으면 `noindex`를 못 봐 빈 카드로 색인될 수 있다). AI 검색
+ * 크롤러는 자체 색인이라 그 문제가 없고, 막으면 그 수집량이 산문 페이지로 돌아간다.
+ *
+ * 규칙은 접두사 일치라 `/account`는 `/account/delete`까지 막는다. 기본 로케일(ko)은 접두사가 없고,
+ * 나머지 로케일은 `/{locale}/…`를 명시한다 — `/*​/account` 와일드카드는 `*`가 `/`까지 먹어
+ * `/guide/accounting-…` 같은 색인 경로까지 막는다.
+ */
+const AI_SEARCH_NOINDEX_PAGES = [
+    'signup',
+    'login',
+    'forgot-password',
+    'reset-password',
+    'account',
+    'email-report',
+    'watchlist',
+    'portfolio',
+];
+
+/** AI 검색·인용 크롤러 그룹의 Disallow — baseline + noindex 유틸리티 페이지(로케일 접두사 포함). */
+export const AI_SEARCH_DISALLOW = [
+    ...BASELINE_DISALLOW,
+    ...AI_SEARCH_NOINDEX_PAGES.flatMap(page => [
+        `/${page}`,
+        ...LOCALES.filter(locale => locale !== DEFAULT_LOCALE).map(
+            locale => `/${locale}/${page}`
+        ),
+    ]),
+];
 
 /**
  * 뉴스 **허브**의 OG/twitter 이미지만 Googlebot에 되돌려 준다.

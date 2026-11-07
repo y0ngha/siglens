@@ -3,6 +3,7 @@ import { SITE_URL } from '@/shared/lib/seo';
 import {
     AI_CRAWLER_CRAWL_DELAY_SECONDS,
     AI_SEARCH_CRAWLER_USER_AGENTS,
+    AI_SEARCH_DISALLOW,
     AI_TRAINING_CRAWLER_USER_AGENTS,
     AI_USAGE_CONTROL_TOKENS,
     BASELINE_ALLOW,
@@ -20,7 +21,8 @@ import {
  * `/robots.txt`. 봇 부류별 그룹을 조립한다 — 목록과 경로 규칙의 근거는 `_lib/robotsRules.ts`.
  *
  * robots.txt는 가장 구체적인 그룹만 적용하고 `*`를 상속하지 않으므로, 허용 그룹은 모두
- * `BASELINE_ALLOW`/`BASELINE_DISALLOW`를 명시한다(`robots.test.ts`가 parity를 고정한다).
+ * `BASELINE_ALLOW`/`BASELINE_DISALLOW`를 명시한다(`robots.test.ts`가 Googlebot parity를 고정한다).
+ * AI 검색·인용 그룹만 Disallow가 baseline보다 넓다(`AI_SEARCH_DISALLOW` — noindex 유틸리티 페이지).
  */
 export default function robots(): MetadataRoute.Robots {
     return {
@@ -61,11 +63,17 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: BASELINE_DISALLOW,
             },
             {
-                // 차단 대신 빈도만 낮춰 인용 가시성을 보존한다.
-                userAgent: [
-                    ...AI_SEARCH_CRAWLER_USER_AGENTS,
-                    ...AI_USAGE_CONTROL_TOKENS,
-                ],
+                // 차단 대신 빈도만 낮춰 인용 가시성을 보존한다. noindex 유틸리티 페이지는 닫아 수집량을
+                // 산문 페이지로 돌린다(`AI_SEARCH_DISALLOW` JSDoc).
+                userAgent: AI_SEARCH_CRAWLER_USER_AGENTS,
+                allow: BASELINE_ALLOW,
+                disallow: AI_SEARCH_DISALLOW,
+                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
+            },
+            {
+                // 자체 fetch가 없는 사용 권한 토큰(Gemini·Apple Intelligence) — 수집량 근거가 없으니
+                // baseline 그대로 둔다. crawl-delay는 예전 그룹 구성 그대로 유지한다(효과 없음).
+                userAgent: AI_USAGE_CONTROL_TOKENS,
                 allow: BASELINE_ALLOW,
                 disallow: BASELINE_DISALLOW,
                 crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,

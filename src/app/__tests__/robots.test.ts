@@ -2,6 +2,8 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import type { MetadataRoute } from 'next';
 
 import { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/_lib/robotsRules';
@@ -148,14 +150,85 @@ describe('robots', () => {
                 'ClaudeBot',
                 'Claude-SearchBot',
                 'PerplexityBot',
-                'Google-Extended',
-                'Applebot-Extended',
             ],
+            allow: ['/', '/api/analysis/stream'],
+            disallow: [
+                '/api/',
+                ...[
+                    'signup',
+                    'login',
+                    'forgot-password',
+                    'reset-password',
+                    'account',
+                    'email-report',
+                    'watchlist',
+                    'portfolio',
+                ].flatMap(page => [
+                    `/${page}`,
+                    `/en/${page}`,
+                    `/ja/${page}`,
+                    `/zh/${page}`,
+                ]),
+            ],
+            crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
+        });
+        // 사용 권한 토큰은 자체 fetch가 없어 baseline 그대로다.
+        expect(result.rules).toContainEqual({
+            userAgent: ['Google-Extended', 'Applebot-Extended'],
             allow: ['/', '/api/analysis/stream'],
             disallow: ['/api/'],
             crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
         });
     });
+
+    /**
+     * AI 검색 그룹이 막는 페이지는 전부 `noindex`인 유틸리티 페이지여야 한다 — 색인 대상 페이지를
+     * 막으면 인용 기회를 잃는다.
+     */
+    const aiSearchDisallow = (): string[] => {
+        const aiGroup = toRulesArray(robots().rules).find(rule =>
+            toUserAgents(rule).includes('OAI-SearchBot')
+        );
+        return [aiGroup?.disallow ?? []].flat();
+    };
+    const LOCALE_PREFIXED = /^\/(en|ja|zh)\//;
+    const blockedPages = aiSearchDisallow().filter(
+        rule => rule !== '/api/' && !LOCALE_PREFIXED.test(rule)
+    );
+
+    it('AI 검색 그룹은 noindex 유틸리티 페이지를 막는다', () => {
+        expect(blockedPages.length).toBeGreaterThan(0);
+    });
+
+    it.each(blockedPages)(
+        'AI 검색 그룹이 막는 %s는 코드상 noindex(index: false) 페이지다',
+        page => {
+            const source = readFileSync(
+                path.join(process.cwd(), 'src/app/[locale]', page, 'page.tsx'),
+                'utf8'
+            );
+            // 주석을 빼고 본다 — 주석 속 "noindex" 낱말로 통과하지 않게.
+            const code = source
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\/\/[^\n]*/g, '');
+            expect(code).toMatch(/index:\s*false/);
+        }
+    );
+
+    it('AI 검색 그룹 규칙에는 와일드카드가 없다(`*`는 `/`까지 먹는다)', () => {
+        expect(aiSearchDisallow().filter(rule => rule.includes('*'))).toEqual(
+            []
+        );
+    });
+
+    it.each(aiSearchDisallow().filter(rule => LOCALE_PREFIXED.test(rule)))(
+        '로케일 접두사 규칙 %s는 기본 로케일 규칙과 짝이 맞다',
+        prefixed => {
+            expect(aiSearchDisallow()).toContain(
+                prefixed.replace(/^\/(en|ja|zh)/, '')
+            );
+        }
+    );
 
     /**
      * 순수 학습·스크레이핑 크롤러 전면 차단. 이 사이트에 리턴이 없는 부류이고,
