@@ -97,7 +97,7 @@ export function FearGreedRouteBody({
     const answer = reading?.answer ?? null;
     const scoreTitle = reading?.title ?? null;
     const extremes =
-        view.snapshot === null
+        reading === null || view.snapshot === null
             ? null
             : pickFactorExtremes(view.snapshot.factors);
     const extremesSentence =
@@ -179,7 +179,8 @@ export function FearGreedRouteBody({
                     )}
                     {/* 점수의 이유 — 요인 양 끝. 답 문장과 같은 판독값에서 나온다. 요인 항목은
                         `factorExtremeItem`을 `factorExtremes`의 ICU 인자로 넣어 한 문장 키로 만들고,
-                        답 문장과는 코드로 잇지 않고 별도 문단으로 둔다(I18N.md#I18-14). */}
+                        답 문장과는 코드로 잇지 않고 별도 문단으로 둔다(I18N.md#I18-14). 항목 키는
+                        "요인 이름(백분위 N)" 명사구라 어순·조사는 문장 키가 정한다(ko는 `{fear}이고`). */}
                     {extremesSentence && (
                         <p className="text-secondary-300">{extremesSentence}</p>
                     )}

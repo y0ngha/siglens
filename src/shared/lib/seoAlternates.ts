@@ -315,7 +315,8 @@ export interface HubMetadataInput {
     readonly title: string;
     /**
      * `true`면 `<title>`에 레이아웃 템플릿(브랜드 접미사)을 붙이지 않는다(`{ absolute: title }`).
-     * 그날 수치를 담는 점수형 제목처럼 접미사 폭(ko 11)까지 들어가면 폭 상한을 넘는 경우에 쓴다.
+     * 그날 수치를 담는 점수형 제목처럼 접미사(` | 시그렌즈`, `seoTitleWidth`로 11)까지 붙이면
+     * `SEO_TITLE_MAX_WIDTH`(seoClamp.ts)를 넘는 경우에 쓴다.
      * 소셜 카드 제목은 그대로 브랜드를 붙인다.
      */
     readonly absoluteTitle?: boolean;

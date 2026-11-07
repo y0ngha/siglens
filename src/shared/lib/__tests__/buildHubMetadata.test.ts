@@ -159,7 +159,7 @@ describe('buildHubMetadata', () => {
         const templated = await buildHubMetadata(base);
 
         expect(absolute.title).toEqual({ absolute: base.title });
-        // 기본값(false)은 예전처럼 문자열 — 레이아웃 템플릿이 브랜드를 붙인다.
+        // 기본값(false)은 문자열이라 레이아웃 템플릿이 브랜드를 붙인다.
         expect(templated.title).toBe(base.title);
         const brandedTitle = `${base.title} | ${SITE_NAME_KO}`;
         expect((absolute.openGraph as { title?: string }).title).toBe(
