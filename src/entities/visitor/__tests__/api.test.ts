@@ -67,6 +67,7 @@ describe('DrizzleVisitorRepository', () => {
             userAgent: 'Mozilla/5.0 (Macintosh) Chrome/140.0.0.0',
             country: 'KR',
             landingPath: '/ko/AAPL',
+            entrySource: 'chatgpt' as const,
             userId: 'user-1',
         };
         await new DrizzleVisitorRepository(db).recordVisit(visit);
@@ -85,6 +86,7 @@ describe('DrizzleVisitorRepository', () => {
             userAgent: null,
             country: null,
             landingPath: null,
+            entrySource: null,
             userId: null,
         });
         expect(onConflictDoUpdate).toHaveBeenCalledWith(
@@ -95,6 +97,7 @@ describe('DrizzleVisitorRepository', () => {
         const [{ set, setWhere }] = onConflictDoUpdate.mock.calls.find(
             ([arg]) => arg !== undefined
         ) as [{ set: { userId: unknown }; setWhere: never }];
+        // 충돌 시 user_id만 채운다 — 첫 진입 출처(entry_source)는 첫 행 값을 그대로 둔다.
         expect(Object.keys(set)).toEqual(['userId']);
         const rendered = new PgDialect().sqlToQuery(set.userId as never);
         expect(rendered.sql).toBe(
