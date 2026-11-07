@@ -35,7 +35,10 @@ export interface FundamentalFactsScorecard {
             DilutionMetrics,
             | 'filingsInWindow'
             | 'atmFilings'
+            | 'marketedOfferingFilings'
+            | 'privatePlacementFilings'
             | 'shelfFilings'
+            | 'registrationFilings'
             | 'latestFilingDate'
         > | null;
     };
@@ -104,9 +107,9 @@ export type FundamentalFact =
       }
     | {
           readonly kind: 'dilutionFilings';
+          /** 희석 신호 종류(ATM·공모·사모·일괄신고·증권신고)만 센 건수. 투자설명서·기타는 뺀다. */
           readonly filings: number;
           readonly atmFilings: number;
-          readonly shelfFilings: number;
           readonly windowDays: number;
           readonly latestFilingDate: string | null;
       }

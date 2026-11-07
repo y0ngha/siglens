@@ -19,7 +19,6 @@ const ALL_FACTS: FundamentalFact[] = [
         kind: 'dilutionFilings',
         filings: 2,
         atmFilings: 1,
-        shelfFilings: 1,
         windowDays: 180,
         latestFilingDate: '2026-10-01',
     },
@@ -93,6 +92,9 @@ describe('FundamentalFactsCard', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(/증자 관련 SEC 공시가 2건 있었습니다/)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('그중 시장가 발행(ATM) 공시가 1건입니다.')
         ).toBeInTheDocument();
         expect(screen.getByText(/매도 3건/)).toBeInTheDocument();
         expect(
@@ -226,7 +228,6 @@ describe('FundamentalFactsCard', () => {
                         kind: 'dilutionFilings',
                         filings: 1,
                         atmFilings: 1,
-                        shelfFilings: 0,
                         windowDays: 180,
                         latestFilingDate: null,
                     },
@@ -245,9 +246,12 @@ describe('FundamentalFactsCard', () => {
         );
         expect(
             screen.getByText(
-                'There was 1 SEC filing related to share issuance in the last 180 days (at-the-market offerings: 1, shelf registrations: 0).'
+                'There was 1 SEC filing related to share issuance in the last 180 days.'
             )
         ).toBeInTheDocument();
         expect(screen.getByText(/, 1 day from now\.$/)).toBeInTheDocument();
+        expect(
+            screen.getByText('1 of them is an at-the-market (ATM) offering.')
+        ).toBeInTheDocument();
     });
 });

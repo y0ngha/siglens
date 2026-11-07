@@ -4243,7 +4243,7 @@
     "widgets.fundamental.FundamentalFactsCard.heading": "c58e813162f5",
     "widgets.fundamental.FundamentalFactsCard.cashRunway": "4e24965ab033",
     "widgets.fundamental.FundamentalFactsCard.cashRunwaySource": "0bb7b5d68091",
-    "widgets.fundamental.FundamentalFactsCard.dilution": "16408a099d93",
+    "widgets.fundamental.FundamentalFactsCard.dilution": "cc673383e425",
     "widgets.fundamental.FundamentalFactsCard.dilutionSource": "9ddbb8498962",
     "widgets.fundamental.FundamentalFactsCard.dilutionSourceDated": "dd194177cdc3",
     "widgets.fundamental.FundamentalFactsCard.insiderUs": "460dda9c86fb",
@@ -4267,5 +4267,6 @@
     "widgets.fundamental.FundamentalFactsCard.nextEarnings": "f13af098c959",
     "widgets.fundamental.FundamentalFactsCard.lastSurprise": "8ba990778664",
     "widgets.fundamental.FundamentalFactsCard.nextEarningsSource": "585601e26aa4",
-    "widgets.fundamental.FundamentalFactsCard.footnote": "3557d321d5fd"
+    "widgets.fundamental.FundamentalFactsCard.footnote": "3557d321d5fd",
+    "widgets.fundamental.FundamentalFactsCard.dilutionAtm": "00fa275650bb"
 }

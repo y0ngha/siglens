@@ -4496,7 +4496,8 @@
             "FundamentalFactsCard": {
                 "cashRunway": "최근 회계연도 영업현금흐름은 {burn} 적자이고, 현금성 자산은 {cash}입니다. 같은 적자가 이어지면 약 {years}년치 규모입니다.",
                 "cashRunwaySource": "{date} 연간 재무제표 기준",
-                "dilution": "최근 {days}일 동안 증자 관련 SEC 공시가 {count}건 있었습니다. 그중 시장가 발행(ATM)은 {atm}건, 일괄신고서는 {shelf}건입니다.",
+                "dilution": "최근 {days}일 동안 증자 관련 SEC 공시가 {count}건 있었습니다.",
+                "dilutionAtm": "그중 시장가 발행(ATM) 공시가 {atm}건입니다.",
                 "dilutionSource": "SEC 공시",
                 "dilutionSourceDated": "SEC 공시, 마지막 {date}",
                 "epsBeat": "최근 {count}번 연속으로 EPS가 시장 예상치를 웃돌았습니다.",
