@@ -431,3 +431,92 @@ systemctl enable siglens cloudflared \
   siglens-lifecycle-launch siglens-lifecycle-drain siglens-selfcheck.timer
 systemctl start --no-block siglens cloudflared \
   siglens-lifecycle-launch siglens-lifecycle-drain siglens-selfcheck.timer
+
+# ── dashboard.siglens.io (개인 대시보드, 별도 저장소 sealsq-radar) ──────────────
+# siglens와 같은 인스턴스에 컨테이너 하나를 더 띄운다. 배포는 분리돼 있다:
+#   - 이미지 태그는 SSM /dashboard/sealsq/IMAGE_URI가 정한다. sealsq-radar의 deploy/deploy.sh가
+#     이 값을 바꾸고 SSM Run Command로 `systemctl restart dashboard-sealsq`만 보낸다(인스턴스 교체 없음).
+#   - siglens 배포(instance refresh)로 인스턴스가 바뀌면 이 블록이 같은 태그를 다시 띄운다.
+#     데이터는 RDS(dashboard DB)에 있어 인스턴스가 바뀌어도 그대로다.
+# siglens를 해치지 않는 것이 최우선이다:
+#   - 서브셸에서 `set +e`로 돌리고 전체를 `|| true`로 감싼다. 여기서 무엇이 실패해도 siglens 부팅은 계속된다.
+#   - 컨테이너는 127.0.0.1에만 바인딩하고(터널만 접근) 메모리 512MiB로 묶는다(실측 70MiB 안팎).
+#   - cloudflared와 lifecycle 훅은 이 유닛에 의존하지 않는다.
+# env는 /dashboard/sealsq/ 경로만 읽는다. /siglens/와 겹치지 않아 서로의 키가 섞이지 않는다.
+(
+set +e
+cat > /usr/local/bin/dashboard-sealsq-run.sh <<'RUN'
+#!/usr/bin/env bash
+set -euo pipefail
+REGION=ap-northeast-2
+ENV_DIR=/run/dashboard-sealsq
+mkdir -p "$ENV_DIR"
+aws ssm get-parameters-by-path --region "$REGION" --path /dashboard/sealsq/ --with-decryption --output json \
+  | jq -r '.Parameters[] | "\(.Name | ltrimstr("/dashboard/sealsq/"))=\(.Value)"' > "$ENV_DIR/env"
+chmod 600 "$ENV_DIR/env"
+IMAGE=$(grep '^IMAGE_URI=' "$ENV_DIR/env" | cut -d= -f2-)
+[ -n "$IMAGE" ] || { echo "[dashboard-sealsq] IMAGE_URI가 SSM에 없다" >&2; exit 1; }
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "${IMAGE%%/*}" >/dev/null
+docker pull "$IMAGE"
+docker rm -f dashboard-sealsq >/dev/null 2>&1 || true
+TOKEN=$(curl -sf -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60" || true)
+INSTANCE_ID=$(curl -sf -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id || echo unknown)
+exec /usr/bin/docker run --rm --name dashboard-sealsq -p 127.0.0.1:4780:4780 \
+  --memory=512m --memory-swap=512m -e NODE_OPTIONS=--max-old-space-size=320 \
+  --env-file "$ENV_DIR/env" --security-opt no-new-privileges:true \
+  --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=/dashboard/sealsq \
+  --log-opt awslogs-stream="$INSTANCE_ID" --log-opt awslogs-create-group=true "$IMAGE"
+RUN
+chmod +x /usr/local/bin/dashboard-sealsq-run.sh
+
+cat > /usr/local/bin/dashboard-sealsq-collect.sh <<'COLLECT'
+#!/usr/bin/env bash
+set -euo pipefail
+SECRET=$(grep '^CRON_SECRET=' /run/dashboard-sealsq/env | cut -d= -f2-)
+curl -fsS -m 290 -X POST -H "Authorization: Bearer $SECRET" http://127.0.0.1:4780/sealsq/api/cron/collect
+COLLECT
+chmod +x /usr/local/bin/dashboard-sealsq-collect.sh
+
+cat > /etc/systemd/system/dashboard-sealsq.service <<'UNIT'
+[Unit]
+Description=dashboard.siglens.io/sealsq
+After=docker.service network-online.target
+Requires=docker.service
+# 크래시 루프가 SSM/KMS를 두드려 siglens까지 스로틀되지 않게 막는다(siglens.service와 같은 이유).
+StartLimitIntervalSec=300
+StartLimitBurst=3
+[Service]
+ExecStart=/usr/local/bin/dashboard-sealsq-run.sh
+ExecStop=/usr/bin/docker stop -t 20 dashboard-sealsq
+TimeoutStartSec=300
+Restart=always
+RestartSec=30
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+cat > /etc/systemd/system/dashboard-sealsq-collect.service <<'UNIT'
+[Unit]
+Description=dashboard sealsq 수집 (30분마다, 소스별 주기는 앱이 판단)
+After=dashboard-sealsq.service
+Requires=dashboard-sealsq.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/dashboard-sealsq-collect.sh
+UNIT
+
+cat > /etc/systemd/system/dashboard-sealsq-collect.timer <<'UNIT'
+[Unit]
+Description=dashboard sealsq 수집 타이머
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+RandomizedDelaySec=60
+[Install]
+WantedBy=timers.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable dashboard-sealsq.service dashboard-sealsq-collect.timer
+systemctl start --no-block dashboard-sealsq.service dashboard-sealsq-collect.timer
+) || true
