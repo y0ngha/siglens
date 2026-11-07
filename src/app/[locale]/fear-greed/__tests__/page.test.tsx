@@ -403,7 +403,8 @@ describe('/fear-greed 가시 브레드크럼', () => {
 });
 
 const ANSWER_SNAPSHOT = {
-    score: 24,
+    // 운영 판독값처럼 반올림 전 실수 — 문장·제목·Dataset은 화면처럼 정수로 말해야 한다.
+    score: 24.48367166813769,
     label: 'EXTREME_FEAR',
     factors: [],
     confidence: 'normal',
@@ -414,10 +415,20 @@ const ANSWER_SNAPSHOT = {
 const ANSWER_VIEW: MarketFearGreedView = {
     snapshot: ANSWER_SNAPSHOT,
     comparisons: [
-        { key: 'now', date: '2026-11-05', score: 24, label: 'EXTREME_FEAR' },
-        { key: '1w', date: '2026-10-29', score: 36, label: 'FEAR' },
-        { key: '1m', date: '2026-10-06', score: 51, label: 'NEUTRAL' },
-        { key: '1y', date: '2025-11-05', score: 34, label: 'FEAR' },
+        {
+            key: 'now',
+            date: '2026-11-05',
+            score: 24.48367166813769,
+            label: 'EXTREME_FEAR',
+        },
+        { key: '1w', date: '2026-10-29', score: 35.6, label: 'FEAR' },
+        {
+            key: '1m',
+            date: '2026-10-06',
+            score: 51.2,
+            label: 'NEUTRAL',
+        },
+        { key: '1y', date: '2025-11-05', score: 33.7, label: 'FEAR' },
     ],
 };
 

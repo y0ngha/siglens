@@ -350,6 +350,8 @@ If a fixture value equals the literal in the assertion, reverting a dynamic prop
 
 A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission.
 
+Values a surface formats (scores, prices, ratios) use production-shaped unrounded numbers (`24.48367166813769`, not `24`) in fixtures for every text and metadata surface (title, description, structured data); integer fixtures hide a missing rounding step.
+
 - ❌ `dropSupersededPaths([{ path: 'actionRecommendation.exit' }])` while production passes `result.actionRecommendation.exit`.
 - ✅ A fixture with the full `{ status, result: { ... } }` envelope plus a route-level assertion that the payload reaches the helper.
 
