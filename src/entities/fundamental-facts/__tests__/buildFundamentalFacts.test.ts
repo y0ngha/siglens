@@ -120,45 +120,79 @@ describe('buildFundamentalFacts', () => {
     });
 
     describe('dilutionFilings', () => {
-        it('180일 안 공시가 1건 이상이면 낸다', () => {
+        const dilution = (
+            o: Partial<{
+                filingsInWindow: number;
+                atmFilings: number;
+                marketedOfferingFilings: number;
+                privatePlacementFilings: number;
+                shelfFilings: number;
+                registrationFilings: number;
+            }>
+        ) => ({
+            filingsInWindow: 0,
+            atmFilings: 0,
+            marketedOfferingFilings: 0,
+            privatePlacementFilings: 0,
+            shelfFilings: 0,
+            registrationFilings: 0,
+            latestFilingDate: '2026-10-01',
+            ...o,
+        });
+
+        it('희석 신호 종류(ATM·공모·사모·일괄신고·증권신고)를 합쳐 센다', () => {
             const facts = buildFundamentalFacts(
                 input({
                     scorecard: scorecard({
-                        dilution: {
-                            filingsInWindow: 2,
+                        dilution: dilution({
+                            filingsInWindow: 5,
                             atmFilings: 1,
+                            marketedOfferingFilings: 1,
+                            privatePlacementFilings: 1,
                             shelfFilings: 1,
-                            latestFilingDate: '2026-10-01',
-                        },
+                            registrationFilings: 1,
+                        }),
                     }),
                 })
             );
             expect(facts).toEqual([
                 {
                     kind: 'dilutionFilings',
-                    filings: 2,
+                    filings: 5,
                     atmFilings: 1,
-                    shelfFilings: 1,
                     windowDays: 180,
                     latestFilingDate: '2026-10-01',
                 },
             ]);
         });
 
-        it('공시 0건이면 내지 않는다', () => {
+        it('신호 종류가 0건이면(투자설명서·기타만 있는 대형주) 내지 않는다', () => {
             const facts = buildFundamentalFacts(
                 input({
                     scorecard: scorecard({
-                        dilution: {
-                            filingsInWindow: 0,
-                            atmFilings: 0,
-                            shelfFilings: 0,
-                            latestFilingDate: null,
-                        },
+                        dilution: dilution({ filingsInWindow: 2 }),
                     }),
                 })
             );
             expect(facts).toEqual([]);
+        });
+
+        it('센 공시 밖의 공시가 섞이면 최신일을 싣지 않는다(다른 집합의 날짜가 된다)', () => {
+            const [fact] = buildFundamentalFacts(
+                input({
+                    scorecard: scorecard({
+                        dilution: dilution({
+                            filingsInWindow: 3,
+                            shelfFilings: 1,
+                        }),
+                    }),
+                })
+            );
+            expect(fact).toMatchObject({
+                kind: 'dilutionFilings',
+                filings: 1,
+                latestFilingDate: null,
+            });
         });
     });
 
@@ -477,7 +511,10 @@ describe('buildFundamentalFacts', () => {
                     dilution: {
                         filingsInWindow: 1,
                         atmFilings: 1,
+                        marketedOfferingFilings: 0,
+                        privatePlacementFilings: 0,
                         shelfFilings: 0,
+                        registrationFilings: 0,
                         latestFilingDate: null,
                     },
                     insider: {

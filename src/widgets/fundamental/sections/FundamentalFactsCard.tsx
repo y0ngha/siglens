@@ -93,9 +93,15 @@ function toLine(
                     t('FundamentalFactsCard.dilution', {
                         days: fact.windowDays,
                         count: fact.filings,
-                        atm: fact.atmFilings,
-                        shelf: fact.shelfFilings,
                     }),
+                    // 시장가 발행(ATM)은 지금 시장에 주식을 파는 중이라는 뜻이라 따로 말한다.
+                    ...(fact.atmFilings > 0
+                        ? [
+                              t('FundamentalFactsCard.dilutionAtm', {
+                                  atm: fact.atmFilings,
+                              }),
+                          ]
+                        : []),
                 ],
                 source:
                     fact.latestFilingDate === null

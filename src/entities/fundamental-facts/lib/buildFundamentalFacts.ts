@@ -37,14 +37,27 @@ function cashRunway(input: FundamentalFactsInput): FundamentalFact | null {
 function dilutionFilings(input: FundamentalFactsInput): FundamentalFact | null {
     const dilution = input.scorecard?.dilution;
     const metrics = dilution?.metrics;
-    if (!metrics || metrics.filingsInWindow < 1) return null;
+    if (!metrics) return null;
+    // `filingsInWindow`는 투자설명서(424B3 등)·기타까지 센다 — 대형주는 이런 일상 공시만으로 "증자 공시
+    // N건(ATM 0건, 일괄신고서 0건)"이 나와 오독된다(NVDA 2026-11-08 운영). 희석 신호 종류만 센다.
+    const filings =
+        metrics.atmFilings +
+        metrics.marketedOfferingFilings +
+        metrics.privatePlacementFilings +
+        metrics.shelfFilings +
+        metrics.registrationFilings;
+    if (filings < 1) return null;
     return {
         kind: 'dilutionFilings',
-        filings: metrics.filingsInWindow,
+        filings,
         atmFilings: metrics.atmFilings,
-        shelfFilings: metrics.shelfFilings,
         windowDays: input.scorecard?.freshness.dilutionWindow.days ?? 0,
-        latestFilingDate: metrics.latestFilingDate,
+        // `latestFilingDate`는 창 안 전체 공시의 최신일이다 — 센 공시가 전부일 때만 같은 집합을 가리킨다.
+        // 투자설명서·기타가 섞이면 그 날짜가 센 공시의 것이 아닐 수 있어 싣지 않는다.
+        latestFilingDate:
+            filings === metrics.filingsInWindow
+                ? metrics.latestFilingDate
+                : null,
     };
 }
 

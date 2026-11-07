@@ -59,7 +59,10 @@ const flowsScorecard = {
         metrics: {
             filingsInWindow: 1,
             atmFilings: 1,
+            marketedOfferingFilings: 0,
+            privatePlacementFilings: 0,
             shelfFilings: 0,
+            registrationFilings: 0,
             latestFilingDate: '2026-10-01',
         },
     },
