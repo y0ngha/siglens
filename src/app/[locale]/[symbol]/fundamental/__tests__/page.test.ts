@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { revalidate } from '@/app/[locale]/[symbol]/fundamental/page';
 
 describe('Fundamental page ISR route config', () => {
-    it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
+    it('exports revalidate = 43200 (literal — required for Next.js static analysis)', () => {
         // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
-        expect(revalidate).toBe(86400);
+        expect(revalidate).toBe(43200);
     });
 });

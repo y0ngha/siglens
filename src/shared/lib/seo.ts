@@ -192,14 +192,15 @@ export const X_URL = 'https://x.com/siglens_io';
 /**
  * 종목은 살아 있지만 **탭 자체를 색인하지 않기로 정한** 페이지의 robots.
  *
- * 2026-10-01 SEO 감사로 종목별 색인을 차트·뉴스·공포탐욕 세 탭으로 좁혔다. overall·fundamental·financials·
- * congress·flows·options 여섯 탭은 이 값을 쓴다.
+ * 2026-10-01 SEO 감사로 종목별 색인을 차트·뉴스·공포탐욕 세 탭으로 좁혔다. overall·financials·
+ * congress·flows·options 다섯 탭은 이 값을 항상 쓴다. fundamental은 2026-11-07부터 사실 블록이
+ * 모자랄 때만 이 값을 쓴다(`[symbol]/fundamental/page.tsx` generateMetadata).
  *
  * `NOINDEX_SYMBOL_METADATA`(실존하지 않는 종목·degrade용)와 같은 robots이고 둘 다
  * self-canonical을 쓴다 — 이 페이지들은 정상 페이지라 제목·설명도 그대로 둔다.
  * `follow: true`인 이유는 `NOINDEX_SYMBOL_METADATA` 주석과 같다(형제 탭 크롤 경로).
  *
- * 여섯 페이지가 같은 상수를 써야 sitemap 빌더(`buildPopularEntries`)의 "이 탭은
+ * 이 페이지들이 같은 상수를 써야 sitemap 빌더(`buildPopularEntries`)의 "이 탭은
  * 싣지 않는다"와 한 곳에서 대응된다. 탭을 다시 열 때는 여기가 아니라 각 페이지에서
  * 이 값을 걷어내고 sitemap 빌더에 엔트리를 되돌린다.
  */

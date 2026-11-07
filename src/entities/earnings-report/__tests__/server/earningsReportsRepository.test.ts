@@ -268,6 +268,70 @@ describe('DrizzleEarningsReportsRepository', () => {
         });
     });
 
+    describe('listReportedEps', () => {
+        it('발표된 EPS 행을 숫자로 바꿔 최신순·limit으로 돌려준다', async () => {
+            const { db, orderBy, limit } = makeSelectLimitDb([
+                {
+                    earningsDate: '2026-09-11',
+                    epsActual: '-0.13',
+                    epsEstimated: '-0.1',
+                },
+                {
+                    earningsDate: '2026-03-31',
+                    epsActual: '-0.2',
+                    epsEstimated: null,
+                },
+            ]);
+            const repo = new DrizzleEarningsReportsRepository(db);
+
+            await expect(
+                repo.listReportedEps('LAES', '2026-11-07', 8)
+            ).resolves.toEqual([
+                {
+                    earningsDate: '2026-09-11',
+                    epsActual: -0.13,
+                    epsEstimated: -0.1,
+                },
+                {
+                    earningsDate: '2026-03-31',
+                    epsActual: -0.2,
+                    epsEstimated: null,
+                },
+            ]);
+            const [order] = orderBy.mock.calls[0] as SQL[];
+            expect(renderSql(order).sql).toBe(
+                renderSql(desc(earningsReports.earningsDate)).sql
+            );
+            expect(limit).toHaveBeenCalledWith(8);
+        });
+
+        it('where는 종목·오늘 이전·실제 EPS 있음 세 조건을 건다', async () => {
+            const where = vi.fn(() => ({
+                orderBy: vi.fn(() => ({
+                    limit: vi.fn().mockResolvedValue([]),
+                })),
+            }));
+            const db = {
+                select: vi.fn(() => ({ from: vi.fn(() => ({ where })) })),
+            } as unknown as SiglensDatabase;
+
+            await new DrizzleEarningsReportsRepository(db).listReportedEps(
+                'LAES',
+                '2026-11-07',
+                8
+            );
+
+            const [clause] = where.mock.calls[0] as unknown as [SQL];
+            const { sql, params } = renderSql(clause);
+            expect(sql).toContain('"earnings_reports"."symbol" = $1');
+            expect(sql).toContain('"earnings_reports"."earnings_date" <= $2');
+            expect(sql).toContain(
+                '"earnings_reports"."eps_actual" is not null'
+            );
+            expect(params).toEqual(['LAES', '2026-11-07']);
+        });
+    });
+
     describe('getNextForSymbol', () => {
         it('lastUpdated 가 null 인 행(yahoo 예정 행)도 버리지 않고 받아 온 날짜(KST)로 채운다', async () => {
             // 2026-05-20T16:00Z = KST 05-21 01:00 — UTC 날짜를 자르면 하루 이르게 찍힌다.

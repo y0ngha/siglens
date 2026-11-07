@@ -52,6 +52,15 @@ export interface BuildPopularEntriesOptions {
      * (fail-open) 같은 방향이다.
      */
     readonly snapshotGeneratedAt?: ReadonlyMap<string, Date>;
+    /**
+     * 종목 → 펀더멘털 탭의 **마지막 렌더 색인 판정**(`readFundamentalIndexableMap`, 페이지가
+     * `getFundamentalFacts` 결과를 남긴 Redis 스탬프). `true`인 종목만 `/{ticker}/fundamental`을 싣는다.
+     *
+     * 산문 게이트와 반대로 **없으면(`undefined`) 하나도 싣지 않는다** — 이 탭은 사실이 모자란
+     * 종목(ETF 등)이 noindex라, 판정을 모르는 채로 전부 실으면 "sitemap에 있는데 noindex"가
+     * 수백 개 생긴다. 기록이 없는 종목도 같은 이유로 뺀다.
+     */
+    readonly fundamentalIndexable?: ReadonlyMap<string, boolean>;
 }
 
 /**
