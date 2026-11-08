@@ -13,6 +13,7 @@ import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultRea
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
@@ -137,8 +138,21 @@ export function NewsAiSummary({
     }
 
     return (
-        <PlainAnalysisSwitch plain={analysis.plain}>
-            <NewsAiSummaryView result={analysis.result} />
-        </PlainAnalysisSwitch>
+        <>
+            <PlainAnalysisSwitch plain={analysis.plain}>
+                <NewsAiSummaryView result={analysis.result} />
+            </PlainAnalysisSwitch>
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'news',
+                    symbol,
+                    modelId,
+                    reasoning,
+                }}
+                snapshot={analysis.result}
+                plain={analysis.plain}
+                className="mt-3"
+            />
+        </>
     );
 }

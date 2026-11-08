@@ -78,6 +78,9 @@ OPTIONAL_KEYS=(
   SEC_USER_AGENT
   # KR DART disclosure crons: unset = both crons end as `disabled` with zero requests.
   DART_API_KEY
+  # Operator inbox for inquiry/VOC notification mails and the daily AI-feedback digest.
+  # Unset = those mails are skipped (rows are still stored); the digest cron still purges expired rows.
+  OPERATOR_EMAIL
 )
 
 # 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { TextField } from '@/shared/ui/TextField';
+import { HoneypotField } from './HoneypotField';
 import type { ContactFormState } from '@/shared/lib/types';
 import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
@@ -88,6 +89,8 @@ export function ContactFormFields({
                 label={t('ContactForm.4de00c')}
                 pendingLabel={t('ContactForm.15bde2')}
             />
+
+            <HoneypotField />
         </form>
     );
 }

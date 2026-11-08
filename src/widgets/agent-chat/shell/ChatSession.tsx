@@ -13,6 +13,7 @@ import type {
 } from '@/entities/chat-conversation/model';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
+import { publishAgentTurnCompleted } from '@/shared/lib/agentTurnCompletedSignal';
 import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { Composer } from '../Composer';
@@ -125,6 +126,8 @@ export function ChatSession({
         conversationId,
         initialMessages,
         guest: !signedIn,
+        // 첫 AI 경험 직후 별점 모달(VOC)을 여는 신호. 호스트는 채팅 트리 밖에 있다.
+        onTurnComplete: publishAgentTurnCompleted,
         onConversationCreated: (id, title) => {
             window.history.replaceState(null, '', `${localePrefix}/c/${id}`);
             onConversationCreated(id, title);
@@ -213,6 +216,8 @@ export function ChatSession({
                 onSend={text => void stream.send(text)}
                 siteUrl={siteUrl}
                 localePrefix={localePrefix}
+                conversationId={stream.conversationId}
+                guest={!signedIn}
             />
         );
     };

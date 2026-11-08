@@ -30,6 +30,9 @@ vi.mock('@/features/analysis-rate-limit/ui/AnalysisRateLimitModalHost', () => ({
 vi.mock('@/features/email-report-nudge/ui/EmailReportNudgeHost', () => ({
     EmailReportNudgeHost: marker('email-nudge'),
 }));
+vi.mock('@/features/voc-prompt/ui/VocPromptHost', () => ({
+    VocPromptHost: marker('voc-prompt'),
+}));
 vi.mock('@/features/visitor-ping/ui/VisitorPing', () => ({
     VisitorPing: marker('visitor-ping'),
 }));
@@ -120,6 +123,7 @@ describe('SiteChrome', () => {
             'notice',
             'rate-limit',
             'email-nudge',
+            'voc-prompt',
             'watchlist-merge',
             'header',
             'route-pending',

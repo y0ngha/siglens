@@ -14,6 +14,11 @@ export interface EmailMessage {
      * 제공자 요구사항 때문에 싣는다.
      */
     headers?: Record<string, string>;
+    /**
+     * 답장 받을 주소. 운영자 알림 메일이 방문자 이메일을 여기에 실으면 운영자가
+     * 메일 클라이언트에서 바로 회신할 수 있다. 생략하면 헤더 자체를 싣지 않는다.
+     */
+    replyTo?: string;
 }
 
 /** 트랜잭셔널 이메일 발송 추상 (Resend/SendGrid/SMTP 등을 use-case에 주입). */

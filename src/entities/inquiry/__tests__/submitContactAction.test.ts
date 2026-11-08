@@ -1,8 +1,12 @@
 import type { MockInstance } from 'vitest';
-const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
-    mockSubmitInquiry: vi.fn(),
-    mockCreate: vi.fn(),
-}));
+const { mockSubmitInquiry, mockCreate, mockRateLimit, mockNotify } = vi.hoisted(
+    () => ({
+        mockSubmitInquiry: vi.fn(),
+        mockCreate: vi.fn(),
+        mockRateLimit: vi.fn(),
+        mockNotify: vi.fn(),
+    })
+);
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -13,6 +17,19 @@ vi.mock('../api', () => ({
             create: mockCreate,
         };
     }),
+}));
+vi.mock('@/shared/cache/fixedWindowRateLimit', () => ({
+    checkFixedWindowRateLimit: mockRateLimit,
+}));
+vi.mock('@/shared/api/getClientIp', () => ({
+    getClientIp: vi.fn().mockResolvedValue('1.2.3.4'),
+}));
+vi.mock('@/shared/email/operatorNotifier', () => ({
+    scheduleOperatorNotification: mockNotify,
+}));
+vi.mock('@y0ngha/siglens-core', async orig => ({
+    ...(await orig<typeof import('@y0ngha/siglens-core')>()),
+    hashUsageIp: vi.fn(() => 'ipHashX'),
 }));
 vi.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),
@@ -41,6 +58,7 @@ describe('submitContactAction', () => {
         vi.clearAllMocks();
         mockSubmitInquiry.mockResolvedValue(undefined);
         mockCreate.mockResolvedValue(undefined);
+        mockRateLimit.mockResolvedValue(true);
         consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -75,12 +93,72 @@ describe('submitContactAction', () => {
                 })
             );
             expect(mockSubmitInquiry).toHaveBeenCalledTimes(1);
-            const [input] = mockSubmitInquiry.mock.calls[0];
-            expect(input).toEqual({
-                title: '문의 제목',
-                email: 'user@example.com',
-                content: '문의 내용입니다.',
-            });
+            expect(mockSubmitInquiry).toHaveBeenCalledWith(
+                {
+                    title: '문의 제목',
+                    email: 'user@example.com',
+                    content: '문의 내용입니다.',
+                },
+                expect.anything()
+            );
+        });
+
+        it('submitInquiry 에 응답 뒤로 미루는 운영자 notifier 를 주입한다', async () => {
+            await submitContactAction(INITIAL_STATE, makeFormData(validForm));
+            const deps = mockSubmitInquiry.mock.calls
+                .map(call => call[1] as { notifier?: (m: unknown) => void })
+                .find(d => typeof d?.notifier === 'function');
+            const message = { subject: 's', text: 't', html: 'h' };
+            deps?.notifier?.(message);
+            expect(mockNotify).toHaveBeenCalledWith(
+                message,
+                '[submitContactAction]'
+            );
+        });
+
+        it('inquiry 키에 IP 해시로 rate limit 을 건다', async () => {
+            await submitContactAction(INITIAL_STATE, makeFormData(validForm));
+            expect(mockRateLimit).toHaveBeenCalledWith(
+                expect.objectContaining({ key: 'inquiry:rl:ipHashX' })
+            );
+        });
+    });
+
+    describe('honeypot', () => {
+        it('siglens_hp_ignore 가 채워져 있으면 성공처럼 응답하고 저장·rate limit 을 하지 않는다', async () => {
+            const result = await submitContactAction(
+                INITIAL_STATE,
+                makeFormData({
+                    ...validForm,
+                    siglens_hp_ignore: 'http://spam.example',
+                })
+            );
+            expect(result.submitted).toBe(true);
+            expect(result.error).toBeNull();
+            expect(mockSubmitInquiry).not.toHaveBeenCalled();
+            expect(mockRateLimit).not.toHaveBeenCalled();
+        });
+
+        it('siglens_hp_ignore 가 비어 있으면 정상 제출한다', async () => {
+            await submitContactAction(
+                INITIAL_STATE,
+                makeFormData({ ...validForm, siglens_hp_ignore: '' })
+            );
+            expect(mockSubmitInquiry).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('rate limit', () => {
+        it('한도를 넘으면 rate_limited 에러와 raw 입력값을 반환하고 저장하지 않는다', async () => {
+            mockRateLimit.mockResolvedValue(false);
+            const result = await submitContactAction(
+                INITIAL_STATE,
+                makeFormData(validForm)
+            );
+            expect(result.submitted).toBe(false);
+            expect(result.error).toEqual({ code: 'rate_limited' });
+            expect(result.values).toEqual(validForm);
+            expect(mockSubmitInquiry).not.toHaveBeenCalled();
         });
     });
 

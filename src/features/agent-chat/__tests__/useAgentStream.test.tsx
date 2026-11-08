@@ -1358,3 +1358,123 @@ describe('useAgentStream', () => {
         expect(result.current.messages.at(-1)!.content).toBe('부분 답변');
     });
 });
+
+describe('useAgentStream onTurnComplete', () => {
+    it('fires once per turn that ended with an answer, and again for the next turn', async () => {
+        const onTurnComplete = vi.fn();
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+            sse([
+                'event: meta\ndata: {"conversationId":"c1","userMessageId":"m1"}',
+                'event: text\ndata: {"delta":"ok"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: null,
+                initialMessages: [],
+                onTurnComplete,
+            })
+        );
+        act(() => {
+            void result.current.send('AAPL?');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+
+        expect(onTurnComplete).toHaveBeenCalledTimes(1);
+
+        act(() => {
+            void result.current.send('TSLA?');
+        });
+        await waitFor(() => expect(onTurnComplete).toHaveBeenCalledTimes(2));
+    });
+
+    it('does not fire when the turn ends with an error frame', async () => {
+        const onTurnComplete = vi.fn();
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+            sse(['event: error\ndata: {"code":"server_error"}'])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: 'c1',
+                initialMessages: [],
+                onTurnComplete,
+            })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(result.current.status).toBe('error'));
+
+        expect(onTurnComplete).not.toHaveBeenCalled();
+    });
+
+    it('does not fire when the request fails before the turn starts', async () => {
+        const onTurnComplete = vi.fn();
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(JSON.stringify({ error: 'server_busy' }), {
+                status: 503,
+            })
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: 'c1',
+                initialMessages: [],
+                onTurnComplete,
+            })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(result.current.status).toBe('error'));
+
+        expect(onTurnComplete).not.toHaveBeenCalled();
+    });
+
+    it('does not fire when the stream is cut off after text but before the done frame', async () => {
+        const onTurnComplete = vi.fn();
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+            sse(['event: text\ndata: {"delta":"부분"}'])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: 'c1',
+                initialMessages: [],
+                onTurnComplete,
+            })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+
+        expect(onTurnComplete).not.toHaveBeenCalled();
+    });
+
+    it('calls the latest callback, not the one from the render that started the turn', async () => {
+        const first = vi.fn();
+        const second = vi.fn();
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+            sse([
+                'event: text\ndata: {"delta":"ok"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result, rerender } = renderHook(
+            ({ cb }: { cb: () => void }) =>
+                useAgentStream({
+                    conversationId: 'c1',
+                    initialMessages: [],
+                    onTurnComplete: cb,
+                }),
+            { initialProps: { cb: first } }
+        );
+        rerender({ cb: second });
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(second).toHaveBeenCalledTimes(1));
+
+        expect(first).not.toHaveBeenCalled();
+    });
+});

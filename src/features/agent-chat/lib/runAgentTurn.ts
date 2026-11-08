@@ -57,6 +57,11 @@ export interface AgentTurnContext {
     /** The server assigned a (new) conversation id; `title` may be `''`. */
     readonly onConversationAssigned: (id: string, title: string) => void;
     readonly setFailureKind: (kind: AgentFailureKind) => void;
+    /**
+     * The turn ended with a `done` frame (an answer was produced), and it is still the current
+     * call. Not fired for an error, an abort or a replaced call.
+     */
+    readonly onTurnComplete?: () => void;
 }
 
 /** What to send and how to undo the caller's optimistic change if the request never starts. */
@@ -170,6 +175,7 @@ export async function runAgentTurn(
     try {
         reader = await postTurn(ctx, request.body);
         let buffer = '';
+        let receivedDone = false;
         for (;;) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -208,6 +214,7 @@ export async function runAgentTurn(
                 } else if (event === 'tool_end') {
                     patchLast(m => withToolEnded(m, data));
                 } else if (event === 'done') {
+                    receivedDone = true;
                     patchLast(m => withDone(m, data));
                     if (isAgentRemaining(data.remaining))
                         ctx.setRemaining(data.remaining);
@@ -220,6 +227,7 @@ export async function runAgentTurn(
         }
         flushText(true);
         ctx.setStatus('idle');
+        if (receivedDone && ctx.isCurrent()) ctx.onTurnComplete?.();
     } catch (e) {
         if (!ctx.isCurrent()) {
             // A newer call already replaced this one (double submit, fast retry):

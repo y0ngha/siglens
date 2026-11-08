@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
@@ -72,9 +73,21 @@ export function InvestorFlowsSummary({ symbol }: InvestorFlowsSummaryProps) {
     }
 
     return (
-        <InvestorFlowsSummaryView
-            result={state.result}
-            market={isKrEquitySymbol(symbol) ? 'kr' : 'us'}
-        />
+        <>
+            <InvestorFlowsSummaryView
+                result={state.result}
+                market={isKrEquitySymbol(symbol) ? 'kr' : 'us'}
+            />
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'investorFlows',
+                    symbol,
+                    modelId,
+                    reasoning,
+                }}
+                snapshot={state.result}
+                className="mt-3"
+            />
+        </>
     );
 }

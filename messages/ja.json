@@ -1224,6 +1224,42 @@
             "successWithoutEmail": "追加されると、レーダーですぐに確認できます。",
             "symbolLabel": "銘柄",
             "symbolPlaceholder": "ティッカーまたは会社名(例: PLTR、パランティア)"
+        },
+        "ai-feedback": {
+            "AiFeedbackButtons": {
+                "down": "役に立ちませんでした",
+                "failed": "意見を送信できませんでした。しばらくしてからもう一度お試しください。",
+                "groupAnalysis": "この分析は役に立ちましたか？",
+                "groupAnswer": "この回答は役に立ちましたか？",
+                "thanks": "ご意見ありがとうございます",
+                "up": "役に立ちました"
+            },
+            "FeedbackDownPopover": {
+                "close": "閉じる",
+                "commentLabel": "一言コメント（任意）",
+                "reasonInaccurate": "事実と異なります",
+                "reasonOffTopic": "質問と関連がありません",
+                "reasonOther": "その他",
+                "reasonTooLong": "長すぎるか、難しすぎます",
+                "reasonUnsupported": "根拠が不足しています",
+                "send": "送信",
+                "title": "どの点が不満でしたか？"
+            }
+        },
+        "voc-prompt": {
+            "VocPromptModal": {
+                "body": "評価と一言コメントを残していただければ、サービス改善にすぐに反映いたします。",
+                "close": "閉じる",
+                "commentLabel": "コメント",
+                "counter": "{current}/{max}",
+                "failed": "意見を送信できませんでした。しばらくしてからもう一度お試しください。",
+                "placeholder": "良かった点や不満だった点を自由にご記入ください（任意）",
+                "ratingLabel": "評価",
+                "starLabel": "{rating}点",
+                "submit": "送信",
+                "thanks": "ご意見ありがとうございます",
+                "title": "SIGLENSを使ってみていかがでしたか？"
+            }
         }
     },
     "shared": {
@@ -1721,7 +1757,8 @@
                 "emailRequired": "メールアドレスを入力してください。",
                 "submissionFailed": "お問い合わせの送信に失敗しました。しばらくしてからもう一度お試しください。",
                 "titleRequired": "件名を入力してください。",
-                "titleTooLong": "件名は{v0}文字以内で入力してください。"
+                "titleTooLong": "件名は{v0}文字以内で入力してください。",
+                "rateLimited": "お問い合わせの送信頻度が多すぎます。しばらくしてからもう一度お試しください。"
             },
             "fearGreed": {
                 "confidenceLimited": "信頼度に制限",

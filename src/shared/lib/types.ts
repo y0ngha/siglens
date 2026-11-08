@@ -208,7 +208,8 @@ export type ContactFormErrorCode =
     | 'email_invalid'
     | 'content_required'
     | 'content_too_long'
-    | 'submission_failed';
+    | 'submission_failed'
+    | 'rate_limited';
 
 export interface ContactFormError {
     code: ContactFormErrorCode;

@@ -7,6 +7,7 @@ import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultRea
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { useCongressTrend } from './hooks/useCongressTrend';
@@ -98,8 +99,21 @@ export function CongressTrendSummary({
     }
 
     return (
-        <PlainAnalysisSwitch plain={state.plain}>
-            <CongressTrendSummaryView result={state.result} />
-        </PlainAnalysisSwitch>
+        <>
+            <PlainAnalysisSwitch plain={state.plain}>
+                <CongressTrendSummaryView result={state.result} />
+            </PlainAnalysisSwitch>
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'congress',
+                    symbol,
+                    modelId,
+                    reasoning,
+                }}
+                snapshot={state.result}
+                plain={state.plain}
+                className="mt-3"
+            />
+        </>
     );
 }

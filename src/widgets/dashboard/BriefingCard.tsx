@@ -2,6 +2,7 @@
  * 시장 브리핑 카드 — 요약·테마·섹터·변동성·심리·생성 시각을 한 카드로 조립한다.
  */
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -63,6 +64,15 @@ export function BriefingCard({
                 <p className="text-xs text-secondary-500">{riskSentiment}</p>
             )}
             <BriefingTimestamp generatedAt={generatedAt} />
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'briefing',
+                    // 서버 seed 단계에는 빈 문자열이라 시각이 없는 것으로 본다.
+                    generatedAt: generatedAt === '' ? undefined : generatedAt,
+                    extra: { scope: scope.id },
+                }}
+                snapshot={briefing}
+            />
         </div>
     );
 }

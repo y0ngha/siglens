@@ -6,12 +6,14 @@ import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
+import { VocPromptHost } from '@/features/voc-prompt/ui/VocPromptHost';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { ServiceWorkerRegistrar } from '@/features/pwa-install/ui/ServiceWorkerRegistrar';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import type { Locale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
+import { ToastProvider } from '@/shared/ui/ToastProvider';
 import { AI_CLIENT_PATHS } from '../_lib/aiClientPaths';
 
 interface AiAppProvidersProps {
@@ -42,35 +44,44 @@ export function AiAppProviders({
                 messages={pickMessages(messages, [...AI_CLIENT_PATHS])}
             >
                 <ReactQueryProvider>
-                    <SearchOverlayProvider>
-                        <VisitorPing />
-                        {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
-                            렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
-                        <FunnelSignupPing />
-                        {/* 설치 배너 + 서비스 워커 등록. 하단은 입력창 자리라 위에 띄우고,
-                            스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다.
-                            점검 중(`disabled`)에는 점검 안내만 여는 앱을 권하지 않도록 배너는 띄우지 않되,
-                            오프라인 페이지 프리캐시가 빠지지 않게 서비스 워커는 등록한다. */}
-                        {disabled ? (
-                            <ServiceWorkerRegistrar reloadOnUpdate={false} />
-                        ) : (
-                            <PwaBanner
-                                placement="top"
-                                reloadOnServiceWorkerUpdate={false}
+                    {/* 답변 👍/👎 저장 실패를 알리는 토스트. 메인 호스트는 SiteChrome이 같은 프로바이더를 둔다. */}
+                    <ToastProvider>
+                        <SearchOverlayProvider>
+                            <VisitorPing />
+                            {/* 가입 직후 첫 페이지에서 가입 완료 퍼널 이벤트를 한 번 보낸다.
+                                렌더 결과가 없다. 근거는 FunnelSignupPing JSDoc. */}
+                            <FunnelSignupPing />
+                            {/* 설치 배너 + 서비스 워커 등록. 하단은 입력창 자리라 위에 띄우고,
+                                스트리밍 중인 답변이 끊기지 않게 SW 교체 때 새로고침하지 않는다.
+                                점검 중(`disabled`)에는 점검 안내만 여는 앱을 권하지 않도록 배너는 띄우지 않되,
+                                오프라인 페이지 프리캐시가 빠지지 않게 서비스 워커는 등록한다. */}
+                            {disabled ? (
+                                <ServiceWorkerRegistrar
+                                    reloadOnUpdate={false}
+                                />
+                            ) : (
+                                <PwaBanner
+                                    placement="top"
+                                    reloadOnServiceWorkerUpdate={false}
+                                />
+                            )}
+                            <AuthSessionHeaderClient
+                                authReturn="ai"
+                                hideOnScrollDown
                             />
-                        )}
-                        <AuthSessionHeaderClient
-                            authReturn="ai"
-                            hideOnScrollDown
-                        />
-                        {disabled ? (
-                            <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
-                                {maintenanceNotice}
-                            </main>
-                        ) : (
-                            children
-                        )}
-                    </SearchOverlayProvider>
+                            {/* 첫 답변이 끝난 직후 별점 모달을 한 번 띄운다. 점검 중엔 채팅이 없어 두지 않는다. */}
+                            {disabled ? null : (
+                                <VocPromptHost trigger="agent_chat" />
+                            )}
+                            {disabled ? (
+                                <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
+                                    {maintenanceNotice}
+                                </main>
+                            ) : (
+                                children
+                            )}
+                        </SearchOverlayProvider>
+                    </ToastProvider>
                 </ReactQueryProvider>
             </NextIntlClientProvider>
         </LocaleProvider>

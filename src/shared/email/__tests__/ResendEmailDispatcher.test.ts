@@ -66,6 +66,32 @@ describe('ResendEmailDispatcher', () => {
         );
     });
 
+    it('replyTo가 있으면 Resend replyTo 필드로 넘긴다', async () => {
+        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        await dispatcher.sendEmail({ ...message, replyTo: 'v@example.com' });
+
+        expect(sendMock).toHaveBeenCalledWith(
+            expect.objectContaining({ replyTo: 'v@example.com' })
+        );
+    });
+
+    it('replyTo가 없으면 키를 싣지 않는다', async () => {
+        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        await dispatcher.sendEmail(message);
+
+        expect(sendMock.mock.lastCall?.[0]).not.toHaveProperty('replyTo');
+    });
+
     it('Resend가 error를 반환하면 false를 반환한다', async () => {
         sendMock.mockResolvedValue({ data: null, error: { message: 'fail' } });
         const dispatcher = new ResendEmailDispatcher({

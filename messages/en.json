@@ -1224,6 +1224,42 @@
             "successWithoutEmail": "Once it is added, you can see it on the radar right away.",
             "symbolLabel": "Ticker",
             "symbolPlaceholder": "Ticker or company name (e.g. PLTR, Palantir)"
+        },
+        "ai-feedback": {
+            "AiFeedbackButtons": {
+                "down": "Not helpful",
+                "failed": "Failed to send feedback. Please try again later.",
+                "groupAnalysis": "Was this analysis helpful?",
+                "groupAnswer": "Was this answer helpful?",
+                "thanks": "Thanks for the feedback",
+                "up": "Helpful"
+            },
+            "FeedbackDownPopover": {
+                "close": "Close",
+                "commentLabel": "Brief comment (optional)",
+                "reasonInaccurate": "Inaccurate",
+                "reasonOffTopic": "Irrelevant to the question",
+                "reasonOther": "Other",
+                "reasonTooLong": "Too long or difficult",
+                "reasonUnsupported": "Insufficient basis",
+                "send": "Send",
+                "title": "What was unsatisfactory?"
+            }
+        },
+        "voc-prompt": {
+            "VocPromptModal": {
+                "body": "Your rating and comment will be immediately reflected in service improvements.",
+                "close": "Close",
+                "commentLabel": "Comment",
+                "counter": "{current}/{max}",
+                "failed": "Failed to send feedback. Please try again later.",
+                "placeholder": "Feel free to write about what you liked or disliked (optional)",
+                "ratingLabel": "Rating",
+                "starLabel": "{rating} of 5 stars",
+                "submit": "Submit",
+                "thanks": "Thanks for the feedback",
+                "title": "How do you like SIGLENS?"
+            }
         }
     },
     "shared": {
@@ -1721,7 +1757,8 @@
                 "emailRequired": "Please enter an email address.",
                 "submissionFailed": "We could not send your message. Please try again in a moment.",
                 "titleRequired": "Please enter a subject.",
-                "titleTooLong": "Keep the subject to {v0} characters or fewer."
+                "titleTooLong": "Keep the subject to {v0} characters or fewer.",
+                "rateLimited": "You have sent too many inquiries. Please try again later."
             },
             "fearGreed": {
                 "confidenceLimited": "Limited confidence",

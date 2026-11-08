@@ -9,6 +9,7 @@ import {
     hasNudgeShownToday,
     markNudgeShownToday,
 } from '@/shared/lib/anonAnalysisCount';
+import { LOCAL_STORAGE_VOC_PROMPTED_KEY } from '@/shared/lib/storageKeys';
 
 // Regression test for the anonymous-nudge missed-fire on cache-HIT + cold
 // currentUser (member-reasoning-toggle spec Part B code review finding #1).
@@ -155,6 +156,9 @@ vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
 }));
 
 vi.mock('@/shared/lib/anonAnalysisCount', () => ({
+    // 이 파일의 시나리오는 "세 번째 서로 다른 종목에서 연다"를 전제로 한다. 실제 문턱(1)이 아니라 3으로 둬
+    // 경합이 카운트를 한 번 빠뜨리면 열리는 시점이 밀리는 회귀를 그대로 잡는다.
+    ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD: 3,
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
@@ -190,9 +194,12 @@ describe('ChartContent × useAnonAnalysisNudge integration (real hook, race betw
         mockHasShown.mockReturnValue(false);
         // 한 탭 세션 넛지 상한(`nudgeSession`)은 실제 sessionStorage를 쓴다 — 테스트끼리 새지 않게 비운다.
         sessionStorage.clear();
+        // VOC 별점 모달이 이미 지나간 방문자다 - 대기 중이면 가입 넛지는 양보하고 아무것도 세지 않는다.
+        localStorage.setItem(LOCAL_STORAGE_VOC_PROMPTED_KEY, '1');
     });
 
     afterEach(() => {
+        localStorage.removeItem(LOCAL_STORAGE_VOC_PROMPTED_KEY);
         vi.clearAllMocks();
     });
 

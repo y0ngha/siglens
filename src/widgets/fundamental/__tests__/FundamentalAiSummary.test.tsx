@@ -1,6 +1,12 @@
 const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
     mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
 }));
+vi.mock('@/entities/feedback/actions/submitAiFeedbackAction', () => ({
+    submitAiFeedbackAction: vi.fn(),
+}));
+vi.mock('@/entities/feedback/actions/updateAiFeedbackAction', () => ({
+    updateAiFeedbackAction: vi.fn(),
+}));
 vi.mock('@/features/symbol-model/hooks/useAiAutoRunAllowed', () => ({
     useAiAutoRunAllowed: mockUseAiAutoRunAllowed,
 }));
@@ -31,6 +37,7 @@ vi.mock('../FundamentalAiSummarySkeleton', () => ({
 }));
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
 
 import {
     ShareableAnalysisProvider,
@@ -252,5 +259,65 @@ describe('FundamentalAiSummary', () => {
         render(<FundamentalAiSummary symbol="AAPL" />);
 
         expect(screen.queryByText('원자재 가격 상승')).not.toBeInTheDocument();
+    });
+
+    describe('👍/👎 평가 버튼', () => {
+        const DONE_RESULT: FundamentalAnalysisResponse = {
+            overallSentiment: 'bullish',
+            overallConclusionKo: '강세 전망입니다',
+            categoryAssessments: [],
+            riskFactorsKo: [],
+        };
+        const feedbackUp = () =>
+            screen.queryByRole('button', { name: '도움이 됐어요' });
+
+        it('끝난 결과 아래에만 붙는다', () => {
+            vi.mocked(useFundamentalAnalysis).mockReturnValue({
+                status: 'done',
+                plain: null,
+                result: DONE_RESULT,
+                trigger: vi.fn(),
+            });
+
+            render(<FundamentalAiSummary symbol="AAPL" />);
+
+            expect(feedbackUp()).toBeInTheDocument();
+        });
+
+        it.each([
+            ['loading', { status: 'loading', trigger: vi.fn() }],
+            [
+                'awaiting_interaction',
+                { status: 'awaiting_interaction', trigger: vi.fn() },
+            ],
+            [
+                'error',
+                {
+                    status: 'error',
+                    error: new Error('x'),
+                    retry: vi.fn(),
+                    trigger: vi.fn(),
+                },
+            ],
+        ] as const)('%s 상태에는 붙지 않는다', (_status, state) => {
+            vi.mocked(useFundamentalAnalysis).mockReturnValue(state as never);
+
+            render(<FundamentalAiSummary symbol="AAPL" />);
+
+            expect(feedbackUp()).not.toBeInTheDocument();
+        });
+
+        it('UI를 숨기면(hideView) 붙지 않는다', () => {
+            vi.mocked(useFundamentalAnalysis).mockReturnValue({
+                status: 'done',
+                plain: null,
+                result: DONE_RESULT,
+                trigger: vi.fn(),
+            });
+
+            render(<FundamentalAiSummary symbol="AAPL" hideView />);
+
+            expect(feedbackUp()).not.toBeInTheDocument();
+        });
     });
 });

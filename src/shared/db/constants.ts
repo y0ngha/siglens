@@ -31,3 +31,6 @@ export const SHAREABLE_KIND_VALUES = [
     'fear-greed',
 ] as const;
 export type ShareableKind = (typeof SHAREABLE_KIND_VALUES)[number];
+
+/** 종목 심볼 컬럼(`varchar`)의 길이. 스키마와 입력 검증기가 같은 값을 쓰도록 여기서 내보낸다. */
+export const SYMBOL_MAX_LENGTH = 32;

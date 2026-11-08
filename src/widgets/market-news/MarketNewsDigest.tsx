@@ -5,6 +5,7 @@
  */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
 import { DigestErrorView } from './ui/digest/DigestErrorView';
 import { DigestResultView } from './ui/digest/DigestResultView';
@@ -45,5 +46,17 @@ export function MarketNewsDigest({
         return <DigestStatusCard />;
     }
 
-    return <DigestResultView result={digest.result} />;
+    return (
+        <>
+            <DigestResultView result={digest.result} />
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'marketNewsDigest',
+                    extra: { category },
+                }}
+                snapshot={digest.result}
+                className="mt-3"
+            />
+        </>
+    );
 }

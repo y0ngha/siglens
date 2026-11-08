@@ -15,4 +15,5 @@ export const CONTACT_ERROR_KEY: Record<ContactFormErrorCode, string> = {
     content_required: 'contentRequired',
     content_too_long: 'contentTooLong',
     submission_failed: 'submissionFailed',
+    rate_limited: 'rateLimited',
 };
