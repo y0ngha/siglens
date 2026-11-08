@@ -225,7 +225,14 @@
                 "dfbacd": "Verified Against Historical Data",
                 "eafd49": "Chart trends built on {v0} {v0, plural, one {indicator} other {indicators}} and a range of investment strategies,",
                 "ee41ec": "View Backtesting Results →",
-                "aiTeaser": "Ask an AI chatbot about stocks & crypto"
+                "aiTeaser": "Ask an AI chatbot about stocks & crypto",
+                "radarBadge": "BETA",
+                "radarBody": "News, filings, X posts and sector outlook for each ticker, all in one place.",
+                "radarChipAria": "Open the {v0} radar",
+                "radarRequestCta": "Request a ticker",
+                "radarRequestPrompt": "Don't see the ticker you want?",
+                "radarTitle": "Ticker Radar",
+                "radarViewAll": "View all"
             }
         },
         "login": {
@@ -1201,6 +1208,22 @@
         "symbol-model": {
             "fallbackDetail": "Analyzing with the default model ({fallback}).",
             "fallbackTitle": "{model} is temporarily unavailable"
+        },
+        "radar-request": {
+            "close": "Close",
+            "dialogDescription": "Tell us which ticker to add to the radar. For now, the operator adds them by hand.",
+            "dialogTitle": "Request a radar ticker",
+            "emailHint": "We'll let you know once it's added. You can leave this blank.",
+            "emailLabel": "Email (optional)",
+            "errorSymbolRequired": "Please enter a ticker.",
+            "errorSymbolTooLong": "Please keep it within {v0} characters.",
+            "pending": "Sending…",
+            "submit": "Send request",
+            "successTitle": "We got your request",
+            "successWithEmail": "We'll email you once it's added.",
+            "successWithoutEmail": "Once it is added, you can see it on the radar right away.",
+            "symbolLabel": "Ticker",
+            "symbolPlaceholder": "Ticker or company name (e.g. PLTR, Palantir)"
         }
     },
     "shared": {
@@ -5140,6 +5163,7 @@
                 "benchmarkLink": "Benchmark",
                 "developersLink": "Developer API",
                 "guideLink": "Chart Guide",
+                "radarLink": "Ticker Radar",
                 "symbolsLink": "Most-viewed symbols"
             },
             "Header": {

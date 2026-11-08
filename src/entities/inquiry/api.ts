@@ -9,8 +9,8 @@ export interface ContactInput {
     title: string;
     /** 문의 본문. */
     content: string;
-    /** 답변을 받을 방문자 이메일. */
-    email: string;
+    /** 답변을 받을 방문자 이메일. 레이더 종목 요청처럼 선택 입력인 폼은 `null`. */
+    email: string | null;
 }
 
 /** 방문자 문의 저장소 포트. `submitInquiry`가 DB 구현 대신 이 인터페이스에 의존한다. */

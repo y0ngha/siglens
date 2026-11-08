@@ -8,6 +8,15 @@ interface ContactEmailFieldProps {
     isPending: boolean;
     defaultValue: string;
     error?: string;
+    /** 입력 id. 한 페이지에 두 폼이 있을 때 겹치지 않게 호출자가 정한다. */
+    id?: string;
+    /** 라벨. 생략하면 문의 폼의 "이메일". */
+    label?: string;
+    /** 필수 여부. 문의 폼은 필수, 종목 요청 폼은 선택이다. */
+    required?: boolean;
+    placeholder?: string;
+    /** 입력 아래에 붙는 안내 문구. */
+    hint?: string;
 }
 
 /**
@@ -19,14 +28,20 @@ export function ContactEmailField({
     isPending,
     defaultValue,
     error,
+    id = 'contact-email',
+    label,
+    required = true,
+    placeholder = 'answer@example.com',
+    hint,
 }: ContactEmailFieldProps) {
     const t = useTranslations('features.contact-form');
+    const resolvedLabel = label ?? t('ContactForm.3c3776');
 
     if (isPending) {
         return (
             <div className="space-y-2" aria-busy="true">
                 <span className="block text-sm font-medium text-secondary-200">
-                    {t('ContactForm.3c3776')}
+                    {resolvedLabel}
                 </span>
                 <div
                     aria-hidden
@@ -36,17 +51,25 @@ export function ContactEmailField({
         );
     }
 
-    return (
+    const field = (
         <TextField
-            id="contact-email"
+            id={id}
             name="email"
-            label={t('ContactForm.3c3776')}
+            label={resolvedLabel}
             type="email"
             autoComplete="email"
-            required
-            placeholder="answer@example.com"
+            required={required}
+            placeholder={placeholder}
             defaultValue={defaultValue}
             error={error}
         />
+    );
+    if (hint === undefined) return field;
+
+    return (
+        <div className="space-y-2">
+            {field}
+            <p className="text-xs text-secondary-400">{hint}</p>
+        </div>
     );
 }

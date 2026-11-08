@@ -1,8 +1,4 @@
-import type {
-    ContactFormError,
-    ContactFormField,
-    ContactFormState,
-} from '@/shared/lib/types';
+import type { ContactFormError, ContactFormField } from '@/shared/lib/types';
 import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
@@ -61,7 +57,7 @@ export function getSubmissionError(
  * 로그인 사용자의 이메일을 미리 채우고, 비로그인이면 빈 칸이다.
  */
 export function resolveEmailDefault(
-    state: ContactFormState,
+    state: { error: object | null; values: { email: string } },
     signedInEmail: string | undefined
 ): string {
     if (state.error) return state.values.email;
