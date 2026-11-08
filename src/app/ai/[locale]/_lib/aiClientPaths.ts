@@ -20,6 +20,8 @@ export const AI_CLIENT_PATHS: readonly string[] = [
     ...CHROME_CLIENT_PATHS,
     'widgets.agent-chat',
     'features.agent-chat',
+    // 답변 아래 👍/👎(MessageActions)와 그 입력창.
+    'features.ai-feedback',
     'features.pwa-install',
     'app.ai',
 ];

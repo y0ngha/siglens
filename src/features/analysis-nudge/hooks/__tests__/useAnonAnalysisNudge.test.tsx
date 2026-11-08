@@ -15,12 +15,14 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
+import { isVocPromptPending } from '@/shared/lib/vocPromptStorage';
 
 vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/anonAnalysisCount', () => ({
+    ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD: 1,
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
@@ -32,6 +34,11 @@ vi.mock('@/shared/lib/nudgeSession', () => ({
     markNudgeShownThisSession: vi.fn(),
 }));
 
+vi.mock('@/shared/lib/vocPromptStorage', () => ({
+    isVocPromptPending: vi.fn(),
+}));
+
+const mockVocPending = vi.mocked(isVocPromptPending);
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockRecord = vi.mocked(recordAnonSymbolAnalysis);
 const mockHasShown = vi.mocked(hasNudgeShownToday);
@@ -70,6 +77,8 @@ describe('useAnonAnalysisNudge', () => {
         mockNextVariant.mockReset();
         mockSessionShown.mockReset();
         mockMarkSession.mockReset();
+        mockVocPending.mockReset();
+        mockVocPending.mockReturnValue(false);
         mockHasShown.mockReturnValue(false);
         mockSessionShown.mockReturnValue(false);
         mockNextVariant.mockReturnValue('emailReport');
@@ -119,7 +128,7 @@ describe('useAnonAnalysisNudge', () => {
         expect(mockRecord).toHaveBeenCalledWith('AAPL');
     });
 
-    it('opens the shared modal with the next copy variant when the threshold is crossed and not shown today', () => {
+    it('opens the shared modal with the next copy variant when the threshold is reached and not shown today', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
             distinctCount: 1,
@@ -159,7 +168,7 @@ describe('useAnonAnalysisNudge', () => {
         expect(mockNextVariant).not.toHaveBeenCalled();
     });
 
-    it('does not open the modal if crossedThreshold but already shown today (nag-prevention)', () => {
+    it('does not open the modal if the threshold is reached but already shown today (nag-prevention)', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
             distinctCount: 3,
@@ -177,10 +186,10 @@ describe('useAnonAnalysisNudge', () => {
         expect(mockMarkShown).not.toHaveBeenCalled();
     });
 
-    it('does not open the modal when crossedThreshold is false', () => {
+    it('does not open the modal while the distinct count is below the threshold', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
-            distinctCount: 1,
+            distinctCount: 0,
             crossedThreshold: false,
         });
 
@@ -191,5 +200,74 @@ describe('useAnonAnalysisNudge', () => {
         });
 
         expect(openNudge).not.toHaveBeenCalled();
+    });
+
+    describe('yielding to the VOC rating modal', () => {
+        it('does not count, mark or open anything while the VOC prompt is still pending', () => {
+            mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
+            mockVocPending.mockReturnValue(true);
+            mockRecord.mockReturnValue({
+                distinctCount: 1,
+                crossedThreshold: true,
+            });
+
+            const { result } = renderHook(() =>
+                useAnonAnalysisNudge(openNudge)
+            );
+            act(() => {
+                result.current.onSymbolAnalyzed('NVDA');
+            });
+
+            expect(mockRecord).not.toHaveBeenCalled();
+            expect(openNudge).not.toHaveBeenCalled();
+            expect(mockMarkShown).not.toHaveBeenCalled();
+            expect(mockMarkSession).not.toHaveBeenCalled();
+        });
+
+        it('fires the deferred nudge on a later analysis once the VOC prompt is no longer pending', () => {
+            mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
+            // The deferred nudge's own threshold crossing already happened on the
+            // yielded call, so this later call reports crossedThreshold: false.
+            mockRecord.mockReturnValue({
+                distinctCount: 2,
+                crossedThreshold: false,
+            });
+            mockVocPending.mockReturnValue(true);
+
+            const { result } = renderHook(() =>
+                useAnonAnalysisNudge(openNudge)
+            );
+            act(() => {
+                result.current.onSymbolAnalyzed('NVDA');
+            });
+            expect(openNudge).not.toHaveBeenCalled();
+
+            mockVocPending.mockReturnValue(false);
+            act(() => {
+                result.current.onSymbolAnalyzed('AAPL');
+            });
+
+            expect(openNudge).toHaveBeenCalledTimes(1);
+            expect(mockMarkShown).toHaveBeenCalledTimes(1);
+            expect(mockMarkSession).toHaveBeenCalledTimes(1);
+        });
+
+        it('still honors the once-per-day cap after the VOC prompt is done', () => {
+            mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
+            mockRecord.mockReturnValue({
+                distinctCount: 2,
+                crossedThreshold: false,
+            });
+            mockHasShown.mockReturnValue(true);
+
+            const { result } = renderHook(() =>
+                useAnonAnalysisNudge(openNudge)
+            );
+            act(() => {
+                result.current.onSymbolAnalyzed('AAPL');
+            });
+
+            expect(openNudge).not.toHaveBeenCalled();
+        });
     });
 });

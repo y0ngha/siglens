@@ -33,7 +33,8 @@ vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
         }) as Partial<UseQueryResult>,
 }));
 
-vi.mock('@/shared/config/contact', () => ({
+vi.mock('@/shared/config/contact', async orig => ({
+    ...(await orig<typeof import('@/shared/config/contact')>()),
     CONTACT_TITLE_MAX_LENGTH: 100,
     CONTACT_CONTENT_MAX_LENGTH: 5000,
 }));

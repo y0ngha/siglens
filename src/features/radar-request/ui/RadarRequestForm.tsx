@@ -9,6 +9,7 @@ import type {
 } from '@/entities/inquiry/lib/types';
 import { ContactEmailField } from '@/features/contact-form/ui/ContactEmailField';
 import { resolveEmailDefault } from '@/features/contact-form/lib/contactFormUtils';
+import { HoneypotField } from '@/features/contact-form/ui/HoneypotField';
 import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 import { RADAR_REQUEST_SYMBOL_MAX_LENGTH } from '@/shared/config/radar';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
@@ -40,6 +41,8 @@ export function RadarRequestForm() {
                 });
             case 'email_invalid':
                 return tError('emailInvalid');
+            case 'rate_limited':
+                return tError('rateLimited');
             case 'submission_failed':
                 return tError('submissionFailed');
         }
@@ -105,6 +108,7 @@ export function RadarRequestForm() {
                         label={t('submit')}
                         pendingLabel={t('pending')}
                     />
+                    <HoneypotField />
                 </form>
             )}
         </>

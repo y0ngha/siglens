@@ -9,6 +9,7 @@ import type {
     MacroBriefingResponse,
 } from '@y0ngha/siglens-core';
 
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -128,6 +129,14 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                     </time>
                 </p>
             )}
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'macroBriefing',
+                    generatedAt: generatedAt ?? undefined,
+                }}
+                snapshot={briefing}
+                className="mt-3"
+            />
         </section>
     );
 }

@@ -86,6 +86,12 @@ vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
 vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
+vi.mock('@/entities/feedback/actions/submitAiFeedbackAction', () => ({
+    submitAiFeedbackAction: vi.fn(),
+}));
+vi.mock('@/entities/feedback/actions/updateAiFeedbackAction', () => ({
+    updateAiFeedbackAction: vi.fn(),
+}));
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn() }),
 }));
@@ -549,6 +555,45 @@ describe('OverallContent done branch', () => {
         expect(screen.getByText('통합 결론 텍스트')).toBeInTheDocument();
         fireEvent.click(btn);
         expect(reanalyze).not.toHaveBeenCalled();
+    });
+
+    describe('👍/👎 평가 버튼', () => {
+        const renderOverall = () =>
+            render(
+                <OverallContent
+                    symbol="AAPL"
+                    companyName="Apple Inc."
+                    hasEnrichedNews={true}
+                    hasOptions={true}
+                />
+            );
+        const feedbackUp = () =>
+            screen.queryByRole('button', { name: '도움이 됐어요' });
+
+        it('끝난 결과 아래에 붙는다', () => {
+            mockDoneState(makeDoneResult());
+            renderOverall();
+
+            expect(feedbackUp()).toBeInTheDocument();
+        });
+
+        it('재분석 중에는 곧 바뀔 옛 결과라 붙이지 않는다', () => {
+            mockDoneState(makeDoneResult(), { reanalyzing: true });
+            renderOverall();
+
+            expect(feedbackUp()).not.toBeInTheDocument();
+        });
+
+        it('분석 전(idle)에는 붙지 않는다', () => {
+            mockUseOverallAnalysis.mockReturnValue({
+                state: { status: 'idle' },
+                trigger: vi.fn(),
+                reanalyze: vi.fn(),
+            });
+            renderOverall();
+
+            expect(feedbackUp()).not.toBeInTheDocument();
+        });
     });
 
     it('쿨다운 안내를 결과 아래에 status로 노출한다', () => {

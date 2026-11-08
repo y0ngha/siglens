@@ -3,6 +3,7 @@
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
@@ -151,6 +152,20 @@ export function OverallContent({
             </PlainAnalysisSwitch>
             {state.notice !== null && (
                 <OverallNoticeBanner notice={state.notice} />
+            )}
+            {/* 새 분석이 도착하면 결과가 바뀌어 평가가 초기화된다. 재분석 중엔 옛 결과라 숨긴다. */}
+            {!state.reanalyzing && (
+                <AnalysisFeedback
+                    context={{
+                        analysisType: 'overall',
+                        symbol,
+                        timeframe,
+                        modelId,
+                        reasoning,
+                    }}
+                    snapshot={state.result}
+                    plain={state.plain}
+                />
             )}
             <ReanalyzeButton
                 onClick={reanalyze}

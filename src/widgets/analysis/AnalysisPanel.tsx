@@ -12,6 +12,7 @@ import type {
     TierInfoDepth,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import type { AnalysisFeedbackContext } from '@/entities/feedback/types';
 import { useFunnelMeterShown } from './hooks/useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
@@ -28,6 +29,7 @@ import type { CooldownNotice } from './model/types';
 import { AnalysisDetailSections } from './sections/AnalysisDetailSections';
 import { AnalysisPanelHeader } from './sections/AnalysisPanelHeader';
 import { AnalysisStatsLine } from './sections/AnalysisStatsLine';
+import { AnalysisPanelFeedback } from './ui/AnalysisPanelFeedback';
 import { ReanalyzeButton } from './ui/ReanalyzeButton';
 import { resolveLockedSections } from './utils/lockedSections';
 import { toOverlayCardControls } from './utils/overlayCardControls';
@@ -126,6 +128,11 @@ interface AnalysisPanelProps {
     onHighlightOverlay?: (key: string | null) => void;
     /** 해당 key가 강조 중일 때만 해제(멱등). */
     onClearOverlayHighlight?: (key: string) => void;
+    /**
+     * 👍/👎에 실어 보낼 이 분석의 모델·추론 설정. 받는 쪽(`ChartContent`)만 안다.
+     * 없으면(공유 스냅샷처럼 읽기 전용 화면) 평가 버튼을 그리지 않는다.
+     */
+    feedbackSettings?: Pick<AnalysisFeedbackContext, 'modelId' | 'reasoning'>;
 }
 
 export function AnalysisPanel({
@@ -156,6 +163,7 @@ export function AnalysisPanel({
     onToggleOverlay,
     onHighlightOverlay,
     onClearOverlayHighlight,
+    feedbackSettings,
 }: AnalysisPanelProps) {
     // showProgress·progressPhaseIndex·progressTipIndex는 ChartContent가 관리한다.
     // useAnalysisProgress 훅이 타이머/상태를 소유하므로 데스크톱·모바일 두 인스턴스가
@@ -280,6 +288,16 @@ export function AnalysisPanel({
             {/* 패널 전체에 한 줄만 두는 차트 가이드 진입점. 캔들 패턴은 차트 캔버스 마커로만
                 그려져 항목별 "뜻 보기"를 달 수 없으므로, 여기서 가이드 전체로 보낸다. */}
             {!showProgress && <GuideEntryLink />}
+
+            <AnalysisPanelFeedback
+                symbol={symbol}
+                timeframe={timeframe}
+                analysis={analysis}
+                plain={plain}
+                settings={feedbackSettings}
+                isBusy={isBusy}
+                isFallback={isFallback}
+            />
 
             {onReanalyze !== undefined && (
                 <div className="mt-1">

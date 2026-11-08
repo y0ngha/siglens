@@ -6,6 +6,10 @@
  */
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+    buildFeedbackContext,
+    buildFeedbackTranscript,
+} from '@/features/agent-chat/lib/feedbackTranscript';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
@@ -28,6 +32,10 @@ interface Props {
     /** Main-site origin + locale prefix, for the "open on siglens" links under an answer. */
     readonly siteUrl: string;
     readonly localePrefix: string;
+    /** 👍/👎에 싣는 대화 id. 새 대화의 첫 답이 끝나기 전엔 null. */
+    readonly conversationId?: string | null;
+    /** 비회원 대화는 저장되지 않아 평가에 대화·메시지 id를 싣지 않는다. 기본은 비회원(id를 싣지 않는 쪽). */
+    readonly guest?: boolean;
 }
 
 const COPIED_RESET_MS = 1_500;
@@ -44,6 +52,8 @@ export function MessageList({
     onSend,
     siteUrl,
     localePrefix,
+    conversationId = null,
+    guest = true,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const [editingSeq, setEditingSeq] = useState<number | null>(null);
@@ -77,13 +87,33 @@ export function MessageList({
         void copy(m.content);
     };
 
-    const renderTurn = (m: AgentUiMessage, isLast: boolean) => {
+    const renderTurn = (m: AgentUiMessage, index: number) => {
+        const isLast = index === messages.length - 1;
         const minHeight =
             isLast && activeMinHeight !== null ? activeMinHeight : undefined;
         // 편집할 수 있는 질문의 seq — 마지막 질문이고 스트리밍이 아닐 때만 있다.
         const editableSeq =
             m.role === 'user' && m === lastUser && !streaming
                 ? m.seq
+                : undefined;
+        // 끝난 답변에만 👍/👎를 둔다 - 스트리밍·중단·실패한 말풍선은 평가할 응답이 아니다. 목록 전체가 아니라
+        // 메시지별로 판단해, 새 턴이 스트리밍되는 동안에도 앞선 답변의 평가 상태가 언마운트되지 않는다.
+        const feedback =
+            m.role === 'assistant' && m.status === 'complete'
+                ? {
+                      resetKey: m.id,
+                      target: {
+                          surface: 'siglens_ai' as const,
+                          context: buildFeedbackContext({
+                              message: m,
+                              index,
+                              conversationId,
+                              guest,
+                          }),
+                          getTranscript: () =>
+                              buildFeedbackTranscript(messages, index),
+                      },
+                  }
                 : undefined;
         const actions = (
             <MessageActions
@@ -100,6 +130,7 @@ export function MessageList({
                         ? undefined
                         : () => setEditingSeq(editableSeq)
                 }
+                feedback={feedback}
             />
         );
 
@@ -167,9 +198,7 @@ export function MessageList({
                     ref={contentRef}
                     className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-4 py-8"
                 >
-                    {messages.map((m, i) =>
-                        renderTurn(m, i === messages.length - 1)
-                    )}
+                    {messages.map((m, i) => renderTurn(m, i))}
                     <div ref={endRef} />
                 </div>
             </div>

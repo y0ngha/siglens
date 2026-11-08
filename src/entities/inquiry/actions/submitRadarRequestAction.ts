@@ -1,11 +1,16 @@
 'use server';
 
 import { getDatabaseClient } from '@/shared/db/client';
+import { scheduleOperatorNotification } from '@/shared/email/operatorNotifier';
 import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzleContactRepository } from '../api';
 import { validateRadarRequestInput } from '../lib/radarRequestValidation';
 import { submitInquiry } from '../lib/submitInquiry';
 import type { RadarRequestFormState } from '../lib/types';
+import {
+    isHoneypotFilled,
+    isInquiryRateLimited,
+} from '../server/inquirySpamGuard';
 
 /** FormData 값이 문자열이 아니거나 없으면 빈 문자열로 정규화한다. */
 function getVal(formData: FormData, key: string): string {
@@ -16,6 +21,7 @@ function getVal(formData: FormData, key: string): string {
 /**
  * 레이더 종목 요청 폼 Server Action. 문의 테이블에 제목 접두어로 구분해 저장하며,
  * 저장 실패는 내부 정보 없이 `submission_failed`로만 노출해 사용자가 재시도할 수 있게 한다.
+ * 스팸 방어와 운영자 알림은 문의 폼과 같다(`inquirySpamGuard`, `scheduleOperatorNotification`).
  * 소비자: features/radar-request `useRadarRequestForm`.
  */
 export async function submitRadarRequestAction(
@@ -27,6 +33,10 @@ export async function submitRadarRequestAction(
         email: getVal(formData, 'email'),
     };
 
+    if (isHoneypotFilled(formData)) {
+        return { submitted: true, error: null, values: rawValues };
+    }
+
     const validation = validateRadarRequestInput(rawValues);
     if (!validation.ok) {
         return {
@@ -37,9 +47,23 @@ export async function submitRadarRequestAction(
     }
 
     try {
+        if (await isInquiryRateLimited()) {
+            return {
+                submitted: false,
+                error: { code: 'rate_limited' },
+                values: rawValues,
+            };
+        }
         const { db } = getDatabaseClient();
         const contactRepository = new DrizzleContactRepository(db);
-        await submitInquiry(validation.values, { contactRepository });
+        await submitInquiry(validation.values, {
+            contactRepository,
+            notifier: message =>
+                scheduleOperatorNotification(
+                    message,
+                    '[submitRadarRequestAction]'
+                ),
+        });
         return {
             submitted: true,
             error: null,

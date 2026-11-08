@@ -19,6 +19,7 @@ import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -212,11 +213,29 @@ export function OptionsAiAnalysis({
     }
 
     return (
-        <PlainAnalysisSwitch plain={state.plain}>
-            <OptionsAiAnalysisView
-                result={state.result}
-                basisCaption={basisCaption}
-            />
-        </PlainAnalysisSwitch>
+        <>
+            <PlainAnalysisSwitch plain={state.plain}>
+                <OptionsAiAnalysisView
+                    result={state.result}
+                    basisCaption={basisCaption}
+                />
+            </PlainAnalysisSwitch>
+            {/* 내용이 빈 결과는 위 뷰가 오류 카드로 바꿔 그린다. 평가할 응답이 없다. */}
+            {!isEmptyOptionsAnalysis(state.result) && (
+                <AnalysisFeedback
+                    context={{
+                        analysisType: 'options',
+                        symbol,
+                        modelId,
+                        reasoning,
+                        analyzedAt: state.result.analyzedAt,
+                        extra: { expirationDate },
+                    }}
+                    snapshot={state.result}
+                    plain={state.plain}
+                    className="mt-3"
+                />
+            )}
+        </>
     );
 }

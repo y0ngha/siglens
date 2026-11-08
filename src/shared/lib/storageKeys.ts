@@ -94,3 +94,10 @@ export const LOCAL_STORAGE_WATCHLIST_COACH_SEEN_KEY =
 
 /** 이 탭 세션에서 로컬 관심종목을 계정으로 병합했다(sessionStorage). 실패 시엔 적지 않는다. */
 export const SESSION_STORAGE_WATCHLIST_MERGED_KEY = 'siglens:watchlist:merged';
+
+/**
+ * VOC 별점 모달을 이미 띄웠다(localStorage, 영구). 값은 `'1'`. 띄운 순간 적으므로 닫기만 해도
+ * 다시 뜨지 않는다 - 별점을 안 남기고 닫은 사람을 계속 붙잡지 않는다. 두 오리진(siglens.io,
+ * ai.siglens.io)의 저장소는 따로라 각 사이트에서 한 번씩 뜬다(`shared/lib/vocPromptStorage.ts`).
+ */
+export const LOCAL_STORAGE_VOC_PROMPTED_KEY = 'siglens_voc_prompted';

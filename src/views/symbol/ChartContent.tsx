@@ -547,6 +547,7 @@ export function ChartContent({
                     onToggleOverlay={handleToggleOverlay}
                     onHighlightOverlay={setHighlightedOverlay}
                     onClearOverlayHighlight={clearHighlightedOverlay}
+                    feedbackSettings={{ modelId, reasoning }}
                 />
                 {/* "내 포지션" 결정적 요약 — 홀딩이 있는 회원에게만, AI 분석
                     바로 옆에 노출한다(personalized-analysis 배지와 동일 이웃).
@@ -598,6 +599,8 @@ export function ChartContent({
         clearHighlightedOverlay,
         statusBanner,
         factsSummary,
+        modelId,
+        reasoning,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.

@@ -41,6 +41,7 @@ readonly DOCKER_HOST_NAME="host.docker.internal"
 #   agreements                                      사용자별 약관 동의
 #   inquiries                                       문의(이메일·본문)
 #   chat_conversations, chat_messages               SIGLENS AI 대화 (messages는 conversations 소속)
+#   feedback                                        VOC 별점·AI 응답 평가(의견, 대화 스냅샷, 회원 id)
 #   visitor_days                                    방문자 해시·UA·국가·진입 경로
 #   funnel_events                                   가입 퍼널 이벤트(방문자 해시·회원 id)
 #   watchlist_items                                 회원 관심종목
@@ -65,6 +66,7 @@ EXCLUDED_TABLES=(
     inquiries
     chat_conversations
     chat_messages
+    feedback
     visitor_days
     funnel_events
     watchlist_items

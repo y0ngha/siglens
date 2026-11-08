@@ -41,6 +41,14 @@ vi.mock('@/features/visitor-ping/ui/FunnelSignupPing', () => ({
 vi.mock('@/app/_components/AuthSessionHeaderClient', () => ({
     AuthSessionHeaderClient: () => <div data-testid="header" />,
 }));
+vi.mock('@/shared/ui/ToastProvider', () => ({
+    ToastProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+vi.mock('@/features/voc-prompt/ui/VocPromptHost', () => ({
+    VocPromptHost: ({ trigger }: { trigger: string }) => (
+        <div data-testid="voc-host" data-trigger={trigger} />
+    ),
+}));
 vi.mock('@/features/pwa-install/ui/PwaBanner', () => ({
     PwaBanner: () => <div data-testid="pwa-banner" />,
 }));
@@ -106,5 +114,20 @@ describe('AiAppProviders', () => {
             app: { ai: { title: '제목' } },
             widgets: { 'agent-chat': { send: '전송' } },
         });
+    });
+
+    it('평소에는 채팅 계기의 별점 모달 호스트를 둔다', () => {
+        renderProviders(false);
+
+        expect(screen.getByTestId('voc-host')).toHaveAttribute(
+            'data-trigger',
+            'agent_chat'
+        );
+    });
+
+    it('점검 중에는 채팅이 없어 별점 모달 호스트를 두지 않는다', () => {
+        renderProviders(true);
+
+        expect(screen.queryByTestId('voc-host')).not.toBeInTheDocument();
     });
 });

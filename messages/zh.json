@@ -1224,6 +1224,42 @@
             "successWithoutEmail": "添加后即可直接在雷达中查看。",
             "symbolLabel": "个股",
             "symbolPlaceholder": "股票代码或公司名称(例如:PLTR、Palantir)"
+        },
+        "ai-feedback": {
+            "AiFeedbackButtons": {
+                "down": "没有帮助",
+                "failed": "未能发送反馈。请稍后重试。",
+                "groupAnalysis": "此分析有帮助吗？",
+                "groupAnswer": "此回答有帮助吗？",
+                "thanks": "感谢您的反馈",
+                "up": "有帮助"
+            },
+            "FeedbackDownPopover": {
+                "close": "关闭",
+                "commentLabel": "一句话评论（可选）",
+                "reasonInaccurate": "与事实不符",
+                "reasonOffTopic": "与问题无关",
+                "reasonOther": "其他",
+                "reasonTooLong": "内容过长或难以理解",
+                "reasonUnsupported": "依据不足",
+                "send": "发送",
+                "title": "您不满意哪些方面？"
+            }
+        },
+        "voc-prompt": {
+            "VocPromptModal": {
+                "body": "您的评分和评论将立即用于改进服务。",
+                "close": "关闭",
+                "commentLabel": "评论",
+                "counter": "{current}/{max}",
+                "failed": "未能发送反馈。请稍后重试。",
+                "placeholder": "请随意写下您喜欢或不满意的地方（可选）",
+                "ratingLabel": "评分",
+                "starLabel": "{rating}星",
+                "submit": "发送",
+                "thanks": "感谢您的反馈",
+                "title": "您觉得 SIGLENS 怎么样？"
+            }
         }
     },
     "shared": {
@@ -1721,7 +1757,8 @@
                 "emailRequired": "请输入邮箱地址。",
                 "submissionFailed": "咨询发送失败。请稍后重试。",
                 "titleRequired": "请输入标题。",
-                "titleTooLong": "标题请控制在 {v0} 个字符以内。"
+                "titleTooLong": "标题请控制在 {v0} 个字符以内。",
+                "rateLimited": "您发送请求过于频繁。请稍后重试。"
             },
             "fearGreed": {
                 "confidenceLimited": "置信度受限",

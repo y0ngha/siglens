@@ -1,4 +1,12 @@
 // @vitest-environment jsdom
+// 👍/👎 버튼이 서버 액션 모듈을 import한다. 이 파일은 `@/shared/config/time` 등을 부분 목으로 두므로
+// 액션의 서버 쪽 의존이 그 목과 부딪히지 않게 액션 자체를 비운다(이 파일은 버튼을 누르지 않는다).
+vi.mock('@/entities/feedback/actions/submitAiFeedbackAction', () => ({
+    submitAiFeedbackAction: vi.fn(),
+}));
+vi.mock('@/entities/feedback/actions/updateAiFeedbackAction', () => ({
+    updateAiFeedbackAction: vi.fn(),
+}));
 vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <span>{children}</span>
@@ -2102,5 +2110,50 @@ describe('AnalysisPanel — "내 평단 기준으로 분석했어요" 투명성 
         expect(
             screen.queryByTestId('personalized-analysis-badge')
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('AnalysisPanel — 👍/👎 평가 버튼', () => {
+    const SETTINGS = { modelId: 'deepseek-v4-flash', reasoning: false };
+    const feedbackUp = () =>
+        screen.queryByRole('button', { name: '도움이 됐어요' });
+    const panel = (
+        props: Partial<React.ComponentProps<typeof AnalysisPanel>> = {}
+    ) => (
+        <AnalysisPanel
+            symbol="AAPL"
+            analysis={makeAnalysis()}
+            keyLevels={EMPTY_KEY_LEVELS}
+            timeframe="1Day"
+            feedbackSettings={SETTINGS}
+            {...props}
+        />
+    );
+
+    it('끝난 분석 아래에 붙는다', () => {
+        render(panel());
+
+        expect(feedbackUp()).toBeInTheDocument();
+    });
+
+    it('평가에 실을 모델 설정이 없는 읽기 전용 화면(공유 스냅샷)에는 붙지 않는다', () => {
+        render(panel({ feedbackSettings: undefined }));
+
+        expect(feedbackUp()).not.toBeInTheDocument();
+    });
+
+    it.each([
+        ['분석 중', { isAnalyzing: true }],
+        ['진행 연출 중', { showProgress: true }],
+    ])('%s에는 붙지 않는다', (_label, props) => {
+        render(panel(props));
+
+        expect(feedbackUp()).not.toBeInTheDocument();
+    });
+
+    it('내용 없는 폴백 응답에는 붙지 않는다', () => {
+        render(panel({ analysis: FALLBACK_ANALYSIS }));
+
+        expect(feedbackUp()).not.toBeInTheDocument();
     });
 });

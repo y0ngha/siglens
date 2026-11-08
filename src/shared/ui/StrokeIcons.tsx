@@ -237,3 +237,21 @@ export const StarIcon = ({ filled = false, className }: StarIconProps) => (
         <path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z" />
     </svg>
 );
+
+/** AI 응답 평가 👍. 선택 상태는 색과 `aria-pressed`로 나타내므로 윤곽선만 그린다. */
+export const ThumbsUpIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M7 10v11" />
+        <path d="M7 10l4-7a2 2 0 0 1 3 2l-1 4h6a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 17.7 20H7" />
+        <path d="M3 10h4v11H3z" />
+    </Icon>
+);
+
+/** AI 응답 평가 👎. */
+export const ThumbsDownIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M17 14V3" />
+        <path d="M17 14l-4 7a2 2 0 0 1-3-2l1-4H5a2 2 0 0 1-2-2.3l1.3-7A2 2 0 0 1 6.3 4H17" />
+        <path d="M17 3h4v11h-4z" />
+    </Icon>
+);

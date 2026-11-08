@@ -10,6 +10,7 @@ const ALL_ERROR_CODES: ContactFormErrorCode[] = [
     'content_required',
     'content_too_long',
     'submission_failed',
+    'rate_limited',
 ];
 
 /**

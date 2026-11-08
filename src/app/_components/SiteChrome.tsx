@@ -5,6 +5,7 @@ import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { Footer } from '@/widgets/layout/Footer';
 import { AnalysisRateLimitModalHost } from '@/features/analysis-rate-limit/ui/AnalysisRateLimitModalHost';
 import { EmailReportNudgeHost } from '@/features/email-report-nudge/ui/EmailReportNudgeHost';
+import { VocPromptHost } from '@/features/voc-prompt/ui/VocPromptHost';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
@@ -58,6 +59,8 @@ export function SiteChrome({ locale, messages, children }: SiteChromeProps) {
                                     여러 라우트(종목·허브)에서 나오므로 루트에 하나만 둔다. */}
                                 <AnalysisRateLimitModalHost />
                                 <EmailReportNudgeHost />
+                                {/* 첫 종목 분석 직후 별점 모달을 한 번 띄운다. 넛지 모달과 같은 세션 상한을 공유한다. */}
+                                <VocPromptHost trigger="analysis" />
                                 <WatchlistMergeHost />
                                 <AuthSessionHeaderClient />
                                 {/* 다른 라우트로 가는 이동은 클릭 즉시 목적지 모양의 골격으로 바꾼다.

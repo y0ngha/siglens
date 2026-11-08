@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
+    ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD,
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
@@ -13,6 +14,7 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
+import { isVocPromptPending } from '@/shared/lib/vocPromptStorage';
 
 /** Return value of {@link useAnonAnalysisNudge}. */
 export interface UseAnonAnalysisNudgeResult {
@@ -45,10 +47,20 @@ export interface UseAnonAnalysisNudgeResult {
  * `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks
  * distinct symbols an anonymous visitor has analyzed today via
  * `recordAnonSymbolAnalysis`, and opens a soft nudge modal the first time the
- * count crosses the threshold — once per day (`hasNudgeShownToday`/
+ * count is at or above the threshold — once per day (`hasNudgeShownToday`/
  * `markNudgeShownToday`). Members are always a no-op: the counter and modal
  * exist purely to solicit signup, so a logged-in user has nothing to gain
  * from either.
+ *
+ * **Yields to the VOC rating modal.** While `isVocPromptPending()` the hook
+ * returns before counting, marking anything shown or opening — the first AI
+ * experience belongs to the VOC prompt (`features/voc-prompt`), and two modals
+ * back to back would be a worse first impression than either alone. Because
+ * the yield happens on the very call that would have crossed the threshold,
+ * the decision uses `distinctCount >= threshold` rather than the one-shot
+ * `crossedThreshold`: a later analysis (next session, after the VOC prompt has
+ * been shown) must still be able to open the nudge that was deferred. The
+ * once-per-day and once-per-session caps below keep that from nagging.
  *
  * The modal's open-state and the single modal instance are NOT owned here.
  * They live in `SymbolModelProvider` so the auto-nudge (this hook) and the
@@ -78,9 +90,10 @@ export function useAnonAnalysisNudge(
     const onSymbolAnalyzed = useCallback(
         (symbol: string): void => {
             if (!isAnonymous) return;
+            if (isVocPromptPending()) return;
 
-            const { crossedThreshold } = recordAnonSymbolAnalysis(symbol);
-            if (!crossedThreshold) return;
+            const { distinctCount } = recordAnonSymbolAnalysis(symbol);
+            if (distinctCount < ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD) return;
             if (hasNudgeShownToday()) return;
             if (hasNudgeShownThisSession()) return;
 

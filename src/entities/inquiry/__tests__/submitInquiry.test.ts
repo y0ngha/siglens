@@ -1,18 +1,21 @@
 import type { Mock } from 'vitest';
 import type { ContactInput, ContactRepository } from '../api';
 import { submitInquiry } from '../lib/submitInquiry';
-import type { SubmitInquiryDeps } from '../lib/types';
+import type { OperatorNotifier, SubmitInquiryDeps } from '../lib/types';
 
 function makeDeps(): {
     deps: SubmitInquiryDeps;
     create: Mock<ContactRepository['create']>;
+    notifier: Mock<OperatorNotifier>;
 } {
     const create = vi.fn<ContactRepository['create']>();
     create.mockResolvedValue(undefined);
+    const notifier = vi.fn<OperatorNotifier>();
     const contactRepository: ContactRepository = { create };
     return {
-        deps: { contactRepository },
+        deps: { contactRepository, notifier },
         create,
+        notifier,
     };
 }
 
@@ -36,12 +39,26 @@ describe('submitInquiry', () => {
         const dbError = new Error('db connection lost');
         const create = vi.fn<ContactRepository['create']>();
         create.mockRejectedValue(dbError);
+        const notifier = vi.fn<OperatorNotifier>();
         const deps: SubmitInquiryDeps = {
             contactRepository: { create },
+            notifier,
         };
 
         await expect(submitInquiry(validInput, deps)).rejects.toThrow(
             'db connection lost'
+        );
+        expect(notifier).not.toHaveBeenCalled();
+    });
+
+    it('notifies the operator after a successful create', async () => {
+        const { deps, notifier } = makeDeps();
+
+        await submitInquiry(validInput, deps);
+
+        expect(notifier).toHaveBeenCalledTimes(1);
+        expect(notifier).toHaveBeenCalledWith(
+            expect.objectContaining({ replyTo: 'visitor@example.com' })
         );
     });
 });

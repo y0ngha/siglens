@@ -1,7 +1,18 @@
 import type { MockInstance } from 'vitest';
-const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
-    mockSubmitInquiry: vi.fn(),
-    mockCreate: vi.fn(),
+const { mockSubmitInquiry, mockCreate, mockRateLimited, mockSchedule } =
+    vi.hoisted(() => ({
+        mockSubmitInquiry: vi.fn(),
+        mockCreate: vi.fn(),
+        mockRateLimited: vi.fn(),
+        mockSchedule: vi.fn(),
+    }));
+
+vi.mock('../server/inquirySpamGuard', async orig => ({
+    ...(await orig<typeof import('../server/inquirySpamGuard')>()),
+    isInquiryRateLimited: () => mockRateLimited(),
+}));
+vi.mock('@/shared/email/operatorNotifier', () => ({
+    scheduleOperatorNotification: mockSchedule,
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -35,6 +46,7 @@ describe('submitRadarRequestAction', () => {
         vi.clearAllMocks();
         mockSubmitInquiry.mockResolvedValue(undefined);
         mockCreate.mockResolvedValue(undefined);
+        mockRateLimited.mockResolvedValue(false);
         consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -155,5 +167,47 @@ describe('submitRadarRequestAction', () => {
         for (const value of Object.values(values)) {
             expect(serialized).not.toContain(value);
         }
+    });
+
+    it('봇 함정이 채워져 있으면 성공처럼 응답하고 저장하지 않는다', async () => {
+        const result = await submitRadarRequestAction(
+            INITIAL_STATE,
+            makeFormData({ symbol: 'PLTR', email: '', siglens_hp_ignore: 'x' })
+        );
+
+        expect(result.submitted).toBe(true);
+        expect(mockSubmitInquiry).not.toHaveBeenCalled();
+        expect(mockRateLimited).not.toHaveBeenCalled();
+    });
+
+    it('한도를 넘으면 rate_limited 를 돌려주고 저장하지 않는다', async () => {
+        mockRateLimited.mockResolvedValue(true);
+
+        const result = await submitRadarRequestAction(
+            INITIAL_STATE,
+            makeFormData({ symbol: 'PLTR', email: '' })
+        );
+
+        expect(result.submitted).toBe(false);
+        expect(result.error).toEqual({ code: 'rate_limited' });
+        expect(result.values).toEqual({ symbol: 'PLTR', email: '' });
+        expect(mockSubmitInquiry).not.toHaveBeenCalled();
+    });
+
+    it('submitInquiry 에 응답 뒤로 미루는 운영자 notifier 를 주입한다', async () => {
+        await submitRadarRequestAction(
+            INITIAL_STATE,
+            makeFormData({ symbol: 'PLTR', email: '' })
+        );
+
+        const deps = mockSubmitInquiry.mock.calls
+            .map(call => call[1] as { notifier?: (m: unknown) => void })
+            .find(d => typeof d?.notifier === 'function');
+        const message = { subject: 's', text: 't', html: 'h' };
+        deps?.notifier?.(message);
+        expect(mockSchedule).toHaveBeenCalledWith(
+            message,
+            '[submitRadarRequestAction]'
+        );
     });
 });

@@ -21,6 +21,11 @@ export interface UseAgentStreamOptions {
     initialMessages: ChatMessageView[];
     onConversationCreated?: (id: string, title: string) => void;
     /**
+     * Fires once for each assistant turn that finished with an answer (not on error, stop or a
+     * replaced call). Callers use it as the "first good AI experience" moment.
+     */
+    onTurnComplete?: () => void;
+    /**
      * No session: nothing is stored server-side, so every turn carries the
      * transcript this hook holds as `history`, and `regenerate` re-sends the
      * last question instead of asking the server to rewrite stored rows.
@@ -69,6 +74,7 @@ export function useAgentStream(
     const messagesRef = useRef(messages);
     const controllerRef = useRef<AbortController | null>(null);
     const onConversationCreatedRef = useRef(options.onConversationCreated);
+    const onTurnCompleteRef = useRef(options.onTurnComplete);
     /** Body of the most recent turn, replayed by `retry()` for an HTTP-stage failure (retry must not turn into `regenerate` there). */
     const lastBodyRef = useRef<Record<string, unknown> | null>(null);
     /** Which failure kind `retry()` is reacting to — only a turn-stage failure may map to `regenerate()` (a partial assistant row was actually persisted for that turn). */
@@ -103,6 +109,7 @@ export function useAgentStream(
                 setFailureKind: kind => {
                     lastErrorKindRef.current = kind;
                 },
+                onTurnComplete: () => onTurnCompleteRef.current?.(),
             };
             return runAgentTurn(ctx, {
                 body,
@@ -219,6 +226,9 @@ export function useAgentStream(
     useEffect(() => {
         onConversationCreatedRef.current = options.onConversationCreated;
     }, [options.onConversationCreated]);
+    useEffect(() => {
+        onTurnCompleteRef.current = options.onTurnComplete;
+    }, [options.onTurnComplete]);
     // Abort an in-flight turn if the component unmounts mid-stream (nav away,
     // conversation swap) — an orphaned reader loop would keep patching state
     // on an unmounted hook instance.

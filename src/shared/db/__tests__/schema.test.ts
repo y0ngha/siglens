@@ -23,6 +23,7 @@ describe('schema 테이블 export', () => {
         'analysisHistory',
         'visitorDays',
         'funnelEvents',
+        'feedback',
     ] as const;
 
     it.each(expectedTables)("'%s' 테이블이 export 되어 있다", tableName => {

@@ -5,6 +5,7 @@
  * 결과 본문 렌더는 `ui/ai-summary/FinancialsAiSummaryView`가 맡는다.
  */
 import { useTranslations } from 'next-intl';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
@@ -96,8 +97,21 @@ export function FinancialsAiSummary({
     }
 
     return (
-        <PlainAnalysisSwitch plain={state.plain}>
-            <FinancialsAiSummaryView result={state.result} />
-        </PlainAnalysisSwitch>
+        <>
+            <PlainAnalysisSwitch plain={state.plain}>
+                <FinancialsAiSummaryView result={state.result} />
+            </PlainAnalysisSwitch>
+            <AnalysisFeedback
+                context={{
+                    analysisType: 'financials',
+                    symbol,
+                    modelId,
+                    reasoning,
+                }}
+                snapshot={state.result}
+                plain={state.plain}
+                className="mt-3"
+            />
+        </>
     );
 }

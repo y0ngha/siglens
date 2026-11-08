@@ -715,6 +715,27 @@
                 "b5b216": "탈퇴 처리 중…"
             }
         },
+        "ai-feedback": {
+            "AiFeedbackButtons": {
+                "down": "도움이 안 됐어요",
+                "failed": "의견을 보내지 못했어요. 잠시 후 다시 시도해 주세요.",
+                "groupAnalysis": "이 분석이 도움이 됐나요?",
+                "groupAnswer": "이 답변이 도움이 됐나요?",
+                "thanks": "의견 고마워요",
+                "up": "도움이 됐어요"
+            },
+            "FeedbackDownPopover": {
+                "close": "닫기",
+                "commentLabel": "한 줄 의견 (선택)",
+                "reasonInaccurate": "사실과 달라요",
+                "reasonOffTopic": "질문과 관련 없어요",
+                "reasonOther": "기타",
+                "reasonTooLong": "너무 길거나 어려워요",
+                "reasonUnsupported": "근거가 부족해요",
+                "send": "보내기",
+                "title": "어떤 점이 아쉬웠나요?"
+            }
+        },
         "analysis-nudge": {
             "AnalysisSignupNudgeModal": {
                 "486011": "회원가입하면 ''{v0}''을 켜고 더 자세한 분석 리포트를 받을 수 있어요.",
@@ -1159,6 +1180,21 @@
                 "searchingEllipsis": "검색 중…",
                 "triggerLabel": "종목 검색 열기",
                 "typeToSearch": "검색어를 입력하세요"
+            }
+        },
+        "voc-prompt": {
+            "VocPromptModal": {
+                "body": "별점과 한 줄 의견을 남겨 주시면 서비스 개선에 바로 반영할게요.",
+                "close": "닫기",
+                "commentLabel": "의견",
+                "counter": "{current}/{max}",
+                "failed": "의견을 보내지 못했어요. 잠시 후 다시 시도해 주세요.",
+                "placeholder": "좋았던 점이나 아쉬운 점을 자유롭게 적어 주세요 (선택)",
+                "ratingLabel": "별점",
+                "starLabel": "{rating}점",
+                "submit": "보내기",
+                "thanks": "의견 고마워요",
+                "title": "시그렌즈, 써 보니 어떠세요?"
             }
         },
         "watchlist": {
@@ -1719,6 +1755,7 @@
                 "contentTooLong": "문의 내용은 {v0}자 이내로 입력해 주세요.",
                 "emailInvalid": "올바른 이메일 형식이 아닙니다.",
                 "emailRequired": "이메일을 입력해 주세요.",
+                "rateLimited": "문의를 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.",
                 "submissionFailed": "문의 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.",
                 "titleRequired": "제목을 입력해 주세요.",
                 "titleTooLong": "제목은 {v0}자 이내로 입력해 주세요."

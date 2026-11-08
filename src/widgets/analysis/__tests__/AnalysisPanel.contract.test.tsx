@@ -14,6 +14,14 @@
 // useSymbolPageContext mock이 더 이상 필요 없다.
 // 미터 노출 중복 억제는 KST 날짜 계산(etTimeUtils)을 끌어와 아래 time 목에 없는 상수를
 // 읽는다. 이 파일의 관심사가 아니므로 모듈째 막는다.
+// 👍/👎 버튼이 서버 액션 모듈을 import한다. 이 파일은 `@/shared/config/time` 등을 부분 목으로 두므로
+// 액션의 서버 쪽 의존이 그 목과 부딪히지 않게 액션 자체를 비운다(이 파일은 버튼을 누르지 않는다).
+vi.mock('@/entities/feedback/actions/submitAiFeedbackAction', () => ({
+    submitAiFeedbackAction: vi.fn(),
+}));
+vi.mock('@/entities/feedback/actions/updateAiFeedbackAction', () => ({
+    updateAiFeedbackAction: vi.fn(),
+}));
 vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
     claimMeterShown: () => false,
 }));

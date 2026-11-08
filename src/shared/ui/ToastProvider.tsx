@@ -74,3 +74,12 @@ export function useToast(): ToastContextValue {
     }
     return value;
 }
+
+/**
+ * 프로바이더 밖에서도 던지지 않는 `useToast`. 알림이 부가 기능인 곳(AI 응답 👍/👎 실패 안내)에서
+ * 쓴다 — 토스트가 없는 트리(조각 렌더 테스트, 프로바이더를 아직 달지 않은 호스트)에서도 본 기능이
+ * 렌더 중에 죽지 않게 한다. 없으면 `null`이라 호출부가 조용히 건너뛴다.
+ */
+export function useOptionalToast(): ToastContextValue | null {
+    return use(ToastContext);
+}

@@ -5,6 +5,7 @@ import {
     bigint,
     boolean,
     char,
+    check,
     date,
     doublePrecision,
     index,
@@ -29,11 +30,11 @@ import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
+    SYMBOL_MAX_LENGTH,
     TERMS_KIND_VALUES,
     USER_TIER_VALUES,
 } from './constants';
 
-const SYMBOL_MAX_LENGTH = 32;
 const EXCHANGE_MAX_LENGTH = 32;
 const FMP_SYMBOL_MAX_LENGTH = 64;
 const NOTICE_TITLE_MAX_LENGTH = 200;
@@ -1838,5 +1839,63 @@ export const dartTradingPlans = pgTable(
             table.corpCode,
             table.receiptDate
         ),
+    ]
+);
+
+/**
+ * 사용자 피드백. `kind='voc'`는 첫 AI 경험 직후의 별점(1~5) + 의견, `'ai_response'`는
+ * AI 응답 하나에 대한 👍/👎와 그 시점의 결과 원문(`snapshot`)이다.
+ *
+ * 비회원 식별자(guest 쿠키, IP 해시)는 **저장하지 않는다** — 처리방침상 guest 쿠키
+ * 용도를 넓히지 않기 위해서다. 회원이면 `user_id`로 계정과 연결되며 탈퇴(CASCADE)·
+ * 대화 삭제(`conversation_id` CASCADE) 시 함께 파기된다. 365일이 지난 행은
+ * `/api/cron/feedback-digest`가 삭제한다.
+ * `symbol`·`target_type`은 요약 조회용 비정규화 사본이다.
+ */
+export const feedback = pgTable(
+    'feedback',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        /** 'voc' | 'ai_response' */
+        kind: varchar('kind', { length: 16 }).notNull(),
+        /** 'siglens' | 'siglens_ai' */
+        surface: varchar('surface', { length: 16 }).notNull(),
+        /** voc만, 1~5 */
+        rating: smallint('rating'),
+        /** ai_response만, 'up' | 'down' */
+        vote: varchar('vote', { length: 8 }),
+        /** 👎 사유 코드 배열 */
+        reasons: jsonb('reasons'),
+        comment: text('comment'),
+        /** 분석 종류 또는 'agent_message' */
+        targetType: varchar('target_type', { length: 32 }),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }),
+        context: jsonb('context').notNull(),
+        /** 결과 원문 또는 대화 기록. 서버에서 256KB 상한 */
+        snapshot: jsonb('snapshot'),
+        userId: uuid('user_id').references(() => users.id, {
+            onDelete: 'cascade',
+        }),
+        conversationId: uuid('conversation_id').references(
+            () => chatConversations.id,
+            { onDelete: 'cascade' }
+        ),
+        pagePath: text('page_path'),
+        locale: contentLocaleEnum('locale').notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'feedback_rating_range',
+            sql`${table.rating} IS NULL OR (${table.rating} BETWEEN 1 AND 5)`
+        ),
+        index('feedback_created_at_idx').on(table.createdAt),
+        index('feedback_kind_created_at_idx').on(table.kind, table.createdAt),
     ]
 );

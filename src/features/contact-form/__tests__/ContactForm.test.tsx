@@ -206,4 +206,52 @@ describe('ContactForm', () => {
             '문의 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.'
         );
     });
+
+    it('rate_limited 에러는 폼 상단의 alert 로 노출된다', () => {
+        mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
+        setContactFormState({
+            submitted: false,
+            error: { code: 'rate_limited' },
+            values: { title: 't', email: 'e@x.io', content: 'c' },
+        });
+        render(<ContactForm />);
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '문의를 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.'
+        );
+    });
+
+    describe('honeypot', () => {
+        it('siglens_hp_ignore 입력은 사람에게 보이지 않고 탭·자동완성·스크린리더에서 빠진다', () => {
+            mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
+            const { container } = render(<ContactForm />);
+
+            const honeypot = container.querySelector<HTMLInputElement>(
+                'input[name="siglens_hp_ignore"]'
+            );
+
+            expect(honeypot).not.toBeNull();
+            expect(honeypot?.tabIndex).toBe(-1);
+            expect(honeypot?.getAttribute('autocomplete')).toBe('off');
+            expect(honeypot?.value).toBe('');
+            // 비밀번호 관리자(1Password·LastPass·Bitwarden)가 채우지 않도록 알린다.
+            expect(honeypot?.hasAttribute('data-1p-ignore')).toBe(true);
+            expect(honeypot?.getAttribute('data-lpignore')).toBe('true');
+            expect(honeypot?.hasAttribute('data-bwignore')).toBe(true);
+            expect(honeypot?.closest('[aria-hidden="true"]')).not.toBeNull();
+            // 접근성 트리에 라벨 있는 입력으로 잡히지 않는다.
+            expect(
+                screen.queryByRole('textbox', { name: /siglens_hp_ignore/i })
+            ).toBeNull();
+        });
+
+        it('폼 제출 데이터에 siglens_hp_ignore 키가 빈 문자열로 실린다', () => {
+            mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
+            const { container } = render(<ContactForm />);
+
+            const form = container.querySelector('form') as HTMLFormElement;
+
+            expect(new FormData(form).get('siglens_hp_ignore')).toBe('');
+        });
+    });
 });
