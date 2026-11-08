@@ -598,7 +598,8 @@ export const inquiries = pgTable('inquiries', {
     id: uuid('id').primaryKey().defaultRandom(),
     title: text('title').notNull(),
     content: text('content').notNull(),
-    email: varchar('email', { length: EMAIL_MAX_LENGTH }).notNull(),
+    // 레이더 종목 요청은 이메일이 선택이라 NULL을 허용한다. 문의 폼은 항상 채워 보낸다.
+    email: varchar('email', { length: EMAIL_MAX_LENGTH }),
     answered: boolean('answered').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true })
         .notNull()

@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useRef, type RefObject } from 'react';
-import type { ContactFormError } from '@/shared/lib/types';
 
-/** 필드 컴포넌트(`TextField`, `ContactTextareaField`)가 오류일 때 다는 표식. */
+/** 필드 컴포넌트(`TextField`, `ContactTextareaField`, `ConsentCheckboxGroup`)가 오류일 때 다는 표식. */
 const INVALID_FIELD_SELECTOR = '[aria-invalid="true"]';
 
 /**
@@ -23,7 +22,8 @@ const INVALID_FIELD_SELECTOR = '[aria-invalid="true"]';
  */
 export function useFocusInvalidFieldOnError(
     formRef: RefObject<HTMLFormElement | null>,
-    error: ContactFormError | null
+    // 오류의 모양은 보지 않고 참조만 비교한다 — 문의·종목 요청·OAuth 동의 폼이 함께 쓴다.
+    error: object | null | undefined
 ): void {
     const handledErrorRef = useRef(error);
 

@@ -3,8 +3,9 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
 import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
+import { RADAR_SITE_URL } from '@/shared/config/radar';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
-import { localePath } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandName } from '@/shared/lib/brandName';
 import { GUIDE_PATH } from '@/shared/lib/guidePaths';
@@ -127,6 +128,16 @@ export function Footer() {
                                 variant="text"
                                 className={FOOTER_LINK_CLASSES}
                             />
+                            {/* 종목 레이더 — 목적지가 한국어 전용·noindex 대시보드라 기본 로케일에만
+                                낸다. 다른 오리진이라 일반 앵커다. */}
+                            {locale === DEFAULT_LOCALE && (
+                                <a
+                                    href={RADAR_SITE_URL}
+                                    className={FOOTER_LINK_CLASSES}
+                                >
+                                    {t('Footer.radarLink')}
+                                </a>
+                            )}
                             <FooterTextLink href={PRIVACY_PATH}>
                                 {privacyTitle(tSeo)}
                             </FooterTextLink>

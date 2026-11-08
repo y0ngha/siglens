@@ -225,7 +225,14 @@
                 "c26658": "투자의 확신을 더하는 AI 분석",
                 "dfbacd": "과거 데이터로 검증한 결과",
                 "eafd49": "{v0}종의 지표와 다양한 투자 전략 기반의 차트 흐름,",
-                "ee41ec": "백테스팅 결과 보기 →"
+                "ee41ec": "백테스팅 결과 보기 →",
+                "radarBadge": "BETA",
+                "radarBody": "종목마다 뉴스, 공시, X 글, 섹터 전망을 한곳에 모아 봅니다.",
+                "radarChipAria": "{v0} 레이더 열기",
+                "radarRequestCta": "종목 요청하기",
+                "radarRequestPrompt": "보고 싶은 종목이 없나요?",
+                "radarTitle": "종목 레이더",
+                "radarViewAll": "전체 보기"
             }
         },
         "login": {
@@ -1002,6 +1009,22 @@
                 "step3Desc": "시그렌즈 아이콘이 홈 화면에 추가됩니다",
                 "step3Title": "우측 상단 '추가'를 탭하면 완료"
             }
+        },
+        "radar-request": {
+            "close": "닫기",
+            "dialogDescription": "레이더에 추가할 종목을 알려 주세요. 지금은 운영자가 직접 추가하고 있어요.",
+            "dialogTitle": "레이더 종목 요청",
+            "emailHint": "추가되면 알려드릴게요. 비워 두셔도 됩니다.",
+            "emailLabel": "이메일 (선택)",
+            "errorSymbolRequired": "종목을 입력해 주세요.",
+            "errorSymbolTooLong": "{v0}자 이내로 입력해 주세요.",
+            "pending": "전송 중…",
+            "submit": "요청 보내기",
+            "successTitle": "요청을 받았습니다",
+            "successWithEmail": "추가되면 입력하신 이메일로 알려드릴게요.",
+            "successWithoutEmail": "추가되면 레이더에서 바로 볼 수 있어요.",
+            "symbolLabel": "종목",
+            "symbolPlaceholder": "티커나 회사명 (예: PLTR, 팔란티어)"
         },
         "reasoning-toggle": {
             "ReasoningToggle": {
@@ -5274,6 +5297,7 @@
                 "benchmarkLink": "벤치마크",
                 "developersLink": "개발자 API",
                 "guideLink": "차트 가이드",
+                "radarLink": "종목 레이더",
                 "symbolsLink": "많이 찾는 종목"
             },
             "Header": {

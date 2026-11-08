@@ -10,7 +10,7 @@ import { cn } from '@/shared/lib/cn';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { usePageShowReload } from '../hooks/usePageShowReload';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
-import { useFocusInvalidFieldOnError } from '../hooks/useFocusInvalidFieldOnError';
+import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 import {
     CONSENT_AGREED_VALUE,
     CONSENT_DECLINED_VALUE,

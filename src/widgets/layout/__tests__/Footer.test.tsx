@@ -47,6 +47,7 @@ import {
     NAV_VERTICALS,
 } from '@/shared/config/assetClassNav';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { RADAR_SITE_URL } from '@/shared/config/radar';
 import { localePath } from '@/shared/i18n/locales';
 import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
@@ -503,4 +504,28 @@ describe('푸터의 분석 방법·X 계정 카탈로그', () => {
             })
         ).toBeNull();
     });
+});
+
+describe('푸터의 종목 레이더 링크', () => {
+    it('ko 푸터는 레이더 사이트로 가는 일반 앵커를 낸다', () => {
+        renderWithIntl(<Footer />, { locale: 'ko' });
+
+        const link = screen.getByRole('link', {
+            name: ko.widgets.layout.Footer.radarLink,
+        });
+        expect(link).toHaveAttribute('href', RADAR_SITE_URL);
+        expect(link).not.toHaveAttribute('target');
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s 푸터에는 한국어 전용 레이더 링크가 없다',
+        locale => {
+            renderWithIntl(<Footer />, { locale });
+
+            const hrefs = screen
+                .getAllByRole('link')
+                .map(a => a.getAttribute('href') ?? '');
+            expect(hrefs).not.toContain(RADAR_SITE_URL);
+        }
+    );
 });

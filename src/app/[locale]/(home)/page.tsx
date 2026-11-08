@@ -28,6 +28,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { buildHomeFaq } from './_lib/homeJsonLd';
 import { HomeBacktestingCta } from './_components/HomeBacktestingCta';
 import { HomeHero } from './_components/HomeHero';
+import { HomeRadarCta } from './_components/HomeRadarCta';
 import { buildHomeJsonLdNodes } from './_lib/homeJsonLdNodes';
 import { loadShowcase, loadSkillCounts } from './_lib/homeSkills';
 
@@ -185,6 +186,22 @@ export default async function Home({ params }: HomeRouteProps) {
                         ctaLabel={t('page.ee41ec')}
                     />
                 </section>
+                {/* 종목 레이더 — 목적지가 한국어 전용 대시보드라 기본 로케일에만 낸다. */}
+                {locale === DEFAULT_LOCALE && (
+                    <section className="page-container pb-8">
+                        <HomeRadarCta
+                            title={t('page.radarTitle')}
+                            badge={t('page.radarBadge')}
+                            body={t('page.radarBody')}
+                            viewAllLabel={t('page.radarViewAll')}
+                            requestPrompt={t('page.radarRequestPrompt')}
+                            requestCta={t('page.radarRequestCta')}
+                            chipAriaLabel={name =>
+                                t('page.radarChipAria', { v0: name })
+                            }
+                        />
+                    </section>
+                )}
                 {/* 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다. */}
                 <SkillsShowcase skills={toSkillShowcaseItems(showcaseSkills)} />
                 <TickerCategories />

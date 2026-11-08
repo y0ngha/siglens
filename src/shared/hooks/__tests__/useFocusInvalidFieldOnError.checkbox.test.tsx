@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
-import { useFocusInvalidFieldOnError } from '@/features/auth-oauth-consent/hooks/useFocusInvalidFieldOnError';
+import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 
 type ConsentError = FinalizeOAuthSignupState['error'];
 

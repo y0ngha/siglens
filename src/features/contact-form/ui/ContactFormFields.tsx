@@ -6,13 +6,13 @@ import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { TextField } from '@/shared/ui/TextField';
 import type { ContactFormState } from '@/shared/lib/types';
+import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/shared/config/contact';
 import type { useContactForm } from '../hooks/useContactForm';
-import { useFocusInvalidFieldOnError } from '../hooks/useFocusInvalidFieldOnError';
 import {
     getFieldError,
     getSubmissionError,

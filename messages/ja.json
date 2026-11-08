@@ -225,7 +225,14 @@
                 "dfbacd": "過去データで検証した結果",
                 "eafd49": "{v0}種類の指標と多様な投資戦略に基づくチャートの流れ、",
                 "ee41ec": "バックテスト結果を見る →",
-                "aiTeaser": "株と仮想通貨をAIチャットに質問"
+                "aiTeaser": "株と仮想通貨をAIチャットに質問",
+                "radarBadge": "BETA",
+                "radarBody": "銘柄ごとにニュース、開示、Xの投稿、セクター見通しを1か所にまとめて確認できます。",
+                "radarChipAria": "{v0}のレーダーを開く",
+                "radarRequestCta": "銘柄をリクエスト",
+                "radarRequestPrompt": "見たい銘柄がありませんか?",
+                "radarTitle": "銘柄レーダー",
+                "radarViewAll": "すべて見る"
             }
         },
         "login": {
@@ -1201,6 +1208,22 @@
         "symbol-model": {
             "fallbackDetail": "既定のモデル（{fallback}）で分析します。",
             "fallbackTitle": "{model} は一時的に利用できません"
+        },
+        "radar-request": {
+            "close": "閉じる",
+            "dialogDescription": "レーダーに追加してほしい銘柄を教えてください。現在は運営者が手動で追加しています。",
+            "dialogTitle": "レーダー銘柄のリクエスト",
+            "emailHint": "追加されたらお知らせします。空欄のままでも構いません。",
+            "emailLabel": "メールアドレス(任意)",
+            "errorSymbolRequired": "銘柄を入力してください。",
+            "errorSymbolTooLong": "{v0}文字以内で入力してください。",
+            "pending": "送信中…",
+            "submit": "リクエストを送信",
+            "successTitle": "リクエストを受け付けました",
+            "successWithEmail": "追加されたら、入力いただいたメールアドレスにお知らせします。",
+            "successWithoutEmail": "追加されると、レーダーですぐに確認できます。",
+            "symbolLabel": "銘柄",
+            "symbolPlaceholder": "ティッカーまたは会社名(例: PLTR、パランティア)"
         }
     },
     "shared": {
@@ -5140,6 +5163,7 @@
                 "benchmarkLink": "ベンチマーク",
                 "developersLink": "開発者API",
                 "guideLink": "チャートガイド",
+                "radarLink": "銘柄レーダー",
                 "symbolsLink": "よく見られる銘柄"
             },
             "Header": {

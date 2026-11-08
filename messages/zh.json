@@ -225,7 +225,14 @@
                 "dfbacd": "基于历史数据验证的结果",
                 "eafd49": "基于 {v0} 种指标和多样投资策略的图表走势，",
                 "ee41ec": "查看回测结果 →",
-                "aiTeaser": "用 AI 聊天助手问股票与加密货币"
+                "aiTeaser": "用 AI 聊天助手问股票与加密货币",
+                "radarBadge": "BETA",
+                "radarBody": "每只个股的新闻、公告、X 帖子和板块展望,集中在一处查看。",
+                "radarChipAria": "打开 {v0} 雷达",
+                "radarRequestCta": "申请添加个股",
+                "radarRequestPrompt": "没有想看的个股?",
+                "radarTitle": "个股雷达",
+                "radarViewAll": "查看全部"
             }
         },
         "login": {
@@ -1201,6 +1208,22 @@
         "symbol-model": {
             "fallbackDetail": "将使用默认模型（{fallback}）进行分析。",
             "fallbackTitle": "{model} 暂时无法使用"
+        },
+        "radar-request": {
+            "close": "关闭",
+            "dialogDescription": "请告诉我们想添加到雷达的个股。目前由运营者手动添加。",
+            "dialogTitle": "申请雷达个股",
+            "emailHint": "添加后会通知您。也可以留空。",
+            "emailLabel": "邮箱(选填)",
+            "errorSymbolRequired": "请输入个股。",
+            "errorSymbolTooLong": "请在 {v0} 个字符以内输入。",
+            "pending": "发送中…",
+            "submit": "提交申请",
+            "successTitle": "已收到您的申请",
+            "successWithEmail": "添加后会通过您填写的邮箱通知您。",
+            "successWithoutEmail": "添加后即可直接在雷达中查看。",
+            "symbolLabel": "个股",
+            "symbolPlaceholder": "股票代码或公司名称(例如:PLTR、Palantir)"
         }
     },
     "shared": {
@@ -5140,6 +5163,7 @@
                 "benchmarkLink": "基准测试",
                 "developersLink": "开发者 API",
                 "guideLink": "图表指南",
+                "radarLink": "个股雷达",
                 "symbolsLink": "热门标的"
             },
             "Header": {
