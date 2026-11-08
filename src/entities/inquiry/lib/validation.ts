@@ -5,9 +5,8 @@ import type {
 } from '@/shared/lib/types';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
-    CONTACT_EMAIL_MAX_LENGTH,
-    CONTACT_EMAIL_PATTERN,
     CONTACT_TITLE_MAX_LENGTH,
+    isValidContactEmail,
 } from './constants';
 
 /** 검증을 통과한 trim된 입력값. */
@@ -43,10 +42,7 @@ export function validateContactInput(raw: ContactFormValues): ValidationResult {
     if (email.length === 0) {
         return failure('email_required', 'email');
     }
-    if (
-        email.length > CONTACT_EMAIL_MAX_LENGTH ||
-        !CONTACT_EMAIL_PATTERN.test(email)
-    ) {
+    if (!isValidContactEmail(email)) {
         return failure('email_invalid', 'email');
     }
     if (content.length === 0) {

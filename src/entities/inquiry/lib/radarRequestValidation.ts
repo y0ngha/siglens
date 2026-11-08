@@ -1,6 +1,6 @@
 import { RADAR_REQUEST_SYMBOL_MAX_LENGTH } from '@/shared/config/radar';
 import type { ContactInput } from '../api';
-import { CONTACT_EMAIL_MAX_LENGTH, CONTACT_EMAIL_PATTERN } from './constants';
+import { isValidContactEmail } from './constants';
 import type {
     RadarRequestError,
     RadarRequestField,
@@ -46,11 +46,7 @@ export function validateRadarRequestInput(
     if (symbol.length > RADAR_REQUEST_SYMBOL_MAX_LENGTH) {
         return failure('symbol_too_long', 'symbol');
     }
-    if (
-        email.length > 0 &&
-        (email.length > CONTACT_EMAIL_MAX_LENGTH ||
-            !CONTACT_EMAIL_PATTERN.test(email))
-    ) {
+    if (email.length > 0 && !isValidContactEmail(email)) {
         return failure('email_invalid', 'email');
     }
 

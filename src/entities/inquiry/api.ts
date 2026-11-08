@@ -3,7 +3,7 @@ import { inquiries } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
-/** 문의 레코드 생성 입력. `submitContactAction`이 검증·trim한 값을 넘긴다. */
+/** 문의 레코드 생성 입력. 문의·종목 요청 액션이 검증·trim한 값을 넘긴다. */
 export interface ContactInput {
     /** 문의 제목. */
     title: string;
@@ -19,7 +19,7 @@ export interface ContactRepository {
     create(input: ContactInput): Promise<void>;
 }
 
-/** Drizzle 기반 {@link ContactRepository} 구현. `submitContactAction`이 요청마다 생성한다. */
+/** Drizzle 기반 {@link ContactRepository} 구현. 문의·종목 요청 액션이 요청마다 생성한다. */
 export class DrizzleContactRepository implements ContactRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
