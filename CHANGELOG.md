@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.117.1](https://github.com/y0ngha/siglens/compare/v0.117.0...v0.117.1) (2026-11-08)
+
+### Bug Fixes
+
+* **seo:** 펀더멘털 증자 공시 사실은 희석 신호 종류만 센다 ([#1283](https://github.com/y0ngha/siglens/issues/1283)) ([fd735f7](https://github.com/y0ngha/siglens/commit/fd735f72ae80f2d070b514221d0659eebd5e91e6))
+
 # [0.117.0](https://github.com/y0ngha/siglens/compare/v0.116.2...v0.117.0) (2026-11-07)
 
 ### Features
