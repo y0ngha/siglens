@@ -354,7 +354,7 @@ describe('DrizzleEarningsReportsRepository', () => {
             );
         });
 
-        it('프로바이더가 추정일이라고 표시한 일정(yahoo isEstimate=true)은 분석 경로에 넘기지 않는다', async () => {
+        it('프로바이더 추정일(yahoo isEstimate=true)도 분석 경로에 넘기되 dateConfirmed:false를 싣는다', async () => {
             const { db } = makeSelectLimitDb([
                 { ...upcomingRow, rawPayload: { isEstimate: true } },
             ]);
@@ -362,21 +362,26 @@ describe('DrizzleEarningsReportsRepository', () => {
 
             await expect(
                 repo.getNextForSymbol('AAPL', '2026-05-25')
-            ).resolves.toBeNull();
+            ).resolves.toEqual(
+                expect.objectContaining({
+                    earningsDate: '2026-07-30',
+                    dateConfirmed: false,
+                })
+            );
         });
 
-        it('확정일(isEstimate=false)과 확정 여부를 모르는 FMP 행은 분석 경로에 넘긴다', async () => {
+        it('확정일(isEstimate=false)과 확정 여부를 모르는 FMP 행은 dateConfirmed 없이 넘긴다(기존 캐시 키 유지)', async () => {
             for (const rawPayload of [{ isEstimate: false }, {}]) {
                 const { db } = makeSelectLimitDb([
                     { ...upcomingRow, rawPayload },
                 ]);
                 const repo = new DrizzleEarningsReportsRepository(db);
 
-                await expect(
-                    repo.getNextForSymbol('AAPL', '2026-05-25')
-                ).resolves.toEqual(
+                const item = await repo.getNextForSymbol('AAPL', '2026-05-25');
+                expect(item).toEqual(
                     expect.objectContaining({ earningsDate: '2026-07-30' })
                 );
+                expect(item).not.toHaveProperty('dateConfirmed');
             }
         });
 

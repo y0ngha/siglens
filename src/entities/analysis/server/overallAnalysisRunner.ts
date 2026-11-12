@@ -14,6 +14,7 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -293,6 +294,8 @@ export async function executeOverallAnalysis({
         // 켜지는 경우는 생성 한도 초과 강등뿐이다(`cacheOnly` JSDoc).
         skipEnqueueIfMiss: options.cacheOnly === true,
         assetClass,
+        // 뉴스 축으로 그대로 간다 — 단독 뉴스 분석과 같은 값이어야 같은 키에 같은 글이 쌓인다.
+        instrumentKind: newsInstrumentKindFor(symbol, companyName),
         // core는 통화를 심볼에서 추론하지 않는다 — 시장 프로필이 소유한 값을 넘긴다.
         currency: descriptor.priceFormat.currency,
         // technical 탭·프리웜과 같은 호가 표 — core 캐시 키에 접히지 않는다.

@@ -18,10 +18,14 @@ export interface EarningsReportUpsertInput {
  * `dateConfirmed`는 프로바이더가 확정 여부를 알려 줄 때만 boolean이다 — yahoo(KR)는
  * `calendarEvents.earnings.isEarningsDateEstimate`를 `rawPayload.isEstimate`로 남기고,
  * FMP `/stable/earnings`는 확정 플래그도 발표 시각(장전·장후)도 주지 않아 `null`이다.
- * core의 `EarningsCalendarItem`을 넓히지 않고 siglens 쪽에서만 붙인다 — 분석 경로
- * (`getNextEarningsReport`)가 core에 넘기는 모양은 그대로 둔다.
+ * core `EarningsCalendarItem.dateConfirmed`(선택, `false`만 의미 있음)와 달리 여기서는 "모름"을
+ * `null`로 명시한다 — 에이전트 도구가 세 경우를 구분해 말한다. core로 넘길 때는 `toCalendarItem`이
+ * `false`만 남긴다.
  */
-export interface NextEarningsSchedule extends EarningsCalendarItem {
+export interface NextEarningsSchedule extends Omit<
+    EarningsCalendarItem,
+    'dateConfirmed'
+> {
     dateConfirmed: boolean | null;
 }
 

@@ -117,6 +117,22 @@ beforeEach(() => {
     vi.mocked(listEarningsDates).mockResolvedValue(undefined);
 });
 
+describe('executeOverallAnalysis — 뉴스 축 instrumentKind', () => {
+    it.each([
+        ['AAPL', 'Apple', 'company'],
+        ['SPY', 'SPDR S&P 500 ETF Trust', 'fund'],
+    ] as const)('%s → %s', async (symbol, companyName, kind) => {
+        await executeOverallAnalysis({
+            ...base,
+            symbol,
+            companyName,
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+        expect(callFor(BYOK_MODEL)?.instrumentKind).toBe(kind);
+    });
+});
+
 describe('executeOverallAnalysis — 실적 발표일(earningsDates) 주입', () => {
     it('실적 갱신 뒤 DB에서 읽은 발표일을 technical 축 earningsDates로 넘긴다', async () => {
         const dates = ['2026-07-30', '2026-10-29'];

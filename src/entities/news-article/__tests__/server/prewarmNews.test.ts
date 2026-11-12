@@ -204,6 +204,18 @@ describe('prewarmNews', () => {
         );
     });
 
+    it('forwards instrumentKind from the same classifier as the visitor path', async () => {
+        await prewarmNews('SPY', 'SPDR S&P 500 ETF Trust', false);
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ instrumentKind: 'fund' })
+        );
+
+        await prewarmNews('AAPL', 'Apple', false);
+        expect(mockRunNewsAnalysis).toHaveBeenLastCalledWith(
+            expect.objectContaining({ instrumentKind: 'company' })
+        );
+    });
+
     it('forwards currency: "KRW" when resolveMarketProfile resolves to kr-equity', async () => {
         mockResolveMarketProfile.mockResolvedValueOnce('kr-equity');
 

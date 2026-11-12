@@ -42,7 +42,8 @@ export async function getNextEarningsReport(
 
 /**
  * {@link getNextEarningsReport}와 같은 갱신 뒤, 확정 여부(`dateConfirmed`)까지 붙여 읽는다.
- * 에이전트 도구(`get_fundamentals`)용 — 분석 경로는 core 모양 그대로인 위 함수를 쓴다.
+ * 에이전트 도구(`get_fundamentals`)용 — "모름"(`null`)까지 구분해 말한다. 분석 경로는 추정일에만
+ * `dateConfirmed: false`를 싣는 위 함수를 쓴다.
  */
 export async function getNextEarningsSchedule(
     symbol: string,

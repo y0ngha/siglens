@@ -100,6 +100,25 @@ describe('executeNewsAnalysis', () => {
         expect(getCurrentUser).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ['AAPL', 'Apple', 'company'],
+        ['SPY', 'SPDR S&P 500 ETF Trust', 'fund'],
+    ] as const)(
+        '%s는 instrumentKind %s로 core에 넘긴다',
+        async (symbol, companyName, kind) => {
+            await executeNewsAnalysis({
+                ...base,
+                symbol,
+                companyName,
+                caller: { userId: null, tier: 'free' },
+                modelId: BYOK_MODEL,
+            });
+            expect(mockRun).toHaveBeenCalledWith(
+                expect.objectContaining({ instrumentKind: kind })
+            );
+        }
+    );
+
     it('cacheOnly 확인 호출은 키 없이 byok-only로 보내고 skipEnqueueIfMiss를 켠다', async () => {
         await executeNewsAnalysis({
             ...base,
