@@ -1,5 +1,13 @@
 # Changelog
 
+# [0.118.0](https://github.com/y0ngha/siglens/compare/v0.117.1...v0.118.0) (2026-11-12)
+
+### Features
+
+* **home:** 홈과 푸터에 종목 레이더(BETA) 진입점과 종목 요청 모달을 둔다 ([#1286](https://github.com/y0ngha/siglens/issues/1286)) ([80277c4](https://github.com/y0ngha/siglens/commit/80277c4863b14cef1b54d9beff4ce9751153f979))
+* **news:** siglens-core 2.32.0 — 미확정 실적일과 ETF 구분을 뉴스 분석에 넘긴다 ([#1288](https://github.com/y0ngha/siglens/issues/1288)) ([6148d0c](https://github.com/y0ngha/siglens/commit/6148d0c30662089dc6ddcac58d88c1d9c9a4b14d))
+* VOC 별점 모달과 AI 응답 👍/👎 피드백, 문의 운영자 메일 알림 ([#1285](https://github.com/y0ngha/siglens/issues/1285)) ([#1287](https://github.com/y0ngha/siglens/issues/1287)) ([b9fbf55](https://github.com/y0ngha/siglens/commit/b9fbf55ca23576a76e32ca684f39d55a86831d01))
+
 ## [0.117.1](https://github.com/y0ngha/siglens/compare/v0.117.0...v0.117.1) (2026-11-08)
 
 ### Bug Fixes
