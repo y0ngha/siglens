@@ -9,6 +9,7 @@ import {
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
@@ -189,6 +190,8 @@ export async function prewarmNews(
         providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         assetClass: descriptor.assetClass,
+        // 방문자 뉴스 경로와 같은 판정 — 'fund'는 core 뉴스 캐시 키에 들어간다.
+        instrumentKind: newsInstrumentKindFor(symbol, companyName),
         // 방문자 경로(submitNewsAnalysisAction)와 같은 값을 넘겨야 prewarm이 채운
         // 캐시의 산출 텍스트가 갈리지 않는다.
         currency: descriptor.priceFormat.currency,

@@ -94,7 +94,7 @@ describe('getNextEarningsReport', () => {
         vi.restoreAllMocks();
     });
 
-    it('한국 종목에 추정 실적일(yahoo isEstimate)만 있으면 분석 경로는 다음 실적일 없음(null)으로 받고, 에이전트 경로는 추정 표시와 함께 받는다', async () => {
+    it('한국 종목에 추정 실적일(yahoo isEstimate)만 있으면 분석 경로는 dateConfirmed:false로, 에이전트 경로는 추정 표시와 함께 받는다', async () => {
         getLatestFetchedAt.mockResolvedValue(new Date(Date.now() - 1000));
         const estimated = {
             symbol: '005930.KS',
@@ -111,9 +111,10 @@ describe('getNextEarningsReport', () => {
             'getNextScheduleForSymbol'
         ).mockResolvedValue(estimated);
 
+        const { dateConfirmed: _schedule, ...calendarFields } = estimated;
         await expect(
             getNextEarningsReport('005930.KS', fakeDb)
-        ).resolves.toBeNull();
+        ).resolves.toEqual({ ...calendarFields, dateConfirmed: false });
         await expect(
             getNextEarningsSchedule('005930.KS', fakeDb)
         ).resolves.toEqual(estimated);

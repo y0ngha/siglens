@@ -18,6 +18,7 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import {
     currencyForSymbol,
@@ -458,6 +459,8 @@ export async function prewarmOverall(
         providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         assetClass,
+        // 뉴스 축 — 방문자 종합·뉴스 경로와 같은 판정.
+        instrumentKind: newsInstrumentKindFor(symbol, companyName),
         currency: descriptor.priceFormat.currency,
         // 방문자 경로와 같은 호가 표 — core 캐시 키에 접히지 않는다.
         krxTickTable,

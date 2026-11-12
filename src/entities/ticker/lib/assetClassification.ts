@@ -1,5 +1,6 @@
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { type AssetClass } from '@/shared/config/marketProfile/types';
+import type { NewsInstrumentKind } from '@y0ngha/siglens-core';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 
 /**
@@ -264,4 +265,24 @@ function toSchemaTickerSymbol(symbol: string): string {
     const upper = symbol.toUpperCase();
     if (!isKrEquitySymbol(upper)) return upper;
     return `KRX:${upper.replace(KR_EXCHANGE_SUFFIX_RE, '')}`;
+}
+
+/**
+ * 뉴스 분석 프롬프트의 상품 종류(core `NewsInstrumentKind`). ETF·지수로 분류되면 `'fund'`다 —
+ * 펀드는 실적 발표·회사 일정이 없어 다가오는 일정이 매크로 발표 위주가 되므로, core는 펀드
+ * 프레이밍으로 쓰고 매크로를 2개까지 허용한다(회사는 기사가 연결한 1개까지).
+ *
+ * 입력은 뉴스 경로 네 곳(뉴스 탭·뉴스 프리웜·종합 분석·종합 프리웜)이 모두 이미 쥔 `symbol`과
+ * `companyName`뿐이다. core는 `'fund'`를 뉴스 캐시 키에 접으므로, 네 경로가 같은 함수로 같은
+ * 값을 내야 프리웜이 구운 글을 방문자 요청이 같은 키로 맞힌다.
+ * `fmpSymbol`이 없어 `^` 지수 판정은 심볼 자체가 `^`로 시작할 때만 된다.
+ */
+export function newsInstrumentKindFor(
+    symbol: string,
+    companyName: string
+): NewsInstrumentKind {
+    const fmpSymbol = symbol.startsWith('^') ? symbol : undefined;
+    return classifyAsset(symbol, fmpSymbol, companyName) === 'stock'
+        ? 'company'
+        : 'fund';
 }

@@ -816,6 +816,14 @@ describe('prewarmOverall', () => {
         expect(call![0].technical?.earningsDates).toBe(dates);
     });
 
+    it('뉴스 축에 넘길 instrumentKind를 방문자 경로와 같은 분류기로 정한다', async () => {
+        await prewarmOverall('SPY', 'SPDR S&P 500 ETF Trust', false);
+        const call = mockRunOverallAnalysis.mock.calls.find(
+            c => c[0].symbol === 'SPY'
+        );
+        expect(call![0].instrumentKind).toBe('fund');
+    });
+
     it('실적 발표일을 못 구하면(undefined) 종합 분석은 그대로 진행되고 technical 축 earningsDates는 비어 있다', async () => {
         vi.mocked(listEarningsDates).mockResolvedValue(undefined);
 

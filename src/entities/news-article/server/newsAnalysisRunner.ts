@@ -11,6 +11,7 @@ import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveReasoning } from '@/shared/lib/byokGate';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     resolveCallerKeyOptions,
@@ -91,6 +92,8 @@ export async function executeNewsAnalysis({
         // 실행 게이트(첫 입력 전 조회)에서 온다.
         skipEnqueueIfMiss: cacheOnly,
         assetClass,
+        // 펀드(ETF·지수)는 매크로 위주 일정 — 네 뉴스 경로가 같은 함수로 내야 같은 캐시 키를 쓴다.
+        instrumentKind: newsInstrumentKindFor(symbol, companyName),
         // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
         currency: descriptor.priceFormat.currency,
         signal,

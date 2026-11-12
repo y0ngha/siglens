@@ -105,20 +105,18 @@ export class DrizzleEarningsReportsRepository {
      * Next upcoming (or same-day) earnings entry for `symbol` on/after `fromDate` (ISO date) where no actual
      * values have been reported yet; `null` when none — **분석 경로 전용**(`getNextEarningsReport`).
      *
-     * ⚠️ 프로바이더가 **추정일**이라고 표시한 일정(`dateConfirmed === false`, yahoo `isEarningsDateEstimate`)은
-     * `null`로 뺀다. core에 넘기는 `EarningsCalendarItem`에는 확정 여부를 실을 자리가 없어서, 그대로 넘기면
-     * 분석·뉴스 프롬프트가 yahoo 추정일을 확정된 실적일처럼 쓴다("N일 뒤 실적 발표"). 일정이 없는 것으로
-     * 두는 쪽이 틀린 확정보다 낫다. 확정 여부를 모르는 행(FMP, `null`)은 지금까지처럼 넘긴다 — 미국 종목의
-     * 실적일은 전부 이 경우라 빼면 분석에서 실적 맥락이 통째로 사라진다. 에이전트 도구는 확정 여부를 함께
-     * 말할 수 있으므로 {@link getNextScheduleForSymbol}로 추정일까지 받는다.
+     * 프로바이더가 **추정일**이라고 표시한 일정(`dateConfirmed === false`, yahoo `isEarningsDateEstimate`)도
+     * 넘기되 `dateConfirmed: false`를 싣는다(`toCalendarItem`). core(2.32.0~)가 그 행에 추정일 표식을 달고
+     * 프롬프트가 "예정(미확정)"으로 쓰게 한다. 예전에는 실을 자리가 없어 `null`로 뺐는데, 그러면 국내 종목은
+     * 다음 실적일이 늘 추정치라 뉴스 탭 다가오는 일정에 실적이 한 번도 나가지 않았다(2026-11 운영: 삼성전자·
+     * SK하이닉스가 일반 CPI 불릿만 받았다). 이 행을 받는 곳은 뉴스 분석과 종합 분석의 뉴스 축뿐이다.
      */
     async getNextForSymbol(
         symbol: string,
         fromDate: string
     ): Promise<EarningsCalendarItem | null> {
         const schedule = await this.getNextScheduleForSymbol(symbol, fromDate);
-        if (schedule === null || schedule.dateConfirmed === false) return null;
-        return toCalendarItem(schedule);
+        return schedule === null ? null : toCalendarItem(schedule);
     }
 
     /**
