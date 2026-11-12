@@ -1,6 +1,6 @@
+import type { NewsInstrumentKind } from '@y0ngha/siglens-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { type AssetClass } from '@/shared/config/marketProfile/types';
-import type { NewsInstrumentKind } from '@y0ngha/siglens-core';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 
 /**
