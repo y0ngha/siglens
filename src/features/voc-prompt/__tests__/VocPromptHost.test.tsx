@@ -3,6 +3,7 @@ vi.mock('@/entities/feedback/actions/submitVocFeedbackAction', () => ({
 }));
 
 import { act, render, screen } from '@testing-library/react';
+import type { VocTrigger } from '@/entities/feedback/types';
 import { publishAgentTurnCompleted } from '@/shared/lib/agentTurnCompletedSignal';
 import {
     LOCAL_STORAGE_VOC_PROMPT_STATE_KEY,
@@ -11,6 +12,7 @@ import {
 import {
     VOC_PROMPT_COOLDOWN_MS,
     VOC_PROMPT_POLICY,
+    type VocPromptSurface,
 } from '@/shared/lib/vocPromptStorage';
 import { hasNudgeShownThisSession } from '@/shared/lib/nudgeSession';
 import {
@@ -98,6 +100,12 @@ describe('VocPromptHost', () => {
         localStorage.clear();
         sessionStorage.clear();
         document.body.querySelectorAll('input').forEach(el => el.remove());
+    });
+
+    // shared는 entities를 import할 수 없어 같은 값 집합을 두 곳에 정의한다. 한쪽에만 값이 늘면
+    // 여기서 타입 검사가 실패한다.
+    it('모달을 띄운 계기(VocTrigger)와 이용 기록의 사이트 구분(VocPromptSurface)은 같은 집합이다', () => {
+        expectTypeOf<VocTrigger>().toEqualTypeOf<VocPromptSurface>();
     });
 
     describe('siglens.io (analysis)', () => {
