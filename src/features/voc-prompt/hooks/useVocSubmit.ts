@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { submitVocFeedbackAction } from '@/entities/feedback/actions/submitVocFeedbackAction';
 import type { FeedbackSurface, VocTrigger } from '@/entities/feedback/types';
+import { markVocSubmitted } from '@/shared/lib/vocPromptStorage';
 
 export type VocSubmitStatus = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -19,7 +20,8 @@ const SURFACE_OF_TRIGGER: Record<VocTrigger, FeedbackSurface> = {
 
 /**
  * VOC 별점 전송. 실패하면 모달을 닫지 않고 `error`로 두어 같은 입력으로 다시 보낼 수 있게 한다 -
- * 별점을 고르고 적은 의견이 한 번의 네트워크 오류로 사라지면 안 된다.
+ * 별점을 고르고 적은 의견이 한 번의 네트워크 오류로 사라지면 안 된다. 전송에 성공하면 이
+ * 브라우저에 "보냈다"를 적어 모달이 다시 뜨지 않게 한다.
  */
 export function useVocSubmit(trigger: VocTrigger): UseVocSubmitResult {
     const [status, setStatus] = useState<VocSubmitStatus>('idle');
@@ -37,6 +39,8 @@ export function useVocSubmit(trigger: VocTrigger): UseVocSubmitResult {
                 // 쿼리 문자열을 뺀 경로만 보낸다.
                 pagePath: window.location.pathname,
             });
+            // 별점을 받았으면 다시 묻지 않는다. 닫기만 한 방문자는 나중에 한 번 더 묻는다.
+            if (result.ok) markVocSubmitted();
             setStatus(result.ok ? 'sent' : 'error');
         } catch {
             setStatus('error');

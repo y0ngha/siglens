@@ -15,7 +15,7 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
-import { isVocPromptPending } from '@/shared/lib/vocPromptStorage';
+import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
 
 vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
@@ -35,10 +35,10 @@ vi.mock('@/shared/lib/nudgeSession', () => ({
 }));
 
 vi.mock('@/shared/lib/vocPromptStorage', () => ({
-    isVocPromptPending: vi.fn(),
+    isVocPromptDue: vi.fn(),
 }));
 
-const mockVocPending = vi.mocked(isVocPromptPending);
+const mockVocDue = vi.mocked(isVocPromptDue);
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockRecord = vi.mocked(recordAnonSymbolAnalysis);
 const mockHasShown = vi.mocked(hasNudgeShownToday);
@@ -77,8 +77,8 @@ describe('useAnonAnalysisNudge', () => {
         mockNextVariant.mockReset();
         mockSessionShown.mockReset();
         mockMarkSession.mockReset();
-        mockVocPending.mockReset();
-        mockVocPending.mockReturnValue(false);
+        mockVocDue.mockReset();
+        mockVocDue.mockReturnValue(false);
         mockHasShown.mockReturnValue(false);
         mockSessionShown.mockReturnValue(false);
         mockNextVariant.mockReturnValue('emailReport');
@@ -203,9 +203,9 @@ describe('useAnonAnalysisNudge', () => {
     });
 
     describe('yielding to the VOC rating modal', () => {
-        it('does not count, mark or open anything while the VOC prompt is still pending', () => {
+        it('does not count, mark or open anything on the analysis that makes the VOC prompt due', () => {
             mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
-            mockVocPending.mockReturnValue(true);
+            mockVocDue.mockReturnValue(true);
             mockRecord.mockReturnValue({
                 distinctCount: 1,
                 crossedThreshold: true,
@@ -218,13 +218,14 @@ describe('useAnonAnalysisNudge', () => {
                 result.current.onSymbolAnalyzed('NVDA');
             });
 
+            expect(mockVocDue).toHaveBeenCalledWith('analysis', 'NVDA');
             expect(mockRecord).not.toHaveBeenCalled();
             expect(openNudge).not.toHaveBeenCalled();
             expect(mockMarkShown).not.toHaveBeenCalled();
             expect(mockMarkSession).not.toHaveBeenCalled();
         });
 
-        it('fires the deferred nudge on a later analysis once the VOC prompt is no longer pending', () => {
+        it('fires the deferred nudge on a later analysis once the VOC prompt is no longer due', () => {
             mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
             // The deferred nudge's own threshold crossing already happened on the
             // yielded call, so this later call reports crossedThreshold: false.
@@ -232,7 +233,7 @@ describe('useAnonAnalysisNudge', () => {
                 distinctCount: 2,
                 crossedThreshold: false,
             });
-            mockVocPending.mockReturnValue(true);
+            mockVocDue.mockReturnValue(true);
 
             const { result } = renderHook(() =>
                 useAnonAnalysisNudge(openNudge)
@@ -242,7 +243,7 @@ describe('useAnonAnalysisNudge', () => {
             });
             expect(openNudge).not.toHaveBeenCalled();
 
-            mockVocPending.mockReturnValue(false);
+            mockVocDue.mockReturnValue(false);
             act(() => {
                 result.current.onSymbolAnalyzed('AAPL');
             });

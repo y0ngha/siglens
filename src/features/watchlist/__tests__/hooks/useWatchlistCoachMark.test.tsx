@@ -4,7 +4,7 @@ vi.mock('@/shared/lib/nudgeSession', () => ({
 }));
 
 vi.mock('@/shared/lib/vocPromptStorage', () => ({
-    isVocPromptPending: vi.fn(() => false),
+    isVocPromptDue: vi.fn(() => false),
 }));
 
 import { act, renderHook } from '@testing-library/react';
@@ -13,20 +13,20 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
-import { isVocPromptPending } from '@/shared/lib/vocPromptStorage';
+import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
 import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
 import { LOCAL_STORAGE_WATCHLIST_COACH_SEEN_KEY } from '@/shared/lib/storageKeys';
 
 const mockSessionShown = vi.mocked(hasNudgeShownThisSession);
 const mockMarkSession = vi.mocked(markNudgeShownThisSession);
-const mockVocPending = vi.mocked(isVocPromptPending);
+const mockVocDue = vi.mocked(isVocPromptDue);
 
 describe('useWatchlistCoachMark', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
         mockSessionShown.mockReturnValue(false);
-        mockVocPending.mockReturnValue(false);
+        mockVocDue.mockReturnValue(false);
     });
 
     it('분석 렌더 신호 전에는 보이지 않는다', () => {
@@ -75,12 +75,13 @@ describe('useWatchlistCoachMark', () => {
         ).toBeNull();
     });
 
-    it('VOC 별점 모달이 대기 중이면 구독 순서와 무관하게 양보하고 세션 플래그도 건드리지 않는다', () => {
-        mockVocPending.mockReturnValue(true);
+    it('이 신호로 VOC 별점 모달이 물어볼 때가 되면 구독 순서와 무관하게 양보하고 세션 플래그도 건드리지 않는다', () => {
+        mockVocDue.mockReturnValue(true);
         const { result } = renderHook(() =>
             useWatchlistCoachMark({ enabled: true })
         );
         act(() => publishSymbolAnalyzed('AAPL'));
+        expect(mockVocDue).toHaveBeenCalledWith('analysis', 'AAPL');
         expect(result.current.visible).toBe(false);
         expect(mockMarkSession).not.toHaveBeenCalled();
         expect(

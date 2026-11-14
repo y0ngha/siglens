@@ -69,7 +69,7 @@ export function AiAppProviders({
                                 authReturn="ai"
                                 hideOnScrollDown
                             />
-                            {/* 첫 답변이 끝난 직후 별점 모달을 한 번 띄운다. 점검 중엔 채팅이 없어 두지 않는다. */}
+                            {/* 답변을 여러 번 받았거나 다른 날 다시 온 방문자에게 별점 모달을 띄운다. 점검 중엔 채팅이 없어 두지 않는다. */}
                             {disabled ? null : (
                                 <VocPromptHost trigger="agent_chat" />
                             )}

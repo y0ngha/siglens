@@ -126,7 +126,7 @@ export function ChatSession({
         conversationId,
         initialMessages,
         guest: !signedIn,
-        // 첫 AI 경험 직후 별점 모달(VOC)을 여는 신호. 호스트는 채팅 트리 밖에 있다.
+        // 별점 모달(VOC)이 이용 횟수를 세는 신호. 호스트는 채팅 트리 밖에 있다.
         onTurnComplete: publishAgentTurnCompleted,
         onConversationCreated: (id, title) => {
             window.history.replaceState(null, '', `${localePrefix}/c/${id}`);

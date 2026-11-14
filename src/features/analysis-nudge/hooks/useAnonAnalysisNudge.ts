@@ -14,7 +14,7 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
-import { isVocPromptPending } from '@/shared/lib/vocPromptStorage';
+import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
 
 /** Return value of {@link useAnonAnalysisNudge}. */
 export interface UseAnonAnalysisNudgeResult {
@@ -52,15 +52,17 @@ export interface UseAnonAnalysisNudgeResult {
  * exist purely to solicit signup, so a logged-in user has nothing to gain
  * from either.
  *
- * **Yields to the VOC rating modal.** While `isVocPromptPending()` the hook
- * returns before counting, marking anything shown or opening — the first AI
- * experience belongs to the VOC prompt (`features/voc-prompt`), and two modals
- * back to back would be a worse first impression than either alone. Because
- * the yield happens on the very call that would have crossed the threshold,
+ * **Yields to the VOC rating modal.** When this analysis is the one that makes
+ * the VOC prompt due (`isVocPromptDue` - the visitor has used the service
+ * enough to be asked for a rating, see `shared/lib/vocPromptStorage.ts`) the
+ * hook returns before counting, marking anything shown or opening: that
+ * session's single modal slot belongs to the VOC prompt (`features/voc-prompt`),
+ * and two modals back to back would be worse than either alone. Because
+ * the yield can happen on the very call that would have crossed the threshold,
  * the decision uses `distinctCount >= threshold` rather than the one-shot
- * `crossedThreshold`: a later analysis (next session, after the VOC prompt has
- * been shown) must still be able to open the nudge that was deferred. The
- * once-per-day and once-per-session caps below keep that from nagging.
+ * `crossedThreshold`: a later analysis (after the VOC prompt has been shown)
+ * must still be able to open the nudge that was deferred. The once-per-day and
+ * once-per-session caps below keep that from nagging.
  *
  * The modal's open-state and the single modal instance are NOT owned here.
  * They live in `SymbolModelProvider` so the auto-nudge (this hook) and the
@@ -90,7 +92,7 @@ export function useAnonAnalysisNudge(
     const onSymbolAnalyzed = useCallback(
         (symbol: string): void => {
             if (!isAnonymous) return;
-            if (isVocPromptPending()) return;
+            if (isVocPromptDue('analysis', symbol)) return;
 
             const { distinctCount } = recordAnonSymbolAnalysis(symbol);
             if (distinctCount < ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD) return;

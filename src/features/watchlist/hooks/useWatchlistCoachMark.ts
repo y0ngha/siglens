@@ -6,7 +6,7 @@ import {
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
 import { subscribeSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
-import { isVocPromptPending } from '@/shared/lib/vocPromptStorage';
+import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
 import {
     hasSeenWatchlistCoachMark,
     markWatchlistCoachMarkSeen,
@@ -28,9 +28,9 @@ export interface UseWatchlistCoachMarkResult {
  * 종목 헤더 ☆ 아래 1회 말풍선. 차트 탭이 분석을 그린 뒤(`publishSymbolAnalyzed`) 뜨고,
  * 넛지 모달과 같은 탭 세션에 겹치지 않도록 `nudgeSession` 플래그를 **공유**한다 — 모달이
  * 먼저 떴으면 코치 마크는 다음 세션이고, 코치 마크가 먼저 떴으면 모달이 다음 세션이다.
- * **VOC 별점 모달에 양보한다.** `isVocPromptPending()`인 동안은 신호를 무시한다 - VOC 호스트가
- * 같은 신호에 세션 플래그를 선점하므로, 구독 순서와 무관하게 첫 세션의 슬롯은 VOC가 갖고 코치
- * 마크는 다음 세션으로 간다(`useAnonAnalysisNudge`와 같은 규칙).
+ * **VOC 별점 모달에 양보한다.** 이 신호로 VOC가 물어볼 때가 되면(`isVocPromptDue`) 신호를
+ * 무시한다 - VOC 호스트가 같은 신호에 세션 플래그를 선점하므로, 구독 순서와 무관하게 그 세션의
+ * 슬롯은 VOC가 갖고 코치 마크는 다음 세션으로 간다(`useAnonAnalysisNudge`와 같은 규칙).
  * 구독 콜백 안의 `setState`는 EF-1이 허용하는 경로다.
  */
 export function useWatchlistCoachMark({
@@ -45,11 +45,11 @@ export function useWatchlistCoachMark({
 
     useEffect(() => {
         if (!enabled) return;
-        return subscribeSymbolAnalyzed(() => {
+        return subscribeSymbolAnalyzed(symbol => {
             if (
                 hasSeenWatchlistCoachMark() ||
                 hasNudgeShownThisSession() ||
-                isVocPromptPending()
+                isVocPromptDue('analysis', symbol)
             )
                 return;
             markNudgeShownThisSession();
