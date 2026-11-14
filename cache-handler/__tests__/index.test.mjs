@@ -227,6 +227,99 @@ describe('CacheHandler.get', () => {
     });
 });
 
+describe('CacheHandler.get — noindex degrade 사본', () => {
+    const DEGRADED_CONTROL = { revalidate: 300, expire: 31536000 };
+    const degradedPage = ageMs => ({
+        value: { kind: 'APP_PAGE', html: 'degraded' },
+        lastModified: NOW - ageMs,
+        tags: ['symbol:V', 'noindex-degraded-render'],
+        cacheControl: DEGRADED_CONTROL,
+    });
+
+    it('revalidate 창이 지난 degrade 페이지는 stale로 주지 않고 miss다(블로킹 재생성)', async () => {
+        getEntry.mockResolvedValueOnce(degradedPage(301_000));
+        expect(
+            await new CacheHandler({}).get('/V/fundamental', {
+                kind: 'APP_PAGE',
+            })
+        ).toBeNull();
+    });
+
+    it('창 안의 degrade 페이지는 그대로 hit이다', async () => {
+        const page = degradedPage(60_000);
+        getEntry.mockResolvedValueOnce(page);
+        expect(
+            await new CacheHandler({}).get('/V/fundamental', {
+                kind: 'APP_PAGE',
+            })
+        ).toEqual({
+            lastModified: page.lastModified,
+            value: page.value,
+            cacheControl: DEGRADED_CONTROL,
+        });
+    });
+
+    it('degrade 태그가 없는 페이지는 창이 지나도 hit이다 — 정상 사본의 SWR 유지', async () => {
+        const page = { ...degradedPage(301_000), tags: ['symbol:V'] };
+        getEntry.mockResolvedValueOnce(page);
+        expect(
+            await new CacheHandler({}).get('/V/fundamental', {
+                kind: 'APP_PAGE',
+            })
+        ).toEqual({
+            lastModified: page.lastModified,
+            value: page.value,
+            cacheControl: DEGRADED_CONTROL,
+        });
+    });
+
+    // 사슬의 가운데 고리: 페이지 태그는 set context가 아니라 캐시 값의 `x-next-cache-tags` 헤더로
+    // 온다. 핸들러가 그 헤더에서 표식을 못 읽으면 get의 판정이 조용히 꺼진다 — Next가 실어 보내는
+    // 모양 그대로 저장한 엔트리를, 창이 지난 시점에 다시 읽어 miss인지 본다.
+    it('헤더로 온 표식 태그가 저장된 엔트리에 남아, 창이 지나면 그 엔트리가 miss가 된다', async () => {
+        const handler = new CacheHandler({});
+        await handler.set(
+            '/V/fundamental',
+            {
+                kind: 'APP_PAGE',
+                html: 'degraded',
+                headers: {
+                    'x-next-cache-tags':
+                        '_N_T_/V/fundamental,symbol:V,noindex-degraded-render',
+                },
+            },
+            { cacheControl: DEGRADED_CONTROL }
+        );
+        await settleUploads();
+        const [, , stored] = setEntry.mock.calls[0];
+        expect(stored.tags).toContain('noindex-degraded-render');
+        expect(stored.cacheControl).toEqual(DEGRADED_CONTROL);
+
+        // 다른 인스턴스가 S3에서 이 엔트리를 읽는 상황 — 저장 뒤 301초가 지났다.
+        resetPageMem();
+        resetUploads();
+        getEntry.mockResolvedValueOnce({
+            ...stored,
+            lastModified: stored.lastModified - 301_000,
+        });
+        expect(
+            await handler.get('/V/fundamental', { kind: 'APP_PAGE' })
+        ).toBeNull();
+    });
+
+    it('FETCH 엔트리는 태그가 있어도 대상이 아니다 — 데이터 캐시의 stale 값은 마지막 정상값이다', async () => {
+        const pin = {
+            value: { kind: 'FETCH', data: { body: 'true' } },
+            lastModified: NOW - 301_000,
+            tags: ['noindex-degraded-render'],
+        };
+        memGetEntry.mockReturnValueOnce(pin);
+        expect(
+            await new CacheHandler({}).get('pin-key', { kind: 'FETCH' })
+        ).toEqual({ lastModified: pin.lastModified, value: pin.value });
+    });
+});
+
 describe('CacheHandler.set', () => {
     it('작은 FETCH는 S3를 건드리지 않고 메모리에 쓴다', async () => {
         memSetEntry.mockReturnValueOnce(true);

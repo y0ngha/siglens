@@ -32,6 +32,8 @@
 // degrade 섹션은 렌더 revalidate를 5분으로 낮춘다 — 호출 여부만 관찰한다.
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: vi.fn().mockResolvedValue(undefined),
+    // `noindex`로 나가는 degrade 렌더의 표식 — 캐시 핸들러가 창이 지난 사본을 stale로 내보내지 않게 한다.
+    flagNoindexDegradedRender: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
@@ -262,7 +264,10 @@ import {
 } from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    flagNoindexDegradedRender,
+    shortenRevalidateForRuntimeDegrade,
+} from '@/shared/cache/buildDegradedRevalidate';
 import {
     getProfile,
     getProfileDescription,
@@ -343,6 +348,25 @@ describe('Fundamental page ISR empty-cache prevention — top-level guard', () =
         });
         expect(isValidElement(tree)).toBe(true);
         expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+        expect(flagNoindexDegradedRender).not.toHaveBeenCalled();
+    });
+
+    // 2026-11-14 운영 실측: FMP 429로 만들어진 안내문 + noindex 사본이 18시간 뒤 첫 요청까지 캐시에
+    // 남아 크롤러에게 그대로 나갔다. 표식이 있어야 캐시 핸들러가 창이 지난 사본을 miss로 돌린다.
+    it('프로필이 degrade면 안내문을 그리고 noindex degrade 렌더로 표시한다', async () => {
+        mockGetProfileResilient.mockResolvedValueOnce({
+            profile: null,
+            degraded: true,
+        });
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+        });
+
+        expect(isValidElement(tree)).toBe(true);
+        expect(flagNoindexDegradedRender).toHaveBeenCalledTimes(1);
+        // 본문 데이터는 읽지 않는다 — 안내문 분기는 사실 입력원을 때리지 않는다.
+        expect(mockGetFundamentalFacts).not.toHaveBeenCalled();
     });
 
     it('사실 입력이 불완전하면 이 렌더의 revalidate를 낮춘다 — 장애 중 noindex가 12h 굳지 않게', async () => {
@@ -357,6 +381,8 @@ describe('Fundamental page ISR empty-cache prevention — top-level guard', () =
         });
 
         expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+        // 이 렌더는 noindex다(`indexable: false`) — 창이 지난 뒤 stale로도 내보내지 않게 표시한다.
+        expect(flagNoindexDegradedRender).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -471,6 +497,8 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
             );
             // 원문 폴백이 24h 동안 굳지 않게 이 렌더의 revalidate를 낮춘다.
             expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+            // 본문과 색인 상태가 멀쩡한 부분 degrade다 — noindex 표식은 달지 않는다(stale 서빙 유지).
+            expect(flagNoindexDegradedRender).not.toHaveBeenCalled();
             consoleSpy.mockRestore();
         });
 

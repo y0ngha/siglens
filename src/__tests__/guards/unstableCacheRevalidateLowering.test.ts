@@ -9,7 +9,11 @@ await vi.hoisted(async () => {
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    NOINDEX_DEGRADED_RENDER_TAG,
+    flagNoindexDegradedRender,
+    shortenRevalidateForRuntimeDegrade,
+} from '@/shared/cache/buildDegradedRevalidate';
 
 // 전역 셋업(`vitest.setup.base.ts`)이 `next/cache`를 목으로 바꿔 둔다 — 이 가드는 실제 Next 구현을
 // 실행해야 의미가 있으므로 이 파일에서만 되돌린다(`buildDegradedRevalidate`가 실제 `unstable_cache`를 쓴다).
@@ -264,6 +268,30 @@ describe('next unstable_cache — 런타임 ISR 재생성에서의 동작', () =
                 shortenRevalidateForRuntimeDegrade()
             );
 
+            expect(store.revalidate, HINT).toBe(300);
+        });
+
+        it('일반 런타임 degrade 핀은 스토어에 noindex degrade 표식을 남기지 않는다', async () => {
+            const store = legacyStore();
+
+            await runAsIsr(store, null, () =>
+                shortenRevalidateForRuntimeDegrade()
+            );
+
+            // 본문이 멀쩡한 부분 degrade는 stale 서빙을 유지해야 한다 — 표식이 붙으면 캐시 핸들러가
+            // 창이 지난 사본을 miss로 돌려 장애 중 안전망이 사라진다.
+            expect(store.tags ?? []).not.toContain(NOINDEX_DEGRADED_RENDER_TAG);
+        });
+
+        it('flagNoindexDegradedRender는 같은 렌더의 스토어에 표식 태그를 남기고 revalidate를 300으로 낮춘다', async () => {
+            const store = legacyStore();
+
+            await runAsIsr(store, null, () => flagNoindexDegradedRender());
+
+            // 페이지 엔트리 태그가 여기서 나온다. 캐시 핸들러(`cache-handler/degradedEntry.mjs`)가
+            // 이 태그로 창이 지난 `noindex` degrade 사본을 miss로 돌린다. Next가 렌더 중 읽힌
+            // `unstable_cache` 태그를 스토어에 모으지 않게 되면 그 보호가 조용히 꺼진다.
+            expect(store.tags, HINT).toContain(NOINDEX_DEGRADED_RENDER_TAG);
             expect(store.revalidate, HINT).toBe(300);
         });
 

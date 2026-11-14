@@ -240,7 +240,9 @@ export function ChatSession({
                     {sidebar}
                 </SidebarDrawer>
             ) : null}
-            <div className="flex min-w-0 flex-1 flex-col">
+            {/* 대화 영역이 이 문서의 주 콘텐츠다 — `<main>`이 없으면 보조 기술의 "본문으로 건너뛰기"가
+                갈 곳이 없다(대화 목록은 `<aside>`, 사이트 헤더는 `<header>`). */}
+            <main className="flex min-w-0 flex-1 flex-col">
                 <MobileChatBar
                     title={activeTitle}
                     drawerOpen={drawerOpen}
@@ -270,7 +272,7 @@ export function ChatSession({
                     onStop={stream.stop}
                     initialValue={initialDraft}
                 />
-            </div>
+            </main>
         </div>
     );
 }

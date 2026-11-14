@@ -825,6 +825,17 @@ body:has([data-technical-facts='panel']) [data-technical-facts-page-slot] {
 }
 
 /*
+ * 회원은 폰 폭(30rem 미만)에서 헤더 줄의 언어 전환을 숨긴다 — 아바타가 44px 한 칸을 더 써서
+ * 그대로 두면 맨 끝의 햄버거가 화면 밖으로 밀린다(`Header`의 "폭 예산"). 같은 스위처가 드로어에
+ * 있다. 게스트는 아바타가 없어 그대로 둔다.
+ */
+@media (width < 30rem) {
+    :root[data-auth-hint='member'] [data-header-locale] {
+        display: none;
+    }
+}
+
+/*
  * 다른 라우트로 떠나는 중에는 모바일 분석 시트를 감춘다.
  *
  * 루트 pending 슬롯(`RoutePendingSlot`)은 떠나온 페이지를 `hidden`으로 가리고 목적지

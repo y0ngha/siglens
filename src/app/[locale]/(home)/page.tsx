@@ -127,6 +127,7 @@ export default async function Home({ params }: HomeRouteProps) {
         locale,
         title: tSeo('root.title', { v0: brandIntroName(locale) }),
         description: tSeo('root.description'),
+        headline: tSeo('root.headline'),
     });
 
     return (

@@ -2091,8 +2091,8 @@
                     "krDescription": "汇总查看{subject}在韩国金融监督院电子公告(DART)上的5%大额持股报告、高管与主要股东持股变动和交易计划报告，并由AI解读持股动向。"
                 },
                 "fundamental": {
-                    "description": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附分析师一致预期与目标价。",
-                    "descriptionWithSector": "一页汇总{subject}的公司概况、PER/PSR/EPS估值、ROE与利润率、负债与现金流健康度,并附其在{sector}板块中的位置、分析师一致预期与目标价。",
+                    "description": "一页汇总{subject}的公司概况、PER/PSR估值、ROE与利润率、财务健康度,并附分析师一致预期与目标价。",
+                    "descriptionWithSector": "一页汇总{subject}的公司概况、估值、盈利能力、财务健康度,并附其在{sector}板块中的位置、分析师一致预期与目标价。",
                     "titleCore": "基本面",
                     "titleTail": "PER、ROE与一致预期"
                 },

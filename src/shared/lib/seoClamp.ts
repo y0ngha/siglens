@@ -1,4 +1,4 @@
-import { truncateWithEllipsis } from '@/shared/lib/truncate';
+import { truncateAtWordBoundary } from '@/shared/lib/truncate';
 
 /**
  * 한글 SERP description 안전권. Google 한국어 SERP에서 모바일은 ~80자,
@@ -23,16 +23,19 @@ export const SEO_DESCRIPTION_MAX_LENGTH = 120;
 export const SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH = 160;
 
 /**
- * 입력이 SEO_DESCRIPTION_MAX_LENGTH 이하면 그대로, 초과 시 잘라내고 말줄임표(…)를 붙인다.
- * 말줄임표는 1자로 계산해 최종 길이가 항상 SEO_DESCRIPTION_MAX_LENGTH 이하가 되게 한다.
+ * 입력이 SEO_DESCRIPTION_MAX_LENGTH 이하면 그대로, 초과 시 **어절 경계**에서 잘라 말줄임표(…)를
+ * 붙인다. 말줄임표는 1자로 계산해 최종 길이가 항상 SEO_DESCRIPTION_MAX_LENGTH 이하가 되게 한다.
+ *
+ * 예전에는 글자 수만 맞춰 잘라 단어 한가운데서 끊겼다(2026-11-14 운영 크롤: 펀더멘털 탭 279개 중
+ * 269개가 `…목표 주가도 이어 봅니…`로 끝났다 — 템플릿이 흔한 종목명 길이에서 이미 예산을 넘었다).
+ * 이 함수는 **안전망**이다. 템플릿은 흔한 종목명에서 클램프 없이 통과하게 쓰고
+ * (`seo.test.ts`의 "펀더멘털 설명은 잘리지 않는다"), 예외적으로 긴 이름에서만 여기서 잘린다.
  *
  * 길이/슬라이스는 모두 code point 기준으로 처리해 surrogate pair(이모지,
  * supplementary plane 한자 등)가 split되어 invalid UTF-16이 되는 것을 막는다.
  */
 export function clampSeoDescription(text: string): string {
-    return truncateWithEllipsis(text, SEO_DESCRIPTION_MAX_LENGTH, {
-        trimEnd: true,
-    });
+    return truncateAtWordBoundary(text, SEO_DESCRIPTION_MAX_LENGTH);
 }
 
 /**

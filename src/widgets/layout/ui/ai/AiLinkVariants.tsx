@@ -47,11 +47,18 @@ export function AiWordmarkLink({ href, onAiHost, className }: AiLinkProps) {
                 className
             )}
         >
-            AI
+            {/* 뒤의 공백 텍스트 노드는 화면에 그려지지 않는다(flex 컨테이너는 공백뿐인 텍스트를
+                항목으로 만들지 않는다). 없으면 텍스트 내용이 `AIBeta`로 붙어, 접근성 검사기가
+                "보이는 글자가 이름(`SIGLENS AI Beta`)에 들어 있지 않다"로 판정한다(WCAG 2.5.3). */}
+            AI{' '}
             {/* 375px 폰의 로그인 상태 ai 호스트 헤더에는 40px 여유가 없다. 그 폭에서는
                 랜딩의 eyebrow와 입력창 안내가 Beta를 대신 알린다. */}
+            {/* 메인 호스트는 360px 미만에서만 숨긴다 — 그 폭에서는 헤더 한 줄에 태그가 설 자리가
+                없다(`Header`의 "폭 예산"). 드로어의 AI 항목이 Beta를 계속 알린다. */}
             <BetaBadge
-                className={onAiHost ? 'max-[399px]:hidden' : undefined}
+                className={
+                    onAiHost ? 'max-[399px]:hidden' : 'max-[22.5rem]:hidden'
+                }
             />
         </a>
     );
@@ -76,8 +83,8 @@ export function AiPillLink({
                 className
             )}
         >
-            {brandLabel}
-            <BetaBadge className="ml-1.5" />
+            {/* 공백 텍스트 노드 — `AiWordmarkLink`와 같은 이유다. */}
+            {brandLabel} <BetaBadge className="ml-1.5" />
         </a>
     );
 }

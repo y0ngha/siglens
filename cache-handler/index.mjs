@@ -23,6 +23,7 @@ import {
     staleLastModified,
 } from './nextInternals.mjs';
 import { config } from './config.mjs';
+import { isExpiredDegradedEntry } from './degradedEntry.mjs';
 
 // Next 16.2가 set()에 넘기는 페이지 태그 헤더 키.
 // 출처: next/dist/lib/constants.js:275 — NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags'.
@@ -177,6 +178,11 @@ export default class CacheHandler {
             ? await readFetchEntry(cacheKey)
             : await readPageEntry(cacheKey, kind);
         if (!entry) return null;
+        // 창이 지난 `noindex` degrade 사본은 stale로 내보내지 않는다(miss → 블로킹 재생성) —
+        // degradedEntry.mjs 참고. FETCH는 대상이 아니다: 데이터 캐시의 stale 값은 갱신이
+        // 실패했을 때 쓰는 마지막 정상값이라 오히려 지켜야 한다.
+        if (!isFetchKind(kind) && isExpiredDegradedEntry(entry, Date.now()))
+            return null;
         // 재시작으로 Next 메모리에서 사라진 라우트 revalidate/expire를 되살린다.
         // IncrementalCache가 cacheControls를 읽기 전에 해야 같은 요청부터 맞는 판정·
         // Cache-Control이 나간다 — nextInternals.mjs `seedCacheControl` 참고.

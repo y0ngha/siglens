@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { buildHomeJsonLdNodes } from '@/app/[locale]/(home)/_lib/homeJsonLdNodes';
 
-const INPUT = { title: '홈 제목', description: '홈 설명' } as const;
+const INPUT = {
+    title: '홈 제목',
+    description: '홈 설명',
+    headline: '홈 한 구절',
+} as const;
 
 describe('buildHomeJsonLdNodes', () => {
     it('ko WebApplication은 접두사 없는 루트 @id·url과 inLanguage ko를 쓴다', () => {
@@ -55,6 +59,8 @@ describe('buildHomeJsonLdNodes', () => {
             alternateName: '시그렌즈',
             logo: 'https://siglens.io/icon512.png',
             description: '홈 설명',
+            // 동명 프로젝트와 가르는 한 구절 — 서비스 종류를 말하는 헤드라인을 싣는다.
+            disambiguatingDescription: '홈 한 구절',
             founder: {
                 '@type': 'Person',
                 '@id': 'https://siglens.io/about#person',
@@ -111,6 +117,7 @@ describe('buildHomeJsonLdNodes 직렬화 순서', () => {
             'alternateName',
             'logo',
             'description',
+            'disambiguatingDescription',
             'sameAs',
             'founder',
         ]);
