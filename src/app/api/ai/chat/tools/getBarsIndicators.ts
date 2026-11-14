@@ -1,7 +1,9 @@
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
 import {
+    aggregateBarsToMonthly,
     aggregateBarsToWeekly,
+    barPeriodStartSeconds,
     calculateIndicators,
     fearGreedInputs,
     calculateMA,
@@ -15,11 +17,14 @@ import {
     findMaCrosses,
     pullbackEventCaveat,
     getDetectionBars,
+    hasUsablePrices,
     PULLBACK_BASE_RATES,
     rsiZone,
     scoreConfluence,
     selectLastCandlePatternEntries,
+    type AgentBarsTimeframe,
     type Bar,
+    type BarPeriod,
     type BarsData,
     type BollingerResult,
     type CandlePattern,
@@ -70,7 +75,10 @@ import {
 import { logToolDegrade } from './logToolDegrade';
 import { calendarChangeView, type CalendarChangeView } from './calendarChange';
 import { staleKrListingDate } from './freshness';
-import { MS_PER_SECOND } from '@/shared/config/time';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
 import { pctVs, ratioPct } from './percent';
 import {
     resolveAssetInfoOrNull,
@@ -264,9 +272,42 @@ function latestIndicators(
  * `YYYY-MM-DD` (a day has no time-of-day to misread); intraday emits a full
  * ISO instant WITH `Z` so it is unambiguous.
  */
-const isoTimestamp = (unixSeconds: number, timeframe: Timeframe): string => {
+const isoTimestamp = (
+    unixSeconds: number,
+    timeframe: AgentBarsTimeframe
+): string => {
     const iso = new Date(unixSeconds * 1000).toISOString();
-    return timeframe === '1Day' ? iso.slice(0, 10) : iso;
+    return isDailyOrLonger(timeframe) ? iso.slice(0, 10) : iso;
+};
+
+/**
+ * Weekly and monthly bars are not a provider timeframe: the tool builds them
+ * from daily bars (core `aggregateBarsToWeekly` / `aggregateBarsToMonthly`,
+ * the same aggregation `higherTimeframe` already uses for 1Day).
+ */
+type AggregatedTimeframe = Extract<AgentBarsTimeframe, '1Week' | '1Month'>;
+
+function isAggregatedTimeframe(
+    timeframe: AgentBarsTimeframe
+): timeframe is AggregatedTimeframe {
+    return timeframe === '1Week' || timeframe === '1Month';
+}
+
+/** Daily bars and anything built from them carry a date, not a time of day. */
+function isDailyOrLonger(timeframe: AgentBarsTimeframe): boolean {
+    return timeframe === '1Day' || isAggregatedTimeframe(timeframe);
+}
+
+const AGGREGATE: Record<AggregatedTimeframe, (bars: readonly Bar[]) => Bar[]> =
+    {
+        '1Week': aggregateBarsToWeekly,
+        '1Month': aggregateBarsToMonthly,
+    };
+
+/** The core period each aggregated timeframe's bars are stamped with. */
+const PERIOD: Record<AggregatedTimeframe, BarPeriod> = {
+    '1Week': 'week',
+    '1Month': 'month',
 };
 
 /**
@@ -293,7 +334,7 @@ interface BarCandlePattern {
  */
 function latestCandlePatterns(
     bars: Bar[],
-    timeframe: Timeframe
+    timeframe: AgentBarsTimeframe
 ): BarCandlePattern[] {
     const detectionBars = getDetectionBars(bars);
     const entries = detectCandlePatternEntries(bars);
@@ -344,7 +385,7 @@ interface BarsConfluenceView {
  */
 function confluenceView(
     bars: Bar[],
-    timeframe: Timeframe,
+    timeframe: AgentBarsTimeframe,
     htfBars: readonly Bar[] | null,
     htfLabel: string | null
 ): BarsConfluenceView | null {
@@ -405,7 +446,7 @@ interface PullbackView {
  */
 function pullbackSnapshot(
     bars: readonly Bar[],
-    timeframe: Timeframe
+    timeframe: AgentBarsTimeframe
 ): PullbackSnapshot | null {
     return timeframe === '1Day' ? evaluatePullback(bars) : null;
 }
@@ -483,11 +524,8 @@ const HTF_MAP: Partial<Record<Timeframe, Timeframe>> = {
     '5Min': '30Min',
 };
 
-/** `higherTimeframe.timeframe`'s label set — `Timeframe` plus `'1Week'`, which core's `Timeframe` union doesn't carry (weekly bars are a siglens-side aggregation, not a provider-fetched timeframe). */
-type HtfTimeframeLabel = Timeframe | '1Week';
-
 interface HigherTimeframeView {
-    timeframe: HtfTimeframeLabel;
+    timeframe: AgentBarsTimeframe;
     trend: TrendState;
     confluenceScore: number | null;
     priceVsMa50Pct: number | null;
@@ -496,9 +534,12 @@ interface HigherTimeframeView {
 
 /**
  * Loads the next larger timeframe's bars (spec §3.1). `1Day` aggregates the
- * ALREADY-LOADED daily `mainBars` into ISO weeks via core's
- * `aggregateBarsToWeekly` — no second fetch, since the source bars are the
- * same series the main tool call already has in hand — then runs core's
+ * ALREADY-LOADED long daily series (`longDailyBars`: the five-year
+ * `fearGreedBars` when cached, else the regular window) into ISO weeks via
+ * core's `aggregateBarsToWeekly`, and `1Week` aggregates the same series into
+ * months — no second fetch, and the same daily source a `1Week` request
+ * builds its own bars from, so a 1Day call's weekly read and a 1Week call
+ * agree. Then it runs core's
  * `calculateIndicators` on the weekly series (its own warm-up/min-bars
  * handling applies, same as any other timeframe). Every other timeframe
  * fetches its HTF bars via the same cached loader the main series uses.
@@ -509,18 +550,41 @@ interface HigherTimeframeView {
 async function loadHigherTimeframe(
     provider: ReturnType<typeof getCachedMarketDataProvider>,
     symbol: string,
-    timeframe: Timeframe,
+    timeframe: AgentBarsTimeframe,
     fmpSymbol: string | undefined,
     session: ReturnType<typeof sessionSpecFor>,
-    mainBars: readonly Bar[]
+    longDailyBars: readonly Bar[] | null
 ): Promise<{
-    timeframe: HtfTimeframeLabel;
+    timeframe: AgentBarsTimeframe;
     bars: Bar[];
     indicators: IndicatorResult;
 } | null> {
+    // Weekly → monthly, built from the same daily series as the weekly bars;
+    // monthly has no larger timeframe SIGLENS builds.
+    if (timeframe === '1Month') return null;
+    if (timeframe === '1Week') {
+        try {
+            if (longDailyBars === null) return null;
+            const monthlyBars = aggregateBarsToMonthly(longDailyBars);
+            if (monthlyBars.length === 0) return null;
+            return {
+                timeframe: '1Month',
+                bars: monthlyBars,
+                indicators: calculateIndicators(monthlyBars),
+            };
+        } catch (error) {
+            logToolDegrade(
+                'get_bars_indicators',
+                'monthly higher-timeframe aggregation',
+                error
+            );
+            return null;
+        }
+    }
     if (timeframe === '1Day') {
         try {
-            const weeklyBars = aggregateBarsToWeekly(mainBars);
+            if (longDailyBars === null) return null;
+            const weeklyBars = aggregateBarsToWeekly(longDailyBars);
             if (weeklyBars.length === 0) return null;
             return {
                 timeframe: '1Week',
@@ -569,19 +633,19 @@ async function loadHigherTimeframe(
  * CONFLUENCE_TREND_MA_PERIOD)` — the SAME MA definition
  * `evaluateConfluence`'s own `ma50` uses internally (replacing a
  * hand-rolled plain-average reimplementation) — INSTEAD OF
- * reading `snapshot?.ma50` directly: `1Day`'s higher timeframe is weekly
- * bars aggregated from the already-loaded daily series, and even the
- * production max of 500 daily bars aggregates to only ~101 weekly bars —
- * well under `CONFLUENCE_MIN_BARS` (120), so `evaluateConfluence` abstains
- * (`snapshot === null`) for every `1Day` request, no matter how much
- * history is loaded. `confluenceScore` staying `null` in that case is
- * honest (core really did abstain), but the same MA is still computable
- * independent of confluence's own bar-count gate, so `priceVsMa50Pct` no
- * longer piggybacks on `snapshot?.ma50`.
+ * reading `snapshot?.ma50` directly: whether `evaluateConfluence` abstains
+ * on the higher timeframe depends on how many bars it has. `1Day`'s weekly
+ * (and `1Week`'s monthly) bars are aggregated from the long daily series —
+ * the five-year `fearGreedBars` (~260 weeks, clearing `CONFLUENCE_MIN_BARS`
+ * of 120) when cached, else the regular ~500-session window (~101 weeks,
+ * below it, so core abstains). Monthly bars (~60) always fall below it.
+ * `confluenceScore` stays `null` whenever core abstains (honest), but the
+ * MA is computable independent of confluence's bar-count gate, so
+ * `priceVsMa50Pct` does not piggyback on `snapshot?.ma50`.
  */
 function higherTimeframeView(
     htf: {
-        timeframe: HtfTimeframeLabel;
+        timeframe: AgentBarsTimeframe;
         bars: Bar[];
         indicators: IndicatorResult;
     } | null
@@ -790,7 +854,7 @@ function extremeBar(
 function computeRangeWindow(
     window: readonly Bar[],
     lastClose: number | null,
-    timeframe: Timeframe
+    timeframe: AgentBarsTimeframe
 ): RangeWindow {
     const highBar = extremeBar(
         window,
@@ -849,7 +913,7 @@ function directionOf(sign: number): CloseStreakView['direction'] {
  */
 function computeCloseStreak(
     bars: readonly Bar[],
-    timeframe: Timeframe,
+    timeframe: AgentBarsTimeframe,
     lastBarInProgress: boolean
 ): CloseStreakView | null {
     if (timeframe !== '1Day') return null;
@@ -885,7 +949,7 @@ function computeCloseStreak(
 function computeDerived(
     bars: readonly Bar[],
     indicators: IndicatorResult,
-    timeframe: Timeframe,
+    timeframe: AgentBarsTimeframe,
     lastBarInProgress: boolean
 ): DerivedView {
     const lastClose = last(bars.map(b => b.close));
@@ -921,7 +985,11 @@ function computeDerived(
         prevVolumes.length === 20 && prevVolumes.every(Number.isFinite)
             ? prevVolumes.reduce((sum, v) => sum + v, 0) / prevVolumes.length
             : null;
+    // A partial week or month holds only part of a period's volume, so its
+    // ratio to 20 full periods would read as a collapse for days.
+    const partialPeriod = isAggregatedTimeframe(timeframe) && lastBarInProgress;
     const volumeVsAvg20 =
+        !partialPeriod &&
         lastVolume !== null &&
         Number.isFinite(lastVolume) &&
         avgVolume20 !== null &&
@@ -1093,7 +1161,7 @@ export function buildFearGreedHistoryView(
  */
 async function fearGreedView(
     data: BarsData,
-    timeframe: Timeframe,
+    timeframe: AgentBarsTimeframe,
     locale: Locale
 ): Promise<SymbolFearGreedView | null> {
     if (timeframe !== '1Day') return null;
@@ -1134,13 +1202,33 @@ async function fearGreedView(
  */
 function lastBarProgress(
     bars: readonly Bar[],
-    timeframe: Timeframe,
-    session: MarketSessionSpec
+    timeframe: AgentBarsTimeframe,
+    session: MarketSessionSpec,
+    longDailyBars: readonly Bar[] | null
 ): {
     lastBarInProgress: boolean;
-    lastCompletedClose?: { date: string; close: number };
+    lastCompletedClose?: { date: string; close: number } | null;
 } {
-    const inProgress = lastBarIsForming(bars, session, new Date());
+    const now = new Date();
+    if (isAggregatedTimeframe(timeframe))
+        return {
+            // `seriesFor` always supplies the daily source for aggregated
+            // timeframes; without it nothing can be said, so not in progress
+            // (never fall back to the weekly/monthly bars, the wrong granularity).
+            lastBarInProgress:
+                longDailyBars !== null &&
+                aggregatedBarInProgress(
+                    bars,
+                    timeframe,
+                    longDailyBars,
+                    session,
+                    now
+                ),
+            // The tool description promises null here: a weekly/monthly read
+            // has no single "previous session close".
+            lastCompletedClose: null,
+        };
+    const inProgress = lastBarIsForming(bars, session, now);
     const previous = bars.at(-2);
     if (!inProgress || timeframe !== '1Day' || previous === undefined)
         return { lastBarInProgress: inProgress };
@@ -1153,9 +1241,95 @@ function lastBarProgress(
     };
 }
 
+/**
+ * A weekly or monthly bar is unfinished while its period still has trading
+ * ahead: the market's own date today (exchange time zone; UTC for 24/7
+ * markets) falls in the last bar's period, and either the session is under
+ * way, or a trading day of that period has no daily bar yet (today before the
+ * open, or a later weekday). A US week read on Saturday, or a Korean week read
+ * on Monday 08:00 KST (still Sunday in UTC), is therefore complete or a new
+ * week respectively, not "in progress". Exchange holidays are not modelled: a
+ * period whose remaining weekdays are all holidays still reads as unfinished
+ * until it ends. Period boundaries come from core's `barPeriodStartSeconds`,
+ * the same function the aggregators stamp bars with.
+ */
+function aggregatedBarInProgress(
+    bars: readonly Bar[],
+    timeframe: AggregatedTimeframe,
+    dailyBars: readonly Bar[],
+    session: MarketSessionSpec,
+    now: Date
+): boolean {
+    const last = bars.at(-1);
+    if (last === undefined) return false;
+    const period = PERIOD[timeframe];
+    const today = utcMidnightSeconds(
+        session.kind === 'always-open'
+            ? toUtcIsoDate(now)
+            : zonedDate(now, session.timeZone)
+    );
+    if (barPeriodStartSeconds(period, today) !== last.time) return false;
+    if (session.kind === 'always-open') return true;
+    if (lastBarIsForming(dailyBars, session, now)) return true;
+    const lastDailyTime = dailyBars.at(-1)?.time ?? -Infinity;
+    for (
+        let day = today;
+        barPeriodStartSeconds(period, day) === last.time;
+        day += SECONDS_PER_DAY
+    ) {
+        const weekday = new Date(day * MS_PER_SECOND).getUTCDay();
+        if (!session.weekendDays.includes(weekday) && day > lastDailyTime)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * The longest daily series the cache holds — the five-year `fearGreedBars`
+ * when present, else the regular daily window. Read directly rather than via
+ * core's `fearGreedInputs`, which would also compute buy/sell volume over the
+ * whole series only to throw it away here.
+ */
+function longDailyBarsOf(data: BarsData): readonly Bar[] {
+    return data.fearGreedBars !== undefined && data.fearGreedBars.length > 0
+        ? data.fearGreedBars
+        : data.bars;
+}
+
+/**
+ * The series the tool reads for `timeframe`, plus `longDailyBars` — the daily
+ * source weekly and monthly bars are built from (null for intraday, which has
+ * no daily history in hand). Provider timeframes use the cached series as
+ * loaded. Weekly and monthly are built from {@link longDailyBarsOf} (≈260
+ * weeks or 60 months), so a multi-year question reads multi-year bars without
+ * another provider call.
+ */
+function seriesFor(
+    data: BarsData,
+    timeframe: AgentBarsTimeframe
+): {
+    bars: Bar[];
+    indicators: IndicatorResult;
+    longDailyBars: readonly Bar[] | null;
+} {
+    if (!isAggregatedTimeframe(timeframe))
+        return {
+            bars: data.bars,
+            indicators: data.indicators,
+            longDailyBars: timeframe === '1Day' ? longDailyBarsOf(data) : null,
+        };
+    const longDailyBars = longDailyBarsOf(data);
+    const bars = AGGREGATE[timeframe](longDailyBars);
+    return { bars, indicators: calculateIndicators(bars), longDailyBars };
+}
+
 export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const symbol = String(args.symbol).toUpperCase();
-    const timeframe = args.timeframe as Timeframe;
+    const timeframe = args.timeframe as AgentBarsTimeframe;
+    // Weekly and monthly bars are aggregated from the daily series.
+    const sourceTimeframe: Timeframe = isAggregatedTimeframe(timeframe)
+        ? '1Day'
+        : timeframe;
     const count = clampBars(args.bars);
     const [profile, asset] = await Promise.all([
         resolveMarketProfile(symbol),
@@ -1170,16 +1344,15 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     const barsData = await getCachedBarsWithIndicators(
         provider,
         symbol,
-        timeframe,
+        sourceTimeframe,
         asset?.fmpSymbol,
         session
     );
-    const { bars, indicators } = barsData;
-    if (bars.length === 0) return { symbol, timeframe, found: false };
+    if (barsData.bars.length === 0) return { symbol, timeframe, found: false };
     // 한국의 죽은 리스팅(잘못된 접미사 등)은 묵은 봉을 "현재"로 내보내지 않고 데이터 오류로 돌린다.
     const lastTradeDate = staleKrListingDate(
         profile,
-        bars[bars.length - 1]!.time * MS_PER_SECOND,
+        barsData.bars[barsData.bars.length - 1]!.time * MS_PER_SECOND,
         Date.now()
     );
     if (lastTradeDate !== null)
@@ -1190,6 +1363,8 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
             error: 'stale_listing',
             lastTradeDate,
         };
+    const { bars, indicators, longDailyBars } = seriesFor(barsData, timeframe);
+    if (bars.length === 0) return { symbol, timeframe, found: false };
     const requestedBars: BarPoint[] = bars.slice(-count).map(b => ({
         t: isoTimestamp(b.time, timeframe),
         o: b.open,
@@ -1218,7 +1393,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
         timeframe,
         asset?.fmpSymbol,
         session,
-        bars
+        longDailyBars
     );
     const confluence = confluenceView(
         bars,
@@ -1228,7 +1403,12 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     );
     const higherTimeframe = higherTimeframeView(htf);
     const pullback = pullbackView(pullbackSnap, await caveatPromise);
-    const lastBarState = lastBarProgress(bars, timeframe, session);
+    const lastBarState = lastBarProgress(
+        bars,
+        timeframe,
+        session,
+        longDailyBars
+    );
     const derived = computeDerived(
         bars,
         indicators,
@@ -1243,7 +1423,15 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
     );
     const candlePatterns = latestCandlePatterns(bars, timeframe);
     const fearGreed = await fearGreedView(barsData, timeframe, ctx.locale);
-    const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
+    // Weekly/monthly bars are stamped with their period's first day; `asOf` is
+    // the last daily bar the aggregation actually used (rows without usable
+    // prices are skipped by it, so a trailing placeholder must not date it).
+    const asOfTime =
+        isAggregatedTimeframe(timeframe) && longDailyBars !== null
+            ? (longDailyBars.findLast(hasUsablePrices)?.time ??
+              bars.at(-1)!.time)
+            : bars.at(-1)!.time;
+    const asOf = isoTimestamp(asOfTime, timeframe);
 
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({
