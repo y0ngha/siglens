@@ -143,6 +143,7 @@ export function VocPromptHost({ trigger }: VocPromptHostProps) {
                 setOpen(true);
                 return;
             }
+            // 미룰 횟수를 다 썼다 - 계속 입력 중인 방문자를 방해하지 않고 이 세션에는 열지 않는다.
             if (typingRetriesLeft === 0) return;
             typingRetriesLeft -= 1;
             timer = setTimeout(openUnlessTyping, VOC_PROMPT_TYPING_RETRY_MS);

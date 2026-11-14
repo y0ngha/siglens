@@ -93,6 +93,8 @@ const pinRuntimeDegradedRevalidate = unstable_cache(
 
 const pinNoindexDegradedRender = unstable_cache(
     async () => true,
+    // 캐시 키다 — 아래 태그 상수와 글자가 같지만 역할이 다르다(키는 이 핀 엔트리의 식별자, 태그는
+    // 페이지 엔트리에 남기는 표식). 태그 값을 바꿔도 키를 따라 바꿀 필요가 없어 상수를 공유하지 않는다.
     ['noindex-degraded-render'],
     {
         revalidate: RUNTIME_DEGRADED_REVALIDATE_SECONDS,
