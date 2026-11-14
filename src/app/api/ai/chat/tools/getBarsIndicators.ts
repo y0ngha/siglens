@@ -1272,16 +1272,26 @@ function aggregatedBarInProgress(
     if (session.kind === 'always-open') return true;
     if (lastBarIsForming(dailyBars, session, now)) return true;
     const lastDailyTime = dailyBars.at(-1)?.time ?? -Infinity;
-    for (
-        let day = today;
-        barPeriodStartSeconds(period, day) === last.time;
-        day += SECONDS_PER_DAY
-    ) {
-        const weekday = new Date(day * MS_PER_SECOND).getUTCDay();
-        if (!session.weekendDays.includes(weekday) && day > lastDailyTime)
-            return true;
-    }
-    return false;
+    return remainingDaysOfPeriod(period, today).some(
+        day =>
+            !session.weekendDays.includes(
+                new Date(day * MS_PER_SECOND).getUTCDay()
+            ) && day > lastDailyTime
+    );
+}
+
+/**
+ * UTC-midnight timestamps from `fromDay` to the last day of the same week or
+ * month, inclusive — the days a period still has ahead of it.
+ */
+function remainingDaysOfPeriod(period: BarPeriod, fromDay: number): number[] {
+    const start = barPeriodStartSeconds(period, fromDay);
+    // A month has at most 31 days, so the period ends within 31 steps.
+    const MAX_PERIOD_DAYS = 31;
+    return Array.from(
+        { length: MAX_PERIOD_DAYS },
+        (_, i) => fromDay + i * SECONDS_PER_DAY
+    ).filter(day => barPeriodStartSeconds(period, day) === start);
 }
 
 /**
