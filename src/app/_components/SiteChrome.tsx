@@ -59,7 +59,7 @@ export function SiteChrome({ locale, messages, children }: SiteChromeProps) {
                                     여러 라우트(종목·허브)에서 나오므로 루트에 하나만 둔다. */}
                                 <AnalysisRateLimitModalHost />
                                 <EmailReportNudgeHost />
-                                {/* 첫 종목 분석 직후 별점 모달을 한 번 띄운다. 넛지 모달과 같은 세션 상한을 공유한다. */}
+                                {/* 종목 분석을 여러 번 봤거나 다른 날 다시 온 방문자에게 별점 모달을 띄운다. 넛지 모달과 같은 세션 상한을 공유한다. */}
                                 <VocPromptHost trigger="analysis" />
                                 <WatchlistMergeHost />
                                 <AuthSessionHeaderClient />

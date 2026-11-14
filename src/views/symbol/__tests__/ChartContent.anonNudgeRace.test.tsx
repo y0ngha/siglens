@@ -9,7 +9,6 @@ import {
     hasNudgeShownToday,
     markNudgeShownToday,
 } from '@/shared/lib/anonAnalysisCount';
-import { LOCAL_STORAGE_VOC_PROMPTED_KEY } from '@/shared/lib/storageKeys';
 
 // Regression test for the anonymous-nudge missed-fire on cache-HIT + cold
 // currentUser (member-reasoning-toggle spec Part B code review finding #1).
@@ -194,12 +193,13 @@ describe('ChartContent × useAnonAnalysisNudge integration (real hook, race betw
         mockHasShown.mockReturnValue(false);
         // 한 탭 세션 넛지 상한(`nudgeSession`)은 실제 sessionStorage를 쓴다 — 테스트끼리 새지 않게 비운다.
         sessionStorage.clear();
-        // VOC 별점 모달이 이미 지나간 방문자다 - 대기 중이면 가입 넛지는 양보하고 아무것도 세지 않는다.
-        localStorage.setItem(LOCAL_STORAGE_VOC_PROMPTED_KEY, '1');
+        // 이용 기록이 없는 방문자다 - 첫 분석으로는 VOC 별점 모달이 물어볼 때가 되지 않아 가입
+        // 넛지가 양보하지 않는다.
+        localStorage.clear();
     });
 
     afterEach(() => {
-        localStorage.removeItem(LOCAL_STORAGE_VOC_PROMPTED_KEY);
+        localStorage.clear();
         vi.clearAllMocks();
     });
 

@@ -9,15 +9,17 @@ import {
 } from '@/shared/lib/nudgeSession';
 import { subscribeSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
 import {
-    isVocPromptPending,
+    isVocPromptRetired,
     markVocPrompted,
+    recordVocUse,
 } from '@/shared/lib/vocPromptStorage';
 import { VocPromptModal } from './VocPromptModal';
 
 interface VocPromptHostProps {
     /**
-     * 무엇이 "첫 AI 경험"인가. `analysis`는 종목 분석이 화면에 그려진 순간(siglens.io),
-     * `agent_chat`은 시그렌즈 AI가 첫 답변을 끝낸 순간(ai.siglens.io).
+     * 무엇을 "이용 한 번"으로 세는가. `analysis`는 종목 분석이 화면에 그려진 순간(siglens.io,
+     * 같은 종목은 한 번), `agent_chat`은 시그렌즈 AI가 답변 한 턴을 끝낸 순간(ai.siglens.io).
+     * 몇 번에 묻는지는 `VOC_PROMPT_POLICY`(`shared/lib/vocPromptStorage.ts`).
      */
     readonly trigger: VocTrigger;
 }
@@ -69,11 +71,12 @@ export const VOC_PROMPT_SETTLE_MS = 3_000;
 export const VOC_PROMPT_TYPING_RETRY_MS = 5_000;
 export const VOC_PROMPT_TYPING_RETRIES = 3;
 
-type Subscribe = (listener: () => void) => () => void;
+/** `key`는 같은 이용을 두 번 세지 않기 위한 값(종목 코드). 없으면 신호마다 한 번으로 센다. */
+type Subscribe = (listener: (key?: string) => void) => () => void;
 
 const SUBSCRIBE_BY_TRIGGER: Record<VocTrigger, Subscribe> = {
-    analysis: listener => subscribeSymbolAnalyzed(() => listener()),
-    agent_chat: subscribeAgentTurnCompleted,
+    analysis: subscribeSymbolAnalyzed,
+    agent_chat: listener => subscribeAgentTurnCompleted(() => listener()),
 };
 
 /** 첫 입력에 한 번 `onEngaged`를 부른다. 반환값은 리스너 해제. */
@@ -115,17 +118,18 @@ function isTyping(): boolean {
 }
 
 /**
- * VOC 별점 모달의 호스트. 첫 AI 경험 신호를 한 번만 받고, **지연이 지났고 방문자가 페이지를
- * 한 번이라도 조작했을 때** 모달을 연다. 이미 띄운 적이 있거나(영구 기록) 이 탭 세션에 다른
- * 넛지가 떴으면 아무것도 하지 않는다 - 한 세션에 모달은 하나뿐이다.
+ * VOC 별점 모달의 호스트. 이용 신호를 셀 때마다 "써 보고 쓸모를 느낀 뒤"인지 묻고
+ * (`recordVocUse` - 여러 번 썼거나 다른 날 다시 왔다), 그렇게 된 신호에서 **지연이 지났고 방문자가
+ * 페이지를 한 번이라도 조작했을 때** 모달을 연다. 이 탭 세션에 다른 넛지가 떴으면 열지 않고
+ * 다음 세션으로 미룬다 - 한 세션에 모달은 하나뿐이고, 조건은 채워진 채로 남는다.
  *
- * 세션 플래그와 영구 기록은 신호를 받은 즉시(지연 전에) 함께 적고 모달만 나중에 연다. 가입
- * 넛지(`useAnonAnalysisNudge`)와 코치 마크(`useWatchlistCoachMark`)는 VOC가 대기 중이면 양보하고,
- * 여기서 세션 플래그를 세우면 같은 세션의 나머지 넛지도 물러난다 - 구독 순서와 무관하게 이 세션의
- * 슬롯은 VOC가 가진다. 영구 기록을 모달을 여는 순간으로 미루지 않는 이유: 조건을 못 채우고 떠나는
- * 짧은 방문이 이어지면 VOC가 계속 대기로 남아, 양보하는 가입 넛지와 코치 마크가 영영 못 뜬다.
- * VOC의 기회는 첫 신호의 세션 한 번이다. 조건이 채워지기 전에 이 호스트가 사라지면 그 세션의
- * 모달은 건너뛴다.
+ * 세션 플래그와 "물었다" 기록은 그 신호를 받은 즉시(지연 전에) 함께 적고 모달만 나중에 연다. 가입
+ * 넛지(`useAnonAnalysisNudge`)와 코치 마크(`useWatchlistCoachMark`)는 같은 신호에서
+ * `isVocPromptDue`로 양보하고, 여기서 세션 플래그를 세우면 같은 세션의 나머지 넛지도 물러난다 -
+ * 구독 순서와 무관하게 이 세션의 슬롯은 VOC가 가진다. 기록을 모달을 여는 순간으로 미루지 않는
+ * 이유: 조건을 못 채우고 떠나는 짧은 방문이 이어지면 VOC가 계속 "물어볼 때"로 남아, 양보하는 가입
+ * 넛지와 코치 마크가 영영 못 뜬다. 조건이 채워지기 전에 이 호스트가 사라지면 그 번의 모달은
+ * 건너뛴다(닫은 것과 같이 다음 차례를 기다린다).
  * 모든 E2E 스펙이 세션 플래그를 미리 심으므로 이 호스트가 그것을 존중해야 기존 클릭이 모달에
  * 막히지 않는다.
  */
@@ -133,7 +137,7 @@ export function VocPromptHost({ trigger }: VocPromptHostProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
-        if (!isVocPromptPending()) return;
+        if (isVocPromptRetired()) return;
         let timer: ReturnType<typeof setTimeout> | undefined;
         let engaged = false;
         let delayElapsed = false;
@@ -156,17 +160,20 @@ export function VocPromptHost({ trigger }: VocPromptHostProps) {
                 timer = setTimeout(openUnlessTyping, VOC_PROMPT_SETTLE_MS);
             }
         });
-        const unsubscribe = SUBSCRIBE_BY_TRIGGER[trigger](() => {
-            // 첫 신호만 본다. 그 뒤 신호마다 타이머를 새로 걸지 않는다.
+        const unsubscribe = SUBSCRIBE_BY_TRIGGER[trigger](key => {
+            // 이용을 세고, 아직 물어볼 때가 아니면 다음 신호를 기다린다.
+            if (!recordVocUse(trigger, key)) return;
+            // 다른 넛지가 이 세션을 가졌다. 조건은 채워진 채로 남아 다음 세션의 첫 신호에 묻는다.
+            if (hasNudgeShownThisSession()) return;
+            // 한 번 묻기로 하면 이 마운트에서는 더 세지 않는다.
             unsubscribe();
-            if (!isVocPromptPending() || hasNudgeShownThisSession()) {
-                stopListening();
-                return;
-            }
             // 신호를 받은 즉시 세션을 선점한다. 지연 뒤에 확인하면 그 사이 같은 신호를 받은 다른
             // 넛지(코치 마크 등)가 세션 플래그를 먼저 세워 모달도 넛지도 못 보는 세션이 생긴다.
             markNudgeShownThisSession();
-            markVocPrompted();
+            if (!markVocPrompted()) {
+                stopListening();
+                return;
+            }
             timer = setTimeout(() => {
                 delayElapsed = true;
                 if (engaged) openUnlessTyping();

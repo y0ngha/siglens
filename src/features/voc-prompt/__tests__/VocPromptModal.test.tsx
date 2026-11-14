@@ -6,6 +6,7 @@ vi.mock('@/entities/feedback/actions/submitVocFeedbackAction', () => ({
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { VocTrigger } from '@/entities/feedback/types';
+import { isVocPromptRetired } from '@/shared/lib/vocPromptStorage';
 import { VocPromptModal } from '../ui/VocPromptModal';
 
 const stars = () => screen.getAllByRole('radio');
@@ -22,7 +23,10 @@ describe('VocPromptModal', () => {
         vi.clearAllMocks();
         actions.submit.mockResolvedValue({ ok: true });
     });
-    afterEach(() => vi.useRealTimers());
+    afterEach(() => {
+        vi.useRealTimers();
+        localStorage.clear();
+    });
 
     it('제목·안내·별 5개·의견칸을 보여 준다', () => {
         renderModal();
@@ -257,6 +261,32 @@ describe('VocPromptModal', () => {
 
             expect(actions.submit).toHaveBeenCalledTimes(1);
             await act(async () => resolve({ ok: true }));
+        });
+
+        it('성공하면 이 브라우저에 "보냈다"를 적어 다시 묻지 않게 한다', async () => {
+            const user = userEvent.setup();
+            renderModal();
+            await user.click(screen.getByRole('radio', { name: '4점' }));
+            expect(isVocPromptRetired()).toBe(false);
+
+            await user.click(submitButton());
+
+            await waitFor(() => expect(isVocPromptRetired()).toBe(true));
+        });
+
+        it('실패하면 "보냈다"를 적지 않는다', async () => {
+            actions.submit.mockResolvedValue({
+                ok: false,
+                code: 'rate_limited',
+            });
+            const user = userEvent.setup();
+            renderModal();
+            await user.click(screen.getByRole('radio', { name: '4점' }));
+
+            await user.click(submitButton());
+
+            await waitFor(() => expect(actions.submit).toHaveBeenCalled());
+            expect(isVocPromptRetired()).toBe(false);
         });
 
         it('성공하면 감사 문구를 보이고 잠시 뒤 닫는다', async () => {

@@ -96,8 +96,15 @@ export const LOCAL_STORAGE_WATCHLIST_COACH_SEEN_KEY =
 export const SESSION_STORAGE_WATCHLIST_MERGED_KEY = 'siglens:watchlist:merged';
 
 /**
- * VOC 별점 모달을 이미 띄웠다(localStorage, 영구). 값은 `'1'`. 띄운 순간 적으므로 닫기만 해도
- * 다시 뜨지 않는다 - 별점을 안 남기고 닫은 사람을 계속 붙잡지 않는다. 두 오리진(siglens.io,
- * ai.siglens.io)의 저장소는 따로라 각 사이트에서 한 번씩 뜬다(`shared/lib/vocPromptStorage.ts`).
+ * VOC 별점 모달을 언제 물을지 정하는 이용 기록(localStorage) — 마지막으로 물은 뒤의 이용 횟수,
+ * 그때 본 종목 코드(최대 3개), 이용한 날(최대 2개), 물은 횟수와 마지막 시각, 별점 전송 여부.
+ * 두 오리진(siglens.io, ai.siglens.io)의 저장소는 따로라 사이트마다 따로 센다. 모양과 규칙은
+ * `shared/lib/vocPromptStorage.ts`.
+ */
+export const LOCAL_STORAGE_VOC_PROMPT_STATE_KEY = 'siglens:voc-prompt:v1';
+
+/**
+ * 예전 정책("첫 이용 직후 한 번")의 기록. 값은 `'1'`. 더는 쓰지 않고, 새 기록이 없을 때 "한 번
+ * 물었다"로 이어받는 데만 읽는다(`shared/lib/vocPromptStorage.ts`).
  */
 export const LOCAL_STORAGE_VOC_PROMPTED_KEY = 'siglens_voc_prompted';
