@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     BARS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
@@ -105,6 +105,7 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 }));
 
 import {
+    aggregateBarsToMonthly,
     aggregateBarsToWeekly,
     calculateIndicators,
     calculateMA,
@@ -2427,6 +2428,288 @@ describe('getBarsIndicatorsTool', () => {
                 yearMin: null,
                 yearMax: null,
             });
+        });
+    });
+
+    describe('주봉·월봉 (1Week·1Month)', () => {
+        const DAY = 86_400;
+        const US = {
+            kind: 'scheduled' as const,
+            timeZone: 'America/New_York',
+            openMinute: 570,
+            closeMinute: 960,
+            weekendDays: [0, 6],
+        };
+        const KR = {
+            ...US,
+            timeZone: 'Asia/Seoul',
+            openMinute: 540,
+            closeMinute: 930,
+        };
+        const CRYPTO = { kind: 'always-open' as const };
+        // 2024-01-01(월)부터 매일 한 봉. 실제 core 지표가 돌도록 OHLC를 움직인다.
+        const START = Math.floor(Date.UTC(2024, 0, 1) / 1000);
+        const daily = (n: number, start = START) =>
+            Array.from({ length: n }, (_, i) => {
+                const close = 100 + Math.sin(i / 9) * 10 + i * 0.03;
+                return {
+                    time: start + i * DAY,
+                    open: close - 0.4,
+                    high: close + 1,
+                    low: close - 1,
+                    close,
+                    volume: 1_000 + ((i * 31) % 200),
+                };
+            });
+        const iso = (t: number) =>
+            new Date(t * 1000).toISOString().slice(0, 10);
+        // daily(400)의 마지막 봉은 2025-02-03(월), daily(404)는 2025-02-07(금).
+        const at = (isoInstant: string) =>
+            vi.setSystemTime(new Date(isoInstant));
+
+        beforeEach(() => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('downtrend');
+            detect.mockReturnValue([]);
+            spec.mockReturnValue(US);
+            vi.useFakeTimers({ toFake: ['Date'] });
+            at('2025-02-04T12:00:00Z');
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        type Result = {
+            timeframe: string;
+            asOf: string;
+            lastBarInProgress: boolean;
+            lastCompletedClose: unknown;
+            bars: { t: string; c: number; v: number }[];
+            pullback: unknown;
+            fearGreed: unknown;
+            higherTimeframe: { timeframe: string } | null;
+            derived: {
+                calendarChange: unknown;
+                maCross50_200: unknown;
+                closeStreak: unknown;
+                volumeVsAvg20: number | null;
+            };
+        };
+        const call = async (timeframe: string, bars?: number) =>
+            (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe, ...(bars ? { bars } : {}) },
+                ctx,
+                rt
+            )) as Result;
+
+        it('1Week: 일봉을 원본 그대로 받아(1Day 조회) ISO 주로 묶고, 상위는 월봉이다', async () => {
+            const bars = daily(400);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            const r = await call('1Week', 60);
+            expect(getCachedBars.mock.calls.every(c => c[2] === '1Day')).toBe(
+                true
+            );
+            const weekly = aggregateBarsToWeekly(bars);
+            expect(r.timeframe).toBe('1Week');
+            expect(r.bars.at(-1)).toMatchObject({
+                t: iso(weekly.at(-1)!.time),
+                c: weekly.at(-1)!.close,
+            });
+            // 주봉은 월요일로 찍히고 asOf는 마지막 일봉 날짜다.
+            expect(r.bars.at(-1)!.t).toBe('2025-02-03');
+            expect(r.asOf).toBe('2025-02-03');
+            expect(r.higherTimeframe?.timeframe).toBe('1Month');
+            expect(r.pullback).toBeNull();
+            expect(r.fearGreed).toBeNull();
+            expect(r.derived.calendarChange).toBeNull();
+            expect(r.derived.maCross50_200).toBeNull();
+            expect(r.derived.closeStreak).toBeNull();
+            // 도구 설명이 약속한 대로 null을 명시한다(누락이 아니라).
+            expect(r.lastCompletedClose).toBeNull();
+        });
+
+        it('1Month: 달력 월로 묶고 상위 타임프레임은 없다', async () => {
+            const bars = daily(400);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            const r = await call('1Month');
+            const monthly = aggregateBarsToMonthly(bars);
+            expect(r.bars.map(b => b.t)).toEqual(
+                monthly.slice(-30).map(b => iso(b.time))
+            );
+            expect(r.bars.at(-1)!.t).toBe('2025-02-01');
+            expect(r.higherTimeframe).toBeNull();
+        });
+
+        it('5년 일봉(fearGreedBars)이 있으면 그것으로 묶고, 1Day의 주봉 상위 타임프레임도 같은 원본을 쓴다', async () => {
+            const long = daily(1_200, START - 800 * DAY);
+            const standard = long.slice(-400);
+            getCachedBars.mockResolvedValue({
+                bars: standard,
+                indicators,
+                fearGreedBars: long,
+            });
+            const r = await call('1Month', 60);
+            // 출력 예산이 오래된 봉을 자를 수 있지만, 남은 봉도 표준 창(2024-01-01 시작)보다 이르다.
+            expect(r.bars[0]!.t < '2024-01-01').toBe(true);
+            expect(r.bars.length).toBeGreaterThan(
+                aggregateBarsToMonthly(standard).length
+            );
+
+            evaluateConfluenceSpy.mockClear();
+            await call('1Day');
+            const htfCall = evaluateConfluenceSpy.mock.calls.find(
+                c => c[1]?.timeframe === '1Week'
+            );
+            expect(htfCall?.[0]).toEqual(aggregateBarsToWeekly(long));
+        });
+
+        // daily(404) ends Friday 2025-02-07, so asOf differs from both the
+        // weekly stamp (Monday 02-03) and the monthly stamp (02-01).
+        it.each([
+            ['1Week', '2025-02-03'],
+            ['1Month', '2025-02-01'],
+        ])(
+            '%s: asOf는 기간 첫날이 아니라 마지막 일봉 날짜다',
+            async (timeframe, periodStart) => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                const r = await call(timeframe);
+                expect(r.bars.at(-1)!.t).toBe(periodStart);
+                expect(r.asOf).toBe('2025-02-07');
+            }
+        );
+
+        it('asOf는 집계가 실제로 쓴 마지막 일봉이다(가격 없는 끝 행은 건너뛴다)', async () => {
+            const bars = daily(404);
+            const placeholder = {
+                ...bars.at(-1)!,
+                time: bars.at(-1)!.time + DAY,
+                close: 0,
+            };
+            getCachedBars.mockResolvedValue({
+                bars: [...bars, placeholder],
+                indicators,
+            });
+            const r = await call('1Week');
+            expect(r.asOf).toBe('2025-02-07');
+        });
+
+        describe('진행 중 판정은 장 세션 기준이다', () => {
+            it('미국: 이번 주에 거래일이 남았으면 진행 중, 다음 주면 끝난 봉', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(400),
+                    indicators,
+                });
+                // 화 07:00 ET, 화요일 봉이 아직 없다.
+                expect((await call('1Week')).lastBarInProgress).toBe(true);
+                at('2025-02-12T12:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(false);
+            });
+
+            it('미국: 금요일 봉까지 있는 주를 토요일에 보면 끝난 봉이다', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-08T15:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(false);
+            });
+
+            it('미국: 장중이면(마지막 일봉이 형성 중) 진행 중이다', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-07T17:00:00Z');
+                forming.mockReturnValue(true);
+                expect((await call('1Week')).lastBarInProgress).toBe(true);
+            });
+
+            it('한국: 월요일 08:00 KST(UTC로는 일요일)에 지난주 봉은 진행 중이 아니다', async () => {
+                spec.mockReturnValue(KR);
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-09T23:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(false);
+            });
+
+            it('크립토(상시 개장)는 주말에도 이번 주 봉이 진행 중이다', async () => {
+                spec.mockReturnValue(CRYPTO);
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-08T15:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(true);
+            });
+
+            it('월봉: 같은 달 주말이면 남은 평일에 봉이 없을 때만 진행 중이다', async () => {
+                // 2025-02-07(금)까지 봉, 2025-02-08(토): 2월에 평일이 남았다.
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-08T15:00:00Z');
+                expect((await call('1Month')).lastBarInProgress).toBe(true);
+                // 2025-05-30(금)까지 봉, 2025-05-31(토)이 5월의 마지막 날이다.
+                getCachedBars.mockResolvedValue({
+                    bars: daily(516),
+                    indicators,
+                });
+                at('2025-05-31T15:00:00Z');
+                const done = await call('1Month');
+                expect(done.bars.at(-1)!.t).toBe('2025-05-01');
+                expect(done.asOf).toBe('2025-05-30');
+                expect(done.lastBarInProgress).toBe(false);
+            });
+
+            it('크립토 월봉은 그달 안이면 주말에도 진행 중이다', async () => {
+                spec.mockReturnValue(CRYPTO);
+                getCachedBars.mockResolvedValue({
+                    bars: daily(516),
+                    indicators,
+                });
+                at('2025-05-31T15:00:00Z');
+                expect((await call('1Month')).lastBarInProgress).toBe(true);
+            });
+
+            it('월봉: 이번 달이면 진행 중, 달이 바뀌면 끝난 봉', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(400),
+                    indicators,
+                });
+                expect((await call('1Month')).lastBarInProgress).toBe(true);
+                at('2025-03-01T15:00:00Z');
+                expect((await call('1Month')).lastBarInProgress).toBe(false);
+            });
+
+            it('진행 중인 주·월은 거래량 비율을 내지 않는다(부분 기간이라 비교 불가)', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(400),
+                    indicators,
+                });
+                const live = await call('1Week');
+                expect(live.lastBarInProgress).toBe(true);
+                expect(live.derived.volumeVsAvg20).toBeNull();
+                at('2025-02-12T12:00:00Z');
+                const done = await call('1Week');
+                expect(done.derived.volumeVsAvg20).not.toBeNull();
+            });
+        });
+
+        it('일봉이 없으면 found:false', async () => {
+            getCachedBars.mockResolvedValue({ bars: [], indicators });
+            expect(
+                await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '1Week' },
+                    ctx,
+                    rt
+                )
+            ).toEqual({ symbol: 'AAPL', timeframe: '1Week', found: false });
         });
     });
 });
