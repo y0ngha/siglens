@@ -7,7 +7,8 @@ import {
     VOC_PROMPT_MAX_PROMPTS,
     isVocPromptDue,
     isVocPromptRetired,
-    markVocPrompted,
+    claimVocPrompt,
+    markVocShown,
     markVocSubmitted,
     recordVocUse,
 } from '@/shared/lib/vocPromptStorage';
@@ -106,23 +107,53 @@ describe('vocPromptStorage', () => {
             ['A', 'B', 'C'].forEach(s => recordVocUse('analysis', s, now));
         }
 
-        it('물으면 이용 기록을 비우고 횟수와 시각을 적는다', () => {
+        it('묻기로 하면 이용 기록을 비우고 시각을 적되, 횟수는 세지 않는다', () => {
             reachDue(DAY1);
-            expect(markVocPrompted(DAY1)).toBe(true);
+            expect(claimVocPrompt(DAY1)).toBe(true);
 
             expect(stored()).toEqual({
                 uses: 0,
                 seen: [],
                 days: [],
-                promptCount: 1,
+                promptCount: 0,
                 lastPromptedAt: DAY1,
                 submitted: false,
             });
         });
 
+        it('모달이 열리면 횟수를 센다', () => {
+            reachDue(DAY1);
+            claimVocPrompt(DAY1);
+            markVocShown();
+
+            expect(stored()).toMatchObject({
+                promptCount: 1,
+                lastPromptedAt: DAY1,
+            });
+        });
+
+        it('모달이 열리지 않은 방문은 간격만 다시 시작하고 상한을 쓰지 않는다', () => {
+            let now = DAY1;
+            for (let i = 0; i < VOC_PROMPT_MAX_PROMPTS + 1; i += 1) {
+                reachDue(now);
+                claimVocPrompt(now);
+                now += VOC_PROMPT_COOLDOWN_MS;
+            }
+
+            expect(isVocPromptRetired()).toBe(false);
+        });
+
+        it('기기 시계가 앞서 있을 때 적힌 시각(미래)은 간격이 지난 것으로 본다', () => {
+            reachDue(DAY1);
+            claimVocPrompt(DAY1 + VOC_PROMPT_COOLDOWN_MS * 100);
+            reachDue(DAY1);
+
+            expect(isVocPromptDue('analysis', 'D', DAY1)).toBe(true);
+        });
+
         it('간격 안에는 조건을 다시 채워도 묻지 않고, 간격이 지나면 묻는다', () => {
             reachDue(DAY1);
-            markVocPrompted(DAY1);
+            claimVocPrompt(DAY1);
 
             reachDue(DAY1 + VOC_PROMPT_COOLDOWN_MS - 1);
             expect(
@@ -139,7 +170,7 @@ describe('vocPromptStorage', () => {
 
         it('간격이 지나도 그 사이 다시 쓰지 않았으면 묻지 않는다', () => {
             reachDue(DAY1);
-            markVocPrompted(DAY1);
+            claimVocPrompt(DAY1);
 
             expect(
                 isVocPromptDue('analysis', 'A', DAY1 + VOC_PROMPT_COOLDOWN_MS)
@@ -151,7 +182,8 @@ describe('vocPromptStorage', () => {
             for (let i = 0; i < VOC_PROMPT_MAX_PROMPTS; i += 1) {
                 expect(isVocPromptRetired()).toBe(false);
                 reachDue(now);
-                markVocPrompted(now);
+                claimVocPrompt(now);
+                markVocShown();
                 now += VOC_PROMPT_COOLDOWN_MS;
             }
 
@@ -162,7 +194,7 @@ describe('vocPromptStorage', () => {
 
         it('별점을 보냈으면 다시 묻지 않는다', () => {
             reachDue(DAY1);
-            markVocPrompted(DAY1);
+            claimVocPrompt(DAY1);
             markVocSubmitted();
 
             expect(isVocPromptRetired()).toBe(true);
@@ -180,7 +212,8 @@ describe('vocPromptStorage', () => {
             expect(recordVocUse('analysis', 'A', DAY1)).toBe(false);
             recordVocUse('analysis', 'B', DAY1);
             expect(recordVocUse('analysis', 'C', DAY1)).toBe(true);
-            markVocPrompted(DAY1);
+            claimVocPrompt(DAY1);
+            markVocShown();
             expect(stored().promptCount).toBe(2);
         });
     });
@@ -194,7 +227,7 @@ describe('vocPromptStorage', () => {
             expect(isVocPromptRetired()).toBe(true);
             expect(isVocPromptDue('analysis', 'NVDA')).toBe(false);
             expect(recordVocUse('analysis', 'NVDA')).toBe(false);
-            expect(markVocPrompted()).toBe(false);
+            expect(claimVocPrompt()).toBe(false);
             expect(() => markVocSubmitted()).not.toThrow();
         });
 
@@ -215,7 +248,7 @@ describe('vocPromptStorage', () => {
             });
 
             expect(recordVocUse('analysis', 'C', DAY1)).toBe(false);
-            expect(markVocPrompted(DAY1)).toBe(false);
+            expect(claimVocPrompt(DAY1)).toBe(false);
         });
 
         it.each(['not json', '{"uses":"3"}', 'null'])(

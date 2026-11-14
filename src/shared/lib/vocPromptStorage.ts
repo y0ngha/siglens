@@ -15,7 +15,11 @@ import {
  *    한 번 본 것은 "써 봤다"일 뿐이고, 여러 번 쓰거나 다른 날 다시 온 것이 "쓸모를 느꼈다"다.
  * 2. 별점을 보내면 다시 묻지 않는다.
  * 3. 닫기만 했으면 `VOC_PROMPT_COOLDOWN_MS` 뒤에, 그 사이 1번 조건을 **다시** 채운 방문자에게만
- *    또 묻는다. 모두 합쳐 `VOC_PROMPT_MAX_PROMPTS`번까지다.
+ *    또 묻는다. 모달이 실제로 열린 것만 세어 모두 합쳐 `VOC_PROMPT_MAX_PROMPTS`번까지다.
+ *
+ * 묻기로 한 것(`claimVocPrompt`)과 모달이 열린 것(`markVocShown`)을 따로 적는다. 묻기로 한 뒤
+ * 지연·조작 조건을 못 채우고 떠난 방문은 간격만 다시 시작하고 횟수는 쓰지 않는다 - 짧은 방문 세
+ * 번에 모달을 한 번도 못 보고 상한이 차면 안 된다.
  *
  * 저장소가 막혀 있으면(사파리 개인 정보 보호 등) 묻지 않는다. 기록을 못 남기는데 물으면 모달이
  * 매 방문 뜬다.
@@ -50,8 +54,9 @@ interface VocPromptState {
     readonly seen: readonly string[];
     /** 마지막으로 물은 뒤 이용한 날(`YYYY-MM-DD`, 현지). `minActiveDays`개까지만 둔다. */
     readonly days: readonly string[];
+    /** 모달이 실제로 열린 횟수. */
     readonly promptCount: number;
-    /** 마지막으로 물은 시각(epoch ms). 물은 적이 없거나 시각을 모르면 0. */
+    /** 마지막으로 묻기로 한 시각(epoch ms). 그런 적이 없거나 시각을 모르면 0. */
     readonly lastPromptedAt: number;
     readonly submitted: boolean;
 }
@@ -96,7 +101,11 @@ function parseState(raw: string): VocPromptState | null {
  * 저장된 상태. 저장소가 막혀 있으면 `null`.
  *
  * 새 기록이 없고 예전 키(`'1'` = "첫 이용 직후 한 번 띄웠다")만 있으면 한 번 물은 것으로 이어받는다.
- * 그때는 쓸모를 느끼기 전에 물었으므로 간격 없이, 이용 조건을 채우면 다시 묻는다.
+ * 그때는 쓸모를 느끼기 전에 물었으므로 간격 없이, 이용 조건을 채우면 다시 묻는다. 예전 키는 별점을
+ * 보냈는지를 담지 않아, 그때 별점을 남긴 방문자도 한 번 더 물을 수 있다.
+ *
+ * 깨진 값은 기록 없음으로 본다. `submitted`도 함께 잃지만, 읽을 수 없는 값을 "보냈다"로 치면 값
+ * 하나가 깨진 브라우저에서 모달이 영영 뜨지 않는다.
  */
 function loadState(): VocPromptState | null {
     if (typeof window === 'undefined') return null;
@@ -164,9 +173,13 @@ function isDue(
     now: number
 ): boolean {
     if (isRetired(state)) return false;
+    // 기기 시계가 앞서 있을 때 적힌 시각(미래)은 간격이 지난 것으로 본다. 그대로 빼면 음수라
+    // 시계를 고친 뒤에도 그 시각이 올 때까지 묻지 못한다.
+    const sinceLastPrompt = now - state.lastPromptedAt;
     if (
-        state.promptCount > 0 &&
-        now - state.lastPromptedAt < VOC_PROMPT_COOLDOWN_MS
+        state.lastPromptedAt > 0 &&
+        sinceLastPrompt >= 0 &&
+        sinceLastPrompt < VOC_PROMPT_COOLDOWN_MS
     ) {
         return false;
     }
@@ -187,7 +200,7 @@ export function isVocPromptRetired(): boolean {
  *
  * 같은 신호를 받는 다른 넛지가 양보할지 정할 때 쓴다. 같은 종목·같은 날은 다시 세지 않으므로 VOC
  * 호스트가 이 이용을 먼저 기록했든 아직이든 답이 같다 - 구독 순서와 무관하다. 호스트가 이미
- * "물었다"고 적은 뒤에는 false지만, 그때는 호스트가 세션 넛지 플래그를 선점해 둔 상태다.
+ * "묻기로 했다"고 적은 뒤에는 false지만, 그때는 호스트가 세션 넛지 플래그를 선점해 둔 상태다.
  */
 export function isVocPromptDue(
     surface: VocPromptSurface,
@@ -214,18 +227,25 @@ export function recordVocUse(
 }
 
 /**
- * 물어보기로 한 순간 부른다. 이용 기록을 비워, 다음에 물으려면 조건을 다시 채워야 한다.
- * 기록에 실패하면 false - 호출부는 모달을 열지 않는다.
+ * 묻기로 한 순간 부른다. 이용 기록을 비우고 간격을 다시 시작해, 다음에 물으려면 조건을 다시 채워야
+ * 한다. 횟수는 세지 않는다(`markVocShown`). 기록에 실패하면 false - 호출부는 모달을 열지 않는다.
  */
-export function markVocPrompted(now: number = Date.now()): boolean {
+export function claimVocPrompt(now: number = Date.now()): boolean {
     const state = loadState();
     if (state === null) return false;
     return saveState({
         ...INITIAL_STATE,
-        promptCount: state.promptCount + 1,
+        promptCount: state.promptCount,
         lastPromptedAt: now,
         submitted: state.submitted,
     });
+}
+
+/** 모달이 실제로 열렸다. 상한(`VOC_PROMPT_MAX_PROMPTS`)에 한 번을 쓴다. */
+export function markVocShown(): void {
+    const state = loadState();
+    if (state === null) return;
+    saveState({ ...state, promptCount: state.promptCount + 1 });
 }
 
 /** 별점을 보냈다. 다시 묻지 않는다. */

@@ -9,8 +9,9 @@ import {
 } from '@/shared/lib/nudgeSession';
 import { subscribeSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
 import {
+    claimVocPrompt,
     isVocPromptRetired,
-    markVocPrompted,
+    markVocShown,
     recordVocUse,
 } from '@/shared/lib/vocPromptStorage';
 import { VocPromptModal } from './VocPromptModal';
@@ -123,13 +124,15 @@ function isTyping(): boolean {
  * 페이지를 한 번이라도 조작했을 때** 모달을 연다. 이 탭 세션에 다른 넛지가 떴으면 열지 않고
  * 다음 세션으로 미룬다 - 한 세션에 모달은 하나뿐이고, 조건은 채워진 채로 남는다.
  *
- * 세션 플래그와 "물었다" 기록은 그 신호를 받은 즉시(지연 전에) 함께 적고 모달만 나중에 연다. 가입
+ * 세션 플래그와 "묻기로 했다" 기록(`claimVocPrompt`)은 그 신호를 받은 즉시(지연 전에) 함께 적고
+ * 모달만 나중에 연다. 가입
  * 넛지(`useAnonAnalysisNudge`)와 코치 마크(`useWatchlistCoachMark`)는 같은 신호에서
  * `isVocPromptDue`로 양보하고, 여기서 세션 플래그를 세우면 같은 세션의 나머지 넛지도 물러난다 -
  * 구독 순서와 무관하게 이 세션의 슬롯은 VOC가 가진다. 기록을 모달을 여는 순간으로 미루지 않는
  * 이유: 조건을 못 채우고 떠나는 짧은 방문이 이어지면 VOC가 계속 "물어볼 때"로 남아, 양보하는 가입
  * 넛지와 코치 마크가 영영 못 뜬다. 조건이 채워지기 전에 이 호스트가 사라지면 그 번의 모달은
- * 건너뛴다(닫은 것과 같이 다음 차례를 기다린다).
+ * 건너뛴다. 그 방문은 간격을 다시 시작하고 그 세션의 슬롯을 쓰지만, 물은 횟수에는 들지 않는다 -
+ * 횟수는 모달이 열릴 때(`markVocShown`) 센다.
  * 모든 E2E 스펙이 세션 플래그를 미리 심으므로 이 호스트가 그것을 존중해야 기존 클릭이 모달에
  * 막히지 않는다.
  */
@@ -144,6 +147,7 @@ export function VocPromptHost({ trigger }: VocPromptHostProps) {
         let typingRetriesLeft = VOC_PROMPT_TYPING_RETRIES;
         const openUnlessTyping = () => {
             if (!isTyping()) {
+                markVocShown();
                 setOpen(true);
                 return;
             }
@@ -169,11 +173,13 @@ export function VocPromptHost({ trigger }: VocPromptHostProps) {
             unsubscribe();
             // 신호를 받은 즉시 세션을 선점한다. 지연 뒤에 확인하면 그 사이 같은 신호를 받은 다른
             // 넛지(코치 마크 등)가 세션 플래그를 먼저 세워 모달도 넛지도 못 보는 세션이 생긴다.
-            markNudgeShownThisSession();
-            if (!markVocPrompted()) {
+            // 기록부터 한다. 기록에 실패하면 모달을 열지 않으므로 세션 슬롯도 잡지 않는다 - 다른
+            // 넛지가 쓸 수 있다.
+            if (!claimVocPrompt()) {
                 stopListening();
                 return;
             }
+            markNudgeShownThisSession();
             timer = setTimeout(() => {
                 delayElapsed = true;
                 if (engaged) openUnlessTyping();

@@ -189,7 +189,7 @@ describe('VocPromptHost', () => {
             expect(dialog()).toBeInTheDocument();
         });
 
-        it('신호를 받은 즉시 "물었다" 기록과 세션 넛지 플래그를 함께 남긴다', () => {
+        it('신호를 받은 즉시 "묻기로 했다" 기록과 세션 넛지 플래그를 함께 남긴다', () => {
             render(<VocPromptHost trigger="analysis" />);
 
             act(() => publishSymbolAnalyzed('NVDA'));
@@ -197,7 +197,8 @@ describe('VocPromptHost', () => {
             // 모달은 아직이지만 기록은 이미 있다 - 조건을 못 채우고 떠나는 짧은 방문이 이어져도
             // VOC가 "물어볼 때"로 남아 가입 넛지와 코치 마크를 계속 막지 않는다.
             expect(dialog()).not.toBeInTheDocument();
-            expect(storedState()).toMatchObject({ promptCount: 1, uses: 0 });
+            expect(storedState()).toMatchObject({ promptCount: 0, uses: 0 });
+            expect(storedState().lastPromptedAt).toBeGreaterThan(0);
             expect(
                 sessionStorage.getItem(SESSION_STORAGE_NUDGE_SHOWN_KEY)
             ).toBe('1');
@@ -234,7 +235,7 @@ describe('VocPromptHost', () => {
             expect(dialog()).not.toBeInTheDocument();
         });
 
-        it('이 탭 세션에 다른 넛지가 떴으면 열지 않고, "물었다" 기록도 남기지 않는다', () => {
+        it('이 탭 세션에 다른 넛지가 떴으면 열지 않고, "묻기로 했다" 기록도 남기지 않는다', () => {
             sessionStorage.setItem(SESSION_STORAGE_NUDGE_SHOWN_KEY, '1');
             render(<VocPromptHost trigger="analysis" />);
 
@@ -244,7 +245,10 @@ describe('VocPromptHost', () => {
 
             expect(dialog()).not.toBeInTheDocument();
             // 조건은 채워진 채로 남아 다음 세션에서 물을 수 있어야 한다.
-            expect(storedState()).toMatchObject({ promptCount: 0, uses: 3 });
+            expect(storedState()).toMatchObject({
+                lastPromptedAt: 0,
+                uses: 3,
+            });
         });
 
         it('다른 넛지 때문에 미룬 방문자는 다음 세션의 첫 신호에 본다', () => {
@@ -419,7 +423,7 @@ describe('VocPromptHost', () => {
             });
         });
 
-        it('지연 안에 떠나면(언마운트) 열리지 않는다', () => {
+        it('지연 안에 떠나면(언마운트) 열리지 않고, 물은 횟수도 쓰지 않는다', () => {
             const { unmount } = render(<VocPromptHost trigger="analysis" />);
 
             engage();
@@ -428,6 +432,45 @@ describe('VocPromptHost', () => {
             advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
+            // 모달을 못 본 짧은 방문이 이어져도 상한이 차지 않는다.
+            expect(storedState().promptCount).toBe(0);
+        });
+
+        it('모달이 열리면 물은 횟수를 센다', () => {
+            render(<VocPromptHost trigger="analysis" />);
+
+            engage();
+            act(() => publishSymbolAnalyzed('NVDA'));
+            advance(ANALYSIS_DELAY_MS);
+
+            expect(dialog()).toBeInTheDocument();
+            expect(storedState().promptCount).toBe(1);
+        });
+
+        it('"묻기로 했다"를 기록하지 못하면 열지 않고 세션 슬롯도 잡지 않는다', () => {
+            render(<VocPromptHost trigger="analysis" />);
+            const realSetItem = Storage.prototype.setItem;
+            let localWrites = 0;
+            // 이용 기록(첫 쓰기)은 되고 그 다음 쓰기부터 실패한다.
+            const setItemSpy = vi
+                .spyOn(Storage.prototype, 'setItem')
+                .mockImplementation(function (this: Storage, key, value) {
+                    if (this === localStorage) {
+                        localWrites += 1;
+                        if (localWrites > 1) throw new Error('quota');
+                    }
+                    realSetItem.call(this, key, value);
+                });
+
+            engage();
+            act(() => publishSymbolAnalyzed('NVDA'));
+            advance(ANALYSIS_DELAY_MS * 2);
+            setItemSpy.mockRestore();
+
+            expect(dialog()).not.toBeInTheDocument();
+            expect(
+                sessionStorage.getItem(SESSION_STORAGE_NUDGE_SHOWN_KEY)
+            ).toBeNull();
         });
 
         it('조작을 기다리는 틈에 떠나도(언마운트) 열리지 않는다', () => {
