@@ -8,6 +8,8 @@ import {
     BUILD_DEGRADED_REVALIDATE_SECONDS,
     INCOMPLETE_SESSION_REVALIDATE_SECONDS,
     RUNTIME_DEGRADED_REVALIDATE_SECONDS,
+    NOINDEX_DEGRADED_RENDER_TAG,
+    flagNoindexDegradedRender,
     shortenRevalidateForIncompleteSession,
     shortenRevalidateForRuntimeDegrade,
     shortenRevalidateForBuildDegrade,
@@ -194,5 +196,38 @@ describe('shortenRevalidateForIncompleteSession', () => {
         ).resolves.toBeUndefined();
         expect(warnSpy).toHaveBeenCalledOnce();
         warnSpy.mockRestore();
+    });
+});
+
+describe('flagNoindexDegradedRender', () => {
+    beforeEach(() => {
+        pinMock.mockClear();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('태그를 다는 핀은 이것 하나다 — 일반 런타임 degrade 핀(300초)은 태그 없이 revalidate만 낮춘다', () => {
+        const tagged = WRAPPER_OPTIONS.filter(o => o?.tags !== undefined);
+        expect(tagged).toEqual([
+            { revalidate: 300, tags: [NOINDEX_DEGRADED_RENDER_TAG] },
+        ]);
+        expect(WRAPPER_OPTIONS).toContainEqual({ revalidate: 300 });
+    });
+
+    it('핀을 호출한다', async () => {
+        await flagNoindexDegradedRender();
+        expect(pinMock).toHaveBeenCalledOnce();
+    });
+
+    it('핀이 던져도 삼킨다 — degrade를 처리 중인 호출부를 500으로 만들지 않는다', async () => {
+        const warn = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        pinMock.mockRejectedValueOnce(new Error('incrementalCache missing'));
+
+        await expect(flagNoindexDegradedRender()).resolves.toBeUndefined();
+        expect(warn).toHaveBeenCalledOnce();
     });
 });

@@ -12,7 +12,10 @@ import {
 } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    flagNoindexDegradedRender,
+    shortenRevalidateForRuntimeDegrade,
+} from '@/shared/cache/buildDegradedRevalidate';
 import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
 import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
@@ -171,6 +174,9 @@ export default async function FundamentalPage({ params }: Props) {
         ? marketProfileOf(assetInfo)
         : profileIdForSymbol(upper);
     if (profileDegraded) {
+        // 이 렌더는 안내문 + `noindex`다. 300초 창이 지나면 stale로 내보내지 않게 표시한다 —
+        // 안 하면 다음 요청자(롱테일에서는 몇 시간 뒤의 크롤러)가 이 `noindex` 사본을 받는다.
+        await flagNoindexDegradedRender();
         return (
             <FundamentalDegraded
                 displayName={displayName}
@@ -188,7 +194,12 @@ export default async function FundamentalPage({ params }: Props) {
     const factsResult = await getFundamentalFacts(upper);
     // 입력원 장애로 불완전한 렌더(메타는 noindex)가 12h 동안 굳지 않게, 섹션 degrade와 같이
     // 이 렌더의 revalidate를 짧게 낮춘다 — 복구되면 다음 재생성에서 다시 판정한다.
-    if (!factsResult.complete) await shortenRevalidateForRuntimeDegrade();
+    // 그 렌더는 `noindex`이므로(`getFundamentalFacts`의 `indexable`) 창이 지난 뒤 stale로도
+    // 내보내지 않는다 — 위 프로필 degrade와 같은 이유다.
+    if (!factsResult.complete) {
+        await shortenRevalidateForRuntimeDegrade();
+        await flagNoindexDegradedRender();
+    }
     // sitemap 스탬프는 여기서 쓰지 않는다 — 렌더 중 Redis 쓰기(Upstash REST no-store fetch)는 ISR을
     // 동적으로 뒤집는다(e2e 실측). 스탬프는 SEO 프리웜이 같은 판정으로 채운다(`fundamentalStamps.ts`).
 

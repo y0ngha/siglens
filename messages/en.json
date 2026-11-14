@@ -2091,8 +2091,8 @@
                     "krDescription": "See 5% major-holder reports, executive and major-shareholder ownership changes and trading-plan reports for {subject} from DART in one place, with an AI reading of the ownership flows."
                 },
                 "fundamental": {
-                    "description": "See {subject}'s company profile, PER/PSR/EPS valuation, ROE and margin profitability, and debt/cash-flow health on one page, plus analyst consensus and price targets.",
-                    "descriptionWithSector": "See {subject}'s company profile, PER/PSR/EPS valuation, ROE and margin profitability, and debt/cash-flow health on one page, plus its position in the {sector} sector, analyst consensus, and price targets.",
+                    "description": "{subject}: profile, valuation (PER, PSR), ROE, financial health, analyst consensus and price targets.",
+                    "descriptionWithSector": "{subject}: profile, valuation, ROE, financial health, {sector} sector standing, analyst consensus and targets.",
                     "titleCore": "Fundamentals",
                     "titleTail": "PER, ROE & Consensus"
                 },

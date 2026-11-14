@@ -65,6 +65,26 @@ describe('HeaderMobileMenu 중첩 Escape', () => {
         expectDrawerClosed();
     });
 
+    // 폰 폭에서는 테마 토글이 헤더 줄이 아니라 드로어 안에 선다 — 언어 팝오버와 같은 규칙이어야 한다.
+    const openThemeMenu = () =>
+        fireEvent.click(screen.getByRole('button', { name: /^테마/ }));
+
+    it('테마 메뉴가 열려 있으면 첫 Escape는 메뉴만 닫고, 두 번째가 드로어를 닫는다', () => {
+        renderWithIntl(<HeaderMobileMenu items={NAV_TREE} />);
+        openDrawer();
+        openThemeMenu();
+        expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+
+        fireEvent.keyDown(document, { key: 'Escape' });
+
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        fireEvent.keyDown(document, { key: 'Escape' });
+
+        expectDrawerClosed();
+    });
+
     it('팝오버가 닫혀 있으면 Escape 한 번에 드로어가 닫힌다', () => {
         renderWithIntl(<HeaderMobileMenu items={NAV_TREE} />);
         openDrawer();

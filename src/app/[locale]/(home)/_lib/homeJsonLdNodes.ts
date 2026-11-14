@@ -22,6 +22,11 @@ export interface HomeJsonLdInput {
     /** 홈 `<title>`과 같은 문자열 — `WebPage.name`이 SERP 제목과 어긋나지 않게 한다. */
     readonly title: string;
     readonly description: string;
+    /**
+     * 이 서비스가 무엇인지 한 구절로 말하는 문구(`shared.seo.root.headline`).
+     * `Organization.disambiguatingDescription`에 싣는다.
+     */
+    readonly headline: string;
 }
 
 /** 홈이 싣는 엔티티 그래프 노드. `FAQPage`는 화면 FAQ와 같은 배열에서 따로 만든다. */
@@ -43,6 +48,7 @@ export function buildHomeJsonLdNodes({
     locale,
     title,
     description,
+    headline,
 }: HomeJsonLdInput): HomeJsonLdNodes {
     const homeUrl = localizedAbsoluteUrl(SITE_URL, locale);
     const webApplicationId = `${homeUrl}#webapplication`;
@@ -83,6 +89,10 @@ export function buildHomeJsonLdNodes({
             alternateName: SITE_NAME_KO,
             logo: `${SITE_URL}/icon512.png`,
             description,
+            // 같은 이름의 다른 주체와 가르는 한 구절이다. 영문 `SIGLENS`는 로그 관리 프로젝트와 이름이
+            // 겹쳐(`SITE_NAME_KO` 주석) 검색·AI 답변 엔진이 긴 설명을 읽기 전에 "무엇의 이름인가"부터
+            // 판단한다 — schema.org가 그 용도로 둔 속성에 서비스 종류(주식·암호화폐 AI 분석)를 싣는다.
+            disambiguatingDescription: headline,
             // 조직의 외부 프로필만 싣는다. 운영자 개인 GitHub·velog는 사람의 프로필이라
             // `founder.sameAs`에만 둔다 — 섞으면 파서가 조직과 운영자를 같은 주체로 읽는다.
             sameAs: [GITHUB_URL, X_URL],

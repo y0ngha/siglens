@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
@@ -89,9 +89,11 @@ export function ThemeToggle() {
     const containerRef = useRef<HTMLDivElement>(null);
     const groupRef = useRef<HTMLDivElement>(null);
     const { isOpen, close, toggle } = usePopoverToggle(containerRef);
-    /* 형제 메뉴(`HeaderUserMenu`·`AnalysisSettingsMenu`)와 같은 짝을 쓴다 —
-       바깥 클릭만 있으면 키보드 사용자에게는 닫을 방법이 없다. */
-    useEscapeKey(close, isOpen);
+    /* 바깥 클릭만 있으면 키보드 사용자에게는 닫을 방법이 없다. 레이어 훅을 쓰는 이유: 이 토글은
+       모바일 드로어 안에도 선다(`HeaderMobileMenu`). 독립 리스너(`useEscapeKey`)면 Escape 한 번이
+       이 메뉴와 드로어를 한꺼번에 닫는다 — 드로어 안의 언어 팝오버와 같은 처리다. 헤더 줄에서는
+       레이어가 이것 하나라 동작이 같다. */
+    useEscapeLayer(close, isOpen);
     const menuId = useId();
 
     const current = OPTIONS.find(o => o.value === preference) ?? SYSTEM_OPTION;

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { authNextQuery } from '@/shared/lib/auth/redirect';
 import { GUIDE_PATH } from '@/shared/lib/guidePaths';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { AiNavLink } from './AiNavLink';
 import { useMobileDrawer } from './hooks/useMobileDrawer';
 import { LocaleSwitcher } from './LocaleSwitcher';
@@ -63,8 +64,15 @@ export function HeaderMobileMenu({
             >
                 {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로 <nav> 밖에 둔다 — 안에 넣으면
                     스크린리더가 메뉴 링크 목록의 일부로 읽는다. */}
-                <div className="border-b border-secondary-700 px-2 py-2">
+                <div className="flex items-center justify-between border-b border-secondary-700 px-2 py-2">
                     <LocaleSwitcher showLabel align="start" />
+                    {/* 폰 폭에서는 헤더 줄에 테마 토글이 설 자리가 없어 여기로 온다. 경계는
+                        `Header`의 `HIDE_BELOW_PHONE_BAR`와 같아야 한다 — 그 위 폭에서는 헤더 줄의
+                        토글 하나만 남긴다. 줄 오른쪽 끝에 두는 이유: 토글의 팝오버가 트리거 오른쪽에
+                        맞춰 왼쪽으로 펼쳐지므로 드로어 안에 들어온다. */}
+                    <div className="min-[30rem]:hidden">
+                        <ThemeToggle />
+                    </div>
                 </div>
 
                 <nav

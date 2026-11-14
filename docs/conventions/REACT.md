@@ -563,6 +563,19 @@ A `role` attribute needs `aria-label`, `aria-labelledby`, or accessible text con
 />
 ```
 
+<a id="CR-10"></a>
+
+#### CR-10 — A one-per-session nudge claims its shared slot at signal time, and moving that write is checked against every reader
+
+Nudges that share a session flag (modal prompts, coach marks) must write the flag synchronously when their trigger signal fires, not when the UI finally opens. A deferred write lets another subscriber claim the slot on the same signal (neither shows), and a "pending" flag left unset until open starves the nudges that yield to it on short visits. Before changing when a shared flag is written, grep every reader of it and check what each does while it stays unset. Never open an overlay in the same tick as the input that satisfied its gate.
+
+```ts
+// ❌ open-time claim: another subscriber takes the slot first
+onSignal(() => setTimeout(() => { markShown(); open(); }, delay));
+// ✅ claim at signal time, open later
+onSignal(() => { if (!claimSessionSlot()) return; setTimeout(open, delay); });
+```
+
 <a id="CR-9"></a>
 
 #### CR-9 — A DOM id in a reusable component comes from `useId`

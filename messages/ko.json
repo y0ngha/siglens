@@ -2091,8 +2091,8 @@
                     "titleTail": "13F, 내부자, 공매도"
                 },
                 "fundamental": {
-                    "description": "{subject} 회사 프로필, 밸류에이션(PER, PSR, EPS), 수익성(ROE, 마진), 재무 건전성(부채, 현금흐름)을 한 페이지에서 정리합니다. 애널리스트 컨센서스와 목표 주가도 이어 봅니다.",
-                    "descriptionWithSector": "{subject} 회사 프로필, 밸류에이션(PER, PSR, EPS), 수익성(ROE, 마진), 재무 건전성(부채, 현금흐름)을 한 페이지에서 정리합니다. {sector} 섹터 내 위치, 애널리스트 컨센서스와 목표 주가도 이어 봅니다.",
+                    "description": "{subject} 회사 프로필과 밸류에이션(PER, PSR), 수익성(ROE, 마진), 재무 건전성, 애널리스트 컨센서스와 목표 주가를 정리합니다.",
+                    "descriptionWithSector": "{subject} 회사 프로필과 밸류에이션, 수익성, 재무 건전성, {sector} 섹터 내 위치, 애널리스트 컨센서스와 목표 주가를 정리합니다.",
                     "titleCore": "펀더멘털",
                     "titleTail": "PER, ROE와 컨센서스"
                 },

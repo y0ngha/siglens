@@ -1,6 +1,10 @@
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
+import {
+    takeWholeSentences,
+    truncateAtWordBoundary,
+} from '@/shared/lib/truncate';
 
 /**
  * SEO 프리웜 스냅샷의 탭별로, `content`가 싣는 주 한국어 산문 필드를 가리킨다
@@ -132,43 +136,10 @@ function isDecimalPoint(codePoints: readonly string[], index: number): boolean {
 }
 
 /**
- * 예산 안에 들어가는 **온전한 문장들**만 이어 붙인다. 하나도 못 넣으면 `null`.
- *
- * `clampAtSentenceBoundary`와 다르다. 그쪽은 하드 컷 지점에서 뒤로 40자만
- * 훑어 종결부호를 찾고, 못 찾으면 `…`로 자른다 — 첫 문장이 예산보다 길면
- * 무조건 잘린다. 이 함수는 자르지 않고 **넣을 수 있는 만큼만** 넣는다.
- *
- * 평이화 산문에 이 규칙이 필요한 이유: 평이화는 헤드라인 전용 필드가 없어
- * 본문 첫 문장부터 쓰게 되는데, 그게 원문의 `headlineKo`보다 길다(실측 40건,
- * overall 평균 94자 → 104자). 그대로 클램프하면 잘림이 2/40에서 11/40으로
- * 늘었다. 문장 단위로만 담으면 잘림이 구조적으로 0이 되고, 한 문장도 못 담는
- * 경우에만 호출자가 원문으로 폴백한다.
- */
-export function takeWholeSentences(
-    text: string,
-    maxLength: number
-): string | null {
-    // 한국어 종결(`다.`)과 일반 종결부호를 모두 끊는다. CJK 종결부호는 공백을
-    // 두지 않으므로 공백을 요구하지 않는다.
-    const sentences = text
-        .split(/(?<=다\.)\s*|(?<=[.!?。])\s+/)
-        .map(part => part.trim())
-        .filter(part => part.length > 0);
-
-    let out = '';
-    for (const sentence of sentences) {
-        const next = out === '' ? sentence : `${out} ${sentence}`;
-        if ([...next].length > maxLength) break;
-        out = next;
-    }
-    return out === '' ? null : out;
-}
-
-/**
  * `text`를 `maxLength` 코드포인트로 자르되, 하드 컷에서 {@link SENTENCE_BOUNDARY_SEARCH_WINDOW}
  * 코드포인트 이내의 마지막 문장 종결부호(`.`/`!`/`?`)에서 끊는 쪽을 택한다 — SERP
  * 스니펫에서는 문장 중간에서 잘린 것보다 온전한 마지막 문장이 낫다. 그 범위에 종결부호가
- * 없으면 하드 컷 + `…`로 떨어진다(`clampSeoDescription`과 같은 동작). 서로게이트 쌍을
+ * 없으면 어절 경계에서 자르고 `…`를 붙인다(`truncateAtWordBoundary`). 서로게이트 쌍을
  * 쪼개지 않도록 전 과정을 코드포인트 기준으로 센다.
  */
 export function clampAtSentenceBoundary(
@@ -196,7 +167,7 @@ export function clampAtSentenceBoundary(
                 .trimEnd();
         }
     }
-    return truncated.join('').trimEnd() + '…';
+    return truncateAtWordBoundary(text, maxLength);
 }
 
 /**

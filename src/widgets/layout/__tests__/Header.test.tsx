@@ -147,7 +147,7 @@ describe('Header', () => {
         it('main host: the AI wordmark next to the logo links to the AI product; the logo goes home', () => {
             render(<Header currentUser={null} />);
             const ai = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
-            expect(ai).toHaveTextContent(/^AIBeta$/);
+            expect(ai).toHaveTextContent(/^AI Beta$/);
             expect(ai).toHaveAttribute('href', `${AI_SITE_URL}/`);
             expect(ai).not.toHaveAttribute('aria-current');
             const logo = screen.getByTitle('홈으로');

@@ -13,14 +13,38 @@ import {
     publishSymbolAnalyzed,
     subscribeSymbolAnalyzed,
 } from '@/shared/lib/symbolAnalyzedSignal';
-import { VOC_PROMPT_DELAY_MS, VocPromptHost } from '../ui/VocPromptHost';
+import {
+    VOC_PROMPT_DELAY_MS,
+    VOC_PROMPT_SETTLE_MS,
+    VOC_PROMPT_TYPING_RETRIES,
+    VOC_PROMPT_TYPING_RETRY_MS,
+    VocPromptHost,
+} from '../ui/VocPromptHost';
 
 const dialog = () => screen.queryByRole('dialog');
+const ANALYSIS_DELAY_MS = VOC_PROMPT_DELAY_MS.analysis;
+const CHAT_DELAY_MS = VOC_PROMPT_DELAY_MS.agent_chat;
 
 function advance(ms: number) {
     act(() => {
         vi.advanceTimersByTime(ms);
     });
+}
+
+/** 방문자가 페이지를 한 번 조작했다. */
+function engage(type = 'pointerdown', target: EventTarget = window) {
+    act(() => {
+        target.dispatchEvent(new Event(type, { bubbles: true }));
+    });
+}
+
+/** 내용이 든 입력란에 포커스를 둔다 — "입력 중" 상태. 정리 함수를 돌려준다. */
+function focusField(value: string): HTMLInputElement {
+    const input = document.createElement('input');
+    input.value = value;
+    document.body.append(input);
+    input.focus();
+    return input;
 }
 
 describe('VocPromptHost', () => {
@@ -33,25 +57,95 @@ describe('VocPromptHost', () => {
         vi.useRealTimers();
         localStorage.clear();
         sessionStorage.clear();
+        document.body.querySelectorAll('input').forEach(el => el.remove());
     });
 
     describe('siglens.io (analysis)', () => {
         it('신호 전에는 아무것도 그리지 않는다', () => {
             render(<VocPromptHost trigger="analysis" />);
 
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            engage();
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
         });
 
-        it('첫 분석 신호 뒤 2.5초가 지나야 열린다', () => {
+        it('진입 직후가 아니라 20초 뒤에 연다 - 분석 지연은 챗 지연보다 길다', () => {
+            expect(ANALYSIS_DELAY_MS).toBe(20_000);
+            expect(ANALYSIS_DELAY_MS).toBeGreaterThan(CHAT_DELAY_MS);
+        });
+
+        it('이미 조작한 방문자에게는 첫 분석 신호 뒤 지연이 지나면 열린다', () => {
             render(<VocPromptHost trigger="analysis" />);
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
-            advance(VOC_PROMPT_DELAY_MS - 1);
+            advance(ANALYSIS_DELAY_MS - 1);
             expect(dialog()).not.toBeInTheDocument();
 
             advance(1);
+            expect(dialog()).toBeInTheDocument();
+        });
+
+        it('지연이 지나도 방문자가 페이지를 조작하기 전에는 열지 않는다 - 크롤러와 측정 도구는 모달을 보지 않는다', () => {
+            render(<VocPromptHost trigger="analysis" />);
+
+            act(() => publishSymbolAnalyzed('NVDA'));
+            advance(ANALYSIS_DELAY_MS * 10);
+
+            expect(dialog()).not.toBeInTheDocument();
+        });
+
+        it.each(['pointerdown', 'touchstart', 'wheel', 'keydown'])(
+            '%s은 조작이다 - 지연 뒤에 오면 그 순간이 아니라 조금 뒤에 연다',
+            type => {
+                render(<VocPromptHost trigger="analysis" />);
+
+                act(() => publishSymbolAnalyzed('NVDA'));
+                advance(ANALYSIS_DELAY_MS);
+                engage(type);
+                // 입력과 같은 순간에 열면 방문자가 막 시작한 동작을 모달이 가로챈다.
+                expect(dialog()).not.toBeInTheDocument();
+
+                advance(VOC_PROMPT_SETTLE_MS - 1);
+                expect(dialog()).not.toBeInTheDocument();
+                advance(1);
+                expect(dialog()).toBeInTheDocument();
+            }
+        );
+
+        // 스크롤 복원·`scrollIntoView` 같은 스크립트 스크롤도 `scroll`을 낸다 - 조작으로 치면 입력이
+        // 없는 렌더러에서도 모달이 열린다. `click`은 스크립트가 낼 수 있고 `pointerdown`이 이미 덮는다.
+        it.each(['scroll', 'click'])(
+            '%s은 조작으로 치지 않는다 - 스크립트가 낼 수 있는 이벤트다',
+            type => {
+                render(<VocPromptHost trigger="analysis" />);
+
+                engage(type);
+                engage(type, document.body);
+                act(() => publishSymbolAnalyzed('NVDA'));
+                advance(ANALYSIS_DELAY_MS * 3);
+
+                expect(dialog()).not.toBeInTheDocument();
+            }
+        );
+
+        it('안쪽 요소에서 난 입력도 조작으로 센다(캡처 단계)', () => {
+            render(
+                <>
+                    <button type="button">안쪽</button>
+                    <VocPromptHost trigger="analysis" />
+                </>
+            );
+
+            const inner = screen.getByRole('button', { name: '안쪽' });
+            inner.addEventListener('pointerdown', event =>
+                event.stopPropagation()
+            );
+            engage('pointerdown', inner);
+            act(() => publishSymbolAnalyzed('NVDA'));
+            advance(ANALYSIS_DELAY_MS);
+
             expect(dialog()).toBeInTheDocument();
         });
 
@@ -59,9 +153,10 @@ describe('VocPromptHost', () => {
             render(<VocPromptHost trigger="analysis" />);
 
             act(() => publishSymbolAnalyzed('NVDA'));
-            expect(dialog()).not.toBeInTheDocument();
-            advance(VOC_PROMPT_DELAY_MS);
 
+            // 모달은 아직이지만 기록은 이미 있다 - 조건을 못 채우고 떠나는 짧은 방문이 이어져도
+            // VOC가 대기로 남아 가입 넛지와 코치 마크를 계속 막지 않는다.
+            expect(dialog()).not.toBeInTheDocument();
             expect(localStorage.getItem(LOCAL_STORAGE_VOC_PROMPTED_KEY)).toBe(
                 '1'
             );
@@ -73,9 +168,10 @@ describe('VocPromptHost', () => {
         it('여러 번 분석돼도 한 번만 열리고, 닫으면 다시 열리지 않는다', () => {
             render(<VocPromptHost trigger="analysis" />);
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
             act(() => publishSymbolAnalyzed('AAPL'));
-            advance(VOC_PROMPT_DELAY_MS);
+            advance(ANALYSIS_DELAY_MS);
             expect(screen.getAllByRole('dialog')).toHaveLength(1);
 
             act(() => {
@@ -84,7 +180,8 @@ describe('VocPromptHost', () => {
             expect(dialog()).not.toBeInTheDocument();
 
             act(() => publishSymbolAnalyzed('TSLA'));
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            engage();
+            advance(ANALYSIS_DELAY_MS * 2);
             expect(dialog()).not.toBeInTheDocument();
         });
 
@@ -92,8 +189,9 @@ describe('VocPromptHost', () => {
             localStorage.setItem(LOCAL_STORAGE_VOC_PROMPTED_KEY, '1');
             render(<VocPromptHost trigger="analysis" />);
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
         });
@@ -102,8 +200,9 @@ describe('VocPromptHost', () => {
             sessionStorage.setItem(SESSION_STORAGE_NUDGE_SHOWN_KEY, '1');
             render(<VocPromptHost trigger="analysis" />);
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
             // 다음 방문에서 다시 시도할 수 있어야 한다.
@@ -119,50 +218,136 @@ describe('VocPromptHost', () => {
                 seenByOthers = hasNudgeShownThisSession();
             });
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
             unsubscribe();
 
             expect(seenByOthers).toBe(true);
-            advance(VOC_PROMPT_DELAY_MS);
+            advance(ANALYSIS_DELAY_MS);
             expect(dialog()).toBeInTheDocument();
         });
 
-        it('2.5초 안에 떠나면(언마운트) 열리지 않는다', () => {
+        describe('입력 중인 방문자', () => {
+            it('내용이 든 입력란에 포커스가 있으면 미뤘다가, 입력이 끝나면 연다', () => {
+                render(<VocPromptHost trigger="analysis" />);
+                const field = focusField('TSLA');
+
+                engage('keydown');
+                act(() => publishSymbolAnalyzed('NVDA'));
+                advance(ANALYSIS_DELAY_MS);
+                // 지금 열면 포커스 트랩이 검색어 입력을 가로챈다.
+                expect(dialog()).not.toBeInTheDocument();
+
+                field.blur();
+                advance(VOC_PROMPT_TYPING_RETRY_MS);
+                expect(dialog()).toBeInTheDocument();
+            });
+
+            it('계속 입력 중이면 정해진 횟수만 미루고 이 세션에는 열지 않는다', () => {
+                render(<VocPromptHost trigger="analysis" />);
+                const field = focusField('TSLA');
+
+                engage('keydown');
+                act(() => publishSymbolAnalyzed('NVDA'));
+                advance(
+                    ANALYSIS_DELAY_MS +
+                        VOC_PROMPT_TYPING_RETRY_MS * VOC_PROMPT_TYPING_RETRIES
+                );
+                expect(dialog()).not.toBeInTheDocument();
+
+                field.blur();
+                advance(VOC_PROMPT_TYPING_RETRY_MS * 4);
+                expect(dialog()).not.toBeInTheDocument();
+            });
+
+            it('비어 있는 입력란의 포커스는 입력 중이 아니다', () => {
+                render(<VocPromptHost trigger="analysis" />);
+                focusField('');
+
+                engage();
+                act(() => publishSymbolAnalyzed('NVDA'));
+                advance(ANALYSIS_DELAY_MS);
+
+                expect(dialog()).toBeInTheDocument();
+            });
+        });
+
+        it('지연 안에 떠나면(언마운트) 열리지 않는다', () => {
             const { unmount } = render(<VocPromptHost trigger="analysis" />);
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
             unmount();
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
         });
 
-        it('언마운트하면 구독을 해제한다', () => {
+        it('조작을 기다리는 틈에 떠나도(언마운트) 열리지 않는다', () => {
+            const { unmount } = render(<VocPromptHost trigger="analysis" />);
+
+            act(() => publishSymbolAnalyzed('NVDA'));
+            advance(ANALYSIS_DELAY_MS);
+            engage();
+            unmount();
+            advance(VOC_PROMPT_SETTLE_MS * 2);
+
+            expect(dialog()).not.toBeInTheDocument();
+        });
+
+        it('언마운트하면 구독과 입력 리스너를 해제한다', () => {
+            const removeSpy = vi.spyOn(window, 'removeEventListener');
             const { unmount } = render(<VocPromptHost trigger="analysis" />);
             unmount();
 
             act(() => publishSymbolAnalyzed('NVDA'));
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            engage();
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
+            expect(removeSpy.mock.calls.map(call => call[0])).toEqual(
+                expect.arrayContaining([
+                    'pointerdown',
+                    'touchstart',
+                    'wheel',
+                    'keydown',
+                ])
+            );
+            removeSpy.mockRestore();
         });
 
         it('시그렌즈 AI 신호에는 반응하지 않는다', () => {
             render(<VocPromptHost trigger="analysis" />);
 
+            engage();
             act(() => publishAgentTurnCompleted());
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
         });
     });
 
     describe('ai.siglens.io (agent_chat)', () => {
-        it('첫 답변 턴이 끝나면 2.5초 뒤 열린다', () => {
+        it('질문을 보낸 방문자는 첫 답변 턴이 끝나고 2.5초 뒤 본다', () => {
             render(<VocPromptHost trigger="agent_chat" />);
 
+            // 질문을 입력해 보낸 것 자체가 조작이다.
+            engage('keydown');
             act(() => publishAgentTurnCompleted());
-            advance(VOC_PROMPT_DELAY_MS);
+            advance(CHAT_DELAY_MS - 1);
+            expect(dialog()).not.toBeInTheDocument();
+
+            advance(1);
+            expect(dialog()).toBeInTheDocument();
+        });
+
+        it('질문을 보낸 뒤 비어 있는 입력창이 포커스를 쥐고 있어도 열린다', () => {
+            render(<VocPromptHost trigger="agent_chat" />);
+            focusField('');
+
+            engage('keydown');
+            act(() => publishAgentTurnCompleted());
+            advance(CHAT_DELAY_MS);
 
             expect(dialog()).toBeInTheDocument();
         });
@@ -170,8 +355,9 @@ describe('VocPromptHost', () => {
         it('종목 분석 신호에는 반응하지 않는다', () => {
             render(<VocPromptHost trigger="agent_chat" />);
 
+            engage();
             act(() => publishSymbolAnalyzed('NVDA'));
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            advance(ANALYSIS_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
         });
@@ -180,8 +366,9 @@ describe('VocPromptHost', () => {
             sessionStorage.setItem(SESSION_STORAGE_NUDGE_SHOWN_KEY, '1');
             render(<VocPromptHost trigger="agent_chat" />);
 
+            engage();
             act(() => publishAgentTurnCompleted());
-            advance(VOC_PROMPT_DELAY_MS * 2);
+            advance(CHAT_DELAY_MS * 2);
 
             expect(dialog()).not.toBeInTheDocument();
         });

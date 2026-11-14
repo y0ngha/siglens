@@ -9,9 +9,9 @@ import { SITE_URL } from '@/shared/lib/seo';
 import {
     clampAtSentenceBoundary,
     collapseToSingleLine,
-    takeWholeSentences,
 } from '@/shared/lib/seoSnapshotDescription';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
+import { takeWholeSentences } from '@/shared/lib/truncate';
 
 /** 항목 설명 상한(code point). 리더 목록 미리보기에 쓰이는 길이다 — 전문은 `content:encoded`가 싣는다. */
 export const DESCRIPTION_MAX_LENGTH = 500;

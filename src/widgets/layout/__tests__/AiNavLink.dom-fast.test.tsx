@@ -19,7 +19,7 @@ describe('AiNavLink', () => {
         const { unmount } = render(<AiNavLink />);
         expect(
             screen.getByRole('link', { name: '시그렌즈 AI Beta' })
-        ).toHaveTextContent(/^시그렌즈 AIBeta$/);
+        ).toHaveTextContent(/^시그렌즈 AI Beta$/);
         unmount();
 
         render(
@@ -29,7 +29,7 @@ describe('AiNavLink', () => {
         );
         expect(
             screen.getByRole('link', { name: 'SIGLENS AI Beta' })
-        ).toHaveTextContent(/^SIGLENS AIBeta$/);
+        ).toHaveTextContent(/^SIGLENS AI Beta$/);
     });
 
     it('en href는 AI_SITE_URL + localePath(en, "/")', () => {
@@ -109,7 +109,7 @@ describe('AiNavLink', () => {
         it('shows "AI" + the Beta tag but keeps the full accessible name and the ai href', () => {
             render(<AiNavLink variant="wordmark" />);
             const link = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
-            expect(link).toHaveTextContent(/^AIBeta$/);
+            expect(link).toHaveTextContent(/^AI Beta$/);
             expect(link).toHaveAttribute('translate', 'no');
             expect(link).toHaveAttribute(
                 'href',

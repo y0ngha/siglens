@@ -209,4 +209,84 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
             )
             .toBe('hidden');
     });
+
+    /**
+     * 7. 좁은 폰 폭에서 햄버거가 화면 안에 온전히 선다.
+     *
+     * 헤더 한 줄에 44px 아이콘이 여섯 개 서면서 360~390px 폰에서 맨 끝의 햄버거가 화면 밖으로
+     * 잘렸다(운영 실측: 360px에서 x=348~392). `toBeVisible()`은 일부만 보여도 통과하므로 위
+     * 테스트들은 이걸 못 잡는다 — 버튼 상자가 뷰포트 안에 다 들어오는지, 문서에 가로 스크롤이
+     * 없는지를 직접 잰다. 헤더에 아이콘을 더하면 이 테스트가 먼저 깨져야 한다(`Header.tsx` "폭 예산").
+     */
+    for (const width of [320, 360, 390]) {
+        test(`@webkit ${width}px 폭에서 햄버거가 화면 안에 온전히 선다`, async ({
+            page,
+        }) => {
+            test.skip(
+                test.info().project.name !== 'webkit',
+                '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+            );
+
+            await page.setViewportSize({ width, height: 740 });
+            await page.goto('/');
+            await settlePwaBanner(page);
+
+            const trigger = page.getByRole('button', { name: '메뉴 열기' });
+            await expect(trigger).toBeVisible();
+            const box = await trigger.boundingBox();
+            expect(box).not.toBeNull();
+            if (box === null) return;
+            expect(box.x).toBeGreaterThanOrEqual(0);
+            expect(box.x + box.width).toBeLessThanOrEqual(width);
+
+            const scrollWidth = await page.evaluate(
+                () => document.documentElement.scrollWidth
+            );
+            expect(scrollWidth).toBeLessThanOrEqual(width);
+        });
+    }
+
+    /**
+     * 8. 폰 폭에서는 테마 토글이 헤더 줄이 아니라 드로어에 있다.
+     *
+     * 헤더 줄에서 뺀 컨트롤은 드로어에서 닿아야 한다 — 두 쪽의 경계가 어긋나면 어느 쪽에도 없는
+     * 폭이 생긴다.
+     */
+    test('@webkit 폰 폭에서 테마 토글은 드로어에서 닿는다', async ({
+        page,
+    }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+        await settlePwaBanner(page);
+
+        // 닫힌 드로어의 토글은 DOM에 있지만 화면 밖이고, 헤더 줄의 토글은 `display: none`이다 —
+        // 가시성 판정 대신 뷰포트 안에 상자가 있는 토글 수를 센다.
+        const themeToggles = page.getByRole('button', {
+            name: /^테마/,
+            includeHidden: true,
+        });
+        const onScreen = await themeToggles.evaluateAll(
+            elements =>
+                elements.filter(element => {
+                    const rect = element.getBoundingClientRect();
+                    return (
+                        rect.width > 0 &&
+                        rect.right > 0 &&
+                        rect.left < window.innerWidth
+                    );
+                }).length
+        );
+        expect(onScreen).toBe(0);
+
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        const drawer = page.getByRole('dialog', { name: '메뉴' });
+        await expect(drawer).toBeVisible();
+        await expect(
+            drawer.getByRole('button', { name: /^테마/ })
+        ).toBeVisible();
+    });
 });

@@ -156,6 +156,70 @@ describe('buildSymbolFundamentalSeoContent', () => {
         );
     });
 
+    // 2026-11-14 운영 크롤: 펀더멘털 탭 279개 중 269개가 `…이어 봅니…`로 잘려 나갔다 — 템플릿이
+    // 흔한 종목명 길이에서 이미 120자를 넘었다. 클램프는 안전망이지 상시 절단 수단이 아니다.
+    it.each([
+        ['AAPL', '애플, Apple Inc. (AAPL)'],
+        ['MSFT', '마이크로소프트, Microsoft Corp. (MSFT)'],
+        ['005930.KS', '삼성전자 (005930.KS)'],
+        ['BRK-B', '버크셔 해서웨이, Berkshire Hathaway Inc. (BRK-B)'],
+    ])(
+        '%s: 흔한 종목명에서 펀더멘털 설명은 잘리지 않는다',
+        (ticker, displayName) => {
+            const { description } = buildSymbolFundamentalSeoContent(
+                ticker,
+                t,
+                {
+                    displayName,
+                }
+            );
+            expect(description.endsWith('…')).toBe(false);
+            expect(description.endsWith('정리합니다.')).toBe(true);
+        }
+    );
+
+    // 본문 JSON-LD는 섹터가 붙은 변형을 쓴다 — 그쪽도 흔한 조합에서 잘리지 않아야 한다.
+    it.each([
+        ['AAPL', '애플, Apple Inc. (AAPL)', 'Technology'],
+        ['MSFT', '마이크로소프트, Microsoft Corp. (MSFT)', 'Technology'],
+        ['JPM', 'JP모건, JPMorgan Chase & Co. (JPM)', 'Financial Services'],
+    ])(
+        '%s: 섹터가 붙어도 흔한 종목명에서 펀더멘털 설명은 잘리지 않는다',
+        (ticker, displayName, sector) => {
+            const { description } = buildSymbolFundamentalSeoContent(
+                ticker,
+                t,
+                {
+                    displayName,
+                    sector,
+                }
+            );
+            expect(description).toContain(`${sector} 섹터`);
+            expect(description.endsWith('정리합니다.')).toBe(true);
+        }
+    );
+
+    it('예외적으로 긴 종목명에서도 단어 한가운데서 끊지 않는다', () => {
+        const { description } = buildSymbolFundamentalSeoContent('XLF', t, {
+            displayName:
+                '스테이트 스트리트 파이낸셜 셀렉트 섹터 SPDR ETF, State Street Financial Select Sector SPDR ETF (XLF)',
+        });
+        expect([...description].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        expect(description.endsWith('…')).toBe(true);
+        // 말줄임표 바로 앞은 어절 끝이다 — 원문에서 그 뒤가 공백이어야 한다.
+        const kept = description.slice(0, -1);
+        const full = buildSymbolFundamentalSeoContent('XLF', t, {
+            displayName: 'X (XLF)',
+        }).description.replace(
+            'X (XLF)',
+            '스테이트 스트리트 파이낸셜 셀렉트 섹터 SPDR ETF, State Street Financial Select Sector SPDR ETF (XLF)'
+        );
+        expect(full.startsWith(kept)).toBe(true);
+        expect(full.charAt(kept.length)).toMatch(/[\s,]/);
+    });
+
     it('sector가 함께 들어와도 description이 120자 클램프를 넘지 않는다', () => {
         const content = buildSymbolFundamentalSeoContent('AAPL', t, {
             displayName: '애플, Apple Inc. (AAPL)',

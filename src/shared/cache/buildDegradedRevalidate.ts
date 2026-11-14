@@ -35,6 +35,25 @@ export const BUILD_DEGRADED_REVALIDATE_SECONDS = 60;
 export const RUNTIME_DEGRADED_REVALIDATE_SECONDS = 300;
 
 /**
+ * **degrade 때문에 `noindex`가 된** 렌더가 페이지 엔트리에 남기는 태그.
+ *
+ * 300초 핀은 "언제부터 다시 만들 수 있는가"만 정한다. ISR은 stale-while-revalidate라 창이 지난
+ * 뒤 첫 요청자는 여전히 옛 사본을 받는다. 색인되는 페이지가 입력원 장애로 안내문 + `noindex`를
+ * 그렸다면 그 "첫 요청자"는 몇 시간 뒤의 크롤러이고, 크롤러가 받는 것이 `noindex`다. 캐시 핸들러
+ * (`cache-handler/degradedEntry.mjs`)가 이 태그를 보고 창이 지난 엔트리를 miss로 돌려 그 요청에서
+ * 블로킹 렌더하게 한다.
+ *
+ * **모든 degrade 렌더에 달지 않는다.** 봉·번역·섹션 하나가 빠졌을 뿐 본문과 색인 상태가 멀쩡한
+ * 렌더는 stale로 내보내는 편이 낫다 — 장애 중에 방문자가 즉시 응답을 받고, 재생성이 실패해도
+ * 옛 사본이 남는다. 이 태그는 그 안전망을 포기하므로 "옛 사본이 `noindex` 껍데기"인 경우로 한정한다
+ * ({@link flagNoindexDegradedRender}).
+ *
+ * 누구도 이 태그로 `revalidateTag`를 부르지 않는다 — 무효화용이 아니라 표식이다. 값은 핸들러의
+ * 같은 이름 상수와 같아야 하고 `cache-handler/__tests__/degradedEntry.test.mjs`가 고정한다.
+ */
+export const NOINDEX_DEGRADED_RENDER_TAG = 'noindex-degraded-render';
+
+/**
  * 세션 키 캐시가 **한 세션 뒤처진 값**(`sessionCoverage` = `lagging`)을 받은 렌더의 revalidate(초).
  *
  * 그 값은 캐시에 저장하지 않지만, 렌더된 ISR HTML은 라우트 revalidate(12~24h) 동안 남는다 — 그대로
@@ -70,6 +89,19 @@ const pinRuntimeDegradedRevalidate = unstable_cache(
     async () => true,
     ['runtime-degraded-revalidate'],
     { revalidate: RUNTIME_DEGRADED_REVALIDATE_SECONDS }
+);
+
+const pinNoindexDegradedRender = unstable_cache(
+    async () => true,
+    // 캐시 키다 — 아래 태그 상수와 글자가 같지만 역할이 다르다(키는 이 핀 엔트리의 식별자, 태그는
+    // 페이지 엔트리에 남기는 표식). 태그 값을 바꿔도 키를 따라 바꿀 필요가 없어 상수를 공유하지 않는다.
+    ['noindex-degraded-render'],
+    {
+        revalidate: RUNTIME_DEGRADED_REVALIDATE_SECONDS,
+        // 렌더 중 읽힌 `unstable_cache`의 태그는 그 페이지 엔트리의 태그로 모인다(위 주석의 같은
+        // `prerender-legacy` 분기). 그래서 이 핀을 거친 렌더는 페이지 엔트리에 이 태그가 남는다.
+        tags: [NOINDEX_DEGRADED_RENDER_TAG],
+    }
 );
 
 const pinIncompleteSessionRevalidate = unstable_cache(
@@ -165,6 +197,29 @@ export async function shortenRevalidateForRuntimeDegrade(): Promise<void> {
     } catch (error) {
         console.warn(
             '[shortenRevalidateForRuntimeDegrade] pin skipped (outside a Next render?):',
+            error
+        );
+    }
+}
+
+/**
+ * 이 렌더가 **degrade 때문에 `noindex`로 나간다**고 표시한다 — 페이지 엔트리에
+ * {@link NOINDEX_DEGRADED_RENDER_TAG}가 남아, 캐시 핸들러가 300초 창이 지난 그 사본을 stale로
+ * 내보내지 않는다(다음 요청이 블로킹 렌더한다). revalidate도 같은 300초로 낮춘다.
+ *
+ * 부르는 곳은 "정상이면 색인되는 페이지가 입력원 장애로 `noindex` 껍데기를 그리는" 분기뿐이다 —
+ * 지금은 펀더멘털 탭의 프로필 degrade와 사실 블록 입력 실패(`[symbol]/fundamental/page.tsx`).
+ * 본문이 멀쩡한 부분 degrade에는 `shortenRevalidateForRuntimeDegrade`만 쓴다(위 태그 주석).
+ *
+ * 제약은 다른 핀과 같다 — 페이지/레이아웃 렌더 경로에서 불러야 하고, 다른 `unstable_cache` 콜백
+ * 안에서는 효과가 없다. 실패는 삼킨다(degrade를 처리 중인 호출부를 던지게 만들지 않는다).
+ */
+export async function flagNoindexDegradedRender(): Promise<void> {
+    try {
+        await pinNoindexDegradedRender();
+    } catch (error) {
+        console.warn(
+            '[flagNoindexDegradedRender] pin skipped (outside a Next render?):',
             error
         );
     }
