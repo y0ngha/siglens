@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.119.0](https://github.com/y0ngha/siglens/compare/v0.118.1...v0.119.0) (2026-11-14)
+
+### Bug Fixes
+
+* **seo:** 감사 후속 — degrade noindex 사본 stale 서빙 차단, 별점 모달 노출 조건, 모바일 헤더 폭, 메타 설명 절단 ([#1291](https://github.com/y0ngha/siglens/issues/1291)) ([e9ff488](https://github.com/y0ngha/siglens/commit/e9ff488649868d2eccd47af0b1c8cc8178769834))
+
+### Features
+
+* 별점 모달을 첫 이용 직후가 아니라 쓸모를 느낀 뒤에 묻는다 ([#1292](https://github.com/y0ngha/siglens/issues/1292)) ([1e7d25d](https://github.com/y0ngha/siglens/commit/1e7d25dd890cd7c3fe7a1c92f14bd8906ba8466f))
+* **agent:** siglens-core 2.33.0 — 이어지는 대화는 짧게 답하고, 차트 도구가 주봉·월봉을 낸다 ([d8dc775](https://github.com/y0ngha/siglens/commit/d8dc7754739252d03e8aaae2c544a77723ebc7ac))
+
 ## [0.118.1](https://github.com/y0ngha/siglens/compare/v0.118.0...v0.118.1) (2026-11-13)
 
 # [0.118.0](https://github.com/y0ngha/siglens/compare/v0.117.1...v0.118.0) (2026-11-12)
