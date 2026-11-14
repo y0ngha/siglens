@@ -203,12 +203,18 @@ describe('get_chart_data (공개 API 전용 도구)', () => {
         ]);
     });
 
-    it('timeframe 열거값은 get_bars_indicators와 같다', () => {
+    // get_chart_data returns the cached provider series as is, so it offers the
+    // provider timeframes only; 1Week/1Month are bars get_bars_indicators builds
+    // from daily history and exist on that tool alone.
+    it('timeframe 열거값은 get_bars_indicators의 제공자 타임프레임과 같고, 주봉·월봉은 없다', () => {
         const core = AGENT_TOOL_SPECS.find(
             s => s.name === 'get_bars_indicators'
         )!;
+        const aggregated = ['1Week', '1Month'];
+        const coreEnum = core.inputSchema.properties.timeframe.enum ?? [];
+        expect(coreEnum).toEqual(expect.arrayContaining(aggregated));
         expect(spec.inputSchema.properties.timeframe.enum).toEqual(
-            core.inputSchema.properties.timeframe.enum
+            coreEnum.filter(t => !aggregated.includes(t))
         );
     });
 
