@@ -18,8 +18,9 @@ interface TimeframeSelectorProps {
     isFreeTier?: boolean;
     isTierHydrated?: boolean;
     /**
-     * 잠긴 프레임을 눌렀을 때 부른다(가입 안내 모달을 여는 쪽). 없으면 예전처럼 퍼널 이벤트만
-     * 남는다 — 모달을 가진 provider 밖에서도 셀렉터를 쓸 수 있게 선택 값으로 둔다.
+     * 잠긴 프레임을 눌렀을 때 부른다(가입 안내 모달을 여는 쪽). 터치 기기에는 `title` 툴팁이
+     * 뜨지 않아 왜 바뀌지 않는지 알릴 수단이 이것뿐이다. 선택 값인 이유: 모달을 가진 provider 밖에서도
+     * 셀렉터를 쓸 수 있게 — 없으면 퍼널 이벤트만 남는다.
      */
     onLockedClick?: () => void;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { GUEST_ONLY_PATHS } from '@/shared/config/authGuardPaths';
 import { splitLocalePath } from '@/shared/i18n/locales';
 import {
     authNextQuery,
@@ -12,22 +13,19 @@ import { useHydrated } from './useHydrated';
 /** 돌아올 곳을 실어 보낼 수 있는 인증 화면. */
 export type AuthEntryPath = '/signup' | '/login';
 
-/**
- * 돌아갈 곳으로 치지 않는 경로(로케일 접두사를 뗀 값의 첫 구간). 인증 화면에서 가입 유도가
- * 뜨면(전역 모달) `next`가 인증 화면 자신을 가리켜, 가입을 마친 사람이 다시 로그인 화면에
- * 떨어진다. 이 경로들에서는 `next`를 싣지 않아 기본 목적지 정책이 적용되게 한다.
- */
-const NON_RETURN_SEGMENTS: ReadonlySet<string> = new Set([
-    'signup',
-    'login',
-    'forgot-password',
-    'reset-password',
-]);
+/** `'/signup/oauth/consent'.split('/')` → `['', 'signup', 'oauth', 'consent']` — 0번은 선행 `/` 앞의 빈 칸이다. */
+const FIRST_SEGMENT_INDEX = 1;
 
+/**
+ * 돌아갈 곳인가. 홈과 게스트 전용 인증 화면(`GUEST_ONLY_PATHS` — 프록시 가드와 같은 목록)
+ * 아래는 아니다. 인증 화면에서 가입 유도가 뜨면(전역 모달) `next`가 인증 화면 자신을 가리켜,
+ * 가입을 마친 사람이 다시 로그인 화면에 떨어진다. 하위 경로(`/signup/oauth/consent`)도 같은
+ * 화면으로 치려고 첫 구간으로 비교한다.
+ */
 function isReturnTarget(localeFreePath: string): boolean {
     if (localeFreePath === DEFAULT_REDIRECT_PATH) return false;
-    const firstSegment = localeFreePath.split('/')[1] ?? '';
-    return !NON_RETURN_SEGMENTS.has(firstSegment);
+    const firstSegment = localeFreePath.split('/')[FIRST_SEGMENT_INDEX] ?? '';
+    return !GUEST_ONLY_PATHS.has(`/${firstSegment}`);
 }
 
 /**

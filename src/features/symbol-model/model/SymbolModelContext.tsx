@@ -94,8 +94,8 @@ interface SymbolModelContextValue {
      */
     openSignupNudgeAs: (variant: SignupNudgeVariant) => void;
     /**
-     * 잠긴 시간 프레임 버튼 클릭이 같은 모달을 시간 프레임 문구로 연다. 예전에는 그 클릭이
-     * 퍼널 이벤트만 남기고 화면에서는 아무 일도 일어나지 않았다(모바일은 `title` 툴팁도 없다).
+     * 잠긴 시간 프레임 버튼 클릭이 같은 모달을 시간 프레임 문구로 연다. 터치 기기에는 버튼의
+     * `title` 툴팁이 뜨지 않아, 잠긴 이유를 알릴 수단이 이 모달뿐이다.
      */
     openTimeframeNudge: () => void;
     /** Dismiss the shared signup-nudge modal. */
