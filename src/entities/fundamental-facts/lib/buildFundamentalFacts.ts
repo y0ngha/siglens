@@ -186,6 +186,12 @@ function nextEarnings(input: FundamentalFactsInput): FundamentalFact | null {
         kind: 'nextEarnings',
         date,
         daysUntil,
+        confirmed: input.nextEarningsConfirmed,
+        // 세션은 확정일에만 말한다 — 추정일에 장전·장후를 붙이면 확정처럼 읽힌다.
+        session:
+            input.nextEarningsConfirmed === true
+                ? input.nextEarningsSession
+                : null,
         lastSurprisePct: last ? surprisePct(last) : null,
         lastDate: last ? last.earningsDate.slice(0, 10) : null,
     };

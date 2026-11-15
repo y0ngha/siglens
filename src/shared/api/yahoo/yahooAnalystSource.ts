@@ -191,13 +191,28 @@ export function mapAnalystSummary(
 }
 
 /**
- * Yahoo가 펀더멘털 모듈이 없는 종목(ETF·지수 등)에 던지는 오류. 장애가 아니라 "애널리스트 데이터 없음"이다.
- * 실측: `No fundamentals data found for symbol: SPY`.
+ * Yahoo가 "이 심볼은 서비스할 수 없다"고 영구적으로 답하는 오류 문구. 장애가 아니라 "애널리스트 데이터 없음"이다.
+ * 실측·라이브러리 오류 형태: `No fundamentals data found for symbol: SPY`(ETF 등), `Quote not found for ticker
+ * symbol: X`(quoteSummary의 `Not Found` 코드는 이름 있는 오류 클래스가 없어 일반 `Error`로 온다),
+ * `No data found, symbol may be delisted`(상장폐지). 목록은 의도적으로 작게 두고, 그 밖의 문구는 실패로 남긴다.
  */
-function isNoFundamentalsError(error: unknown): boolean {
+const SYMBOL_UNSERVED_MESSAGES: readonly RegExp[] = [
+    /No fundamentals data found for symbol/i,
+    /Quote not found for (ticker )?symbol/i,
+    /No data found, symbol may be delisted/i,
+];
+
+/** yahoo-finance2 `HTTPError`가 `code`에 실어 주는 상태. 404만 "심볼 없음"이고 429·5xx는 장애다. */
+const HTTP_NOT_FOUND = 404;
+
+export function isSymbolUnservedError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    if (SYMBOL_UNSERVED_MESSAGES.some(re => re.test(error.message)))
+        return true;
     return (
-        error instanceof Error &&
-        /No fundamentals data found for symbol/i.test(error.message)
+        error.name === 'HTTPError' &&
+        'code' in error &&
+        error.code === HTTP_NOT_FOUND
     );
 }
 
@@ -209,7 +224,7 @@ function emptySummary(includeActions: boolean): YahooAnalystSummary {
  * Yahoo 애널리스트 요약(목표가·투자의견 분포·증권사별 변경 이력·실적 일정)을 `quoteSummary` 한 번으로 받는다.
  *
  * 실패는 캐시하지 않는다: fetcher가 던지면 `getOrSetCache`가 쓰기를 건너뛰므로, 바깥에서 잡아 로그를 남기고
- * `null`("모름")로 돌린다. 단 "펀더멘털 데이터 없음" 오류(ETF 등)는 빈 요약으로 바꿔 **정상 결과처럼 캐시한다** —
+ * `null`("모름")로 돌린다. 단 "심볼을 서비스할 수 없음" 오류(ETF·미지 심볼·상폐; `isSymbolUnservedError`)는 빈 요약으로 바꿔 **정상 결과처럼 캐시한다** —
  * 그렇지 않으면 ETF 질문마다 Yahoo를 다시 때리고 `degraded`로 오표시된다.
  * `includeActions`가 키에 들어가는 이유는 변경 이력 모듈이 수백 행이라 이력이 필요 없는 호출(한국 종목, 펀더멘털
  * 도구의 가벼운 조회)이 그 비용을 내지 않게 하려는 것이고, 두 변형이 서로의 캐시를 읽지 않게 하기 위해서다.
@@ -244,7 +259,7 @@ export async function getYahooAnalystSummary(
                         new Date()
                     );
                 } catch (error) {
-                    if (isNoFundamentalsError(error))
+                    if (isSymbolUnservedError(error))
                         return emptySummary(includeActions);
                     throw error;
                 }

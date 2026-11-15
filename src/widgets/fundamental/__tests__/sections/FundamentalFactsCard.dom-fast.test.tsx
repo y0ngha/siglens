@@ -56,6 +56,8 @@ const ALL_FACTS: FundamentalFact[] = [
         kind: 'nextEarnings',
         date: '2026-11-20',
         daysUntil: 13,
+        confirmed: null,
+        session: null,
         lastSurprisePct: -30,
         lastDate: '2026-09-11',
     },
@@ -235,6 +237,8 @@ describe('FundamentalFactsCard', () => {
                         kind: 'nextEarnings',
                         date: '2026-11-08',
                         daysUntil: 1,
+                        confirmed: null,
+                        session: null,
                         lastSurprisePct: null,
                         lastDate: null,
                     },
@@ -253,5 +257,91 @@ describe('FundamentalFactsCard', () => {
         expect(
             screen.getByText('1 of them is an at-the-market (ATM) offering.')
         ).toBeInTheDocument();
+    });
+
+    describe('다음 실적 확정 여부', () => {
+        const earnings = (
+            confirmed: boolean | null,
+            session: 'before_market' | 'during_market' | 'after_market' | null
+        ): FundamentalFact => ({
+            kind: 'nextEarnings',
+            date: '2026-11-20',
+            daysUntil: 13,
+            confirmed,
+            session,
+            lastSurprisePct: null,
+            lastDate: null,
+        });
+        const render = (fact: FundamentalFact, locale: 'ko' | 'en' = 'ko') =>
+            renderWithIntl(
+                <FundamentalFactsCard
+                    facts={[fact]}
+                    symbol="AAPL"
+                    displayName="Apple"
+                />,
+                { locale }
+            );
+
+        it.each([
+            ['before_market', '장 시작 전'],
+            ['during_market', '장중'],
+            ['after_market', '장 마감 후'],
+        ] as const)(
+            '확정 + 세션 %s: 세션을 괄호로 말하고 확정 출처 줄을 쓴다',
+            (session, label) => {
+                render(earnings(true, session));
+                expect(
+                    screen.getByText(
+                        `다음 실적 발표일은 2026년 11월 20일(${label})로 확정됐고, 13일 남았습니다.`
+                    )
+                ).toBeInTheDocument();
+                expect(
+                    screen.getByText(
+                        '회사가 확정한 일정입니다(Yahoo Finance 집계)'
+                    )
+                ).toBeInTheDocument();
+                expect(
+                    screen.queryByText(/예상 일정이라/)
+                ).not.toBeInTheDocument();
+            }
+        );
+
+        it('확정 + 세션 없음: 세션 없이 확정이라고만 말한다', () => {
+            render(earnings(true, null));
+            expect(
+                screen.getByText(
+                    '다음 실적 발표일은 2026년 11월 20일로 확정됐고, 13일 남았습니다.'
+                )
+            ).toBeInTheDocument();
+            expect(
+                screen.getByText('회사가 확정한 일정입니다(Yahoo Finance 집계)')
+            ).toBeInTheDocument();
+        });
+
+        it.each([false, null])(
+            '확정이 아니면(%s) 종전 예정 문장과 출처 줄 그대로',
+            confirmed => {
+                render(earnings(confirmed, null));
+                expect(
+                    screen.getByText(
+                        '다음 실적 발표 예정일은 2026년 11월 20일이고, 13일 남았습니다.'
+                    )
+                ).toBeInTheDocument();
+                expect(
+                    screen.getByText(
+                        '예상 일정이라 회사 공지에 따라 바뀔 수 있습니다'
+                    )
+                ).toBeInTheDocument();
+            }
+        );
+
+        it('en: 확정 + 세션 문장이 ICU select로 세션을 고른다', () => {
+            render(earnings(true, 'after_market'), 'en');
+            expect(
+                screen.getByText(
+                    /confirmed for November 20, 2026 \(after the market closes\), 13 days from now\./
+                )
+            ).toBeInTheDocument();
+        });
     });
 });

@@ -3,6 +3,10 @@
  */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import {
+    TARGET_DISAGREE_THRESHOLD_PCT,
+    type AnalystTargetsSummary,
+} from '@/entities/analyst-views/model';
 import type {
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
@@ -16,6 +20,9 @@ import { formatMoney } from '@/widgets/fundamental/utils/moneyFormat';
 interface PriceTargetSectionProps {
     consensus: FundamentalPriceTargetConsensusInput | null;
     summary: FundamentalPriceTargetSummaryInput | null;
+    analystTargets: AnalystTargetsSummary | null;
+    /** FMP 컨센서스와 Yahoo 평균이 임계값 넘게 벌어졌는가 — 서버가 화면에 실린 두 값으로 계산해 넘긴다. */
+    sourcesDisagree: boolean;
     symbol: string;
     locale: Locale;
 }
@@ -33,6 +40,8 @@ interface PriceTargetEntry {
 export function PriceTargetSection({
     consensus,
     summary,
+    analystTargets,
+    sourcesDisagree,
     symbol,
     locale,
 }: PriceTargetSectionProps) {
@@ -117,6 +126,35 @@ export function PriceTargetSection({
                         </div>
                     ))}
                 </dl>
+            )}
+            {analystTargets !== null && (
+                <div className="mt-2 space-y-1 text-xs text-secondary-400">
+                    <p className="tabular-nums">
+                        {analystTargets.yahooAnalysts === null
+                            ? t('FutureDirectionCard.yahooTargetMean', {
+                                  amount: formatMoney(
+                                      analystTargets.yahooMean,
+                                      symbol,
+                                      locale
+                                  ),
+                              })
+                            : t('FutureDirectionCard.yahooTargetMeanCount', {
+                                  amount: formatMoney(
+                                      analystTargets.yahooMean,
+                                      symbol,
+                                      locale
+                                  ),
+                                  count: analystTargets.yahooAnalysts,
+                              })}
+                    </p>
+                    {sourcesDisagree && (
+                        <p>
+                            {t('FutureDirectionCard.targetSourcesDisagree', {
+                                pct: TARGET_DISAGREE_THRESHOLD_PCT,
+                            })}
+                        </p>
+                    )}
+                </div>
             )}
         </div>
     );

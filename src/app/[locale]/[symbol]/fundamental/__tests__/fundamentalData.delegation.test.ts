@@ -85,7 +85,6 @@ import {
     getFinancialScores,
     getCashFlowStatement,
     getAnalystEstimates,
-    getGradesConsensus,
     getPriceTargetConsensus,
     getPriceTargetSummary,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
@@ -197,20 +196,6 @@ describe('fundamentalData delegation wiring', () => {
         const result = await getAnalystEstimates('AAPL');
         expect(result).toEqual(estimates);
         assertOnlyMethodCalled('getAnalystEstimates', 'AAPL');
-    });
-
-    it('getGradesConsensus delegates to provider.getGradesConsensus only', async () => {
-        const consensus = {
-            strongBuy: 10,
-            buy: 15,
-            hold: 5,
-            sell: 1,
-            strongSell: 0,
-        };
-        mockProvider.getGradesConsensus.mockResolvedValue(consensus);
-        const result = await getGradesConsensus('AAPL');
-        expect(result).toEqual(consensus);
-        assertOnlyMethodCalled('getGradesConsensus', 'AAPL');
     });
 
     it('getPriceTargetConsensus delegates to provider.getPriceTargetConsensus only', async () => {

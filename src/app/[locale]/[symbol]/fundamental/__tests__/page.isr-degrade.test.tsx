@@ -61,7 +61,6 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
     getAnalystEstimates: vi.fn().mockResolvedValue(null),
     getCashFlowStatement: vi.fn().mockResolvedValue(null),
     getFinancialScores: vi.fn().mockResolvedValue(null),
-    getGradesConsensus: vi.fn().mockResolvedValue(null),
     getIncomeStatementGrowth: vi.fn().mockResolvedValue(null),
     getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
     getPriceTargetConsensus: vi.fn().mockResolvedValue(null),
@@ -70,6 +69,13 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
     getProfileDescription: vi.fn().mockResolvedValue(null),
     getRatiosTtm: vi.fn().mockResolvedValue(null),
     getStockPeers: vi.fn().mockResolvedValue([]),
+}));
+const { mockLoadGrades } = vi.hoisted(() => ({ mockLoadGrades: vi.fn() }));
+vi.mock('@/shared/api/fmp/loadPageGradesConsensus', () => ({
+    loadPageGradesConsensus: mockLoadGrades,
+}));
+vi.mock('@/entities/analyst-views/server/loadAnalystTargetsSummary', () => ({
+    loadAnalystTargetsSummary: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/FundamentalDegraded', () => ({
     FundamentalDegraded: () => <div data-testid="fundamental-degraded" />,
@@ -141,16 +147,19 @@ vi.mock('@/widgets/fundamental/sections/FutureDirectionCard', () => ({
     FutureDirectionCard: ({
         estimates,
         grades,
+        gradesSource,
         ptConsensus,
         ptSummary,
     }: {
         estimates: unknown;
         grades: unknown;
+        gradesSource: string | null;
         ptConsensus: unknown;
         ptSummary: unknown;
     }) => (
         <div
             data-testid="future-direction-card"
+            data-grades-source={gradesSource ?? ''}
             data-degraded={
                 estimates === null &&
                 grades === null &&
@@ -278,7 +287,6 @@ import {
     getFinancialScores,
     getCashFlowStatement,
     getAnalystEstimates,
-    getGradesConsensus,
     getPriceTargetConsensus,
     getPriceTargetSummary,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
@@ -310,9 +318,7 @@ const mockGetCashFlowStatement = getCashFlowStatement as MockedFunction<
 const mockGetAnalystEstimates = getAnalystEstimates as MockedFunction<
     typeof getAnalystEstimates
 >;
-const mockGetGradesConsensus = getGradesConsensus as MockedFunction<
-    typeof getGradesConsensus
->;
+
 const mockGetPriceTargetConsensus = getPriceTargetConsensus as MockedFunction<
     typeof getPriceTargetConsensus
 >;
@@ -419,7 +425,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         mockGetFinancialScores.mockResolvedValue(null);
         mockGetCashFlowStatement.mockResolvedValue(null);
         mockGetAnalystEstimates.mockResolvedValue(null);
-        mockGetGradesConsensus.mockResolvedValue(null);
+        mockLoadGrades.mockResolvedValue({ grades: null, yahooFailed: false });
         mockGetPriceTargetConsensus.mockResolvedValue(null);
         mockGetPriceTargetSummary.mockResolvedValue(null);
     });
@@ -712,7 +718,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
 
     it('FutureDirectionSection: all four loaders throw → renders degraded card (data-degraded="true"), does not throw', async () => {
         mockGetAnalystEstimates.mockRejectedValue(new Error('estimates down'));
-        mockGetGradesConsensus.mockRejectedValue(new Error('grades down'));
+        mockLoadGrades.mockRejectedValue(new Error('grades down'));
         mockGetPriceTargetConsensus.mockRejectedValue(
             new Error('pt-consensus down')
         );
@@ -736,6 +742,58 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         );
 
         consoleSpy.mockRestore();
+    });
+
+    describe('FutureDirectionSection 투자의견 분포 revalidate', () => {
+        const GRADES = {
+            strongBuy: 40,
+            buy: 70,
+            hold: 32,
+            sell: 2,
+            strongSell: 1,
+            source: 'fmp' as const,
+        };
+
+        it('정상 값이면 revalidate를 낮추지 않는다', async () => {
+            mockLoadGrades.mockResolvedValue({
+                grades: { ...GRADES, source: 'yahoo' },
+                yahooFailed: false,
+            });
+            render(await FutureDirectionSection({ symbol: 'AAPL' }));
+            expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+            expect(
+                screen
+                    .getByTestId('future-direction-card')
+                    .getAttribute('data-grades-source')
+            ).toBe('yahoo');
+        });
+
+        it('Yahoo 실패 fallback이면 값은 그리되 인원 수 출처(yahoo)는 없고 revalidate를 낮춘다', async () => {
+            mockLoadGrades.mockResolvedValue({
+                grades: GRADES,
+                yahooFailed: true,
+            });
+            render(await FutureDirectionSection({ symbol: 'AAPL' }));
+            expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+            const card = screen.getByTestId('future-direction-card');
+            expect(card.getAttribute('data-degraded')).toBe('false');
+            expect(card.getAttribute('data-grades-source')).toBe('fmp');
+        });
+
+        it('진짜 실패면 null로 떨어지고 revalidate를 낮춘다', async () => {
+            mockLoadGrades.mockRejectedValue(new Error('fmp down'));
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            render(await FutureDirectionSection({ symbol: 'AAPL' }));
+            expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+            expect(
+                screen
+                    .getByTestId('future-direction-card')
+                    .getAttribute('data-degraded')
+            ).toBe('true');
+            consoleSpy.mockRestore();
+        });
     });
 
     it('success path — all loaders succeed → cards receive real data (data-degraded="false"), no throw', async () => {

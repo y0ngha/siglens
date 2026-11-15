@@ -3,7 +3,11 @@ import { cache } from 'react';
 import { getOrSetCache, setCacheValue } from '@/shared/cache/getOrSetCache';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { sym } from './symKey';
-import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
+import { isYahooFailedGrades } from './gradesConsensusSource';
+import {
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import {
     isNextEarningsCacheFresh,
@@ -36,6 +40,9 @@ import type {
 
 const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;
+
+/** Yahoo 실패로 FMP 값이 내려온 투자의견 분포를 캐시에 두는 시간(10분). */
+const GRADES_YAHOO_FAILED_TTL_SECONDS = 10 * SECONDS_PER_MINUTE;
 
 /**
  * key-metrics·ratios 키. 한 쌍을 함께 쓰는 `fetchValuationPair`와 읽는 쪽이 같은 함수를 쓴다.
@@ -286,9 +293,16 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
 
     getGradesConsensus = cache(
         (symbol: string): Promise<FundamentalGradesConsensusInput | null> =>
+            // `-v2`: 미국 종목은 Yahoo의 현재 분포(`source: 'yahoo'`)로 바뀌어 값의 의미가 달라졌다.
+            // 옛 키는 FMP 누적값을 TTL 동안 그대로 내보낸다. Yahoo 실패로 FMP 값이 내려온 경우
+            // (`yahooFailed`)는 10분만 들고 있어 에이전트 도구·AI 분석이 금방 회복하되 호출마다 Yahoo를
+            // 다시 치지는 않는다.
             getOrSetCache(
-                `fundamental:grades-consensus:${sym(symbol)}`,
-                TTL,
+                `fundamental:grades-consensus-v2:${sym(symbol)}`,
+                value =>
+                    isYahooFailedGrades(value)
+                        ? GRADES_YAHOO_FAILED_TTL_SECONDS
+                        : TTL,
                 () => this.inner.getGradesConsensus(symbol)
             )
     );

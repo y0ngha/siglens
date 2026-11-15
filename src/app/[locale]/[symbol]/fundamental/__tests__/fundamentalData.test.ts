@@ -85,7 +85,6 @@ import {
     getFinancialScores,
     getCashFlowStatement,
     getAnalystEstimates,
-    getGradesConsensus,
     getPriceTargetConsensus,
     getPriceTargetSummary,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
@@ -148,11 +147,6 @@ describe('fundamentalData', () => {
 
     it('getAnalystEstimates returns null', async () => {
         const result = await getAnalystEstimates('AAPL');
-        expect(result).toBeNull();
-    });
-
-    it('getGradesConsensus returns null', async () => {
-        const result = await getGradesConsensus('AAPL');
         expect(result).toBeNull();
     });
 

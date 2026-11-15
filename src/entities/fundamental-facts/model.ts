@@ -1,3 +1,4 @@
+import type { EarningsSession } from '@/entities/analyst-views/model';
 import type {
     DilutionMetrics,
     FundamentalGradesConsensusInput,
@@ -94,6 +95,13 @@ export interface FundamentalFactsInput {
      * 없으면 `null`.
      */
     readonly nextEarningsDate: string | null;
+    /**
+     * 그 날짜가 회사 확정인가(`resolveNextEarnings`의 3상태). 모르면 `null` — FMP 행은 확정 플래그가 없어
+     * 대개 `null`이다.
+     */
+    readonly nextEarningsConfirmed: boolean | null;
+    /** 확정된 날짜의 발표 세션(장전·장중·장후). 확정이 아니거나 모르면 `null`. */
+    readonly nextEarningsSession: EarningsSession | null;
 }
 
 export type FundamentalFact =
@@ -155,6 +163,10 @@ export type FundamentalFact =
           readonly kind: 'nextEarnings';
           readonly date: string;
           readonly daysUntil: number;
+          /** 날짜가 확정이면 `true`, 추정이면 `false`, 모르면 `null`. 문장이 "확정"과 "예정"을 가른다. */
+          readonly confirmed: boolean | null;
+          /** 확정일의 발표 세션. 확정이 아니면 항상 `null`. */
+          readonly session: EarningsSession | null;
           /** 직전 발표의 EPS 서프라이즈(%) — 예상치가 0이거나 없으면 `null`. */
           readonly lastSurprisePct: number | null;
           readonly lastDate: string | null;

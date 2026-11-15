@@ -1,14 +1,20 @@
 import 'server-only';
 import { cache } from 'react';
+import { resolveNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
+import type { AnalystEarningsHint } from '@/entities/analyst-views/model';
+import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 import { getNextEarningsSchedule } from '@/entities/earnings-report/api';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+import { isE2EFakeMode } from '@/shared/api/e2eEnv';
+import { loadPageGradesConsensus } from '@/shared/api/fmp/loadPageGradesConsensus';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_DAY, SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import {
@@ -92,6 +98,48 @@ async function loadEarnings(symbol: string, today: string) {
     return { nextEarningsDate: schedule?.earningsDate ?? null, reported };
 }
 
+/** 실적 힌트(Yahoo) 보강에 기다리는 최대 시간. 메타데이터·크롤러가 보는 사실 블록이 보강 때문에 8초씩 기다리지 않게 한다. */
+const EARNINGS_HINT_BUDGET_MS = 2_500;
+
+/**
+ * Yahoo의 실적 힌트(확정 여부·세션) 로더 — `staticSymbolCache` 안에서만 돈다. Yahoo가 실패하면 던져서
+ * `null`이 12시간 캐시에 굳지 않게 한다("힌트 없음"은 정상 `null`).
+ */
+async function loadEarningsHint(
+    symbol: string
+): Promise<AnalystEarningsHint | null> {
+    const views = await getAnalystViews(symbol, { detail: 'lite' });
+    if (views.degraded.includes('yahoo')) {
+        throw new Error(`Yahoo earnings hint unavailable for ${symbol}`);
+    }
+    return views.earnings;
+}
+
+/**
+ * 보강 전용: 한국 종목(프로바이더가 이미 Yahoo)과 E2E에서는 부르지 않고, 실패·시간 초과는 `null`이다 — 사실
+ * 문장이 "예정"으로 남을 뿐 `complete`에도 revalidate에도 영향이 없다. 시간 초과 뒤에도 로드는 뒤에서 마저 돌아
+ * 캐시를 채운다(`withTimeout`은 취소하지 않는다).
+ */
+async function loadEarningsHintBounded(
+    symbol: string
+): Promise<AnalystEarningsHint | null> {
+    if (isKrEquitySymbol(symbol) || isE2EFakeMode()) return null;
+    const hint = await settle('earnings-hint', symbol, () =>
+        withTimeout(
+            staticSymbolCache(
+                ['fundamental-facts:earnings-hint', symbol],
+                symbol,
+                () => loadEarningsHint(symbol),
+                [],
+                SECONDS_PER_HALF_DAY
+            ),
+            EARNINGS_HINT_BUDGET_MS,
+            null
+        )
+    );
+    return valueOf(hint);
+}
+
 /**
  * 펀더멘털 탭 사실 블록과 색인 판정. 본문·`generateMetadata`·sitemap 스탬프가 이 결과 하나를
  * 쓴다(같은 요청 안에서는 React `cache`로 한 번만 읽는다).
@@ -104,7 +152,7 @@ export const getFundamentalFacts = cache(
     async (symbol: string): Promise<FundamentalFactsResult> => {
         const today = marketToday(symbol, new Date());
         const provider = getFundamentalDataProvider(symbol);
-        const [annual, flows, consensus, summary, grades, earnings] =
+        const [annual, flows, consensus, summary, grades, earnings, hint] =
             await Promise.all([
                 settle('financials', symbol, () => loadAnnual(symbol)),
                 settle('investor-flows', symbol, () =>
@@ -130,14 +178,12 @@ export const getFundamentalFacts = cache(
                         SECONDS_PER_DAY
                     )
                 ),
-                settle('grades', symbol, () =>
-                    staticSymbolCache(
-                        ['fundamental:grades-consensus', symbol],
-                        symbol,
-                        () => provider.getGradesConsensus(symbol),
-                        [],
-                        SECONDS_PER_DAY
-                    )
+                // 섹션과 같은 로더(`loadPageGradesConsensus`) — Yahoo 실패 fallback은 캐시에 굳지 않는다.
+                // `yahooFailed`도 쓸 수 있는 값이라 성공 로드다(`complete`에 영향 없음).
+                settle(
+                    'grades',
+                    symbol,
+                    async () => (await loadPageGradesConsensus(symbol)).grades
                 ),
                 // DB 직접 읽기는 `unstable_cache` 밖이면 ISR 렌더를 동적으로 뒤집는다
                 // (`noStoreQueryLogger` → DYNAMIC_SERVER_USAGE). 뉴스 탭 EventCalendar와 같은 12h.
@@ -150,9 +196,17 @@ export const getFundamentalFacts = cache(
                         SECONDS_PER_HALF_DAY
                     )
                 ),
+                loadEarningsHintBounded(symbol),
             ]);
         const flowsValue = valueOf(flows);
         const earningsValue = valueOf(earnings);
+        // DB 일정(확정 플래그 없음)과 Yahoo 힌트를 대조한다. 힌트가 없으면 일정 그대로(미확정)다.
+        const nextEarnings = resolveNextEarnings({
+            scheduledDate: earningsValue?.nextEarningsDate ?? null,
+            scheduledConfirmed: null,
+            hint,
+            today,
+        });
         const facts = buildFundamentalFacts({
             today,
             annual: valueOf(annual),
@@ -161,8 +215,13 @@ export const getFundamentalFacts = cache(
             priceTargetSummary: valueOf(summary),
             grades: valueOf(grades),
             earnings: earningsValue?.reported ?? null,
-            nextEarningsDate: earningsValue?.nextEarningsDate ?? null,
+            nextEarningsDate: nextEarnings.date,
+            nextEarningsConfirmed: nextEarnings.confirmed,
+            nextEarningsSession: nextEarnings.session,
         });
+        // `grades`도 완전성 판정에 넣는다: 분포는 Yahoo가 실패해도 FMP 값으로 내려오므로
+        // (`CurrentGradesFmpClient`) 로드가 실패했다면 FMP 자체가 실패한 것이고, 그건 종전과 같은 의미다.
+        // 실적 힌트(`hint`)는 보강이라 여기 들어가지 않는다.
         const complete =
             [annual, flows, consensus, summary, grades, earnings].every(
                 v => v !== FAILED
