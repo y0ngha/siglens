@@ -2,6 +2,7 @@
 category: indicators
 order: 270
 related: [stochastic-rsi, macd, bollinger-bands, adx, mfi]
+signals: [rsi_oversold, rsi_overbought, rsi_bullish_divergence, rsi_bearish_divergence]
 title: RSI
 aliases: [상대강도지수, 알에스아이, Relative Strength Index, RSI 14, RSI 다이버전스]
 summary: 일정 기간 오른 폭과 내린 폭의 비율을 0~100으로 바꿔, 과매수와 과매도를 가늠하는 모멘텀 지표예요.

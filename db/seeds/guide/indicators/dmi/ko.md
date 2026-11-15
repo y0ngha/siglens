@@ -2,6 +2,7 @@
 category: indicators
 order: 100
 related: [adx, macd, ema, parabolic-sar]
+signals: [dmi_bullish_cross, dmi_bearish_cross]
 title: DMI
 aliases: [방향성 지수, Directional Movement Index, +DI -DI, 디렉셔널 무브먼트]
 summary: 매수 쪽 힘(+DI)과 매도 쪽 힘(-DI) 두 선을 비교해 추세의 방향과 우위를 보여 주는 지표예요.

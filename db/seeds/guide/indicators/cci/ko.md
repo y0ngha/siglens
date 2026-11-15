@@ -2,6 +2,7 @@
 category: indicators
 order: 60
 related: [rsi, bollinger-bands, macd, stochastic]
+signals: [cci_bullish_cross, cci_bearish_cross]
 title: CCI
 aliases: [상품채널지수, Commodity Channel Index, 커머디티 채널 인덱스]
 summary: 가격이 평균에서 얼마나 벗어났는지를 보여 주는 지표로, +100과 -100을 기준선으로 삼아요. 상한과 하한이 없는 게 특징이에요.

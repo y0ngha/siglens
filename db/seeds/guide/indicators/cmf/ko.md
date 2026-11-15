@@ -2,6 +2,7 @@
 category: indicators
 order: 80
 related: [obv, mfi, buy-sell-volume, macd]
+signals: [cmf_bullish_flip, cmf_bearish_flip]
 title: CMF
 aliases: [차이킨 머니 플로우, Chaikin Money Flow, 자금 흐름 지표]
 summary: 일정 기간 동안 종가가 봉의 위쪽에 마감했는지 아래쪽에 마감했는지를 거래량과 곱해, 자금이 들어오는지 빠지는지 -1~+1로 보여 줘요.
