@@ -88,6 +88,7 @@ vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
 vi.mock('next/navigation', () => ({
     useSearchParams: () => new URLSearchParams(),
     useRouter: () => ({ replace: vi.fn() }),
+    usePathname: () => '/AAPL',
 }));
 
 // ── chart (ChartContent) ────────────────────────────────────────────────

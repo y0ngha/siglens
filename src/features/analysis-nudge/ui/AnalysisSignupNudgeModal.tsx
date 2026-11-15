@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { REASONING_FEATURE_LABEL_KEY } from '@/features/reasoning-toggle/model/reasoningFeature';
+import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 import {
@@ -17,24 +18,39 @@ import type {
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ModalShell } from '@/shared/ui/ModalShell';
-import { LayersIcon, MailIcon } from '@/shared/ui/StrokeIcons';
+import { CandlesIcon, LayersIcon, MailIcon } from '@/shared/ui/StrokeIcons';
 
-/** 이 모달을 여는 두 계기. 퍼널 이벤트의 `kind`로 그대로 기록된다. */
+/** 이 모달을 여는 세 계기. 퍼널 이벤트의 `kind`로 그대로 기록된다. */
 export type SignupNudgeKind = Extract<
     FunnelNudgeKind,
-    'anon_auto' | 'reasoning_toggle'
+    'anon_auto' | 'reasoning_toggle' | 'timeframe_nudge'
 >;
 
-interface AnalysisSignupNudgeModalProps {
-    /** 무엇이 열었나 — 자동 넛지(`anon_auto`)인지 잠긴 추론 토글 클릭(`reasoning_toggle`)인지. */
-    kind: SignupNudgeKind;
-    /**
-     * 어떤 기능을 알릴지. `reasoning`은 상세 분석(추론 토글), `emailReport`는 보유·관심종목
-     * 메일 리포트다. 잠금 토글 클릭은 늘 `reasoning`, 자동 넛지는 둘을 번갈아 쓴다.
-     */
-    variant: SignupNudgeVariant;
+/**
+ * 모달이 알리는 기능. 자동 넛지가 번갈아 쓰는 두 문구(`SignupNudgeVariant`)에 잠긴 시간
+ * 프레임 클릭 전용 문구(`timeframe`)를 더한 것이다. `timeframe`을 `SignupNudgeVariant`에
+ * 넣지 않는 이유: 그 타입은 퍼널 카탈로그가 `anon_auto`의 `variant`로 허용하는 값이라,
+ * 넣으면 자동 넛지가 내지 않는 조합까지 수집 라우트가 받게 된다.
+ */
+export type SignupNudgePitch = SignupNudgeVariant | 'timeframe';
+
+/**
+ * 계기와 문구의 짝. 계기마다 낼 수 있는 문구가 정해져 있어 판별 유니언으로 묶는다 —
+ * 따로 두면 `{ kind: 'reasoning_toggle', variant: 'timeframe' }`처럼 계기와 맞지 않는
+ * 문구가 컴파일되고, 퍼널에는 엉뚱한 kind로 남는다.
+ *
+ * - `anon_auto`: 첫 분석 뒤 자동 넛지. 상세 분석·메일 리포트 문구를 번갈아 쓴다.
+ * - `reasoning_toggle`: 잠긴 추론 토글 클릭. 늘 상세 분석 문구.
+ * - `timeframe_nudge`: 잠긴 시간 프레임 클릭. 늘 시간 프레임 문구.
+ */
+export type SignupNudgeState =
+    | { readonly kind: 'anon_auto'; readonly variant: SignupNudgeVariant }
+    | { readonly kind: 'reasoning_toggle'; readonly variant: 'reasoning' }
+    | { readonly kind: 'timeframe_nudge'; readonly variant: 'timeframe' };
+
+type AnalysisSignupNudgeModalProps = SignupNudgeState & {
     onClose: () => void;
-}
+};
 
 const TITLE_ID = 'analysis-signup-nudge-title';
 const ACTION_SIZE = 'h-10 px-4 text-sm';
@@ -45,17 +61,20 @@ const ACTION_SIZE = 'h-10 px-4 text-sm';
  * 정보성 넛지라 분석을 막지 않는다.
  */
 export function AnalysisSignupNudgeModal({
-    kind,
-    variant,
     onClose,
+    ...nudge
 }: AnalysisSignupNudgeModalProps) {
     const t = useTranslations('features.analysis-nudge');
     const tA11y = useTranslations('features.reasoning-toggle.a11y');
-    // `variant`는 자동 넛지에만 의미가 있다 — 문구를 번갈아 보여 주는 쪽. 잠금 토글
-    // 클릭은 늘 `reasoning` 문구라 기록해도 정보가 늘지 않고, 이벤트 카탈로그도
+    const signupHref = useAuthReturnHref('/signup');
+    const { variant } = nudge;
+    // `variant`는 자동 넛지에만 의미가 있다 — 문구를 번갈아 보여 주는 쪽. 다른 계기는
+    // 문구가 하나로 정해져 있어 기록해도 정보가 늘지 않고, 이벤트 카탈로그도
     // `anon_auto`에만 허용한다.
     const funnelContext: ContextOf<'nudge_shown'> =
-        kind === 'anon_auto' ? { kind, variant } : { kind };
+        nudge.kind === 'anon_auto'
+            ? { kind: nudge.kind, variant: nudge.variant }
+            : { kind: nudge.kind };
     useFunnelNudgeShown(funnelContext);
 
     const handleSignupClick = (): void => {
@@ -66,9 +85,14 @@ export function AnalysisSignupNudgeModal({
     // 문구 종류별 아이콘·제목·본문. `Record`라 종류가 늘면 여기서 컴파일 오류로 드러난다 —
     // 이분 분기였다면 새 종류가 조용히 한쪽 문구로 떨어진다.
     const content: Record<
-        SignupNudgeVariant,
+        SignupNudgePitch,
         { Icon: typeof MailIcon; title: string; body: string }
     > = {
+        timeframe: {
+            Icon: CandlesIcon,
+            title: t('AnalysisSignupNudgeModal.timeframeTitle'),
+            body: t('AnalysisSignupNudgeModal.timeframeBody'),
+        },
         emailReport: {
             Icon: MailIcon,
             title: t('AnalysisSignupNudgeModal.3dc0b0'),
@@ -106,7 +130,7 @@ export function AnalysisSignupNudgeModal({
 
             <div className="flex flex-col gap-2">
                 <Link
-                    href="/signup"
+                    href={signupHref}
                     onClick={handleSignupClick}
                     className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                 >

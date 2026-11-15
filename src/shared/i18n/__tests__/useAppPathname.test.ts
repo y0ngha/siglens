@@ -13,6 +13,8 @@ const ALLOWED_RAW_PATHNAME_USERS = [
     // 이동에 재사용 — 접두사가 있어야 한다.
     'src/widgets/dashboard/hooks/useSectorSelection.ts',
     'src/features/backtest-filter/hooks/useBacktestFilter.ts',
+    // 가입·로그인 뒤 돌아올 `next`로 싣는다 — 접두사째여야 같은 로케일로 돌아온다.
+    'src/shared/hooks/useAuthReturnHref.ts',
     // 경로 변경 감지 키로만 쓴다 — 접두사 유무가 무관하다.
     'src/app/_components/AuthSessionHeaderClient.tsx',
     // 검색 오버레이 훅·provider는 "경로가 바뀌었다"만 본다(도착 감지 → 오버레이 닫기,

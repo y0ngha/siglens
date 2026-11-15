@@ -128,7 +128,8 @@ describe('Journey: New User', () => {
             const signupLink = screen.getByRole('link', {
                 name: '회원가입 하러 가기',
             });
-            expect(signupLink).toHaveAttribute('href', '/signup');
+            // 가입을 마치면 보던 종목으로 돌아오도록 지금 경로를 `next`로 싣는다.
+            expect(signupLink).toHaveAttribute('href', '/signup?next=%2FAAPL');
         });
 
         it('allows dismissing the gate modal', async () => {

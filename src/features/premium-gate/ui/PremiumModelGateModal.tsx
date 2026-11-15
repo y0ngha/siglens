@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { GateMode } from '@/shared/lib/types';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
@@ -46,6 +47,7 @@ export function PremiumModelGateModal({
 }: PremiumModelGateModalProps) {
     const t = useTranslations('features.premium-gate');
     const tMisc = useTranslations('shared.ui.misc');
+    const signupHref = useAuthReturnHref('/signup');
 
     const isAuth = mode === 'auth';
 
@@ -73,7 +75,7 @@ export function PremiumModelGateModal({
                 access === 'member'
                     ? t('PremiumModelGateModal.41b8c4')
                     : t('PremiumModelGateModal.671fa2'),
-            ctaHref: '/signup',
+            ctaHref: signupHref,
             ctaLabel: t('PremiumModelGateModal.2b8afd'),
         },
         byok: {
