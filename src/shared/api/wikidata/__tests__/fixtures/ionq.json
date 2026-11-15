@@ -1,0 +1,24 @@
+{
+    "head": {
+        "vars": [
+            "company",
+            "companyX",
+            "cxRank",
+            "ceo",
+            "ceoLabel",
+            "csRank",
+            "ceoX",
+            "pxRank"
+        ]
+    },
+    "results": {
+        "bindings": [
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q47462183"
+                }
+            }
+        ]
+    }
+}

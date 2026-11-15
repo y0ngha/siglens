@@ -116,6 +116,17 @@ export const MACRO_QUOTES_RESULT_MAX_CHARS = 7_000;
 export const COMPANY_FILINGS_RESULT_MAX_CHARS = 17_000;
 
 /**
+ * `get_x_posts` ceiling (counted on the SERIALIZED length). The tool returns up to `AGENT_X_POSTS_MAX` (12) posts
+ * of up to `AGENT_X_POST_TEXT_MAX_CHARS` (600) characters each, plus two account rows — far past the shared 4,000
+ * default, which would re-cut the result into a front-cut preview blob. Measured 2026-11-16 on a heavier-than-real
+ * worst case (`getXPosts.test.ts`: 12 posts of exactly 600 characters with a `"` and a newline every 40 characters,
+ * 15-char handles, 19-digit ids, 7-digit counts, two account rows): 10,294 chars. 11,500 leaves ~1,200 above it.
+ * Text that escapes harder than the fixture is not left to the registry's cut: the tool drops the oldest posts
+ * itself (`fitPosts`).
+ */
+export const X_POSTS_RESULT_MAX_CHARS = 11_500;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK

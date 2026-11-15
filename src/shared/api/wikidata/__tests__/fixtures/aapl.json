@@ -1,0 +1,88 @@
+{
+    "head": {
+        "vars": [
+            "company",
+            "companyX",
+            "cxRank",
+            "ceo",
+            "ceoLabel",
+            "csRank",
+            "ceoX",
+            "pxRank"
+        ]
+    },
+    "results": {
+        "bindings": [
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q312"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "AppleSupport"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q106028933"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "johnternus"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "mul",
+                    "type": "literal",
+                    "value": "John Ternus"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q312"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "Apple"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q106028933"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "johnternus"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "mul",
+                    "type": "literal",
+                    "value": "John Ternus"
+                }
+            }
+        ]
+    }
+}

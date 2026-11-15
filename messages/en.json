@@ -5889,7 +5889,8 @@
                 "toolQuote": "Quote",
                 "toolSearchTicker": "Symbol search",
                 "toolWebSearch": "Web search",
-                "toolGuide": "Chart Guide"
+                "toolGuide": "Chart Guide",
+                "toolXPosts": "X posts"
             }
         }
     }

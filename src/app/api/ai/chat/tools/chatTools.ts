@@ -7,12 +7,14 @@ import type {
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
+import { xBearerToken } from '@/shared/api/x/xClient';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
     ECONOMY_RESULT_MAX_CHARS,
     INVESTOR_FLOWS_RESULT_MAX_CHARS,
     GUIDE_RESULT_MAX_CHARS,
     MACRO_QUOTES_RESULT_MAX_CHARS,
+    X_POSTS_RESULT_MAX_CHARS,
     COMPANY_FILINGS_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
@@ -38,6 +40,7 @@ import { getGuideTool } from './getGuide';
 import { getAnalystViewsTool } from './getAnalystViews';
 import { getMacroQuotesTool } from './getMacroQuotes';
 import { getCompanyFilingsTool } from './getCompanyFilings';
+import { getXPostsTool } from './getXPosts';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
@@ -105,6 +108,8 @@ export interface ToolResultCaps {
     macroQuotes: number;
     /** `get_company_filings` (a 10-filing list, or one filing's text up to `AGENT_FILING_TEXT_MAX_CHARS`). */
     companyFilings: number;
+    /** `get_x_posts` (up to 12 posts of up to 600 characters, plus the account rows). */
+    xPosts: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -121,6 +126,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     guide: GUIDE_RESULT_MAX_CHARS,
     macroQuotes: MACRO_QUOTES_RESULT_MAX_CHARS,
     companyFilings: COMPANY_FILINGS_RESULT_MAX_CHARS,
+    xPosts: X_POSTS_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -178,6 +184,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_analyst_views: getAnalystViewsTool,
     get_macro_quotes: getMacroQuotesTool,
     get_company_filings: getCompanyFilingsTool,
+    get_x_posts: getXPostsTool,
 };
 
 /**
@@ -187,6 +194,9 @@ const EXECUTORS: Record<string, ToolExecutor> = {
  * server exists to exercise real round-trips, and a search tool that silently
  * vanishes there is exactly the kind of gap that only shows up in production.
  * CI never sets it, so the e2e suite keeps the deterministic tool set.
+ *
+ * `get_x_posts` follows the same rule with `X_BEARER_TOKEN`: X bills per post read, so without a key the tool
+ * is not offered to the model at all (core drops its routing row and guest line with it).
  */
 export function availableToolNames(): Set<string> {
     const names = new Set(Object.keys(EXECUTORS));
@@ -195,6 +205,7 @@ export function availableToolNames(): Set<string> {
         Boolean(process.env.BRAVE_SEARCH_API_KEY) ||
         naverAiCredentials() !== null;
     if (e2eFake || !keyed) names.delete('web_search');
+    if (e2eFake || xBearerToken() === null) names.delete('get_x_posts');
     return names;
 }
 
@@ -296,6 +307,7 @@ export function createToolExecutor(
         if (name === 'get_guide') return resultCaps.guide;
         if (name === 'get_macro_quotes') return resultCaps.macroQuotes;
         if (name === 'get_company_filings') return resultCaps.companyFilings;
+        if (name === 'get_x_posts') return resultCaps.xPosts;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

@@ -68,6 +68,10 @@ OPTIONAL_KEYS=(
   # Set only while extra Brave capacity is bought, e.g. a benchmark measurement window.
   AGENT_WEB_SEARCH_PER_DAY
   AGENT_WEB_SEARCH_PER_MONTH
+  # SiglensAI get_x_posts (official company / CEO posts on X). X_BEARER_TOKEN absent = the tool is not offered
+  # to the model. X bills per post read; AGENT_X_POSTS_PER_DAY overrides the daily read budget (200 when unset).
+  X_BEARER_TOKEN
+  AGENT_X_POSTS_PER_DAY
   # Investor flows data crons: FINRA_SHORT_DATA_ENABLED / REG_SHO_THRESHOLD_DATA_ENABLED unset = enabled
   # (non-commercial phase), OPENFIGI_API_KEY unset = anonymous OpenFIGI limits, SEC_USER_AGENT unset = built-in default.
   FINRA_SHORT_DATA_ENABLED

@@ -52,6 +52,9 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  *   반복 호출이 SEC를 다시 부르지 않는다. 본문 읽기의 턴당 횟수 상한은 core가 세는 에이전트 전용 규칙이고, API는
  *   회원 단위 분당/일 한도(`PUBLIC_API_RATE_LIMITS.data`)가 호출 수를 묶는다.
  *
+ * `get_x_posts`(2026-11): **공개 API에서 제외**한다. X 개발자 약관은 X 콘텐츠를 제3자에게 다시 내보내는 것을 제한하고,
+ *   X는 읽은 글 수만큼 과금한다 — "서버 비용 없이"라는 API 전제와 맞지 않는다. SiglensAI 에이전트에서만 쓴다.
+ *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
@@ -71,6 +74,7 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'web_search',
     'get_analyst_views',
     'get_macro_quotes',
+    'get_x_posts',
 ]);
 
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */

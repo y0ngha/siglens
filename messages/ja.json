@@ -5889,7 +5889,8 @@
                 "toolQuote": "株価",
                 "toolSearchTicker": "銘柄検索",
                 "toolWebSearch": "ウェブ検索",
-                "toolGuide": "チャートガイド"
+                "toolGuide": "チャートガイド",
+                "toolXPosts": "Xの投稿"
             }
         }
     }

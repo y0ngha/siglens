@@ -5889,7 +5889,8 @@
                 "toolQuote": "行情",
                 "toolSearchTicker": "股票搜索",
                 "toolWebSearch": "网络搜索",
-                "toolGuide": "图表指南"
+                "toolGuide": "图表指南",
+                "toolXPosts": "X 帖子"
             }
         }
     }

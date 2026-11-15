@@ -114,6 +114,7 @@ describe('tool registry', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.stubEnv('BRAVE_SEARCH_API_KEY', '');
+        vi.stubEnv('X_BEARER_TOKEN', '');
     });
 
     afterEach(() => {
@@ -153,6 +154,18 @@ describe('tool registry', () => {
             expect(availableToolNames().has('web_search')).toBe(true);
         } finally {
             naverState.creds = false;
+        }
+    });
+
+    it('X_BEARER_TOKEN이 있을 때만 get_x_posts가 가용 목록에 들고, E2E fake 모드에서는 빠진다', () => {
+        expect(availableToolNames().has('get_x_posts')).toBe(false);
+        vi.stubEnv('X_BEARER_TOKEN', 'x');
+        expect(availableToolNames().has('get_x_posts')).toBe(true);
+        e2eState.on = true;
+        try {
+            expect(availableToolNames().has('get_x_posts')).toBe(false);
+        } finally {
+            e2eState.on = false;
         }
     });
 
@@ -760,6 +773,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         guide: 9_000,
         macroQuotes: 9_000,
         companyFilings: 9_000,
+        xPosts: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };
