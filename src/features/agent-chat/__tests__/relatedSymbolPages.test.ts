@@ -78,6 +78,20 @@ describe('relatedSymbolPages', () => {
         ).toEqual([{ symbol: 'AAPL', tab: 'congress' }]);
     });
 
+    it('get_analyst_views points at the fundamental tab', () => {
+        expect(
+            relatedSymbolPages([tool('get_analyst_views', { symbol: 'NVDA' })])
+        ).toEqual([{ symbol: 'NVDA', tab: 'fundamental' }]);
+    });
+
+    it('get_macro_quotes has no symbol, so it links nowhere', () => {
+        expect(
+            relatedSymbolPages([
+                tool('get_macro_quotes', { instruments: ['wti'] }),
+            ])
+        ).toEqual([]);
+    });
+
     it('get_investor_flows points at the flows tab', () => {
         expect(
             relatedSymbolPages([tool('get_investor_flows', { symbol: 'AAPL' })])

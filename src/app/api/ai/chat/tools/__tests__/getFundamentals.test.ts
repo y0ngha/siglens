@@ -18,6 +18,7 @@ const {
     loadIndexMemberships,
     fetchKrAnnualDividend,
     loadSecQuarters,
+    getAnalystViews,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -34,6 +35,10 @@ const {
     loadIndexMemberships: vi.fn(),
     fetchKrAnnualDividend: vi.fn(),
     loadSecQuarters: vi.fn(),
+    getAnalystViews: vi.fn(),
+}));
+vi.mock('@/entities/analyst-views/server/getAnalystViews', () => ({
+    getAnalystViews,
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
@@ -97,6 +102,8 @@ vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
 
 import {
     daysUntil,
+    earningsDateAlt,
+    earningsDateCertainty,
     earningsDateNoteFor,
     getFundamentalsTool,
 } from '@/app/api/ai/chat/tools/getFundamentals';
@@ -190,6 +197,8 @@ describe('getFundamentalsTool', () => {
         loadIndexMemberships.mockResolvedValue(null);
         fetchKrAnnualDividend.mockResolvedValue(null);
         loadSecQuarters.mockResolvedValue(null);
+        // 기본: Yahoo 애널리스트 뷰 없음(실패와 같은 모양) — 기존 단언이 FMP 값 그대로 나오는지 지킨다.
+        getAnalystViews.mockResolvedValue(null);
         sessionSpecFor.mockReturnValue({
             kind: 'scheduled',
             timeZone: 'America/New_York',
@@ -786,7 +795,7 @@ describe('getFundamentalsTool', () => {
         ],
         [
             false,
-            'Provider marks this date as an estimate; it may move. Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.',
+            'Provider marks this date as an estimate; it may move. Session timing has not been announced while the date itself is unsettled; say so and do not search for it.',
         ],
         [
             null,
@@ -1268,6 +1277,45 @@ describe('getFundamentalsTool', () => {
                 revenueYoYPct: -12.34,
             }))
         );
+        // Worst case also carries the Yahoo extras: ratings, Yahoo target, confirmed session + call time.
+        getNextEarningsSchedule.mockResolvedValue({
+            symbol: 'AAPL',
+            earningsDate: '2099-01-10',
+            dateConfirmed: null,
+        });
+        getAnalystViews.mockResolvedValue({
+            asOf: '2026-11-15T12:00:00.000Z',
+            symbol: 'AAPL',
+            targets: {
+                yahoo: {
+                    mean: 276.56,
+                    median: 280,
+                    low: 150,
+                    high: 400,
+                    analysts: 53,
+                },
+                fmp: null,
+                gapPct: 12.94,
+                sourcesDisagree: true,
+            },
+            ratings: {
+                strongBuy: 10,
+                buy: 37,
+                hold: 14,
+                sell: 0,
+                strongSell: 0,
+                analysts: 61,
+                source: 'yahoo',
+            },
+            actions: { available: true, rows: [], tally: {} },
+            earnings: {
+                date: '2099-01-10',
+                isEstimate: false,
+                session: 'during_market',
+                callAt: '2099-01-10T22:00:00.000Z',
+            },
+            degraded: [],
+        });
         const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
             recentQuarters: { sec: unknown }[];
             earningsReactions: unknown[];
@@ -1278,6 +1326,7 @@ describe('getFundamentalsTool', () => {
         expect(r.recentQuarters).toHaveLength(5);
         expect(r.earningsReactions).toHaveLength(8);
         expect(JSON.stringify(r).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);
+        expect(JSON.stringify(r)).toContain('earningsSession');
     });
 
     it('한국 종목은 KRW 통화로 투영된다', async () => {
@@ -1440,5 +1489,654 @@ describe('earningsDateNoteFor', () => {
             expect(earningsDateNoteFor(confirmed)).toContain(
                 'Session timing (before/after market) is not provided by the data source; use web_search to find the timing the company announced and cite the source, never guess.'
             );
+    });
+});
+
+describe('earningsDateNoteFor (세션 제공 여부)', () => {
+    it('세션이 함께 나가면 web_search로 찾으라는 문장을 빼고 earningsSession을 가리킨다', () => {
+        for (const confirmed of [true, false, null]) {
+            const note = earningsDateNoteFor(confirmed, 'given');
+            expect(note).not.toContain('web_search');
+            expect(note).toContain('earningsSession');
+        }
+    });
+
+    it('날짜가 미정이면 시간대가 아직 공지되지 않았다고 하고 검색을 시키지 않는다', () => {
+        for (const confirmed of [true, false, null]) {
+            const note = earningsDateNoteFor(confirmed, 'unsettled');
+            expect(note).not.toContain('use web_search');
+            expect(note).toContain('do not search for it');
+        }
+    });
+});
+
+describe('earningsDateCertainty', () => {
+    const fmpRow = (dateConfirmed: boolean | null) => ({ dateConfirmed });
+
+    it('Yahoo 힌트가 없으면 기존 값 그대로(세션 필드 없음)', () => {
+        expect(earningsDateCertainty(fmpRow(null))).toEqual({
+            earningsDateConfirmed: null,
+            earningsDateNote: earningsDateNoteFor(null),
+        });
+        expect(earningsDateCertainty(null)).toEqual({});
+    });
+
+    it('isEstimate 3상태: false→true, true→false, null→기존 값', () => {
+        const hint = (isEstimate: boolean | null) => ({
+            isEstimate,
+            session: null,
+            callAt: null,
+        });
+        expect(
+            earningsDateCertainty(fmpRow(null), hint(false))
+                .earningsDateConfirmed
+        ).toBe(true);
+        expect(
+            earningsDateCertainty(fmpRow(true), hint(true))
+                .earningsDateConfirmed
+        ).toBe(false);
+        expect(
+            earningsDateCertainty(fmpRow(true), hint(null))
+                .earningsDateConfirmed
+        ).toBe(true);
+        expect(
+            earningsDateCertainty(fmpRow(null), hint(null))
+                .earningsDateConfirmed
+        ).toBeNull();
+    });
+
+    it('확정이면 세션과 (있으면) 콜 시각을 싣고 노트는 검색을 안내하지 않는다', () => {
+        const r = earningsDateCertainty(fmpRow(null), {
+            isEstimate: false,
+            session: 'after_market',
+            callAt: '2026-11-17T22:00:00.000Z',
+        });
+        expect(r).toMatchObject({
+            earningsDateConfirmed: true,
+            earningsSession: 'after_market',
+            earningsCallAt: '2026-11-17T22:00:00.000Z',
+        });
+        expect(r.earningsDateNote).not.toContain('web_search');
+    });
+
+    it('콜 시각이 없으면 earningsCallAt 키를 내지 않는다', () => {
+        const r = earningsDateCertainty(fmpRow(null), {
+            isEstimate: false,
+            session: 'before_market',
+            callAt: null,
+        });
+        expect(r).toHaveProperty('earningsSession', 'before_market');
+        expect(r).not.toHaveProperty('earningsCallAt');
+    });
+
+    it('추정일이면 세션을 내지 않고 노트는 검색을 시키지 않는다', () => {
+        const r = earningsDateCertainty(fmpRow(null), {
+            isEstimate: true,
+            session: null,
+            callAt: '2026-11-17T22:00:00.000Z',
+        });
+        expect(r).not.toHaveProperty('earningsSession');
+        expect(r).not.toHaveProperty('earningsCallAt');
+        expect(r.earningsDateNote).toBe(
+            earningsDateNoteFor(false, 'unsettled')
+        );
+    });
+
+    it('두 출처의 날짜가 다르면 확정 여부를 몰라도 검색을 시키지 않는다', () => {
+        const r = earningsDateCertainty(fmpRow(null), null, true);
+        expect(r.earningsDateConfirmed).toBeNull();
+        expect(r.earningsDateNote).toBe(earningsDateNoteFor(null, 'unsettled'));
+    });
+
+    it('날짜가 하나뿐이고 확정 여부를 모르면 기존 검색 안내를 유지한다', () => {
+        expect(earningsDateCertainty(fmpRow(null)).earningsDateNote).toContain(
+            'use web_search to find the timing'
+        );
+    });
+});
+
+describe('earningsDateAlt', () => {
+    const yahoo = (date: string, isEstimate: boolean | null = true) => ({
+        date,
+        isEstimate,
+    });
+
+    it('둘 다 오늘 이후이고 서로 다르면 대체 날짜를 싣는다', () => {
+        expect(
+            earningsDateAlt('2026-11-17', yahoo('2026-11-24'), '2026-11-15')
+        ).toEqual({ date: '2026-11-24', source: 'yahoo', estimate: true });
+    });
+
+    it('오늘 날짜는 "오늘 이후"에 포함된다', () => {
+        expect(
+            earningsDateAlt(
+                '2026-11-15',
+                yahoo('2026-11-24', null),
+                '2026-11-15'
+            )
+        ).toEqual({ date: '2026-11-24', source: 'yahoo', estimate: null });
+    });
+
+    it('같은 날짜면 대체 날짜가 없다', () => {
+        expect(
+            earningsDateAlt('2026-11-17', yahoo('2026-11-17'), '2026-11-15')
+        ).toBeNull();
+    });
+
+    it('한쪽이라도 이미 지났으면 충돌이 아니다', () => {
+        expect(
+            earningsDateAlt('2026-08-27', yahoo('2026-11-24'), '2026-11-15')
+        ).toBeNull();
+        expect(
+            earningsDateAlt('2026-11-24', yahoo('2026-11-14'), '2026-11-15')
+        ).toBeNull();
+    });
+
+    it('날짜나 Yahoo 힌트가 없으면 null', () => {
+        expect(
+            earningsDateAlt(null, yahoo('2026-11-24'), '2026-11-15')
+        ).toBeNull();
+        expect(earningsDateAlt('2026-11-24', null, '2026-11-15')).toBeNull();
+    });
+});
+
+describe('getFundamentalsTool - Yahoo 애널리스트 보강', () => {
+    // 먼 미래 날짜를 써서 시계를 고정하지 않고도 "오늘 이후"가 항상 성립하게 한다.
+    const FMP_DATE = '2099-01-10';
+    const ALT_DATE = '2099-01-20';
+
+    const views = (over: Record<string, unknown> = {}) => ({
+        asOf: '2026-11-15T12:00:00.000Z',
+        symbol: 'AAPL',
+        targets: {
+            yahoo: {
+                mean: 276.56,
+                median: 280,
+                low: 150,
+                high: 400,
+                analysts: 53,
+            },
+            fmp: null,
+            gapPct: 12.9,
+            sourcesDisagree: true,
+        },
+        ratings: {
+            strongBuy: 10,
+            buy: 37,
+            hold: 14,
+            sell: 0,
+            strongSell: 0,
+            analysts: 61,
+            source: 'yahoo',
+        },
+        actions: { available: true, rows: [], tally: {} },
+        earnings: null,
+        degraded: [],
+        ...over,
+    });
+    const schedule = (dateConfirmed: boolean | null = null) => ({
+        symbol: 'AAPL',
+        earningsDate: FMP_DATE,
+        dateConfirmed,
+    });
+    type Analyst = {
+        consensus: Record<string, number> | null;
+        consensusAnalysts: number | null;
+        consensusSource: string | null;
+        analystBuySharePct: number | null;
+        priceTarget: unknown;
+        priceTargetSource: string | null;
+        priceTargetYahoo: { mean: number; analysts: number } | null;
+        targetSourcesDisagree: boolean;
+        earningsDateConfirmed?: boolean | null;
+        earningsDateNote?: string;
+        earningsSession?: string;
+        earningsCallAt?: string;
+        nextEarningsDate?: string | null;
+        earningsDateAlt?: {
+            date: string;
+            source: string;
+            estimate: boolean | null;
+        };
+    };
+    const analyst = async (symbol = 'AAPL') =>
+        (
+            (await getFundamentalsTool({ symbol }, ctx, rt)) as {
+                analyst: Analyst;
+            }
+        ).analyst;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        isTabAllowed.mockResolvedValue(true);
+        resolveMarketProfile.mockResolvedValue('us-equity');
+        getNextEarningsSchedule.mockResolvedValue(null);
+        getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
+        assetInfo.mockResolvedValue(null);
+        getIncomeStatements.mockResolvedValue([]);
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        listReportedEarningsDates.mockResolvedValue([]);
+        findListedShares.mockResolvedValue(null);
+        fetchDividendSource.mockResolvedValue(null);
+        loadIndexMemberships.mockResolvedValue(null);
+        fetchKrAnnualDividend.mockResolvedValue(null);
+        loadSecQuarters.mockResolvedValue(null);
+        sessionSpecFor.mockReturnValue({
+            kind: 'scheduled',
+            timeZone: 'America/New_York',
+            openMinute: 570,
+            closeMinute: 960,
+            weekendDays: [0, 6],
+        });
+        getProvider.mockReturnValue(fakeProvider());
+        getAnalystViews.mockResolvedValue(views());
+    });
+
+    it('미국: Yahoo 분포가 FMP 누적 분포를 대체하고 합계·매수 비율·출처가 그 분포를 따른다', async () => {
+        const a = await analyst();
+        expect(a.consensus).toEqual({
+            strongBuy: 10,
+            buy: 37,
+            hold: 14,
+            sell: 0,
+            strongSell: 0,
+        });
+        expect(a.consensusAnalysts).toBe(61);
+        expect(a.consensusSource).toBe('yahoo');
+        expect(a.analystBuySharePct).toBeCloseTo((47 / 61) * 100, 3);
+    });
+
+    it('미국: Yahoo 분포가 없으면 프로바이더(FMP) 분포를 그대로 쓴다', async () => {
+        getAnalystViews.mockResolvedValue(views({ ratings: null }));
+        const a = await analyst();
+        expect(a.consensus).toEqual({
+            strongBuy: 10,
+            buy: 20,
+            hold: 5,
+            sell: 1,
+            strongSell: 0,
+        });
+        expect(a.consensusAnalysts).toBe(36);
+        expect(a.consensusSource).toBe('fmp');
+        expect(a.analystBuySharePct).toBeCloseTo((30 / 36) * 100, 3);
+    });
+
+    it('애널리스트 뷰가 통째로 실패해도 도구는 살아 있다', async () => {
+        getAnalystViews.mockRejectedValue(new Error('boom'));
+        const a = await analyst();
+        expect(a.consensusSource).toBe('fmp');
+        expect(a.priceTargetYahoo).toBeNull();
+        expect(a.targetSourcesDisagree).toBe(false);
+    });
+
+    it('분포가 아예 없으면 합계·출처·매수 비율은 null', async () => {
+        getAnalystViews.mockResolvedValue(views({ ratings: null }));
+        getProvider.mockReturnValue(
+            fakeProvider({
+                getGradesConsensus: vi.fn().mockResolvedValue(null),
+            })
+        );
+        const a = await analyst();
+        expect(a.consensus).toBeNull();
+        expect(a.consensusAnalysts).toBeNull();
+        expect(a.consensusSource).toBeNull();
+        expect(a.analystBuySharePct).toBeNull();
+    });
+
+    it('미국: priceTarget은 FMP 그대로, priceTargetYahoo와 불일치 플래그가 옆에 붙는다', async () => {
+        const a = await analyst();
+        expect(a.priceTargetSource).toBe('fmp');
+        expect(a.priceTargetYahoo).toEqual({ mean: 276.56, analysts: 53 });
+        expect(a.targetSourcesDisagree).toBe(true);
+    });
+
+    it('priceTarget이 없으면 priceTargetSource는 null', async () => {
+        getProvider.mockReturnValue(
+            fakeProvider({
+                getPriceTargetConsensus: vi.fn().mockResolvedValue(null),
+            })
+        );
+        expect((await analyst()).priceTargetSource).toBeNull();
+    });
+
+    it('한국: 분포는 프로바이더(Yahoo) 것, 출처 yahoo, 보강 필드는 비운다', async () => {
+        resolveMarketProfile.mockResolvedValue('kr-equity');
+        getQuote.mockResolvedValue({
+            price: 70000,
+            changesPercentage: 0,
+            timestamp: Math.floor(Date.now() / 1000),
+        });
+        const a = await analyst('005930.KS');
+        expect(getAnalystViews).not.toHaveBeenCalled();
+        expect(a.consensusSource).toBe('yahoo');
+        expect(a.consensusAnalysts).toBe(36);
+        expect(a.priceTargetSource).toBe('yahoo');
+        expect(a.priceTargetYahoo).toBeNull();
+        expect(a.targetSourcesDisagree).toBe(false);
+        expect(a).not.toHaveProperty('earningsSession');
+        expect(a).not.toHaveProperty('earningsDateAlt');
+    });
+
+    it("미국: 가벼운 조회('lite')로 부른다 — 이력·기간 평균은 이 도구에 필요 없다", async () => {
+        await analyst();
+        expect(getAnalystViews).toHaveBeenCalledTimes(1);
+        expect(getAnalystViews).toHaveBeenCalledWith('AAPL', {
+            detail: 'lite',
+        });
+    });
+
+    describe('공개 API 런타임(allowUnofficialSources: false)', () => {
+        const publicRt = { ...rt, allowUnofficialSources: false };
+        const YAHOO_ONLY_KEYS = [
+            'consensusAnalysts',
+            'consensusSource',
+            'priceTargetSource',
+            'priceTargetYahoo',
+            'targetSourcesDisagree',
+            'earningsSession',
+            'earningsCallAt',
+            'earningsDateAlt',
+        ];
+        const run = async (symbol = 'AAPL') =>
+            (
+                (await getFundamentalsTool({ symbol }, ctx, publicRt)) as {
+                    analyst: Analyst & Record<string, unknown>;
+                }
+            ).analyst;
+
+        it('Yahoo를 부르지 않고 Yahoo 유래 키를 하나도 내지 않는다', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            // 호출됐다면 확정 승격까지 일어났을 값 — 호출 자체가 없어야 한다.
+            getAnalystViews.mockResolvedValue(
+                views({
+                    earnings: {
+                        date: ALT_DATE,
+                        isEstimate: false,
+                        session: 'after_market',
+                        callAt: `${ALT_DATE}T22:00:00.000Z`,
+                    },
+                })
+            );
+            const a = await run();
+            expect(getAnalystViews).not.toHaveBeenCalled();
+            for (const key of YAHOO_ONLY_KEYS)
+                expect(a).not.toHaveProperty(key);
+        });
+
+        it('분포는 프로바이더 값 그대로, 실적 안내는 Yahoo 힌트 없이 계산한다', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            const a = await run();
+            expect(a.consensus).toEqual({
+                strongBuy: 10,
+                buy: 20,
+                hold: 5,
+                sell: 1,
+                strongSell: 0,
+            });
+            expect(a.analystBuySharePct).toBeCloseTo((30 / 36) * 100, 3);
+            expect(a.nextEarningsDate).toBe(FMP_DATE);
+            expect(a.earningsDateConfirmed).toBeNull();
+            expect(a.earningsDateNote).toBe(earningsDateNoteFor(null));
+        });
+
+        it('한국 종목도 같은 키 집합이다(기존 응답 모양)', async () => {
+            resolveMarketProfile.mockResolvedValue('kr-equity');
+            getQuote.mockResolvedValue({
+                price: 70000,
+                changesPercentage: 0,
+                timestamp: Math.floor(Date.now() / 1000),
+            });
+            const a = await run('005930.KS');
+            for (const key of YAHOO_ONLY_KEYS)
+                expect(a).not.toHaveProperty(key);
+            expect(getAnalystViews).not.toHaveBeenCalled();
+        });
+
+        it('에이전트 런타임(옵션 생략)은 그대로 보강한다', async () => {
+            const a = (await analyst()) as Analyst;
+            expect(a.consensusSource).toBe('yahoo');
+        });
+    });
+
+    describe('실적 일정', () => {
+        const yahooEarnings = (over: Record<string, unknown> = {}) => ({
+            date: FMP_DATE,
+            isEstimate: false,
+            session: 'after_market',
+            callAt: `${FMP_DATE}T22:00:00.000Z`,
+            ...over,
+        });
+
+        it('같은 날짜 + 확정: earningsDateConfirmed true, 세션·콜 시각, 검색 안내 없음, alt 없음', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            getAnalystViews.mockResolvedValue(
+                views({ earnings: yahooEarnings() })
+            );
+            const a = await analyst();
+            expect(a.earningsDateConfirmed).toBe(true);
+            expect(a.earningsSession).toBe('after_market');
+            expect(a.earningsCallAt).toBe(`${FMP_DATE}T22:00:00.000Z`);
+            expect(a.earningsDateNote).not.toContain('web_search');
+            expect(a).not.toHaveProperty('earningsDateAlt');
+        });
+
+        it('같은 날짜 + 추정: earningsDateConfirmed false, 세션 없음, 검색 안내 없음', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(true));
+            getAnalystViews.mockResolvedValue(
+                views({
+                    earnings: yahooEarnings({
+                        isEstimate: true,
+                        session: null,
+                    }),
+                })
+            );
+            const a = await analyst();
+            expect(a.earningsDateConfirmed).toBe(false);
+            expect(a).not.toHaveProperty('earningsSession');
+            expect(a.earningsDateNote).toContain('do not search for it');
+        });
+
+        it('같은 날짜 + isEstimate null: 기존 확정 값을 유지한다', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(true));
+            getAnalystViews.mockResolvedValue(
+                views({
+                    earnings: yahooEarnings({
+                        isEstimate: null,
+                        session: null,
+                    }),
+                })
+            );
+            expect((await analyst()).earningsDateConfirmed).toBe(true);
+        });
+
+        it('날짜가 다르고 둘 다 미래이며 Yahoo가 추정이면: earningsDateAlt + 미정 안내, 확정 여부는 기존 그대로, 세션은 없다', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            getAnalystViews.mockResolvedValue(
+                views({
+                    earnings: yahooEarnings({
+                        date: ALT_DATE,
+                        isEstimate: true,
+                        session: null,
+                        callAt: null,
+                    }),
+                })
+            );
+            const a = await analyst();
+            expect(a.earningsDateAlt).toEqual({
+                date: ALT_DATE,
+                source: 'yahoo',
+                estimate: true,
+            });
+            expect(a.nextEarningsDate).toBe(FMP_DATE);
+            expect(a.earningsDateConfirmed).toBeNull();
+            expect(a.earningsDateNote).toBe(
+                earningsDateNoteFor(null, 'unsettled')
+            );
+            // alt와 세션은 같은 응답에 함께 나오지 않는다.
+            expect(a).not.toHaveProperty('earningsSession');
+            expect(a).not.toHaveProperty('earningsCallAt');
+        });
+
+        describe('Yahoo의 확정 날짜가 FMP 추정 날짜를 이긴다', () => {
+            const confirmed = (over: Record<string, unknown> = {}) =>
+                views({
+                    earnings: yahooEarnings({
+                        date: ALT_DATE,
+                        isEstimate: false,
+                        session: 'after_market',
+                        callAt: `${ALT_DATE}T22:00:00.000Z`,
+                        ...over,
+                    }),
+                });
+            const full = async () =>
+                (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+                    analyst: Analyst & {
+                        nextEarningsDate: string | null;
+                        daysToEarnings: number | null;
+                    };
+                };
+
+            it('날짜가 다르고 Yahoo가 확정이며 미래면: Yahoo 날짜·확정·세션·콜 시각, alt 없음', async () => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(confirmed());
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBe(ALT_DATE);
+                expect(a.earningsDateConfirmed).toBe(true);
+                expect(a.earningsSession).toBe('after_market');
+                expect(a.earningsCallAt).toBe(`${ALT_DATE}T22:00:00.000Z`);
+                expect(a.earningsDateNote).toBe(
+                    earningsDateNoteFor(true, 'given')
+                );
+                expect(a).not.toHaveProperty('earningsDateAlt');
+            });
+
+            it('daysToEarnings는 승격된 날짜를 따른다', async () => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(confirmed());
+                const { analyst: a } = await full();
+                expect(a.daysToEarnings).toBe(
+                    daysUntil(ALT_DATE, new Date(), 'America/New_York')
+                );
+                expect(a.daysToEarnings).not.toBe(
+                    daysUntil(FMP_DATE, new Date(), 'America/New_York')
+                );
+            });
+
+            it('세션이 없으면 승격하되 검색 안내 문장을 유지한다', async () => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(
+                    confirmed({ session: null, callAt: null })
+                );
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBe(ALT_DATE);
+                expect(a).not.toHaveProperty('earningsSession');
+                expect(a.earningsDateNote).toBe(
+                    earningsDateNoteFor(true, 'not_provided')
+                );
+            });
+
+            it('FMP 날짜가 이미 지난 행이어도(옛 일정) Yahoo의 확정 미래 날짜를 쓴다', async () => {
+                getNextEarningsSchedule.mockResolvedValue({
+                    ...schedule(null),
+                    earningsDate: '2020-01-10',
+                });
+                getAnalystViews.mockResolvedValue(confirmed());
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBe(ALT_DATE);
+                expect(a.earningsDateConfirmed).toBe(true);
+                expect(a).not.toHaveProperty('earningsDateAlt');
+            });
+
+            it('Yahoo 날짜가 이미 지났으면 승격하지 않는다(지난 일정은 일정이 아니다)', async () => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(
+                    confirmed({ date: '2020-02-01' })
+                );
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBe(FMP_DATE);
+                expect(a).not.toHaveProperty('earningsSession');
+                expect(a).not.toHaveProperty('earningsDateAlt');
+            });
+
+            it('Yahoo가 추정이면 승격하지 않는다', async () => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(
+                    confirmed({ isEstimate: true, session: null })
+                );
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBe(FMP_DATE);
+            });
+
+            it('Yahoo가 isEstimate 모름(null)이면 승격하지 않는다', async () => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(
+                    confirmed({ isEstimate: null, session: null })
+                );
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBe(FMP_DATE);
+                expect(a.earningsDateAlt).toMatchObject({ date: ALT_DATE });
+            });
+
+            it('FMP 일정 행이 아예 없으면 증명할 기준이 없어 아무것도 바꾸지 않는다', async () => {
+                getNextEarningsSchedule.mockResolvedValue(null);
+                getAnalystViews.mockResolvedValue(confirmed());
+                const { analyst: a } = await full();
+                expect(a.nextEarningsDate).toBeNull();
+                expect(a).not.toHaveProperty('earningsSession');
+            });
+        });
+
+        it.each([
+            ['같은 날짜 · 확정', FMP_DATE, false, 'earningsSession'],
+            ['다른 날짜 · 확정(승격)', ALT_DATE, false, 'earningsSession'],
+            ['다른 날짜 · 추정', ALT_DATE, true, 'earningsDateAlt'],
+        ])(
+            '%s: earningsDateAlt와 earningsSession은 절대 함께 나오지 않는다',
+            async (_n, date, isEstimate, expectedKey) => {
+                getNextEarningsSchedule.mockResolvedValue(schedule(null));
+                getAnalystViews.mockResolvedValue(
+                    views({
+                        earnings: yahooEarnings({
+                            date,
+                            isEstimate,
+                            session: isEstimate ? null : 'after_market',
+                        }),
+                    })
+                );
+                const a = await analyst();
+                expect('earningsDateAlt' in a && 'earningsSession' in a).toBe(
+                    false
+                );
+                expect(expectedKey in a).toBe(true);
+            }
+        );
+
+        it('FMP 날짜가 이미 지났고 Yahoo가 추정이면 alt도 승격도 없다', async () => {
+            getNextEarningsSchedule.mockResolvedValue({
+                ...schedule(null),
+                earningsDate: '2020-01-10',
+            });
+            getAnalystViews.mockResolvedValue(
+                views({
+                    earnings: yahooEarnings({
+                        date: ALT_DATE,
+                        isEstimate: true,
+                        session: null,
+                    }),
+                })
+            );
+            const a = await analyst();
+            expect(a).not.toHaveProperty('earningsDateAlt');
+            expect(a).not.toHaveProperty('earningsSession');
+            expect(a.nextEarningsDate).toBe('2020-01-10');
+        });
+
+        it('Yahoo 실적 힌트가 없으면 지금과 같다', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            const a = await analyst();
+            expect(a.earningsDateConfirmed).toBeNull();
+            expect(a.earningsDateNote).toBe(earningsDateNoteFor(null));
+            expect(a).not.toHaveProperty('earningsDateAlt');
+        });
     });
 });

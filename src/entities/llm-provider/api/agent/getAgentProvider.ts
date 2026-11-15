@@ -1,6 +1,6 @@
 import 'server-only';
 import type { CallAgentProvider } from '@y0ngha/siglens-core';
-import { isE2E } from '@/shared/api/e2eEnv';
+import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { fakeAgentProvider } from './fake';
 import { createAgentProvider, type AgentProviderState } from './router';
 
@@ -15,6 +15,6 @@ import { createAgentProvider, type AgentProviderState } from './router';
 export function getAgentProvider(
     state?: AgentProviderState
 ): CallAgentProvider {
-    const fake = isE2E() && process.env.AGENT_REAL_PROVIDER !== '1';
+    const fake = isE2EFakeMode();
     return fake ? fakeAgentProvider : createAgentProvider(state);
 }

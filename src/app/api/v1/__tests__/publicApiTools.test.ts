@@ -40,6 +40,12 @@ vi.mock('@/app/api/ai/chat/tools/getInvestorFlows', () => ({
     getInvestorFlowsTool: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
+vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+    getAnalystViewsTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+    getMacroQuotesTool: vi.fn(),
+}));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
@@ -49,6 +55,7 @@ import {
     PUBLIC_API_CHART_DATA,
     PUBLIC_API_CHART_DATA_MEASURED_SIZES as MEASURED,
 } from '@/shared/config/publicApi';
+import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
 import {
     findPublicApiToolSpec,
     isPublicApiOnlyTool,
@@ -86,9 +93,25 @@ describe('publicApiToolNames', () => {
         );
     });
 
-    it('제외 목록은 web_search뿐이다(run_fresh_analysis는 BYOK 전용 구현으로 노출한다)', () => {
-        expect([...PUBLIC_API_EXCLUDED_TOOLS]).toEqual(['web_search']);
+    it('제외 목록은 web_search와 Yahoo 전용 도구 둘뿐이다(run_fresh_analysis는 BYOK 전용 구현으로 노출한다)', () => {
+        expect([...PUBLIC_API_EXCLUDED_TOOLS]).toEqual([
+            'web_search',
+            'get_analyst_views',
+            'get_macro_quotes',
+        ]);
     });
+
+    it.each(['get_analyst_views', 'get_macro_quotes'])(
+        '%s는 실행기에는 있어도 API 목록·스펙에서 빠진다',
+        name => {
+            expect(availableToolNames().has(name)).toBe(true);
+            expect(publicApiToolNames().has(name)).toBe(false);
+            expect(findPublicApiToolSpec(name)).toBeUndefined();
+            expect(publicApiToolSpecs().map(spec => spec.name)).not.toContain(
+                name
+            );
+        }
+    );
 
     it('검색 키가 있어 에이전트에선 web_search가 켜져도 API에는 나가지 않는다', () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'brave-test-key');

@@ -40,6 +40,12 @@ vi.mock('@/app/api/ai/chat/tools/getInvestorFlows', () => ({
     getInvestorFlowsTool: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
+vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+    getAnalystViewsTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+    getMacroQuotesTool: vi.fn(),
+}));
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
