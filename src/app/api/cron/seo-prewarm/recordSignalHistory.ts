@@ -1,8 +1,12 @@
+import { revalidateTag } from 'next/cache';
 import {
     getSectorSignals,
     type SectorSignalsResult,
 } from '@y0ngha/siglens-core';
-import { DrizzleSignalHistoryRepository } from '@/entities/signal-history/api';
+import {
+    DrizzleSignalHistoryRepository,
+    SIGNAL_HISTORY_CACHE_TAG,
+} from '@/entities/signal-history/api';
 import {
     continuationFloor,
     planSignalEpisodes,
@@ -101,6 +105,8 @@ interface RecordSignalHistoryOptions {
     readonly budgetEndMs?: number;
     readonly scan?: ScanMarket;
     readonly markers?: RecordedMarkerStore | null;
+    /** 새 행이 생기면 신호 페이지 캐시를 비운다. 기본은 `revalidateTag`. 테스트가 갈아 끼운다. */
+    readonly invalidate?: () => void;
 }
 
 /**
@@ -134,6 +140,16 @@ interface MarketContext {
     readonly now: Date;
     readonly scan: ScanMarket;
     readonly markers: RecordedMarkerStore | null;
+}
+
+function invalidateSignalPages(): void {
+    revalidateTag(SIGNAL_HISTORY_CACHE_TAG, 'max');
+}
+
+function changedRows(outcome: MarketRecordOutcome): number {
+    return outcome.status === 'recorded'
+        ? outcome.inserted + outcome.extended
+        : 0;
 }
 
 async function recordMarket(
@@ -194,7 +210,12 @@ async function recordMarket(
 
 async function recordAndPrune(
     db: SiglensDatabase,
-    context: Omit<MarketContext, 'repo'>
+    {
+        invalidate,
+        ...context
+    }: Omit<MarketContext, 'repo'> & {
+        readonly invalidate: () => void;
+    }
 ): Promise<RecordSignalHistoryResult> {
     const repo = new DrizzleSignalHistoryRepository(db);
     const marketContext = { ...context, repo };
@@ -202,6 +223,17 @@ async function recordAndPrune(
         recordMarket('us', marketContext),
         recordMarket('kr', marketContext),
     ]);
+    // 신호 페이지가 1시간 캐시를 기다리지 않고 오늘 기록을 보이게 한다. 바뀐 행이 없으면 건드리지 않는다.
+    if (changedRows(us) + changedRows(kr) > 0) {
+        try {
+            invalidate();
+        } catch (error) {
+            console.error(
+                '[seo-prewarm] signal history invalidate failed:',
+                error
+            );
+        }
+    }
     // 정리는 실제로 기록한 실행에서만 한다 — 시장마다 세션당 한 번이라 하루 두어 번이면 충분하고,
     // 5분마다 도는 크론의 나머지 실행에서 DELETE를 되풀이하지 않는다.
     const recordedAny = us.status === 'recorded' || kr.status === 'recorded';
@@ -242,9 +274,10 @@ export async function recordSignalHistory(
         budgetEndMs,
         scan = scanUncached,
         markers = redisMarkers(),
+        invalidate = invalidateSignalPages,
     }: RecordSignalHistoryOptions = {}
 ): Promise<RecordSignalHistoryResult> {
-    const context = { now, scan, markers };
+    const context = { now, scan, markers, invalidate };
     if (budgetEndMs === undefined) return recordAndPrune(db, context);
     const remainingMs = budgetEndMs - Date.now();
     // 예산이 이미 바닥이면 시작하지 않는다 — 시작만 하고 버려지는 작업을 만들지 않는다. 다음 크론

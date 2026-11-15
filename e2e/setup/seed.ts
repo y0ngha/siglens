@@ -11,6 +11,7 @@ import {
     economicCalendar,
     marketNews,
     sharedAnalyses,
+    signalEvents,
     terms,
     users,
 } from '@/shared/db/schema';
@@ -445,6 +446,46 @@ async function seed(): Promise<void> {
     console.log(
         `e2e seed: guide ok (entries ${guide.entriesUpserted}, contents ${guide.contentsUpserted})`
     );
+
+    // 신호 이력(`/market/signals/*`) — 골든크로스만 색인 기준(5행)을 채운다. 데드크로스는 비워 두어
+    // 같은 실행에서 색인(JSON-LD·종목 링크)과 noindex(빈 안내) 두 경로를 함께 본다. 날짜는 실행 날짜
+    // 기준 상대값이라 30일 창을 벗어나지 않는다. PK 충돌은 무시해 재실행에 안전하다.
+    const today = new Date().toISOString().slice(0, 10);
+    const goldenCrossRows = [
+        { market: 'us', symbol: 'AAPL', koreanName: '애플', daysAgo: 1 },
+        { market: 'us', symbol: 'NVDA', koreanName: '엔비디아', daysAgo: 1 },
+        {
+            market: 'us',
+            symbol: 'MSFT',
+            koreanName: '마이크로소프트',
+            daysAgo: 3,
+        },
+        {
+            market: 'kr',
+            symbol: '005930.KS',
+            koreanName: '삼성전자',
+            daysAgo: 2,
+        },
+        {
+            market: 'kr',
+            symbol: '000660.KS',
+            koreanName: 'SK하이닉스',
+            daysAgo: 4,
+        },
+    ].map(({ daysAgo, ...row }) => {
+        const sessionDate = addUtcIsoDays(today, -daysAgo);
+        return {
+            ...row,
+            sessionDate,
+            lastSeenSession: sessionDate,
+            signalType: 'golden_cross',
+            direction: 'bullish',
+            changePercent: 1.2,
+            computedAt: new Date(`${sessionDate}T21:30:00Z`),
+        };
+    });
+    await db.insert(signalEvents).values(goldenCrossRows).onConflictDoNothing();
+    console.log('e2e seed: signal_events ok');
     console.log('e2e seed: ok');
 }
 

@@ -17,6 +17,28 @@ export interface SignalEpisodeInsert {
     readonly computedAt: string;
 }
 
+/** 신호 페이지가 읽는 에피소드 한 줄. 날짜는 `YYYY-MM-DD`(그 시장 현지 세션 날짜). */
+export interface SignalEpisodeRow {
+    readonly market: SignalHistoryMarket;
+    readonly symbol: string;
+    readonly koreanName: string | null;
+    readonly sessionDate: string;
+    readonly lastSeenSession: string;
+    readonly changePercent: number;
+}
+
+/**
+ * 신호 하나의 기간 집계 — 사이트맵이 색인할 신호 페이지와 lastmod를 고른다. 페이지가 종목마다 한 줄만
+ * 그리므로(`latestEpisodePerSymbol`) 색인 판정도 에피소드 수가 아니라 종목 수로 한다.
+ */
+export interface SignalHubCount {
+    readonly signalType: string;
+    /** 기간 안에 첫 포착된 에피소드가 있는 서로 다른 (시장, 종목) 수. */
+    readonly symbols: number;
+    /** 그 에피소드들의 가장 최근 마지막 포착 세션(`YYYY-MM-DD`) — 목록이 실제로 바뀐 날. */
+    readonly latestSession: string;
+}
+
 /** (종목, 신호) — 에피소드를 고르는 키. 시장은 호출 단위로 따로 준다. */
 export interface SignalEpisodeKey {
     readonly symbol: string;

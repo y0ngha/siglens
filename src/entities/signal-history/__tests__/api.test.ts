@@ -182,4 +182,103 @@ describe('DrizzleSignalHistoryRepository', () => {
         expect(sql).toContain('"last_seen_session" < $1');
         expect(params).toEqual(['2025-10-09']);
     });
+
+    describe('listRecentEpisodes', () => {
+        it('신호·첫 포착 세션 하한으로 거르고 최신순·등락률 크기순으로 limit까지 읽는다', async () => {
+            const limit = vi.fn().mockResolvedValue([
+                {
+                    market: 'us',
+                    symbol: 'NVDA',
+                    koreanName: '엔비디아',
+                    sessionDate: '2026-11-13',
+                    lastSeenSession: '2026-11-14',
+                    changePercent: 2,
+                },
+                {
+                    market: 'zz',
+                    symbol: 'BAD',
+                    koreanName: null,
+                    sessionDate: '2026-11-13',
+                    lastSeenSession: '2026-11-13',
+                    changePercent: 1,
+                },
+            ]);
+            const orderBy = vi.fn((..._order: unknown[]) => ({ limit }));
+            const where = vi.fn((_condition: unknown) => ({ orderBy }));
+            const db = {
+                select: vi.fn(() => ({ from: () => ({ where }) })),
+            } as unknown as SiglensDatabase;
+
+            const rows = await new DrizzleSignalHistoryRepository(
+                db
+            ).listRecentEpisodes('golden_cross', '2026-10-16', 50);
+
+            // 시장 값이 'us' | 'kr'이 아닌 행은 버린다.
+            expect(rows.map(row => row.symbol)).toEqual(['NVDA']);
+            expect(limit).toHaveBeenCalledWith(50);
+            const { sql, params } = render(onlyCallArg(where));
+            expect(sql).toContain('"signal_type" = $1');
+            expect(sql).toContain('"session_date" >= $2');
+            expect(params).toEqual(['golden_cross', '2026-10-16']);
+            expect(orderBy.mock.calls.find(Boolean)).toHaveLength(3);
+        });
+    });
+
+    describe('recentCountsByType', () => {
+        it('신호 목록·세션 하한으로 거르고 신호별로 묶는다', async () => {
+            const groupBy = vi.fn().mockResolvedValue([
+                {
+                    signalType: 'golden_cross',
+                    symbols: 7,
+                    latestSession: '2026-11-13',
+                },
+            ]);
+            const where = vi.fn((_condition: unknown) => ({ groupBy }));
+            const select = vi.fn((_fields: unknown) => ({
+                from: () => ({ where }),
+            }));
+            const db = { select } as unknown as SiglensDatabase;
+
+            const counts = await new DrizzleSignalHistoryRepository(
+                db
+            ).recentCountsByType(['golden_cross', 'death_cross'], '2026-10-16');
+
+            expect(counts).toEqual([
+                {
+                    signalType: 'golden_cross',
+                    symbols: 7,
+                    latestSession: '2026-11-13',
+                },
+            ]);
+            const { sql, params } = render(onlyCallArg(where));
+            expect(sql).toContain('"session_date" >= $3');
+            // 색인 판정은 종목 수(같은 종목의 여러 에피소드는 한 줄), lastmod는 마지막 포착 세션.
+            const fields = onlyCallArg(select) as Record<string, unknown>;
+            const selection = render(fields['symbols']).sql;
+            expect(selection).toContain(
+                'count(distinct ("signal_events"."market", "signal_events"."symbol"))'
+            );
+            expect(render(fields['latestSession']).sql).toContain(
+                'max("signal_events"."last_seen_session")'
+            );
+            expect(params).toEqual([
+                'golden_cross',
+                'death_cross',
+                '2026-10-16',
+            ]);
+        });
+
+        it('신호 목록이 비면 쿼리하지 않는다', async () => {
+            const select = vi.fn();
+            const db = { select } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleSignalHistoryRepository(db).recentCountsByType(
+                    [],
+                    '2026-10-16'
+                )
+            ).resolves.toEqual([]);
+            expect(select).not.toHaveBeenCalled();
+        });
+    });
 });
