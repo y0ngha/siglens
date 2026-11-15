@@ -2,6 +2,7 @@
 category: strategies
 order: 60
 related: [ma-cycle, ema, macd, multi-timeframe]
+signals: [macd_bullish_cross, macd_bearish_cross]
 title: MACD 대순환 분석
 aliases: [MACD 대순환, MACD 상중하, 지수이동평균 대순환, MACD Cycle]
 summary: EMA 세 개의 차이로 MACD 상, 중, 하를 만들고, 각각의 부호로 시장을 6단계 중 하나로 읽는 분석이에요.

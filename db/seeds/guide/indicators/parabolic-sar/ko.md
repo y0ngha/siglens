@@ -2,6 +2,7 @@
 category: indicators
 order: 250
 related: [supertrend, adx, atr, chandelier-exit]
+signals: [parabolic_sar_flip, parabolic_sar_bearish_flip]
 title: 파라볼릭 SAR
 aliases: [파라볼릭 에스에이알, 패러볼릭 SAR, Parabolic SAR, Stop and Reverse, PSAR]
 summary: 가격 위나 아래에 점을 찍어 추세 방향과 반전 시점, 추적 손절선을 한 번에 보여 주는 지표예요.

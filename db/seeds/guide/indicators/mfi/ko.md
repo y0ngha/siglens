@@ -2,6 +2,7 @@
 category: indicators
 order: 230
 related: [rsi, obv, cmf, force-index]
+signals: [mfi_oversold_bounce, mfi_overbought_reversal]
 title: MFI(자금 흐름 지수)
 aliases: [MFI, 머니 플로우 인덱스, 자금흐름지수, Money Flow Index, 거래량 가중 RSI]
 summary: 가격과 거래량을 함께 써서 매수세와 매도세의 자금 흐름을 0에서 100 사이로 보여 주는 오실레이터예요.

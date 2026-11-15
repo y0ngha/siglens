@@ -2,6 +2,7 @@
 category: indicators
 order: 30
 related: [bollinger-percent-b, keltner-channel, rsi, atr]
+signals: [bollinger_lower_bounce, bollinger_upper_breakout, bollinger_squeeze_bullish, bollinger_squeeze_bearish]
 title: 볼린저 밴드
 aliases: [볼밴, 볼린저밴드, Bollinger Bands, BB]
 summary: 20일 이동평균선 위아래에 표준편차 2배 폭의 띠를 그려, 가격이 최근 흐름에서 얼마나 벗어났는지와 변동성의 크기를 함께 보여 줘요.

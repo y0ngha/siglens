@@ -5,6 +5,9 @@ vi.mock('../demos/registry', () => ({
             : null
     ),
 }));
+vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
+    SymbolSearchPanel: () => <div data-testid="symbol-search-panel" />,
+}));
 vi.mock('../ui/GuideDemoChart', () => ({
     GuideDemoChart: ({
         title,
@@ -496,13 +499,14 @@ describe('GuideEntryPage', () => {
         });
     });
 
-    it('종목 검색 안내는 홈으로 가는 링크다', async () => {
+    it('종목 검색 안내는 홈으로 보내지 않고 그 자리에 검색 패널을 둔다', async () => {
         await renderEntry();
 
-        expect(screen.getByRole('link', { name: g.ctaButton })).toHaveAttribute(
-            'href',
-            '/'
-        );
+        const cta = screen.getByRole('region', { name: g.ctaHeading });
+        expect(
+            within(cta).getByTestId('symbol-search-panel')
+        ).toBeInTheDocument();
+        expect(within(cta).queryByRole('link')).toBeNull();
     });
 
     it('투자 고지 문구를 싣는다', async () => {
@@ -546,8 +550,8 @@ describe('GuideEntryPage', () => {
         await renderEntry(RSI, 'en');
 
         expect(
-            screen.getByRole('link', { name: en.views.guide.ctaButton })
-        ).toHaveAttribute('href', '/en');
+            screen.getByRole('heading', { name: en.views.guide.ctaHeading })
+        ).toBeInTheDocument();
         const categoryLinks = screen.getAllByRole('link', {
             name: en.views.guide.categoryIndicators,
         });

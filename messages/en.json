@@ -3330,7 +3330,6 @@
             "categorySeoTitleStrategies": "Chart Trading Strategies and Theories Explained",
             "categoryStrategies": "Strategies & theory",
             "ctaBody": "Search a stock you follow to read its chart and analysis side by side.",
-            "ctaButton": "Search stocks",
             "ctaHeading": "See it on a real stock",
             "demoFallbackDescription": "Example chart of {count, plural, one {# candlestick} other {# candlesticks}}",
             "demoFallbackDescriptionWithPanes": "Example chart of {count, plural, one {# candlestick} other {# candlesticks}} (indicator panes: {panes})",

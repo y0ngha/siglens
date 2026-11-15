@@ -148,7 +148,6 @@ export async function GuideEntryPage({
                     <GuideEntryCta
                         heading={t('ctaHeading')}
                         body={t('ctaBody')}
-                        buttonLabel={t('ctaButton')}
                     />
 
                     <p className="mt-8 text-xs leading-relaxed text-secondary-500">

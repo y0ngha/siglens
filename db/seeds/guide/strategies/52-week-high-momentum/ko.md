@@ -2,6 +2,7 @@
 category: strategies
 order: 90
 related: [breakout, ma, adx, multi-timeframe]
+signals: [new_52w_high, new_52w_low]
 title: 52주 신고가 모멘텀
 aliases: [52주 신고가, 52주 최고가 돌파, 52주 신저가, 신고가 매매, 52-Week High Momentum]
 summary: 52주 신고가는 너무 오른 신호가 아니라 상승 흐름이 이어지는 신호로, 신저가는 약세가 이어지는 신호로 보는 접근이에요.

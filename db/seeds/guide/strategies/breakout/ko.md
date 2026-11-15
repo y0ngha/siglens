@@ -2,6 +2,7 @@
 category: strategies
 order: 40
 related: [donchian-channel, bull-flag, rectangle, multi-timeframe, atr]
+signals: [new_52w_high, bollinger_upper_breakout, keltner_upper_breakout]
 title: 브레이크아웃
 aliases: [돌파 매매, 박스권 돌파, 저항선 돌파, 가격 돌파, Breakout]
 summary: 오래 막혀 있던 지지선이나 저항선을 종가로 넘어서는 순간을 보고, 거래량 같은 확인으로 거짓 돌파를 가려내는 방법이에요.
