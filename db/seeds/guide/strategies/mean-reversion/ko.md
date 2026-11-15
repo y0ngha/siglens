@@ -2,6 +2,7 @@
 category: strategies
 order: 70
 related: [williams-r, connors-rsi, ma, multi-timeframe]
+signals: [rsi_oversold, bollinger_lower_bounce, bollinger_percentb_oversold]
 title: 평균 회귀(단기 과매도 되돌림)
 aliases: [평균회귀 전략, 단기 과매도 반등, 눌림목 반등, Mean Reversion, 윌리엄스 %R 과매도]
 summary: 장기 상승 추세 안에서 며칠 사이 크게 눌린 종목이 단기 반등하는 경향을 보는 전략이에요.

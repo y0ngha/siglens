@@ -3317,7 +3317,6 @@
             "categorySeoTitleStrategies": "チャート売買の戦略と理論の種類まとめ",
             "categoryStrategies": "戦略と理論",
             "ctaBody": "気になる銘柄を検索すると、チャートと分析をあわせて見られます。",
-            "ctaButton": "銘柄を検索する",
             "ctaHeading": "実際の銘柄で確認する",
             "demoFallbackDescription": "{count}本のローソク足の例示チャート",
             "demoFallbackDescriptionWithPanes": "{count}本のローソク足の例示チャート（サブパネル：{panes}）",

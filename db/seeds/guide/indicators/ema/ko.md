@@ -2,6 +2,7 @@
 category: indicators
 order: 140
 related: [ma, macd, adx, keltner-channel]
+signals: [golden_cross, death_cross]
 title: 지수이동평균(EMA)
 aliases: [EMA, 지수 이동평균, 지수이평선, Exponential Moving Average]
 summary: 최근 가격에 더 큰 가중치를 줘서 단순이동평균보다 빠르게 따라가는 이동평균선이에요.
