@@ -39,7 +39,7 @@ function fitReadResult<
  * 미국 상장사가 SEC에 낸 최근 현재보고서(8-K·6-K)의 목록, 또는 접수번호 하나의 원문.
  *
  * `accession`이 없거나 문자열이 아니거나 공백이면 목록, 있으면 본문이다. 본문 읽기 횟수(턴당 상한)는 core가 센다 — 여기서 세지
- * 않는다. 한국 종목·크립토·CIK 미등록은 `no_sec_filer`, SEC·DB 실패는 `provider_failed`이며 예외 메시지는
+ * 않는다. 한국 종목·크립토는 `no_sec_filer`, SEC·DB 실패와 미국 종목인데 CIK 맵에 없는 경우는 `provider_failed`이며 예외 메시지는
  * 결과에 싣지 않는다(엔티티가 이름·코드만 로그로 남긴다).
  */
 export const getCompanyFilingsTool: ToolExecutor = async args => {

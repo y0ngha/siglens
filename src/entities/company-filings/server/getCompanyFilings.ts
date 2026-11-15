@@ -36,14 +36,15 @@ import type {
 } from '../model';
 
 /** 제출 목록: 새 공시가 하루에도 몇 건 생기므로 짧게. 실패는 캐시하지 않는다(fetcher가 던져 쓰기를 건너뛴다). */
-export const FILINGS_LIST_CACHE_TTL_SECONDS = 30 * SECONDS_PER_MINUTE;
+const FILINGS_LIST_CACHE_TTL_SECONDS = 30 * SECONDS_PER_MINUTE;
 /** 접수된 공시의 문서 선택·제목·본문은 바뀌지 않는다. */
-export const FILING_CACHE_TTL_SECONDS = 30 * SECONDS_PER_DAY;
-export const FILINGS_LIST_CACHE_KEY_PREFIX = 'sec:filings-list:v1';
+const FILING_CACHE_TTL_SECONDS = 30 * SECONDS_PER_DAY;
+/** 키 접두사의 버전(`v1`·`v2`)은 저장하는 값의 모양이 바뀔 때 올린다. 제출 목록 항목은 CIK별 `SubmissionFiling[]`. */
+const FILINGS_LIST_CACHE_KEY_PREFIX = 'sec:filings-list:v1';
 /** 목록용 작은 항목 `{fileName, document, headline}` — 목록 호출은 이 키만 읽어 Redis 대역폭을 아낀다. */
-export const FILING_META_CACHE_KEY_PREFIX = 'sec:filing-meta:v1';
-/** 읽기용 항목 `FilingDocument`(잘라 둔 본문 포함). v1은 전문을 저장하던 모양이라 올렸다. */
-export const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v2';
+const FILING_META_CACHE_KEY_PREFIX = 'sec:filing-meta:v1';
+/** 읽기용 항목 `FilingDocument` — 전문이 아니라 상한까지 잘라 둔 본문을 싣는다. */
+const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v2';
 
 /**
  * 한 목록 호출에서 제목을 읽는 공시 수. 공시 하나가 게이트를 지나는 SEC 요청 2건(색인 + 문서 앞부분)이라
@@ -51,7 +52,7 @@ export const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v2';
  * 10건(21건 ≈ 4.6초)을 한 번에 밀어 넣지 않는다. 나머지 공시도 목록에는 나오고(`headline: null`) 접수번호로
  * 읽을 수 있다.
  */
-export const FILING_META_LOAD_MAX = 6;
+const FILING_META_LOAD_MAX = 6;
 
 /**
  * 도구 경로(요청 경로)의 SEC 호출 옵션: 재시도 없음, 요청 6초, 슬롯 대기 포함 전체 8초(SERVER.md#SA-14).
@@ -71,12 +72,12 @@ const SEC_TOOL_OPTIONS = {
 /** head 상한에 닿았는지 판정할 때 멀티바이트 문자가 잘려 줄어드는 바이트의 여유. */
 const HEAD_CAP_SLACK_BYTES = 4;
 
-export type ListCompanyFilingsResult =
-    | { status: 'ok'; cik: string; filings: CompanyFiling[] }
+type ListCompanyFilingsResult =
+    | { status: 'ok'; filings: CompanyFiling[] }
     | { status: 'no_sec_filer' }
     | { status: 'failed' };
 
-export type ReadCompanyFilingResult =
+type ReadCompanyFilingResult =
     | { status: 'ok'; filing: CompanyFilingBody }
     | { status: 'unknown_filing' }
     | { status: 'no_sec_filer' }
@@ -293,7 +294,7 @@ export async function listCompanyFilings(
         }
         return toCompanyFiling(cik, row, settled.value);
     });
-    return { status: 'ok', cik, filings };
+    return { status: 'ok', filings };
 }
 
 /**

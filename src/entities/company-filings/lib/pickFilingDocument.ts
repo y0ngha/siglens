@@ -1,6 +1,7 @@
+import { isRecord } from '@/shared/lib/isRecord';
 import type { CompanyFilingDocument } from '../model';
 
-export interface PickedFilingDocument {
+interface PickedFilingDocument {
     fileName: string;
     document: CompanyFilingDocument;
 }
@@ -14,12 +15,11 @@ const EXHIBIT_99 = /ex(?:hibit)?[-_]?99[-_.]?(\d*)/i;
 const OTHER_EXHIBIT = /(?:^|[^a-z])ex(?:hibit)?[-_ ]?\d/i;
 
 function itemNames(indexJson: unknown): string[] {
-    const directory = (indexJson as { directory?: { item?: unknown } } | null)
-        ?.directory;
-    const items = directory?.item;
+    const directory = isRecord(indexJson) ? indexJson.directory : undefined;
+    const items = isRecord(directory) ? directory.item : undefined;
     if (!Array.isArray(items)) return [];
     return items.flatMap(item => {
-        const name = (item as { name?: unknown } | null)?.name;
+        const name = isRecord(item) ? item.name : undefined;
         return typeof name === 'string' && name !== '' ? [name] : [];
     });
 }

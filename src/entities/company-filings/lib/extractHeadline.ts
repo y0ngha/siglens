@@ -1,7 +1,10 @@
-import { cutAtWordBoundary, HEADLINE_MAX_CHARS } from './cutAtWordBoundary';
+import {
+    cutAtWordBoundary,
+    HEADLINE_MAX_CHARS,
+    HEADLINE_MIN_CHARS,
+} from './cutAtWordBoundary';
 import { stripExhibitPreamble } from './stripExhibitPreamble';
 
-const HEADLINE_MIN_CHARS = 10;
 /** 문단이 이보다 길면 제목이 아니라 본문·법적 고지다. */
 const BODY_PARAGRAPH_MAX_CHARS = 300;
 /** 이 길이를 채운 뒤에 빈 줄이 나오면 제목이 끝난 것이다(짧은 제목은 빈 줄을 건너 이어 붙인다). */

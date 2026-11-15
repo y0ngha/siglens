@@ -1,6 +1,5 @@
-import { cutAtWordBoundary } from './cutAtWordBoundary';
+import { cutAtWordBoundary, HEADLINE_MIN_CHARS } from './cutAtWordBoundary';
 
-const HEADLINE_MIN_CHARS = 10;
 const SKIPPED_ITEM = '9.01';
 /** `Item 8.01. Other Events.`, `Item 8.01`(번호만 있는 줄). */
 const ITEM_HEADING = /^Item\s+(\d{1,2}\.\d{2})\b[.:\s–—-]*(.*)$/i;

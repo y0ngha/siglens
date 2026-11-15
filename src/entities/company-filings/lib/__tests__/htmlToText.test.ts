@@ -106,6 +106,16 @@ describe('htmlToText', () => {
             }
         );
 
+        // 닫힌 행 경로(행 찾기 + 행 안 태그 펴기) 전체의 시간 상한이다. 행 안 태그 패턴의 문자 클래스 하나를
+        // 겨냥한 테스트가 아니다 — 행은 `</tr>`로 끝나 그 패턴은 어느 꼴이든 선형이다.
+        it.each([
+            ['닫히지 않은 p', '<p '],
+            ['닫히지 않은 div', '<div '],
+        ])('닫힌 표 행 안에 %s가 가득한 입력', (_name, token) => {
+            const input = `<table><tr><td>${token.repeat(Math.floor(SIZE / token.length))}</td></tr></table>`;
+            expect(elapsed(input)).toBeLessThan(TIME_BOUND_MS);
+        });
+
         it('마지막 닫는 태그 뒤에 여는 태그가 가득해도 앞의 정상 블록은 처리한다', () => {
             const input = `<p>앞</p><!-- 숨김 --><p>본문</p>${'<!--'.repeat(40_000)}`;
             expect(elapsed(input)).toBeLessThan(TIME_BOUND_MS);

@@ -185,7 +185,7 @@ const DOCUMENT_OPTIONS: DocumentOptions = {
  * 호출부가 덮어쓸 수 있는 요청 옵션. 생략하면 cron급 기본값(재시도·긴 타임아웃)이고, 요청 경로(에이전트 도구 등)는
  * `maxRetries: 0`과 `totalBudgetMs`를 넘겨 슬롯 대기까지 마감 안에 가둔다(SERVER.md#SA-14).
  */
-export type SecRequestOptions = Partial<
+type SecRequestOptions = Partial<
     Pick<DocumentOptions, 'maxRetries' | 'timeoutMs' | 'totalBudgetMs'>
 >;
 

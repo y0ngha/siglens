@@ -1,10 +1,6 @@
 import { AGENT_FILINGS_WINDOW_DAYS } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import {
-    easternIsoDate,
-    hasRecentFilings,
-    parseSubmissions,
-} from '../parseSubmissions';
+import { hasRecentFilings, parseSubmissions } from '../parseSubmissions';
 
 const NOW_WINTER = new Date('2026-11-16T03:00:00Z'); // 22:00 EST, 11-15 in New York
 const NOW_SUMMER = new Date('2026-07-15T02:00:00Z'); // 22:00 EDT, 07-14 in New York
@@ -244,19 +240,25 @@ describe('hasRecentFilings', () => {
     });
 });
 
-describe('easternIsoDate', () => {
-    it('겨울과 여름 모두 동부 달력 날짜를 돌려준다', () => {
-        expect(easternIsoDate(new Date('2026-01-15T04:59:00Z'))).toBe(
-            '2026-01-14'
-        );
-        expect(easternIsoDate(new Date('2026-01-15T05:00:00Z'))).toBe(
-            '2026-01-15'
-        );
-        expect(easternIsoDate(new Date('2026-07-15T03:59:00Z'))).toBe(
-            '2026-07-14'
-        );
-        expect(easternIsoDate(new Date('2026-07-15T04:00:00Z'))).toBe(
-            '2026-07-15'
-        );
+describe('parseSubmissions — 창의 "오늘"은 동부 자정에 넘어간다', () => {
+    const boundaryRow = (date: string) =>
+        recent([{ form: '8-K', date, accession: '0000000001-26-000001' }]);
+    const datesAt = (date: string, now: string): string[] =>
+        parseSubmissions(boundaryRow(date), new Date(now)).map(r => r.filedAt);
+
+    it('겨울(EST, UTC−5): 05:00Z에 경계일이 하루 밀린다', () => {
+        // 동부 01-14의 경계일은 2025-09-16이다.
+        expect(datesAt('2025-09-16', '2026-01-15T04:59:00Z')).toEqual([
+            '2025-09-16',
+        ]);
+        expect(datesAt('2025-09-16', '2026-01-15T05:00:00Z')).toEqual([]);
+    });
+
+    it('여름(EDT, UTC−4): 04:00Z에 경계일이 하루 밀린다', () => {
+        // 동부 07-14의 경계일은 03-16이다.
+        expect(datesAt('2026-03-16', '2026-07-15T03:59:00Z')).toEqual([
+            '2026-03-16',
+        ]);
+        expect(datesAt('2026-03-16', '2026-07-15T04:00:00Z')).toEqual([]);
     });
 });

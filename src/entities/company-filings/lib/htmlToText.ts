@@ -45,7 +45,9 @@ function decodeEntities(text: string): string {
 
 /** 표 행 안에서는 단락·줄바꿈이 행을 쪼개지 않도록 공백으로 바꾼다(셀 하나가 `<td><p>…</p></td>`인 표가 흔하다). */
 function flattenRow(row: string): string {
-    return row.replace(/<\/?(?:p|div|br|li|ul|ol|h[1-6])\b[^>]*>/gi, ' ');
+    // 행은 `</tr>`로 끝나므로 `[^>]`여도 제곱 시간이 되지는 않는다. 그래도 태그 속성은 이 파일 전체에서
+    // `[^<>]` 한 가지 꼴만 쓴다(SERVER.md#SA-23) — 꼴이 섞이면 다음 수정에서 안전한 쪽을 가려 쓰기 어렵다.
+    return row.replace(/<\/?(?:p|div|br|li|ul|ol|h[1-6])\b[^<>]*>/gi, ' ');
 }
 
 function tidyLine(line: string): string {

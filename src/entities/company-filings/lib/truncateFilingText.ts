@@ -1,4 +1,4 @@
-export interface TruncatedFilingText {
+interface TruncatedFilingText {
     text: string;
     truncated: boolean;
     totalChars: number;

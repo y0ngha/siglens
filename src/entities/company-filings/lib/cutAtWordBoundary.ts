@@ -1,4 +1,6 @@
 export const HEADLINE_MAX_CHARS = 200;
+/** 이보다 짧은 줄은 제목으로 치지 않는다(문서 번호·날짜 같은 조각). */
+export const HEADLINE_MIN_CHARS = 10;
 /** 단어 경계로 자를 때 이보다 앞에서 자르게 되면(= 공백이 너무 앞에만 있으면) 그냥 200자에서 자른다. */
 const WORD_CUT_MIN_CHARS = 100;
 

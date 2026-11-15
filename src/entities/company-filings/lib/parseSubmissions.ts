@@ -1,26 +1,23 @@
 import { AGENT_FILINGS_WINDOW_DAYS } from '@y0ngha/siglens-core';
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
+import { isRecord } from '@/shared/lib/isRecord';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import type { CompanyFilingForm, SubmissionFiling } from '../model';
 import { filingItems } from './filingItems';
 import { normalizeAccession } from './normalizeAccession';
 
-const EVENT_FORMS: ReadonlySet<string> = new Set<CompanyFilingForm>([
-    '8-K',
-    '8-K/A',
-    '6-K',
-]);
+const EVENT_FORMS: readonly CompanyFilingForm[] = ['8-K', '8-K/A', '6-K'];
+
+function isEventForm(form: unknown): form is CompanyFilingForm {
+    return EVENT_FORMS.some(known => known === form);
+}
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null
-        ? (value as Record<string, unknown>)
-        : null;
-}
-
 function recentOf(json: unknown): Record<string, unknown> | null {
-    return asRecord(asRecord(asRecord(json)?.filings)?.recent);
+    const filings = isRecord(json) ? json.filings : undefined;
+    const recent = isRecord(filings) ? filings.recent : undefined;
+    return isRecord(recent) ? recent : null;
 }
 
 /** 제출 목록 JSON에 `filings.recent`가 있는가 — 없으면 빈 목록이 아니라 "읽지 못함"으로 다뤄야 한다. */
@@ -32,7 +29,7 @@ export function hasRecentFilings(json: unknown): boolean {
  * SEC 접수일은 미국 동부 달력 날짜다. UTC 날짜로 "오늘"을 잡으면 동부 저녁(UTC 다음 날)에 하루 어긋나고,
  * 그 어긋남은 서머타임 여부에 따라 시각이 달라진다(SERVER.md#SA-21).
  */
-export function easternIsoDate(now: Date): string {
+function easternIsoDate(now: Date): string {
     return toUtcIsoDate(
         new Date(now.getTime() + getEasternOffsetHours(now) * MS_PER_HOUR)
     );
@@ -66,7 +63,7 @@ export function parseSubmissions(json: unknown, now: Date): SubmissionFiling[] {
         const rawAccession = accessions[index];
         const primaryDocument = primaries[index];
         const rawItems = items[index];
-        if (typeof form !== 'string' || !EVENT_FORMS.has(form)) return [];
+        if (!isEventForm(form)) return [];
         if (typeof filedAt !== 'string' || !ISO_DATE.test(filedAt)) return [];
         if (filedAt < cutoff) return [];
         if (typeof rawAccession !== 'string') return [];
@@ -77,7 +74,7 @@ export function parseSubmissions(json: unknown, now: Date): SubmissionFiling[] {
         return [
             {
                 accession,
-                form: form as CompanyFilingForm,
+                form,
                 filedAt,
                 primaryDocument,
                 items: filingItems(

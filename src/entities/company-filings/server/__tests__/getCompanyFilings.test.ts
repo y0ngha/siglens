@@ -66,9 +66,6 @@ import {
     AGENT_FILINGS_LIST_MAX,
 } from '@y0ngha/siglens-core';
 import {
-    FILING_CACHE_TTL_SECONDS,
-    FILING_META_LOAD_MAX,
-    FILINGS_LIST_CACHE_TTL_SECONDS,
     listCompanyFilings,
     readCompanyFiling,
 } from '@/entities/company-filings/server/getCompanyFilings';
@@ -258,7 +255,6 @@ describe('listCompanyFilings', () => {
         happyPath();
         const result = await listCompanyFilings('IONQ');
         if (result.status !== 'ok') throw new Error('expected ok');
-        expect(result.cik).toBe('1824920');
         expect(result.filings).toHaveLength(AGENT_FILINGS_LIST_MAX);
         expect(result.filings[0]).toEqual({
             accession: accessionOf(0),
@@ -289,7 +285,6 @@ describe('listCompanyFilings', () => {
         expect(sec.fetchSubmissionsJson).toHaveBeenCalledWith(
             'CIK0001824920.json'
         );
-        expect(FILING_META_LOAD_MAX).toBe(6);
         expect(sec.fetchFilingIndexJson).toHaveBeenCalledTimes(6);
         expect(sec.fetchFilingDocumentHead).toHaveBeenCalledTimes(6);
         expect(secCallCount()).toBe(13);
@@ -307,8 +302,6 @@ describe('listCompanyFilings', () => {
     it('캐시 키·TTL: 목록 30분, 공시별 메타 30일', async () => {
         happyPath();
         await listCompanyFilings('IONQ');
-        expect(FILINGS_LIST_CACHE_TTL_SECONDS).toBe(30 * 60);
-        expect(FILING_CACHE_TTL_SECONDS).toBe(30 * 24 * 60 * 60);
         const list = cache.writes.find(
             w => w.key === 'sec:filings-list:v1:1824920'
         );
@@ -448,7 +441,6 @@ describe('listCompanyFilings', () => {
         );
         expect(await listCompanyFilings('IONQ')).toEqual({
             status: 'ok',
-            cik: '1824920',
             filings: [],
         });
         expect(sec.fetchFilingIndexJson).not.toHaveBeenCalled();
