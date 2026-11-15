@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "보고 싶은 종목이 없나요?",
                 "radarTitle": "종목 레이더",
                 "radarViewAll": "전체 보기"
+            },
+            "todayMarket": {
+                "asOf": "{date} 기준",
+                "expectedTag": "예상",
+                "heading": "오늘의 시장",
+                "intro": "시장 심리를 보여 주는 공포 탐욕 지수와, 최근 기술적 신호가 잡힌 종목이에요.",
+                "marketCrypto": "암호화폐",
+                "marketKr": "한국 주식",
+                "marketUs": "미국 주식",
+                "scoreBarLabel": "{market} 공포 탐욕 지수 {score}점, {label}",
+                "signalsBasis": "{time} 스캔 기준",
+                "signalsHeading": "기술적 신호가 잡힌 종목",
+                "signalsKr": "한국",
+                "signalsUs": "미국",
+                "viewAll": "{market} 전체 보기"
             }
         },
         "login": {

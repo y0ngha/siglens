@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "没有想看的个股?",
                 "radarTitle": "个股雷达",
                 "radarViewAll": "查看全部"
+            },
+            "todayMarket": {
+                "asOf": "截至{date}",
+                "expectedTag": "预期",
+                "heading": "今日市场",
+                "intro": "反映市场情绪的恐惧与贪婪指数，以及最近出现技术信号的股票。",
+                "marketCrypto": "加密货币",
+                "marketKr": "韩股",
+                "marketUs": "美股",
+                "scoreBarLabel": "{market}恐惧与贪婪指数 {score}分，{label}",
+                "signalsBasis": "截至{time}扫描",
+                "signalsHeading": "出现技术信号的股票",
+                "signalsKr": "韩国",
+                "signalsUs": "美国",
+                "viewAll": "查看全部{market}"
             }
         },
         "login": {

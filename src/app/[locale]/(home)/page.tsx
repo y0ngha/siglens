@@ -29,7 +29,10 @@ import { buildHomeFaq } from './_lib/homeJsonLd';
 import { HomeBacktestingCta } from './_components/HomeBacktestingCta';
 import { HomeHero } from './_components/HomeHero';
 import { HomeRadarCta } from './_components/HomeRadarCta';
+import { HomeTodayMarket } from './_components/HomeTodayMarket';
 import { buildHomeJsonLdNodes } from './_lib/homeJsonLdNodes';
+import { loadHomeTodayMarket } from './_lib/loadHomeTodayMarket';
+import { toTodayMarketView } from './_lib/todayMarketView';
 import { loadShowcase, loadSkillCounts } from './_lib/homeSkills';
 
 interface HomeRouteProps {
@@ -93,7 +96,9 @@ export async function generateMetadata({
 
 // 랜딩은 ISR 정적 페이지다 — `?q=` 딥링크는 proxy.ts가 redirect로 처리하므로 이 페이지는
 // searchParams 등 dynamic 의존성이 없다. 소비하면 라우트가 dynamic으로 바뀌어 ISR이 꺼진다.
-export const revalidate = 86400; // 24h — skills는 배포 시 갱신되므로 장중 신선도와 무관
+// 1h — "오늘의 시장"(공포탐욕·오늘의 신호)이 하루 안에 바뀐다. 데이터는 `/fear-greed`·`/market`과
+// 같은 1h 캐시를 공유하므로 이보다 짧게 잡아도 내용은 더 자주 바뀌지 않는다. 스킬 수는 배포 시 갱신.
+export const revalidate = 3600;
 
 /**
  * 홈(`/`). 데이터(스킬 개수·쇼케이스·번역)를 모으고 섹션을 배치한다.
@@ -115,12 +120,14 @@ export default async function Home({ params }: HomeRouteProps) {
     ]);
     // 번역 묶음과 합치지 않는다 — 가드(`serverDataSuspenseBoundaries`)가 스킬 개수와 쇼케이스를
     // 한 `Promise.all`에서 읽는 구조를 고정하고, 이미 각 묶음 안에서 병렬이다.
+    // "오늘의 시장"은 그 묶음 바깥에서 병렬로 함께 기다린다 — 안쪽 묶음 모양은 그대로다.
     // react-doctor-disable-next-line react-doctor/server-sequential-independent-await
-    const [skillCounts, showcaseSkills] = await Promise.all([
-        loadSkillCounts(),
-        loadShowcase(),
+    const [[skillCounts, showcaseSkills], todayMarket] = await Promise.all([
+        Promise.all([loadSkillCounts(), loadShowcase()]),
+        loadHomeTodayMarket(),
     ]);
 
+    const todayMarketView = toTodayMarketView(todayMarket);
     // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.
     const homeFaq = buildHomeFaq(tJsonLd, locale);
     const jsonLd = buildHomeJsonLdNodes({
@@ -167,7 +174,17 @@ export default async function Home({ params }: HomeRouteProps) {
                             })
                         )}
                     />
-                    {/* 내 관심종목 — 히어로(검색) 바로 아래, StatsBar 위. 담기는 아래 인기 종목
+                    {/* 오늘의 시장 — 날마다 바뀌는 서버 렌더 블록. 검색 다음 두 번째 행동(오늘 무엇이
+                        움직였나)을 히어로 바로 아래 둔다. 데이터가 하나도 없으면 아무것도 그리지 않는다. */}
+                    {todayMarketView !== null && (
+                        <div className="relative mt-10">
+                            <HomeTodayMarket
+                                locale={locale}
+                                view={todayMarketView}
+                            />
+                        </div>
+                    )}
+                    {/* 내 관심종목 — 오늘의 시장 아래, StatsBar 위. 담기는 아래 인기 종목
                         알약의 ★가 맡고, 이 카드는 담은 종목·최근 본 종목의 시세를 보여 준다.
                         클라이언트 아일랜드라 서버 HTML에는 자리표시자만 있다 — 크롤러가 따라갈
                         종목 링크는 인기 종목 섹션이 서버 렌더로 낸다. */}

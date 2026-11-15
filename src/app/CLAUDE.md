@@ -77,7 +77,7 @@ HTML 해시가 달라진다 → 서버 재시작·ISR 재생성마다 불필요�
 값을 정적 분석하지 못해 `⨯ Invalid segment configuration export detected ... configs not being
 applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`CONVENTIONS.md#NC-1`(매직넘버
 상수 추출)은 route segment config에 적용하지 않는다** — 리터럴을 유지하고 `// 1h` / `// 30d`
-인라인 코멘트로 의미만 표기한다. (`app/page.tsx`는 `revalidate = 86400` 리터럴.)
+인라인 코멘트로 의미만 표기한다. (예: 홈 `app/[locale]/(home)/page.tsx`는 `revalidate = 3600` 리터럴.)
 
 동적 세그먼트(`[symbol]`) 라우트는 `revalidate`만으로 ISR이 걸리지 않는다 — `ƒ (Dynamic)`로
 남아 매 요청 렌더된다. **`export async function generateStaticParams() { return [] }`**(빈 배열 =
