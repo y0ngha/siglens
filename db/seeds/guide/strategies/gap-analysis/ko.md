@@ -2,6 +2,7 @@
 category: strategies
 order: 80
 related: [breakout, gap-continuation, gap-two-crows-rabbits, atr]
+signals: [gap_up, gap_down]
 title: 갭 분석
 aliases: [갭 상승, 갭 하락, 브레이크어웨이 갭, 런어웨이 갭, 이그조스천 갭, Gap Analysis]
 summary: 앞 봉과 가격이 겹치지 않고 떨어진 갭을 위치와 추세 맥락에 따라 네 가지로 나눠 읽는 방법이에요.

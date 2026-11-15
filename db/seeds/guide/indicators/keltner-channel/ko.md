@@ -2,6 +2,7 @@
 category: indicators
 order: 190
 related: [bollinger-bands, atr, squeeze-momentum, ema]
+signals: [keltner_upper_breakout, keltner_lower_breakout]
 title: 켈트너 채널
 aliases: [켈트너 밴드, Keltner Channel, KC]
 summary: 20일 지수이동평균 위아래에 ATR 기반 밴드를 그려서 변동성 범위와 추세, 스퀴즈를 보는 채널이에요.

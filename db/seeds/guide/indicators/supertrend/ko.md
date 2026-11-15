@@ -2,6 +2,7 @@
 category: indicators
 order: 320
 related: [atr, parabolic-sar, chandelier-exit, adx, ema]
+signals: [supertrend_bullish_flip, supertrend_bearish_flip]
 title: 슈퍼트렌드
 aliases: [슈퍼 트렌드, Supertrend, ATR 추세선]
 summary: ATR로 가격 위나 아래에 선을 그어 추세 방향과 반전, 추적 손절선을 한 번에 보여 주는 지표예요.

@@ -2,6 +2,7 @@
 category: indicators
 order: 180
 related: [ma, adx, macd, volume-profile]
+signals: [ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
 title: 일목균형표
 aliases: [일목균형표 구름, 일목산인, 이치모쿠 클라우드, Ichimoku Cloud, Ichimoku Kinko Hyo]
 summary: 전환선, 기준선, 선행스팬 두 개로 만든 구름대와 후행스팬으로 추세와 지지, 저항을 한눈에 보는 지표예요.

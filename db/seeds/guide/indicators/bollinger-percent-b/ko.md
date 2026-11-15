@@ -2,6 +2,7 @@
 category: indicators
 order: 40
 related: [bollinger-bands, rsi, mfi, elder-impulse]
+signals: [bollinger_percentb_oversold, bollinger_percentb_overbought]
 title: 볼린저 %B와 밴드폭
 aliases: ["%B", 퍼센트 비, BandWidth, 볼린저 밴드폭, Bollinger %B]
 summary: "%B는 가격이 볼린저 밴드 안 어디에 있는지를, 밴드폭은 밴드가 얼마나 넓은지를 숫자로 바꾼 지표예요."

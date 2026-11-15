@@ -2,6 +2,7 @@
 category: indicators
 order: 290
 related: [bollinger-bands, keltner-channel, macd, adx]
+signals: [squeeze_momentum_bullish, squeeze_momentum_bearish]
 title: 스퀴즈 모멘텀
 aliases: [스퀴즈 모멘텀 지표, Squeeze Momentum, TTM 스퀴즈, LazyBear 스퀴즈, 볼린저 켈트너 스퀴즈]
 summary: 볼린저 밴드가 켈트너 채널 안으로 좁혀진 변동성 압축 구간과, 압축이 풀릴 때의 모멘텀 방향을 함께 보는 지표예요.

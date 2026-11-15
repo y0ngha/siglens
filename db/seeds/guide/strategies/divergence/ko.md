@@ -2,6 +2,7 @@
 category: strategies
 order: 30
 related: [rsi, macd, stochastic, double-bottom]
+signals: [rsi_bullish_divergence, rsi_bearish_divergence]
 title: 다이버전스
 aliases: [RSI 다이버전스, 상승 다이버전스, 하락 다이버전스, 히든 다이버전스, Divergence]
 summary: 가격은 새 고점이나 저점을 만드는데 RSI 같은 지표가 따라오지 않을 때, 추세의 힘이 약해졌다고 보는 신호예요.

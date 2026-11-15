@@ -2,6 +2,7 @@
 category: strategies
 order: 50
 related: [macd-cycle, ma, multi-timeframe, mean-reversion]
+signals: [golden_cross, death_cross]
 title: 이동평균선 대순환 분석
 aliases: [대순환 분석, 이평선 대순환, 그랜빌의 법칙, 골든크로스 데드크로스, Granville's Law]
 summary: 단기, 중기, 장기 이동평균선의 순서로 시장을 6단계 중 하나로 나누고, 어느 국면인지 읽는 분석이에요.

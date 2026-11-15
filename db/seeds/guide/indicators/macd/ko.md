@@ -2,6 +2,7 @@
 category: indicators
 order: 220
 related: [ema, rsi, macd-v, adx]
+signals: [macd_bullish_cross, macd_bearish_cross, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
 title: MACD
 aliases: [맥디, 이동평균 수렴확산, Moving Average Convergence Divergence, MACD 히스토그램]
 summary: 12일과 26일 지수이동평균의 차이와 그 9일 평균을 비교해서 추세 방향과 모멘텀 변화를 보는 지표예요.

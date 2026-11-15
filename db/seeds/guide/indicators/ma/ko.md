@@ -2,6 +2,7 @@
 category: indicators
 order: 200
 related: [ema, macd, bollinger-bands, ichimoku-cloud]
+signals: [golden_cross, death_cross]
 title: 이동평균선(MA)
 aliases: [MA, 단순이동평균, SMA, 이평선, 골든크로스, 데드크로스, Moving Average]
 summary: 일정 기간 종가의 평균을 이어 그린 선으로, 추세 방향, 지지와 저항, 골든크로스와 데드크로스를 볼 때 써요.
