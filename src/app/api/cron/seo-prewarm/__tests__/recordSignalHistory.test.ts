@@ -26,6 +26,7 @@ import {
 } from '../recordSignalHistory';
 
 const DB = {} as SiglensDatabase;
+const invalidate = vi.fn();
 // 2026-11-13(금) 21:20 UTC = 16:20 ET(미국 마감+20분) = 11-14 06:20 KST(한국은 다음 날 새벽 → 건너뜀).
 const US_AFTER_CLOSE = new Date('2026-11-13T21:20:00.000Z');
 // 같은 날 07:10 UTC = 16:10 KST(한국 마감+40분) = 02:10 ET(미국은 장 열기 전 → 건너뜀).
@@ -81,6 +82,7 @@ async function runDone(options: {
     const result = await recordSignalHistory(DB, {
         scan: scanNvda,
         markers: null,
+        invalidate,
         ...options,
     });
     if (result.status !== 'done') throw new Error('expected done');
@@ -88,6 +90,7 @@ async function runDone(options: {
 }
 
 beforeEach(() => {
+    invalidate.mockReset();
     repo.openEpisodeKeys.mockReset().mockResolvedValue([]);
     repo.insertEpisodes
         .mockReset()
@@ -248,6 +251,31 @@ describe('recordSignalHistory', () => {
         });
         expect(idle.pruned).toBeNull();
         expect(repo.pruneOlderThan).not.toHaveBeenCalled();
+    });
+
+    it('새 행이 생기면 신호 페이지 캐시를 비운다', async () => {
+        await runDone({ now: US_AFTER_CLOSE });
+
+        expect(invalidate).toHaveBeenCalledTimes(1);
+    });
+
+    it('바뀐 행이 없으면(건너뜀·이미 기록) 캐시를 건드리지 않는다', async () => {
+        await runDone({ now: new Date('2026-11-13T18:00:00.000Z') });
+        repo.insertEpisodes.mockResolvedValue(0);
+        repo.extendEpisodes.mockResolvedValue(0);
+        await runDone({ now: US_AFTER_CLOSE });
+
+        expect(invalidate).not.toHaveBeenCalled();
+    });
+
+    it('캐시 무효화가 던져도 기록 결과는 그대로 돌려준다', async () => {
+        invalidate.mockImplementation(() => {
+            throw new Error('no request scope');
+        });
+
+        const result = await runDone({ now: US_AFTER_CLOSE });
+
+        expect(result.us).toMatchObject({ status: 'recorded' });
     });
 
     it('정리가 던져도 결과를 돌려준다(pruned=null)', async () => {

@@ -272,6 +272,27 @@
                 "a92ddb": "외부 시세 제공처가 일시적으로 응답하지 않을 수 있어요. 잠시 후\n                다시 시도해 주세요.",
                 "cccc8a": "시장 데이터를 불러오지 못했어요",
                 "eb2523": "{v0} 홈으로"
+            },
+            "signalHub": {
+                "breadcrumbMarket": "시장 분석",
+                "degraded": "신호 기록을 불러오지 못했어요. 잠시 뒤 다시 확인해 주세요.",
+                "description": "최근 30일 동안 {signal} 신호가 처음 포착된 미국·한국 주식을 날짜별로 모았어요. 신호가 이어진 기간과 그날 등락률을 함께 보여 줘요.",
+                "empty": "최근 30일 동안 이 신호가 처음 잡힌 종목이 아직 없어요.",
+                "firstSeen": "{date} 처음 포착",
+                "guideHeading": "{signal} 알아보기",
+                "guideLink": "{title} 가이드 읽기",
+                "intro": "시그렌즈는 매일 장 마감 뒤 미국 약 100종목, 한국 약 30종목의 일봉으로 {signal} 신호가 새로 잡힌 종목을 기록해요. 처음 포착된 날짜는 실제 신호가 난 날보다 며칠 늦을 수 있어요.",
+                "itemListName": "{signal} 신호가 처음 포착된 종목",
+                "keywordRecent": "최근 {signal} 종목",
+                "keywordStocks": "{signal} 종목",
+                "keywordToday": "오늘 {signal}",
+                "lastSeen": "{date}까지 이어짐",
+                "marketKr": "한국 주식",
+                "marketLinksHeading": "신호별 종목 모아보기",
+                "marketUs": "미국 주식",
+                "otherSignals": "다른 신호가 잡힌 종목",
+                "signalStocks": "{signal} 종목",
+                "title": "{signal} 종목: 최근 30일 미국·한국 주식"
             }
         },
         "news": {

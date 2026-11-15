@@ -8,6 +8,11 @@ import { SectorFactsSummary } from '@/widgets/dashboard/SectorFactsSummary';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
+import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
+import {
+    SIGNAL_HUBS,
+    signalHubPath,
+} from '@/entities/signal-history/lib/signalHubs';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import {
     toClientScope,
@@ -30,6 +35,31 @@ import { buildMarketItemListJsonLd } from './_lib/marketItemListJsonLd';
 import { buildMarketDehydratedSeed } from './_lib/marketSeed';
 import { marketCopyFor } from './copy';
 import { loadMarketSignals } from './loadMarketSignals';
+
+/**
+ * `/market`·`/market/kr` 본문 끝의 "신호별 종목" 링크 묶음 — 신호 페이지(`/market/signals/*`)로 가는
+ * 문맥상 가장 가까운 입구다(고아 페이지 금지, `src/app/CLAUDE.md#AP-4`).
+ */
+async function MarketSignalHubLinks(): Promise<ReactElement> {
+    const [t, tLabel] = await Promise.all([
+        getTranslations('app.market.signalHub'),
+        getTranslations('shared.enumLabel'),
+    ]);
+    return (
+        <SignalHubLinks
+            heading={t('marketLinksHeading')}
+            headingId="market-signal-hubs-heading"
+            className="mx-auto w-full max-w-6xl px-4 pb-6"
+            links={SIGNAL_HUBS.map(hub => ({
+                href: signalHubPath(hub.slug),
+                label: t('signalStocks', {
+                    // 신호 이름은 시장 페이지 배지와 같은 `shared.enumLabel`(추출기 보존 목록).
+                    signal: tLabel(`signalType.${hub.signalType}`),
+                }),
+            }))}
+        />
+    );
+}
 
 interface MarketScopeProps {
     readonly scope: DashboardScope;
@@ -208,6 +238,7 @@ export async function MarketRouteBody({
                     클라 전용 경계(`MarketSummaryPanel`·`SectorSignalPanel`)는 `MarketContent`
                     안에서 유지한다. */}
                 <MarketContent scope={scope} />
+                <MarketSignalHubLinks />
                 {/*
                  * 디렉터리 진입 — 이 페이지는 섹터 신호가 잡힌 종목만 보여주므로
                  * 조용한 장에는 목록이 짧다. 그때 다른 종목으로 가는 길이 사라지지

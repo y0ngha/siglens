@@ -6,6 +6,17 @@ vi.mock('next/server', async () => {
 vi.mock('@/entities/guide/api', () => ({
     loadGuideCatalog: vi.fn().mockResolvedValue(null),
 }));
+// 신호 이력 집계는 DB를 읽는다 — 목 없이 두면 테스트가 실제 DB 클라이언트로 간다.
+const signalHubCounts = vi.hoisted(() => ({
+    value: [] as {
+        signalType: string;
+        symbols: number;
+        latestSession: string;
+    }[],
+}));
+vi.mock('@/entities/signal-history/api', () => ({
+    loadSignalHubCounts: vi.fn(async () => signalHubCounts.value),
+}));
 const BACKTESTING_DATA_AT = new Date('2026-03-31T00:00:00.000Z');
 vi.mock('@/entities/sitemap-entry/lib/buildStaticEntries', () => ({
     buildStaticEntries: vi.fn().mockReturnValue([]),
@@ -34,6 +45,7 @@ function mainHostRequest(): Request {
 describe('GET /api/sitemap/static', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        signalHubCounts.value = [];
     });
 
     it('returns XML with correct content-type header', async () => {
@@ -76,6 +88,33 @@ describe('GET /api/sitemap/static', () => {
         await GET(mainHostRequest());
 
         expect(mockToUrlSetXml).toHaveBeenCalledWith(entries);
+    });
+
+    it('색인 기준을 채운 신호 페이지만 정적 엔트리 뒤에 싣는다', async () => {
+        mockBuildStaticEntries.mockReturnValue([]);
+        signalHubCounts.value = [
+            {
+                signalType: 'golden_cross',
+                symbols: 5,
+                latestSession: '2026-11-13',
+            },
+            {
+                signalType: 'death_cross',
+                symbols: 4,
+                latestSession: '2026-11-13',
+            },
+        ];
+
+        await GET(mainHostRequest());
+
+        const entries = mockToUrlSetXml.mock.calls.find(Boolean)?.[0] ?? [];
+        const urls = entries.map(entry => entry.url);
+        expect(urls).toContain(
+            'https://siglens.io/market/signals/golden-cross'
+        );
+        expect(urls).not.toContain(
+            'https://siglens.io/market/signals/death-cross'
+        );
     });
 
     it('includes cache-control header', async () => {

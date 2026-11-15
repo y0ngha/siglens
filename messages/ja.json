@@ -272,6 +272,27 @@
                 "a92ddb": "外部の相場情報提供元が一時的に応答しない可能性があります。しばらくしてから\n                もう一度お試しください。",
                 "cccc8a": "市場データを読み込めませんでした",
                 "eb2523": "{v0} ホームへ"
+            },
+            "signalHub": {
+                "breadcrumbMarket": "市場分析",
+                "degraded": "シグナル記録を読み込めませんでした。しばらくしてから再度ご確認ください。",
+                "description": "直近30日に{signal}シグナルが初めて検出された米国・韓国株を日付別にまとめました。シグナルが続いた期間とその日の騰落率も表示します。",
+                "empty": "直近30日にこのシグナルが初めて出た銘柄はまだありません。",
+                "firstSeen": "{date} 初検出",
+                "guideHeading": "{signal}について",
+                "guideLink": "{title}のガイドを読む",
+                "intro": "SIGLENSは毎日の取引終了後、米国約100銘柄・韓国約30銘柄の日足で{signal}シグナルが新たに出た銘柄を記録します。初めて検出された日付は、実際のシグナル発生日より数日遅れることがあります。",
+                "itemListName": "{signal}シグナルが初めて検出された銘柄",
+                "keywordRecent": "最近の{signal}銘柄",
+                "keywordStocks": "{signal} 銘柄",
+                "keywordToday": "今日の{signal}",
+                "lastSeen": "{date}まで継続",
+                "marketKr": "韓国株",
+                "marketLinksHeading": "シグナル別の銘柄",
+                "marketUs": "米国株",
+                "otherSignals": "ほかのシグナルが出た銘柄",
+                "signalStocks": "{signal}銘柄",
+                "title": "{signal}銘柄：直近30日の米国・韓国株"
             }
         },
         "news": {
