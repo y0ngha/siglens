@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "見たい銘柄がありませんか?",
                 "radarTitle": "銘柄レーダー",
                 "radarViewAll": "すべて見る"
+            },
+            "todayMarket": {
+                "asOf": "{date}時点",
+                "expectedTag": "予想",
+                "heading": "今日のマーケット",
+                "intro": "市場心理を示す恐怖強欲指数と、最近テクニカルシグナルが出た銘柄です。",
+                "marketCrypto": "暗号資産",
+                "marketKr": "韓国株",
+                "marketUs": "米国株",
+                "scoreBarLabel": "{market}の恐怖強欲指数 {score}点、{label}",
+                "signalsBasis": "{time}スキャン時点",
+                "signalsHeading": "テクニカルシグナルが出た銘柄",
+                "signalsKr": "韓国",
+                "signalsUs": "米国",
+                "viewAll": "{market}をすべて見る"
             }
         },
         "login": {

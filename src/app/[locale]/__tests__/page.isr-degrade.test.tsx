@@ -56,6 +56,16 @@ vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
+// "오늘의 시장" 로더는 FMP·DB 캐시를 읽는다 — 이 파일의 관심사(메타·마크업)와 무관하니 빈 값으로 둔다.
+vi.mock('@/app/[locale]/(home)/_lib/loadHomeTodayMarket', () => ({
+    loadHomeTodayMarket: vi.fn(async () => ({
+        fearGreed: { us: null, kr: null, crypto: null },
+        signals: {
+            us: { rows: [], computedAt: null },
+            kr: { rows: [], computedAt: null },
+        },
+    })),
+}));
 vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(),
     loadShowcaseSkills: vi.fn(),

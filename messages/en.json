@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "Don't see the ticker you want?",
                 "radarTitle": "Ticker Radar",
                 "radarViewAll": "View all"
+            },
+            "todayMarket": {
+                "asOf": "As of {date}",
+                "expectedTag": "expected",
+                "heading": "Today's market",
+                "intro": "Fear & Greed Index readings for each market, plus stocks that recently triggered a technical signal.",
+                "marketCrypto": "Crypto",
+                "marketKr": "Korean stocks",
+                "marketUs": "US stocks",
+                "scoreBarLabel": "{market} Fear & Greed Index {score}, {label}",
+                "signalsBasis": "Scanned {time}",
+                "signalsHeading": "Stocks with a technical signal",
+                "signalsKr": "Korea",
+                "signalsUs": "US",
+                "viewAll": "See all {market}"
             }
         },
         "login": {
