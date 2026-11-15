@@ -11,7 +11,7 @@ import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { FearGreedScoreBar } from '@/shared/ui/FearGreedScoreBar';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import type { TodaySignalRow } from '../_lib/selectTodaySignals';
+import type { TodaySignalRow } from '@/entities/sector-signal/lib/selectTodaySignals';
 import type {
     FearGreedMarketLabelKey,
     SignalMarketLabelKey,

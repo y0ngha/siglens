@@ -138,7 +138,8 @@ function PreviewSummaryText({ summary }: PreviewSummaryTextProps) {
         case 'empty':
             return (
                 <p className="text-sm text-secondary-400">
-                    {t('ReportSymbolsPreview.d406d7')}
+                    {t('ReportSymbolsPreview.d406d7')}{' '}
+                    {t('ReportSymbolsPreview.emptyBriefing')}
                 </p>
             );
     }

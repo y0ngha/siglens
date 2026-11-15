@@ -14,7 +14,10 @@ import {
     US_DASHBOARD_SCOPE,
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
-import { selectTodaySignals, type TodaySignalRow } from './selectTodaySignals';
+import {
+    selectTodaySignals,
+    type TodaySignalRow,
+} from '@/entities/sector-signal/lib/selectTodaySignals';
 
 /** 시장마다 홈에 보일 신호 종목 수. 한 화면에 시장 둘이 나란히 들어가는 양이다. */
 const SIGNAL_ROWS_PER_MARKET = 4;

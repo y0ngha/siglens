@@ -21,10 +21,17 @@ export const REPORT_EMAIL_MAX_HTML_BYTES = 100_000;
  * `List-Unsubscribe`(+ `-Post`, RFC 8058) 헤더로 메일 앱의 원클릭 수신거부를 연다.
  */
 export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
-    const { t, locale } = input;
+    const { t, locale, marketBriefing } = input;
     const date = formatDate(input.localDate, locale);
-    const heading = t('heading');
-    const intro = t('intro', { v0: date });
+    // 번역 키는 리터럴로 부른다 — 추출기가 `t(변수)`를 못 봐 키를 지운다(`I18N.md`).
+    const heading =
+        marketBriefing === undefined ? t('heading') : t('marketHeading');
+    const intro =
+        marketBriefing === undefined
+            ? t('intro', { v0: date })
+            : t('marketIntro', { v0: date });
+    const briefHeading =
+        marketBriefing === undefined ? t('sectionBrief') : t('marketSection');
     const disclaimer = t('disclaimer');
     // 컨플루언스 줄(점수 또는 "—")이 한 군데도 없으면 각주가 가리킬 대상이 없다.
     const showConfluenceNote =
@@ -33,6 +40,8 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`I18N.md#I18-11`).
     const brand = brandName(locale);
     const reason = t('reason', { v0: brand });
+    const marketHint = marketBriefing === undefined ? null : t('marketHint');
+    const marketMore = marketBriefing === undefined ? null : t('marketMore');
 
     const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head><body style="font-family:${FONT};background:${COLORS.page};color:${COLORS.body};padding:24px 12px;margin:0;">
 <div style="max-width:600px;margin:0 auto;">
@@ -42,7 +51,8 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     <p style="font-size:14px;color:${COLORS.body};margin:0;">${escapeHtml(intro)}</p>
   </div>
   ${input.sections.map(s => sectionHtml(s, t, input.signalLabel, brand)).join('\n')}
-  ${briefTableHtml(input.briefRows, locale, t, input.signalLabel)}
+  ${briefTableHtml(input.briefRows, locale, t, input.signalLabel, briefHeading)}
+  ${marketBriefing !== undefined && marketHint !== null && marketMore !== null ? `<div style="padding:0 8px 16px;"><p style="font-size:14px;line-height:1.6;color:${COLORS.body};margin:0 0 8px;">${escapeHtml(marketHint)}</p><p style="font-size:14px;margin:0;"><a href="${escapeHtml(marketBriefing.marketUrl)}" style="color:${COLORS.link};font-weight:600;">${escapeHtml(marketMore)} →</a></p></div>` : ''}
   <div style="padding:16px 8px;border-top:1px solid ${COLORS.rule};">
     <p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(disclaimer)}</p>
     ${showConfluenceNote ? `<p style="font-size:12px;line-height:1.6;color:${COLORS.muted};margin:0 0 8px;">${escapeHtml(t('confluenceNote'))}</p>` : ''}
@@ -58,7 +68,16 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
             sectionText(s, t, input.signalLabel, brand),
             '',
         ]),
-        ...briefTableLines(input.briefRows, locale, t, input.signalLabel),
+        ...briefTableLines(
+            input.briefRows,
+            locale,
+            t,
+            input.signalLabel,
+            briefHeading
+        ),
+        ...(marketBriefing !== undefined && marketHint !== null
+            ? [marketHint, `${marketMore}: ${marketBriefing.marketUrl}`, '']
+            : []),
         '---',
         disclaimer,
         ...(showConfluenceNote ? [t('confluenceNote')] : []),
@@ -69,7 +88,10 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
 
     return {
         to: input.to,
-        subject: t('subject', { v0: brand, v1: date }),
+        subject:
+            marketBriefing === undefined
+                ? t('subject', { v0: brand, v1: date })
+                : t('marketSubject', { v0: brand, v1: date }),
         html,
         text,
         headers: {

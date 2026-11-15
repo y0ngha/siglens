@@ -59,6 +59,11 @@ export interface EmailReportBatchDeps {
     loadReport: (symbol: string, locale: Locale) => Promise<SymbolReport>;
     /** 로케일 무관 경량 경로 — `(symbol)`마다 배치 안에서 한 번. */
     loadBrief: (symbol: string) => Promise<SymbolBrief>;
+    /**
+     * 보유·관심종목이 없는 회원에게 보낼 시장 브리핑 종목(그날 신호가 잡힌 대표 종목). 배치 안에서 한 번만
+     * 부른다. 비면 그 회원은 지금처럼 건너뛴다.
+     */
+    loadMarketPicks: () => Promise<string[]>;
     getTranslator: (locale: Locale) => Promise<ReportEmailTranslator>;
     getSignalLabel: (locale: Locale) => Promise<SignalLabelResolver>;
     dispatcher: EmailDispatcher;
@@ -73,6 +78,8 @@ export interface EmailReportBatchCounts {
     sent: number;
     failed: number;
     skipped: number;
+    /** `sent` 중 보유·관심종목이 없어 시장 브리핑으로 보낸 회원. */
+    marketBriefings: number;
     /** 다른 실행이 이미 선점한 회원. */
     alreadyClaimed: number;
     /** 마감으로 손대지 못한 회원. */
@@ -160,6 +167,7 @@ export async function runEmailReportBatch(
         sent: 0,
         failed: 0,
         skipped: 0,
+        marketBriefings: 0,
         alreadyClaimed: 0,
         deferred: 0,
         pruned: 0,
@@ -211,6 +219,17 @@ export async function runEmailReportBatch(
         return pending;
     };
 
+    // 시장 브리핑 종목은 회원과 무관해 배치에 한 번만 조회한다(첫 필요 시점에). 실패는 빈 목록 — 그
+    // 회원들은 지금처럼 건너뛴다. 로더 자체가 시장별 실패를 삼키지만, 예상 밖 throw도 배치를 멈추지 않게 둔다.
+    let marketPicks: Promise<string[]> | null = null;
+    const marketPicksOnce = () => {
+        marketPicks ??= deps.loadMarketPicks().catch(error => {
+            console.error('[email-report] market picks failed', error);
+            return [];
+        });
+        return marketPicks;
+    };
+
     async function processOne({ recipient, localDate }: DueRecipient) {
         const claimId = await deps.deliveries.claim(
             recipient.userId,
@@ -233,6 +252,15 @@ export async function runEmailReportBatch(
                 excluded,
             });
             symbols = [...selection.full, ...selection.brief];
+            // 보유·관심종목이 아예 없으면 그날 신호가 잡힌 대표 종목으로 시장 브리핑을 보낸다. 요약 표만
+            // 쓰고 전체 카드(AI 분석 로드)는 없다 — 회원이 고른 종목이 아니라서다. 담은 종목을 전부 리포트에서
+            // 뺀 회원은 브리핑을 받지 않는다(종목을 고른 뒤 뺀 것은 "이 종목들 메일은 그만"이라는 뜻이다).
+            const marketBriefing =
+                holdings.length === 0 && watchlist.length === 0;
+            const briefSymbols = marketBriefing
+                ? await marketPicksOnce()
+                : selection.brief;
+            if (marketBriefing) symbols = briefSymbols;
             if (symbols.length === 0) {
                 await deps.deliveries.finish(claimId, 'skipped', [], null);
                 counts.skipped += 1;
@@ -270,7 +298,7 @@ export async function runEmailReportBatch(
                         report.symbol
                     ),
                 })),
-                briefRows: selection.brief.map(symbol => ({
+                briefRows: briefSymbols.map(symbol => ({
                     brief: briefOf(symbol),
                     pageUrl: buildSymbolPageUrl(deps.siteUrl, locale, symbol),
                 })),
@@ -286,6 +314,11 @@ export async function runEmailReportBatch(
                     recipient.userId
                 ),
                 settingsUrl: `${deps.siteUrl}${localePath(locale, '/email-report')}`,
+                ...(marketBriefing && {
+                    marketBriefing: {
+                        marketUrl: `${deps.siteUrl}${localePath(locale, '/market')}`,
+                    },
+                }),
                 t,
                 signalLabel,
             });
@@ -296,8 +329,10 @@ export async function runEmailReportBatch(
                 symbols,
                 accepted ? null : 'dispatcher rejected'
             );
-            if (accepted) counts.sent += 1;
-            else counts.failed += 1;
+            if (accepted) {
+                counts.sent += 1;
+                if (marketBriefing) counts.marketBriefings += 1;
+            } else counts.failed += 1;
         } catch (error) {
             counts.failed += 1;
             console.error(
