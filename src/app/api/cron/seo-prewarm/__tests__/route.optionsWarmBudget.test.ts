@@ -46,6 +46,12 @@ vi.mock('../pruneExpiredRows', () => ({
     }),
 }));
 
+// 신호 이력(배치 앞 단계)은 자체 테스트(recordSignalHistory.test.ts)가 예산·실패 격리를 덮는다 —
+// 여기선 옵션 워밍의 시간 경계만 본다. 실제로 돌리면 이 파일의 멈춘 Redis 목에 먼저 걸린다.
+vi.mock('../recordSignalHistory', () => ({
+    recordSignalHistory: vi.fn().mockResolvedValue({ status: 'timed_out' }),
+}));
+
 vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     DrizzleAnalysisHistoryRepository: vi.fn().mockImplementation(function () {
         return { pruneAnalysisHistory: mockPruneAnalysisHistory };

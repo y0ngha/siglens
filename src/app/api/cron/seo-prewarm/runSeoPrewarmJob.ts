@@ -3,7 +3,14 @@ import { warmOptionsLastGood } from '@/entities/options-chain/server/warmOptions
 import { getDatabaseClient } from '@/shared/db/client';
 import { releasePrewarmLock } from './lock';
 import { pruneExpiredRows } from './pruneExpiredRows';
+import { recordSignalHistory } from './recordSignalHistory';
 import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
+
+/**
+ * 신호 이력 단계의 상한(ms). 스캐너 한 번(미국 약 100종목, 봉은 대부분 캐시 적중)과 DB 쓰기 몇 번이면
+ * 끝나는 일이라 넉넉히 1분 — 넘기면 기다리지 않고 배치로 넘어간다(다음 실행이 마저 남긴다).
+ */
+const SIGNAL_HISTORY_STEP_MAX_MS = 60_000;
 
 /** 한 단계의 예외를 삼키고 로그만 남긴다 — 뒤 단계(워밍·정리·락 해제)가 앞 단계 실패에 막히지 않게 한다. */
 async function logFailure(
@@ -27,7 +34,7 @@ async function releaseLockSafely(token: string): Promise<void> {
 }
 
 /**
- * 락을 잡은 SEO pre-warm 실행의 본문 — 배치 → 옵션 워밍 → 보존 정리 → 락 해제 순서로 돈다.
+ * 락을 잡은 SEO pre-warm 실행의 본문 — 신호 이력 → 배치 → 옵션 워밍 → 보존 정리 → 락 해제 순서로 돈다.
  * `route.ts`가 `afterWithDrain` 안에서 부르며, 이 함수는 던지지 않는다(`afterWithDrain`의 계약).
  *
  * 단계마다 실패를 격리한다: 어느 단계가 던져도 뒤 단계와 락 해제는 반드시 돈다. 옵션 워밍은 별도
@@ -41,6 +48,22 @@ export async function runSeoPrewarmJob(
     lockToken: string,
     lockAcquiredAtMs: number
 ): Promise<void> {
+    // 신호 이력은 배치 **앞**에서 돈다. 시장마다 세션당 한 번뿐인 가벼운 단계인데, 예산을 다 쓰도록
+    // 짜인 배치 뒤에 두면 바쁜 밤마다 예산이 바닥나 그 세션을 영영 못 남긴다. 대신 자기 상한
+    // (`SIGNAL_HISTORY_STEP_MAX_MS`)을 따로 둬 배치 몫을 크게 깎지 않는다. 스스로 던지지 않는다.
+    await logFailure('signal history', async () => {
+        const { db } = getDatabaseClient();
+        const outcome = await recordSignalHistory(db, {
+            budgetEndMs: Math.min(
+                lockAcquiredAtMs + BATCH_WALL_CLOCK_BUDGET_MS,
+                Date.now() + SIGNAL_HISTORY_STEP_MAX_MS
+            ),
+        });
+        console.log(
+            '[seo-prewarm] signal history done:',
+            JSON.stringify(outcome)
+        );
+    });
     await logFailure('batch', async () => {
         const counts = await runPrewarmBatch();
         console.log('[seo-prewarm] batch done:', JSON.stringify(counts));

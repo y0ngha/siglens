@@ -1899,3 +1899,69 @@ export const feedback = pgTable(
         index('feedback_kind_created_at_idx').on(table.kind, table.createdAt),
     ]
 );
+
+/**
+ * 섹터 스캐너가 잡은 **확정** 신호의 이력 — 신호별 종목 페이지(골든크로스·52주 신고가 등)의 원천.
+ *
+ * 스캐너(`getSectorSignalsStatic`)는 지금 시점 결과만 들고 있어 하루치로는 페이지가 얇다. 그래서
+ * 장 마감 뒤 결과를 세션별로 남긴다. 기록은 `seo-prewarm` 크론이 세션당 한 번 한다
+ * (`recordSignalHistory` — 마감+정착 시간 뒤 스캐너를 캐시 없이 직접 계산).
+ *
+ * 한 행 = 한 종목에서 한 신호가 **이어진 구간(에피소드)**. 교차 신호는 최근 몇 개 봉 안의 교차를
+ * 계속 잡고(core `CROSS_LOOKBACK_BARS`), RSI 과매도·52주 신고가 같은 상태 신호는 여러 세션
+ * 이어진다. 직전 세션에도 잡혔으면 새 행 대신 `lastSeenSession`만 늘리고, 끊겼다 다시 잡히면 새
+ * 행이다. 그래서 `sessionDate`는 "처음 포착된 세션"이다 — 실제 교차일보다 최대 몇 세션 늦을 수 있다.
+ *
+ * 두 가지 한계: (1) 세션 날짜는 거래소 달력(`sessionSpecFor`)이 맞다는 전제다 — 달력에 빠진 임시
+ * 휴장일은 거래일로 읽혀 그날 옛 봉으로 기록될 수 있다. (2) 크론이 한 세션을 통째로 놓치면 그 사이
+ * 계속 잡히던 신호도 "끊긴 것"으로 보여 새 행이 열린다.
+ *
+ * 개인 식별 정보가 없다(시장 데이터의 집계 결과뿐).
+ */
+export const signalEvents = pgTable(
+    'signal_events',
+    {
+        /** 대시보드 범위 id(`us` | `kr`). 같은 티커 문자열이 두 시장에 있어도 섞이지 않게 키에 넣는다. */
+        market: varchar('market', { length: 8 }).notNull(),
+        /** 처음 포착된 세션 날짜(`YYYY-MM-DD`) — 미국은 ET, 한국은 KST 기준. */
+        sessionDate: date('session_date').notNull(),
+        /** 마지막으로 포착된 세션 날짜. 이어지는 동안 기록할 때마다 늘어난다. */
+        lastSeenSession: date('last_seen_session').notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        /** core `SignalType`. enum이 아닌 이유: core에 신호가 늘어도 DB 제약이 막지 않게. */
+        signalType: varchar('signal_type', { length: 48 }).notNull(),
+        /** `bullish` | `bearish`. */
+        direction: varchar('direction', { length: 8 }).notNull(),
+        /** 그날 등락률(%). 목록에 함께 보여 준다. */
+        changePercent: doublePrecision('change_percent').notNull(),
+        /** 기록 시점의 한글 종목명. 없으면 null — 목록이 이름 조회 없이 그려지게 남긴다. */
+        koreanName: text('korean_name'),
+        /** 스캐너 계산 시각. */
+        computedAt: timestamp('computed_at', { withTimezone: true }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({
+            columns: [
+                table.market,
+                table.sessionDate,
+                table.symbol,
+                table.signalType,
+            ],
+        }),
+        // 신호별 페이지: "이 신호의 최근 N일" — 신호·날짜 역순 범위 스캔.
+        index('signal_events_type_date_idx').on(
+            table.signalType,
+            table.sessionDate.desc()
+        ),
+        // 이어짐 판정: "이 시장·종목·신호의 에피소드가 직전 세션까지 이어졌나".
+        index('signal_events_open_episode_idx').on(
+            table.market,
+            table.symbol,
+            table.signalType,
+            table.lastSeenSession
+        ),
+    ]
+);

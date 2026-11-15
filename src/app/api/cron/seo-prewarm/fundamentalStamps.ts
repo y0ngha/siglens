@@ -2,6 +2,7 @@ import 'server-only';
 import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
 import { recordFundamentalIndexable } from '@/entities/fundamental-facts/server/indexableStamp';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 
@@ -29,22 +30,6 @@ export interface FundamentalStampCounts {
     /** 시도한 종목 수(타임아웃·실패 포함) — 커서를 이만큼 민다. */
     readonly checked: number;
     readonly recorded: number;
-}
-
-/** `ms` 안에 끝나지 않으면 `'timeout'`. 어느 쪽이든 끝나면 타이머를 지운다(남은 타이머가 프로세스를 붙잡지 않게). */
-async function withTimeout<T>(
-    work: Promise<T>,
-    ms: number
-): Promise<T | 'timeout'> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<'timeout'>(resolve => {
-        timer = setTimeout(() => resolve('timeout'), ms);
-    });
-    try {
-        return await Promise.race([work, timeout]);
-    } finally {
-        clearTimeout(timer);
-    }
 }
 
 /** 페이지 메타데이터와 같은 판정. `null`이면 판정할 수 없어 스탬프를 남기지 않는다. */
@@ -88,7 +73,11 @@ export async function refreshFundamentalStamps(
         if (symbol === undefined) break;
         checked += 1;
         try {
-            const verdict = await withTimeout(decide(symbol), timeoutMs);
+            const verdict = await withTimeout<boolean | null | 'timeout'>(
+                decide(symbol),
+                timeoutMs,
+                'timeout'
+            );
             if (verdict === 'timeout') {
                 console.warn(
                     `[seo-prewarm] fundamental stamp ${symbol} timed out — abandoned wait`
