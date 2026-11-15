@@ -29,10 +29,7 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: pins.runtime,
 }));
 
-import {
-    EMPTY_HOME_TODAY_MARKET,
-    loadHomeTodayMarket,
-} from '../loadHomeTodayMarket';
+import { loadHomeTodayMarket } from '../loadHomeTodayMarket';
 
 const READING: FearGreedReading = {
     date: '2026-11-13',
@@ -140,7 +137,13 @@ describe('loadHomeTodayMarket', () => {
     it('오프라인 빌드는 아무것도 부르지 않고 빈 값을 돌려준다', async () => {
         offline.value = true;
 
-        expect(await loadHomeTodayMarket()).toBe(EMPTY_HOME_TODAY_MARKET);
+        expect(await loadHomeTodayMarket()).toEqual({
+            fearGreed: { us: null, kr: null, crypto: null },
+            signals: {
+                us: { rows: [], computedAt: null },
+                kr: { rows: [], computedAt: null },
+            },
+        });
         expect(fearGreed).not.toHaveBeenCalled();
         expect(sectorSignals).not.toHaveBeenCalled();
     });

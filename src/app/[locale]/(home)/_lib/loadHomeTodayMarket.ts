@@ -43,7 +43,7 @@ export interface HomeTodayMarketData {
 
 const NO_SIGNALS: TodayMarketSignals = { rows: [], computedAt: null };
 
-export const EMPTY_HOME_TODAY_MARKET: HomeTodayMarketData = {
+const EMPTY_HOME_TODAY_MARKET: HomeTodayMarketData = {
     fearGreed: { us: null, kr: null, crypto: null },
     signals: { us: NO_SIGNALS, kr: NO_SIGNALS },
 };

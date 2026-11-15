@@ -18,10 +18,13 @@ export interface TodaySignalRow {
 /**
  * 대표 신호 우선순위 — 앞일수록 먼저 보인다.
  *
- * 기준은 **사람들이 찾는 신호**다. 골든·데드크로스, 52주 신고·신저, RSI 과매도·과매수는
- * 검색 수요가 있는 이름이고(네이버 자동완성 실측: "골든크로스 종목", "52주 신고가 종목"),
- * CCI·CMF 교차처럼 하루에 수십 종목씩 잡히는 신호는 뒤로 민다 — 앞에 두면 목록이 늘
- * 같은 종류로 채워진다. 목록에 없는 신호는 확정(`confirmed`)만, 맨 뒤 순서로 받는다.
+ * 기준은 **사람들이 찾는 신호**다. 골든·데드크로스, 52주 신고·신저, RSI 과매도·과매수처럼
+ * 이름으로 검색되는 신호를 앞에 둔다. 근거: 2026-11-15 네이버 검색 자동완성
+ * (`ac.search.naver.com`)에 "골든크로스 종목"·"52주 신고가 종목"은 자동완성이 붙었고 "RSI 과매도
+ * 종목"은 붙지 않았다 — 순서를 다시 정할 때 같은 방법으로 재확인한다.
+ * CCI·CMF 교차처럼 하루에 수십 종목씩 잡히는 신호는 뒤로 민다(같은 날 `/market` 기준 미국
+ * CCI 교차 41종목, 골든크로스 4종목) — 앞에 두면 목록이 늘 같은 종류로 채워진다. 목록에 없는
+ * 신호는 확정(`confirmed`)만, 맨 뒤 순서로 받는다.
  */
 const SIGNAL_PRIORITY: readonly SignalType[] = [
     'golden_cross',
@@ -54,9 +57,18 @@ interface Candidate {
     readonly rank: number;
 }
 
-/** 확정이 예상보다 앞이다. 우선순위보다 먼저 본다 — 확정된 52주 신고가가 예상 골든크로스보다 앞선다. */
-function phaseOrder(expected: boolean): number {
-    return expected ? 1 : 0;
+interface RankedSignal {
+    readonly expected: boolean;
+    readonly rank: number;
+}
+
+/**
+ * 신호 순서 — 확정이 예상보다 앞이고, 그다음 우선순위. 종목 안에서 대표를 고를 때와 종목끼리
+ * 줄 세울 때 같은 함수를 쓴다(두 기준이 어긋나면 대표로 고른 신호와 목록 순서가 따로 논다).
+ * 확정 여부를 우선순위보다 먼저 본다 — 확정된 52주 신고가가 예상 골든크로스보다 앞선다.
+ */
+function compareSignals(a: RankedSignal, b: RankedSignal): number {
+    return Number(a.expected) - Number(b.expected) || a.rank - b.rank;
 }
 
 function pickRepresentative(stock: StockSignalResult): Candidate | null {
@@ -69,11 +81,7 @@ function pickRepresentative(stock: StockSignalResult): Candidate | null {
             expected: signal.phase === 'expected',
             rank: RANK.get(signal.type) ?? UNRANKED,
         }))
-        .toSorted(
-            (a, b) =>
-                phaseOrder(a.expected) - phaseOrder(b.expected) ||
-                a.rank - b.rank
-        );
+        .toSorted(compareSignals);
     const best = ranked[0];
     if (best === undefined) return null;
     return {
@@ -100,19 +108,21 @@ export function selectTodaySignals(
     stocks: readonly StockSignalResult[],
     limit: number
 ): TodaySignalRow[] {
-    const seen = new Set<string>();
-    const candidates: Candidate[] = [];
-    for (const stock of stocks) {
-        if (seen.has(stock.symbol)) continue;
-        seen.add(stock.symbol);
-        const candidate = pickRepresentative(stock);
-        if (candidate !== null) candidates.push(candidate);
-    }
-    return candidates
+    const firstBySymbol = stocks.filter(
+        (stock, index) =>
+            stocks.findIndex(other => other.symbol === stock.symbol) === index
+    );
+    return firstBySymbol
+        .flatMap(stock => {
+            const candidate = pickRepresentative(stock);
+            return candidate === null ? [] : [candidate];
+        })
         .toSorted(
             (a, b) =>
-                phaseOrder(a.row.expected) - phaseOrder(b.row.expected) ||
-                a.rank - b.rank ||
+                compareSignals(
+                    { expected: a.row.expected, rank: a.rank },
+                    { expected: b.row.expected, rank: b.rank }
+                ) ||
                 Math.abs(b.row.changePercent) - Math.abs(a.row.changePercent) ||
                 a.row.symbol.localeCompare(b.row.symbol)
         )

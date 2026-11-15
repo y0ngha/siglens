@@ -6,10 +6,7 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import ko from '../../../../../../messages/ko.json';
 import en from '../../../../../../messages/en.json';
 import { HomeTodayMarket } from '../HomeTodayMarket';
-import {
-    EMPTY_HOME_TODAY_MARKET,
-    type HomeTodayMarketData,
-} from '../../_lib/loadHomeTodayMarket';
+import type { HomeTodayMarketData } from '../../_lib/loadHomeTodayMarket';
 import { toTodayMarketView } from '../../_lib/todayMarketView';
 
 const c = ko.app.home.todayMarket;
@@ -175,7 +172,15 @@ describe('HomeTodayMarket', () => {
     });
 
     it('공포탐욕도 신호도 없으면 섹션 자체를 내지 않는다', () => {
-        expect(renderSection(EMPTY_HOME_TODAY_MARKET)).toBeNull();
+        expect(
+            renderSection({
+                fearGreed: { us: null, kr: null, crypto: null },
+                signals: {
+                    us: { rows: [], computedAt: null },
+                    kr: { rows: [], computedAt: null },
+                },
+            })
+        ).toBeNull();
     });
 
     it('ko가 아닌 로케일은 한글 이름 대신 티커(거래소 접미사 제거)를 쓴다', () => {

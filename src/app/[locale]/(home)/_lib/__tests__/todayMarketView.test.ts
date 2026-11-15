@@ -1,8 +1,13 @@
-import {
-    EMPTY_HOME_TODAY_MARKET as EMPTY,
-    type HomeTodayMarketData,
-} from '../loadHomeTodayMarket';
+import type { HomeTodayMarketData } from '../loadHomeTodayMarket';
 import { toTodayMarketView } from '../todayMarketView';
+
+const EMPTY: HomeTodayMarketData = {
+    fearGreed: { us: null, kr: null, crypto: null },
+    signals: {
+        us: { rows: [], computedAt: null },
+        kr: { rows: [], computedAt: null },
+    },
+};
 
 const ROW = {
     symbol: 'NVDA',
