@@ -361,7 +361,7 @@
     },
     {
         "file": "src/app/[locale]/market/signals/_lib/loadSignalHub.ts",
-        "line": 74,
+        "line": 78,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 기록 조회 실패"
     },
