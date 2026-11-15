@@ -44,6 +44,28 @@ describe('카탈로그 상수', () => {
 });
 
 describe('isFunnelEventPayload — 양성', () => {
+    // 목록에서 빠지면 컴포넌트 테스트는 못 잡는다(그쪽은 trackFunnelEvent를 목으로 바꾼다).
+    it('잠긴 시간 프레임 넛지(timeframe_nudge)의 노출·가입 클릭을 받는다', () => {
+        expect(
+            isFunnelEventPayload({
+                event: 'nudge_shown',
+                context: { kind: 'timeframe_nudge' },
+            })
+        ).toBe(true);
+        expect(
+            isFunnelEventPayload({
+                event: 'nudge_clicked',
+                context: { kind: 'timeframe_nudge', cta: 'signup' },
+            })
+        ).toBe(true);
+        expect(
+            isFunnelEventPayload({
+                event: 'signup_completed',
+                context: { method: 'oauth', lastGate: 'timeframe_nudge' },
+            })
+        ).toBe(true);
+    });
+
     it.each(FUNNEL_NUDGE_KINDS)('nudge_shown kind=%s', kind => {
         expect(
             isFunnelEventPayload({ event: 'nudge_shown', context: { kind } })
@@ -228,6 +250,15 @@ describe('isFunnelEventPayload — 음성', () => {
             isFunnelEventPayload({
                 event: 'nudge_shown',
                 context: { kind: 'rate_limit', variant: 'reasoning' },
+            })
+        ).toBe(false);
+    });
+
+    it('timeframe_nudge에 variant가 붙으면 거부한다 — variant는 anon_auto 전용이다', () => {
+        expect(
+            isFunnelEventPayload({
+                event: 'nudge_shown',
+                context: { kind: 'timeframe_nudge', variant: 'reasoning' },
             })
         ).toBe(false);
     });

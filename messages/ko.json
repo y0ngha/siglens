@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "보고 싶은 종목이 없나요?",
                 "radarTitle": "종목 레이더",
                 "radarViewAll": "전체 보기"
+            },
+            "todayMarket": {
+                "asOf": "{date} 기준",
+                "expectedTag": "예상",
+                "heading": "오늘의 시장",
+                "intro": "시장 심리를 보여 주는 공포 탐욕 지수와, 최근 기술적 신호가 잡힌 종목이에요.",
+                "marketCrypto": "암호화폐",
+                "marketKr": "한국 주식",
+                "marketUs": "미국 주식",
+                "scoreBarLabel": "{market} 공포 탐욕 지수 {score}점, {label}",
+                "signalsBasis": "{time} 스캔 기준",
+                "signalsHeading": "기술적 신호가 잡힌 종목",
+                "signalsKr": "한국",
+                "signalsUs": "미국",
+                "viewAll": "{market} 전체 보기"
             }
         },
         "login": {
@@ -744,7 +759,9 @@
                 "84ff73": "더 깊은 분석을 원하세요?",
                 "91d660": "회원가입하고 보유종목과 관심종목을 등록하면 고른 요일과 시각에 일봉 차트, 쉽게 보기 분석, 뉴스, 옵션 동향을 메일로 보내 드려요.",
                 "94b7db": "닫기",
-                "d7bbf8": "샘플 메일 보기"
+                "d7bbf8": "샘플 메일 보기",
+                "timeframeBody": "회원가입하면 5분봉부터 4시간봉까지 모든 시간 프레임에서 차트와 AI 분석을 볼 수 있어요. 가입은 무료예요.",
+                "timeframeTitle": "다른 시간 프레임도 보고 싶으세요?"
             }
         },
         "analysis-rate-limit": {

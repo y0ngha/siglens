@@ -83,6 +83,45 @@ describe('AnalysisSignupNudgeModal', () => {
         ).toHaveAttribute('href', '/signup');
     });
 
+    it('timeframe 문구는 시간 프레임을 알리고 샘플 메일 링크는 싣지 않는다', () => {
+        render(
+            <AnalysisSignupNudgeModal
+                kind="timeframe_nudge"
+                variant="timeframe"
+                onClose={vi.fn()}
+            />
+        );
+        expect(
+            screen.getByRole('heading', {
+                name: koMessage(
+                    'features.analysis-nudge.AnalysisSignupNudgeModal.timeframeTitle'
+                ),
+            })
+        ).toBeInTheDocument();
+        expect(screen.getByText(/5분봉부터 4시간봉까지/)).toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: '샘플 메일 보기' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('timeframe 넛지의 가입 클릭은 variant 없이 kind만 기록한다', async () => {
+        track.mockClear();
+        render(
+            <AnalysisSignupNudgeModal
+                kind="timeframe_nudge"
+                variant="timeframe"
+                onClose={vi.fn()}
+            />
+        );
+        await userEvent
+            .setup()
+            .click(screen.getByRole('link', { name: '회원가입 하러 가기' }));
+        expect(track).toHaveBeenCalledWith('nudge_clicked', {
+            kind: 'timeframe_nudge',
+            cta: 'signup',
+        });
+    });
+
     it('emailReport 문구는 가입 CTA 아래에 샘플 메일 보기 링크를 둔다', () => {
         render(
             <AnalysisSignupNudgeModal

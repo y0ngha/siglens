@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "見たい銘柄がありませんか?",
                 "radarTitle": "銘柄レーダー",
                 "radarViewAll": "すべて見る"
+            },
+            "todayMarket": {
+                "asOf": "{date}時点",
+                "expectedTag": "予想",
+                "heading": "今日のマーケット",
+                "intro": "市場心理を示す恐怖強欲指数と、最近テクニカルシグナルが出た銘柄です。",
+                "marketCrypto": "暗号資産",
+                "marketKr": "韓国株",
+                "marketUs": "米国株",
+                "scoreBarLabel": "{market}の恐怖強欲指数 {score}点、{label}",
+                "signalsBasis": "{time}スキャン時点",
+                "signalsHeading": "テクニカルシグナルが出た銘柄",
+                "signalsKr": "韓国",
+                "signalsUs": "米国",
+                "viewAll": "{market}をすべて見る"
             }
         },
         "login": {
@@ -723,7 +738,9 @@
                 "84ff73": "より深い分析をご希望ですか？",
                 "94b7db": "閉じる",
                 "91d660": "会員登録して保有銘柄やウォッチリストを登録すると、選んだ曜日と時刻に日足チャート、かんたん分析、ニュース、オプション動向をメールでお届けします。",
-                "d7bbf8": "サンプルメールを見る"
+                "d7bbf8": "サンプルメールを見る",
+                "timeframeBody": "会員登録すると、5分足から4時間足まで、すべての時間足でチャートとAI分析を確認できます。登録は無料です。",
+                "timeframeTitle": "ほかの時間足も見てみませんか？"
             }
         },
         "api-key-management": {

@@ -233,6 +233,21 @@
                 "radarRequestPrompt": "没有想看的个股?",
                 "radarTitle": "个股雷达",
                 "radarViewAll": "查看全部"
+            },
+            "todayMarket": {
+                "asOf": "截至{date}",
+                "expectedTag": "预期",
+                "heading": "今日市场",
+                "intro": "反映市场情绪的恐惧与贪婪指数，以及最近出现技术信号的股票。",
+                "marketCrypto": "加密货币",
+                "marketKr": "韩股",
+                "marketUs": "美股",
+                "scoreBarLabel": "{market}恐惧与贪婪指数 {score}分，{label}",
+                "signalsBasis": "截至{time}扫描",
+                "signalsHeading": "出现技术信号的股票",
+                "signalsKr": "韩国",
+                "signalsUs": "美国",
+                "viewAll": "查看全部{market}"
             }
         },
         "login": {
@@ -723,7 +738,9 @@
                 "84ff73": "想要更深入的分析吗？",
                 "94b7db": "关闭",
                 "91d660": "注册并添加持仓或自选股后，我们将在您选择的日期和时间，通过邮件发送日线图、简明分析、新闻和期权动向。",
-                "d7bbf8": "查看示例邮件"
+                "d7bbf8": "查看示例邮件",
+                "timeframeBody": "注册后即可在从5分钟到4小时的所有时间周期上查看图表和AI分析。注册免费。",
+                "timeframeTitle": "想看看其他时间周期吗？"
             }
         },
         "api-key-management": {

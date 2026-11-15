@@ -1,16 +1,10 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import type { SignupNudgeKind } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
+import { useCallback, useRef, useState } from 'react';
+import type { SignupNudgeState } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 
-/** 공유 가입 넛지 모달의 열림 상태 — 어떤 문구를, 어떤 계기로. */
-export interface SignupNudgeState {
-    kind: SignupNudgeKind;
-    variant: SignupNudgeVariant;
-}
-
-/** {@link useSignupNudgeControls}의 결과. 세 함수는 모두 안정 참조다. */
+/** {@link useSignupNudgeControls}의 결과. 네 함수는 모두 안정 참조다. */
 export interface SignupNudgeControls {
     /** 지금 열린 넛지. 닫혀 있으면 `null`. 모달을 그리는 provider만 읽는다. */
     signupNudge: SignupNudgeState | null;
@@ -18,6 +12,13 @@ export interface SignupNudgeControls {
     openSignupNudge: () => void;
     /** 익명 첫 분석 자동 넛지. 문구를 번갈아 쓰고, 퍼널에는 `anon_auto`+variant로 남는다. */
     openSignupNudgeAs: (variant: SignupNudgeVariant) => void;
+    /**
+     * 잠긴 시간 프레임 클릭. 문구는 시간 프레임 안내이고, 퍼널에는 `timeframe_nudge`로 남는다.
+     * 이 provider가 마운트된 동안 **한 번만** 연다 — 버튼을 여러 개 눌러 볼 때마다 모달이
+     * 뜨면 성가시고, `nudge_shown`이 사람 수가 아니라 클릭 수만큼 쌓여 다른 넛지와 비교가
+     * 안 된다. 두 번째부터는 게이트 클릭 이벤트만 남는다(셀렉터가 보낸다).
+     */
+    openTimeframeNudge: () => void;
     closeSignupNudge: () => void;
 }
 
@@ -41,12 +42,19 @@ export function useSignupNudgeControls(): SignupNudgeControls {
             setSignupNudge({ kind: 'anon_auto', variant }),
         []
     );
+    const timeframeNudgeShownRef = useRef(false);
+    const openTimeframeNudge = useCallback(() => {
+        if (timeframeNudgeShownRef.current) return;
+        timeframeNudgeShownRef.current = true;
+        setSignupNudge({ kind: 'timeframe_nudge', variant: 'timeframe' });
+    }, []);
     const closeSignupNudge = useCallback(() => setSignupNudge(null), []);
 
     return {
         signupNudge,
         openSignupNudge,
         openSignupNudgeAs,
+        openTimeframeNudge,
         closeSignupNudge,
     };
 }

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { FunnelNudgeCta } from '@/shared/lib/funnel/funnelEvents';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
@@ -34,6 +35,8 @@ export function AnalysisRateLimitSignupModal({
     onClose,
 }: AnalysisRateLimitSignupModalProps) {
     const t = useTranslations('features.analysis-rate-limit');
+    const signupHref = useAuthReturnHref('/signup');
+    const loginHref = useAuthReturnHref('/login');
 
     useFunnelNudgeShown({ kind: 'rate_limit' });
 
@@ -65,14 +68,14 @@ export function AnalysisRateLimitSignupModal({
 
             <div className="flex flex-col gap-2">
                 <Link
-                    href="/signup"
+                    href={signupHref}
                     onClick={closeAfterCta('signup')}
                     className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                 >
                     {t('signup')}
                 </Link>
                 <Link
-                    href="/login"
+                    href={loginHref}
                     onClick={closeAfterCta('login')}
                     className={cn(BUTTON_GHOST, ACTION_SIZE)}
                 >

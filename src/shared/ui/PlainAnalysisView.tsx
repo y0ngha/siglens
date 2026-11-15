@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 import { cn } from '@/shared/lib/cn';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink } from './LocaleLink';
@@ -35,6 +36,7 @@ export function PlainAnalysisView({
     className,
 }: PlainAnalysisViewProps) {
     const t = useTranslations('widgets.analysis.viewToggle');
+    const signupHref = useAuthReturnHref('/signup');
     const paragraphs = text
         .split(/\n\s*\n/)
         .map(p => p.trim())
@@ -75,7 +77,7 @@ export function PlainAnalysisView({
                      * 세로로 쌓고 넓어지면 한 줄로 돌아간다.
                      */}
                     <LocaleLink
-                        href="/signup"
+                        href={signupHref}
                         // 가입 페이지로 가는 잠긴 요소 클릭 — 가입 퍼널의 게이트다.
                         onClick={() =>
                             trackFunnelEvent('gate_clicked', {
