@@ -12,6 +12,7 @@ import {
     CheckIcon,
     ChevronDownIcon,
     FlowsIcon,
+    GaugeIcon,
     GavelIcon,
     GlobeIcon,
     LayersIcon,
@@ -22,6 +23,7 @@ import {
     RefreshIcon,
     SearchIcon,
     SparkIcon,
+    StarIcon,
 } from '@/shared/ui/StrokeIcons';
 import { toolResultError } from './utils/toolSummary';
 
@@ -43,6 +45,8 @@ const ICON: Record<string, IconComponent> = {
     get_congress_trades: GavelIcon,
     get_investor_flows: FlowsIcon,
     get_guide: BookIcon,
+    get_analyst_views: StarIcon,
+    get_macro_quotes: GaugeIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -96,6 +100,8 @@ export function ToolActivity({
         get_congress_trades: t('ToolActivity.toolCongressTrades'),
         get_investor_flows: t('ToolActivity.toolInvestorFlows'),
         get_guide: t('ToolActivity.toolGuide'),
+        get_analyst_views: t('ToolActivity.toolAnalystViews'),
+        get_macro_quotes: t('ToolActivity.toolMacroQuotes'),
     };
     // Daily bars also carry the symbol's own fear & greed reading, so the
     // step says so; other timeframes get the plain chart label.

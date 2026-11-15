@@ -6,12 +6,13 @@ import type {
 } from '@y0ngha/siglens-core';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
-import { isE2E } from '@/shared/api/e2eEnv';
+import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
     ECONOMY_RESULT_MAX_CHARS,
     INVESTOR_FLOWS_RESULT_MAX_CHARS,
     GUIDE_RESULT_MAX_CHARS,
+    MACRO_QUOTES_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -33,6 +34,8 @@ import { getEconomyTool } from './getEconomy';
 import { getCongressTradesTool } from './getCongressTrades';
 import { getInvestorFlowsTool } from './getInvestorFlows';
 import { getGuideTool } from './getGuide';
+import { getAnalystViewsTool } from './getAnalystViews';
+import { getMacroQuotesTool } from './getMacroQuotes';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
@@ -96,6 +99,8 @@ export interface ToolResultCaps {
     /** `get_investor_flows` (scorecard + capped holder, insider, Form 144 and offering lists). */
     investorFlows: number;
     guide: number;
+    /** `get_macro_quotes` (up to 8 instruments, each with changes and a 52-week range). */
+    macroQuotes: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -110,6 +115,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     economy: ECONOMY_RESULT_MAX_CHARS,
     investorFlows: INVESTOR_FLOWS_RESULT_MAX_CHARS,
     guide: GUIDE_RESULT_MAX_CHARS,
+    macroQuotes: MACRO_QUOTES_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -164,6 +170,8 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_congress_trades: getCongressTradesTool,
     get_investor_flows: getInvestorFlowsTool,
     get_guide: getGuideTool,
+    get_analyst_views: getAnalystViewsTool,
+    get_macro_quotes: getMacroQuotesTool,
 };
 
 /**
@@ -176,7 +184,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
  */
 export function availableToolNames(): Set<string> {
     const names = new Set(Object.keys(EXECUTORS));
-    const e2eFake = isE2E() && process.env.AGENT_REAL_PROVIDER !== '1';
+    const e2eFake = isE2EFakeMode();
     const keyed =
         Boolean(process.env.BRAVE_SEARCH_API_KEY) ||
         naverAiCredentials() !== null;
@@ -280,6 +288,7 @@ export function createToolExecutor(
         // 다시 자르면 앞부분 미리보기 덩어리로 무너진다.
         if (name === 'get_investor_flows') return resultCaps.investorFlows;
         if (name === 'get_guide') return resultCaps.guide;
+        if (name === 'get_macro_quotes') return resultCaps.macroQuotes;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

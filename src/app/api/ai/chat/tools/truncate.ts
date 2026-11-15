@@ -29,7 +29,11 @@ export const BARS_RESULT_MAX_CHARS = 6_500;
  *
  * `get_fundamentals` and `get_congress_trades` fit comfortably under the
  * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
- * `get_fundamentals` measures ~3,385 chars with every section filled plus 5
+ * `get_fundamentals` measured ~3,385 chars (2026-10-24) and ~3,689 after the Yahoo analyst extras
+ * (2026-11-15: `consensusAnalysts`/`consensusSource`, `priceTargetSource`/`priceTargetYahoo`,
+ * `targetSourcesDisagree`, and a confirmed `earningsSession` + `earningsCallAt`; `earningsDateAlt` never
+ * co-occurs with the session, so the worst case is the session one) — still under 4,000, so no own ceiling.
+ * The 3,385 figure covers with every section filled plus 5
  * `recentQuarters` rows (each with `form`, `revenueYoYPct` and a full `sec`
  * as-filed block), 8 `earningsReactions`, the ~170-char `dividends` block
  * (+ the KR-only `annualReported`) and `indexMemberships` (summed from
@@ -86,6 +90,16 @@ export const INVESTOR_FLOWS_RESULT_MAX_CHARS = 8_500;
  * into a front-cut preview blob, so it gets its own ceiling.
  */
 export const GUIDE_RESULT_MAX_CHARS = 6_000;
+
+/**
+ * `get_macro_quotes` ceiling. Each instrument carries a quote, a futures
+ * `contract`, four calendar changes and a 52-week range (~700 chars). Measured
+ * 2026-11-15 on a real-shape 8-instrument call (the per-call maximum, ~400 daily
+ * rows each, `getMacroQuotes.test.ts`): 5,627 chars; 7,000 leaves ~1,370 of
+ * headroom for longer contract names and digits. The standard 4,000 would re-cut a full call into a
+ * front-cut preview blob.
+ */
+export const MACRO_QUOTES_RESULT_MAX_CHARS = 7_000;
 
 /**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that

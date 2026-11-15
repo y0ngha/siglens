@@ -47,6 +47,13 @@ vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
 vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
+vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+    getAnalystViewsTool: vi.fn(),
+}));
+const getMacroQuotes = vi.hoisted(() => vi.fn());
+vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+    getMacroQuotesTool: getMacroQuotes,
+}));
 const getGuide = vi.hoisted(() => vi.fn());
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({
     getGuideTool: getGuide,
@@ -61,7 +68,10 @@ vi.mock('@/shared/api/naver/naverSearch', () => ({
     stripNaverMarkup: (s: string) => s,
     toIsoPublishedAt: () => null,
 }));
-vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
+vi.mock('@/shared/api/e2eEnv', () => ({
+    isE2E: () => e2eState.on,
+    isE2EFakeMode: () => e2eState.on && process.env.AGENT_REAL_PROVIDER !== '1',
+}));
 const correctKrSymbolSuffix = vi.hoisted(() =>
     vi.fn(async (s: string) => s.toUpperCase())
 );
@@ -80,6 +90,7 @@ import {
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
     GUIDE_RESULT_MAX_CHARS,
+    MACRO_QUOTES_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
 } from '@/app/api/ai/chat/tools/truncate';
 
@@ -104,8 +115,9 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 14종(web_search는 키 있을 때만)', () => {
+    it('가용 툴 16종(web_search는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
+            'get_analyst_views',
             'get_bars_indicators',
             'get_cached_analysis',
             'get_congress_trades',
@@ -113,6 +125,7 @@ describe('tool registry', () => {
             'get_fundamentals',
             'get_guide',
             'get_investor_flows',
+            'get_macro_quotes',
             'get_market_overview',
             'get_my_portfolio',
             'get_news',
@@ -506,6 +519,27 @@ describe('tool registry', () => {
         expect(await call()).toMatchObject({ truncated: true });
     });
 
+    it('get_macro_quotes는 MACRO_QUOTES_RESULT_MAX_CHARS 한도 — 4,000자 초과·한도 이내는 온전히, 초과는 절단된다', async () => {
+        const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () =>
+            exec('get_macro_quotes', { instruments: ['wti'] }, makeCtx());
+        const midSize = Math.floor(
+            (TOOL_RESULT_MAX_CHARS + MACRO_QUOTES_RESULT_MAX_CHARS) / 2
+        );
+        getMacroQuotes.mockResolvedValueOnce(sized(midSize));
+        const mid = await call();
+        expect(mid).not.toHaveProperty('truncated');
+        expect(JSON.stringify(mid).length).toBe(midSize);
+
+        getMacroQuotes.mockResolvedValueOnce(
+            sized(MACRO_QUOTES_RESULT_MAX_CHARS + 500)
+        );
+        expect(await call()).toMatchObject({ truncated: true });
+    });
+
     it('get_guide는 게스트에게도 열려 있다', async () => {
         getGuide.mockResolvedValueOnce({ found: false });
         const exec = createToolExecutor({
@@ -683,6 +717,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         economy: 9_000,
         investorFlows: 9_000,
         guide: 9_000,
+        macroQuotes: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };

@@ -291,6 +291,11 @@ and states it as fact.
 - ✅ The catch returns `{ unavailable: true }` (or the field is flagged), and the tool result says the data could not
   be loaded.
 
+Keep three outcomes distinct: a result absent by nature (the provider has no data for this instrument, such as an ETF
+with no analyst coverage), a failed load, and a real zero. Cache the first as a legitimate empty result, never cache the
+second, and report a tally as `null` rather than `0` when the data is unavailable, so "no history exists" and
+"could not be loaded" are not the same output.
+
 A refactor or "defensive" touch-up of a provider parser keeps the same failure mode. Skipping a malformed row
 (`if (!row?.title) continue`, `?? []`) where the code used to throw turns a provider contract break into silently
 missing data, and the caller can no longer degrade or retry. Add a tolerance only when the provider is known to emit
@@ -319,6 +324,17 @@ that parses, an error code that something actually emits) before acting on it or
 
 - ❌ `/^\d{4}-\d{2}-\d{2}$/.test(date)` accepts `2026-13-45`.
 - ✅ The pattern check is followed by a calendar check (round-trip the parsed date) before the value is used.
+
+<a id="SA-21"></a>
+
+#### SA-21 — Date keys come from the instrument's exchange time zone
+
+A provider stamps a daily bar at the exchange-local session boundary, which is not UTC midnight (a London-stamped bar is
+`23:00Z` of the previous day during summer time). Derive a day key from the timestamp in the instrument's exchange time
+zone, never from `toISOString().slice(0, 10)`: the UTC slice dates those bars a day early for half the year with no error.
+
+- ❌ `new Date(bar.time * 1000).toISOString().slice(0, 10)` for a Europe/London FX bar.
+- ✅ Format the instant with `Intl.DateTimeFormat` and the instrument's `timeZone`, then test it with a summer-time bar.
 
 ---
 

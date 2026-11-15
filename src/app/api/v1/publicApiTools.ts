@@ -36,6 +36,13 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  *   건너뛴다 — 영문 이름으로 답하고, 번역 없는 결과는 웹이 읽는 캐시·임시 항목이 아니라 API 전용 키(1시간)에만
  *   남겨 웹의 번역을 막지 않으면서 반복 호출이 FMP/Yahoo를 다시 부르지 않게 한다. 번역 함수 자체도 같은 정책을 마지막으로 한 번 더 확인한다(`koreanTranslator`).
  *
+ * `get_analyst_views`·`get_macro_quotes`(2026-11): LLM은 부르지 않지만 Yahoo Finance의 비공식 엔드포인트
+ *   (`quoteSummary`·선물/환율 `quote`·`chart`)를 읽는다. Yahoo는 재배포 약관이 없어 제3자 개발자에게 그대로
+ *   내보내면 라이선스 위험이 커서 **공개 API에서는 제외**한다. SiglensAI 에이전트에서만 쓴다.
+ *   `get_fundamentals`는 공개 API에 남지만, 새 Yahoo 보강(투자의견 분포 교체·`priceTargetYahoo`·실적 세션·대체 날짜
+ *   등)은 `allowUnofficialSources: false`일 때 도구가 Yahoo를 부르지도 내보내지도 않는다 — 공개 API에서는
+ *   이 변경 전의 출처(FMP 프로바이더, 한국 종목은 기존 Yahoo 프로바이더)와 응답 모양 그대로다.
+ *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
@@ -53,6 +60,8 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  */
 export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'web_search',
+    'get_analyst_views',
+    'get_macro_quotes',
 ]);
 
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */

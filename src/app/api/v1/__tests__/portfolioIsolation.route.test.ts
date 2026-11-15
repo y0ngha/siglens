@@ -62,6 +62,12 @@ vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
     getCongressTradesTool: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
+vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+    getAnalystViewsTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+    getMacroQuotesTool: vi.fn(),
+}));
 // 아래는 getMyPortfolioTool(실물)의 의존성.
 vi.mock('@/entities/portfolio/api', () => ({
     DrizzlePortfolioRepository: vi.fn(function () {

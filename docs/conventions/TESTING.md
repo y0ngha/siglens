@@ -392,6 +392,15 @@ A test that reads source files (`readFileSync`, a glob over a slice) pins a path
 - ❌ A scan of `Panel.tsx` keeps passing after its logic moves to `PanelRow.tsx` and `usePanel.ts`.
 - ✅ The scan derives its files from the directory (or lists the new files), and fails when a listed path is missing.
 
+<a id="TE-59"></a>
+
+#### TE-59 — Date-handling tests include a daylight-saving fixture
+
+A date or day-key test run only on a winter (standard-time) date cannot show an offset bug that exists half the year. Include a fixture inside the summer-time period of each time zone involved, and assert the day key it must produce (see SERVER.md#SA-21).
+
+- ❌ Every bar fixture is dated in November, so a UTC-slice day key passes.
+- ✅ One fixture is a London bar stamped `23:00Z` in July and the test expects the next calendar day.
+
 ## Time, Flakes & Isolation
 
 <a id="TE-7"></a>

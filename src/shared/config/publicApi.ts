@@ -112,6 +112,8 @@ export const PUBLIC_API_RESULT_CAPS = {
     economy: 24_000,
     investorFlows: 24_000,
     guide: 24_000,
+    // `get_macro_quotes`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
+    macroQuotes: 24_000,
     cachedAnalysis: 32_000,
     cachedAnalysisBudget: 32_000,
 } as const;

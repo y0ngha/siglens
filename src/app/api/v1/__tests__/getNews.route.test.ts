@@ -112,6 +112,12 @@ vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
     getCongressTradesTool: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
+vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+    getAnalystViewsTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+    getMacroQuotesTool: vi.fn(),
+}));
 
 import { POST } from '@/app/api/v1/tools/[name]/route';
 import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
