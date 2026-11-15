@@ -15,6 +15,8 @@ interface ChartTimeframeBarProps {
     onTimeframeChange: (next: Timeframe) => void;
     isFreeTier: boolean;
     isTierHydrated: boolean;
+    /** 비회원이 잠긴 시간 프레임을 눌렀을 때 — 가입 안내 모달을 연다. */
+    onLockedTimeframeClick: () => void;
     /** 모바일 분석 시트를 FULL로 연다. */
     onOpenAnalysisSheet: () => void;
 }
@@ -36,6 +38,7 @@ export function ChartTimeframeBar({
     onTimeframeChange,
     isFreeTier,
     isTierHydrated,
+    onLockedTimeframeClick,
     onOpenAnalysisSheet,
 }: ChartTimeframeBarProps) {
     const t = useTranslations('views.symbol');
@@ -77,6 +80,7 @@ export function ChartTimeframeBar({
                     onChange={onTimeframeChange}
                     isFreeTier={isFreeTier}
                     isTierHydrated={isTierHydrated}
+                    onLockedClick={onLockedTimeframeClick}
                 />
             </div>
         </div>

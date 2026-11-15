@@ -4329,5 +4329,7 @@
     "app.home.todayMarket.signalsKr": "900e95b6971a",
     "app.home.todayMarket.viewAll": "e3643d36daa2",
     "app.home.todayMarket.expectedTag": "764ee30af1d4",
-    "app.home.todayMarket.signalsBasis": "c84328d05ed6"
+    "app.home.todayMarket.signalsBasis": "c84328d05ed6",
+    "features.analysis-nudge.AnalysisSignupNudgeModal.timeframeBody": "0f717f858b24",
+    "features.analysis-nudge.AnalysisSignupNudgeModal.timeframeTitle": "806cb2349532"
 }

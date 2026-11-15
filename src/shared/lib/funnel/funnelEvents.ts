@@ -20,6 +20,9 @@ import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 export const FUNNEL_NUDGE_KINDS = [
     'anon_auto',
     'reasoning_toggle',
+    // 잠긴 시간 프레임 클릭이 연 모달. 게이트 `timeframe`(클릭 자체)과 이름을 달리 둔다 —
+    // 같으면 lastGate·리포트에서 한 줄로 합쳐져 "모달을 보고 가입했나"를 가를 수 없다.
+    'timeframe_nudge',
     'rate_limit',
     'model_gate',
     'member_setup',

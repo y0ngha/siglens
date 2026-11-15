@@ -5,6 +5,7 @@
  */
 import { useTranslations } from 'next-intl';
 import type { Ref } from 'react';
+import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { resolveMeterDailySymbols } from '../utils/meterDailySymbols';
@@ -16,6 +17,7 @@ interface MeterRevealedNoticeProps {
 
 export function MeterRevealedNotice({ meterRef }: MeterRevealedNoticeProps) {
     const tPanel = useTranslations('widgets.analysis.panel');
+    const signupHref = useAuthReturnHref('/signup');
     return (
         <div
             ref={meterRef}
@@ -30,7 +32,7 @@ export function MeterRevealedNotice({ meterRef }: MeterRevealedNoticeProps) {
                 })}
             </p>
             <Link
-                href="/signup"
+                href={signupHref}
                 onClick={() =>
                     trackFunnelEvent('meter_clicked', { state: 'revealed' })
                 }

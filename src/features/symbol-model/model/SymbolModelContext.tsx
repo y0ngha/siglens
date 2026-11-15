@@ -93,6 +93,11 @@ interface SymbolModelContextValue {
      * passed straight to click handlers, which would hand it the click event.
      */
     openSignupNudgeAs: (variant: SignupNudgeVariant) => void;
+    /**
+     * 잠긴 시간 프레임 버튼 클릭이 같은 모달을 시간 프레임 문구로 연다. 터치 기기에는 버튼의
+     * `title` 툴팁이 뜨지 않아, 잠긴 이유를 알릴 수단이 이 모달뿐이다.
+     */
+    openTimeframeNudge: () => void;
     /** Dismiss the shared signup-nudge modal. */
     closeSignupNudge: () => void;
 }
@@ -113,6 +118,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
         signupNudge,
         openSignupNudge,
         openSignupNudgeAs,
+        openTimeframeNudge,
         closeSignupNudge,
     } = useSignupNudgeControls();
     const {
@@ -155,6 +161,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             isReasoningHydrated,
             openSignupNudge,
             openSignupNudgeAs,
+            openTimeframeNudge,
             closeSignupNudge,
         }),
         [
@@ -175,6 +182,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             isReasoningHydrated,
             openSignupNudge,
             openSignupNudgeAs,
+            openTimeframeNudge,
             closeSignupNudge,
         ]
     );
@@ -184,8 +192,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             {children}
             {signupNudge !== null && (
                 <AnalysisSignupNudgeModal
-                    kind={signupNudge.kind}
-                    variant={signupNudge.variant}
+                    {...signupNudge}
                     onClose={closeSignupNudge}
                 />
             )}

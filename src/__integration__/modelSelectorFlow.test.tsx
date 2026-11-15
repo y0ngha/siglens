@@ -51,7 +51,7 @@ describe('Model Selector Flow', () => {
             ).toBeInTheDocument();
             expect(
                 screen.getByRole('link', { name: '회원가입 하러 가기' })
-            ).toHaveAttribute('href', '/signup');
+            ).toHaveAttribute('href', '/signup?next=%2FAAPL');
         });
 
         it('calls onClose when dismiss button is clicked', async () => {

@@ -142,7 +142,7 @@ export function SymbolPageClient({
     hasBarsSeed = true,
     headingBadge,
 }: SymbolPageClientProps) {
-    const { tier, isTierHydrated } = useSymbolModel();
+    const { tier, isTierHydrated, openTimeframeNudge } = useSymbolModel();
     const {
         sheetSnap,
         setSheetSnap,
@@ -193,6 +193,7 @@ export function SymbolPageClient({
                     onTimeframeChange={handleTimeframeChange}
                     isFreeTier={isFreeTier}
                     isTierHydrated={isTierHydrated}
+                    onLockedTimeframeClick={openTimeframeNudge}
                     onOpenAnalysisSheet={() => setSheetSnap(SNAP_FULL)}
                 />
                 {/* md+: 높이를 놓는다(`md:flex-none`) — 높이는 ChartContent의 차트
