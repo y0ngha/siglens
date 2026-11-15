@@ -28,7 +28,8 @@ const ANALYSIS_TAB: Record<string, SymbolTab> = {
 };
 
 function tabFor(item: ToolActivityItem): SymbolTab {
-    if (item.name === 'get_news') return 'news';
+    if (item.name === 'get_news' || item.name === 'get_company_filings')
+        return 'news';
     if (item.name === 'get_options_summary') return 'options';
     if (item.name === 'get_fundamentals' || item.name === 'get_analyst_views')
         return 'fundamental';

@@ -242,6 +242,15 @@ Any new network read on a request path that has a time budget must be inside tha
 rely on the client library's default (some HTTP-based DB drivers have none). A hung read then degrades to the
 fallback instead of consuming the whole deadline. For loops under a deadline, see CC-5.
 
+A process-global rate gate is a shared budget: a request-path feature bounds how many gated calls one request may
+queue (for example load metadata for the newest few items only, `FILING_META_LOAD_MAX`) and passes request-path
+options (no retries, a short timeout, a total budget) instead of the cron-grade defaults, so one cold request cannot
+starve the render-path callers that share the gate. Read only the part of a remote document that is used, and cache
+that part.
+
+- ❌ A tool queues 20 gated fetches with a 30 s timeout and retries, behind a gate that pages share with an 8 s budget.
+- ✅ The request loads at most a handful of entries with the request-path options and head-only reads.
+
 ### Request trust & abuse
 
 <a id="SA-15"></a>
@@ -335,6 +344,20 @@ zone, never from `toISOString().slice(0, 10)`: the UTC slice dates those bars a 
 
 - ❌ `new Date(bar.time * 1000).toISOString().slice(0, 10)` for a Europe/London FX bar.
 - ✅ Format the instant with `Intl.DateTimeFormat` and the instrument's `timeZone`, then test it with a summer-time bar.
+
+<a id="SA-23"></a>
+
+#### SA-23 — Untrusted, size-capped input is processed in linear time
+
+Text a third party controls (filer HTML, user content) is bounded by a size cap, but a quadratic pattern inside the cap
+still blocks the event loop for seconds. Use no `[^>]*`-style class that can cross the next opening delimiter (use
+`[^<>]*`), apply a lazy `open[\s\S]*?close` pattern only up to a real close (find that span end with the same close
+pattern the block regex uses, as `closedSpanEnd` in `entities/company-filings/lib/htmlToText.ts` does), and never run a
+per-item scan that restarts at index 0 (slice forward instead). Pin it with a regression test that feeds a cap-sized
+adversarial input under a time bound.
+
+- ❌ `/<!--[\s\S]*?-->/g` over a body with thousands of unclosed `<!--` rescans to the end from each one.
+- ✅ The pattern runs only inside the span that ends at the last real `-->`; the unclosed tail is dropped.
 
 <a id="SA-22"></a>
 

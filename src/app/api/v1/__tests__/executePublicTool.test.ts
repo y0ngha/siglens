@@ -162,6 +162,7 @@ describe('executePublicTool — 실행기 오류 → HTTP', () => {
         ['invalid_args', 400],
         ['invalid_query', 400],
         ['unknown_tool', 404],
+        ['unknown_filing', 404],
         ['login_required', 403],
         ['aborted', 504],
         ['tool_failed', 500],

@@ -11,6 +11,7 @@ import {
     CandlesIcon,
     CheckIcon,
     ChevronDownIcon,
+    FileIcon,
     FlowsIcon,
     GaugeIcon,
     GavelIcon,
@@ -47,6 +48,7 @@ const ICON: Record<string, IconComponent> = {
     get_guide: BookIcon,
     get_analyst_views: StarIcon,
     get_macro_quotes: GaugeIcon,
+    get_company_filings: FileIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -102,6 +104,7 @@ export function ToolActivity({
         get_guide: t('ToolActivity.toolGuide'),
         get_analyst_views: t('ToolActivity.toolAnalystViews'),
         get_macro_quotes: t('ToolActivity.toolMacroQuotes'),
+        get_company_filings: t('ToolActivity.toolCompanyFilings'),
     };
     // Daily bars also carry the symbol's own fear & greed reading, so the
     // step says so; other timeframes get the plain chart label.

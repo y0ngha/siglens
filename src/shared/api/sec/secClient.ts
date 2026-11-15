@@ -181,6 +181,14 @@ const DOCUMENT_OPTIONS: DocumentOptions = {
     accessDeniedMeansMissing: true,
 };
 
+/**
+ * 호출부가 덮어쓸 수 있는 요청 옵션. 생략하면 cron급 기본값(재시도·긴 타임아웃)이고, 요청 경로(에이전트 도구 등)는
+ * `maxRetries: 0`과 `totalBudgetMs`를 넘겨 슬롯 대기까지 마감 안에 가둔다(SERVER.md#SA-14).
+ */
+type SecRequestOptions = Partial<
+    Pick<DocumentOptions, 'maxRetries' | 'timeoutMs' | 'totalBudgetMs'>
+>;
+
 const WWW_DOCUMENT_OPTIONS: DocumentOptions = {
     ...DOCUMENT_OPTIONS,
     accessDeniedMeansMissing: false,
@@ -252,11 +260,13 @@ export function fetchDailyFormIndex(date: string): Promise<string | null> {
 /** 제출 폴더의 `index.json`. 없으면 `null`. */
 export function fetchFilingIndexJson(
     cik: string,
-    accession: string
+    accession: string,
+    options: SecRequestOptions = {}
 ): Promise<unknown | null> {
     return secGetDocument(
         `${filingFolderUrl(cik, accession)}/index.json`,
-        res => res.json() as Promise<unknown>
+        res => res.json() as Promise<unknown>,
+        { ...DOCUMENT_OPTIONS, ...options }
     );
 }
 
@@ -542,10 +552,12 @@ export function fetchFailsToDeliverListing(): Promise<string | null> {
 export function fetchFilingDocumentHead(
     cik: string,
     accession: string,
-    fileName: string
+    fileName: string,
+    options: SecRequestOptions = {}
 ): Promise<string | null> {
     return secGetDocument(
         `${filingFolderUrl(cik, accession)}/${encodeURIComponent(fileName)}`,
-        res => readBodyHead(res, SEC_FILING_HEAD_MAX_BYTES)
+        res => readBodyHead(res, SEC_FILING_HEAD_MAX_BYTES),
+        { ...DOCUMENT_OPTIONS, ...options }
     );
 }

@@ -84,6 +84,14 @@ describe('relatedSymbolPages', () => {
         ).toEqual([{ symbol: 'NVDA', tab: 'fundamental' }]);
     });
 
+    it('get_company_filings points at the news tab', () => {
+        expect(
+            relatedSymbolPages([
+                tool('get_company_filings', { symbol: 'IONQ' }),
+            ])
+        ).toEqual([{ symbol: 'IONQ', tab: 'news' }]);
+    });
+
     it('get_macro_quotes has no symbol, so it links nowhere', () => {
         expect(
             relatedSymbolPages([

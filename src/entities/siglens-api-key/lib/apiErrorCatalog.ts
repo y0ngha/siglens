@@ -123,6 +123,13 @@ export const API_ERROR_DOCS: readonly ApiErrorDoc[] = [
             'get_chart_data only: no price bars exist for this symbol and timeframe.',
     },
     {
+        code: 'unknown_filing',
+        status: 404,
+        scope: 'tools',
+        summary:
+            'get_company_filings only: the accession is not among the company’s recent 8-K, 8-K/A or 6-K filings. Call without accession to list them and copy an accession from the list.',
+    },
+    {
         code: 'stale_listing',
         status: 404,
         scope: 'tools',
