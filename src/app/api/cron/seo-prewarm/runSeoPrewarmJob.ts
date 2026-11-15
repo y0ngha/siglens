@@ -10,7 +10,7 @@ import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
  * 신호 이력 단계의 상한(ms). 스캐너 한 번(미국 약 100종목, 봉은 대부분 캐시 적중)과 DB 쓰기 몇 번이면
  * 끝나는 일이라 넉넉히 1분 — 넘기면 기다리지 않고 배치로 넘어간다(다음 실행이 마저 남긴다).
  */
-export const SIGNAL_HISTORY_STEP_MAX_MS = 60_000;
+const SIGNAL_HISTORY_STEP_MAX_MS = 60_000;
 
 /** 한 단계의 예외를 삼키고 로그만 남긴다 — 뒤 단계(워밍·정리·락 해제)가 앞 단계 실패에 막히지 않게 한다. */
 async function logFailure(

@@ -23,16 +23,19 @@ import { withTimeout } from '@/shared/lib/withTimeout';
  * 늦게 오므로(`marketProfile` 실측 KRX 20분) 그만큼 더 기다린다 — 그 전에 계산하면 동시호가
  * 마감가가 빠진 봉으로 신호를 판정한다.
  */
-export const SIGNAL_SETTLE_MINUTES: Readonly<
-    Record<SignalHistoryMarket, number>
-> = { us: 15, kr: 35 };
+const SIGNAL_SETTLE_MINUTES: Readonly<Record<SignalHistoryMarket, number>> = {
+    us: 15,
+    kr: 35,
+};
 
 /**
  * 신호 이력 보존 기간(일, 마지막 포착 세션 기준). 신호별 페이지는 최근 몇 주만 보여 주지만, 신호가
- * 드문 날이 이어질 때 목록을 채우고 나중에 신호별 빈도를 볼 수 있게 넉넉히 둔다. 행이 작고
- * 하루 수백 행 안이라 1년치도 수십만 행에 그친다.
+ * 드문 날이 이어질 때 목록을 채우고 나중에 신호별 빈도를 볼 수 있게 넉넉히 둔다.
+ * 규모 근거: 2026-11-15 운영 `/market`·`/market/kr` 실측 신호 약 230건(미국 185·한국 46, 예상 단계 포함)
+ * — 새 에피소드는 그 이하이고 이어지는 신호는 행을 늘리지 않으므로, 400일이면 많아야 9만 행 남짓이다.
+ * 재측정: `select count(*) from signal_events` 또는 같은 날 `/market` HTML의 신호 수.
  */
-export const SIGNAL_HISTORY_RETENTION_DAYS = 400;
+const SIGNAL_HISTORY_RETENTION_DAYS = 400;
 
 /** "이 시장·세션은 기록했다" 표식. 다음 세션 기록 전에 사라지면 되고, 주말·연휴를 넉넉히 덮는다. */
 const RECORDED_MARKER_TTL_SECONDS = 4 * 24 * 60 * 60;
@@ -59,7 +62,7 @@ function attemptMarkerKey(
 }
 
 /** 시장 하나의 결과. `skipped`는 지금이 기록 시점이 아니거나 이 세션을 이미 남겼다는 뜻이다. */
-export type MarketRecordOutcome =
+type MarketRecordOutcome =
     | { readonly status: 'skipped' }
     | {
           readonly status: 'recorded';
@@ -92,7 +95,7 @@ export interface RecordedMarkerStore {
     mark(key: string, ttlSeconds: number): Promise<void>;
 }
 
-export interface RecordSignalHistoryOptions {
+interface RecordSignalHistoryOptions {
     readonly now?: Date;
     /** 이 시각(epoch ms)까지 끝나지 않으면 기다리지 않고 `timed_out`. 이미 지났으면 시작하지 않는다. */
     readonly budgetEndMs?: number;

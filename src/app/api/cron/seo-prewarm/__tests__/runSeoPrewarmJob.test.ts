@@ -43,10 +43,10 @@ import {
     BATCH_WALL_CLOCK_BUDGET_MS,
     runPrewarmBatch,
 } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
-import {
-    runSeoPrewarmJob,
-    SIGNAL_HISTORY_STEP_MAX_MS,
-} from '@/app/api/cron/seo-prewarm/runSeoPrewarmJob';
+import { runSeoPrewarmJob } from '@/app/api/cron/seo-prewarm/runSeoPrewarmJob';
+
+/** 신호 이력 단계의 자기 상한 — 구현 상수와 같은 값(1분)을 테스트가 따로 고정한다. */
+const SIGNAL_HISTORY_STEP_MAX_MS = 60_000;
 
 const NOW = new Date('2026-08-03T15:30:00.000Z');
 

@@ -37,6 +37,11 @@ export interface SignalHistoryRepository {
     pruneOlderThan(cutoffDate: string): Promise<number>;
 }
 
+/**
+ * `signal_events`(신호 에피소드) 저장소. 기록은 `seo-prewarm` 크론의 `recordSignalHistory`가 세션당 한 번
+ * 쓴다 — 이어진 에피소드를 찾고(`openEpisodeKeys`), 새로 열거나(`insertEpisodes`) 늘린다(`extendEpisodes`).
+ * 모든 쓰기는 같은 날 재실행에 멱등이다. 일시적 DB 오류는 `withRetry`로 재시도한다.
+ */
 export class DrizzleSignalHistoryRepository implements SignalHistoryRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

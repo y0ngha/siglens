@@ -20,7 +20,6 @@ vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: () => null }));
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
     recordSignalHistory,
-    SIGNAL_HISTORY_RETENTION_DAYS,
     type RecordedMarkerStore,
     type RecordSignalHistoryResult,
     type ScanMarket,
@@ -238,7 +237,7 @@ describe('recordSignalHistory', () => {
         expect(repo.openEpisodeKeys).not.toHaveBeenCalled();
     });
 
-    it(`기록한 실행에서만 보존 기간(${SIGNAL_HISTORY_RETENTION_DAYS}일)이 지난 행을 지운다`, async () => {
+    it('기록한 실행에서만 보존 기간(400일)이 지난 행을 지운다', async () => {
         const recorded = await runDone({ now: US_AFTER_CLOSE });
         expect(recorded.pruned).toBe(3);
         expect(repo.pruneOlderThan).toHaveBeenCalledWith('2025-10-09');
