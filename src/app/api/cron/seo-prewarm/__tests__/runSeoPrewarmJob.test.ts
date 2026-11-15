@@ -2,10 +2,12 @@ const {
     mockPruneAnalysisHistory,
     mockGetDatabaseClient,
     mockPruneExpiredRows,
+    mockRecordSignalHistory,
 } = vi.hoisted(() => ({
     mockPruneAnalysisHistory: vi.fn(),
     mockGetDatabaseClient: vi.fn(),
     mockPruneExpiredRows: vi.fn(),
+    mockRecordSignalHistory: vi.fn(),
 }));
 
 // 실제 상수(`runPrewarmBatch`가 락 모듈 상수에서 파생)를 살리려고 나머지는 원본을 쓴다.
@@ -26,6 +28,9 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('../pruneExpiredRows', () => ({
     pruneExpiredRows: mockPruneExpiredRows,
 }));
+vi.mock('../recordSignalHistory', () => ({
+    recordSignalHistory: mockRecordSignalHistory,
+}));
 vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     DrizzleAnalysisHistoryRepository: vi.fn().mockImplementation(function () {
         return { pruneAnalysisHistory: mockPruneAnalysisHistory };
@@ -38,7 +43,10 @@ import {
     BATCH_WALL_CLOCK_BUDGET_MS,
     runPrewarmBatch,
 } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
-import { runSeoPrewarmJob } from '@/app/api/cron/seo-prewarm/runSeoPrewarmJob';
+import {
+    runSeoPrewarmJob,
+    SIGNAL_HISTORY_STEP_MAX_MS,
+} from '@/app/api/cron/seo-prewarm/runSeoPrewarmJob';
 
 const NOW = new Date('2026-08-03T15:30:00.000Z');
 
@@ -80,6 +88,12 @@ describe('runSeoPrewarmJob', () => {
             sessionsDeleted: 5,
             sharedAnalysesDeleted: 1,
         });
+        mockRecordSignalHistory.mockResolvedValue({
+            status: 'done',
+            us: { status: 'recorded', sessionDate: '2026-08-03', inserted: 4 },
+            kr: { status: 'skipped' },
+            pruned: 0,
+        });
     });
 
     afterEach(() => {
@@ -92,9 +106,10 @@ describe('runSeoPrewarmJob', () => {
         expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
     });
 
-    it('배치 → 옵션 워밍 → 이력 정리 → 만료 행 정리 → 락 해제 순서로 돈다', async () => {
+    it('신호 이력 → 배치 → 옵션 워밍 → 이력 정리 → 만료 행 정리 → 락 해제 순서로 돈다', async () => {
         await runSeoPrewarmJob('token-1', 1_000);
         const order = [
+            mockRecordSignalHistory,
             runPrewarmBatch,
             warmOptionsLastGood,
             mockPruneAnalysisHistory,
@@ -205,6 +220,49 @@ describe('runSeoPrewarmJob', () => {
 
         it('정리는 여전히 돈다', async () => {
             await runSeoPrewarmJob('token-1', 1_000);
+            expect(mockPruneExpiredRows).toHaveBeenCalledTimes(1);
+        });
+
+        it('락은 여전히 해제한다', async () => {
+            await runSeoPrewarmJob('token-1', 1_000);
+            expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
+        });
+    });
+
+    it('신호 이력은 같은 db로, 자기 상한과 락 예산 끝 중 이른 쪽까지 돌고 결과를 로그한다', async () => {
+        const db = { tag: 'db' };
+        mockGetDatabaseClient.mockReturnValue({ db });
+
+        await runSeoPrewarmJob('token-1', NOW.getTime());
+
+        expect(mockRecordSignalHistory).toHaveBeenCalledWith(db, {
+            budgetEndMs: Math.min(
+                NOW.getTime() + BATCH_WALL_CLOCK_BUDGET_MS,
+                NOW.getTime() + SIGNAL_HISTORY_STEP_MAX_MS
+            ),
+        });
+        expect(console.log).toHaveBeenCalledWith(
+            '[seo-prewarm] signal history done:',
+            expect.stringContaining('"inserted":4')
+        );
+    });
+
+    describe('신호 이력이 던지면', () => {
+        beforeEach(() => {
+            mockRecordSignalHistory.mockRejectedValue(new Error('signals'));
+        });
+
+        it('실패를 로그한다', async () => {
+            await runSeoPrewarmJob('token-1', 1_000);
+            expect(console.error).toHaveBeenCalledWith(
+                '[seo-prewarm] signal history failed:',
+                expect.any(Error)
+            );
+        });
+
+        it('배치와 정리는 여전히 돈다', async () => {
+            await runSeoPrewarmJob('token-1', 1_000);
+            expect(runPrewarmBatch).toHaveBeenCalledTimes(1);
             expect(mockPruneExpiredRows).toHaveBeenCalledTimes(1);
         });
 

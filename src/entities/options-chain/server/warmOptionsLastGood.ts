@@ -1,6 +1,7 @@
 import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { getOptionsWarmWindow } from '../lib/optionsWarmWindow';
 import {
     type OptionsWarmPick,
@@ -100,26 +101,6 @@ async function readCursor(redis: RedisClient): Promise<number> {
     const stored = await redis.get<number | string>(OPTIONS_WARM_CURSOR_KEY);
     const parsed = Number(stored ?? 0);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-}
-
-/**
- * `work`가 `ms` 안에 끝나지 않으면 `onTimeout`을 돌려준다. `work`는 취소되지 않는다
- * (orphan) — 락·워커 보호용이다. 타이머는 항상 정리한다.
- */
-async function withTimeout<T>(
-    work: Promise<T>,
-    ms: number,
-    onTimeout: T
-): Promise<T> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<T>(resolve => {
-        timer = setTimeout(() => resolve(onTimeout), Math.max(ms, 0));
-    });
-    try {
-        return await Promise.race([work, timeout]);
-    } finally {
-        clearTimeout(timer);
-    }
 }
 
 /** 커서를 저장한다. 실패는 흡수한다 — 다음 tick이 이전 커서에서 다시 시작할 뿐이다. */

@@ -393,6 +393,13 @@
       "when": 1794129636838,
       "tag": "0055_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1794739170211,
+      "tag": "0056_signal_events",
+      "breakpoints": true
     }
   ]
 }
