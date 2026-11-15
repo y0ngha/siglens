@@ -137,10 +137,11 @@ function PreviewSummaryText({ summary }: PreviewSummaryTextProps) {
             );
         case 'empty':
             return (
-                <p className="text-sm text-secondary-400">
-                    {t('ReportSymbolsPreview.d406d7')}{' '}
-                    {t('ReportSymbolsPreview.emptyBriefing')}
-                </p>
+                // 두 문장을 코드에서 이어 붙이지 않고 문단을 나눈다 — 문장 간격·어순은 로케일마다 다르다.
+                <div className="space-y-1 text-sm text-secondary-400">
+                    <p>{t('ReportSymbolsPreview.d406d7')}</p>
+                    <p>{t('ReportSymbolsPreview.emptyBriefing')}</p>
+                </div>
             );
     }
 }

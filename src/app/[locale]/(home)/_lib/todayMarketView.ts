@@ -1,6 +1,6 @@
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import type { HomeTodayMarketData, TodayMarketId } from './loadHomeTodayMarket';
 import type { TodaySignalRow } from '@/entities/sector-signal/lib/selectTodaySignals';
+import type { HomeTodayMarketData, TodayMarketId } from './loadHomeTodayMarket';
 
 export type FearGreedMarketLabelKey = 'marketUs' | 'marketKr' | 'marketCrypto';
 export type SignalMarketLabelKey = 'signalsUs' | 'signalsKr';
