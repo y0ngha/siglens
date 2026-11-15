@@ -1,7 +1,7 @@
 [
     {
         "file": "src/app/[locale]/(home)/_lib/loadHomeTodayMarket.ts",
-        "line": 71,
+        "line": 74,
         "reason": "developer-diagnostic",
         "text": "`[home-today-market] ${scope.id} 신호 조회 실패 — 비운 채로 진행한다`"
     },

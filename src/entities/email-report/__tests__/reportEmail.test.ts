@@ -114,6 +114,37 @@ describe('buildReportEmail', () => {
         expect(email.subject).toBe('subject(시그렌즈,10월 8일)');
     });
 
+    it('시장 브리핑은 제목·인사말·표 제목을 브리핑용으로 바꾸고 시장 링크와 관심종목 안내를 싣는다', () => {
+        const email = buildReportEmail({
+            ...INPUT,
+            sections: [],
+            briefRows: [
+                {
+                    brief: briefOf('NVDA'),
+                    pageUrl: 'https://siglens.io/NVDA?utm_source=email',
+                },
+            ],
+            marketBriefing: { marketUrl: 'https://siglens.io/market' },
+        });
+
+        expect(email.subject).toBe('marketSubject(시그렌즈,10월 8일)');
+        for (const body of [email.html, email.text]) {
+            expect(body).toContain('marketHeading');
+            expect(body).toContain('marketIntro(10월 8일)');
+            expect(body).toContain('marketSection');
+            expect(body).toContain('marketHint');
+            expect(body).toContain('https://siglens.io/market');
+            expect(body).not.toContain('sectionBrief');
+        }
+    });
+
+    it('개인 리포트는 브리핑 문구를 싣지 않는다', () => {
+        const email = buildReportEmail(INPUT);
+
+        expect(email.html).not.toContain('marketHint');
+        expect(email.text).not.toContain('marketMore');
+    });
+
     it('원클릭 수신거부 헤더를 단다', () => {
         expect(buildReportEmail(INPUT).headers).toEqual({
             'List-Unsubscribe':

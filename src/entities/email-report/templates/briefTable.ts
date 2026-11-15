@@ -64,7 +64,8 @@ export function briefTableHtml(
     rows: readonly SymbolBriefRow[],
     locale: Locale,
     t: ReportEmailTranslator,
-    signalLabel: SignalLabelResolver
+    signalLabel: SignalLabelResolver,
+    heading: string = t('sectionBrief')
 ): string {
     if (rows.length === 0) return '';
     const body = rows
@@ -79,7 +80,7 @@ export function briefTableHtml(
         })
         .join('');
     return `<div style="background:${COLORS.card};border-radius:12px;padding:24px 32px;margin:0 0 16px;">
-  <h2 style="font-size:16px;margin:0 0 12px;color:${COLORS.heading};">${escapeHtml(t('sectionBrief'))}</h2>
+  <h2 style="font-size:16px;margin:0 0 12px;color:${COLORS.heading};">${escapeHtml(heading)}</h2>
   <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
     <thead><tr>
       <th scope="col" style="${HEAD_CELL}">${escapeHtml(t('briefColSymbol'))}</th>
@@ -97,11 +98,12 @@ export function briefTableLines(
     rows: readonly SymbolBriefRow[],
     locale: Locale,
     t: ReportEmailTranslator,
-    signalLabel: SignalLabelResolver
+    signalLabel: SignalLabelResolver,
+    heading: string = t('sectionBrief')
 ): string[] {
     if (rows.length === 0) return [];
     return [
-        `■ ${t('sectionBrief')}`,
+        `■ ${heading}`,
         ...rows.map(row => {
             const cells = briefRowCells(row, locale, t, signalLabel);
             return `- ${row.brief.symbol} | ${[cells.close, cells.change].filter(Boolean).join(' ')} | ${cells.trend} | ${cells.signals}\n  ${row.pageUrl}`;

@@ -17,6 +17,7 @@ import {
     createSymbolReportSources,
     loadSymbolReport,
 } from './loadSymbolReport';
+import { createMarketPickSources, loadMarketPicks } from './loadMarketPicks';
 import { createSymbolBriefSources, loadSymbolBrief } from './loadSymbolBrief';
 import type { EmailReportBatchDeps } from './runEmailReportBatch';
 
@@ -31,6 +32,7 @@ export function createEmailReportDeps(
     const exclusions = new DrizzleEmailReportExclusionRepository(db);
     const sources = createSymbolReportSources();
     const briefSources = createSymbolBriefSources();
+    const marketPickSources = createMarketPickSources();
     return {
         subscriptions: new DrizzleEmailReportSubscriptionRepository(db),
         deliveries: new DrizzleEmailReportDeliveryRepository(db),
@@ -40,6 +42,7 @@ export function createEmailReportDeps(
         loadReport: (symbol, locale) =>
             loadSymbolReport(symbol, locale, now, sources),
         loadBrief: symbol => loadSymbolBrief(symbol, briefSources),
+        loadMarketPicks: () => loadMarketPicks(marketPickSources),
         getTranslator: getReportEmailTranslator,
         getSignalLabel: getReportSignalLabelResolver,
         dispatcher: createEmailDispatcher(),

@@ -79,6 +79,7 @@ function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
         findExcludedSymbols: vi.fn().mockResolvedValue([]),
         loadReport: vi.fn(async (symbol: string) => report(symbol)),
         loadBrief: vi.fn(async (symbol: string) => brief(symbol)),
+        loadMarketPicks: vi.fn().mockResolvedValue([]),
         getTranslator: vi.fn().mockResolvedValue((key: string) => key),
         getSignalLabel: vi
             .fn()
@@ -173,7 +174,7 @@ describe('runEmailReportBatch', () => {
         expect(counts.alreadyClaimed).toBe(1);
     });
 
-    it('보유도 관심종목도 없으면 보내지 않고 skipped로 기록한다', async () => {
+    it('보유도 관심종목도 없고 시장 브리핑 종목도 없으면 보내지 않고 skipped로 기록한다', async () => {
         const { deps, sent } = makeDeps({
             findHoldings: vi.fn().mockResolvedValue([]),
             findWatchlist: vi.fn().mockResolvedValue([]),
@@ -189,6 +190,71 @@ describe('runEmailReportBatch', () => {
             null
         );
         expect(counts.skipped).toBe(1);
+    });
+
+    it('보유도 관심종목도 없으면 그날 신호 종목으로 시장 브리핑을 보낸다(요약 표만, AI 리포트 없음)', async () => {
+        const { deps, sent } = makeDeps({
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
+            loadMarketPicks: vi.fn().mockResolvedValue(['NVDA', '005930.KS']),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(1);
+        expect(sent[0]!.subject).toBe('marketSubject');
+        expect(sent[0]!.html).toContain('marketHeading');
+        expect(sent[0]!.html).toContain('NVDA');
+        expect(sent[0]!.html).toContain('https://siglens.io/market');
+        expect(deps.loadReport).not.toHaveBeenCalled();
+        expect(deps.loadBrief).toHaveBeenCalledWith('005930.KS');
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'sent',
+            ['NVDA', '005930.KS'],
+            null
+        );
+        expect(counts).toMatchObject({
+            sent: 1,
+            marketBriefings: 1,
+            skipped: 0,
+        });
+    });
+
+    it('시장 브리핑 종목은 회원이 여럿이어도 배치에 한 번만 조회한다', async () => {
+        const { deps, sent } = makeDeps({
+            subscriptions: {
+                findEnabledRecipients: vi
+                    .fn()
+                    .mockResolvedValue([
+                        recipient({ userId: 'a', email: 'a@x.com' }),
+                        recipient({ userId: 'b', email: 'b@x.com' }),
+                    ]),
+            },
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
+            loadMarketPicks: vi.fn().mockResolvedValue(['NVDA']),
+        });
+
+        await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(2);
+        expect(deps.loadMarketPicks).toHaveBeenCalledTimes(1);
+    });
+
+    it('시장 브리핑 종목 조회가 던지면 그 회원은 skipped로 둔다', async () => {
+        const { deps, sent } = makeDeps({
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
+            loadMarketPicks: vi
+                .fn()
+                .mockRejectedValue(new Error('scanner down')),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(0);
+        expect(counts).toMatchObject({ skipped: 1, failed: 0 });
     });
 
     it('회원이 리포트에서 뺀 종목은 메일과 발송 기록에서 빠진다', async () => {
@@ -210,9 +276,10 @@ describe('runEmailReportBatch', () => {
         );
     });
 
-    it('담긴 종목을 전부 빼면 보내지 않고 skipped로 기록한다', async () => {
+    it('담긴 종목을 전부 빼면 시장 브리핑도 보내지 않고 skipped로 기록한다', async () => {
         const { deps, sent } = makeDeps({
             findExcludedSymbols: vi.fn().mockResolvedValue(['AAPL', 'MSFT']),
+            loadMarketPicks: vi.fn().mockResolvedValue(['NVDA']),
         });
 
         const counts = await runEmailReportBatch(deps, NOW);

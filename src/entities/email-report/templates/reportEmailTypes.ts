@@ -45,6 +45,11 @@ export interface BuildReportEmailInput {
     unsubscribePageUrl: string;
     unsubscribeApiUrl: string;
     settingsUrl: string;
+    /**
+     * 보유·관심종목이 없는 회원에게 보내는 시장 신호 브리핑이면 채운다. 이때 `sections`는 비고 `briefRows`가
+     * 그날 신호가 잡힌 대표 종목이다 — 제목·인사말·표 제목이 브리핑용으로 바뀌고 시장 페이지 링크가 붙는다.
+     */
+    marketBriefing?: { readonly marketUrl: string };
     t: ReportEmailTranslator;
     signalLabel: SignalLabelResolver;
 }

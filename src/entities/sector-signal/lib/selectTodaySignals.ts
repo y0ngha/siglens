@@ -1,6 +1,6 @@
 import type { SignalType, StockSignalResult } from '@y0ngha/siglens-core';
 
-/** 홈 "오늘의 시장"의 신호 종목 한 줄. */
+/** 오늘 신호가 잡힌 대표 종목 한 줄 — 홈 "오늘의 시장"과 회원 메일 시장 브리핑이 같이 쓴다. */
 export interface TodaySignalRow {
     readonly symbol: string;
     /** 한글 종목명. 없으면 `null`(표시는 티커로). */
