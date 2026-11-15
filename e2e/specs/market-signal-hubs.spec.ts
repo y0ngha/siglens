@@ -12,14 +12,18 @@ const GOOGLEBOT_UA =
 
 const LD_JSON_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
 
+/**
+ * 페이지 최상위 JSON-LD들의 `@type`. 사이트 공통 블록은 `@graph`(최상위 `@type` 없음)라 건너뛴다 —
+ * 이 스펙은 신호 페이지가 직접 내는 블록만 본다.
+ */
 function jsonLdTypes(html: string): string[] {
-    return Array.from(html.matchAll(LD_JSON_RE), match => {
+    return Array.from(html.matchAll(LD_JSON_RE)).flatMap(match => {
         const body = match[1];
         if (body === undefined) throw new Error('빈 JSON-LD 스크립트');
         const data: unknown = JSON.parse(body);
-        if (typeof data !== 'object' || data === null || !('@type' in data))
-            throw new Error(`@type 없는 JSON-LD: ${body.slice(0, 80)}`);
-        return String(data['@type']);
+        return typeof data === 'object' && data !== null && '@type' in data
+            ? [String(data['@type'])]
+            : [];
     });
 }
 
