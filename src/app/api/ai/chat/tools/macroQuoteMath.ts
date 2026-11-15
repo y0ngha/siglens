@@ -23,6 +23,12 @@ export interface MacroRange52w {
     fromLowPct: number | null;
 }
 
+/** 52주 범위의 한쪽 끝: 값과 그 값이 찍힌 날짜. */
+interface RangeExtreme {
+    value: number;
+    date: string;
+}
+
 const WEEK_DAYS = 7;
 const YEAR_DAYS = 365;
 
@@ -43,10 +49,7 @@ function lastRowOnOrBefore(
     rows: readonly YahooDailyClose[],
     targetDate: string
 ): YahooDailyClose | null {
-    for (let i = rows.length - 1; i >= 0; i--) {
-        if (rows[i]!.date <= targetDate) return rows[i]!;
-    }
-    return null;
+    return rows.findLast(row => row.date <= targetDate) ?? null;
 }
 
 /**
@@ -87,20 +90,20 @@ export function macroRange52w(
     rows: readonly YahooDailyClose[]
 ): MacroRange52w | null {
     const from = addUtcIsoDays(quoteDate, -YEAR_DAYS);
-    let high: { value: number; date: string } | null = null;
-    let low: { value: number; date: string } | null = null;
-    for (const row of rows) {
-        if (row.date < from || row.date > quoteDate) continue;
-        const rowHigh = row.high ?? row.close;
-        const rowLow = row.low ?? row.close;
-        if (high === null || rowHigh >= high.value)
-            high = { value: rowHigh, date: row.date };
-        if (low === null || rowLow <= low.value)
-            low = { value: rowLow, date: row.date };
-    }
-    if (high === null || low === null) return null;
-    if (price > high.value) high = { value: price, date: quoteDate };
-    if (price < low.value) low = { value: price, date: quoteDate };
+    const inWindow = rows.filter(
+        row => row.date >= from && row.date <= quoteDate
+    );
+    if (inWindow.length === 0) return null;
+    // `>=`·`<=`라 같은 값이 여러 날이면 뒤(최근) 행이 이긴다 — `rows`는 오래된 순이다.
+    const rowHigh = inWindow
+        .map(row => ({ value: row.high ?? row.close, date: row.date }))
+        .reduce((best, next) => (next.value >= best.value ? next : best));
+    const rowLow = inWindow
+        .map(row => ({ value: row.low ?? row.close, date: row.date }))
+        .reduce((best, next) => (next.value <= best.value ? next : best));
+    const live: RangeExtreme = { value: price, date: quoteDate };
+    const high = price > rowHigh.value ? live : rowHigh;
+    const low = price < rowLow.value ? live : rowLow;
     return {
         high: high.value,
         highDate: high.date,

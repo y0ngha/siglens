@@ -125,6 +125,9 @@ function mapActions(raw: unknown): YahooRawAnalystAction[] {
 /**
  * 최신순으로 정렬한 뒤 최근 90일 행 + 최신 15건의 합집합만 남긴다(둘 다 앞쪽 접두라 합집합은 더 긴 쪽이다).
  * 날짜를 못 읽는 행은 어느 창에도 못 들어가므로 버린다. `now`는 주입한다(테스트 가능성).
+ *
+ * 날짜를 UTC로 자르는 것은 의도다: 이 값은 거래 세션의 일봉 날짜가 아니라 등급 변경이 발표된 시각이라
+ * 거래소 시간대 규칙(SERVER.md#SA-21)의 대상이 아니고, 90일 창의 경계에서 하루 차이는 보존 범위에만 영향을 준다.
  */
 export function trimActionsForCache(
     rows: readonly YahooRawAnalystAction[],

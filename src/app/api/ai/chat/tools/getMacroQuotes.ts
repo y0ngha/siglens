@@ -105,20 +105,19 @@ export const getMacroQuotesTool: ToolExecutor = async args => {
         logToolDegrade('get_macro_quotes', 'quotes', error);
         return new Map<string, YahooMacroQuote | null>();
     });
-    const settled = await Promise.allSettled(
+    // 종목마다 자기 실패를 자기 자리에서 `found: false`로 바꾼다 — 한 종목의 실패가 나머지를 비우지 않는다.
+    const items = await Promise.all(
         instruments.map(instrument =>
             loadInstrument(
                 instrument,
                 quotes.get(INSTRUMENTS[instrument].yahooSymbol) ?? null,
                 nowIso
-            )
+            ).catch((error: unknown) => {
+                logToolDegrade('get_macro_quotes', instrument, error);
+                return { instrument, found: false as const };
+            })
         )
     );
-    const items = settled.map((result, i) => {
-        if (result.status === 'fulfilled') return result.value;
-        logToolDegrade('get_macro_quotes', instruments[i]!, result.reason);
-        return { instrument: instruments[i]!, found: false as const };
-    });
     return roundNumbersDeep({
         asOf: nowIso,
         source: 'Yahoo Finance (futures and FX quotes, delayed)',

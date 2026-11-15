@@ -67,16 +67,6 @@ export interface BuildAnalystViewsInput {
     includeEarnings: boolean;
 }
 
-function emptyTally(): AnalystActionTally {
-    return {
-        upgrades: 0,
-        downgrades: 0,
-        initiations: 0,
-        targetRaises: 0,
-        targetCuts: 0,
-    };
-}
-
 function positiveOrNull(value: number | null | undefined): number | null {
     return typeof value === 'number' && Number.isFinite(value) && value > 0
         ? value
@@ -119,16 +109,18 @@ function tallyWithin(
     fromDate: string,
     toDate: string
 ): AnalystActionTally {
-    const tally = emptyTally();
-    for (const row of rows) {
-        if (row.date < fromDate || row.date > toDate) continue;
-        if (row.action === 'upgrade') tally.upgrades += 1;
-        else if (row.action === 'downgrade') tally.downgrades += 1;
-        else if (row.action === 'initiate') tally.initiations += 1;
-        if (row.targetAction === 'raise') tally.targetRaises += 1;
-        else if (row.targetAction === 'lower') tally.targetCuts += 1;
-    }
-    return tally;
+    const inWindow = rows.filter(
+        row => row.date >= fromDate && row.date <= toDate
+    );
+    const count = (matches: (row: AnalystAction) => boolean): number =>
+        inWindow.filter(matches).length;
+    return {
+        upgrades: count(row => row.action === 'upgrade'),
+        downgrades: count(row => row.action === 'downgrade'),
+        initiations: count(row => row.action === 'initiate'),
+        targetRaises: count(row => row.targetAction === 'raise'),
+        targetCuts: count(row => row.targetAction === 'lower'),
+    };
 }
 
 function buildRatings(

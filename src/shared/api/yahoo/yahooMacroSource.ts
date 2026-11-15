@@ -103,22 +103,23 @@ export function mapDailyCloses(raw: unknown): YahooMacroDaily {
         quotes?: unknown;
     };
     const timeZone = resolvedTimeZone(record.meta?.exchangeTimezoneName);
-    const rows: YahooDailyClose[] = [];
-    if (Array.isArray(record.quotes)) {
-        for (const item of record.quotes) {
-            if (typeof item !== 'object' || item === null) continue;
-            const q = item as Record<string, unknown>;
-            const close = toFiniteNumber(q.close);
-            const iso = toIsoOrNull(q.date);
-            if (close === null || iso === null) continue;
-            rows.push({
+    const quotes: unknown[] = Array.isArray(record.quotes) ? record.quotes : [];
+    const rows = quotes.flatMap((item): YahooDailyClose[] => {
+        if (typeof item !== 'object' || item === null) return [];
+        // Safe cast: 바로 위에서 null이 아닌 object임을 확인했고, 아래에서 필드마다 좁혀 읽는다.
+        const q = item as Record<string, unknown>;
+        const close = toFiniteNumber(q.close);
+        const iso = toIsoOrNull(q.date);
+        if (close === null || iso === null) return [];
+        return [
+            {
                 date: zonedDate(new Date(iso), timeZone),
                 close,
                 high: toFiniteNumber(q.high),
                 low: toFiniteNumber(q.low),
-            });
-        }
-    }
+            },
+        ];
+    });
     return {
         timeZone,
         rows: rows.toSorted((a, b) => a.date.localeCompare(b.date)),
