@@ -5,9 +5,9 @@ import type {
 } from '@/shared/api/yahoo/yahooAnalystSource';
 import {
     buildAnalystViews,
-    TARGET_DISAGREE_THRESHOLD_PCT,
     type BuildAnalystViewsInput,
 } from '@/entities/analyst-views/lib/buildAnalystViews';
+import { TARGET_DISAGREE_THRESHOLD_PCT } from '@/entities/analyst-views/model';
 
 const NOW = new Date('2026-11-15T12:00:00Z');
 

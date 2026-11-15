@@ -336,6 +336,20 @@ zone, never from `toISOString().slice(0, 10)`: the UTC slice dates those bars a 
 - ❌ `new Date(bar.time * 1000).toISOString().slice(0, 10)` for a Europe/London FX bar.
 - ✅ Format the instant with `Intl.DateTimeFormat` and the instrument's `timeZone`, then test it with a summer-time bar.
 
+<a id="SA-22"></a>
+
+#### SA-22 — List every consumer before changing a provider method's failure mode
+
+Changing a provider method to throw where it used to return a value (or the reverse) changes every caller, including the
+ones inside `@y0ngha/siglens-core`: the library calls the app's provider implementations, for example its
+fundamental analysis reads provider methods inside a bare `Promise.all`, so one new throw fails the whole analysis.
+Grep the method name in the app and in `node_modules/@y0ngha/siglens-core/dist`, and guard or pin each caller before
+changing the behaviour. When a throw is only meant to keep a fallback out of a cache, prefer returning the fallback
+tagged as degraded with a short TTL.
+
+- ❌ A decorator starts throwing on a second-source failure; the three app callers are guarded, the library path is not.
+- ✅ The fallback value is tagged and cached briefly; no caller sees a new failure mode.
+
 ---
 
 ## Concurrency, Batching & Background Work

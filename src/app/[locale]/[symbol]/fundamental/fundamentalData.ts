@@ -8,7 +8,6 @@ import type {
     FundamentalFinancialScoresInput,
     FundamentalCashFlowInput,
     FundamentalAnalystEstimateInput,
-    FundamentalGradesConsensusInput,
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
@@ -174,12 +173,6 @@ export const getAnalystEstimates = (
     symbol: string
 ): Promise<FundamentalAnalystEstimateInput | null> =>
     getFundamentalDataProvider(symbol).getAnalystEstimates(symbol);
-
-/** 투자의견 컨센서스(향후 방향 카드). */
-export const getGradesConsensus = (
-    symbol: string
-): Promise<FundamentalGradesConsensusInput | null> =>
-    getFundamentalDataProvider(symbol).getGradesConsensus(symbol);
 
 /** 목표주가 컨센서스(향후 방향 카드). */
 export const getPriceTargetConsensus = (

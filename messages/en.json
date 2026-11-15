@@ -4476,6 +4476,9 @@
                 "insiderKr": "{reports, plural, one {# executive or major shareholder ownership report was} other {# executive and major shareholder ownership reports were}} filed by {reporters, plural, one {# reporter} other {# reporters}}, with a net change of {net} shares.",
                 "insiderKrSource": "DART filings",
                 "insiderKrSourceDated": "DART filings, latest receipt {date}",
+                "nextEarningsConfirmed": "The next earnings report is confirmed for {date}, {days, plural, one {# day} other {# days}} from now.",
+                "nextEarningsConfirmedSession": "The next earnings report is confirmed for {date} ({session, select, before_market {before the market opens} during_market {during market hours} other {after the market closes}}), {days, plural, one {# day} other {# days}} from now.",
+                "nextEarningsConfirmedSource": "Date confirmed by the company (aggregated by Yahoo Finance)",
                 "shortBoth": "Short interest is {pct}% of float, about {days} days to cover at average daily volume.",
                 "shortPct": "Short interest is {pct}% of float.",
                 "shortDays": "Short interest is about {days} days to cover at average daily volume.",
@@ -4521,7 +4524,11 @@
                 "dea4fe": "This indicator measures the level of growth the market expects.\n                                        ",
                 "ebde29": "More buy recommendations indicate a stronger positive market outlook.\n                                ",
                 "f23e65": "The average of revenue forecasts by analysts.\n                                        ",
-                "f7b7b3": "3 Months"
+                "f7b7b3": "3 Months",
+                "ratingsAnalystBasis": "Based on {count, plural, one {# analyst} other {# analysts}} currently covering this stock",
+                "targetSourcesDisagree": "Price targets differ by more than {pct}% between data providers. The figures above are FMP's; this line is Yahoo Finance's.",
+                "yahooTargetMean": "Yahoo Finance average target: {amount}",
+                "yahooTargetMeanCount": "Yahoo Finance average target: {amount} · {count, plural, one {# analyst} other {# analysts}}"
             },
             "GrowthChart": {
                 "06ae38": "Revenue Growth Rate",

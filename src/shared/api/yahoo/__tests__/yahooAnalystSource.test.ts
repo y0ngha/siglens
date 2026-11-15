@@ -307,6 +307,58 @@ describe('getYahooAnalystSummary', () => {
         warn.mockRestore();
     });
 
+    it.each([
+        ['Quote not found for ticker symbol: ZZZZ', undefined],
+        ['Quote not found for symbol: ZZZZ', undefined],
+        ['No data found, symbol may be delisted', undefined],
+        ['Not Found', 404],
+    ])(
+        '심볼을 서비스할 수 없다는 영구 응답(%s, code %s)은 빈 요약으로 캐시된다',
+        async (message, code) => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            getOrSetCache.mockImplementation(
+                async (_k: string, _t: number, fetcher: Fetcher) => fetcher()
+            );
+            const error = Object.assign(
+                new Error(message),
+                code === undefined ? {} : { code, name: 'HTTPError' }
+            );
+            quoteSummary.mockRejectedValue(error);
+            const r = await getYahooAnalystSummary('ZZZZ', {
+                includeActions: false,
+            });
+            expect(r).not.toBeNull();
+            expect(r?.trend).toBeNull();
+            expect(warn).not.toHaveBeenCalled();
+            warn.mockRestore();
+        }
+    );
+
+    it.each([
+        [
+            'HTTP 429',
+            Object.assign(new Error('Too Many Requests'), {
+                name: 'HTTPError',
+                code: 429,
+            }),
+        ],
+        [
+            'HTTP 500',
+            Object.assign(new Error('boom'), { name: 'HTTPError', code: 500 }),
+        ],
+        ['timeout', new Error('fetch failed')],
+    ])('%s는 여전히 실패(null)다', async (_label, error) => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        getOrSetCache.mockImplementation(
+            async (_k: string, _t: number, fetcher: Fetcher) => fetcher()
+        );
+        quoteSummary.mockRejectedValue(error);
+        await expect(
+            getYahooAnalystSummary('AAPL', { includeActions: false })
+        ).resolves.toBeNull();
+        warn.mockRestore();
+    });
+
     it('빈 요약은 includeActions=false면 actions가 null이다', async () => {
         quoteSummary.mockRejectedValue(
             new Error('No fundamentals data found for symbol: SPY')

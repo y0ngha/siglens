@@ -17,6 +17,7 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 import type { FundamentalProviderWithRawPeers } from '@/shared/api/fmp/fundamentalProvider.types';
+import type { GradesConsensusWithSource } from '@/shared/api/fmp/gradesConsensusSource';
 import type { FmpEarningsReportItem } from '@/shared/api/fmp/fundamentalClient';
 import { getYahooFundamentals } from './yahooFundamentalSource';
 import {
@@ -111,7 +112,14 @@ export class YahooFundamentalProvider implements FundamentalProviderWithRawPeers
     async getGradesConsensus(
         symbol: string
     ): Promise<FundamentalGradesConsensusInput | null> {
-        return mapGradesConsensus(await getYahooFundamentals(symbol));
+        const grades = mapGradesConsensus(await getYahooFundamentals(symbol));
+        if (grades === null) return null;
+        // 이 프로바이더 자체가 Yahoo의 현재 분포다 — 미국 경로와 같은 `source` 표시를 단다.
+        const tagged: GradesConsensusWithSource = {
+            ...grades,
+            source: 'yahoo',
+        };
+        return tagged;
     }
 
     async getPriceTargetConsensus(

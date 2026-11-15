@@ -4476,6 +4476,9 @@
                 "insiderKr": "役員・主要株主の持分変動報告は{reports}件（報告者{reporters}名）で、純変動は{net}株です。",
                 "insiderKrSource": "DART公示",
                 "insiderKrSourceDated": "DART公示、最新受付{date}",
+                "nextEarningsConfirmed": "次回決算発表日は{date}に確定しており、あと{days}日です。",
+                "nextEarningsConfirmedSession": "次回決算発表日は{date}（{session, select, before_market {寄り付き前} during_market {取引時間中} other {引け後}}）に確定しており、あと{days}日です。",
+                "nextEarningsConfirmedSource": "会社が確定した日程です（Yahoo Finance集計）",
                 "shortBoth": "空売り残高は浮動株の{pct}%で、1日平均出来高で買い戻すのに{days}日かかる規模です。",
                 "shortPct": "空売り残高は浮動株の{pct}%です。",
                 "shortDays": "空売り残高は1日平均出来高で買い戻すのに{days}日かかる規模です。",
@@ -4521,7 +4524,11 @@
                 "dea4fe": "市場が期待する成長水準を測ることができる\n                                        指標です。",
                 "ebde29": "買い意見が多いほど、市場の肯定的な見方が\n                                強いことを意味します。",
                 "f23e65": "アナリストが予測した売上高の\n                                        平均値です。",
-                "f7b7b3": "3ヶ月"
+                "f7b7b3": "3ヶ月",
+                "ratingsAnalystBasis": "現在この銘柄をカバーするアナリスト{count}名ベース",
+                "targetSourcesDisagree": "集計元によって目標株価が{pct}%以上異なります。上の数値はFMP集計、この行はYahoo Finance集計です。",
+                "yahooTargetMean": "Yahoo Finance集計の平均目標株価：{amount}",
+                "yahooTargetMeanCount": "Yahoo Finance集計の平均目標株価：{amount}・アナリスト{count}名"
             },
             "GrowthChart": {
                 "06ae38": "売上高成長率",

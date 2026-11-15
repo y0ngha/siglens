@@ -52,6 +52,8 @@ function input(
         grades: null,
         earnings: null,
         nextEarningsDate: null,
+        nextEarningsConfirmed: null,
+        nextEarningsSession: null,
         ...overrides,
     };
 }
@@ -490,10 +492,53 @@ describe('buildFundamentalFacts', () => {
                     kind: 'nextEarnings',
                     date: '2026-11-20',
                     daysUntil: 13,
+                    confirmed: null,
+                    session: null,
                     lastSurprisePct: null,
                     lastDate: '2026-08-20',
                 },
             ]);
+        });
+
+        it('확정일의 세션을 사실에 싣는다', () => {
+            const facts = buildFundamentalFacts(
+                input({
+                    nextEarningsDate: '2026-11-20',
+                    nextEarningsConfirmed: true,
+                    nextEarningsSession: 'after_market',
+                    earnings: [],
+                })
+            );
+            expect(facts[0]).toMatchObject({
+                kind: 'nextEarnings',
+                confirmed: true,
+                session: 'after_market',
+            });
+        });
+
+        it('확정이지만 세션을 모르면 session은 null', () => {
+            const facts = buildFundamentalFacts(
+                input({
+                    nextEarningsDate: '2026-11-20',
+                    nextEarningsConfirmed: true,
+                    earnings: [],
+                })
+            );
+            expect(facts[0]).toMatchObject({ confirmed: true, session: null });
+        });
+
+        it('확정이 아니면(추정·모름) 세션이 들어와도 싣지 않는다', () => {
+            for (const confirmed of [false, null]) {
+                const facts = buildFundamentalFacts(
+                    input({
+                        nextEarningsDate: '2026-11-20',
+                        nextEarningsConfirmed: confirmed,
+                        nextEarningsSession: 'before_market',
+                        earnings: [],
+                    })
+                );
+                expect(facts[0]).toMatchObject({ confirmed, session: null });
+            }
         });
     });
 

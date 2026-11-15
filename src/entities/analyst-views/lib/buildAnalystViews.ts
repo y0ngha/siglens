@@ -19,13 +19,11 @@ import type {
     AnalystViews,
     EarningsSession,
 } from '../model';
+import { targetGapPct, targetsDisagree } from './targetGap';
 import { etWallClock } from '@/shared/api/market/usSessionClock';
 import { MINUTES_PER_HOUR } from '@/shared/config/time';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
-
-/** 두 출처 목표가 차이가 이 값(%)을 넘으면 `sourcesDisagree`다. 정확히 같으면 불일치가 아니다. */
-export const TARGET_DISAGREE_THRESHOLD_PCT = 10;
 
 const TALLY_WINDOWS_DAYS = { last30d: 30, last90d: 90 } as const;
 
@@ -208,10 +206,7 @@ export function buildAnalystViews(input: BuildAnalystViewsInput): AnalystViews {
         yahoo && yahoo.targets.mean !== null ? yahoo.targets : null;
     const fmpTargets = buildFmpTargets(fmp);
     const yahooMean = yahooTargets?.mean ?? null;
-    const gapPct =
-        fmpTargets?.consensus != null && yahooMean !== null && yahooMean > 0
-            ? ((fmpTargets.consensus - yahooMean) / yahooMean) * 100
-            : null;
+    const gapPct = targetGapPct(fmpTargets?.consensus, yahooMean);
 
     // 이력을 읽지 못했으면(요청 안 함, 또는 Yahoo 실패) 0건 집계를 내지 않는다 — "변경 없음"으로 읽히기 때문이다.
     const historyRows = input.includeActions ? yahoo?.actions : null;
@@ -233,9 +228,7 @@ export function buildAnalystViews(input: BuildAnalystViewsInput): AnalystViews {
             yahoo: yahooTargets,
             fmp: fmpTargets,
             gapPct,
-            sourcesDisagree:
-                gapPct !== null &&
-                Math.abs(gapPct) > TARGET_DISAGREE_THRESHOLD_PCT,
+            sourcesDisagree: targetsDisagree(gapPct),
         },
         ratings: buildRatings(yahoo),
         actions: {

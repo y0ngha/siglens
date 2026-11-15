@@ -102,3 +102,16 @@ export interface AnalystViews {
     earnings: AnalystEarningsHint | null;
     degraded: AnalystSource[];
 }
+
+/** 두 출처 목표가 차이가 이 값(%)을 넘으면 불일치다. 정확히 같으면 불일치가 아니다. */
+export const TARGET_DISAGREE_THRESHOLD_PCT = 10;
+
+/**
+ * 펀더멘털 탭이 쓰는 Yahoo 목표가 요약 — 직렬화 가능한 최소 모양(전체 `AnalystViews`를 캐시·프롭으로
+ * 넘기지 않는다). 불일치 여부는 담지 않는다: 화면이 실제로 보여 주는 FMP 컨센서스와 이 평균으로 렌더 때 계산한다
+ * (`targetsDisagree`) — 따로 캐시된 두 값 사이에서 낡은 플래그가 남지 않게 한다.
+ */
+export interface AnalystTargetsSummary {
+    yahooMean: number;
+    yahooAnalysts: number | null;
+}

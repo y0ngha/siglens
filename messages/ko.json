@@ -4618,6 +4618,9 @@
                 "insiderUsSource": "SEC Form 4 기준",
                 "lastSurprise": "직전 발표({date})의 EPS는 예상치 대비 {pct}였습니다.",
                 "nextEarnings": "다음 실적 발표 예정일은 {date}이고, {days}일 남았습니다.",
+                "nextEarningsConfirmed": "다음 실적 발표일은 {date}로 확정됐고, {days}일 남았습니다.",
+                "nextEarningsConfirmedSession": "다음 실적 발표일은 {date}({session, select, before_market {장 시작 전} during_market {장중} other {장 마감 후}})로 확정됐고, {days}일 남았습니다.",
+                "nextEarningsConfirmedSource": "회사가 확정한 일정입니다(Yahoo Finance 집계)",
                 "nextEarningsSource": "예상 일정이라 회사 공지에 따라 바뀔 수 있습니다",
                 "shortBoth": "공매도 잔고는 유통주식의 {pct}%이고, 하루 평균 거래량으로 다 갚는 데 {days}일이 걸리는 규모입니다.",
                 "shortDays": "공매도 잔고는 하루 평균 거래량으로 다 갚는 데 {days}일이 걸리는 규모입니다.",
@@ -4657,7 +4660,11 @@
                 "dea4fe": "시장이 기대하는 성장 수준을 가늠할 수\n                                        있는 지표예요.",
                 "ebde29": "매수 의견이 많을수록 시장의 긍정적 시각이\n                                강하다는 뜻이에요.",
                 "f23e65": "애널리스트들이 예측한 매출의\n                                        평균값이에요.",
-                "f7b7b3": "3개월"
+                "f7b7b3": "3개월",
+                "ratingsAnalystBasis": "현재 이 종목을 다루는 애널리스트 {count}명 기준",
+                "targetSourcesDisagree": "집계 기관에 따라 목표가가 {pct}% 넘게 다릅니다. 위 수치는 FMP 집계, 이 줄은 Yahoo Finance 집계입니다.",
+                "yahooTargetMean": "Yahoo Finance 집계 평균 {amount}",
+                "yahooTargetMeanCount": "Yahoo Finance 집계 평균 {amount} · 애널리스트 {count}명"
             },
             "GrowthChart": {
                 "06ae38": "매출 성장률",

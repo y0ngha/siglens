@@ -39,9 +39,12 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  * `get_analyst_views`·`get_macro_quotes`(2026-11): LLM은 부르지 않지만 Yahoo Finance의 비공식 엔드포인트
  *   (`quoteSummary`·선물/환율 `quote`·`chart`)를 읽는다. Yahoo는 재배포 약관이 없어 제3자 개발자에게 그대로
  *   내보내면 라이선스 위험이 커서 **공개 API에서는 제외**한다. SiglensAI 에이전트에서만 쓴다.
- *   `get_fundamentals`는 공개 API에 남지만, 새 Yahoo 보강(투자의견 분포 교체·`priceTargetYahoo`·실적 세션·대체 날짜
- *   등)은 `allowUnofficialSources: false`일 때 도구가 Yahoo를 부르지도 내보내지도 않는다 — 공개 API에서는
- *   이 변경 전의 출처(FMP 프로바이더, 한국 종목은 기존 Yahoo 프로바이더)와 응답 모양 그대로다.
+ *   `get_fundamentals`는 공개 API에 남지만, 새 Yahoo 보강 필드(`consensusAnalysts`·`consensusSource`·
+ *   `priceTargetSource`·`priceTargetYahoo`·`targetSourcesDisagree`·실적 세션·대체 날짜 등)는
+ *   `allowUnofficialSources: false`일 때 도구가 Yahoo를 부르지도 내보내지도 않는다. 미국 종목의 투자의견 건수도
+ *   Yahoo 우선인 프로바이더 메서드가 아니라 FMP 자체 값(`getFmpGradesConsensus`, 원래 Redis 키
+ *   `fundamental:grades-consensus:<SYM>`)을 읽는다 — 미국 종목의 공개 `get_fundamentals` 출력은 이 변경 전과
+ *   같다(FMP 건수, 새 키 없음). 한국 종목은 원래 Yahoo 프로바이더라 그대로다. `consensus`에는 다섯 건수만 싣는다.
  *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만

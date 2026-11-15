@@ -4476,6 +4476,9 @@
                 "insiderKr": "高管及主要股东持股变动报告{reports}份（报告人{reporters}名），净变动{net}股。",
                 "insiderKrSource": "DART公告",
                 "insiderKrSourceDated": "DART公告，最新受理{date}",
+                "nextEarningsConfirmed": "下次财报发布日已确定为{date}，还有{days}天。",
+                "nextEarningsConfirmedSession": "下次财报发布日已确定为{date}（{session, select, before_market {开盘前} during_market {盘中} other {收盘后}}），还有{days}天。",
+                "nextEarningsConfirmedSource": "公司已确认的日程（Yahoo Finance汇总）",
                 "shortBoth": "空头持仓占流通股的{pct}%，按日均成交量回补约需{days}天。",
                 "shortPct": "空头持仓占流通股的{pct}%。",
                 "shortDays": "空头持仓按日均成交量回补约需{days}天。",
@@ -4521,7 +4524,11 @@
                 "dea4fe": "衡量市场预期增长水平的指标。",
                 "ebde29": "买入意见越多，意味着市场持有的积极看法越强。",
                 "f23e65": "分析师预测的营收平均值。",
-                "f7b7b3": "3个月"
+                "f7b7b3": "3个月",
+                "ratingsAnalystBasis": "基于目前覆盖该股票的{count}位分析师",
+                "targetSourcesDisagree": "不同汇总机构的目标价相差超过{pct}%。上方数值为FMP汇总，本行为Yahoo Finance汇总。",
+                "yahooTargetMean": "Yahoo Finance汇总平均目标价：{amount}",
+                "yahooTargetMeanCount": "Yahoo Finance汇总平均目标价：{amount} · {count}位分析师"
             },
             "GrowthChart": {
                 "06ae38": "营收增长率",

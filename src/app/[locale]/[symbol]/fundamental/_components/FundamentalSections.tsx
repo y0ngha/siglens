@@ -2,7 +2,6 @@ import {
     getAnalystEstimates,
     getCashFlowStatement,
     getFinancialScores,
-    getGradesConsensus,
     getIncomeStatementGrowth,
     getKeyMetricsTtm,
     getPriceTargetConsensus,
@@ -11,6 +10,17 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
+import {
+    targetGapPct,
+    targetsDisagree,
+} from '@/entities/analyst-views/lib/targetGap';
+import { loadAnalystTargetsSummary } from '@/entities/analyst-views/server/loadAnalystTargetsSummary';
+import { readGradesSource } from '@/shared/api/fmp/gradesConsensusSource';
+import {
+    loadPageGradesConsensus,
+    type PageGradesConsensus,
+} from '@/shared/api/fmp/loadPageGradesConsensus';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { loadProfileDescription } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
@@ -66,6 +76,56 @@ function loadSection<T, F>(
         await shortenRevalidateForRuntimeDegrade();
         return fallback;
     });
+}
+
+/**
+ * `loadSection`의 짝: 페이지 **핵심 내용이 아닌 보강**(있으면 좋은 한 줄)용이다. 같은 `staticSymbolCache`
+ * 래핑이지만 실패했을 때 로그를 `console.warn`으로만 남기고 **revalidate를 낮추지 않는다** — 보강 하나가
+ * 장애 동안 페이지 전체를 5분마다 재렌더하게 만들면 안 된다. 로더가 던졌으므로 데이터 캐시에는 남지 않고,
+ * 다음 ISR 재생성이 다시 시도한다. 그때까지 페이지는 그 줄 없이 렌더된다. 핵심 섹션(`loadSection`)은 빈 카드가
+ * 굳지 않게 revalidate를 낮추지만, 보강은 없어도 페이지가 온전하므로 낮추지 않는다.
+ */
+function loadOptionalSection<T, F>(
+    key: string,
+    symbol: string,
+    load: () => Promise<T>,
+    failureLog: string,
+    fallback: F
+): Promise<T | F> {
+    return staticSymbolCache(
+        [key, symbol],
+        symbol,
+        load,
+        [],
+        SECONDS_PER_DAY
+    ).catch((error: unknown): F => {
+        console.warn(failureLog, error);
+        return fallback;
+    });
+}
+
+/**
+ * 투자의견 분포 로더. 캐시 엔트리(`fundamental:grades-consensus-v2`)는 `getFundamentalFacts`와
+ * `loadPageGradesConsensus`로 공유한다.
+ *
+ * - Yahoo 실패로 FMP 누적 분포가 내려온 경우(`yahooFailed`): 값은 그려 주되 인원 수 줄은 숨기고(출처 `fmp`),
+ *   이 렌더의 revalidate를 낮춘다 — 틀린 누적값이 하루 굳지 않고 몇 분 뒤 재생성된다(프로바이더의 10분 Redis
+ *   엔트리가 재생성마다 Yahoo를 다시 치는 것을 막는다).
+ * - 진짜 실패(FMP 오류): `loadSection`과 같다 — `null` + revalidate 하향.
+ */
+async function loadGradesSection(symbol: string): Promise<PageGradesConsensus> {
+    try {
+        const result = await loadPageGradesConsensus(symbol);
+        if (result.yahooFailed) await shortenRevalidateForRuntimeDegrade();
+        return result;
+    } catch (error) {
+        console.error(
+            '[FutureDirectionSection] getGradesConsensus failed, degrading to null:',
+            error
+        );
+        await shortenRevalidateForRuntimeDegrade();
+        return { grades: null, yahooFailed: false };
+    }
 }
 
 /**
@@ -182,45 +242,62 @@ export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     );
 }
 
-/** 향후 방향 카드 — 네 로더를 병렬로 읽고, 각각 실패하면 그 값만 `null`이다. */
+/**
+ * 향후 방향 카드 — 다섯 로더를 병렬로 읽고, 각각 실패하면 그 값만 `null`이다.
+ *
+ * `analystTargets`(Yahoo 집계 목표가 줄)는 한국 종목에서 부르지 않는다 — 한국 프로바이더가 이미 Yahoo라
+ * 나란히 보일 값이 없다. 로더는 Yahoo 실패 때 던지지만 보강이라 `loadOptionalSection`이 revalidate를 낮추지 않는다.
+ */
 export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
-    const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
-        loadSection(
-            'fundamental:estimates',
-            symbol,
-            () => getAnalystEstimates(symbol),
-            '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
-            null
-        ),
-        loadSection(
-            'fundamental:grades-consensus',
-            symbol,
-            () => getGradesConsensus(symbol),
-            '[FutureDirectionSection] getGradesConsensus failed, degrading to null:',
-            null
-        ),
-        loadSection(
-            'fundamental:pt-consensus',
-            symbol,
-            () => getPriceTargetConsensus(symbol),
-            '[FutureDirectionSection] getPriceTargetConsensus failed, degrading to null:',
-            null
-        ),
-        loadSection(
-            'fundamental:pt-summary',
-            symbol,
-            () => getPriceTargetSummary(symbol),
-            '[FutureDirectionSection] getPriceTargetSummary failed, degrading to null:',
-            null
-        ),
-    ]);
+    const [estimates, gradesResult, ptConsensus, ptSummary, analystTargets] =
+        await Promise.all([
+            loadSection(
+                'fundamental:estimates',
+                symbol,
+                () => getAnalystEstimates(symbol),
+                '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
+                null
+            ),
+            loadGradesSection(symbol),
+            loadSection(
+                'fundamental:pt-consensus',
+                symbol,
+                () => getPriceTargetConsensus(symbol),
+                '[FutureDirectionSection] getPriceTargetConsensus failed, degrading to null:',
+                null
+            ),
+            loadSection(
+                'fundamental:pt-summary',
+                symbol,
+                () => getPriceTargetSummary(symbol),
+                '[FutureDirectionSection] getPriceTargetSummary failed, degrading to null:',
+                null
+            ),
+            isKrEquitySymbol(symbol)
+                ? Promise.resolve(null)
+                : loadOptionalSection(
+                      'fundamental:analyst-views-lite',
+                      symbol,
+                      () => loadAnalystTargetsSummary(symbol),
+                      '[FutureDirectionSection] loadAnalystTargetsSummary failed, degrading to null:',
+                      null
+                  ),
+        ]);
+    // 불일치는 **화면에 실린 두 값**(FMP 컨센서스·Yahoo 평균)으로 렌더 때 계산한다. 따로 캐시된 엔트리의
+    // 플래그를 쓰면 한쪽만 갱신됐을 때 낡은 안내가 남는다.
+    const targetSourcesDisagree = targetsDisagree(
+        targetGapPct(ptConsensus?.targetConsensus, analystTargets?.yahooMean)
+    );
     return (
         <FutureDirectionCard
             symbol={symbol}
             estimates={estimates}
-            grades={grades}
+            grades={gradesResult.grades}
+            gradesSource={readGradesSource(gradesResult.grades)}
             ptConsensus={ptConsensus}
             ptSummary={ptSummary}
+            analystTargets={analystTargets}
+            targetSourcesDisagree={targetSourcesDisagree}
         />
     );
 }

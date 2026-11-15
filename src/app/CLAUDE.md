@@ -87,6 +87,9 @@ on-demand ISR)를 함께 export해야 빌드에서 `● (SSG)`로 전환된다. 
 
 일시적으로 degraded된 값(예: 번역 누락으로 원문을 대신 보여 준 설명)이 전체 ISR 창 동안 캐시되면 실제 값이 준비된 뒤에도 갱신되지 않는다. degraded 결과는 전체 revalidate가 아니라 **짧은 degrade revalidate**를 쓴다.
 
+- **소스와 HTML 사이의 모든 캐시 계층에서** 지킨다. 안쪽(Redis 엔트리)만 짧은 TTL을 주고 바깥(페이지 단위 data cache·ISR HTML)이 같은 값을 전체 창 동안 저장하면 소용없다. degrade 표식은 바깥 계층도 읽어야 하며, 표식이 붙은 값은 data cache 스코프 안에서 던져 저장되지 않게 하고 호출자가 표식을 받아 그 렌더의 revalidate를 낮춘다(`shortenRevalidateForRuntimeDegrade`).
+- **선택적 보강은 revalidate를 낮추지 않는 로더로 읽는다.** 핵심 콘텐츠만 페이지를 degrade시킨다. 보강 소스 장애까지 revalidate를 낮추면 장애가 전 종목의 재생성 루프가 된다. ❌ 보강을 revalidate를 낮추는 로더로 읽음 ✅ `fundamental/_components/FundamentalSections.tsx`의 `loadOptionalSection`처럼 실패를 `null`로 흡수하고 revalidate는 그대로 둔다.
+
 #### 페이지별 revalidate (값·근거는 [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md))
 
 사용자 신선도는 ISR이 아니라 클라 refetch가 책임지므로, revalidate는 **크롤러 SSR 신선도 + Fast Origin

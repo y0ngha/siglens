@@ -1,4 +1,4 @@
-import { FmpFundamentalClient } from './fundamentalClient';
+import { CurrentGradesFmpClient } from './CurrentGradesFmpClient';
 import { CachedFundamentalProvider } from './CachedFundamentalProvider';
 import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
 import { FmpFinancialStatementsClient } from './financialStatementsClient';
@@ -19,7 +19,8 @@ const getFmpProvider: () => FundamentalProviderWithRawPeers =
     createE2EGatedSingleton(
         () =>
             new CachedFundamentalProvider(
-                new FmpFundamentalClient(),
+                // 투자의견 분포는 Yahoo의 현재 분포로 바꿔 끼운다(FMP 값은 누적이라 과대) — `CurrentGradesFmpClient`.
+                new CurrentGradesFmpClient(),
                 new CachedFinancialStatementsProvider(
                     new FmpFinancialStatementsClient()
                 ),

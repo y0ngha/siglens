@@ -4,6 +4,8 @@
  */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import type { AnalystTargetsSummary } from '@/entities/analyst-views/model';
+import type { GradesConsensusSource } from '@/shared/api/fmp/gradesConsensusSource';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
@@ -27,8 +29,14 @@ interface FutureDirectionCardProps {
     symbol: string;
     estimates: FundamentalAnalystEstimateInput | null;
     grades: FundamentalGradesConsensusInput | null;
+    /** 분포의 출처. `'yahoo'`일 때만 "현재 애널리스트 N명 기준" 줄을 그린다(FMP 합계는 누적이라 인원 수가 아니다). */
+    gradesSource: GradesConsensusSource | null;
     ptConsensus: FundamentalPriceTargetConsensusInput | null;
     ptSummary: FundamentalPriceTargetSummaryInput | null;
+    /** Yahoo 집계 목표가 줄. 한국 종목·Yahoo 실패·데이터 없음이면 `null`. */
+    analystTargets: AnalystTargetsSummary | null;
+    /** Yahoo 평균이 화면의 FMP 컨센서스와 임계값 넘게 다른가. */
+    targetSourcesDisagree: boolean;
 }
 
 /** 미래 방향 카드. 모든 입력이 비어 있거나 등급이 전부 0이면 빈 상태를 그린다. */
@@ -36,12 +44,16 @@ export function FutureDirectionCard({
     symbol,
     estimates,
     grades,
+    gradesSource,
     ptConsensus,
     ptSummary,
+    analystTargets,
+    targetSourcesDisagree,
 }: FutureDirectionCardProps) {
     const t = useTranslations('widgets.fundamental');
     const locale = useResolvedLocale();
-    const hasPriceTarget = ptConsensus !== null || ptSummary !== null;
+    const hasPriceTarget =
+        ptConsensus !== null || ptSummary !== null || analystTargets !== null;
 
     if (estimates === null && !hasGrades(grades) && !hasPriceTarget) {
         return (
@@ -73,11 +85,15 @@ export function FutureDirectionCard({
                 <PriceTargetSection
                     consensus={ptConsensus}
                     summary={ptSummary}
+                    analystTargets={analystTargets}
+                    sourcesDisagree={targetSourcesDisagree}
                     symbol={symbol}
                     locale={locale}
                 />
             )}
-            {hasGrades(grades) && <RatingsSection grades={grades} />}
+            {hasGrades(grades) && (
+                <RatingsSection grades={grades} source={gradesSource} />
+            )}
         </section>
     );
 }

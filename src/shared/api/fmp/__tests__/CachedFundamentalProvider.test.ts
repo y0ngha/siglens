@@ -7,7 +7,9 @@ import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import {
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
     SECONDS_PER_QUARTER_DAY,
 } from '@/shared/config/time';
 
@@ -190,9 +192,51 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         expect(store.has('fundamental:ratios-v2:AAPL')).toBe(true);
         expect(store.has('fundamental:growth:AAPL')).toBe(true);
         expect(store.has('fundamental:estimates:v2:AAPL')).toBe(true);
-        expect(store.has('fundamental:grades-consensus:AAPL')).toBe(true);
+        expect(store.has('fundamental:grades-consensus-v2:AAPL')).toBe(true);
         expect(store.has('fundamental:price-target-consensus:AAPL')).toBe(true);
         expect(store.has('fundamental:price-target-summary:AAPL')).toBe(true);
+    });
+});
+
+describe('CachedFundamentalProvider — getGradesConsensus TTL', () => {
+    beforeEach(resetSharedState);
+
+    const FMP = { strongBuy: 40, buy: 70, hold: 32, sell: 2, strongSell: 1 };
+    const ttlOf = (key: string) =>
+        (fakeRedis.set.mock.calls as unknown[][]).find(([k]) => k === key)?.[2];
+
+    it('정상 값(yahoo·fmp)은 기본 TTL로 캐시된다', async () => {
+        for (const source of ['yahoo', 'fmp'] as const) {
+            resetSharedState();
+            const provider = new CachedFundamentalProvider(
+                makeInner({
+                    getGradesConsensus: vi.fn(async () => ({
+                        ...FMP,
+                        source,
+                    })),
+                } as never)
+            );
+            await provider.getGradesConsensus('aapl');
+            expect(ttlOf('fundamental:grades-consensus-v2:AAPL')).toEqual({
+                ex: FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+            });
+        }
+    });
+
+    it('Yahoo 실패로 내려온 FMP 값(yahooFailed)은 10분만 캐시된다', async () => {
+        const provider = new CachedFundamentalProvider(
+            makeInner({
+                getGradesConsensus: vi.fn(async () => ({
+                    ...FMP,
+                    source: 'fmp',
+                    yahooFailed: true,
+                })),
+            } as never)
+        );
+        await provider.getGradesConsensus('aapl');
+        expect(ttlOf('fundamental:grades-consensus-v2:AAPL')).toEqual({
+            ex: 10 * SECONDS_PER_MINUTE,
+        });
     });
 });
 

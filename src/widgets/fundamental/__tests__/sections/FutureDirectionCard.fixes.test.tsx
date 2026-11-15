@@ -39,6 +39,9 @@ describe('FutureDirectionCard — 목표 주가 요약', () => {
                 grades={null}
                 ptConsensus={null}
                 ptSummary={PT_SUMMARY}
+                gradesSource={null}
+                analystTargets={null}
+                targetSourcesDisagree={false}
             />
         );
 
@@ -58,6 +61,9 @@ describe('FutureDirectionCard — 목표 주가 요약', () => {
                 grades={null}
                 ptConsensus={PT_CONSENSUS}
                 ptSummary={null}
+                gradesSource={null}
+                analystTargets={null}
+                targetSourcesDisagree={false}
             />
         );
 
@@ -73,6 +79,9 @@ describe('FutureDirectionCard — 목표 주가 요약', () => {
                 grades={null}
                 ptConsensus={PT_CONSENSUS}
                 ptSummary={PT_SUMMARY}
+                gradesSource={null}
+                analystTargets={null}
+                targetSourcesDisagree={false}
             />
         );
 
@@ -90,6 +99,9 @@ describe('FutureDirectionCard — 전부 0인 등급', () => {
                 grades={ZERO_GRADES}
                 ptConsensus={null}
                 ptSummary={null}
+                gradesSource={null}
+                analystTargets={null}
+                targetSourcesDisagree={false}
             />
         );
 
@@ -104,6 +116,9 @@ describe('FutureDirectionCard — 전부 0인 등급', () => {
                 grades={ZERO_GRADES}
                 ptConsensus={PT_CONSENSUS}
                 ptSummary={null}
+                gradesSource={null}
+                analystTargets={null}
+                targetSourcesDisagree={false}
             />
         );
 
@@ -118,6 +133,9 @@ describe('FutureDirectionCard — 전부 0인 등급', () => {
                 grades={{ ...ZERO_GRADES, hold: 4 }}
                 ptConsensus={null}
                 ptSummary={null}
+                gradesSource={null}
+                analystTargets={null}
+                targetSourcesDisagree={false}
             />
         );
 

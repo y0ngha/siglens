@@ -1,7 +1,16 @@
 import 'server-only';
 import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
-import type { AnalystEarningsHint } from '@/entities/analyst-views/model';
+import type { EarningsSession } from '@/entities/analyst-views/model';
+import {
+    resolveNextEarnings,
+    type ResolvedNextEarnings,
+} from '@/entities/analyst-views/lib/resolveNextEarnings';
+import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
+import {
+    gradeCountsOnly,
+    readGradesSource,
+} from '@/shared/api/fmp/gradesConsensusSource';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
@@ -35,7 +44,6 @@ import {
     getNextEarningsSchedule,
     listReportedEarningsDates,
 } from '@/entities/earnings-report/api';
-import type { NextEarningsSchedule } from '@/entities/earnings-report/model';
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -170,7 +178,7 @@ async function loadLastCompletedClose(
 interface EarningsDateCertainty {
     earningsDateConfirmed: boolean | null;
     earningsDateNote: string;
-    earningsSession?: NonNullable<AnalystEarningsHint['session']>;
+    earningsSession?: EarningsSession;
     earningsCallAt?: string;
 }
 
@@ -220,62 +228,26 @@ export function earningsDateNoteFor(
 }
 
 /**
- * `yahooSameDate`는 Yahoo가 DB/FMP와 **같은 날짜**를 말할 때만 넘긴다(호출부가 대조한다) —
- * 다른 날짜의 `isEstimate`로 이 날짜의 확정 여부를 덮어쓰면 안 된다.
- * `dateDisputed`는 두 출처의 날짜가 서로 다를 때(`earningsDateAlt`가 함께 나갈 때) `true`다.
+ * 이미 대조가 끝난 `resolveNextEarnings` 결과를 도구 출력 필드로 옮긴다. `earnings`가 `null`(일정 행 없음)이면
+ * 확정도 세션도 말할 것이 없어 빈 객체다. 날짜가 서로 다른 채 남았으면(`alt`) 검색을 시키지 않는다.
  */
 export function earningsDateCertainty(
-    earnings: Pick<NextEarningsSchedule, 'dateConfirmed'> | null,
-    yahooSameDate: Pick<
-        AnalystEarningsHint,
-        'isEstimate' | 'session' | 'callAt'
-    > | null = null,
-    dateDisputed: boolean = false
+    resolved: ResolvedNextEarnings | null
 ): Partial<EarningsDateCertainty> {
-    if (earnings === null) return {};
-    const existing = earnings.dateConfirmed ?? null;
-    const estimate = yahooSameDate?.isEstimate ?? null;
-    const confirmed = estimate === null ? existing : !estimate;
-    const session =
-        yahooSameDate?.isEstimate === false ? yahooSameDate.session : null;
+    if (resolved === null) return {};
+    const { confirmed, session, callAt, alt } = resolved;
     const timingNote: EarningsTimingNote =
         session !== null
             ? 'given'
-            : dateDisputed || confirmed === false
+            : alt !== null || confirmed === false
               ? 'unsettled'
               : 'not_provided';
     return {
         earningsDateConfirmed: confirmed,
         earningsDateNote: earningsDateNoteFor(confirmed, timingNote),
         ...(session !== null && { earningsSession: session }),
-        ...(session !== null &&
-            yahooSameDate?.callAt != null && {
-                earningsCallAt: yahooSameDate.callAt,
-            }),
+        ...(session !== null && callAt !== null && { earningsCallAt: callAt }),
     };
-}
-
-/** Yahoo가 같은 보고서에 대해 다른 날짜를 줄 때 싣는 대체 날짜. */
-export interface EarningsDateAlt {
-    date: string;
-    source: 'yahoo';
-    estimate: boolean | null;
-}
-
-/**
- * DB/FMP 날짜와 Yahoo 날짜가 **둘 다 오늘 이후**(오늘 포함)이고 서로 다를 때만 대체 날짜를 돌려준다.
- * 한쪽이 이미 지났다면 "다른 날짜"가 아니라 "지난 일정"이라 충돌이 아니다(Yahoo는 발표 후에도 지난 날짜를 둔다).
- * 날짜는 모두 `YYYY-MM-DD`라 문자열 비교가 달력 비교다. `today`는 시장 시간대 기준이다.
- */
-export function earningsDateAlt(
-    earningsDate: string | null,
-    yahoo: Pick<AnalystEarningsHint, 'date' | 'isEstimate'> | null,
-    today: string
-): EarningsDateAlt | null {
-    if (earningsDate === null || yahoo === null) return null;
-    if (earningsDate === yahoo.date) return null;
-    if (earningsDate < today || yahoo.date < today) return null;
-    return { date: yahoo.date, source: 'yahoo', estimate: yahoo.isEstimate };
 }
 
 /**
@@ -359,8 +331,11 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
     // KRX 상장주식수 기준 시총·PER·PBR은 한국 종목에만 필요하다(`krListedBasis`).
     const isKr = isKrEquitySymbol(symbol);
     // Yahoo (analyst views) is an unofficial source with no redistribution terms: the public API
-    // (`allowUnofficialSources: false`) must keep the pre-existing sources and shape, so it neither
-    // calls Yahoo here nor emits the Yahoo-derived analyst fields below.
+    // (`allowUnofficialSources: false`) neither calls Yahoo from this tool nor emits the NEW Yahoo-derived
+    // analyst keys below, and for US symbols it reads FMP's own rating counts (`getFmpGradesConsensus`), not
+    // the Yahoo-first provider method — its output for US symbols is what it was before the Yahoo sources
+    // were added. Korean symbols keep the provider (already Yahoo). Only the five counts are emitted, never
+    // the source marker.
     const useYahooExtras = rt.allowUnofficialSources !== false;
     const [
         profileR,
@@ -390,7 +365,12 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
         provider.getIncomeStatementGrowth(symbol),
         provider.getFinancialScores(symbol),
         provider.getCashFlowStatement(symbol),
-        provider.getGradesConsensus(symbol),
+        // Public API (`allowUnofficialSources: false`) keeps FMP's own counts for US symbols: the provider's
+        // method is Yahoo-first, and Yahoo values must not leave through the public API. Korean symbols'
+        // provider is already Yahoo and unchanged. The agent runtime uses the corrected provider.
+        useYahooExtras || isKr
+            ? provider.getGradesConsensus(symbol)
+            : getFmpGradesConsensus(symbol),
         provider.getPriceTargetConsensus(symbol),
         provider.getAnalystEstimates(symbol),
         earningsRefresh,
@@ -534,21 +514,12 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
     );
 
     const views = settledOrNull(analystViewsR);
-    // US: the provider's FMP grades are a cumulative count (AAPL 112 vs 45 analysts actually covering
-    // it, 2026-11-15), so Yahoo's current distribution replaces them when it exists. KR's provider is
-    // Yahoo already. `consensusAnalysts`/`analystBuySharePct` follow whichever distribution is emitted.
-    const yahooRatings = views?.ratings ?? null;
-    const consensus = yahooRatings
-        ? {
-              strongBuy: yahooRatings.strongBuy,
-              buy: yahooRatings.buy,
-              hold: yahooRatings.hold,
-              sell: yahooRatings.sell,
-              strongSell: yahooRatings.strongSell,
-          }
-        : grades;
-    const consensusSource =
-        consensus === null ? null : isKr || yahooRatings ? 'yahoo' : 'fmp';
+    // The provider already returns the CURRENT distribution (Yahoo for KR and, for US stocks, Yahoo with
+    // an FMP fallback), tagged with `source`. FMP's own count is cumulative (AAPL 112 vs 45 analysts
+    // actually covering it, 2026-11-15), so its sum is not an analyst count: only a Yahoo-sourced
+    // distribution reports `consensusAnalysts`. The emitted `consensus` is the five counts only.
+    const consensus = grades === null ? null : gradeCountsOnly(grades);
+    const consensusSource = readGradesSource(grades);
     const gradeTotal = consensus
         ? consensus.strongBuy +
           consensus.buy +
@@ -556,29 +527,16 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
           consensus.sell +
           consensus.strongSell
         : null;
-    // Yahoo's earnings hint (US only). Same ET date as the DB/FMP row = the same report. A DIFFERENT date
-    // that Yahoo marks confirmed (and that is not in the past) beats the FMP projection: FMP derives its
-    // date from the previous cycle, Yahoo's confirmed one comes from the company announcement.
-    const yahooEarnings = views?.earnings ?? null;
-    const fmpEarningsDate = earnings?.earningsDate ?? null;
-    const todayInMarket = zonedDate(new Date(), earningsTimeZone);
-    const sameDateEarnings =
-        yahooEarnings !== null && yahooEarnings.date === fmpEarningsDate
-            ? yahooEarnings
-            : null;
-    const promotedEarnings =
-        earnings !== null &&
-        yahooEarnings !== null &&
-        yahooEarnings.date !== fmpEarningsDate &&
-        yahooEarnings.isEstimate === false &&
-        yahooEarnings.date >= todayInMarket
-            ? yahooEarnings
-            : null;
-    const nextEarningsDate = promotedEarnings?.date ?? fmpEarningsDate;
-    const earningsAlt =
-        promotedEarnings === null
-            ? earningsDateAlt(fmpEarningsDate, yahooEarnings, todayInMarket)
-            : null;
+    const consensusAnalysts = consensusSource === 'yahoo' ? gradeTotal : null;
+    // Yahoo's earnings hint (US only) reconciled with the DB/FMP row (`resolveNextEarnings`): a confirmed
+    // Yahoo date beats FMP's projection, two unconfirmed dates that differ surface as `earningsDateAlt`.
+    const resolvedEarnings = resolveNextEarnings({
+        scheduledDate: earnings?.earningsDate ?? null,
+        scheduledConfirmed: earnings?.dateConfirmed ?? null,
+        hint: views?.earnings ?? null,
+        today: zonedDate(new Date(), earningsTimeZone),
+    });
+    const nextEarningsDate = resolvedEarnings.date;
 
     // Provider ratios arrive as raw floats (P/E 27.622012578616346); trim them
     // to significant digits like every other number the agent quotes.
@@ -691,7 +649,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
         analyst: {
             consensus,
             ...(useYahooExtras && {
-                consensusAnalysts: gradeTotal,
+                consensusAnalysts,
                 consensusSource,
             }),
             analystBuySharePct: consensus
@@ -727,11 +685,11 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             },
             nextEarningsDate,
             ...earningsDateCertainty(
-                earnings,
-                promotedEarnings ?? sameDateEarnings,
-                earningsAlt !== null
+                earnings === null ? null : resolvedEarnings
             ),
-            ...(earningsAlt !== null && { earningsDateAlt: earningsAlt }),
+            ...(resolvedEarnings.alt !== null && {
+                earningsDateAlt: resolvedEarnings.alt,
+            }),
             daysToEarnings: daysUntil(
                 nextEarningsDate,
                 new Date(),
