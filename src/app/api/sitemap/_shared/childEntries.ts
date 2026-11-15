@@ -4,6 +4,10 @@ import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCry
 import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import { buildGuideSitemapEntries } from '@/entities/sitemap-entry/lib/buildGuideSitemapEntries';
+import { buildSignalHubSitemapEntries } from '@/entities/sitemap-entry/lib/buildSignalHubSitemapEntries';
+import { loadSignalHubCounts } from '@/entities/signal-history/api';
+import { signalHubWindowStart } from '@/entities/signal-history/lib/signalHubRows';
+import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import type { SitemapEntry } from '@/entities/sitemap-entry/model';
 import {
@@ -28,9 +32,13 @@ import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 export async function loadStaticChildEntries(
     now: Date
 ): Promise<SitemapEntry[]> {
-    const [inputs, guideCatalog] = await Promise.all([
+    const [inputs, guideCatalog, signalHubCounts] = await Promise.all([
         loadStaticSitemapInputs(),
         loadGuideCatalog(DEFAULT_LOCALE),
+        loadSignalHubCounts(
+            SIGNAL_HUBS.map(hub => hub.signalType),
+            signalHubWindowStart(now)
+        ),
     ]);
     const staticEntries = buildStaticEntries(now, {
         ...inputs,
@@ -45,6 +53,7 @@ export async function loadStaticChildEntries(
     return [
         ...staticEntries,
         ...buildGuideSitemapEntries(guideCatalog?.entries ?? [], now),
+        ...buildSignalHubSitemapEntries(signalHubCounts),
     ];
 }
 

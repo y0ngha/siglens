@@ -1,0 +1,215 @@
+const intl = vi.hoisted(() => ({ locale: 'ko' }));
+vi.mock('next-intl/server', async () => {
+    const { catalogTranslator } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return {
+        getLocale: async () => intl.locale,
+        getTranslations: async (
+            arg: string | { locale?: string; namespace?: string }
+        ) =>
+            typeof arg === 'string'
+                ? catalogTranslator(arg, intl.locale)
+                : catalogTranslator(
+                      arg.namespace ?? '',
+                      arg.locale ?? intl.locale
+                  ),
+    };
+});
+const hubData = vi.hoisted(() => ({
+    value: { rows: [] as unknown[], degraded: false },
+}));
+vi.mock('../../_lib/loadSignalHub', () => ({
+    loadSignalHub: vi.fn(async () => hubData.value),
+}));
+const catalog = vi.hoisted(() => ({ value: null as unknown }));
+vi.mock('@/entities/guide/api', () => ({
+    loadGuideCatalog: vi.fn(async () => catalog.value),
+}));
+vi.mock('@/shared/ui/JsonLd', () => ({
+    JsonLd: ({ data }: { data: Record<string, unknown> }) => (
+        <script data-testid="json-ld" data-type={String(data['@type'])} />
+    ),
+}));
+
+import { screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { findSignalHub } from '@/entities/signal-history/lib/signalHubs';
+import type { SignalEpisodeRow } from '@/entities/signal-history/types';
+import type { Locale } from '@/shared/i18n/locales';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+import ko from '../../../../../../../messages/ko.json';
+import { SignalHubBody } from '../SignalHubBody';
+
+const c = ko.app.market.signalHub;
+const GOLDEN = findSignalHub('golden-cross')!;
+const SIGNAL = ko.shared.enumLabel.signalType.golden_cross;
+
+function row(
+    symbol: string,
+    market: 'us' | 'kr',
+    sessionDate: string,
+    extra: Partial<SignalEpisodeRow> = {}
+): SignalEpisodeRow {
+    return {
+        market,
+        symbol,
+        koreanName: `${symbol}이름`,
+        sessionDate,
+        lastSeenSession: sessionDate,
+        changePercent: 1.5,
+        ...extra,
+    };
+}
+
+const FIVE_ROWS: SignalEpisodeRow[] = [
+    row('NVDA', 'us', '2026-11-13', { lastSeenSession: '2026-11-14' }),
+    row('AAPL', 'us', '2026-11-13'),
+    row('MSFT', 'us', '2026-11-10'),
+    row('005930.KS', 'kr', '2026-11-12'),
+    row('000660.KS', 'kr', '2026-11-11'),
+];
+
+async function renderBody(locale: Locale = 'ko') {
+    intl.locale = locale;
+    const tree = await SignalHubBody({ hub: GOLDEN, locale });
+    return renderWithIntl(
+        (await resolveAsyncServerTree(tree)) as ReactElement,
+        {
+            locale,
+        }
+    );
+}
+
+beforeEach(() => {
+    hubData.value = { rows: FIVE_ROWS, degraded: false };
+    catalog.value = {
+        entries: [
+            {
+                category: 'indicators',
+                slug: 'ma',
+                title: '이동평균선',
+                summary: '일정 기간 종가의 평균을 이은 선이에요.',
+            },
+        ],
+    };
+});
+
+describe('SignalHubBody', () => {
+    it('제목·소개에 신호 이름을 넣고, 시장 분석으로 가는 브레드크럼을 둔다', async () => {
+        await renderBody();
+
+        expect(
+            screen.getByRole('heading', {
+                level: 1,
+                name: c.title.replace('{signal}', SIGNAL),
+            })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: c.breadcrumbMarket })
+        ).toHaveAttribute('href', '/market');
+    });
+
+    it('미국·한국으로 나눠 처음 포착 세션별로 묶고 종목 페이지로 링크한다', async () => {
+        await renderBody();
+
+        const us = screen.getByRole('region', { name: c.marketUs });
+        expect(within(us).getAllByRole('heading', { level: 3 })).toHaveLength(
+            2
+        ); // 11-13, 11-10
+        expect(
+            within(us).getByRole('link', { name: 'NVDA이름' })
+        ).toHaveAttribute('href', '/NVDA');
+        const kr = screen.getByRole('region', { name: c.marketKr });
+        expect(
+            within(kr).getByRole('link', { name: '005930.KS이름' })
+        ).toHaveAttribute('href', '/005930.KS');
+    });
+
+    it('이어진 에피소드에만 마지막 포착일을 붙인다', async () => {
+        await renderBody();
+
+        const nvda = screen
+            .getByRole('link', { name: 'NVDA이름' })
+            .closest('li')!;
+        const aapl = screen
+            .getByRole('link', { name: 'AAPL이름' })
+            .closest('li')!;
+        expect(within(nvda).getByText(/까지 이어짐/)).toBeInTheDocument();
+        expect(within(aapl).queryByText(/까지 이어짐/)).toBeNull();
+    });
+
+    it('가이드 항목 요약을 싣고 가이드로 링크한다', async () => {
+        await renderBody();
+
+        expect(
+            screen.getByText('일정 기간 종가의 평균을 이은 선이에요.')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', {
+                name: new RegExp(c.guideLink.replace('{title}', '이동평균선')),
+            })
+        ).toHaveAttribute('href', '/guide/indicators/ma');
+    });
+
+    it('색인 기준(5행) 이상이면 WebPage·Breadcrumb·ItemList 구조화데이터를 낸다', async () => {
+        await renderBody();
+
+        expect(
+            screen.getAllByTestId('json-ld').map(node => node.dataset.type)
+        ).toEqual(['WebPage', 'BreadcrumbList', 'ItemList']);
+    });
+
+    it('행이 모자라면 구조화데이터를 내지 않는다(메타데이터 noindex와 같은 판정)', async () => {
+        hubData.value = { rows: FIVE_ROWS.slice(0, 4), degraded: false };
+
+        await renderBody();
+
+        expect(screen.queryAllByTestId('json-ld')).toHaveLength(0);
+    });
+
+    it('한 시장에 행이 없으면 그 시장은 빈 안내를 보인다', async () => {
+        hubData.value = {
+            rows: FIVE_ROWS.filter(r => r.market === 'us'),
+            degraded: false,
+        };
+
+        await renderBody();
+
+        const kr = screen.getByRole('region', { name: c.marketKr });
+        expect(within(kr).getByText(c.empty)).toBeInTheDocument();
+    });
+
+    it('기록을 못 읽으면(degraded) 목록 대신 안내를 보이고 구조화데이터도 내지 않는다', async () => {
+        hubData.value = { rows: [], degraded: true };
+
+        await renderBody();
+
+        expect(screen.getByText(c.degraded)).toBeInTheDocument();
+        expect(screen.queryByRole('region', { name: c.marketUs })).toBeNull();
+        expect(screen.queryAllByTestId('json-ld')).toHaveLength(0);
+    });
+
+    it('다른 신호 페이지로 가는 링크를 두고 자기 자신은 뺀다', async () => {
+        await renderBody();
+
+        const nav = screen.getByRole('navigation', { name: c.otherSignals });
+        const hrefs = within(nav)
+            .getAllByRole('link')
+            .map(link => link.getAttribute('href'));
+        expect(hrefs).toContain('/market/signals/death-cross');
+        expect(hrefs).not.toContain('/market/signals/golden-cross');
+    });
+
+    it('ko가 아닌 로케일은 한글 이름 대신 티커를 쓴다', async () => {
+        await renderBody('en');
+
+        expect(screen.getByRole('link', { name: 'NVDA' })).toHaveAttribute(
+            'href',
+            '/en/NVDA'
+        );
+        expect(
+            screen.getByRole('link', { name: '005930' })
+        ).toBeInTheDocument();
+    });
+});

@@ -272,6 +272,27 @@
                 "a92ddb": "The external quote provider may be temporarily unresponsive. Please try again shortly.",
                 "cccc8a": "Failed to load market data",
                 "eb2523": "{v0} Home"
+            },
+            "signalHub": {
+                "breadcrumbMarket": "Market analysis",
+                "degraded": "We could not load the signal history. Please check again shortly.",
+                "description": "US and Korean stocks where a {signal} signal was first detected in the last 30 days, grouped by date, with how long the signal lasted and the day's change.",
+                "empty": "No stock has shown this signal for the first time in the last 30 days yet.",
+                "firstSeen": "First detected {date}",
+                "guideHeading": "About {signal}",
+                "guideLink": "Read the {title} guide",
+                "intro": "After each market close, SIGLENS checks daily candles for about 100 US and 30 Korean stocks and records the ones where a new {signal} signal appeared. The first-detected date can be a few days later than the actual signal.",
+                "itemListName": "Stocks where {signal} was first detected",
+                "keywordRecent": "recent {signal} stocks",
+                "keywordStocks": "{signal} stocks",
+                "keywordToday": "{signal} today",
+                "lastSeen": "Still showing on {date}",
+                "marketKr": "Korean stocks",
+                "marketLinksHeading": "Stocks by signal",
+                "marketUs": "US stocks",
+                "otherSignals": "Stocks with other signals",
+                "signalStocks": "{signal} stocks",
+                "title": "{signal} stocks: last 30 days in the US and Korea"
             }
         },
         "news": {

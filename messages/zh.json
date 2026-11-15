@@ -272,6 +272,27 @@
                 "a92ddb": "外部行情提供商可能暂时无响应。请稍后\n                重试。",
                 "cccc8a": "未能加载市场数据",
                 "eb2523": "{v0} 主页"
+            },
+            "signalHub": {
+                "breadcrumbMarket": "市场分析",
+                "degraded": "无法加载信号记录，请稍后再查看。",
+                "description": "按日期整理近30天首次出现{signal}信号的美股和韩股，并显示信号持续的时间和当天涨跌幅。",
+                "empty": "近30天还没有首次出现该信号的股票。",
+                "firstSeen": "{date} 首次检测",
+                "guideHeading": "了解{signal}",
+                "guideLink": "阅读{title}指南",
+                "intro": "SIGLENS每天收盘后用约100只美股和约30只韩股的日K线，记录新出现{signal}信号的股票。首次检测到的日期可能比实际信号出现晚几天。",
+                "itemListName": "首次出现{signal}信号的股票",
+                "keywordRecent": "近期{signal}股票",
+                "keywordStocks": "{signal} 股票",
+                "keywordToday": "今日{signal}",
+                "lastSeen": "持续到{date}",
+                "marketKr": "韩股",
+                "marketLinksHeading": "按信号查看股票",
+                "marketUs": "美股",
+                "otherSignals": "出现其他信号的股票",
+                "signalStocks": "{signal}股票",
+                "title": "{signal}股票：近30天美股与韩股"
             }
         },
         "news": {
