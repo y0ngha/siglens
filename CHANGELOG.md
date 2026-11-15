@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.121.0](https://github.com/y0ngha/siglens/compare/v0.120.0...v0.121.0) (2026-11-15)
+
+### Features
+
+* 관심종목이 없는 메일 리포트 회원에게 시장 신호 브리핑을 보낸다 ([#1305](https://github.com/y0ngha/siglens/issues/1305)) ([a909377](https://github.com/y0ngha/siglens/commit/a909377eae704e10cbaa1291cce80f438ed7e02b))
+* 신호별 종목 페이지(/market/signals/*)를 연다 ([#1303](https://github.com/y0ngha/siglens/issues/1303)) ([8771024](https://github.com/y0ngha/siglens/commit/87710248ccb60a522aaaae1a5330df783d702499)), closes [#1299](https://github.com/y0ngha/siglens/issues/1299) [#1299](https://github.com/y0ngha/siglens/issues/1299)
+
 # [0.120.0](https://github.com/y0ngha/siglens/compare/v0.119.0...v0.120.0) (2026-11-15)
 
 ### Features
