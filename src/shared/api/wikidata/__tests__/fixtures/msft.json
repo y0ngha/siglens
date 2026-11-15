@@ -1,0 +1,438 @@
+{
+    "head": {
+        "vars": [
+            "company",
+            "companyX",
+            "cxRank",
+            "ceo",
+            "ceoLabel",
+            "csRank",
+            "ceoX",
+            "pxRank"
+        ]
+    },
+    "results": {
+        "bindings": [
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "msuspartner"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "Microsoft"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "MicrosoftDE"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "mslearningcurve"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "MicrosoftHelps"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "msftsecurity"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "MSFTIssues"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "msftsecresponse"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "MSFTnews"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "MSFTMechanics"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "MicrosoftUK"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q2283"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "OpenAtMicrosoft"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q7426870"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "satyanadella"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Satya Nadella"
+                }
+            }
+        ]
+    }
+}

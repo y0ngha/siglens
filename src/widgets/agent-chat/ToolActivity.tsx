@@ -23,6 +23,7 @@ import {
     QuoteIcon,
     RefreshIcon,
     SearchIcon,
+    SpeechIcon,
     SparkIcon,
     StarIcon,
 } from '@/shared/ui/StrokeIcons';
@@ -49,6 +50,7 @@ const ICON: Record<string, IconComponent> = {
     get_analyst_views: StarIcon,
     get_macro_quotes: GaugeIcon,
     get_company_filings: FileIcon,
+    get_x_posts: SpeechIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -105,6 +107,7 @@ export function ToolActivity({
         get_analyst_views: t('ToolActivity.toolAnalystViews'),
         get_macro_quotes: t('ToolActivity.toolMacroQuotes'),
         get_company_filings: t('ToolActivity.toolCompanyFilings'),
+        get_x_posts: t('ToolActivity.toolXPosts'),
     };
     // Daily bars also carry the symbol's own fear & greed reading, so the
     // step says so; other timeframes get the plain chart label.

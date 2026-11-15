@@ -217,6 +217,12 @@ export const FileIcon = (p: IconProps) => (
         <path d="M14 3v5h5M9 13h6M9 17h6" />
     </Icon>
 );
+export const SpeechIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M5 4h14a2 2 0 012 2v9a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+        <path d="M8 9h8M8 12.5h5" />
+    </Icon>
+);
 export const LockIcon = (p: IconProps) => (
     <Icon {...p}>
         <rect x="4" y="11" width="16" height="10" rx="2" />

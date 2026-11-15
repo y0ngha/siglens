@@ -3713,7 +3713,8 @@
                 "toolPortfolio": "내 포트폴리오",
                 "toolQuote": "시세",
                 "toolSearchTicker": "종목 검색",
-                "toolWebSearch": "웹 검색"
+                "toolWebSearch": "웹 검색",
+                "toolXPosts": "X 게시물"
             }
         },
         "analysis": {

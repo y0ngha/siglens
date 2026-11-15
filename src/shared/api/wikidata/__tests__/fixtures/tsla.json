@@ -1,0 +1,88 @@
+{
+    "head": {
+        "vars": [
+            "company",
+            "companyX",
+            "cxRank",
+            "ceo",
+            "ceoLabel",
+            "csRank",
+            "ceoX",
+            "pxRank"
+        ]
+    },
+    "results": {
+        "bindings": [
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q478214"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "Tesla"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q317521"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "cyb3rgam3r420"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Elon Musk"
+                }
+            },
+            {
+                "company": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q478214"
+                },
+                "companyX": {
+                    "type": "literal",
+                    "value": "Tesla"
+                },
+                "cxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#NormalRank"
+                },
+                "ceo": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q317521"
+                },
+                "csRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoX": {
+                    "type": "literal",
+                    "value": "elonmusk"
+                },
+                "pxRank": {
+                    "type": "uri",
+                    "value": "http://wikiba.se/ontology#PreferredRank"
+                },
+                "ceoLabel": {
+                    "xml:lang": "en",
+                    "type": "literal",
+                    "value": "Elon Musk"
+                }
+            }
+        ]
+    }
+}

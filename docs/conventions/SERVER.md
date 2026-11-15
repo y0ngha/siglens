@@ -224,6 +224,11 @@ treated it. Check it against an event whose real value is known (a central-bank 
 record the result next to the parsing code. A field assumed to be local wall-clock time that is actually UTC shifts
 every consumer by hours without any error.
 
+A community-edited source (Wikidata and the like) read as "official" needs the same care: filter statements by end date
+and rank (deprecated out, preferred-only when any preferred exists), and when one key (a ticker) matches more than one
+item, return no result rather than merging both. Otherwise former officers and another company's accounts surface as
+current facts.
+
 <a id="SA-13"></a>
 
 #### SA-13 — Pass range parameters and validate freshness
@@ -286,6 +291,9 @@ An upstream body of the wrong shape (a non-array where a list is expected, a mis
 range that should have rows is a failure signal, not a successful empty answer. Throw or return the error result so
 the caller degrades, and never cache it or let it set a completion flag: `[]` stored as "no events" hides the gap for
 the whole TTL, and a swallowed chunk makes a partial result look complete.
+
+The same applies to an HTTP 200 whose body carries only an `errors` array (a suspended or protected account, a partial
+failure): it is an error result, not an empty page. Do not map it to `[]` and cache it as "no posts".
 
 - ❌ `Array.isArray(body) ? body : []` per chunk, then the merged result is cached or marks the day as done.
 - ✅ A malformed chunk throws; an empty result for a non-empty window is returned uncached (or with a short TTL) so the
