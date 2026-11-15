@@ -1,5 +1,14 @@
 # Changelog
 
+# [0.120.0](https://github.com/y0ngha/siglens/compare/v0.119.0...v0.120.0) (2026-11-15)
+
+### Features
+
+* 가이드 지표·전략에서 실제 신호 종목으로 잇는다 ([#1295](https://github.com/y0ngha/siglens/issues/1295)) ([605a46c](https://github.com/y0ngha/siglens/commit/605a46c7faacd710cf180c45e20167ce5feac479))
+* 잠긴 시간 프레임 안내와 가입 뒤 보던 분석 복귀 ([#1296](https://github.com/y0ngha/siglens/issues/1296)) ([f43c750](https://github.com/y0ngha/siglens/commit/f43c7504e917592cb5b435296f01a931e4ca30f6))
+* 장 마감 뒤 신호 발생 이력을 세션별로 쌓는다 ([#1300](https://github.com/y0ngha/siglens/issues/1300)) ([d54c9d7](https://github.com/y0ngha/siglens/commit/d54c9d7d17aad2c9e3f1be8a2f258f6190743534))
+* 홈에 매일 바뀌는 오늘의 시장을 싣는다 ([#1298](https://github.com/y0ngha/siglens/issues/1298)) ([843b736](https://github.com/y0ngha/siglens/commit/843b7368ae985513b18e534399165d098af242b5))
+
 # [0.119.0](https://github.com/y0ngha/siglens/compare/v0.118.1...v0.119.0) (2026-11-14)
 
 ### Bug Fixes
