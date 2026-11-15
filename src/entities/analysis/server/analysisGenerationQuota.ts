@@ -4,6 +4,7 @@ import {
     hashUsageIp,
     type CounterStore,
 } from '@y0ngha/siglens-core';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getUpstashWriterCredentials } from '@/shared/cache/redisClient';
 import {
@@ -353,19 +354,6 @@ async function claimAll(
 
 const TIMED_OUT = Symbol('timed-out');
 
-async function withTimeout<T>(
-    work: Promise<T>,
-    ms: number
-): Promise<T | typeof TIMED_OUT> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<typeof TIMED_OUT>(resolve => {
-        timer = setTimeout(() => resolve(TIMED_OUT), ms);
-    });
-    return Promise.race([work, timeout]).finally(() => {
-        if (timer !== undefined) clearTimeout(timer);
-    });
-}
-
 /**
  * 새 생성 1건을 예약한다. **던지지 않는다.**
  *
@@ -394,7 +382,9 @@ export async function reserveAnalysisGeneration(
                 ? memberClaims(identity.userId, now)
                 : guestClaims(identity, now);
         const attempt = claimAll(audience, claims, now);
-        const outcome = await withTimeout(attempt, QUOTA_RESERVE_TIMEOUT_MS);
+        const outcome = await withTimeout<
+            Awaited<typeof attempt> | typeof TIMED_OUT
+        >(attempt, QUOTA_RESERVE_TIMEOUT_MS, TIMED_OUT);
         if (outcome !== TIMED_OUT) return outcome;
 
         warnThrottled(

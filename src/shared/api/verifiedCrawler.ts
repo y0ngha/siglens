@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { Resolver } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import {
     __resetMemoryLruForTests,
@@ -292,19 +293,6 @@ async function resolveVerdict(
 
 const TIMED_OUT = Symbol('timed-out');
 
-async function withTimeout<T>(
-    work: Promise<T>,
-    ms: number
-): Promise<T | typeof TIMED_OUT> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<typeof TIMED_OUT>(resolve => {
-        timer = setTimeout(() => resolve(TIMED_OUT), ms);
-    });
-    return Promise.race([work, timeout]).finally(() => {
-        if (timer !== undefined) clearTimeout(timer);
-    });
-}
-
 /**
  * `ip`가 `userAgent`가 주장하는 검색 크롤러의 것임을 DNS로 확인했는가. **던지지 않는다.**
  *
@@ -344,7 +332,11 @@ export async function isVerifiedCrawler(
             .finally(() => inFlight.delete(memoryKey));
         inFlight.set(memoryKey, pending);
     }
-    const outcome = await withTimeout(pending, VERIFY_TIMEOUT_MS);
+    const outcome = await withTimeout<boolean | typeof TIMED_OUT>(
+        pending,
+        VERIFY_TIMEOUT_MS,
+        TIMED_OUT
+    );
     return outcome === TIMED_OUT ? false : outcome;
 }
 
