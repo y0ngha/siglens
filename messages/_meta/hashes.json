@@ -4317,5 +4317,7 @@
     "features.voc-prompt.VocPromptModal.submit": "f4cba30a775a",
     "features.voc-prompt.VocPromptModal.thanks": "315d12b8d9c9",
     "features.voc-prompt.VocPromptModal.title": "44a8e5a87001",
-    "shared.lib.contactError.rateLimited": "93584ca28567"
+    "shared.lib.contactError.rateLimited": "93584ca28567",
+    "features.analysis-nudge.AnalysisSignupNudgeModal.timeframeBody": "0f717f858b24",
+    "features.analysis-nudge.AnalysisSignupNudgeModal.timeframeTitle": "806cb2349532"
 }

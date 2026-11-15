@@ -723,7 +723,9 @@
                 "84ff73": "Want deeper analysis?",
                 "94b7db": "Close",
                 "91d660": "Sign up and add your holdings or watchlist, and we'll email daily charts, the Simple analysis, news and options activity on the days and time you choose.",
-                "d7bbf8": "View a sample email"
+                "d7bbf8": "View a sample email",
+                "timeframeBody": "Sign up to view charts and AI analysis on every timeframe, from 5-minute to 4-hour candles. Signing up is free.",
+                "timeframeTitle": "Want to see other timeframes?"
             }
         },
         "api-key-management": {

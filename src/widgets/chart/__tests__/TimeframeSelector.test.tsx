@@ -79,6 +79,37 @@ describe('TimeframeSelector', () => {
         });
     });
 
+    it('잠긴 프레임 클릭은 onLockedClick을 불러 가입 안내를 열게 한다', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        const onLockedClick = vi.fn();
+        render(
+            <TimeframeSelector
+                value="1Day"
+                onChange={onChange}
+                isFreeTier
+                onLockedClick={onLockedClick}
+            />
+        );
+        await user.click(screen.getByRole('button', { name: '4시간' }));
+        expect(onLockedClick).toHaveBeenCalledTimes(1);
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('열린 프레임 클릭은 onLockedClick을 부르지 않는다', async () => {
+        const user = userEvent.setup();
+        const onLockedClick = vi.fn();
+        render(
+            <TimeframeSelector
+                value="1Day"
+                onChange={vi.fn()}
+                onLockedClick={onLockedClick}
+            />
+        );
+        await user.click(screen.getByRole('button', { name: '4시간' }));
+        expect(onLockedClick).not.toHaveBeenCalled();
+    });
+
     it('티어 미확정 동안은 네이티브 disabled라 클릭도 기록도 없다', async () => {
         track.mockReset();
         const user = userEvent.setup();

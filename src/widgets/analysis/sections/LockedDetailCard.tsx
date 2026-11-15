@@ -6,6 +6,7 @@
  */
 import { useTranslations } from 'next-intl';
 import type { Ref } from 'react';
+import { useAuthReturnHref } from '@/shared/hooks/useAuthReturnHref';
 import { cn } from '@/shared/lib/cn';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
@@ -27,6 +28,7 @@ export function LockedDetailCard({
     meterRef,
 }: LockedDetailCardProps) {
     const t = useTranslations('widgets.analysis');
+    const signupHref = useAuthReturnHref('/signup');
     const { title, body } = useLockedCardCopy(meter, skillCount);
     const isMeterExhausted = meter === 'exhausted';
     return (
@@ -49,7 +51,7 @@ export function LockedDetailCard({
                 </p>
             </div>
             <Link
-                href="/signup"
+                href={signupHref}
                 // 가입 페이지로 가는 잠긴 요소 클릭 — 가입 퍼널의 게이트다.
                 onClick={() =>
                     trackFunnelEvent(
