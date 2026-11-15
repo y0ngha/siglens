@@ -221,9 +221,10 @@ export function buildAnalystViews(input: BuildAnalystViewsInput): AnalystViews {
     const tally = (days: number) =>
         tallyWithin(rows, addUtcIsoDays(today, -days), today);
 
-    const degraded: AnalystSource[] = [];
-    if (yahoo === null) degraded.push('yahoo');
-    if (fmpFailed) degraded.push('fmp');
+    const degraded: AnalystSource[] = [
+        ...(yahoo === null ? (['yahoo'] as const) : []),
+        ...(fmpFailed ? (['fmp'] as const) : []),
+    ];
 
     return {
         asOf: now.toISOString(),

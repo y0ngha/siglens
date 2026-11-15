@@ -135,9 +135,14 @@ interface QuoteWaiter {
  * 한 번의 `getYahooMacroQuotes` 호출 안에서 캐시 miss 심볼을 모아 `quote([...])` 한 번으로 보낸다.
  * 응답에 없는(또는 가격이 없는) 심볼은 그 심볼만 reject해 캐시에 남지 않고 `found: false`로 내려가며,
  * 묶음 호출 자체가 실패하면 이번 묶음의 모든 심볼이 reject된다.
+ *
+ * 배처는 **호출마다 새로 만든다** — 서로 다른 `getYahooMacroQuotes` 호출(다른 요청·다른 턴)의 심볼은 한
+ * 묶음으로 합쳐지지 않는다. 호출 사이에 공유하면 한 요청의 실패가 다른 요청의 심볼까지 reject한다.
  */
 function createQuoteBatcher() {
     const waiters = new Map<string, QuoteWaiter>();
+    // 디바운스 상태: "묶음 창이 열려 있는가"를 타이머 핸들 하나로 든다. 창이 닫힐 때(`flush`) 비우고 다음
+    // miss가 다시 연다 — 이 상태 전이가 배처의 본체라 불변 값으로 바꿀 수 없다.
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     async function flush(): Promise<void> {
@@ -150,20 +155,25 @@ function createQuoteBatcher() {
                 {},
                 { validateResult: false }
             );
-            const bySymbol = new Map<string, unknown>();
-            for (const item of Array.isArray(raw) ? raw : [raw]) {
-                const symbol = (item as { symbol?: unknown } | null)?.symbol;
-                if (typeof symbol === 'string')
-                    bySymbol.set(symbol.toUpperCase(), item);
-            }
-            for (const [symbol, waiter] of batch) {
+            const items: unknown[] = Array.isArray(raw) ? raw : [raw];
+            const bySymbol = new Map(
+                items.flatMap((item): [string, unknown][] => {
+                    // Safe cast: 필드 하나만 읽고 바로 `typeof`로 좁힌다(응답 타입은 라이브러리가 넓게 정의한다).
+                    const symbol = (item as { symbol?: unknown } | null)
+                        ?.symbol;
+                    return typeof symbol === 'string'
+                        ? [[symbol.toUpperCase(), item]]
+                        : [];
+                })
+            );
+            batch.forEach(([symbol, waiter]) => {
                 const quote = mapMacroQuote(bySymbol.get(symbol.toUpperCase()));
                 if (quote === null)
                     waiter.reject(new Error('yahoo macro quote missing'));
                 else waiter.resolve(quote);
-            }
+            });
         } catch (error) {
-            for (const [, waiter] of batch) waiter.reject(error);
+            batch.forEach(([, waiter]) => waiter.reject(error));
         }
     }
 
