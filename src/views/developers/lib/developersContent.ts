@@ -29,6 +29,7 @@ export const TOOL_SUMMARIES: Readonly<Record<string, ToolSummaryMessage>> = {
     get_bars_indicators: { key: 'tools.summaries.get_bars_indicators' },
     get_cached_analysis: { key: 'tools.summaries.get_cached_analysis' },
     get_chart_data: { key: 'tools.summaries.get_chart_data' },
+    get_company_filings: { key: 'tools.summaries.get_company_filings' },
     get_congress_trades: { key: 'tools.summaries.get_congress_trades' },
     get_economy: {
         key: 'tools.summaries.get_economy',

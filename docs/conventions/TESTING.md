@@ -348,7 +348,7 @@ If a fixture value equals the literal in the assertion, reverting a dynamic prop
 
 #### TE-15 — Fixture shape equals the real call-site envelope
 
-A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission.
+A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission. The same holds for text heuristics over real documents (headline extraction, picking the primary document): derive the rules and the cases from cleaned samples of real documents, because hand-made text skips split titles, boilerplate and odd attachments.
 
 Values a surface formats (scores, prices, ratios) use production-shaped unrounded numbers (`24.48367166813769`, not `24`) in fixtures for every text and metadata surface (title, description, structured data); integer fixtures hide a missing rounding step.
 
@@ -400,6 +400,17 @@ A date or day-key test run only on a winter (standard-time) date cannot show an 
 
 - ❌ Every bar fixture is dated in November, so a UTC-slice day key passes.
 - ✅ One fixture is a London bar stamped `23:00Z` in July and the test expects the next calendar day.
+
+<a id="TE-60"></a>
+
+#### TE-60 — A fix for an adversarial-input defect is tested with nearest-miss inputs
+
+Pin the fix with inputs that almost match its guard, not only the one the reviewer named. A guard located by a prefix
+(`</script`) while the pattern needs the full token (`</script\s*>`) passes the named case and re-opens the defect for
+`</scriptx>`.
+
+- ❌ The test feeds only input with no closing token at all.
+- ✅ It also feeds prefix-only closers (`</scriptx>`, `</track>`, `</header>`) at the size cap.
 
 ## Time, Flakes & Isolation
 

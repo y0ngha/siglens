@@ -102,6 +102,20 @@ export const GUIDE_RESULT_MAX_CHARS = 6_000;
 export const MACRO_QUOTES_RESULT_MAX_CHARS = 7_000;
 
 /**
+ * `get_company_filings` ceiling, shared by both calls (counted on the SERIALIZED length). Measured 2026-11-15 on
+ * heavier-than-real worst cases (`getCompanyFilings.test.ts`):
+ * - list: 10 filings, each with 8 items carrying the longest labels, a 200-char headline with quotes and a long
+ *   document URL: 10,241 chars (a realistic list is ~4,000-5,000, but even 1-2 items per filing outgrows the
+ *   shared 4,000 default once ten headlines and URLs are listed);
+ * - read: exactly `AGENT_FILING_TEXT_MAX_CHARS` (12,000) of text with a `"` and a newline every 12 characters
+ *   (+16.7% once JSON-escaped) plus the same heavy item/headline block: 15,167 chars.
+ * 17,000 leaves ~1,830 above the larger. The shared default would re-cut a full read into a front-cut preview
+ * blob. Text that escapes even harder than the fixture is not left to the registry's cut: the tool shortens the
+ * text itself and sets `truncated` (`fitReadResult`).
+ */
+export const COMPANY_FILINGS_RESULT_MAX_CHARS = 17_000;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK

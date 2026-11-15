@@ -82,6 +82,12 @@ const TOOL_ERROR_MAPPING: Readonly<Record<string, ErrorMapping>> = {
         status: API_STATUS.forbidden,
         message: 'This timeframe is not available for the account tier.',
     },
+    // `get_company_filings`: 목록에 없는(또는 창 밖의) 접수번호 — 호출자가 목록에서 다시 고르면 되는 입력 오류다.
+    unknown_filing: {
+        status: API_STATUS.notFound,
+        message:
+            'The accession is not among this company’s recent 8-K, 8-K/A or 6-K filings; list the filings first and copy an accession from the list.',
+    },
     bars_not_found: {
         status: API_STATUS.notFound,
         message: 'No price bars exist for this symbol and timeframe.',

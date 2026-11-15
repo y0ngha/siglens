@@ -13,6 +13,7 @@ import {
     INVESTOR_FLOWS_RESULT_MAX_CHARS,
     GUIDE_RESULT_MAX_CHARS,
     MACRO_QUOTES_RESULT_MAX_CHARS,
+    COMPANY_FILINGS_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -36,6 +37,7 @@ import { getInvestorFlowsTool } from './getInvestorFlows';
 import { getGuideTool } from './getGuide';
 import { getAnalystViewsTool } from './getAnalystViews';
 import { getMacroQuotesTool } from './getMacroQuotes';
+import { getCompanyFilingsTool } from './getCompanyFilings';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
@@ -101,6 +103,8 @@ export interface ToolResultCaps {
     guide: number;
     /** `get_macro_quotes` (up to 8 instruments, each with changes and a 52-week range). */
     macroQuotes: number;
+    /** `get_company_filings` (a 10-filing list, or one filing's text up to `AGENT_FILING_TEXT_MAX_CHARS`). */
+    companyFilings: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -116,6 +120,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     investorFlows: INVESTOR_FLOWS_RESULT_MAX_CHARS,
     guide: GUIDE_RESULT_MAX_CHARS,
     macroQuotes: MACRO_QUOTES_RESULT_MAX_CHARS,
+    companyFilings: COMPANY_FILINGS_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -172,6 +177,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_guide: getGuideTool,
     get_analyst_views: getAnalystViewsTool,
     get_macro_quotes: getMacroQuotesTool,
+    get_company_filings: getCompanyFilingsTool,
 };
 
 /**
@@ -289,6 +295,7 @@ export function createToolExecutor(
         if (name === 'get_investor_flows') return resultCaps.investorFlows;
         if (name === 'get_guide') return resultCaps.guide;
         if (name === 'get_macro_quotes') return resultCaps.macroQuotes;
+        if (name === 'get_company_filings') return resultCaps.companyFilings;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

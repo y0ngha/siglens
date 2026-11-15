@@ -46,6 +46,12 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  *   `fundamental:grades-consensus:<SYM>`)을 읽는다 — 미국 종목의 공개 `get_fundamentals` 출력은 이 변경 전과
  *   같다(FMP 건수, 새 키 없음). 한국 종목은 원래 Yahoo 프로바이더라 그대로다. `consensus`에는 다섯 건수만 싣는다.
  *
+ * `get_company_filings`(2026-11): 공개 API에 **노출한다**. LLM을 부르지 않고, SEC EDGAR(공공 자료, 재배포 제한 없음)의
+ *   제출 목록·색인·문서와 DB의 CIK 맵(`sec_cik_symbol_map`)만 읽는다. SEC 요청은 `secClient`의 전역 요청 간격과
+ *   연락처 User-Agent를 타고, 결과는 에이전트와 같은 공유 캐시(제출 목록 30분, 공시별 제목·본문 30일)를 거쳐
+ *   반복 호출이 SEC를 다시 부르지 않는다. 본문 읽기의 턴당 횟수 상한은 core가 세는 에이전트 전용 규칙이고, API는
+ *   회원 단위 분당/일 한도(`PUBLIC_API_RATE_LIMITS.data`)가 호출 수를 묶는다.
+ *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.

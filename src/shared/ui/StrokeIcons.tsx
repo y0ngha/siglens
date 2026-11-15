@@ -211,6 +211,12 @@ export const GaugeIcon = (p: IconProps) => (
         <circle cx="12" cy="16" r="1" />
     </Icon>
 );
+export const FileIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
+        <path d="M14 3v5h5M9 13h6M9 17h6" />
+    </Icon>
+);
 export const LockIcon = (p: IconProps) => (
     <Icon {...p}>
         <rect x="4" y="11" width="16" height="10" rx="2" />

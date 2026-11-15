@@ -54,6 +54,10 @@ const getMacroQuotes = vi.hoisted(() => vi.fn());
 vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
     getMacroQuotesTool: getMacroQuotes,
 }));
+const getCompanyFilings = vi.hoisted(() => vi.fn());
+vi.mock('@/app/api/ai/chat/tools/getCompanyFilings', () => ({
+    getCompanyFilingsTool: getCompanyFilings,
+}));
 const getGuide = vi.hoisted(() => vi.fn());
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({
     getGuideTool: getGuide,
@@ -89,6 +93,7 @@ import {
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+    COMPANY_FILINGS_RESULT_MAX_CHARS,
     GUIDE_RESULT_MAX_CHARS,
     MACRO_QUOTES_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
@@ -115,11 +120,12 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 16종(web_search는 키 있을 때만)', () => {
+    it('가용 툴 17종(web_search는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_analyst_views',
             'get_bars_indicators',
             'get_cached_analysis',
+            'get_company_filings',
             'get_congress_trades',
             'get_economy',
             'get_fundamentals',
@@ -540,6 +546,41 @@ describe('tool registry', () => {
         expect(await call()).toMatchObject({ truncated: true });
     });
 
+    it('get_company_filings는 COMPANY_FILINGS_RESULT_MAX_CHARS 한도 — 4,000자 초과·한도 이내는 온전히, 초과는 절단된다', async () => {
+        const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () =>
+            exec('get_company_filings', { symbol: 'IONQ' }, makeCtx());
+        const midSize = Math.floor(
+            (TOOL_RESULT_MAX_CHARS + COMPANY_FILINGS_RESULT_MAX_CHARS) / 2
+        );
+        getCompanyFilings.mockResolvedValueOnce(sized(midSize));
+        const mid = await call();
+        expect(mid).not.toHaveProperty('truncated');
+        expect(JSON.stringify(mid).length).toBe(midSize);
+
+        getCompanyFilings.mockResolvedValueOnce(
+            sized(COMPANY_FILINGS_RESULT_MAX_CHARS + 500)
+        );
+        expect(await call()).toMatchObject({ truncated: true });
+    });
+
+    it('get_company_filings는 게스트에게도 열려 있다', async () => {
+        getCompanyFilings.mockResolvedValueOnce({ available: true });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        expect(
+            await exec(
+                'get_company_filings',
+                { symbol: 'IONQ' },
+                { ...makeCtx(), userId: guestSubject('1.2.3.4') }
+            )
+        ).toEqual({ available: true });
+    });
+
     it('get_guide는 게스트에게도 열려 있다', async () => {
         getGuide.mockResolvedValueOnce({ found: false });
         const exec = createToolExecutor({
@@ -718,6 +759,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         investorFlows: 9_000,
         guide: 9_000,
         macroQuotes: 9_000,
+        companyFilings: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };
