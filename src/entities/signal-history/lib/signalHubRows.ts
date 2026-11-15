@@ -2,7 +2,11 @@ import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 import type { SignalEpisodeRow, SignalHistoryMarket } from '../types';
 import { SIGNAL_HUB_WINDOW_DAYS } from './signalHubs';
 
-const MARKET_ORDER: readonly SignalHistoryMarket[] = ['us', 'kr'];
+/** 신호 페이지가 시장을 그리는 순서. 화면 섹션과 구조화데이터(ItemList) position이 함께 따른다. */
+export const SIGNAL_HUB_MARKET_ORDER: readonly SignalHistoryMarket[] = [
+    'us',
+    'kr',
+];
 
 /**
  * 신호 페이지 기간의 시작 세션 날짜(포함). "최근 30일"은 오늘을 포함한 30일이라 29일 전부터다.
@@ -37,7 +41,7 @@ export function latestEpisodePerSymbol(
 export function orderForDisplay(
     rows: readonly SignalEpisodeRow[]
 ): SignalEpisodeRow[] {
-    return MARKET_ORDER.flatMap(market =>
+    return SIGNAL_HUB_MARKET_ORDER.flatMap(market =>
         rows.filter(row => row.market === market)
     );
 }

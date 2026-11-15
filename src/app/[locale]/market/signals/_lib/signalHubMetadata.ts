@@ -1,15 +1,16 @@
 import 'server-only';
 
 import type { Metadata } from 'next';
-import { isSignalHubIndexable } from '@/entities/signal-history/lib/signalHubs';
 import type { SignalHub } from '@/entities/signal-history/lib/signalHubs';
 import type { Locale } from '@/shared/i18n/locales';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { isSignalHubDataIndexable } from './isSignalHubDataIndexable';
 import { loadSignalHub } from './loadSignalHub';
 import { signalHubCopy } from './signalHubCopy';
 
 /**
- * 신호 페이지 메타데이터. 색인 판정은 본문·구조화데이터·사이트맵과 같은 술어(`isSignalHubIndexable`)다.
+ * 신호 페이지 메타데이터. 색인 판정은 본문의 구조화데이터와 같은 함수(`isSignalHubDataIndexable`)이고,
+ * 사이트맵도 그 안의 같은 기준(`isSignalHubIndexable`)을 쓴다.
  * 기록을 못 읽었거나(degraded) 행이 모자라면 `noindex,follow` + 자기 canonical — 얇은 목록을 색인
  * 시키지 않되 페이지 안 링크는 따라가게 둔다.
  */
@@ -29,6 +30,6 @@ export async function signalHubMetadata(
         title: copy.title,
         description: copy.description,
         keywords: copy.keywords,
-        degraded: data.degraded || !isSignalHubIndexable(data.rows.length),
+        degraded: !isSignalHubDataIndexable(data),
     });
 }

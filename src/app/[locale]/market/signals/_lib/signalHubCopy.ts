@@ -1,8 +1,10 @@
 import 'server-only';
 
 import { getTranslations } from 'next-intl/server';
-import type { SignalHub } from '@/entities/signal-history/lib/signalHubs';
-import { signalHubPath } from '@/entities/signal-history/lib/signalHubs';
+import {
+    signalHubPath,
+    type SignalHub,
+} from '@/entities/signal-history/lib/signalHubs';
 import { clampSeoDescription } from '@/shared/lib/seoClamp';
 
 /** 신호 페이지 하나의 문구 — 메타데이터·본문·구조화데이터가 같은 값을 쓴다. */

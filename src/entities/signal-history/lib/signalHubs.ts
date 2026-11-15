@@ -11,10 +11,12 @@ export interface SignalHub {
 }
 
 /**
- * 페이지를 여는 신호. 기준은 **이름으로 검색되는 신호**다 — 2026-11-15 네이버 자동완성에
- * "골든크로스 종목"·"52주 신고가 종목"이 붙었고, 같은 계열(데드크로스·신저가·RSI·MACD 교차)을 함께
- * 연다. CCI·CMF 교차처럼 하루 수십 종목이 잡히지만 그 이름으로 찾는 사람이 드문 신호는 열지 않는다
- * (얇고 겹치는 페이지가 늘어난다). 늘릴 때는 같은 방법으로 수요를 확인한다.
+ * 페이지를 여는 신호. 기준은 **이름으로 검색되는 신호**다 — 2026-11-15 네이버 검색 자동완성
+ * (`https://ac.search.naver.com/nx/ac?q=<검색어>&st=100`의 응답 `items`)에서 "골든크로스 종목"·
+ * "52주 신고가 종목"은 자동완성이 붙었고 "RSI 과매도 종목"은 붙지 않았다. 같은 계열(데드크로스·신저가·
+ * RSI·MACD 교차)은 묶어서 연다. CCI·CMF 교차처럼 하루 수십 종목이 잡히지만 그 이름으로 찾는 사람이
+ * 드문 신호는 열지 않는다(얇고 겹치는 페이지가 늘어난다). 늘릴 때는 같은 요청으로 "<신호> 종목"을
+ * 넣어 자동완성이 붙는지 다시 확인한다.
  */
 export const SIGNAL_HUBS: readonly SignalHub[] = [
     {
@@ -69,10 +71,12 @@ export const SIGNAL_HUB_WINDOW_DAYS = 30;
  */
 export const SIGNAL_HUB_MIN_INDEXABLE_ROWS = 5;
 
+/** 신호 페이지 경로(로케일 접두사 없음 — 링크 컴포넌트·`localizedAbsoluteUrl`이 붙인다). */
 export function signalHubPath(slug: string): string {
     return `/market/signals/${slug}`;
 }
 
+/** URL 슬러그로 신호 페이지를 찾는다. 목록에 없으면 `null` — 라우트가 404를 낸다. */
 export function findSignalHub(slug: string): SignalHub | null {
     return SIGNAL_HUBS.find(hub => hub.slug === slug) ?? null;
 }

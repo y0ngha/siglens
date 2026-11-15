@@ -9,6 +9,10 @@ import { SITE_URL } from '@/shared/lib/seo';
 import type { SitemapEntry } from '../model';
 import { sitemapAlternates } from './sitemapAlternates';
 
+/** 신호 페이지는 장 마감마다 목록이 바뀐다. 우선순위는 종목 페이지(0.8)보다 낮은 목록 페이지 수준이다. */
+const SIGNAL_HUB_CHANGE_FREQUENCY = 'daily' as const;
+const SIGNAL_HUB_PRIORITY = 0.6;
+
 /**
  * 색인할 수 있는 신호 페이지만 사이트맵에 싣는다 — 페이지 메타데이터와 같은 술어
  * (`isSignalHubIndexable`)라, noindex로 내보내는 얇은 페이지를 사이트맵이 "수집하라"고 권하지 않는다.
@@ -30,8 +34,8 @@ export function buildSignalHubSitemapEntries(
             {
                 url: `${SITE_URL}${path}`,
                 lastModified,
-                changeFrequency: 'daily' as const,
-                priority: 0.6,
+                changeFrequency: SIGNAL_HUB_CHANGE_FREQUENCY,
+                priority: SIGNAL_HUB_PRIORITY,
                 alternates: sitemapAlternates(path, STATIC_INDEXABLE_LOCALES),
             },
         ];

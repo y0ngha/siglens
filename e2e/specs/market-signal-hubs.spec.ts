@@ -14,7 +14,11 @@ const LD_JSON_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
 
 function jsonLdTypes(html: string): string[] {
     return Array.from(html.matchAll(LD_JSON_RE), match => {
-        const data = JSON.parse(match[1]!) as Record<string, unknown>;
+        const body = match[1];
+        if (body === undefined) throw new Error('빈 JSON-LD 스크립트');
+        const data: unknown = JSON.parse(body);
+        if (typeof data !== 'object' || data === null || !('@type' in data))
+            throw new Error(`@type 없는 JSON-LD: ${body.slice(0, 80)}`);
         return String(data['@type']);
     });
 }
