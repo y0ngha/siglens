@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TOOL_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import {
+    ANALYST_VIEWS_RESULT_MAX_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+} from '@/app/api/ai/chat/tools/truncate';
 import type { AnalystViews } from '@/entities/analyst-views/model';
 
 const { isTabAllowed, getViews, getQuote, resolveProfile, assetInfo } =
@@ -80,8 +83,32 @@ function rows(n: number) {
     }));
 }
 
+/** 실제보다 무거운 추정치 4기간(긴 소수·12자리 매출). */
+const ESTIMATES: NonNullable<AnalystViews['estimates']> = [
+    '0q',
+    '+1q',
+    '0y',
+    '+1y',
+].map(period => ({
+    period,
+    endDate: '2027-01-31',
+    eps: {
+        avg: -12345.6789,
+        analysts: 57,
+        ago7d: -12345.6789,
+        ago30d: -12345.6789,
+        ago60d: -12345.6789,
+        ago90d: -12345.6789,
+        change30d: -1234.5678,
+        change90d: -1234.5678,
+    },
+    revisions: { up7d: 12, down7d: 12, up30d: 12, down30d: 12 },
+    revenue: { avg: 1017420394730000, analysts: 57, growthPct: 292.62 },
+}));
+
 function views(over: Partial<AnalystViews> = {}): AnalystViews {
     return {
+        estimates: null,
         asOf: '2026-11-15T12:00:00.000Z',
         symbol: 'NVDA',
         targets: {
@@ -324,6 +351,22 @@ describe('getAnalystViewsTool', () => {
         await vi.waitFor(() => expect(getQuote).toHaveBeenCalled());
         release();
         expect((await pending).available).toBe(true);
+    });
+
+    it('15행 + 추정치 4기간(실제보다 무거운 값)이 전용 상한 안이고, 추정치는 그대로 실린다', async () => {
+        getViews.mockResolvedValue(views({ estimates: ESTIMATES }));
+        const result = await run();
+        const size = JSON.stringify(result).length;
+        // 2026-11-16 실측 4,721자.
+        expect(size).toBeGreaterThan(4_500);
+        expect(size).toBeLessThan(ANALYST_VIEWS_RESULT_MAX_CHARS);
+        // 결과 숫자는 유효숫자 6자리로 줄어든다(`roundNumbersDeep`).
+        expect(result).toMatchObject({
+            estimates: ESTIMATES.map(e => ({
+                period: e.period,
+                eps: { avg: -12345.7, change30d: -1234.57 },
+            })),
+        });
     });
 
     it('긴 증권사명·등급을 담은 15행 결과가 표준 상한(4,000자) 안이다', async () => {

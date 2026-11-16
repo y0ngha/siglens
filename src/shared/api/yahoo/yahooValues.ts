@@ -13,6 +13,13 @@ export function stringOrNull(value: unknown): string | null {
     return typeof value === 'string' ? value : null;
 }
 
+/** Yahoo의 소수 비율(0.7117)을 퍼센트(71.17)로, 소수 둘째 자리까지. 숫자가 아니면 `null`. */
+export function fractionToPct(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value)
+        ? Math.round(value * 10_000) / 100
+        : null;
+}
+
 /**
  * `Date`·ISO 문자열·epoch 초를 ISO 문자열로 바꾼다(Redis JSON 왕복용). 해석이 안 되면 `null`.
  */

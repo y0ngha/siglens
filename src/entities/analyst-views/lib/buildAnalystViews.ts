@@ -5,6 +5,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type {
     YahooAnalystSummary,
+    YahooEstimatePeriod,
     YahooRawAnalystAction,
 } from '@/shared/api/yahoo/yahooAnalystSource';
 import type {
@@ -12,6 +13,7 @@ import type {
     AnalystActionKind,
     AnalystActionTally,
     AnalystEarningsHint,
+    AnalystEstimatePeriod,
     AnalystFmpTargets,
     AnalystRatings,
     AnalystSource,
@@ -24,6 +26,7 @@ import { etWallClock } from '@/shared/api/market/usSessionClock';
 import { MINUTES_PER_HOUR } from '@/shared/config/time';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { fractionToPct } from '@/shared/api/yahoo/yahooValues';
 
 const TALLY_WINDOWS_DAYS = { last30d: 30, last90d: 90 } as const;
 
@@ -63,6 +66,54 @@ export interface BuildAnalystViewsInput {
     includeActions: boolean;
     /** 한국 종목은 실적 힌트를 내지 않는다(프로바이더가 이미 Yahoo다). */
     includeEarnings: boolean;
+    /** 실적 추정치 추이를 싣는가. 가벼운 조회(`detail: 'lite'`)는 싣지 않는다. */
+    includeEstimates: boolean;
+}
+
+/** 현재 − 과거(주당). 반올림은 도구 경계(`roundNumbersDeep`)가 한 번만 한다. 차이가 0이면 `-0`이 아니라 `0`이다. */
+function epsChange(current: number | null, past: number | null): number | null {
+    return current === null || past === null ? null : current - past || 0;
+}
+
+function mapEstimate(raw: YahooEstimatePeriod): AnalystEstimatePeriod {
+    return {
+        period: raw.period,
+        endDate: raw.endDate,
+        eps: {
+            avg: raw.epsAvg,
+            analysts: raw.epsAnalysts,
+            ago7d: raw.eps7dAgo,
+            ago30d: raw.eps30dAgo,
+            ago60d: raw.eps60dAgo,
+            ago90d: raw.eps90dAgo,
+            change30d: epsChange(raw.epsAvg, raw.eps30dAgo),
+            change90d: epsChange(raw.epsAvg, raw.eps90dAgo),
+        },
+        revisions: {
+            up7d: raw.up7d,
+            down7d: raw.down7d,
+            up30d: raw.up30d,
+            down30d: raw.down30d,
+        },
+        revenue: {
+            avg: raw.revenueAvg,
+            analysts: raw.revenueAnalysts,
+            growthPct: fractionToPct(raw.revenueGrowth),
+        },
+    };
+}
+
+/**
+ * EPS와 매출 추정치가 둘 다 없는 기간만 버린다(적자·초기 기업은 매출 추정치만 있을 수 있다). 남는 기간이 없으면 `null`
+ * ("추정치 없음"을 빈 배열로 내지 않는다).
+ */
+function buildEstimates(
+    yahoo: YahooAnalystSummary | null
+): AnalystEstimatePeriod[] | null {
+    const periods = (yahoo?.estimates ?? [])
+        .filter(row => row.epsAvg !== null || row.revenueAvg !== null)
+        .map(mapEstimate);
+    return periods.length > 0 ? periods : null;
 }
 
 function positiveOrNull(value: number | null | undefined): number | null {
@@ -242,6 +293,7 @@ export function buildAnalystViews(input: BuildAnalystViewsInput): AnalystViews {
                 : null,
         },
         earnings: input.includeEarnings ? buildEarnings(yahoo, now) : null,
+        estimates: input.includeEstimates ? buildEstimates(yahoo) : null,
         degraded,
     };
 }

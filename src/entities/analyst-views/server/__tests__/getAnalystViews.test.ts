@@ -50,6 +50,7 @@ describe('getAnalystViews', () => {
         const v = await getAnalystViews('NVDA');
         expect(getYahooAnalystSummary).toHaveBeenCalledWith('NVDA', {
             includeActions: true,
+            includeEstimates: true,
         });
         expect(v.targets.yahoo?.mean).toBe(100);
         expect(v.targets.fmp?.consensus).toBe(130);
@@ -62,6 +63,7 @@ describe('getAnalystViews', () => {
         const v = await getAnalystViews('005930.KS');
         expect(getYahooAnalystSummary).toHaveBeenCalledWith('005930.KS', {
             includeActions: false,
+            includeEstimates: true,
         });
         expect(getProvider).not.toHaveBeenCalled();
         expect(v.targets.fmp).toBeNull();
@@ -135,6 +137,7 @@ describe('getAnalystViews', () => {
         const v = await getAnalystViews('NVDA', { detail: 'lite' });
         expect(getYahooAnalystSummary).toHaveBeenCalledWith('NVDA', {
             includeActions: false,
+            includeEstimates: false,
         });
         expect(consensus).toHaveBeenCalledTimes(1);
         expect(summary).not.toHaveBeenCalled();
@@ -155,6 +158,7 @@ describe('getAnalystViews', () => {
         expect(summary).toHaveBeenCalledTimes(1);
         expect(getYahooAnalystSummary).toHaveBeenCalledWith('NVDA', {
             includeActions: true,
+            includeEstimates: true,
         });
     });
 

@@ -23,6 +23,7 @@ const EMPTY: YahooGradesResult = { kind: 'empty' };
 const FAILED: YahooGradesResult = { kind: 'failed' };
 
 const summary = (trend: YahooAnalystSummary['trend']): YahooAnalystSummary => ({
+    estimates: [],
     targets: {
         mean: null,
         median: null,

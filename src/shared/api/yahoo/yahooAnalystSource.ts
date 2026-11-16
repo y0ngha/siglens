@@ -66,6 +66,28 @@ export interface YahooEarningsHint {
     isEstimate: boolean | null;
 }
 
+/** `earningsTrend` 한 기간(원문 그대로, 날짜만 ISO 날짜). 값이 없으면 `null`. */
+export interface YahooEstimatePeriod {
+    /** `0q`·`+1q`·`0y`·`+1y`. */
+    period: string;
+    /** 기간 마지막 날 `YYYY-MM-DD`. */
+    endDate: string | null;
+    epsAvg: number | null;
+    epsAnalysts: number | null;
+    eps7dAgo: number | null;
+    eps30dAgo: number | null;
+    eps60dAgo: number | null;
+    eps90dAgo: number | null;
+    up7d: number | null;
+    down7d: number | null;
+    up30d: number | null;
+    down30d: number | null;
+    revenueAvg: number | null;
+    revenueAnalysts: number | null;
+    /** 소수(0.25 = 25%). */
+    revenueGrowth: number | null;
+}
+
 /** JSON 직렬화 가능한 애널리스트 요약. 캐시에 그대로 들어간다. */
 export interface YahooAnalystSummary {
     targets: YahooAnalystTargets;
@@ -73,6 +95,51 @@ export interface YahooAnalystSummary {
     /** `null`은 요청하지 않았다는 뜻이고, `[]`는 이력이 없다는 뜻이다. */
     actions: YahooRawAnalystAction[] | null;
     earnings: YahooEarningsHint | null;
+    /** 실적 추정치 추이. 요청하지 않았거나 Yahoo가 주지 않으면 `[]`. */
+    estimates: YahooEstimatePeriod[];
+}
+
+/** 추정치를 싣는 기간 — 이번·다음 분기, 이번·다음 회계연도. `-1q` 같은 지난 기간은 버린다. */
+const ESTIMATE_PERIODS: ReadonlySet<string> = new Set([
+    '0q',
+    '+1q',
+    '0y',
+    '+1y',
+]);
+
+function mapEstimates(raw: unknown): YahooEstimatePeriod[] {
+    const rows = asRecord(raw)?.trend;
+    if (!Array.isArray(rows)) return [];
+    return rows.flatMap(item => {
+        const row = asRecord(item);
+        const period = stringOrNull(row?.period);
+        if (row === null || period === null || !ESTIMATE_PERIODS.has(period))
+            return [];
+        const eps = asRecord(row.earningsEstimate);
+        const trend = asRecord(row.epsTrend);
+        const revisions = asRecord(row.epsRevisions);
+        const revenue = asRecord(row.revenueEstimate);
+        return [
+            {
+                period,
+                endDate: toIsoOrNull(row.endDate)?.slice(0, 10) ?? null,
+                epsAvg: toFiniteNumber(eps?.avg),
+                epsAnalysts: toFiniteNumber(eps?.numberOfAnalysts),
+                eps7dAgo: toFiniteNumber(trend?.['7daysAgo']),
+                eps30dAgo: toFiniteNumber(trend?.['30daysAgo']),
+                eps60dAgo: toFiniteNumber(trend?.['60daysAgo']),
+                eps90dAgo: toFiniteNumber(trend?.['90daysAgo']),
+                up7d: toFiniteNumber(revisions?.upLast7days),
+                // Yahoo 원문 키가 이것만 대문자 D다(`downLast7Days`).
+                down7d: toFiniteNumber(revisions?.downLast7Days),
+                up30d: toFiniteNumber(revisions?.upLast30days),
+                down30d: toFiniteNumber(revisions?.downLast30days),
+                revenueAvg: toFiniteNumber(revenue?.avg),
+                revenueAnalysts: toFiniteNumber(revenue?.numberOfAnalysts),
+                revenueGrowth: toFiniteNumber(revenue?.growth),
+            },
+        ];
+    });
 }
 
 function firstIso(value: unknown): string | null {
@@ -187,6 +254,7 @@ export function mapAnalystSummary(
               )
             : null,
         earnings: mapEarnings(record.calendarEvents),
+        estimates: mapEstimates(record.earningsTrend),
     };
 }
 
@@ -228,24 +296,31 @@ function emptySummary(includeActions: boolean): YahooAnalystSummary {
  * 그렇지 않으면 ETF 질문마다 Yahoo를 다시 때리고 `degraded`로 오표시된다.
  * `includeActions`가 키에 들어가는 이유는 변경 이력 모듈이 수백 행이라 이력이 필요 없는 호출(한국 종목, 펀더멘털
  * 도구의 가벼운 조회)이 그 비용을 내지 않게 하려는 것이고, 두 변형이 서로의 캐시를 읽지 않게 하기 위해서다.
+ * `includeEstimates`(기본 `false`)는 `earningsTrend` 모듈을 더하고 별도 키(`v3:<SYM>:<a|n>e`)를 쓴다 — 추정치가 필요 없는
+ * 호출은 기존 v2 키를 그대로 읽어, 추정치 도입이 그 경로의 캐시를 비우거나 응답을 키우지 않는다.
  * E2E fake 모드에서는 네트워크에 나가지 않는다.
  */
 export async function getYahooAnalystSummary(
     symbol: string,
-    options: { includeActions: boolean }
+    options: { includeActions: boolean; includeEstimates?: boolean }
 ): Promise<YahooAnalystSummary | null> {
     if (isE2EFakeMode()) return null;
-    const { includeActions } = options;
+    const { includeActions, includeEstimates = false } = options;
     const yahooSymbol = toYahooSymbol(sym(symbol));
     const modules: QuoteSummaryModules[] = [
         'financialData',
         'recommendationTrend',
         'calendarEvents',
+        ...(includeEstimates ? (['earningsTrend'] as const) : []),
         ...(includeActions ? (['upgradeDowngradeHistory'] as const) : []),
     ];
     try {
         return await getOrSetCache<YahooAnalystSummary>(
-            `yahoo:analyst-summary:v2:${sym(symbol)}:${includeActions ? 'a' : 'n'}`,
+            // 추정치 변형만 새 키(v3, 접미사 e)를 쓴다 — 추정치가 필요 없는 가벼운 조회는 기존 v2 키를 그대로 읽어
+            // 배포 직후 캐시가 한꺼번에 비지 않는다.
+            includeEstimates
+                ? `yahoo:analyst-summary:v3:${sym(symbol)}:${includeActions ? 'a' : 'n'}e`
+                : `yahoo:analyst-summary:v2:${sym(symbol)}:${includeActions ? 'a' : 'n'}`,
             ANALYST_SUMMARY_TTL_SECONDS,
             async () => {
                 try {

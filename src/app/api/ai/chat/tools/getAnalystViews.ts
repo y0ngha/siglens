@@ -13,16 +13,16 @@ import { pctVs } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 /**
- * 모델에 싣는 변경 이력 행 수. core 설명은 "up to 15"이고, 긴 증권사명·등급 문구를 담은 15행 실측이
- * `TOOL_RESULT_MAX_CHARS`(4,000자) 안에 들어와 15를 유지한다(`getAnalystViews.test.ts`가 고정한다).
- * 넘으면 상한을 올리지 말고 이 값을 줄일 것.
+ * 모델에 싣는 변경 이력 행 수. core 설명은 "up to 15"이고, 긴 증권사명·등급 문구를 담은 15행과 추정치 4기간을 함께 실은
+ * 실측이 이 도구의 전용 상한 `ANALYST_VIEWS_RESULT_MAX_CHARS`(5,500자) 안에 들어와 15를 유지한다(`getAnalystViews.test.ts`가
+ * 고정한다). 넘으면 상한을 올리지 말고 이 값을 줄일 것.
  */
 export const ANALYST_ACTION_ROWS_MAX = 15;
 
 /**
- * 종목의 애널리스트 뷰: 목표가 두 출처(Yahoo·FMP) 병기, 현재 투자의견 분포, 증권사별 변경 이력.
- * 펀더멘털 탭이 허용되는 종목(미국·한국 주식)만 대상이고, 그 밖은 `not_a_stock`이다.
- * `earnings`는 싣지 않는다(`get_fundamentals`의 몫).
+ * 종목의 애널리스트 뷰: 목표가 두 출처(Yahoo·FMP) 병기, 현재 투자의견 분포, 증권사별 변경 이력, 실적 추정치 추이
+ * (`estimates`, Yahoo — 미국·한국). 펀더멘털 탭이 허용되는 종목(미국·한국 주식)만 대상이고, 그 밖은 `not_a_stock`이다.
+ * 넷 다 없으면 `no_analyst_data`(또는 출처 실패면 `provider_failed`)다. `earnings`는 싣지 않는다(`get_fundamentals`의 몫).
  */
 export const getAnalystViewsTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();
@@ -57,7 +57,8 @@ export const getAnalystViewsTool: ToolExecutor = async args => {
         targets.yahoo === null &&
         targets.fmp === null &&
         ratings === null &&
-        actions.rows.length === 0
+        actions.rows.length === 0 &&
+        views.estimates === null
     )
         // 출처가 실패했으면 "모름"(재시도 가치), 아니면 이 종목에 애널리스트 데이터가 없는 것(ETF·소형주)이다.
         return {
@@ -91,6 +92,7 @@ export const getAnalystViewsTool: ToolExecutor = async args => {
             rows: actions.rows.slice(0, ANALYST_ACTION_ROWS_MAX),
             tally: actions.tally,
         },
+        estimates: views.estimates,
         degraded,
     });
 };

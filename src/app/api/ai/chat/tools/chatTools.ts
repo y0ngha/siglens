@@ -17,6 +17,7 @@ import {
     X_POSTS_RESULT_MAX_CHARS,
     COMPANY_FILINGS_RESULT_MAX_CHARS,
     INDEX_HISTORY_RESULT_MAX_CHARS,
+    ANALYST_VIEWS_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -115,6 +116,8 @@ export interface ToolResultCaps {
     xPosts: number;
     /** `get_index_history_stats` (a year-by-year table since 1951 for the S&P 500). */
     indexHistory: number;
+    /** `get_analyst_views` (up to 15 actions plus four estimate periods). */
+    analystViews: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -133,6 +136,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     companyFilings: COMPANY_FILINGS_RESULT_MAX_CHARS,
     xPosts: X_POSTS_RESULT_MAX_CHARS,
     indexHistory: INDEX_HISTORY_RESULT_MAX_CHARS,
+    analystViews: ANALYST_VIEWS_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -319,6 +323,7 @@ export function createToolExecutor(
         if (name === 'get_company_filings') return resultCaps.companyFilings;
         if (name === 'get_x_posts') return resultCaps.xPosts;
         if (name === 'get_index_history_stats') return resultCaps.indexHistory;
+        if (name === 'get_analyst_views') return resultCaps.analystViews;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

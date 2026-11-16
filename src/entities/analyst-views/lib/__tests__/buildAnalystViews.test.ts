@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { YahooEstimatePeriod } from '@/shared/api/yahoo/yahooAnalystSource';
 import type {
     YahooAnalystSummary,
     YahooRawAnalystAction,
@@ -21,6 +22,7 @@ const NO_TARGETS = {
 
 function summary(over: Partial<YahooAnalystSummary> = {}): YahooAnalystSummary {
     return {
+        estimates: [],
         targets: {
             mean: 276.56,
             median: 280,
@@ -73,6 +75,7 @@ function build(over: Partial<BuildAnalystViewsInput> = {}) {
         fmp: fmpWith(300),
         fmpFailed: false,
         includeActions: true,
+        includeEstimates: false,
         includeEarnings: true,
         ...over,
     });
@@ -590,5 +593,96 @@ describe('buildAnalystViews - earnings', () => {
 
     it('asOf는 주입한 now다', () => {
         expect(build().asOf).toBe(NOW.toISOString());
+    });
+});
+
+describe('buildAnalystViews - estimates', () => {
+    const period = (
+        over: Partial<YahooEstimatePeriod> = {}
+    ): YahooEstimatePeriod => ({
+        period: '0y',
+        endDate: '2026-12-31',
+        epsAvg: -2.22907,
+        epsAnalysts: 7,
+        eps7dAgo: -4.08,
+        eps30dAgo: -4.15167,
+        eps60dAgo: -4.48333,
+        eps90dAgo: -3.72761,
+        up7d: 2,
+        down7d: 0,
+        up30d: 2,
+        down30d: 0,
+        revenueAvg: 510465900,
+        revenueAnalysts: 12,
+        revenueGrowth: 2.9262,
+        ...over,
+    });
+
+    it('변화는 현재 − 과거(주당 절대값), 매출 성장률은 퍼센트(적자 EPS의 개선은 양수)', () => {
+        const views = build({
+            yahoo: summary({ estimates: [period()] }),
+            includeEstimates: true,
+        });
+        const [period0] = views.estimates ?? [];
+        expect(period0).toMatchObject({
+            period: '0y',
+            endDate: '2026-12-31',
+            eps: {
+                avg: -2.22907,
+                analysts: 7,
+                ago7d: -4.08,
+                ago30d: -4.15167,
+                ago60d: -4.48333,
+                ago90d: -3.72761,
+            },
+            revisions: { up7d: 2, down7d: 0, up30d: 2, down30d: 0 },
+            revenue: { avg: 510465900, analysts: 12, growthPct: 292.62 },
+        });
+        // 반올림은 도구 경계가 한다 — 여기서는 부동소수 그대로다.
+        expect(period0?.eps.change30d).toBeCloseTo(1.9226, 10);
+        expect(period0?.eps.change90d).toBeCloseTo(1.49854, 10);
+    });
+
+    it('과거 값이 없으면 변화는 null, 매출만 있는 기간은 남기고 EPS·매출이 둘 다 없는 기간은 버린다', () => {
+        const views = build({
+            yahoo: summary({
+                estimates: [
+                    period({ eps30dAgo: null }),
+                    period({ period: '+1y', epsAvg: null }),
+                    period({ period: '+1q', epsAvg: null, revenueAvg: null }),
+                ],
+            }),
+            includeEstimates: true,
+        });
+        expect(views.estimates?.map(e => e.period)).toEqual(['0y', '+1y']);
+        expect(views.estimates?.[0]?.eps.change30d).toBeNull();
+        expect(views.estimates?.[1]?.eps.change30d).toBeNull();
+        expect(
+            build({
+                yahoo: summary({
+                    estimates: [period({ epsAvg: null, revenueAvg: null })],
+                }),
+                includeEstimates: true,
+            }).estimates
+        ).toBeNull();
+    });
+
+    it('변화가 0이면 -0이 아니라 0이다', () => {
+        const views = build({
+            yahoo: summary({
+                estimates: [period({ epsAvg: -1.5, eps30dAgo: -1.5 })],
+            }),
+            includeEstimates: true,
+        });
+        expect(Object.is(views.estimates?.[0]?.eps.change30d, 0)).toBe(true);
+    });
+
+    it('가벼운 조회(includeEstimates false)나 Yahoo 실패면 null', () => {
+        expect(
+            build({ yahoo: summary({ estimates: [period()] }) }).estimates
+        ).toBeNull();
+        expect(
+            build({ yahoo: null, includeEstimates: true }).estimates
+        ).toBeNull();
     });
 });
