@@ -934,7 +934,7 @@ that fails when it is removed. Allowlists stay explicit and fixed; do not widen 
 #### CS-8 — Grep the repo after moving, deleting or changing a constant
 
 After a move, delete, constant change or merge-conflict resolution, grep the whole repo (`src/`, `e2e/`, `scripts/`,
-`docs/`) for the old path, name or literal and update every hit in the same commit. Scoped test runs and editor
+`infra/`, `docs/`) for the old path, name or literal and update every hit in the same commit. Scoped test runs and editor
 refactors miss e2e specs, hard-coded test literals and branch-only additions. When a data source starts feeding a
 config list, check every test-enforced invariant over that list; a script's output should be dry-run against the
 suite before it is committed. Rules that exist in several restatements (prompt body, digest, output directives)

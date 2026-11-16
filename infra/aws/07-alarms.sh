@@ -220,7 +220,7 @@ put_alert_filter siglens-agent-busy '"[agent] busy"' P2 100
 put_alert_filter siglens-agent-web-search-budget '"[agent] web search budget exhausted"' P2 100
 
 # X 글 도구(get_x_posts) 하루 읽기 예산 소진 — entities/x-posts/server/xDailyBudget.ts가 전체 상한
-# (AGENT_X_POSTS_PER_DAY, 기본 200항목)에 닿으면 `[xPosts] daily read budget exhausted`를 찍는다. 그 뒤로
+# (AGENT_X_POSTS_PER_DAY, 기본 400항목)에 닿으면 `[xPosts] daily read budget exhausted`를 찍는다. 그 뒤로
 # 그날(UTC)은 모든 사용자의 X 글 조회가 거절된다(X는 읽은 항목 수만큼 과금). 상한 상향을 판단하는 신호라
 # 1건이라도 나면 알린다. 게스트 몫(25%) 소진(`daily guest read budget exhausted`)은 회원이 남은 예산을
 # 계속 쓰므로 알리지 않는다 — 따옴표로 묶은 전체 문구라 그 로그와 겹치지 않는다. P2: 답변은 계속 나간다.

@@ -6,7 +6,7 @@ import { ISO_DATE_LENGTH, SECONDS_PER_DAY } from '@/shared/config/time';
  * 하루에 X에서 읽는 항목(글 + 조회한 사용자) 수의 기본 상한. X는 읽은 항목 수만큼 과금한다 — 이 값은 비용의
  * 천장이지 목표가 아니다. `AGENT_X_POSTS_PER_DAY`로 덮어쓴다.
  */
-const DEFAULT_X_READS_PER_DAY = 200;
+const DEFAULT_X_READS_PER_DAY = 400;
 /**
  * 게스트가 함께 쓸 수 있는 몫(전체 상한의 비율). 게스트는 쿠키만 지우면 새 주체가 되므로 회원 몫까지 비우지 못하게
  * 따로 센다 — 게스트 몫이 차도 회원은 남은 전체 예산을 쓴다.
