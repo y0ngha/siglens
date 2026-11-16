@@ -1,5 +1,23 @@
 # Changelog
 
+# [0.122.0](https://github.com/y0ngha/siglens/compare/v0.121.0...v0.122.0) (2026-11-16)
+
+### Bug Fixes
+
+* 해외 발행사(6-K)·보도자료 공시 제목 추출 정확도 개선 ([#1313](https://github.com/y0ngha/siglens/issues/1313)) ([883b277](https://github.com/y0ngha/siglens/commit/883b277fd6e07e390b6f90c010a67d65f33a9c06))
+
+### Features
+
+* 뉴스 탭에 애널리스트 목표가 변화와 최근 공시 섹션 추가 ([#1310](https://github.com/y0ngha/siglens/issues/1310)) ([e7bcfdc](https://github.com/y0ngha/siglens/commit/e7bcfdcc88d9e73f1966c8c9c7e65ae58cb9e696))
+* 다음 실적일을 Yahoo 확정 정보로 대조해 뉴스 탭·AI 분석에도 반영 ([#1314](https://github.com/y0ngha/siglens/issues/1314)) ([d49dabe](https://github.com/y0ngha/siglens/commit/d49dabe23f464fbef28c3aba9c70de92b9c8c52b))
+* 애널리스트 뷰·매크로 시세 도구와 펀더멘털 확장 ([#1306](https://github.com/y0ngha/siglens/issues/1306)) ([fd3e66c](https://github.com/y0ngha/siglens/commit/fd3e66cf84ff3f6a792c43b088bf30aa1828c15a))
+* 애널리스트 현행 분포와 미래 방향 카드 보정 ([#1307](https://github.com/y0ngha/siglens/issues/1307)) ([6c08443](https://github.com/y0ngha/siglens/commit/6c08443320dc8bd334067eb1230cbbe8a1005514))
+* 펀더멘털 탭에 실적 추정치 변화(30·90일) 섹션 추가 ([#1315](https://github.com/y0ngha/siglens/issues/1315)) ([db503a7](https://github.com/y0ngha/siglens/commit/db503a76e40e339d7e9e4c14afb1448c125fe91c)), closes [I18N.md#I18-16](https://github.com/I18N.md/issues/I18-16)
+* SiglensAI 기업 공시 조회 도구 추가 ([#1308](https://github.com/y0ngha/siglens/issues/1308)) ([bdea904](https://github.com/y0ngha/siglens/commit/bdea9046a7275daf38bfabce1ab7cabae0b7ec33))
+* SiglensAI 애널리스트 도구에 실적 추정치 추이, 수급 도구에 기관·내부자 보유 비율 추가 ([#1312](https://github.com/y0ngha/siglens/issues/1312)) ([c6a6f67](https://github.com/y0ngha/siglens/commit/c6a6f6785fa9fc5d6045cf06706d1e027c2ccf84))
+* SiglensAI 테마 동향·지수 장기 통계 도구 실행기 추가 ([#1311](https://github.com/y0ngha/siglens/issues/1311)) ([50a11cc](https://github.com/y0ngha/siglens/commit/50a11cc8b4d8499aa5efccdc3b23b6cf1fa06865))
+* SiglensAI X 공식 계정 글 조회 도구(get_x_posts) 실행기 추가 ([#1309](https://github.com/y0ngha/siglens/issues/1309)) ([503a486](https://github.com/y0ngha/siglens/commit/503a486567036dff4b9762d73e4083e13a7dd7a5))
+
 # [0.121.0](https://github.com/y0ngha/siglens/compare/v0.120.0...v0.121.0) (2026-11-15)
 
 ### Features
