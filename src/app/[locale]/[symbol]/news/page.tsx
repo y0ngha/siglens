@@ -13,6 +13,7 @@ import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvabl
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { earningsMarketToday } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
@@ -24,7 +25,6 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { earningsMarketToday } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import {
     buildTitleSubject,
     resolveSymbolNewsSeoContent,

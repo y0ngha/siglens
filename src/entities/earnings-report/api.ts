@@ -183,20 +183,25 @@ export async function resolveEarningsDates(
             return null;
         }
     );
-    return withUpcoming(await listEarningsDates(symbol, db), next);
+    return withUpcoming(await listEarningsDates(symbol, db), next, symbol);
 }
 
-/** 목록의 예정일을 대조된 다음 실적일로 맞춘다(`withUpcomingEarningsDate`). 목록이 없으면(`undefined`) 그대로다. */
+/**
+ * 목록의 예정일을 대조된 다음 실적일로 맞춘다(`withUpcomingEarningsDate`). 목록이 없으면(`undefined`) 그대로다.
+ * "지난 날짜"는 대조와 같은 시장 달력(`earningsMarketToday`)으로 가른다 — KST로 가르면 미국 장 마감 후 발표일이
+ * 하루 일찍 지난 것으로 보인다.
+ */
 function withUpcoming(
     dates: readonly string[] | undefined,
-    next: EarningsCalendarItem | null
+    next: EarningsCalendarItem | null,
+    symbol: string
 ): readonly string[] | undefined {
     return dates === undefined
         ? undefined
         : withUpcomingEarningsDate(
               dates,
               next?.earningsDate ?? null,
-              kstDateKey(new Date())
+              earningsMarketToday(symbol, new Date())
           );
 }
 
@@ -212,7 +217,8 @@ export function listEarningsDatesAfterRefresh(
     db: SiglensDatabase
 ): Promise<readonly string[] | undefined> {
     return refresh.then(
-        async next => withUpcoming(await listEarningsDates(symbol, db), next),
+        async next =>
+            withUpcoming(await listEarningsDates(symbol, db), next, symbol),
         () => undefined
     );
 }
