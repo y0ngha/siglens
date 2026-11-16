@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.123.0](https://github.com/y0ngha/siglens/compare/v0.122.0...v0.123.0) (2026-11-16)
+
+### Features
+
+* SiglensAI가 한 회사의 "요즘 소식"에도 X 게시물을 함께 보고, X 하루 읽기 상한을 400으로 ([#1317](https://github.com/y0ngha/siglens/issues/1317)) ([cce6ef7](https://github.com/y0ngha/siglens/commit/cce6ef776ed63554f70c27d6ceb7180a4f51d044)), closes [#1316](https://github.com/y0ngha/siglens/issues/1316)
+
 # [0.122.0](https://github.com/y0ngha/siglens/compare/v0.121.0...v0.122.0) (2026-11-16)
 
 ### Bug Fixes
