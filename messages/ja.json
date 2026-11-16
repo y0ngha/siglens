@@ -5408,7 +5408,11 @@
                 "7ba954": "予定",
                 "a06069": "コンセンサス",
                 "c0c9e1": "過去",
-                "f8f294": "発表"
+                "f8f294": "発表",
+                "confirmed": "確定",
+                "sessionBeforeOpen": "寄り付き前",
+                "sessionDuringMarket": "取引時間中",
+                "sessionAfterClose": "引け後"
             },
             "NewsAiSummary": {
                 "0c767c": "再試行",

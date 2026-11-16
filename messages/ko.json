@@ -5558,7 +5558,11 @@
                 "7ba954": "예정",
                 "a06069": "컨센서스",
                 "c0c9e1": "과거",
-                "f8f294": "발표"
+                "confirmed": "확정",
+                "f8f294": "발표",
+                "sessionAfterClose": "장 마감 후",
+                "sessionBeforeOpen": "장 시작 전",
+                "sessionDuringMarket": "장중"
             },
             "NewsAiSummary": {
                 "0c767c": "다시 시도",

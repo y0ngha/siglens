@@ -6,6 +6,7 @@ import {
     getGradeEvents,
 } from '@/app/[locale]/[symbol]/news/newsData';
 import { getAnalystActionHistory } from '@/entities/analyst-views/server/getAnalystActionHistory';
+import { loadEarningsHintBounded } from '@/entities/analyst-views/server/loadEarningsHint';
 import type { CompanyFiling } from '@/entities/company-filings/model';
 import { listCompanyFilings } from '@/entities/company-filings/server/getCompanyFilings';
 import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
@@ -23,6 +24,7 @@ import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { CompanyFilings } from '@/widgets/news/sections/CompanyFilings';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
+import { withNextEarnings } from '@/widgets/news/utils/withNextEarnings';
 import {
     fromAnalystAction,
     fromGradesEvent,
@@ -148,6 +150,11 @@ interface EventCalendarSectionProps extends SymbolSectionProps {
      * 계산된다. 요청 시각은 페이지가 읽어 넘긴다 — 섹션 렌더는 순수하게 둔다.
      */
     today: string;
+    /**
+     * 그 종목 시장의 오늘(`earningsMarketToday`, 미국 ET·한국 KST). 다음 실적을 Yahoo 힌트와 대조할 때 "이미 지난
+     * 날짜"를 시장 달력으로 가른다 — KST 날짜 키로 가르면 미국 장 마감 후 발표일이 하루 일찍 지난 것으로 보인다.
+     */
+    marketToday: string;
 }
 
 /** 섹션 로더가 실패해 경고 카드로 떨어졌을 때의 안내 문구. */
@@ -180,26 +187,31 @@ const isDegraded = <T,>(value: T | DegradedSection): value is DegradedSection =>
 
 /**
  * 실적 이벤트 캘린더 섹션(주식 전용). FMP 장애(렌더 예산 초과 포함)는 경고 카드로 흡수한다
- * (`degradeSection`).
+ * (`degradeSection`). 다음 실적은 Yahoo 힌트(12h 캐시, 실패·2.5초 초과면 대조 없이)와 대조해 확정일·발표 시간대를
+ * 싣는다 — 펀더멘털 탭·AI 분석과 같은 날짜를 말하게.
  */
 export async function EventCalendarSection({
     symbol,
     today,
+    marketToday,
 }: EventCalendarSectionProps) {
     const t = await getTranslations('app.symbol');
-    const earningsReports = await staticSymbolCache(
-        ['news:earnings', symbol, today],
-        symbol,
-        () => getEarningsReportComparison(symbol, today),
-        [newsCacheTag(symbol)],
-        SECONDS_PER_HALF_DAY
-    ).catch((error: unknown) =>
-        degradeSection(
-            '[EventCalendarSection] earnings load failed, degrading:',
-            error,
-            t('page.3c87a9')
-        )
-    );
+    const [earningsReports, hint] = await Promise.all([
+        staticSymbolCache(
+            ['news:earnings', symbol, today],
+            symbol,
+            () => getEarningsReportComparison(symbol, today),
+            [newsCacheTag(symbol)],
+            SECONDS_PER_HALF_DAY
+        ).catch((error: unknown) =>
+            degradeSection(
+                '[EventCalendarSection] earnings load failed, degrading:',
+                error,
+                t('page.3c87a9')
+            )
+        ),
+        loadEarningsHintBounded(symbol),
+    ]);
     if (isDegraded(earningsReports)) {
         return (
             <NewsDataServerAlert
@@ -208,7 +220,15 @@ export async function EventCalendarSection({
             />
         );
     }
-    return <EventCalendar earningsReports={earningsReports} />;
+    return (
+        <EventCalendar
+            earningsReports={withNextEarnings(
+                earningsReports,
+                hint,
+                marketToday
+            )}
+        />
+    );
 }
 
 /**

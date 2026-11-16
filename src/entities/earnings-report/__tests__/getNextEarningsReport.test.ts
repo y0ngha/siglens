@@ -20,6 +20,11 @@ vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
         getEarningsReports: mockGetEarningsReports,
     }),
 }));
+// Yahoo 실적 힌트는 기본 "없음" — 대조 테스트만 값을 준다(실제 Yahoo로 나가지 않는다).
+const { mockHint } = vi.hoisted(() => ({ mockHint: vi.fn() }));
+vi.mock('@/entities/analyst-views/server/loadEarningsHint', () => ({
+    loadEarningsHintBounded: mockHint,
+}));
 vi.mock('@/shared/lib/etTimeUtils', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/etTimeUtils')>()),
     kstDateKey: () => '2026-05-25',
@@ -69,6 +74,7 @@ describe('getNextEarningsReport', () => {
     beforeEach(() => {
         store.clear();
         vi.clearAllMocks();
+        mockHint.mockResolvedValue(null);
         vi.spyOn(Date, 'now').mockReturnValue(NOW);
         vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         getLatestFetchedAt = vi.spyOn(
@@ -118,6 +124,56 @@ describe('getNextEarningsReport', () => {
         await expect(
             getNextEarningsSchedule('005930.KS', fakeDb)
         ).resolves.toEqual(estimated);
+    });
+
+    // 대조의 "오늘"은 실제 시계(ET)다 — 힌트 날짜를 먼 미래로 두어 실행 시각과 무관하게 한다.
+    it('Yahoo가 다른 날짜를 확정했으면 그 날짜로 바꾸고 dateConfirmed를 싣지 않는다', async () => {
+        getLatestFetchedAt.mockResolvedValue(new Date(Date.now() - 1000));
+        getNextForSymbol.mockResolvedValue({
+            ...nextEarnings,
+            earningsDate: '2030-07-30',
+        });
+        mockHint.mockResolvedValue({
+            date: '2030-07-28',
+            isEstimate: false,
+            session: 'after_market',
+            callAt: null,
+        });
+
+        const result = await getNextEarningsReport('AAPL', fakeDb);
+        expect(result).toEqual({ ...nextEarnings, earningsDate: '2030-07-28' });
+        expect(result).not.toHaveProperty('dateConfirmed');
+        expect(mockHint).toHaveBeenCalledWith('AAPL');
+    });
+
+    it('Yahoo가 같은 날짜를 추정이라고 하면 dateConfirmed:false를 싣는다', async () => {
+        getLatestFetchedAt.mockResolvedValue(new Date(Date.now() - 1000));
+        getNextForSymbol.mockResolvedValue({
+            ...nextEarnings,
+            earningsDate: '2030-07-30',
+        });
+        mockHint.mockResolvedValue({
+            date: '2030-07-30',
+            isEstimate: true,
+            session: null,
+            callAt: null,
+        });
+
+        await expect(getNextEarningsReport('AAPL', fakeDb)).resolves.toEqual({
+            ...nextEarnings,
+            earningsDate: '2030-07-30',
+            dateConfirmed: false,
+        });
+    });
+
+    it('다음 실적 행이 없으면(크립토 등) Yahoo 힌트를 부르지 않는다', async () => {
+        getLatestFetchedAt.mockResolvedValue(new Date(Date.now() - 1000));
+        getNextForSymbol.mockResolvedValue(null);
+
+        await expect(getNextEarningsReport('BTCUSD', fakeDb)).resolves.toBe(
+            null
+        );
+        expect(mockHint).not.toHaveBeenCalled();
     });
 
     it('fresh data skips FMP call and returns next earnings from DB', async () => {
@@ -278,6 +334,7 @@ describe('getNextEarningsSchedule', () => {
     beforeEach(() => {
         store.clear();
         vi.clearAllMocks();
+        mockHint.mockResolvedValue(null);
         vi.spyOn(Date, 'now').mockReturnValue(NOW);
     });
 

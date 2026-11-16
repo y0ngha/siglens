@@ -637,6 +637,8 @@ file or the rule it describes changes:
 
 - "Only X uses this" claims go stale when a second caller appears; name callers explicitly or drop the claim.
 - Before writing a claim about consumers, callers, usage counts or per-method behavior ("used in two places", "both validate at import time", "all queries retry", "reason is used for logging"), grep the repo for the actual callers and read each method; a claim that holds for one member does not hold for the group.
+- A consistency guarantee ("both paths see the same value", "cannot diverge") states the condition it holds under (warm cache, no budget timeout, same inputs); and when a refactor moves only some callers onto a shared loader, the comment lists exactly which moved and which keep their own path instead of saying "every surface".
+  ❌ "Every surface reads the hint from the shared cache." ✅ "Pages A, B and C read it from the shared cache; the agent tool keeps its own lite read. Both agree once the 12 h cache is warm."
 - When a function's processing order or workload changes (a step appended, steps reordered), re-read its JSDoc and the
   route or caller doc that describes it, for example a "short, no lock needed" claim.
 - When a function's input, data source or location changes, or a file or function is deleted, grep for comments,

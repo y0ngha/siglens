@@ -1,3 +1,5 @@
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { AnalystEarningsHint, EarningsSession } from '../model';
 
 /**
@@ -34,9 +36,10 @@ export interface ResolveNextEarningsInput {
  * - 날짜가 다르고 둘 다 오늘 이후이며 Yahoo가 확정이 아님: 일정 행을 그대로 두고 Yahoo 날짜를 `alt`로 붙인다.
  * - 그 밖(한쪽이 이미 지남 등): 일정 행 그대로. Yahoo는 발표 후에도 지난 날짜를 둔다.
  *
- * 범위: 이 대조는 에이전트 도구와 펀더멘털 탭 사실 문장만 쓴다. 일정을 직접 읽는 다른 표면(뉴스 탭 이벤트 캘린더,
- * AI 분석의 `nextEarningsAt`)은 아직 대조 전의 DB/FMP 날짜를 보여 준다 — 대조를 `entities/earnings-report`로
- * 옮기는 것은 후속 작업이다.
+ * 범위: 다음 실적일을 말하는 모든 표면이 이 대조를 쓴다 — 에이전트 `get_fundamentals`, 펀더멘털 탭 사실 문장,
+ * 뉴스 탭 실적 카드, AI 분석(뉴스·종합)의 다음 실적(`getNextEarningsReport`). 사실 문장·뉴스 탭·AI 분석은 힌트를
+ * `loadEarningsHintBounded`(같은 12h 캐시 엔트리)에서 읽고, 에이전트 도구는 자기 호출의 `getAnalystViews` lite 결과를
+ * 그대로 쓴다(판정 함수만 같다).
  */
 export function resolveNextEarnings(
     input: ResolveNextEarningsInput
@@ -75,4 +78,15 @@ export function resolveNextEarnings(
         };
     }
     return unchanged;
+}
+
+/**
+ * 그 종목 시장의 오늘(`YYYY-MM-DD`) — 실적일이 시장 달력 날짜라서다. 한국은 KST, 그 외는 미국 동부.
+ * `resolveNextEarnings`의 `today`로 넘긴다.
+ */
+export function earningsMarketToday(symbol: string, now: Date): string {
+    return zonedDate(
+        now,
+        isKrEquitySymbol(symbol) ? 'Asia/Seoul' : 'America/New_York'
+    );
 }

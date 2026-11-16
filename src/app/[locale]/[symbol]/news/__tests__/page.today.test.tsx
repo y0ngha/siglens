@@ -140,22 +140,27 @@ describe('NewsPage — 실적 캘린더 today', () => {
     });
 
     it.each([
-        // UTC 자정 직후 — KST로는 같은 날 오전이다.
-        ['2026-10-29T00:05:00.000Z', '2026-10-29'],
-        // KST 자정 직전 — UTC·KST 모두 10-29.
-        ['2026-10-29T14:59:00.000Z', '2026-10-29'],
-        // KST 자정 직후 — UTC로는 아직 10-29지만 KST는 다음 날이다.
-        ['2026-10-29T15:01:00.000Z', '2026-10-30'],
-    ])('요청 시각 %s → today=%s', async (now, expected) => {
-        vi.setSystemTime(new Date(now));
+        // UTC 자정 직후 — KST로는 같은 날 오전, 미국 동부(EDT)는 아직 전날 저녁이다.
+        ['2026-10-29T00:05:00.000Z', '2026-10-29', '2026-10-28'],
+        // KST 자정 직전 — UTC·KST·ET 모두 10-29.
+        ['2026-10-29T14:59:00.000Z', '2026-10-29', '2026-10-29'],
+        // KST 자정 직후 — UTC·ET로는 아직 10-29지만 KST는 다음 날이다.
+        ['2026-10-29T15:01:00.000Z', '2026-10-30', '2026-10-29'],
+    ])(
+        '요청 시각 %s → today=%s(KST), marketToday=%s(미국 종목은 ET)',
+        async (now, expected, expectedMarket) => {
+            vi.setSystemTime(new Date(now));
 
-        const tree = await NewsPage({
-            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
-        });
+            const tree = await NewsPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+            });
 
-        const section = findElementByType(tree, EventCalendarSection);
-        expect((section?.props as { today?: string } | undefined)?.today).toBe(
-            expected
-        );
-    });
+            const section = findElementByType(tree, EventCalendarSection);
+            const props = section?.props as
+                | { today?: string; marketToday?: string }
+                | undefined;
+            expect(props?.today).toBe(expected);
+            expect(props?.marketToday).toBe(expectedMarket);
+        }
+    );
 });

@@ -28,6 +28,9 @@ vi.mock('@/shared/lib/etTimeUtils', async importOriginal => ({
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => null,
 }));
+vi.mock('@/entities/analyst-views/server/loadEarningsHint', () => ({
+    loadEarningsHintBounded: vi.fn(async () => null),
+}));
 
 const fakeDb = {} as SiglensDatabase;
 const NOW = new Date('2026-10-18T12:00:00Z').getTime();
@@ -222,5 +225,26 @@ describe('listReportedEarningsDates (실제로 발표된 실적일만)', () => {
             '("earnings_reports"."eps_actual" is not null or "earnings_reports"."revenue_actual" is not null)'
         );
         expect(params).toEqual(['AAPL', '2024-10-18']);
+    });
+
+    it('목록의 예정일(FMP 투영)을 갱신이 준 대조된 다음 실적일로 바꾼다', async () => {
+        // 비교 기준 "오늘"은 실제 시계(KST)라 예정일을 먼 미래로 둔다.
+        vi.spyOn(
+            DrizzleEarningsReportsRepository.prototype,
+            'listDatesSince'
+        ).mockResolvedValue(['2025-01-30', '2026-07-30', '2031-01-29']);
+        const refresh = Promise.resolve({
+            symbol: 'AAPL',
+            earningsDate: '2031-01-30',
+            epsActual: null,
+            epsEstimated: null,
+            revenueActual: null,
+            revenueEstimated: null,
+            lastUpdated: '2026-10-18',
+        });
+
+        await expect(
+            listEarningsDatesAfterRefresh(refresh, 'AAPL', fakeDb)
+        ).resolves.toEqual(['2025-01-30', '2026-07-30', '2031-01-30']);
     });
 });

@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import type { EarningsCardItem } from '@/widgets/news/utils/withNextEarnings';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
-const SURPRISE_ITEM: EarningsReportComparisonItem = {
+const SURPRISE_ITEM: EarningsCardItem = {
     symbol: 'AAPL',
     earningsDate: '2026-04-30',
     epsActual: 2.01,
@@ -13,9 +13,11 @@ const SURPRISE_ITEM: EarningsReportComparisonItem = {
     lastUpdated: '2026-05-10',
     period: 'past',
     slot: 'past-1',
+    confirmed: null,
+    session: null,
 };
 
-const INLINE_ITEM: EarningsReportComparisonItem = {
+const INLINE_ITEM: EarningsCardItem = {
     ...SURPRISE_ITEM,
     earningsDate: '2026-01-29',
     epsActual: 2,
@@ -25,7 +27,7 @@ const INLINE_ITEM: EarningsReportComparisonItem = {
     slot: 'past-2',
 };
 
-const FUTURE_ITEM: EarningsReportComparisonItem = {
+const FUTURE_ITEM: EarningsCardItem = {
     ...SURPRISE_ITEM,
     earningsDate: '2026-07-30',
     epsActual: null,
@@ -36,13 +38,13 @@ const FUTURE_ITEM: EarningsReportComparisonItem = {
     slot: 'recent-or-future',
 };
 
-const NEGATIVE_EPS_ITEM: EarningsReportComparisonItem = {
+const NEGATIVE_EPS_ITEM: EarningsCardItem = {
     ...SURPRISE_ITEM,
     epsActual: -0.5,
     epsEstimated: -0.4,
 };
 
-const KR_ITEM: EarningsReportComparisonItem = {
+const KR_ITEM: EarningsCardItem = {
     ...SURPRISE_ITEM,
     symbol: '005930.KS',
     epsActual: 1_800,
@@ -77,6 +79,34 @@ describe('EventCalendar', () => {
         expect(screen.getByText(/서프라이즈/)).toBeInTheDocument();
         expect(screen.getByText(/예상치 부합/)).toBeInTheDocument();
         expect(screen.queryByText(/쇼크/)).not.toBeInTheDocument();
+    });
+
+    it('확정된 다음 실적은 "확정" 배지와 발표 시간대를, 확정이 아니면 "예정"만 보인다', () => {
+        const { unmount } = render(
+            <EventCalendar
+                earningsReports={[
+                    {
+                        ...FUTURE_ITEM,
+                        confirmed: true,
+                        session: 'after_market',
+                    },
+                ]}
+            />
+        );
+        expect(screen.getByText('확정')).toBeInTheDocument();
+        expect(screen.getByText('장 마감 후')).toBeInTheDocument();
+        // 날짜 위의 "예정"(다가오는 실적) 라벨만 남고, 배지는 "확정"으로 바뀐다.
+        expect(screen.getAllByText('예정')).toHaveLength(1);
+        unmount();
+
+        render(
+            <EventCalendar
+                earningsReports={[{ ...FUTURE_ITEM, confirmed: false }]}
+            />
+        );
+        expect(screen.queryByText('확정')).toBeNull();
+        expect(screen.getAllByText('예정')).toHaveLength(2);
+        expect(screen.queryByText('장 마감 후')).toBeNull();
     });
 
     it('음수 EPS 막대는 음수 색상으로 구분한다', () => {
