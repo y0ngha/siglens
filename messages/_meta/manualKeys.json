@@ -150,6 +150,7 @@
         "widgets.legal.untranslatedNotice",
         "widgets.legal.untranslatedNoticeLabel",
         "widgets.market-fear-greed.page",
+        "widgets.news.CompanyFilings",
         "widgets.news.surprise",
         "widgets.options.chainTable",
         "widgets.options.dst",

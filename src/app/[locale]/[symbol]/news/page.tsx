@@ -41,6 +41,7 @@ import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
 
 import {
     AnalystActionsSection,
+    CompanyFilingsSection,
     EventCalendarSection,
     NewsListSection,
 } from './_components/NewsSections';
@@ -283,6 +284,8 @@ export default async function NewsPage({ params }: Props) {
                 )}
 
                 {isEquity && <AnalystActionsSection symbol={upper} />}
+
+                {isEquity && <CompanyFilingsSection symbol={upper} />}
 
                 <CrossLinkCards
                     symbol={upper}

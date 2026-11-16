@@ -1,5 +1,6 @@
-import { gradeRowKey } from '@/widgets/news/utils/gradeRows';
 import type { GradesEvent } from '@y0ngha/siglens-core';
+import { fromGradesEvent } from '@/widgets/news/utils/analystActionItems';
+import { gradeRowKey } from '@/widgets/news/utils/gradeRows';
 
 const EVENT: GradesEvent = {
     symbol: 'AAPL',
@@ -12,6 +13,7 @@ const EVENT: GradesEvent = {
 
 describe('gradeRowKey', () => {
     it('내용이 같은 두 행도 인덱스로 구분한다', () => {
-        expect(gradeRowKey(EVENT, 0)).not.toBe(gradeRowKey({ ...EVENT }, 1));
+        const item = fromGradesEvent(EVENT);
+        expect(gradeRowKey(item, 0)).not.toBe(gradeRowKey({ ...item }, 1));
     });
 });

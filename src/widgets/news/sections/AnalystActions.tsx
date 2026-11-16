@@ -5,24 +5,25 @@
  */
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import type { GradesEvent } from '@y0ngha/siglens-core';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { ShowMoreButton } from '../ui/ShowMoreButton';
 import { AnalystActionsEmpty } from '../ui/analyst-actions/AnalystActionsEmpty';
 import { GradeRow } from '../ui/analyst-actions/GradeRow';
+import type { AnalystActionItem } from '../utils/analystActionItems';
 import { gradeRowKey } from '../utils/gradeRows';
 
 const PAGE_SIZE = 5;
 
 interface AnalystActionsProps {
-    events: GradesEvent[];
+    items: AnalystActionItem[];
 }
 
-/** 이벤트가 없으면 빈 상태, 있으면 최신순 목록과 "더보기" 버튼. */
-export function AnalystActions({ events }: AnalystActionsProps) {
+/** 행이 없으면 빈 상태, 있으면 최신순 목록과 "더보기" 버튼. */
+export function AnalystActions({ items }: AnalystActionsProps) {
     const t = useTranslations('widgets.news');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-    if (events.length === 0) return <AnalystActionsEmpty />;
+    if (items.length === 0) return <AnalystActionsEmpty />;
 
     return (
         <section
@@ -30,23 +31,23 @@ export function AnalystActions({ events }: AnalystActionsProps) {
             className="space-y-3"
         >
             <h2 id="analyst-actions-heading" className={HEADING_SECTION}>
-                {t('AnalystActions.b2cd1a')}
+                {t('AnalystActions.heading')}
             </h2>
-            <ul className="space-y-2" aria-label={t('AnalystActions.b37a23')}>
-                {events.slice(0, visibleCount).map((event, index) => (
-                    <GradeRow key={gradeRowKey(event, index)} event={event} />
+            <ul
+                className="space-y-2"
+                aria-label={t('AnalystActions.listLabel')}
+            >
+                {items.slice(0, visibleCount).map((item, index) => (
+                    <GradeRow key={gradeRowKey(item, index)} item={item} />
                 ))}
             </ul>
-            {visibleCount < events.length && (
-                <button
-                    type="button"
-                    onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="w-full rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-                >
-                    {t('AnalystActions.8e5a3a', {
-                        v0: events.length - visibleCount,
+            {visibleCount < items.length && (
+                <ShowMoreButton
+                    label={t('AnalystActions.8e5a3a', {
+                        v0: items.length - visibleCount,
                     })}
-                </button>
+                    onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                />
             )}
         </section>
     );

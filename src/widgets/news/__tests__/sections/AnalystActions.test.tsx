@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import type { GradesEvent } from '@y0ngha/siglens-core';
+import {
+    fromAnalystAction,
+    fromGradesEvent,
+} from '@/widgets/news/utils/analystActionItems';
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -37,41 +41,41 @@ const EVENTS: GradesEvent[] = [
 
 describe('AnalystActions', () => {
     it('renders empty state when no events', () => {
-        render(<AnalystActions events={[]} />);
+        render(<AnalystActions items={[]} />);
         expect(
             screen.getByText(/최근 애널리스트 등급 변경이 없습니다/)
         ).toBeInTheDocument();
     });
 
     it('renders heading', () => {
-        render(<AnalystActions events={EVENTS} />);
+        render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
         expect(
-            screen.getByRole('heading', { name: /애널리스트 등급 변경/ })
+            screen.getByRole('heading', { name: '애널리스트 등급·목표가 변경' })
         ).toBeInTheDocument();
     });
 
     it('renders grade events with company names', () => {
-        render(<AnalystActions events={EVENTS} />);
+        render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
         expect(screen.getByText('Goldman Sachs')).toBeInTheDocument();
         expect(screen.getByText('Morgan Stanley')).toBeInTheDocument();
         expect(screen.getByText('JP Morgan')).toBeInTheDocument();
     });
 
     it('renders action labels', () => {
-        render(<AnalystActions events={EVENTS} />);
+        render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
         expect(screen.getByText('상향')).toBeInTheDocument();
         expect(screen.getByText('하향')).toBeInTheDocument();
         expect(screen.getByText('신규 커버리지')).toBeInTheDocument();
     });
 
     it('renders grade transition for upgrade/downgrade', () => {
-        render(<AnalystActions events={EVENTS} />);
+        render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
         expect(screen.getByText('Neutral')).toBeInTheDocument();
         expect(screen.getByText('Buy')).toBeInTheDocument();
     });
 
     it('renders only new grade for initiated coverage', () => {
-        render(<AnalystActions events={EVENTS} />);
+        render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
         const allOverweight = screen.getAllByText('Overweight');
         expect(allOverweight.length).toBeGreaterThanOrEqual(1);
     });
@@ -86,7 +90,7 @@ describe('AnalystActions', () => {
             newGrade: 'Hold',
         }));
 
-        render(<AnalystActions events={manyEvents} />);
+        render(<AnalystActions items={manyEvents.map(fromGradesEvent)} />);
         expect(screen.getByText(/더보기/)).toBeInTheDocument();
         expect(screen.getByText(/3개 남음/)).toBeInTheDocument();
     });
@@ -95,7 +99,7 @@ describe('AnalystActions', () => {
     // "2026년 8월 10일" 같은 한국어 날짜를 영어 문장 옆에 다시 박는다.
     it('locale=en에서는 등급 변경일에 한글이 섞이지 않는다', () => {
         const { container } = renderWithIntl(
-            <AnalystActions events={EVENTS} />,
+            <AnalystActions items={EVENTS.map(fromGradesEvent)} />,
             { locale: 'en' }
         );
         const dates = container.querySelectorAll('time');
@@ -111,7 +115,7 @@ describe('AnalystActions', () => {
     // shared.enumLabel.gradesAction 카탈로그를 거친다.
     it('locale=en에서는 등급 변경 라벨이 번역되고 한글이 남지 않는다', () => {
         const { container } = renderWithIntl(
-            <AnalystActions events={EVENTS} />,
+            <AnalystActions items={EVENTS.map(fromGradesEvent)} />,
             { locale: 'en' }
         );
         expect(screen.getByText('Upgrade')).toBeInTheDocument();
@@ -131,7 +135,7 @@ describe('AnalystActions', () => {
             newGrade: 'Hold',
         }));
 
-        render(<AnalystActions events={manyEvents} />);
+        render(<AnalystActions items={manyEvents.map(fromGradesEvent)} />);
         await user.click(screen.getByText(/더보기/));
         expect(screen.queryByText(/더보기/)).not.toBeInTheDocument();
     });
@@ -139,10 +143,10 @@ describe('AnalystActions', () => {
     it('유지·기타 액션 배지는 AA 대비를 만족하는 중립 토큰(-300)을 쓴다', () => {
         render(
             <AnalystActions
-                events={[
-                    { ...EVENTS[0]!, action: 'maintained' },
-                    { ...EVENTS[1]!, action: 'other' },
-                ]}
+                items={[
+                    { ...EVENTS[0]!, action: 'maintained' as const },
+                    { ...EVENTS[1]!, action: 'other' as const },
+                ].map(fromGradesEvent)}
             />
         );
         const badges = [
@@ -161,7 +165,11 @@ describe('AnalystActions', () => {
             .mockImplementation(() => {});
         const duplicate: GradesEvent = { ...EVENTS[0]! };
 
-        render(<AnalystActions events={[duplicate, { ...duplicate }]} />);
+        render(
+            <AnalystActions
+                items={[duplicate, { ...duplicate }].map(fromGradesEvent)}
+            />
+        );
 
         expect(screen.getAllByText('Goldman Sachs')).toHaveLength(2);
         const keyWarnings = errorSpy.mock.calls.filter(call =>
@@ -169,5 +177,66 @@ describe('AnalystActions', () => {
         );
         expect(keyWarnings).toHaveLength(0);
         errorSpy.mockRestore();
+    });
+    describe('목표가 변화(Yahoo 이력)', () => {
+        const row = (
+            over: Partial<Parameters<typeof fromAnalystAction>[0]> = {}
+        ) =>
+            fromAnalystAction({
+                date: '2026-11-10',
+                firm: 'Morgan Stanley',
+                action: 'maintain',
+                fromGrade: 'Overweight',
+                toGrade: 'Overweight',
+                priorTarget: 150,
+                target: 175,
+                targetAction: 'raise',
+                ...over,
+            })!;
+
+        it('이전 → 새 목표가를 보여 주고, 같은 등급은 "A → A"로 쓰지 않는다', () => {
+            render(<AnalystActions items={[row()]} />);
+            const line = screen.getByText('$175.00').closest('p');
+            expect(line).toHaveTextContent('목표가 $150.00 → 에서 $175.00');
+            expect(screen.getByText('$175.00')).toHaveClass(
+                'text-ui-success-text'
+            );
+            expect(screen.queryByText(/Overweight →/)).not.toBeInTheDocument();
+        });
+
+        it('하향은 위험색, 이전 목표가가 없으면 새 목표가만', () => {
+            render(
+                <AnalystActions
+                    items={[
+                        row({
+                            priorTarget: 200,
+                            target: 160,
+                            targetAction: 'lower',
+                        }),
+                        row({
+                            firm: 'UBS',
+                            action: 'initiate',
+                            fromGrade: null,
+                            toGrade: 'Buy',
+                            priorTarget: null,
+                            target: 210,
+                            targetAction: 'announce',
+                        }),
+                    ]}
+                />
+            );
+            expect(screen.getByText('$160.00')).toHaveClass(
+                'text-ui-danger-text'
+            );
+            const ubs = screen.getByText('UBS').closest('li');
+            expect(ubs).toHaveTextContent('목표가 $210.00');
+            expect(ubs).not.toHaveTextContent('→');
+        });
+
+        it('등급 이벤트(목표가 없음) 행에는 목표가 줄이 없다', () => {
+            render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
+            for (const li of screen.getAllByRole('listitem'))
+                expect(li).not.toHaveTextContent('목표가');
+        });
     });
 });
