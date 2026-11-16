@@ -5,12 +5,12 @@
  */
 import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import { getMaxAbs } from '../../utils/earningsBars';
+import type { EarningsCardItem } from '../../utils/withNextEarnings';
 import { EarningsReportCard } from './EarningsReportCard';
 
 interface EarningsReportComparisonProps {
-    items: EarningsReportComparisonItem[];
+    items: EarningsCardItem[];
 }
 
 /** 항목이 없으면 아무것도 그리지 않는다. */

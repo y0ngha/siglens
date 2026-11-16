@@ -1,9 +1,16 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
+import {
+    earningsMarketToday,
+    resolveNextEarnings,
+} from '@/entities/analyst-views/lib/resolveNextEarnings';
+import { loadEarningsHintBounded } from '@/entities/analyst-views/server/loadEarningsHint';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { applyResolvedNextEarnings } from './lib/applyResolvedNextEarnings';
 import { isEarningsReportStale } from './lib/isEarningsReportStale';
+import { withUpcomingEarningsDate } from './lib/withUpcomingEarningsDate';
 import type { NextEarningsSchedule } from './model';
 import {
     isEarningsKnownEmpty,
@@ -27,9 +34,17 @@ export const EARNINGS_REPORT_FMP_LIMIT = 12;
  * (lib/)가 아니라 api.ts(server-only)에 둔다. staleness 판정은 순수 함수
  * `isEarningsReportStale`(lib/)에 위임하고, `Date.now()`는 여기(I/O 경계)에서 주입한다.
  *
- * I/O 보호는 의도적으로 비대칭이다: FMP refresh만 best-effort(try-catch로 삼켜 분석이
- * earnings 없이 진행)이고, DB I/O(getLatestFetchedAt/getNextForSymbol) 오류는 호출자
- * (Server Action)의 try-catch에 위임한다.
+ * DB 행은 FMP가 지난 분기에서 투영한 날짜일 수 있어 Yahoo 실적 힌트(`loadEarningsHintBounded`, 12h 캐시)로
+ * 대조한다(`resolveNextEarnings`): 회사가 확정한 다른 날짜면 그 날짜로, 추정이면 `dateConfirmed: false`. AI 분석의
+ * 네 경로(뉴스·종합 × 웹/공개 API·프리웜)가 모두 이 함수를 불러 같은 대조를 한다. 행이 없으면(크립토 등) Yahoo를
+ * 부르지 않고, 힌트 실패·시간 초과(2.5초)는 DB 행 그대로다.
+ *
+ * inputHash 일치는 힌트 캐시가 데워진 뒤에 보장된다. 캐시가 빈 순간 거의 동시에 도는 두 경로는 한쪽만 예산 안에
+ * 힌트를 받아 다른 날짜·플래그를 넘길 수 있다 — 그 한 번은 분석 캐시가 갈리지만, 힌트는 뒤에서 마저 캐시를 채우므로
+ * (`withTimeout`은 취소하지 않는다) 다음 호출부터 같은 값이다. 분석이 힌트를 위해 예산보다 오래 기다리게 하지는 않는다.
+ *
+ * I/O 보호는 의도적으로 비대칭이다: FMP refresh와 힌트만 best-effort(삼켜 분석이 earnings 보정 없이 진행)이고,
+ * DB I/O(getLatestFetchedAt/getNextForSymbol) 오류는 호출자(Server Action)의 try-catch에 위임한다.
  */
 export async function getNextEarningsReport(
     symbol: string,
@@ -37,7 +52,19 @@ export async function getNextEarningsReport(
 ): Promise<EarningsCalendarItem | null> {
     const repo = new DrizzleEarningsReportsRepository(db);
     const today = await refreshEarningsIfStale(repo, symbol);
-    return repo.getNextForSymbol(symbol, today);
+    const next = await repo.getNextForSymbol(symbol, today);
+    if (next === null) return null;
+    const hint = await loadEarningsHintBounded(symbol);
+    if (hint === null) return next;
+    return applyResolvedNextEarnings(
+        next,
+        resolveNextEarnings({
+            scheduledDate: next.earningsDate,
+            scheduledConfirmed: next.dateConfirmed === false ? false : null,
+            hint,
+            today: earningsMarketToday(symbol, new Date()),
+        })
+    );
 }
 
 /**
@@ -142,35 +169,56 @@ export async function listReportedEarningsDates(
 }
 
 /**
- * `getNextEarningsReport`(신선도 판정·FMP 갱신·빈 응답 마커 재사용 → 새 Redis 호출 없음)로
- * DB를 최신으로 만든 뒤 {@link listEarningsDates}로 읽는다. 어떤 단계가 실패해도 던지지 않고
- * `undefined`를 돌려준다.
+ * `getNextEarningsReport`(신선도 판정·FMP 갱신·빈 응답 마커 재사용, Yahoo 힌트는 12h 캐시)로 DB를 최신으로
+ * 만든 뒤 {@link listEarningsDates}로 읽고, 예정일을 대조된 다음 실적일로 맞춘다. 어떤 단계가 실패해도 던지지
+ * 않고 `undefined`를 돌려준다.
  */
 export async function resolveEarningsDates(
     symbol: string,
     db: SiglensDatabase
 ): Promise<readonly string[] | undefined> {
-    try {
-        await getNextEarningsReport(symbol, db);
-    } catch (err) {
-        console.warn('[resolveEarningsDates] refresh failed:', err);
-    }
-    return listEarningsDates(symbol, db);
+    const next = await getNextEarningsReport(symbol, db).catch(
+        (err: unknown) => {
+            console.warn('[resolveEarningsDates] refresh failed:', err);
+            return null;
+        }
+    );
+    return withUpcoming(await listEarningsDates(symbol, db), next, symbol);
+}
+
+/**
+ * 목록의 예정일을 대조된 다음 실적일로 맞춘다(`withUpcomingEarningsDate`). 목록이 없으면(`undefined`) 그대로다.
+ * "지난 날짜"는 대조와 같은 시장 달력(`earningsMarketToday`)으로 가른다 — KST로 가르면 미국 장 마감 후 발표일이
+ * 하루 일찍 지난 것으로 보인다.
+ */
+function withUpcoming(
+    dates: readonly string[] | undefined,
+    next: EarningsCalendarItem | null,
+    symbol: string
+): readonly string[] | undefined {
+    return dates === undefined
+        ? undefined
+        : withUpcomingEarningsDate(
+              dates,
+              next?.earningsDate ?? null,
+              earningsMarketToday(symbol, new Date())
+          );
 }
 
 /**
  * 이미 시작한 갱신(`getNextEarningsReport` promise)이 끝난 뒤 {@link listEarningsDates}로
- * 읽는다. 갱신을 또 돌리면 FMP 호출이 겹치므로 호출자가 쥔 promise를 재사용한다. 갱신이
- * 거부돼도(그 오류는 호출자가 자기 `Promise.all`에서 다룬다) 여기서는 던지지 않고
- * `undefined`("캘린더 모름")로 끝낸다.
+ * 읽고, 목록의 예정일을 그 promise가 준 대조된 다음 실적일로 맞춘다. 갱신을 또 돌리면 FMP 호출이 겹치므로
+ * 호출자가 쥔 promise를 재사용한다. 갱신이 거부돼도(그 오류는 호출자가 자기 `Promise.all`에서 다룬다) 여기서는
+ * 던지지 않고 `undefined`("캘린더 모름")로 끝낸다.
  */
 export function listEarningsDatesAfterRefresh(
-    refresh: Promise<unknown>,
+    refresh: Promise<EarningsCalendarItem | null>,
     symbol: string,
     db: SiglensDatabase
 ): Promise<readonly string[] | undefined> {
     return refresh.then(
-        () => listEarningsDates(symbol, db),
+        async next =>
+            withUpcoming(await listEarningsDates(symbol, db), next, symbol),
         () => undefined
     );
 }

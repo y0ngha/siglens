@@ -4,12 +4,12 @@
  * 실적 캘린더 섹션 — 제목과 비교 그리드를 조립한다. 표기·막대 계산·카드는 `utils/`·`ui/event-calendar/`에 있다.
  */
 import { useTranslations } from 'next-intl';
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { EarningsReportComparison } from '../ui/event-calendar/EarningsReportComparison';
+import type { EarningsCardItem } from '../utils/withNextEarnings';
 
 interface EventCalendarProps {
-    earningsReports: EarningsReportComparisonItem[];
+    earningsReports: EarningsCardItem[];
 }
 
 /** 실적 발표가 없으면 섹션 자체를 그리지 않는다. */

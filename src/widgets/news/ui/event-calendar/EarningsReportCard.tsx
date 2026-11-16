@@ -1,10 +1,9 @@
 'use client';
 
 /**
- * 실적 발표 한 건의 카드 — 발표일, 상태 라벨, 서프라이즈 배지, EPS·매출 막대.
+ * 실적 발표 한 건의 카드 — 발표일(확정된 다음 실적은 발표 시간대 포함), 상태 라벨, 서프라이즈 배지, EPS·매출 막대.
  */
 import { useTranslations } from 'next-intl';
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
@@ -14,11 +13,12 @@ import {
     formatShortDate,
 } from '../../utils/earningsFormat';
 import { getSurpriseBadge } from '../../utils/surpriseBadge';
+import type { EarningsCardItem } from '../../utils/withNextEarnings';
 import { MetricBars } from './MetricBars';
 import { SurpriseBadge } from './SurpriseBadge';
 
 interface EarningsReportCardProps {
-    item: EarningsReportComparisonItem;
+    item: EarningsCardItem;
     maxEps: number;
     maxRevenue: number;
 }
@@ -32,6 +32,8 @@ export function EarningsReportCard({
     const t = useTranslations('widgets.news');
     const locale = useResolvedLocale();
     const isFuture = item.period === 'future';
+    // 회사가 확정한 날짜(Yahoo 집계)일 때만 "확정"이라고 말한다. 추정이거나 모르면 종전 "예정" 그대로다.
+    const confirmed = isFuture && item.confirmed === true;
     const surpriseBadge = getSurpriseBadge(item);
 
     return (
@@ -43,18 +45,31 @@ export function EarningsReportCard({
                             ? t('EventCalendar.7ba954')
                             : t('EventCalendar.f8f294')}
                     </p>
-                    <time
-                        dateTime={item.earningsDate}
-                        className="font-semibold tabular-nums"
-                    >
-                        {formatShortDate(item.earningsDate, locale)}
-                    </time>
+                    <p>
+                        <time
+                            dateTime={item.earningsDate}
+                            className="font-semibold tabular-nums"
+                        >
+                            {formatShortDate(item.earningsDate, locale)}
+                        </time>
+                        {confirmed && item.session !== null ? (
+                            <span className="ml-1.5 text-xs text-secondary-400">
+                                {item.session === 'before_market'
+                                    ? t('EventCalendar.sessionBeforeOpen')
+                                    : item.session === 'during_market'
+                                      ? t('EventCalendar.sessionDuringMarket')
+                                      : t('EventCalendar.sessionAfterClose')}
+                            </span>
+                        ) : null}
+                    </p>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
                     <span className="rounded-full border border-secondary-600 px-2 py-0.5 text-xs text-secondary-300">
-                        {isFuture
-                            ? t('EventCalendar.7ba954')
-                            : t('EventCalendar.c0c9e1')}
+                        {confirmed
+                            ? t('EventCalendar.confirmed')
+                            : isFuture
+                              ? t('EventCalendar.7ba954')
+                              : t('EventCalendar.c0c9e1')}
                     </span>
                     {surpriseBadge !== null ? (
                         <SurpriseBadge badge={surpriseBadge} />
