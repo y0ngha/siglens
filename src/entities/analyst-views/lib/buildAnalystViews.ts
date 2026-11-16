@@ -107,7 +107,7 @@ function mapEstimate(raw: YahooEstimatePeriod): AnalystEstimatePeriod {
  * EPS와 매출 추정치가 둘 다 없는 기간만 버린다(적자·초기 기업은 매출 추정치만 있을 수 있다). 남는 기간이 없으면 `null`
  * ("추정치 없음"을 빈 배열로 내지 않는다).
  */
-function buildEstimates(
+export function buildEstimates(
     yahoo: YahooAnalystSummary | null
 ): AnalystEstimatePeriod[] | null {
     const periods = (yahoo?.estimates ?? [])

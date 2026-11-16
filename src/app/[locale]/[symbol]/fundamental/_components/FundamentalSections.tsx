@@ -14,6 +14,7 @@ import {
     targetGapPct,
     targetsDisagree,
 } from '@/entities/analyst-views/lib/targetGap';
+import { loadAnalystEstimateTrend } from '@/entities/analyst-views/server/loadAnalystEstimateTrend';
 import { loadAnalystTargetsSummary } from '@/entities/analyst-views/server/loadAnalystTargetsSummary';
 import { readGradesSource } from '@/shared/api/fmp/gradesConsensusSource';
 import {
@@ -243,46 +244,60 @@ export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
 }
 
 /**
- * 향후 방향 카드 — 다섯 로더를 병렬로 읽고, 각각 실패하면 그 값만 `null`이다.
+ * 향후 방향 카드 — 여섯 로더를 병렬로 읽고, 각각 실패하면 그 값만 `null`이다.
  *
  * `analystTargets`(Yahoo 집계 목표가 줄)는 한국 종목에서 부르지 않는다 — 한국 프로바이더가 이미 Yahoo라
  * 나란히 보일 값이 없다. 로더는 Yahoo 실패 때 던지지만 보강이라 `loadOptionalSection`이 revalidate를 낮추지 않는다.
  */
 export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
-    const [estimates, gradesResult, ptConsensus, ptSummary, analystTargets] =
-        await Promise.all([
-            loadSection(
-                'fundamental:estimates',
-                symbol,
-                () => getAnalystEstimates(symbol),
-                '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
-                null
-            ),
-            loadGradesSection(symbol),
-            loadSection(
-                'fundamental:pt-consensus',
-                symbol,
-                () => getPriceTargetConsensus(symbol),
-                '[FutureDirectionSection] getPriceTargetConsensus failed, degrading to null:',
-                null
-            ),
-            loadSection(
-                'fundamental:pt-summary',
-                symbol,
-                () => getPriceTargetSummary(symbol),
-                '[FutureDirectionSection] getPriceTargetSummary failed, degrading to null:',
-                null
-            ),
-            isKrEquitySymbol(symbol)
-                ? Promise.resolve(null)
-                : loadOptionalSection(
-                      'fundamental:analyst-views-lite',
-                      symbol,
-                      () => loadAnalystTargetsSummary(symbol),
-                      '[FutureDirectionSection] loadAnalystTargetsSummary failed, degrading to null:',
-                      null
-                  ),
-        ]);
+    const [
+        estimates,
+        gradesResult,
+        ptConsensus,
+        ptSummary,
+        analystTargets,
+        estimateTrend,
+    ] = await Promise.all([
+        loadSection(
+            'fundamental:estimates',
+            symbol,
+            () => getAnalystEstimates(symbol),
+            '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
+            null
+        ),
+        loadGradesSection(symbol),
+        loadSection(
+            'fundamental:pt-consensus',
+            symbol,
+            () => getPriceTargetConsensus(symbol),
+            '[FutureDirectionSection] getPriceTargetConsensus failed, degrading to null:',
+            null
+        ),
+        loadSection(
+            'fundamental:pt-summary',
+            symbol,
+            () => getPriceTargetSummary(symbol),
+            '[FutureDirectionSection] getPriceTargetSummary failed, degrading to null:',
+            null
+        ),
+        isKrEquitySymbol(symbol)
+            ? Promise.resolve(null)
+            : loadOptionalSection(
+                  'fundamental:analyst-views-lite',
+                  symbol,
+                  () => loadAnalystTargetsSummary(symbol),
+                  '[FutureDirectionSection] loadAnalystTargetsSummary failed, degrading to null:',
+                  null
+              ),
+        // 한국 종목도 Yahoo `earningsTrend`가 온다(미국·한국 공통). 보강이라 실패해도 revalidate를 낮추지 않는다.
+        loadOptionalSection(
+            'fundamental:estimate-trend',
+            symbol,
+            () => loadAnalystEstimateTrend(symbol),
+            '[FutureDirectionSection] loadAnalystEstimateTrend failed, degrading to null:',
+            null
+        ),
+    ]);
     // 불일치는 **화면에 실린 두 값**(FMP 컨센서스·Yahoo 평균)으로 렌더 때 계산한다. 따로 캐시된 엔트리의
     // 플래그를 쓰면 한쪽만 갱신됐을 때 낡은 안내가 남는다.
     const targetSourcesDisagree = targetsDisagree(
@@ -292,6 +307,7 @@ export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
         <FutureDirectionCard
             symbol={symbol}
             estimates={estimates}
+            estimateTrend={estimateTrend}
             grades={gradesResult.grades}
             gradesSource={readGradesSource(gradesResult.grades)}
             ptConsensus={ptConsensus}

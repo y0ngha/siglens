@@ -4595,7 +4595,23 @@
                 "strongBuy": "強い買い {v0}",
                 "strongSell": "強い売り {v0}"
             },
-            "analystSellCount": "売り {v0}"
+            "analystSellCount": "売り {v0}",
+            "EstimateTrend": {
+                "heading": "決算予想の修正",
+                "tooltipWhat": "アナリストの1株当たり利益(EPS)予想の平均が、30日前・90日前からどれだけ変わったかを示します。予想が上がっていれば決算への期待が高まっていることを意味します。",
+                "tooltipSource": "Yahoo Finance の集計に基づくもので、上の予想EPS(別の出典)と値が異なる場合があります。",
+                "periodThisQuarter": "今四半期",
+                "periodNextQuarter": "来四半期",
+                "periodThisYear": "今期(会計年度)",
+                "periodNextYear": "来期(会計年度)",
+                "analysts": "{count}人",
+                "vs30d": "30日前比",
+                "vs90d": "90日前比",
+                "revisions30d": "直近30日 上方修正{up}人・下方修正{down}人",
+                "noChange": "変動なし",
+                "srUp": "上方",
+                "srDown": "下方"
+            }
         },
         "home": {
             "CategoryCardGrid": {

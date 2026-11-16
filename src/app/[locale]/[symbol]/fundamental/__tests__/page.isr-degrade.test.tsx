@@ -77,6 +77,12 @@ vi.mock('@/shared/api/fmp/loadPageGradesConsensus', () => ({
 vi.mock('@/entities/analyst-views/server/loadAnalystTargetsSummary', () => ({
     loadAnalystTargetsSummary: vi.fn().mockResolvedValue(null),
 }));
+const { mockLoadEstimateTrend } = vi.hoisted(() => ({
+    mockLoadEstimateTrend: vi.fn(),
+}));
+vi.mock('@/entities/analyst-views/server/loadAnalystEstimateTrend', () => ({
+    loadAnalystEstimateTrend: mockLoadEstimateTrend,
+}));
 vi.mock('@/app/[locale]/[symbol]/fundamental/FundamentalDegraded', () => ({
     FundamentalDegraded: () => <div data-testid="fundamental-degraded" />,
 }));
@@ -146,12 +152,14 @@ vi.mock('@/widgets/fundamental/sections/FinancialHealthCard', () => ({
 vi.mock('@/widgets/fundamental/sections/FutureDirectionCard', () => ({
     FutureDirectionCard: ({
         estimates,
+        estimateTrend,
         grades,
         gradesSource,
         ptConsensus,
         ptSummary,
     }: {
         estimates: unknown;
+        estimateTrend: unknown;
         grades: unknown;
         gradesSource: string | null;
         ptConsensus: unknown;
@@ -160,6 +168,7 @@ vi.mock('@/widgets/fundamental/sections/FutureDirectionCard', () => ({
         <div
             data-testid="future-direction-card"
             data-grades-source={gradesSource ?? ''}
+            data-estimate-trend={estimateTrend === null ? 'null' : 'set'}
             data-degraded={
                 estimates === null &&
                 grades === null &&
@@ -414,6 +423,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
     beforeEach(() => {
         vi.clearAllMocks();
         // Default: all loaders succeed with safe empty values.
+        mockLoadEstimateTrend.mockResolvedValue(null);
         mockGetProfile.mockResolvedValue(null);
         mockGetProfileDescription.mockResolvedValue(null);
         mockGetKeyMetricsTtm.mockResolvedValue(null);
@@ -742,6 +752,38 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         );
 
         consoleSpy.mockRestore();
+    });
+
+    describe('FutureDirectionSection 실적 추정치 변화(보강)', () => {
+        it('값이 있으면 카드에 넘긴다', async () => {
+            mockLoadEstimateTrend.mockResolvedValue([{ period: '0q' }]);
+            render(await FutureDirectionSection({ symbol: 'AAPL' }));
+            expect(mockLoadEstimateTrend).toHaveBeenCalledWith('AAPL');
+            expect(
+                screen
+                    .getByTestId('future-direction-card')
+                    .getAttribute('data-estimate-trend')
+            ).toBe('set');
+        });
+
+        it('Yahoo가 실패해도 경고만 남기고 null로 그리며 revalidate는 낮추지 않는다', async () => {
+            mockLoadEstimateTrend.mockRejectedValue(new Error('yahoo down'));
+            const warn = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => undefined);
+            render(await FutureDirectionSection({ symbol: 'AAPL' }));
+            expect(
+                screen
+                    .getByTestId('future-direction-card')
+                    .getAttribute('data-estimate-trend')
+            ).toBe('null');
+            expect(warn).toHaveBeenCalledWith(
+                '[FutureDirectionSection] loadAnalystEstimateTrend failed, degrading to null:',
+                expect.any(Error)
+            );
+            expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+            warn.mockRestore();
+        });
     });
 
     describe('FutureDirectionSection 투자의견 분포 revalidate', () => {
