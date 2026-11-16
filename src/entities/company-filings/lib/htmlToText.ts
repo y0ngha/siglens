@@ -18,7 +18,29 @@ const NAMED_ENTITIES: Readonly<Record<string, string>> = {
     hellip: '…',
     reg: '®',
     trade: '™',
+    middot: '·',
+    bull: '•',
+    euro: '€',
+    pound: '£',
+    yen: '¥',
+    cent: '¢',
+    copy: '©',
+    deg: '°',
+    times: '×',
+    divide: '÷',
+    sect: '§',
+    para: '¶',
+    laquo: '«',
+    raquo: '»',
+    minus: '−',
+    ensp: ' ',
+    emsp: ' ',
+    thinsp: ' ',
+    shy: '',
 };
+
+/** 폭 없는 문자(zero-width space·joiner, word joiner, BOM)와 소프트 하이픈. 제목·본문에 보이지 않는 잡음을 남긴다. */
+const INVISIBLE = /[\u200b-\u200d\u2060\ufeff\u00ad]/g;
 
 function codePointToString(code: number): string {
     const valid =
@@ -51,7 +73,10 @@ function flattenRow(row: string): string {
 }
 
 function tidyLine(line: string): string {
-    const collapsed = line.replace(/[ \t\r\f\v]+/g, ' ').trim();
+    const collapsed = line
+        .replace(INVISIBLE, '')
+        .replace(/[ \t\r\f\v]+/g, ' ')
+        .trim();
     if (!collapsed.includes(CELL)) return collapsed;
     return collapsed
         .split(CELL)
