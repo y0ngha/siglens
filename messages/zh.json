@@ -4595,7 +4595,23 @@
                 "strongBuy": "强烈买入 {v0}",
                 "strongSell": "强烈卖出 {v0}"
             },
-            "analystSellCount": "卖出 {v0}"
+            "analystSellCount": "卖出 {v0}",
+            "EstimateTrend": {
+                "heading": "财报预期修正",
+                "tooltipWhat": "显示分析师每股收益(EPS)预期平均值与30天前、90天前相比的变化幅度。预期上调意味着市场对财报的期待正在提高。",
+                "tooltipSource": "基于 Yahoo Finance 汇总,可能与上方预期EPS(其他来源)的数值不同。",
+                "periodThisQuarter": "本季度",
+                "periodNextQuarter": "下季度",
+                "periodThisYear": "本财年",
+                "periodNextYear": "下财年",
+                "analysts": "{count}位",
+                "vs30d": "较30天前",
+                "vs90d": "较90天前",
+                "revisions30d": "近30天 上调{up}位 · 下调{down}位",
+                "noChange": "无变化",
+                "srUp": "上调",
+                "srDown": "下调"
+            }
         },
         "home": {
             "CategoryCardGrid": {

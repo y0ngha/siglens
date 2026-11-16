@@ -4595,7 +4595,23 @@
                 "strongBuy": "Strong Buy {v0}",
                 "strongSell": "Strong Sell {v0}"
             },
-            "analystSellCount": "Sell {v0}"
+            "analystSellCount": "Sell {v0}",
+            "EstimateTrend": {
+                "heading": "Earnings estimate revisions",
+                "tooltipWhat": "Shows how much the analysts’ average earnings-per-share (EPS) estimate has changed versus 30 and 90 days ago. Rising estimates mean earnings expectations are going up.",
+                "tooltipSource": "Aggregated by Yahoo Finance; values can differ from the estimated EPS above, which comes from another source.",
+                "periodThisQuarter": "This quarter",
+                "periodNextQuarter": "Next quarter",
+                "periodThisYear": "This fiscal year",
+                "periodNextYear": "Next fiscal year",
+                "analysts": "{count, plural, one {# analyst} other {# analysts}}",
+                "vs30d": "vs 30 days ago",
+                "vs90d": "vs 90 days ago",
+                "revisions30d": "Last 30 days: {up} raised · {down} lowered",
+                "noChange": "No change",
+                "srUp": "Up",
+                "srDown": "Down"
+            }
         },
         "home": {
             "CategoryCardGrid": {

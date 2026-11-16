@@ -4,7 +4,10 @@
  */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { AnalystTargetsSummary } from '@/entities/analyst-views/model';
+import type {
+    AnalystEstimatePeriod,
+    AnalystTargetsSummary,
+} from '@/entities/analyst-views/model';
 import type { GradesConsensusSource } from '@/shared/api/fmp/gradesConsensusSource';
 import type {
     FundamentalAnalystEstimateInput,
@@ -18,6 +21,8 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { hasGrades } from '@/widgets/fundamental/utils/gradeBands';
 import { EstimatesSection } from '@/widgets/fundamental/ui/future-direction/EstimatesSection';
+import { EstimateTrendSection } from '@/widgets/fundamental/ui/future-direction/EstimateTrendSection';
+import { visibleEstimatePeriods } from '@/widgets/fundamental/utils/estimateTrend';
 import { PriceTargetSection } from '@/widgets/fundamental/ui/future-direction/PriceTargetSection';
 import { RatingsSection } from '@/widgets/fundamental/ui/future-direction/RatingsSection';
 
@@ -28,6 +33,8 @@ interface FutureDirectionCardProps {
     /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
     symbol: string;
     estimates: FundamentalAnalystEstimateInput | null;
+    /** 실적 추정치 변화(Yahoo, 미국·한국). Yahoo 실패·추정치 없음이면 `null`. */
+    estimateTrend: AnalystEstimatePeriod[] | null;
     grades: FundamentalGradesConsensusInput | null;
     /** 분포의 출처. `'yahoo'`일 때만 "현재 애널리스트 N명 기준" 줄을 그린다(FMP 합계는 누적이라 인원 수가 아니다). */
     gradesSource: GradesConsensusSource | null;
@@ -43,6 +50,7 @@ interface FutureDirectionCardProps {
 export function FutureDirectionCard({
     symbol,
     estimates,
+    estimateTrend,
     grades,
     gradesSource,
     ptConsensus,
@@ -55,7 +63,15 @@ export function FutureDirectionCard({
     const hasPriceTarget =
         ptConsensus !== null || ptSummary !== null || analystTargets !== null;
 
-    if (estimates === null && !hasGrades(grades) && !hasPriceTarget) {
+    const trendPeriods =
+        estimateTrend === null ? [] : visibleEstimatePeriods(estimateTrend);
+
+    if (
+        estimates === null &&
+        trendPeriods.length === 0 &&
+        !hasGrades(grades) &&
+        !hasPriceTarget
+    ) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
@@ -77,6 +93,13 @@ export function FutureDirectionCard({
             {estimates !== null && (
                 <EstimatesSection
                     estimates={estimates}
+                    symbol={symbol}
+                    locale={locale}
+                />
+            )}
+            {trendPeriods.length > 0 && (
+                <EstimateTrendSection
+                    periods={trendPeriods}
                     symbol={symbol}
                     locale={locale}
                 />

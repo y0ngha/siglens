@@ -4567,6 +4567,22 @@
             }
         },
         "fundamental": {
+            "EstimateTrend": {
+                "analysts": "{count}명",
+                "heading": "실적 추정치 변화",
+                "noChange": "변동 없음",
+                "periodNextQuarter": "다음 분기",
+                "periodNextYear": "다음 회계연도",
+                "periodThisQuarter": "이번 분기",
+                "periodThisYear": "올해 회계연도",
+                "revisions30d": "최근 30일 상향 {up}명 · 하향 {down}명",
+                "srDown": "하향",
+                "srUp": "상향",
+                "tooltipSource": "Yahoo Finance 집계 기준이며, 위 예상 EPS(다른 출처)와 값이 다를 수 있습니다.",
+                "tooltipWhat": "애널리스트들의 주당순이익(EPS) 추정치 평균이 30일·90일 전보다 얼마나 바뀌었는지 보여 줍니다. 추정치가 오르면 실적 기대가 높아지고 있다는 뜻입니다.",
+                "vs30d": "30일 전보다",
+                "vs90d": "90일 전보다"
+            },
             "FinancialHealthCard": {
                 "869609": "파산 위험 지수",
                 "093acd": "피오트로스키 F-Score",

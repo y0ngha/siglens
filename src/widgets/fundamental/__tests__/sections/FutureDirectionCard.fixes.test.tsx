@@ -36,6 +36,7 @@ describe('FutureDirectionCard — 목표 주가 요약', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={null}
                 ptConsensus={null}
                 ptSummary={PT_SUMMARY}
@@ -58,6 +59,7 @@ describe('FutureDirectionCard — 목표 주가 요약', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={null}
                 ptConsensus={PT_CONSENSUS}
                 ptSummary={null}
@@ -76,6 +78,7 @@ describe('FutureDirectionCard — 목표 주가 요약', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={null}
                 ptConsensus={PT_CONSENSUS}
                 ptSummary={PT_SUMMARY}
@@ -96,6 +99,7 @@ describe('FutureDirectionCard — 전부 0인 등급', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={ZERO_GRADES}
                 ptConsensus={null}
                 ptSummary={null}
@@ -113,6 +117,7 @@ describe('FutureDirectionCard — 전부 0인 등급', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={ZERO_GRADES}
                 ptConsensus={PT_CONSENSUS}
                 ptSummary={null}
@@ -130,6 +135,7 @@ describe('FutureDirectionCard — 전부 0인 등급', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={{ ...ZERO_GRADES, hold: 4 }}
                 ptConsensus={null}
                 ptSummary={null}

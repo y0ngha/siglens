@@ -4399,5 +4399,19 @@
     "widgets.fundamental.FundamentalFactsCard.nextEarningsConfirmed": "d2391acf7463",
     "widgets.fundamental.FundamentalFactsCard.nextEarningsConfirmedSession": "87f75fb547f7",
     "widgets.fundamental.FundamentalFactsCard.nextEarningsConfirmedSource": "fe287c7749c0",
-    "widgets.agent-chat.ToolActivity.toolXPosts": "744bd2f03e59"
+    "widgets.agent-chat.ToolActivity.toolXPosts": "744bd2f03e59",
+    "widgets.fundamental.EstimateTrend.heading": "d0c18881d90c",
+    "widgets.fundamental.EstimateTrend.tooltipWhat": "8e0b85690a0f",
+    "widgets.fundamental.EstimateTrend.tooltipSource": "5c319efab257",
+    "widgets.fundamental.EstimateTrend.periodThisQuarter": "3fa392e3232c",
+    "widgets.fundamental.EstimateTrend.periodNextQuarter": "e52d73aa7547",
+    "widgets.fundamental.EstimateTrend.periodThisYear": "e01e04bcf73d",
+    "widgets.fundamental.EstimateTrend.periodNextYear": "481205e83f73",
+    "widgets.fundamental.EstimateTrend.analysts": "1a2606a24a0d",
+    "widgets.fundamental.EstimateTrend.vs30d": "7b8172a61725",
+    "widgets.fundamental.EstimateTrend.vs90d": "6e0da62a2010",
+    "widgets.fundamental.EstimateTrend.revisions30d": "a7f7cba52d39",
+    "widgets.fundamental.EstimateTrend.noChange": "3ba1341ea4ef",
+    "widgets.fundamental.EstimateTrend.srUp": "915f990b8eaf",
+    "widgets.fundamental.EstimateTrend.srDown": "4a893483be99"
 }

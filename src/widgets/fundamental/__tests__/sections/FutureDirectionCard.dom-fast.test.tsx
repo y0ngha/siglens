@@ -7,7 +7,10 @@ import type {
     FundamentalPriceTargetConsensusInput,
 } from '@y0ngha/siglens-core';
 import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
-import { TARGET_DISAGREE_THRESHOLD_PCT } from '@/entities/analyst-views/model';
+import {
+    TARGET_DISAGREE_THRESHOLD_PCT,
+    type AnalystEstimatePeriod,
+} from '@/entities/analyst-views/model';
 import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_ESTIMATES = {
@@ -36,6 +39,7 @@ describe('FutureDirectionCard', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={SAMPLE_ESTIMATES}
+                estimateTrend={null}
                 grades={SAMPLE_GRADES}
                 ptConsensus={SAMPLE_PT_CONSENSUS}
                 ptSummary={null}
@@ -55,6 +59,7 @@ describe('FutureDirectionCard', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={null}
+                estimateTrend={null}
                 grades={null}
                 ptConsensus={null}
                 ptSummary={null}
@@ -78,6 +83,7 @@ describe('FutureDirectionCard', () => {
             <FutureDirectionCard
                 symbol="AAPL"
                 estimates={SAMPLE_ESTIMATES}
+                estimateTrend={null}
                 grades={null}
                 ptConsensus={null}
                 ptSummary={null}
@@ -99,6 +105,7 @@ describe('FutureDirectionCard', () => {
             <FutureDirectionCard
                 symbol="005930.KS"
                 estimates={SAMPLE_ESTIMATES}
+                estimateTrend={null}
                 grades={null}
                 ptConsensus={SAMPLE_PT_CONSENSUS}
                 ptSummary={null}
@@ -117,6 +124,119 @@ describe('FutureDirectionCard', () => {
         expect(screen.queryByText(/US\$/)).not.toBeInTheDocument();
     });
 
+    describe('실적 추정치 변화(Yahoo)', () => {
+        const period = (
+            over: Partial<AnalystEstimatePeriod> & { period: string }
+        ): AnalystEstimatePeriod => ({
+            endDate: '2026-12-31',
+            eps: {
+                avg: 1.3,
+                analysts: 40,
+                ago7d: 1.29,
+                ago30d: 1.25,
+                ago60d: 1.2,
+                ago90d: 1.4,
+                change30d: 0.05,
+                change90d: -0.1,
+            },
+            revisions: { up7d: 1, down7d: 0, up30d: 6, down30d: 2 },
+            revenue: { avg: 1e9, analysts: 30, growthPct: 20 },
+            ...over,
+        });
+
+        it('기간을 정해진 순서로, 30·90일 변화를 기호와 함께, 상향·하향 수를 보여 준다', () => {
+            render(
+                <FutureDirectionCard
+                    symbol="AAPL"
+                    estimates={null}
+                    estimateTrend={[
+                        period({ period: '+1y' }),
+                        period({ period: '0q' }),
+                    ]}
+                    grades={null}
+                    gradesSource={null}
+                    ptConsensus={null}
+                    ptSummary={null}
+                    analystTargets={null}
+                    targetSourcesDisagree={false}
+                />
+            );
+            expect(screen.getByText('실적 추정치 변화')).toBeInTheDocument();
+            const items = screen.getAllByRole('listitem');
+            expect(items[0]).toHaveTextContent('이번 분기');
+            expect(items[1]).toHaveTextContent('다음 회계연도');
+            expect(items[0]).toHaveTextContent('30일 전보다 ▲ 상향 US$0.05');
+            expect(items[0]).toHaveTextContent('90일 전보다 ▼ 하향 US$0.10');
+            expect(items[0]).toHaveTextContent('최근 30일 상향 6명 · 하향 2명');
+        });
+
+        it('표시 단위에서 0이 되는 변화(US$0.002)는 방향 기호 없이 "변동 없음"이다', () => {
+            render(
+                <FutureDirectionCard
+                    symbol="AAPL"
+                    estimates={null}
+                    estimateTrend={[
+                        period({
+                            period: '0q',
+                            eps: {
+                                avg: 2.47,
+                                analysts: 40,
+                                ago7d: null,
+                                ago30d: 2.472,
+                                ago60d: null,
+                                ago90d: null,
+                                change30d: -0.002,
+                                change90d: null,
+                            },
+                        }),
+                    ]}
+                    grades={null}
+                    gradesSource={null}
+                    ptConsensus={null}
+                    ptSummary={null}
+                    analystTargets={null}
+                    targetSourcesDisagree={false}
+                />
+            );
+            const [item] = screen.getAllByRole('listitem');
+            expect(item).toHaveTextContent('30일 전보다 변동 없음');
+            expect(item).not.toHaveTextContent('▼');
+            expect(item).not.toHaveTextContent('90일 전보다');
+        });
+
+        it('EPS 추정치가 없는 기간뿐이면 섹션도 카드 본문도 그리지 않는다(빈 카드)', () => {
+            render(
+                <FutureDirectionCard
+                    symbol="AAPL"
+                    estimates={null}
+                    estimateTrend={[
+                        period({
+                            period: '0q',
+                            eps: {
+                                avg: null,
+                                analysts: null,
+                                ago7d: null,
+                                ago30d: null,
+                                ago60d: null,
+                                ago90d: null,
+                                change30d: null,
+                                change90d: null,
+                            },
+                        }),
+                    ]}
+                    grades={null}
+                    gradesSource={null}
+                    ptConsensus={null}
+                    ptSummary={null}
+                    analystTargets={null}
+                    targetSourcesDisagree={false}
+                />
+            );
+            expect(screen.queryByText('실적 추정치 변화')).toBeNull();
+            expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        });
+    });
+
     describe('Yahoo 보강 줄', () => {
         const renderCard = (
             over: Partial<ComponentProps<typeof FutureDirectionCard>>
@@ -125,6 +245,7 @@ describe('FutureDirectionCard', () => {
                 <FutureDirectionCard
                     symbol="AAPL"
                     estimates={null}
+                    estimateTrend={null}
                     grades={SAMPLE_GRADES}
                     gradesSource={null}
                     ptConsensus={SAMPLE_PT_CONSENSUS}
