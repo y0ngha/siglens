@@ -307,11 +307,11 @@ describe('listCompanyFilings', () => {
         );
         expect(list?.ttl).toBe(1800);
         const meta = cache.writes.find(
-            w => w.key === `sec:filing-meta:v1:${accessionOf(3)}`
+            w => w.key === `sec:filing-meta:v2:${accessionOf(3)}`
         );
         expect(meta?.ttl).toBe(2_592_000);
         const text = cache.writes.find(
-            w => w.key === `sec:filing-text:v2:${accessionOf(3)}`
+            w => w.key === `sec:filing-text:v3:${accessionOf(3)}`
         );
         expect(text?.ttl).toBe(2_592_000);
         // 목록 1 + 메타 6 + 본문 6
@@ -369,7 +369,7 @@ describe('listCompanyFilings', () => {
             url: `${FOLDER}/${failing.replaceAll('-', '')}/main2.htm`,
         });
         expect(result.filings[3].headline).not.toBeNull();
-        expect(cache.store.has(`sec:filing-meta:v1:${failing}`)).toBe(false);
+        expect(cache.store.has(`sec:filing-meta:v2:${failing}`)).toBe(false);
 
         // 다음 호출에서 복구된 공시만 다시 읽는다.
         sec.fetchFilingIndexJson.mockClear();
@@ -522,10 +522,10 @@ describe('readCompanyFiling', () => {
         );
         expect(result.filing.totalChars).toBe(result.filing.text.length);
         const textWrite = cache.writes.find(
-            w => w.key === `sec:filing-text:v2:${accessionOf(1)}`
+            w => w.key === `sec:filing-text:v3:${accessionOf(1)}`
         );
         expect(textWrite?.ttl).toBe(2_592_000);
-        expect(cache.store.get(`sec:filing-text:v2:${accessionOf(1)}`)).toEqual(
+        expect(cache.store.get(`sec:filing-text:v3:${accessionOf(1)}`)).toEqual(
             {
                 fileName: 'x-ex99_1.htm',
                 document: 'press_release',
@@ -601,7 +601,7 @@ describe('readCompanyFiling', () => {
             AGENT_FILING_TEXT_MAX_CHARS
         );
         const cached = cache.store.get(
-            `sec:filing-text:v2:${accessionOf(0)}`
+            `sec:filing-text:v3:${accessionOf(0)}`
         ) as { text: string };
         expect(cached.text).toBe(result.filing.text);
     });
@@ -641,7 +641,7 @@ describe('readCompanyFiling', () => {
         expect(await readCompanyFiling('IONQ', accessionOf(0))).toEqual({
             status: 'failed',
         });
-        expect(cache.store.has(`sec:filing-text:v2:${accessionOf(0)}`)).toBe(
+        expect(cache.store.has(`sec:filing-text:v3:${accessionOf(0)}`)).toBe(
             false
         );
     });
