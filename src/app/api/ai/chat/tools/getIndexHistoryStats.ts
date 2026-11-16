@@ -24,13 +24,14 @@ export const getIndexHistoryStatsTool: ToolExecutor = async args => {
     const index = args.index;
     if (!isHistoryIndex(index)) return { error: 'invalid_args' };
     const now = new Date();
-    let loaded;
-    try {
-        loaded = await loadIndexMonthEnds(index, now);
-    } catch (error) {
-        logToolDegrade(TOOL, 'month-end closes', error);
+    const loaded = await loadIndexMonthEnds(index, now).catch(
+        (error: unknown) => {
+            logToolDegrade(TOOL, 'month-end closes', error);
+            return null;
+        }
+    );
+    if (loaded === null)
         return { index, available: false, reason: 'provider_failed' };
-    }
     const stats = computeIndexHistoryStats(loaded.monthEnds, {
         usCycle: loaded.usCycle,
         currentMonth: loaded.currentMonth,

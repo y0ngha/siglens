@@ -111,12 +111,16 @@ async function loadFmpMonthEnds(
     toYear: number
 ): Promise<MonthEndClose[]> {
     const startYear = Number(source.firstMonth.slice(0, 4));
-    const chunks: { from: string; to: string }[] = [];
-    for (let year = startYear; year <= toYear; year += FMP_CHUNK_YEARS)
-        chunks.push({
-            from: `${year}-01-01`,
-            to: `${Math.min(year + FMP_CHUNK_YEARS - 1, toYear)}-12-31`,
-        });
+    const chunks = Array.from(
+        { length: Math.ceil((toYear - startYear + 1) / FMP_CHUNK_YEARS) },
+        (_, i) => {
+            const year = startYear + i * FMP_CHUNK_YEARS;
+            return {
+                from: `${year}-01-01`,
+                to: `${Math.min(year + FMP_CHUNK_YEARS - 1, toYear)}-12-31`,
+            };
+        }
+    );
     const pages = await Promise.all(
         chunks.map(chunk => loadFmpChunk(source, chunk.from, chunk.to))
     );
