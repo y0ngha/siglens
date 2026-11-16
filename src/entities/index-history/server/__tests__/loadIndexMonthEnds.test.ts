@@ -20,7 +20,7 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
         fetcher: () => Promise<unknown>
     ) => {
         const value = await fetcher();
-        cache.writes.push({ key, ttl });
+        cache.writes = [...cache.writes, { key, ttl }];
         return value;
     },
 }));
@@ -51,7 +51,7 @@ function fullChunks(firstDay: (from: string) => string = from => from) {
 beforeEach(() => {
     fmp.get.mockReset();
     yahoo.chart.mockReset();
-    cache.writes.length = 0;
+    cache.writes = [];
     e2e.fake = false;
 });
 
@@ -67,7 +67,9 @@ describe('loadIndexMonthEnds', () => {
             '2010-01-01',
             '2025-01-01',
         ]);
-        expect(fmp.get.mock.calls.at(-1)![1].to).toBe('2026-12-31');
+        const lastCall = fmp.get.mock.calls.at(-1);
+        if (lastCall === undefined) throw new Error('fmpGet not called');
+        expect(lastCall[1].to).toBe('2026-12-31');
         // 구간 요청은 재시도하지 않는다(동시에 나가므로 최악 시간이 요청 한 번이다).
         for (const call of fmp.get.mock.calls)
             expect(call[2]).toEqual({ retryTransient: false });
@@ -94,7 +96,7 @@ describe('loadIndexMonthEnds', () => {
     it('나스닥은 지수가 시작한 1971-02를 첫 구간의 기준으로 본다', async () => {
         fullChunks(from => (from === '1971-01-01' ? '1971-02-05' : from));
         const result = await loadIndexMonthEnds('nasdaq', NOW);
-        expect(result.monthEnds[0]!.month).toBe('1971-02');
+        expect(result.monthEnds[0]?.month).toBe('1971-02');
     });
 
     it('KOSPI: Yahoo 월봉을 서울 달력으로 바꾸고, 같은 달이 두 번 오면 늦은 행 하나로 접는다', async () => {

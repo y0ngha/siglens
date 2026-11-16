@@ -10,6 +10,7 @@ import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import { isRecord } from '@/shared/lib/isRecord';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { foldDailyToMonthEnds } from '../lib/foldMonthEnds';
 
 const yahooFinance = getYahooClient();
@@ -64,6 +65,11 @@ const SOURCES: Readonly<Record<AgentHistoryIndex, IndexSource>> = {
 const FMP_CHUNK_YEARS = 15;
 /** 구간의 첫 행이 요청 시작일에서 이만큼 넘게 늦으면 잘린 응답이다(연초 휴장·지수 시작일 여유). */
 const CHUNK_START_SLACK_DAYS = 45;
+/**
+ * 동시에 보내는 구간 요청 수(SERVER.md#CC-1). 지금은 구간이 6개(1950년부터 15년씩)라 한 묶음이고, 15년마다 하나씩 늘어
+ * 넘치면 다음 묶음으로 간다 — 그때 최악 시간이 묶음 수만큼 는다(아래 시간 예산 참고).
+ */
+const FMP_CHUNK_CONCURRENCY = 6;
 /** 지난 달 값은 바뀌지 않는다. 키에 현재 달을 넣으므로 달이 바뀌면 새 키로 다시 읽는다. */
 const MONTH_ENDS_CACHE_TTL_SECONDS = 32 * SECONDS_PER_DAY;
 /**
@@ -121,10 +127,18 @@ async function loadFmpMonthEnds(
             };
         }
     );
-    const pages = await Promise.all(
-        chunks.map(chunk => loadFmpChunk(source, chunk.from, chunk.to))
+    const settled = await withConcurrencyLimit(
+        chunks,
+        FMP_CHUNK_CONCURRENCY,
+        chunk => loadFmpChunk(source, chunk.from, chunk.to)
     );
-    return foldDailyToMonthEnds(pages.flat());
+    const failed = settled.find(result => result.status === 'rejected');
+    if (failed !== undefined) throw failed.reason;
+    return foldDailyToMonthEnds(
+        settled.flatMap(result =>
+            result.status === 'fulfilled' ? result.value : []
+        )
+    );
 }
 
 async function loadYahooMonthEnds(
@@ -162,7 +176,8 @@ interface IndexMonthEnds {
  * 지수의 월말 종가(가격 지수, 배당 제외). 미국 지수는 FMP 일봉을 구간별로 받아 달마다 마지막 거래일로 접고, 한국 지수는
  * Yahoo 월봉을 같은 규칙으로 접는다. 진행 중인 달이 들어 있을 수 있다(core가 뺀다).
  *
- * 시간 예산(SERVER.md#CC-7): FMP 구간 6개를 동시에 재시도 없이 보내므로 최악 10초, Yahoo 월봉은 요청 한 번이다 — core
+ * 시간 예산(SERVER.md#CC-7): FMP 구간 요청은 재시도 없이 `FMP_CHUNK_CONCURRENCY`(6)개씩 보낸다 — 지금은 6개라 한 묶음, 최악
+ * 10초다(묶음이 둘이 되면 20초). Yahoo 월봉은 요청 한 번이다 — core
  * `TOOL_TIMEOUT_MS.cached`(30초) 안이다. 같은 키의 동시 호출은 `getOrSetCache`가 한 요청으로 묶는다.
  *
  * 받은 이력이 알려진 첫 달에서 시작하지 않거나 FMP 구간 하나라도 잘렸으면 던진다 — 일부 연도가 빠진 이력을 한 달 동안

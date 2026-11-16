@@ -17,7 +17,8 @@ vi.mock('@/entities/bars/lib/quantizeBars', () => ({
     lastBarIsForming: () => forming.value,
 }));
 
-import { AGENT_THEMES } from '@y0ngha/siglens-core';
+import { AGENT_THEMES, type ThemeSnapshot } from '@y0ngha/siglens-core';
+import { isRecord } from '@/shared/lib/isRecord';
 import { getThemeSnapshotTool } from '@/app/api/ai/chat/tools/getThemeSnapshot';
 import { TOOL_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
@@ -33,6 +34,25 @@ const rt = {
 };
 const run = (args: Record<string, unknown>) =>
     getThemeSnapshotTool(args, ctx, rt);
+
+type OkSnapshot = ThemeSnapshot & {
+    asOf: string;
+    source: string;
+    available: true;
+};
+
+function isOkSnapshot(result: unknown): result is OkSnapshot {
+    return isRecord(result) && result.available === true;
+}
+
+/** 성공 결과로 좁힌다(타입 가드 — 실행기는 `available: true`일 때 core 결과를 그대로 펼쳐 싣는다). */
+function okSnapshot(result: unknown): OkSnapshot {
+    if (!isOkSnapshot(result))
+        throw new Error(
+            `expected an available result: ${JSON.stringify(result)}`
+        );
+    return result;
+}
 
 const DAY = 86_400;
 /** n개 일봉: 마지막 종가가 last, 그 앞은 100. */
@@ -65,7 +85,7 @@ describe('getThemeSnapshotTool', () => {
                 ? { symbol, name: 'IonQ, Inc.', koreanName: '아이온큐' }
                 : null
         );
-        const result = (await run({ theme: 'quantum' })) as Record<string, any>;
+        const result = okSnapshot(await run({ theme: 'quantum' }));
         expect(result).toMatchObject({
             source: 'SIGLENS theme basket (daily closes)',
             available: true,
@@ -78,17 +98,18 @@ describe('getThemeSnapshotTool', () => {
             changePct: { '1d': 10 },
         });
         expect(result.summary['1d']).toMatchObject({ up: 1, down: 5 });
-        const quantum = AGENT_THEMES.find(t => t.id === 'quantum')!;
+        const quantum = AGENT_THEMES.find(t => t.id === 'quantum');
+        if (quantum === undefined) throw new Error('quantum theme missing');
         expect(provider.getBars).toHaveBeenCalledTimes(quantum.symbols.length);
-        expect(provider.getBars.mock.calls[0]![0]).toMatchObject({
-            timeframe: '1Day',
-        });
+        const [firstCall] = provider.getBars.mock.calls;
+        if (firstCall === undefined) throw new Error('getBars not called');
+        expect(firstCall[0]).toMatchObject({ timeframe: '1Day' });
     });
 
     it('정규장 중이면 마지막(진행 중) 봉을 빼고 완결 종가로만 센다', async () => {
         forming.value = true;
         provider.getBars.mockResolvedValue(bars(30, 150)); // 진행 중인 봉 150
-        const result = (await run({ theme: 'quantum' })) as Record<string, any>;
+        const result = okSnapshot(await run({ theme: 'quantum' }));
         expect(result.members[0].changePct['1d']).toBe(0);
     });
 
@@ -99,13 +120,8 @@ describe('getThemeSnapshotTool', () => {
                 throw new Error('fmp down');
             }
         );
-        const partial = (await run({ theme: 'quantum' })) as Record<
-            string,
-            any
-        >;
-        expect(
-            partial.members.map((m: { symbol: string }) => m.symbol)
-        ).toEqual(['IONQ']);
+        const partial = okSnapshot(await run({ theme: 'quantum' }));
+        expect(partial.members.map(m => m.symbol)).toEqual(['IONQ']);
         expect(partial.missing).toHaveLength(5);
         provider.getBars.mockRejectedValue(new Error('fmp down'));
         expect(await run({ theme: 'quantum' })).toEqual({
@@ -122,10 +138,29 @@ describe('getThemeSnapshotTool', () => {
             name: 'A Very Long Company Name Holdings Incorporated',
             koreanName: '아주 긴 한국어 회사 이름 주식회사',
         }));
-        const kr = (await run({ theme: 'kr_battery' })) as Record<string, any>;
+        const kr = okSnapshot(await run({ theme: 'kr_battery' }));
         expect(kr.theme.market).toBe('kr');
         const big = await run({ theme: 'ai_semis' });
         expect(JSON.stringify(big).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);
+    });
+
+    it('12초 안에 오지 않는 종목은 missing으로 돌리고 나머지로 집계한다(시간 예산)', async () => {
+        vi.useFakeTimers();
+        try {
+            provider.getBars.mockImplementation(
+                ({ symbol }: { symbol: string }) =>
+                    symbol === 'IONQ'
+                        ? new Promise(() => {})
+                        : Promise.resolve(bars(30, 101))
+            );
+            const pending = run({ theme: 'quantum' });
+            await vi.advanceTimersByTimeAsync(12_000);
+            const result = okSnapshot(await pending);
+            expect(result.missing).toEqual(['IONQ']);
+            expect(result.members).toHaveLength(5);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('목록에 없는 테마는 invalid_args', async () => {

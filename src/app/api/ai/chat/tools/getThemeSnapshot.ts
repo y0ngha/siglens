@@ -10,6 +10,7 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
@@ -21,6 +22,12 @@ const SOURCE = 'SIGLENS theme basket (daily closes)';
  * 오늘 시세)를 거치므로 따뜻한 캐시에서는 외부 요청이 거의 없다.
  */
 const BARS_CONCURRENCY = 4;
+/**
+ * 종목 하나를 기다리는 최대 시간. 시간 예산(SERVER.md#CC-7): 최악은 두 묶음 × 12초 = 24초로 core
+ * `TOOL_TIMEOUT_MS.cached`(30초) 안이다. 차가운 캐시에서 FMP 재시도 사다리(10·15·20초 백오프)를 다 기다리면 이 예산을
+ * 넘으므로, 넘긴 종목은 `missing`으로 돌린다 — 로드는 뒤에서 마저 돌아 캐시를 채운다.
+ */
+const MEMBER_TIMEOUT_MS = 12_000;
 /** 52주(252거래일) 고점과 20거래일 등락률을 덮는 달력 일수. 휴장일을 감안해 넉넉히 잡는다. */
 const LOOKBACK_DAYS = 400;
 
@@ -77,7 +84,17 @@ export const getThemeSnapshotTool: ToolExecutor = async args => {
     const settled = await withConcurrencyLimit(
         theme.symbols,
         BARS_CONCURRENCY,
-        symbol => loadMemberCloses(symbol, theme.market, now)
+        symbol =>
+            withTimeout(
+                loadMemberCloses(symbol, theme.market, now),
+                MEMBER_TIMEOUT_MS,
+                {
+                    symbol,
+                    name: null,
+                    closes: [],
+                    lastDate: null,
+                }
+            )
     );
     const members = theme.symbols.map((symbol, index): ThemeMemberCloses => {
         const result = settled[index];
