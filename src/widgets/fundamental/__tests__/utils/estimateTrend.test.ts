@@ -31,21 +31,23 @@ function row(
 }
 
 describe('estimateTrend utils', () => {
-    it('EPS 추정치가 있는 기간만 이번 분기→다음 분기→올해→내년 순으로', () => {
+    it('EPS 추정치가 있는 기간만 이번 분기→다음 분기→올해→내년 순으로, 모르는 기간 코드는 뺀다', () => {
         expect(
             visibleEstimatePeriods([
                 row('+1y', 5),
                 row('0y', null),
                 row('+1q', 1.2),
                 row('0q', 1.1),
+                row('+5y', 9),
             ]).map(r => r.period)
         ).toEqual(['0q', '+1q', '+1y']);
     });
 
-    it('적자 EPS의 개선(−4.1 → −2.2)도 상승이고, 아주 작은 차이는 변화 없음이다', () => {
-        expect(estimateChangeDirection(-2.2 - -4.1)).toBe('up');
-        expect(estimateChangeDirection(-0.3)).toBe('down');
-        expect(estimateChangeDirection(0.00001)).toBe('flat');
+    it('적자 EPS의 개선(−4.1 → −2.2)도 상승이고, 표시 단위에서 0이면 변화 없음이다', () => {
+        expect(estimateChangeDirection(-2.2 - -4.1, false)).toBe('up');
+        expect(estimateChangeDirection(-0.3, false)).toBe('down');
+        expect(estimateChangeDirection(-0.002, true)).toBe('flat');
+        expect(estimateChangeDirection(0, false)).toBe('flat');
     });
 
     it('상향·하향 비율은 합 100이고, 둘 다 없으면 null이다', () => {

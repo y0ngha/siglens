@@ -3,7 +3,6 @@
  * 올랐거나 내렸는지, 최근 30일 동안 추정치를 올린·내린 애널리스트 수를 보여 준다.
  */
 import { useTranslations } from 'next-intl';
-import type { AnalystEstimatePeriod } from '@/entities/analyst-views/model';
 import type { Locale } from '@/shared/i18n/locales';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
@@ -13,11 +12,13 @@ import {
     estimateChangeDirection,
     revisionShare,
     type EstimateChangeDirection,
+    type EstimatePeriodCode,
+    type VisibleEstimatePeriod,
 } from '@/widgets/fundamental/utils/estimateTrend';
 
 interface EstimateTrendSectionProps {
     /** 보여 줄 기간(`visibleEstimatePeriods`로 거른 것). 비어 있지 않다 — 호출부가 비면 섹션을 그리지 않는다. */
-    periods: readonly AnalystEstimatePeriod[];
+    periods: readonly VisibleEstimatePeriod[];
     symbol: string;
     locale: Locale;
 }
@@ -28,19 +29,6 @@ const CHANGE_TONE: Record<EstimateChangeDirection, string> = {
     flat: 'text-secondary-300',
 };
 
-/** 기간 코드(`0q`·`+1q`·`0y`·`+1y`)를 화면 라벨로. */
-function usePeriodLabel() {
-    const t = useTranslations('widgets.fundamental');
-    return (period: string): string =>
-        period === '0q'
-            ? t('EstimateTrend.periodThisQuarter')
-            : period === '+1q'
-              ? t('EstimateTrend.periodNextQuarter')
-              : period === '0y'
-                ? t('EstimateTrend.periodThisYear')
-                : t('EstimateTrend.periodNextYear');
-}
-
 interface ChangeProps {
     label: string;
     value: number | null;
@@ -49,17 +37,17 @@ interface ChangeProps {
 }
 
 /**
- * "30일 전보다 ▲ $0.05". 방향은 기호와 색 둘 다로 말한다(색만으로 구분하지 않는다). 표시 단위(달러 센트, 원)로
- * 반올림해 0이 되는 변화는 "변동 없음"이다 — `▼ US$0.00`처럼 방향과 값이 어긋나 보이지 않게.
+ * "30일 전보다 ▲ $0.05". 방향은 기호·화면 낭독기 문구·색 셋으로 말한다(색만으로 구분하지 않는다). 표시 단위로
+ * 반올림해 0이 되는 변화는 "변동 없음"이다(`estimateChangeDirection`의 단일 기준).
  */
 function Change({ label, value, symbol, locale }: ChangeProps) {
     const t = useTranslations('widgets.fundamental');
     if (value === null) return null;
     const amount = formatMoney(Math.abs(value), symbol, locale);
-    const direction =
+    const direction = estimateChangeDirection(
+        value,
         amount === formatMoney(0, symbol, locale)
-            ? 'flat'
-            : estimateChangeDirection(value);
+    );
     return (
         <span className="whitespace-nowrap">
             {label}{' '}
@@ -89,14 +77,20 @@ function Change({ label, value, symbol, locale }: ChangeProps) {
     );
 }
 
-/** 기간별 추정치 변화 목록. */
+/** Yahoo 집계 추정치 변화 목록. 호출부(`FutureDirectionCard`)가 보여 줄 기간이 있을 때만 그린다. */
 export function EstimateTrendSection({
     periods,
     symbol,
     locale,
 }: EstimateTrendSectionProps) {
     const t = useTranslations('widgets.fundamental');
-    const periodLabel = usePeriodLabel();
+    // 키는 호출 자리의 리터럴이어야 추출기가 본다(I18N.md#I18-16). 필수 키 객체라 기간 코드가 늘면 타입 오류가 난다.
+    const periodLabels = {
+        '0q': t('EstimateTrend.periodThisQuarter'),
+        '+1q': t('EstimateTrend.periodNextQuarter'),
+        '0y': t('EstimateTrend.periodThisYear'),
+        '+1y': t('EstimateTrend.periodNextYear'),
+    } satisfies Record<EstimatePeriodCode, string>;
 
     return (
         <div className="mb-5">
@@ -114,7 +108,7 @@ export function EstimateTrendSection({
                         <li key={row.period} className="py-3">
                             <div className="flex items-baseline justify-between gap-3">
                                 <p className="text-sm text-secondary-200">
-                                    {periodLabel(row.period)}
+                                    {periodLabels[row.period]}
                                     {row.eps.analysts !== null ? (
                                         <span className="ml-1.5 text-xs text-secondary-400">
                                             {t('EstimateTrend.analysts', {
