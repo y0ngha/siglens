@@ -20,7 +20,7 @@ export function AnalystActionsEmpty() {
                 id="analyst-actions-heading"
                 className={cn('mb-3', HEADING_SECTION)}
             >
-                {t('AnalystActions.b2cd1a')}
+                {t('AnalystActions.heading')}
             </h2>
             <p className="text-sm text-secondary-400">
                 {t('AnalystActions.dc2ffb')}

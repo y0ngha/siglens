@@ -2,6 +2,7 @@
  * 애널리스트 등급 변경 행의 표시 테이블 — 액션별 라벨 키, 배지 색, 행 강조선.
  */
 import type { GradesAction } from '@y0ngha/siglens-core';
+import type { AnalystTargetAction } from '@/entities/analyst-views/model';
 import { SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 
 /**
@@ -35,4 +36,15 @@ export const ROW_ACCENT_CLASS: Record<GradesAction, string> = {
     maintained: 'border-l-[3px] border-l-secondary-600',
     initiated: 'border-l-[3px] border-l-ui-warning',
     other: 'border-l-[3px] border-l-secondary-600',
+};
+
+/**
+ * 목표가 방향별 새 목표가 글자색. 상향·하향은 등급 배지와 같은 성공·위험 텍스트 토큰(대비 보정된 `-text`)을 쓰고,
+ * 유지·신규 제시는 본문 강조색이다 — 색만으로 방향을 전하지 않도록 이전 값 → 새 값이 함께 보인다.
+ */
+export const TARGET_DIRECTION_CLASS: Record<AnalystTargetAction, string> = {
+    raise: 'text-ui-success-text',
+    lower: 'text-ui-danger-text',
+    maintain: 'text-secondary-100',
+    announce: 'text-secondary-100',
 };

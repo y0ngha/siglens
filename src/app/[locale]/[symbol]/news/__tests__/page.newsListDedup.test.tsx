@@ -94,14 +94,22 @@ vi.mock('@/widgets/news/sections/NewsList', () => ({
 vi.mock('@/widgets/news/sections/EventCalendar', () => ({
     EventCalendar: () => <div data-testid="event-calendar" />,
 }));
+vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
+    // 기본은 SEC 공시 대상이 아님 — 섹션을 그리지 않는다. DB·SEC에 나가지 않는다.
+    listCompanyFilings: vi.fn(async () => ({ status: 'no_sec_filer' })),
+}));
+vi.mock('@/entities/analyst-views/server/getAnalystActionHistory', () => ({
+    // 기본은 "Yahoo 이력 없음"(한국 종목·E2E와 같은 경로) — 기존 등급 목록으로 그린다. 네트워크에 나가지 않는다.
+    getAnalystActionHistory: vi.fn(async () => null),
+}));
 vi.mock('@/widgets/news/sections/AnalystActions', () => ({
     // data-count/first/last: 직렬화 상한이 몇 개를, 어느 쪽 끝에서 남기는지 관찰한다.
-    AnalystActions: ({ events }: { events: { date: string }[] }) => (
+    AnalystActions: ({ items }: { items: { date: string }[] }) => (
         <div
             data-testid="analyst-actions"
-            data-count={events.length}
-            data-first={events[0]?.date}
-            data-last={events[events.length - 1]?.date}
+            data-count={items.length}
+            data-first={items[0]?.date}
+            data-last={items[items.length - 1]?.date}
         />
     ),
 }));

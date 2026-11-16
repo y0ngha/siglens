@@ -67,6 +67,14 @@ vi.mock('@/widgets/news/sections/NewsList', () => ({
 vi.mock('@/widgets/news/sections/EventCalendar', () => ({
     EventCalendar: () => null,
 }));
+vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
+    // 기본은 SEC 공시 대상이 아님 — 섹션을 그리지 않는다. DB·SEC에 나가지 않는다.
+    listCompanyFilings: vi.fn(async () => ({ status: 'no_sec_filer' })),
+}));
+vi.mock('@/entities/analyst-views/server/getAnalystActionHistory', () => ({
+    // 기본은 "Yahoo 이력 없음"(한국 종목·E2E와 같은 경로) — 기존 등급 목록으로 그린다. 네트워크에 나가지 않는다.
+    getAnalystActionHistory: vi.fn(async () => null),
+}));
 vi.mock('@/widgets/news/sections/AnalystActions', () => ({
     AnalystActions: () => null,
 }));

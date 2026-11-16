@@ -84,14 +84,30 @@ vi.mock('@/widgets/news/sections/NewsList', () => ({
 vi.mock('@/widgets/news/sections/EventCalendar', () => ({
     EventCalendar: () => <div data-testid="event-calendar" />,
 }));
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
+}));
+vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
+    // 기본은 SEC 공시 대상이 아님 — 섹션을 그리지 않는다. DB·SEC에 나가지 않는다.
+    listCompanyFilings: vi.fn(async () => ({ status: 'no_sec_filer' })),
+}));
+vi.mock('@/entities/analyst-views/server/getAnalystActionHistory', () => ({
+    // 기본은 "Yahoo 이력 없음"(한국 종목·E2E와 같은 경로) — 기존 등급 목록으로 그린다. 네트워크에 나가지 않는다.
+    getAnalystActionHistory: vi.fn(async () => null),
+}));
+vi.mock('@/widgets/news/sections/CompanyFilings', () => ({
+    CompanyFilings: ({ filings }: { filings: { accession: string }[] }) => (
+        <div data-testid="company-filings" data-count={filings.length} />
+    ),
+}));
 vi.mock('@/widgets/news/sections/AnalystActions', () => ({
     // data-count/first/last: 직렬화 상한이 몇 개를, 어느 쪽 끝에서 남기는지 관찰한다.
-    AnalystActions: ({ events }: { events: { date: string }[] }) => (
+    AnalystActions: ({ items }: { items: { date: string }[] }) => (
         <div
             data-testid="analyst-actions"
-            data-count={events.length}
-            data-first={events[0]?.date}
-            data-last={events[events.length - 1]?.date}
+            data-count={items.length}
+            data-first={items[0]?.date}
+            data-last={items[items.length - 1]?.date}
         />
     ),
 }));
@@ -151,10 +167,14 @@ import {
     NewsListSection,
     EventCalendarSection,
     AnalystActionsSection,
+    CompanyFilingsSection,
 } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
+import { getAnalystActionHistory } from '@/entities/analyst-views/server/getAnalystActionHistory';
+import { listCompanyFilings } from '@/entities/company-filings/server/getCompanyFilings';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import {
     getEarningsReportComparison,
     getGradeEvents,
@@ -170,6 +190,16 @@ const mockGetEarningsReportComparison =
     getEarningsReportComparison as MockedFunction<
         typeof getEarningsReportComparison
     >;
+const mockShortenRevalidate =
+    shortenRevalidateForRuntimeDegrade as MockedFunction<
+        typeof shortenRevalidateForRuntimeDegrade
+    >;
+const mockListCompanyFilings = listCompanyFilings as MockedFunction<
+    typeof listCompanyFilings
+>;
+const mockGetAnalystActionHistory = getAnalystActionHistory as MockedFunction<
+    typeof getAnalystActionHistory
+>;
 const mockGetGradeEvents = getGradeEvents as MockedFunction<
     typeof getGradeEvents
 >;
@@ -369,6 +399,13 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
  * 오래된 것만 남는데 렌더는 멀쩡해서 아무도 눈치채지 못한다** — 그래서 개수만이 아니라
  * 어느 쪽 끝이 남는지까지 단언한다.
  */
+/** `n`이 클수록 최근인 날짜(오늘 기준 100−n일 전) — 끊긴 이력 규칙(180일)에 걸리지 않는다. */
+function recentDay(n: number): string {
+    return new Date(Date.now() - (100 - n) * 86_400_000)
+        .toISOString()
+        .slice(0, 10);
+}
+
 describe('/[symbol]/news 직렬화 행 상한', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -429,6 +466,97 @@ describe('/[symbol]/news 직렬화 행 상한', () => {
         );
     });
 
+    it('Yahoo 이력(목표가 포함)이 있으면 그것으로 그리고 같은 상한을 건다 — 등급 이벤트는 읽지 않는다', async () => {
+        mockGetAnalystActionHistory.mockResolvedValueOnce(
+            Array.from(
+                { length: NEWS_ROW_SERIALIZATION_LIMIT + 3 },
+                (_, i) => ({
+                    date: recentDay(NEWS_ROW_SERIALIZATION_LIMIT + 3 - i),
+                    firm: `Firm ${i}`,
+                    action: 'maintain' as const,
+                    fromGrade: 'Buy',
+                    toGrade: 'Buy',
+                    priorTarget: 100,
+                    target: 110,
+                    targetAction: 'raise' as const,
+                })
+            )
+        );
+        render(await AnalystActionsSection({ symbol: 'AAPL' }));
+        const el = screen.getByTestId('analyst-actions');
+        expect(el.getAttribute('data-count')).toBe(
+            String(NEWS_ROW_SERIALIZATION_LIMIT)
+        );
+        expect(el.getAttribute('data-first')).toBe(
+            recentDay(NEWS_ROW_SERIALIZATION_LIMIT + 3)
+        );
+        expect(mockGetGradeEvents).not.toHaveBeenCalled();
+    });
+
+    it('Yahoo 이력의 최신 행이 180일보다 오래됐으면(끊긴 이력) 등급 이벤트로 그린다', async () => {
+        mockGetGradeEvents.mockResolvedValue(gradeRows(2));
+        mockGetAnalystActionHistory.mockResolvedValueOnce([
+            {
+                date: '2023-03-01',
+                firm: 'Old Firm',
+                action: 'maintain',
+                fromGrade: 'Buy',
+                toGrade: 'Buy',
+                priorTarget: null,
+                target: 10,
+                targetAction: null,
+            },
+        ]);
+        render(await AnalystActionsSection({ symbol: 'AAPL' }));
+        expect(
+            screen.getByTestId('analyst-actions').getAttribute('data-count')
+        ).toBe('2');
+        expect(mockGetGradeEvents).toHaveBeenCalledTimes(1);
+    });
+
+    it('Yahoo 이력이 예산(2.5초) 안에 오지 않으면 등급 이벤트로 그리고 이번 렌더의 revalidate를 낮춘다', async () => {
+        vi.useFakeTimers();
+        try {
+            mockGetGradeEvents.mockResolvedValue(gradeRows(1));
+            mockGetAnalystActionHistory.mockReturnValueOnce(
+                new Promise(() => {})
+            );
+            const pending = AnalystActionsSection({ symbol: 'AAPL' });
+            await vi.advanceTimersByTimeAsync(2_500);
+            render(await pending);
+            expect(
+                screen.getByTestId('analyst-actions').getAttribute('data-count')
+            ).toBe('1');
+            expect(mockShortenRevalidate).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('Yahoo 이력이 실패하거나 비면 등급 이벤트로 그린다(보강 실패는 경고 카드가 아니다)', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockGetGradeEvents.mockResolvedValue(gradeRows(3));
+        mockGetAnalystActionHistory.mockRejectedValueOnce(
+            new Error('yahoo down')
+        );
+        render(await AnalystActionsSection({ symbol: 'AAPL' }));
+        expect(
+            screen
+                .getAllByTestId('analyst-actions')
+                .at(-1)
+                ?.getAttribute('data-count')
+        ).toBe('3');
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('[AnalystActionsSection] Yahoo history'),
+            expect.any(Error)
+        );
+        mockGetAnalystActionHistory.mockResolvedValueOnce([]);
+        render(await AnalystActionsSection({ symbol: 'AAPL' }));
+        expect(mockGetGradeEvents).toHaveBeenCalledTimes(2);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        warn.mockRestore();
+    });
+
     it('등급 이벤트에도 같은 상한이 걸린다 — 한쪽에만 거는 실수 감지', async () => {
         mockGetGradeEvents.mockResolvedValue(
             gradeRows(NEWS_ROW_SERIALIZATION_LIMIT + 7)
@@ -442,5 +570,67 @@ describe('/[symbol]/news 직렬화 행 상한', () => {
         expect(el.getAttribute('data-first')).toBe(
             `2026-01-${String(NEWS_ROW_SERIALIZATION_LIMIT + 7).padStart(2, '0')}`
         );
+    });
+});
+
+describe('/[symbol]/news 최근 공시 섹션', () => {
+    beforeEach(() => {
+        mockShortenRevalidate.mockClear();
+        mockListCompanyFilings.mockReset();
+    });
+
+    const filing = (n: number) => ({
+        accession: `0001193125-26-46101${n}`,
+        form: '8-K' as const,
+        filedAt: '2026-11-13',
+        items: [],
+        headline: null,
+        hasPressRelease: false,
+        url: 'https://www.sec.gov/Archives/edgar/data/1/x.htm',
+    });
+
+    it('목록이 있으면 그린다', async () => {
+        mockListCompanyFilings.mockResolvedValueOnce({
+            status: 'ok',
+            filings: [filing(1), filing(2)],
+        });
+        const node = await CompanyFilingsSection({ symbol: 'IONQ' });
+        render(<>{node}</>);
+        expect(
+            screen.getByTestId('company-filings').getAttribute('data-count')
+        ).toBe('2');
+    });
+
+    it.each([
+        ['SEC 공시 대상 아님', { status: 'no_sec_filer' as const }],
+        ['빈 목록', { status: 'ok' as const, filings: [] }],
+    ])('%s이면 섹션을 그리지 않는다', async (_name, result) => {
+        mockListCompanyFilings.mockResolvedValueOnce(result);
+        expect(await CompanyFilingsSection({ symbol: 'IONQ' })).toBeNull();
+    });
+
+    it('예산(4초) 안에 오지 않으면 섹션을 빼고 이번 렌더의 revalidate를 낮춘다(캐시가 곧 채워진다)', async () => {
+        vi.useFakeTimers();
+        try {
+            mockListCompanyFilings.mockReturnValueOnce(new Promise(() => {}));
+            const pending = CompanyFilingsSection({ symbol: 'IONQ' });
+            await vi.advanceTimersByTimeAsync(4_000);
+            expect(await pending).toBeNull();
+            expect(mockShortenRevalidate).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('SEC·DB 실패는 경고만 남기고 섹션을 빼며, 경고 카드도 revalidate 단축도 없다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockListCompanyFilings.mockResolvedValueOnce({ status: 'failed' });
+        expect(await CompanyFilingsSection({ symbol: 'IONQ' })).toBeNull();
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('[CompanyFilingsSection]'),
+            expect.any(Error)
+        );
+        expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        warn.mockRestore();
     });
 });
