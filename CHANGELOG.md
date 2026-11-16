@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.124.0](https://github.com/y0ngha/siglens/compare/v0.123.0...v0.124.0) (2026-11-16)
+
+### Features
+
+* SiglensAI 조정·상승 구간 통계 도구 실행기 추가 ([#1318](https://github.com/y0ngha/siglens/issues/1318)) ([de6eac0](https://github.com/y0ngha/siglens/commit/de6eac04fc35f104c856f058acfedbe258194299))
+
 # [0.123.0](https://github.com/y0ngha/siglens/compare/v0.122.0...v0.123.0) (2026-11-16)
 
 ### Features
