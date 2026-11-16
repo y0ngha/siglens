@@ -24,6 +24,7 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { earningsMarketToday } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import {
     buildTitleSubject,
     resolveSymbolNewsSeoContent,
@@ -280,6 +281,8 @@ export default async function NewsPage({ params }: Props) {
                         // 하이드레이션되지 않는다 — 하이드레이션 불일치 경로가 아니다.
                         // react-doctor-disable-next-line react-doctor/rendering-hydration-mismatch-time
                         today={kstDateKey(new Date())}
+                        // react-doctor-disable-next-line react-doctor/rendering-hydration-mismatch-time
+                        marketToday={earningsMarketToday(upper, new Date())}
                     />
                 )}
 

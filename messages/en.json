@@ -5392,7 +5392,11 @@
                 "7ba954": "Scheduled",
                 "a06069": "Consensus",
                 "c0c9e1": "Past",
-                "f8f294": "Announced"
+                "f8f294": "Announced",
+                "confirmed": "Confirmed",
+                "sessionBeforeOpen": "Before the open",
+                "sessionDuringMarket": "During market hours",
+                "sessionAfterClose": "After the close"
             },
             "NewsAiSummary": {
                 "0c767c": "Try again",

@@ -4399,5 +4399,9 @@
     "widgets.fundamental.FundamentalFactsCard.nextEarningsConfirmed": "d2391acf7463",
     "widgets.fundamental.FundamentalFactsCard.nextEarningsConfirmedSession": "87f75fb547f7",
     "widgets.fundamental.FundamentalFactsCard.nextEarningsConfirmedSource": "fe287c7749c0",
-    "widgets.agent-chat.ToolActivity.toolXPosts": "744bd2f03e59"
+    "widgets.agent-chat.ToolActivity.toolXPosts": "744bd2f03e59",
+    "widgets.news.EventCalendar.confirmed": "555361064c17",
+    "widgets.news.EventCalendar.sessionBeforeOpen": "12240fb2a8da",
+    "widgets.news.EventCalendar.sessionDuringMarket": "f60130ba7ffa",
+    "widgets.news.EventCalendar.sessionAfterClose": "43e861f33a89"
 }

@@ -5392,7 +5392,11 @@
                 "7ba954": "预估",
                 "a06069": "共识",
                 "c0c9e1": "历史",
-                "f8f294": "公布"
+                "f8f294": "公布",
+                "confirmed": "已确定",
+                "sessionBeforeOpen": "开盘前",
+                "sessionDuringMarket": "盘中",
+                "sessionAfterClose": "收盘后"
             },
             "NewsAiSummary": {
                 "0c767c": "重试",

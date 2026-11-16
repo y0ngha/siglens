@@ -1,22 +1,19 @@
 import 'server-only';
 import { cache } from 'react';
-import { resolveNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
-import type { AnalystEarningsHint } from '@/entities/analyst-views/model';
-import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
+import {
+    earningsMarketToday,
+    resolveNextEarnings,
+} from '@/entities/analyst-views/lib/resolveNextEarnings';
+import { loadEarningsHintBounded } from '@/entities/analyst-views/server/loadEarningsHint';
 import { getNextEarningsSchedule } from '@/entities/earnings-report/api';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
-import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { loadPageGradesConsensus } from '@/shared/api/fmp/loadPageGradesConsensus';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_DAY, SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
-import { withTimeout } from '@/shared/lib/withTimeout';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import {
     buildFundamentalFacts,
     isFundamentalIndexable,
@@ -47,18 +44,6 @@ async function settle<T>(
 
 function valueOf<T>(v: T | typeof FAILED): T | null {
     return v === FAILED ? null : v;
-}
-
-/** 그 종목 시장의 오늘(`YYYY-MM-DD`) — 실적일이 시장 달력 날짜라서다. 한국은 KST, 그 외는 ET. */
-function marketToday(symbol: string, now: Date): string {
-    if (isKrEquitySymbol(symbol)) return kstDateKey(now);
-    // en-CA는 `YYYY-MM-DD`로 낸다.
-    return cachedDateTimeFormat('en-CA', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    }).format(now);
 }
 
 function latestByDate<T extends { date: string }>(
@@ -98,48 +83,6 @@ async function loadEarnings(symbol: string, today: string) {
     return { nextEarningsDate: schedule?.earningsDate ?? null, reported };
 }
 
-/** 실적 힌트(Yahoo) 보강에 기다리는 최대 시간. 메타데이터·크롤러가 보는 사실 블록이 보강 때문에 8초씩 기다리지 않게 한다. */
-const EARNINGS_HINT_BUDGET_MS = 2_500;
-
-/**
- * Yahoo의 실적 힌트(확정 여부·세션) 로더 — `staticSymbolCache` 안에서만 돈다. Yahoo가 실패하면 던져서
- * `null`이 12시간 캐시에 굳지 않게 한다("힌트 없음"은 정상 `null`).
- */
-async function loadEarningsHint(
-    symbol: string
-): Promise<AnalystEarningsHint | null> {
-    const views = await getAnalystViews(symbol, { detail: 'lite' });
-    if (views.degraded.includes('yahoo')) {
-        throw new Error(`Yahoo earnings hint unavailable for ${symbol}`);
-    }
-    return views.earnings;
-}
-
-/**
- * 보강 전용: 한국 종목(프로바이더가 이미 Yahoo)과 E2E에서는 부르지 않고, 실패·시간 초과는 `null`이다 — 사실
- * 문장이 "예정"으로 남을 뿐 `complete`에도 revalidate에도 영향이 없다. 시간 초과 뒤에도 로드는 뒤에서 마저 돌아
- * 캐시를 채운다(`withTimeout`은 취소하지 않는다).
- */
-async function loadEarningsHintBounded(
-    symbol: string
-): Promise<AnalystEarningsHint | null> {
-    if (isKrEquitySymbol(symbol) || isE2EFakeMode()) return null;
-    const hint = await settle('earnings-hint', symbol, () =>
-        withTimeout(
-            staticSymbolCache(
-                ['fundamental-facts:earnings-hint', symbol],
-                symbol,
-                () => loadEarningsHint(symbol),
-                [],
-                SECONDS_PER_HALF_DAY
-            ),
-            EARNINGS_HINT_BUDGET_MS,
-            null
-        )
-    );
-    return valueOf(hint);
-}
-
 /**
  * 펀더멘털 탭 사실 블록과 색인 판정. 본문·`generateMetadata`·sitemap 스탬프가 이 결과 하나를
  * 쓴다(같은 요청 안에서는 React `cache`로 한 번만 읽는다).
@@ -150,7 +93,7 @@ async function loadEarningsHintBounded(
  */
 export const getFundamentalFacts = cache(
     async (symbol: string): Promise<FundamentalFactsResult> => {
-        const today = marketToday(symbol, new Date());
+        const today = earningsMarketToday(symbol, new Date());
         const provider = getFundamentalDataProvider(symbol);
         const [annual, flows, consensus, summary, grades, earnings, hint] =
             await Promise.all([
