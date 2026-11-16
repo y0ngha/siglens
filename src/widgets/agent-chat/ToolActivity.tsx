@@ -16,6 +16,7 @@ import {
     GaugeIcon,
     GridIcon,
     HistoryIcon,
+    SwingIcon,
     GavelIcon,
     GlobeIcon,
     LayersIcon,
@@ -55,6 +56,7 @@ const ICON: Record<string, IconComponent> = {
     get_x_posts: SpeechIcon,
     get_theme_snapshot: GridIcon,
     get_index_history_stats: HistoryIcon,
+    get_swing_history: SwingIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -116,6 +118,7 @@ export function ToolActivity({
         get_x_posts: t('ToolActivity.toolXPosts'),
         get_theme_snapshot: t('ToolActivity.toolThemeSnapshot'),
         get_index_history_stats: t('ToolActivity.toolIndexHistory'),
+        get_swing_history: t('ToolActivity.toolSwingHistory'),
     };
     // Daily bars also carry the symbol's own fear & greed reading, so the
     // step says so; other timeframes get the plain chart label.

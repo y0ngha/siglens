@@ -137,6 +137,14 @@ export const X_POSTS_RESULT_MAX_CHARS = 11_500;
 export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
 
 /**
+ * `get_swing_history` ceiling. Core caps each episode list (`SWING_EPISODES_LISTED_MAX`, 20 declines and 20 rallies), so
+ * the size does not grow with history. Measured 2026-11-17 across 27 symbols (index ETFs, the big seven, theme stocks,
+ * defensives, BTCUSD, KRX) at 10%: 7,903–8,267 chars of core output, plus a ~200-char envelope with the resolved name.
+ * 11,000 leaves room for wider prices (KRW closes) and a future field.
+ */
+export const SWING_HISTORY_RESULT_MAX_CHARS = 11_000;
+
+/**
  * `get_analyst_views` ceiling. Up to 15 firm-level actions plus up to four estimate periods: measured 2026-11-16
  * on a heavier-than-real case (`getAnalystViews.test.ts`: long firm names and grades, four periods with 5-digit
  * EPS and 16-digit revenue) at 4,721 chars. 5,500 leaves ~780; the shared 4,000 default would cut the estimates
