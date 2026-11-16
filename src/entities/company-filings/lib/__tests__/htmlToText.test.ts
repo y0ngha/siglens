@@ -136,6 +136,14 @@ describe('htmlToText', () => {
         expect(htmlToText('<table><tr><td>a</td><td>b</td>')).toContain('a');
     });
 
+    it('공시에 흔한 이름 붙은 엔티티(·, €)를 풀고 폭 없는 문자·소프트 하이픈을 지운다', () => {
+        expect(
+            htmlToText(
+                '<p>&middot; Revenue &euro;24.1 billion</p><p>\u200bOperating Review\u200b</p><p>co&shy;operation</p>'
+            )
+        ).toBe('· Revenue €24.1 billion\nOperating Review\ncooperation');
+    });
+
     it('빈 입력은 빈 문자열', () => {
         expect(htmlToText('')).toBe('');
         expect(htmlToText('<div> </div>')).toBe('');

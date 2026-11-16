@@ -39,12 +39,18 @@ import type {
 const FILINGS_LIST_CACHE_TTL_SECONDS = 30 * SECONDS_PER_MINUTE;
 /** 접수된 공시의 문서 선택·제목·본문은 바뀌지 않는다. */
 const FILING_CACHE_TTL_SECONDS = 30 * SECONDS_PER_DAY;
-/** 키 접두사의 버전(`v1`·`v2`)은 저장하는 값의 모양이 바뀔 때 올린다. 제출 목록 항목은 CIK별 `SubmissionFiling[]`. */
+/**
+ * 키 접두사의 버전(`v1`·`v2`)은 저장하는 값의 모양이 바뀔 때, 또는 같은 원문에서 뽑는 값(제목·정제 본문)의 규칙이
+ * 바뀔 때 올린다 — 30일 TTL이라 올리지 않으면 옛 규칙의 제목이 한 달 동안 남는다. 제출 목록 항목은 CIK별
+ * `SubmissionFiling[]`.
+ */
 const FILINGS_LIST_CACHE_KEY_PREFIX = 'sec:filings-list:v1';
 /** 목록용 작은 항목 `{fileName, document, headline}` — 목록 호출은 이 키만 읽어 Redis 대역폭을 아낀다. */
-const FILING_META_CACHE_KEY_PREFIX = 'sec:filing-meta:v1';
+// v2(2026-11-16): 6-K 주 문서 본문·홍콩 공고·서한 제목, HTML 기호·폭 없는 문자 정리.
+const FILING_META_CACHE_KEY_PREFIX = 'sec:filing-meta:v2';
 /** 읽기용 항목 `FilingDocument` — 전문이 아니라 상한까지 잘라 둔 본문을 싣는다. */
-const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v2';
+// v3(2026-11-16): 위 제목 규칙과 정제 본문의 기호(`&middot;`·`&euro;`)·폭 없는 문자 처리.
+const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v3';
 
 /**
  * 한 목록 호출에서 제목을 읽는 공시 수. 공시 하나가 게이트를 지나는 SEC 요청 2건(색인 + 문서 앞부분)이라
@@ -203,7 +209,8 @@ function loadFilingDocument(
                     text,
                     AGENT_FILING_TEXT_MAX_CHARS
                 );
-                // 보도자료가 없는 주 문서의 앞머리는 SEC 표지 문구라 첫 `Item` 본문의 첫 문장(또는 6-K의 첨부 목록 설명)을 쓴다.
+                // 보도자료가 없는 주 문서의 앞머리는 SEC 표지 문구라 첫 `Item` 본문의 첫 문장(6-K는 첨부 목록 설명, 없으면 표지
+                // 안의 설명이나 서명란 뒤 본문)을 쓴다.
                 const headline =
                     document === 'press_release'
                         ? extractHeadline(text)

@@ -103,6 +103,117 @@ describe('extractPrimaryHeadline', () => {
         expect(extractPrimaryHeadline(text)).toBeNull();
     });
 
+    // 아래 원문은 2026-11-16 EDGAR 실측 6-K 주 문서를 htmlToText에 통과시킨 뒤 표지 앞부분을 줄였다.
+    const COVER = [
+        'FORM 6-K',
+        'REPORT OF FOREIGN PRIVATE ISSUER',
+        'Indicate by check mark whether the registrant files or will file annual reports under cover Form 20-F or Form 40-F.',
+        'Form 20-F x Form 40-F o',
+    ];
+
+    it('6-K 첨부 목록이 표로 풀려 번호와 설명이 다른 줄이면 다음 줄 설명을 쓴다', () => {
+        const text = [
+            ...COVER,
+            'EXHIBIT INDEX',
+            'Exhibit No.',
+            'Description',
+            '99.1',
+            'Announcement—Date of Board Meeting',
+            'SIGNATURES',
+        ].join('\n');
+        expect(extractPrimaryHeadline(text)).toBe(
+            'Announcement—Date of Board Meeting'
+        );
+    });
+
+    it('6-K 표지 체크 줄과 서명란 사이의 설명(EXPLANATORY NOTE)에서 제목을 뽑는다', () => {
+        const text = [
+            ...COVER,
+            'EXPLANATORY NOTE',
+            '',
+            'Annual General Meeting Results',
+            '',
+            'On September 8, 2026, Arqit Quantum Inc. (the',
+            '“Company”) held its 2026 annual general meeting of shareholders (the “AGM”). At the AGM, the holders of 9,421,171',
+            'ordinary shares as of the August 13, 2026 record date were represented in person or by proxy, constituting a quorum. Each of the proposals',
+            'brought before the AGM was approved by the Company’s shareholders.',
+            '',
+            'SIGNATURES',
+        ].join('\n');
+        expect(extractPrimaryHeadline(text)).toBe(
+            'Annual General Meeting Results'
+        );
+    });
+
+    it('표지 안이 체크 문구뿐이면 서명란(이름·직함 칸)을 건너뛴 본문의 제목을 쓴다', () => {
+        const text = [
+            ...COVER,
+            'Indicate by check mark if the registrant is submitting the Form 6-K in papers as permitted by Regulation S-T Rule 101(b)(1): o',
+            'SIGNATURES',
+            'Pursuant to the requirements of the Securities Exchange Act of 1934, the registrant has duly caused this report to be signed on its behalf by the undersigned, thereunto duly authorized.',
+            'Taiwan Semiconductor Manufacturing Company Limited',
+            'Date: November 10, 2026 | By | /s/ Wendell Huang',
+            'Wendell Huang',
+            'Senior Vice President and Chief Financial Officer',
+            'TSMC Board of Directors Meeting Resolutions',
+            'HSINCHU, Taiwan, R.O.C., Nov. 10, 2026 – The TSMC (TWSE: 2330, NYSE: TSM) Board of Directors today held a meeting.',
+        ].join('\n');
+        expect(extractPrimaryHeadline(text)).toBe(
+            'TSMC Board of Directors Meeting Resolutions'
+        );
+    });
+
+    it('서명란 뒤 본문에 제목이 없으면 회사명·상장 표기를 건너뛰고 첫 문장을 쓴다', () => {
+        const report = `This is to report 1) the changes in the shareholdings of TSMC board of directors, executive officers and shareholders who own more than 10% of total outstanding common shares of TSMC; 2) the changes in the pledge of TSMC common shares for the month of September 2026. More follows.`;
+        const text = [
+            ...COVER,
+            'SIGNATURES',
+            'Taiwan Semiconductor Manufacturing Company Limited',
+            'Date: October 22, 2026 | By | /s/ Wendell Huang',
+            'Wendell Huang',
+            'Senior Vice President and Chief Financial Officer',
+            'Taiwan Semiconductor Manufacturing Company Limited',
+            '("TSMC"; NYSE: TSM)',
+            report,
+        ].join('\n');
+        const headline = extractPrimaryHeadline(text);
+        expect(headline?.startsWith('This is to report 1) the changes')).toBe(
+            true
+        );
+        expect(headline?.length).toBeLessThanOrEqual(200);
+        expect(report.startsWith(headline ?? '-')).toBe(true);
+    });
+
+    it('6-K 표지가 아니면(Form 40-F 체크 줄 없음) 서명란 뒤를 보지 않는다', () => {
+        const text = [
+            'SIGNATURES',
+            'Date: November 10, 2026 | By | /s/ Jane Doe',
+            'Jane Doe',
+            'A Title That Should Not Be Used For This Filing',
+        ].join('\n');
+        expect(extractPrimaryHeadline(text)).toBeNull();
+    });
+
+    it.each([
+        ['빈 줄 없는 Item 줄', 'Item 1.01\n'],
+        ['빈 줄로 나뉜 Item 줄', 'Item 1.01\n\n'],
+    ])('%s이 256KB 이어져도 선형 시간이다', (_, unit) => {
+        const text = unit.repeat(Math.floor((256 * 1024) / unit.length));
+        const started = performance.now();
+        extractPrimaryHeadline(text);
+        expect(performance.now() - started).toBeLessThan(1_000);
+    });
+
+    it('99.1 줄이 256KB 이어져도 선형 시간이다', () => {
+        const text = [
+            ...COVER,
+            ...Array.from({ length: 50_000 }, () => '99.1'),
+        ].join('\n\n');
+        const started = performance.now();
+        extractPrimaryHeadline(text);
+        expect(performance.now() - started).toBeLessThan(1_500);
+    });
+
     it('조건에 맞는 항목이 없으면 null', () => {
         expect(extractPrimaryHeadline('')).toBeNull();
         expect(

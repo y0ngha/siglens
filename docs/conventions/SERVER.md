@@ -368,6 +368,16 @@ pattern the block regex uses, as `closedSpanEnd` in `entities/company-filings/li
 per-item scan that restarts at index 0 (slice forward instead). Pin it with a regression test that feeds a cap-sized
 adversarial input under a time bound.
 
+A scan that returns at the first match becomes a full fall-through once you add skip/continue conditions, so re-check
+every per-item helper it calls (and its siblings in the same file) for searches from index 0 and for `slice(from)`
+copies of the remainder: compute spans once or search a bounded window, and add one cap-sized adversarial test per new
+skip class. Anchor label-only skip patterns to the whole line so they do not match the first words of real titles.
+
+A helper that gains a new caller (for example when it moves to a shared file) gets its input bound re-checked: a
+per-match `slice(0, index)` that is safe for a bounded caller is quadratic for an unbounded one. Bound constant factors
+too (rescans per start item, look-ahead per blank line), not only asymptotic growth, and measure the adversarial test
+locally with a wide margin (aim under 10 % of the test bound) because CI runners are several times slower.
+
 - ❌ `/<!--[\s\S]*?-->/g` over a body with thousands of unclosed `<!--` rescans to the end from each one.
 - ✅ The pattern runs only inside the span that ends at the last real `-->`; the unclosed tail is dropped.
 
