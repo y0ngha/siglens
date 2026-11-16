@@ -31,5 +31,6 @@ export async function getAnalystActionHistory(
         fmpFailed: false,
         includeActions: true,
         includeEarnings: false,
+        includeEstimates: false,
     }).actions.rows;
 }

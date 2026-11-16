@@ -1,4 +1,9 @@
 import 'server-only';
+import {
+    getYahooOwnershipShares,
+    type YahooOwnershipShares,
+} from '@/shared/api/yahoo/yahooOwnershipSource';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
     getInvestorFlowsScorecard,
@@ -167,6 +172,14 @@ async function krResult(
     };
 }
 
+/** core `get_investor_flows` 설명의 `ownershipShares` 모양. 못 읽었으면 `null`. */
+function ownershipView(shares: YahooOwnershipShares | null) {
+    return shares === null ? null : { ...shares, source: 'yahoo' as const };
+}
+
+/** 보유 비율(Yahoo)을 실을 때 결과 `source`에 덧붙이는 출처 — 모델이 SEC 13F 값으로 오인하지 않게 한다. */
+const OWNERSHIP_SOURCE_NOTE = '; ownership shares: Yahoo Finance aggregate';
+
 /**
  * 수급 요약. 미국 주식은 기관 13F·풋콜 · 내부자 Form 4·Form 144 · 5% 대량보유 · 증자·희석 공시 · FINRA 공매도 · SEC FTD ·
  * Reg SHO 과열 목록 · 숏스퀴즈 점수, 한국 주식은 DART 대량보유(5%)·임원·주요주주 소유보고·거래계획보고서(`krResult`, `market: 'kr'`)다.
@@ -197,11 +210,24 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
         rt.allowUnofficialSources === false
             ? null
             : loadKrInvestorTrend(symbol);
+    // 미국 종목 보유 비율(Yahoo)도 스코어카드와 겹쳐 읽는다. 공개 API는 비공식 출처를 쓰지 않으므로 부르지 않는다. 로더는
+    // 던지지 않는다(`null`). 한국 종목이면 아래 분기에서 쓰지 않고 버린다.
+    const ownershipPending =
+        rt.allowUnofficialSources === false || isKrEquitySymbol(symbol)
+            ? null
+            : getYahooOwnershipShares(symbol);
     const result = await getInvestorFlowsScorecard(symbol);
     if (result.degraded)
         return { symbol, available: false, reason: 'provider_failed' };
+    // 한국 종목은 Yahoo 보유 비율 집계가 없다 — core 설명대로 `null`을 실어 "없음"을 밝힌다(보유 지분은 DART 공시로 답한다).
+    // 공개 API는 비공식 출처 필드를 싣지 않으므로 키도 없다.
     if (result.market === 'kr')
-        return await krResult(symbol, result, krTrendPending);
+        return {
+            ...(await krResult(symbol, result, krTrendPending)),
+            ...(rt.allowUnofficialSources === false
+                ? {}
+                : { ownershipShares: null }),
+        };
 
     const { snapshot, scorecard, finraEnabled, regShoEnabled, readiness } =
         result;
@@ -211,14 +237,23 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
         finraEnabled,
         regShoEnabled,
     });
+    const ownership =
+        ownershipPending === null
+            ? {}
+            : { ownershipShares: ownershipView(await ownershipPending) };
+    const resultSource =
+        ownershipPending === null
+            ? source
+            : `${source}${OWNERSHIP_SOURCE_NOTE}`;
     if (snapshot === null || scorecard === null)
         return {
             asOf: new Date().toISOString(),
-            source,
+            source: resultSource,
             symbol,
             available: true,
             noData: true,
             ...(dataStatus === undefined ? {} : { dataStatus }),
+            ...ownership,
         };
 
     const temporarilyUnavailable = buildTemporarilyUnavailable(
@@ -226,7 +261,7 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
     );
     return {
         asOf: snapshot.asOf,
-        source,
+        source: resultSource,
         symbol,
         available: true,
         noData: false,
@@ -238,5 +273,6 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
             maskUncollectedSections(snapshot, readiness),
             scorecard
         ),
+        ...ownership,
     };
 };

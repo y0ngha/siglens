@@ -76,6 +76,36 @@ export interface AnalystEarningsHint {
 
 export type AnalystSource = 'yahoo' | 'fmp';
 
+/** 실적 추정치 한 기간(Yahoo 컨센서스). core `get_analyst_views` 설명의 `estimates` 행 모양이다. */
+export interface AnalystEstimatePeriod {
+    /** `0q` 이번 분기, `+1q` 다음 분기, `0y` 이번 회계연도, `+1y` 다음 회계연도. */
+    period: string;
+    endDate: string | null;
+    eps: {
+        avg: number | null;
+        analysts: number | null;
+        ago7d: number | null;
+        ago30d: number | null;
+        ago60d: number | null;
+        ago90d: number | null;
+        /** 현재 − 30일 전(주당 절대값). 둘 중 하나라도 없으면 `null`. */
+        change30d: number | null;
+        change90d: number | null;
+    };
+    revisions: {
+        up7d: number | null;
+        down7d: number | null;
+        up30d: number | null;
+        down30d: number | null;
+    };
+    revenue: {
+        avg: number | null;
+        analysts: number | null;
+        /** 퍼센트(25 = 25%). */
+        growthPct: number | null;
+    };
+}
+
 export interface AnalystViews {
     asOf: string;
     symbol: string;
@@ -100,6 +130,8 @@ export interface AnalystViews {
         } | null;
     };
     earnings: AnalystEarningsHint | null;
+    /** 실적 추정치 추이. 요청하지 않았거나(가벼운 조회) Yahoo를 못 읽었거나 추정치가 없으면 `null`. */
+    estimates: AnalystEstimatePeriod[] | null;
     degraded: AnalystSource[];
 }
 

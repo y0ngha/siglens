@@ -33,6 +33,7 @@ export async function getAnalystViews(
     if (isKr) {
         const yahoo = await getYahooAnalystSummary(symbol, {
             includeActions: false,
+            includeEstimates: full,
         });
         return buildAnalystViews({
             symbol,
@@ -42,10 +43,14 @@ export async function getAnalystViews(
             fmpFailed: false,
             includeActions: false,
             includeEarnings: false,
+            includeEstimates: full,
         });
     }
     const [yahooR, consensusR, summaryR] = await Promise.allSettled([
-        getYahooAnalystSummary(symbol, { includeActions: full }),
+        getYahooAnalystSummary(symbol, {
+            includeActions: full,
+            includeEstimates: full,
+        }),
         Promise.resolve().then(() =>
             getFundamentalDataProvider(symbol).getPriceTargetConsensus(symbol)
         ),
@@ -73,5 +78,6 @@ export async function getAnalystViews(
         fmpFailed,
         includeActions: full,
         includeEarnings: true,
+        includeEstimates: full,
     });
 }

@@ -76,11 +76,13 @@ export const ECONOMY_RESULT_MAX_CHARS = 20_000;
  * tool passes through (Form 144 shares and % of outstanding, the FTD peak
  * date, short-interest change endpoints, Reg SHO freshness), bringing the
  * worst case to ~7,560 chars; the ceiling moved 8,000 → 8,500 rather than
- * dropping the endpoint dates the prompt rules require. The `SUMMARY_MAX_*`
+ * dropping the endpoint dates the prompt rules require. The US `ownershipShares` block (Yahoo aggregate,
+ * 2026-11-16) and its source note add ~345 chars: worst case 7,904, ceiling 8,500 → 8,800 to keep the
+ * 600-char margin. The `SUMMARY_MAX_*`
  * caps in `entities/investor-flows/lib/summary/` keep it ≥600 under this ceiling
  * (`getInvestorFlows.test.ts` pins it).
  */
-export const INVESTOR_FLOWS_RESULT_MAX_CHARS = 8_500;
+export const INVESTOR_FLOWS_RESULT_MAX_CHARS = 8_800;
 
 /**
  * `get_guide` ceiling. The best match carries up to 3,500 raw body characters
@@ -133,6 +135,14 @@ export const X_POSTS_RESULT_MAX_CHARS = 11_500;
  * would cut the table into a front-cut preview blob.
  */
 export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
+
+/**
+ * `get_analyst_views` ceiling. Up to 15 firm-level actions plus up to four estimate periods: measured 2026-11-16
+ * on a heavier-than-real case (`getAnalystViews.test.ts`: long firm names and grades, four periods with 5-digit
+ * EPS and 16-digit revenue) at 4,721 chars. 5,500 leaves ~780; the shared 4,000 default would cut the estimates
+ * block off the end.
+ */
+export const ANALYST_VIEWS_RESULT_MAX_CHARS = 5_500;
 
 /**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that

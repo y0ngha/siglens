@@ -200,6 +200,7 @@ describe('mapAnalystSummary', () => {
             trend: null,
             actions: [],
             earnings: null,
+            estimates: [],
         });
     });
 });
@@ -262,6 +263,23 @@ describe('getYahooAnalystSummary', () => {
         );
     });
 
+    it('includeEstimates=true: earningsTrend 모듈을 더하고, 기존 키와 겹치지 않는 v3 …e 키를 쓴다', async () => {
+        quoteSummary.mockResolvedValue(RAW);
+        await getYahooAnalystSummary('NVDA', {
+            includeActions: true,
+            includeEstimates: true,
+        });
+        const call = callFor('earningsTrend');
+        expect((call?.[1] as { modules: string[] }).modules).toContain(
+            'earningsTrend'
+        );
+        expect(getOrSetCache).toHaveBeenCalledWith(
+            'yahoo:analyst-summary:v3:NVDA:ae',
+            SECONDS_PER_HOUR,
+            expect.any(Function)
+        );
+    });
+
     it('includeActions=false: 변경 이력 모듈을 요청하지 않고 n 키를 쓴다', async () => {
         quoteSummary.mockResolvedValue(RAW);
         const r = await getYahooAnalystSummary('005930.KS', {
@@ -301,6 +319,7 @@ describe('getYahooAnalystSummary', () => {
             trend: null,
             actions: [],
             earnings: null,
+            estimates: [],
         });
         expect(cachedValue).toEqual(r);
         expect(warn).not.toHaveBeenCalled();
@@ -513,5 +532,67 @@ describe('trimActionsForCache', () => {
         expect(trimmed.actions!.length).toBeLessThan(untrimmed.actions!.length);
         expect(after).toBeLessThan(before / 5);
         // 2026-11-15 실측(이 픽스처): 212,529자 -> 19,403자.
+    });
+});
+
+describe('mapAnalystSummary — earningsTrend', () => {
+    /** 2026-11-16 NVDA 응답 모양(값 일부). `downLast7Days`만 대문자 D인 Yahoo 원문 키를 그대로 둔다. */
+    const raw = {
+        earningsTrend: {
+            trend: [
+                {
+                    period: '0q',
+                    endDate: new Date('2026-10-31T00:00:00Z'),
+                    earningsEstimate: { avg: 2.47121, numberOfAnalysts: 43 },
+                    revenueEstimate: {
+                        avg: 108731903900,
+                        numberOfAnalysts: 45,
+                        growth: 0.90739995,
+                    },
+                    epsTrend: {
+                        current: 2.47121,
+                        '7daysAgo': 2.47325,
+                        '30daysAgo': 2.47325,
+                        '60daysAgo': 2.47269,
+                        '90daysAgo': 2.35237,
+                    },
+                    epsRevisions: {
+                        upLast7days: 0,
+                        downLast7Days: 1,
+                        upLast30days: 0,
+                        downLast30days: 1,
+                    },
+                },
+                { period: '-1q', earningsEstimate: { avg: 1 } },
+                { period: '+1y', endDate: 'not-a-date' },
+            ],
+        },
+    };
+
+    it('이번·다음 분기·회계연도만 싣고 원문 키를 매핑한다', () => {
+        const { estimates } = mapAnalystSummary(raw, false, NOW);
+        expect(estimates.map(e => e.period)).toEqual(['0q', '+1y']);
+        expect(estimates[0]).toEqual({
+            period: '0q',
+            endDate: '2026-10-31',
+            epsAvg: 2.47121,
+            epsAnalysts: 43,
+            eps7dAgo: 2.47325,
+            eps30dAgo: 2.47325,
+            eps60dAgo: 2.47269,
+            eps90dAgo: 2.35237,
+            up7d: 0,
+            down7d: 1,
+            up30d: 0,
+            down30d: 1,
+            revenueAvg: 108731903900,
+            revenueAnalysts: 45,
+            revenueGrowth: 0.90739995,
+        });
+        expect(estimates[1]).toMatchObject({ endDate: null, epsAvg: null });
+    });
+
+    it('earningsTrend가 없으면 빈 배열', () => {
+        expect(mapAnalystSummary({}, false, NOW).estimates).toEqual([]);
     });
 });

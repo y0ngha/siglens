@@ -605,6 +605,10 @@ differ between users (chart data, locale, plain-language prose); a field missing
 silently inherits the first user's row. Canonical detail lives in the JSDoc of
 `entities/shared-analysis/lib/contentHash.ts`.
 
+A new module or field added to a shared cached provider call is an opt-in option per caller with its own key suffix.
+Existing callers keep their key, cache entries and response size; a global key bump empties every caller's cache at
+deploy and makes lite paths fetch data they discard.
+
 ```typescript
 // ❌ limit added later, key unchanged
 buildBarsRawKey(symbol, timeframe) { return `bars:${symbol}:${timeframe}`; }

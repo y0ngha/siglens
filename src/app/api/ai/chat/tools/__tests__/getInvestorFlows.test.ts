@@ -16,6 +16,17 @@ vi.mock('@/shared/api/naver/naverInvestorTrend', () => ({
     fetchNaverInvestorTrend: naverFetch,
 }));
 vi.mock('@/shared/cache/redisClient', () => ({ getRedisClient: () => null }));
+const { ownership } = vi.hoisted(() => ({ ownership: { get: vi.fn() } }));
+vi.mock('@/shared/api/yahoo/yahooOwnershipSource', () => ({
+    getYahooOwnershipShares: ownership.get,
+}));
+/** 실측(2026-11-16 NVDA) 모양의 보유 비율 — 크기 예산 테스트에도 실린다. */
+const OWNERSHIP = {
+    institutionsPct: 71.17,
+    institutionsFloatPct: 74.25,
+    insidersPct: 4.16,
+    institutionCount: 7773,
+};
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
 }));
@@ -115,6 +126,8 @@ function arrange(
 
 describe('getInvestorFlowsTool', () => {
     beforeEach(() => {
+        ownership.get.mockReset();
+        ownership.get.mockResolvedValue(OWNERSHIP);
         vi.clearAllMocks();
         isTabAllowed.mockResolvedValue(true);
     });
@@ -169,6 +182,7 @@ describe('getInvestorFlowsTool', () => {
             'asOf',
             'available',
             'noData',
+            'ownershipShares',
             'source',
             'symbol',
         ]);
@@ -515,6 +529,65 @@ describe('getInvestorFlowsTool', () => {
             expect(result.failsToDeliver).toBeNull();
             expect(result.insider.proposedSales).toBeNull();
             expect(result.offerings).toBeNull();
+        });
+    });
+
+    describe('보유 비율(ownershipShares, Yahoo)', () => {
+        it('미국 종목은 보유 비율을 출처와 함께 싣는다', async () => {
+            arrange(makeSnapshot());
+            const result = await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            );
+            expect(result).toMatchObject({
+                ownershipShares: { ...OWNERSHIP, source: 'yahoo' },
+            });
+            expect(ownership.get).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('Yahoo를 못 읽었으면 ownershipShares는 null(키는 있다)', async () => {
+            ownership.get.mockResolvedValue(null);
+            arrange(makeSnapshot());
+            const result = await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            );
+            expect(result).toMatchObject({ ownershipShares: null });
+        });
+
+        it('스냅샷이 없는 미국 종목(noData)에도 보유 비율을 싣고, 결과 출처에 Yahoo 집계를 밝힌다', async () => {
+            loadScorecard.mockResolvedValue({
+                snapshot: null,
+                scorecard: null,
+                degraded: false,
+                finraEnabled: true,
+                regShoEnabled: true,
+                readiness: READY,
+            });
+            const result = await getInvestorFlowsTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            );
+            expect(result).toMatchObject({
+                noData: true,
+                ownershipShares: { ...OWNERSHIP, source: 'yahoo' },
+            });
+            expect(String((result as { source: unknown }).source)).toContain(
+                'ownership shares: Yahoo Finance aggregate'
+            );
+        });
+
+        it('공개 API(비공식 출처 비허용)에서는 Yahoo를 부르지 않고 키도 없다', async () => {
+            arrange(makeSnapshot());
+            const result = await getInvestorFlowsTool({ symbol: 'AAPL' }, ctx, {
+                ...rt,
+                allowUnofficialSources: false,
+            });
+            expect(ownership.get).not.toHaveBeenCalled();
+            expect(result).not.toHaveProperty('ownershipShares');
         });
     });
 
@@ -925,6 +998,17 @@ describe('getInvestorFlowsTool', () => {
             expect(result.krInvestorTrend).toBeNull();
             expect(result.notProvided).toContain('If web_search is available');
             expect(result).not.toHaveProperty('trendNote');
+        });
+
+        it('한국 종목은 Yahoo 보유 비율을 읽지 않고 ownershipShares는 null이다(DART 공시로 답한다)', async () => {
+            arrangeKr(makeKrSnapshot());
+            const result = await getInvestorFlowsTool(
+                { symbol: '005930.KS' },
+                ctx,
+                rt
+            );
+            expect(ownership.get).not.toHaveBeenCalled();
+            expect(result).toMatchObject({ ownershipShares: null });
         });
 
         function arrangeKr(

@@ -789,6 +789,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         companyFilings: 9_000,
         xPosts: 9_000,
         indexHistory: 9_000,
+        analystViews: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };
