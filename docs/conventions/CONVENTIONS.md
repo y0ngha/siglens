@@ -100,6 +100,8 @@ return result;
 const result = condition ? newValue : value;
 ```
 
+A `let` assigned inside `try` and read after it is the same smell: make the guarded call a `const` (`const x = await load().catch(() => null)`).
+
 In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
 
 <a id="CP-5"></a>
@@ -188,7 +190,7 @@ lines.reduce((acc, line) => { ... }, init);
 
 #### CP-6 — No `push` accumulation in pure calculations or functional contexts
 
-Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created, and compute min/max/sum with `reduce` or `Math.max`/`Math.min` instead of a `let` reassigned inside a loop. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation. It applies only where the immutable form has a real cost; a `reduce` over a constant-size object or a short list stays immutable, and a lint warning alone does not justify rewriting it to `push`/in-place mutation. Where the exception is used, a one-line comment names the cost that justifies the mutable accumulator.
+Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created, and compute min/max/sum with `reduce` or `Math.max`/`Math.min` instead of a `let` reassigned inside a loop. The same holds for `Map`/`Set` folds and request chunking: build them with `new Map(entries)` (later entries win) or `Array.from({ length }, …)` after a filter/sort, not a `for…of` + `continue` + `Map.set`/`push` loop. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation. It applies only where the immutable form has a real cost; a `reduce` over a constant-size object or a short list stays immutable, and a lint warning alone does not justify rewriting it to `push`/in-place mutation. Where the exception is used, a one-line comment names the cost that justifies the mutable accumulator.
 
 ```typescript
 // ❌

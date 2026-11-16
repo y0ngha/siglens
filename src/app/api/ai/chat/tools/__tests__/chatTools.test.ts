@@ -121,7 +121,7 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 17종(web_search는 키 있을 때만)', () => {
+    it('가용 툴 19종(web_search·get_x_posts는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_analyst_views',
             'get_bars_indicators',
@@ -131,6 +131,7 @@ describe('tool registry', () => {
             'get_economy',
             'get_fundamentals',
             'get_guide',
+            'get_index_history_stats',
             'get_investor_flows',
             'get_macro_quotes',
             'get_market_overview',
@@ -138,6 +139,7 @@ describe('tool registry', () => {
             'get_news',
             'get_options_summary',
             'get_quote',
+            'get_theme_snapshot',
             'run_fresh_analysis',
             'search_ticker',
         ]);
@@ -154,6 +156,18 @@ describe('tool registry', () => {
             expect(availableToolNames().has('web_search')).toBe(true);
         } finally {
             naverState.creds = false;
+        }
+    });
+
+    it('E2E fake 모드에서는 get_index_history_stats를 내놓지 않는다(이력을 읽지 않는다)', () => {
+        expect(availableToolNames().has('get_index_history_stats')).toBe(true);
+        e2eState.on = true;
+        try {
+            expect(availableToolNames().has('get_index_history_stats')).toBe(
+                false
+            );
+        } finally {
+            e2eState.on = false;
         }
     });
 
@@ -774,6 +788,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         macroQuotes: 9_000,
         companyFilings: 9_000,
         xPosts: 9_000,
+        indexHistory: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };

@@ -16,6 +16,7 @@ import {
     MACRO_QUOTES_RESULT_MAX_CHARS,
     X_POSTS_RESULT_MAX_CHARS,
     COMPANY_FILINGS_RESULT_MAX_CHARS,
+    INDEX_HISTORY_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -41,6 +42,8 @@ import { getAnalystViewsTool } from './getAnalystViews';
 import { getMacroQuotesTool } from './getMacroQuotes';
 import { getCompanyFilingsTool } from './getCompanyFilings';
 import { getXPostsTool } from './getXPosts';
+import { getThemeSnapshotTool } from './getThemeSnapshot';
+import { getIndexHistoryStatsTool } from './getIndexHistoryStats';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
@@ -110,6 +113,8 @@ export interface ToolResultCaps {
     companyFilings: number;
     /** `get_x_posts` (up to 12 posts of up to 600 characters, plus the account rows). */
     xPosts: number;
+    /** `get_index_history_stats` (a year-by-year table since 1951 for the S&P 500). */
+    indexHistory: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -127,6 +132,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     macroQuotes: MACRO_QUOTES_RESULT_MAX_CHARS,
     companyFilings: COMPANY_FILINGS_RESULT_MAX_CHARS,
     xPosts: X_POSTS_RESULT_MAX_CHARS,
+    indexHistory: INDEX_HISTORY_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -185,6 +191,8 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_macro_quotes: getMacroQuotesTool,
     get_company_filings: getCompanyFilingsTool,
     get_x_posts: getXPostsTool,
+    get_theme_snapshot: getThemeSnapshotTool,
+    get_index_history_stats: getIndexHistoryStatsTool,
 };
 
 /**
@@ -206,6 +214,8 @@ export function availableToolNames(): Set<string> {
         naverAiCredentials() !== null;
     if (e2eFake || !keyed) names.delete('web_search');
     if (e2eFake || xBearerToken() === null) names.delete('get_x_posts');
+    // 지수 이력은 E2E fake 모드에서 읽지 않는다(엔티티가 던진다) — 늘 실패할 도구를 내놓지 않는다.
+    if (e2eFake) names.delete('get_index_history_stats');
     return names;
 }
 
@@ -308,6 +318,7 @@ export function createToolExecutor(
         if (name === 'get_macro_quotes') return resultCaps.macroQuotes;
         if (name === 'get_company_filings') return resultCaps.companyFilings;
         if (name === 'get_x_posts') return resultCaps.xPosts;
+        if (name === 'get_index_history_stats') return resultCaps.indexHistory;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

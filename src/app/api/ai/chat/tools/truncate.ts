@@ -127,6 +127,14 @@ export const COMPANY_FILINGS_RESULT_MAX_CHARS = 17_000;
 export const X_POSTS_RESULT_MAX_CHARS = 11_500;
 
 /**
+ * `get_index_history_stats` ceiling. The result grows by one `annual` row a year; measured 2026-11-16 on the
+ * longest index (S&P 500, 75 full years from 1951, all US-only blocks present): 6,743 chars of core stats plus a
+ * ~120-char envelope. 9,000 leaves room for ~30 more years and for a future field; the shared 4,000 default
+ * would cut the table into a front-cut preview blob.
+ */
+export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK

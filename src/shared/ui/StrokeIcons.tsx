@@ -223,6 +223,20 @@ export const SpeechIcon = (p: IconProps) => (
         <path d="M8 9h8M8 12.5h5" />
     </Icon>
 );
+export const GridIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <rect x="4" y="4" width="7" height="7" rx="1.5" />
+        <rect x="13" y="4" width="7" height="7" rx="1.5" />
+        <rect x="4" y="13" width="7" height="7" rx="1.5" />
+        <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    </Icon>
+);
+export const HistoryIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M3 12a9 9 0 103-6.7L3 8" />
+        <path d="M3 3v5h5M12 7v5l3 2" />
+    </Icon>
+);
 export const LockIcon = (p: IconProps) => (
     <Icon {...p}>
         <rect x="4" y="11" width="16" height="10" rx="2" />
