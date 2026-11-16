@@ -69,7 +69,7 @@ OPTIONAL_KEYS=(
   AGENT_WEB_SEARCH_PER_DAY
   AGENT_WEB_SEARCH_PER_MONTH
   # SiglensAI get_x_posts (official company / CEO posts on X). X_BEARER_TOKEN absent = the tool is not offered
-  # to the model. X bills per post read; AGENT_X_POSTS_PER_DAY overrides the daily read budget (200 when unset).
+  # to the model. X bills per post read; AGENT_X_POSTS_PER_DAY overrides the daily read budget (400 when unset).
   X_BEARER_TOKEN
   AGENT_X_POSTS_PER_DAY
   # Investor flows data crons: FINRA_SHORT_DATA_ENABLED / REG_SHO_THRESHOLD_DATA_ENABLED unset = enabled

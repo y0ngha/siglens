@@ -69,15 +69,15 @@ afterEach(() => {
 });
 
 describe('reserveXReads', () => {
-    it('기본 상한 200: 경계까지 예약하고, 넘는 예약은 되돌린 뒤 exhausted(표식 로그)', async () => {
-        expect(await reserveXReads(190, member)).toBe('reserved');
+    it('기본 상한 400: 경계까지 예약하고, 넘는 예약은 되돌린 뒤 exhausted(표식 로그)', async () => {
+        expect(await reserveXReads(390, member)).toBe('reserved');
         expect(await reserveXReads(10, member)).toBe('reserved');
-        expect(redis.store.get(KEY)).toBe(200);
+        expect(redis.store.get(KEY)).toBe(400);
         expect(await reserveXReads(1, member)).toBe('exhausted');
-        expect(redis.store.get(KEY)).toBe(200);
+        expect(redis.store.get(KEY)).toBe(400);
         expect(console.warn).toHaveBeenCalledWith(
             '[xPosts] daily read budget exhausted',
-            { limit: 200 }
+            { limit: 400 }
         );
     });
 
@@ -89,14 +89,14 @@ describe('reserveXReads', () => {
             expect(call).toEqual([KEY, 172_800, 'NX']);
     });
 
-    it('게스트는 전체 상한의 1/4(50)까지만 쓰고, 그 뒤에도 회원은 남은 전체 예산을 쓴다', async () => {
-        expect(await reserveXReads(50, guest)).toBe('reserved');
-        expect(redis.store.get(GUEST_KEY)).toBe(50);
+    it('게스트는 전체 상한의 1/4(100)까지만 쓰고, 그 뒤에도 회원은 남은 전체 예산을 쓴다', async () => {
+        expect(await reserveXReads(100, guest)).toBe('reserved');
+        expect(redis.store.get(GUEST_KEY)).toBe(100);
         expect(await reserveXReads(1, guest)).toBe('exhausted');
         // 게스트 몫 초과는 전체 카운터에서도 되돌린다.
-        expect(redis.store.get(KEY)).toBe(50);
-        expect(redis.store.get(GUEST_KEY)).toBe(50);
-        expect(await reserveXReads(150, member)).toBe('reserved');
+        expect(redis.store.get(KEY)).toBe(100);
+        expect(redis.store.get(GUEST_KEY)).toBe(100);
+        expect(await reserveXReads(300, member)).toBe('reserved');
         expect(await reserveXReads(1, member)).toBe('exhausted');
     });
 
@@ -106,7 +106,7 @@ describe('reserveXReads', () => {
         expect(await reserveXReads(1, member)).toBe('exhausted');
         redis.store.clear();
         vi.stubEnv('AGENT_X_POSTS_PER_DAY', '-3');
-        expect(await reserveXReads(200, member)).toBe('reserved');
+        expect(await reserveXReads(400, member)).toBe('reserved');
         expect(console.warn).toHaveBeenCalledWith(
             '[xPosts] AGENT_X_POSTS_PER_DAY is not a positive integer — using the default'
         );
