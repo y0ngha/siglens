@@ -424,6 +424,7 @@ This includes a clock passed as an argument: if a dependency (an LRU, a cache) a
 
 - ❌ Passing a synthetic `now` of `999` to a limiter whose backing cache expires entries on `Date.now()`; a 1 ms TTL elapses in real CI time and a new window opens.
 - ✅ Freeze the clock for the suite (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
+- ❌ A cache key's date segment is matched with a regex (`/:\d{4}-\d{2}-\d{2}$/`) against the wall clock, so any date passes. ✅ Pin the clock with `vi.setSystemTime` and assert the exact key.
 
 <a id="TE-9"></a>
 

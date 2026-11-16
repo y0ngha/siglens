@@ -120,6 +120,8 @@ export const PUBLIC_API_RESULT_CAPS = {
     xPosts: 24_000,
     // `get_index_history_stats`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
     indexHistory: 24_000,
+    // `get_swing_history`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
+    swingHistory: 24_000,
     // `get_analyst_views`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
     analystViews: 24_000,
     cachedAnalysis: 32_000,

@@ -59,6 +59,9 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  *   월봉이 Yahoo Finance 비공식 엔드포인트를 거친다(재배포 약관 없음). 테마 바스켓은 SIGLENS가 고른 묶음이라
  *   제3자 API 계약으로 고정하기도 이르다. SiglensAI 에이전트에서만 쓴다.
  *
+ * `get_swing_history`(2026-11): **공개 API에서 제외**한다. 한국 종목 일봉 이력이 Yahoo Finance 비공식 엔드포인트를
+ *   거치고, 미국 종목은 캐시 미스마다 FMP 일봉 구간 6개를 읽는다. SiglensAI 에이전트에서만 쓴다.
+ *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
@@ -81,6 +84,7 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'get_x_posts',
     'get_theme_snapshot',
     'get_index_history_stats',
+    'get_swing_history',
 ]);
 
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */

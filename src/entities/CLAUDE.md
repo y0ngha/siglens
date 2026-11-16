@@ -26,7 +26,7 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 | `entities/earnings-report/api.ts`, `entities/earnings-report/lib/applyResolvedNextEarnings.ts` | `entities/analyst-views/server/loadEarningsHint`, `entities/analyst-views/lib/resolveNextEarnings` | AI 분석 네 경로가 부르는 `getNextEarningsReport`가 DB 일정(FMP 투영일)을 Yahoo 힌트로 대조한다 — 경로마다 대조하면 inputHash가 갈리므로 한 함수 안에서 한다. analyst-views는 earnings-report를 import하지 않는다(순환 없음) — server-only deep import |
 | `entities/company-filings/server/getCompanyFilings.ts` | `entities/investor-flows/api/investorFlowsFilingsRepository` (`DrizzleSecFilingsRepository.findCikBySymbol`) | 심볼 → SEC CIK 맵(`sec_cik_symbol_map`)은 investor-flows가 소유·갱신하고, company-filings는 읽기만 한다. 같은 맵을 두 번 만들면 티커 변경·상폐 처리가 갈라진다 — server-only deep import |
 | `entities/company-filings/server/getCompanyFilings.ts` | `entities/ticker/lib/resolveMarketProfile` | 심볼이 한국 주식·크립토인지(= SEC 제출자가 아닌지) 가르려면 자산 정보 조회가 필요하다. CIK 맵에 없다는 사실만으로는 "공시 없음"과 "조회 구멍"을 구분할 수 없어, 시장 프로필을 먼저 해석한다 — 읽기 전용 |
-| `entities/index-history/server/loadIndexMonthEnds.ts` | `entities/market-fear-greed/lib/parseFmpEodRows` (`parseDailyCloseRows`) | FMP EOD 응답에서 쓸 수 있는 일별 종가만 추리는 규칙(`typeof` 검사로 `null` 종가 차단)을 두 번 두지 않는다 — 지수 장기 이력과 공포·탐욕 요인이 같은 파서를 쓴다. 순수 함수 import |
+| `entities/index-history/server/loadIndexMonthEnds.ts`, `entities/bars/server/loadDailyCloseHistory.ts` | `entities/market-fear-greed/lib/parseFmpEodRows` (`parseDailyCloseRows`) | FMP EOD 응답에서 쓸 수 있는 일별 종가만 추리는 규칙(`typeof` 검사로 `null` 종가 차단)을 두 번 두지 않는다 — 지수 장기 이력과 공포·탐욕 요인이 같은 파서를 쓴다. 순수 함수 import |
 
 이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.
 

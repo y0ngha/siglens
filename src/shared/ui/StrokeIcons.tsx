@@ -237,6 +237,12 @@ export const HistoryIcon = (p: IconProps) => (
         <path d="M3 3v5h5M12 7v5l3 2" />
     </Icon>
 );
+export const SwingIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M3 6l6 8 4-4 8 9" />
+        <path d="M3 20h18" />
+    </Icon>
+);
 export const LockIcon = (p: IconProps) => (
     <Icon {...p}>
         <rect x="4" y="11" width="16" height="10" rx="2" />
