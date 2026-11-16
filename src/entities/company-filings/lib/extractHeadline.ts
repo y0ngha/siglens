@@ -51,22 +51,32 @@ const TICKER_LOOKAHEAD_LINES = 3;
 const STOCK_CODE = /^[(（]?\s*Stock\s+Code\s*[:：]/i;
 /** `(Stock Code: …)` 괄호가 닫히는 줄의 끝. 제목이 빈 줄 없이 바로 다음 줄에 붙는 공고가 있다(`9868）` ⏎ `NOTICE OF …`). */
 const CLOSING_PAREN = /[)）]$/;
-/** `* 僅供識別 For identification purposes only` — 홍콩 보고서 표지의 한자 회사명 각주. 이 뒤는 제목이 아니다. */
+/**
+ * `* 僅供識別 For identification purposes only` — 홍콩 보고서 표지의 한자 회사명 각주. 이 뒤는 제목이 아니다.
+ * `cleanHeadline`만 쓰고, 그 입력은 제목 후보(이어 붙이기 300자, 첫 문장 2,000자 상한)라 앞쪽 `\s*`의 재시도가
+ * 길어지지 않는다.
+ */
 const IDENTIFICATION_NOTE = /\*?\s*For identification purposes only[\s\S]*$/i;
 /** 주주 서한 인사말(`Dear Shareholder:`). */
 const SALUTATION = /^Dear\s[^.!?]{1,60}[:,]$/;
 /** 홍콩 공고 표기·서한 인사말을 찾는 앞쪽 문단 수. */
 const LEAD_PARAGRAPHS = 40;
+/**
+ * 제목 후보를 찾는 앞쪽 문단 수. 실측 공시의 제목은 면책·의결권 고지·표지 조각 뒤 수십 문단 안에 있다. 문단마다
+ * 최대 100줄을 이어 붙여 보므로, 상한이 없으면 건너뛸 문단이 수만 개인 256KB 입력에서 상수배가 커진다.
+ */
+const HEADLINE_SCAN_PARAGRAPHS = 120;
 /** 날짜줄에서 날짜 앞에 올 수 있는 장소 표기(`SHANGHAI, China,`)의 최대 길이. */
 const DATELINE_PLACE_MAX_CHARS = 80;
 /** 장소 표기는 쉼표·마침표·대시·빗금으로 날짜와 이어진다. 본문 문장 속 날짜(`period ended June 30, 2026`)는 아니다. */
 const DATELINE_PLACE_TAIL = /[,.–—/-]$/;
 /**
- * 연락처(이메일·미국 전화번호)가 든 후보. `NEWS RELEASE` ⏎ `Contact:` 뒤의 담당자 블록은 제목이 아니다. 길이 상한을
- * 둔 수량자만 쓴다 — 256KB짜리 단어 덩어리에서 `[\w]+@`는 시작 위치마다 끝까지 훑어 제곱 시간이 된다(SERVER.md#SA-23).
+ * 연락처(이메일·미국 전화번호)가 든 후보. `NEWS RELEASE` ⏎ `Contact:` 뒤의 담당자 블록은 제목이 아니다. 이메일은
+ * `@` 바로 앞 한 글자만 확인한다 — `[\w.+-]{1,64}@`처럼 앞쪽을 길게 잡으면 위치마다 64글자를 되짚어 제목 후보마다
+ * 수천 단계가 되고, 무한 수량자(`[\w]+@`)면 256KB 단어 덩어리에서 제곱 시간이 된다(SERVER.md#SA-23).
  */
 const CONTACT_INFO =
-    /[\w.+-]{1,64}@[\w-]{1,63}\.[a-z]{2,10}\b|\(\d{3}\)\s?\d{3}-\d{4}/i;
+    /[\w.+-]@[\w-]{1,63}\.[a-z]{2,10}\b|\(\d{3}\)\s?\d{3}-\d{4}/i;
 /** 제목다운 줄: 네 글자 이상 단어의 이 비율 이상이 대문자·숫자로 시작한다(Title Case). */
 const TITLE_CASE_MIN_RATIO = 0.6;
 const TITLE_CASE_MIN_WORDS = 4;
@@ -131,6 +141,11 @@ function endsHeadline(line: string): boolean {
 
 /** 한 번의 제목 후보 이어 붙이기가 훑는 줄 수의 상한 — 빈 줄·짧은 줄이 수천 개여도 비용이 일정하다. */
 const MAX_SCAN_LINES = 100;
+/**
+ * 빈 줄 뒤 문단이 본문인지 볼 때 읽는 줄 수. 300자를 넘는지·문장처럼 끝나는지만 보면 되므로 몇 줄이면 된다 —
+ * 이보다 긴 문단은 300자를 넘거나 문장 끝이 이 안에 없어도 본문으로 본다.
+ */
+const NEXT_PARAGRAPH_SCAN_LINES = 8;
 
 interface Collecting {
     text: string;
@@ -143,13 +158,20 @@ interface Collecting {
  * 인사말(`Dear Shareholders,`)은 붙이지 않는다.
  */
 function bodyFollows(lines: readonly string[], blank: number): boolean {
-    // 다음 문단은 이어 붙이기 구간(MAX_SCAN_LINES) 안에서만 찾는다 — 0번 줄부터 다시 훑으면 빈 줄마다 문서 전체가 된다.
-    const window = lines.slice(blank + 1, blank + 1 + MAX_SCAN_LINES);
+    // 다음 문단은 짧은 구간(NEXT_PARAGRAPH_SCAN_LINES) 안에서만 본다 — 이어 붙이기는 빈 줄마다 이 함수를 부르므로 구간이
+    // 길면 시작 줄 수 × 빈 줄 수 × 구간이 된다. 0번 줄부터 다시 훑으면 빈 줄마다 문서 전체가 된다.
+    const window = lines.slice(
+        blank + 1,
+        blank + 1 + NEXT_PARAGRAPH_SCAN_LINES
+    );
     const first = window.findIndex(line => line.trim() !== '');
     if (first === -1) return true;
     const blankAfter = window.findIndex(
         (line, index) => index > first && line.trim() === ''
     );
+    // 구간 안에서 문단이 끝나지 않으면(8줄 넘게 이어지는 문단) 본문이다.
+    if (blankAfter === -1 && blank + 1 + window.length < lines.length)
+        return true;
     const text = paragraphText(
         window,
         first,
@@ -170,8 +192,8 @@ function bodyFollows(lines: readonly string[], blank: number): boolean {
 function collect(lines: readonly string[], start: number, cap: number): string {
     return lines.slice(start, start + MAX_SCAN_LINES).reduce<Collecting>(
         (acc, raw, offset) => {
-            if (acc.done || acc.text.length >= cap)
-                return { ...acc, done: true };
+            if (acc.done) return acc;
+            if (acc.text.length >= cap) return { ...acc, done: true };
             const line = raw.trim();
             if (line === '')
                 return acc.text.length >= BLANK_LINE_STOP_MIN_CHARS ||
@@ -243,7 +265,11 @@ function findHeadlineText(
     lines: readonly string[],
     longParagraph: LongParagraph
 ): string | null {
-    for (const { from, end } of paragraphSpans(lines)) {
+    // 제목은 문서 앞쪽에 있다 — 건너뛸 문단이 수만 개인 입력에서도 문단마다 이어 붙이기를 다시 하지 않게 앞쪽만 본다.
+    for (const { from, end } of paragraphSpans(lines).slice(
+        0,
+        HEADLINE_SCAN_PARAGRAPHS
+    )) {
         const offset = lines
             .slice(from, end)
             .findIndex(

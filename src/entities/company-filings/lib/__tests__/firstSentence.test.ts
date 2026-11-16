@@ -18,4 +18,12 @@ describe('firstSentence', () => {
             'No sentence end here'
         );
     });
+
+    it('약어·이니셜이 이어지는 256KB 문단에서도 선형 시간이고 앞 2,000자만 돌려준다', () => {
+        const paragraph = 'a. '.repeat(Math.floor((256 * 1024) / 3));
+        const started = performance.now();
+        const out = firstSentence(paragraph);
+        expect(performance.now() - started).toBeLessThan(500);
+        expect(out.length).toBe(2_000);
+    });
 });

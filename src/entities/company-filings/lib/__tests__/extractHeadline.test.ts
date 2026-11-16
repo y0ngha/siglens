@@ -357,6 +357,7 @@ describe('extractHeadline: 규칙', () => {
         ['한자뿐인 문단', '集團\n\n'],
         ['연락처뿐인 문단', 'a@bb.cc\n\n'],
         ['짧은 조각 문단', 'Xy\n\n'],
+        ['약어가 이어지는 긴 본문 한 문단', 'Inc. U.S. a. '],
     ])('%s가 256KB 이어져도 선형 시간이다', (_, unit) => {
         const text = unit.repeat(Math.floor((256 * 1024) / unit.length));
         const started = performance.now();
