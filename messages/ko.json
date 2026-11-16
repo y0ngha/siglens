@@ -3704,6 +3704,7 @@
                 "toolFreshAnalysis": "새 분석 생성",
                 "toolFundamentals": "기업 개요와 재무",
                 "toolGuide": "차트 가이드",
+                "toolIndexHistory": "지수 장기 통계",
                 "toolInvestorFlows": "기관, 내부자, 공매도 수급",
                 "toolMacroQuotes": "원자재·선물 시세",
                 "toolMarketOverview": "시장 동향",
@@ -3713,6 +3714,7 @@
                 "toolPortfolio": "내 포트폴리오",
                 "toolQuote": "시세",
                 "toolSearchTicker": "종목 검색",
+                "toolThemeSnapshot": "테마 동향",
                 "toolWebSearch": "웹 검색",
                 "toolXPosts": "X 게시물"
             }

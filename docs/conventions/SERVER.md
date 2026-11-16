@@ -298,6 +298,10 @@ failure): it is an error result, not an empty page. Do not map it to `[]` and ca
 - ❌ `Array.isArray(body) ? body : []` per chunk, then the merged result is cached or marks the day as done.
 - ✅ A malformed chunk throws; an empty result for a non-empty window is returned uncached (or with a short TTL) so the
   next call retries.
+- A long-TTL cache of a paged provider history validates coverage, not only non-emptiness: each page's first row must
+  fall near its requested start and the series must begin at a known first period. Providers that cap rows per
+  response drop the oldest rows silently, so a truncated page is non-empty yet incomplete and would be served for the
+  whole TTL.
 
 The same holds one step later: a read that degraded to empty (a DB error caught and turned into `[]`/`null`) must not
 reach the consumer as a plain empty result. When the consumer is an LLM tool result, carry an explicit

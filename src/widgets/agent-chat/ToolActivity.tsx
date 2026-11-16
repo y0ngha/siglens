@@ -14,6 +14,8 @@ import {
     FileIcon,
     FlowsIcon,
     GaugeIcon,
+    GridIcon,
+    HistoryIcon,
     GavelIcon,
     GlobeIcon,
     LayersIcon,
@@ -51,6 +53,8 @@ const ICON: Record<string, IconComponent> = {
     get_macro_quotes: GaugeIcon,
     get_company_filings: FileIcon,
     get_x_posts: SpeechIcon,
+    get_theme_snapshot: GridIcon,
+    get_index_history_stats: HistoryIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -62,6 +66,8 @@ function subject(item: ToolActivityItem): string {
             .filter(s => typeof s === 'string')
             .join(', ');
     if (typeof args.query === 'string') return `“${args.query}”`;
+    if (typeof args.theme === 'string') return args.theme;
+    if (typeof args.index === 'string') return args.index;
     return '';
 }
 
@@ -108,6 +114,8 @@ export function ToolActivity({
         get_macro_quotes: t('ToolActivity.toolMacroQuotes'),
         get_company_filings: t('ToolActivity.toolCompanyFilings'),
         get_x_posts: t('ToolActivity.toolXPosts'),
+        get_theme_snapshot: t('ToolActivity.toolThemeSnapshot'),
+        get_index_history_stats: t('ToolActivity.toolIndexHistory'),
     };
     // Daily bars also carry the symbol's own fear & greed reading, so the
     // step says so; other timeframes get the plain chart label.

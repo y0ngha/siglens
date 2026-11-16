@@ -5908,6 +5908,7 @@
                 "toolCongressTrades": "国会交易",
                 "toolEconomy": "经济数据",
                 "toolFundamentals": "公司基本面",
+                "toolIndexHistory": "指数长期统计",
                 "toolInvestorFlows": "机构、内部人与做空资金流向",
                 "toolMacroQuotes": "大宗商品与期货行情",
                 "toolMarketOverview": "市场概况",
@@ -5918,6 +5919,7 @@
                 "toolPortfolio": "我的持仓",
                 "toolQuote": "行情",
                 "toolSearchTicker": "股票搜索",
+                "toolThemeSnapshot": "主题动态",
                 "toolWebSearch": "网络搜索",
                 "toolGuide": "图表指南",
                 "toolXPosts": "X 帖子"

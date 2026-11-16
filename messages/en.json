@@ -5908,6 +5908,7 @@
                 "toolCongressTrades": "Congressional Trades",
                 "toolEconomy": "Economic data",
                 "toolFundamentals": "Company fundamentals",
+                "toolIndexHistory": "Long-run index statistics",
                 "toolInvestorFlows": "Investor flows",
                 "toolMacroQuotes": "Commodity and futures quotes",
                 "toolMarketOverview": "Market overview",
@@ -5918,6 +5919,7 @@
                 "toolPortfolio": "My portfolio",
                 "toolQuote": "Quote",
                 "toolSearchTicker": "Symbol search",
+                "toolThemeSnapshot": "Theme snapshot",
                 "toolWebSearch": "Web search",
                 "toolGuide": "Chart Guide",
                 "toolXPosts": "X posts"

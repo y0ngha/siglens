@@ -5908,6 +5908,7 @@
                 "toolCongressTrades": "議会取引",
                 "toolEconomy": "経済指標",
                 "toolFundamentals": "企業概要と財務",
+                "toolIndexHistory": "指数の長期統計",
                 "toolInvestorFlows": "機関、インサイダー、空売りの需給",
                 "toolMacroQuotes": "商品・先物相場",
                 "toolMarketOverview": "市場概況",
@@ -5918,6 +5919,7 @@
                 "toolPortfolio": "マイポートフォリオ",
                 "toolQuote": "株価",
                 "toolSearchTicker": "銘柄検索",
+                "toolThemeSnapshot": "テーマ動向",
                 "toolWebSearch": "ウェブ検索",
                 "toolGuide": "チャートガイド",
                 "toolXPosts": "Xの投稿"
