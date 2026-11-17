@@ -4,6 +4,7 @@ import type {
     ModelId,
     ToolExecutionContext,
 } from '@y0ngha/siglens-core';
+import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
@@ -51,7 +52,6 @@ import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
-import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */

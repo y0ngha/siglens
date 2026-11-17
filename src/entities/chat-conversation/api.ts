@@ -189,6 +189,8 @@ export class DrizzleChatConversationRepository {
                     .orderBy(chatMessages.seq),
             DB_TRANSIENT_RETRY
         );
+        // 선택 컬럼이 `withCharts`에 따라 둘 중 하나라 drizzle이 행 타입을 하나로 좁히지 못한다. 두 경우 모두 테이블의
+        // 컬럼 그대로이고, 차트 컬럼을 빼고 읽은 행은 `chart: null`로 채우므로(읽었으면 `...row`가 덮는다) 레코드 모양과 같다.
         return rows.map(row => ({
             chart: null,
             ...row,

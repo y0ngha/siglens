@@ -34,6 +34,7 @@ const isOneOf = <T extends string>(
  */
 export function isChatChartBlock(value: unknown): value is ChatChartBlock {
     if (typeof value !== 'object' || value === null) return false;
+    // 바로 위에서 null 아닌 객체임을 확인했다 — 필드를 하나씩 검사하려고 키로 읽을 수 있는 모양으로 본다.
     const v = value as Record<string, unknown>;
     return (
         v.version === 1 &&

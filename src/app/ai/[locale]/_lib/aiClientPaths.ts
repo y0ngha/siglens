@@ -16,7 +16,7 @@ import { CHROME_CLIENT_PATHS } from '@/shared/i18n/clientNamespaces';
  * ai 호스트는 ISR/SEO 표면이 없어 과도하게 넓은 네임스페이스로 first-load JS가 커졌던
  * 문제(`shared/i18n/loadMessages.ts`)가 같은 방식으로 적용되지 않는다.
  *
- * 답변 안 차트(2026-11)의 세 네임스페이스는 `messages/ko.json` 기준 로케일당 약 8.2KB(`widgets.chart` 2.3KB,
+ * 답변 안 차트의 세 네임스페이스는 `messages/ko.json` 기준 로케일당 약 8.2KB(`widgets.chart` 2.3KB,
  * `shared.ui.misc` 0.8KB, `shared.skillName` 5.1KB)를 더한다. 차트 코드는 지연 청크지만 메시지는 레이아웃이 한 번에
  * 내려보내므로 모든 ai 페이지에 실린다 — 차트가 처음 그려질 때 메시지가 없어 키가 그대로 보이는 것보다 낫다고 봤다.
  */
