@@ -26,6 +26,36 @@ const base = {
 };
 
 describe('fakeAgentProvider', () => {
+    it('"차트"를 물어도 get_bars_indicators가 없으면 get_quote로 답한다', async () => {
+        const r = await fakeAgentProvider({
+            ...base,
+            onEvent: vi.fn(),
+            messages: [{ role: 'user', content: 'QQQ 차트 보여줘' }],
+        });
+        expect(r.toolCalls).toEqual([
+            { id: 'fake_1', name: 'get_quote', args: { symbols: ['QQQ'] } },
+        ]);
+    });
+
+    it('질문에 "차트"가 있으면 get_bars_indicators 1회', async () => {
+        const r = await fakeAgentProvider({
+            ...base,
+            tools: [
+                ...base.tools,
+                { ...base.tools[0]!, name: 'get_bars_indicators' },
+            ],
+            onEvent: vi.fn(),
+            messages: [{ role: 'user', content: 'QQQ 차트 보여줘' }],
+        });
+        expect(r.toolCalls).toEqual([
+            {
+                id: 'fake_1',
+                name: 'get_bars_indicators',
+                args: { symbol: 'QQQ', timeframe: '1Day', bars: 30 },
+            },
+        ]);
+    });
+
     it('대문자 심볼 + 툴 결과 없음 → get_quote 1회', async () => {
         const r = await fakeAgentProvider({
             ...base,

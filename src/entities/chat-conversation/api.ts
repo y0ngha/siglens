@@ -1,6 +1,15 @@
 import 'server-only';
 
-import { and, desc, eq, gte, max, sql, type SQL } from 'drizzle-orm';
+import {
+    and,
+    desc,
+    eq,
+    getTableColumns,
+    gte,
+    max,
+    sql,
+    type SQL,
+} from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { chatConversations, chatMessages } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -157,18 +166,33 @@ export class DrizzleChatConversationRepository {
             );
     }
 
-    /** 소유자 범위가 아니다(클래스 문서 참고). 형식이 틀린 `conversationId`는 쿼리 없이 `[]`. 일시 DB 오류는 재시도한다. */
-    async listMessages(conversationId: string): Promise<ChatMessageRecord[]> {
+    /**
+     * 소유자 범위가 아니다(클래스 문서 참고). 형식이 틀린 `conversationId`는 쿼리 없이 `[]`. 일시 DB 오류는 재시도한다.
+     *
+     * `withCharts`가 아니면 tool 행의 차트 블록(`chart`, 행마다 봉 120~400개)을 읽지 않는다 — 매 턴의 이력 읽기
+     * (`prepareTurn`)는 모델 기록만 만들고 차트를 쓰지 않는다. 대화 화면(`getConversationAction`)만 켠다.
+     */
+    async listMessages(
+        conversationId: string,
+        { withCharts = false }: { withCharts?: boolean } = {}
+    ): Promise<ChatMessageRecord[]> {
         if (!isValidUuid(conversationId)) return [];
-        return withRetry(
+        const { chart, ...withoutChart } = getTableColumns(chatMessages);
+        const rows = await withRetry(
             () =>
                 this.db
-                    .select()
+                    .select(
+                        withCharts ? { ...withoutChart, chart } : withoutChart
+                    )
                     .from(chatMessages)
                     .where(eq(chatMessages.conversationId, conversationId))
                     .orderBy(chatMessages.seq),
             DB_TRANSIENT_RETRY
-        ) as Promise<ChatMessageRecord[]>;
+        );
+        return rows.map(row => ({
+            chart: null,
+            ...row,
+        })) as ChatMessageRecord[];
     }
 
     /**
@@ -194,6 +218,7 @@ export class DrizzleChatConversationRepository {
             toolName: m.toolName ?? null,
             modelId: m.modelId ?? null,
             usage: m.usage ?? null,
+            chart: m.chart ?? null,
             status: m.status ?? 'complete',
         }));
         const inserted = await this.db

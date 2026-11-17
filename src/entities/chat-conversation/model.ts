@@ -1,5 +1,7 @@
 import { splitAgentFollowUps, type AgentMessage } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
+import { isChatChartBlock } from './lib/chartBlock';
+import type { ChatChartBlock } from './types';
 
 /** `deriveTitle`이 첫 메시지에서 잘라 내는 제목의 최대 코드 포인트 수 (DB 컬럼 상한은 {@link CONVERSATION_TITLE_COLUMN_MAX}). */
 const CONVERSATION_TITLE_MAX = 60;
@@ -47,6 +49,8 @@ export interface ChatMessageRecord {
     toolName: string | null;
     modelId: string | null;
     usage: Record<string, unknown> | null;
+    /** tool 행에만 — 그 도구가 만든 차트 블록(없으면 `null`). */
+    chart: unknown;
     status: ChatMessageStatus;
     createdAt: Date;
 }
@@ -60,6 +64,7 @@ export interface NewChatMessage {
     toolName?: string;
     modelId?: string;
     usage?: Record<string, unknown>;
+    chart?: ChatChartBlock;
     status?: ChatMessageStatus;
 }
 
@@ -79,6 +84,8 @@ export interface ChatMessageView {
      * 것이다(core는 CommonJS 한 덩어리라 함수 하나에 번들 전체가 따라온다).
      */
     followUps?: string[];
+    /** tool 행의 차트 블록 — 모양 검사를 통과한 것만 싣는다. */
+    chart?: ChatChartBlock;
 }
 
 /**
@@ -151,6 +158,9 @@ export function toMessageView(r: ChatMessageRecord): ChatMessageView {
         createdAt: r.createdAt.toISOString(),
         // 빈 배열은 싣지 않는다 — RSC 페이로드에 메시지마다 `[]`가 붙을 이유가 없다.
         ...(followUps.length > 0 ? { followUps } : {}),
+        ...(r.role === 'tool' && isChatChartBlock(r.chart)
+            ? { chart: r.chart }
+            : {}),
     };
 }
 

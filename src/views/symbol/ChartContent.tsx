@@ -53,7 +53,7 @@ import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
 } from '@/widgets/chart/utils/overlayItems';
-import { barTimesOf } from '@/widgets/chart/utils/chartOverlayUtils';
+import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import {
     PANEL_MAX_WIDTH,

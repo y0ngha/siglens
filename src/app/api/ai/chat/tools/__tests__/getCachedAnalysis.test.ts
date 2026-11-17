@@ -1852,3 +1852,259 @@ describe('getCachedAnalysisTool — overall이 새 생성으로 이어질 때 �
         });
     });
 });
+
+describe('getCachedAnalysisTool — 차트 블록', () => {
+    const HOUR_MS = 60 * 60 * 1000;
+    const DAY_S = 86_400;
+    const bars = Array.from({ length: 5 }, (_, i) => ({
+        time: i * DAY_S,
+        open: 1,
+        high: 1,
+        low: 1,
+        close: 1,
+        volume: 1,
+    }));
+    const overlay = {
+        id: 't1',
+        kind: 'trendline',
+        skill: 'trend',
+        sourceRef: 't1',
+        variant: 'primary',
+        segments: [
+            {
+                from: { time: DAY_S, price: 1 },
+                to: { time: 3 * DAY_S, price: 2 },
+                role: 'support',
+                style: 'solid',
+                pane: 'price',
+            },
+        ],
+        levels: [],
+        labels: [],
+    };
+    const technical = (analyzedAt: string) => ({
+        result: {
+            summary: 'tech',
+            trend: 'bullish',
+            riskLevel: 'low',
+            keyLevels: {},
+            priceTargets: {},
+            analyzedAt,
+            chartOverlays: [overlay],
+        },
+        lockedInfoDepth: [],
+    });
+    /** `emitChart`가 받은 블록 promise를 `emitted.block`에 남긴다(호출 순번으로 꺼내지 않는다). */
+    const emitting = () => {
+        const emitted: { block?: Promise<unknown> } = {};
+        const emitChart = vi.fn((pending: Promise<unknown>) => {
+            emitted.block = pending;
+        });
+        return { runtime: { ...rt, emitChart }, emitChart, emitted };
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        findByUserAndSymbol.mockResolvedValue(null);
+        findBySymbol.mockResolvedValue([]);
+        findRecentForPrompt.mockResolvedValue([]);
+        peekAnalysis.mockResolvedValue(null);
+        peekOverall.mockResolvedValue(null);
+        profile.mockResolvedValue('us-equity');
+        mockSessionSpecFor.mockReturnValue(US_EQUITY_SESSION);
+        getQuote.mockResolvedValue(undefined);
+        getCachedBars.mockResolvedValue({ bars, indicators: {} });
+        assetInfo.mockResolvedValue(null);
+    });
+
+    it('technical redis 적중이면 그 분석의 작도로 차트 블록을 낸다', async () => {
+        peekAnalysis.mockResolvedValue(
+            technical(new Date(Date.now() - HOUR_MS).toISOString())
+        );
+        const { runtime, emitChart, emitted } = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            ctx,
+            runtime
+        );
+        expect(emitChart).toHaveBeenCalledTimes(1);
+        await expect(emitted.block).resolves.toMatchObject({
+            symbol: 'QQQ',
+            timeframe: '1Day',
+            overlays: [expect.objectContaining({ id: 't1' })],
+        });
+    });
+
+    it('게스트(무료 등급)도 차트에는 작도를 싣는다 — 작도 제한 없는 설정으로 같은 캐시를 다시 꺼낸다', async () => {
+        const at = new Date(Date.now() - HOUR_MS).toISOString();
+        const full = technical(at);
+        // 호출자 티어 설정(작도 제한 있음)으로는 작도가 빠지고, 제한을 끈 설정으로는 남는다.
+        peekAnalysis.mockImplementation(async (...args: unknown[]) => {
+            const config = args[6] as {
+                featureFlags: { enableInfoDepthRestrictions: boolean };
+            };
+            return config.featureFlags.enableInfoDepthRestrictions
+                ? {
+                      ...full,
+                      result: { ...full.result, chartOverlays: [] },
+                  }
+                : full;
+        });
+        const { runtime, emitted } = emitting();
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            guestCtx,
+            runtime
+        )) as { found: boolean };
+        expect(r.found).toBe(true);
+        await expect(emitted.block).resolves.toMatchObject({
+            overlays: [expect.objectContaining({ id: 't1' })],
+        });
+        // 모델이 받는 분석은 호출자 티어 설정(TIER_CONFIG)으로 꺼낸 것이다.
+        expect(peekAnalysis).toHaveBeenCalledWith(
+            'QQQ',
+            '1Day',
+            undefined,
+            rt.analysisModel,
+            false,
+            guestCtx.tier,
+            TIER_CONFIG,
+            undefined,
+            guestCtx.locale
+        );
+    });
+
+    it('작도용 재조회가 비면 모델이 받은 분석으로 그린다', async () => {
+        const at = new Date(Date.now() - HOUR_MS).toISOString();
+        const filtered = {
+            ...technical(at),
+            result: { ...technical(at).result, chartOverlays: [] },
+        };
+        peekAnalysis.mockImplementation(async (...args: unknown[]) =>
+            args[6] === TIER_CONFIG ? filtered : null
+        );
+        const { runtime, emitted } = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            guestCtx,
+            runtime
+        );
+        await expect(emitted.block).resolves.toMatchObject({
+            overlays: [],
+            analyzedAt: at,
+        });
+    });
+
+    it('작도용 재조회가 다른 분석(생성 시각이 다름)이면 쓰지 않고 모델이 받은 분석으로 그린다', async () => {
+        const at = new Date(Date.now() - HOUR_MS).toISOString();
+        const newer = new Date(Date.now() - 60_000).toISOString();
+        const filtered = {
+            ...technical(at),
+            result: { ...technical(at).result, chartOverlays: [] },
+        };
+        peekAnalysis.mockImplementation(async (...args: unknown[]) =>
+            args[6] === TIER_CONFIG ? filtered : technical(newer)
+        );
+        const { runtime, emitted } = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            guestCtx,
+            runtime
+        );
+        await expect(emitted.block).resolves.toMatchObject({
+            overlays: [],
+            analyzedAt: at,
+        });
+    });
+
+    it('회원 작도 재조회는 원래 peek과 같은 키(채택된 reasoning·보유 버킷·로케일)로 읽는다', async () => {
+        findByUserAndSymbol.mockResolvedValue({ averagePrice: '100' });
+        getQuote.mockResolvedValue({ price: 150 });
+        const at = new Date(Date.now() - HOUR_MS).toISOString();
+        // reasoning on 항목만 있다 — 회원 peek은 그 항목을 고른다.
+        peekAnalysis.mockImplementation(async (...args: unknown[]) =>
+            args[4] === true ? technical(at) : null
+        );
+        const { runtime, emitted } = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            ctx,
+            runtime
+        );
+        await emitted.block;
+        // 모델용 peek(TIER_CONFIG)이 받은 보유 버킷을 작도용 재조회도 그대로 받는다.
+        const modelPeek = peekAnalysis.mock.calls.find(
+            c => c[6] === TIER_CONFIG && c[4] === true
+        );
+        // 평단 100·현재가 150(+50%)은 core 기준 'deep-profit'이다.
+        const bucket = modelPeek?.[7];
+        expect(bucket).toBe('deep-profit');
+        expect(peekAnalysis).toHaveBeenCalledWith(
+            'QQQ',
+            '1Day',
+            undefined,
+            rt.analysisModel,
+            true,
+            ctx.tier,
+            expect.objectContaining({
+                featureFlags: expect.objectContaining({
+                    enableInfoDepthRestrictions: false,
+                }),
+            }),
+            bucket,
+            ctx.locale
+        );
+    });
+
+    it('분석이 없으면 차트 블록을 내지 않는다', async () => {
+        const { runtime, emitChart } = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            freeCtx,
+            runtime
+        );
+        expect(emitChart).not.toHaveBeenCalled();
+    });
+
+    it('overall 대체가 채택되면 technical 차트를 내고, 버려지면(낡음) 내지 않는다', async () => {
+        peekAnalysis.mockResolvedValue(
+            technical(new Date(Date.now() - HOUR_MS).toISOString())
+        );
+        const accepted = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'overall' },
+            ctx,
+            accepted.runtime
+        );
+        expect(accepted.emitChart).toHaveBeenCalledTimes(1);
+
+        // 봉이 없으면 신선도가 나이 규칙(1일)으로 떨어져 3일 전 분석은 낡았다 — 대체가 버려진다.
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        peekAnalysis.mockResolvedValue(
+            technical(new Date(Date.now() - 3 * 24 * HOUR_MS).toISOString())
+        );
+        const rejected = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'overall' },
+            ctx,
+            rejected.runtime
+        );
+        expect(rejected.emitChart).not.toHaveBeenCalled();
+    });
+
+    it('봉 조회가 실패해도 차트 블록 promise는 null로 끝난다(던지지 않는다)', async () => {
+        peekAnalysis.mockResolvedValue(
+            technical(new Date(Date.now() - HOUR_MS).toISOString())
+        );
+        getCachedBars.mockRejectedValue(new Error('fmp down'));
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const { runtime, emitted } = emitting();
+        await getCachedAnalysisTool(
+            { symbol: 'QQQ', tab: 'technical' },
+            ctx,
+            runtime
+        );
+        await expect(emitted.block).resolves.toBeNull();
+    });
+});

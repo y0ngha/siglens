@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
     barTimesOf,
+    isOverlayAlignedToBars,
+} from '@/entities/analysis/lib/overlayAlignment';
+import {
     buildOverlayLineSpecs,
     firstSegmentDirection,
     hasDrawnLevels,
-    isOverlayAlignedToBars,
     isOverlayDrawn,
     overlayColorFor,
     overlayItemKey,

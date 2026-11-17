@@ -51,6 +51,7 @@ import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
+import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */
@@ -85,6 +86,12 @@ export interface ToolRuntime {
      * 요청과 다른 탭을 돌려주면 안 되므로 `false`다(`createToolExecutor` 옵션이 채운다).
      */
     substituteFreshTechnicalForOverall?: boolean;
+    /**
+     * 이 호출의 결과와 함께 보여 줄 차트 블록을 넘긴다(기술 분석·봉 지표 도구). 블록은 모델에 가지 않는다 — 실행부가
+     * `ToolExecutorOptions.onChart`로 스트림·저장에 넘긴다. 생략하면(공개 API·차트 없는 실행) 아무것도 하지 않는다.
+     * 넘기는 promise는 절대 reject하지 않아야 한다(`loadAnalysisChartBlock`처럼 실패를 `null`로 접는다).
+     */
+    emitChart?: (pending: Promise<ChatChartBlock | null>) => void;
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해
@@ -95,7 +102,14 @@ export type ToolRuntimeInput = Omit<
     | 'ensureSymbolData'
     | 'allowUnofficialSources'
     | 'substituteFreshTechnicalForOverall'
+    | 'emitChart'
 >;
+
+/** 차트 블록을 낸 도구 호출 — core가 `tool_start`에 싣는 것과 같은 이름·인자(교정 전). */
+export interface ChartToolCall {
+    name: string;
+    args: Record<string, unknown>;
+}
 
 /** Result-size ceilings (chars) the executor applies per tool class. */
 export interface ToolResultCaps {
@@ -165,6 +179,14 @@ export interface ToolExecutorOptions {
      * (see `ToolRuntime.substituteFreshTechnicalForOverall`). Default `true` (the agent). The public API passes `false`.
      */
     substituteFreshTechnicalForOverall?: boolean;
+    /**
+     * 도구가 차트 블록을 냈을 때 부른다(`ToolRuntime.emitChart`). 생략하면 블록을 만들지 않는다 — 실행기는
+     * `emitChart`가 없으면 봉 조회도 하지 않는다. 에이전트 스트림만 넘긴다.
+     */
+    onChart?: (
+        call: ChartToolCall,
+        pending: Promise<ChatChartBlock | null>
+    ) => void;
 }
 
 export type ToolExecutor = (
@@ -272,6 +294,7 @@ export function createToolExecutor(
         resultCaps = AGENT_RESULT_CAPS,
         allowUnofficialSources = true,
         substituteFreshTechnicalForOverall = true,
+        onChart,
     } = options;
     /**
      * 턴당 심볼별 1회. 한 대화에서 같은 심볼로 여러 툴이 불리는 게 정상이고
@@ -351,9 +374,18 @@ export function createToolExecutor(
             // 한국 종목 접미사(.KS/.KQ)를 마스터로 교정한다 — 잘못된 접미사는 yahoo의 죽은
             // 리스팅으로 해석된다(`correctKrSymbolSuffix` JSDoc). 교정 기록은 잘리기 전에 싣는다.
             const corrected = await correctKrSymbolArgs(args, name);
+            // 호출마다 런타임을 하나 더 만든다 — 차트 블록을 이 호출(core가 `tool_start`에 실은 이름·인자)에 묶는다.
+            const callRuntime: ToolRuntime =
+                onChart === undefined
+                    ? toolRuntime
+                    : {
+                          ...toolRuntime,
+                          emitChart: pending =>
+                              onChart({ name, args }, pending),
+                      };
             const result = truncateToolResult(
                 corrected.annotate(
-                    await executor(corrected.args, ctx, toolRuntime)
+                    await executor(corrected.args, ctx, callRuntime)
                 ),
                 ceilingFor(name)
             );

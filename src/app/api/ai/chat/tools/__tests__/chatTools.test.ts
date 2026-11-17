@@ -297,6 +297,50 @@ describe('tool registry', () => {
         expect(search).toHaveBeenCalledTimes(1);
     });
 
+    it('도구가 낸 차트 블록을 core가 넘긴 이름·인자(교정 전)와 함께 onChart로 넘긴다', async () => {
+        const pending = Promise.resolve(null);
+        getBarsIndicators.mockImplementation(
+            async (
+                _args: unknown,
+                _ctx: unknown,
+                runtime: { emitChart?: (p: Promise<null>) => void }
+            ) => {
+                runtime.emitChart?.(pending);
+                return { ok: true };
+            }
+        );
+        const onChart = vi.fn();
+        const args = { symbol: 'QQQ', timeframe: '1Day' };
+        await createToolExecutor({ analysisModel: 'm' as never }, { onChart })(
+            'get_bars_indicators',
+            args,
+            makeCtx()
+        );
+        expect(onChart).toHaveBeenCalledWith(
+            { name: 'get_bars_indicators', args },
+            pending
+        );
+    });
+
+    it('onChart가 없으면 실행기에 emitChart를 주지 않는다(차트용 봉 조회를 하지 않는다)', async () => {
+        getBarsIndicators.mockImplementation(
+            async (
+                _a: unknown,
+                _c: unknown,
+                runtime: { emitChart?: unknown }
+            ) => ({
+                hasEmit: runtime.emitChart !== undefined,
+            })
+        );
+        expect(
+            await createToolExecutor({ analysisModel: 'm' as never })(
+                'get_bars_indicators',
+                { symbol: 'QQQ', timeframe: '1Day' },
+                makeCtx()
+            )
+        ).toEqual({ hasEmit: false });
+    });
+
     it('알 수 없는 툴 이름 → unknown_tool', async () => {
         expect(
             await createToolExecutor({ analysisModel: 'deepseek-v4.1-flash' })(

@@ -145,9 +145,48 @@ describe('toMessageView', () => {
         toolName: null,
         modelId: 'deepseek',
         usage: { inputTokens: 1 },
+        chart: null,
         status: 'complete',
         createdAt: new Date('2026-10-01T00:00:00.000Z'),
         ...overrides,
+    });
+
+    it('tool 행의 차트 블록은 모양이 맞을 때만 싣는다', () => {
+        const chart = {
+            version: 1,
+            symbol: 'QQQ',
+            timeframe: '1Day',
+            marketProfile: 'us-equity',
+            bars: [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+            overlays: [],
+            overlayColors: {},
+            overlayLabels: {},
+            analyzedAt: null,
+        };
+        expect(
+            toMessageView(record({ role: 'tool', content: '{}', chart })).chart
+        ).toEqual(chart);
+        expect(
+            'chart' in
+                toMessageView(
+                    record({
+                        role: 'tool',
+                        content: '{}',
+                        chart: { version: 2 },
+                    })
+                )
+        ).toBe(false);
+        expect(
+            'chart' in
+                toMessageView(
+                    record({
+                        role: 'tool',
+                        content: '{}',
+                        chart: { ...chart, bars: [] },
+                    })
+                )
+        ).toBe(false);
+        expect('chart' in toMessageView(record({ chart }))).toBe(false);
     });
 
     it('답변의 후속 질문 마커 줄은 서버에서 떼어 followUps로 싣는다', () => {

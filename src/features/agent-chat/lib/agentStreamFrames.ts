@@ -1,3 +1,4 @@
+import { isChatChartBlock } from '@/entities/chat-conversation/lib/chartBlock';
 import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { AgentUiMessage } from '../model/types';
 
@@ -71,6 +72,21 @@ export function withToolEnded(
                       summary: String(data.summary ?? ''),
                   }
                 : t
+        ),
+    };
+}
+
+/**
+ * `chart`: 그 id의 칩에 차트 블록을 붙인다. 블록은 `tool_end` 뒤(봉 조회가 끝나면) 오므로 답변 글이 이미 흐르는 중일 수
+ * 있다. 모양이 다른 블록·모르는 id는 아무것도 바꾸지 않는다.
+ */
+export function withChart(m: AgentUiMessage, data: FrameData): AgentUiMessage {
+    const block = data.block;
+    if (!isChatChartBlock(block)) return m;
+    return {
+        ...m,
+        tools: m.tools.map(t =>
+            t.id === data.id ? { ...t, chart: block } : t
         ),
     };
 }

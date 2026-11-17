@@ -1,8 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { runTurn, appendMessages } = vi.hoisted(() => ({
+const { runTurn, appendMessages, executorOptions } = vi.hoisted(() => ({
     runTurn: vi.fn(),
     appendMessages: vi.fn(),
+    executorOptions: {
+        onChart: undefined as
+            | ((
+                  call: { name: string; args: Record<string, unknown> },
+                  p: Promise<unknown>
+              ) => void)
+            | undefined,
+    },
 }));
 
 vi.mock('@y0ngha/siglens-core', async importOriginal => ({
@@ -17,7 +25,13 @@ vi.mock('@/app/api/ai/chat/counters', () => ({
     createAgentCounters: () => ({}),
 }));
 vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
-    createToolExecutor: () => vi.fn(),
+    createToolExecutor: (
+        _runtime: unknown,
+        options?: { onChart?: typeof executorOptions.onChart }
+    ) => {
+        executorOptions.onChart = options?.onChart;
+        return vi.fn();
+    },
     availableToolNames: () => new Set(['get_quote']),
 }));
 
@@ -42,6 +56,18 @@ const OK_TURN = {
 };
 
 const FK_ERROR = Object.assign(new Error('fk'), { cause: { code: '23503' } });
+
+const CHART_BLOCK = {
+    version: 1,
+    symbol: 'QQQ',
+    timeframe: '1Day',
+    marketProfile: 'us-equity',
+    bars: [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+    overlays: [],
+    overlayColors: {},
+    overlayLabels: {},
+    analyzedAt: null,
+};
 
 const memberTurn = (): ReadyTurn => ({
     repo: { appendMessages } as unknown as NonNullable<ReadyTurn['repo']>,
@@ -119,6 +145,164 @@ describe('agentTurnStream', () => {
         expect(text).toContain('event: done');
         expect(text).toContain('"assistantMessageId":"a0"');
         expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('도구가 낸 차트 블록을 chart 프레임으로 보내고 그 도구 행에 저장한다', async () => {
+        const block = {
+            version: 1,
+            symbol: 'QQQ',
+            timeframe: '1Day',
+            marketProfile: 'us-equity',
+            bars: [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+            overlays: [],
+            overlayColors: {},
+            overlayLabels: {},
+            analyzedAt: null,
+        };
+        const args = { symbol: 'QQQ', timeframe: '1Day' };
+        runTurn.mockImplementation(
+            async (
+                _params: unknown,
+                deps: { onEvent: (e: Record<string, unknown>) => void }
+            ) => {
+                deps.onEvent({
+                    type: 'tool_start',
+                    id: 'call-1',
+                    name: 'get_bars_indicators',
+                    args,
+                });
+                executorOptions.onChart?.(
+                    { name: 'get_bars_indicators', args },
+                    Promise.resolve(block)
+                );
+                deps.onEvent({
+                    type: 'tool_end',
+                    id: 'call-1',
+                    name: 'get_bars_indicators',
+                    status: 'ok',
+                    ms: 1,
+                    summary: '',
+                });
+                return {
+                    ...OK_TURN,
+                    intermediate: [
+                        {
+                            role: 'assistant',
+                            content: '',
+                            toolCalls: [
+                                {
+                                    id: 'call-1',
+                                    name: 'get_bars_indicators',
+                                    args,
+                                },
+                            ],
+                        },
+                        {
+                            role: 'tool',
+                            content: '{}',
+                            toolCallId: 'call-1',
+                            toolName: 'get_bars_indicators',
+                        },
+                    ],
+                };
+            }
+        );
+        const { stream } = start();
+        const text = await readAll(stream);
+        expect(text).toContain('event: chart');
+        expect(text).toContain('"id":"call-1"');
+        expect(text.indexOf('event: chart')).toBeLessThan(
+            text.indexOf('event: done')
+        );
+        expect(appendMessages).toHaveBeenCalledWith('c1', [
+            expect.not.objectContaining({ chart: expect.anything() }),
+            expect.objectContaining({ role: 'tool', chart: block }),
+            expect.objectContaining({ role: 'assistant', content: 'hi' }),
+        ]);
+    });
+
+    it('실패한 도구(tool_end error)의 블록은 프레임으로도 저장으로도 내지 않는다', async () => {
+        const args = { symbol: 'QQQ', timeframe: '1Day' };
+        runTurn.mockImplementation(
+            async (
+                _params: unknown,
+                deps: { onEvent: (e: Record<string, unknown>) => void }
+            ) => {
+                deps.onEvent({
+                    type: 'tool_start',
+                    id: 'call-1',
+                    name: 'get_bars_indicators',
+                    args,
+                });
+                executorOptions.onChart?.(
+                    { name: 'get_bars_indicators', args },
+                    Promise.resolve(CHART_BLOCK)
+                );
+                deps.onEvent({
+                    type: 'tool_end',
+                    id: 'call-1',
+                    name: 'get_bars_indicators',
+                    status: 'error',
+                    ms: 1,
+                    summary: '',
+                });
+                return {
+                    ...OK_TURN,
+                    intermediate: [
+                        {
+                            role: 'tool',
+                            content: '{"error":"tool_failed"}',
+                            toolCallId: 'call-1',
+                            toolName: 'get_bars_indicators',
+                        },
+                    ],
+                };
+            }
+        );
+        const { stream } = start();
+        const text = await readAll(stream);
+        expect(text).not.toContain('event: chart');
+        expect(appendMessages).toHaveBeenCalledWith('c1', [
+            expect.not.objectContaining({ chart: expect.anything() }),
+            expect.objectContaining({ role: 'assistant' }),
+        ]);
+    });
+
+    it('턴이 실패하면 기다리던 블록도 프레임으로 내지 않는다', async () => {
+        const args = { symbol: 'QQQ', timeframe: '1Day' };
+        const late = Promise.withResolvers<unknown>();
+        runTurn.mockImplementation(
+            async (
+                _params: unknown,
+                deps: { onEvent: (e: Record<string, unknown>) => void }
+            ) => {
+                deps.onEvent({
+                    type: 'tool_start',
+                    id: 'call-1',
+                    name: 'get_bars_indicators',
+                    args,
+                });
+                executorOptions.onChart?.(
+                    { name: 'get_bars_indicators', args },
+                    late.promise
+                );
+                deps.onEvent({
+                    type: 'tool_end',
+                    id: 'call-1',
+                    name: 'get_bars_indicators',
+                    status: 'ok',
+                    ms: 1,
+                    summary: '',
+                });
+                return { ok: false, error: 'deadline' };
+            }
+        );
+        const { stream } = start();
+        const text = await readAll(stream);
+        late.resolve(CHART_BLOCK);
+        await late.promise;
+        expect(text).toContain('event: error');
+        expect(text).not.toContain('event: chart');
     });
 
     it('부분 답변: 실패 코드에 맞는 상태로 저장하고 에러 프레임을 보낸다', async () => {

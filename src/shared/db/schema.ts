@@ -1217,6 +1217,8 @@ export const chatMessages = pgTable(
         toolName: varchar('tool_name', { length: 64 }),
         modelId: varchar('model_id', { length: 64 }),
         usage: jsonb('usage'),
+        /** tool 행에만: 그 도구가 만든 표시 전용 차트 블록(`ChatChartBlock`). 모델 기록에는 쓰이지 않는다. */
+        chart: jsonb('chart'),
         /** 'complete' | 'aborted' | 'error' | 'superseded' */
         status: varchar('status', { length: 16 }).notNull().default('complete'),
         createdAt: timestamp('created_at', { withTimezone: true })

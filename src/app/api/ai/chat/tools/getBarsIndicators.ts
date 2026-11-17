@@ -85,6 +85,7 @@ import {
     resolvedInstrumentFields,
 } from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
+import { chartBlockFrom } from './chartBlock';
 
 /**
  * Restored 20 → 30 (2026-09-14): this tool now fits against its own
@@ -1333,7 +1334,11 @@ function seriesFor(
     return { bars, indicators: calculateIndicators(bars), longDailyBars };
 }
 
-export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
+export const getBarsIndicatorsTool: ToolExecutor = async (
+    args,
+    ctx,
+    runtime
+) => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as AgentBarsTimeframe;
     // Weekly and monthly bars are aggregated from the daily series.
@@ -1432,6 +1437,17 @@ export const getBarsIndicatorsTool: ToolExecutor = async (args, ctx) => {
         roundOrNull(pullbackSnap?.rsi2 ?? null)
     );
     const candlePatterns = latestCandlePatterns(bars, timeframe);
+    // 봉 차트(작도 없음) — 이 도구가 지금 쓴 봉 그대로라 조회가 더 없다.
+    runtime.emitChart?.(
+        Promise.resolve(
+            chartBlockFrom({
+                symbol,
+                timeframe,
+                marketProfile: profile,
+                bars,
+            })
+        )
+    );
     const fearGreed = await fearGreedView(barsData, timeframe, ctx.locale);
     // Weekly/monthly bars are stamped with their period's first day; `asOf` is
     // the last daily bar the aggregation actually used (rows without usable

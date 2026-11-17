@@ -182,6 +182,31 @@ describe('getBarsIndicatorsTool', () => {
         forming.mockReturnValue(false);
     });
 
+    it('쓴 봉 그대로 작도 없는 차트 블록을 낸다', async () => {
+        const day = Math.floor(Date.UTC(2026, 9, 22) / 1000);
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(day - 86_400, 10), bar(day, 11)],
+            indicators,
+        });
+        const emitted: { block?: Promise<unknown> } = {};
+        await getBarsIndicatorsTool({ symbol: 'QQQ', timeframe: '1Day' }, ctx, {
+            ...rt,
+            emitChart: pending => {
+                emitted.block = pending;
+            },
+        });
+        await expect(emitted.block).resolves.toMatchObject({
+            symbol: 'QQQ',
+            timeframe: '1Day',
+            marketProfile: 'us-equity',
+            overlays: [],
+            bars: [{ time: day - 86_400 }, { time: day }],
+        });
+    });
+
     describe('진행 중인 마지막 봉', () => {
         const day = Math.floor(Date.UTC(2026, 9, 22) / 1000);
         const twoBars = [bar(day - 86_400, 16.68), bar(day, 18.35)];

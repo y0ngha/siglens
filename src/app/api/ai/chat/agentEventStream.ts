@@ -1,5 +1,6 @@
 import 'server-only';
 import type { AgentTurnEvent } from '@y0ngha/siglens-core';
+import type { ChatChartBlock } from '@/entities/chat-conversation/types';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
 
@@ -11,11 +12,21 @@ export class AgentTurnError extends Error {
     }
 }
 
+/** 도구 호출 `id`의 차트 블록 — core 이벤트가 아니라 실행부가 덧붙이는 표시 전용 프레임. */
+interface AgentChartEvent {
+    type: 'chart';
+    id: string;
+    block: ChatChartBlock;
+}
+
+/** SSE로 나가는 이벤트: core 턴 이벤트와 실행부의 차트 프레임. */
+export type AgentStreamEvent = AgentTurnEvent | AgentChartEvent;
+
 export interface AgentEventStreamOptions<
     TDone extends Record<string, unknown>,
 > {
     meta: Record<string, unknown>;
-    work: (emit: (event: AgentTurnEvent) => void) => Promise<TDone>;
+    work: (emit: (event: AgentStreamEvent) => void) => Promise<TDone>;
     /** Client disconnected — abort the provider/tool signal (never the fresh analysis). */
     onAbort: () => void;
 }

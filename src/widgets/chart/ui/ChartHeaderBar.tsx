@@ -22,6 +22,8 @@ interface ChartHeaderBarProps {
     /** 메뉴 셋 앞의 `flex-1 min-w-0` 칸 — 폭이 모자라면 이 슬롯이 먼저 줄어든다. */
     startSlot?: ReactNode;
     indicatorBindings: IndicatorBinding[];
+    /** 보조지표 메뉴를 그릴지 — 지표 데이터를 받지 않는 차트(SIGLENS AI 답변 차트)는 끈다. 기본 `true`. */
+    showIndicatorMenu?: boolean;
     overlayItems: readonly OverlayMenuItem[];
     hiddenOverlayKeys: ReadonlySet<string>;
     onSetOverlayVisible: (keys: readonly string[], visible: boolean) => void;
@@ -40,6 +42,7 @@ interface ChartHeaderBarProps {
 export function ChartHeaderBar({
     startSlot,
     indicatorBindings,
+    showIndicatorMenu = true,
     overlayItems,
     hiddenOverlayKeys,
     onSetOverlayVisible,
@@ -62,10 +65,12 @@ export function ChartHeaderBar({
             <div className="@container flex min-w-0 flex-1 items-center pl-1">
                 {startSlot}
             </div>
-            <IndicatorMenu
-                bindings={indicatorBindings}
-                menu={chartMenus.bind('indicators')}
-            />
+            {showIndicatorMenu ? (
+                <IndicatorMenu
+                    bindings={indicatorBindings}
+                    menu={chartMenus.bind('indicators')}
+                />
+            ) : null}
             <ChartOverlayMenu
                 menu={chartMenus.bind('overlays')}
                 items={overlayItems}

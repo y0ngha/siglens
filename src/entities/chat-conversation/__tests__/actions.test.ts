@@ -123,6 +123,10 @@ describe('chat-conversation actions', () => {
             expect(
                 (await getConversationAction(VALID_ID))?.messages.map(m => m.id)
             ).toEqual(['m1']);
+            // 대화 화면은 tool 행의 차트 블록까지 읽는다.
+            expect(repo.listMessages).toHaveBeenCalledWith(VALID_ID, {
+                withCharts: true,
+            });
             expect(repo.findForUser).toHaveBeenCalledWith(VALID_ID, VALID_USER);
         });
 

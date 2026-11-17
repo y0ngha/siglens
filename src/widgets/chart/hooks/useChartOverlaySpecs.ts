@@ -6,10 +6,10 @@
  */
 import { useMemo } from 'react';
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
+import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { CHART_OVERLAY_COLORS } from '../model/chartOverlayCategories';
 import {
-    barTimesOf,
     buildOverlayLineSpecs,
     hasDrawnLevels,
     overlayColorFor,

@@ -28,6 +28,11 @@ export interface CoreClientGraphOptions {
      * 청크도 그 화면을 쓰는 순간 내려받는다.
      */
     followDynamicImports?: boolean;
+    /**
+     * `followDynamicImports`일 때도 따라가지 않을 지연 청크(SRC 기준 상대 경로). 화면을 쓰는 것만으로는 내려받지 않고
+     * 특정 콘텐츠가 나올 때만 내려받는 청크를 이름으로 허용한다 — 허용 목록은 가드 쪽에 이유와 함께 둔다.
+     */
+    allowedLazyChunks?: readonly string[];
 }
 
 export function findCoreInClientGraph(
@@ -48,7 +53,15 @@ export function findCoreInClientGraph(
             ({ typeOnly, lazyChunk }) =>
                 !typeOnly && (options.followDynamicImports || !lazyChunk)
         );
-        for (const { specifier, resolved } of followed) {
+        for (const { specifier, resolved, lazyChunk } of followed) {
+            if (
+                lazyChunk &&
+                typeof resolved === 'string' &&
+                options.allowedLazyChunks?.includes(
+                    path.relative(SRC, resolved)
+                )
+            )
+                continue;
             if (specifier === '@y0ngha/siglens-core') {
                 if (client) offenders.push({ file, chain });
                 continue;

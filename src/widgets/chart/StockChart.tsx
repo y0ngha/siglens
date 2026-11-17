@@ -133,6 +133,8 @@ interface StockChartProps {
     onRightGutterChange?: (pixels: number) => void;
     /** 제목 폭 측정기 — 기본은 차트 글꼴의 캔버스 `measureText`. 테스트가 주입한다. */
     measureText?: TextMeasurer;
+    /** 헤더의 보조지표 메뉴를 그릴지 — 지표 데이터를 넘기지 않는 차트는 끈다. 기본 `true`. */
+    showIndicatorMenu?: boolean;
 }
 
 // 모듈 단위로 하나 — 캔버스·컨텍스트를 인스턴스마다 만들지 않는다.
@@ -164,6 +166,7 @@ export function StockChart({
     onHighlightOverlay,
     onRightGutterChange,
     measureText = defaultMeasureText,
+    showIndicatorMenu = true,
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
@@ -317,6 +320,7 @@ export function StockChart({
                 <ChartHeaderBar
                     startSlot={headerStartSlot}
                     indicatorBindings={indicatorBindings}
+                    showIndicatorMenu={showIndicatorMenu}
                     overlayItems={overlayItems}
                     hiddenOverlayKeys={hiddenOverlayKeys}
                     onSetOverlayVisible={onSetOverlayVisible}
