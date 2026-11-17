@@ -12,6 +12,43 @@ const view = (v: Partial<ChatMessageView>): ChatMessageView =>
         ...v,
     }) as ChatMessageView;
 
+describe('fromViews — 차트', () => {
+    it('tool 행의 차트 블록을 그 호출 칩에 붙인다', () => {
+        const chart = {
+            version: 1,
+            symbol: 'QQQ',
+            timeframe: '1Day',
+            marketProfile: 'us-equity',
+            bars: [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+            overlays: [],
+            overlayColors: {},
+            overlayLabels: {},
+            analyzedAt: null,
+        } as const;
+        const out = fromViews([
+            view({ id: 'u1', seq: 1, role: 'user', content: 'QQQ 차트' }),
+            view({
+                id: 'a1',
+                seq: 2,
+                role: 'assistant',
+                toolCalls: [
+                    { id: 't1', name: 'get_bars_indicators', args: {} },
+                ],
+            }),
+            view({
+                id: 'm1',
+                seq: 3,
+                role: 'tool',
+                content: '{}',
+                toolName: 'get_bars_indicators',
+                chart: chart as never,
+            }),
+            view({ id: 'a2', seq: 4, role: 'assistant', content: '답' }),
+        ]);
+        expect(out.at(-1)?.tools[0]?.chart?.symbol).toBe('QQQ');
+    });
+});
+
 describe('fromViews', () => {
     it('한 툴 호출을 칩 하나로 합친다(assistant.toolCalls + tool 행 중복 금지)', () => {
         // 재빌드가 두 소스를 각각 칩으로 만들면 같은 호출이 "get_quote AAPL"과

@@ -38,6 +38,11 @@ import {
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+import {
+    loadAnalysisChartBlock,
+    peekChartDrawings,
+    type ChartAnalysisSource,
+} from './chartBlock';
 
 const STALE_AFTER_MS: Record<string, number> = {
     technical: MS_PER_DAY,
@@ -396,6 +401,19 @@ async function findPublicSnapshotGeneratedAt(
     }
 }
 
+/** 기술 분석 적중의 차트 블록을 실행부로 넘긴다(`ToolRuntime.emitChart`). 차트를 받지 않는 실행이면 봉도 읽지 않는다. */
+function emitAnalysisChart(
+    runtime: Parameters<ToolExecutor>[2],
+    symbol: string,
+    timeframe: Timeframe,
+    fmpSymbol: string | undefined,
+    loadAnalysis: () => Promise<ChartAnalysisSource>
+): void {
+    runtime.emitChart?.(
+        loadAnalysisChartBlock({ symbol, timeframe, fmpSymbol, loadAnalysis })
+    );
+}
+
 interface LoadPublicAnalysisInput {
     symbol: string;
     tab: string;
@@ -493,6 +511,16 @@ export async function loadPublicAnalysis({
     return null;
 }
 
+/** technical redis 적중: 모델에 줄 결과와, 차트 블록의 작도를 다시 꺼낼 함수. */
+interface TechnicalPeek {
+    result: Record<string, unknown>;
+    /**
+     * 같은 캐시 항목을 작도 제한 없이 다시 꺼낸다(`peekChartDrawings`) — 모델이 읽는 `result`는 호출자 티어로 걸렀으므로,
+     * 무료 등급이면 작도가 빠져 있다. 차트를 그릴 때만 부른다.
+     */
+    loadChartAnalysis: () => Promise<ChartAnalysisSource>;
+}
+
 /**
  * technical redis peek(회원은 reasoning off/on 중 늦은 쪽) → 적중이면 예산 맞춘 payload, 아니면 `null`.
  * technical 탭과 overall 대체(`freshTechnicalInsteadOfOverall`)가 함께 쓴다.
@@ -507,7 +535,7 @@ async function peekTechnicalResult(
     ctx: CallerCtx,
     runtime: Parameters<ToolExecutor>[2],
     extra: Record<string, unknown> = {}
-): Promise<Record<string, unknown> | null> {
+): Promise<TechnicalPeek | null> {
     const memberCaller = isMemberCaller(ctx);
     const tab = 'technical';
     // A guest holds nothing, and its subject is not a user id the holdings
@@ -551,7 +579,7 @@ async function peekTechnicalResult(
         // through to the registry-level `truncateToolResult`, which
         // collapses the WHOLE payload into a front-cut preview blob
         // (losing `keyLevels`/`priceTargets` too).
-        return fitTechnicalAnalysis({
+        const result = fitTechnicalAnalysis({
             ...extra,
             found: true,
             source: 'redis',
@@ -564,6 +592,22 @@ async function peekTechnicalResult(
             analysis: projectTechnicalAnalysis(a),
             ...(sinceAnalysis ? { sinceAnalysis } : {}),
         });
+        return {
+            result,
+            loadChartAnalysis: () =>
+                peekChartDrawings(
+                    {
+                        symbol,
+                        timeframe,
+                        modelId: runtime.analysisModel,
+                        reasoning,
+                        tier: ctx.tier,
+                        positionBucket,
+                        locale: ctx.locale,
+                    },
+                    a
+                ),
+        };
     }
     return null;
 }
@@ -640,7 +684,16 @@ async function freshTechnicalInsteadOfOverall(
                 ),
             }
         );
-        return hit !== null && hit.stale === false ? hit : null;
+        if (hit === null || hit.result.stale !== false) return null;
+        // 대체가 채택됐을 때만 그 분석의 차트를 붙인다 — 버려지는 결과의 그림을 답변에 달지 않는다.
+        emitAnalysisChart(
+            runtime,
+            symbol,
+            timeframe,
+            fmpSymbol,
+            hit.loadChartAnalysis
+        );
+        return hit.result;
     } catch (error) {
         logToolDegrade(
             'get_cached_analysis',
@@ -673,7 +726,16 @@ async function resolveCachedAnalysis(
             ctx,
             runtime
         );
-        if (hit) return hit;
+        if (hit) {
+            emitAnalysisChart(
+                runtime,
+                symbol,
+                timeframe,
+                fmpSymbol,
+                hit.loadChartAnalysis
+            );
+            return hit.result;
+        }
     }
     if (tab === 'overall') {
         // 한계: core의 overall peek 키(`buildOverallPeekCacheKey`)에는 tier 세그먼트가 없어,

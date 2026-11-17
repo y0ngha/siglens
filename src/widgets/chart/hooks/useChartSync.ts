@@ -6,6 +6,7 @@
 
 import { useCallback, useRef } from 'react';
 import type { IChartApi, LogicalRange } from 'lightweight-charts';
+import { applyRightOffsetPixels } from '../utils/rightOffset';
 
 interface ChartSyncHandlers {
     handleStockChartReady: (chart: IChartApi) => void;
@@ -64,10 +65,6 @@ function runWithFlag(flag: { current: boolean }, update: () => void): void {
     } finally {
         flag.current = false;
     }
-}
-
-function applyRightOffsetPixels(chart: IChartApi, pixels: number): void {
-    chart.applyOptions({ timeScale: { rightOffsetPixels: pixels } });
 }
 
 /**

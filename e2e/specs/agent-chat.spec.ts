@@ -79,6 +79,33 @@ test.describe('SIGLENS AI agent chat', () => {
         ).toHaveCount(0);
     });
 
+    test('봉 지표를 읽은 답변에 차트가 붙고, 새로고침해도 같은 차트가 남는다', async ({
+        page,
+    }) => {
+        await page.goto(`${AI}/`);
+        await expect(page).toHaveURL(new RegExp(`^${AI}/(ko/)?$`));
+        await page
+            .getByRole('textbox', { name: /메시지 입력/ })
+            .fill('AAPL 차트 보여줘');
+        await page.keyboard.press('Enter');
+        await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
+        const chart = page.getByTestId('chat-chart');
+        await expect(chart).toBeVisible();
+        // 높이를 고정해 답변이 흐르는 동안 레이아웃이 흔들리지 않는다.
+        const box = await chart.boundingBox();
+        expect(box?.height ?? 0).toBeGreaterThan(200);
+        await expect(chart.locator('canvas').first()).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: /다시 생성/ })
+        ).toBeVisible();
+        await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/);
+        await page.reload();
+        await expect(page.getByTestId('chat-chart')).toBeVisible();
+        await expect(
+            page.getByTestId('chat-chart').locator('canvas').first()
+        ).toBeVisible();
+    });
+
     test('비로그인: 로그인 없이 묻고 답을 받되 저장되지 않고, 저장된 대화를 가리키면 401', async ({
         browser,
     }) => {

@@ -26,7 +26,7 @@ export async function getConversationAction(
         );
         const conversation = await repo.findForUser(id, user.id);
         if (!conversation) return null;
-        const messages = await repo.listMessages(id);
+        const messages = await repo.listMessages(id, { withCharts: true });
         return {
             id: conversation.id,
             title: conversation.title,

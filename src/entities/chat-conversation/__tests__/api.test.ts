@@ -330,6 +330,17 @@ describe('DrizzleChatConversationRepository — invalid UUID guard', () => {
         expect(db.select).not.toHaveBeenCalled();
     });
 
+    it('listMessages: 기본(턴 이력 읽기)은 chart 컬럼을 읽지 않고, withCharts면 읽는다', async () => {
+        const { db, captured } = await realDbWithCapture();
+        const repo = new DrizzleChatConversationRepository(db);
+        await repo.listMessages(VALID_ID);
+        await repo.listMessages(VALID_ID, { withCharts: true });
+        const [history, view] = captured.map(q => q.sql);
+        expect(history).toContain('"tool_name"');
+        expect(history).not.toContain('"chart"');
+        expect(view).toContain('"chart"');
+    });
+
     it('appendMessages: UUID가 아니면 쿼리 없이 []', async () => {
         const db = chain([]);
         const repo = new DrizzleChatConversationRepository(

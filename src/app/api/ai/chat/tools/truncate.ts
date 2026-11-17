@@ -138,8 +138,9 @@ export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
 
 /**
  * `get_swing_history` ceiling. Core caps each episode list (`SWING_EPISODES_LISTED_MAX`, 20 declines and 20 rallies), so
- * the size does not grow with history. Measured 2026-11-17 across 27 symbols (index ETFs, the big seven, theme stocks,
- * defensives, BTCUSD, KRX) at 10%: 7,903–8,267 chars of core output, plus a ~200-char envelope with the resolved name.
+ * the size does not grow with history. Measured 2026-11-17 on core 2.40.0 (open leg with `afterThisAge`/`endsAtClose`)
+ * across 27 symbols (index ETFs, the big seven, theme stocks, defensives, BTCUSD/ETHUSD, KRX) at 10%: 8,048–8,437 chars
+ * of core output, plus a ~200-char envelope with the resolved name.
  * 11,000 leaves room for wider prices (KRW closes) and a future field.
  */
 export const SWING_HISTORY_RESULT_MAX_CHARS = 11_000;

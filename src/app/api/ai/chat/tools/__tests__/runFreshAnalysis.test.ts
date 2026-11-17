@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ChartAnalysisSource } from '@/app/api/ai/chat/tools/chartBlock';
 
 const m = vi.hoisted(() => ({
     runAnalysis: vi.fn(),
@@ -23,6 +24,11 @@ const m = vi.hoisted(() => ({
     resolveHoldingPositionBucket: vi.fn(
         async (): Promise<string | undefined> => undefined
     ),
+}));
+const chart = vi.hoisted(() => ({ load: vi.fn(), peekDrawings: vi.fn() }));
+vi.mock('@/app/api/ai/chat/tools/chartBlock', () => ({
+    loadAnalysisChartBlock: chart.load,
+    peekChartDrawings: chart.peekDrawings,
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
@@ -268,6 +274,93 @@ describe('runFreshAnalysisTool', () => {
         m.findRecentForPrompt.mockResolvedValue([]);
         __resetFreshSemaphoreForTests();
         __resetActiveStreamsForTests();
+    });
+
+    const captureLoad = () => {
+        const loaded: {
+            input?: { loadAnalysis: () => Promise<ChartAnalysisSource> };
+        } = {};
+        chart.load.mockImplementation(
+            (input: { loadAnalysis: () => Promise<ChartAnalysisSource> }) => {
+                loaded.input = input;
+                return Promise.resolve(null);
+            }
+        );
+        return loaded;
+    };
+
+    it('technical: 끝난 분석이면 차트 블록을 낸다', async () => {
+        const pending = Promise.resolve(null);
+        chart.load.mockReturnValue(pending);
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: { summary: 's', chartOverlays: [] },
+        });
+        const emitChart = vi.fn();
+        await runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, {
+            ...rt,
+            emitChart,
+        });
+        expect(chart.load).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                fmpSymbol: 'AAPL',
+            })
+        );
+        expect(emitChart).toHaveBeenCalledWith(pending);
+    });
+
+    it('technical: 새로 생성했으면 core의 필터 전 결과로 작도를 그리고 캐시를 다시 읽지 않는다', async () => {
+        const loaded = captureLoad();
+        const full = { summary: 's', chartOverlays: [{ id: 'o1' }] };
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: { summary: 's', chartOverlays: [] },
+            unfilteredResult: full,
+        });
+        await runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, {
+            ...rt,
+            emitChart: vi.fn(),
+        });
+        await expect(loaded.input?.loadAnalysis()).resolves.toBe(full);
+        expect(chart.peekDrawings).not.toHaveBeenCalled();
+    });
+
+    it('technical: 캐시 적중이면 같은 키로 작도를 다시 꺼내고, 받은 분석을 폴백으로 넘긴다', async () => {
+        const loaded = captureLoad();
+        const result = { summary: 's', chartOverlays: [] };
+        const full = { ...result, chartOverlays: [{ id: 'o1' }] };
+        chart.peekDrawings.mockResolvedValueOnce(full);
+        m.resolveHoldingPositionBucket.mockResolvedValueOnce('profit');
+        m.runAnalysis.mockResolvedValue({ status: 'cached', result });
+        await runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, {
+            ...rt,
+            emitChart: vi.fn(),
+        });
+        await expect(loaded.input?.loadAnalysis()).resolves.toBe(full);
+        expect(chart.peekDrawings).toHaveBeenCalledWith(
+            {
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                modelId: rt.analysisModel,
+                reasoning: false,
+                tier: ctx.tier,
+                positionBucket: 'profit',
+                locale: ctx.locale,
+            },
+            result
+        );
+    });
+
+    it('technical: 실패한 분석은 차트 블록을 내지 않는다', async () => {
+        m.runAnalysis.mockResolvedValue({ status: 'error', error: 'x' });
+        const emitChart = vi.fn();
+        await runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, {
+            ...rt,
+            emitChart,
+        });
+        expect(emitChart).not.toHaveBeenCalled();
     });
 
     it('technical: core runAnalysis(모델·tier·locale, signal 없음), 슬롯 해제', async () => {

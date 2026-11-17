@@ -3,11 +3,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { AI_CLIENT_PATHS } from '@/app/ai/[locale]/_lib/aiClientPaths';
 
-function walk(dir: string): string[] {
+function walk(dir: string, exts: readonly string[] = ['.tsx']): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap(e =>
         e.isDirectory()
-            ? walk(join(dir, e.name))
-            : e.name.endsWith('.tsx')
+            ? walk(join(dir, e.name), exts)
+            : exts.some(ext => e.name.endsWith(ext))
               ? [join(dir, e.name)]
               : []
     );
@@ -21,6 +21,9 @@ describe('AI_CLIENT_PATHS', () => {
             // ai 레이아웃이 설치 배너(`PwaBanner`)를 렌더한다.
             ...walk(join(process.cwd(), 'src/features/pwa-install')),
             ...walk(join(process.cwd(), 'src/app/ai')),
+            // 답변 안 차트(`ChatChartProvider` → `ChatChart` → `StockChart`). 훅(`.ts`)도 번역을 쓴다.
+            ...walk(join(process.cwd(), 'src/widgets/chart'), ['.tsx', '.ts']),
+            join(process.cwd(), 'src/shared/i18n/skillLabel.ts'),
         ].filter(f => !f.includes('__tests__'));
         const used = new Set<string>();
         for (const f of files) {

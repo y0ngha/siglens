@@ -3,6 +3,7 @@
  */
 
 import type { ChartOverlay, OverlayLabel } from '@y0ngha/siglens-core';
+import { isOverlayAlignedToBars } from '@/entities/analysis/lib/overlayAlignment';
 import {
     ALTERNATE_OVERLAY_OPACITY,
     BREAKOUT_LEVEL_LABEL,
@@ -83,14 +84,6 @@ export interface OverlayLineSpecOptions {
 }
 
 /**
- * 로드된 봉의 시각 집합 — 작도가 봉에 맞는지(`isOverlayAlignedToBars`) 판정하는 기준.
- * 차트(`StockChart`)와 메뉴 항목 목록(`ChartContent`)이 같은 정의를 쓰도록 한 곳에 둔다.
- */
-export function barTimesOf(bars: readonly { time: number }[]): Set<number> {
-    return new Set(bars.map(b => b.time));
-}
-
-/**
  * 한 작도가 어느 on/off 항목에 속하는지.
  *
  * 추세선은 `sourceRef`가 전부 `'trendlines'`라 선마다 따로 켜고 끄려면 overlay id를
@@ -100,22 +93,6 @@ export function barTimesOf(bars: readonly { time: number }[]): Set<number> {
  */
 export function overlayItemKey(overlay: ChartOverlay): string {
     return overlay.kind === 'trendline' ? overlay.id : overlay.sourceRef;
-}
-
-/**
- * 오버레이의 모든 기준 시각이 지금 로드된 봉에 있는지. 다른 timeframe의
- * 분석이 잠깐 남아 있거나 봉 창이 좁아졌을 때 엉뚱한 위치에 그리지 않게 한다.
- */
-export function isOverlayAlignedToBars(
-    overlay: ChartOverlay,
-    barTimes: ReadonlySet<number>
-): boolean {
-    const times = [
-        ...overlay.segments.flatMap(s => [s.from.time, s.to.time]),
-        ...overlay.levels.map(l => l.fromTime),
-        ...overlay.labels.map(l => l.at.time),
-    ];
-    return times.every(t => barTimes.has(t));
 }
 
 /**

@@ -4,6 +4,7 @@ import {
     DRAFT_MIN_CHARS,
     followUpsOf,
     patchLastMessage,
+    withChart,
     withDone,
     withText,
     withToolEnded,
@@ -22,6 +23,45 @@ function bubble(overrides: Partial<AgentUiMessage> = {}): AgentUiMessage {
         ...overrides,
     };
 }
+
+const CHART = {
+    version: 1,
+    symbol: 'QQQ',
+    timeframe: '1Day',
+    marketProfile: 'us-equity',
+    bars: [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+    overlays: [],
+    overlayColors: {},
+    overlayLabels: {},
+    analyzedAt: null,
+};
+
+describe('withChart', () => {
+    const tool = (id: string) => ({
+        id,
+        name: 'get_bars_indicators',
+        args: {},
+        status: 'ok' as const,
+    });
+
+    it('그 id의 칩에 차트 블록을 붙인다', () => {
+        const m = withChart(bubble({ tools: [tool('a'), tool('b')] }), {
+            id: 'b',
+            block: CHART,
+        });
+        expect(m.tools.map(t => t.chart?.symbol)).toEqual([undefined, 'QQQ']);
+    });
+
+    it('모양이 다른 블록·모르는 id는 바꾸지 않는다', () => {
+        const before = bubble({ tools: [tool('a')] });
+        expect(withChart(before, { id: 'a', block: { version: 2 } })).toBe(
+            before
+        );
+        expect(
+            withChart(before, { id: 'x', block: CHART }).tools[0]?.chart
+        ).toBeUndefined();
+    });
+});
 
 describe('followUpsOf', () => {
     it('keeps only the string items', () => {

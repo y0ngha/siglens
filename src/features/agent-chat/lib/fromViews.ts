@@ -35,12 +35,16 @@ function withToolResult(
 ): ToolActivityItem[] {
     const name = v.toolName ?? 'tool';
     const summary = v.content.slice(0, TOOL_SUMMARY_MAX_CHARS);
+    const chart = v.chart ? { chart: v.chart } : {};
     const index = tools.findIndex(
         t => t.name === name && t.summary === undefined
     );
     if (index < 0)
-        return [...tools, { id: v.id, name, args: {}, status: 'ok', summary }];
-    return tools.map((t, i) => (i === index ? { ...t, summary } : t));
+        return [
+            ...tools,
+            { id: v.id, name, args: {}, status: 'ok', summary, ...chart },
+        ];
+    return tools.map((t, i) => (i === index ? { ...t, summary, ...chart } : t));
 }
 
 function uiStatusOf(v: ChatMessageView): AgentUiMessage['status'] {

@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
-    barTimesOf,
     buildOverlayLineSpecs,
     firstSegmentDirection,
     hasDrawnLevels,
-    isOverlayAlignedToBars,
     isOverlayDrawn,
     overlayColorFor,
     overlayItemKey,
@@ -49,25 +47,6 @@ describe('overlayItemKey', () => {
         expect(
             overlayItemKey(overlay({ kind: 'divergence', sourceRef: 'd1' }))
         ).toBe('d1');
-    });
-});
-
-describe('barTimesOf', () => {
-    it('collects each bar time into a Set', () => {
-        const bars = [{ time: 1 }, { time: 2 }, { time: 3 }];
-        expect(barTimesOf(bars)).toEqual(new Set([1, 2, 3]));
-    });
-});
-
-describe('isOverlayAlignedToBars', () => {
-    it('true only when every anchor time is a loaded bar', () => {
-        expect(isOverlayAlignedToBars(overlay({}), BAR_TIMES)).toBe(true);
-        expect(
-            isOverlayAlignedToBars(
-                overlay({ levels: [{ price: 1, fromTime: 99, label: '' }] }),
-                BAR_TIMES
-            )
-        ).toBe(false);
     });
 });
 

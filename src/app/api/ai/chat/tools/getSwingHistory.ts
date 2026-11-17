@@ -73,7 +73,7 @@ export const getSwingHistoryTool: ToolExecutor = async args => {
     const session = sessionSpecFor(profile);
     const now = new Date();
     const providerSymbol = asset?.fmpSymbol ?? symbol;
-    const key = `agent:swing-history:v2:${profile}:${providerSymbol}:${minSwingPct}:${lookbackYears ?? 'all'}:${lastClosedSessionDate(session, now)}`;
+    const key = `agent:swing-history:v3:${profile}:${providerSymbol}:${minSwingPct}:${lookbackYears ?? 'all'}:${lastClosedSessionDate(session, now)}`;
 
     const history = await getOrSetCache<SwingHistory | null>(
         key,

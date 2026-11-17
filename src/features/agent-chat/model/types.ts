@@ -2,6 +2,8 @@
 // than in the `useAgentStream` hook so `lib/` helpers and widgets can use them
 // without importing the hook module (lib → hooks would invert the dependency).
 
+import type { ChatChartBlock } from '@/entities/chat-conversation/types';
+
 /** `useAgentStream`'s turn state: no turn running, a turn streaming, or the last turn failed. */
 export type AgentStreamStatus = 'idle' | 'streaming' | 'error';
 
@@ -14,6 +16,8 @@ export interface ToolActivityItem {
     ms?: number;
     summary?: string;
     estimatedSeconds?: number;
+    /** 이 도구가 만든 차트 블록(SSE `chart` 프레임, 저장된 대화는 그 tool 행의 `chart`). */
+    chart?: ChatChartBlock;
 }
 
 /** One chat bubble as the agent UI renders it (live stream or rebuilt by `fromViews`). */

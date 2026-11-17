@@ -5,7 +5,7 @@
  * 관련 종목 링크, 후속 질문 칩.
  */
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { useContext, useMemo, type ReactNode } from 'react';
 import type { RelatedSymbolPage } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { AgentMarkdown } from '../AgentMarkdown';
@@ -14,6 +14,8 @@ import { ToolActivity } from '../ToolActivity';
 import { FollowUps } from './FollowUps';
 import { RelatedPages } from './RelatedPages';
 import { Thinking } from './Thinking';
+import { ChatChartSlot } from '../model/chatChartSlot';
+import { messageCharts } from '../utils/messageCharts';
 
 interface AssistantMessageProps {
     readonly message: AgentUiMessage;
@@ -47,6 +49,8 @@ export function AssistantMessage({
     const t = useTranslations('widgets.agent-chat');
     const isStreaming = m.status === 'streaming';
     const body = m.content;
+    const Chart = useContext(ChatChartSlot);
+    const charts = useMemo(() => messageCharts(m.tools), [m.tools]);
     const statusNote: Partial<Record<AgentUiMessage['status'], ReactNode>> = {
         aborted: (
             <p className="mt-2 text-xs text-secondary-400">
@@ -83,18 +87,24 @@ export function AssistantMessage({
         >
             <div className="flex items-start gap-3">
                 <SiglensMark className="mt-0.5" />
-                <div
-                    aria-live={isStreaming ? 'polite' : undefined}
-                    className="min-w-0 flex-1 text-[15px] leading-7 break-words text-secondary-100"
-                >
-                    <ToolActivity tools={m.tools} />
-                    {renderBody()}
-                    {statusNote[m.status] ?? null}
-                    {m.truncated ? (
-                        <p className="mt-2 text-xs text-ui-warning-text">
-                            {t('MessageList.259976')}
-                        </p>
-                    ) : null}
+                <div className="min-w-0 flex-1 text-[15px] leading-7 break-words text-secondary-100">
+                    <div aria-live={isStreaming ? 'polite' : undefined}>
+                        <ToolActivity tools={m.tools} />
+                        {renderBody()}
+                        {statusNote[m.status] ?? null}
+                        {m.truncated ? (
+                            <p className="mt-2 text-xs text-ui-warning-text">
+                                {t('MessageList.259976')}
+                            </p>
+                        ) : null}
+                    </div>
+                    {/* 차트는 본문 아래, 실시간 낭독 영역 밖에 둔다 — 블록은 도구가 끝난 뒤 봉 조회를 거쳐 오므로
+                        본문 위에 두면 읽던 글이 차트 높이만큼 밀리고, 낭독 영역 안이면 차트 메뉴 글이 읽힌다. */}
+                    {Chart === null
+                        ? null
+                        : charts.map(c => (
+                              <Chart key={c.key} block={c.block} />
+                          ))}
                     {!isStreaming && body ? (
                         <RelatedPages
                             pages={relatedPages}

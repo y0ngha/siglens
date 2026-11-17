@@ -30,6 +30,7 @@ import {
 import { createFollowUpTextFilter } from '@/app/api/ai/chat/followUps';
 import { persistedStatusFor } from './persistedStatus';
 import { isConversationGone, type ReadyTurn } from './prepareTurn';
+import { createTurnCharts } from './turnCharts';
 
 /**
  * Answer length cap per provider call. Core's default (4,096) cut long
@@ -95,7 +96,11 @@ export function agentTurnStream({
     } = turn;
 
     const controller = new AbortController();
-    const executeTool = createToolExecutor({ analysisModel: AGENT_MODEL });
+    const charts = createTurnCharts();
+    const executeTool = createToolExecutor(
+        { analysisModel: AGENT_MODEL },
+        { onChart: charts.register }
+    );
     const toolTimings: Array<{
         name: string;
         ms: number;
@@ -152,9 +157,22 @@ export function agentTurnStream({
                                 if (delta) emit({ ...event, delta });
                                 return;
                             }
-                            if (event.type === 'tool_start')
+                            if (event.type === 'tool_start') {
                                 followUpFilter.reset();
+                                charts.started(
+                                    event.id,
+                                    event.name,
+                                    event.args
+                                );
+                            }
                             emit(event);
+                            if (
+                                event.type === 'tool_end' &&
+                                event.status === 'ok'
+                            )
+                                charts.ended(event.id, block =>
+                                    emit({ type: 'chart', id: event.id, block })
+                                );
                         },
                     }
                 );
@@ -209,14 +227,23 @@ export function agentTurnStream({
                 } catch (error) {
                     console.error('[agent] grounding check failed:', error);
                 }
+                // 차트 프레임이 모두 나가고 나서 저장·`done`으로 간다 — 블록은 그 도구 행에 붙는다.
+                const chartsByCall = await charts.settled();
                 const rowsToSave: NewChatMessage[] = [
-                    ...result.intermediate.map(m => ({
-                        role: m.role,
-                        content: m.content,
-                        toolCalls: m.toolCalls,
-                        toolCallId: m.toolCallId,
-                        toolName: m.toolName,
-                    })),
+                    ...result.intermediate.map(m => {
+                        const chart =
+                            m.role === 'tool' && m.toolCallId
+                                ? chartsByCall.get(m.toolCallId)
+                                : undefined;
+                        return {
+                            role: m.role,
+                            content: m.content,
+                            toolCalls: m.toolCalls,
+                            toolCallId: m.toolCallId,
+                            toolName: m.toolName,
+                            ...(chart ? { chart } : {}),
+                        };
+                    }),
                     {
                         role: 'assistant',
                         content: result.assistant.content,

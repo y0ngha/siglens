@@ -29,6 +29,7 @@ import {
     loadTechnicalAnalysisInputs,
 } from './freshAnalysisInputs';
 import { isMemberCaller, loadPublicAnalysis } from './getCachedAnalysis';
+import { loadAnalysisChartBlock, peekChartDrawings } from './chartBlock';
 import { logToolDegrade } from './logToolDegrade';
 
 /**
@@ -80,6 +81,8 @@ export const FRESH_ANALYSIS_KINDS: ReadonlySet<string> = new Set([
 export type Outcome = {
     status: string;
     result?: unknown;
+    /** 새로 생성한 technical 분석(`done`)의 필터 전 전체 결과 — core `RunAnalysisResult.unfilteredResult`. 차트 작도에만 쓴다. */
+    unfilteredResult?: AnalysisResponse;
     /** Machine-readable code sitting at the top level in several core error
      * variants (e.g. `{status:'no_chains_error', code:'no_options_chains', error: string}`,
      * `{status:'key_error', code:'user_api_key_required', error: string}`) —
@@ -218,15 +221,20 @@ function buildFreshResult(
     return { ...envelope, analysis: { ...analysis, ...fitted } };
 }
 
+/** 끝난(`done`·`cached`) 분석의 결과, 아니면 `undefined`. `unwrap`도 이 판정으로 결과를 꺼낸다. */
+function finishedResult(outcome: Outcome): unknown {
+    return (outcome.status === 'done' || outcome.status === 'cached') &&
+        outcome.result !== undefined
+        ? outcome.result
+        : undefined;
+}
+
 export function unwrap(
     kind: string,
     timeframe: Timeframe | undefined,
     outcome: Outcome
 ): unknown {
-    if (
-        (outcome.status === 'done' || outcome.status === 'cached') &&
-        outcome.result !== undefined
-    ) {
+    if (finishedResult(outcome) !== undefined) {
         const cached = outcome.status === 'cached';
         if (kind === 'technical') {
             const projected = projectTechnicalAnalysis(
@@ -441,18 +449,43 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                     earningsDates,
                     positionBucket,
                 };
-                return unwrap(
-                    kind,
+                const outcome = (await runAnalysis(
+                    symbol,
+                    companyName,
                     timeframe,
-                    (await runAnalysis(
-                        symbol,
-                        companyName,
-                        timeframe,
-                        false,
-                        asset?.fmpSymbol,
-                        options
-                    )) as Outcome
-                );
+                    false,
+                    asset?.fmpSymbol,
+                    options
+                )) as Outcome;
+                // technical 분석의 결과는 `AnalysisResponse`다(`unwrap`의 technical 갈래와 같은 가정).
+                const analysis = finishedResult(outcome) as
+                    | AnalysisResponse
+                    | undefined;
+                if (analysis !== undefined)
+                    runtime.emitChart?.(
+                        loadAnalysisChartBlock({
+                            symbol,
+                            timeframe,
+                            fmpSymbol: asset?.fmpSymbol,
+                            // 새로 생성했으면 core가 필터 전 전체 결과(`unfilteredResult`)를 함께 준다 — 그 작도를
+                            // 그대로 쓴다. 캐시 적중이면 같은 항목을 작도 제한 없이 다시 꺼낸다(`peekChartDrawings`).
+                            loadAnalysis: async () =>
+                                outcome.unfilteredResult ??
+                                peekChartDrawings(
+                                    {
+                                        symbol,
+                                        timeframe,
+                                        modelId: runtime.analysisModel,
+                                        reasoning: false,
+                                        tier: ctx.tier,
+                                        positionBucket,
+                                        locale: ctx.locale,
+                                    },
+                                    analysis
+                                ),
+                        })
+                    );
+                return unwrap(kind, timeframe, outcome);
             }
             // overall/news/options go through server actions shared with siglens.io's
             // user-chosen model paths, which must not fall back — no providerFallback there.

@@ -15,6 +15,7 @@ import type { Locale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
 import { ToastProvider } from '@/shared/ui/ToastProvider';
 import { AI_CLIENT_PATHS } from '../_lib/aiClientPaths';
+import { ChatChartProvider } from './ChatChartProvider';
 
 interface AiAppProvidersProps {
     readonly locale: Locale;
@@ -78,7 +79,9 @@ export function AiAppProviders({
                                     {maintenanceNotice}
                                 </main>
                             ) : (
-                                children
+                                <ChatChartProvider>
+                                    {children}
+                                </ChatChartProvider>
                             )}
                         </SearchOverlayProvider>
                     </ToastProvider>

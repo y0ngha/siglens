@@ -15,6 +15,7 @@ import {
     withDone,
     withText,
     withToolEnded,
+    withChart,
     withToolStarted,
     withUserSeq,
 } from './agentStreamFrames';
@@ -213,6 +214,8 @@ export async function runAgentTurn(
                     patchLast(m => withToolStarted(m, data));
                 } else if (event === 'tool_end') {
                     patchLast(m => withToolEnded(m, data));
+                } else if (event === 'chart') {
+                    patchLast(m => withChart(m, data));
                 } else if (event === 'done') {
                     receivedDone = true;
                     patchLast(m => withDone(m, data));

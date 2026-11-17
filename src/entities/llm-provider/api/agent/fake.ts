@@ -29,7 +29,10 @@ function userWords(content: string): string {
         : content.slice(at + TURN_MESSAGE_HEADING.length);
 }
 
-/** 결정적인 E2E provider: 처음 나온 대문자 티커로 get_quote를 한 번 부른 뒤 고정 답변을 돌려준다. */
+/**
+ * 결정적인 E2E provider: 처음 나온 대문자 티커로 도구를 한 번 부른 뒤 고정 답변을 돌려준다. 질문에 "차트"가 있으면
+ * 답변 안 차트(봉 지표 도구의 차트 블록)를 검증하도록 `get_bars_indicators`를, 아니면 `get_quote`를 부른다.
+ */
 export async function fakeAgentProvider(
     o: CallAgentProviderOptions
 ): Promise<AgentProviderResult> {
@@ -38,11 +41,18 @@ export async function fakeAgentProvider(
     );
     const hasToolResult = o.messages.some(m => m.role === 'tool');
     const symbol = /\b[A-Z]{2,5}\b/.exec(lastUser)?.[0];
-    if (symbol && !hasToolResult && o.tools.some(t => t.name === 'get_quote')) {
+    // "차트"를 물었어도 봉 지표 도구가 없으면(가용 목록에서 빠진 실행) 예전처럼 시세로 답한다.
+    const wantsChart =
+        lastUser.includes('차트') &&
+        o.tools.some(t => t.name === 'get_bars_indicators');
+    const toolName = wantsChart ? 'get_bars_indicators' : 'get_quote';
+    if (symbol && !hasToolResult && o.tools.some(t => t.name === toolName)) {
         const call = {
             id: 'fake_1',
-            name: 'get_quote',
-            args: { symbols: [symbol] },
+            name: toolName,
+            args: wantsChart
+                ? { symbol, timeframe: '1Day', bars: 30 }
+                : { symbols: [symbol] },
         };
         o.onEvent({ type: 'tool_call', call });
         o.onEvent({ type: 'stop', reason: 'tool_use' });
