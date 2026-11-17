@@ -117,7 +117,7 @@ describe('getSwingHistoryTool', () => {
         expect(cache.writes).toEqual([
             {
                 key: expect.stringMatching(
-                    /^agent:swing-history:v2:us-equity:QQQ:10:all:\d{4}-\d{2}-\d{2}$/
+                    /^agent:swing-history:v3:us-equity:QQQ:10:all:\d{4}-\d{2}-\d{2}$/
                 ),
                 cached: true,
             },
@@ -131,7 +131,7 @@ describe('getSwingHistoryTool', () => {
             vi.setSystemTime(new Date('2026-11-16T22:00:00Z'));
             await run({ symbol: 'QQQ' });
             expect(cache.writes[0]?.key).toBe(
-                'agent:swing-history:v2:us-equity:QQQ:10:all:2026-11-13'
+                'agent:swing-history:v3:us-equity:QQQ:10:all:2026-11-13'
             );
         } finally {
             vi.useRealTimers();
