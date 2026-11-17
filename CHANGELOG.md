@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.125.0](https://github.com/y0ngha/siglens/compare/v0.124.0...v0.125.0) (2026-11-17)
+
+### Features
+
+* SiglensAI 답변에 분석 차트를 그리고 대화에 저장 ([#1319](https://github.com/y0ngha/siglens/issues/1319)) ([233041c](https://github.com/y0ngha/siglens/commit/233041c94b3497b485974316997dcd101c2f3ef5))
+
 # [0.124.0](https://github.com/y0ngha/siglens/compare/v0.123.0...v0.124.0) (2026-11-16)
 
 ### Features
