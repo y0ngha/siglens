@@ -4,6 +4,7 @@ import { type MouseEvent, useId } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
+import { SearchIcon } from '@/shared/ui/StrokeIcons';
 import {
     useAutocomplete,
     type UseAutocompleteOptions,
@@ -72,6 +73,13 @@ interface TickerAutocompleteProps {
     inputId?: string;
     /** 결과 행에 관심종목 ★를 붙인다. 종목 페이지로 가는 검색에만 준다(폼 입력에는 주지 않는다). */
     showWatchlistStar?: boolean;
+    /**
+     * 헤더용 압축형 — 입력 안 왼쪽에 돋보기를 두고 옆의 "검색" 버튼을 없애며, 짧은 예시
+     * 플레이스홀더를 쓴다. 헤더 한 줄은 내비·관심·계정과 폭을 나눠 써서 버튼과 긴 예시를 함께
+     * 두면 입력이 몇 글자만 보일 만큼 줄어든다. 제출은 Enter가 맡는다(돋보기는 장식이다 —
+     * 누를 수 있어 보이면 버튼 하나를 그린 것과 같아 폭을 아끼지 못한다).
+     */
+    compact?: boolean;
 }
 
 /**
@@ -96,6 +104,7 @@ export function TickerAutocomplete({
     ariaLabelledby,
     inputId,
     showWatchlistStar = false,
+    compact = false,
 }: TickerAutocompleteProps) {
     const t = useTranslations('features.ticker-search');
     const baseId = useId();
@@ -140,6 +149,9 @@ export function TickerAutocomplete({
     const accessibleName = ariaLabelledby
         ? undefined
         : t('TickerAutocomplete.30cf1e');
+    const placeholder = compact
+        ? t('TickerAutocomplete.compactPlaceholder')
+        : t('TickerAutocomplete.124e37');
 
     return (
         <div
@@ -152,6 +164,9 @@ export function TickerAutocomplete({
             )}
         >
             <div className="relative min-w-0 flex-1">
+                {compact && (
+                    <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-secondary-500" />
+                )}
                 <input
                     ref={inputRef}
                     id={inputId}
@@ -173,11 +188,12 @@ export function TickerAutocomplete({
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
-                    placeholder={t('TickerAutocomplete.124e37')}
+                    placeholder={placeholder}
                     className={cn(
                         INPUT_BASE,
                         INPUT_SIZE[size],
                         'w-full min-w-0',
+                        compact && 'pl-9',
                         inputClassName
                     )}
                 />
@@ -229,7 +245,7 @@ export function TickerAutocomplete({
                     {isOpen ? announcement : ''}
                 </p>
             </div>
-            {navigateOnSelect !== false && (
+            {navigateOnSelect !== false && !compact && (
                 <button
                     type="button"
                     onClick={handleSearchClick}

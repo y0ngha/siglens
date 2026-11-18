@@ -23,7 +23,7 @@ describe('loadMessages', () => {
 
 const CATALOG = {
     widgets: {
-        layout: { localeSwitcher: { label: '언어 선택' } },
+        layout: { preferences: { language: '언어' } },
         analysis: { Panel: { a1: '분석' } },
     },
     app: { home: { page: { b2: '홈' } } },
@@ -37,7 +37,7 @@ describe('pickMessages', () => {
      */
     it('중첩 구조를 유지한 채 서브트리를 되쌓는다', () => {
         expect(pickMessages(CATALOG, ['widgets.layout'])).toEqual({
-            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+            widgets: { layout: { preferences: { language: '언어' } } },
         });
     });
 
@@ -51,7 +51,7 @@ describe('pickMessages', () => {
 
     it('여러 네임스페이스를 한 트리에 병합한다', () => {
         expect(pickMessages(CATALOG, ['widgets.layout', 'app.home'])).toEqual({
-            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+            widgets: { layout: { preferences: { language: '언어' } } },
             app: { home: { page: { b2: '홈' } } },
         });
     });
@@ -67,7 +67,7 @@ describe('pickMessages', () => {
      */
     it('네임스페이스가 리프 문자열을 지나 더 깊이 내려가려 하면 조용히 건너뛴다', () => {
         expect(
-            pickMessages(CATALOG, ['widgets.layout.localeSwitcher.label.extra'])
+            pickMessages(CATALOG, ['widgets.layout.preferences.language.extra'])
         ).toEqual({});
     });
 
@@ -75,21 +75,21 @@ describe('pickMessages', () => {
         expect(
             pickMessages(CATALOG, [
                 'widgets.layout',
-                'widgets.layout.localeSwitcher',
+                'widgets.layout.preferences',
             ])
         ).toEqual({
-            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+            widgets: { layout: { preferences: { language: '언어' } } },
         });
     });
 
     it('상위 접두사가 뒤에 와도 같은 결과를 낸다', () => {
         expect(
             pickMessages(CATALOG, [
-                'widgets.layout.localeSwitcher',
+                'widgets.layout.preferences',
                 'widgets.layout',
             ])
         ).toEqual({
-            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+            widgets: { layout: { preferences: { language: '언어' } } },
         });
     });
 
@@ -97,17 +97,17 @@ describe('pickMessages', () => {
         const frozen = {
             widgets: {
                 layout: Object.freeze({
-                    localeSwitcher: Object.freeze({ label: '언어 선택' }),
+                    preferences: Object.freeze({ language: '언어' }),
                 }),
             },
         };
         expect(
             pickMessages(frozen, [
                 'widgets.layout',
-                'widgets.layout.localeSwitcher',
+                'widgets.layout.preferences',
             ])
         ).toEqual({
-            widgets: { layout: { localeSwitcher: { label: '언어 선택' } } },
+            widgets: { layout: { preferences: { language: '언어' } } },
         });
     });
 
@@ -115,7 +115,7 @@ describe('pickMessages', () => {
         const before = JSON.stringify(CATALOG);
         pickMessages(CATALOG, [
             'widgets.layout',
-            'widgets.layout.localeSwitcher.label',
+            'widgets.layout.preferences.language',
             'app.home',
         ]);
         expect(JSON.stringify(CATALOG)).toBe(before);

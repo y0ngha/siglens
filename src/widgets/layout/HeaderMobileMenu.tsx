@@ -4,10 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { authNextQuery } from '@/shared/lib/auth/redirect';
 import { GUIDE_PATH } from '@/shared/lib/guidePaths';
-import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { AiNavLink } from './AiNavLink';
 import { useMobileDrawer } from './hooks/useMobileDrawer';
-import { LocaleSwitcher } from './LocaleSwitcher';
 import { MobileAuthCta } from './ui/mobile-menu/MobileAuthCta';
 import { MobileDrawerPanel } from './ui/mobile-menu/MobileDrawerPanel';
 import { MobileMenuTrigger } from './ui/mobile-menu/MobileMenuTrigger';
@@ -35,7 +33,8 @@ interface HeaderMobileMenuProps {
  * 모바일 햄버거 + 드로어 내비 조립.
  *
  * 열림 상태와 부수 효과는 `useMobileDrawer`, 셸은 `MobileDrawerPanel`이 맡고 여기서는 드로어
- * 안의 순서만 정한다 — 언어 설정, 내비 그룹, 차트 가이드, AI 진입, 인증 CTA.
+ * 안의 순서만 정한다 — 내비 그룹, 차트 가이드, AI 진입, 인증 CTA. 언어·테마는 드로어에 두지
+ * 않는다 — 헤더 줄의 계정 영역(비회원 文A 버튼 / 회원 아바타 메뉴)이 모든 폭에서 맡는다.
  * 래퍼의 `lg:hidden`은 `Header`의 데스크톱 내비 `hidden lg:flex`와 짝이다 — 한쪽만 바꾸면 두
  * 내비가 동시에 보이거나 둘 다 사라진다.
  */
@@ -62,19 +61,6 @@ export function HeaderMobileMenu({
                 isOpen={isOpen}
                 onClose={close}
             >
-                {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로 <nav> 밖에 둔다 — 안에 넣으면
-                    스크린리더가 메뉴 링크 목록의 일부로 읽는다. */}
-                <div className="flex items-center justify-between border-b border-secondary-700 px-2 py-2">
-                    <LocaleSwitcher showLabel align="start" />
-                    {/* 폰 폭에서는 헤더 줄에 테마 토글이 설 자리가 없어 여기로 온다. 경계는
-                        `Header`의 `HIDE_BELOW_PHONE_BAR`와 같아야 한다 — 그 위 폭에서는 헤더 줄의
-                        토글 하나만 남긴다. 줄 오른쪽 끝에 두는 이유: 토글의 팝오버가 트리거 오른쪽에
-                        맞춰 왼쪽으로 펼쳐지므로 드로어 안에 들어온다. */}
-                    <div className="min-[30rem]:hidden">
-                        <ThemeToggle />
-                    </div>
-                </div>
-
                 <nav
                     aria-label={t('HeaderMobileMenu.076925')}
                     className="overflow-y-auto overscroll-contain"

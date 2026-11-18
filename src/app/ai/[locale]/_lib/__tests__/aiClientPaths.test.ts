@@ -54,7 +54,7 @@ describe('AI_CLIENT_PATHS', () => {
             ...walk(join(process.cwd(), 'src/widgets/layout')),
             ...walk(join(process.cwd(), 'src/features/ticker-search')),
             ...walk(join(process.cwd(), 'src/features/auth-logout')),
-            join(process.cwd(), 'src/shared/ui/ThemeToggle.tsx'),
+            join(process.cwd(), 'src/shared/ui/ThemeRadioGroup.tsx'),
         ].filter(
             f =>
                 !f.includes('__tests__') &&

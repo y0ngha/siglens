@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 import { authNextQuery } from '@/shared/lib/auth/redirect';
+import { HeaderPreferencesMenu } from './HeaderPreferencesMenu';
 import { usePopoverDisclosure } from './hooks/usePopoverDisclosure';
 import type { HeaderUserMenuUser } from './types';
 import { GuestAuthLinks } from './ui/user-menu/GuestAuthLinks';
@@ -25,7 +26,9 @@ interface HeaderUserMenuProps {
 }
 
 /**
- * 헤더 우측 계정 영역 — 스켈레톤 / 게스트 CTA / 로그인 사용자 메뉴 중 하나를 그린다.
+ * 헤더 우측 계정 영역 — 스켈레톤 / 게스트(언어·테마 버튼 + CTA) / 로그인 사용자 메뉴 중 하나를
+ * 그린다. 언어·테마 설정이 계정 영역에 사는 이유: 회원은 아바타 메뉴 안에서, 비회원은 그 자리의
+ * 文A 버튼에서 같은 섹션을 쓴다.
  *
  * 사용자 메뉴는 Disclosure Navigation 패턴이다: 아바타 버튼이 `aria-expanded`로 상태를
  * 알리고 패널은 평범한 링크 목록이다. Escape로 닫으면 포커스가 패널 안에 있었을 때만 버튼으로
@@ -42,7 +45,16 @@ export function HeaderUserMenu({
     const panelId = useId();
 
     if (loading) return <UserMenuSkeleton />;
-    if (!currentUser) return <GuestAuthLinks authQuery={authQuery} />;
+    if (!currentUser) {
+        // 회원 추정(`<html data-auth-hint="member">`)이면 첫 페인트부터 CSS가 이 묶음 전체를
+        // 숨긴다(`globals.css`) — 회원은 같은 설정을 아바타 메뉴에서 쓴다.
+        return (
+            <div data-header-guest-cta="" className="flex items-center gap-2">
+                <HeaderPreferencesMenu />
+                <GuestAuthLinks authQuery={authQuery} />
+            </div>
+        );
+    }
 
     return (
         <div ref={containerRef} className="relative">

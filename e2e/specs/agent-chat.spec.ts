@@ -17,15 +17,18 @@ test.describe('SIGLENS AI agent chat', () => {
         await expect(page).toHaveURL(new RegExp(`^${AI}/(ko/)?$`));
         // Task S3: the ai host renders the shared main `Header` (not the old
         // bespoke `AiHeader`) — its `SIGLENS AI` wordmark shows `aria-current`
-        // when `useHrefBase() !== ''`, and the theme toggle rides along with
-        // the rest of the shared chrome.
+        // when `useHrefBase() !== ''`, and the language/theme settings ride
+        // along with the rest of the shared chrome — for a member they live in
+        // the avatar menu.
         const banner = page.getByRole('banner');
         await expect(
             banner.getByRole('link', { name: 'SIGLENS AI Beta' })
         ).toHaveAttribute('aria-current', 'page');
+        await banner.getByRole('button', { name: /사용자 메뉴/ }).click();
         await expect(
-            banner.getByRole('button', { name: /테마/ })
+            banner.getByRole('radiogroup', { name: '테마' })
         ).toBeVisible();
+        await page.keyboard.press('Escape');
         await expect(
             page.getByRole('heading', { level: 1, name: /시그렌즈 AI/ })
         ).toBeVisible();

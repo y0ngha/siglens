@@ -14,12 +14,4 @@ describe('GuestAuthLinks', () => {
             '/signup?next=%2F'
         );
     });
-
-    it('회원 추정 시 CSS가 숨길 표식을 단다', () => {
-        render(<GuestAuthLinks authQuery="" />);
-
-        expect(
-            screen.getByRole('navigation', { name: '인증' })
-        ).toHaveAttribute('data-header-guest-cta');
-    });
 });

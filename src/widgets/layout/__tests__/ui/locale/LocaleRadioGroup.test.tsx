@@ -4,12 +4,7 @@ import { LocaleRadioGroup } from '../../../ui/locale/LocaleRadioGroup';
 describe('LocaleRadioGroup', () => {
     it('선택된 로케일만 탭 스톱(tabindex 0)이다', () => {
         render(
-            <LocaleRadioGroup
-                id="g"
-                locale="en"
-                align="end"
-                onSelect={vi.fn()}
-            />
+            <LocaleRadioGroup locale="en" labelledBy="h" onSelect={vi.fn()} />
         );
 
         expect(screen.getByRole('radio', { name: 'English' })).toHaveAttribute(
@@ -25,12 +20,7 @@ describe('LocaleRadioGroup', () => {
     it('항목을 누르면 그 로케일로 onSelect한다', () => {
         const onSelect = vi.fn();
         render(
-            <LocaleRadioGroup
-                id="g"
-                locale="ko"
-                align="end"
-                onSelect={onSelect}
-            />
+            <LocaleRadioGroup locale="ko" labelledBy="h" onSelect={onSelect} />
         );
 
         fireEvent.click(screen.getByRole('radio', { name: '日本語' }));
@@ -41,12 +31,7 @@ describe('LocaleRadioGroup', () => {
     it('화살표 키는 포커스만 옮기고 선택하지 않는다', () => {
         const onSelect = vi.fn();
         render(
-            <LocaleRadioGroup
-                id="g"
-                locale="ko"
-                align="end"
-                onSelect={onSelect}
-            />
+            <LocaleRadioGroup locale="ko" labelledBy="h" onSelect={onSelect} />
         );
         const radios = screen.getAllByRole('radio');
         radios[0]!.focus();
@@ -59,12 +44,7 @@ describe('LocaleRadioGroup', () => {
 
     it('화살표가 아닌 키는 가로채지 않는다', () => {
         render(
-            <LocaleRadioGroup
-                id="g"
-                locale="ko"
-                align="end"
-                onSelect={vi.fn()}
-            />
+            <LocaleRadioGroup locale="ko" labelledBy="h" onSelect={vi.fn()} />
         );
         const radio = screen.getAllByRole('radio')[0]!;
 
@@ -75,12 +55,7 @@ describe('LocaleRadioGroup', () => {
 
     it('현재 로케일 항목에만 체크 도형이 있다', () => {
         render(
-            <LocaleRadioGroup
-                id="g"
-                locale="ko"
-                align="end"
-                onSelect={vi.fn()}
-            />
+            <LocaleRadioGroup locale="ko" labelledBy="h" onSelect={vi.fn()} />
         );
 
         const checked = screen

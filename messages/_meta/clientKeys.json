@@ -66,6 +66,7 @@
             "features.ticker-search.TickerAutocomplete.30cf1e",
             "features.ticker-search.TickerAutocomplete.4f5a3f",
             "features.ticker-search.TickerAutocomplete.5dd6d9",
+            "features.ticker-search.TickerAutocomplete.compactPlaceholder",
             "features.ticker-search.TickerAutocomplete.e39068",
             "features.ticker-search.TickerAutocomplete.e62852",
             "features.ticker-search.recentSearch.removeRecent",
@@ -140,8 +141,9 @@
             "widgets.layout.HeaderUserMenu.ecb4cc",
             "widgets.layout.HeaderUserMenu.menuLabel",
             "widgets.layout.HeaderUserMenu.myPortfolio",
-            "widgets.layout.localeSwitcher.current",
-            "widgets.layout.localeSwitcher.label",
+            "widgets.layout.preferences.language",
+            "widgets.layout.preferences.theme",
+            "widgets.layout.preferences.trigger",
             "widgets.notice-popup.NoticePopup.94b7db",
             "widgets.notice-popup.NoticePopup.a5ce49",
             "widgets.notice-popup.NoticePopup.ca2829",
@@ -162,10 +164,8 @@
             "shared.config.nav.region",
             "shared.lib.byokGate",
             "shared.lib.skillStats.count",
-            "shared.ui",
             "shared.ui.themeOption",
-            "widgets.layout",
-            "widgets.layout.localeSwitcher"
+            "widgets.layout"
         ]
     },
     "routes": {
@@ -250,6 +250,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -346,8 +347,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -370,11 +372,9 @@
                 "shared.lib.skillStats.count",
                 "shared.skillName",
                 "shared.skillSummary",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.home",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]": {
@@ -484,6 +484,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -573,8 +574,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -619,10 +621,8 @@
                 "shared.lib.fearGreed",
                 "shared.lib.skillStats.count",
                 "shared.symbolTab",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/(page)": {
@@ -735,6 +735,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -962,8 +963,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -997,7 +999,6 @@
                 "shared.lib.skillStats.count",
                 "shared.lib.trendline",
                 "shared.skillName",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "views.symbol.technicalFacts",
                 "widgets.analysis.adBanner",
@@ -1008,8 +1009,7 @@
                 "widgets.analysis.viewToggle",
                 "widgets.chart",
                 "widgets.chart.indicatorCategory",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/congress": {
@@ -1121,6 +1121,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -1216,8 +1217,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -1240,11 +1242,9 @@
                 "shared.enumLabel",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.analysis.viewToggle",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/fear-greed": {
@@ -1314,6 +1314,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -1408,8 +1409,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -1433,12 +1435,10 @@
                 "shared.lib.fearGreed",
                 "shared.lib.fearGreedFactor",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.period",
                 "shared.ui.themeOption",
                 "widgets.fear-greed.gauge",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/financials": {
@@ -1550,6 +1550,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -1646,8 +1647,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -1670,14 +1672,12 @@
                 "shared.enumLabel",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.analysis.viewToggle",
                 "widgets.financials",
                 "widgets.financials.periodToggle",
                 "widgets.financials.section",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/flows": {
@@ -1789,6 +1789,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -1894,8 +1895,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -1917,7 +1919,6 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.investor-flows.axis",
                 "widgets.investor-flows.ev",
@@ -1925,8 +1926,7 @@
                 "widgets.investor-flows.split",
                 "widgets.investor-flows.squeeze.component",
                 "widgets.investor-flows.tooltip",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/fundamental": {
@@ -2038,6 +2038,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -2127,8 +2128,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -2151,11 +2153,9 @@
                 "shared.enumLabel",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.analysis.viewToggle",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "[symbol]/news": {
@@ -2267,6 +2267,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -2351,8 +2352,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.news.AnalystActions.81b8e2",
                 "widgets.news.AnalystActions.8e5a3a",
                 "widgets.news.AnalystActions.dc2ffb",
@@ -2425,11 +2427,9 @@
                 "shared.lib.byokGate",
                 "shared.lib.newsPeriod",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.analysis.viewToggle",
                 "widgets.layout",
-                "widgets.layout.localeSwitcher",
                 "widgets.news.CompanyFilings",
                 "widgets.news.surprise"
             ]
@@ -2543,6 +2543,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -2626,8 +2627,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -2718,7 +2720,6 @@
                 "shared.ui.themeOption",
                 "widgets.analysis.viewToggle",
                 "widgets.layout",
-                "widgets.layout.localeSwitcher",
                 "widgets.options",
                 "widgets.options.dst"
             ]
@@ -2832,6 +2833,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -2911,8 +2913,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -2969,11 +2972,9 @@
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
                 "shared.symbolTab",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.analysis.viewToggle",
                 "widgets.layout",
-                "widgets.layout.localeSwitcher",
                 "widgets.overall.ctaSubtitle"
             ]
         },
@@ -3044,6 +3045,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -3119,8 +3121,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -3158,10 +3161,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.layout",
-                "widgets.layout.localeSwitcher",
                 "widgets.portfolio-position.positionNote"
             ]
         },
@@ -3232,6 +3233,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -3306,8 +3308,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -3328,10 +3331,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "account": {
@@ -3468,6 +3469,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -3542,8 +3544,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -3566,10 +3569,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "account/delete": {
@@ -3649,6 +3650,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -3723,8 +3725,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -3746,10 +3749,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "backtesting": {
@@ -3819,6 +3820,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -3897,8 +3899,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -3919,14 +3922,12 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.backtesting.exitPath",
                 "widgets.backtesting.tradeRow",
                 "widgets.backtesting.tradeRow.entryType",
                 "widgets.backtesting.tradeRow.legReason",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "benchmark": {
@@ -3996,6 +3997,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -4104,8 +4106,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -4126,10 +4129,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "developers": {
@@ -4199,6 +4200,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -4277,8 +4279,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -4299,10 +4302,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "economy": {
@@ -4410,6 +4411,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -4503,8 +4505,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -4527,11 +4530,9 @@
                 "shared.enumLabel",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.economy",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "economy/kr": {
@@ -4601,6 +4602,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -4688,8 +4690,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -4712,11 +4715,9 @@
                 "shared.enumLabel",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.economy",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "email-report": {
@@ -4813,6 +4814,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -4887,8 +4889,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -4909,10 +4912,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "email-report/sample": {
@@ -4982,6 +4983,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -5056,8 +5058,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -5078,10 +5081,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "email-report/unsubscribe": {
@@ -5160,6 +5161,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -5234,8 +5236,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -5256,10 +5259,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "fear-greed": {
@@ -5334,6 +5335,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -5409,8 +5411,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -5431,10 +5434,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "fear-greed/crypto": {
@@ -5504,6 +5505,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -5579,8 +5581,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -5601,10 +5604,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "fear-greed/kr": {
@@ -5674,6 +5675,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -5749,8 +5751,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -5771,10 +5774,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "forgot-password": {
@@ -5850,6 +5851,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -5924,8 +5926,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -5947,10 +5950,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "guide": {
@@ -6020,6 +6021,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -6107,8 +6109,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -6129,10 +6132,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "guide/[category]": {
@@ -6202,6 +6203,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -6289,8 +6291,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -6311,10 +6314,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "guide/[category]/[slug]": {
@@ -6384,6 +6385,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -6458,8 +6460,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -6480,10 +6483,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "login": {
@@ -6563,6 +6564,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -6640,8 +6642,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -6663,10 +6666,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "market": {
@@ -6774,6 +6775,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -6876,8 +6878,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -6901,11 +6904,9 @@
                 "shared.lib.byokGate",
                 "shared.lib.priceMove",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.dashboard",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "market/kr": {
@@ -7008,6 +7009,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -7110,8 +7112,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -7135,11 +7138,9 @@
                 "shared.lib.byokGate",
                 "shared.lib.priceMove",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.dashboard",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "market/signals/[signal]": {
@@ -7209,6 +7210,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -7283,8 +7285,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -7305,10 +7308,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "methodology": {
@@ -7378,6 +7379,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -7452,8 +7454,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -7474,10 +7477,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "news": {
@@ -7552,6 +7553,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -7626,8 +7628,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -7648,10 +7651,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "news/[category]": {
@@ -7754,6 +7755,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -7831,8 +7833,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.market-news.MarketNewsCard.3ea27a",
                 "widgets.market-news.MarketNewsCard.adb2bb",
                 "widgets.market-news.MarketNewsCard.d12df8",
@@ -7870,10 +7873,8 @@
                 "shared.enumLabel",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "news/us": {
@@ -7943,6 +7944,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -8017,8 +8019,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -8039,10 +8042,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "portfolio": {
@@ -8149,6 +8150,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -8223,8 +8225,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -8253,10 +8256,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.layout",
-                "widgets.layout.localeSwitcher",
                 "widgets.portfolio-position.positionNote"
             ]
         },
@@ -8327,6 +8328,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -8401,8 +8403,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -8423,10 +8426,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "reset-password": {
@@ -8503,6 +8504,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -8582,8 +8584,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -8605,11 +8608,9 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.passwordRule",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "share/[id]": {
@@ -8722,6 +8723,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -8895,8 +8897,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.news.NewsAiSummary.1244e3",
                 "widgets.news.NewsAiSummary.3cad3e",
                 "widgets.news.NewsAiSummary.a74178",
@@ -8961,7 +8964,6 @@
                 "shared.lib.skillStats.count",
                 "shared.lib.trendline",
                 "shared.skillName",
-                "shared.ui",
                 "shared.ui.themeOption",
                 "widgets.analysis.adBanner",
                 "widgets.analysis.panel",
@@ -8970,8 +8972,7 @@
                 "widgets.analysis.signalStrength",
                 "widgets.analysis.viewToggle",
                 "widgets.fear-greed.gauge",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "signup": {
@@ -9065,6 +9066,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -9154,8 +9156,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -9177,11 +9180,9 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.passwordRule",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "signup/oauth/consent": {
@@ -9255,6 +9256,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -9339,8 +9341,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -9362,10 +9365,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "symbols": {
@@ -9435,6 +9436,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -9509,8 +9511,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -9531,10 +9534,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "terms": {
@@ -9604,6 +9605,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -9678,8 +9680,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -9700,10 +9703,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         },
         "watchlist": {
@@ -9785,6 +9786,7 @@
                 "features.ticker-search.TickerAutocomplete.30cf1e",
                 "features.ticker-search.TickerAutocomplete.4f5a3f",
                 "features.ticker-search.TickerAutocomplete.5dd6d9",
+                "features.ticker-search.TickerAutocomplete.compactPlaceholder",
                 "features.ticker-search.TickerAutocomplete.e39068",
                 "features.ticker-search.TickerAutocomplete.e62852",
                 "features.ticker-search.recentSearch.removeRecent",
@@ -9880,8 +9882,9 @@
                 "widgets.layout.HeaderUserMenu.ecb4cc",
                 "widgets.layout.HeaderUserMenu.menuLabel",
                 "widgets.layout.HeaderUserMenu.myPortfolio",
-                "widgets.layout.localeSwitcher.current",
-                "widgets.layout.localeSwitcher.label",
+                "widgets.layout.preferences.language",
+                "widgets.layout.preferences.theme",
+                "widgets.layout.preferences.trigger",
                 "widgets.notice-popup.NoticePopup.94b7db",
                 "widgets.notice-popup.NoticePopup.a5ce49",
                 "widgets.notice-popup.NoticePopup.ca2829",
@@ -9903,10 +9906,8 @@
                 "shared.config.nav.region",
                 "shared.lib.byokGate",
                 "shared.lib.skillStats.count",
-                "shared.ui",
                 "shared.ui.themeOption",
-                "widgets.layout",
-                "widgets.layout.localeSwitcher"
+                "widgets.layout"
             ]
         }
     }

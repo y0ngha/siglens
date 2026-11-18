@@ -1128,7 +1128,8 @@
                 "4f5a3f": "搜索",
                 "5dd6d9": "无搜索结果",
                 "e39068": "搜索中…",
-                "e62852": "无搜索结果。请尝试使用股票代码（例：AAPL）进行搜索"
+                "e62852": "无搜索结果。请尝试使用股票代码（例：AAPL）进行搜索",
+                "compactPlaceholder": "输入股票 (例: AAPL)"
             },
             "assetBadge": {
                 "coin": "加密货币",
@@ -2330,11 +2331,6 @@
             },
             "RegionTabs": {
                 "1eafbd": "选择地区"
-            },
-            "ThemeToggle": {
-                "current": "主题：{v0}",
-                "f36b6a": "选择主题",
-                "label": "主题"
             },
             "analysisError": {
                 "analysisFailed": "分析过程中发生错误。",
@@ -5303,11 +5299,12 @@
                 "myPortfolio": "我的投资组合"
             },
             "githubRepoAria": "{v0} GitHub 仓库（在新标签页中打开）",
-            "localeSwitcher": {
-                "current": "语言：{v0}",
-                "label": "选择语言"
-            },
-            "xAccountAria": "{v0} X (Twitter) 账户（在新标签页中打开）"
+            "xAccountAria": "{v0} X (Twitter) 账户（在新标签页中打开）",
+            "preferences": {
+                "trigger": "语言和主题设置",
+                "language": "语言",
+                "theme": "主题"
+            }
         },
         "legal": {
             "LegalPageShell": {

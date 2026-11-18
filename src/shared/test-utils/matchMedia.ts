@@ -6,7 +6,7 @@
  * 한 줄도 확인되지 않은 채 전부 초록이 된다. 그래서 명시적으로 심는다.
  *
  * 두 테스트 파일(`lib/__tests__/theme.dom-fast.test.tsx`,
- * `ui/__tests__/ThemeToggle.dom-fast.test.tsx`)이 같은 스텁을 각자 재구현하고 있어서
+ * `ui/__tests__/ThemeRadioGroup.dom-fast.test.tsx`)이 같은 스텁을 각자 재구현하고 있어서
  * 여기로 모았다 — 한쪽만 고치면 두 파일의 전제가 갈린다.
  */
 

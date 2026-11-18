@@ -85,7 +85,8 @@ describe('[data-header-auth-slot] CSS', () => {
 });
 
 /**
- * 게스트 폭이 **가장 넓은 CTA**(현재 ja `ログイン`+`会員登録`)를 담는지.
+ * 게스트 폭이 文A 설정 버튼(`size-11` = 2.75rem) + 갭 + **가장 넓은 CTA**(현재 ja
+ * `ログイン`+`会員登録`)를 담는지.
  *
  * jsdom엔 레이아웃이 없어 글자 폭을 보수적으로 추정한다: `text-sm`(14px)에서 CJK 글자는 전각
  * 1em, 라틴 글자는 평균 0.6em(Pretendard·Inter 실측 평균은 0.5~0.55em). 버튼은 `px-3`(좌우
@@ -98,6 +99,8 @@ describe('게스트 CTA가 예약 폭 안에 들어간다', () => {
     const LATIN_EM = 0.6;
     const BUTTON_PADDING_PX = 2 * 0.75 * REM_PX;
     const GAP_PX = 0.5 * REM_PX;
+    /** `HeaderPreferencesMenu` 트리거(`size-11`)와 CTA 사이 `gap-2`. */
+    const PREFERENCES_BUTTON_PX = 2.75 * REM_PX + GAP_PX;
 
     function textWidthPx(text: string): number {
         return [...text].reduce(
@@ -108,13 +111,14 @@ describe('게스트 CTA가 예약 폭 안에 들어간다', () => {
         );
     }
 
-    function ctaWidthPx(catalog: typeof ko): number {
+    function guestGroupWidthPx(catalog: typeof ko): number {
         const menu = catalog.widgets.layout.HeaderUserMenu;
         return (
             textWidthPx(menu.e225a6) +
             textWidthPx(menu.ecb4cc) +
             2 * BUTTON_PADDING_PX +
-            GAP_PX
+            GAP_PX +
+            PREFERENCES_BUTTON_PX
         );
     }
 
@@ -127,11 +131,11 @@ describe('게스트 CTA가 예약 폭 안에 들어간다', () => {
         ['ja', ja],
         ['zh', zh],
     ] as const)('%s', (_locale, catalog) => {
-        expect(ctaWidthPx(catalog)).toBeLessThanOrEqual(guestPx);
+        expect(guestGroupWidthPx(catalog)).toBeLessThanOrEqual(guestPx);
     });
 
-    it('예약 폭은 11rem이다', () => {
-        expect(guestPx).toBe(11 * REM_PX);
+    it('예약 폭은 14rem이다', () => {
+        expect(guestPx).toBe(14 * REM_PX);
     });
 });
 

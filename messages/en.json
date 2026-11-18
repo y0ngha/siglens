@@ -1128,7 +1128,8 @@
                 "4f5a3f": "Search",
                 "5dd6d9": "No search results",
                 "e39068": "Searching…",
-                "e62852": "No search results. Try searching by ticker (e.g. AAPL)"
+                "e62852": "No search results. Try searching by ticker (e.g. AAPL)",
+                "compactPlaceholder": "Search ticker (e.g. AAPL)"
             },
             "assetBadge": {
                 "coin": "Crypto",
@@ -2330,11 +2331,6 @@
             },
             "RegionTabs": {
                 "1eafbd": "Select Region"
-            },
-            "ThemeToggle": {
-                "current": "Theme: {v0}",
-                "f36b6a": "Select theme",
-                "label": "Theme"
             },
             "analysisError": {
                 "analysisFailed": "An error occurred during analysis.",
@@ -5303,11 +5299,12 @@
                 "myPortfolio": "My Portfolio"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
-            "localeSwitcher": {
-                "current": "Language: {v0}",
-                "label": "Select Language"
-            },
-            "xAccountAria": "{v0} X (Twitter) Account (opens in new tab)"
+            "xAccountAria": "{v0} X (Twitter) Account (opens in new tab)",
+            "preferences": {
+                "trigger": "Language and theme settings",
+                "language": "Language",
+                "theme": "Theme"
+            }
         },
         "legal": {
             "LegalPageShell": {

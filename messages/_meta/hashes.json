@@ -1654,9 +1654,6 @@
     "shared.ui.PasswordStrengthHint.6fa4dd": "6fa4dd18da1d",
     "shared.ui.PasswordStrengthHint.eba437": "eba437bc762e",
     "shared.ui.RegionTabs.1eafbd": "1eafbd0eaac8",
-    "shared.ui.ThemeToggle.current": "c1d13362f802",
-    "shared.ui.ThemeToggle.f36b6a": "f36b6a6c61d6",
-    "shared.ui.ThemeToggle.label": "5d8fee1143a2",
     "shared.ui.analysisError.analysisFailed": "0bb0bd860c25",
     "shared.ui.analysisError.digestFailed": "cea151779993",
     "shared.ui.analysisError.trendFailed": "dafb121a6a4d",
@@ -2807,8 +2804,6 @@
     "widgets.layout.HeaderUserMenu.ecb4cc": "ecb4cc8789ec",
     "widgets.layout.HeaderUserMenu.menuLabel": "11232e40db1d",
     "widgets.layout.githubRepoAria": "d981f961bc07",
-    "widgets.layout.localeSwitcher.current": "3563eb8fa30e",
-    "widgets.layout.localeSwitcher.label": "21295cab2995",
     "widgets.legal.LegalPageShell.4ea5e2": "4ea5e2d69fb5",
     "widgets.legal.LegalPageShell.7474d0": "7474d0b99332",
     "widgets.legal.untranslatedNotice": "2e00ced97941",
@@ -4418,5 +4413,9 @@
     "widgets.fundamental.EstimateTrend.revisions30d": "a7f7cba52d39",
     "widgets.fundamental.EstimateTrend.noChange": "3ba1341ea4ef",
     "widgets.fundamental.EstimateTrend.srUp": "915f990b8eaf",
-    "widgets.fundamental.EstimateTrend.srDown": "4a893483be99"
+    "widgets.fundamental.EstimateTrend.srDown": "4a893483be99",
+    "widgets.layout.preferences.trigger": "73f8b9669b97",
+    "widgets.layout.preferences.language": "1a723e1dbb68",
+    "widgets.layout.preferences.theme": "5d8fee1143a2",
+    "features.ticker-search.TickerAutocomplete.compactPlaceholder": "89501c546ad4"
 }

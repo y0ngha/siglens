@@ -1183,6 +1183,7 @@
                 "30cf1e": "종목 티커 검색",
                 "4f5a3f": "검색",
                 "5dd6d9": "검색 결과 없음",
+                "compactPlaceholder": "종목 입력 (예: AAPL)",
                 "e39068": "검색 중…",
                 "e62852": "검색 결과 없음. 티커(예: AAPL)로 검색해 보세요"
             },
@@ -2427,11 +2428,6 @@
             },
             "RegionTabs": {
                 "1eafbd": "지역 선택"
-            },
-            "ThemeToggle": {
-                "current": "테마: {v0}",
-                "f36b6a": "테마 선택",
-                "label": "테마"
             },
             "analysisError": {
                 "analysisFailed": "분석 중 오류가 발생했습니다.",
@@ -5444,9 +5440,10 @@
                 "myPortfolio": "내 포트폴리오"
             },
             "githubRepoAria": "{v0} GitHub 저장소 (새 탭에서 열림)",
-            "localeSwitcher": {
-                "current": "언어: {v0}",
-                "label": "언어 선택"
+            "preferences": {
+                "language": "언어",
+                "theme": "테마",
+                "trigger": "언어 및 테마 설정"
             },
             "xAccountAria": "{v0} X(트위터) 계정 (새 탭에서 열림)"
         },

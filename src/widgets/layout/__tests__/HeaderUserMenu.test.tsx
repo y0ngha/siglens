@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { HeaderUserMenu } from '@/widgets/layout/HeaderUserMenu';
 
+vi.mock('@/shared/i18n/navigation', () => ({
+    usePathname: () => '/market',
+    useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+}));
 vi.mock('@/features/auth-logout/ui/LogoutButton', () => ({
     LogoutButton: () => <button>로그아웃</button>,
 }));
@@ -16,12 +20,37 @@ describe('HeaderUserMenu', () => {
         ).toBeInTheDocument();
     });
 
-    /** 회원 추정(`<html data-auth-hint="member">`)이면 CSS가 첫 페인트부터 이 묶음을 숨긴다. */
-    it('게스트 CTA 묶음에 data-header-guest-cta 표식을 단다', () => {
+    /**
+     * 회원 추정(`<html data-auth-hint="member">`)이면 CSS가 첫 페인트부터 이 묶음을 숨긴다.
+     * 文A 설정 버튼도 같은 묶음 안이어야 한다 — 회원은 아바타 메뉴에서 같은 설정을 쓴다.
+     */
+    it('게스트 묶음(설정 버튼 + CTA)에 data-header-guest-cta 표식을 단다', () => {
         render(<HeaderUserMenu currentUser={null} />);
+        const group = screen
+            .getByRole('link', { name: '로그인' })
+            .closest('[data-header-guest-cta]');
+        expect(group).not.toBeNull();
         expect(
-            screen.getByRole('link', { name: '로그인' }).closest('nav')
-        ).toHaveAttribute('data-header-guest-cta');
+            screen
+                .getByRole('button', { name: '언어 및 테마 설정' })
+                .closest('[data-header-guest-cta]')
+        ).toBe(group);
+    });
+
+    it('로그인 사용자에게는 별도 설정 버튼을 그리지 않는다(아바타 메뉴 안에 있다)', () => {
+        render(
+            <HeaderUserMenu
+                currentUser={{
+                    email: 'a@b.com',
+                    name: 'A',
+                    tier: 'free',
+                    avatarUrl: null,
+                }}
+            />
+        );
+        expect(
+            screen.queryByRole('button', { name: '언어 및 테마 설정' })
+        ).not.toBeInTheDocument();
     });
 
     it('authNext가 없으면 로그인/회원가입 href에 ?next=가 없다', () => {
@@ -92,7 +121,8 @@ describe('HeaderUserMenu', () => {
         expect(links[1]).toHaveTextContent('메일 리포트');
         expect(links[1]).toHaveAttribute('href', '/email-report');
         expect(links[2]).toHaveAttribute('href', '/account');
-        expect(items).toHaveLength(4);
+        // 로그아웃은 목록 밖, 언어·테마 섹션 아래 패널 맨 끝에 따로 선다.
+        expect(items).toHaveLength(3);
     });
 
     it('avatarUrl이 있으면 이미지를 렌더한다', () => {

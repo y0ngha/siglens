@@ -73,6 +73,16 @@ describe('HeaderSearch', () => {
         expect(wrapper?.className).toContain('lg:flex');
     });
 
+    it('데스크톱 검색은 압축형이다 — 별도 검색 버튼 없이 짧은 예시를 쓴다', () => {
+        renderWithProvider();
+        expect(
+            screen.getByRole('combobox', { name: '종목 티커 검색' })
+        ).toHaveAttribute('placeholder', '종목 입력 (예: AAPL)');
+        expect(
+            screen.queryByRole('button', { name: '검색' })
+        ).not.toBeInTheDocument();
+    });
+
     it('Provider가 없으면 트리거를 렌더하지 않는다', () => {
         // 눌러도 아무 일 없는 버튼을 남기느니 감춘다. 헤더 자체는 정상 렌더돼야 한다.
         expect(() => renderWithProvider(false)).not.toThrow();
