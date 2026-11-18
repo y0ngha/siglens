@@ -88,7 +88,7 @@ export function WatchlistQuickButton() {
                 aria-haspopup="dialog"
                 className={cn(
                     'relative inline-flex size-10 touch-manipulation items-center justify-center rounded-lg text-secondary-300 transition-colors hover:bg-secondary-800 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
-                    'lg:w-auto lg:min-w-[4.75rem] lg:gap-1.5 lg:border lg:border-border-control lg:px-3 lg:text-sm lg:font-semibold',
+                    'lg:w-auto lg:gap-1.5 lg:border lg:border-border-control lg:px-3 lg:text-sm lg:font-semibold xl:min-w-[4.75rem]',
                     mode !== 'closed' &&
                         'bg-secondary-800 text-secondary-100 lg:border-primary-500'
                 )}
@@ -100,7 +100,10 @@ export function WatchlistQuickButton() {
                         count !== null && count > 0 && 'text-primary-400'
                     )}
                 />
-                <span aria-hidden="true" className="hidden lg:inline">
+                {/* "관심" 글자는 `xl`부터 — `lg`~`xl` 구간의 헤더 한 줄은 내비·검색 아이콘·비회원 文A·◐
+                    버튼·CTA로 가득 차서(1024px에서 12px 넘쳤다) 글자 폭(약 32px)을 낼 수 없다. 접근
+                    이름은 `aria-label`이 늘 말한다. */}
+                <span aria-hidden="true" className="hidden xl:inline">
                     {t('quick.label')}
                 </span>
                 {count !== null && count > 0 && (

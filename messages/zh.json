@@ -5301,9 +5301,10 @@
             "githubRepoAria": "{v0} GitHub 仓库（在新标签页中打开）",
             "xAccountAria": "{v0} X (Twitter) 账户（在新标签页中打开）",
             "preferences": {
-                "trigger": "语言和主题设置",
                 "language": "语言",
-                "theme": "主题"
+                "theme": "主题",
+                "languageCurrent": "语言：{v0}",
+                "themeCurrent": "主题：{v0}"
             }
         },
         "legal": {

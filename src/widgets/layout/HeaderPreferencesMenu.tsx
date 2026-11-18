@@ -1,57 +1,69 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/shared/lib/cn';
-import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
-import { TranslateIcon } from '@/shared/ui/StrokeIcons';
-import { usePopoverDisclosure } from './hooks/usePopoverDisclosure';
-import { PreferencesSection } from './ui/preferences/PreferencesSection';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { LOCALE_NATIVE_LABEL } from '@/shared/i18n/locales';
+import { ContrastIcon, TranslateIcon } from '@/shared/ui/StrokeIcons';
+import { ThemeRadioGroup } from '@/shared/ui/ThemeRadioGroup';
+import { useLocaleSwitch } from './hooks/useLocaleSwitch';
+import { LocaleRadioGroup } from './ui/locale/LocaleRadioGroup';
+import { PreferencePopover } from './ui/preferences/PreferencePopover';
+import { HIDE_BELOW_PHONE_BAR } from './utils/phoneBarBreakpoint';
 
 /**
- * 비회원의 언어·테마 설정 진입점 — 文A 아이콘 버튼 하나와 그 패널.
+ * 비회원의 언어·테마 진입점 — 文A(언어)와 ◐(테마) 아이콘 버튼 두 개, 각자의 팝오버.
  *
- * 회원은 같은 섹션을 아바타 메뉴 안에서 쓴다(`UserMenuPanel`). 비회원에게도 아바타 모양을 쓰지
- * 않는 이유는 로그인한 것처럼 읽히기 때문이고, 아이콘이 文A인 이유는 처음 온 해외 방문자가
- * 화면 글자를 못 읽어도 "언어"로 알아보는 모양이어야 하기 때문이다. 테마는 자주 바꾸는 설정이
- * 아니라 같은 패널 안에 둔다.
+ * 회원은 같은 두 설정을 아바타 메뉴 안의 두 줄로 쓴다(`PreferencesSection`). 비회원에게 아바타
+ * 모양을 쓰지 않는 이유는 로그인한 것처럼 읽히기 때문이다. 라벨 없이 아이콘만 두어 예전의
+ * "🌐 한국어 / 🖥 테마"보다 좁다. 아이콘이 文A인 이유는 처음 온 해외 방문자가 화면 글자를 못
+ * 읽어도 "언어"로 알아보는 모양이어야 하기 때문이다.
  *
- * 패널은 Disclosure 패턴이다 — 명령 메뉴가 아니라 두 라디오그룹을 담은 영역이라 `aria-haspopup`
- * 없이 `aria-expanded`만 단다. 포털을 쓰지 않는다: 사이트 헤더는 `sticky z-50`(최상위)이라
- * 덮일 스택 컨텍스트 함정이 없다.
+ * 언어를 고르면 패널을 닫는다(페이지가 그 언어로 다시 열린다). 테마는 고른 결과가 바로 칠해져
+ * 비교할 수 있게 열어 둔다.
+ *
+ * 폰 폭(30rem 미만)에서는 ◐를 헤더 줄에서 빼고 드로어로 옮긴다(`HeaderMobileMenu`) — 두 버튼을
+ * 모두 세우면 맨 끝의 햄버거가 화면 밖으로 밀린다(`Header`의 "폭 예산"). 언어(文A)는 처음 온
+ * 방문자가 찾아야 하는 쪽이라 남긴다.
  */
 export function HeaderPreferencesMenu() {
     const t = useTranslations('widgets.layout');
-    const { containerRef, triggerRef, isOpen, close, toggle } =
-        usePopoverDisclosure();
-    const panelId = useId();
-    const label = t('preferences.trigger');
+    const tOption = useTranslations('shared.ui.themeOption');
+    const { locale, select } = useLocaleSwitch();
+    const { preference } = useTheme();
 
     return (
-        <div ref={containerRef} className="relative inline-flex shrink-0">
-            <button
-                ref={triggerRef}
-                type="button"
-                onClick={toggle}
-                aria-expanded={isOpen}
-                aria-controls={isOpen ? panelId : undefined}
-                aria-label={label}
-                title={label}
-                className="flex size-11 items-center justify-center rounded-lg text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+        <div className="flex items-center">
+            <PreferencePopover
+                icon={<TranslateIcon className="size-5 shrink-0" />}
+                label={t('preferences.languageCurrent', {
+                    v0: LOCALE_NATIVE_LABEL[locale],
+                })}
+                heading={t('preferences.language')}
             >
-                <TranslateIcon className="size-5 shrink-0" />
-            </button>
-            {isOpen && (
-                <div
-                    id={panelId}
-                    className={cn(
-                        SURFACE_FLOATING,
-                        'absolute top-full right-0 z-10 mt-1 w-56 p-1 shadow-lg'
-                    )}
+                {({ headingId, close }) => (
+                    <LocaleRadioGroup
+                        locale={locale}
+                        labelledBy={headingId}
+                        onSelect={next => {
+                            select(next);
+                            close();
+                        }}
+                    />
+                )}
+            </PreferencePopover>
+            <div className={HIDE_BELOW_PHONE_BAR}>
+                <PreferencePopover
+                    icon={<ContrastIcon className="size-5 shrink-0" />}
+                    label={t('preferences.themeCurrent', {
+                        v0: tOption(preference),
+                    })}
+                    heading={t('preferences.theme')}
                 >
-                    <PreferencesSection onLocaleSelect={close} />
-                </div>
-            )}
+                    {({ headingId }) => (
+                        <ThemeRadioGroup labelledBy={headingId} />
+                    )}
+                </PreferencePopover>
+            </div>
         </div>
     );
 }

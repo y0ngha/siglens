@@ -5442,8 +5442,9 @@
             "githubRepoAria": "{v0} GitHub 저장소 (새 탭에서 열림)",
             "preferences": {
                 "language": "언어",
+                "languageCurrent": "언어: {v0}",
                 "theme": "테마",
-                "trigger": "언어 및 테마 설정"
+                "themeCurrent": "테마: {v0}"
             },
             "xAccountAria": "{v0} X(트위터) 계정 (새 탭에서 열림)"
         },

@@ -4414,8 +4414,9 @@
     "widgets.fundamental.EstimateTrend.noChange": "3ba1341ea4ef",
     "widgets.fundamental.EstimateTrend.srUp": "915f990b8eaf",
     "widgets.fundamental.EstimateTrend.srDown": "4a893483be99",
-    "widgets.layout.preferences.trigger": "73f8b9669b97",
     "widgets.layout.preferences.language": "1a723e1dbb68",
     "widgets.layout.preferences.theme": "5d8fee1143a2",
-    "features.ticker-search.TickerAutocomplete.compactPlaceholder": "89501c546ad4"
+    "features.ticker-search.TickerAutocomplete.compactPlaceholder": "89501c546ad4",
+    "widgets.layout.preferences.languageCurrent": "3563eb8fa30e",
+    "widgets.layout.preferences.themeCurrent": "c1d13362f802"
 }

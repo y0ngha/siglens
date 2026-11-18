@@ -26,7 +26,8 @@ interface UserMenuPanelProps {
  * (Disclosure Navigation).
  *
  * 언어·테마는 헤더 줄이 아니라 여기에 둔다 — 이미 언어를 정한 회원에게는 매 페이지 헤더 한 칸을
- * 쓸 만큼 자주 쓰는 조작이 아니다. 비회원 패널(`HeaderPreferencesMenu`)과 같은 섹션을 쓴다.
+ * 쓸 만큼 자주 쓰는 조작이 아니다. 두 줄(文A 언어 / ◐ 테마)로 두고 누르면 그 아래에 선택지가
+ * 펼쳐진다(`PreferencesSection`). 아이콘은 비회원 헤더 버튼(`HeaderPreferencesMenu`)과 같다.
  * 로그아웃은 맨 끝에 따로 둔다 — 설정 바로 위에 두면 테마를 고르다 잘못 누르기 쉽다.
  */
 export function UserMenuPanel({ id, user, onNavigate }: UserMenuPanelProps) {

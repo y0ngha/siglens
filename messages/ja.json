@@ -5301,9 +5301,10 @@
             "githubRepoAria": "{v0} GitHub リポジトリ（新しいタブで開く）",
             "xAccountAria": "{v0} X(Twitter) アカウント (新しいタブで開く)",
             "preferences": {
-                "trigger": "言語とテーマの設定",
                 "language": "言語",
-                "theme": "テーマ"
+                "theme": "テーマ",
+                "languageCurrent": "言語: {v0}",
+                "themeCurrent": "テーマ: {v0}"
             }
         },
         "legal": {

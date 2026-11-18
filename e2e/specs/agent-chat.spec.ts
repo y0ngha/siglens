@@ -25,8 +25,9 @@ test.describe('SIGLENS AI agent chat', () => {
             banner.getByRole('link', { name: 'SIGLENS AI Beta' })
         ).toHaveAttribute('aria-current', 'page');
         await banner.getByRole('button', { name: /사용자 메뉴/ }).click();
+        await banner.getByRole('button', { name: /^테마/ }).click();
         await expect(
-            banner.getByRole('radiogroup', { name: '테마' })
+            banner.getByRole('radiogroup', { name: /^테마/ })
         ).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(

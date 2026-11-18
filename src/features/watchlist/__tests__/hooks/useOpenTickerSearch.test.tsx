@@ -6,7 +6,7 @@ import {
     SearchOverlayTriggerContext,
 } from '@/shared/model/SearchOverlayTriggerContext';
 
-function setBelowLg(matches: boolean) {
+function setBelowXl(matches: boolean) {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
         matches,
         media: query,
@@ -34,8 +34,8 @@ describe('useOpenTickerSearch', () => {
     });
     afterEach(() => input.remove());
 
-    it('lg 미만이면 검색 오버레이를 연다', () => {
-        setBelowLg(true);
+    it('xl 미만이면 검색 오버레이를 연다', () => {
+        setBelowXl(true);
         const open = vi.fn();
         const { result } = renderHook(() => useOpenTickerSearch(), {
             wrapper: withOverlay(open),
@@ -45,8 +45,8 @@ describe('useOpenTickerSearch', () => {
         expect(input).not.toHaveFocus();
     });
 
-    it('lg 이상이면 오버레이 대신 헤더 검색 입력에 포커스를 보낸다', () => {
-        setBelowLg(false);
+    it('xl 이상이면 오버레이 대신 헤더 검색 입력에 포커스를 보낸다', () => {
+        setBelowXl(false);
         const open = vi.fn();
         const { result } = renderHook(() => useOpenTickerSearch(), {
             wrapper: withOverlay(open),
@@ -57,7 +57,7 @@ describe('useOpenTickerSearch', () => {
     });
 
     it('오버레이 프로바이더가 없으면 뷰포트와 무관하게 입력 포커스만 시도한다', () => {
-        setBelowLg(true);
+        setBelowXl(true);
         const { result } = renderHook(() => useOpenTickerSearch());
         result.current();
         expect(input).toHaveFocus();

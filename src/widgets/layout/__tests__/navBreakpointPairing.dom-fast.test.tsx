@@ -38,26 +38,51 @@ describe('헤더 내비 브레이크포인트', () => {
 });
 
 /**
- * 언어·테마 설정의 집은 **계정 영역 하나**다 — 비회원은 文A 버튼 패널(`HeaderPreferencesMenu`),
- * 회원은 아바타 메뉴(`UserMenuPanel`). 헤더 줄이나 드로어에 별도 스위처가 다시 생기면 폰 폭
- * 예산(`Header.tsx`)이 깨지고, 폭마다 어느 쪽에 보일지 맞춰야 하는 경계 쌍이 되살아난다.
+ * 언어·테마 설정의 집은 **계정 영역**이다 — 비회원은 文A·◐ 버튼(`HeaderPreferencesMenu`), 회원은
+ * 아바타 메뉴의 두 줄(`PreferencesSection`). 헤더 줄(`Header.tsx`)에 별도 스위처가 다시 생기면 폰
+ * 폭 예산이 깨진다.
+ *
+ * 예외 하나: 폰 폭에서는 비회원의 ◐가 헤더 줄에서 빠지고 드로어로 간다. 헤더가 숨기는 경계와
+ * 드로어가 보이는 경계가 어긋나면 어느 쪽에도 테마가 없는 폭이 생기는데, jsdom에는 미디어쿼리가
+ * 없어 렌더 테스트로는 못 잡는다 — 두 쪽이 같은 상수 파일을 쓰는지와 그 값을 고정한다.
  */
-describe('언어·테마 설정은 계정 영역에만 있다', () => {
-    const preferencesHosts = [
-        'HeaderPreferencesMenu.tsx',
-        'ui/user-menu/UserMenuPanel.tsx',
-    ];
+describe('언어·테마 설정의 위치와 폰 폭 경계', () => {
+    const breakpoints = read('utils/phoneBarBreakpoint.ts');
+    const hideBelow = breakpoints.match(
+        /HIDE_BELOW_PHONE_BAR = 'max-\[([\d.]+rem)\]:hidden'/
+    )?.[1];
+    const showBelow = breakpoints.match(
+        /SHOW_BELOW_PHONE_BAR = 'min-\[([\d.]+rem)\]:hidden'/
+    )?.[1];
 
-    it.each(preferencesHosts)('%s가 PreferencesSection을 끼운다', file => {
-        expect(read(file)).toContain('<PreferencesSection');
+    it('헤더가 ◐를 숨기는 경계와 드로어가 테마를 보이는 경계가 같다', () => {
+        expect(hideBelow).toBe('30rem');
+        expect(showBelow).toBe(hideBelow);
     });
 
-    it.each(['Header.tsx', 'HeaderMobileMenu.tsx'])(
-        '%s는 언어·테마 컨트롤을 직접 그리지 않는다',
-        file => {
-            expect(read(file)).not.toMatch(
-                /PreferencesSection|LocaleRadioGroup|ThemeRadioGroup/
-            );
-        }
-    );
+    it('비회원 헤더는 ◐ 버튼만 그 경계로 감싼다', () => {
+        expect(read('HeaderPreferencesMenu.tsx')).toMatch(
+            /<div className=\{HIDE_BELOW_PHONE_BAR\}>\s*<PreferencePopover\s+icon=\{<ContrastIcon/
+        );
+    });
+
+    it('드로어의 테마는 비회원에게만, 같은 경계 미만에서만 보인다', () => {
+        const drawer = read('HeaderMobileMenu.tsx');
+        expect(drawer).toMatch(/\{showAuthCta && \(/);
+        expect(drawer).toContain('SHOW_BELOW_PHONE_BAR');
+        expect(drawer).toContain('<ThemeRadioGroup');
+        expect(drawer).not.toMatch(/LocaleRadioGroup|PreferencesSection/);
+    });
+
+    it('회원 아바타 메뉴가 언어·테마 두 줄을 담는다', () => {
+        expect(read('ui/user-menu/UserMenuPanel.tsx')).toContain(
+            '<PreferencesSection'
+        );
+    });
+
+    it('헤더 줄(Header.tsx)은 언어·테마 컨트롤을 직접 그리지 않는다', () => {
+        expect(read('Header.tsx')).not.toMatch(
+            /PreferencesSection|PreferencePopover|LocaleRadioGroup|ThemeRadioGroup/
+        );
+    });
 });

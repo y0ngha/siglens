@@ -48,7 +48,7 @@ test.describe('로케일 라우팅', () => {
 
     test('언어 스위처가 경로를 유지한 채 로케일을 바꾼다', async ({ page }) => {
         await page.goto('/market');
-        // 비회원은 헤더의 文A 버튼(언어 및 테마 설정) 패널에서 언어 라디오그룹을 고른다.
+        // 비회원은 헤더의 文A 버튼(이름 "언어: 한국어") 팝오버에서 언어 라디오그룹을 고른다.
         await page.getByRole('button', { name: /언어|language/i }).click();
         await page
             .getByRole('radiogroup', { name: /언어|language/i })

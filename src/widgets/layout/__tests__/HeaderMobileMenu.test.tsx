@@ -239,7 +239,11 @@ describe('HeaderMobileMenu', () => {
             render(<HeaderMobileMenu items={NAV_TREE} showAuthCta />);
 
             const drawer = document.getElementById('mobile-nav-drawer')!;
-            const focusables = drawer.querySelectorAll('a, button');
+            // 라디오는 뺀다 — 폰 폭 비회원의 테마 그룹은 APG 라디오그룹이라 선택 항목만 탭 스톱인
+            // 로빙 tabindex가 계약이다. 여기서 막는 것은 닫힌 드로어를 tabindex=-1로 숨기는 일이다.
+            const focusables = drawer.querySelectorAll(
+                'a, button:not([role="radio"])'
+            );
             expect(focusables.length).toBeGreaterThan(0);
             for (const el of focusables) {
                 expect(el).not.toHaveAttribute('tabindex');

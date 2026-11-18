@@ -5301,9 +5301,10 @@
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
             "xAccountAria": "{v0} X (Twitter) Account (opens in new tab)",
             "preferences": {
-                "trigger": "Language and theme settings",
                 "language": "Language",
-                "theme": "Theme"
+                "theme": "Theme",
+                "languageCurrent": "Language: {v0}",
+                "themeCurrent": "Theme: {v0}"
             }
         },
         "legal": {

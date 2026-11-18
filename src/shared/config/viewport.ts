@@ -19,6 +19,14 @@ export const MOBILE_VIEWPORT_MEDIA_QUERY = '(max-width: 767px)';
 export const BELOW_LG_MEDIA_QUERY = '(max-width: 1023.98px)';
 
 /**
+ * Tailwind `xl`(1280px) 미만. 헤더 검색이 인라인 입력 대신 아이콘 트리거(전체화면 오버레이)를 쓰는
+ * 경계다 — `lg`~`xl` 구간은 데스크톱 내비가 한 줄을 거의 다 써서 인라인 입력이 돋보기만 남을 만큼
+ * 눌린다(1024px 실측 32px). `HeaderSearch`의 `xl:hidden`/`xl:flex`와 "종목 검색" 버튼
+ * (`useOpenTickerSearch`)이 같은 경계를 써야 숨은 입력에 포커스를 보내는 일이 없다.
+ */
+export const BELOW_XL_MEDIA_QUERY = '(max-width: 1279.98px)';
+
+/**
  * 주 입력 장치가 손가락인 기기(휴대폰·태블릿). Tailwind `pointer-coarse:` 변형과 같은 조건이라
  * CSS와 JS 판정이 어긋나지 않는다. 화면 폭과 무관하다 — iPad는 `sm` 이상이지만 hover가 없다.
  */

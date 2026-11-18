@@ -801,20 +801,38 @@ body:has([data-technical-facts='panel']) [data-technical-facts-page-slot] {
  * 아바타로 바뀐다 — 그 폭 차이만큼 검색 등 왼쪽 요소가 밀렸다(CLS). `<html data-auth-hint>`는
  * 첫 페인트 전에 인라인 스크립트가 힌트 쿠키로 찍는다(`AUTH_HINT_INIT_SCRIPT`).
  *
- * - 게스트(기본, 속성 없음 포함): 文A 설정 버튼(2.75rem) + 갭(0.5rem) + 가장 넓은 CTA(ja
- *   `ログイン`+`会員登録`, 실측 기준 약 10.5rem)를 담는 14rem. 폰트 교체로 CTA 폭이 흔들려도
- *   상자는 그대로다.
+ * - 게스트: 文A·◐ 버튼(2 × 2.75rem) + 갭 + 로그인·회원가입 CTA. **언어마다 따로 잡는다**
+ *   (`<html lang>`). 가장 긴 언어(ja) 하나로 모두 잡으면 짧은 언어에서 남는 폭이 文A 왼쪽에
+ *   빈칸으로 보인다. 값은 1440px 실측 폭(2026-11-18, ko 236.7 / en 241.0 / ja 265.3 /
+ *   zh 208.0px)을 0.25rem 단위로 올린 것이고, 언어가 맞지 않는 문서는 가장 넓은 ja 값을 쓴다.
+ *   CTA 문구가 바뀌면 다시 잰다(`headerAuthSlotReservation.test.ts`가 문구를 고정한다).
  * - 회원 추정: 아바타·스켈레톤과 같은 2.5rem. 게스트 묶음은 처음부터 그리지 않는다 —
  *   하이드레이션 뒤에도 힌트가 있으면 게스트 묶음 대신 스켈레톤이 나오므로 같은 화면이다.
+ *   언어 규칙과 명시도가 같아 **맨 뒤에 둔다**.
  *
  * **`min-width`만 쓴다.** `width`/`max-width`로 고정하면 예상보다 넓은 CTA(새 로케일, 큰
  * 글꼴 설정)가 잘린다. 모자라면 상자가 자라는 편이 잘리는 것보다 낫다. 아래 폭은 모바일
- * (CTA가 숨는 sm 미만)에는 걸지 않는다 — 그 폭의 게스트는 설정 버튼 한 칸, 회원은 아바타 한
- * 칸이라 교체 차이가 4px뿐이다.
+ * (CTA가 숨는 sm 미만)에는 걸지 않는다.
  */
 @media (width >= 40rem) {
     [data-header-auth-slot] {
-        min-width: 14rem;
+        min-width: 16.75rem;
+    }
+
+    :root:lang(ko) [data-header-auth-slot] {
+        min-width: 15rem;
+    }
+
+    :root:lang(en) [data-header-auth-slot] {
+        min-width: 15.25rem;
+    }
+
+    :root:lang(ja) [data-header-auth-slot] {
+        min-width: 16.75rem;
+    }
+
+    :root:lang(zh) [data-header-auth-slot] {
+        min-width: 13.25rem;
     }
 
     :root[data-auth-hint='member'] [data-header-auth-slot] {

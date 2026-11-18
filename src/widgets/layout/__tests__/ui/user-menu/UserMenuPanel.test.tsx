@@ -63,15 +63,45 @@ describe('UserMenuPanel', () => {
         expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
     });
 
-    it('비회원 패널과 같은 언어·테마 섹션을 담는다', () => {
+    /**
+     * 언어·테마는 "아이콘 · 이름 · 현재 값" 두 줄이다. 선택지를 늘 펼쳐 두면 메뉴가 두 배로 길어져
+     * 계정 링크·로그아웃을 밀어내므로, 처음에는 접혀 있다.
+     */
+    it('언어·테마는 현재 값을 보이는 접힌 두 줄이다', () => {
         render(<UserMenuPanel id="p" user={user} onNavigate={vi.fn()} />);
 
-        expect(
-            screen.getByRole('radiogroup', { name: '언어' })
-        ).toBeInTheDocument();
-        expect(
-            screen.getByRole('radiogroup', { name: '테마' })
-        ).toBeInTheDocument();
+        const language = screen.getByRole('button', { name: /^언어/ });
+        const theme = screen.getByRole('button', { name: /^테마/ });
+        expect(language).toHaveTextContent('한국어');
+        expect(theme).toHaveTextContent('시스템 설정');
+        for (const row of [language, theme]) {
+            expect(row).toHaveAttribute('aria-expanded', 'false');
+            expect(row).not.toHaveAttribute('aria-controls');
+        }
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    });
+
+    it('줄을 누르면 그 아래에 선택지가 펼쳐지고, 한 번에 한 줄만 열린다', () => {
+        render(<UserMenuPanel id="p" user={user} onNavigate={vi.fn()} />);
+        const language = screen.getByRole('button', { name: /^언어/ });
+        const theme = screen.getByRole('button', { name: /^테마/ });
+
+        fireEvent.click(language);
+        expect(language).toHaveAttribute('aria-expanded', 'true');
+        const languageGroup = screen.getByRole('radiogroup');
+        expect(language).toHaveAttribute(
+            'aria-controls',
+            languageGroup.parentElement?.id
+        );
+        expect(languageGroup).toHaveAccessibleName(/^언어/);
+
+        fireEvent.click(theme);
+        expect(language).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.getAllByRole('radiogroup')).toHaveLength(1);
+        expect(screen.getByRole('radiogroup')).toHaveAccessibleName(/^테마/);
+
+        fireEvent.click(theme);
+        expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
     });
 
     it('언어를 고르면 그 로케일로 이동하고 패널을 닫는다', () => {
@@ -79,10 +109,26 @@ describe('UserMenuPanel', () => {
         const onNavigate = vi.fn();
         render(<UserMenuPanel id="p" user={user} onNavigate={onNavigate} />);
 
+        fireEvent.click(screen.getByRole('button', { name: /^언어/ }));
         fireEvent.click(screen.getByRole('radio', { name: 'English' }));
 
         expect(mockReplace).toHaveBeenCalledWith('/market', { locale: 'en' });
         expect(onNavigate).toHaveBeenCalledTimes(1);
+    });
+
+    it('테마를 고르면 줄의 현재 값이 바뀌고 메뉴는 닫지 않는다', () => {
+        localStorage.clear();
+        const onNavigate = vi.fn();
+        render(<UserMenuPanel id="p" user={user} onNavigate={onNavigate} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /^테마/ }));
+        fireEvent.click(screen.getByRole('radio', { name: /라이트/ }));
+
+        expect(screen.getByRole('button', { name: /^테마/ })).toHaveTextContent(
+            '라이트'
+        );
+        expect(onNavigate).not.toHaveBeenCalled();
+        localStorage.clear();
     });
 
     it('링크를 누르면 onNavigate를 부른다', () => {
