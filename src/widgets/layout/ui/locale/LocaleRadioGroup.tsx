@@ -1,14 +1,12 @@
 'use client';
 
 import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { useTranslations } from 'next-intl';
 import {
     LOCALES,
     LOCALE_NATIVE_LABEL,
     type Locale,
 } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
 
 /** 화살표 키 → 포커스 이동 방향. 목록 양 끝에서는 순환한다. */
@@ -20,15 +18,16 @@ const ARROW_DELTA: Record<string, number> = {
 };
 
 interface LocaleRadioGroupProps {
-    readonly id: string;
     readonly locale: Locale;
-    /** 패널을 트리거의 어느 쪽에 붙일지. 트리거가 왼쪽에 있는 자리는 `start`. */
-    readonly align: 'start' | 'end';
+    /** 그룹의 접근 이름을 대는 보이는 제목의 id(호스트 패널의 "언어" 제목). */
+    readonly labelledBy: string;
     readonly onSelect: (next: Locale) => void;
 }
 
 /**
- * 언어 라디오그룹 팝오버.
+ * 언어 라디오그룹. 팝오버가 아니라 **인라인**이다 — 헤더의 설정 패널(비회원)과 아바타
+ * 메뉴(회원)가 자기 표면 안에 그대로 끼운다. 이름이 짧아(한국어·English·日本語·中文) 2열로
+ * 놓아 메뉴 높이를 아낀다. 화살표는 2열이어도 목록 순서대로 한 칸씩 움직인다.
  *
  * WAI-ARIA APG의 라디오 그룹은 **단일 탭 스톱**이다(선택 항목만 `tabIndex=0`). 화살표는
  * 포커스만 옮기고 선택은 Enter/Space가 맡는다 — 언어는 라우터 이동이라 화살표 한 번에
@@ -37,12 +36,10 @@ interface LocaleRadioGroupProps {
  * 선택 표시는 색뿐 아니라 체크 도형으로도 말한다(WCAG 1.4.1).
  */
 export function LocaleRadioGroup({
-    id,
     locale,
-    align,
+    labelledBy,
     onSelect,
 }: LocaleRadioGroupProps) {
-    const t = useTranslations('widgets.layout');
     const groupRef = useRef<HTMLDivElement>(null);
 
     const moveFocus = (from: number, delta: number) => {
@@ -64,14 +61,9 @@ export function LocaleRadioGroup({
     return (
         <div
             ref={groupRef}
-            id={id}
             role="radiogroup"
-            aria-label={t('localeSwitcher.label')}
-            className={cn(
-                SURFACE_FLOATING,
-                'absolute top-full z-10 mt-1 w-max min-w-44 p-1 shadow-lg',
-                align === 'start' ? 'left-0' : 'right-0'
-            )}
+            aria-labelledby={labelledBy}
+            className="grid grid-cols-2 gap-1"
         >
             {LOCALES.map((option, index) => {
                 const selected = option === locale;

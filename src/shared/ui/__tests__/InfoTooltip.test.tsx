@@ -3,7 +3,7 @@ import { InfoTooltip, TOOLTIP_CLOSE_DELAY_MS } from '@/shared/ui/InfoTooltip';
 
 // useEscapeKey/useOnClickOutside are left real (not mocked) so the tests below
 // can exercise the actual Escape/click-outside close paths, the same style
-// ThemeToggle's test uses for its sibling popover.
+// the header popover tests (`HeaderPreferencesMenu`) use.
 vi.mock('@/shared/lib/tooltipPosition', () => ({
     getTooltipPosition: () => ({ top: 100, left: 200 }),
 }));

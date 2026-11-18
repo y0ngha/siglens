@@ -1128,7 +1128,8 @@
                 "4f5a3f": "検索",
                 "5dd6d9": "検索結果なし",
                 "e39068": "検索中…",
-                "e62852": "検索結果がありません。ティッカー（例: AAPL）で検索してみてください"
+                "e62852": "検索結果がありません。ティッカー（例: AAPL）で検索してみてください",
+                "compactPlaceholder": "銘柄を入力 (例: AAPL)"
             },
             "assetBadge": {
                 "coin": "暗号資産",
@@ -2330,11 +2331,6 @@
             },
             "RegionTabs": {
                 "1eafbd": "地域選択"
-            },
-            "ThemeToggle": {
-                "current": "テーマ: {v0}",
-                "f36b6a": "テーマを選択",
-                "label": "テーマ"
             },
             "analysisError": {
                 "analysisFailed": "分析中にエラーが発生しました。",
@@ -5303,11 +5299,13 @@
                 "myPortfolio": "マイポートフォリオ"
             },
             "githubRepoAria": "{v0} GitHub リポジトリ（新しいタブで開く）",
-            "localeSwitcher": {
-                "current": "言語: {v0}",
-                "label": "言語を選択"
-            },
-            "xAccountAria": "{v0} X(Twitter) アカウント (新しいタブで開く)"
+            "xAccountAria": "{v0} X(Twitter) アカウント (新しいタブで開く)",
+            "preferences": {
+                "language": "言語",
+                "theme": "テーマ",
+                "languageCurrent": "言語: {v0}",
+                "themeCurrent": "テーマ: {v0}"
+            }
         },
         "legal": {
             "LegalPageShell": {

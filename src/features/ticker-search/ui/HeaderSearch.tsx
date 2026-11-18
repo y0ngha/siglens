@@ -8,13 +8,17 @@ import { HEADER_SEARCH_INPUT_ID } from '@/shared/model/SearchOverlayTriggerConte
 /**
  * 헤더의 검색 표면. 브레이크포인트에 따라 두 얼굴을 갖는다.
  *
- * - `lg` 이상(데스크톱): 기존 인라인 자동완성 그대로. 화면이 넓고 키보드가 없어
- *   문제가 존재하지 않는다.
- * - `lg` 미만(모바일): 돋보기 아이콘만. 탭하면 전체화면 오버레이가 열린다.
+ * - `xl` 이상: 인라인 자동완성(압축형 — 돋보기가 입력 안에 있고 별도 버튼이 없다).
+ * - `xl` 미만: 돋보기 아이콘만. 누르면 전체화면 오버레이가 열린다.
  *
- * 브레이크포인트가 `lg`인 것은 `Header`의 데스크톱 내비(`hidden lg:flex`)·
- * `HeaderMobileMenu`(`lg:hidden`)와 **같은 값**이어야 하기 때문이다. 어긋나면 특정
- * 폭 구간에서 검색 표면이 둘 다 보이거나 둘 다 사라진다.
+ * 경계가 데스크톱 내비(`lg`)보다 한 단계 위인 이유: `lg`~`xl` 구간에서는 로고·내비·관심·계정
+ * 영역이 한 줄을 거의 다 써서 인라인 입력이 돋보기만 남을 만큼 눌렸다(1024px 실측 32px). 그
+ * 구간은 아이콘으로 접고 폭을 오버레이 전폭으로 넘긴다. "종목 검색" 버튼(`useOpenTickerSearch`)은
+ * 같은 경계(`BELOW_XL_MEDIA_QUERY`)로 오버레이와 입력 포커스를 가른다 — 어긋나면 숨은 입력에
+ * 포커스를 보낸다.
+ *
+ * 두 표면의 경계(`xl:hidden`/`xl:flex`)는 **같은 값**이어야 한다. 어긋나면 특정 폭 구간에서
+ * 검색 표면이 둘 다 보이거나 둘 다 사라진다.
  *
  * 조건부 렌더가 아니라 **CSS로 감춘다**. `display:none`은 접근성 트리와 포커스
  * 순서에서 제거되므로 중복 랜드마크·이중 탭스톱이 생기지 않고, 크롤러가 보는
@@ -33,18 +37,17 @@ export function HeaderSearch() {
             {overlay && (
                 <SearchTriggerButton
                     onClick={overlay.open}
-                    className="ml-auto lg:hidden"
+                    className="ml-auto xl:hidden"
                 />
             )}
             {/*
-                폭은 브레이크포인트마다 다르다. `lg`(1024px)에서는 로고·내비 3개·
-                검색·언어·테마·유저메뉴가 `h-14` 한 줄을 나눠 쓰므로 여유가 없고,
-                `xl` 이상에서는 남는 공백이 검색창 쪽에 몰린다. 한 값으로 고정하면
-                둘 중 하나가 손해를 본다 — 좁은 데스크톱에서 내비가 눌리거나, 넓은
-                화면에서 입력이 티커 4글자만 겨우 들어갈 만큼 작아 보이거나.
+                폭은 브레이크포인트마다 다르다. `xl`(1280px)에서는 로고·내비·관심·계정 영역과
+                한 줄을 나눠 쓰고, `2xl` 이상에서는 남는 공백이 검색창 쪽에 몰린다.
             */}
-            <div className="ml-auto hidden w-full max-w-xs min-w-0 justify-end lg:flex xl:max-w-md 2xl:max-w-lg">
-                {/* `w-full`이 없으면 입력이 **내용 폭**(브라우저 기본 `size=20`,
+            <div className="ml-auto hidden w-full max-w-md min-w-0 justify-end xl:flex 2xl:max-w-lg">
+                {/* 압축형(`compact`)이다 — 돋보기를 입력 안에 두고 "검색" 버튼을 없앤다. 버튼과
+                    긴 예시를 함께 두면 좁은 데스크톱에서 입력이 몇 글자만 보였다.
+                    `w-full`이 없으면 입력이 **내용 폭**(브라우저 기본 `size=20`,
                     ≈176px)에 머문다 — 래퍼의 `max-w-*`는 상한일 뿐 늘리지 못한다.
                     1440px에서도 176px이던 원인이 이것이다. */}
                 <TickerAutocomplete
@@ -52,6 +55,7 @@ export function HeaderSearch() {
                     className="w-full"
                     inputId={HEADER_SEARCH_INPUT_ID}
                     showWatchlistStar
+                    compact
                 />
             </div>
         </>

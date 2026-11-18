@@ -247,12 +247,12 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
     }
 
     /**
-     * 8. 폰 폭에서는 테마 토글이 헤더 줄이 아니라 드로어에 있다.
+     * 8. 폰 폭 비회원: 언어(文A)는 헤더 줄에서, 테마는 드로어에서 닿는다.
      *
-     * 헤더 줄에서 뺀 컨트롤은 드로어에서 닿아야 한다 — 두 쪽의 경계가 어긋나면 어느 쪽에도 없는
-     * 폭이 생긴다.
+     * 두 버튼(文A·◐)을 모두 헤더 줄에 세우면 맨 끝의 햄버거가 잘려서, 폰 폭에서는 ◐가 드로어로
+     * 간다. 헤더가 숨기는 경계와 드로어가 보이는 경계가 어긋나면 어느 쪽에도 테마가 없는 폭이 생긴다.
      */
-    test('@webkit 폰 폭에서 테마 토글은 드로어에서 닿는다', async ({
+    test('@webkit 폰 폭에서 언어는 헤더 줄, 테마는 드로어에서 닿는다', async ({
         page,
     }) => {
         test.skip(
@@ -263,30 +263,30 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         await page.goto('/');
         await settlePwaBanner(page);
 
-        // 닫힌 드로어의 토글은 DOM에 있지만 화면 밖이고, 헤더 줄의 토글은 `display: none`이다 —
-        // 가시성 판정 대신 뷰포트 안에 상자가 있는 토글 수를 센다.
-        const themeToggles = page.getByRole('button', {
-            name: /^테마/,
-            includeHidden: true,
-        });
-        const onScreen = await themeToggles.evaluateAll(
-            elements =>
-                elements.filter(element => {
-                    const rect = element.getBoundingClientRect();
-                    return (
-                        rect.width > 0 &&
-                        rect.right > 0 &&
-                        rect.left < window.innerWidth
-                    );
-                }).length
+        const banner = page.getByRole('banner');
+        const language = banner.getByRole('button', { name: /^언어:/ });
+        await expect(language).toBeVisible();
+        await expect(
+            banner.getByRole('button', { name: /^테마:/ })
+        ).toBeHidden();
+
+        await language.click();
+        const languageGroup = page.getByRole('radiogroup', { name: '언어' });
+        await expect(languageGroup).toBeVisible();
+        const width = page.viewportSize()?.width ?? 0;
+        const box = await languageGroup.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+        expect((box?.x ?? 0) + (box?.width ?? Infinity)).toBeLessThanOrEqual(
+            width
         );
-        expect(onScreen).toBe(0);
+        await page.keyboard.press('Escape');
 
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         const drawer = page.getByRole('dialog', { name: '메뉴' });
         await expect(drawer).toBeVisible();
         await expect(
-            drawer.getByRole('button', { name: /^테마/ })
+            drawer.getByRole('radiogroup', { name: '테마' })
         ).toBeVisible();
     });
 });

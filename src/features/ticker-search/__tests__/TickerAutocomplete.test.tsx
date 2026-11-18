@@ -685,4 +685,55 @@ describe('TickerAutocomplete', () => {
             expect(screen.getByRole('status')).toBeEmptyDOMElement();
         });
     });
+
+    /**
+     * 헤더용 압축형 — 돋보기는 입력 안의 장식이고 "검색" 버튼이 없다. 제출은 Enter가 맡는다
+     * (`handleKeyDown`), 그래서 버튼을 없애도 제출 경로가 사라지지 않는다.
+     */
+    describe('compact', () => {
+        it('검색 버튼을 그리지 않고 짧은 예시 플레이스홀더를 쓴다', () => {
+            setupAutocomplete();
+            render(<TickerAutocomplete compact />);
+
+            expect(
+                screen.queryByRole('button', { name: '검색' })
+            ).not.toBeInTheDocument();
+            expect(screen.getByRole('combobox')).toHaveAttribute(
+                'placeholder',
+                '종목 입력 (예: AAPL)'
+            );
+        });
+
+        it('돋보기는 장식이라 접근성 트리에 나오지 않고, 입력이 그 자리를 비운다', () => {
+            setupAutocomplete();
+            const { container } = render(<TickerAutocomplete compact />);
+
+            const icon = container.querySelector('svg');
+            expect(icon).toHaveAttribute('aria-hidden', 'true');
+            expect(screen.getByRole('combobox').className).toContain('pl-9');
+        });
+
+        it('Enter 처리는 그대로 입력의 onKeyDown이 받는다', () => {
+            const handleKeyDown = vi.fn();
+            setupAutocomplete({ handleKeyDown });
+            render(<TickerAutocomplete compact />);
+
+            fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
+
+            expect(handleKeyDown).toHaveBeenCalledTimes(1);
+        });
+
+        it('기본형은 검색 버튼과 긴 예시를 그대로 쓴다', () => {
+            setupAutocomplete();
+            render(<TickerAutocomplete />);
+
+            expect(
+                screen.getByRole('button', { name: '검색' })
+            ).toBeInTheDocument();
+            expect(screen.getByRole('combobox')).toHaveAttribute(
+                'placeholder',
+                '종목 입력 (예: 애플, 삼성전자, 비트코인)'
+            );
+        });
+    });
 });

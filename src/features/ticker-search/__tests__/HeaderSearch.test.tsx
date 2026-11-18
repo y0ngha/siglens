@@ -58,10 +58,10 @@ describe('HeaderSearch', () => {
             name: SEARCH_TRIGGER_LABEL,
         });
         expect(trigger.className).toContain('ml-auto');
-        expect(trigger.className).toContain('lg:hidden');
+        expect(trigger.className).toContain('xl:hidden');
     });
 
-    it('데스크톱 자동완성 래퍼도 ml-auto를 갖고 lg에서만 보인다', () => {
+    it('데스크톱 자동완성 래퍼도 ml-auto를 갖고 xl에서만 보인다', () => {
         renderWithProvider();
         // 위치가 아니라 **내용**으로 찾는다 — `container.querySelector('div.hidden')`은
         // 트리에서 첫 번째로 `hidden`을 가진 div를 집으므로, 관계없는 요소가 앞에
@@ -70,7 +70,17 @@ describe('HeaderSearch', () => {
             .getByRole('combobox', { name: '종목 티커 검색' })
             .closest('div.hidden');
         expect(wrapper?.className).toContain('ml-auto');
-        expect(wrapper?.className).toContain('lg:flex');
+        expect(wrapper?.className).toContain('xl:flex');
+    });
+
+    it('데스크톱 검색은 압축형이다 — 별도 검색 버튼 없이 짧은 예시를 쓴다', () => {
+        renderWithProvider();
+        expect(
+            screen.getByRole('combobox', { name: '종목 티커 검색' })
+        ).toHaveAttribute('placeholder', '종목 입력 (예: AAPL)');
+        expect(
+            screen.queryByRole('button', { name: '검색' })
+        ).not.toBeInTheDocument();
     });
 
     it('Provider가 없으면 트리거를 렌더하지 않는다', () => {

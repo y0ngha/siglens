@@ -45,8 +45,8 @@ function minWidthRem(body: string): number {
 describe('[data-header-auth-slot] CSS', () => {
     const bodies = slotRuleBodies(CSS);
 
-    it('게스트·회원 두 규칙이 있다', () => {
-        expect(bodies).toHaveLength(2);
+    it('기본(게스트)·언어별 4개·회원 규칙이 있다', () => {
+        expect(bodies).toHaveLength(6);
     });
 
     /** `width`/`max-width`로 고정하면 예상보다 넓은 CTA(새 로케일·큰 글꼴)가 잘린다. */
@@ -59,7 +59,7 @@ describe('[data-header-auth-slot] CSS', () => {
         }
     });
 
-    it('두 규칙 모두 sm 이상 미디어 쿼리 하나 안에 있다', () => {
+    it('모든 규칙이 sm 이상 미디어 쿼리 하나 안에 있다', () => {
         const firstSlot = CSS.indexOf('[data-header-auth-slot]');
         const lastSlot = CSS.lastIndexOf('[data-header-auth-slot]');
         const mediaStart = CSS.lastIndexOf(SM_MEDIA, firstSlot);
@@ -69,15 +69,21 @@ describe('[data-header-auth-slot] CSS', () => {
         expect(lastSlot).toBeLessThan(CSS.indexOf('\n}\n', mediaStart));
     });
 
-    it('회원 추정 폭은 아바타·스켈레톤(size-10 = 2.5rem)과 같다', () => {
+    it('회원 추정 폭은 아바타·스켈레톤(size-10 = 2.5rem)과 같고, 언어 규칙보다 뒤에 있다', () => {
         const member = CSS.match(
             /:root\[data-auth-hint='member'\] \[data-header-auth-slot\]\s*\{([^}]*)\}/
         );
         expect(member).not.toBeNull();
         expect(minWidthRem(member?.[1] ?? '')).toBe(2.5);
+        // 언어 규칙과 명시도가 같아(:root + 의사 클래스/속성 + 속성) 뒤에 와야 이긴다.
+        expect(
+            CSS.indexOf(
+                ":root[data-auth-hint='member'] [data-header-auth-slot]"
+            )
+        ).toBeGreaterThan(CSS.lastIndexOf(':root:lang('));
     });
 
-    it('회원 추정이면 게스트 CTA를 첫 페인트부터 숨긴다', () => {
+    it('회원 추정이면 게스트 묶음을 첫 페인트부터 숨긴다', () => {
         expect(CSS).toMatch(
             /:root\[data-auth-hint='member'\] \[data-header-guest-cta\]\s*\{\s*display:\s*none;\s*\}/
         );
@@ -85,53 +91,64 @@ describe('[data-header-auth-slot] CSS', () => {
 });
 
 /**
- * 게스트 폭이 **가장 넓은 CTA**(현재 ja `ログイン`+`会員登録`)를 담는지.
+ * 게스트 묶음(文A·◐ 버튼 + 로그인·회원가입 CTA)의 **실측 폭**과 예약 폭.
  *
- * jsdom엔 레이아웃이 없어 글자 폭을 보수적으로 추정한다: `text-sm`(14px)에서 CJK 글자는 전각
- * 1em, 라틴 글자는 평균 0.6em(Pretendard·Inter 실측 평균은 0.5~0.55em). 버튼은 `px-3`(좌우
- * 0.75rem)씩, 둘 사이는 `gap-2`(0.5rem). 추정이 예약 폭을 넘으면 새 로케일이나 문구 변경이
- * 예약을 깨뜨린 것이다 — 폭을 늘리거나 문구를 줄인다.
+ * jsdom엔 레이아웃이 없어 폭을 여기서 잴 수 없다. 그래서 1440px 실측값(Chromium, Pretendard 로드
+ * 후, 2026-11-18)을 그때의 CTA 문구와 함께 고정한다. 문구가 바뀌면 첫 단언이 깨진다 — 그때는
+ * 브라우저에서 `[data-header-guest-cta]` 폭을 다시 재 아래 표와 `globals.css`를 함께 고친다.
+ *
+ * 예약은 실측을 담아야 하고(모자라면 하이드레이션 때 헤더가 밀린다), 실측보다 크게 남으면 안 된다
+ * (남는 폭이 文A 왼쪽 빈칸으로 보인다 — 언어별로 잡는 이유).
  */
-describe('게스트 CTA가 예약 폭 안에 들어간다', () => {
-    const TEXT_SM_PX = 14;
-    const CJK_EM = 1;
-    const LATIN_EM = 0.6;
-    const BUTTON_PADDING_PX = 2 * 0.75 * REM_PX;
-    const GAP_PX = 0.5 * REM_PX;
+const MEASURED_GUEST: Record<
+    'ko' | 'en' | 'ja' | 'zh',
+    { readonly login: string; readonly signup: string; readonly px: number }
+> = {
+    ko: { login: '로그인', signup: '회원가입', px: 236.7 },
+    en: { login: 'Log In', signup: 'Sign Up', px: 241.0 },
+    ja: { login: 'ログイン', signup: '会員登録', px: 265.3 },
+    zh: { login: '登录', signup: '注册', px: 208.0 },
+};
+const CATALOGS = { ko, en, ja, zh } as const;
+/** 예약이 실측을 넘어 남겨도 되는 폭 — 0.25rem 단위 올림 한 칸. */
+const MAX_SLACK_PX = 0.25 * REM_PX;
 
-    function textWidthPx(text: string): number {
-        return [...text].reduce(
-            (sum, ch) =>
-                sum +
-                TEXT_SM_PX * (/[　-鿿가-힯＀-￯]/.test(ch) ? CJK_EM : LATIN_EM),
-            0
+function localeSlotPx(locale: keyof typeof MEASURED_GUEST): number {
+    const rule = CSS.match(
+        new RegExp(
+            `:root:lang\\(${locale}\\) \\[data-header-auth-slot\\]\\s*\\{([^}]*)\\}`
+        )
+    );
+    if (rule === null) throw new Error(`no slot rule for ${locale}`);
+    return minWidthRem(rule[1] ?? '') * REM_PX;
+}
+
+describe('게스트 묶음 예약 폭 — 언어별', () => {
+    it.each(Object.keys(MEASURED_GUEST) as (keyof typeof MEASURED_GUEST)[])(
+        '%s: 실측 당시 문구 그대로이고, 예약이 실측을 담되 거의 남기지 않는다',
+        locale => {
+            const measured = MEASURED_GUEST[locale];
+            const menu = CATALOGS[locale].widgets.layout.HeaderUserMenu;
+            expect([menu.e225a6, menu.ecb4cc]).toEqual([
+                measured.login,
+                measured.signup,
+            ]);
+            const slot = localeSlotPx(locale);
+            expect(slot).toBeGreaterThanOrEqual(measured.px);
+            expect(slot - measured.px).toBeLessThanOrEqual(MAX_SLACK_PX);
+        }
+    );
+
+    it('언어가 맞지 않는 문서의 기본 예약은 가장 넓은 언어를 담는다', () => {
+        const fallback = CSS.match(
+            /\{\s*\[data-header-auth-slot\]\s*\{([^}]*)\}/
         );
-    }
-
-    function ctaWidthPx(catalog: typeof ko): number {
-        const menu = catalog.widgets.layout.HeaderUserMenu;
-        return (
-            textWidthPx(menu.e225a6) +
-            textWidthPx(menu.ecb4cc) +
-            2 * BUTTON_PADDING_PX +
-            GAP_PX
+        const widest = Math.max(
+            ...Object.values(MEASURED_GUEST).map(m => m.px)
         );
-    }
-
-    const guestRule = CSS.match(/\{\s*\[data-header-auth-slot\]\s*\{([^}]*)\}/);
-    const guestPx = minWidthRem(guestRule?.[1] ?? '') * REM_PX;
-
-    it.each([
-        ['ko', ko],
-        ['en', en],
-        ['ja', ja],
-        ['zh', zh],
-    ] as const)('%s', (_locale, catalog) => {
-        expect(ctaWidthPx(catalog)).toBeLessThanOrEqual(guestPx);
-    });
-
-    it('예약 폭은 11rem이다', () => {
-        expect(guestPx).toBe(11 * REM_PX);
+        expect(
+            minWidthRem(fallback?.[1] ?? '') * REM_PX
+        ).toBeGreaterThanOrEqual(widest);
     });
 });
 

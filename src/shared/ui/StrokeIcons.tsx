@@ -160,6 +160,23 @@ export const GlobeIcon = (p: IconProps) => (
         <path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z" />
     </Icon>
 );
+/**
+ * 文A — 언어 전환 관용구. 지구본은 "지역·웹사이트"로도 읽혀서, 글자 체계가 바뀐다는 뜻이 바로
+ * 읽히는 이 형태를 언어 설정 진입점에 쓴다.
+ */
+export const TranslateIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M3 6h10M8 3.5V6M11 6c-.9 3.8-3.6 6.9-7.5 8.6M5.6 9.2c1.4 2.3 3.5 4.1 5.9 5.1" />
+        <path d="M12.5 20.5 16.5 11l4 9.5M13.8 17.5h5.4" />
+    </Icon>
+);
+/** ◐ — 라이트/다크 대비를 한 도형으로 말한다. 테마 설정 진입점용. */
+export const ContrastIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" />
+    </Icon>
+);
 export const BuildingIcon = (p: IconProps) => (
     <Icon {...p}>
         <rect x="5" y="3.5" width="10" height="17" rx="1" />
