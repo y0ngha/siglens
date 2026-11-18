@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.126.0](https://github.com/y0ngha/siglens/compare/v0.125.0...v0.126.0) (2026-11-18)
+
+### Features
+
+* 헤더 언어·테마 설정을 계정 영역으로 이동 ([#1320](https://github.com/y0ngha/siglens/issues/1320)) ([253d0ee](https://github.com/y0ngha/siglens/commit/253d0ee7cf5d5fd1547c18b3fc120fddf2db9547))
+
 # [0.125.0](https://github.com/y0ngha/siglens/compare/v0.124.0...v0.125.0) (2026-11-17)
 
 ### Features
