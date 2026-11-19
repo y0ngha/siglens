@@ -2,24 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { barsOf, profileOf } = vi.hoisted(() => ({
+const { barsOf, assetOf } = vi.hoisted(() => ({
     barsOf: vi.fn(),
-    profileOf: vi.fn(),
+    assetOf: vi.fn(),
 }));
 vi.mock('@/entities/bars/server/barsDataCache', () => ({
     getCachedBarsWithIndicators: barsOf,
-}));
-vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
-    resolveMarketProfile: profileOf,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
-    resolveAssetInfoOrNull: async () => null,
+    resolveAssetInfoOrNull: assetOf,
 }));
 
 import type { Bar } from '@y0ngha/siglens-core';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     buildCompareBlock,
     COMPARE_POINTS_MAX,
@@ -49,10 +47,16 @@ const bars = (n: number, close: (i: number) => number, from = START): Bar[] =>
         volume: 1,
     }));
 
+const asset = (marketProfile?: MarketProfileId) => ({
+    symbol: 'X',
+    name: 'X Inc',
+    ...(marketProfile ? { marketProfile } : {}),
+});
+
 beforeEach(() => {
     barsOf.mockReset();
-    profileOf.mockReset();
-    profileOf.mockResolvedValue('us-equity');
+    assetOf.mockReset();
+    assetOf.mockResolvedValue(asset('us-equity'));
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -183,6 +187,19 @@ describe('buildCompareBlock', () => {
         expect(out.summary.missing).toEqual(['BAD']);
     });
 
+    it('자산 조회가 null인 종목도 기본 시장 프로필로 선을 남긴다', async () => {
+        assetOf.mockImplementation(async (s: string) =>
+            s === 'MSFT' ? null : asset('us-equity')
+        );
+        barsOf.mockResolvedValue({ bars: bars(3, i => 100 + i) });
+        const out = await buildCompareBlock(['AAPL', 'MSFT'], '6M', env);
+        if ('error' in out) throw new Error(out.reason);
+        expect(
+            out.block.kind === 'compare' && out.block.series.map(s => s.symbol)
+        ).toEqual(['AAPL', 'MSFT']);
+        expect(out.summary.missing).toEqual([]);
+    });
+
     it('남은 종목이 둘 미만이면 no_data', async () => {
         barsOf.mockImplementation(async (_p: unknown, symbol: string) =>
             symbol === 'AAPL' ? { bars: bars(3, i => 100 + i) } : { bars: [] }
@@ -194,8 +211,8 @@ describe('buildCompareBlock', () => {
     });
 
     it('한국 죽은 리스팅(마지막 거래가 오래됨)은 수익률에 쓰지 않는다', async () => {
-        profileOf.mockImplementation(async (s: string) =>
-            s.endsWith('.KS') ? 'kr-equity' : 'us-equity'
+        assetOf.mockImplementation(async (s: string) =>
+            asset(s.endsWith('.KS') ? 'kr-equity' : 'us-equity')
         );
         barsOf.mockImplementation(async (_p: unknown, symbol: string) => ({
             // 한국 종목은 마지막 봉이 한 달 전이다.

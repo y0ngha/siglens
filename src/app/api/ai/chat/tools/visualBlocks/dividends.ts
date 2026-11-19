@@ -1,6 +1,7 @@
 import 'server-only';
 import type { ChatDividendsBlock } from '@/entities/chat-conversation/types';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '../resolveAssetInfo';
 import {
     getDescriptor,
     isKrEquitySymbol,
@@ -69,7 +70,10 @@ export async function buildDividendsBlock(
     const kr = isKrEquitySymbol(symbol);
     const [source, profile] = await Promise.all([
         fetchDividendSource(symbol, kr),
-        resolveMarketProfile(symbol),
+        // 통화를 정하는 데만 쓴다 — 자산 조회가 실패해도 그림 전체를 버리지 않고 기본 시장으로 내려간다.
+        resolveAssetInfoOrNull(symbol, 'show_chart').then(
+            marketProfileForAssetInfo
+        ),
     ]);
     if (source === null) return noData('dividend_history_unavailable');
     const events = dividendEventsOf(source);

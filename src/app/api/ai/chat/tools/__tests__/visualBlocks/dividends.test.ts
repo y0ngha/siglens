@@ -2,14 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const m = vi.hoisted(() => ({ source: vi.fn(), profileOf: vi.fn() }));
+const m = vi.hoisted(() => ({ source: vi.fn(), assetOf: vi.fn() }));
 vi.mock('@/app/api/ai/chat/tools/dividends', () => ({
     fetchDividendSource: m.source,
 }));
-vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
-    resolveMarketProfile: m.profileOf,
+vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+    resolveAssetInfoOrNull: m.assetOf,
 }));
 
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     buildDividendsBlock,
     DIVIDEND_YEARS_MAX,
@@ -28,9 +29,15 @@ const ev = (exDate: string, amount: number) => ({
     payDate: null,
 });
 
+const asset = (marketProfile?: MarketProfileId) => ({
+    symbol: 'X',
+    name: 'X Inc',
+    ...(marketProfile ? { marketProfile } : {}),
+});
+
 beforeEach(() => {
     Object.values(m).forEach(fn => fn.mockReset());
-    m.profileOf.mockResolvedValue('us-equity');
+    m.assetOf.mockResolvedValue(asset('us-equity'));
 });
 
 describe('dividendYearsFrom', () => {
@@ -107,8 +114,19 @@ describe('buildDividendsBlock', () => {
         });
     });
 
+    it('자산 조회가 null이어도 블록을 만들고 통화는 기본 시장(USD)으로 내려간다', async () => {
+        m.assetOf.mockResolvedValue(null);
+        m.source.mockResolvedValue({
+            kind: 'fmp',
+            rows: [ev('2026-04-01', 0.52)],
+        });
+        const out = await buildDividendsBlock('ZZZZ', env);
+        if ('error' in out) throw new Error(out.reason);
+        expect(out.block).toMatchObject({ kind: 'dividends', currency: 'USD' });
+    });
+
     it('한국: Yahoo 이력(원 단위)으로 만든다', async () => {
-        m.profileOf.mockResolvedValue('kr-equity');
+        m.assetOf.mockResolvedValue(asset('kr-equity'));
         m.source.mockResolvedValue({
             kind: 'yahoo',
             data: {

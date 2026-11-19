@@ -6,13 +6,13 @@ const m = vi.hoisted(() => ({
     tabAllowed: vi.fn(),
     incomeStatements: vi.fn(),
     reportedEps: vi.fn(),
-    profileOf: vi.fn(),
+    assetOf: vi.fn(),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: m.tabAllowed,
 }));
-vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
-    resolveMarketProfile: m.profileOf,
+vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+    resolveAssetInfoOrNull: m.assetOf,
 }));
 vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
     getFinancialStatementsProvider: () => ({
@@ -34,6 +34,7 @@ import {
     FINANCIAL_QUARTERS_MAX,
     financialsQuartersFrom,
 } from '@/app/api/ai/chat/tools/visualBlocks/financials';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { VisualBuildEnv } from '@/app/api/ai/chat/tools/visualBlocks/types';
 
 const env: VisualBuildEnv = {
@@ -66,10 +67,16 @@ const row = (
     ...over,
 });
 
+const asset = (marketProfile?: MarketProfileId) => ({
+    symbol: 'X',
+    name: 'X Inc',
+    ...(marketProfile ? { marketProfile } : {}),
+});
+
 beforeEach(() => {
     Object.values(m).forEach(fn => fn.mockReset());
     m.tabAllowed.mockResolvedValue(true);
-    m.profileOf.mockResolvedValue('us-equity');
+    m.assetOf.mockResolvedValue(asset('us-equity'));
     m.reportedEps.mockResolvedValue([]);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
@@ -156,6 +163,17 @@ describe('buildFinancialsBlock', () => {
                 { period: '2026 Q1' },
                 { period: '2026 Q2', epsActual: 1.1, epsEstimated: 1.0 },
             ],
+        });
+    });
+
+    it('자산 조회가 null이어도 블록을 만들고 통화는 기본 시장(USD)으로 내려간다', async () => {
+        m.assetOf.mockResolvedValue(null);
+        m.incomeStatements.mockResolvedValue([row('2026-06-30', '2026', 'Q2')]);
+        const out = await buildFinancialsBlock('ZZZZ', env);
+        if ('error' in out) throw new Error(out.reason);
+        expect(out.block).toMatchObject({
+            kind: 'financials',
+            currency: 'USD',
         });
     });
 

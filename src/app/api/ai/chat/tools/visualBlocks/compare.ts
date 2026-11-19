@@ -5,7 +5,7 @@ import type {
     ChatCompareBlock,
     ChatCompareChartPeriod,
 } from '@/entities/chat-conversation/types';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
@@ -74,10 +74,10 @@ export function compareSeriesFrom(
 
 async function loadDailyBars(symbol: string): Promise<readonly Bar[] | null> {
     try {
-        const [profile, asset] = await Promise.all([
-            resolveMarketProfile(symbol),
-            resolveAssetInfoOrNull(symbol, 'show_chart'),
-        ]);
+        // 시장 프로필은 이미 받는 자산 정보에서 정한다 — 따로 `resolveMarketProfile`을 부르면 자산 조회가 던질 때
+        // (모르는 종목·FMP 장애) 그 종목 전체가 빠져, 두 종목 비교가 한 종목으로 줄어 그림이 사라졌다.
+        const asset = await resolveAssetInfoOrNull(symbol, 'show_chart');
+        const profile = marketProfileForAssetInfo(asset);
         const session = sessionSpecFor(profile);
         const { bars } = await getCachedBarsWithIndicators(
             getCachedMarketDataProvider(session),

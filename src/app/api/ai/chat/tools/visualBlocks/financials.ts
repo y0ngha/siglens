@@ -7,7 +7,8 @@ import type {
 } from '@/entities/chat-conversation/types';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '../resolveAssetInfo';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { MS_PER_DAY } from '@/shared/config/time';
@@ -105,7 +106,10 @@ export async function buildFinancialsBlock(
             FINANCIAL_QUARTERS_MAX
         ),
         loadReportedEps(symbol, env.now),
-        resolveMarketProfile(symbol),
+        // 통화를 정하는 데만 쓴다 — 자산 조회가 실패해도 그림 전체를 버리지 않고 기본 시장으로 내려간다.
+        resolveAssetInfoOrNull(symbol, 'show_chart').then(
+            marketProfileForAssetInfo
+        ),
     ]);
     const quarters = financialsQuartersFrom(rows, reported);
     if (quarters.length === 0) return noData('no_quarterly_statements');
