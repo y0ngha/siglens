@@ -412,6 +412,15 @@ Pin the fix with inputs that almost match its guard, not only the one the review
 - ❌ The test feeds only input with no closing token at all.
 - ✅ It also feeds prefix-only closers (`</scriptx>`, `</track>`, `</header>`) at the size cap.
 
+<a id="TE-61"></a>
+
+#### TE-61 — An E2E for a rendered image asserts it loaded, not only that it is visible
+
+`toBeVisible()` passes for a broken `<img>`, and jsdom unit tests do not enforce CSP. Assert `naturalWidth > 0` for every image source the feature introduces (preview, live, stored). See `src/app/CLAUDE.md#AP-7` for the CSP side.
+
+- ❌ `await expect(img).toBeVisible()` while a CSP-blocked `blob:` thumbnail renders as a broken image.
+- ✅ `expect(await img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0)`.
+
 ## Time, Flakes & Isolation
 
 <a id="TE-7"></a>

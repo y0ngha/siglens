@@ -6,6 +6,7 @@ import {
     boolean,
     char,
     check,
+    customType,
     date,
     doublePrecision,
     index,
@@ -1229,6 +1230,43 @@ export const chatMessages = pgTable(
         uniqueIndex('chat_messages_conversation_seq_uq').on(
             table.conversationId,
             table.seq
+        ),
+    ]
+);
+
+/** Postgres `bytea` ↔ Node `Buffer`. drizzle-orm에 내장 bytea 컬럼이 없어 직접 정의한다. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+    dataType: () => 'bytea',
+});
+
+/**
+ * 사용자 메시지에 첨부한 이미지(서버가 정규화한 WebP). 메시지(→ 대화 → 계정)가 지워지면 cascade로
+ * 함께 지워진다. 행은 불변이지만 조회 라우트는 영구 캐시를 걸지 않는다 — 소유자 확인이 매 요청 돌아야 하므로
+ * `private, no-cache` + ETag(304)로 재검증한다(로그아웃·계정 전환 뒤 브라우저 캐시로 남의 이미지가 보이지 않게).
+ * 모델 기록에는 `data`를 읽지 않는다 — 목록·기록 조회는 `id`·크기 컬럼만 고른다.
+ */
+export const chatMessageImages = pgTable(
+    'chat_message_images',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        messageId: uuid('message_id')
+            .notNull()
+            .references(() => chatMessages.id, { onDelete: 'cascade' }),
+        /** 한 메시지 안의 순서(0부터, 최대 3). */
+        position: smallint('position').notNull(),
+        mediaType: varchar('media_type', { length: 32 }).notNull(),
+        width: integer('width').notNull(),
+        height: integer('height').notNull(),
+        byteSize: integer('byte_size').notNull(),
+        data: bytea('data').notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        uniqueIndex('chat_message_images_message_position_uq').on(
+            table.messageId,
+            table.position
         ),
     ]
 );

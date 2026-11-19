@@ -40,6 +40,22 @@ export function toOpenAiChatMessages(
                 })),
             };
         }
+        if (m.role === 'user' && m.images && m.images.length > 0)
+            return {
+                role: 'user',
+                content: [
+                    // 글 없이 이미지만 보낸 턴은 빈 text 파트를 만들지 않는다(일부 엔드포인트가 거절한다).
+                    ...(m.content === ''
+                        ? []
+                        : [{ type: 'text' as const, text: m.content }]),
+                    ...m.images.map(image => ({
+                        type: 'image_url' as const,
+                        image_url: {
+                            url: `data:${image.mediaType};base64,${image.data}`,
+                        },
+                    })),
+                ],
+            };
         return { role: m.role, content: m.content };
     });
 }

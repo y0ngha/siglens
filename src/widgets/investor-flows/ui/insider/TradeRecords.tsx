@@ -10,11 +10,11 @@ import { formatCompact, formatUsdCompact } from '../../utils/flowFormat';
 import { shortRole } from '../../utils/insider';
 import { insiderTradeKey } from '../../utils/insiderTradeKey';
 import { FilingLink } from '../filings/FilingLink';
-import { CardFieldList } from '../tables/CardFieldList';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
-} from '../tables/ResponsiveRecordList';
+} from '@/shared/ui/ResponsiveRecordList';
 import { TypeBadge } from './TypeBadge';
 
 interface TradeRecordsProps {

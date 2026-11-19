@@ -13,11 +13,11 @@ import {
 import { krDisclosureKey } from '../../utils/krDisclosures';
 import type { MajorHolderRowData } from '../../utils/krMajorHolders';
 import { DartFilingLink } from '../filings/DartFilingLink';
-import { CardFieldList } from '../tables/CardFieldList';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
-} from '../tables/ResponsiveRecordList';
+} from '@/shared/ui/ResponsiveRecordList';
 import { FormBadge } from './FormBadge';
 
 /** 보유비율 증감(%p)의 소수 자리 — DART가 소수 둘째 자리까지 준다. */

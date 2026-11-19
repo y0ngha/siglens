@@ -13,6 +13,8 @@ import type { AgentClientErrorCode } from '@/features/agent-chat/lib/errorCodes'
  */
 export const AGENT_ERROR_RETRYABLE: Record<AgentClientErrorCode, boolean> = {
     invalid_body: false,
+    invalid_image: false,
+    too_large: false,
     unauthenticated: false,
     bot: false,
     not_found: false,

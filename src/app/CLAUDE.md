@@ -238,6 +238,14 @@ route의 `generateMetadata`가 필드(description, robots, canonical …)를 빼
   헤더와 비교하면 대소문자 불일치에서 루프 가드가 깨진다.
 - 경로 가드 목록(`AUTH_REQUIRED_PATHS` 등)은 한 곳을 단일 소스로 두고 다른 가드가 공유한다.
 
+<a id="AP-7"></a>
+
+#### AP-7 — 새 URL 스킴·출처를 로드하는 UI는 같은 변경에서 호스트 CSP를 갱신한다
+
+`blob:`, `data:`, 새 CDN 같은 출처를 `<img>`·`fetch` 등으로 처음 로드하면 해당 호스트의 CSP(`src/proxy.ts`의 `img-src` 등)에 같은 변경으로 추가하고 proxy 테스트를 갱신한다. 단위 테스트(jsdom)는 CSP를 강제하지 않아 통과한 채로 화면은 깨진 이미지가 된다. E2E는 `naturalWidth > 0`으로 실제 로드를 단언한다(`TESTING.md#TE-61`).
+❌ `blob:` 미리보기를 추가하고 `img-src`는 그대로 둔다.
+✅ `img-src`에 `blob:`을 이유와 함께 추가하고 proxy 테스트가 이를 고정한다.
+
 ---
 
 ## Next.js 16 Notes

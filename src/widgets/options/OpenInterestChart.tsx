@@ -6,10 +6,7 @@
  */
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import type {
-    OptionsExpirationMetrics,
-    StrikeOpenInterest,
-} from '@y0ngha/siglens-core';
+import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
@@ -17,7 +14,7 @@ import { useStrikeBarChart } from './hooks/useStrikeBarChart';
 import { STRIKE_CHART_ELEMENT_IDS } from './utils/chartElementIds';
 import { formatCompactCount } from './utils/formatCompactCount';
 import { buildOpenInterestChartModel } from './utils/openInterestChartModel';
-import { OpenInterestTooltip } from './utils/optionsTooltips';
+import { OpenInterestTooltip } from './utils/openInterestTooltips';
 import { BAR_OPACITY, SVG_HEIGHT, SVG_WIDTH } from './utils/strikeChartLayout';
 import { OpenInterestLegend } from './ui/oi-chart/OpenInterestLegend';
 import { OpenInterestTooltipBody } from './ui/oi-chart/OpenInterestTooltipBody';
@@ -34,8 +31,8 @@ interface OpenInterestChartProps {
     underlyingPrice: number;
     /** Per-strike OI for the selected expiration; empty when there is no chain. */
     oiByStrike: ReadonlyArray<StrikeOpenInterest>;
-    /** Pre-computed metrics — `maxPain` drives the dashed guide line. */
-    metrics: OptionsExpirationMetrics | null;
+    /** Max Pain strike — drives the dashed guide line; `null` when unknown. */
+    maxPain: number | null;
     /**
      * `true` when the OI snapshot is stale. Max Pain is then untrustworthy (the
      * metrics row hides it), so the guide line and legend entry are omitted
@@ -53,7 +50,7 @@ const IDS = STRIKE_CHART_ELEMENT_IDS.openInterest;
 export function OpenInterestChart({
     underlyingPrice,
     oiByStrike,
-    metrics,
+    maxPain: maxPainStrike,
     oiStale,
 }: OpenInterestChartProps) {
     const t = useTranslations('widgets.options');
@@ -66,7 +63,7 @@ export function OpenInterestChart({
         handlePointerLeave,
     } = useStrikeBarChart();
 
-    const maxPain = oiStale ? null : (metrics?.maxPain ?? null);
+    const maxPain = oiStale ? null : maxPainStrike;
     // 같은 메모 경계에서 라벨 인덱스 Set까지 만들어 hover state 변화에
     // Set이 재생성되지 않게 한다(REACT.md#CR-1).
     const model = useMemo(

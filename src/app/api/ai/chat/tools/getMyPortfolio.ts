@@ -45,7 +45,7 @@ const QUOTE_CONCURRENCY = 5;
  */
 const STALE_FRESHNESS_DETAIL_LIMIT = 5;
 
-interface HoldingView {
+export interface HoldingView {
     symbol: string;
     companyName: string | null;
     quantity: number;
@@ -76,7 +76,7 @@ interface HoldingView {
     weightPct: number | null;
 }
 
-interface CurrencyTotal {
+export interface CurrencyTotal {
     currency: string;
     marketValue: number | null;
     costBasis: number;
@@ -223,6 +223,17 @@ function rawCurrencyTotal(
     };
 }
 
+/** `get_my_portfolio`의 결과 모양. */
+export interface MyPortfolioView {
+    asOf: string;
+    source: string;
+    count: number;
+    stalePriceCount?: number;
+    holdings: HoldingView[];
+    totals: CurrencyTotal[];
+    weightScope?: 'currency';
+}
+
 /**
  * The signed-in user's own holdings (R9), with quote-derived P/L (spec §3.3,
  * audit B5) — the model used to be handed raw qty × avg price and had to
@@ -244,10 +255,12 @@ function rawCurrencyTotal(
  * percent fields (dayChangePct/pnlPct/weightPct) keep
  * `roundNumber`/`pctVs`/`ratioPct` as before — only the money path changed.
  */
-export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
+export async function loadMyPortfolio(
+    userId: string
+): Promise<MyPortfolioView> {
     const rows = await new DrizzlePortfolioRepository(
         getDatabaseClient().db
-    ).findByUser(ctx.userId);
+    ).findByUser(userId);
 
     // withConcurrencyLimit settles every call rather than rejecting on the
     // first failure, so the previous Promise.all semantics are rebuilt by
@@ -355,4 +368,8 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
         totals,
         ...(currencies.length > 1 ? { weightScope: 'currency' as const } : {}),
     };
-};
+}
+
+/** 모델이 받는 보유종목 결과 — `show_chart`(`portfolio`)가 같은 로더를 쓴다. */
+export const getMyPortfolioTool: ToolExecutor = (_args, ctx) =>
+    loadMyPortfolio(ctx.userId);

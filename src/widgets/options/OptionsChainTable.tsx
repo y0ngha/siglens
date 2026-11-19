@@ -12,7 +12,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { ClientOptionsChain } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { OpenInterestTooltip } from './utils/optionsTooltips';
+import { OpenInterestTooltip } from './utils/openInterestTooltips';
 import {
     formatBidAsk,
     formatIv,

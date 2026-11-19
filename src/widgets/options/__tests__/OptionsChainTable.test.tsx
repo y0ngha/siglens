@@ -13,7 +13,7 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
     ),
 }));
 
-vi.mock('@/widgets/options/utils/optionsTooltips', () => ({
+vi.mock('@/widgets/options/utils/openInterestTooltips', () => ({
     OpenInterestTooltip: 'OI',
 }));
 

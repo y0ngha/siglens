@@ -1,6 +1,6 @@
 import 'server-only';
 import type { AgentTurnEvent } from '@y0ngha/siglens-core';
-import type { ChatChartBlock } from '@/entities/chat-conversation/types';
+import type { ChatBlock } from '@/entities/chat-conversation/types';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
 
@@ -16,7 +16,7 @@ export class AgentTurnError extends Error {
 interface AgentChartEvent {
     type: 'chart';
     id: string;
-    block: ChatChartBlock;
+    block: ChatBlock;
 }
 
 /** SSE로 나가는 이벤트: core 턴 이벤트와 실행부의 차트 프레임. */

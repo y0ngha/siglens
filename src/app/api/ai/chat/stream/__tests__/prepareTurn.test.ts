@@ -6,6 +6,8 @@ const { repo, portfolio, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
         findForUser: vi.fn(),
         listMessages: vi.fn(),
         appendMessages: vi.fn(),
+        appendUserMessage: vi.fn(),
+        listImagesOfMessage: vi.fn(),
         countForUser: vi.fn(),
         supersedeAfterLastUser: vi.fn(),
         deleteFromSeq: vi.fn(),
@@ -57,7 +59,16 @@ const sendBody = (conversationId: string | null = 'c1'): ParsedBody => ({
     message: 'hello',
     action: 'send',
     history: [],
+    images: [],
 });
+
+const IMG = (n: number) => ({
+    mediaType: 'image/webp' as const,
+    bytes: Buffer.alloc(n, 1),
+    width: n,
+    height: n,
+});
+const REF = { id: 'img-1', width: 4, height: 4 };
 
 describe('guestTurn', () => {
     it('브라우저가 보낸 기록을 기록으로 쓰고 DB 필드는 비운다', () => {
@@ -66,6 +77,7 @@ describe('guestTurn', () => {
             repo: null,
             conversationId: null,
             userMessage: 'hello',
+            userImages: [],
             userMessageId: null,
             userMessageSeq: null,
             history,
@@ -95,6 +107,8 @@ describe('prepareMemberTurn', () => {
         repo.listMessages.mockResolvedValue([]);
         repo.supersedeAfterLastUser.mockResolvedValue({});
         repo.appendMessages.mockResolvedValue([{ id: 'u-1', seq: 1 }]);
+        repo.appendUserMessage.mockResolvedValue({ id: 'u-1', seq: 1 });
+        repo.listImagesOfMessage.mockResolvedValue([IMG(7)]);
         portfolio.findByUser.mockResolvedValue([{ symbol: 'AAPL' }]);
     });
 
@@ -128,7 +142,7 @@ describe('prepareMemberTurn', () => {
         expect(
             await prepareMemberTurn('u1', sendBody(), 'member', 'ko')
         ).toEqual({ status: 409, error: 'conversation_full' });
-        expect(repo.appendMessages).not.toHaveBeenCalled();
+        expect(repo.appendUserMessage).not.toHaveBeenCalled();
     });
 
     it('기존 대화 send: 사용자 행을 저장하고 id·seq·포트폴리오를 싣는다', async () => {
@@ -144,9 +158,7 @@ describe('prepareMemberTurn', () => {
             userMessageSeq: 1,
             portfolioSymbols: ['AAPL'],
         });
-        expect(repo.appendMessages).toHaveBeenCalledWith('c1', [
-            { role: 'user', content: 'hello' },
-        ]);
+        expect(repo.appendUserMessage).toHaveBeenCalledWith('c1', 'hello', []);
     });
 
     it('새 대화 send: 대화를 만들고 제목을 싣는다', async () => {
@@ -160,6 +172,7 @@ describe('prepareMemberTurn', () => {
         expect(repo.create).toHaveBeenCalledWith({
             userId: 'u1',
             firstMessage: 'hello',
+            hasImages: false,
             locale: 'ko',
             modelId: AGENT_MODEL,
         });
@@ -181,7 +194,8 @@ describe('prepareMemberTurn', () => {
                 { role: 'assistant', content: 'a1' },
             ],
         });
-        expect(repo.appendMessages).not.toHaveBeenCalled();
+        expect(repo.appendUserMessage).not.toHaveBeenCalled();
+        expect(repo.listImagesOfMessage).not.toHaveBeenCalled();
     });
 
     it('regenerate: 대체할 사용자 행이 없으면 400 invalid_body', async () => {
@@ -217,16 +231,168 @@ describe('prepareMemberTurn', () => {
     });
 
     it('저장 중 대화가 삭제되면(FK 위반) 404 not_found', async () => {
-        repo.appendMessages.mockRejectedValue({ cause: { code: '23503' } });
+        repo.appendUserMessage.mockRejectedValue({ cause: { code: '23503' } });
         expect(
             await prepareMemberTurn('u1', sendBody(), 'member', 'ko')
         ).toEqual({ status: 404, error: 'not_found' });
     });
 
     it('FK 위반이 아닌 저장 오류는 그대로 던진다', async () => {
-        repo.appendMessages.mockRejectedValue(new Error('db down'));
+        repo.appendUserMessage.mockRejectedValue(new Error('db down'));
         await expect(
             prepareMemberTurn('u1', sendBody(), 'member', 'ko')
         ).rejects.toThrow('db down');
+    });
+
+    describe('이미지', () => {
+        const withImages = (over: Partial<ParsedBody>): ParsedBody =>
+            ({ ...sendBody(), ...over }) as ParsedBody;
+
+        it('send: 정규화한 이미지를 user 행과 함께 저장하고 모델 입력에도 싣는다', async () => {
+            const images = [IMG(2), IMG(3)];
+            const out = await prepareMemberTurn(
+                'u1',
+                sendBody(),
+                'member',
+                'ko',
+                images
+            );
+            expect(repo.appendUserMessage).toHaveBeenCalledWith(
+                'c1',
+                'hello',
+                images
+            );
+            expect(out).toMatchObject({ userImages: images });
+        });
+
+        it('새 대화 send: 이미지가 있으면 hasImages로 제목을 정한다', async () => {
+            await prepareMemberTurn('u1', sendBody(null), 'member', 'ko', [
+                IMG(1),
+            ]);
+            expect(repo.create).toHaveBeenCalledWith(
+                expect.objectContaining({ hasImages: true })
+            );
+        });
+
+        it('저장 실패는 던져 턴이 시작되지 않는다(이미지 없이 저장하는 폴백 없음)', async () => {
+            repo.appendUserMessage.mockRejectedValue(new Error('image insert'));
+            await expect(
+                prepareMemberTurn('u1', sendBody(), 'member', 'ko', [IMG(1)])
+            ).rejects.toThrow('image insert');
+            expect(repo.appendMessages).not.toHaveBeenCalled();
+        });
+
+        it('regenerate: 마지막 user 행의 이미지를 DB에서 다시 읽어 싣는다', async () => {
+            repo.listMessages.mockResolvedValue([
+                { ...ROW(1, 'user', 'q1'), images: [REF] },
+                ROW(2, 'assistant', 'a1'),
+            ]);
+            const stored = [IMG(5)];
+            repo.listImagesOfMessage.mockResolvedValue(stored);
+            const out = await prepareMemberTurn(
+                'u1',
+                withImages({ action: 'regenerate' }),
+                'member',
+                'ko'
+            );
+            expect(repo.listImagesOfMessage).toHaveBeenCalledWith('m1');
+            expect(out).toMatchObject({
+                userMessage: 'q1',
+                userImages: stored,
+            });
+            expect(repo.appendUserMessage).not.toHaveBeenCalled();
+        });
+
+        it('regenerate: 이미지가 없던 질문은 이미지를 읽지 않는다', async () => {
+            repo.listMessages.mockResolvedValue([
+                { ...ROW(1, 'user', 'q1'), images: [] },
+                ROW(2, 'assistant', 'a1'),
+            ]);
+            const out = await prepareMemberTurn(
+                'u1',
+                withImages({ action: 'regenerate' }),
+                'member',
+                'ko'
+            );
+            expect(repo.listImagesOfMessage).not.toHaveBeenCalled();
+            expect(out).toMatchObject({ userImages: [] });
+        });
+
+        it('edit: 대상 행의 이미지를 지우기 전에 읽어 새 user 행에 다시 저장한다', async () => {
+            repo.listMessages.mockResolvedValue([
+                { ...ROW(1, 'user', 'q1'), images: [REF] },
+                ROW(2, 'assistant', 'a1'),
+            ]);
+            const stored = [IMG(6)];
+            repo.listImagesOfMessage.mockResolvedValue(stored);
+            await prepareMemberTurn(
+                'u1',
+                withImages({ action: 'edit', editSeq: 1, message: '수정' }),
+                'member',
+                'ko'
+            );
+            const readOrder =
+                repo.listImagesOfMessage.mock.invocationCallOrder[0];
+            const deleteOrder = repo.deleteFromSeq.mock.invocationCallOrder[0];
+            expect(readOrder).toBeDefined();
+            expect(deleteOrder).toBeDefined();
+            expect(readOrder ?? Infinity).toBeLessThan(deleteOrder ?? 0);
+            expect(repo.listImagesOfMessage).toHaveBeenCalledWith('m1');
+            expect(repo.appendUserMessage).toHaveBeenCalledWith(
+                'c1',
+                '수정',
+                stored
+            );
+        });
+
+        it('edit: 대화 전체 읽기는 한 번뿐이고 이력은 편집 행 앞까지만 남긴다', async () => {
+            repo.listMessages.mockResolvedValue([
+                ROW(1, 'user', 'q1'),
+                ROW(2, 'assistant', 'a1'),
+                { ...ROW(3, 'user', 'q2'), images: [REF] },
+                ROW(4, 'assistant', 'a2'),
+            ]);
+            repo.listImagesOfMessage.mockResolvedValue([IMG(6)]);
+            const out = await prepareMemberTurn(
+                'u1',
+                withImages({ action: 'edit', editSeq: 3, message: '수정' }),
+                'member',
+                'ko'
+            );
+            expect(repo.listMessages).toHaveBeenCalledTimes(1);
+            expect(repo.listImagesOfMessage).toHaveBeenCalledWith('m3');
+            expect(out).toMatchObject({
+                history: [
+                    { role: 'user', content: 'q1' },
+                    { role: 'assistant', content: 'a1' },
+                ],
+            });
+        });
+
+        it('edit: 본문에 이미지가 있으면 승계하지 않고 그것으로 대체한다', async () => {
+            repo.listMessages.mockResolvedValue([
+                { ...ROW(1, 'user', 'q1'), images: [REF] },
+                ROW(2, 'assistant', 'a1'),
+            ]);
+            const fresh = [IMG(9)];
+            await prepareMemberTurn(
+                'u1',
+                withImages({ action: 'edit', editSeq: 1, message: '수정' }),
+                'member',
+                'ko',
+                fresh
+            );
+            expect(repo.listImagesOfMessage).not.toHaveBeenCalled();
+            expect(repo.appendUserMessage).toHaveBeenCalledWith(
+                'c1',
+                '수정',
+                fresh
+            );
+        });
+
+        it('guestTurn: 본문 이미지를 그대로 싣는다', () => {
+            const images = [IMG(2)];
+            expect(guestTurn(sendBody(null), images).userImages).toBe(images);
+        });
     });
 });

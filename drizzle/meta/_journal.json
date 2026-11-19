@@ -407,6 +407,13 @@
       "when": 1794876952239,
       "tag": "0057_agent_chat_chart",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795055605019,
+      "tag": "0058_agent_chat_images",
+      "breakpoints": true
     }
   ]
 }

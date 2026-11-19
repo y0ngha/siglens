@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { CardFieldList } from '../../../ui/tables/CardFieldList';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
 
 describe('CardFieldList', () => {
     it('라벨은 dt, 값은 dd로 짝지어 보인다', () => {

@@ -1,10 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { followUpLine } from '@/app/api/ai/chat/followUps';
 import {
     GUEST_HISTORY_MESSAGE_MAX_CHARS,
     parseBody,
 } from '@/app/api/ai/chat/stream/_lib/parseBody';
 import { MESSAGE_MAX_CHARS } from '@/features/agent-chat/lib/messageLimits';
+import {
+    CHAT_IMAGE_DECODED_MAX_BYTES,
+    CHAT_IMAGES_PER_MESSAGE_MAX,
+} from '@/shared/config/chatImages';
+
+const png = (bytes = 8) => ({
+    mediaType: 'image/png',
+    data: Buffer.alloc(bytes, 7).toString('base64'),
+});
 
 describe('parseBody', () => {
     it('action 생략 시 send로 해석한다', () => {
@@ -13,6 +22,7 @@ describe('parseBody', () => {
             message: 'hi',
             action: 'send',
             history: [],
+            images: [],
         });
     });
 
@@ -143,5 +153,167 @@ describe('parseBody', () => {
             history: [{ role: 'user', content: 'q', followUps: ['a'] }],
         });
         expect(parsed?.history[0]?.content).toBe('q');
+    });
+    describe('이미지', () => {
+        it('이미지가 있으면 빈 메시지도 받고 디코드하지 않은 base64 문자열을 싣는다', () => {
+            const parsed = parseBody({ message: '', images: [png(8)] });
+            expect(parsed?.message).toBe('');
+            expect(parsed?.images).toEqual([png(8).data]);
+        });
+
+        it('검증 중에는 이미지를 디코드(Buffer 할당)하지 않는다', () => {
+            const from = vi.spyOn(Buffer, 'from');
+            const parsed = parseBody({
+                message: 'x',
+                images: [png(CHAT_IMAGE_DECODED_MAX_BYTES)],
+            });
+            const decodeCalls = from.mock.calls.filter(
+                (call: readonly unknown[]) => call[1] === 'base64'
+            );
+            from.mockRestore();
+            expect(parsed?.images.every(i => typeof i === 'string')).toBe(true);
+            expect(decodeCalls).toHaveLength(0);
+        });
+
+        it('이미지도 글도 없으면 거절한다', () => {
+            expect(parseBody({ message: '  ', images: [] })).toBeNull();
+        });
+
+        it('이미지가 있어도 글이 상한을 넘으면 거절한다', () => {
+            expect(
+                parseBody({
+                    message: 'a'.repeat(MESSAGE_MAX_CHARS + 1),
+                    images: [png()],
+                })
+            ).toBeNull();
+        });
+
+        it('4장은 받고 5장은 거절한다', () => {
+            const four = Array.from(
+                { length: CHAT_IMAGES_PER_MESSAGE_MAX },
+                () => png()
+            );
+            expect(
+                parseBody({ message: 'x', images: four })?.images
+            ).toHaveLength(4);
+            expect(
+                parseBody({ message: 'x', images: [...four, png()] })
+            ).toBeNull();
+        });
+
+        it('base64가 아닌 값·data: 접두사·줄바꿈은 거절한다', () => {
+            const bad = [
+                'not base64!',
+                'data:image/png;base64,AAAA',
+                'AAAA\nAAAA',
+                'AAA',
+            ];
+            bad.forEach(data => {
+                expect(
+                    parseBody({
+                        message: 'x',
+                        images: [{ mediaType: 'image/png', data }],
+                    })
+                ).toBeNull();
+            });
+        });
+
+        it('허용하지 않는 mediaType·모양은 거절한다', () => {
+            expect(
+                parseBody({
+                    message: 'x',
+                    images: [{ mediaType: 'image/svg+xml', data: png().data }],
+                })
+            ).toBeNull();
+            expect(parseBody({ message: 'x', images: ['AAAA'] })).toBeNull();
+            expect(parseBody({ message: 'x', images: 'AAAA' })).toBeNull();
+        });
+
+        it('디코드 후 10MB 이하는 받고 초과는 거절한다', () => {
+            expect(
+                parseBody({
+                    message: 'x',
+                    images: [png(CHAT_IMAGE_DECODED_MAX_BYTES)],
+                })?.images
+            ).toHaveLength(1);
+            expect(
+                parseBody({
+                    message: 'x',
+                    images: [png(CHAT_IMAGE_DECODED_MAX_BYTES + 1)],
+                })
+            ).toBeNull();
+        });
+
+        it('edit는 이미지를 읽고 regenerate는 이미지가 실려 오면 거절한다', () => {
+            expect(
+                parseBody({
+                    action: 'edit',
+                    editSeq: 2,
+                    message: 'x',
+                    images: [png()],
+                })?.images
+            ).toHaveLength(1);
+            expect(
+                parseBody({ action: 'regenerate', images: [png()] })
+            ).toBeNull();
+            expect(parseBody({ action: 'regenerate' })?.images).toEqual([]);
+        });
+
+        it('게스트 기록: imageCount가 있는 user 항목은 끝 줄에 첨부 표식이 붙는다', () => {
+            const parsed = parseBody({
+                message: 'x',
+                history: [
+                    { role: 'user', content: '이거 어때?', imageCount: 2 },
+                ],
+            });
+            expect(parsed?.history[0]?.content).toBe(
+                '이거 어때?\n[attached images: 2]'
+            );
+        });
+
+        it('게스트 기록: 글 없이 이미지만 있던 user 항목은 표식만 남는다', () => {
+            const parsed = parseBody({
+                message: 'x',
+                history: [{ role: 'user', content: '', imageCount: 1 }],
+            });
+            expect(parsed?.history).toEqual([
+                { role: 'user', content: '[attached images: 1]' },
+            ]);
+        });
+
+        it('게스트 기록: 긴 글이어도 표식 줄은 잘리지 않고 상한을 넘지 않는다', () => {
+            const parsed = parseBody({
+                message: 'x',
+                history: [
+                    {
+                        role: 'user',
+                        content: 'z'.repeat(GUEST_HISTORY_MESSAGE_MAX_CHARS),
+                        imageCount: 3,
+                    },
+                ],
+            });
+            const content = parsed?.history[0]?.content ?? '';
+            expect(content).toHaveLength(GUEST_HISTORY_MESSAGE_MAX_CHARS);
+            expect(content.endsWith('\n[attached images: 3]')).toBe(true);
+        });
+
+        it('게스트 기록: imageCount가 0·음수·소수·5 이상·assistant면 거절한다', () => {
+            [0, -1, 1.5, 5, '2'].forEach(imageCount => {
+                expect(
+                    parseBody({
+                        message: 'x',
+                        history: [{ role: 'user', content: 'q', imageCount }],
+                    })
+                ).toBeNull();
+            });
+            expect(
+                parseBody({
+                    message: 'x',
+                    history: [
+                        { role: 'assistant', content: 'a', imageCount: 1 },
+                    ],
+                })
+            ).toBeNull();
+        });
     });
 });

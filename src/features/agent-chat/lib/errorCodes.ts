@@ -7,6 +7,8 @@ import type { AgentErrorCode } from '@y0ngha/siglens-core';
  */
 const HTTP_STAGE_CODES = [
     'invalid_body',
+    'invalid_image',
+    'too_large',
     'unauthenticated',
     'bot',
     'not_found',

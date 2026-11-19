@@ -1,5 +1,6 @@
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import type { AgentUiMessage, ToolActivityItem } from '../model/types';
+import { storedImageSrc } from './prepareChatImage';
 
 /** A `tool` row's result is shown as the chip's summary, clipped to this many characters. */
 const TOOL_SUMMARY_MAX_CHARS = 120;
@@ -104,6 +105,15 @@ function foldView(out: AgentUiMessage[], v: ChatMessageView): AgentUiMessage[] {
             tools: [],
             status: uiStatusOf(v),
             ...(v.followUps ? { followUps: v.followUps } : {}),
+            // 저장된 이미지는 서버가 보관한다 — 조회 경로만 알면 되고 payload는 없다.
+            ...(v.images && v.images.length > 0
+                ? {
+                      images: v.images.map(image => ({
+                          ...image,
+                          src: storedImageSrc(image.id),
+                      })),
+                  }
+                : {}),
         },
     ];
 }

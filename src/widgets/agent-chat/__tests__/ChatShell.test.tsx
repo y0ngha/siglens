@@ -898,7 +898,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         const textarea = screen.getByRole('textbox');
         fireEvent.change(textarea, { target: { value: '새 메시지' } });
         fireEvent.keyDown(textarea, { key: 'Enter' });
-        expect(mockStream.send).toHaveBeenCalledWith('새 메시지');
+        expect(mockStream.send).toHaveBeenCalledWith('새 메시지', []);
     });
 
     it('conversationId prop이 바뀌면 MessageList가 리마운트되어 다시 맨 아래로 점프한다', () => {

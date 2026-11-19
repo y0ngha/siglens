@@ -5,7 +5,7 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     CallOpenInterestTooltip,
     PutOpenInterestTooltip,
-} from '../../utils/optionsTooltips';
+} from '../../utils/openInterestTooltips';
 import { StrikeChartLegend } from '../strike-chart/StrikeChartLegend';
 import { StrikeLegendItem } from '../strike-chart/StrikeLegendItem';
 

@@ -30,6 +30,8 @@ export function useAgentErrorCopy(
     const t = useTranslations('widgets.agent-chat');
     const messageByCode: Record<AgentClientErrorCode, string> = {
         invalid_body: t('ChatShell.errorInvalidBody'),
+        invalid_image: t('ChatShell.errorInvalidImage'),
+        too_large: t('ChatShell.errorTooLarge'),
         unauthenticated: t('ChatShell.errorUnauthenticated'),
         bot: t('ChatShell.errorBot'),
         not_found: t('ChatShell.errorNotFound'),

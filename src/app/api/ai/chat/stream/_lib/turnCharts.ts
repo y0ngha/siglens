@@ -1,5 +1,5 @@
 import 'server-only';
-import type { ChatChartBlock } from '@/entities/chat-conversation/types';
+import type { ChatBlock } from '@/entities/chat-conversation/types';
 import type { ChartToolCall } from '@/app/api/ai/chat/tools/chatTools';
 
 /**
@@ -11,25 +11,22 @@ import type { ChartToolCall } from '@/app/api/ai/chat/tools/chatTools';
  */
 export interface TurnCharts {
     /** 실행기가 블록을 냈다(`onChart`). */
-    register: (
-        call: ChartToolCall,
-        pending: Promise<ChatChartBlock | null>
-    ) => void;
+    register: (call: ChartToolCall, pending: Promise<ChatBlock | null>) => void;
     /** `tool_start` — 이 호출 id를 이름·인자에 묶는다. */
     started: (id: string, name: string, args: Record<string, unknown>) => void;
     /** 성공한 `tool_end` — 그 호출의 블록이 준비되면 `emit`한다(블록이 없으면 아무것도 하지 않는다). */
-    ended: (id: string, emit: (block: ChatChartBlock) => void) => void;
+    ended: (id: string, emit: (block: ChatBlock) => void) => void;
     /** 이 턴에 나간 블록을 모두 기다려 호출 id → 블록으로 돌려준다(저장용). */
-    settled: () => Promise<ReadonlyMap<string, ChatChartBlock>>;
+    settled: () => Promise<ReadonlyMap<string, ChatBlock>>;
 }
 
 const keyOf = (name: string, args: Record<string, unknown>): string =>
     `${name}\u0000${JSON.stringify(args)}`;
 
 export function createTurnCharts(): TurnCharts {
-    const pendingByCall = new Map<string, Promise<ChatChartBlock | null>>();
+    const pendingByCall = new Map<string, Promise<ChatBlock | null>>();
     const keyById = new Map<string, string>();
-    const emitted = new Map<string, Promise<ChatChartBlock | null>>();
+    const emitted = new Map<string, Promise<ChatBlock | null>>();
     return {
         register: (call, pending) =>
             void pendingByCall.set(keyOf(call.name, call.args), pending),

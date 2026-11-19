@@ -159,6 +159,7 @@ export function MessageList({
             <UserMessage
                 key={m.id}
                 content={m.content}
+                images={m.images}
                 nodeRef={registerUserNode(m.id)}
                 minHeight={minHeight}
                 actions={actions}

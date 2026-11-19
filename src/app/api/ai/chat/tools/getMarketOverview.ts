@@ -75,7 +75,7 @@ function topSignals(stocks: readonly StockSignalResult[]) {
  * check `useAssetLabel` uses; a `try/catch` around `t(key)` would silently
  * never fall back.
  */
-async function sectorDisplayNames(
+export async function sectorDisplayNames(
     locale: Locale,
     sectors: readonly MarketSectorData[]
 ): Promise<Record<string, string>> {
@@ -162,7 +162,7 @@ interface RankedSector {
  * or a non-finite `changesPercentage` must never enter a ranking or a
  * best-worst spread.
  */
-const isRankableSector = (s: MarketSectorData): boolean =>
+export const isRankableSector = (s: MarketSectorData): boolean =>
     Number.isFinite(s.changesPercentage) &&
     Number.isFinite(s.price) &&
     s.price > 0;

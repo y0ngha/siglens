@@ -28,7 +28,10 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-import { getMyPortfolioTool } from '@/app/api/ai/chat/tools/getMyPortfolio';
+import {
+    getMyPortfolioTool,
+    loadMyPortfolio,
+} from '@/app/api/ai/chat/tools/getMyPortfolio';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { MS_PER_DAY } from '@/shared/config/time';
 
@@ -764,5 +767,32 @@ describe('보유종목 시세 나이', () => {
         >;
 
         expect(r).not.toHaveProperty('stalePriceCount');
+    });
+});
+
+describe('loadMyPortfolio', () => {
+    it('도구와 같은 결과를 돌려준다(show_chart 포트폴리오가 이 로더를 쓴다)', async () => {
+        findByUser.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                companyName: 'Apple',
+                quantity: '10',
+                averagePrice: '150',
+            },
+        ]);
+        profile.mockResolvedValue('us-equity');
+        getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
+        const viaLoader = await loadMyPortfolio('u7');
+        const viaTool = await getMyPortfolioTool({}, ctxFor('u7'), rt);
+        expect(findByUser).toHaveBeenLastCalledWith('u7');
+        expect({ ...viaLoader, asOf: '' }).toEqual({
+            ...(viaTool as object),
+            asOf: '',
+        });
+        expect(viaLoader.holdings[0]).toMatchObject({
+            symbol: 'AAPL',
+            weightPct: 100,
+            pnlPct: 33.3333,
+        });
     });
 });

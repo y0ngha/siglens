@@ -97,7 +97,7 @@ describe('publicApiToolNames', () => {
         );
     });
 
-    it('제외 목록은 web_search, Yahoo 전용 도구 둘, X 글 도구, 테마·지수 통계·스윙 이력 도구뿐이다(run_fresh_analysis는 BYOK 전용 구현으로 노출한다)', () => {
+    it('제외 목록은 web_search, Yahoo 전용 도구 둘, X 글 도구, 테마·지수 통계·스윙 이력 도구, 표시 전용 show_chart뿐이다(run_fresh_analysis는 BYOK 전용 구현으로 노출한다)', () => {
         expect([...PUBLIC_API_EXCLUDED_TOOLS]).toEqual([
             'web_search',
             'get_analyst_views',
@@ -106,6 +106,7 @@ describe('publicApiToolNames', () => {
             'get_theme_snapshot',
             'get_index_history_stats',
             'get_swing_history',
+            'show_chart',
         ]);
     });
 

@@ -7,11 +7,11 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { formatCompact } from '../../utils/flowFormat';
-import { CardFieldList } from '../tables/CardFieldList';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
-} from '../tables/ResponsiveRecordList';
+} from '@/shared/ui/ResponsiveRecordList';
 import { HolderChangeText } from './HolderChangeText';
 import { StatusBadge } from './StatusBadge';
 

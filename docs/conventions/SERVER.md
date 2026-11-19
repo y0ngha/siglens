@@ -381,6 +381,24 @@ locally with a wide margin (aim under 10 % of the test bound) because CI runners
 - ❌ `/<!--[\s\S]*?-->/g` over a body with thousands of unclosed `<!--` rescans to the end from each one.
 - ✅ The pattern runs only inside the span that ends at the last real `-->`; the unclosed tail is dropped.
 
+<a id="SA-24"></a>
+
+#### SA-24 — A display-only artifact passes the client's validator before the model is told it was shown
+
+When a tool emits a block the client renders (a chart, a card) and then reports `rendered: true` to the model, the server runs the same validator the client applies. A block the client would drop must not be reported as shown, or the model narrates something the user never sees.
+
+- ❌ Emit the block and answer `rendered: true` after only building it.
+- ✅ `isChatVisualBlock(block)` gates both the emit and the reported flag.
+
+<a id="SA-25"></a>
+
+#### SA-25 — Authorization-gated responses never use long-lived `immutable` caching
+
+A browser serves an `immutable` response without contacting the server, so the owner check is skipped after logout or account switch. Owner-only or tier-gated bodies use `Cache-Control: private, no-cache` plus an `ETag`: every reuse revalidates and re-runs the check, and unchanged bytes still answer 304.
+
+- ❌ `Cache-Control: private, max-age=31536000, immutable` on an owner-only image.
+- ✅ `private, no-cache` with an `ETag`.
+
 <a id="SA-22"></a>
 
 #### SA-22 — List every consumer before changing a provider method's failure mode

@@ -1,4 +1,4 @@
-import { isChatChartBlock } from '@/entities/chat-conversation/lib/chartBlock';
+import { isChatBlock } from '@/entities/chat-conversation/lib/chartBlock';
 import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { AgentUiMessage } from '../model/types';
 
@@ -82,7 +82,7 @@ export function withToolEnded(
  */
 export function withChart(m: AgentUiMessage, data: FrameData): AgentUiMessage {
     const block = data.block;
-    if (!isChatChartBlock(block)) return m;
+    if (!isChatBlock(block)) return m;
     return {
         ...m,
         tools: m.tools.map(t =>

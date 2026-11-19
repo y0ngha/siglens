@@ -1,4 +1,4 @@
-import type { AgentUiMessage } from '../model/types';
+import type { AgentUiMessage, ChatImageAttachment } from '../model/types';
 
 // Intentional module state: a process-wide counter is the cheapest way to make
 // same-millisecond client ids unique; tests match ids by pattern, not by value.
@@ -15,13 +15,17 @@ export function localMessageId(prefix: 'local' | 'pending'): string {
     return `${prefix}-${Date.now()}-${sequence}`;
 }
 
-/** The user's question as shown right away, before the server stores it and `meta` brings its `seq`. */
-export function optimisticUserMessage(content: string): AgentUiMessage {
+/** The user's question (and attached images) as shown right away, before the server stores it and `meta` brings its `seq`. */
+export function optimisticUserMessage(
+    content: string,
+    images: readonly ChatImageAttachment[] = []
+): AgentUiMessage {
     return {
         id: localMessageId('local'),
         role: 'user',
         content,
         tools: [],
         status: 'complete',
+        ...(images.length > 0 ? { images } : {}),
     };
 }

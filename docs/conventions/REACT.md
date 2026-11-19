@@ -746,6 +746,17 @@ React Compiler bails out on logical assignment operators (react-doctor `react-ho
 //    cache.current = map;
 ```
 
+<a id="EF-6"></a>
+
+#### EF-6 — A ref an event handler reads as current state is written where the state is set
+
+Mirroring state into a ref from a `useEffect` leaves a window between commit and the passive effect: a click in that window reads the stale value. Write the ref and the state together in one `commit(next)` helper. A flake that appears only under load is a timing bug until proven otherwise; reproduce it with the two calls inside a single `act` before calling it flaky.
+
+```typescript
+// ❌ useEffect(() => { ref.current = items; }, [items]);  // takeAll() right after addFiles() returns []
+// ✅ const commit = (next: Item[]) => { ref.current = next; setItems(next); };
+```
+
 ---
 
 ## Lightweight Charts Rules
