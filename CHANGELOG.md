@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.127.0](https://github.com/y0ngha/siglens/compare/v0.126.0...v0.127.0) (2026-11-19)
+
+### Features
+
+* SiglensAI 이미지 첨부 분석과 답변 시각화 블록(show_chart) 추가 ([#1321](https://github.com/y0ngha/siglens/issues/1321)) ([6973950](https://github.com/y0ngha/siglens/commit/69739508373d1b51259fe185dc90e23d4b07f684))
+
 # [0.126.0](https://github.com/y0ngha/siglens/compare/v0.125.0...v0.126.0) (2026-11-18)
 
 ### Features
