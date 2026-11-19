@@ -130,10 +130,10 @@ test.describe('SIGLENS AI agent chat', () => {
         await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
         const block = page.getByTestId('chat-visual-block');
         await expect(block).toBeVisible();
-        await expect(block.getByRole('img')).toHaveAttribute(
-            'aria-label',
-            /AAPL, MSFT 수익률 비교 선 차트/
-        );
+        // 블록 안에는 그림 역할 요소가 여럿이다(틀·차트 캔버스) — 요약 이름으로 집는다.
+        await expect(
+            block.getByRole('img', { name: /AAPL, MSFT 수익률 비교 선 차트/ })
+        ).toBeVisible();
         await expect(block.locator('canvas').first()).toBeVisible();
         // 접힌 데이터 표는 정확한 값을 준다.
         await block.getByText('데이터 표 보기').click();
