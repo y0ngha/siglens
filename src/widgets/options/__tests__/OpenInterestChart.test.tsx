@@ -41,7 +41,7 @@ vi.mock('@/widgets/options/utils/pickLabelIndices', () => ({
         new Set(Array.from({ length: count }, (_, i) => i)),
 }));
 
-vi.mock('@/widgets/options/utils/optionsTooltips', () => ({
+vi.mock('@/widgets/options/utils/openInterestTooltips', () => ({
     OpenInterestTooltip: 'OI tooltip',
     CallOpenInterestTooltip: 'Call OI tooltip',
     PutOpenInterestTooltip: 'Put OI tooltip',
@@ -149,7 +149,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={[]}
-                metrics={null}
+                maxPain={null}
                 oiStale={false}
             />
         );
@@ -167,7 +167,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(noStrikesChain)}
-                metrics={null}
+                maxPain={null}
                 oiStale={false}
             />
         );
@@ -185,7 +185,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(zeroOiChain)}
-                metrics={null}
+                maxPain={null}
                 oiStale={false}
             />
         );
@@ -197,7 +197,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -210,7 +210,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -224,7 +224,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -242,7 +242,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -255,7 +255,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -268,7 +268,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -297,7 +297,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(CHAIN)}
-                metrics={METRICS}
+                maxPain={METRICS.maxPain}
                 oiStale={false}
             />
         );
@@ -328,7 +328,7 @@ describe('OpenInterestChart', () => {
             <OpenInterestChart
                 underlyingPrice={150}
                 oiByStrike={aggregateOpenInterest(manyStrikesChain)}
-                metrics={null}
+                maxPain={null}
                 oiStale={false}
             />
         );
@@ -343,7 +343,7 @@ describe('OpenInterestChart', () => {
                 <OpenInterestChart
                     underlyingPrice={150}
                     oiByStrike={aggregateOpenInterest(CHAIN)}
-                    metrics={METRICS}
+                    maxPain={METRICS.maxPain}
                     oiStale={oiStale}
                 />
             );

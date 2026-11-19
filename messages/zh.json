@@ -3976,6 +3976,63 @@
                 "extendedHours": "显示盘前盘后(延长交易时段)",
                 "extendedHoursUnavailable": "日线、韩国股票和加密货币没有延长交易时段",
                 "label": "图表设置"
+            },
+            "ChatVisual": {
+                "asOf": "截至 {date}",
+                "colChange": "收益率",
+                "colDayChange": "涨跌幅",
+                "colDate": "日期",
+                "colDay1": "1日",
+                "colDay20": "20日",
+                "colDay5": "5日",
+                "colDividend": "每股股息",
+                "colEps": "EPS",
+                "colEpsActual": "实际EPS",
+                "colEpsEstimate": "预计EPS",
+                "colForeign": "外国人",
+                "colFrom": "开始日期",
+                "colIndividual": "个人",
+                "colInsiderNet": "内部人净买入金额",
+                "colInstitution": "机构",
+                "colMonth": "月",
+                "colName": "名称",
+                "colNetIncome": "净利润",
+                "colPnl": "损益率",
+                "colRevenue": "营收",
+                "colSector": "板块",
+                "colSymbol": "股票代码",
+                "colTo": "结束日期",
+                "colWeight": "权重",
+                "compareAria": "{symbols} 收益率比较折线图，最近 {period} 变化：{changes}",
+                "compareTitle": "收益率比较 · 最近 {period}",
+                "dataTable": "查看数据表",
+                "dividendsAria": "{symbol} 年度每股股息柱状图。最近 {year} 年 {amount}",
+                "dividendsAriaPartial": "{symbol} 年度每股股息柱状图。最近 {year} 年 {amount}（进行中）",
+                "dividendsTitle": "{symbol} 年度每股股息 ({currency})",
+                "financialsAria": "{symbol} 最近 {count} 季度营收和净利润柱状图。最近 {period}：营收 {revenue}，净利润 {netIncome}",
+                "financialsTitle": "{symbol} 季度财报 · 最近 {count} 季度",
+                "flowsInsiderAria": "{symbol} 内部人按月净买入金额柱状图。近{months}个月合计 {total}",
+                "flowsInsiderCaption": "内部人净买入金额（月度，美元）",
+                "flowsInstitutionalCaption": "机构持股净增减（季度）",
+                "flowsKrAria": "{symbol} 外资·机构·个人日净买入量柱状图。最近 {days} 日合计：外资 {foreign}，机构 {institution}，个人 {individual}",
+                "flowsKrTitle": "{symbol} 投资者净买入（股）· 最近 {days} 日",
+                "flowsUsTitle": "{symbol} 资金流向 · 机构季度，内部人月度",
+                "heatmapSectorsTitle": "{market} 板块涨跌幅 · 今日",
+                "heatmapThemeTitle": "{label} 主题 · 成分股涨跌幅",
+                "legendForeign": "外资",
+                "legendIndividual": "个人",
+                "legendInstitution": "机构",
+                "marketKr": "韩国",
+                "marketUs": "美国",
+                "optionsSummary": "最大痛点 {maxPain} · 看跌/看涨比率 {ratio}",
+                "optionsTitle": "{symbol} 期权 未平仓合约 · {expiry} 到期",
+                "period1M": "1个月",
+                "period1Y": "1年",
+                "period3M": "3个月",
+                "period6M": "6个月",
+                "portfolioGroup": "{currency} 持仓",
+                "portfolioTitle": "我的持仓 · 仓位和盈亏",
+                "yearPartial": "{year}年 (进行中)"
             }
         },
         "ask-ai-fab": {
@@ -5826,7 +5883,9 @@
                 "errorUnauthenticated": "请先登录。",
                 "guestNotice": "访客对话不会被保存。",
                 "loginCta": "登录",
-                "openConversations": "对话列表"
+                "openConversations": "对话列表",
+                "errorInvalidImage": "无法读取图片。请尝试其他图片。",
+                "errorTooLarge": "图片太大，无法发送。请减少图片数量或缩小图片尺寸。"
             },
             "Composer": {
                 "4077ce": "发送",
@@ -5837,7 +5896,16 @@
                 "charCount": "{len} / {max}",
                 "placeholder": "向 SIGLENS AI 提问…",
                 "keyHint": "Enter 发送，Shift+Enter 换行",
-                "betaNotice": "测试版：回答可能有误，不构成投资建议。"
+                "betaNotice": "测试版：回答可能有误，不构成投资建议。",
+                "attachImage": "附加图片",
+                "attachedImages": "已附加图片",
+                "imageAlt": "附加图片 {n}",
+                "imageLimit": "最多可附加 {max} 张图片",
+                "imagePrivacyHint": "请遮盖账号等个人信息后再上传",
+                "imageTooLarge": "{name} 文件太大（只能上传25MB以下的文件）",
+                "imageUnreadable": "无法读取 {name} 文件",
+                "imageUnsupported": "{name} 是不支持的格式（支持PNG·JPEG·WebP·GIF）",
+                "removeImage": "移除附加图片 {n}"
             },
             "EmptyState": {
                 "a00741": "使用 SIGLENS 账户登录",
@@ -5942,6 +6010,11 @@
                 "toolWebSearch": "网络搜索",
                 "toolGuide": "图表指南",
                 "toolXPosts": "X 帖子"
+            },
+            "UserMessage": {
+                "imageAlt": "附加图片 {n}",
+                "imagesLabel": "已附加图片",
+                "openImage": "在新标签页中打开附加图片 {n}"
             }
         }
     }

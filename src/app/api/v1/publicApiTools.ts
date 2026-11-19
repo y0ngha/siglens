@@ -62,6 +62,10 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  * `get_swing_history`(2026-11): **공개 API에서 제외**한다. 한국 종목 일봉 이력이 Yahoo Finance 비공식 엔드포인트를
  *   거치고, 미국 종목은 캐시 미스마다 FMP 일봉 구간 6개를 읽는다. SiglensAI 에이전트에서만 쓴다.
  *
+ * `show_chart`(2026-11): **공개 API에서 제외**한다. 답변 아래 그림을 그리는 표시 전용 도구라 결과(`{rendered, kind, summary}`)가
+ *   제3자 API 계약에 쓸모가 없고, 그림 데이터는 `emitChart`로만 나가는데 API 실행기에는 그 길이 없다(데이터는 각
+ *   데이터 도구가 이미 준다). SiglensAI 에이전트에서만 쓴다.
+ *
  * 나머지 도구의 감사: LLM 호출이 없다.
  * - `get_cached_analysis`·`get_market_overview`·`get_economy`의 AI 산출물은 `peek*`(읽기 전용 캐시/DB)만
  *   읽고 생성하지 않는다.
@@ -85,6 +89,7 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'get_theme_snapshot',
     'get_index_history_stats',
     'get_swing_history',
+    'show_chart',
 ]);
 
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */

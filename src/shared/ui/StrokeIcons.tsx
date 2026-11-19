@@ -304,3 +304,10 @@ export const ThumbsDownIcon = (p: IconProps) => (
         <path d="M17 3h4v11h-4z" />
     </Icon>
 );
+export const ImageIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+        <circle cx="9" cy="10" r="1.6" />
+        <path d="M4 17.5l4.5-4.5 3.5 3.5 3-3 5 5" />
+    </Icon>
+);

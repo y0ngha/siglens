@@ -4,7 +4,7 @@ import type {
     ModelId,
     ToolExecutionContext,
 } from '@y0ngha/siglens-core';
-import type { ChatChartBlock } from '@/entities/chat-conversation/types';
+import type { ChatBlock } from '@/entities/chat-conversation/types';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
@@ -48,6 +48,7 @@ import { getXPostsTool } from './getXPosts';
 import { getThemeSnapshotTool } from './getThemeSnapshot';
 import { getIndexHistoryStatsTool } from './getIndexHistoryStats';
 import { getSwingHistoryTool } from './getSwingHistory';
+import { showChartTool } from './showChart';
 import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
@@ -91,7 +92,7 @@ export interface ToolRuntime {
      * `ToolExecutorOptions.onChart`로 스트림·저장에 넘긴다. 생략하면(공개 API·차트 없는 실행) 아무것도 하지 않는다.
      * 넘기는 promise는 절대 reject하지 않아야 한다(`loadAnalysisChartBlock`처럼 실패를 `null`로 접는다).
      */
-    emitChart?: (pending: Promise<ChatChartBlock | null>) => void;
+    emitChart?: (pending: Promise<ChatBlock | null>) => void;
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해
@@ -183,10 +184,7 @@ export interface ToolExecutorOptions {
      * 도구가 차트 블록을 냈을 때 부른다(`ToolRuntime.emitChart`). 생략하면 블록을 만들지 않는다 — 실행기는
      * `emitChart`가 없으면 봉 조회도 하지 않는다. 에이전트 스트림만 넘긴다.
      */
-    onChart?: (
-        call: ChartToolCall,
-        pending: Promise<ChatChartBlock | null>
-    ) => void;
+    onChart?: (call: ChartToolCall, pending: Promise<ChatBlock | null>) => void;
 }
 
 export type ToolExecutor = (
@@ -225,6 +223,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_theme_snapshot: getThemeSnapshotTool,
     get_index_history_stats: getIndexHistoryStatsTool,
     get_swing_history: getSwingHistoryTool,
+    show_chart: showChartTool,
 };
 
 /**

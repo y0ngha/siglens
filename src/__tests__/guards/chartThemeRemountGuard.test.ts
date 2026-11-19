@@ -39,6 +39,7 @@ const CHART_COMPONENTS = [
     'StockChart',
     'VolumeChart',
     'ShareCandlestickChart',
+    'CompareLineChart',
     'FearGreedHistoricalChart',
 ] as const;
 

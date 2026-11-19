@@ -172,7 +172,7 @@ export function OptionsPageClient({
                 <OpenInterestChart
                     underlyingPrice={snapshot.underlyingPrice}
                     oiByStrike={chainMetrics.oiByStrike}
-                    metrics={chainMetrics.metrics}
+                    maxPain={chainMetrics.metrics?.maxPain ?? null}
                     oiStale={oiStale}
                 />
 

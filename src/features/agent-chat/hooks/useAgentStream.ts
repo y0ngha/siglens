@@ -5,15 +5,21 @@ import type { AgentRemaining } from '@y0ngha/siglens-core';
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import { trackAdsConversion } from '@/shared/lib/googleAds';
 import type { AgentClientErrorCode } from '../lib/errorCodes';
+import { dropSentPayloads } from '../lib/dropSentPayloads';
 import { fromViews } from '../lib/fromViews';
 import { guestHistory } from '../lib/guestHistory';
 import { optimisticUserMessage } from '../lib/optimisticMessages';
+import { imagePayloads } from '../lib/prepareChatImage';
 import {
     runAgentTurn,
     type AgentFailureKind,
     type AgentTurnContext,
 } from '../lib/runAgentTurn';
-import type { AgentStreamStatus, AgentUiMessage } from '../model/types';
+import type {
+    AgentStreamStatus,
+    AgentUiMessage,
+    ChatImageAttachment,
+} from '../model/types';
 
 /** `useAgentStream`'s input from the chat shell. */
 export interface UseAgentStreamOptions {
@@ -41,11 +47,34 @@ export interface UseAgentStreamResult {
     readonly error: AgentClientErrorCode | null;
     /** Daily allowance left after the last turn; `null` until a `done` frame reports it. */
     readonly remaining: AgentRemaining | null;
-    readonly send: (text: string) => Promise<void>;
+    /** `images`: 이번 질문에 첨부한 이미지(글이 비어도 이미지가 있으면 보낼 수 있다). */
+    readonly send: (
+        text: string,
+        images?: readonly ChatImageAttachment[]
+    ) => Promise<void>;
     readonly regenerate: () => Promise<void>;
     readonly edit: (seq: number, text: string) => Promise<void>;
     readonly retry: () => Promise<void>;
     readonly stop: () => void;
+    /** 이미지가 거절돼 되돌려 줄 글(없으면 `null`) — Composer의 `restoredDraft`로 넘긴다. */
+    readonly restoredDraft: RestoredDraft | null;
+}
+
+/** 이미지가 거절된 질문의 글 — {@link useAgentStream}의 `restoredDraft`. */
+export interface RestoredDraft {
+    readonly id: number;
+    readonly text: string;
+}
+
+/** 같은 이미지로는 다시 보내도 또 거절되는 오류 — 다시 시도 대신 글을 입력창에 되돌린다. */
+const DRAFT_RESTORING_ERRORS: ReadonlySet<AgentClientErrorCode> = new Set([
+    'invalid_image',
+    'too_large',
+]);
+
+/** 방금 첨부한 이미지(`blob:`)의 object URL만 놓는다 — 저장된 이미지는 서버 경로라 해당 없다. */
+function revokeBlobUrl(src: string): void {
+    if (src.startsWith('blob:')) URL.revokeObjectURL(src);
 }
 
 /**
@@ -81,6 +110,18 @@ export function useAgentStream(
     const lastErrorKindRef = useRef<AgentFailureKind>(null);
     /** The last turn was a guest regenerate (sent as `send`) — `retry()` must replay it as one. */
     const guestRegenerateRef = useRef(false);
+    /** 마지막 `submit`이 실은 이미지 — HTTP 단계 실패를 `retry()`가 같은 이미지로 다시 보내려고 든다. */
+    const lastImagesRef = useRef<readonly ChatImageAttachment[]>([]);
+    /** 마지막 턴이 남긴 오류 코드 — `submit`이 이미지 거절인지 보고 입력을 되돌려 줄지 정한다. */
+    const lastErrorCodeRef = useRef<AgentClientErrorCode | null>(null);
+    /**
+     * 이미지가 거절돼(`invalid_image`·`too_large`) 사용자 말풍선이 사라진 질문의 글 — Composer가 받아 입력창에 되돌린다.
+     * 이 오류는 같은 이미지로 다시 보내도 또 거절되므로 다시 시도 버튼이 없고, 글을 되돌려야 이미지만 바꿔 다시 보낼 수 있다.
+     * `id`가 바뀔 때만 되돌린다(같은 글을 두 번 거절당해도 두 번 되돌린다).
+     */
+    const [restoredDraft, setRestoredDraft] = useState<RestoredDraft | null>(
+        null
+    );
 
     const guest = options.guest === true;
 
@@ -100,7 +141,10 @@ export function useAgentStream(
                 isCurrent: () => controllerRef.current === controller,
                 setMessages,
                 setStatus,
-                setError,
+                setError: code => {
+                    lastErrorCodeRef.current = code;
+                    setError(code);
+                },
                 setRemaining,
                 onConversationAssigned: (id, title) => {
                     setConversationId(id);
@@ -109,7 +153,13 @@ export function useAgentStream(
                 setFailureKind: kind => {
                     lastErrorKindRef.current = kind;
                 },
-                onTurnComplete: () => onTurnCompleteRef.current?.(),
+                onTurnComplete: () => {
+                    onTurnCompleteRef.current?.();
+                    // 보낸 이미지의 base64가 세션 내내 상태에 남지 않게 한다(게스트는 마지막 질문만 재생성용으로 남긴다).
+                    // `retry()`가 쓰는 `lastImagesRef`는 HTTP 단계 실패용이라 성공한 턴 뒤에는 필요 없어 함께 비운다.
+                    setMessages(prev => dropSentPayloads(prev, guest));
+                    lastImagesRef.current = [];
+                },
             };
             return runAgentTurn(ctx, {
                 body,
@@ -117,24 +167,60 @@ export function useAgentStream(
                 restoreSnapshot,
             });
         },
-        [conversationId]
+        [conversationId, guest]
     );
 
     /** Posts a user message. Untracked — `retry` replays through here so a retried question is not a second ad conversion. */
     const submit = useCallback(
-        (message: string): Promise<void> => {
+        (
+            message: string,
+            images: readonly ChatImageAttachment[] = []
+        ): Promise<void> => {
             const snapshot = messagesRef.current;
             guestRegenerateRef.current = false;
-            setMessages(prev => [...prev, optimisticUserMessage(message)]);
+            // HTTP 단계 오류로 롤백된 첨부는 `lastImagesRef`에만 남아 있다 — 새 제출이 그 자리를 덮으면 아무도 가리키지 않는
+            // blob URL이 새므로, 새 첨부·현재 말풍선이 쓰지 않는 것만 놓는다(`retry()`는 같은 첨부를 다시 넘긴다).
+            const inUse = new Set([
+                ...images.map(image => image.src),
+                ...snapshot.flatMap(
+                    m => m.images?.map(image => image.src) ?? []
+                ),
+            ]);
+            lastImagesRef.current.forEach(image => {
+                if (!inUse.has(image.src)) revokeBlobUrl(image.src);
+            });
+            lastImagesRef.current = images;
+            setMessages(prev => [
+                ...prev,
+                optimisticUserMessage(message, images),
+            ]);
             return run(
                 {
                     action: 'send',
                     message,
+                    ...(images.length > 0
+                        ? { images: imagePayloads(images) }
+                        : {}),
                     ...(guest ? { history: guestHistory(snapshot) } : {}),
                 },
                 true,
                 snapshot
-            );
+            ).then(() => {
+                const code = lastErrorCodeRef.current;
+                if (
+                    lastErrorKindRef.current === 'http' &&
+                    code !== null &&
+                    DRAFT_RESTORING_ERRORS.has(code)
+                ) {
+                    // 이 오류는 다시 시도가 없고 말풍선이 롤백돼 화면이 이 URL을 다시 쓰지 않는다 — 여기서 놓는다.
+                    // 다른 HTTP 오류는 `retry()`가 같은 첨부를 다시 보내 다시 그리므로 놓지 않는다.
+                    images.forEach(image => revokeBlobUrl(image.src));
+                    setRestoredDraft(prev => ({
+                        id: (prev?.id ?? 0) + 1,
+                        text: message,
+                    }));
+                }
+            });
         },
         [run, guest]
     );
@@ -145,9 +231,12 @@ export function useAgentStream(
      * existing question, so they go through `run`/`submit` without counting.
      */
     const send = useCallback(
-        (message: string): Promise<void> => {
+        (
+            message: string,
+            images: readonly ChatImageAttachment[] = []
+        ): Promise<void> => {
             trackAdsConversion('chatQuestion');
-            return submit(message);
+            return submit(message, images);
         },
         [submit]
     );
@@ -167,6 +256,10 @@ export function useAgentStream(
             {
                 action: 'send',
                 message: question.content,
+                // 게스트의 이미지는 서버에 없다 — 브라우저가 메모리에 든 payload를 다시 보낸다.
+                ...(question.images && question.images.length > 0
+                    ? { images: imagePayloads(question.images) }
+                    : {}),
                 history: guestHistory(snapshot.slice(0, lastUser)),
             },
             false,
@@ -179,9 +272,13 @@ export function useAgentStream(
             const snapshot = messagesRef.current;
             setMessages(prev => {
                 const index = prev.findIndex(m => m.seq === seq);
+                // 서버는 편집한 행의 이미지를 그대로 이어 붙인다(`resolveEditImages`) — 화면도 같은 첨부를 보여 줘야
+                // 저장·전송된 것과 어긋나지 않는다. 본문에는 싣지 않는다(서버가 보관분을 다시 읽는다).
+                const images =
+                    (index >= 0 ? prev[index]?.images : undefined) ?? [];
                 return [
                     ...(index >= 0 ? prev.slice(0, index) : prev),
-                    optimisticUserMessage(message),
+                    optimisticUserMessage(message, images),
                 ];
             });
             return run(
@@ -208,7 +305,8 @@ export function useAgentStream(
         // A guest's regenerate goes out as `send` (see `regenerate`): replaying
         // that body through `send` would put the question on screen twice.
         if (!body || guestRegenerateRef.current) return regenerate();
-        if (body.action === 'send') return submit(String(body.message ?? ''));
+        if (body.action === 'send')
+            return submit(String(body.message ?? ''), lastImagesRef.current);
         if (body.action === 'edit')
             return edit(Number(body.editSeq), String(body.message ?? ''));
         return run({ action: 'regenerate' }, false, messagesRef.current);
@@ -233,6 +331,17 @@ export function useAgentStream(
     // conversation swap) — an orphaned reader loop would keep patching state
     // on an unmounted hook instance.
     useEffect(() => () => controllerRef.current?.abort(), []);
+    // 방금 첨부한 이미지의 object URL은 대화 화면이 사라질 때 놓아 준다(저장된 이미지는 서버 경로라 해당 없음).
+    useEffect(
+        () => () => {
+            messagesRef.current.forEach(m =>
+                m.images?.forEach(image => revokeBlobUrl(image.src))
+            );
+            // 롤백돼 화면엔 없고 `retry()` 대기로만 남은 첨부도 함께 놓는다.
+            lastImagesRef.current.forEach(image => revokeBlobUrl(image.src));
+        },
+        []
+    );
 
     return {
         messages,
@@ -245,5 +354,6 @@ export function useAgentStream(
         edit,
         retry,
         stop,
+        restoredDraft,
     };
 }

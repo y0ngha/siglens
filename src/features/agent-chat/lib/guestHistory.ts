@@ -9,6 +9,11 @@ export interface GuestHistoryMessage {
      * 줄을 되붙여, 모델이 읽는 기록이 회원(DB 원문)과 같은 모양이 되게 한다.
      */
     readonly followUps?: readonly string[];
+    /**
+     * 이 사용자 메시지에 붙었던 이미지 수. 이미지는 다시 보내지 않고, 서버가 표식 줄을 되붙여
+     * 모델이 읽는 기록이 회원(DB 원문)과 같은 모양이 되게 한다.
+     */
+    readonly imageCount?: number;
 }
 
 /**
@@ -21,12 +26,20 @@ export function guestHistory(
     return messages
         .filter(
             m =>
-                m.content.trim() !== '' &&
+                (m.content.trim() !== '' || (m.images?.length ?? 0) > 0) &&
                 (m.role === 'user' || m.status !== 'error')
         )
-        .map(m =>
-            m.role === 'assistant' && m.followUps && m.followUps.length > 0
+        .map(m => {
+            if (m.role === 'user' && m.images && m.images.length > 0)
+                return {
+                    role: m.role,
+                    content: m.content,
+                    imageCount: m.images.length,
+                };
+            return m.role === 'assistant' &&
+                m.followUps &&
+                m.followUps.length > 0
                 ? { role: m.role, content: m.content, followUps: m.followUps }
-                : { role: m.role, content: m.content }
-        );
+                : { role: m.role, content: m.content };
+        });
 }

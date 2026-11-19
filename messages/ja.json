@@ -3976,6 +3976,63 @@
                 "extendedHours": "時間外取引(プレマーケット、アフターマーケット)を表示",
                 "extendedHoursUnavailable": "日足、韓国株、暗号資産には時間外取引がありません",
                 "label": "チャート設定"
+            },
+            "ChatVisual": {
+                "asOf": "基準 {date}",
+                "colChange": "収益率",
+                "colDayChange": "騰落率",
+                "colDate": "日付",
+                "colDay1": "1日",
+                "colDay20": "20日",
+                "colDay5": "5日",
+                "colDividend": "1株当たり配当",
+                "colEps": "EPS",
+                "colEpsActual": "EPS実績",
+                "colEpsEstimate": "EPS予想",
+                "colForeign": "外国人",
+                "colFrom": "開始日",
+                "colIndividual": "個人",
+                "colInsiderNet": "インサイダー純買付額",
+                "colInstitution": "機関",
+                "colMonth": "月",
+                "colName": "名前",
+                "colNetIncome": "純利益",
+                "colPnl": "損益率",
+                "colRevenue": "売上",
+                "colSector": "セクター",
+                "colSymbol": "銘柄",
+                "colTo": "終了日",
+                "colWeight": "比重",
+                "compareAria": "{symbols}の収益率比較折れ線グラフ、直近{period}の変動: {changes}",
+                "compareTitle": "収益率比較 · 直近{period}",
+                "dataTable": "データ表を見る",
+                "dividendsAria": "{symbol}の年間1株当たり配当棒グラフ。直近{year}年{amount}",
+                "dividendsAriaPartial": "{symbol}の年間1株当たり配当棒グラフ。直近{year}年{amount}(進行中)",
+                "dividendsTitle": "{symbol} 年間1株当たり配当 ({currency})",
+                "financialsAria": "{symbol}の直近{count}四半期の売上と純利益棒グラフ。直近{period}: 売上{revenue}、純利益{netIncome}",
+                "financialsTitle": "{symbol} 四半期決算 · 直近{count}四半期",
+                "flowsInsiderAria": "{symbol} インサイダーの月別純買い金額の棒グラフ。直近{months}か月の合計 {total}",
+                "flowsInsiderCaption": "インサイダー純買付額 (月次, USD)",
+                "flowsInstitutionalCaption": "機関保有株式純増減 (四半期)",
+                "flowsKrAria": "{symbol}の外国人・機関・個人別日次純買付量棒グラフ。直近{days}日合計: 外国人{foreign}、機関{institution}、個人{individual}",
+                "flowsKrTitle": "{symbol} 投資家別純買付（株）· 直近{days}日",
+                "flowsUsTitle": "{symbol} 受給 · 機関四半期、インサイダー月次",
+                "heatmapSectorsTitle": "{market} セクター騰落率 · 今日",
+                "heatmapThemeTitle": "{label} テーマ · 構成銘柄騰落率",
+                "legendForeign": "外国人",
+                "legendIndividual": "個人",
+                "legendInstitution": "機関",
+                "marketKr": "韓国",
+                "marketUs": "米国",
+                "optionsSummary": "マックスペイン {maxPain} · プットコール比率 {ratio}",
+                "optionsTitle": "{symbol} オプション建玉 · {expiry} 満期",
+                "period1M": "1ヶ月",
+                "period1Y": "1年",
+                "period3M": "3ヶ月",
+                "period6M": "6ヶ月",
+                "portfolioGroup": "{currency} 保有銘柄",
+                "portfolioTitle": "私の保有銘柄 · 比重と損益",
+                "yearPartial": "{year}年 (進行中)"
             }
         },
         "ask-ai-fab": {
@@ -5826,7 +5883,9 @@
                 "errorUnauthenticated": "ログインが必要です。",
                 "guestNotice": "ゲストの会話は保存されません。",
                 "loginCta": "ログイン",
-                "openConversations": "会話一覧"
+                "openConversations": "会話一覧",
+                "errorInvalidImage": "画像を読み取れませんでした。別の画像で再試行してください。",
+                "errorTooLarge": "画像が大きすぎて送信できません。画像の数またはサイズを減らしてください。"
             },
             "Composer": {
                 "4077ce": "送信",
@@ -5837,7 +5896,16 @@
                 "charCount": "{len} / {max}",
                 "placeholder": "SIGLENS AIに質問…",
                 "keyHint": "Enterで送信、Shift+Enterで改行",
-                "betaNotice": "ベータ版：回答には誤りが含まれる場合があり、投資助言ではありません。"
+                "betaNotice": "ベータ版：回答には誤りが含まれる場合があり、投資助言ではありません。",
+                "attachImage": "画像を添付",
+                "attachedImages": "添付画像",
+                "imageAlt": "添付画像 {n}",
+                "imageLimit": "画像は最大{max}枚まで添付できます",
+                "imagePrivacyHint": "口座番号などの個人情報が見えないように隠してアップロードしてください",
+                "imageTooLarge": "{name}ファイルが大きすぎます（25MB以下のみアップロードできます）",
+                "imageUnreadable": "{name}ファイルを読み取れませんでした",
+                "imageUnsupported": "{name}はサポートされていない形式です（PNG・JPEG・WebP・GIF）",
+                "removeImage": "添付画像 {n}を削除"
             },
             "EmptyState": {
                 "a00741": "SIGLENSアカウントでログイン",
@@ -5942,6 +6010,11 @@
                 "toolWebSearch": "ウェブ検索",
                 "toolGuide": "チャートガイド",
                 "toolXPosts": "Xの投稿"
+            },
+            "UserMessage": {
+                "imageAlt": "添付画像 {n}",
+                "imagesLabel": "添付画像",
+                "openImage": "添付画像 {n}を新しいタブで開く"
             }
         }
     }

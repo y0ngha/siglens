@@ -268,9 +268,10 @@ export function ChatSession({
                     disabled={false}
                     streaming={stream.status === 'streaming'}
                     remainingTurns={stream.remaining?.turns ?? null}
-                    onSend={text => void stream.send(text)}
+                    onSend={(text, images) => void stream.send(text, images)}
                     onStop={stream.stop}
                     initialValue={initialDraft}
+                    restoredDraft={stream.restoredDraft}
                 />
             </main>
         </div>

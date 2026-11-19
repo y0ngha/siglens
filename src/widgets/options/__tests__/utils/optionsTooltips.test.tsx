@@ -4,9 +4,6 @@ import {
     PutCallRatioTooltip,
     AtmIvTooltip,
     ImpliedMoveTooltip,
-    OpenInterestTooltip,
-    CallOpenInterestTooltip,
-    PutOpenInterestTooltip,
     CallVolumeTooltip,
     PutVolumeTooltip,
 } from '@/widgets/options/utils/optionsTooltips';
@@ -112,28 +109,7 @@ describe('optionsTooltips', () => {
         });
     });
 
-    describe('OpenInterestTooltip', () => {
-        it('renders OI explanation', () => {
-            render(<>{OpenInterestTooltip}</>);
-            expect(screen.getByText(/살아있는/)).toBeInTheDocument();
-        });
-    });
-
-    describe('Call/Put specific tooltips', () => {
-        it('renders CallOpenInterestTooltip', () => {
-            render(<>{CallOpenInterestTooltip}</>);
-            expect(
-                screen.getByText(/콜\(상승\) 옵션을 산 사람/)
-            ).toBeInTheDocument();
-        });
-
-        it('renders PutOpenInterestTooltip', () => {
-            render(<>{PutOpenInterestTooltip}</>);
-            expect(
-                screen.getByText(/풋\(하락\) 옵션을 산 사람/)
-            ).toBeInTheDocument();
-        });
-
+    describe('Call/Put volume tooltips', () => {
         it('renders CallVolumeTooltip', () => {
             render(<>{CallVolumeTooltip}</>);
             expect(screen.getByText(/오늘 새로 체결된 콜/)).toBeInTheDocument();

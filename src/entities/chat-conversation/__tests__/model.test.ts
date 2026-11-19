@@ -189,6 +189,34 @@ describe('toMessageView', () => {
         expect('chart' in toMessageView(record({ chart }))).toBe(false);
     });
 
+    it('시각화 블록(kind)도 같은 칸에서 읽고, 모르는 kind·버전은 싣지 않는다', () => {
+        const visual = {
+            version: 1,
+            kind: 'dividends',
+            asOf: '2026-11-19T00:00:00.000Z',
+            symbol: 'KO',
+            currency: 'USD',
+            years: [{ year: 2026, amount: 1, partial: true }],
+        };
+        expect(
+            toMessageView(
+                record({ role: 'tool', content: '{}', chart: visual })
+            ).chart
+        ).toEqual(visual);
+        [
+            { ...visual, kind: 'treemap' },
+            { ...visual, version: 2 },
+            { ...visual, years: [] },
+        ].forEach(chart => {
+            expect(
+                'chart' in
+                    toMessageView(
+                        record({ role: 'tool', content: '{}', chart })
+                    )
+            ).toBe(false);
+        });
+    });
+
     it('답변의 후속 질문 마커 줄은 서버에서 떼어 followUps로 싣는다', () => {
         const view = toMessageView(
             record({

@@ -9,9 +9,14 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { readGuestId } from '@/shared/api/guestId';
+import { CHAT_REQUEST_MAX_BYTES } from '@/shared/config/chatImages';
 import { isBot } from '@/shared/api/isBot';
 import { AGENT_TIME_ZONE_HEADER } from '@/shared/i18n/locales';
 import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
+import {
+    BoundedBodyTooLargeError,
+    readBoundedBody,
+} from '@/shared/lib/readBoundedBody';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import {
@@ -22,6 +27,7 @@ import { guestSubject } from '../guestSubject';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { acquireTurnLock } from '../turnLock';
 import { agentTurnStream } from './_lib/agentTurnStream';
+import { normalizeBodyImages } from './_lib/normalizeBodyImages';
 import { parseBody } from './_lib/parseBody';
 import { guestTurn, prepareMemberTurn } from './_lib/prepareTurn';
 import {
@@ -35,6 +41,7 @@ const {
     HTTP_STATUS_BAD_REQUEST,
     HTTP_STATUS_CONFLICT,
     HTTP_STATUS_FORBIDDEN,
+    HTTP_STATUS_PAYLOAD_TOO_LARGE,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
     HTTP_STATUS_SERVICE_UNAVAILABLE,
     HTTP_STATUS_TOO_MANY_REQUESTS,
@@ -61,6 +68,29 @@ const SSE_HEADERS: HeadersInit = {
 const json = (status: number, body: unknown, headers?: HeadersInit): Response =>
     Response.json(body, { status, headers });
 
+type JsonBodyRead =
+    | { kind: 'ok'; value: unknown }
+    | { kind: 'too_large' }
+    | { kind: 'invalid' };
+
+/** 본문을 상한까지만 읽어 JSON으로 파싱한다. 본문 없음·읽기 실패·JSON 아님은 `invalid`(→ 기존 400 경로). */
+async function readJsonBody(
+    request: Request,
+    maxBytes: number
+): Promise<JsonBodyRead> {
+    try {
+        const bytes = await readBoundedBody(request, maxBytes);
+        return {
+            kind: 'ok',
+            value: JSON.parse(new TextDecoder().decode(bytes)),
+        };
+    } catch (error) {
+        return error instanceof BoundedBodyTooLargeError
+            ? { kind: 'too_large' }
+            : { kind: 'invalid' };
+    }
+}
+
 export async function POST(request: Request): Promise<Response> {
     if (process.env.AGENT_CHAT_DISABLED === '1')
         return json(
@@ -75,7 +105,12 @@ export async function POST(request: Request): Promise<Response> {
     if (request.headers.get('Origin') !== AI_ORIGIN)
         return json(HTTP_STATUS_FORBIDDEN, { error: 'bot' });
 
-    const body = parseBody(await request.json().catch(() => null));
+    // 이미지(base64)가 실려 본문이 커질 수 있다. `readBoundedBody`가 선언된 `content-length`는 읽기 전에, 선언이 없거나
+    // 거짓인 요청(chunked 등)은 읽는 바이트를 세어 상한을 넘기는 즉시 끊는다. `parseBody`는 그 뒤 장수·장당 크기를 잰다.
+    const read = await readJsonBody(request, CHAT_REQUEST_MAX_BYTES);
+    if (read.kind === 'too_large')
+        return json(HTTP_STATUS_PAYLOAD_TOO_LARGE, { error: 'too_large' });
+    const body = parseBody(read.kind === 'ok' ? read.value : null);
     if (body === null)
         return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
     /**
@@ -195,10 +230,16 @@ export async function POST(request: Request): Promise<Response> {
     };
 
     try {
+        // 이미지는 슬롯·락을 잡은 뒤에 정규화한다 — sharp 작업의 동시 수가 턴 슬롯 수로 묶인다.
+        const images = await normalizeBodyImages(body.images);
+        if (images === null) {
+            await releaseOnce();
+            return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_image' });
+        }
         const prepared =
             user === null
-                ? guestTurn(body)
-                : await prepareMemberTurn(user.id, body, tier, locale);
+                ? guestTurn(body, images)
+                : await prepareMemberTurn(user.id, body, tier, locale, images);
         if ('error' in prepared) {
             await releaseOnce();
             return json(prepared.status, { error: prepared.error });

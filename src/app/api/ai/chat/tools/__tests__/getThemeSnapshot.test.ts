@@ -19,7 +19,10 @@ vi.mock('@/entities/bars/lib/quantizeBars', () => ({
 
 import { AGENT_THEMES, type ThemeSnapshot } from '@y0ngha/siglens-core';
 import { isRecord } from '@/shared/lib/isRecord';
-import { getThemeSnapshotTool } from '@/app/api/ai/chat/tools/getThemeSnapshot';
+import {
+    getThemeSnapshotTool,
+    loadThemeSnapshot,
+} from '@/app/api/ai/chat/tools/getThemeSnapshot';
 import { TOOL_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const ctx = {
@@ -168,5 +171,27 @@ describe('getThemeSnapshotTool', () => {
             error: 'invalid_args',
         });
         expect(provider.getBars).not.toHaveBeenCalled();
+    });
+});
+
+describe('loadThemeSnapshot', () => {
+    it('테마 객체로 직접 읽고 도구와 같은 값을 돌려준다(show_chart 히트맵이 이 로더를 쓴다)', async () => {
+        provider.getBars.mockResolvedValue(bars(30, 110));
+        const quantum = AGENT_THEMES.find(t => t.id === 'quantum');
+        if (quantum === undefined) throw new Error('quantum theme missing');
+        const direct = okSnapshot(await loadThemeSnapshot(quantum));
+        const viaTool = okSnapshot(await run({ theme: 'quantum' }));
+        expect({ ...direct, asOf: '' }).toEqual({ ...viaTool, asOf: '' });
+    });
+
+    it('종목을 하나도 못 읽으면 provider_failed', async () => {
+        provider.getBars.mockRejectedValue(new Error('fmp down'));
+        const quantum = AGENT_THEMES.find(t => t.id === 'quantum');
+        if (quantum === undefined) throw new Error('quantum theme missing');
+        expect(await loadThemeSnapshot(quantum)).toEqual({
+            theme: 'quantum',
+            available: false,
+            reason: 'provider_failed',
+        });
     });
 });

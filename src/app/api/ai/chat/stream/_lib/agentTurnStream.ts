@@ -89,6 +89,7 @@ export function agentTurnStream({
         conversationId,
         title,
         userMessage,
+        userImages,
         userMessageId,
         userMessageSeq,
         history,
@@ -133,6 +134,15 @@ export function agentTurnStream({
                         locale,
                         history,
                         userMessage,
+                        // 이번 턴 이미지만 모델에 보낸다 — core가 기록 속 과거 이미지는 싣지 않는다.
+                        ...(userImages.length > 0
+                            ? {
+                                  userImages: userImages.map(image => ({
+                                      mediaType: image.mediaType,
+                                      data: image.bytes.toString('base64'),
+                                  })),
+                              }
+                            : {}),
                         availableTools: availableToolNames(),
                         portfolioSymbols,
                         // Untrusted; core validates and falls back to the locale's zone.

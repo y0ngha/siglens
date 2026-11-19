@@ -32,4 +32,15 @@ export const AI_CLIENT_PATHS: readonly string[] = [
     'widgets.chart',
     'shared.ui.misc',
     'shared.skillName',
+    // 답변 안 시각화 블록이 재사용하는 시그렌즈 위젯의 문구 — 네임스페이스 통째가 아니라 쓰는 하위 경로만 싣는다
+    // (`ChatVisualBlock`: 재무 추세 차트·표, 옵션 미결제약정 차트와 그 툴팁, 수급 분기 막대). 어긋나면 키가 그대로 보이므로
+    // `ChatVisualBlock.dom-fast.test`가 이 경로만 담은 메시지로 렌더해 확인한다.
+    'widgets.financials.StatementTable',
+    'widgets.financials.section.tableScrollHint',
+    'widgets.options.OpenInterestChart',
+    'widgets.options.tooltip.openInterest',
+    'widgets.options.tooltip.callOpenInterest',
+    'widgets.options.tooltip.putOpenInterest',
+    'widgets.investor-flows.flowChart',
+    'shared.ui.InfoTooltip',
 ];

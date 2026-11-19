@@ -49,7 +49,30 @@ describe('withChart', () => {
             id: 'b',
             block: CHART,
         });
-        expect(m.tools.map(t => t.chart?.symbol)).toEqual([undefined, 'QQQ']);
+        expect(m.tools.map(t => t.chart)).toEqual([undefined, CHART]);
+    });
+
+    it('시각화 블록(kind)도 붙이고, 모르는 kind는 바꾸지 않는다', () => {
+        const visual = {
+            version: 1,
+            kind: 'dividends',
+            asOf: '2026-11-19T00:00:00.000Z',
+            symbol: 'KO',
+            currency: 'USD',
+            years: [{ year: 2026, amount: 1, partial: true }],
+        };
+        const m = withChart(bubble({ tools: [tool('a')] }), {
+            id: 'a',
+            block: visual,
+        });
+        expect(m.tools[0]?.chart).toEqual(visual);
+        const before = bubble({ tools: [tool('a')] });
+        expect(
+            withChart(before, {
+                id: 'a',
+                block: { ...visual, kind: 'treemap' },
+            })
+        ).toBe(before);
     });
 
     it('모양이 다른 블록·모르는 id는 바꾸지 않는다', () => {

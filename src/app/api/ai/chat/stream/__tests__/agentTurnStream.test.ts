@@ -73,6 +73,7 @@ const memberTurn = (): ReadyTurn => ({
     repo: { appendMessages } as unknown as NonNullable<ReadyTurn['repo']>,
     conversationId: 'c1',
     userMessage: 'q',
+    userImages: [],
     userMessageId: 'u1',
     userMessageSeq: 1,
     history: [],
@@ -145,6 +146,27 @@ describe('agentTurnStream', () => {
         expect(text).toContain('event: done');
         expect(text).toContain('"assistantMessageId":"a0"');
         expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('이번 턴 이미지는 base64로 runAgentTurn의 userImages에 실리고, 없으면 키가 없다', async () => {
+        const bytes = Buffer.from([1, 2, 3, 4, 5]);
+        const { stream } = start({
+            turn: {
+                ...memberTurn(),
+                userImages: [
+                    { mediaType: 'image/webp', bytes, width: 1, height: 1 },
+                ],
+            },
+        });
+        await readAll(stream);
+        expect(runTurn.mock.calls.at(-1)?.[0]).toMatchObject({
+            userImages: [
+                { mediaType: 'image/webp', data: bytes.toString('base64') },
+            ],
+        });
+
+        await readAll(start().stream);
+        expect(runTurn.mock.calls.at(-1)?.[0]).not.toHaveProperty('userImages');
     });
 
     it('도구가 낸 차트 블록을 chart 프레임으로 보내고 그 도구 행에 저장한다', async () => {

@@ -10,16 +10,23 @@ import {
     sql,
     type SQL,
 } from 'drizzle-orm';
+import type { AgentImageMediaType } from '@y0ngha/siglens-core';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
-import { chatConversations, chatMessages } from '@/shared/db/schema';
+import {
+    chatConversations,
+    chatMessageImages,
+    chatMessages,
+} from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import type { NormalizedChatImage } from './server/normalizeChatImage';
 import {
     CONVERSATION_LIST_LIMIT,
     CONVERSATION_TITLE_COLUMN_MAX,
     deriveTitle,
     type ChatConversationRecord,
+    type ChatImageRef,
     type ChatMessageRecord,
     type NewChatMessage,
 } from './model';
@@ -39,6 +46,39 @@ function isValidUuid(id: string): boolean {
 /** `chat_messages` 행 수로 `message_count`를 다시 계산하는 서브쿼리. 증분(`+ n`)이 아니라 재계산이라 재시도에 멱등이고 기존 어긋남도 스스로 복구된다. */
 function messageCountSql(conversationId: string): SQL {
     return sql`(select count(*) from ${chatMessages} where ${chatMessages.conversationId} = ${conversationId})`;
+}
+
+/**
+ * 저장된 이미지 한 장 — 재생성·수정 때 새 user 행에 다시 저장하려고 바이트까지 읽은 모양.
+ * 지금 쓰기 경로는 항상 WebP지만 열은 형식을 담는다 — 읽을 때 그 값을 그대로 돌려줘야 모델에 보내는
+ * `mediaType`이 바이트와 어긋나지 않는다. `NormalizedChatImage`는 이 타입에 그대로 들어간다.
+ */
+export interface StoredChatImage extends Omit<
+    NormalizedChatImage,
+    'mediaType'
+> {
+    mediaType: AgentImageMediaType;
+}
+
+const AGENT_IMAGE_MEDIA_TYPES: readonly AgentImageMediaType[] = [
+    'image/webp',
+    'image/jpeg',
+    'image/png',
+];
+
+function toAgentImageMediaType(value: string): AgentImageMediaType {
+    const found = AGENT_IMAGE_MEDIA_TYPES.find(type => type === value);
+    // 쓰기는 정규화 결과만 넣으므로 모르는 값은 손상된 행이다 — 엉뚱한 형식 표시로 모델에 보내지 말고 던진다.
+    if (found === undefined)
+        throw new Error(`unsupported stored image media type: ${value}`);
+    return found;
+}
+
+/** 이미지 조회 라우트용 — 바이트와 그 이미지가 속한 대화의 소유자. */
+export interface ChatImageWithOwner {
+    mediaType: string;
+    data: Buffer;
+    ownerId: string;
 }
 
 /**
@@ -63,6 +103,8 @@ export class DrizzleChatConversationRepository {
     async create(input: {
         userId: string;
         firstMessage: string;
+        /** 첫 메시지에 이미지가 붙었는지 — 글이 비면 "이미지 분석" 제목을 쓴다. */
+        hasImages?: boolean;
         locale: Locale;
         modelId: string;
     }): Promise<ChatConversationRecord> {
@@ -70,7 +112,11 @@ export class DrizzleChatConversationRepository {
             .insert(chatConversations)
             .values({
                 userId: input.userId,
-                title: deriveTitle(input.firstMessage, input.locale),
+                title: deriveTitle(
+                    input.firstMessage,
+                    input.locale,
+                    input.hasImages
+                ),
                 locale: input.locale,
                 modelId: input.modelId,
                 lastMessageAt: new Date(),
@@ -189,12 +235,158 @@ export class DrizzleChatConversationRepository {
                     .orderBy(chatMessages.seq),
             DB_TRANSIENT_RETRY
         );
+        const imagesByMessage = rows.some(r => r.role === 'user')
+            ? await this.listImageRefs(conversationId)
+            : new Map<string, ChatImageRef[]>();
         // 선택 컬럼이 `withCharts`에 따라 둘 중 하나라 drizzle이 행 타입을 하나로 좁히지 못한다. 두 경우 모두 테이블의
         // 컬럼 그대로이고, 차트 컬럼을 빼고 읽은 행은 `chart: null`로 채우므로(읽었으면 `...row`가 덮는다) 레코드 모양과 같다.
         return rows.map(row => ({
             chart: null,
             ...row,
+            images: imagesByMessage.get(row.id) ?? [],
         })) as ChatMessageRecord[];
+    }
+
+    /**
+     * 대화의 모든 이미지 참조(바이트 제외)를 메시지 id별로 묶는다. `data`(bytea)를 읽지 않아 매 턴의
+     * 기록 읽기가 이미지 크기에 비례해 커지지 않는다.
+     */
+    private async listImageRefs(
+        conversationId: string
+    ): Promise<Map<string, ChatImageRef[]>> {
+        const refs = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        messageId: chatMessageImages.messageId,
+                        id: chatMessageImages.id,
+                        width: chatMessageImages.width,
+                        height: chatMessageImages.height,
+                    })
+                    .from(chatMessageImages)
+                    .innerJoin(
+                        chatMessages,
+                        eq(chatMessageImages.messageId, chatMessages.id)
+                    )
+                    .where(eq(chatMessages.conversationId, conversationId))
+                    .orderBy(chatMessageImages.position),
+            DB_TRANSIENT_RETRY
+        );
+        // 한 번에 묶는다 — 요소마다 배열을 복사하는 reduce는 한 메시지에 이미지가 몰릴수록 O(n²)다.
+        // `position` 순 정렬은 SQL이 끝냈고 `groupBy`는 입력 순서를 지킨다.
+        const byMessage = Map.groupBy(refs, ref => ref.messageId);
+        return new Map(
+            Array.from(byMessage, ([messageId, group]) => [
+                messageId,
+                group.map(({ id, width, height }) => ({ id, width, height })),
+            ])
+        );
+    }
+
+    /**
+     * 소유자 범위가 아니다(클래스 문서 참고). 한 user 행의 이미지를 바이트까지 `position` 순으로 읽는다 —
+     * edit이 행을 지우기 전에 읽어 새 행에 다시 저장하고, regenerate가 모델에 다시 보낼 때 쓴다.
+     * 형식이 틀린 `messageId`는 쿼리 없이 `[]`.
+     */
+    async listImagesOfMessage(messageId: string): Promise<StoredChatImage[]> {
+        if (!isValidUuid(messageId)) return [];
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        mediaType: chatMessageImages.mediaType,
+                        data: chatMessageImages.data,
+                        width: chatMessageImages.width,
+                        height: chatMessageImages.height,
+                    })
+                    .from(chatMessageImages)
+                    .where(eq(chatMessageImages.messageId, messageId))
+                    .orderBy(chatMessageImages.position),
+            DB_TRANSIENT_RETRY
+        );
+        return rows.map(row => ({
+            mediaType: toAgentImageMediaType(row.mediaType),
+            bytes: row.data,
+            width: row.width,
+            height: row.height,
+        }));
+    }
+
+    /**
+     * 이미지 한 장과 그 소유 대화의 `userId`. 조회 라우트가 세션 사용자와 대조해 소유자에게만 돌려준다 —
+     * 없는 id·형식이 틀린 id는 `null`이라 "없음"과 "내 것이 아님"이 같은 모양이다.
+     */
+    async findImageWithOwner(id: string): Promise<ChatImageWithOwner | null> {
+        if (!isValidUuid(id)) return null;
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        mediaType: chatMessageImages.mediaType,
+                        data: chatMessageImages.data,
+                        ownerId: chatConversations.userId,
+                    })
+                    .from(chatMessageImages)
+                    .innerJoin(
+                        chatMessages,
+                        eq(chatMessageImages.messageId, chatMessages.id)
+                    )
+                    .innerJoin(
+                        chatConversations,
+                        eq(chatMessages.conversationId, chatConversations.id)
+                    )
+                    .where(eq(chatMessageImages.id, id))
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        return row ?? null;
+    }
+
+    /**
+     * user 메시지 한 건과 그 이미지를 한 트랜잭션으로 넣는다 — 이미지 저장이 실패하면 user 행도 남지 않는다
+     * (이미지만 빠진 기록은 대화를 다시 열었을 때 맥락이 깨진다). 이미지가 없으면 `appendMessages`와 같다.
+     * 소유자 범위가 아니다(클래스 문서 참고). 재시도하지 않는다.
+     */
+    async appendUserMessage(
+        conversationId: string,
+        content: string,
+        images: readonly StoredChatImage[]
+    ): Promise<ChatMessageRecord | undefined> {
+        if (images.length === 0)
+            return (
+                await this.appendMessages(conversationId, [
+                    { role: 'user', content },
+                ])
+            )[0];
+        if (!isValidUuid(conversationId)) return undefined;
+        const inserted = await this.db.transaction(async tx => {
+            const [message] = await tx
+                .insert(chatMessages)
+                .values({
+                    conversationId,
+                    seq: sql<number>`(select coalesce(max(${chatMessages.seq}), 0) from ${chatMessages} where ${chatMessages.conversationId} = ${conversationId}) + 1`,
+                    role: 'user',
+                    content,
+                    status: 'complete',
+                })
+                .returning();
+            if (!message)
+                throw new Error('chat message insert returned no row');
+            await tx.insert(chatMessageImages).values(
+                images.map((image, position) => ({
+                    messageId: message.id,
+                    position,
+                    mediaType: image.mediaType,
+                    width: image.width,
+                    height: image.height,
+                    byteSize: image.bytes.byteLength,
+                    data: image.bytes,
+                }))
+            );
+            return message;
+        });
+        await this.refreshCounters(conversationId);
+        return inserted as ChatMessageRecord;
     }
 
     /**
@@ -227,9 +419,16 @@ export class DrizzleChatConversationRepository {
             .insert(chatMessages)
             .values(rows)
             .returning();
-        // 메시지는 이미 커밋됐다. 카운터 갱신이 재시도 후에도 실패했을 때 턴을 실패로 알리면
-        // 호출자가 재시도해 방금 넣은 행이 중복되므로, 오류를 삼키고 삽입된 메시지를 돌려준다.
-        // 다음 `appendMessages`가 `message_count`/`last_message_at`을 처음부터 다시 계산해 복구한다.
+        await this.refreshCounters(conversationId);
+        return inserted as ChatMessageRecord[];
+    }
+
+    /**
+     * 메시지는 이미 커밋됐다. 카운터 갱신이 재시도 후에도 실패했을 때 턴을 실패로 알리면
+     * 호출자가 재시도해 방금 넣은 행이 중복되므로, 오류를 삼킨다.
+     * 다음 호출이 `message_count`/`last_message_at`을 처음부터 다시 계산해 복구한다.
+     */
+    private async refreshCounters(conversationId: string): Promise<void> {
         try {
             await withRetry(
                 () =>
@@ -249,7 +448,6 @@ export class DrizzleChatConversationRepository {
                 conversationId
             );
         }
-        return inserted as ChatMessageRecord[];
     }
 
     /**

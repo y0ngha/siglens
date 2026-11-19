@@ -72,4 +72,41 @@ describe('readBoundedBody', () => {
         expect(error).toBeInstanceOf(BoundedBodyTooLargeError);
         expect((error as Error).message).not.toContain('http');
     });
+
+    describe('Request 본문', () => {
+        const requestOf = (stream: ReadableStream<Uint8Array>): Request =>
+            new Request('http://localhost/x', {
+                method: 'POST',
+                body: stream,
+                // Node fetch는 스트림 본문에 duplex를 요구한다.
+                duplex: 'half',
+            } as RequestInit);
+
+        it('상한 이하 본문을 청크 경계와 무관하게 이어 준다', async () => {
+            const { stream } = streamOf(['{"a":', '[1,2]}']);
+            const bytes = await readBoundedBody(requestOf(stream), 100);
+            expect(new TextDecoder().decode(bytes)).toBe('{"a":[1,2]}');
+        });
+
+        it('content-length 없이 chunked로 상한을 넘기면 던지고 나머지를 읽지 않고 스트림을 끊는다', async () => {
+            const chunk = 'x'.repeat(60);
+            const { stream, state } = streamOf(Array(50).fill(chunk));
+            const request = requestOf(stream);
+            expect(request.headers.get('content-length')).toBeNull();
+            await expect(readBoundedBody(request, 100)).rejects.toBeInstanceOf(
+                BoundedBodyTooLargeError
+            );
+            expect(state.cancelled).toBe(true);
+            expect(state.pulled).toBeLessThan(10);
+        });
+
+        it('본문이 없으면 빈 배열이다', async () => {
+            const request = new Request('http://localhost/x', {
+                method: 'POST',
+            });
+            expect(await readBoundedBody(request, 100)).toEqual(
+                new Uint8Array(0)
+            );
+        });
+    });
 });

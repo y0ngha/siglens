@@ -3,10 +3,15 @@
 /**
  * 질문 한 턴 — 오른쪽 말풍선과 그 아래 동작 줄, 또는 편집 중이면 그 자리의 편집 폼.
  */
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import type { ReactNode, Ref } from 'react';
+import type { ChatImageAttachment } from '@/features/agent-chat/model/types';
 
 interface UserMessageProps {
     readonly content: string;
+    /** 첨부한 이미지. 방금 보낸 것은 object URL, 저장된 대화는 `/api/ai/chat/images/<id>`다. */
+    readonly images?: readonly ChatImageAttachment[];
     /** 보낸 직후 이 노드를 화면 위로 올리려고 스크롤 훅이 잡는다. */
     readonly nodeRef: Ref<HTMLElement>;
     readonly minHeight: number | undefined;
@@ -21,11 +26,13 @@ interface UserMessageProps {
  */
 export function UserMessage({
     content,
+    images = [],
     nodeRef,
     minHeight,
     actions,
     editor,
 }: UserMessageProps) {
+    const t = useTranslations('widgets.agent-chat');
     return (
         <article
             ref={nodeRef}
@@ -40,9 +47,43 @@ export function UserMessage({
         >
             {editor ?? (
                 <>
-                    <div className="surface-raised max-w-[80%] rounded-lg px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
-                        {content}
-                    </div>
+                    {images.length > 0 && (
+                        <ul
+                            aria-label={t('UserMessage.imagesLabel')}
+                            className="mb-2 flex max-w-[80%] flex-wrap justify-end gap-2"
+                        >
+                            {images.map((image, index) => (
+                                <li key={image.id} className="size-24 shrink-0">
+                                    {/* 새 탭에서 원본 크기로 연다. 상자 크기를 고정해 이미지가 오는 동안 줄이 흔들리지 않는다. */}
+                                    <a
+                                        href={image.src}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={t('UserMessage.openImage', {
+                                            n: index + 1,
+                                        })}
+                                        className="block size-24 overflow-hidden rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        <Image
+                                            unoptimized
+                                            src={image.src}
+                                            alt={t('UserMessage.imageAlt', {
+                                                n: index + 1,
+                                            })}
+                                            width={image.width}
+                                            height={image.height}
+                                            className="size-24 object-cover"
+                                        />
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {content !== '' && (
+                        <div className="surface-raised max-w-[80%] rounded-lg px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
+                            {content}
+                        </div>
+                    )}
                     {actions}
                 </>
             )}

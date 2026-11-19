@@ -26,6 +26,73 @@ const base = {
 };
 
 describe('fakeAgentProvider', () => {
+    it('이미지 턴은 대문자 티커가 있어도 도구 없이 장수를 확인한 답으로 끝난다', async () => {
+        const onEvent = vi.fn();
+        const r = await fakeAgentProvider({
+            ...base,
+            onEvent,
+            messages: [
+                {
+                    role: 'user',
+                    content: 'NVDA 어때?',
+                    images: [{ mediaType: 'image/webp', data: 'AAAA' }],
+                },
+            ],
+        });
+        expect(r.toolCalls).toEqual([]);
+        expect(r.text).toBe('[E2E agent] 이미지 1장을 확인했습니다.');
+        expect(onEvent).toHaveBeenCalledWith({
+            type: 'text',
+            delta: r.text,
+        });
+    });
+
+    it('"비교 차트"는 show_chart(compare)를 부르고, 도구 결과가 오면 고정 답으로 끝난다', async () => {
+        const tools = [
+            ...base.tools,
+            ...base.tools.slice(0, 1).map(t => ({ ...t, name: 'show_chart' })),
+        ];
+        const asked = await fakeAgentProvider({
+            ...base,
+            tools,
+            onEvent: vi.fn(),
+            messages: [{ role: 'user', content: '애플 마소 비교 차트 그려줘' }],
+        });
+        expect(asked.toolCalls).toEqual([
+            {
+                id: 'fake_1',
+                name: 'show_chart',
+                args: { kind: 'compare', symbols: ['AAPL', 'MSFT'] },
+            },
+        ]);
+        const answered = await fakeAgentProvider({
+            ...base,
+            tools,
+            onEvent: vi.fn(),
+            messages: [
+                { role: 'user', content: '애플 마소 비교 차트 그려줘' },
+                { role: 'assistant', content: '', toolCalls: asked.toolCalls },
+                {
+                    role: 'tool',
+                    content: '{"rendered":true}',
+                    toolCallId: 'fake_1',
+                    toolName: 'show_chart',
+                },
+            ],
+        });
+        expect(answered.toolCalls).toEqual([]);
+        expect(answered.text).toContain('[E2E agent]');
+    });
+
+    it('show_chart가 가용 목록에 없으면 "비교 차트"도 예전 경로로 간다', async () => {
+        const r = await fakeAgentProvider({
+            ...base,
+            onEvent: vi.fn(),
+            messages: [{ role: 'user', content: 'QQQ 비교 차트' }],
+        });
+        expect(r.toolCalls[0]?.name).toBe('get_quote');
+    });
+
     it('"차트"를 물어도 get_bars_indicators가 없으면 get_quote로 답한다', async () => {
         const r = await fakeAgentProvider({
             ...base,

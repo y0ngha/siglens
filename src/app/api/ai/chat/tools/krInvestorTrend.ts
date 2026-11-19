@@ -100,12 +100,13 @@ async function fetchEntry(code: string): Promise<TrendCacheEntry> {
 }
 
 /**
- * 도구 전체를 실패시키지 않는다 — 실패(네트워크·형태 불일치)와 HTTP 200 `[]`(데이터 없음) 모두 `null`이고, 모델은 이를
- * "확인 못 함"으로 말한다(`notProvided`). 다만 캐시는 다르다: 정상 30분, 데이터 없음 6시간, 실패 5분.
+ * 캐시된 일별 행(최신순, 최대 {@link KR_TREND_LONG_WINDOW}개)을 그대로 돌려준다 — `get_investor_flows`는 출력 예산 때문에 그중
+ * 10행만 싣지만 `show_chart`(수급)는 20일 전부를 그린다. 실패(네트워크·형태 불일치)와 HTTP 200 `[]`(데이터 없음) 모두 `null`이다.
+ * 캐시는 정상 30분, 데이터 없음 6시간, 실패 5분. 던지지 않는다.
  */
-export async function loadKrInvestorTrend(
+export async function loadKrInvestorTrendRows(
     symbol: string
-): Promise<KrInvestorTrendView | null> {
+): Promise<NaverInvestorTrendRow[] | null> {
     const code = krSymbolToStockCode(symbol);
     if (code === null) return null;
     try {
@@ -114,7 +115,9 @@ export async function loadKrInvestorTrend(
             ttlFor,
             () => fetchEntry(code)
         );
-        return entry.kind === 'ok' ? buildKrInvestorTrend(entry.rows) : null;
+        return entry.kind === 'ok'
+            ? entry.rows.slice(0, KR_TREND_LONG_WINDOW)
+            : null;
     } catch (error) {
         logToolDegrade(
             'get_investor_flows',
@@ -123,4 +126,15 @@ export async function loadKrInvestorTrend(
         );
         return null;
     }
+}
+
+/**
+ * 도구 전체를 실패시키지 않는다 — 실패(네트워크·형태 불일치)와 HTTP 200 `[]`(데이터 없음) 모두 `null`이고, 모델은 이를
+ * "확인 못 함"으로 말한다(`notProvided`). 다만 캐시는 다르다: 정상 30분, 데이터 없음 6시간, 실패 5분.
+ */
+export async function loadKrInvestorTrend(
+    symbol: string
+): Promise<KrInvestorTrendView | null> {
+    const rows = await loadKrInvestorTrendRows(symbol);
+    return rows === null ? null : buildKrInvestorTrend(rows);
 }

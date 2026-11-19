@@ -2,7 +2,9 @@ import 'server-only';
 import {
     findAgentTheme,
     summarizeTheme,
+    type AgentTheme,
     type ThemeMemberCloses,
+    type ThemeSnapshot,
 } from '@y0ngha/siglens-core';
 import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
@@ -72,14 +74,22 @@ async function loadMemberCloses(
     };
 }
 
+/** 테마 스냅샷 로드 결과 — 도구 결과 그대로이고, `show_chart`(`heatmap`)도 같은 값을 읽는다. */
+export type ThemeSnapshotResult =
+    | { theme: string; available: false; reason: 'provider_failed' }
+    | ({
+          asOf: string;
+          source: string;
+          available: true;
+      } & ThemeSnapshot);
+
 /**
- * SIGLENS가 고른 테마 바스켓의 최근 흐름(core `summarizeTheme`). 종목별 완결 일봉 종가를 읽어 넘기고, 집계·정렬은
- * core가 한다. 일부 종목을 못 읽으면 `missing`에 실리고, 하나도 못 읽으면 `provider_failed`다. 절대 던지지 않는다.
+ * 테마 바스켓의 종목별 완결 일봉 종가를 읽어 core `summarizeTheme`으로 집계한다. 일부 종목을 못 읽으면 `missing`에
+ * 실리고, 하나도 못 읽으면 `provider_failed`다. 절대 던지지 않는다.
  */
-export const getThemeSnapshotTool: ToolExecutor = async args => {
-    const theme =
-        typeof args.theme === 'string' ? findAgentTheme(args.theme) : undefined;
-    if (theme === undefined) return { error: 'invalid_args' };
+export async function loadThemeSnapshot(
+    theme: AgentTheme
+): Promise<ThemeSnapshotResult> {
     const now = new Date();
     const settled = await withConcurrencyLimit(
         theme.symbols,
@@ -111,4 +121,15 @@ export const getThemeSnapshotTool: ToolExecutor = async args => {
         available: true,
         ...snapshot,
     };
+}
+
+/**
+ * SIGLENS가 고른 테마 바스켓의 최근 흐름(core `summarizeTheme`). 종목별 완결 일봉 종가를 읽어 넘기고, 집계·정렬은
+ * core가 한다({@link loadThemeSnapshot}).
+ */
+export const getThemeSnapshotTool: ToolExecutor = args => {
+    const theme =
+        typeof args.theme === 'string' ? findAgentTheme(args.theme) : undefined;
+    if (theme === undefined) return Promise.resolve({ error: 'invalid_args' });
+    return loadThemeSnapshot(theme);
 };

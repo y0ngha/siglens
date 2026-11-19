@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ResponsiveRecordList } from '../../../ui/tables/ResponsiveRecordList';
+import { ResponsiveRecordList } from '@/shared/ui/ResponsiveRecordList';
 
 function renderList(
     columns: readonly { label: string; align: 'left' | 'right' }[]

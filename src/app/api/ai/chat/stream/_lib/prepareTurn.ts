@@ -5,7 +5,11 @@ import {
     type AgentMessage,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
+import {
+    DrizzleChatConversationRepository,
+    type StoredChatImage,
+} from '@/entities/chat-conversation/api';
+import type { NormalizedChatImage } from '@/entities/chat-conversation/server/normalizeChatImage';
 import {
     toAgentHistory,
     type ChatMessageRecord,
@@ -39,6 +43,11 @@ export interface ReadyTurn {
     conversationId: string | null;
     title?: string;
     userMessage: string;
+    /**
+     * 이번 턴 user 메시지에 실을 이미지(서버가 정규화한 WebP). 회원 `send`·`edit`은 저장한 그 이미지, `regenerate`는
+     * 마지막 user 행에서 다시 읽은 이미지다. 게스트는 요청 본문 그대로이고 저장하지 않는다.
+     */
+    userImages: readonly StoredChatImage[];
     userMessageId: string | null;
     userMessageSeq: number | null;
     history: AgentMessage[];
@@ -72,16 +81,46 @@ export function isConversationGone(error: unknown): boolean {
 }
 
 /** A guest turn: the browser's transcript is the history, and nothing is stored. */
-export function guestTurn(body: ParsedBody): ReadyTurn {
+export function guestTurn(
+    body: ParsedBody,
+    images: readonly NormalizedChatImage[] = []
+): ReadyTurn {
     return {
         repo: null,
         conversationId: null,
         userMessage: body.message,
+        userImages: images,
         userMessageId: null,
         userMessageSeq: null,
         history: body.history,
         portfolioSymbols: [],
     };
+}
+
+type ChatRepo = InstanceType<typeof DrizzleChatConversationRepository>;
+
+/**
+ * `edit`의 이미지 승계. 대상이 이 대화의 user 행이 아니면 null(거절).
+ * 본문에 이미지가 있으면 그것이 대체하고, 없으면 대상 행의 이미지를 읽는다.
+ * 행을 지우면 이미지도 cascade로 사라지므로 호출자는 지우기 전에 이 함수를 부른다.
+ *
+ * `rows`는 호출자가 이미 읽은 대화 전체다 — 행 하나를 찾으려고 이미지 참조 조인까지 하는 전체 읽기를
+ * 한 번 더 하지 않는다.
+ */
+async function resolveEditImages(
+    repo: ChatRepo,
+    rows: readonly ChatMessageRecord[],
+    editSeq: number,
+    images: readonly StoredChatImage[]
+): Promise<readonly StoredChatImage[] | null> {
+    const target = rows.find(r => r.seq === editSeq);
+    // Reject an editSeq that doesn't point at an existing USER row
+    // owned by this conversation — an assistant/tool row would leave
+    // two consecutive user rows after the append below.
+    if (!target || target.role !== 'user') return null;
+    return images.length === 0 && (target.images?.length ?? 0) > 0
+        ? repo.listImagesOfMessage(target.id)
+        : images;
 }
 
 /**
@@ -93,7 +132,8 @@ export async function prepareMemberTurn(
     userId: string,
     body: ParsedBody,
     tier: Tier,
-    locale: Locale
+    locale: Locale,
+    images: readonly NormalizedChatImage[] = []
 ): Promise<PreparedTurn> {
     const { db } = getDatabaseClient();
     const repo = new DrizzleChatConversationRepository(db);
@@ -126,6 +166,7 @@ export async function prepareMemberTurn(
         const created = await repo.create({
             userId: userId,
             firstMessage: body.message,
+            hasImages: images.length > 0,
             locale,
             // Always AGENT_MODEL, never the fallback: no turn has run yet at
             // conversation-create time, so whether DeepSeek or Gemini answers
@@ -136,24 +177,37 @@ export async function prepareMemberTurn(
         title = created.title;
     }
 
+    // 이번 턴 user 메시지의 이미지. `send`는 요청 본문, `edit`은 본문이 없을 때 대상 행에서 승계,
+    // `regenerate`는 아래에서 마지막 user 행에서 다시 읽는다.
+    // `edit`만 지우기 전에 대화를 읽는다 — 아래 이력 읽기가 이 행들에서 지워질 구간만 빼면 같은 결과라 다시 읽지 않는다.
+    const rowsBeforeEdit =
+        body.action === 'edit' ? await repo.listMessages(conversationId) : [];
+    const carriedImages =
+        body.action === 'edit'
+            ? await resolveEditImages(
+                  repo,
+                  rowsBeforeEdit,
+                  body.editSeq,
+                  images
+              )
+            : images;
+    if (carriedImages === null) {
+        return { status: HTTP_STATUS_BAD_REQUEST, error: 'invalid_body' };
+    }
+
     if (body.action === 'edit') {
-        const { editSeq } = body;
-        const rows = await repo.listMessages(conversationId);
-        const target = rows.find(r => r.seq === editSeq);
-        // Reject an editSeq that doesn't point at an existing USER row
-        // owned by this conversation — an assistant/tool row would leave
-        // two consecutive user rows after the append below.
-        if (!target || target.role !== 'user') {
-            return { status: HTTP_STATUS_BAD_REQUEST, error: 'invalid_body' };
-        }
-        await repo.deleteFromSeq(conversationId, editSeq);
+        await repo.deleteFromSeq(conversationId, body.editSeq);
     } else if (body.action === 'regenerate') {
         if ((await repo.supersedeAfterLastUser(conversationId)) === null) {
             return { status: HTTP_STATUS_BAD_REQUEST, error: 'invalid_body' };
         }
     }
 
-    const rows = await repo.listMessages(conversationId);
+    // `deleteFromSeq`가 `editSeq` 이상을 지웠으므로, 다시 읽은 결과와 같다(턴 락 아래라 그 사이 쓰기는 없다).
+    const rows =
+        body.action === 'edit'
+            ? rowsBeforeEdit.filter(r => r.seq < body.editSeq)
+            : await repo.listMessages(conversationId);
     if (rows.length >= AGENT_LIMITS.messagesPerConversation) {
         return { status: HTTP_STATUS_CONFLICT, error: 'conversation_full' };
     }
@@ -162,18 +216,31 @@ export async function prepareMemberTurn(
     // whole transcript is history; `regenerate` reuses the last user row as `userMessage` and
     // drops it from history.
     let history: AgentMessage[] = toAgentHistory(rows);
+    const lastUser =
+        body.action === 'regenerate'
+            ? [...rows].reverse().find(r => r.role === 'user')
+            : undefined;
+    const userImages: readonly StoredChatImage[] =
+        body.action !== 'regenerate'
+            ? carriedImages
+            : lastUser !== undefined && (lastUser.images?.length ?? 0) > 0
+              ? await repo.listImagesOfMessage(lastUser.id)
+              : [];
     if (body.action === 'regenerate') {
-        userMessage =
-            [...rows].reverse().find(r => r.role === 'user')?.content ?? '';
+        userMessage = lastUser?.content ?? '';
         const lastUserIndex = history.map(m => m.role).lastIndexOf('user');
         history =
             lastUserIndex >= 0 ? history.slice(0, lastUserIndex) : history;
     } else {
         let saved: ChatMessageRecord | undefined;
         try {
-            [saved] = await repo.appendMessages(conversationId, [
-                { role: 'user', content: body.message },
-            ]);
+            // user 행과 이미지를 한 트랜잭션으로 — 이미지 저장이 실패하면 던져 턴을 시작하지 않는다
+            // (이미지만 빠진 채 저장하는 폴백은 없다).
+            saved = await repo.appendUserMessage(
+                conversationId,
+                body.message,
+                userImages
+            );
         } catch (error) {
             // Deleted between the ownership check and this insert. No stream exists
             // yet, so answer on the HTTP stage rather than as an SSE frame.
@@ -192,6 +259,7 @@ export async function prepareMemberTurn(
         conversationId,
         title,
         userMessage,
+        userImages,
         userMessageId,
         userMessageSeq,
         history,

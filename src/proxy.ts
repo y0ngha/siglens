@@ -51,11 +51,13 @@ const intlMiddleware = createIntlMiddleware(routing);
  * `img-src`를 좁히는 이유는 모델 출력에 섞인 이미지 URL로 대화 내용을 빼내는 경로를
  * 막기 위해서다(agent-chat 설계 "출력 위생"). Google Ads 전환 픽셀 호스트만 연다 —
  * Google 태그 CSP 가이드의 Ads 이미지 목록. 국가 도메인은 와일드카드가 안 돼서
- * 광고 대상인 한국만 넣었다.
+ * 광고 대상인 한국만 넣었다. `blob:`은 사용자가 첨부한 이미지의 미리보기·전송 직후 말풍선(브라우저가 만든 object
+ * URL)이다 — 같은 출처 안에서만 만들어지고 바깥으로 요청을 보내지 않으므로 위 유출 경로와 무관하다. 빠지면 첨부
+ * 썸네일이 CSP에 막혀 깨진 이미지로 보인다.
  */
 // ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
 const AI_CSP =
-    "frame-ancestors 'none'; img-src 'self' data: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
+    "frame-ancestors 'none'; img-src 'self' data: blob: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
 /**
  * SIGLENS AI의 공개 면은 로케일별 홈과 `/about`, 그리고 게이트가 열린 뒤의 `/benchmark`(`AI_INDEXABLE_PATHS`)이다. 대화(`/c/*`)는 회원 본인만
  * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.

@@ -104,24 +104,6 @@ export function ImpliedMoveTooltip() {
     );
 }
 
-export const OpenInterestTooltip = (
-    <TooltipParagraphs namespace="widgets.options" tooltipKey="openInterest" />
-);
-
-export const CallOpenInterestTooltip = (
-    <TooltipParagraphs
-        namespace="widgets.options"
-        tooltipKey="callOpenInterest"
-    />
-);
-
-export const PutOpenInterestTooltip = (
-    <TooltipParagraphs
-        namespace="widgets.options"
-        tooltipKey="putOpenInterest"
-    />
-);
-
 export const CallVolumeTooltip = (
     <TooltipParagraphs namespace="widgets.options" tooltipKey="callVolume" />
 );

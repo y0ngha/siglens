@@ -22,6 +22,8 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
             findForUser: vi.fn(),
             listMessages: vi.fn(),
             appendMessages: vi.fn(),
+            appendUserMessage: vi.fn(),
+            listImagesOfMessage: vi.fn(),
             countForUser: vi.fn(),
             supersedeAfterLastUser: vi.fn(),
             deleteFromSeq: vi.fn(),
@@ -96,6 +98,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     runAgentTurn: m.runTurn,
 }));
 
+import sharp from 'sharp';
 import { POST } from '@/app/api/ai/chat/stream/route';
 import { getActiveAgentTurns } from '@/app/api/ai/chat/stream/_lib/turnSlots';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
@@ -179,6 +182,12 @@ describe('POST /api/ai/chat/stream', () => {
                     seq: i + 1,
                 }))
         );
+        // user 행 저장은 `appendUserMessage` — 이미지 없는 턴은 `appendMessages`와 같은 행을 남긴다.
+        m.repo.appendUserMessage.mockImplementation(
+            async (c: string, content: string) =>
+                (await m.repo.appendMessages(c, [{ role: 'user', content }]))[0]
+        );
+        m.repo.listImagesOfMessage.mockResolvedValue([]);
         m.runTurn.mockResolvedValue(OK_TURN);
     });
     afterEach(() => vi.unstubAllEnvs());
@@ -546,6 +555,7 @@ describe('POST /api/ai/chat/stream', () => {
         expect(m.repo.create).toHaveBeenCalledWith({
             userId: 'u1',
             firstMessage: 'AAPL?',
+            hasImages: false,
             locale: 'en',
             modelId: 'deepseek-v4.1-flash',
         });
@@ -1271,6 +1281,178 @@ describe('POST /api/ai/chat/stream', () => {
                 )
             ).toBe(false);
             warn.mockRestore();
+        });
+    });
+
+    // ---- 이미지 ----
+    describe('이미지', () => {
+        const pngBase64 = async (): Promise<string> =>
+            (
+                await sharp({
+                    create: {
+                        width: 32,
+                        height: 24,
+                        channels: 3,
+                        background: { r: 10, g: 20, b: 200 },
+                    },
+                })
+                    .png()
+                    .toBuffer()
+            ).toString('base64');
+
+        it('content-length가 16MB를 넘으면 본문을 읽기 전에 413이고 락도 잡지 않는다', async () => {
+            const res = await POST(
+                post(
+                    { message: 'x' },
+                    { 'content-length': String(16 * 1024 * 1024 + 1) }
+                )
+            );
+            expect(res.status).toBe(413);
+            expect(await res.json()).toEqual({ error: 'too_large' });
+            expect(m.lock).not.toHaveBeenCalled();
+            expect(m.runTurn).not.toHaveBeenCalled();
+        });
+
+        it('content-length 없이 chunked로 16MB를 넘겨도 413이고 락을 잡지 않는다', async () => {
+            const chunk = new Uint8Array(1024 * 1024).fill(120);
+            const body = new ReadableStream<Uint8Array>({
+                start(controller) {
+                    Array.from({ length: 17 }, () => controller.enqueue(chunk));
+                    controller.close();
+                },
+            });
+            const res = await POST(
+                new Request('http://localhost/api/ai/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        Origin: AI_ORIGIN,
+                    },
+                    body,
+                    duplex: 'half',
+                } as RequestInit)
+            );
+            expect(res.status).toBe(413);
+            expect(await res.json()).toEqual({ error: 'too_large' });
+            expect(m.lock).not.toHaveBeenCalled();
+        });
+
+        it('regenerate에 이미지가 실려 오면 400 invalid_body이고 락을 잡지 않는다', async () => {
+            const res = await POST(
+                post({
+                    action: 'regenerate',
+                    images: [
+                        { mediaType: 'image/png', data: await pngBase64() },
+                    ],
+                })
+            );
+            expect(res.status).toBe(400);
+            expect(await res.json()).toEqual({ error: 'invalid_body' });
+            expect(m.lock).not.toHaveBeenCalled();
+            expect(m.runTurn).not.toHaveBeenCalled();
+        });
+
+        it('읽을 수 없는 이미지는 400 invalid_image이고 슬롯·락을 반납하며 턴은 돌지 않는다', async () => {
+            const release = vi.fn();
+            m.lock.mockResolvedValue({ release });
+            const res = await POST(
+                post({
+                    message: 'x',
+                    images: [
+                        {
+                            mediaType: 'image/png',
+                            data: Buffer.from('not an image').toString(
+                                'base64'
+                            ),
+                        },
+                    ],
+                })
+            );
+            expect(res.status).toBe(400);
+            expect(await res.json()).toEqual({ error: 'invalid_image' });
+            expect(release).toHaveBeenCalledTimes(1);
+            expect(getActiveAgentTurns()).toBe(0);
+            expect(m.runTurn).not.toHaveBeenCalled();
+            expect(m.repo.appendUserMessage).not.toHaveBeenCalled();
+        });
+
+        it('게스트 send: 정규화한 WebP를 userImages로 보내고 아무것도 저장하지 않는다', async () => {
+            m.user.mockResolvedValueOnce(null);
+            const res = await POST(
+                post({
+                    message: '',
+                    images: [
+                        { mediaType: 'image/png', data: await pngBase64() },
+                    ],
+                })
+            );
+            expect(res.status).toBe(200);
+            await res.text();
+            const params = m.runTurn.mock.calls.find(
+                ([p]) => p.userMessage === '' && p.userImages.length > 0
+            )?.[0];
+            expect(params).toBeDefined();
+            const sent = params?.userImages[0];
+            expect(params?.userImages).toHaveLength(1);
+            expect(sent?.mediaType).toBe('image/webp');
+            const meta = await sharp(
+                Buffer.from(sent?.data ?? '', 'base64')
+            ).metadata();
+            expect([meta.format, meta.width, meta.height]).toEqual([
+                'webp',
+                32,
+                24,
+            ]);
+            expect(RepoCtor).not.toHaveBeenCalled();
+        });
+
+        it('회원 send: user 행과 함께 이미지를 저장하고 같은 이미지를 모델에 보낸다', async () => {
+            const res = await POST(
+                post({
+                    conversationId: 'c1',
+                    message: '이거 어때?',
+                    images: [
+                        { mediaType: 'image/png', data: await pngBase64() },
+                    ],
+                })
+            );
+            expect(res.status).toBe(200);
+            await res.text();
+            const appended = m.repo.appendUserMessage.mock.calls.find(
+                ([, content]) => content === '이거 어때?'
+            );
+            expect(appended).toBeDefined();
+            const [conversationId, content, stored] = appended ?? [];
+            expect([conversationId, content]).toEqual(['c1', '이거 어때?']);
+            expect(stored).toHaveLength(1);
+            const params = m.runTurn.mock.calls.find(
+                ([p]) => p.userMessage === '이거 어때?'
+            )?.[0];
+            expect(params?.userImages[0]?.data).toBe(
+                stored?.[0]?.bytes.toString('base64')
+            );
+        });
+
+        it('회원 이미지 저장이 실패하면 500이고 모델은 돌지 않으며 락을 반납한다', async () => {
+            const release = vi.fn();
+            m.lock.mockResolvedValue({ release });
+            m.repo.appendUserMessage.mockRejectedValue(new Error('db down'));
+            const error = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const res = await POST(
+                post({
+                    conversationId: 'c1',
+                    message: 'x',
+                    images: [
+                        { mediaType: 'image/png', data: await pngBase64() },
+                    ],
+                })
+            );
+            error.mockRestore();
+            expect(res.status).toBe(500);
+            expect(m.runTurn).not.toHaveBeenCalled();
+            expect(release).toHaveBeenCalledTimes(1);
         });
     });
 });

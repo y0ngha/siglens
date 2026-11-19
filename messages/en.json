@@ -3976,6 +3976,63 @@
                 "extendedHours": "Show extended hours (pre/after-market)",
                 "extendedHoursUnavailable": "No extended hours on daily charts, Korean stocks or crypto",
                 "label": "Chart settings"
+            },
+            "ChatVisual": {
+                "asOf": "As of {date}",
+                "colChange": "Return",
+                "colDayChange": "Change",
+                "colDate": "Date",
+                "colDay1": "1 Day",
+                "colDay20": "20 Days",
+                "colDay5": "5 Days",
+                "colDividend": "Dividend per Share",
+                "colEps": "EPS",
+                "colEpsActual": "EPS Actual",
+                "colEpsEstimate": "EPS Estimate",
+                "colForeign": "Foreigners",
+                "colFrom": "Start Date",
+                "colIndividual": "Individuals",
+                "colInsiderNet": "Insider Net Purchase Amount",
+                "colInstitution": "Institutions",
+                "colMonth": "Month",
+                "colName": "Name",
+                "colNetIncome": "Net Income",
+                "colPnl": "P&L Ratio",
+                "colRevenue": "Revenue",
+                "colSector": "Sector",
+                "colSymbol": "Symbol",
+                "colTo": "End Date",
+                "colWeight": "Weight",
+                "compareAria": "Line chart comparing {symbols} returns. Change over the last {period}: {changes}",
+                "compareTitle": "Return Comparison · Last {period}",
+                "dataTable": "View Data Table",
+                "dividendsAria": "Bar chart of {symbol} dividends per share by year. Most recent {year}: {amount}",
+                "dividendsAriaPartial": "Bar chart of {symbol} dividends per share by year. Most recent {year}: {amount} (partial year)",
+                "dividendsTitle": "{symbol} Dividends Per Share ({currency})",
+                "financialsAria": "Bar chart of {symbol} revenue and net income for the last {count} quarters. Most recent {period}: revenue {revenue}, net income {netIncome}",
+                "financialsTitle": "{symbol} Quarterly Earnings · Last {count} Quarters",
+                "flowsInsiderAria": "{symbol} insider net buying by month, bar chart. {months}-month total {total}",
+                "flowsInsiderCaption": "Insider Net Buy Amount (Monthly, USD)",
+                "flowsInstitutionalCaption": "Institutional Holdings Net Change (Quarterly)",
+                "flowsKrAria": "Bar chart of {symbol} daily net buying by foreign, institutional, and individual investors. Last {days} days total: foreign {foreign}, institutional {institution}, individual {individual}",
+                "flowsKrTitle": "{symbol} Investor Net Buying (shares) · Last {days} Days",
+                "flowsUsTitle": "{symbol} Supply & Demand · Institutional Quarterly, Insider Monthly",
+                "heatmapSectorsTitle": "{market} Sector Performance · Today",
+                "heatmapThemeTitle": "{label} Theme · Constituent Performance",
+                "legendForeign": "Foreign",
+                "legendIndividual": "Individual",
+                "legendInstitution": "Institutional",
+                "marketKr": "Korea",
+                "marketUs": "US",
+                "optionsSummary": "Max pain {maxPain} · Put/call ratio {ratio}",
+                "optionsTitle": "{symbol} Options Open Interest · {expiry} Expiry",
+                "period1M": "1 Month",
+                "period1Y": "1 Year",
+                "period3M": "3 Months",
+                "period6M": "6 Months",
+                "portfolioGroup": "{currency} Holdings",
+                "portfolioTitle": "My Holdings · Weight and P&L",
+                "yearPartial": "{year} (Partial)"
             }
         },
         "ask-ai-fab": {
@@ -5826,7 +5883,9 @@
                 "errorUnauthenticated": "Please log in.",
                 "guestNotice": "Guest conversations are not saved.",
                 "loginCta": "Log in",
-                "openConversations": "Conversations"
+                "openConversations": "Conversations",
+                "errorInvalidImage": "Failed to read image. Please try again with a different image.",
+                "errorTooLarge": "Image is too large to send. Please reduce the number or size of images."
             },
             "Composer": {
                 "4077ce": "Send",
@@ -5837,7 +5896,16 @@
                 "charCount": "{len} / {max}",
                 "placeholder": "Ask SIGLENS AI…",
                 "keyHint": "Enter to send, Shift+Enter for a new line",
-                "betaNotice": "Beta: answers may contain errors and are not investment advice."
+                "betaNotice": "Beta: answers may contain errors and are not investment advice.",
+                "attachImage": "Attach image",
+                "attachedImages": "Attached images",
+                "imageAlt": "Attached image {n}",
+                "imageLimit": "You can attach up to {max} images.",
+                "imagePrivacyHint": "Please cover personal information such as account numbers before uploading.",
+                "imageTooLarge": "{name} file is too large (only files under 25MB can be uploaded)",
+                "imageUnreadable": "Failed to read {name} file.",
+                "imageUnsupported": "{name} is an unsupported format (PNG, JPEG, WebP, GIF).",
+                "removeImage": "Remove attached image {n}"
             },
             "EmptyState": {
                 "a00741": "Log in with your SIGLENS account",
@@ -5942,6 +6010,11 @@
                 "toolWebSearch": "Web search",
                 "toolGuide": "Chart Guide",
                 "toolXPosts": "X posts"
+            },
+            "UserMessage": {
+                "imageAlt": "Attached image {n}",
+                "imagesLabel": "Attached images",
+                "openImage": "Open attached image {n} in new tab"
             }
         }
     }

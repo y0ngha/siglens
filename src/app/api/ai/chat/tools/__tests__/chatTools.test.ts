@@ -121,7 +121,7 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 20종(web_search·get_x_posts는 키 있을 때만)', () => {
+    it('가용 툴 21종(web_search·get_x_posts는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_analyst_views',
             'get_bars_indicators',
@@ -143,6 +143,7 @@ describe('tool registry', () => {
             'get_theme_snapshot',
             'run_fresh_analysis',
             'search_ticker',
+            'show_chart',
         ]);
     });
 
@@ -169,6 +170,15 @@ describe('tool registry', () => {
                 false
             );
             expect(availableToolNames().has('get_swing_history')).toBe(false);
+        } finally {
+            e2eState.on = false;
+        }
+    });
+
+    it('E2E fake 모드에서도 show_chart는 가용 목록에 남는다(fake 공급자 데이터로 그린다)', () => {
+        e2eState.on = true;
+        try {
+            expect(availableToolNames().has('show_chart')).toBe(true);
         } finally {
             e2eState.on = false;
         }

@@ -1,8 +1,16 @@
+import path from 'node:path';
+import type { Locator } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { AUTH_STORAGE_STATE } from '../support/authUser';
 
 const AI = 'http://ai.localhost:4300';
 const MAIN = 'http://localhost:4300';
+// e2e 스펙은 CommonJS로 실행된다 — `import.meta`를 쓰면 Playwright가 파일을 읽지도 못하고 모든 샤드가 실패한다.
+const CHART_CAPTURE_PNG = path.join(__dirname, '../fixtures/chart-capture.png');
+
+/** 이미지가 실제로 불러와졌는지 — 깨진 이미지는 `naturalWidth`가 0이다. */
+const loadedWidth = (img: Locator): Promise<number> =>
+    img.evaluate(el => (el instanceof HTMLImageElement ? el.naturalWidth : 0));
 
 test.describe('SIGLENS AI agent chat', () => {
     test.use({ storageState: AUTH_STORAGE_STATE }); // main-host session only
@@ -108,6 +116,77 @@ test.describe('SIGLENS AI agent chat', () => {
         await expect(
             page.getByTestId('chat-chart').locator('canvas').first()
         ).toBeVisible();
+    });
+
+    test('종목 비교를 물으면 답변에 비교 차트(시각화 블록)가 붙고, 새로고침해도 남는다', async ({
+        page,
+    }) => {
+        await page.goto(`${AI}/`);
+        await expect(page).toHaveURL(new RegExp(`^${AI}/(ko/)?$`));
+        await page
+            .getByRole('textbox', { name: /메시지 입력/ })
+            .fill('애플이랑 마이크로소프트 비교 차트 그려줘');
+        await page.keyboard.press('Enter');
+        await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
+        const block = page.getByTestId('chat-visual-block');
+        await expect(block).toBeVisible();
+        // 블록 안에는 그림 역할 요소가 여럿이다(틀·차트 캔버스) — 요약 이름으로 집는다.
+        await expect(
+            block.getByRole('img', { name: /AAPL, MSFT 수익률 비교 선 차트/ })
+        ).toBeVisible();
+        await expect(block.locator('canvas').first()).toBeVisible();
+        // 접힌 데이터 표는 정확한 값을 준다.
+        await block.getByText('데이터 표 보기').click();
+        await expect(block.getByRole('cell', { name: 'AAPL' })).toBeVisible();
+        await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/);
+        await page.reload();
+        await expect(page.getByTestId('chat-visual-block')).toBeVisible();
+        await expect(
+            page.getByTestId('chat-visual-block').locator('canvas').first()
+        ).toBeVisible();
+    });
+
+    test('이미지를 첨부해 보내면 말풍선에 썸네일이 뜨고 답이 오며, 새로고침해도 이미지가 남는다', async ({
+        page,
+    }) => {
+        await page.goto(`${AI}/`);
+        await expect(page).toHaveURL(new RegExp(`^${AI}/(ko/)?$`));
+        // 첨부가 없을 때는 개인정보 안내가 보이지 않는다.
+        await expect(page.getByText(/개인정보가 보이지 않게/)).toHaveCount(0);
+        // 숨은 파일 입력에 직접 넣는다 — 선택창은 브라우저 UI라 자동화하지 않는다.
+        await page
+            .locator('input[type="file"]')
+            .setInputFiles(CHART_CAPTURE_PNG);
+        const preview = page.getByRole('img', { name: '첨부 이미지 1' });
+        await expect(preview).toBeVisible();
+        // 보이기만 하고 실제로는 못 불러온(CSP가 `blob:`을 막은) 깨진 이미지를 거른다.
+        await expect.poll(() => loadedWidth(preview)).toBeGreaterThan(0);
+        await expect(
+            page.getByText(
+                '계좌번호 등 개인정보가 보이지 않게 가려서 올려 주세요'
+            )
+        ).toBeVisible();
+        // 글 없이 이미지만으로도 보낼 수 있다.
+        await page.getByRole('button', { name: '전송' }).click();
+        const bubble = page.locator('article[data-role="user"]');
+        const live = bubble.getByRole('img', { name: '첨부 이미지 1' });
+        await expect(live).toBeVisible();
+        await expect.poll(() => loadedWidth(live)).toBeGreaterThan(0);
+        await expect(page.getByText(/이미지 1장을 확인했습니다/)).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: /다시 생성/ })
+        ).toBeVisible();
+        await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/);
+        // 다시 열면 object URL이 아니라 저장된 이미지(조회 라우트)로 보인다.
+        await page.reload();
+        const stored = page
+            .locator('article[data-role="user"]')
+            .getByRole('img', { name: '첨부 이미지 1' });
+        await expect(stored).toHaveAttribute(
+            'src',
+            /\/api\/ai\/chat\/images\//
+        );
+        await expect.poll(() => loadedWidth(stored)).toBeGreaterThan(0);
     });
 
     test('비로그인: 로그인 없이 묻고 답을 받되 저장되지 않고, 저장된 대화를 가리키면 401', async ({

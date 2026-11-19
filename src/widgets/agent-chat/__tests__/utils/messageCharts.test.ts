@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type {
+    ChatBlock,
     ChatChartBlock,
     ChatChartTimeframe,
+    ChatCompareBlock,
+    ChatDividendsBlock,
+    ChatHeatmapBlock,
+    ChatOptionsBlock,
 } from '@/entities/chat-conversation/types';
 import type { ToolActivityItem } from '@/features/agent-chat/model/types';
 import {
     MESSAGE_CHARTS_MAX,
     messageCharts,
+    visualBlockKey,
 } from '@/widgets/agent-chat/utils/messageCharts';
 
 const block = (
@@ -30,7 +36,7 @@ const block = (
 
 const tool = (
     id: string,
-    chart: ChatChartBlock | undefined,
+    chart: ChatBlock | undefined,
     status: ToolActivityItem['status'] = 'ok'
 ): ToolActivityItem => ({
     id,
@@ -111,6 +117,135 @@ describe('messageCharts', () => {
         const charts = messageCharts(
             ['A', 'B', 'C', 'D'].map(s => tool(s, block(s)))
         );
-        expect(charts.map(c => c.block.symbol)).toEqual(['A', 'B', 'C']);
+        expect(charts.map(c => c.key)).toEqual([
+            'A|1Day|bars',
+            'B|1Day|bars',
+            'C|1Day|bars',
+        ]);
+    });
+});
+
+const compare = (
+    symbols: string[],
+    period: ChatCompareBlock['period'] = '6M'
+): ChatCompareBlock => ({
+    version: 1,
+    kind: 'compare',
+    asOf: '2026-11-19T00:00:00.000Z',
+    period,
+    series: symbols.map(symbol => ({
+        symbol,
+        points: [
+            [1, 0],
+            [2, 1],
+        ],
+    })),
+});
+
+const dividends = (symbol: string, amount = 1): ChatDividendsBlock => ({
+    version: 1,
+    kind: 'dividends',
+    asOf: '2026-11-19T00:00:00.000Z',
+    symbol,
+    currency: 'USD',
+    years: [{ year: 2026, amount, partial: true }],
+});
+
+const options = (symbol: string, expiry: string): ChatOptionsBlock => ({
+    version: 1,
+    kind: 'options',
+    asOf: '2026-11-19T00:00:00.000Z',
+    symbol,
+    expiry,
+    underlyingPrice: 100,
+    maxPain: null,
+    putCallRatio: null,
+    strikes: [{ strike: 100, callOI: 1, putOI: 1 }],
+});
+
+const heatmapSectors = (market: 'us' | 'kr'): ChatHeatmapBlock => ({
+    version: 1,
+    kind: 'heatmap',
+    asOf: '2026-11-19T00:00:00.000Z',
+    scope: 'sectors',
+    market,
+    sectors: [{ label: 'IT', changePct: 1 }],
+});
+
+describe('messageCharts — 시각화 블록', () => {
+    it('종류별 키로 캔들과 섞어 그리고, 시각화 블록을 캔들보다 앞에 둔다', () => {
+        expect(
+            messageCharts([
+                tool('a', block('QQQ')),
+                tool('b', compare(['NVDA', 'AMD'])),
+                tool('c', dividends('KO')),
+            ]).map(c => c.key)
+        ).toEqual([
+            'compare|AMD,NVDA|6M|2026-11-19T00:00:00.000Z',
+            'dividends|KO|2026-11-19T00:00:00.000Z',
+            'QQQ|1Day|bars',
+        ]);
+    });
+
+    it('캔들이 상한을 먼저 채워도 요청한 시각화 블록은 잘리지 않는다', () => {
+        expect(
+            messageCharts([
+                tool('a', block('QQQ')),
+                tool('b', block('SPY')),
+                tool('c', block('BTCUSD')),
+                tool('d', compare(['QQQ', 'SPY', 'BTCUSD'], '1Y')),
+            ]).map(c => c.key.split('|')[0])
+        ).toEqual(['compare', 'QQQ', 'SPY']);
+    });
+
+    it('비교 키는 종목 순서와 무관하고 기간은 키에 든다', () => {
+        const keys = (b: ChatCompareBlock) => visualBlockKey(b);
+        expect(keys(compare(['NVDA', 'AMD']))).toBe(
+            keys(compare(['AMD', 'NVDA']))
+        );
+        expect(keys(compare(['NVDA', 'AMD'], '1Y'))).not.toBe(
+            keys(compare(['NVDA', 'AMD']))
+        );
+    });
+
+    it('같은 키의 시각화 블록은 한 장 — 나중 블록이 이긴다', () => {
+        const charts = messageCharts([
+            tool('a', dividends('KO', 1)),
+            tool('b', dividends('KO', 2)),
+        ]);
+        expect(charts).toHaveLength(1);
+        expect(charts[0]?.block).toMatchObject({ years: [{ amount: 2 }] });
+    });
+
+    it('옵션은 만기별, 히트맵은 시장별로 따로 그린다', () => {
+        expect(
+            messageCharts([
+                tool('a', options('TSLA', '2026-12-18')),
+                tool('b', options('TSLA', '2027-01-15')),
+                tool('c', heatmapSectors('us')),
+            ]).map(c => c.key.split('|').slice(0, 3).join('|'))
+        ).toEqual([
+            'options|TSLA|2026-12-18',
+            'options|TSLA|2027-01-15',
+            'heatmap|sectors|us',
+        ]);
+        expect(visualBlockKey(heatmapSectors('kr'))).toBe('heatmap|sectors|kr');
+    });
+
+    it('캔들과 시각화를 합쳐 최대 3장', () => {
+        expect(
+            messageCharts([
+                tool('a', block('QQQ')),
+                tool('b', compare(['NVDA', 'AMD'])),
+                tool('c', dividends('KO')),
+                tool('d', dividends('PEP')),
+            ])
+        ).toHaveLength(MESSAGE_CHARTS_MAX);
+    });
+
+    it('실패한 칩의 시각화 블록은 그리지 않는다', () => {
+        expect(
+            messageCharts([tool('a', compare(['A', 'B']), 'error')])
+        ).toEqual([]);
     });
 });

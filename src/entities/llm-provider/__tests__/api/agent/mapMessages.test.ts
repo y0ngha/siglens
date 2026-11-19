@@ -70,4 +70,61 @@ describe('toOpenAiChatMessages toolCallExtra', () => {
             '{"role":"assistant","content":null,"tool_calls":[{"id":"c1","type":"function","function":{"name":"get_quote","arguments":"{\\"symbols\\":[\\"AAPL\\"]}"}}]}'
         );
     });
+
+    describe('이미지 첨부', () => {
+        const images = [
+            { mediaType: 'image/webp' as const, data: 'AAAA' },
+            { mediaType: 'image/png' as const, data: 'BBBB' },
+        ];
+
+        it('user 메시지의 images를 text + image_url(data URL) 파트로 매핑한다', () => {
+            expect(
+                toOpenAiChatMessages([
+                    { role: 'user', content: '이거 어때?', images },
+                ])
+            ).toEqual([
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: '이거 어때?' },
+                        {
+                            type: 'image_url',
+                            image_url: { url: 'data:image/webp;base64,AAAA' },
+                        },
+                        {
+                            type: 'image_url',
+                            image_url: { url: 'data:image/png;base64,BBBB' },
+                        },
+                    ],
+                },
+            ]);
+        });
+
+        it('글이 비면 text 파트를 만들지 않는다', () => {
+            const [mapped] = toOpenAiChatMessages([
+                { role: 'user', content: '', images: [images[0]!] },
+            ]);
+            expect(mapped).toEqual({
+                role: 'user',
+                content: [
+                    {
+                        type: 'image_url',
+                        image_url: { url: 'data:image/webp;base64,AAAA' },
+                    },
+                ],
+            });
+        });
+
+        it('images가 없거나 비어 있으면 평문 content 그대로다', () => {
+            expect(
+                toOpenAiChatMessages([
+                    { role: 'user', content: 'q' },
+                    { role: 'user', content: 'r', images: [] },
+                ])
+            ).toEqual([
+                { role: 'user', content: 'q' },
+                { role: 'user', content: 'r' },
+            ]);
+        });
+    });
 });

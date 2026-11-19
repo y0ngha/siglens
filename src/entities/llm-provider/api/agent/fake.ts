@@ -39,7 +39,38 @@ export async function fakeAgentProvider(
     const lastUser = userWords(
         [...o.messages].reverse().find(m => m.role === 'user')?.content ?? ''
     );
+    // 이미지 턴은 도구 없이 장수만 확인한 고정 답변으로 끝낸다 — E2E가 "이미지가 모델까지 갔다"를
+    // 결정적으로 확인한다(대문자 티커가 글에 있어도 도구 경로로 새지 않는다).
+    const imageCount =
+        [...o.messages].reverse().find(m => m.role === 'user')?.images
+            ?.length ?? 0;
+    if (imageCount > 0) {
+        const text = `[E2E agent] 이미지 ${imageCount}장을 확인했습니다.`;
+        o.onEvent({ type: 'text', delta: text });
+        o.onEvent({ type: 'stop', reason: 'end' });
+        return { text, toolCalls: [], stopReason: 'end', usage: ZERO };
+    }
     const hasToolResult = o.messages.some(m => m.role === 'tool');
+    // "비교 차트"는 시각화 블록(show_chart compare)을 검증한다 — 대문자 티커 규칙보다 먼저 본다.
+    if (
+        lastUser.includes('비교 차트') &&
+        !hasToolResult &&
+        o.tools.some(t => t.name === 'show_chart')
+    ) {
+        const call = {
+            id: 'fake_1',
+            name: 'show_chart',
+            args: { kind: 'compare', symbols: ['AAPL', 'MSFT'] },
+        };
+        o.onEvent({ type: 'tool_call', call });
+        o.onEvent({ type: 'stop', reason: 'tool_use' });
+        return {
+            text: '',
+            toolCalls: [call],
+            stopReason: 'tool_use',
+            usage: ZERO,
+        };
+    }
     const symbol = /\b[A-Z]{2,5}\b/.exec(lastUser)?.[0];
     // "차트"를 물었어도 봉 지표 도구가 없으면(가용 목록에서 빠진 실행) 예전처럼 시세로 답한다.
     const wantsChart =

@@ -45,7 +45,7 @@ describe('fromViews — 차트', () => {
             }),
             view({ id: 'a2', seq: 4, role: 'assistant', content: '답' }),
         ]);
-        expect(out.at(-1)?.tools[0]?.chart?.symbol).toBe('QQQ');
+        expect(out.at(-1)?.tools[0]?.chart).toMatchObject({ symbol: 'QQQ' });
     });
 });
 

@@ -17,6 +17,7 @@ import {
     KR_TREND_NO_DATA_TTL_SECONDS,
     KR_TREND_ROWS_SHOWN,
     loadKrInvestorTrend,
+    loadKrInvestorTrendRows,
 } from '@/app/api/ai/chat/tools/krInvestorTrend';
 import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import type { NaverInvestorTrendRow } from '@/shared/api/naver/naverInvestorTrend';
@@ -147,5 +148,41 @@ describe('loadKrInvestorTrend', () => {
     it('a non-Korean symbol is null without any request', async () => {
         expect(await loadKrInvestorTrend('AAPL')).toBeNull();
         expect(fetchTrend).not.toHaveBeenCalled();
+    });
+});
+
+describe('loadKrInvestorTrendRows', () => {
+    const store = new Map<string, unknown>();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        __resetInFlightForTests();
+        store.clear();
+        getRedisClient.mockReturnValue({
+            get: vi.fn((key: string) => store.get(key) ?? null),
+            set: vi.fn((key: string, value: unknown) => {
+                store.set(key, value);
+                return 'OK';
+            }),
+        });
+    });
+
+    it('도구가 10행만 싣는 것과 달리 캐시된 20행을 모두 돌려준다(그 이상은 자른다)', async () => {
+        fetchTrend.mockResolvedValue(rows(25));
+        const all = await loadKrInvestorTrendRows('005930.KS');
+        expect(all).toHaveLength(20);
+        expect(all?.[0]?.date).toBe('2026-10-23');
+        // 같은 캐시를 읽는 도구 로더의 출력은 그대로 10행이다.
+        expect((await loadKrInvestorTrend('005930.KS'))?.rows).toHaveLength(
+            KR_TREND_ROWS_SHOWN
+        );
+        expect(fetchTrend).toHaveBeenCalledTimes(1);
+    });
+
+    it('데이터 없음·실패·한국 종목이 아님은 null', async () => {
+        fetchTrend.mockResolvedValueOnce([]);
+        expect(await loadKrInvestorTrendRows('005930.KS')).toBeNull();
+        expect(await loadKrInvestorTrendRows('AAPL')).toBeNull();
     });
 });

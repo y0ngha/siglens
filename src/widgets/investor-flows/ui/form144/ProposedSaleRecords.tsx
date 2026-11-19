@@ -9,11 +9,11 @@ import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { formatCompact, formatUsdCompact } from '../../utils/flowFormat';
 import { proposedSaleKey } from '../../utils/secFilings';
 import { FilingLink } from '../filings/FilingLink';
-import { CardFieldList } from '../tables/CardFieldList';
+import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
-} from '../tables/ResponsiveRecordList';
+} from '@/shared/ui/ResponsiveRecordList';
 import { PlanBadge } from './PlanBadge';
 
 /** 예정일을 모르는 신고는 대시로 둔다. */
