@@ -5,10 +5,8 @@ import { AUTH_STORAGE_STATE } from '../support/authUser';
 
 const AI = 'http://ai.localhost:4300';
 const MAIN = 'http://localhost:4300';
-const CHART_CAPTURE_PNG = path.join(
-    import.meta.dirname,
-    '../fixtures/chart-capture.png'
-);
+// e2e 스펙은 CommonJS로 실행된다 — `import.meta`를 쓰면 Playwright가 파일을 읽지도 못하고 모든 샤드가 실패한다.
+const CHART_CAPTURE_PNG = path.join(__dirname, '../fixtures/chart-capture.png');
 
 /** 이미지가 실제로 불러와졌는지 — 깨진 이미지는 `naturalWidth`가 0이다. */
 const loadedWidth = (img: Locator): Promise<number> =>
