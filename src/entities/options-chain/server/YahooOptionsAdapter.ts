@@ -16,6 +16,7 @@ import {
     type YahooOption,
     type YahooOptionsResult,
 } from '../lib/yahooNormalize';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // `yahooSurvey` 공지는 yahoo-finance2가 첫 호출 시 한 번 출력하는 마케팅 배너로,
 // 운영 로그에 노이즈만 남기므로 명시적으로 억제한다.
@@ -72,7 +73,7 @@ async function fetchMissingChains(
                         '[YahooOptionsAdapter] fetch expiration failed',
                         symbol,
                         iso,
-                        err
+                        redactDbErrorForLog(err)
                     );
                     return [] as YahooOption[];
                 })
@@ -190,7 +191,7 @@ export class YahooOptionsAdapter implements SlottedOptionsDataProvider {
             if (!isYahooValidationError(err)) {
                 console.error(
                     '[YahooOptionsAdapter] fetchSnapshot failed',
-                    err
+                    redactDbErrorForLog(err)
                 );
             }
             return null;
@@ -209,7 +210,7 @@ export class YahooOptionsAdapter implements SlottedOptionsDataProvider {
                 console.warn(
                     '[YahooOptionsAdapter] hasOptionsMarket failed',
                     symbol,
-                    err
+                    redactDbErrorForLog(err)
                 );
             }
             return false;

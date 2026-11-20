@@ -34,6 +34,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
 import { toPriorAnalysis } from './lib/toPriorAnalysis';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `analysis_history` 탭 축 — 현재는 technical/overall 둘뿐이다. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
@@ -295,7 +296,10 @@ export class DrizzleAnalysisHistoryRepository {
                 DB_TRANSIENT_RETRY
             );
         } catch (err) {
-            console.error('[analysisHistoryRepository] persist failed:', err);
+            console.error(
+                '[analysisHistoryRepository] persist failed:',
+                redactDbErrorForLog(err)
+            );
         }
     }
 
@@ -385,7 +389,7 @@ export class DrizzleAnalysisHistoryRepository {
         } catch (err) {
             console.error(
                 '[analysisHistoryRepository] findRecentForPrompt failed:',
-                err
+                redactDbErrorForLog(err)
             );
             return [];
         }
@@ -435,7 +439,7 @@ export class DrizzleAnalysisHistoryRepository {
         } catch (err) {
             console.error(
                 '[analysisHistoryRepository] pruneAnalysisHistory failed:',
-                err
+                redactDbErrorForLog(err)
             );
             return { rowsDeleted: 0, promptsCleared: 0 };
         }

@@ -8,6 +8,7 @@ import {
     buildAssetInfoProvisionalCacheKey,
 } from '../lib/cacheKeys';
 import { recordToAssetInfo } from '../lib/assetInfoResolution';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 function tryGetRepository(): AssetTranslationRepository | null {
     const client = tryGetDatabaseClient();
@@ -28,7 +29,12 @@ export function setCacheBestEffort(
     if (!cache) return;
     cache
         .set(cacheKey, info, ttlSeconds)
-        .catch(e => console.warn('[getAssetInfo] cache write failed', e));
+        .catch(e =>
+            console.warn(
+                '[getAssetInfo] cache write failed',
+                redactDbErrorForLog(e)
+            )
+        );
 }
 
 /**
@@ -56,7 +62,7 @@ export async function readFromDatabase(
         return record ? recordToAssetInfo(record) : null;
     } catch (e) {
         if (isAbortError(e)) return null;
-        console.warn('[getAssetInfo] DB read failed', e);
+        console.warn('[getAssetInfo] DB read failed', redactDbErrorForLog(e));
         return null;
     }
 }
@@ -82,7 +88,7 @@ async function persistTranslation(
         await repository.upsert({ symbol, name, koreanName, fmpSymbol });
         return true;
     } catch (e) {
-        console.warn('[getAssetInfo] DB upsert failed', e);
+        console.warn('[getAssetInfo] DB upsert failed', redactDbErrorForLog(e));
         return false;
     }
 }

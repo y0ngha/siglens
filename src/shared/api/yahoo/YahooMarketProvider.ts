@@ -15,6 +15,7 @@ import { pickYahooDisplayName } from './displayName';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { mapOrNull } from '@/shared/api/market/mapOrNull';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -261,7 +262,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[YahooMarketProvider] getQuote failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return null;
         }
@@ -289,7 +290,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[YahooMarketProvider] quote snapshot fetch failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return { quote: null, todayBar: null };
         }

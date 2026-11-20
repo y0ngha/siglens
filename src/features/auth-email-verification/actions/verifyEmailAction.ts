@@ -8,6 +8,7 @@ import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
 import { getDatabaseClient } from '@/shared/db/client';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getTranslations } from 'next-intl/server';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 가입 2단계: 받은 인증 코드를 확인하고, 이미 가입된 주소인지 확인한다.
@@ -64,7 +65,10 @@ export async function verifyEmailAction(
 
         return { verified: true, error: null };
     } catch (err) {
-        console.error('[verifyEmailAction] unexpected error:', err);
+        console.error(
+            '[verifyEmailAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             verified: false,
             error: {

@@ -8,6 +8,7 @@ import {
     US_DASHBOARD_SCOPE,
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 시장마다 브리핑에 싣는 신호 종목 수. 요약 표 한 장에 두 시장이 들어가는 양이다. */
 export const MARKET_PICKS_PER_MARKET = 5;
@@ -37,7 +38,7 @@ async function picksFor(
     } catch (error) {
         console.warn(
             `[email-report] ${scope.id} 신호 조회 실패 — 그 시장 없이 브리핑한다`,
-            error
+            redactDbErrorForLog(error)
         );
         return [];
     }

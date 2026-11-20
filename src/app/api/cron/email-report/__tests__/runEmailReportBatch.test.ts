@@ -13,6 +13,11 @@ import type {
 } from '@/entities/email-report/reportModel';
 import type { EmailReportRecipient } from '@/shared/db/types';
 import type { EmailMessage } from '@/shared/email/types';
+import {
+    PLANTED_EMAIL,
+    PLANTED_TOKEN,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 // 2026-10-04(일) 23:00 UTC = 2026-10-05(월) 08:00 KST
 const NOW = new Date('2026-10-04T23:00:00.000Z');
@@ -600,5 +605,28 @@ describe('runEmailReportBatch', () => {
 
         expect(counts.due).toBe(0);
         expect(deps.deliveries.claim).not.toHaveBeenCalled();
+    });
+
+    it('DB 에러는 전달 기록 컬럼에 파라미터 없이 이름과 코드만 저장한다', async () => {
+        const { deps } = makeDeps({
+            findHoldings: vi.fn().mockRejectedValue(plantedDbError()),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(counts.failed).toBe(1);
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'failed',
+            [],
+            'Error code=57014'
+        );
+        const stored = vi
+            .mocked(deps.deliveries.finish)
+            .mock.calls.map(call => String(call[3]))
+            .join('\n');
+        expect(stored).not.toContain(PLANTED_TOKEN);
+        expect(stored).not.toContain(PLANTED_EMAIL);
+        expect(stored).not.toContain('Failed query');
     });
 });

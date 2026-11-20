@@ -26,6 +26,7 @@ import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 import { LOGIN_FIELD } from '../lib/loginFields';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이메일·비밀번호 로그인 서버 액션(`useActionState` 시그니처).
@@ -93,7 +94,10 @@ export async function loginAction(
         );
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[loginAction] unexpected error:', err);
+        console.error(
+            '[loginAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             error: {
                 code: 'unexpected',

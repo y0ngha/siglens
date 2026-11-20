@@ -11,6 +11,7 @@ import {
 } from '@/entities/analysis/server/meteredReveal';
 import type { AnalysisMeter } from '@/shared/lib/types';
 import type { GuestResolver } from './generationQuota';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이 요청이 비회원 하루 무료 공개 미터를 어떻게 탔는지.
@@ -76,7 +77,10 @@ export async function resolveMeterGate(
             release: decision.release,
         };
     } catch (error) {
-        console.warn('[meter] gate failed, falling back to locked', error);
+        console.warn(
+            '[meter] gate failed, falling back to locked',
+            redactDbErrorForLog(error)
+        );
         return OFF;
     }
 }

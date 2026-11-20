@@ -4,6 +4,7 @@ import { renderFeedbackDigest } from '@/entities/feedback/templates/operator-mai
 import type { FeedbackRepository } from '@/entities/feedback/lib/types';
 import { MS_PER_DAY } from '@/shared/config/time';
 import type { EmailMessage } from '@/shared/email/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface FeedbackDigestDeps {
     repository: Pick<
@@ -39,7 +40,10 @@ export async function runFeedbackDigest(
             );
         }
     } catch (error) {
-        console.error('[feedback-digest] digest failed:', error);
+        console.error(
+            '[feedback-digest] digest failed:',
+            redactDbErrorForLog(error)
+        );
     }
 
     try {
@@ -48,6 +52,9 @@ export async function runFeedbackDigest(
         );
         console.log(`[feedback-digest] purged ${purged} rows past retention`);
     } catch (error) {
-        console.error('[feedback-digest] purge failed:', error);
+        console.error(
+            '[feedback-digest] purge failed:',
+            redactDbErrorForLog(error)
+        );
     }
 }

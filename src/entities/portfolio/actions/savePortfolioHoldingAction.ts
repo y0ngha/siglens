@@ -17,6 +17,7 @@ import type {
     RawHoldingInput,
     SavePortfolioResult,
 } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `validateHoldingInput`이 돌려주는 코드 → `entities.portfolio.action` 키.
@@ -109,7 +110,7 @@ export async function savePortfolioHoldingAction(
     } catch (error) {
         console.warn(
             '[savePortfolioHoldingAction] symbol verification unavailable, proceeding',
-            error
+            redactDbErrorForLog(error)
         );
     }
 

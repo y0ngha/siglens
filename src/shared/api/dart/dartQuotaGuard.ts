@@ -8,6 +8,7 @@ import {
     SECONDS_PER_DAY,
 } from '@/shared/config/time';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** DART가 문서화한 하루 요청 상한(`020` 메시지 — "일반적으로는 20,000건"). */
 export const DART_DAILY_QUOTA = 20_000;
@@ -53,9 +54,10 @@ export function secondsUntilNextKstMidnight(now: Date): number {
 function warnRedisUnavailableOnce(error?: unknown): void {
     if (warnedRedisUnavailable) return;
     warnedRedisUnavailable = true;
+    const loggable = redactDbErrorForLog(error);
     console.warn(
         '[dart] redis unavailable — daily call counter and quota breaker are not shared (DART still enforces 020)',
-        error instanceof Error ? error.message : (error ?? '')
+        loggable instanceof Error ? loggable.message : (loggable ?? '')
     );
 }
 

@@ -7,6 +7,7 @@ import type {
     DeleteAccountOptions,
     DeleteAccountResult,
 } from './authUseCaseTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type RevocableOAuthAccount = Omit<OAuthAccountRecord, 'accessToken'> & {
     accessToken: string;
@@ -28,7 +29,7 @@ async function findOAuthAccountsForRevocation(
     } catch (error) {
         console.warn(
             '[deleteAccount] findByUserId for OAuth revocation failed',
-            error
+            redactDbErrorForLog(error)
         );
         return [];
     }
@@ -56,7 +57,7 @@ async function revokeOAuthTokens(
                 .catch(error => {
                     console.warn(
                         '[deleteAccount] OAuth revokeToken failed',
-                        error
+                        redactDbErrorForLog(error)
                     );
                 })
         )
@@ -70,7 +71,10 @@ async function readActiveApiKeyHashes(
     try {
         return await dependencies.apiKeys.listActiveKeyHashes(userId);
     } catch (error) {
-        console.warn('[deleteAccount] listing API key hashes failed', error);
+        console.warn(
+            '[deleteAccount] listing API key hashes failed',
+            redactDbErrorForLog(error)
+        );
         return [];
     }
 }
@@ -83,7 +87,10 @@ async function revokeApiKeyAuth(
     try {
         await dependencies.apiKeys.revokeAuth(keyHashes);
     } catch (error) {
-        console.warn('[deleteAccount] API key auth revocation failed', error);
+        console.warn(
+            '[deleteAccount] API key auth revocation failed',
+            redactDbErrorForLog(error)
+        );
     }
 }
 

@@ -79,6 +79,10 @@ import {
     PRUNE_BATCH_SIZE,
     RESULT_RETENTION_DAYS,
 } from '@/entities/analysis/analysisHistoryRepository';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 function sha256Hex(body: string): string {
     return createHash('sha256').update(body, 'utf8').digest('hex');
@@ -996,5 +1000,38 @@ describe('DrizzleAnalysisHistoryRepository.pruneAnalysisHistory', () => {
             rowsDeleted: 0,
             promptsCleared: 0,
         });
+    });
+
+    it('저장 실패가 DB 에러여도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        const rejecting = {
+            values: () => ({
+                onConflictDoNothing: () => Promise.reject(plantedDbError()),
+            }),
+        };
+        const db = {
+            insert: vi.fn(() => rejecting),
+        } as unknown as SiglensDatabase;
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            await new DrizzleAnalysisHistoryRepository(db).saveAnalysisHistory({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+                modelId: 'analysis-worker',
+                locale: 'ko',
+                result: readableResult,
+                generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+                prompt: promptRecord,
+            });
+            expect(consoleError).toHaveBeenCalledWith(
+                '[analysisHistoryRepository] persist failed:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(consoleError);
+        } finally {
+            consoleError.mockRestore();
+        }
     });
 });

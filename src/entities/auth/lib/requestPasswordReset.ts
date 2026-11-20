@@ -10,6 +10,7 @@ import type {
     RequestPasswordResetOptions,
     RequestPasswordResetResult,
 } from './authUseCaseTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const PURPOSE = 'password_reset' as const;
 
@@ -54,7 +55,7 @@ export async function requestPasswordReset(
         .catch((error: unknown) => {
             console.warn(
                 '[requestPasswordReset] emailDispatcher.sendEmail failed',
-                error
+                redactDbErrorForLog(error)
             );
             return false;
         });

@@ -8,6 +8,7 @@ import { verifyReportValue } from '@/entities/email-report/lib/reportSignature';
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_FORBIDDEN, HTTP_STATUS_NOT_FOUND } = constants;
 
@@ -78,7 +79,10 @@ export async function GET(request: Request): Promise<Response> {
             })
         );
     } catch (error) {
-        console.warn(`[email-report] chart render failed for ${symbol}`, error);
+        console.warn(
+            `[email-report] chart render failed for ${symbol}`,
+            redactDbErrorForLog(error)
+        );
         return new Response(null, {
             status: HTTP_STATUS_NOT_FOUND,
             headers: NO_STORE,

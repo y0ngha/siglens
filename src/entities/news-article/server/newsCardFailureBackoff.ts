@@ -5,6 +5,7 @@ import {
     MS_PER_MINUTE,
     SECONDS_PER_DAY,
 } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 카드 분석에 실패한 기사의 재시도 간격(네거티브 캐시).
@@ -84,7 +85,10 @@ export async function loadNewsCardFailures(
             })
         );
     } catch (error) {
-        console.error('[newsCardFailureBackoff] load failed', error);
+        console.error(
+            '[newsCardFailureBackoff] load failed',
+            redactDbErrorForLog(error)
+        );
         return new Map();
     }
 }
@@ -108,6 +112,9 @@ export async function recordNewsCardFailures(
         );
         await pipeline.exec();
     } catch (error) {
-        console.error('[newsCardFailureBackoff] record failed', error);
+        console.error(
+            '[newsCardFailureBackoff] record failed',
+            redactDbErrorForLog(error)
+        );
     }
 }

@@ -38,6 +38,7 @@ import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 import { readSignupForm } from '../lib/readSignupForm';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 회원가입 3단계의 Server Action. 필수 동의 → 활성 약관 → `registerUser`
@@ -172,7 +173,7 @@ export async function registerAction(
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (isNextRedirectError(err)) throw err;
-        console.error('Error in registerAction:', err);
+        console.error('Error in registerAction:', redactDbErrorForLog(err));
         return {
             error: {
                 code: 'service_unavailable',

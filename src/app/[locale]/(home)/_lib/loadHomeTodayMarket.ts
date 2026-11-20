@@ -18,6 +18,7 @@ import {
     selectTodaySignals,
     type TodaySignalRow,
 } from '@/entities/sector-signal/lib/selectTodaySignals';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 시장마다 홈에 보일 신호 종목 수. 한 화면에 시장 둘이 나란히 들어가는 양이다. */
 const SIGNAL_ROWS_PER_MARKET = 4;
@@ -72,7 +73,7 @@ async function loadSignals(scope: DashboardScope): Promise<LoadedSignals> {
     } catch (error) {
         console.warn(
             `[home-today-market] ${scope.id} 신호 조회 실패 — 비운 채로 진행한다`,
-            error
+            redactDbErrorForLog(error)
         );
         return { failed: true, signals: NO_SIGNALS };
     }

@@ -1,4 +1,5 @@
 import { releaseReanalyzeCooldown, type Timeframe } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 실패한 분석이 잡고 있던 재분석 쿨다운을 **서버가** 되돌린다. 안 되돌리면 사용자는 결과도 못 받은 채
@@ -17,6 +18,6 @@ export async function releaseCooldownQuietly(
     try {
         await releaseReanalyzeCooldown(symbol, timeframe);
     } catch (err) {
-        console.error(logTag, err);
+        console.error(logTag, redactDbErrorForLog(err));
     }
 }

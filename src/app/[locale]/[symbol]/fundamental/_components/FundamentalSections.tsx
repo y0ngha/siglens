@@ -34,6 +34,7 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** TTM 재무비율 캐시 키 — 수익성 카드와 재무 건전성 카드가 같은 캐시 엔트리를 공유한다. */
 const RATIOS_CACHE_KEY = 'fundamental:ratios-v2';
@@ -73,7 +74,7 @@ function loadSection<T, F>(
         [],
         SECONDS_PER_DAY
     ).catch(async (error: unknown): Promise<F> => {
-        console.error(failureLog, error);
+        console.error(failureLog, redactDbErrorForLog(error));
         await shortenRevalidateForRuntimeDegrade();
         return fallback;
     });
@@ -100,7 +101,7 @@ function loadOptionalSection<T, F>(
         [],
         SECONDS_PER_DAY
     ).catch((error: unknown): F => {
-        console.warn(failureLog, error);
+        console.warn(failureLog, redactDbErrorForLog(error));
         return fallback;
     });
 }
@@ -122,7 +123,7 @@ async function loadGradesSection(symbol: string): Promise<PageGradesConsensus> {
     } catch (error) {
         console.error(
             '[FutureDirectionSection] getGradesConsensus failed, degrading to null:',
-            error
+            redactDbErrorForLog(error)
         );
         await shortenRevalidateForRuntimeDegrade();
         return { grades: null, yahooFailed: false };

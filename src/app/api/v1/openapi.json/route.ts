@@ -9,6 +9,7 @@ import {
     OPENAPI_CACHE_CONTROL,
     OPENAPI_CORS_HEADERS,
 } from '../openApiDocument';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,10 @@ export async function GET(): Promise<Response> {
                 },
             });
         } catch (error) {
-            console.error('[api/v1/openapi.json] generation failed:', error);
+            console.error(
+                '[api/v1/openapi.json] generation failed:',
+                redactDbErrorForLog(error)
+            );
             return apiError(
                 API_STATUS.internalError,
                 'internal_error',

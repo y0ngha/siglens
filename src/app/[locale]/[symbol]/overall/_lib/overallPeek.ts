@@ -7,6 +7,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 종합 분석 캐시 엿보기 결과 — MISS·손상·읽기 실패는 모두 `null`이다. */
 export type OverallPeekResult = Awaited<
@@ -47,7 +48,10 @@ export function loadOverallPeek(
         [],
         SECONDS_PER_HALF_DAY
     ).catch((error: unknown) => {
-        console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
+        console.error(
+            '[OverallPage] peekOverallAnalysisCache failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     });
 }

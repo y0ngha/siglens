@@ -86,6 +86,10 @@ import {
     resetDatabaseClientForTests,
 } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockRegister = registerUser as MockedFunction<typeof registerUser>;
@@ -605,5 +609,26 @@ describe('registerAction', () => {
                 'NEXT_REDIRECT:https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fabc'
             );
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockRegister.mockRejectedValue(plantedDbError());
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(errorSpy).toHaveBeenCalledWith(
+                'Error in registerAction:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

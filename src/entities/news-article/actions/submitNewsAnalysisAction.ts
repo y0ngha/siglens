@@ -8,6 +8,7 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Server Action: tier·BYOK 게이트를 통과시킨 뒤 `executeNewsAnalysis`로 뉴스 분석을
@@ -69,7 +70,10 @@ export async function submitNewsAnalysisAction(
             cacheOnly: cacheOnly === true,
         });
     } catch (err) {
-        console.error('[submitNewsAnalysisAction] unexpected error:', err);
+        console.error(
+            '[submitNewsAnalysisAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             status: 'error',
             error: await buildGateError(caughtAnalysisErrorCode(err), locale),

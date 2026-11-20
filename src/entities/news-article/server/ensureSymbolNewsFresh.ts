@@ -18,6 +18,7 @@ import { newsCacheTag } from '../lib/newsCacheTag';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { selectUnanalyzed } from '../lib/selectUnanalyzed';
 import { isRecentlyFetched } from './newsRefreshFlag';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `ensureSymbolNewsFresh`의 진단용 결과. 호출부는 값을 버리고 테스트만 읽는다. */
 export interface SymbolFreshnessResult {
@@ -187,7 +188,7 @@ export async function ensureSymbolNewsFresh(
                     console.error(
                         '[ensureSymbolNewsFresh] deferred enrich',
                         symbol,
-                        error
+                        redactDbErrorForLog(error)
                     );
                 }
                 return true;
@@ -245,7 +246,7 @@ export async function ensureSymbolNewsFresh(
                 console.error(
                     '[ensureSymbolNewsFresh] background enrich',
                     symbol,
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
             // 여기까지 왔다면 `changedCount > 0`이 이미 확인된 상태다 — 보강이
@@ -255,7 +256,11 @@ export async function ensureSymbolNewsFresh(
         return { refreshed: true, changedCount };
     } catch (error) {
         // NewsIngestWriteError(DB 광역 장애)를 포함해 전부 삼킨다 — 위 계약 참고.
-        console.error('[ensureSymbolNewsFresh]', symbol, error);
+        console.error(
+            '[ensureSymbolNewsFresh]',
+            symbol,
+            redactDbErrorForLog(error)
+        );
         return SKIPPED;
     }
 }
@@ -291,7 +296,11 @@ async function enrichWithinBudget(
         // 보강 실패가 뒤따르는 무효화까지 삼키면 안 된다 — 기사 원문은 이미
         // 커밋됐으므로, 라벨 없이라도 목록에 노출되는 편이 12시간 숨는 것보다
         // 낫다. 라벨은 다음 보강 패스가 채운다.
-        console.error('[ensureSymbolNewsFresh] sync enrich', symbol, error);
+        console.error(
+            '[ensureSymbolNewsFresh] sync enrich',
+            symbol,
+            redactDbErrorForLog(error)
+        );
     });
     const outcome = await withBudget(enriched, SYNC_ENRICH_BUDGET_MS);
     if (outcome.status === 'done') return null;
@@ -412,11 +421,19 @@ function scheduleRefreshTail(
             try {
                 invalidate = await tail();
             } catch (error) {
-                console.error('[scheduleRefreshTail] tail', symbol, error);
+                console.error(
+                    '[scheduleRefreshTail] tail',
+                    symbol,
+                    redactDbErrorForLog(error)
+                );
             }
             if (invalidate) revalidateTag(tag, 'max');
         });
     } catch (error) {
-        console.error('[scheduleRefreshTail] schedule', symbol, error);
+        console.error(
+            '[scheduleRefreshTail] schedule',
+            symbol,
+            redactDbErrorForLog(error)
+        );
     }
 }

@@ -36,6 +36,7 @@ import {
     MAX_CONCURRENT_AGENT_TURNS,
     reserveTurnSlot,
 } from './_lib/turnSlots';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -256,7 +257,7 @@ export async function POST(request: Request): Promise<Response> {
         return new Response(stream, { headers: SSE_HEADERS });
     } catch (error) {
         await releaseOnce();
-        console.error('[agent-stream] failed:', error);
+        console.error('[agent-stream] failed:', redactDbErrorForLog(error));
         return json(HTTP_STATUS_INTERNAL_SERVER_ERROR, {
             error: 'server_error',
         });

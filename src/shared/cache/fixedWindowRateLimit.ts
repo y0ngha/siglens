@@ -1,4 +1,5 @@
 import { getRedisReaderWriter } from '@/shared/cache/redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 interface FixedWindowRateLimitOptions {
     /** 호출자가 조립한 Redis 키 전체(접두사 포함). */
@@ -42,7 +43,10 @@ export async function checkFixedWindowRateLimit({
         const count = await pair.writer.incr(key);
         return count <= limit;
     } catch (err) {
-        console.error(`[${logTag}] redis error, failing open`, err);
+        console.error(
+            `[${logTag}] redis error, failing open`,
+            redactDbErrorForLog(err)
+        );
         return true;
     }
 }

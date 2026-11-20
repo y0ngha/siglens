@@ -31,6 +31,7 @@ import { createFollowUpTextFilter } from '@/app/api/ai/chat/followUps';
 import { persistedStatusFor } from './persistedStatus';
 import { isConversationGone, type ReadyTurn } from './prepareTurn';
 import { createTurnCharts } from './turnCharts';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Answer length cap per provider call. Core's default (4,096) cut long
@@ -235,7 +236,10 @@ export function agentTurnStream({
                         );
                     }
                 } catch (error) {
-                    console.error('[agent] grounding check failed:', error);
+                    console.error(
+                        '[agent] grounding check failed:',
+                        redactDbErrorForLog(error)
+                    );
                 }
                 // 차트 프레임이 모두 나가고 나서 저장·`done`으로 간다 — 블록은 그 도구 행에 붙는다.
                 const chartsByCall = await charts.settled();

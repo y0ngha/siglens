@@ -45,6 +45,10 @@ import { getLocale } from 'next-intl/server';
 const mockGetLocale = getLocale as MockedFunction<typeof getLocale>;
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockRequest = requestPasswordReset as MockedFunction<
     typeof requestPasswordReset
@@ -216,5 +220,25 @@ describe('requestPasswordResetAction', () => {
             expect(state.submitted).toBe(true);
             expect(mockRequest).toHaveBeenCalled();
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockRequest.mockRejectedValue(plantedDbError());
+            await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[requestPasswordResetAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

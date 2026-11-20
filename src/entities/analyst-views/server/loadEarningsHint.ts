@@ -6,6 +6,7 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import type { AnalystEarningsHint } from '../model';
 import { getAnalystViews } from './getAnalystViews';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 실적 힌트(Yahoo) 보강에 기다리는 최대 시간. 페이지·분석이 보강 때문에 8초씩 기다리지 않게 한다. */
 export const EARNINGS_HINT_BUDGET_MS = 2_500;
@@ -52,7 +53,10 @@ export async function loadEarningsHintBounded(
             null
         );
     } catch (err) {
-        console.warn(`[loadEarningsHint] failed for ${symbol}:`, err);
+        console.warn(
+            `[loadEarningsHint] failed for ${symbol}:`,
+            redactDbErrorForLog(err)
+        );
         return null;
     }
 }

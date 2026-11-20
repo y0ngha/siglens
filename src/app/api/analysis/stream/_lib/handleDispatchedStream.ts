@@ -28,13 +28,17 @@ import type {
     DispatchQuotaContext,
 } from './types';
 import { withDeadline } from './withDeadline';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 세션 조회 실패는 비회원으로 본다 — 한도가 엄격해질 뿐 생성이 새지 않는다.
  */
 async function currentUserIdOrNull(): Promise<string | null> {
     const user = await getCurrentUser().catch((error: unknown) => {
-        console.error('[streamAnalysisRoute] session lookup failed:', error);
+        console.error(
+            '[streamAnalysisRoute] session lookup failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     });
     return user?.id ?? null;
@@ -107,7 +111,10 @@ export async function handleDispatchedStream(
             t('generic')
         );
     } catch (err) {
-        console.error('[streamAnalysisRoute] unexpected error:', err);
+        console.error(
+            '[streamAnalysisRoute] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         await releaseGenerationGate(quota);
         return unexpectedErrorResponse(locale);
     }

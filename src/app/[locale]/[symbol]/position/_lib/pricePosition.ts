@@ -13,6 +13,7 @@ import {
     computePosition,
 } from '@/widgets/portfolio-position/utils/positionGeometry';
 import { computeVolumeByBand } from '@/widgets/portfolio-position/utils/volumeByBand';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** "내 위치" 탭이 SSR로 내리는 최근 가격 범위(공개 데이터만 — 평단·수익률은 클라 전용). */
 export interface PriceRange {
@@ -68,7 +69,10 @@ export async function resolvePriceRange(
             ),
         };
     } catch (e) {
-        console.error('[PositionPage] resolvePriceRange failed:', e);
+        console.error(
+            '[PositionPage] resolvePriceRange failed:',
+            redactDbErrorForLog(e)
+        );
         return null;
     }
 }

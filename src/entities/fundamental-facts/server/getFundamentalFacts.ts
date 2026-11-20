@@ -19,6 +19,7 @@ import {
     isFundamentalIndexable,
 } from '../lib/buildFundamentalFacts';
 import type { FundamentalFactsInput, FundamentalFactsResult } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** EPS 연속 판정에 읽는 최근 발표 수 — 연속이 이보다 길어도 이 수에서 멈춘다. */
 const REPORTED_EPS_LIMIT = 8;
@@ -36,7 +37,7 @@ async function settle<T>(
     } catch (err) {
         console.warn(
             `[getFundamentalFacts] ${label} failed for ${symbol}:`,
-            err
+            redactDbErrorForLog(err)
         );
         return FAILED;
     }

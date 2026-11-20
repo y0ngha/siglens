@@ -2,6 +2,7 @@ import 'server-only';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient, getUpstashWriterCredentials } from './redisClient';
 import { runUpstashCommandOutsideFetch } from './upstashRenderSafeCommand';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 표시 보존 기간. 크론 창 사이 공백(최대 ~7.5시간)과 페이지
@@ -51,7 +52,7 @@ export async function markSsrMiss(tag: string): Promise<void> {
             SSR_MISS_TTL_SECONDS,
         ]);
     } catch (error) {
-        console.error('[ssrMissMarker] set failed', error);
+        console.error('[ssrMissMarker] set failed', redactDbErrorForLog(error));
     }
 }
 
@@ -69,7 +70,10 @@ export async function consumeSsrMiss(tag: string): Promise<boolean> {
     try {
         return (await redis.getdel(keyOf(tag))) !== null;
     } catch (error) {
-        console.error('[ssrMissMarker] getdel failed', error);
+        console.error(
+            '[ssrMissMarker] getdel failed',
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }

@@ -14,6 +14,7 @@ import { getMarketFearGreedStatic } from './marketFearGreedStaticCache';
 import { getMarketFearGreedKrStatic } from './marketFearGreedKrStaticCache';
 import { getMarketFearGreedCryptoStatic } from './marketFearGreedCryptoStaticCache';
 import type { MarketFearGreedViewSnapshot } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 interface MarketReadingSource {
     readonly load: () => Promise<{
@@ -132,7 +133,7 @@ export async function getMarketFearGreedReading(
         }
         console.error(
             '[getMarketFearGreedReading] market fear-greed load failed:',
-            e
+            redactDbErrorForLog(e)
         );
         return null;
     }

@@ -7,6 +7,7 @@ import {
     withApiErrorBoundary,
 } from '../apiResponse';
 import { publicApiToolSpecs } from '../publicApiTools';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,10 @@ export async function GET(): Promise<Response> {
                 },
             });
         } catch (error) {
-            console.error('[api/v1/skill] generation failed:', error);
+            console.error(
+                '[api/v1/skill] generation failed:',
+                redactDbErrorForLog(error)
+            );
             return apiError(
                 API_STATUS.internalError,
                 'internal_error',

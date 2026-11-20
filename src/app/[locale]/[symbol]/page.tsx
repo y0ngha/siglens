@@ -53,6 +53,7 @@ import {
     enterSymbolTabPage,
     type SymbolTabParams,
 } from './_lib/symbolTabEntry';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** ISR 상한. 사용자 신선도는 클라 refetch(`useBars` 30s)가 보장하므로 상한만 길게 둔다. */
 export const revalidate = 21600; // 6h
@@ -85,7 +86,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ).catch((e: unknown) => {
         console.error(
             '[SymbolPage] generateMetadata getQuantizedBarsStatic failed:',
-            e
+            redactDbErrorForLog(e)
         );
         return null;
     });
@@ -184,7 +185,10 @@ export default async function SymbolPage({ params }: Props) {
         DEEPSEEK_V4_1_FLASH_MODEL,
         locale
     ).catch((error: unknown) => {
-        console.error('[SymbolPage] peekAnalysisStatic failed:', error);
+        console.error(
+            '[SymbolPage] peekAnalysisStatic failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     });
     // 분석 카드 가격의 호가표(주식/ETF). 실패는 내부에서 'share'로 접히고 던지지 않으며, 한국 종목이
@@ -205,7 +209,10 @@ export default async function SymbolPage({ params }: Props) {
         marketProfile,
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[SymbolPage] getQuantizedBarsStatic failed:', e);
+        console.error(
+            '[SymbolPage] getQuantizedBarsStatic failed:',
+            redactDbErrorForLog(e)
+        );
         return null;
     });
 

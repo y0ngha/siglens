@@ -1,7 +1,7 @@
 [
     {
         "file": "src/app/[locale]/(home)/_lib/loadHomeTodayMarket.ts",
-        "line": 74,
+        "line": 75,
         "reason": "developer-diagnostic",
         "text": "`[home-today-market] ${scope.id} 신호 조회 실패 — 비운 채로 진행한다`"
     },
@@ -19,109 +19,109 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 32,
+        "line": 33,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 33,
+        "line": 34,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 34,
+        "line": 35,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 33,
+        "line": 34,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 34,
+        "line": 35,
         "reason": "seo-keywords-ko-only",
         "text": "미국 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "seo-keywords-ko-only",
         "text": "FOMC 일정"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "seo-keywords-ko-only",
         "text": "CPI 발표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "seo-keywords-ko-only",
         "text": "미국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "seo-keywords-ko-only",
         "text": "경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "seo-keywords-ko-only",
         "text": "장단기 금리차"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 40,
+        "line": 41,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경기침체"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 41,
+        "line": 42,
         "reason": "seo-keywords-ko-only",
         "text": "2s10s 스프레드"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 42,
+        "line": 43,
         "reason": "seo-keywords-ko-only",
         "text": "10년물 국채 금리"
     },
@@ -229,7 +229,7 @@
     },
     {
         "file": "src/app/[locale]/guide/_lib/loadGuideLiveSymbols.ts",
-        "line": 129,
+        "line": 130,
         "reason": "developer-diagnostic",
         "text": "`[guide-live] ${source} 조회 실패 — 비운 채로 진행한다`"
     },
@@ -361,7 +361,7 @@
     },
     {
         "file": "src/app/[locale]/market/signals/_lib/loadSignalHub.ts",
-        "line": 78,
+        "line": 80,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 기록 조회 실패"
     },
@@ -517,13 +517,13 @@
     },
     {
         "file": "src/entities/analysis/actions/getReanalyzeCooldownMs.ts",
-        "line": 19,
+        "line": 21,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] pttl 조회 실패:"
     },
     {
         "file": "src/entities/analysis/actions/tryAcquireReanalyzeCooldown.ts",
-        "line": 30,
+        "line": 32,
         "reason": "developer-diagnostic",
         "text": "[ReanalyzeCooldown] acquire 실패:"
     },
@@ -547,7 +547,7 @@
     },
     {
         "file": "src/entities/auth/lib/deleteAccount.ts",
-        "line": 90,
+        "line": 97,
         "reason": "log-fallback-message",
         "text": "사용자 계정을 찾을 수 없습니다."
     },
@@ -571,19 +571,19 @@
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 18,
+        "line": 19,
         "reason": "log-fallback-message",
         "text": "이미 사용 중인 이메일입니다."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 20,
+        "line": 21,
         "reason": "log-fallback-message",
         "text": "이메일 인증을 완료해야 회원가입이 가능합니다."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 21,
+        "line": 22,
         "reason": "log-fallback-message",
         "text": "필수 동의 항목을 확인해주세요."
     },
@@ -601,7 +601,7 @@
     },
     {
         "file": "src/entities/congress-trades/server/getCongressTradesResilient.ts",
-        "line": 36,
+        "line": 37,
         "reason": "developer-diagnostic",
         "text": "[getCongressTradesResilient] FMP 의회 거래 장애, degrade:"
     },
@@ -883,25 +883,25 @@
     },
     {
         "file": "src/entities/guide/api.ts",
-        "line": 88,
+        "line": 90,
         "reason": "developer-diagnostic",
         "text": "[guide] 카탈로그 조회 실패"
     },
     {
         "file": "src/entities/investor-flows/server/getInvestorFlowsPipelineReadiness.ts",
-        "line": 91,
+        "line": 92,
         "reason": "developer-diagnostic",
         "text": "[getInvestorFlowsPipelineReadiness] 상태 조회 실패, unknown:"
     },
     {
         "file": "src/entities/investor-flows/server/getInvestorFlowsResilient.ts",
-        "line": 35,
+        "line": 36,
         "reason": "developer-diagnostic",
         "text": "[getInvestorFlowsResilient] 수급 데이터 장애, degrade:"
     },
     {
         "file": "src/entities/investor-flows/server/getRecentDilutionEvent.ts",
-        "line": 105,
+        "line": 106,
         "reason": "developer-diagnostic",
         "text": "[getRecentDilutionEvent] 증자 공시 조회 실패, 배지 생략:"
     },
@@ -997,7 +997,7 @@
     },
     {
         "file": "src/entities/signal-history/api.ts",
-        "line": 262,
+        "line": 264,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 사이트맵 집계 실패"
     },
@@ -1159,25 +1159,25 @@
     },
     {
         "file": "src/entities/ticker/server/koreanTranslator.ts",
-        "line": 10,
+        "line": 11,
         "reason": "ai-prompt",
         "text": "`Translate these English company names to Korean (한국에서 통용되는 한국어 이름 또는 음역). Retur"
     },
     {
         "file": "src/entities/ticker/server/loadSymbolNames.ts",
-        "line": 86,
+        "line": 87,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름을 하나도 읽지 못했다"
     },
     {
         "file": "src/entities/ticker/server/loadSymbolNames.ts",
-        "line": 90,
+        "line": 92,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름 조회 실패 — 티커만 표시한다"
     },
     {
         "file": "src/entities/ticker/server/reconcileUsTickerNames.ts",
-        "line": 236,
+        "line": 237,
         "reason": "developer-diagnostic",
         "text": "`[ticker-names] renamed ${c.symbol}: \"${c.oldName}\" → \"${c.newName}\" (한글: ${oldK"
     },

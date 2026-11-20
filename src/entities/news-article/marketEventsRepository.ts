@@ -11,6 +11,7 @@ import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 프롬프트에 실을 수 있는 영향도.
@@ -121,7 +122,10 @@ export async function findMarketEventsForPrompt(
                 : []
         );
     } catch (err) {
-        console.error('[marketEventsRepository] read failed:', err);
+        console.error(
+            '[marketEventsRepository] read failed:',
+            redactDbErrorForLog(err)
+        );
         return [];
     }
 }

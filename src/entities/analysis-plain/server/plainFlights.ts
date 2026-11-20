@@ -11,6 +11,7 @@ import {
     type PlainGenerationKey,
 } from '../plainGenerationCoordination';
 import { findStored } from './plainStore';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 다른 인스턴스가 생성 중일 때 저장소를 다시 보는 간격(ms). */
 const PLAIN_WAIT_POLL_INTERVAL_MS = 1_000;
@@ -131,7 +132,10 @@ function runOwnedGeneration(
             }
         })
         .catch((error: unknown) => {
-            console.error('[analysisPlain] lock cleanup failed', error);
+            console.error(
+                '[analysisPlain] lock cleanup failed',
+                redactDbErrorForLog(error)
+            );
         });
     // SIGTERM 드레인(`drainBackgroundTasks`)에 등록한다. 등록 대상이 생성 + 락 해제까지의
     // 정리 체인이라, 종료 시 드레인이 락이 풀릴 때까지 기다린다. 등록하지 않으면 프로세스가

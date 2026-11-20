@@ -25,6 +25,7 @@ import {
     readStaticLastmods,
     writeStaticLastmods,
 } from './indexNowStaticPages';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 배치 로그(`[seo-prewarm] batch done`)에 실리는 IndexNow 응답 지표. */
 export interface IndexNowCounts {
@@ -108,7 +109,10 @@ export async function submitIndexNowForBatch(
                 `[indexnow] batch submission timed out after ${INDEXNOW_TIMEOUT_MS}ms`
             );
         } else {
-            console.error('[indexnow] batch submission failed', error);
+            console.error(
+                '[indexnow] batch submission failed',
+                redactDbErrorForLog(error)
+            );
         }
         return INDEXNOW_BATCH_FAILED;
     }
@@ -129,7 +133,7 @@ async function enqueueAndDrain(
     } catch (error) {
         console.error(
             '[indexnow] enqueue failed — draining existing queue',
-            error
+            redactDbErrorForLog(error)
         );
     }
 

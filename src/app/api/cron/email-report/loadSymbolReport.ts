@@ -21,6 +21,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 종목 한 칸을 채우는 읽기 소스. 테스트가 갈아 끼울 수 있게 주입받는다. */
 export interface SymbolReportSources {
@@ -77,7 +78,7 @@ async function settle<T>(
     } catch (error) {
         console.warn(
             `[email-report] ${label} unavailable for ${symbol}`,
-            error
+            redactDbErrorForLog(error)
         );
         return fallback;
     }

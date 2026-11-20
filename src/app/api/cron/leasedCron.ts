@@ -6,6 +6,7 @@ import {
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,
@@ -130,7 +131,10 @@ export async function handleLeasedCron(
                     JSON.stringify(result)
                 );
             } catch (error) {
-                console.error(`[${options.name}] run failed:`, error);
+                console.error(
+                    `[${options.name}] run failed:`,
+                    redactDbErrorForLog(error)
+                );
             } finally {
                 await releaseAll();
             }

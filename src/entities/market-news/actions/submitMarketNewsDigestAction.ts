@@ -25,6 +25,7 @@ import {
     DIGEST_REASONING,
 } from '../lib/marketNewsConstants';
 import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * runMarketNewsDigest를 부르고, 실제로 생성됐으면(`done`) 마지막 생성본으로 남긴다.
@@ -133,7 +134,10 @@ export async function submitMarketNewsDigestAction(
         }
         return await runAndRecordDigest(options, category, locale, ownsSlot);
     } catch (error) {
-        console.error('[submitMarketNewsDigestAction]', error);
+        console.error(
+            '[submitMarketNewsDigestAction]',
+            redactDbErrorForLog(error)
+        );
         return { status: 'error', error: await digestErrorMessage(locale) };
     }
 }

@@ -44,6 +44,7 @@ import {
 } from '@/shared/config/aiHost';
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -282,7 +283,10 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
         } catch (error) {
             // fail closed: 서명 시크릿이 없으면 쿠키를 심지 않을 뿐, 페이지 렌더
             // 자체를 막지는 않는다. 마커로 1회만 남긴다.
-            console.error('[proxy] guest cookie mint failed:', error);
+            console.error(
+                '[proxy] guest cookie mint failed:',
+                redactDbErrorForLog(error)
+            );
         }
     }
     return response;

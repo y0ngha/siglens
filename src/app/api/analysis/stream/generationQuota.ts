@@ -14,6 +14,7 @@ import {
     type AnalysisRateLimitAudience,
     type AnalysisRateLimitReason,
 } from '@/shared/lib/sse/analysisRateLimit';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이 라우트 요청 하나가 새 생성에 대해 받은 판정.
@@ -172,7 +173,10 @@ export async function reserveGenerationGate(
                   retryAt: reservation.retryAt,
               };
     } catch (error) {
-        console.error('[analysis-quota] identity resolution failed', error);
+        console.error(
+            '[analysis-quota] identity resolution failed',
+            redactDbErrorForLog(error)
+        );
         return userId !== null
             ? { kind: 'allowed', refund: async () => {} }
             : {

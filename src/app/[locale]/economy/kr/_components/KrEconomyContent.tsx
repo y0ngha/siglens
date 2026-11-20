@@ -19,6 +19,7 @@ import { buildEconomyPageJsonLd } from '../../_lib/economyJsonLd';
 import { requestNow } from '../../_lib/requestNow';
 import { economyKrDescription, economyKrTitle } from '../../constants';
 import { KrEconomyDegraded } from './KrEconomyDegraded';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/economy/kr` 본문의 서버 데이터 섹션(지표 카드·캘린더) — 페이지 셸이 Suspense 없이 그린다.
@@ -45,14 +46,17 @@ export async function KrEconomyContent() {
     // reject해 `economy/error.tsx`(클라 컴포넌트, noindex를 낼 수 없다)가 200으로 뜬다.
     const [cards, calendarEvents] = await Promise.all([
         getKrIndicatorCards(todayEt).catch((e: unknown) => {
-            console.error('[KrEconomyContent] getKrIndicatorCards failed:', e);
+            console.error(
+                '[KrEconomyContent] getKrIndicatorCards failed:',
+                redactDbErrorForLog(e)
+            );
             return [];
         }),
         getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR, locale).catch(
             (e: unknown) => {
                 console.error(
                     '[KrEconomyContent] getCalendarFromDb failed:',
-                    e
+                    redactDbErrorForLog(e)
                 );
                 return [];
             }
@@ -64,7 +68,10 @@ export async function KrEconomyContent() {
         calendarEvents,
         locale
     ).catch((e: unknown): Record<string, string> => {
-        console.error('[KrEconomyContent] resolveIndicatorLabels failed:', e);
+        console.error(
+            '[KrEconomyContent] resolveIndicatorLabels failed:',
+            redactDbErrorForLog(e)
+        );
         return {};
     });
 

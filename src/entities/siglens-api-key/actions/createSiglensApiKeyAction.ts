@@ -16,6 +16,7 @@ import {
 } from '@/shared/config/publicApi';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 에러 코드 → `entities.siglens-api-key.action` 메시지 키. */
 const ERROR_MESSAGE_KEY: Record<ReachableSiglensApiKeyErrorCode, string> = {
@@ -91,7 +92,10 @@ export async function createSiglensApiKeyAction(
             keyPrefix: result.key.keyPrefix,
         };
     } catch (error) {
-        console.error('[createSiglensApiKeyAction] failed:', error);
+        console.error(
+            '[createSiglensApiKeyAction] failed:',
+            redactDbErrorForLog(error)
+        );
         return await errorState('server_error');
     }
 }

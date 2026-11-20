@@ -28,6 +28,10 @@ import type {
 } from '@/shared/db/types';
 import type { EmailDispatcher } from '@/shared/email/types';
 import { localePath, type Locale } from '@/shared/i18n/locales';
+import {
+    redactDbErrorForLog,
+    redactedErrorMessage,
+} from '@/shared/db/redactDbErrorForLog';
 
 /** 발송 기록 보관 기간 — 그보다 오래된 행은 매 실행 끝에 지운다. */
 export const DELIVERY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
@@ -94,8 +98,7 @@ interface DueRecipient {
 }
 
 function errorText(error: unknown): string {
-    const text = error instanceof Error ? error.message : String(error);
-    return text.slice(0, ERROR_MAX_LENGTH);
+    return redactedErrorMessage(error).slice(0, ERROR_MAX_LENGTH);
 }
 
 /**
@@ -225,7 +228,10 @@ export async function runEmailReportBatch(
     let marketPicks: Promise<string[]> | null = null;
     const marketPicksOnce = () => {
         marketPicks ??= deps.loadMarketPicks().catch(error => {
-            console.error('[email-report] market picks failed', error);
+            console.error(
+                '[email-report] market picks failed',
+                redactDbErrorForLog(error)
+            );
             return [];
         });
         return marketPicks;
@@ -338,14 +344,14 @@ export async function runEmailReportBatch(
             counts.failed += 1;
             console.error(
                 `[email-report] delivery failed for ${recipient.userId}`,
-                error
+                redactDbErrorForLog(error)
             );
             await deps.deliveries
                 .finish(claimId, 'failed', symbols, errorText(error))
                 .catch(finishError =>
                     console.error(
                         '[email-report] could not record failure',
-                        finishError
+                        redactDbErrorForLog(finishError)
                     )
                 );
         }
@@ -367,7 +373,7 @@ export async function runEmailReportBatch(
                 counts.failed += 1;
                 console.error(
                     `[email-report] claim failed for ${item.recipient.userId}`,
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
         }
@@ -384,7 +390,10 @@ export async function runEmailReportBatch(
             new Date(now.getTime() - DELIVERY_RETENTION_MS)
         );
     } catch (error) {
-        console.error('[email-report] prune failed', error);
+        console.error(
+            '[email-report] prune failed',
+            redactDbErrorForLog(error)
+        );
     }
     return counts;
 }

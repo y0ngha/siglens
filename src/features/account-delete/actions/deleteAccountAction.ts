@@ -17,6 +17,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getTranslations } from 'next-intl/server';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 확인 이메일이 로그인한 본인과 같을 때 계정을 지우고 세션 쿠키를 만료한 뒤 홈으로
@@ -91,7 +92,10 @@ export async function deleteAccountAction(
         return localeRedirect('/');
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[deleteAccountAction] unexpected error:', err);
+        console.error(
+            '[deleteAccountAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             error: {
                 code: 'unexpected',

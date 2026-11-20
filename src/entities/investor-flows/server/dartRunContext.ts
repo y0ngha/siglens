@@ -4,6 +4,7 @@ import type {
     IngestDartFilingsStatus,
     RunContext,
 } from './ingestDartFilingsTypes';
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /** 아무 일도 하지 않은 상태의 결과. */
 export const emptyResult = (
@@ -59,4 +60,4 @@ export function stopOnFatal(ctx: RunContext, error: unknown): boolean {
 
 /** 로그·실패 기록에 싣는 오류 메시지(300자까지). */
 export const errorMessage = (error: unknown): string =>
-    (error instanceof Error ? error.message : String(error)).slice(0, 300);
+    redactedErrorMessage(error).slice(0, 300);

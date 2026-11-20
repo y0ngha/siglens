@@ -10,6 +10,7 @@ import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
 import { noStoreQueryLogger } from './noStoreQueryLogger';
 import * as schema from './schema';
 import type { DatabaseClient, DatabaseConfig } from './types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 클라이언트 캐시의 `globalThis` 키.
@@ -251,7 +252,10 @@ export async function endDatabaseClient(timeoutSeconds = 5): Promise<void> {
     try {
         await client.sql.end({ timeout: timeoutSeconds });
     } catch (error) {
-        console.warn('[db] failed to end connection pool', error);
+        console.warn(
+            '[db] failed to end connection pool',
+            redactDbErrorForLog(error)
+        );
     }
 }
 

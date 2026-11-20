@@ -11,6 +11,7 @@ import {
 } from '@/entities/siglens-api-key/lib/rateLimitWindow';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import type { PublicApiRateBucket } from '@/shared/config/publicApi';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 한도 저장소(Redis)를 쓸 수 없다. API는 외부 공개면이라 fail-open하지 않는다 —
@@ -47,7 +48,10 @@ async function incrementWindow(
         return count;
     } catch (cause) {
         if (cause instanceof RateLimiterUnavailableError) throw cause;
-        console.error('[publicApiRateLimit] redis error:', cause);
+        console.error(
+            '[publicApiRateLimit] redis error:',
+            redactDbErrorForLog(cause)
+        );
         throw new RateLimiterUnavailableError({ cause });
     }
 }
@@ -102,7 +106,10 @@ export async function peekRateLimits(
         );
         return buildRateLimitSnapshot(slots, counts);
     } catch (error) {
-        console.error('[publicApiRateLimit] peek failed:', error);
+        console.error(
+            '[publicApiRateLimit] peek failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

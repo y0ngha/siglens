@@ -12,6 +12,7 @@ import {
     stopAcceptingBackgroundTasks,
 } from '@/shared/lib/backgroundTask';
 import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * ISR 캐시 핸들러(`cache-handler/uploadQueue.mjs`)가 업로드 drain 함수를 등록하는 전역 키.
@@ -114,7 +115,10 @@ export function registerShutdownHandlers(): void {
             drainIsrCacheUploads(SHUTDOWN_DRAIN_DEADLINE_MS),
         ])
             .catch(err => {
-                console.error('[instrumentation] drain error:', err);
+                console.error(
+                    '[instrumentation] drain error:',
+                    redactDbErrorForLog(err)
+                );
             })
             .finally(() => {
                 /**
@@ -132,7 +136,10 @@ export function registerShutdownHandlers(): void {
                 const dbPoolClosed = endDatabaseClient(
                     DB_POOL_END_TIMEOUT_SECONDS
                 ).catch(err => {
-                    console.warn('[instrumentation] db pool end error:', err);
+                    console.warn(
+                        '[instrumentation] db pool end error:',
+                        redactDbErrorForLog(err)
+                    );
                 });
                 setTimeout(() => {
                     void dbPoolClosed.finally(() => {

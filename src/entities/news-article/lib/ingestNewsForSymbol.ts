@@ -14,6 +14,7 @@ import type { DrizzleNewsRepository } from '../api';
 import { getNewsClient } from '../server/getNewsClient';
 import { markFetched } from '../server/newsRefreshFlag';
 import { NEWS_LOOKBACK_MS } from './newsLookback';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 적재 한 번의 결과. `fresh`(이번에 FMP에서 받은 기사)와 `upsertSettled`(기사별 upsert
@@ -115,7 +116,10 @@ export async function ingestNewsForSymbol(
                 getFmpUserFacingKey(err) === null &&
                 !isFmpPaymentRequiredError(err)
             ) {
-                console.error('[ingestNewsForSymbol] FMP fetch failed:', err);
+                console.error(
+                    '[ingestNewsForSymbol] FMP fetch failed:',
+                    redactDbErrorForLog(err)
+                );
             }
             return null;
         });
@@ -134,7 +138,9 @@ export async function ingestNewsForSymbol(
     if (upsertFailures.length > 0) {
         console.error(
             `[ingestNewsForSymbol] ${upsertFailures.length}/${fresh.length} upserts failed`,
-            upsertFailures.map(f => (f.status === 'rejected' ? f.reason : null))
+            upsertFailures.map(f =>
+                f.status === 'rejected' ? redactDbErrorForLog(f.reason) : null
+            )
         );
     }
     if (upsertFailures.length > fresh.length / 2) {

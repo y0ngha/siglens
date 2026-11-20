@@ -7,6 +7,7 @@ import {
     representativeSymbol,
     type DocumentPlan,
 } from '../lib/secFilingsPlan';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Form144Row, OfferingFilingRow } from '../model';
 import type { FilingFailureTarget } from '../api/investorFlowsFilingsRepository';
 import type { IngestSecFilingsDeps, RunState } from './ingestSecFilingsTypes';
@@ -190,10 +191,9 @@ export async function runDocumentJobs(
                 continue;
             }
             state.result.documentsFailed += 1;
+            const loggable = redactDbErrorForLog(outcome.reason);
             const message = (
-                outcome.reason instanceof Error
-                    ? outcome.reason.message
-                    : String(outcome.reason)
+                loggable instanceof Error ? loggable.message : String(loggable)
             ).slice(0, 500);
             deps.log(
                 `[sec-filings] document failed ${job.target.accession}:`,

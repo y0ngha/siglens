@@ -25,6 +25,7 @@ import {
     type SnapshotPatternHit,
     withDisplayNames,
 } from '@/views/guide/lib/liveSymbols';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 데이터원 하나의 결과. 실패하면 `value`는 대신 넣은 빈 값이고 `failed`가 참이다. */
 interface Settled<T> {
@@ -127,7 +128,7 @@ async function settle<T>(
     } catch (error) {
         console.warn(
             `[guide-live] ${source} 조회 실패 — 비운 채로 진행한다`,
-            error
+            redactDbErrorForLog(error)
         );
         return { value: fallback, failed: true };
     }

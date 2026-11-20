@@ -7,6 +7,7 @@
 
 import { getReanalyzeCooldownMs as coreGetMs } from '@y0ngha/siglens-core';
 import type { Timeframe } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 남은 재분석 쿨다운(ms). 조회 장애는 기록하고 `0`(쿨다운 없음)으로 본다. */
 export async function getReanalyzeCooldownMs(
@@ -16,7 +17,10 @@ export async function getReanalyzeCooldownMs(
     try {
         return await coreGetMs(symbol, timeframe);
     } catch (error) {
-        console.error('[ReanalyzeCooldown] pttl 조회 실패:', error);
+        console.error(
+            '[ReanalyzeCooldown] pttl 조회 실패:',
+            redactDbErrorForLog(error)
+        );
         return 0;
     }
 }

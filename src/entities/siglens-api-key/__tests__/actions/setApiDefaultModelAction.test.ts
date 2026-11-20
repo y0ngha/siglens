@@ -31,6 +31,10 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { setApiDefaultModelAction } from '@/entities/siglens-api-key/actions/setApiDefaultModelAction';
 import type { SetApiDefaultModelState } from '@/entities/siglens-api-key/model';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
 const IDLE: SetApiDefaultModelState = { status: 'idle' };
@@ -193,5 +197,18 @@ describe('setApiDefaultModelAction', () => {
             code: 'server_error',
         });
         expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        mockFindProviders.mockRejectedValue(plantedDbError());
+        await setApiDefaultModelAction(
+            IDLE,
+            makeFormData({ model: 'claude-opus-5' })
+        );
+        expect(console.error).toHaveBeenCalledWith(
+            '[setApiDefaultModelAction] failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

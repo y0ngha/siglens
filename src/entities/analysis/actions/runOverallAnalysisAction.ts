@@ -15,6 +15,7 @@ import {
     executeOverallAnalysis,
     type SubmitOverallAnalysisActionOptions,
 } from '../server/overallAnalysisRunner';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** core의 종합 분석 결과에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunOverallAnalysisActionResult =
@@ -76,7 +77,10 @@ export async function runOverallAnalysisAction(
             signal,
         });
     } catch (err) {
-        console.error('[runOverallAnalysisAction] unexpected error:', err);
+        console.error(
+            '[runOverallAnalysisAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             status: 'error',
             error: await buildGateError(caughtAnalysisErrorCode(err), locale),

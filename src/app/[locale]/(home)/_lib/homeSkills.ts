@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import type { Skill, SkillCounts } from '@y0ngha/siglens-core';
 import { countSkillFiles, loadShowcaseSkills } from '@/entities/skill/api';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 스킬 개수를 읽지 못했을 때 홈이 대신 쓰는 값. 히어로 카피와 `StatsBar`가 같은 객체를 받는다.
@@ -21,7 +22,10 @@ export const EMPTY_SKILL_COUNTS: SkillCounts = {
  */
 export function loadSkillCounts(): Promise<SkillCounts> {
     return countSkillFiles().catch((error: unknown) => {
-        console.error('[Home] countSkillFiles failed:', error);
+        console.error(
+            '[Home] countSkillFiles failed:',
+            redactDbErrorForLog(error)
+        );
         return EMPTY_SKILL_COUNTS;
     });
 }
@@ -35,7 +39,10 @@ export const loadShowcase = cache(async (): Promise<Skill[]> => {
     try {
         return await loadShowcaseSkills();
     } catch (error) {
-        console.error('[Home] loadShowcaseSkills failed:', error);
+        console.error(
+            '[Home] loadShowcaseSkills failed:',
+            redactDbErrorForLog(error)
+        );
         return [];
     }
 });

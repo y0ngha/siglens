@@ -17,6 +17,7 @@ import {
     readLastGoodCapturedAtBatch,
     type RedisClient,
 } from './optionsLastGoodStore';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 옵션 워밍 전용 회전 커서. seo-prewarm의 `rotation-cursor`와 **다른 키**다 — 저쪽은
@@ -111,7 +112,7 @@ async function writeCursor(redis: RedisClient, value: number): Promise<void> {
         console.error(
             '[optionsWarm] cursor write failed for',
             OPTIONS_WARM_CURSOR_KEY,
-            error
+            redactDbErrorForLog(error)
         );
     }
 }
@@ -127,7 +128,7 @@ async function isUniverseComplete(
         console.error(
             '[optionsWarm] complete flag read failed for',
             key,
-            error
+            redactDbErrorForLog(error)
         );
         return false;
     }
@@ -145,7 +146,7 @@ async function markUniverseComplete(
         console.error(
             '[optionsWarm] complete flag write failed for',
             key,
-            error
+            redactDbErrorForLog(error)
         );
     }
 }

@@ -6,6 +6,7 @@ import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { getDatabaseClient } from '@/shared/db/client';
 import { API_STATUS } from './apiResponse';
 import { fail, type Failure } from './freshAnalysisOutcomes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 사용할 모델: 요청의 `model` 인자 → 없으면 `users.api_default_model`. 둘 다 없으면 400 `model_required`,
@@ -41,7 +42,7 @@ export async function resolveRequestedModel(
     } catch (error) {
         console.error(
             '[api/v1 run_fresh_analysis] default model lookup failed:',
-            error
+            redactDbErrorForLog(error)
         );
         return {
             ok: false,

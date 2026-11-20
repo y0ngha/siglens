@@ -7,6 +7,7 @@ import {
 } from '@/shared/config/publicApi';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 import { USER_TIER_VALUES } from '@/shared/db/constants';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const CACHE_KEY_PREFIX = 'siglens-api:key:';
 const TOMBSTONE_KEY_PREFIX = 'siglens-api:revoked:';
@@ -20,7 +21,11 @@ function warnCacheUnavailable(op: string, error: unknown): void {
     const now = Date.now();
     if (now - lastCacheWarnAt < WARN_INTERVAL_MS) return;
     lastCacheWarnAt = now;
-    console.warn('[siglensApiKeyAuth] cache unavailable:', op, error);
+    console.warn(
+        '[siglensApiKeyAuth] cache unavailable:',
+        op,
+        redactDbErrorForLog(error)
+    );
 }
 
 /** 테스트 전용: 분당 한 번 경고 스로틀을 결정적으로 만든다. */
@@ -154,7 +159,7 @@ export async function revokeApiKeyAuth(
     } catch (error) {
         console.error(
             '[siglensApiKeyAuth] revocation propagation failed; auth may lag by up to the cache TTL:',
-            error
+            redactDbErrorForLog(error)
         );
         return false;
     }

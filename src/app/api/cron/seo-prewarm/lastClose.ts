@@ -3,6 +3,7 @@ import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { quantizeBarsDataToLastClosed } from '@/entities/bars/lib/quantizeBars';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 페이지 상단에 찍히는 종가 — `getQuantizedBarsStatic`이 쓰는 것과 **같은 로더·같은 양자화**.
@@ -39,7 +40,7 @@ export async function fetchPageLastClose(
     } catch (error) {
         console.warn(
             `[seo-prewarm] last-close lookup failed: ${symbol}`,
-            error
+            redactDbErrorForLog(error)
         );
         return null;
     }

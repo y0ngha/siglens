@@ -17,6 +17,7 @@ import type {
     SignalHistoryMarket,
     SignalHubCount,
 } from './types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 신호 이력을 읽는 캐시(신호 페이지·사이트맵 집계)의 태그. 기록기가 새 에피소드를 넣으면 이 태그를
@@ -259,7 +260,10 @@ export async function loadSignalHubCounts(
             { revalidate: SECONDS_PER_HOUR, tags: [SIGNAL_HISTORY_CACHE_TAG] }
         )();
     } catch (error) {
-        console.error('[signal-hub] 사이트맵 집계 실패', error);
+        console.error(
+            '[signal-hub] 사이트맵 집계 실패',
+            redactDbErrorForLog(error)
+        );
         return [];
     }
 }

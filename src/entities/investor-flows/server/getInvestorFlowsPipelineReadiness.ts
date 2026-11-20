@@ -17,6 +17,7 @@ import { UNKNOWN_PIPELINE_READINESS } from '../lib/investorFlowsReadiness';
 import type { InvestorFlowsPipelineReadiness } from '../model';
 import { isE2EFlowsPipelineCollecting } from './e2eFlowsPipeline';
 import { loadInvestorFlowsPipelineReadiness } from './loadInvestorFlowsPipelineReadiness';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 종목 무관 캐시의 `symbol:` 태그 자리에 들어가는 센티널(`staticSymbolCache`는 키 형식을 강제하지 않는다). */
 const READINESS_CACHE_SCOPE = '__INVESTOR_FLOWS_PIPELINE__';
@@ -89,7 +90,7 @@ export const getInvestorFlowsPipelineReadiness = cache(
             if (isDynamicServerError(error)) throw error;
             console.error(
                 '[getInvestorFlowsPipelineReadiness] 상태 조회 실패, unknown:',
-                error
+                redactDbErrorForLog(error)
             );
             return UNKNOWN_PIPELINE_READINESS;
         }

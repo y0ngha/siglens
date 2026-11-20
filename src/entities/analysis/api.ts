@@ -52,6 +52,7 @@ import {
     loadFinancialsScorecardOrUndefined,
     loadOptionsSnapshotOrNull,
 } from './server/overallAxisInputs';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_1_FLASH_MODEL`을 직접 명시 전달하는
@@ -124,7 +125,7 @@ async function persistPrewarmAnalysis(input: {
     } catch (err) {
         console.error(
             '[entities/analysis/api] persistPrewarmAnalysis failed:',
-            err
+            redactDbErrorForLog(err)
         );
     }
 }

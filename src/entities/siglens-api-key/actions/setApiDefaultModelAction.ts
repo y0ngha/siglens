@@ -12,6 +12,7 @@ import type {
 } from '@/entities/siglens-api-key/model';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const ERROR_MESSAGE_KEY: Record<ReachableApiDefaultModelErrorCode, string> = {
     unauthenticated: 'unauthenticated',
@@ -80,7 +81,10 @@ export async function setApiDefaultModelAction(
         revalidatePath('/[locale]/account', 'page');
         return { status: 'saved', model: check.model };
     } catch (error) {
-        console.error('[setApiDefaultModelAction] failed:', error);
+        console.error(
+            '[setApiDefaultModelAction] failed:',
+            redactDbErrorForLog(error)
+        );
         return await errorState('server_error');
     }
 }

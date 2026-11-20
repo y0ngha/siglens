@@ -21,6 +21,7 @@ import { dashboardScopeOf } from '@/shared/config/dashboardScope';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { withTimeout } from '@/shared/lib/withTimeout';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 마감 뒤 이만큼 지나야 기록한다(분). 미국은 마지막 봉이 확정될 여유 15분. 한국은 시세가 20분
@@ -203,7 +204,10 @@ async function recordMarket(
         await markers?.mark(markerKey, RECORDED_MARKER_TTL_SECONDS);
         return { status: 'recorded', sessionDate, inserted, extended };
     } catch (error) {
-        console.error(`[seo-prewarm] signal history ${market} failed:`, error);
+        console.error(
+            `[seo-prewarm] signal history ${market} failed:`,
+            redactDbErrorForLog(error)
+        );
         return { status: 'failed' };
     }
 }
@@ -230,7 +234,7 @@ async function recordAndPrune(
         } catch (error) {
             console.error(
                 '[seo-prewarm] signal history invalidate failed:',
-                error
+                redactDbErrorForLog(error)
             );
         }
     }
@@ -250,7 +254,10 @@ async function recordAndPrune(
             pruned: await repo.pruneOlderThan(cutoff),
         };
     } catch (error) {
-        console.error('[seo-prewarm] signal history prune failed:', error);
+        console.error(
+            '[seo-prewarm] signal history prune failed:',
+            redactDbErrorForLog(error)
+        );
         return { status: 'done', us, kr, pruned: null };
     }
 }

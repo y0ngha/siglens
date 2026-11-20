@@ -12,6 +12,7 @@ import {
     type CryptoAssetRow,
     type FmpCryptoListRaw,
 } from './lib/fmpCryptoListClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /*
  * 크립토 자산 유니버스의 I/O(FMP 목록 조회, `crypto_assets` 테이블 조회).
@@ -44,7 +45,7 @@ export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
         // (a silent [] fallback would mask a failed crypto_assets sync).
         console.error(
             '[fetchCryptoAssetList] FMP cryptocurrency-list fetch failed:',
-            e
+            redactDbErrorForLog(e)
         );
         throw e;
     }

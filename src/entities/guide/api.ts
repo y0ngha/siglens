@@ -13,6 +13,7 @@ import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
 import { mapGuideRows } from './lib/mapGuideRows';
 import type { GuideCatalog } from './types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 가이드 데이터 캐시 태그·키 접두사. */
 export const GUIDE_CACHE_TAG = 'guide';
@@ -85,7 +86,10 @@ export const loadGuideCatalog = cache(
             )();
             return catalog.entries.length === 0 ? null : catalog;
         } catch (error) {
-            console.error('[guide] 카탈로그 조회 실패', error);
+            console.error(
+                '[guide] 카탈로그 조회 실패',
+                redactDbErrorForLog(error)
+            );
             return null;
         }
     }

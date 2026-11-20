@@ -5,6 +5,7 @@ import { getProfileResilient } from '@/entities/ticker/server/getProfileResilien
 import { withTimeout } from '@/shared/lib/withTimeout';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 펀더멘털 탭 색인 판정 스탬프(`fundamental-indexable:v1:*`)를 크론이 직접 채운다.
@@ -61,7 +62,10 @@ export async function refreshFundamentalStamps(
             (start + FUNDAMENTAL_STAMPS_PER_TICK) % tickers.length
         );
     } catch (error) {
-        console.error('[seo-prewarm] fundamental stamps cursor failed', error);
+        console.error(
+            '[seo-prewarm] fundamental stamps cursor failed',
+            redactDbErrorForLog(error)
+        );
         return { checked: 0, recorded: 0 };
     }
 
@@ -90,7 +94,7 @@ export async function refreshFundamentalStamps(
         } catch (error) {
             console.error(
                 `[seo-prewarm] fundamental stamp ${symbol} failed`,
-                error
+                redactDbErrorForLog(error)
             );
         }
     }
@@ -101,7 +105,7 @@ export async function refreshFundamentalStamps(
         } catch (error) {
             console.error(
                 '[seo-prewarm] fundamental stamps cursor failed',
-                error
+                redactDbErrorForLog(error)
             );
         }
     }

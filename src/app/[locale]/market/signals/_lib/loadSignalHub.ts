@@ -20,6 +20,7 @@ import {
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isDatabaseMissingAtBuild } from '@/shared/db/config';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 한 페이지가 읽는 최대 에피소드 수 — 폭주 방어용 상한이다. 스캐너 대상은 미국 약 100·한국 약 30종목이고
@@ -75,7 +76,11 @@ export const loadSignalHub = cache(
                 degraded: false,
             };
         } catch (error) {
-            console.error('[signal-hub] 기록 조회 실패', signalType, error);
+            console.error(
+                '[signal-hub] 기록 조회 실패',
+                signalType,
+                redactDbErrorForLog(error)
+            );
             await shortenRevalidateForRuntimeDegrade();
             return { rows: [], degraded: true };
         }

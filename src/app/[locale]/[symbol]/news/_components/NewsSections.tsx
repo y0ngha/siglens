@@ -30,6 +30,7 @@ import {
     fromGradesEvent,
     type AnalystActionItem,
 } from '@/widgets/news/utils/analystActionItems';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Yahoo 변경 이력(목표가 포함)을 기다리는 최대 시간. 이력은 보강이라 크롤러가 받는 본문을 이것 때문에 오래 붙잡지
@@ -74,7 +75,7 @@ async function loadBoundedOptional<T>(options: {
             [newsCacheTag(symbol)],
             ttlSeconds
         ).catch((error: unknown) => {
-            console.warn(failureLog, error);
+            console.warn(failureLog, redactDbErrorForLog(error));
             return null;
         }),
         budgetMs,
@@ -172,7 +173,7 @@ async function degradeSection(
     error: unknown,
     fallbackMessage: string
 ): Promise<DegradedSection> {
-    console.error(failureLog, error);
+    console.error(failureLog, redactDbErrorForLog(error));
     await shortenRevalidateForRuntimeDegrade();
     return {
         degradedMessage:

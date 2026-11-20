@@ -10,6 +10,7 @@ import {
 } from '../apiResponse';
 import { requireApiKey } from '../authenticate';
 import { enforceRateLimit } from '../rateLimitHeaders';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,10 @@ export async function GET(request: Request): Promise<Response> {
             providers = rows.map(row => row.provider).toSorted();
             defaultModel = storedModel;
         } catch (error) {
-            console.error('[api/v1/me] provider lookup failed:', error);
+            console.error(
+                '[api/v1/me] provider lookup failed:',
+                redactDbErrorForLog(error)
+            );
             return apiError(
                 API_STATUS.serviceUnavailable,
                 'service_unavailable',

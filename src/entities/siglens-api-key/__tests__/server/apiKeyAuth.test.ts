@@ -24,6 +24,10 @@ import {
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import { API_KEY_AUTH_CACHE_TTL_SECONDS } from '@/shared/config/publicApi';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const RAW_KEY = `slk_${'k7Q'.repeat(13)}x`;
 const HEADER = `Bearer ${RAW_KEY}`;
@@ -297,5 +301,18 @@ describe('폐기 묘비 — 캐시 적중에서도 거절', () => {
         await expect(authenticateApiKey(HEADER)).resolves.toEqual({
             status: 'invalid',
         });
+    });
+
+    it('키 조회가 DB 에러로 실패해도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        mockGetRedis.mockReturnValue(makeRedis());
+        mockFind.mockRejectedValue(plantedDbError());
+        await expect(authenticateApiKey(HEADER)).resolves.toEqual({
+            status: 'unavailable',
+        });
+        expect(console.error).toHaveBeenCalledWith(
+            '[siglensApiKeyAuth] key lookup failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

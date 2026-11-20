@@ -7,6 +7,7 @@ import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 종목 뉴스 목록 행 — 뉴스·종합 탭이 같은 모양을 받는다. */
 export type SymbolNewsListItems = Awaited<ReturnType<typeof getNewsList>>;
@@ -35,7 +36,7 @@ export const loadSymbolNewsList = cache(
         ).catch((e: unknown): SymbolNewsListItems => {
             console.error(
                 '[loadSymbolNewsList] getNewsList failed, degrading to []:',
-                e
+                redactDbErrorForLog(e)
             );
             return [];
         })

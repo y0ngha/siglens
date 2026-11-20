@@ -35,6 +35,7 @@ import { buildMarketItemListJsonLd } from './_lib/marketItemListJsonLd';
 import { buildMarketDehydratedSeed } from './_lib/marketSeed';
 import { marketCopyFor } from './copy';
 import { loadMarketSignals } from './loadMarketSignals';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/market`·`/market/kr` 본문 끝의 "신호별 종목" 링크 묶음 — 신호 페이지(`/market/signals/*`)로 가는
@@ -89,7 +90,10 @@ export async function MarketContent({
     // 조용히 삼키지 않고 로그를 남긴다(SERVER.md#SA-4).
     const peekSeed = await peekBriefingStatic(summary, dateHour, scope).catch(
         (e: unknown) => {
-            console.error('[MarketContent] peekBriefingStatic failed:', e);
+            console.error(
+                '[MarketContent] peekBriefingStatic failed:',
+                redactDbErrorForLog(e)
+            );
             return null;
         }
     );

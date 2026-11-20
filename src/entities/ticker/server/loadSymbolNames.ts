@@ -4,6 +4,7 @@ import { getCryptoAsset } from '@/entities/ticker/server/cryptoAssetStore';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 크립토 판정용 — 매 호출마다 배열을 훑지 않는다. */
 const CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);
@@ -87,7 +88,10 @@ async function readSymbolNames(
         }
         return Object.fromEntries(pairs);
     } catch (error) {
-        console.warn('[symbols] 이름 조회 실패 — 티커만 표시한다', error);
+        console.warn(
+            '[symbols] 이름 조회 실패 — 티커만 표시한다',
+            redactDbErrorForLog(error)
+        );
         throw error instanceof Error ? error : new Error(String(error));
     }
 }

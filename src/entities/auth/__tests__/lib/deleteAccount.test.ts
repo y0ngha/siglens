@@ -3,6 +3,10 @@ import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
 import type { DeleteAccountApiKeys } from '@/entities/auth/lib/authUseCaseTypes';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 async function waitFor(
     assertion: () => void | Promise<void>,
@@ -375,5 +379,76 @@ describe('deleteAccount', () => {
             );
             expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
         });
+    });
+
+    describe('DB 에러 로그', () => {
+        it.each([
+            [
+                'OAuth 계정 조회',
+                '[deleteAccount] findByUserId for OAuth revocation failed',
+                (
+                    deps: ReturnType<typeof makeDependencies>['dependencies']
+                ) => ({
+                    ...deps,
+                    oauthAccounts: {
+                        findByUserId: vi
+                            .fn()
+                            .mockRejectedValue(plantedDbError()),
+                    },
+                }),
+            ],
+            [
+                'API 키 해시 조회',
+                '[deleteAccount] listing API key hashes failed',
+                (
+                    deps: ReturnType<typeof makeDependencies>['dependencies']
+                ) => ({
+                    ...deps,
+                    apiKeys: {
+                        listActiveKeyHashes: vi
+                            .fn()
+                            .mockRejectedValue(plantedDbError()),
+                        revokeAuth: vi.fn(),
+                    },
+                }),
+            ],
+            [
+                'API 키 인증 폐기',
+                '[deleteAccount] API key auth revocation failed',
+                (
+                    deps: ReturnType<typeof makeDependencies>['dependencies']
+                ) => ({
+                    ...deps,
+                    apiKeys: {
+                        listActiveKeyHashes: vi
+                            .fn()
+                            .mockResolvedValue(['hash-1']),
+                        revokeAuth: vi.fn().mockRejectedValue(plantedDbError()),
+                    },
+                }),
+            ],
+        ])(
+            '%s 실패는 파라미터 없이 남긴다',
+            async (_label, prefix, withFailure) => {
+                const warnSpy = vi
+                    .spyOn(console, 'warn')
+                    .mockImplementation(() => undefined);
+                try {
+                    const { dependencies } = makeDependencies(true);
+                    const result = await deleteAccount(
+                        { userId: 'user-1' },
+                        withFailure(dependencies)
+                    );
+                    expect(result.ok).toBe(true);
+                    expect(warnSpy).toHaveBeenCalledWith(
+                        prefix,
+                        'Error code=57014'
+                    );
+                    expectLogWithoutPlantedSecrets(warnSpy);
+                } finally {
+                    warnSpy.mockRestore();
+                }
+            }
+        );
     });
 });

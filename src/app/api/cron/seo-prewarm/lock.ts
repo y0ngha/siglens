@@ -1,6 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'crypto';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // KEYS[1]=락 키, ARGV[1]=보유 토큰 — 저장된 값이 호출자의 토큰과 일치할 때만 DEL한다
 // (compare-and-delete). TTL 만료로 새 실행이 이미 재획득한 락을 옛 실행의 finally가
@@ -92,7 +93,10 @@ export async function acquirePrewarmLock(): Promise<string | null> {
         await redis
             .eval(RELEASE_LOCK_SCRIPT, [LOCK_KEY], [token])
             .catch((cleanupError: unknown) =>
-                console.warn('[seo-prewarm] lock cleanup failed', cleanupError)
+                console.warn(
+                    '[seo-prewarm] lock cleanup failed',
+                    redactDbErrorForLog(cleanupError)
+                )
             );
         throw error;
     }

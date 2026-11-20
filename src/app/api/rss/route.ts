@@ -14,6 +14,7 @@ import type { RssItem } from '@/entities/rss-feed/model';
 import { RSS_FEED_URL } from '@/shared/config/rssFeed';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandIntroName, SITE_URL } from '@/shared/lib/seo';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 
@@ -48,7 +49,10 @@ export async function GET(request: Request): Promise<Response> {
         rssSources().map(source =>
             buildRssItem(source, declaredUrls).catch(error => {
                 // 소스 하나의 읽기 실패가 피드 전체를 500으로 만들면 구독자가 피드를 잃는다.
-                console.error(`[rss] ${source.surface} failed:`, error);
+                console.error(
+                    `[rss] ${source.surface} failed:`,
+                    redactDbErrorForLog(error)
+                );
                 return null;
             })
         )

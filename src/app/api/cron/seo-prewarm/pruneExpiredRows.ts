@@ -1,6 +1,7 @@
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { DrizzleSharedAnalysisRepository } from '@/entities/shared-analysis/api';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 만료 행 정리 결과. 각 값은 이번 tick에 지운 행 수이고, 그 테이블 정리가 실패했으면
@@ -18,7 +19,10 @@ async function settle(
     try {
         return await run();
     } catch (error) {
-        console.error(`[seo-prewarm] expiry prune ${label} failed:`, error);
+        console.error(
+            `[seo-prewarm] expiry prune ${label} failed:`,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

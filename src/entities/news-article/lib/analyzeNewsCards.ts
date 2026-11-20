@@ -7,6 +7,7 @@ import {
     recordNewsCardFailures,
 } from '../server/newsCardFailureBackoff';
 import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from './newsAnalysisConstants';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 기사 한 건을 카드 분석(번역 + 라벨링)해 DB에 반영한다.
@@ -134,7 +135,9 @@ export async function analyzeNewsCards(
     if (rejected.length > 0) {
         console.error(
             `[${options.logLabel}] ${rejected.length}/${targets.length} analyzeAndPersist failed`,
-            rejected.map(f => (f.status === 'rejected' ? f.reason : null))
+            rejected.map(f =>
+                f.status === 'rejected' ? redactDbErrorForLog(f.reason) : null
+            )
         );
     }
 

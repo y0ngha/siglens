@@ -2,6 +2,7 @@ import 'server-only';
 import type { Redis } from '@upstash/redis';
 import { getRedisClient } from './redisClient';
 import { decodeCacheValue, encodeCacheValue } from './cacheValueCodec';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 interface CacheEnvelope<T> {
     data: T;
@@ -87,7 +88,10 @@ async function writeEnvelope<T>(
         await redis.set(key, stored, { ex });
         return true;
     } catch (error) {
-        console.error(`[getOrSetCache] set failed: ${key}`, error);
+        console.error(
+            `[getOrSetCache] set failed: ${key}`,
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }
@@ -165,7 +169,10 @@ export async function getOrSetCache<T>(
             const hit = await decodeCacheValue(await redis.get<unknown>(key));
             if (isCacheEnvelope<T>(hit) && isFresh(hit.data)) return hit.data;
         } catch (error) {
-            console.error(`[getOrSetCache] get failed: ${key}`, error);
+            console.error(
+                `[getOrSetCache] get failed: ${key}`,
+                redactDbErrorForLog(error)
+            );
         }
     }
 

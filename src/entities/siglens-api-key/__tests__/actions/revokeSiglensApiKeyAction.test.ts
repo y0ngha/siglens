@@ -29,6 +29,10 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revokeSiglensApiKeyAction } from '@/entities/siglens-api-key/actions/revokeSiglensApiKeyAction';
 import type { RevokeSiglensApiKeyState } from '@/entities/siglens-api-key/model';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
 const IDLE: RevokeSiglensApiKeyState = { status: 'idle' };
@@ -121,5 +125,16 @@ describe('revokeSiglensApiKeyAction', () => {
         await expect(
             revokeSiglensApiKeyAction(IDLE, makeFormData({ keyId: KEY_ID }))
         ).resolves.toMatchObject({ status: 'error', code: 'server_error' });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        mockGetCurrentUser.mockResolvedValue(USER);
+        mockRevoke.mockRejectedValue(plantedDbError());
+        await revokeSiglensApiKeyAction(IDLE, makeFormData({ keyId: KEY_ID }));
+        expect(console.error).toHaveBeenCalledWith(
+            '[revokeSiglensApiKeyAction] failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

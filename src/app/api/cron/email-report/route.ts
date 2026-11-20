@@ -5,6 +5,7 @@ import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { createEmailReportDeps } from './createEmailReportDeps';
 import { runEmailReportBatch } from './runEmailReportBatch';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
 
@@ -44,7 +45,10 @@ export async function PATCH(request: Request): Promise<Response> {
                 );
                 console.log('[email-report] run done:', JSON.stringify(counts));
             } catch (error) {
-                console.error('[email-report] run failed:', error);
+                console.error(
+                    '[email-report] run failed:',
+                    redactDbErrorForLog(error)
+                );
             }
         })
     );

@@ -1,5 +1,6 @@
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 각 의존성 핑의 짧은 타임아웃(ms). 느린 의존성에 readiness가 매달리지 않게 한다. */
 export const PING_TIMEOUT_MS = 2_000;
@@ -51,7 +52,10 @@ async function runPing(
         await withTimeout(ping(), PING_TIMEOUT_MS);
         return { ok: true };
     } catch (err) {
-        console.error(`[ready] ${label} ping failed:`, err);
+        console.error(
+            `[ready] ${label} ping failed:`,
+            redactDbErrorForLog(err)
+        );
         return {
             ok: false,
             error:

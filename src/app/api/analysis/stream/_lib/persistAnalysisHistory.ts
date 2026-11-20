@@ -7,6 +7,7 @@ import {
 } from '@/entities/analysis/analysisHistoryRepository';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 모델 미지정 technical 요청이 `analysis_history.model_id`(감사용 컬럼)에 남기는 값.
@@ -65,7 +66,7 @@ export function schedulePersistAnalysisHistory(
     } catch (err) {
         console.error(
             '[streamAnalysisRoute] schedulePersistAnalysisHistory failed:',
-            err
+            redactDbErrorForLog(err)
         );
     }
 }

@@ -326,15 +326,12 @@ that shape, and pin it with a test.
 - ✅ Keep the throw (or return the error result); the surrounding catch logs and degrades per SA-4.
 <a id="SA-19"></a>
 
-#### SA-19 — Log database errors through `logActionError`, never the raw error
+#### SA-19 — A Server Action that wants only the error name and code uses `logActionError`
 
-A `DrizzleQueryError` message embeds the failed statement's bound parameters, so `console.error(tag, error)` writes
-user input (ciphertext of a stored key, free-text titles, personal data) into server logs. Log a caught DB error with
-`logActionError(tag, error)` from `shared/lib/logActionError`, which records only the error name and the driver code.
-This refines SA-4: the failure is still logged before degrading, just not with the raw object.
-
-- ❌ `catch (error) { console.error('[saveKeyAction]', error); return { ok: false }; }`
-- ✅ `catch (error) { logActionError('[saveKeyAction]', error); return { ok: false }; }`
+`logActionError(tag, error)` from `shared/lib/logActionError` logs just the error `name` and driver `code` as one
+object. Use it where a Server Action has no use for the message at all; the general rule for every other caught-error
+log is SA-26 (`redactDbErrorForLog`), which keeps non-database messages readable. This refines SA-4: the failure is
+still logged before degrading.
 
 <a id="SA-20"></a>
 
@@ -412,6 +409,26 @@ tagged as degraded with a short TTL.
 
 - ❌ A decorator starts throwing on a second-source failure; the three app callers are guarded, the library path is not.
 - ✅ The fallback value is tagged and cached briefly; no caller sees a new failure mode.
+
+<a id="SA-26"></a>
+
+#### SA-26 — Server code logs a caught error through `redactDbErrorForLog`
+
+drizzle puts a failed query's bound parameters into the error message (`Failed query: … params: …`), and Node prints
+a wrapped error's `cause` message too. A catch cannot tell statically whether the error is a database error: code that
+receives a repository port (`UserRepository`) never imports the database and still gets one. So every `console.*` call
+in server code that passes a caught error (`catch (e)`, a `.catch(e => …)` callback, an `error` parameter) wraps it in
+`redactDbErrorForLog(e)` from `shared/db/redactDbErrorForLog`. It returns only the name and driver code when the error
+or any `cause` is a database error (detected by structure: drizzle's error shape, `PostgresError`, a SQLSTATE code,
+never by trusting the message) and returns every other error unchanged, so provider and LLM messages stay readable.
+The same applies when an error's text is stored or returned (a delivery row's error column, a response body), not only
+logged. Do not change the fixed text that precedes the error argument: CloudWatch filters match it.
+`src/__tests__/guards/dbErrorLogRedaction.test.ts` enforces this for logs; read its header for what it cannot see
+(a rejection reason copied into another variable first, an error copied into a differently named variable, an error
+handed to a logger callback, a message re-thrown as a new string).
+
+- ❌ `catch (error) { console.error('[loginAction] failed:', error); }`
+- ✅ `catch (error) { console.error('[loginAction] failed:', redactDbErrorForLog(error)); }`
 
 ---
 

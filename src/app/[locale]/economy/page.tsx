@@ -17,6 +17,7 @@ import { EconomyContent } from './_components/EconomyContent';
 import { hasEconomyData } from './_lib/economyDegraded';
 import { buildEconomyFaq } from './_lib/economyJsonLd';
 import { economyDescription, economyTitle } from './constants';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
 // 이 페이지 ISR과 스냅샷 정적 캐시(`getEconomySnapshotStatic`의 `SECONDS_PER_DAY`
@@ -57,7 +58,10 @@ export async function generateMetadata({
     const locale = resolveLocale((await params).locale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const snapshot = await getEconomySnapshotStatic().catch(e => {
-        console.error('[economy.generateMetadata] snapshot failed:', e);
+        console.error(
+            '[economy.generateMetadata] snapshot failed:',
+            redactDbErrorForLog(e)
+        );
         return null;
     });
     return buildHubMetadata({

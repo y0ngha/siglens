@@ -23,6 +23,7 @@ import { prepareRunner } from './freshAnalysisRunner';
 import type { PublicToolOutcome, PublicToolResult } from './publicToolOutcome';
 import { decideRateLimit, prefixRateLimitHeaders } from './rateLimitHeaders';
 import { resolveRequestedModel } from './resolveFreshAnalysisModel';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 인스턴스의 분석 슬롯이 가득 찼을 때 클라이언트가 기다릴 초(에이전트의 `busy`와 같은 값). */
 const BUSY_RETRY_AFTER_SECONDS = 60;
@@ -91,7 +92,10 @@ export async function runByokFreshAnalysis(input: {
     try {
         keyResult = await resolveByokOnlyKey(principal.userId, model);
     } catch (error) {
-        console.error('[api/v1 run_fresh_analysis] key lookup failed:', error);
+        console.error(
+            '[api/v1 run_fresh_analysis] key lookup failed:',
+            redactDbErrorForLog(error)
+        );
         keyLookupFailed = true;
     }
     const userKey = keyResult?.status === 'ok' ? keyResult.apiKey : undefined;

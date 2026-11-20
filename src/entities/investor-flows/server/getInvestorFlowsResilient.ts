@@ -4,6 +4,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import type { InvestorFlowsSnapshotWithStatus } from '../model';
 import { getInvestorFlowsSnapshot } from './getInvestorFlowsSnapshot';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface ResilientInvestorFlows {
     /** 수급 데이터가 없는 종목(정상)이거나 인프라 장애면 `null`. 일부만 일시적으로 비었으면 `snapshot.degraded`에 적혀 있다. */
@@ -33,7 +34,7 @@ export const getInvestorFlowsResilient = cache(
             if (!isE2E()) {
                 console.error(
                     '[getInvestorFlowsResilient] 수급 데이터 장애, degrade:',
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
             return { snapshot: null, degraded: true };

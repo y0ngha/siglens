@@ -9,6 +9,7 @@ import { isFinraShortDataEnabled } from '@/shared/api/finra/finraShortDataEnable
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { toSqueezeContext } from '../lib/squeezeContext';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `evaluateInvestorFlows`·`runInvestorFlowsAnalysis`에 똑같이 넘기는 옵션. */
 export interface InvestorFlowsEvaluationOptions {
@@ -53,7 +54,7 @@ async function loadSqueezeContext(
         if (isDynamicServerError(error)) throw error;
         console.warn(
             '[investor-flows] squeeze bars unavailable, scoring without price:',
-            error
+            redactDbErrorForLog(error)
         );
         return undefined;
     }
