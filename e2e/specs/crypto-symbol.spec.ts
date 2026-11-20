@@ -58,11 +58,17 @@ test.describe('crypto symbol page', () => {
         await expect(tabNav).toBeVisible({ timeout: HYDRATION_TIMEOUT });
 
         // Crypto-allowed tabs MUST be present.
-        for (const label of ['차트', '뉴스', '공포 탐욕 지수', '종합']) {
+        for (const label of ['차트', '종합', '뉴스', '공포 탐욕 지수']) {
             await expect(
                 tabNav.getByRole('link', { name: label, exact: true })
             ).toBeVisible({ timeout: TAB_VISIBLE_TIMEOUT_MS });
         }
+
+        // The order is part of the contract: 종합 directly after 차트, 내 위치 last.
+        await expect(tabNav.getByRole('link')).toHaveText(
+            ['차트', '종합', '뉴스', '공포 탐욕 지수', '내 위치'],
+            { timeout: TAB_VISIBLE_TIMEOUT_MS }
+        );
     });
 
     test('equity-only tabs absent for crypto: 펀더멘털/재무제표/의회 거래/옵션 not rendered', async ({

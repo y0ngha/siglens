@@ -17,9 +17,17 @@ import {
  * 라벨은 여기 두지 않는다 — 번역자를 인자로 받는 모듈에서 `t()`를 부르면 추출기가
  * 이 파일을 건너뛴다(`noTranslatorParamCall` 가드). 탭 라벨은 `useSymbolTabLabels`가
  * 리터럴 키로 만든다.
+ *
+ * 순서: `chart`는 라우트 루트라 첫째, `overall`은 다른 탭을 요약하는 유일한 탭이라 둘째(390px
+ * 폭에서 스와이프 없이 보이는 자리), `position`은 마지막이다. 나머지는 예전 상대 순서를 지킨다.
+ * URL·canonical·색인 규칙은 순서와 무관하다.
  */
 export const TABS = [
     { key: 'chart', hrefBuilder: (s: string) => `/${s}` },
+    {
+        key: 'overall',
+        hrefBuilder: (s: string) => `/${s}/overall`,
+    },
     {
         key: 'news',
         hrefBuilder: (s: string) => `/${s}/news`,
@@ -47,10 +55,6 @@ export const TABS = [
     {
         key: 'fear-greed',
         hrefBuilder: (s: string) => `/${s}/fear-greed`,
-    },
-    {
-        key: 'overall',
-        hrefBuilder: (s: string) => `/${s}/overall`,
     },
     {
         key: 'position',

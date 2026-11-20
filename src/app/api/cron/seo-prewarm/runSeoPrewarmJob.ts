@@ -72,7 +72,7 @@ export async function runSeoPrewarmJob(
         );
     });
     await logFailure('batch', async () => {
-        const counts = await runPrewarmBatch();
+        const counts = await runPrewarmBatch(undefined, lockAcquiredAtMs);
         console.log('[seo-prewarm] batch done:', JSON.stringify(counts));
     });
     // 미국 마감+15분 ~ 19:45 ET 구간 밖이면 즉시 반환한다. LLM은 쓰지 않는다.

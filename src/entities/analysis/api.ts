@@ -5,6 +5,7 @@ import {
     runFundamentalAnalysis,
     runFinancialsAnalysis,
     runCongressTrend,
+    peekOverallAnalysisCache,
     DEEPSEEK_V4_1_FLASH_MODEL,
     type AssembledPromptRecord,
     type RunAnalysisResult,
@@ -40,6 +41,7 @@ import {
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import {
     DrizzleAnalysisHistoryRepository,
@@ -479,4 +481,32 @@ export async function prewarmOverall(
     // 모양이라 사문(死文) 행만 쌓인다(스트림 경로의 같은 지점 주석 참고).
 
     return result;
+}
+
+/**
+ * 종합 분석 캐시에 지금 결과가 있는가 — 읽기 전용(생성·enqueue 없음, LLM 없음)이다.
+ *
+ * 프리웜이 시간 초과로 기다리기를 포기한 종합 호출의 결과가 캐시에 올라왔는지 확인해, 올라온 뒤에만
+ * 종합 탭 엿보기 태그를 털게 하는 용도다(`app/api/cron/seo-prewarm/overallWarm.ts`). 캐시 키는 종합 탭
+ * SSR 엿보기(`app/[locale]/[symbol]/overall/_lib/overallPeek.ts`)와 같아야 한다 — 같은 기본 모델·
+ * reasoning off·기본 타임프레임·기본 로케일. 데이터 캐시(`staticSymbolCache`)를 거치지 않고 core를 직접
+ * 읽는다: 거치면 그 캐시가 들고 있는 빈 엿보기를 그대로 읽는다.
+ *
+ * 한계: 이 키는 최신 결과를 덮어쓰는 포인터(TTL 24시간)라 `true`가 **방금 포기한 호출의 새 결과**를
+ * 뜻하지는 않는다 — 어제의 사전 생성이나 방문자가 만든 이전 결과일 수 있다. 새 결과와 이전 결과를 가르려면
+ * 캐시 항목에 생성 시각이 필요한데 그건 core 변경이라 하지 않았다. 호출부는 이 한계를 안고 쓴다
+ * (이전 결과가 적중하면 페이지는 빈 화면이 아니라 이전 종합을 자기 캐시 기간 동안 보여 준다).
+ */
+export async function hasPrewarmedOverall(symbol: string): Promise<boolean> {
+    const cached = await peekOverallAnalysisCache(
+        symbol,
+        symbol,
+        DEFAULT_TIMEFRAME,
+        DEEPSEEK_V4_1_FLASH_MODEL,
+        false,
+        undefined,
+        undefined,
+        DEFAULT_LOCALE
+    );
+    return cached !== null;
 }

@@ -74,6 +74,7 @@ import {
     clearInFlight,
     markSkipped,
     isSkipped,
+    isTransientlySkipped,
     addFmpBudget,
     getFmpBudgetUsed,
     advanceRotationCursor,
@@ -82,6 +83,14 @@ import {
     clearStructurallyUnavailable,
     loadStructurallyUnavailable,
     claimBasisForce,
+    claimOverallWarm,
+    isOverallWarmClaimed,
+    addOverallWarmPending,
+    listOverallWarmPending,
+    removeOverallWarmPending,
+    bumpOverallWarmPendingChecks,
+    getOverallWarmStartsToday,
+    incrementOverallWarmStartsToday,
 } from '../lock';
 
 describe('seo-prewarm lock', () => {
@@ -307,12 +316,47 @@ describe('seo-prewarm lock', () => {
             );
         });
 
+        it('일시적 TTL(30분 이하)이면 값 t로 세워 확정에 가까운 마커와 가른다', async () => {
+            await markSkipped('aapl', 'news', 1800);
+            expect(mockSet).toHaveBeenCalledWith(
+                'seo-prewarm:skip:AAPL:news',
+                't',
+                { ex: 1800 }
+            );
+        });
+
+        it('24시간 마커는 값 1이다', async () => {
+            await markSkipped('aapl', 'news', 86400);
+            expect(mockSet).toHaveBeenCalledWith(
+                'seo-prewarm:skip:AAPL:news',
+                '1',
+                { ex: 86400 }
+            );
+        });
+
         it('redis null이면 noop, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
             await expect(
                 markSkipped('aapl', 'overall')
             ).resolves.toBeUndefined();
             expect(mockSet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('isTransientlySkipped', () => {
+        it('값이 t일 때만 true', async () => {
+            mockGet.mockResolvedValueOnce('t');
+            expect(await isTransientlySkipped('aapl', 'news')).toBe(true);
+            expect(mockGet).toHaveBeenCalledWith('seo-prewarm:skip:AAPL:news');
+            mockGet.mockResolvedValueOnce('1');
+            expect(await isTransientlySkipped('aapl', 'news')).toBe(false);
+            mockGet.mockResolvedValueOnce(null);
+            expect(await isTransientlySkipped('aapl', 'news')).toBe(false);
+        });
+
+        it('redis null이면 false', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+            expect(await isTransientlySkipped('aapl', 'news')).toBe(false);
         });
     });
 
@@ -577,6 +621,179 @@ describe('seo-prewarm lock', () => {
                 false
             );
             expect(mockSet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('claimOverallWarm', () => {
+        it('SET NX EX로 심볼·경계 ms가 든 키를 세우고, 처음이면 true', async () => {
+            mockSet.mockResolvedValue('OK');
+
+            const claimed = await claimOverallWarm('aapl', 1790971200000, 7200);
+
+            expect(claimed).toBe(true);
+            expect(mockSet).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm:AAPL:1790971200000',
+                '1',
+                { nx: true, ex: 7200 }
+            );
+        });
+
+        it('이미 마커가 있으면(Upstash NX 실패 = null) false', async () => {
+            mockSet.mockResolvedValue(null);
+
+            expect(await claimOverallWarm('AAPL', 1, 7200)).toBe(false);
+        });
+
+        it('TTL은 최소 1시간이다', async () => {
+            mockSet.mockResolvedValue('OK');
+
+            await claimOverallWarm('AAPL', 1, 60);
+
+            expect(mockSet).toHaveBeenCalledWith(expect.any(String), '1', {
+                nx: true,
+                ex: 3600,
+            });
+        });
+
+        it('Redis가 없으면 false — 중복을 막을 수단이 없으면 LLM을 부르지 않는다', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+
+            expect(await claimOverallWarm('AAPL', 1, 7200)).toBe(false);
+            expect(mockSet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('isOverallWarmClaimed', () => {
+        it('claim과 같은 키를 읽기만 한다 — 있으면 true', async () => {
+            mockGet.mockResolvedValue('1');
+
+            expect(await isOverallWarmClaimed('aapl', 5)).toBe(true);
+            expect(mockGet).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm:AAPL:5'
+            );
+            expect(mockSet).not.toHaveBeenCalled();
+        });
+
+        it('없으면 false', async () => {
+            mockGet.mockResolvedValue(null);
+
+            expect(await isOverallWarmClaimed('AAPL', 5)).toBe(false);
+        });
+
+        it('Redis가 없으면 true — 시도한 것으로 보고 만들지 않는다', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+
+            expect(await isOverallWarmClaimed('AAPL', 5)).toBe(true);
+        });
+    });
+
+    describe('종합 사전 생성 대기 목록', () => {
+        it('SET 하나에 SYMBOL|시작ms|0 항목을 더하고 24시간 백스톱 TTL을 건다', async () => {
+            await addOverallWarmPending('aapl', 1234);
+
+            expect(mockSadd).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-pending',
+                'AAPL|1234|0'
+            );
+            expect(mockExpire).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-pending',
+                86400
+            );
+        });
+
+        it('전체를 SMEMBERS로 읽고 깨진 항목은 건너뛴다', async () => {
+            mockSmembers.mockResolvedValue([
+                'AAPL|1234|2',
+                'garbage',
+                'MSFT|x|0',
+                'TSLA|99|0',
+                42,
+            ]);
+
+            expect(await listOverallWarmPending()).toEqual([
+                {
+                    symbol: 'AAPL',
+                    startedAtMs: 1234,
+                    checks: 2,
+                    member: 'AAPL|1234|2',
+                },
+                {
+                    symbol: 'TSLA',
+                    startedAtMs: 99,
+                    checks: 0,
+                    member: 'TSLA|99|0',
+                },
+            ]);
+        });
+
+        it('항목을 지운다', async () => {
+            await removeOverallWarmPending('AAPL|1234|0');
+
+            expect(mockSrem).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-pending',
+                'AAPL|1234|0'
+            );
+        });
+
+        it('확인 횟수를 올릴 때 시작 시각은 그대로 두고 옛 항목을 지운다', async () => {
+            await bumpOverallWarmPendingChecks({
+                symbol: 'AAPL',
+                startedAtMs: 1234,
+                checks: 2,
+                member: 'AAPL|1234|2',
+            });
+
+            expect(mockSrem).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-pending',
+                'AAPL|1234|2'
+            );
+            expect(mockSadd).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-pending',
+                'AAPL|1234|3'
+            );
+        });
+
+        it('Redis가 없으면 아무것도 하지 않고 빈 목록이다', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+
+            await addOverallWarmPending('AAPL', 1);
+            await removeOverallWarmPending('x');
+            expect(await listOverallWarmPending()).toEqual([]);
+            expect(mockSadd).not.toHaveBeenCalled();
+            expect(mockSrem).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('종합 사전 생성 일일 시작 카운터', () => {
+        it('UTC 날짜 키의 값을 읽는다(없으면 0)', async () => {
+            mockGet.mockResolvedValueOnce(7);
+            expect(await getOverallWarmStartsToday('2026-11-21')).toBe(7);
+            expect(mockGet).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-starts:2026-11-21'
+            );
+            mockGet.mockResolvedValueOnce(null);
+            expect(await getOverallWarmStartsToday('2026-11-21')).toBe(0);
+        });
+
+        it('Redis가 없으면 Infinity — 상한에 닿은 것으로 본다', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+
+            expect(await getOverallWarmStartsToday('2026-11-21')).toBe(
+                Number.POSITIVE_INFINITY
+            );
+        });
+
+        it('시작할 때 1 올리고 25시간 TTL을 건다', async () => {
+            await incrementOverallWarmStartsToday('2026-11-21');
+
+            expect(mockIncrby).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-starts:2026-11-21',
+                1
+            );
+            expect(mockExpire).toHaveBeenCalledWith(
+                'seo-prewarm:overall-warm-starts:2026-11-21',
+                90000
+            );
         });
     });
 });
