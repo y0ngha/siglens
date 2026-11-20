@@ -140,6 +140,11 @@ interface AnalysisPanelProps {
      * 없으면(공유 스냅샷처럼 읽기 전용 화면) 평가 버튼을 그리지 않는다.
      */
     feedbackSettings?: Pick<AnalysisFeedbackContext, 'modelId' | 'reasoning'>;
+    /**
+     * 추세 배지를 숨긴다. 같은 추세를 패널 위의 "한눈에 보기" 카드가 이미 헤드라인으로 보여
+     * 줄 때(종목 화면) 켜서 두 번 읽히지 않게 한다. 공유 페이지처럼 카드가 없는 화면은 넘기지 않는다.
+     */
+    hideTrendBadge?: boolean;
 }
 
 export function AnalysisPanel({
@@ -172,6 +177,7 @@ export function AnalysisPanel({
     onHighlightOverlay,
     onClearOverlayHighlight,
     feedbackSettings,
+    hideTrendBadge = false,
 }: AnalysisPanelProps) {
     // showProgress·progressPhaseIndex·progressTipIndex는 ChartContent가 관리한다.
     // useAnalysisProgress 훅이 타이머/상태를 소유하므로 데스크톱·모바일 두 인스턴스가
@@ -225,7 +231,7 @@ export function AnalysisPanel({
                 riskLevel={analysis.riskLevel}
                 analyzedAt={analysis.analyzedAt}
                 isAnalyzing={isAnalyzing}
-                hideTrend={isFallback}
+                hideTrend={isFallback || hideTrendBadge}
                 // 개인화 배지는 서버-authoritative `isPersonalized`가 유일한 진실값이다.
                 // 폴백도 배제한다 — 서사 없는 placeholder에 "내 평단 기준으로 분석했어요"는
                 // 오해를 준다.

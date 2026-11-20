@@ -339,4 +339,24 @@ describe('AnalysisPanel — core output contract', () => {
             screen.getByText(/중기 상승 추세가 유지되는/)
         ).toBeInTheDocument();
     });
+
+    it('hideTrendBadge를 켜면 진짜 응답이어도 추세 배지를 그리지 않고 나머지는 그대로다', () => {
+        // 종목 화면은 패널 위의 "한눈에 보기" 카드가 추세를 헤드라인으로 보여 주므로
+        // 같은 추세를 두 번 읽히지 않게 이 배지만 숨긴다. 공유 페이지는 넘기지 않는다.
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={{ ...makeFullAnalysis(), trend: 'neutral' }}
+                keyLevels={makeFullKeyLevels()}
+                timeframe="1Day"
+                hideTrendBadge
+            />
+        );
+
+        expect(screen.queryByText('현재 추세 보합')).not.toBeInTheDocument();
+        expect(screen.getByText('AI 분석')).toBeInTheDocument();
+        expect(
+            screen.getByText(/중기 상승 추세가 유지되는/)
+        ).toBeInTheDocument();
+    });
 });

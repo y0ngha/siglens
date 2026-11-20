@@ -4483,5 +4483,19 @@
     "widgets.chart.ChatVisual.period6M": "128a5e2a4f38",
     "widgets.chart.ChatVisual.portfolioGroup": "e28376c3f498",
     "widgets.chart.ChatVisual.portfolioTitle": "caec32a3d5f7",
-    "widgets.chart.ChatVisual.yearPartial": "1f92ad2cf742"
+    "widgets.chart.ChatVisual.yearPartial": "1f92ad2cf742",
+    "widgets.analysis.conclusion.title": "28fdb077b40c",
+    "widgets.analysis.conclusion.resistance": "ffca96332d83",
+    "widgets.analysis.conclusion.support": "9cd450ad5b7b",
+    "widgets.analysis.conclusion.invalidation": "f580e6be77b2",
+    "widgets.analysis.conclusion.invalidationHelpLabel": "92fa65bd4a45",
+    "widgets.analysis.conclusion.invalidationHelp": "99059a0c9904",
+    "widgets.analysis.conclusion.locked": "cfca78792ff2",
+    "widgets.analysis.conclusion.none": "d58fa73adc42",
+    "widgets.analysis.conclusion.planVoid": "4035bd502083",
+    "widgets.analysis.conclusion.trendUnknown": "04fc38e8720a",
+    "widgets.analysis.conclusion.caveat": "2312787f9920",
+    "widgets.analysis.conclusion.planVoidDescription": "e015569138af",
+    "widgets.analysis.conclusion.trendHeadline": "d3b849d2a8af",
+    "widgets.analysis.conclusion.analyzedAt": "4b5b2464121b"
 }
