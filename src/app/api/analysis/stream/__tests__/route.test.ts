@@ -3774,9 +3774,46 @@ describe('POST /api/analysis/stream', () => {
                     timeframe: '1Day',
                     tab: 'technical',
                     modelId: 'analysis-worker',
+                    tier: 'free',
                     locale: 'ko',
                     prompt: undefined,
                 })
+            );
+        });
+
+        it('이력에는 응답 필터가 아니라 요청을 생성한 tier를 남긴다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h' },
+                unfilteredResult: { headlineKo: 'h', riskLevel: 'medium' },
+            } as never);
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'allowed',
+                tier: 'pro',
+                userApiKey: undefined,
+            } as never);
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'gemini-3.6-flash',
+                },
+            });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+            const callback = mockAfter.mock.calls
+                .map(([scheduled]) => scheduled)
+                .find(
+                    (scheduled): scheduled is () => Promise<void> =>
+                        typeof scheduled === 'function'
+                );
+            if (callback === undefined) throw new Error('no after callback');
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ tier: 'pro' })
             );
         });
 

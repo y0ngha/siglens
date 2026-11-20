@@ -250,3 +250,55 @@ describe('backfill_landing_path_identifiers 마이그레이션', () => {
         );
     });
 });
+
+/**
+ * 신호 첫 포착 가격과 분석 생성 tier — 널 허용 컬럼 둘만 더하고 기본값·인덱스·백필은 없다. 새 코드는
+ * 컬럼을 이름에 올려 INSERT하므로 스키마가 앱 배포보다 먼저 적용돼야 한다.
+ */
+describe('signal_price_analysis_tier 마이그레이션', () => {
+    const sql = readFileSync(
+        join(process.cwd(), 'drizzle/0061_signal_price_analysis_tier.sql'),
+        'utf8'
+    );
+
+    it('널 허용 컬럼 둘만 더한다', () => {
+        const statements = sql
+            .split('--> statement-breakpoint')
+            .map(statement => statement.trim());
+        expect(statements).toEqual([
+            'ALTER TABLE "analysis_history" ADD COLUMN "tier" varchar(16);',
+            'ALTER TABLE "signal_events" ADD COLUMN "price_at_detection" double precision;',
+        ]);
+    });
+
+    it('0060 뒤에 저널에 등록돼 있다', () => {
+        const journal = JSON.parse(
+            readFileSync(
+                join(process.cwd(), 'drizzle/meta/_journal.json'),
+                'utf8'
+            )
+        ) as { entries: Array<{ tag: string }> };
+        const tags = journal.entries.map(entry => entry.tag);
+        expect(tags.indexOf('0061_signal_price_analysis_tier')).toBe(
+            tags.indexOf('0060_backfill_landing_path_identifiers') + 1
+        );
+    });
+
+    it.each([
+        ['analysis_history.tier', schema.analysisHistory.tier],
+        [
+            'signal_events.price_at_detection',
+            schema.signalEvents.priceAtDetection,
+        ],
+    ])('%s 컬럼은 널 허용이고 기본값이 없다', (_label, column) => {
+        expect(column.notNull).toBe(false);
+        expect(column.hasDefault).toBe(false);
+    });
+
+    it('컬럼 이름이 마이그레이션과 같다', () => {
+        expect(schema.analysisHistory.tier.name).toBe('tier');
+        expect(schema.signalEvents.priceAtDetection.name).toBe(
+            'price_at_detection'
+        );
+    });
+});

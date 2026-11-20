@@ -30,6 +30,7 @@ const ROW: SignalEpisodeInsert = {
     signalType: 'golden_cross',
     direction: 'bullish',
     changePercent: 2.5,
+    priceAtDetection: 123.45,
     koreanName: '엔비디아',
     computedAt: '2026-11-13T21:20:00.000Z',
 };
@@ -96,6 +97,32 @@ describe('DrizzleSignalHistoryRepository', () => {
                 },
             ]);
             expect(onConflictDoNothing).toHaveBeenCalledTimes(1);
+        });
+
+        it('첫 포착 가격을 price_at_detection으로 쓰고, 없으면 null로 쓴다', async () => {
+            const returning = vi.fn().mockResolvedValue([]);
+            const values = vi.fn(() => ({
+                onConflictDoNothing: () => ({ returning }),
+            }));
+            const db = {
+                insert: vi.fn(() => ({ values })),
+            } as unknown as SiglensDatabase;
+
+            await new DrizzleSignalHistoryRepository(db).insertEpisodes([
+                ROW,
+                { ...ROW, symbol: 'AAPL', priceAtDetection: null },
+            ]);
+
+            expect(values).toHaveBeenCalledWith([
+                expect.objectContaining({
+                    symbol: 'NVDA',
+                    priceAtDetection: 123.45,
+                }),
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    priceAtDetection: null,
+                }),
+            ]);
         });
 
         it('행이 없으면 쓰지 않는다', async () => {
