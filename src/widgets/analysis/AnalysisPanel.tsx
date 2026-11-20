@@ -12,6 +12,8 @@ import type {
     TierInfoDepth,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { AnalysisFeedbackContext } from '@/entities/feedback/types';
 import { useFunnelMeterShown } from './hooks/useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
@@ -49,6 +51,11 @@ interface AnalysisPanelProps {
     keyLevels: ClusteredKeyLevels;
     /** 분석 대상 타임프레임. stale 판정 임계값 산정에 사용된다. */
     timeframe: Timeframe;
+    /**
+     * 종목의 시장 프로필. stale 판정이 장 마감 동안 새 봉이 없다는 사실을 반영하는 데 쓴다.
+     * 생략하면 시계 임계값만 쓴다(공유 스냅샷 등).
+     */
+    marketProfile?: MarketProfileId;
     isAnalyzing?: boolean;
     /** 마무리 애니메이션을 포함해 "사용자에게 분석이 진행 중인 것처럼 보이는" 상태.
      *  AnalysisProgress 표시·본문 섹션 숨김에 사용된다. ChartContent가 소유한다. */
@@ -141,6 +148,7 @@ export function AnalysisPanel({
     analysis,
     keyLevels,
     timeframe,
+    marketProfile,
     isAnalyzing = false,
     showProgress = false,
     progressPhaseIndex = 0,
@@ -185,6 +193,10 @@ export function AnalysisPanel({
     const showStaleBanner = useAnalysisStaleness({
         analyzedAt: analysis.analyzedAt,
         timeframe,
+        session:
+            marketProfile === undefined
+                ? undefined
+                : sessionSpecFor(marketProfile),
         enabled: !isBusy && onReanalyze !== undefined,
     });
     const skillResults = selectPanelSkillResults(analysis);

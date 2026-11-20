@@ -9,19 +9,18 @@ vi.stubGlobal(
 
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
 
 import { SkillsShowcase } from '../SkillsShowcase';
 
 function makeSkills(
-    type: NonNullable<SkillShowcaseItem['type']>,
+    type: NonNullable<HomeSkillItem['type']>,
     count: number
-): SkillShowcaseItem[] {
+): HomeSkillItem[] {
     return Array.from({ length: count }, (_, i) => ({
         name: `${type}-${i}`,
         type,
         description: `${type}-${i} description`,
-        confidenceWeight: 0.9,
     }));
 }
 
@@ -29,15 +28,16 @@ function makeSkills(
 describe('SkillsShowcase 탭 패널 마운트', () => {
     const SKILLS = [...makeSkills('pattern', 5), ...makeSkills('strategy', 4)];
 
-    function barsIn(panel: HTMLElement): number {
-        return panel.querySelectorAll('[data-testid="confidence-bar"]').length;
+    /** 패널 안의 스킬 카드 수 — 카드마다 `<type>-<i> description` 요약이 하나씩 있다. */
+    function cardsIn(panel: HTMLElement): number {
+        return within(panel).queryAllByText(/ description$/).length;
     }
 
     it('기본 탭(전체)은 SSR 첫 렌더부터 스킬 카드를 그린다', () => {
         render(<SkillsShowcase skills={SKILLS} />);
 
         const [allPanel] = screen.getAllByRole('tabpanel', { hidden: true });
-        expect(barsIn(allPanel!)).toBe(SKILLS.length);
+        expect(cardsIn(allPanel!)).toBe(SKILLS.length);
         expect(within(allPanel!).getByText('pattern-0')).toBeInTheDocument();
     });
 
@@ -49,7 +49,7 @@ describe('SkillsShowcase 탭 패널 마운트', () => {
 
         const panels = screen.getAllByRole('tabpanel', { hidden: true });
         expect(panels).toHaveLength(6);
-        expect(panels.map(barsIn)).toEqual([9, 0, 5, 4, 0, 0]);
+        expect(panels.map(cardsIn)).toEqual([9, 0, 5, 4, 0, 0]);
         expect(
             panels.filter(panel => !panel.hasAttribute('hidden'))
         ).toHaveLength(1);
@@ -61,6 +61,6 @@ describe('SkillsShowcase 탭 패널 마운트', () => {
 
         await user.click(screen.getByRole('tab', { name: '캔들 패턴' }));
 
-        expect(barsIn(screen.getByRole('tabpanel'))).toBe(0);
+        expect(cardsIn(screen.getByRole('tabpanel'))).toBe(0);
     });
 });

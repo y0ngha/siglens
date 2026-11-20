@@ -4,6 +4,7 @@ import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import {
     lastClosedSessionCloseUtc,
     lastClosedSessionDate,
+    lastSessionCloseAtOrBefore,
 } from '@/shared/lib/marketSessionDate';
 
 /**
@@ -575,5 +576,63 @@ describe('lastClosedSessionDate — 방어 분기 / DST 전환일', () => {
                 new Date('2026-03-09T01:00:00Z')
             ).toISOString()
         ).toBe('2026-03-06T06:30:00.000Z');
+    });
+});
+
+describe('lastSessionCloseAtOrBefore', () => {
+    const at = (
+        spec: Parameters<typeof lastSessionCloseAtOrBefore>[0],
+        iso: string
+    ) => lastSessionCloseAtOrBefore(spec, new Date(iso))?.toISOString();
+
+    it('장중에는 직전 거래일 마감(여름 20:00Z)', () => {
+        expect(at(US_EQUITY_SESSION, '2026-07-14T15:00:00Z')).toBe(
+            '2026-07-13T20:00:00.000Z'
+        );
+    });
+
+    it('마감 직후에는 발행 버퍼 없이 당일 마감', () => {
+        expect(at(US_EQUITY_SESSION, '2026-07-14T20:01:00Z')).toBe(
+            '2026-07-14T20:00:00.000Z'
+        );
+    });
+
+    it('겨울(EST)은 21:00Z', () => {
+        expect(at(US_EQUITY_SESSION, '2026-01-13T22:00:00Z')).toBe(
+            '2026-01-13T21:00:00.000Z'
+        );
+    });
+
+    it('주말·월요일 개장 전에는 금요일 마감', () => {
+        expect(at(US_EQUITY_SESSION, '2026-07-12T12:00:00Z')).toBe(
+            '2026-07-10T20:00:00.000Z'
+        );
+        expect(at(US_EQUITY_SESSION, '2026-07-13T12:00:00Z')).toBe(
+            '2026-07-10T20:00:00.000Z'
+        );
+    });
+
+    it('휴장일은 건너뛴다(7/3 금 휴장 → 7/2 목 마감)', () => {
+        expect(at(US_EQUITY_SESSION, '2026-07-03T15:00:00Z')).toBe(
+            '2026-07-02T20:00:00.000Z'
+        );
+    });
+
+    it('한국장은 06:30Z에 마감', () => {
+        expect(at(KR_EQUITY_SESSION, '2026-07-14T08:00:00Z')).toBe(
+            '2026-07-14T06:30:00.000Z'
+        );
+        expect(at(KR_EQUITY_SESSION, '2026-07-14T02:00:00Z')).toBe(
+            '2026-07-13T06:30:00.000Z'
+        );
+    });
+
+    it('24/7 시장은 null', () => {
+        expect(
+            lastSessionCloseAtOrBefore(
+                CRYPTO_SESSION,
+                new Date('2026-07-14T02:00:00Z')
+            )
+        ).toBeNull();
     });
 });

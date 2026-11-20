@@ -1878,7 +1878,7 @@
                     "pattern": "{count} chart patterns",
                     "strategy": "{count} strategy analyses",
                     "support_resistance": "{count} Support/Resistance tools",
-                    "total": "{count} analysis skills"
+                    "total": "{count} analysis techniques"
                 }
             },
             "trendline": {
@@ -3602,7 +3602,7 @@
                 "b3df82": "Internal Correction Value",
                 "bdeea2": "Chart Pattern",
                 "c68843": "Failed to copy to clipboard. Please check browser permissions.",
-                "c80f22": "{v0} skills detected, ",
+                "c80f22": "{v0} analysis techniques detected, ",
                 "cfbeac": "Show Chart Price Lines",
                 "d39704": "The more indicators converge, the higher the reliability of Support and Resistance at that price level.\n                    ",
                 "d930e0": "Resistance",
@@ -3611,7 +3611,7 @@
                 "e815ab": "Copy Failed",
                 "ecb4cc": "Sign Up",
                 "edb872": "Entry Opinion",
-                "f0256c": "Sign up to receive detailed analysis with all skills applied.",
+                "f0256c": "Sign up to receive detailed analysis with all analysis techniques applied.",
                 "f0cdeb": "AI Analysis",
                 "fb0cf0": "Key Prices",
                 "bcc718": "View on Chart",
@@ -3694,7 +3694,7 @@
                 },
                 "reanalyze": "Re-analyze",
                 "reanalyzeCooldown": "{v0} until you can re-analyze",
-                "signupSkillUpsell": "Sign up to get a detailed analysis with all {v0} skills applied."
+                "signupSkillUpsell": "Sign up to get a detailed analysis with all {v0} analysis techniques applied."
             },
             "planCheck": {
                 "aboveEntryZone": "The current price is {v0}% above the suggested entry zone. This plan assumes you wait for a pullback.",
@@ -3707,12 +3707,12 @@
                     "p0": "Sorting market data",
                     "p1": "Analyzing {v0} indicator signals",
                     "p2": "Detecting Candlestick Patterns and chart patterns",
-                    "p3": "Matching signals by combining {v1} skills",
+                    "p3": "Matching signals by combining {v1} analysis techniques",
                     "p4": "Summarizing scenarios and risk",
                     "p5": "Writing the AI overall reading"
                 },
                 "tip": {
-                    "t0": "Analysis combines {v0} types of indicators and {v1} analysis skills.",
+                    "t0": "Analysis combines {v0} types of indicators and {v1} analysis techniques.",
                     "t1": "AI analysis usually takes about five minutes, and up to fifteen when it runs long.",
                     "t2": "You can leave this open and do something else. The result appears on its own when the analysis finishes.",
                     "t3": "It reads the trend by combining signals from indicators such as RSI, MACD and Bollinger Bands.",
@@ -3727,7 +3727,7 @@
                 "entryStrategy": "Entry strategy",
                 "exitStrategy": "Exit strategy",
                 "riskReward": "Risk / reward",
-                "skill": "Skill"
+                "skill": "Analysis technique"
             },
             "settingsMenu": {
                 "aria": "Analysis settings, current model: {v0}",
@@ -4679,14 +4679,10 @@
                 "018ed1": "Illustration of an analysis dashboard displaying a candlestick chart, indicator trendlines, Golden Cross signal markers, and an RSI sub-panel"
             },
             "SkillsShowcase": {
-                "158954": "AI Analysis Skills",
+                "158954": "AI Analysis Techniques",
                 "0d2c24": "Collapse",
-                "7e6540": "Reliability Score Explanation",
                 "allGuides": "Browse the full guide",
-                "c78b79": "Skill Categories Tab",
-                "confidenceTiers": "Below {low}% is low, {low}% to under {high}% is normal, and {high}% or more is high.",
-                "e0f5c5": "Low scores are also considered for supplementary analysis.",
-                "ebff92": "Reliability score of the analysis technique.",
+                "c78b79": "Analysis Technique Categories Tab",
                 "guideLink": "View guide",
                 "guideLinkAria": "View guide: {name}"
             },

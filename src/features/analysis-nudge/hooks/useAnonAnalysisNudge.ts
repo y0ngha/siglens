@@ -44,7 +44,7 @@ export interface UseAnonAnalysisNudgeResult {
 
 /**
  * Anonymous signup nudge (the threshold is
- * `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the first analysis). Tracks
+ * `ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD`, i.e. the third distinct symbol of the day). Tracks
  * distinct symbols an anonymous visitor has analyzed today via
  * `recordAnonSymbolAnalysis`, and opens a soft nudge modal the first time the
  * count is at or above the threshold — once per day (`hasNudgeShownToday`/

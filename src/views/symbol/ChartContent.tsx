@@ -55,11 +55,7 @@ import {
 } from '@/widgets/chart/utils/overlayItems';
 import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
-import {
-    PANEL_MAX_WIDTH,
-    PANEL_MIN_WIDTH,
-    usePanelResize,
-} from './hooks/usePanelResize';
+import { PANEL_MIN_WIDTH, usePanelResize } from './hooks/usePanelResize';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
 import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
@@ -232,8 +228,15 @@ export function ChartContent({
         [supportsExtendedHours, extendedHoursOn, setExtendedHoursOn]
     );
 
-    const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
-        usePanelResize();
+    const rowRef = useRef<HTMLDivElement>(null);
+    const {
+        panelWidth,
+        panelMaxWidth,
+        displayWidth,
+        isDragging,
+        handleDragStart,
+        handleKeyDown,
+    } = usePanelResize(() => rowRef.current?.clientWidth ?? null);
 
     const {
         handleStockChartReady,
@@ -525,6 +528,7 @@ export function ChartContent({
                     analysis={analysis}
                     keyLevels={clusteredKeyLevels}
                     timeframe={timeframe}
+                    marketProfile={marketProfile}
                     isAnalyzing={isAnalyzing}
                     showProgress={displayAnalyzing}
                     progressPhaseIndex={progressPhaseIndex}
@@ -573,6 +577,7 @@ export function ChartContent({
         displayAnalyzing,
         isAwaitingInteraction,
         grantAutoRun,
+        marketProfile,
         t,
         progressPhaseIndex,
         progressTipIndex,
@@ -690,7 +695,10 @@ export function ChartContent({
         // 패널이 내용만큼 자라게 두었더니(v0.79.1) 긴 분석에서 패널만 아래로 한참
         // 늘어나 차트와 동떨어진 화면이 됐다(사용자 제보, 2026-09-27). 그래서 패널은
         // 차트 높이에 맞추고 넘치는 분석은 패널 안에서 스크롤한다.
-        <div className="flex h-full w-full flex-col md:h-auto md:flex-row md:items-start">
+        <div
+            ref={rowRef}
+            className="flex h-full w-full flex-col md:h-auto md:flex-row md:items-start"
+        >
             {/* 차트 영역 — 바텀시트는 fixed 오버레이라 콘텐츠를 밀어내지 않는다.
                  **그래서** 아래를 직접 비워 둬야 Peek 상태에서 거래량 차트와 면책 문구가
                  띠 밑으로 들어가지 않는다(실측: 예약을 0으로 두면 pane 3개가 전부 가려지고
@@ -821,9 +829,9 @@ export function ChartContent({
                 tabIndex={0}
                 aria-orientation="vertical"
                 aria-label={t('ChartContent.d1a23e')}
-                aria-valuenow={panelWidth}
+                aria-valuenow={displayWidth}
                 aria-valuemin={PANEL_MIN_WIDTH}
-                aria-valuemax={PANEL_MAX_WIDTH}
+                aria-valuemax={panelMaxWidth}
                 className={cn(
                     // `self-stretch`: 부모 행이 `items-start`라 이게 없으면 높이 0으로
                     // 접혀 잡을 것이 사라진다. 행의 높이(= 차트·패널 공통의
@@ -855,7 +863,7 @@ export function ChartContent({
                 (`AnalysisProgress`·`AnalysisToast`의 `role="status"`)이 알린다. */}
             <section
                 aria-label={t('ChartContent.f69071')}
-                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-(--panel-width) md:flex-col md:overflow-y-auto md:pb-32"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-[min(var(--panel-width),calc(45%-4px))] md:flex-col md:overflow-y-auto md:pb-32 xl:w-(--panel-width)"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

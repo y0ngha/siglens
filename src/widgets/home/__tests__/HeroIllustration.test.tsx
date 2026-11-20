@@ -14,7 +14,10 @@ vi.mock('next/image', () => ({
     ),
 }));
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
+import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
 
 import { HeroIllustration } from '../HeroIllustration';
 
@@ -23,7 +26,7 @@ describe('HeroIllustration', () => {
         render(<HeroIllustration />);
 
         const img = screen.getByRole('img');
-        expect(img).toHaveAttribute('data-src', '/hero-dashboard.svg');
+        expect(img).toHaveAttribute('data-src', '/hero-dashboard-v2.svg');
     });
 
     it('has a descriptive alt text', () => {
@@ -50,5 +53,24 @@ describe('HeroIllustration', () => {
 
         const img = screen.getByRole('img');
         expect(img).toHaveClass('custom-class');
+    });
+
+    describe('public/hero-dashboard-v2.svg 캔들 색', () => {
+        const svg = readFileSync(
+            join(process.cwd(), 'public/hero-dashboard-v2.svg'),
+            'utf8'
+        );
+        // 캔들 그룹: 심지(line)와 몸통(rect)만 담긴 `<g stroke-linecap="round">` 블록.
+        const candleGroup =
+            /<g stroke-linecap="round">([\s\S]*?)<\/g>/.exec(svg)?.[1] ?? '';
+
+        it('상승 캔들은 실제 차트의 bullish 토큰, 하락 캔들은 bearish 토큰을 쓴다', () => {
+            expect(candleGroup).toContain(CHART_COLORS_RAW_DARK.bullish);
+            expect(candleGroup).toContain(CHART_COLORS_RAW_DARK.bearish);
+        });
+
+        it('캔들에 파란색(상승 색으로 쓰던 #3b82f6)을 쓰지 않는다', () => {
+            expect(candleGroup).not.toMatch(/#3b82f6/i);
+        });
     });
 });

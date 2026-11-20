@@ -46,7 +46,7 @@ vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
 vi.mock('@/entities/analysis/lib/staleThreshold', () => ({
-    isAnalysisStale: () => false,
+    isAnalysisStale: vi.fn(() => false),
 }));
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
 // useSymbolPageContext / ANALYSIS_PHASES / ANALYSIS_TIPS mock이 더 이상 필요 없다.
@@ -98,6 +98,9 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
+import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
@@ -229,7 +232,7 @@ describe('AnalysisPanel', () => {
         // Member skill total is threaded from countSkillFiles.
         expect(
             screen.getByText(
-                /회원가입하면 42개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요/
+                /회원가입하면 42개 분석 기법을 모두 적용한 상세 분석을 받아볼 수 있어요/
             )
         ).toBeInTheDocument();
         // The member-only detail items are folded into the same card.
@@ -253,11 +256,11 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        // Degraded skill catalogue: never promise "0개 스킬".
-        expect(screen.queryByText(/0개 스킬/)).not.toBeInTheDocument();
+        // Degraded skill catalogue: never promise "0개 분석 기법".
+        expect(screen.queryByText(/0개 분석 기법/)).not.toBeInTheDocument();
         expect(
             screen.getByText(
-                /회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요/
+                /회원가입하면 모든 분석 기법을 적용한 상세 분석을 받아볼 수 있어요/
             )
         ).toBeInTheDocument();
     });
@@ -294,8 +297,8 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        expect(screen.queryByText(/스킬 감지/)).not.toBeInTheDocument();
-        expect(screen.getByText(/39종 인디케이터 적용/)).toBeInTheDocument();
+        expect(screen.queryByText(/분석 기법 감지/)).not.toBeInTheDocument();
+        expect(screen.getByText(/보조지표 39종 적용/)).toBeInTheDocument();
     });
 
     it('shows the skill-detected count for members', () => {
@@ -310,8 +313,8 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        expect(screen.getByText(/스킬 감지/)).toBeInTheDocument();
-        expect(screen.getByText(/39종 인디케이터 적용/)).toBeInTheDocument();
+        expect(screen.getByText(/분석 기법 감지/)).toBeInTheDocument();
+        expect(screen.getByText(/보조지표 39종 적용/)).toBeInTheDocument();
     });
 
     it('does not show a signup lock when lockedInfoDepth is empty (e.g. shared snapshot)', () => {
@@ -423,6 +426,61 @@ describe('AnalysisPanel', () => {
         const progress = screen.getByTestId('analysis-progress');
         expect(progress).toHaveAttribute('data-indicator-count', '37');
         expect(progress).toHaveAttribute('data-skill-count', '89');
+    });
+
+    describe('stale 판정에 시장 세션을 넘긴다(marketProfile 배선)', () => {
+        beforeEach(() => {
+            vi.mocked(isAnalysisStale).mockClear();
+        });
+
+        const renderWithProfile = (
+            marketProfile?: 'us-equity' | 'kr-equity' | 'crypto'
+        ): void => {
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis()}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                    marketProfile={marketProfile}
+                    onReanalyze={vi.fn()}
+                />
+            );
+        };
+
+        it.each([
+            ['us-equity', US_EQUITY_SESSION],
+            ['kr-equity', KR_EQUITY_SESSION],
+            ['crypto', CRYPTO_SESSION],
+        ] as const)(
+            '%s 프로필이면 그 시장의 세션으로 판정한다',
+            async (profile, session) => {
+                renderWithProfile(profile);
+
+                await vi.waitFor(() =>
+                    expect(
+                        vi
+                            .mocked(isAnalysisStale)
+                            .mock.calls.find(([, , , s]) => s === session)
+                    ).toBeDefined()
+                );
+            }
+        );
+
+        it('프로필이 없으면 세션 없이(시계 판정만) 호출한다', async () => {
+            renderWithProfile(undefined);
+
+            await vi.waitFor(() =>
+                expect(
+                    vi.mocked(isAnalysisStale).mock.calls.length
+                ).toBeGreaterThan(0)
+            );
+            expect(
+                vi
+                    .mocked(isAnalysisStale)
+                    .mock.calls.filter(([, , , s]) => s !== undefined)
+            ).toEqual([]);
+        });
     });
 
     it('renders the reanalyze button when onReanalyze is provided', () => {

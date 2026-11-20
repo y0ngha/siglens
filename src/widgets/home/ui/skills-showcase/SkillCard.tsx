@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { SURFACE_LIFT_TRANSITION } from '@/shared/lib/cardStyles';
@@ -13,16 +13,15 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 import { useIsClamped } from '../../hooks/useIsClamped';
 import { SKILL_TYPE_META } from '../../utils/skillTypeMeta';
-import { ConfidenceBar } from './ConfidenceBar';
 
 interface SkillCardProps {
-    readonly skill: SkillShowcaseItem;
+    readonly skill: HomeSkillItem;
     readonly isExpanded: boolean;
     readonly onToggleExpand: (key: string) => void;
 }
 
 /**
- * 스킬 한 장 — 이름·타입 배지·한 줄 요약·신뢰도·가이드 링크.
+ * 스킬 한 장 — 이름·타입 배지·한 줄 요약·가이드 링크. 신뢰도 막대는 문헌 가중치가 승률처럼 읽혀 뺐다.
  *
  * 요약이 2줄을 넘길 때만 펼침 가능(아코디언)해진다. 스킬명은 프롬프트·캐시 지문에
  * 쓰여 바꿀 수 없으므로(토글 키로도 쓰인다) **표시 시점에만** 카탈로그로 옮긴다.
@@ -126,7 +125,6 @@ export function SkillCard({
                         {skillDescription(skill.name, skill.description)}
                     </p>
                 </div>
-                <ConfidenceBar weight={skill.confidenceWeight} />
             </div>
             {guidePath !== null && (
                 <div className="px-4 pb-3">

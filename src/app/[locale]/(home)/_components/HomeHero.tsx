@@ -42,21 +42,13 @@ interface HomeHeroProps {
 }
 
 /**
- * 홈 히어로 — 일러스트, SIGLENS AI 안내 줄, H1, 소개 문단, 종목 검색, 빠른 이동 링크.
+ * 홈 히어로 — SIGLENS AI 안내 줄, H1, 소개 문단, 종목 검색, 빠른 이동 링크, 일러스트(이 순서).
  *
  * 서버 컴포넌트다. 문구는 이미 번역된 문자열로 받아 이 컴포넌트는 배치만 맡는다.
  */
 export function HomeHero({ locale, copy, quickLinks }: HomeHeroProps) {
     return (
         <div className="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-10">
-            {/*
-                모바일에서 일러스트가 H1보다 먼저 와야(order-first) above-the-fold의 LCP 후보가 된다.
-                인라인 SVG는 추가 fetch가 없어 HTML 파싱 즉시 페인트되므로 폰트 의존 텍스트 LCP보다
-                결정적으로 빠르다. lg 이상에서는 텍스트가 왼쪽, 일러스트가 오른쪽이다.
-            */}
-            <div className="order-first lg:order-last">
-                <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
-            </div>
             <div className="text-center lg:text-left">
                 {/* 메인 홈에서 SIGLENS AI로 가는 유일한 입구 — 배너가 아니라 제목 위의 조용한 안내 줄이다.
                     제품명은 로케일을 따른다(ko `시그렌즈 AI`). */}
@@ -125,6 +117,15 @@ export function HomeHero({ locale, copy, quickLinks }: HomeHeroProps) {
                         </Link>
                     ))}
                 </div>
+            </div>
+            {/*
+                일러스트는 텍스트 컬럼(H1, 소개, 검색, 빠른 이동) 뒤에 온다. 모바일에서 장식 그림이
+                H1과 검색 상자보다 먼저 와 첫 화면을 차지하던 문제를 바로잡았다 — 읽는 순서도
+                H1, 검색, 일러스트다. `lg` 이상은 그리드가 텍스트를 왼쪽, 일러스트를 오른쪽에 두므로
+                배치가 같다. `HeroIllustration`이 `width`/`height`를 내려 자리를 미리 잡아 CLS는 없다.
+            */}
+            <div>
+                <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
             </div>
         </div>
     );

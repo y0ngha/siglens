@@ -20,10 +20,10 @@ describe('recordAnonSymbolAnalysis', () => {
         localStorage.clear();
     });
 
-    it('문턱은 1이다 — 그날 첫 분석이 곧 문턱을 넘는다', () => {
-        expect(ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD).toBe(1);
+    it('문턱은 3이다 — 첫 분석은 문턱을 넘지 않는다', () => {
+        expect(ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD).toBe(3);
         const result = recordAnonSymbolAnalysis('AAPL', DAY_1);
-        expect(result).toEqual({ distinctCount: 1, crossedThreshold: true });
+        expect(result).toEqual({ distinctCount: 1, crossedThreshold: false });
     });
 
     it('dedups the same symbol analyzed twice (distinctCount stays 1)', () => {
@@ -73,8 +73,8 @@ describe('recordAnonSymbolAnalysis', () => {
         recordAnonSymbolAnalysis('AAPL', DAY_1);
         recordAnonSymbolAnalysis('TSLA', DAY_1);
         const nextDay = recordAnonSymbolAnalysis('NVDA', DAY_2);
-        // 새 날의 첫 종목이라 다시 1부터 세고, 문턱(1)을 다시 넘는다.
-        expect(nextDay).toEqual({ distinctCount: 1, crossedThreshold: true });
+        // 새 날의 첫 종목이라 다시 1부터 센다. 문턱(3) 전이라 넘지 않는다.
+        expect(nextDay).toEqual({ distinctCount: 1, crossedThreshold: false });
     });
 
     it('persists the record to localStorage under the documented key', () => {
@@ -136,7 +136,7 @@ describe('recordAnonSymbolAnalysis', () => {
             JSON.stringify({ dateUtc: '2026-07-10', symbols: [1, 2, 3] })
         );
         const result = recordAnonSymbolAnalysis('AAPL', DAY_1);
-        expect(result).toEqual({ distinctCount: 1, crossedThreshold: true });
+        expect(result).toEqual({ distinctCount: 1, crossedThreshold: false });
     });
 });
 

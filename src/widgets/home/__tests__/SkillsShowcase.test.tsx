@@ -65,20 +65,18 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import userEvent from '@testing-library/user-event';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
 
 import { SkillsShowcase } from '../SkillsShowcase';
 
 function makeSkill(
     name: string,
-    type: SkillShowcaseItem['type'] = 'indicator_guide',
-    confidenceWeight = 0.85
-): SkillShowcaseItem {
+    type: HomeSkillItem['type'] = 'indicator_guide'
+): HomeSkillItem {
     return {
         name,
         type,
         description: `${name} description`,
-        confidenceWeight,
     };
 }
 
@@ -99,7 +97,7 @@ describe('SkillsShowcase', () => {
         render(<SkillsShowcase skills={[]} />);
 
         expect(
-            screen.getByRole('heading', { name: /AI 분석 스킬/ })
+            screen.getByRole('heading', { name: /AI 분석 기법/ })
         ).toBeInTheDocument();
     });
 
@@ -126,12 +124,11 @@ describe('SkillsShowcase', () => {
      * **이름으로 찾는 한 줄 요약**(`shared.skillSummary`)이다.
      */
     it('en: 스킬 설명 자리에 front-matter 원문 대신 영어 요약이 나온다', () => {
-        const skill: SkillShowcaseItem = {
+        const skill: HomeSkillItem = {
             name: '다중 시간대 분석',
             type: 'strategy',
             description:
                 '상위 시간대에서 추세 방향을 확인하고 하위 시간대에서 최적의 진입 타이밍을 잡는 체계적 분석 프레임워크',
-            confidenceWeight: 0.85,
         };
         renderWithIntl(<SkillsShowcase skills={[skill]} />, { locale: 'en' });
 
@@ -153,12 +150,11 @@ describe('SkillsShowcase', () => {
      * 요약이 모두 한국어여야 하고, 모델용 영어 원문은 화면에 없어야 한다.
      */
     it('ko: 영문 이름 스킬도 한국어 표시명과 한국어 요약으로 나온다', () => {
-        const skill: SkillShowcaseItem = {
+        const skill: HomeSkillItem = {
             name: 'Bearish Engulfing Guide',
             type: 'candlestick',
             description:
                 'Bearish Engulfing two-candle reversal interpretation guide with Bulkowski measured rates',
-            confidenceWeight: 0.8,
         };
         renderWithIntl(<SkillsShowcase skills={[skill]} />, { locale: 'ko' });
 
@@ -187,11 +183,11 @@ describe('SkillsShowcase', () => {
         ).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders confidence percentage', () => {
-        const skills = [makeSkill('Bollinger', 'indicator_guide', 0.75)];
+    it('does not render the confidence percentage', () => {
+        const skills = [makeSkill('Bollinger', 'indicator_guide')];
         render(<SkillsShowcase skills={skills} />);
 
-        expect(screen.getAllByText('75%').length).toBeGreaterThanOrEqual(1);
+        expect(screen.queryByText('75%')).not.toBeInTheDocument();
     });
 
     it('renders the tab list', () => {
@@ -202,11 +198,10 @@ describe('SkillsShowcase', () => {
     });
 
     it('renders no type badge for a skill with type === undefined', () => {
-        const skill: SkillShowcaseItem = {
+        const skill: HomeSkillItem = {
             name: '무타입 스킬',
             type: undefined,
             description: 'desc',
-            confidenceWeight: 0.6,
         };
         render(<SkillsShowcase skills={[skill]} />);
 
@@ -304,20 +299,23 @@ describe('SkillsShowcase', () => {
 });
 
 /**
- * 신뢰도 안내 ⓘ는 카드 수와 무관하게 섹션에 **하나**다. 카드마다 달면 같은 안내문이
- * 카드 수만큼 HTML에 반복된다.
+ * 카드의 신뢰도 막대는 문헌 기반 가중치라 승률처럼 읽혀 홈에서 뺐다. 그 막대를 설명하던
+ * ⓘ 안내도 함께 없어야 한다.
  */
-describe('SkillsShowcase 신뢰도 안내 배치', () => {
-    it('ⓘ 버튼이 카드 수와 무관하게 하나이고, 안내문은 열기 전에는 DOM에 없다', () => {
-        render(
+describe('SkillsShowcase 신뢰도 표시 제거', () => {
+    it('신뢰도 점수 ⓘ 안내도, 퍼센트 막대도 그리지 않는다', () => {
+        const { container } = render(
             <SkillsShowcase
                 skills={[makeSkill('RSI'), makeSkill('MACD'), makeSkill('OBV')]}
             />
         );
 
         expect(
-            screen.getAllByRole('button', { name: '신뢰도 점수 설명' })
-        ).toHaveLength(1);
-        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+            screen.queryByRole('button', { name: '신뢰도 점수 설명' })
+        ).not.toBeInTheDocument();
+        expect(
+            container.querySelector('[data-testid="confidence-bar"]')
+        ).toBeNull();
+        expect(screen.queryByText(/\d+%/)).not.toBeInTheDocument();
     });
 });

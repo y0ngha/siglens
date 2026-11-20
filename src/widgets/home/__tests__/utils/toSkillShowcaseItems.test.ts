@@ -16,11 +16,10 @@ function skill(overrides: Partial<Skill> = {}): Skill {
 }
 
 describe('toSkillShowcaseItems', () => {
-    it('선언된 4개 필드만 남긴다 — content는 반드시 빠진다', () => {
+    it('선언된 3개 필드만 남긴다 — content는 반드시 빠진다', () => {
         const [item] = toSkillShowcaseItems([skill()]);
 
         expect(Object.keys(item!).toSorted()).toEqual([
-            'confidenceWeight',
             'description',
             'name',
             'type',
@@ -29,17 +28,17 @@ describe('toSkillShowcaseItems', () => {
         // 클라이언트 번들 경계를 넘던 회귀를 직접 고정한다.
         expect(item).not.toHaveProperty('content');
         expect(item).not.toHaveProperty('category');
+        expect(item).not.toHaveProperty('confidenceWeight');
     });
 
-    it('네 필드의 값은 그대로 옮긴다', () => {
-        const src = skill({ name: 'MACD', confidenceWeight: 0.55 });
+    it('세 필드의 값은 그대로 옮긴다', () => {
+        const src = skill({ name: 'MACD' });
         const [item] = toSkillShowcaseItems([src]);
 
         expect(item).toEqual({
             name: 'MACD',
             description: src.description,
             type: src.type,
-            confidenceWeight: 0.55,
         });
     });
 

@@ -1,23 +1,22 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from './utils/toSkillShowcaseItems';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { GUIDE_PATH } from '@/shared/lib/guidePaths';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 import { useSkillsShowcase } from './hooks/useSkillsShowcase';
-import { ConfidenceInfo } from './ui/skills-showcase/ConfidenceInfo';
 import { SkillPanel } from './ui/skills-showcase/SkillPanel';
 import { SkillTabs } from './ui/skills-showcase/SkillTabs';
 import { SKILL_TABS } from './utils/skillTabs';
 
 interface SkillsShowcaseProps {
-    skills: SkillShowcaseItem[];
+    skills: HomeSkillItem[];
 }
 
 /**
- * 홈의 "AI 분석 스킬" 섹션 — 제목·신뢰도 안내·타입 탭·패널·전체 가이드 링크를 조립한다.
+ * 홈의 "AI 분석 기법" 섹션 — 제목·타입 탭·패널·전체 가이드 링크를 조립한다.
  * 상태는 `useSkillsShowcase`, 표현은 `ui/skills-showcase/*`가 맡는다.
  */
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
@@ -39,7 +38,6 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                 <h2 className={HEADING_SECTION}>
                     {t('SkillsShowcase.158954')}
                 </h2>
-                <ConfidenceInfo />
             </div>
             <SkillTabs
                 activeTab={activeTab}
