@@ -11,20 +11,18 @@ vi.stubGlobal(
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../../../utils/toSkillShowcaseItems';
 
 import { SkillCard } from '../../../ui/skills-showcase/SkillCard';
 
 function makeSkill(
     name: string,
-    type: SkillShowcaseItem['type'] = 'indicator_guide',
-    confidenceWeight = 0.85
-): SkillShowcaseItem {
+    type: HomeSkillItem['type'] = 'indicator_guide'
+): HomeSkillItem {
     return {
         name,
         type,
         description: `${name} description`,
-        confidenceWeight,
     };
 }
 
@@ -204,15 +202,15 @@ describe('SkillCard', () => {
         expect(screen.getByText('캔들')).toBeInTheDocument();
     });
 
-    it('신뢰도 점수를 퍼센트로 보여준다', () => {
+    it('신뢰도 점수 막대를 그리지 않는다(문헌 가중치가 승률처럼 읽힘)', () => {
         render(
             <SkillCard
-                skill={makeSkill('RSI', 'indicator_guide', 0.75)}
+                skill={makeSkill('RSI', 'indicator_guide')}
                 isExpanded={false}
                 onToggleExpand={vi.fn()}
             />
         );
 
-        expect(screen.getByText('75%')).toBeInTheDocument();
+        expect(screen.queryByText('75%')).not.toBeInTheDocument();
     });
 });

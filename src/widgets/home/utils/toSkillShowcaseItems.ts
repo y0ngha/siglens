@@ -1,10 +1,16 @@
-import type { Skill, SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { Skill } from '@y0ngha/siglens-core';
 
 /**
- * `Skill[]` → `SkillShowcaseItem[]` 프로젝션. RSC 경계에서 **반드시** 거쳐야 한다.
+ * 홈 쇼케이스 카드가 읽는 필드. 신뢰도 점수(`confidenceWeight`)는 승률처럼 읽혀 카드에서 뺐으므로
+ * 클라이언트로 보내지 않는다.
+ */
+export type HomeSkillItem = Pick<Skill, 'name' | 'description' | 'type'>;
+
+/**
+ * `Skill[]` → `HomeSkillItem[]` 프로젝션. RSC 경계에서 **반드시** 거쳐야 한다.
  *
- * `SkillsShowcase`의 prop 타입은 `SkillShowcaseItem`
- * (`Pick<Skill,'name'|'description'|'type'|'confidenceWeight'>`)인데, 구조적 타이핑이
+ * `SkillsShowcase`의 prop 타입은 `HomeSkillItem`
+ * (`Pick<Skill,'name'|'description'|'type'>`)인데, 구조적 타이핑이
  * 상위집합인 `Skill`을 그대로 통과시킨다. 그러면 `skill.content`(스킬 전체의 LLM 프롬프트
  * 본문, 합계 수백 KB)가 아무도 읽지 않은 채 경계를 넘어 모든 홈 방문자에게 직렬화된다.
  *
@@ -15,11 +21,10 @@ import type { Skill, SkillShowcaseItem } from '@y0ngha/siglens-core';
  */
 export function toSkillShowcaseItems(
     skills: readonly Skill[]
-): SkillShowcaseItem[] {
-    return skills.map(({ name, description, type, confidenceWeight }) => ({
+): HomeSkillItem[] {
+    return skills.map(({ name, description, type }) => ({
         name,
         description,
         type,
-        confidenceWeight,
     }));
 }

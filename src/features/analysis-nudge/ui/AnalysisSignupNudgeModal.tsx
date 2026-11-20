@@ -39,7 +39,7 @@ export type SignupNudgePitch = SignupNudgeVariant | 'timeframe';
  * 따로 두면 `{ kind: 'reasoning_toggle', variant: 'timeframe' }`처럼 계기와 맞지 않는
  * 문구가 컴파일되고, 퍼널에는 엉뚱한 kind로 남는다.
  *
- * - `anon_auto`: 첫 분석 뒤 자동 넛지. 상세 분석·메일 리포트 문구를 번갈아 쓴다.
+ * - `anon_auto`: 서로 다른 3개 종목을 분석한 뒤(하루·세션 1회) 뜨는 자동 넛지. 상세 분석·메일 리포트 문구를 번갈아 쓴다.
  * - `reasoning_toggle`: 잠긴 추론 토글 클릭. 늘 상세 분석 문구.
  * - `timeframe_nudge`: 잠긴 시간 프레임 클릭. 늘 시간 프레임 문구.
  */

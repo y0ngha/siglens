@@ -9,16 +9,13 @@ vi.stubGlobal(
 
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../../../utils/toSkillShowcaseItems';
 
 import { SkillPanel } from '../../../ui/skills-showcase/SkillPanel';
 import { INITIAL_VISIBLE_COUNT } from '../../../utils/skillTabs';
 
-function makeSkill(
-    name: string,
-    type: SkillShowcaseItem['type']
-): SkillShowcaseItem {
-    return { name, type, description: `${name} d`, confidenceWeight: 0.9 };
+function makeSkill(name: string, type: HomeSkillItem['type']): HomeSkillItem {
+    return { name, type, description: `${name} d` };
 }
 
 const SKILLS = [

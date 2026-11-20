@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
 import {
     filterSkillsByTab,
@@ -15,7 +15,7 @@ interface SkillPanelProps {
     readonly isActive: boolean;
     readonly idPrefix: string;
     /** 필터 전 전체 스킬 — 패널이 자기 탭에 맞게 거른다. */
-    readonly skills: readonly SkillShowcaseItem[];
+    readonly skills: readonly HomeSkillItem[];
     readonly showAll: boolean;
     readonly expandedKey: string | null;
     readonly onToggleShowAll: () => void;

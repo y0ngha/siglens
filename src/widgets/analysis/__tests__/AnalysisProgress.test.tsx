@@ -47,16 +47,16 @@ describe('AnalysisProgress', () => {
 
         rerender(<AnalysisProgress phaseIndex={3} tipIndex={0} {...COUNTS} />);
         expect(
-            screen.getByText('89개 스킬을 조합하여 시그널 매칭 중')
+            screen.getByText('89개 분석 기법을 조합하여 시그널 매칭 중')
         ).toBeInTheDocument();
     });
 
-    it('첫 팁이 보조지표·분석 스킬 수를 한 문장으로 말한다', () => {
+    it('첫 팁이 보조지표·분석 기법 수를 한 문장으로 말한다', () => {
         render(<AnalysisProgress phaseIndex={0} tipIndex={0} {...COUNTS} />);
 
         expect(
             screen.getByText(
-                '37종 보조지표와 89개 분석 스킬을 조합해 분석합니다.'
+                '37종 보조지표와 89개 분석 기법을 조합해 분석합니다.'
             )
         ).toBeInTheDocument();
     });

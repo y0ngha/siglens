@@ -80,7 +80,7 @@ describe('CDN_CACHE_TAG_HEADER_RULES', () => {
         '/_next/image',
         '/icon192.png',
         '/og-image.png',
-        '/hero-dashboard.svg',
+        '/hero-dashboard-v2.svg',
         '/favicon.ico',
         // app/ 루트의 파일 메타데이터(파일 그대로 서빙, 링크에 내용 해시 쿼리가 붙는다).
         '/icon.png',

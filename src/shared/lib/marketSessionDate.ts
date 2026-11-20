@@ -280,6 +280,30 @@ export function sessionCloseUtcOnDate(
 }
 
 /**
+ * `now` 이전(포함)에 **가장 최근에 끝난 정규 세션의 마감 순간**(UTC Date). 24/7 시장은 마감이
+ * 없으므로 `null`.
+ *
+ * `lastClosedSessionCloseUtc`와 달리 EOD 발행 버퍼를 두지 않는다 — 그쪽은 "데이터가 발행됐는가"를
+ * 묻는 캐시 키 경계이고, 이쪽은 "그 마감 뒤로 새 봉이 완성됐는가"를 묻는다(분석 화면의 오래됨
+ * 힌트). 정규장이 열려 있는 동안에는 직전 거래일의 마감을, 마감 직후에는 방금 끝난 세션의
+ * 마감을 돌려준다. 주말·휴장일·DST·반장은 `lastClosedSessionDate`와 같은 규칙을 쓴다.
+ */
+export function lastSessionCloseAtOrBefore(
+    spec: MarketSessionSpec,
+    now: Date
+): Date | null {
+    if (spec.kind === 'always-open') return null;
+    const { date, weekday, minutesOfDay } = zonedParts(now, spec.timeZone);
+    const todayClose = closeMinuteOn(spec, date);
+    const closedToday =
+        !spec.weekendDays.includes(weekday) &&
+        todayClose > 0 &&
+        minutesOfDay >= todayClose;
+    const sessionDate = closedToday ? date : previousSessionDate(spec, date);
+    return sessionCloseUtcOnDate(spec, sessionDate);
+}
+
+/**
  * {@link lastClosedSessionDate}가 지금 값에서 **다음 세션 날짜로 넘어가기까지** 남은 초.
  *
  * 세션 날짜를 키에 넣은 캐시는 날짜가 넘어가는 순간

@@ -10,7 +10,7 @@ export interface SignupNudgeControls {
     signupNudge: SignupNudgeState | null;
     /** 잠긴 추론 토글 클릭. 문구는 늘 상세 분석이고, 퍼널에는 `reasoning_toggle`로 남는다. */
     openSignupNudge: () => void;
-    /** 익명 첫 분석 자동 넛지. 문구를 번갈아 쓰고, 퍼널에는 `anon_auto`+variant로 남는다. */
+    /** 익명 자동 넛지(그날 서로 다른 3개 종목을 분석한 뒤, 하루·세션 1회). 문구를 번갈아 쓰고, 퍼널에는 `anon_auto`+variant로 남는다. */
     openSignupNudgeAs: (variant: SignupNudgeVariant) => void;
     /**
      * 잠긴 시간 프레임 클릭. 문구는 시간 프레임 안내이고, 퍼널에는 `timeframe_nudge`로 남는다.

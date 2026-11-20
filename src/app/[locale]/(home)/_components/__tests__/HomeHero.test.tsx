@@ -1,5 +1,5 @@
 vi.mock('@/widgets/home/HeroIllustration', () => ({
-    HeroIllustration: () => null,
+    HeroIllustration: () => <div data-testid="hero-illustration" />,
 }));
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => <input aria-label="종목 검색" />,
@@ -74,5 +74,20 @@ describe('HomeHero', () => {
 
         const teaser = screen.getByRole('link', { name: /AI에게 물어보세요/ });
         expect(teaser).toHaveAttribute('href', 'https://ai.siglens.io/en');
+    });
+
+    it('DOM 순서는 H1, 검색, 일러스트다(모바일에서 그림이 먼저 오지 않는다)', () => {
+        renderHero();
+
+        const h1 = screen.getByRole('heading', { level: 1 });
+        const search = screen.getByRole('textbox', { name: '종목 검색' });
+        const illustration = screen.getByTestId('hero-illustration');
+        const follows = (a: Node, b: Node): boolean =>
+            Boolean(
+                a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
+            );
+
+        expect(follows(h1, search)).toBe(true);
+        expect(follows(search, illustration)).toBe(true);
     });
 });

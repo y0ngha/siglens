@@ -1,4 +1,5 @@
-import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
+import type { SkillType } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from './toSkillShowcaseItems';
 import { SKILL_TYPE_META, type SkillTypeMeta } from './skillTypeMeta';
 
 /** 스킬 쇼케이스 탭 값 — 전체 또는 core `SkillType` 하나. */
@@ -29,8 +30,8 @@ export const INITIAL_VISIBLE_COUNT = 12;
 
 /** 탭에 속한 스킬만 고른다. "전체"는 입력을 그대로 돌려준다(순서 유지). */
 export function filterSkillsByTab(
-    skills: readonly SkillShowcaseItem[],
+    skills: readonly HomeSkillItem[],
     tab: SkillsActiveTab
-): readonly SkillShowcaseItem[] {
+): readonly HomeSkillItem[] {
     return tab === 'all' ? skills : skills.filter(skill => skill.type === tab);
 }

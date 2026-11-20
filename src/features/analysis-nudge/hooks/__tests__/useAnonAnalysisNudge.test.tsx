@@ -22,7 +22,7 @@ vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
 }));
 
 vi.mock('@/shared/lib/anonAnalysisCount', () => ({
-    ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD: 1,
+    ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD: 3,
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
@@ -131,7 +131,7 @@ describe('useAnonAnalysisNudge', () => {
     it('opens the shared modal with the next copy variant when the threshold is reached and not shown today', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
-            distinctCount: 1,
+            distinctCount: 3,
             crossedThreshold: true,
         });
         mockHasShown.mockReturnValue(false);
@@ -152,7 +152,7 @@ describe('useAnonAnalysisNudge', () => {
     it('does not open the modal when another nudge was already shown this tab session', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
-            distinctCount: 1,
+            distinctCount: 3,
             crossedThreshold: true,
         });
         mockSessionShown.mockReturnValue(true);
@@ -189,7 +189,7 @@ describe('useAnonAnalysisNudge', () => {
     it('does not open the modal while the distinct count is below the threshold', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
-            distinctCount: 0,
+            distinctCount: 2,
             crossedThreshold: false,
         });
 
@@ -207,7 +207,7 @@ describe('useAnonAnalysisNudge', () => {
             mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
             mockVocDue.mockReturnValue(true);
             mockRecord.mockReturnValue({
-                distinctCount: 1,
+                distinctCount: 3,
                 crossedThreshold: true,
             });
 
@@ -230,7 +230,7 @@ describe('useAnonAnalysisNudge', () => {
             // The deferred nudge's own threshold crossing already happened on the
             // yielded call, so this later call reports crossedThreshold: false.
             mockRecord.mockReturnValue({
-                distinctCount: 2,
+                distinctCount: 3,
                 crossedThreshold: false,
             });
             mockVocDue.mockReturnValue(true);
@@ -256,7 +256,7 @@ describe('useAnonAnalysisNudge', () => {
         it('still honors the once-per-day cap after the VOC prompt is done', () => {
             mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
             mockRecord.mockReturnValue({
-                distinctCount: 2,
+                distinctCount: 3,
                 crossedThreshold: false,
             });
             mockHasShown.mockReturnValue(true);

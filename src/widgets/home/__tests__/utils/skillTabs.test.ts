@@ -1,4 +1,5 @@
-import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
+import type { SkillType } from '@y0ngha/siglens-core';
+import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 
 import { SKILL_TABS, filterSkillsByTab } from '../../utils/skillTabs';
 import { SKILL_TYPE_META } from '../../utils/skillTypeMeta';
@@ -15,11 +16,8 @@ const ALL_SKILL_TYPES = Object.keys({
     support_resistance: true,
 } satisfies Record<SkillType, true>) as SkillType[];
 
-function skill(
-    name: string,
-    type: SkillShowcaseItem['type']
-): SkillShowcaseItem {
-    return { name, type, description: '', confidenceWeight: 0.5 };
+function skill(name: string, type: HomeSkillItem['type']): HomeSkillItem {
+    return { name, type, description: '' };
 }
 
 describe('SKILL_TABS', () => {

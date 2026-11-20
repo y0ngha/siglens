@@ -824,7 +824,8 @@ A module-level JSDoc does not replace per-symbol docs. Each exported component, 
 #### CM-11 — Comments describe the current design and WHY, not history
 
 A comment or JSDoc states the present constraint and reason. It does not narrate PRs, audits, review rounds or what
-the code used to do. When a refactor changes a strategy (for example how a chart is remounted on theme change), re-read
+the code used to do, and it does not announce planned future changes ("a later change will move..."), which go stale
+as soon as the plan lands or changes. When a refactor changes a strategy (for example how a chart is remounted on theme change), re-read
 the comments and helpers that describe the old strategy and rewrite or delete them; a comment that contradicts the code
 is worse than none.
 
@@ -887,6 +888,10 @@ When a module cannot import a shared constant (a runtime constraint, a partially
 time), keep the literal and put a comment on every copy naming the original and the sync requirement, plus a parity
 test that parses every copy (TypeScript, shell, config) and compares it with the source. Schemas duplicated across
 files (Redis key layouts) get a block comment naming their origin.
+
+The same applies when a JS constant and a Tailwind arbitrary-value class literal (`w-[45%]`, `h-[4px]`) encode the same
+number: a comment alone does not keep them in sync. Add a test that reads the source file, extracts the literal and
+compares it with the exported constant, and fails when the literal is not found.
 
 ```typescript
 // ✅ shared/config/marketProfile/usEquity.ts
