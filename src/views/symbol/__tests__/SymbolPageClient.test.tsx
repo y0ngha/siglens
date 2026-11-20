@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentType } from 'react';
 import { useMobileSheet } from '@/views/symbol/hooks/useMobileSheet';
@@ -9,6 +9,11 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { renderToString } from 'react-dom/server';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { aiAskUrl } from '@/shared/config/aiHost';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import type { AssetInfo } from '@/shared/lib/types';
 
 // Mock MobileAnalysisSheet so the dynamic() factory's import resolves cheaply.
 vi.mock('@/views/symbol/MobileAnalysisSheet', () => ({
@@ -67,7 +72,12 @@ vi.mock('@/shared/hooks/useIsMobileViewport', () => ({
 
 vi.mock('@/views/symbol/ChartContent', () => ({
     ChartContent: (props: Record<string, unknown>) => (
-        <div data-testid="chart-content">{props.symbol as string}</div>
+        <div data-testid="chart-content">
+            {props.symbol as string}
+            <div data-testid="panel-top-slot">
+                {props.panelTopSlot as React.ReactNode}
+            </div>
+        </div>
     ),
 }));
 
@@ -177,7 +187,67 @@ describe('SymbolPageClient', () => {
 
     it('passes symbol to ChartContent', () => {
         render(<SymbolPageClient {...defaultProps} />);
-        expect(screen.getByTestId('chart-content').textContent).toBe('AAPL');
+        expect(
+            screen.getByTestId('chart-content').firstChild?.textContent
+        ).toBe('AAPL');
+    });
+
+    /*
+     * 차트 탭의 Ask-AI 링크는 AI 패널 맨 위 슬롯으로 들어간다. 종목 레이아웃의 떠 있는 버튼과
+     * 같은 href여야 한다 — 두 곳이 갈라지면 같은 종목이 화면에 따라 다른 질문을 채운다.
+     */
+    describe('panelTopSlot의 Ask-AI 링크', () => {
+        const APPLE_INFO = {
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            koreanName: '애플',
+        } as AssetInfo;
+
+        // `clearMocks`가 꺼져 있어 값이 다음 테스트로 샌다 — 기본(자산 정보 없음)으로 되돌린다.
+        afterEach(() => {
+            vi.mocked(useAssetInfo).mockReturnValue(undefined);
+        });
+
+        it('ko: 한글 종목명 질문과 접두사 없는 ai 호스트 주소를 href에 싣는다', () => {
+            vi.mocked(useAssetInfo).mockReturnValue(APPLE_INFO);
+            render(<SymbolPageClient {...defaultProps} />);
+
+            const question = catalogTranslator('widgets.ask-ai-fab', 'ko')(
+                'question',
+                { name: '애플' }
+            );
+            expect(
+                within(screen.getByTestId('panel-top-slot')).getByRole('link')
+            ).toHaveAttribute('href', aiAskUrl('/', question));
+        });
+
+        it('en: 영어 종목명 질문과 /en 접두 경로를 href에 싣는다', () => {
+            vi.mocked(useAssetInfo).mockReturnValue(APPLE_INFO);
+            renderWithIntl(<SymbolPageClient {...defaultProps} />, {
+                locale: 'en',
+            });
+
+            const question = catalogTranslator('widgets.ask-ai-fab', 'en')(
+                'question',
+                { name: 'Apple Inc.' }
+            );
+            expect(
+                within(screen.getByTestId('panel-top-slot')).getByRole('link')
+            ).toHaveAttribute('href', aiAskUrl('/en', question));
+        });
+
+        it('자산 정보가 아직 없으면 대문자 티커로 질문을 만든다', () => {
+            vi.mocked(useAssetInfo).mockReturnValue(undefined);
+            render(<SymbolPageClient {...defaultProps} symbol="aapl" />);
+
+            const question = catalogTranslator('widgets.ask-ai-fab', 'ko')(
+                'question',
+                { name: 'AAPL' }
+            );
+            expect(
+                within(screen.getByTestId('panel-top-slot')).getByRole('link')
+            ).toHaveAttribute('href', aiAskUrl('/', question));
+        });
     });
 
     it('does not render MobileAnalysisSheet when isMobileViewport is false', () => {

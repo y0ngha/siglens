@@ -715,6 +715,33 @@ body:has(:where(header[data-scroll-chrome][inert])) [data-pwa-banner] {
 }
 
 /*
+ * 하단 오버레이는 한 번에 하나만 보인다. 우선순위:
+ *   일시·모달 UI(토스트, 모달 시트, 팝오버) > 모바일 분석 시트 > Ask-AI 링크 > PWA 설치 배너.
+ *
+ * 셋이 같은 오른쪽 아래에 겹치면 시트 PEEK 띠(17svh)를 링크가, 링크를 다시 배너가 가렸다.
+ * 그래서 아래 두 규칙으로 자리를 나눈다.
+ *  - 차트 탭: Ask-AI 링크는 분석 패널 본문(모바일은 시트 안)에 인라인(`data-ask-ai-inline`)으로
+ *    있으므로 떠 있는 버튼(`data-ask-ai-fab`)은 숨긴다. 차트가 오류로 무너지면 데스크톱은 패널
+ *    사본이 함께 사라져 `:has()`가 풀리고 떠 있는 버튼이 돌아온다. 모바일은 시트 내용이 부모
+ *    상태에 남아 `ChartContent`가 언마운트돼도 인라인 링크가 그대로 있어 계속 매칭된다(링크는
+ *    시트에서 계속 쓸 수 있다).
+ *  - Ask-AI 링크가 있는 화면(종목 탭 전부, 가이드 항목)에는 설치 배너를 띄우지 않는다. 링크가
+ *    숨겨진 차트 탭도 DOM에는 남아 있어 매칭된다. 링크가 없는 화면(홈·시장·허브 등)은 그대로다.
+ *
+ * `:has()` 미지원 브라우저에서는 두 규칙이 모두 무시되어 차트 탭에 인라인 링크와 떠 있는 버튼이
+ * 함께 보이고 배너도 뜰 수 있다(앞의 숨김 규칙들과 같은 퇴화). 이때 모바일(390px)에서는 배너
+ * (z-65)가 떠 있는 버튼(z-60)을 통째로 덮지만, 인라인 링크가 본문에 있어 링크는 계속 쓸 수 있고
+ * 배너의 설치·닫기 버튼도 가려지지 않는다.
+ */
+body:has([data-ask-ai-inline]) [data-ask-ai-fab] {
+    display: none;
+}
+
+body:has([data-ask-ai-fab]) [data-pwa-banner] {
+    display: none;
+}
+
+/*
  * 차트 헤더 팝오버(`ChartPopoverPanel`, `data-chart-popover`)가 열려 있는 동안 PWA 설치 배너와 Ask-AI FAB을
  * 숨긴다.
  *
@@ -761,23 +788,6 @@ body:has([data-vaul-drawer][data-modal-sheet]) [data-pwa-banner] {
  */
 body:has(#agent-chat-sidebar-drawer) [data-pwa-banner] {
     display: none;
-}
-
-/*
- * PWA 설치 배너(`features/pwa-install/ui/PwaBanner`)가 떠 있는 동안 모바일에서
- * Ask-AI FAB을 배너 위로 올린다.
- *
- * 둘 다 화면 오른쪽 아래(0.75rem + safe-area)에 고정된다. 배너는 모바일에서 전폭
- * 카드(h-12 = 3rem)라 FAB을 그 높이 + 간격(0.5rem)만큼 띄운다. sm 이상에서는
- * 배너가 왼쪽 아래 `w-96`이라 겹치지 않으므로 FAB 자리는 그대로 둔다
- * (`AskAiFab.tsx`의 `FAB_POSITION` 주석에 적힌 위치 계약). 배너가 닫히면
- * `:has()`가 풀려 원위치로 돌아온다.
- * 펼친 시트에서는 위 규칙이 둘 다 숨긴다.
- */
-@media (width < 40rem) {
-    body:has([data-pwa-banner]) [data-ask-ai-fab] {
-        bottom: calc(0.75rem + env(safe-area-inset-bottom) + 3.5rem);
-    }
 }
 
 /*

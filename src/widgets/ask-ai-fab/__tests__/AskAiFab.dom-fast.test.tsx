@@ -41,15 +41,25 @@ describe('AskAiFab', () => {
         expect(link).toHaveAttribute('rel', 'nofollow noopener');
     });
 
-    it('모바일은 짧은 라벨(sm:hidden), 데스크톱은 전체 라벨(hidden sm:inline)을 렌더한다', async () => {
+    it('1536px 미만은 짧은 라벨(2xl:hidden), 그 이상은 전체 라벨(hidden 2xl:inline)을 렌더한다', async () => {
         await renderFab('애플', '/');
 
         const shortLabel = screen.getByText('AI에게 묻기');
-        expect(shortLabel.className).toContain('sm:hidden');
+        expect(shortLabel.className).toContain('2xl:hidden');
+        expect(shortLabel.className).not.toContain('sm:hidden');
 
         const fullLabel = screen.getByText('시그렌즈 AI에게 물어보기');
         expect(fullLabel.className).toContain('hidden');
-        expect(fullLabel.className).toContain('sm:inline');
+        expect(fullLabel.className).toContain('2xl:inline');
+        expect(fullLabel.className).not.toContain('sm:inline');
+    });
+
+    it('인라인 링크 표식(data-ask-ai-inline)은 달지 않는다', async () => {
+        await renderFab('애플', '/');
+
+        expect(screen.getByRole('link')).not.toHaveAttribute(
+            'data-ask-ai-inline'
+        );
     });
 
     it('별 아이콘이 아니라 AI 스파클 아이콘을 렌더한다', async () => {

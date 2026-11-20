@@ -185,6 +185,88 @@ describe('ChartContent 슬롯 규칙', () => {
         // 텍스트로 항상 유지하고, AnalysisPanel은 그 위에 서사를 additive로 얹는다.
         expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
     });
+    describe('panelTopSlot (AI 패널 맨 위 슬롯)', () => {
+        const SLOT = <span data-testid="top-slot">slot</span>;
+        const real = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승' };
+
+        const renderWithTopSlot = (
+            analysis: AnalysisResponse,
+            onMobileSheetContent = vi.fn()
+        ) => {
+            baseAnalysis.mockReturnValue(analysisReturn(analysis));
+            render(
+                <ChartContent
+                    {...props}
+                    onMobileSheetContent={onMobileSheetContent}
+                    initialAnalysis={analysis}
+                    initialAnalysisFailed={analysis === FALLBACK_ANALYSIS}
+                    panelTopSlot={SLOT}
+                />
+            );
+            return onMobileSheetContent;
+        };
+
+        it('슬롯을 주지 않으면 아무것도 더하지 않는다', () => {
+            baseAnalysis.mockReturnValue(analysisReturn(real));
+            render(
+                <ChartContent
+                    {...props}
+                    initialAnalysis={real}
+                    initialAnalysisFailed={false}
+                />
+            );
+
+            expect(screen.queryByTestId('top-slot')).toBeNull();
+        });
+
+        it('서사가 없는 분기에서 사실 층보다 앞(패널 맨 위)에 렌더한다', () => {
+            renderWithTopSlot(FALLBACK_ANALYSIS);
+
+            const slot = screen.getByTestId('top-slot');
+            const facts = screen.getByText(/기술적 지표 요약/);
+            expect(
+                slot.compareDocumentPosition(facts) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('서사가 있는 분기에서 사실 층·AnalysisPanel보다 앞에 렌더한다', () => {
+            renderWithTopSlot(real);
+
+            const slot = screen.getByTestId('top-slot');
+            expect(
+                slot.compareDocumentPosition(
+                    screen.getByTestId('analysis-panel')
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            expect(
+                slot.compareDocumentPosition(
+                    screen.getByText(/기술적 지표 요약/)
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it.each([
+            ['서사 없음', FALLBACK_ANALYSIS],
+            ['서사 있음', real],
+        ] as const)(
+            '%s: 모바일 시트로 올라가는 콘텐츠에도 같은 슬롯이 들어 있다',
+            (_label, analysis) => {
+                const onMobileSheetContent = renderWithTopSlot(analysis);
+
+                // 데스크톱 패널 사본 하나가 이미 화면에 있다.
+                expect(screen.getAllByTestId('top-slot')).toHaveLength(1);
+
+                const sheetContent =
+                    onMobileSheetContent.mock.lastCall?.[0] ?? null;
+                expect(sheetContent).not.toBeNull();
+                render(<div data-testid="sheet">{sheetContent}</div>);
+
+                expect(screen.getAllByTestId('top-slot')).toHaveLength(2);
+            }
+        );
+    });
+
     describe('chartHeaderStartSlot (차트 헤더 띠 왼쪽 칸)', () => {
         const renderWithSlot = (slot?: React.ReactNode) => {
             baseAnalysis.mockReturnValue(analysisReturn(FALLBACK_ANALYSIS));
