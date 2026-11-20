@@ -57,6 +57,11 @@ export interface ChatMessageRecord {
     toolName: string | null;
     modelId: string | null;
     usage: Record<string, unknown> | null;
+    /**
+     * user 행에만 — 이 턴의 "## Now" 시계 메모를 만든 시각(없으면 `null`: 저장하기 전의 행). `toAgentHistory`가
+     * ISO 문자열로 core에 넘겨 같은 메모를 다시 만들게 하며, `toMessageView`는 싣지 않는다.
+     */
+    turnAt?: Date | null;
     /** tool 행에만 — 그 도구가 만든 차트 블록(없으면 `null`). */
     chart: unknown;
     status: ChatMessageStatus;
@@ -156,6 +161,7 @@ export function toAgentHistory(
         | 'toolName'
         | 'status'
         | 'images'
+        | 'turnAt'
     >[]
 ): AgentMessage[] {
     return rows
@@ -172,6 +178,11 @@ export function toAgentHistory(
                 : {}),
             ...(r.toolCallId ? { toolCallId: r.toolCallId } : {}),
             ...(r.toolName ? { toolName: r.toolName } : {}),
+            // user 행만 — 다음 턴 요청이 지난 턴 요청의 접두사로 이어지려면 core가 같은 시각으로 같은 메모를 다시
+            // 만들어야 한다. `toISOString()`은 core가 돌려준 문자열(UTC, 밀리초, `.000Z` 포함)을 그대로 재현한다.
+            ...(r.role === 'user' && r.turnAt
+                ? { turnAt: r.turnAt.toISOString() }
+                : {}),
         }));
 }
 

@@ -5,6 +5,7 @@ import {
     aggregateBarsToWeekly,
     barPeriodStartSeconds,
     calculateIndicators,
+    classifyOscillatorZones,
     fearGreedInputs,
     calculateMA,
     classifyMaStack,
@@ -38,6 +39,8 @@ import {
     type MarketSessionSpec,
     type MaStackDirection,
     type MACDResult,
+    type OscillatorKey,
+    type OscillatorZone,
     type MultiCandlePattern,
     type PullbackReading,
     type PullbackSnapshot,
@@ -88,24 +91,29 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
 import { chartBlockFrom } from './chartBlock';
 
 /**
- * Restored 20 → 30 (2026-09-14): this tool now fits against its own
- * `BARS_RESULT_MAX_CHARS` (6,500, not the shared `TOOL_RESULT_MAX_CHARS`
- * 4,000) — `fitBarsToBudget`'s trim loop already guarantees that ceiling
+ * Restored 20 → 30 (2026-09-14): this tool now fits against its own bars cap
+ * (`ToolRuntime.barsResultMaxChars`: 7,000 for the agent and for the public API,
+ * not the shared `TOOL_RESULT_MAX_CHARS` 4,000) — `fitBarsToBudget`'s trim loop already guarantees that ceiling
  * for any `bars` the model requests, so the default no longer needs to
  * shrink just to keep the common (unbudgeted) case comfortably under 4,000.
  *
- * Measured 2026-10-24 after `derived` gained `closeStreak` and every
- * `RangeWindow` (`range`, `ranges` 20/60 bars) gained the six `*Close` fields:
- * the default 30-bar 1Day request on a production-sized series (500 bars,
- * real indicators, fear & greed, three signals, no MA cross) serializes to
- * ~5,835 chars, untrimmed. During the regular session `lastBarInProgress` +
- * `lastCompletedClose` bring it to ~5,892 — ~608 chars under
- * `BARS_RESULT_MAX_CHARS` (6,500, raised from 6,000 on 2026-10-24 when the
- * headroom was down to ~108), and the "기본 요청(30봉, 1Day)" test pins that
- * larger live-session shape. Re-measure (serialize that test's result, live
- * and non-live) when a top-level or `derived` field is added. Each listed
- * cross adds ~35 chars, so ~17 crosses is what the remaining headroom absorbs
- * before `fitBarsToBudget` starts trimming bars.
+ * Headroom history (default 30-bar 1Day request, production-sized series:
+ * 500 bars, real indicators, fear & greed, three signals, no MA cross, in the
+ * live regular-session shape `lastBarInProgress` + `lastCompletedClose` that
+ * the "기본 요청(30봉, 1Day)" test pins; re-measure by serializing that test's
+ * result):
+ * - 2026-10-24: ~5,835 untrimmed, ~5,892 live shape — ~608 under the then
+ *   6,500 cap (raised from 6,000 when the headroom was down to ~108).
+ * - 2026-11-20: `latest.oscillatorZones` + `oscillatorSummary` brought the live
+ *   shape to ~6,155 (+~260); with the longest tally ("not available: …" tail
+ *   and four "just below" suffixes) ~6,330. That is ~170 under 6,500, so the
+ *   cap went to 7,000 for both callers (agent `BARS_RESULT_MAX_CHARS`, public
+ *   API `PUBLIC_API_RESULT_CAPS.bars`).
+ * Current baseline: the tool fits against the calling executor's cap minus
+ * `BARS_ANNOTATE_HEADROOM_CHARS` (100) = 6,900, so the live shape has ~745
+ * (~570 with the longest tally) of headroom. Each listed cross adds ~35 chars,
+ * so ~16 crosses are what the worst case absorbs before `fitBarsToBudget`
+ * starts trimming bars. Re-measure when a top-level or `derived` field is added.
  */
 const DEFAULT_BARS = 30;
 /**
@@ -139,7 +147,8 @@ interface BarPoint {
  */
 function fitBarsToBudget<T extends { bars: BarPoint[] }>(
     buildResult: (bars: BarPoint[], barsTrimmed: number) => T,
-    allBars: BarPoint[]
+    allBars: BarPoint[],
+    maxChars: number
 ): T {
     let bars = allBars;
     let barsTrimmed = 0;
@@ -150,7 +159,7 @@ function fitBarsToBudget<T extends { bars: BarPoint[] }>(
     const MAX_ITERATIONS = 30;
     for (let i = 0; i < MAX_ITERATIONS && bars.length > 1; i++) {
         const serialized = JSON.stringify(buildResult(bars, barsTrimmed));
-        const overflow = serialized.length - BARS_RESULT_MAX_CHARS;
+        const overflow = serialized.length - maxChars;
         if (overflow <= 0) break;
         const perBar = Math.max(1, Math.ceil(serialized.length / bars.length));
         const drop = Math.min(
@@ -192,6 +201,15 @@ interface LatestIndicatorsView {
      * while the chart tab called it neutral.
      */
     rsiZone: RsiZone | null;
+    /**
+     * Computed zone of RSI, stochastic %K, Williams %R, CCI and MFI (`null` for
+     * a reading that is not available), from one core `classifyOscillatorZones`
+     * call on the rounded values shown here. The prompt tells the model to
+     * quote these instead of calling an oversold/overbought state from RSI alone.
+     */
+    oscillatorZones: Record<OscillatorKey, OscillatorZone | null>;
+    /** One-line tally of `oscillatorZones` (counts and names); `null` when no oscillator reading is available. */
+    oscillatorSummary: string | null;
     macd: MACDResult | null;
     bollinger: BollingerResult | null;
     atr: number | null;
@@ -231,9 +249,23 @@ function latestIndicators(
     const supertrend = last(ind.supertrend);
     const parabolicSar = last(ind.parabolicSar);
     const rsi = last(ind.rsi);
+    const stochastic = lastPick(ind.stochastic, ['percentK', 'percentD']);
+    const cci = last(ind.cci);
+    const mfi = last(ind.mfi);
+    const williamsR = last(ind.williamsR);
+    // A missing reading is `null`, never 0 (0 is a real, neutral value).
+    const oscillators = classifyOscillatorZones({
+        rsi,
+        stochasticK: stochastic?.percentK ?? null,
+        williamsR,
+        cci,
+        mfi,
+    });
     return {
         rsi,
         rsiZone: rsi !== null && Number.isFinite(rsi) ? rsiZone(rsi) : null,
+        oscillatorZones: oscillators.zones,
+        oscillatorSummary: oscillators.summary,
         macd: last(ind.macd),
         bollinger: last(ind.bollinger),
         atr: last(ind.atr),
@@ -244,10 +276,10 @@ function latestIndicators(
             Object.entries(ind.ema).map(([p, s]) => [p, last(s)])
         ),
         dmi: lastPick(ind.dmi, ['adx', 'diPlus', 'diMinus']),
-        stochastic: lastPick(ind.stochastic, ['percentK', 'percentD']),
-        cci: last(ind.cci),
-        mfi: last(ind.mfi),
-        williamsR: last(ind.williamsR),
+        stochastic,
+        cci,
+        mfi,
+        williamsR,
         vwap: last(ind.vwap),
         ichimoku: lastPick(ind.ichimoku, [
             'tenkan',
@@ -1481,6 +1513,8 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
             barsTrimmed,
             bars: barsForOutput,
         }),
-        requestedBars
+        requestedBars,
+        // The calling executor's cap (agent or public API); see `ToolRuntime.barsResultMaxChars`.
+        runtime.barsResultMaxChars ?? BARS_RESULT_MAX_CHARS
     );
 };

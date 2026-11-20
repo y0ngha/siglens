@@ -1218,6 +1218,13 @@ export const chatMessages = pgTable(
         toolName: varchar('tool_name', { length: 64 }),
         modelId: varchar('model_id', { length: 64 }),
         usage: jsonb('usage'),
+        /**
+         * user 행에만: 그 턴의 "## Now" 시계 메모를 만든 UTC 시각(core `runAgentTurn` 결과의 `turnAt`).
+         * 사용자를 식별하는 내용이 없다. 다음 턴이 이 시각으로 같은 메모를 다시 만들어 provider의 prefix 캐시가
+         * 이어진다. 브라우저로는 내보내지 않는다. timestamptz는 마이크로초까지 보존하고 Drizzle 기본 모드(Date)는
+         * 밀리초 정확도라 core가 돌려준 ISO 문자열(`toISOString()`)이 그대로 왕복한다.
+         */
+        turnAt: timestamp('turn_at', { withTimezone: true }),
         /** tool 행에만: 그 도구가 만든 표시 전용 차트 블록(`ChatChartBlock`). 모델 기록에는 쓰이지 않는다. */
         chart: jsonb('chart'),
         /** 'complete' | 'aborted' | 'error' | 'superseded' */

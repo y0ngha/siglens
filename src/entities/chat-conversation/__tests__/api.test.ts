@@ -9,6 +9,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 
 const VALID_ID = '11111111-1111-1111-1111-111111111111';
 const VALID_USER = '22222222-2222-2222-2222-222222222222';
+const OTHER_ID = '33333333-3333-3333-3333-333333333333';
 
 /**
  * A postgres-js connection-shaped transient error — matches `isTransientDbError`'s
@@ -339,6 +340,52 @@ describe('DrizzleChatConversationRepository — invalid UUID guard', () => {
         expect(history).toContain('"tool_name"');
         expect(history).not.toContain('"chart"');
         expect(view).toContain('"chart"');
+    });
+
+    it('listMessages: 모든 턴의 이력 읽기가 turn_at도 읽는다(다음 턴 캐시 접두사에 필요)', async () => {
+        const { db, captured } = await realDbWithCapture();
+        await new DrizzleChatConversationRepository(db).listMessages(VALID_ID);
+        expect(captured[0]!.sql).toContain('"turn_at"');
+    });
+
+    it('setTurnAt: 그 대화의 그 행 하나만 turn_at으로 갱신하고 밀리초를 그대로 싣는다', async () => {
+        const { db, captured } = await realDbWithCapture();
+        await new DrizzleChatConversationRepository(db).setTurnAt(
+            VALID_ID,
+            OTHER_ID,
+            '2026-11-20T14:09:00.000Z'
+        );
+        expect(captured).toHaveLength(1);
+        const sql = captured[0]!.sql.toLowerCase();
+        expect(sql).toContain('update "chat_messages" set "turn_at" = $1');
+        const where = whereOnly(sql);
+        expect(where).toContain('"chat_messages"."id" = $2');
+        expect(where).toContain('"chat_messages"."conversation_id" = $3');
+        // 드라이버가 받는 값은 같은 시각의 ISO 문자열이다(`.000Z`까지 보존).
+        expect(captured[0]!.params).toEqual([
+            '2026-11-20T14:09:00.000Z',
+            OTHER_ID,
+            VALID_ID,
+        ]);
+    });
+
+    it('setTurnAt: UUID가 아니거나 시각이 깨졌으면 쿼리 없이 no-op', async () => {
+        const db = chain([]);
+        const repo = new DrizzleChatConversationRepository(
+            db as unknown as SiglensDatabase
+        );
+        await repo.setTurnAt(
+            'not-a-uuid',
+            OTHER_ID,
+            '2026-11-20T14:09:00.000Z'
+        );
+        await repo.setTurnAt(
+            VALID_ID,
+            'not-a-uuid',
+            '2026-11-20T14:09:00.000Z'
+        );
+        await repo.setTurnAt(VALID_ID, OTHER_ID, 'garbage');
+        expect(db.update).not.toHaveBeenCalled();
     });
 
     it('appendMessages: UUID가 아니면 쿼리 없이 []', async () => {

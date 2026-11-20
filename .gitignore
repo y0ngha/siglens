@@ -133,6 +133,9 @@ next-env.d.ts
 !/scripts/db-dev-seed-from-prod.sh
 !/scripts/lib/
 !/scripts/lib/**
+# SiglensAI 에이전트 회귀 평가(로컬 전용, 실제 provider) — 순수 판정부는 checks.mjs, 단위 테스트는 scripts/__tests__.
+!/scripts/agent-eval/
+!/scripts/agent-eval/**
 # i18n 툴링 — `yarn i18n:extract/translate/verify/lint/routes`가 이 파일들을
 # 실행한다. 추적하지 않으면 fresh checkout·CI에서 스크립트가 통째로 사라진다.
 !/scripts/i18n/

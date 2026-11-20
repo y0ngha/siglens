@@ -101,13 +101,15 @@ export const API_KEY_REVOKED_TOMBSTONE_TTL_SECONDS =
  *   접히던 값이다.
  * - `cachedAnalysis` 32,000: 에이전트 상한(16,000)의 2배. 2026-09 실측 가장 큰 기술 분석
  *   (~8,300자)에 쉬운 말 재작성이 붙어도 여유가 있다. 예산도 같은 값(요청당 분석 도구 1회).
- * - `bars` 6,000: `get_bars_indicators`가 스스로 이 값에 맞춰 봉 수를 줄이므로 실행기 상한을
- *   올려도 효과가 없다 — 요청의 `bars` 인자를 줄이는 것이 방법이다.
+ * - `bars` 7,000: 에이전트의 `BARS_RESULT_MAX_CHARS`와 같은 값이다(값을 맞춰 두려고 같게 했을 뿐 둘은 독립이다).
+ *   `get_bars_indicators`는 실행기가 `ToolRuntime.barsResultMaxChars`로 넘기는 이 값(에서 `annotate` 몫을 뺀 것)에 맞춰
+ *   오래된 봉부터 줄이므로 결과가 이 상한을 넘어 `{ truncated, preview }`로 무너지지 않는다. 기본 요청(30봉)의 실측 최악
+ *   크기(~6,330자, 오실레이터 요약 포함)가 6,000을 넘어 7,000으로 올렸다 — 6,000이면 기본 요청도 봉이 잘린다.
  * `get_news`도 자체 예산(4,000)으로 항목을 줄이며 실행기 상한과 무관하다.
  */
 export const PUBLIC_API_RESULT_CAPS = {
     standard: 16_000,
-    bars: 6_000,
+    bars: 7_000,
     aggregate: 24_000,
     economy: 24_000,
     investorFlows: 24_000,
