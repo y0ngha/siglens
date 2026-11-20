@@ -443,11 +443,8 @@ describe('알람 필터 문구가 소스에 존재한다', () => {
     it(
         '모든 필터 용어가 로그를 남기는 소스에 있다',
         () => {
-            const dead = findDeadTerms(patterns, corpus);
-            if (dead.length > 0) {
-                console.warn(`dead alarm filter terms:\n${dead.join('\n')}`);
-            }
-            expect(dead).toEqual([]);
+            // 실패하면 expect가 죽은 용어 목록을 그대로 보여 준다.
+            expect(findDeadTerms(patterns, corpus)).toEqual([]);
         },
         SCAN_TIMEOUT_MS
     );
