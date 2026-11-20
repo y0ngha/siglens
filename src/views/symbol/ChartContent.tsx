@@ -151,6 +151,11 @@ interface ChartContentProps {
      * 나타나거나 사라져도 차트·제목 행이 움직이지 않는다. 호출부가 자산군 판정을 끝낸 뒤 넣는다(프리·애프터마켓 한 줄).
      */
     chartHeaderStartSlot?: ReactNode;
+    /**
+     * AI 패널 맨 위에 흐르는 슬롯(서사가 있든 없든). 호출부가 "AI에게 물어보기" 링크를 넣는다.
+     * 데스크톱 패널과 모바일 시트가 같은 요소를 렌더하므로 고정 높이 요소여야 아래 내용이 밀리지 않는다.
+     */
+    panelTopSlot?: ReactNode;
 }
 
 export function ChartContent({
@@ -168,6 +173,7 @@ export function ChartContent({
     krxTickTable,
     seedHasFormingBarTrimmed = true,
     chartHeaderStartSlot,
+    panelTopSlot,
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
     const tFallback = useTranslations('entities.analysis.fallback');
@@ -494,6 +500,7 @@ export function ChartContent({
 
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
+                {panelTopSlot}
                 {/* 첫 분석(서사 없음) 중에는 작은 텍스트 배너 대신, 캐시된 분석
                     재분석 시 AnalysisPanel이 쓰는 것과 동일한 AnalysisProgress(스피너·
                     페이즈·스켈레톤)를 노출한다. 모바일 바텀시트의 좁은 Peek에서도 분석
@@ -521,6 +528,7 @@ export function ChartContent({
         ) : (
             <div className="flex flex-col gap-3">
                 {statusBanner}
+                {panelTopSlot}
                 {factsSummary}
                 <AnalysisPanel
                     symbol={symbol}
@@ -604,6 +612,7 @@ export function ChartContent({
         clearHighlightedOverlay,
         statusBanner,
         factsSummary,
+        panelTopSlot,
         modelId,
         reasoning,
     ]);
@@ -850,12 +859,12 @@ export function ChartContent({
                 중 jail·`<main>`은 여전히 스크롤러가 아니다 — 문서 + 이 패널, 둘이다.
                 `md:h-full`이 아니라 변수를 쓰는 건 행이 `items-start`라 stretch로
                 높이를 받지 못하기 때문이다.
-                `md:pb-32`: Ask-AI FAB(`md:bottom-6` 24px + 높이 44px = 바닥에서 68px)이
-                패널 위에 떠 있어, 패널 끝까지 스크롤해도 마지막 줄(재분석 버튼)이 FAB 밑에
-                깔린다. 게다가 `--symbol-chrome-h`가 시간 단위 줄을 세지 않아 문서 스크롤
-                0에서 패널 아래 끝이 첫 뷰포트보다 약 44px 아래에 있다(1512×823 실측:
-                패널 bottom 867px). 44 + 68 + 여유 12 = 124px → 128px(pb-32)로 스크롤
-                끝에서 마지막 줄이 FAB 위로 올라오게 한다.
+                `md:pb-16`: `--symbol-chrome-h`가 시간 단위 줄을 세지 않아 문서 스크롤 0에서
+                패널 아래 끝이 첫 뷰포트보다 약 44px 아래에 있다(1512×823 실측: 패널 bottom
+                867px). 이 44px에 여유 12px을 더하면 56px이라 64px(pb-16)로 스크롤 끝에서
+                마지막 줄(재분석 버튼)이 뷰포트 안에 들어온다. 예전에는 차트 탭에서도
+                Ask-AI FAB(바닥에서 68px)이 패널 위에 떠 있어 pb-32(128px)였지만, 이제
+                링크가 패널 맨 위(`panelTopSlot`)로 들어가 FAB은 차트 탭에서 숨겨진다.
 
                 `<aside>`가 아니라 이름 붙은 `<section>`이다 — AI 분석은 이 페이지의 주 콘텐츠라
                 complementary(보조) 랜드마크가 아니다. 패널 전체에 `aria-live`를 걸지 않는다:
@@ -863,7 +872,7 @@ export function ChartContent({
                 (`AnalysisProgress`·`AnalysisToast`의 `role="status"`)이 알린다. */}
             <section
                 aria-label={t('ChartContent.f69071')}
-                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-[min(var(--panel-width),calc(45%-4px))] md:flex-col md:overflow-y-auto md:pb-32 xl:w-(--panel-width)"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-[min(var(--panel-width),calc(45%-4px))] md:flex-col md:overflow-y-auto md:pb-16 xl:w-(--panel-width)"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

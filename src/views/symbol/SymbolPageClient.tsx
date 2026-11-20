@@ -7,6 +7,9 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
 import { ChartContent } from './ChartContent';
+import { AskAiInlineLink } from '@/widgets/ask-ai-fab/ui/AskAiInlineLink';
+import { pickAssetName } from '@/entities/ticker/lib/ticker';
+import { localePath } from '@/shared/i18n/locales';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { symbolFactsSubject } from './utils/factsSubject';
@@ -24,7 +27,7 @@ import type {
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, useMemo, type ReactNode } from 'react';
 import { Spinner } from '@/shared/ui/Spinner';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ChartTimeframeBar } from './ui/chart/ChartTimeframeBar';
@@ -171,6 +174,22 @@ export function SymbolPageClient({
     // 않는다(서버 액션도 같은 판정을 다시 하지만 호출 자체를 아낀다).
     const resolvedProfile =
         marketProfile ?? (assetInfo ? marketProfileOf(assetInfo) : undefined);
+    // 차트 탭의 "AI에게 물어보기" 링크는 떠 있는 버튼 대신 AI 패널 맨 위에 흐른다(`globals.css`가
+    // 이 링크가 있으면 `AskAiFab`을 숨긴다). 질문의 종목명은 레이아웃의 `AskAiFab`과 같은 식
+    // (`pickAssetName`)이라 같은 `href`가 된다. `ChartContent`가 `analysisContent` 메모의 의존성으로
+    // 쓰므로 요소 정체성을 유지한다(`ChartContent.factsMemo.test.tsx`).
+    const symbolAssetName = assetInfo
+        ? pickAssetName(assetInfo, assetInfo.symbol, locale)
+        : symbol.toUpperCase();
+    const askAiSlot = useMemo(
+        () => (
+            <AskAiInlineLink
+                name={symbolAssetName}
+                localePrefix={localePath(locale, '/')}
+            />
+        ),
+        [symbolAssetName, locale]
+    );
 
     return (
         <SymbolPageProvider
@@ -244,6 +263,7 @@ export function SymbolPageClient({
                                     // flex 칸(왼쪽, 메뉴 셋 앞)으로 렌더한다 — 제목 `h1` 행에 형제로
                                     // 두면 캡션이 나타날 때 h1 폭이 줄어 줄바꿈이 바뀐다. 호출은 사용자 입력이 있은 뒤에만 나간다
                                     // (`useExtendedHoursQuote`), 크롤러 렌더는 FMP를 건드리지 않는다.
+                                    panelTopSlot={askAiSlot}
                                     chartHeaderStartSlot={
                                         resolvedProfile === 'us-equity' ? (
                                             <ExtendedHoursQuoteLine

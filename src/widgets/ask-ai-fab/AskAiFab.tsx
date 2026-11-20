@@ -1,5 +1,8 @@
 /**
  * 오른쪽 아래에 떠 있는 "시그렌즈 AI에게 물어보기" 링크(`/[symbol]/*`·차트 가이드 항목).
+ *
+ * 차트 탭에서는 `AskAiInlineLink`가 패널 본문에 있으므로 이 버튼은 숨겨진다
+ * (`globals.css`의 `[data-ask-ai-inline]` 규칙).
  */
 import { getTranslations } from 'next-intl/server';
 import { aiAskUrl } from '@/shared/config/aiHost';
@@ -15,8 +18,8 @@ type AskAiFabProps = AskAiFabSource & {
 
 /*
  * 위치·z-index — `SearchOverlay`의 `z-70`은 이 FAB(`z-60`)보다 위에 뜨려고 고른 값이라
- * z-index를 올리면 검색 오버레이를 덮는다. 모바일 `bottom` 식은 `globals.css`의 PWA 배너
- * 들어올림 규칙(`[data-ask-ai-fab]`)이 그대로 되풀이하므로 함께 바꾼다.
+ * z-index를 올리면 검색 오버레이를 덮는다. 이 버튼이 보이는 화면에는 PWA 설치 배너가
+ * 뜨지 않으므로(`globals.css`) 배너를 피해 위치를 들어 올리지 않는다.
  * 앱은 `viewportFit: 'cover'`라 가로 모드 노치·하단 홈 인디케이터를 env()로 비운다.
  */
 const FAB_POSITION =
@@ -40,7 +43,10 @@ const FAB_CLASS_NAME = cn(FAB_POSITION, FAB_SHAPE, FAB_COLOUR, FAB_FOCUS);
  * 패널을 열지 않는다 — 질문은 입력창에 채워질 뿐 자동 전송되지 않는다(`aiAskUrl` 계약).
  * 상호작용 상태가 없는 순수 링크라 서버 컴포넌트다.
  *
- * 접근성 이름은 보이는 라벨 + 숨긴 "(새 탭)" 안내로 만든다. 모바일은 짧은 라벨만 보이므로
+ * 라벨은 1536px 미만에서 짧은 문구, 그 이상에서 긴 문구다. 가운데 열(`max-w-5xl`)이 좁은
+ * 화면에서 긴 문구가 본문 오른쪽 끝과 겹치지 않게 하려는 것이다.
+ *
+ * 접근성 이름은 보이는 라벨 + 숨긴 "(새 탭)" 안내로 만든다. 짧은 라벨만 보일 때
  * `aria-label`로 긴 문구를 못박으면 보이는 글자가 이름에 들어가지 않아 음성 제어
  * ("AI에게 묻기 누르기")가 링크를 찾지 못한다.
  */
@@ -61,8 +67,8 @@ export async function AskAiFab(props: AskAiFabProps) {
             className={FAB_CLASS_NAME}
         >
             <AiSparkIcon />
-            <span className="sm:hidden">{t('shortLabel')}</span>
-            <span className="hidden sm:inline">{t('label')}</span>
+            <span className="2xl:hidden">{t('shortLabel')}</span>
+            <span className="hidden 2xl:inline">{t('label')}</span>
             {/* 공백을 두어 이름이 "…물어보기 (새 탭)"으로 띄어 읽히게 한다(sr-only 조각은 붙어 이어진다). */}
             <span className="sr-only"> {t('newTab')}</span>
         </a>
