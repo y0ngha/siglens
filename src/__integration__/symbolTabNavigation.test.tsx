@@ -123,7 +123,8 @@ describe('Symbol Tab Navigation', () => {
         render(<SymbolTabs symbol="aapl" />);
         const links = screen.getAllByRole('link');
         expect(links[0]).toHaveAttribute('href', '/AAPL');
-        expect(links[1]).toHaveAttribute('href', '/AAPL/news');
+        expect(links[1]).toHaveAttribute('href', '/AAPL/overall');
+        expect(links[2]).toHaveAttribute('href', '/AAPL/news');
     });
 
     it('has an accessible nav landmark', () => {

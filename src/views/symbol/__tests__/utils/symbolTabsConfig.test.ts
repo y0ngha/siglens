@@ -95,10 +95,30 @@ describe('TABS (symbolTabsConfig)', () => {
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/position');
     });
 
-    it('position tab is positioned after overall tab (last)', () => {
+    it('overall tab directly follows chart tab', () => {
+        const chartIdx = TABS.findIndex(t => t.key === 'chart');
         const overallIdx = TABS.findIndex(t => t.key === 'overall');
+        expect(chartIdx).toBe(0);
+        expect(overallIdx).toBe(chartIdx + 1);
+    });
+
+    it('position tab is last', () => {
         const positionIdx = TABS.findIndex(t => t.key === 'position');
-        expect(positionIdx).toBe(overallIdx + 1);
         expect(positionIdx).toBe(TABS.length - 1);
+    });
+
+    it('keeps the canonical order of the tabs', () => {
+        expect(TABS.map(t => t.key)).toEqual([
+            'chart',
+            'overall',
+            'news',
+            'fundamental',
+            'financials',
+            'congress',
+            'flows',
+            'options',
+            'fear-greed',
+            'position',
+        ]);
     });
 });

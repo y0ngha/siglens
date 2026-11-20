@@ -16,9 +16,9 @@ describe('tabsFor', () => {
     it('returns only crypto-applicable tabs for crypto', () => {
         expect(tabsFor('crypto').map(t => t.key)).toEqual([
             'chart',
+            'overall',
             'news',
             'fear-greed',
-            'overall',
             'position',
         ]);
     });

@@ -45,6 +45,11 @@ vi.mock('../fundamentalStamps', () => ({
     // 실제 단계는 FMP·DB·Redis를 친다 — 이 스위트는 그 단계를 보지 않는다(TESTING.md#TE-2).
     refreshFundamentalStamps: vi.fn(async () => ({ checked: 0, recorded: 0 })),
 }));
+vi.mock('../viewDemand', () => ({
+    // 집계 읽기는 DB를 친다. 이 스위트는 그 단계를 보지 않는다 — "집계를 모름 = 전부 활성"(종전 동작)으로
+    // 고정한다. 활성·조용한 심볼 분기는 `runPrewarmBatch.viewDemand.test.ts`가 본다.
+    loadViewDemand: async () => ({ active: null, overallWarm: [] }),
+}));
 vi.mock('../hubs', () => ({
     // 이 함수는 LLM·Redis를 실제로 친다. 목하지 않으면 이 파일의 모든
     // `runPrewarmBatch()` 호출이 그 경로를 타고, 전역 fetch 스텁이 **우연히**
@@ -71,6 +76,9 @@ vi.mock('../lock', () => ({
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
     advanceRotationCursor: mockAdvanceRotationCursor,
+    // 종합 사전 생성 대기 목록·일시적 backoff 조회 — 이 스위트는 그 단계를 보지 않는다.
+    listOverallWarmPending: async () => [],
+    isTransientlySkipped: async () => false,
     prewarmUnitKey: (symbol: string, tab: string) =>
         `${symbol.toUpperCase()}:${tab}`,
     loadStructurallyUnavailable: vi.fn().mockResolvedValue(new Set<string>()),

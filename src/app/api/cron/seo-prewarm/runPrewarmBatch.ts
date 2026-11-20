@@ -14,10 +14,13 @@ import {
     isSnapshotFresh,
     shouldDeferPrewarmWhileOpen,
     snapshotBoundaryFor,
+    snapshotCloseBoundaryFor,
+    type PrewarmCadence,
 } from '@/entities/seo-snapshot/lib/freshness';
 import { type SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { HarvestedUnits } from '@/entities/sitemap-entry/lib/indexNowUrls';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
+import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
@@ -29,6 +32,7 @@ import {
     getFmpBudgetUsed,
     getInFlightMarker,
     isSkipped,
+    isTransientlySkipped,
     loadStructurallyUnavailable,
     LOCK_TTL_SECONDS,
     markInFlight,
@@ -39,13 +43,15 @@ import {
 import { TAB_SEAMS, resolveHarvest } from './harvest';
 import { refreshFundamentalStamps } from './fundamentalStamps';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { loadViewDemand, type ViewDemand } from './viewDemand';
+import { runOverallWarmStep, type OverallWarmCounts } from './overallWarm';
 
 /**
  * `IndexNowCounts`(`indexNowSubmitted`·`indexNowOk`·`indexNowFailed`)를 함께 싣는다 —
  * 제출은 부가 임무라 실패해도 배치 결과는 같고, 이 세 값이 그 응답을 보는 유일한 창이다
  * (`[seo-prewarm] batch done` 로그에 그대로 찍힌다).
  */
-export interface PrewarmBatchCounts extends IndexNowCounts {
+export interface PrewarmBatchCounts extends IndexNowCounts, OverallWarmCounts {
     harvested: number;
     /**
      * 이번 tick 시작 시점의 stale 심볼 총량과 배치 wall-clock(ms).
@@ -60,6 +66,10 @@ export interface PrewarmBatchCounts extends IndexNowCounts {
     revalidated: number;
     remaining: number;
     fmpBudgetUsed: number;
+    /** 이번 실행의 활성 심볼 수(조회 집계 기준). 집계를 못 읽었으면 null = 전부 활성. */
+    activeSymbols: number | null;
+    /** 조회가 적어 `QUIET_CADENCE_TABS`가 주 2회 주기로 도는 심볼 수. 집계를 모르면 0. */
+    quietSymbols: number;
 }
 
 /**
@@ -171,6 +181,59 @@ const FMP_CALLS_PER_TAB_CRYPTO = 1;
 
 const CRYPTO_SYMBOL_SET = new Set<string>(POPULAR_CRYPTOS);
 
+/**
+ * 조회가 거의 없는 심볼(`ViewDemand.active`에 없는 심볼)을 **주 2회(수/토 앵커) 주기**로 돌리는 탭.
+ *
+ * 유니버스·사이트맵·색인 규칙은 그대로다 — 주기만 늘린다. 행 나이가 `SNAPSHOT_MAX_AGE_MS`(7일)를
+ * 넘으면 그 페이지가 noindex가 되고 사이트맵에서 빠지는데, 수/토 앵커는 최대 간격이 4일이라
+ * (`TWICE_WEEKLY_MAX_GAP_MS`) 하루 이틀 밀려도 절벽에 닿지 않는다(`freshness.ts`의 (a)).
+ *
+ * `technical`을 빼면 뉴스만 줄이는 보수안이다 — 차트 산문·가이드 라이브 블록(48시간 창)·패널 시드에
+ * 영향이 없다. 이 집합을 비우면 전부 종전 동작(매 세션)으로 돌아가는 롤백 스위치이기도 하다.
+ */
+const QUIET_CADENCE_TABS: ReadonlySet<SeoSnapshotTab> = new Set([
+    'technical',
+    'news',
+]);
+
+/**
+ * 이 유닛이 따를 주기.
+ *
+ * 집계를 못 읽었으면(`active === null`) 전부 `session`이다(종전 동작). stale 판정(`isTabPending`)과
+ * 처리 직전 신선도 검사(`processSymbol`)가 **반드시 이 함수 하나**를 거친다 — 두 곳이 다른 경계를 쓰면
+ * "stale이라 후보인데 처리할 탭은 없는" 심볼이 생겨 배치 슬롯이 샌다(`isTabPending` 주석).
+ */
+function cadenceOf(
+    symbol: string,
+    tab: SeoSnapshotTab,
+    active: ReadonlySet<string> | null
+): PrewarmCadence {
+    return isQuietSymbol(symbol, active) && QUIET_CADENCE_TABS.has(tab)
+        ? 'twice-weekly'
+        : 'session';
+}
+
+function isQuietSymbol(
+    symbol: string,
+    active: ReadonlySet<string> | null
+): boolean {
+    return active !== null && !active.has(symbol.toUpperCase());
+}
+
+function boundaryFor(
+    symbol: string,
+    tab: SeoSnapshotTab,
+    now: Date,
+    active: ReadonlySet<string> | null
+): Date {
+    return snapshotBoundaryFor(
+        symbol,
+        tab,
+        now,
+        cadenceOf(symbol, tab, active)
+    );
+}
+
 // 2026-08 감사(starvation watch) — 정상 회전(위 2026-08 감사, KR 5종목 prewarm 미도달)이면 하룻밤 안에
 // 유니버스 전체가 한 번은 후보가 된다. 이 문턱을 넘겨도 stale인 심볼은 "아직
 // 오늘 밤 순번이 안 왔다"가 아니라 "회전에서 구조적으로 빠지고 있다"는 신호다
@@ -226,13 +289,14 @@ function isTabPending(
     tab: SeoSnapshotTab,
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    now: Date
+    now: Date,
+    active: ReadonlySet<string> | null
 ): boolean {
     const key = snapshotKey(symbol, tab);
     if (structural.has(key)) return false;
     return !isSnapshotFresh(
         generatedAtMap.get(key),
-        snapshotBoundaryFor(symbol, tab, now)
+        boundaryFor(symbol, tab, now, active)
     );
 }
 
@@ -251,6 +315,42 @@ interface StarvedSymbol {
      * 워치가 막으려던 바로 그 신호-잡음 실패다(같은 함수의 `ALAB(never)` 주석 참고).
      */
     missingTabs: SeoSnapshotTab[];
+}
+
+/**
+ * 주 2회 주기 심볼이 앵커 이후 이 시간 넘게 아직 안 갱신됐으면 "밀리고 있다"로 본다.
+ *
+ * 앵커 직후에는 행이 최대 4일 묵은 채 정상적으로 stale이다. 그래서 행 나이가 아니라 **앵커로부터
+ * 얼마나 지났는가**로 잰다 — 7일 절벽(`SNAPSHOT_MAX_AGE_MS`)까지 약 3일 남은 시점에 첫 보고가 나간다.
+ * 활성 심볼은 종전 규칙(마지막 생성 이후 48시간)을 그대로 쓴다.
+ */
+const QUIET_DUE_GRACE_MS = 24 * 60 * 60 * 1000; // 24h
+
+function isStarvedAge(
+    symbol: string,
+    ageMs: number,
+    nowMs: number,
+    active: ReadonlySet<string> | null
+): boolean {
+    if (!isQuietSymbol(symbol, active)) {
+        return ageMs > STARVATION_AGE_THRESHOLD_MS;
+    }
+    const anchorMs = snapshotBoundaryFor(
+        symbol,
+        'technical',
+        new Date(nowMs),
+        'twice-weekly'
+    ).getTime();
+    const generatedAtMs = nowMs - ageMs;
+    // 행이 마지막 세션 마감보다도 옛것이어야 한다. 주말에 막 조용해진 심볼은 앵커(토 00:00)보다 옛 금요일 밤
+    // 행을 들고 있어도 그 행은 마지막 마감 뒤에 만든 것이라 정규 갱신을 놓친 게 아니다 — 오늘 밤 차례를
+    // 기다릴 뿐이다. 진짜 밀린 행(앵커 뒤 24시간이 지나도록 마감보다 옛것)은 이 조건이 늦추지 않는다.
+    return (
+        nowMs - anchorMs > QUIET_DUE_GRACE_MS &&
+        generatedAtMs < anchorMs &&
+        generatedAtMs <
+            snapshotCloseBoundaryFor(symbol, new Date(nowMs)).getTime()
+    );
 }
 
 /**
@@ -273,7 +373,8 @@ function findStarvedSymbols(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    nowMs: number
+    nowMs: number,
+    active: ReadonlySet<string> | null
 ): StarvedSymbol[] {
     return staleSymbols
         .map(u => {
@@ -305,7 +406,11 @@ function findStarvedSymbols(
                     : nowMs - oldestGeneratedAt.getTime();
             return { symbol: u.symbol, ageMs, missingTabs };
         })
-        .filter(s => s.ageMs === null || s.ageMs > STARVATION_AGE_THRESHOLD_MS)
+        .filter(
+            s =>
+                s.ageMs === null ||
+                isStarvedAge(s.symbol, s.ageMs, nowMs, active)
+        )
         .toSorted((a, b) => {
             if (a.ageMs === null) return b.ageMs === null ? 0 : -1;
             if (b.ageMs === null) return 1;
@@ -320,13 +425,15 @@ function logStarvationWatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    nowMs: number
+    nowMs: number,
+    active: ReadonlySet<string> | null
 ): void {
     const starved = findStarvedSymbols(
         staleSymbols,
         generatedAtMap,
         structural,
-        nowMs
+        nowMs,
+        active
     );
     if (starved.length === 0) return;
     const worst = starved.slice(0, STARVATION_LOG_LIMIT).map(s =>
@@ -359,7 +466,13 @@ function logStarvationWatch(
  * 오래된 스냅샷이 그대로 남을 뿐).
  */
 export async function runPrewarmBatch(
-    clock: PrewarmClock = DEFAULT_CLOCK
+    clock: PrewarmClock = DEFAULT_CLOCK,
+    /**
+     * 루트 락을 잡은 시각(ms). 종합 사전 생성의 시작 한도는 이 시각 기준이다 — 락 TTL이 여기서부터
+     * 흐르고, 신호 이력 단계가 락 획득과 `batchStartedAt` 사이에서 최대 60초를 쓴다. 생략하면
+     * `batchStartedAt`을 쓴다. 심볼 루프의 기존 마감(`batchDeadline`)은 바꾸지 않았다.
+     */
+    lockAcquiredAtMs?: number
 ): Promise<PrewarmBatchCounts> {
     /*
      * `durationMs`의 기준점. **마감(`batchDeadline`)과 분리해 둔다.**
@@ -441,19 +554,41 @@ export async function runPrewarmBatch(
     // 뺀다 — 안 빼면 그 심볼이 영구 stale로 남아 회전마다 슬롯만 먹는다
     // (`loadStructurallyUnavailable` JSDoc에 2026-08-30 실측). SMEMBERS 1회라
     // 심볼별 Redis 왕복이 늘지 않는다. DB 조회와 독립이라 함께 기다린다.
-    const [generatedAtMap, structural] = await Promise.all([
-        repo.findGeneratedAtMap(universe.map(u => u.symbol)),
+    //
+    // 조회 집계도 같은 `Promise.all`에서 읽는다 — 어느 심볼이 조용한지가 stale 판정의 입력이다.
+    // 집계를 못 읽으면 전부 활성(종전 동작)이고, 종합 사전 생성도 하지 않는다(`loadViewDemand`).
+    const universeSymbols = universe.map(u => u.symbol);
+    const [generatedAtMap, structural, demand] = await Promise.all([
+        repo.findGeneratedAtMap(universeSymbols),
         loadStructurallyUnavailable(),
+        loadViewDemand(
+            new DrizzleSymbolViewRepository(getDatabaseClient().db),
+            universeSymbols,
+            now
+        ),
     ]);
     const staleSymbols = universe.filter(u =>
         u.tabs.some(tab =>
-            isTabPending(u.symbol, tab, generatedAtMap, structural, now)
+            isTabPending(
+                u.symbol,
+                tab,
+                generatedAtMap,
+                structural,
+                now,
+                demand.active
+            )
         )
     );
     // 2026-08 감사(starvation watch) — 회전에서 구조적으로 빠지고 있는 심볼을
     // 로그에 이름으로 남긴다. 이미 배치당 1회 읽은 `generatedAtMap`(DB)만
     // 재사용하므로 심볼당 Redis 왕복이 늘지 않는다(findStarvedSymbols 참고).
-    logStarvationWatch(staleSymbols, generatedAtMap, structural, now.getTime());
+    logStarvationWatch(
+        staleSymbols,
+        generatedAtMap,
+        structural,
+        now.getTime(),
+        demand.active
+    );
     // 자기 시장이 장중인 심볼은 이번 틱에서 뺀다. 창의 뒤쪽 4시간이 KRX 장중이라,
     // 그 틱에 걸린 국내 종목은 형성 중인 일봉으로 만든 서술이 다음 마감까지 굳는다.
     //
@@ -464,11 +599,12 @@ export async function runPrewarmBatch(
     const selectable = staleSymbols.filter(
         u => !shouldDeferPrewarmWhileOpen(u.symbol, now)
     );
-    const batch = await selectFairBatch(
+    const { batch, transientBlocked } = await selectFairBatch(
         selectable,
         generatedAtMap,
         structural,
-        now
+        now,
+        demand.active
     );
     const counts: PrewarmBatchCounts = {
         harvested: 0,
@@ -477,6 +613,19 @@ export async function runPrewarmBatch(
         revalidated: 0,
         remaining: Math.max(0, staleSymbols.length - batch.length),
         fmpBudgetUsed: 0,
+        activeSymbols: demand.active === null ? null : demand.active.size,
+        quietSymbols:
+            demand.active === null
+                ? 0
+                : universe.filter(u => isQuietSymbol(u.symbol, demand.active))
+                      .length,
+        overallWarmed: 0,
+        overallWarmSkippedByBudget: 0,
+        overallWarmSkippedByBacklog: 0,
+        overallWarmSkippedByDailyCap: 0,
+        overallWarmTimedOut: 0,
+        overallWarmFailed: 0,
+        overallWarmPendingRevalidated: 0,
         indexNowSubmitted: 0,
         indexNowOk: 0,
         indexNowFailed: 0,
@@ -489,6 +638,8 @@ export async function runPrewarmBatch(
     // 시그니처는 그 두 값을 청크마다 다시 넘길 자리가 없다. 대신 아래 명시적
     // 루프로 청크 경계마다 데드라인을 검사한다. 격리는 각 processSymbol 호출의
     // `.catch`가 보장하므로 Promise.all 기반 청크 처리와 동일하게 안전하다.
+    // 루프 전의 `remaining`(stale 총량 − 이번 배치) — 마감으로 더 늘었는지 비교하는 기준이다.
+    const remainingBeforeLoop = counts.remaining;
     let droppedByDeadline = 0;
     // 이번에 harvest된 (심볼, 탭) — 배치 끝에 IndexNow 큐에 한 번에 넣는다.
     let harvestedUnits: readonly HarvestedUnits[] = [];
@@ -511,7 +662,8 @@ export async function runPrewarmBatch(
                     repo,
                     counts,
                     isPastDeadline,
-                    clock
+                    clock,
+                    demand
                 ).catch((error): SymbolOutcome => {
                     console.error(
                         `[seo-prewarm] ${u.symbol} failed:`,
@@ -552,6 +704,42 @@ export async function runPrewarmBatch(
             `[seo-prewarm] batch deadline reached — ${droppedByDeadline} tabs dropped`
         );
     }
+
+    // 심볼 처리 대기열: 배치가 가득 찼거나(= 한 tick 처리량 한계), 마감에 걸렸거나, 후보 창에 일시적
+    // backoff로 막힌 심볼이 있다(장애 중에는 마커가 창을 막아 배치가 짧게 나오지만 처리는 끝나지 않았다).
+    // `counts.remaining`을 그대로 쓰지 않는 이유: 그 값은 오래 가는 backoff 중인 심볼(뉴스 없는 심볼 등)과
+    // 장중이라 미룬 심볼까지 세서 영영 0이 되지 못한다 — 그러면 종합 사전 생성이 한 번도 돌지 못한다.
+    const hasBacklog =
+        batch.length >= SYMBOLS_PER_TICK ||
+        counts.remaining > remainingBeforeLoop ||
+        transientBlocked > 0;
+
+    /*
+     * 종합(overall) 분석 사전 생성 — 심볼 처리와 무관하게 이번 tick에서 상위 조회 심볼을 훑는다
+     * (`runOverallWarmStep`). 예산 산식은 `overallWarm.ts`에 있다: 락 획득 후 470초 안에만 시작해
+     * IndexNow·스탬프·옵션 워밍의 몫(`OVERALL_WARM_TAIL_RESERVE_MS`)이 남는다. 집계를 못 읽은 tick에는
+     * 대상 목록이 비어 아무것도 하지 않는다.
+     */
+    await runOverallWarmStep({
+        symbols: demand.overallWarm,
+        now,
+        clock,
+        wallClockEndMs:
+            (lockAcquiredAtMs ?? batchStartedAt) + BATCH_WALL_CLOCK_BUDGET_MS,
+        hasBacklog,
+        // 이번 실행에서 막 만든 technical도 fresh로 본다 — `generatedAtMap`은 실행 시작 시점 사본이다.
+        isTechnicalFresh: symbol =>
+            harvestedUnits.some(
+                unit =>
+                    unit.symbol === symbol && unit.tabs.includes('technical')
+            ) ||
+            isSnapshotFresh(
+                generatedAtMap.get(snapshotKey(symbol, 'technical')),
+                boundaryFor(symbol, 'technical', now, demand.active)
+            ),
+        fmpCallsPerTab: fmpCallsPerTabOf,
+        counts,
+    });
 
     /*
      * 새로 반영한 URL을 검색엔진(Bing·Naver, IndexNow)에 **한 번** 알린다.
@@ -666,9 +854,10 @@ async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    now: Date
-): Promise<PrewarmSymbol[]> {
-    if (staleSymbols.length === 0) return [];
+    now: Date,
+    active: ReadonlySet<string> | null
+): Promise<FairBatch> {
+    if (staleSymbols.length === 0) return { batch: [], transientBlocked: 0 };
 
     // 회전 오프셋은 Redis 영속 커서에서 뽑는다(아래 doc-comment ① 참조) — 이
     // 호출 자체가 "이번 tick에 배치를 시도했다"는 뜻이므로, 분류 결과와 무관하게
@@ -688,7 +877,7 @@ async function selectFairBatch(
     // 같은(=원래 회전 순서) 인덱스로 되돌아온다.
     const classifications = await Promise.all(
         windowCandidates.map(candidate =>
-            classifySymbol(candidate, generatedAtMap, structural, now)
+            classifySymbol(candidate, generatedAtMap, structural, now, active)
         )
     );
 
@@ -697,10 +886,25 @@ async function selectFairBatch(
         if (classifications[i] === 'fresh') fresh.push(candidate);
         // 'blocked' → 배제(모든 stale 탭이 backoff 또는 in-flight 중).
     });
-    return fresh.slice(0, SYMBOLS_PER_TICK);
+    return {
+        batch: fresh.slice(0, SYMBOLS_PER_TICK),
+        transientBlocked: classifications.filter(c => c === 'transient').length,
+    };
 }
 
-type SymbolCandidacy = 'fresh' | 'blocked';
+/** `selectFairBatch`의 결과 — 이번 tick의 배치와, 후보 창에서 일시적 backoff·in-flight로 막힌 심볼 수. */
+interface FairBatch {
+    readonly batch: PrewarmSymbol[];
+    /**
+     * 후보 창 안에서 **일시적**(곧 풀리는 30분 backoff 또는 살아 있는 in-flight) 마커 때문에 배제된 심볼 수.
+     * 장애 중에는 마커가 창 대부분을 막아 배치가 짧게 나오는데, 그건 심볼 처리가 끝났다는 뜻이 아니다.
+     * 6시간·24시간 마커(뉴스 없는 심볼 등)는 세지 않는다 — 그걸 세면 야간 꼬리에 그 심볼들만 남은 한가한
+     * tick이 영영 한가하지 않게 된다.
+     */
+    readonly transientBlocked: number;
+}
+
+type SymbolCandidacy = 'fresh' | 'blocked' | 'transient';
 
 /**
  * 후보 분류: in-flight 마커가 있는 탭은 actionable 아님(재제출 대상 아님).
@@ -711,20 +915,31 @@ async function classifySymbol(
     u: PrewarmSymbol,
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    now: Date
+    now: Date,
+    active: ReadonlySet<string> | null
 ): Promise<SymbolCandidacy> {
     const staleTabs = u.tabs.filter(tab =>
-        isTabPending(u.symbol, tab, generatedAtMap, structural, now)
+        isTabPending(u.symbol, tab, generatedAtMap, structural, now, active)
     );
     if (staleTabs.length === 0) return 'blocked'; // 이론상 도달 안 함(staleSymbols 필터로 보장).
 
     let anyActionable = false;
+    let anyTransient = false;
     for (const tab of staleTabs) {
         const marker = await getInFlightMarker(u.symbol, tab);
-        if (marker.present) continue; // in-flight — 이번 tick엔 actionable 아님(TTL 대기).
-        if (!(await isSkipped(u.symbol, tab))) anyActionable = true;
+        if (marker.present) {
+            // in-flight — 이번 tick엔 actionable 아님(TTL 대기). 곧 끝나므로 일시적이다.
+            anyTransient = true;
+            continue;
+        }
+        if (!(await isSkipped(u.symbol, tab))) {
+            anyActionable = true;
+        } else if (await isTransientlySkipped(u.symbol, tab)) {
+            anyTransient = true;
+        }
     }
-    return anyActionable ? 'fresh' : 'blocked';
+    if (anyActionable) return 'fresh';
+    return anyTransient ? 'transient' : 'blocked';
 }
 
 /** `processSymbol`의 결과 — 데드라인으로 버려진 탭 수와 이번에 harvest된 탭. */
@@ -751,7 +966,8 @@ async function processSymbol(
      * 탭 사이에서도 검사해 그 창을 닫는다.
      */
     isPastDeadline: () => boolean,
-    clock: PrewarmClock
+    clock: PrewarmClock,
+    demand: ViewDemand
 ): Promise<SymbolOutcome> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
@@ -772,7 +988,7 @@ async function processSymbol(
         // 부르게 된다. 신선도 판정은 로컬 맵 조회라 비용도 없다.
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),
-            snapshotBoundaryFor(u.symbol, tab, now)
+            boundaryFor(u.symbol, tab, now, demand.active)
         );
         if (alreadyFresh) continue;
 
@@ -866,10 +1082,7 @@ async function processSymbol(
     }
 
     if (seamsRunForSymbol > 0) {
-        const fmpCallsPerTab = CRYPTO_SYMBOL_SET.has(u.symbol.toUpperCase())
-            ? FMP_CALLS_PER_TAB_CRYPTO
-            : FMP_CALLS_PER_TAB_EQUITY;
-        await addFmpBudget(fmpCallsPerTab * seamsRunForSymbol);
+        await addFmpBudget(fmpCallsPerTabOf(u.symbol) * seamsRunForSymbol);
     }
 
     /*
@@ -897,4 +1110,10 @@ async function processSymbol(
         tabsDropped: tabsDroppedByDeadline,
         harvestedTabs,
     };
+}
+
+function fmpCallsPerTabOf(symbol: string): number {
+    return CRYPTO_SYMBOL_SET.has(symbol.toUpperCase())
+        ? FMP_CALLS_PER_TAB_CRYPTO
+        : FMP_CALLS_PER_TAB_EQUITY;
 }

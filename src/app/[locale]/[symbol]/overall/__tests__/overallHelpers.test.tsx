@@ -55,7 +55,7 @@ describe('loadOverallPeek', () => {
             ['peek:overall', 'AAPL', DEEPSEEK_V4_1_FLASH_MODEL, 'ko'],
             'AAPL',
             expect.any(Function),
-            [],
+            ['overall-peek:AAPL'],
             SECONDS_PER_HALF_DAY
         );
         expect(peekOverallAnalysisCache).toHaveBeenCalledWith(
