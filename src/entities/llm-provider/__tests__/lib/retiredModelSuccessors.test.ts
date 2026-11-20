@@ -21,6 +21,16 @@ describe('RETIRED_MODEL_SUCCESSORS', () => {
     );
 });
 
+describe('2026-11 roster successors', () => {
+    it.each([
+        ['claude-fable-5-1', 'claude-fable-5-2'],
+        ['gpt-6.1-sol', 'gpt-6.2-sol'],
+        ['gpt-6-astra', 'gpt-6.2-astra'],
+    ])('maps the retired %s to %s', (retired, successor) => {
+        expect(resolveRetiredModelId(retired)).toBe(successor);
+    });
+});
+
 describe('resolveRetiredModelId', () => {
     it.each([...RETIRED_MODEL_SUCCESSORS])(
         '퇴역 모델 %s를 후속 %s로 바꾼다',

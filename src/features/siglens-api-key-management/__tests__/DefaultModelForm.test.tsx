@@ -35,7 +35,7 @@ const ANTHROPIC: ApiModelOptionGroup = {
 const OPENAI: ApiModelOptionGroup = {
     provider: 'openai',
     providerLabel: 'ChatGPT (OpenAI)',
-    options: [{ id: 'gpt-6-astra', label: 'GPT-6 Astra' }],
+    options: [{ id: 'gpt-6.2-astra', label: 'GPT-6.2 Astra' }],
 };
 
 function setForm(overrides: Partial<ApiDefaultModelFormReturn> = {}) {
@@ -116,7 +116,7 @@ describe('DefaultModelForm — 키가 있을 때', () => {
             expect.stringContaining('설정 안 함 (요청마다 model 지정)'),
             expect.stringContaining('Claude Opus 5'),
             expect.stringContaining('Claude Opus 5.5'),
-            expect.stringContaining('GPT-6 Astra'),
+            expect.stringContaining('GPT-6.2 Astra'),
         ]);
         const anthropic = within(listbox).getByRole('group', {
             name: 'Claude (Anthropic)',
@@ -131,14 +131,14 @@ describe('DefaultModelForm — 키가 있을 때', () => {
 
     it('저장된 기본 모델이 트리거에 보이고 열면 그 항목이 선택돼 있다', async () => {
         const user = userEvent.setup();
-        const { container } = renderForm({ defaultModel: 'gpt-6-astra' });
-        expect(getTrigger()).toHaveTextContent('GPT-6 Astra');
-        expect(getHiddenModelValue(container)).toBe('gpt-6-astra');
+        const { container } = renderForm({ defaultModel: 'gpt-6.2-astra' });
+        expect(getTrigger()).toHaveTextContent('GPT-6.2 Astra');
+        expect(getHiddenModelValue(container)).toBe('gpt-6.2-astra');
 
         await user.click(getTrigger());
         expect(
             screen.getByRole('option', { selected: true })
-        ).toHaveTextContent('GPT-6 Astra');
+        ).toHaveTextContent('GPT-6.2 Astra');
     });
 
     it('저장된 값이 없으면 "설정 안 함"이 보이고 제출 값은 빈 문자열이다', () => {
@@ -153,12 +153,12 @@ describe('DefaultModelForm — 키가 있을 때', () => {
         const user = userEvent.setup();
         const { container } = renderForm();
         await user.click(getTrigger());
-        await user.click(screen.getByRole('option', { name: /GPT-6 Astra/ }));
+        await user.click(screen.getByRole('option', { name: /GPT-6.2 Astra/ }));
 
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
         expect(getTrigger()).toHaveFocus();
-        expect(getTrigger()).toHaveTextContent('GPT-6 Astra');
-        expect(getHiddenModelValue(container)).toBe('gpt-6-astra');
+        expect(getTrigger()).toHaveTextContent('GPT-6.2 Astra');
+        expect(getHiddenModelValue(container)).toBe('gpt-6.2-astra');
     });
 
     it('키보드로 고른다: 열면 선택 항목에 포커스, 방향키로 옮기고 Enter로 확정', async () => {
@@ -170,7 +170,7 @@ describe('DefaultModelForm — 키가 있을 때', () => {
         await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
 
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-        expect(getHiddenModelValue(container)).toBe('gpt-6-astra');
+        expect(getHiddenModelValue(container)).toBe('gpt-6.2-astra');
         expect(getTrigger()).toHaveFocus();
     });
 
