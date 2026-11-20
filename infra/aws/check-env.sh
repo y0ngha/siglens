@@ -40,8 +40,8 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 # The *_API_KEY (no CHAT) quartet is REQUIRED for the same class of reason:
 # ANTHROPIC/GEMINI/OPENAI/DEEPSEEK_API_KEY are the analysis-side server keys read by
 # @y0ngha/siglens-core's resolveServerApiKey, and every one of the four providers appears
-# in TIER_CONFIG.models.free (claude-haiku-5-5 -> Anthropic, gpt-5-mini -> OpenAI,
-# gemini-2.5-flash* -> Gemini, deepseek-v4-* -> DeepSeek), i.e. the server pays for all
+# in TIER_CONFIG.models.free (the lists live in @y0ngha/siglens-core's tier config, not
+# here, so model ids are not repeated in this comment), i.e. the server pays for all
 # four. Core validates them lazily at call time, so a missing key does not crash startup —
 # it fails the first analysis that routes to that provider, over SSE, with HTTP 200. That
 # is exactly the silent failure this gate exists to catch.

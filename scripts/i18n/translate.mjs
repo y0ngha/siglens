@@ -16,7 +16,8 @@
  * 다시 번역하기 시작했다. 실행 전에 `--dry-run`으로 "번역 필요" 수를 먼저 본다.
  *
  * 프로바이더는 기존 SDK를 재사용한다(신규 SaaS 의존 0). 기본은
- * `gemini-2.5-flash` — 짧은 UI 문자열 번역에 추론 예산이 필요 없다.
+ * `gemini-3.5-flash-lite` — 짧은 UI 문자열 번역에 추론이 필요 없다(요청 모양은
+ * `lib/translateRequest.mjs`).
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -145,18 +146,11 @@ async function callModel(prompt) {
     }
     const { GoogleGenAI } = await import('@google/genai');
     const client = new GoogleGenAI({ apiKey });
-    const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-            responseMimeType: 'application/json',
-            temperature: 0,
-            // 번역은 결정적 변환이라 추론 이득이 없다. 생략하면 2.5 Flash의 기본 동적
-            // 사고가 켜져 배치마다 사고 토큰이 출력 단가로 청구된다. 2.5 Flash는 숫자 0을
-            // 받는다(3세대 Gemini와 달리 — `llm-provider/api/gemini.ts`의 thinkingLevel 주석).
-            thinkingConfig: { thinkingBudget: 0 },
-        },
-    });
+    const { buildTranslateRequest } =
+        await import('./lib/translateRequest.mjs');
+    const response = await client.models.generateContent(
+        buildTranslateRequest(prompt)
+    );
     return parseModelJson(response.text);
 }
 
