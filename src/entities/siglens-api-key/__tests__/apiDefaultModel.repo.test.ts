@@ -42,6 +42,35 @@ describe('findApiDefaultModel', () => {
         expect(params).toEqual([OWNER]);
     });
 
+    it('저장된 퇴역 모델은 후속 모델로 답하고 행은 다시 쓰지 않는다', async () => {
+        const fx = makeSelectDb([{ model: 'gpt-5.6-terra' }]);
+        const writes = {
+            update: vi.fn(),
+            insert: vi.fn(),
+            delete: vi.fn(),
+        };
+        const repo = new DrizzleSiglensApiKeyRepository({
+            ...fx.db,
+            ...writes,
+        } as unknown as SiglensDatabase);
+
+        await expect(repo.findApiDefaultModel(OWNER)).resolves.toBe(
+            'gpt-6-sol'
+        );
+        expect(writes.update).not.toHaveBeenCalled();
+        expect(writes.insert).not.toHaveBeenCalled();
+        expect(writes.delete).not.toHaveBeenCalled();
+    });
+
+    it('모르는 모델 ID는 그대로 돌려준다', async () => {
+        const repo = new DrizzleSiglensApiKeyRepository(
+            makeSelectDb([{ model: 'not-a-model' }]).db
+        );
+        await expect(repo.findApiDefaultModel(OWNER)).resolves.toBe(
+            'not-a-model'
+        );
+    });
+
     it.each([
         ['설정 안 함(null)', [{ model: null }]],
         ['회원 행 없음', []],

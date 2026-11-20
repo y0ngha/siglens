@@ -3,6 +3,7 @@ import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { siglensApiKeys, users } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { resolveRetiredModelId } from '@/entities/llm-provider/lib/retiredModelSuccessors';
 import { withRetry } from '@/shared/lib/withRetry';
 import { API_KEY_LAST_USED_THROTTLE_SECONDS } from '@/shared/config/publicApi';
 import type {
@@ -170,6 +171,10 @@ export class DrizzleSiglensApiKeyRepository {
     /**
      * 회원의 API 기본 모델(`users.api_default_model`). 설정이 없거나 회원이 없으면 `null`.
      * 요청 경로에서 매번 읽는다(캐시하지 않는다) — 계정 화면에서 바꾸면 다음 요청부터 반영돼야 한다.
+     *
+     * 저장된 ID가 퇴역 모델이면 후속 모델로 답한다(`resolveRetiredModelId`, 브라우저의 저장된 모델 선택과
+     * 같은 매핑). 행은 다시 쓰지 않는다 — 사용자가 다시 저장하기 전까지 옛 ID가 남는 것은 허용한다.
+     * 모르는 ID는 그대로 돌려주고, 로스터 검증은 호출부(`resolveRequestedModel`)가 한다.
      */
     async findApiDefaultModel(userId: string): Promise<string | null> {
         const [row] = await this.db
@@ -177,7 +182,7 @@ export class DrizzleSiglensApiKeyRepository {
             .from(users)
             .where(eq(users.id, userId))
             .limit(1);
-        return row?.model ?? null;
+        return row?.model == null ? null : resolveRetiredModelId(row.model);
     }
 
     /**
