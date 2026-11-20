@@ -9,6 +9,8 @@ import { type PwaEnvironment } from '@/shared/lib/types';
 import { useRegisterServiceWorker } from './useRegisterServiceWorker';
 import { useFirstInputReveal } from './useFirstInputReveal';
 import { useDeferredInstallPrompt } from './useDeferredInstallPrompt';
+import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { readPwaEnvironment } from '../lib/detectPwaEnvironment';
 import {
     readBannerDismissed,
@@ -17,7 +19,7 @@ import {
 
 /** [[usePwaInstall]]이 `PwaBanner`에 넘기는 상태와 안정적인 핸들러. */
 export interface UsePwaInstallReturn {
-    /** 첫 입력이 끝났고, 사용자가 닫거나 설치를 수락하지 않았다. */
+    /** 재방문일이고, 첫 입력이 끝났고, 사용자가 닫거나 설치를 수락하지 않았다. */
     showBanner: boolean;
     /** iOS에서 설치 버튼을 눌러 홈 화면 추가 안내 모달이 열려 있다. */
     showIosModal: boolean;
@@ -42,7 +44,8 @@ export interface UsePwaInstallOptions {
  * 닫기 기억을 묶는다.
  *
  * 배너는 홈 화면 추가가 가능한 모바일 브라우저(이미 설치된 standalone·인앱 브라우저 제외)에서,
- * 이 브라우저에서 닫거나 설치를 수락한 적이 없을 때만 첫 입력 뒤에 뜬다.
+ * 이 브라우저에서 닫거나 설치를 수락한 적이 없고, 첫 방문일이 아닌 날(재방문일)일 때만 첫 입력 뒤에 뜬다.
+ * 첫 방문일·이력을 읽을 수 없는 브라우저에서는 방아쇠 리스너도 설치 프롬프트 수신도 붙이지 않는다.
  */
 export function usePwaInstall({
     reloadOnServiceWorkerUpdate = true,
@@ -56,6 +59,13 @@ export function usePwaInstall({
     const [env] = useState<PwaEnvironment>(readPwaEnvironment);
     // 마운트 때 한 번 읽는다 — 이번 페이지에서 닫으면 `hidden`이 맡고, 방아쇠는 이미 발화했다.
     const [dismissedBefore] = useState(readBannerDismissed);
+    // 재방문일부터만 띄운다. 마운트 때 한 번 읽어 두므로 `VisitorPing`이 첫 입력 뒤 이력을 앞으로 쓰는
+    // 일(첫 방문일에 이력이 생기는 것)이 이번 페이지의 판정을 바꾸지 못한다. 서버 렌더에서는 `window`가
+    // 없어 `false`지만 배너는 첫 입력 전에는 마크업에 나오지 않으므로(`showBanner = revealed && …`)
+    // 하이드레이션 값이 달라도 어긋나지 않는다(`env`와 같은 이유).
+    const [isReturnVisit] = useState(() =>
+        readIsReturnVisitDay(kstDateKey(new Date()))
+    );
 
     useRegisterServiceWorker(reloadOnServiceWorkerUpdate);
     // 아래 두 훅의 입력이라 그 직전에 둔다(`REACT.md#HK-1`의 예외).
@@ -63,7 +73,8 @@ export function usePwaInstall({
         env.isMobile &&
         !env.isStandalone &&
         !env.isInAppBrowser &&
-        !dismissedBefore;
+        !dismissedBefore &&
+        isReturnVisit;
     const revealed = useFirstInputReveal(enabled);
     const promptInstall = useDeferredInstallPrompt(enabled);
 

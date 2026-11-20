@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { expectAskAiDestination } from '../support/askAi';
+import { seedReturnVisit } from '../support/pwaBanner';
 
 /**
  * 종목 화면 하단 오버레이 우선순위 — 일시·모달 UI > 모바일 분석 시트 > Ask-AI 링크 > 설치 배너
@@ -83,6 +84,9 @@ test.describe('@webkit symbol overlays: 모바일', () => {
             '모바일 분석 시트는 webkit(모바일)에서만 마운트된다'
         );
 
+        // 첫 방문일에는 배너가 마운트되지 않아 아래 "CSS로 숨겨짐" 단언이 공회전한다(`toBeHidden`은
+        // 없는 요소에도 통과). 재방문일로 심어 배너가 DOM에 올라오게 한 뒤 숨김을 본다.
+        await seedReturnVisit(page);
         await page.goto(`/${SYMBOL}`);
 
         await expect(page.locator(SHEET_HANDLE)).toBeVisible();
