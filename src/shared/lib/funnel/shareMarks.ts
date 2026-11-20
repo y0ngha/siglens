@@ -13,7 +13,11 @@ function emptyMarks(): ShareMarks {
     return { created: [], opened: { date: '', ids: [] } };
 }
 
-/** 저장소가 막힌 브라우저용 — 페이지 수명 동안만 중복을 막는다. */
+/**
+ * 저장소가 막힌 브라우저용 — 페이지 수명 동안만 중복을 막는다. 모듈 수준 가변 상태인 이유: 저장소를
+ * 못 쓰는 동안 여러 호출 사이에서 "이미 셌다"를 이어 가려면 호출 밖에 남는 자리가 필요하고, 그 수명이
+ * 곧 탭(페이지)의 수명이어야 하기 때문이다. 저장소가 되살아나면 쓰이지 않는다.
+ */
 const memoryFallback: ShareMarks = emptyMarks();
 
 function isStringArray(value: unknown): value is string[] {

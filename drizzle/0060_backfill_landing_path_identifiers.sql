@@ -5,5 +5,8 @@
 -- 로케일 접두사는 선택이다(`ko`는 접두사가 없지만 옛 링크가 `/ko/…`로 남았을 수 있어 넷 모두 받는다). 한 세그먼트 뒤의 경로(`/share/<id>/extra`)도 접는다.
 -- AI 대화 경로는 옛 행의 landing_site가 NULL이라 사이트로 가를 수 없다. 대화 id는 uuid이므로 uuid 모양인 세그먼트만 접는다
 -- — 메인 사이트의 종목 경로(`/c`, `/c/news`)는 건드리지 않는다.
+-- 적용 전 점검(운영자): 먼저 백업을 받고, 아래 읽기 전용 SELECT 두 개로 영향 행 수를 확인한다. WHERE가 각 UPDATE와 같다.
+-- SELECT count(*) FROM "visitor_days" WHERE "landing_path" ~ '^(/(ko|en|ja|zh))?/share/[^/]+(/.*)?$' AND "landing_path" !~ '^(/(ko|en|ja|zh))?/share/:id$';
+-- SELECT count(*) FROM "visitor_days" WHERE "landing_path" ~ '^(/(ko|en|ja|zh))?/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/.*)?$';
 UPDATE "visitor_days" SET "landing_path" = regexp_replace("landing_path", '^(/(?:ko|en|ja|zh))?/share/[^/]+(?:/.*)?$', '\1/share/:id') WHERE "landing_path" ~ '^(/(ko|en|ja|zh))?/share/[^/]+(/.*)?$' AND "landing_path" !~ '^(/(ko|en|ja|zh))?/share/:id$';--> statement-breakpoint
 UPDATE "visitor_days" SET "landing_path" = regexp_replace("landing_path", '^(/(?:ko|en|ja|zh))?/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?:/.*)?$', '\1/c/:id') WHERE "landing_path" ~ '^(/(ko|en|ja|zh))?/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/.*)?$';

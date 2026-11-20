@@ -12,6 +12,8 @@ import { LOCALES } from '@/shared/i18n/locales';
  */
 const LOCALE_PREFIX = `(/(?:${LOCALES.join('|')}))?`;
 
+// 의도적으로 사이트별이다(`classifyEntrySource`의 공유 경로 판정은 사이트를 보지 않는다): `/c/<id>`는 ai 호스트에만
+// 있고 메인 사이트의 `/c/…`는 종목 C의 탭이며, `/share/<id>`는 메인 사이트에만 있다.
 const IDENTIFIER_PATHS: ReadonlyArray<{
     readonly site: LandingSite;
     readonly pattern: RegExp;

@@ -13,16 +13,9 @@ export function describeDbErrorForLog(error: unknown): string {
     return `${name} code=${code ?? 'none'}`;
 }
 
-function findCode(error: unknown): string | undefined {
-    let current: unknown = error;
-    for (
-        let depth = 0;
-        depth < MAX_CAUSE_DEPTH && current instanceof Error;
-        depth++
-    ) {
-        const code = (current as Error & { code?: unknown }).code;
-        if (typeof code === 'string') return code;
-        current = current.cause;
-    }
-    return undefined;
+/** `cause` 체인을 깊이 상한까지만 따라가며 처음 나오는 문자열 `code`를 찾는다. 순환 `cause`는 상한에서 끊긴다. */
+function findCode(error: unknown, depth = 0): string | undefined {
+    if (depth >= MAX_CAUSE_DEPTH || !(error instanceof Error)) return undefined;
+    const code = (error as Error & { code?: unknown }).code;
+    return typeof code === 'string' ? code : findCode(error.cause, depth + 1);
 }

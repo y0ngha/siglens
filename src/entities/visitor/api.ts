@@ -12,11 +12,11 @@ import {
     sql,
 } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
-import { GUEST_RETURN_WINDOWS } from '@/entities/visitor/lib/visitHistory';
 import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { LOCALES } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import { GUEST_RETURN_WINDOWS } from './lib/visitHistory';
 import type {
     DailyActiveUsers,
     DailyLandingCount,

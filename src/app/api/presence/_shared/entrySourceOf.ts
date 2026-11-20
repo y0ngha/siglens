@@ -1,6 +1,6 @@
+import type { PresenceBody } from '@/app/api/presence/_shared/readPresenceBody';
 import { classifyEntrySource } from '@/entities/visitor/lib/classifyEntrySource';
 import type { EntrySource } from '@/entities/visitor/types';
-import type { PresenceBody } from '@/app/api/presence/_shared/readPresenceBody';
 import { SITE_HOST } from '@/shared/lib/seo';
 
 /**

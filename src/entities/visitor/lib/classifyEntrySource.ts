@@ -117,7 +117,10 @@ const PAID_MEDIUMS: ReadonlySet<string> = new Set([
     'cpm',
 ]);
 
-/** 분석 공유 링크 페이지 경로. 로케일 접두사는 선택이고 `id` 뒤 슬래시 하나까지 받는다. */
+/**
+ * 분석 공유 링크 페이지 경로. 로케일 접두사는 선택이고 `id` 뒤 슬래시 하나까지 받는다.
+ * 의도적으로 사이트를 보지 않는다(`collapseLandingPath`는 사이트별). ai 호스트에는 `/share` 경로가 없다.
+ */
 const SHARE_PATH = new RegExp(`^(/(${LOCALES.join('|')}))?/share/[^/]+/?$`);
 
 export interface EntrySourceInput {
