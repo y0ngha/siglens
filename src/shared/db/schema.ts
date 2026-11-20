@@ -170,12 +170,43 @@ export const visitorDays = pgTable(
          */
         landingPath: text('landing_path'),
         /**
-         * 그날 첫 진입의 출처 분류(`EntrySource`, 예: `chatgpt`·`google`·`other`). 원본 Referer
-         * 호스트·`utm_source`는 저장하지 않는다 — 분류는 `classifyEntrySource`가 수신 시점에 한다.
-         * 같은 사이트 안의 이동·직접 방문은 null. 같은 날 다시 와도 첫 행의 값을 바꾸지 않는다.
-         * 개인정보처리방침 §2 접속 통계 항목에 고지돼 있어야 한다.
+         * 그날 첫 진입의 출처 분류(`EntrySource`, 예: `chatgpt`·`google`·`paid`·`email`·`share`·`other`).
+         * 원본 Referer 호스트·`utm_source`·`utm_medium`·광고 클릭 식별자 값은 저장하지 않는다 — 분류는
+         * `classifyEntrySource`가 수신 시점에 한다. 광고(`paid`)·메일(`email`)·공유 링크(`share`)는 v15에서
+         * 더해졌고, 그 전 행의 `google` 등에는 광고 클릭이 섞여 있다. 같은 사이트 안의 이동·직접 방문은
+         * null. 같은 날 다시 와도 첫 행의 값을 바꾸지 않는다. 개인정보처리방침 v15 §2 접속 통계 항목에
+         * 고지돼 있어야 한다.
          */
         entrySource: text('entry_source'),
+        /**
+         * 비콘을 보낸 페이지의 사이트. `main`(siglens.io) 또는 `ai`(ai.siglens.io) — 원본 호스트는
+         * 저장하지 않는다. 두 호스트가 같은 `/api/presence`와 같은 해시·PK를 쓰므로 한 방문자가 같은
+         * 날 두 사이트를 열어도 행은 하나이고, 이 값은 **먼저 연 사이트**다(첫 행이 이긴다).
+         * 도입 전 행은 null. 개인정보처리방침 v15 §2 접속 통계 항목에 고지돼 있어야 한다.
+         */
+        landingSite: text('landing_site'),
+        /**
+         * 이 브라우저에서 처음 방문한 뒤 지난 일수 구간(`new`·`d1_6`·`d7_13`·`d14_29`·`d30_89`·
+         * `d90_plus`). 브라우저가 로컬 스토리지의 날짜 기록으로 계산해 구간값만 보낸다. 구간값을 못
+         * 보낸 방문(저장소 차단·옛 클라이언트)과 도입 전 행은 null. 개인정보처리방침 v15 §2에 고지.
+         */
+        firstVisitBucket: text('first_visit_bucket'),
+        /**
+         * 직전 방문 뒤 지난 일수 구간(`none`·`d1`·`d2_6`·`d7_13`·`d14_29`·`d30_plus`). 같은 날 첫 행의
+         * 값을 바꾸지 않는다. 개인정보처리방침 v15 §2에 고지.
+         */
+        lastVisitBucket: text('last_visit_bucket'),
+        /**
+         * 이 브라우저가 방문한 날 수 구간(`n1`·`n2`·`n3_4`·`n5_9`·`n10_19`·`n20_plus`). 개인정보처리방침
+         * v15 §2에 고지.
+         */
+        visitDaysBucket: text('visit_days_bucket'),
+        /**
+         * 이번 방문이 첫 방문 다음 날(`d1`), 7~13일 뒤(`d7`), 30~36일 뒤(`d30`) 창의 **첫** 방문이면 그
+         * 창, 아니면 null. 한 브라우저는 창마다 최대 한 번 채워지므로 ID 없이 D7 비율을 셀 수 있다.
+         * 개인정보처리방침 v15 §2에 고지.
+         */
+        returnWindow: text('return_window'),
         /**
          * 비콘을 보낸 시점에 로그인한 회원이면 그 id. 회원 D7/D30 재방문율의 축이다
          * (`scripts/funnel-report.ts`). 탈퇴하면 SET NULL — 방문 행(익명 집계)은 남고 회원
@@ -228,8 +259,9 @@ export const funnelEvents = pgTable(
  * 종목 페이지 일자 조회수 — 인기 목록 스크립트(`update-popular-tickers.ts`·
  * `scripts/update-popular-cryptos.ts`)의 **추가 후보** 신호.
  *
- * 개인 식별 정보를 담지 않는다(IP·UA·해시 없음) — 집계값만 있으므로 개인정보처리방침
- * 대상이 아니다. 중복 방지는 클라이언트(`SymbolViewPing`, 종목당 하루 1회)가 하고,
+ * 개인 식별 정보를 담지 않는다(IP·UA·해시·회원 id 없음) — 종목 코드·날짜별 횟수뿐이다. 그래도
+ * 개인정보처리방침 v15가 §2(종목 조회수 집계)와 §4(보존 90일)에서 이 수집을 고지한다. 중복 방지는
+ * 클라이언트(`SymbolViewPing`, 종목당 하루 1회, 브라우저 저장소를 쓸 수 있을 때)가 하고,
  * 봇 필터는 비콘 게이트(`onFirstInteraction`) + `isBot`이다.
  *
  * 인증 없는 비콘이라 반복 POST로 부풀릴 수 있다. 방어선은 스크립트의 시장 필터와

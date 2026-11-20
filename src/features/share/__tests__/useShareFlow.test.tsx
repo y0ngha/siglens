@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { useShareFlow } from '@/features/share/hooks/useShareFlow';
 import type { ShareableRegistration } from '@/features/share/model/ShareableAnalysisContext';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import en from '@/../messages/en.json';
 
 const { mockUseShareable, mockUseUserTier } = vi.hoisted(() => ({
@@ -28,6 +29,10 @@ vi.mock('@/features/symbol-model/hooks/useUserTier', () => ({
 
 vi.mock('@/entities/shared-analysis/actions/createShareSnapshotAction', () => ({
     createShareSnapshotAction: vi.fn(),
+}));
+
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: vi.fn(),
 }));
 
 const mockCreateShareSnapshot = vi.mocked(createShareSnapshotAction);
@@ -68,6 +73,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 describe('useShareFlow', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        window.localStorage.clear();
         mockUseUserTier.mockReturnValue({ tier: 'free', isLoading: false });
         Object.defineProperty(navigator, 'share', {
             value: undefined,
@@ -235,6 +241,42 @@ describe('useShareFlow', () => {
         act(() => result.current.onClick());
 
         await waitFor(() => expect(result.current.sheetOpen).toBe(true));
+    });
+
+    it('records share_created once per share id, with only the analysis kind', async () => {
+        mockUseShareable.mockReturnValue(baseReg({ status: 'success' }));
+        mockCreateShareSnapshot.mockResolvedValue({ ok: true, id: 'same-id' });
+
+        const { result } = renderHook(() => useShareFlow(), { wrapper });
+        act(() => result.current.onClick());
+        await waitFor(() => expect(result.current.sheetOpen).toBe(true));
+        expect(trackFunnelEvent).toHaveBeenCalledTimes(1);
+        expect(trackFunnelEvent).toHaveBeenCalledWith('share_created', {
+            shareKind: 'chart',
+        });
+
+        // Re-sharing unchanged content returns the same id and is not counted again.
+        act(() => result.current.onSheetClose());
+        act(() => result.current.onClick());
+        await waitFor(() =>
+            expect(mockCreateShareSnapshot).toHaveBeenCalledTimes(2)
+        );
+        await waitFor(() => expect(result.current.sheetOpen).toBe(true));
+        expect(trackFunnelEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('records no share_created when the action fails', async () => {
+        mockUseShareable.mockReturnValue(baseReg({ status: 'success' }));
+        mockCreateShareSnapshot.mockResolvedValue({
+            ok: false,
+            code: 'rate_limited',
+        });
+
+        const { result } = renderHook(() => useShareFlow(), { wrapper });
+        act(() => result.current.onClick());
+        await waitFor(() => expect(mockCreateShareSnapshot).toHaveBeenCalled());
+        await waitFor(() => expect(result.current.isMutating).toBe(false));
+        expect(trackFunnelEvent).not.toHaveBeenCalled();
     });
 
     it('dismisses the preparing modal on an action-level failure (e.g. rate_limited)', async () => {

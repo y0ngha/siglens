@@ -788,6 +788,18 @@ the figure and the "pinned" wording outlive the design they described. Grep the 
 // ✅ Measured ~4.2KB on the live shape; sizeTest asserts the 8KB ceiling only.
 ```
 
+<a id="CM-15"></a>
+
+#### CM-15 — A claim about a guard or enforcement equals what the guard enforces
+
+A comment, README or rule sentence that says a constraint is enforced ("refuses a non-local DB and Redis", "oxlint
+enforces the layer rules", "the guard requires ASCII") names the real mechanism (lint rule, guard test file, or
+review-time only) and holds only for what that mechanism checks. When the claim is wider than the check, narrow the
+claim or extend the check in the same change; a rule that nothing enforces says so instead of implying a guard.
+
+- ❌ "Refuses non-local databases and Redis" over a helper that validates only `DATABASE_URL`.
+- ✅ One guard checks every inherited address variable, and the comment lists exactly those.
+
 <a id="CM-14"></a>
 
 #### CM-14 — Every export in a module gets JSDoc once its siblings do
@@ -1007,6 +1019,10 @@ every write (state the real trigger); "encrypted" must not imply the server cann
 use; a disclosure names every flow and analysis kind that sends the value, and says "may send" where a cache hit sends
 nothing; a new use extends the purpose list; stores found during the revision that were never disclosed (user-supplied
 keys, bands, counters) are added in the same change. Parallel locale texts use the same enumeration and punctuation.
+
+A privacy claim ("the link address is not recorded") is checked against every stored field that can hold the value
+(an older column may already keep the raw path) and against rows written before the change; when old rows contradict
+the claim, ship an idempotent backfill in the same change. User-facing examples use plain language, not internal code values.
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.

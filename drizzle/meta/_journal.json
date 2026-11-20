@@ -414,6 +414,20 @@
       "when": 1795055605019,
       "tag": "0058_agent_chat_images",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795157646342,
+      "tag": "0059_visitor_visit_signals",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795160263959,
+      "tag": "0060_backfill_landing_path_identifiers",
+      "breakpoints": true
     }
   ]
 }

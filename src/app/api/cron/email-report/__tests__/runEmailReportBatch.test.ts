@@ -205,7 +205,10 @@ describe('runEmailReportBatch', () => {
         expect(sent[0]!.subject).toBe('marketSubject');
         expect(sent[0]!.html).toContain('marketHeading');
         expect(sent[0]!.html).toContain('NVDA');
-        expect(sent[0]!.html).toContain('https://siglens.io/market');
+        expect(sent[0]!.html).toContain('https://siglens.io/market?');
+        // 메일 링크는 유입 출처 분류(`email`)가 읽는 UTM을 단다.
+        expect(sent[0]!.html).toContain('utm_source=email');
+        expect(sent[0]!.html).toContain('utm_medium=email');
         expect(deps.loadReport).not.toHaveBeenCalled();
         expect(deps.loadBrief).toHaveBeenCalledWith('005930.KS');
         expect(deps.deliveries.finish).toHaveBeenCalledWith(

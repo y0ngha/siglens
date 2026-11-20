@@ -185,4 +185,44 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
             false
         );
     });
+
+    it('shareEventCounts는 공유 이벤트 두 종류만 이벤트×shareKind별 건수와 고유 방문자로 센다', async () => {
+        const rows = [
+            {
+                event: 'share_created',
+                shareKind: 'overall',
+                count: 4,
+                visitors: 3,
+            },
+        ];
+        const { db, select, where, groupBy } = makeSelectDb(rows);
+        await expect(
+            new DrizzleFunnelEventRepository(db).shareEventCounts(
+                FROM,
+                TO_EXCLUSIVE
+            )
+        ).resolves.toEqual(rows);
+        const [selection] = onlyCall(select) as [
+            { shareKind: unknown; visitors: unknown },
+        ];
+        const dialect = new PgDialect();
+        expect(dialect.sqlToQuery(selection.shareKind as never).sql).toBe(
+            `"funnel_events"."context" ->> 'shareKind'`
+        );
+        expect(dialect.sqlToQuery(selection.visitors as never).sql).toBe(
+            'count(distinct "funnel_events"."visitor_hash")'
+        );
+        expect(groupBy).toHaveBeenCalledTimes(1);
+        const [condition] = onlyCall(where);
+        const query = dialect.sqlToQuery(condition as never);
+        expect(query.sql).toBe(
+            '("funnel_events"."event" in ($1, $2) and "funnel_events"."occurred_at" >= $3 and "funnel_events"."occurred_at" < $4)'
+        );
+        expect(query.params).toEqual([
+            'share_created',
+            'share_opened',
+            FROM.toISOString(),
+            TO_EXCLUSIVE.toISOString(),
+        ]);
+    });
 });

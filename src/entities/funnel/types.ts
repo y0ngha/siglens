@@ -31,3 +31,14 @@ export interface MeterCohortRow {
     readonly visitors: number;
     readonly signups: number;
 }
+
+/**
+ * 공유 이벤트(`share_created`·`share_opened`) 한 칸 — 공유한 분석의 종류별 건수와 방문자 수.
+ * 방문자 단위는 `visitor_hash`다.
+ */
+export interface ShareEventCount {
+    readonly event: string;
+    readonly shareKind: string | null;
+    readonly count: number;
+    readonly visitors: number;
+}

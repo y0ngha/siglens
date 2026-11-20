@@ -7,6 +7,8 @@ import type { Tier } from '@y0ngha/siglens-core';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
+import { claimShareCreated } from '@/shared/lib/funnel/shareMarks';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { useShareable } from '../model/ShareableAnalysisContext';
 import type {
     ShareableRegistration,
@@ -148,6 +150,12 @@ export function useShareFlow(): UseShareFlowResult {
                 // Action-level error (e.g. rate_limited, persist_failed).
                 setPreparingOpen(false);
                 return;
+            }
+            // The server returns the same id for the same content, so re-sharing an unchanged
+            // analysis counts once. Only the analysis kind is sent, never the symbol or the id.
+            const kind = regRef.current?.kind;
+            if (kind !== undefined && claimShareCreated(result.id)) {
+                trackFunnelEvent('share_created', { shareKind: kind });
             }
             const url = buildShareUrl(locale, result.id);
             setShareUrl(url);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import {
     FUNNEL_BODY_MAX_BYTES,
     FUNNEL_EVENTS,
@@ -16,7 +17,7 @@ import {
 } from '@/shared/lib/funnel/funnelEvents';
 
 describe('카탈로그 상수', () => {
-    it('카탈로그의 이벤트 9종을 전부 가진다', () => {
+    it('카탈로그의 이벤트 11종을 전부 가진다', () => {
         expect([...FUNNEL_EVENTS].toSorted()).toEqual([
             'gate_clicked',
             'meter_clicked',
@@ -24,6 +25,8 @@ describe('카탈로그 상수', () => {
             'nudge_clicked',
             'nudge_shown',
             'report_enabled',
+            'share_created',
+            'share_opened',
             'signup_completed',
             'watchlist_added',
             'watchlist_merged',
@@ -284,3 +287,41 @@ describe('isFunnelEventPayload — 음성', () => {
         }
     );
 });
+
+describe.each(['share_created', 'share_opened'] as const)(
+    '%s 이벤트',
+    event => {
+        it.each(SHAREABLE_KIND_VALUES)('shareKind=%s를 받는다', shareKind => {
+            expect(
+                isFunnelEventPayload({ event, context: { shareKind } })
+            ).toBe(true);
+        });
+
+        it('kind 키는 거부한다(게이트 표에 섞이면 안 된다)', () => {
+            expect(
+                isFunnelEventPayload({ event, context: { kind: 'chart' } })
+            ).toBe(false);
+        });
+
+        it('shareKind와 함께 온 여분 키(종목·id·URL)는 거부한다', () => {
+            for (const extra of ['symbol', 'id', 'url']) {
+                expect(
+                    isFunnelEventPayload({
+                        event,
+                        context: { shareKind: 'chart', [extra]: 'x' },
+                    })
+                ).toBe(false);
+            }
+        });
+
+        it('모르는 종류와 빠진 키를 거부한다', () => {
+            expect(
+                isFunnelEventPayload({ event, context: { shareKind: 'nope' } })
+            ).toBe(false);
+            expect(isFunnelEventPayload({ event, context: {} })).toBe(false);
+            expect(
+                isFunnelEventPayload({ event, context: { shareKind: 1 } })
+            ).toBe(false);
+        });
+    }
+);

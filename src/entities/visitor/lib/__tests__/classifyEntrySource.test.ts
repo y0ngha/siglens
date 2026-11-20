@@ -4,11 +4,25 @@ import { classifyEntrySource } from '../classifyEntrySource';
 
 const OWN = 'siglens.io';
 
+interface Extra {
+    utmMedium?: string | null;
+    adClick?: boolean;
+    landingPath?: string | null;
+}
+
 function classify(
     referrerHost: string | null,
-    utmSource: string | null = null
+    utmSource: string | null = null,
+    extra: Extra = {}
 ) {
-    return classifyEntrySource({ referrerHost, utmSource, ownHost: OWN });
+    return classifyEntrySource({
+        referrerHost,
+        utmSource,
+        utmMedium: extra.utmMedium ?? null,
+        adClick: extra.adClick ?? false,
+        landingPath: extra.landingPath ?? null,
+        ownHost: OWN,
+    });
 }
 
 describe('classifyEntrySource', () => {
@@ -82,5 +96,96 @@ describe('classifyEntrySource', () => {
                     (ENTRY_SOURCES as readonly string[]).includes(result)
             ).toBe(true);
         }
+    });
+
+    describe('광고·메일·공유 링크 (우선순위 1~3)', () => {
+        it('광고 클릭 식별자가 있으면 구글 Referer여도 paid다', () => {
+            expect(classify('www.google.com', null, { adClick: true })).toBe(
+                'paid'
+            );
+        });
+
+        it('광고 클릭 식별자는 같은 사이트 Referer에도 적용된다', () => {
+            expect(classify('siglens.io', null, { adClick: true })).toBe(
+                'paid'
+            );
+        });
+
+        it.each([
+            'cpc',
+            'ppc',
+            'paid',
+            'paid_search',
+            'paid_social',
+            'display',
+            'cpm',
+            ' CPC ',
+        ])('utm_medium=%s는 paid다', medium => {
+            expect(classify(null, null, { utmMedium: medium })).toBe('paid');
+        });
+
+        it('utm_source=naver가 유료 매체와 함께 오면 paid가 이긴다', () => {
+            expect(classify(null, 'naver', { utmMedium: 'cpc' })).toBe('paid');
+        });
+
+        it('광고 클릭 식별자와 utm_source=email이 같이 있으면 paid가 이긴다', () => {
+            expect(classify(null, 'email', { adClick: true })).toBe('paid');
+        });
+
+        it('모르는 utm_medium은 무시한다', () => {
+            expect(
+                classify(null, null, { utmMedium: 'newsletter' })
+            ).toBeNull();
+            expect(classify('www.bing.com', null, { utmMedium: 'x' })).toBe(
+                'bing'
+            );
+        });
+
+        it('utm_source=email은 email이다', () => {
+            expect(classify(null, 'email')).toBe('email');
+        });
+
+        it('utm_medium=email만 있어도 email이다', () => {
+            expect(
+                classify('mail.google.com', null, { utmMedium: 'email' })
+            ).toBe('email');
+        });
+
+        it('공유 링크 페이지는 로케일 접두사 유무와 상관없이 share다', () => {
+            expect(classify(null, null, { landingPath: '/share/abc' })).toBe(
+                'share'
+            );
+            expect(
+                classify(null, null, { landingPath: '/en/share/abc/' })
+            ).toBe('share');
+        });
+
+        it('공유 링크 페이지는 외부 Referer보다 먼저다', () => {
+            expect(classify('t.co', null, { landingPath: '/share/x' })).toBe(
+                'share'
+            );
+        });
+
+        it('공유 링크 페이지는 같은 사이트 Referer에도 적용된다', () => {
+            expect(
+                classify('siglens.io', null, { landingPath: '/ko/share/x' })
+            ).toBe('share');
+        });
+
+        it('공유 링크 페이지와 utm_source=email이 같이 있으면 email이 이긴다', () => {
+            expect(classify(null, 'email', { landingPath: '/share/x' })).toBe(
+                'email'
+            );
+        });
+
+        it.each([
+            '/share',
+            '/share/a/b',
+            '/xshare/a',
+            '/en/sharex/a',
+            '/fr/share/a',
+        ])('공유 링크가 아닌 경로 %s는 share가 아니다', landingPath => {
+            expect(classify(null, null, { landingPath })).toBeNull();
+        });
     });
 });
