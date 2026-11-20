@@ -14,6 +14,7 @@ import {
     isTruncatedEnvelope,
     type PublicToolOutcome,
 } from './publicToolOutcome';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `PublicToolOutcome`의 실패 갈래. */
 export type Failure = Extract<PublicToolOutcome, { ok: false }>;
@@ -124,7 +125,7 @@ export function mapThrown(error: unknown, provider: string): Failure {
         // 호출자 버그다. 사용자에게는 일반 500이고, 서버 키로는 나가지 않았다.
         console.error(
             '[api/v1 run_fresh_analysis] routing guard tripped:',
-            error
+            redactDbErrorForLog(error)
         );
         return fail(
             API_STATUS.internalError,
@@ -148,7 +149,10 @@ export function mapThrown(error: unknown, provider: string): Failure {
             { provider, status: providerFailure.status }
         );
     }
-    console.error('[api/v1 run_fresh_analysis] failed:', error);
+    console.error(
+        '[api/v1 run_fresh_analysis] failed:',
+        redactDbErrorForLog(error)
+    );
     return fail(
         API_STATUS.internalError,
         'tool_failed',

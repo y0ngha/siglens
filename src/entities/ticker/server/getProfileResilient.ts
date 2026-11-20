@@ -5,6 +5,7 @@ import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface ResilientProfile {
     /**
@@ -68,7 +69,7 @@ export async function getProfileResilient(
         if (!isE2E()) {
             console.error(
                 '[getProfileResilient] FMP profile infra failure, degrading:',
-                e
+                redactDbErrorForLog(e)
             );
         }
         await shortenRevalidateForRuntimeDegrade();

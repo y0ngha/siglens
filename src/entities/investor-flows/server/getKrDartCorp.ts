@@ -12,6 +12,7 @@ import {
 } from '../lib/investorFlowsTag';
 import type { DartCorpRecord } from '../model';
 import { resolveFakeDartCorp } from './fakeKrDart';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 async function loadFromDatabase(
     symbol: string
@@ -51,7 +52,7 @@ export async function getKrDartCorp(
         if (isDynamicServerError(error)) throw error;
         console.warn(
             '[getKrDartCorp] DART corp lookup failed, skipping the note:',
-            error
+            redactDbErrorForLog(error)
         );
         return null;
     }

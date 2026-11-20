@@ -15,6 +15,7 @@ import type {
     OptionsExpirationSelector,
 } from '@/shared/lib/types';
 import { executeOptionsAnalysis } from '../server/optionsAnalysisRunner';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** core의 옵션 분석 결과에 siglens 쪽 게이트 거부(티어·BYOK)를 합친 액션 반환 타입. */
 export type SubmitOptionsAnalysisActionResult =
@@ -98,7 +99,10 @@ export async function submitOptionsAnalysisAction(
             cacheOnly: cacheOnly === true,
         });
     } catch (err) {
-        console.error('[submitOptionsAnalysisAction] unexpected error:', err);
+        console.error(
+            '[submitOptionsAnalysisAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             status: 'error',
             error: await buildGateError(caughtAnalysisErrorCode(err), locale),

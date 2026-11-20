@@ -24,6 +24,7 @@ import type {
     ParsedFtdFile,
 } from '../model';
 import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 압축을 푼 FTD 텍스트 상한(바이트). 실측(2026-09b): zip 1.5MB → txt 4.2MB. 크게 여유를 둔다 — 넘으면 형식이 바뀐 것이다.
@@ -245,9 +246,7 @@ export async function runFtdIngest(
                 for (const row of rows) symbols.add(row.symbol);
             } catch (error) {
                 if (deps.isSecBlockedError(error)) throw error;
-                const message = (
-                    error instanceof Error ? error.message : String(error)
-                ).slice(0, 500);
+                const message = redactedErrorMessage(error).slice(0, 500);
                 deps.log(`[sec-ftd] file failed ${link.fileKey}:`, message);
                 // react-doctor-disable-next-line react-doctor/async-await-in-loop
                 await reject(link.fileKey, message);

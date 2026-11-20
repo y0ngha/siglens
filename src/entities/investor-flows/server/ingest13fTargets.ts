@@ -3,6 +3,7 @@ import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseReposito
 import { processFiling } from './ingest13fFiling';
 import { DeadlineSignal, SecBlockedSignal } from './ingest13fRunState';
 import type { FilingTarget, Ingest13fDeps, RunState } from './ingest13fTypes';
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /** 동시에 처리하는 필러 수. SEC 게이트가 속도를 정하므로 DB·네트워크 겹치기용 최소값이다. */
 export const FILING_CONCURRENCY = 2;
@@ -48,7 +49,7 @@ export async function processTargets(
                 state.result.filingsFailed += 1;
                 deps.log(
                     `[sec-13f] filing failed ${filing.accession}:`,
-                    error instanceof Error ? error.message : error
+                    redactedErrorMessage(error)
                 );
                 try {
                     // react-doctor-disable-next-line react-doctor/async-await-in-loop
@@ -59,10 +60,7 @@ export async function processTargets(
                             filingDate: filing.filingDate,
                             submissionType: filing.formType,
                         },
-                        (error instanceof Error
-                            ? error.message
-                            : String(error)
-                        ).slice(0, 500)
+                        redactedErrorMessage(error).slice(0, 500)
                     );
                 } catch (recordError) {
                     state.stop = 'error';

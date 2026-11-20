@@ -22,6 +22,7 @@ import {
 } from '@/shared/lib/symbolDirectory';
 import { fearGreedCopyFor, type FearGreedCopy } from './copy';
 import { composeMarketFearGreedReading } from './_lib/marketFearGreedAnswer';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
 
@@ -62,7 +63,10 @@ export async function fearGreedMetadata(
     const copy = fearGreedCopyFor(source.market, t);
     const view = await source.load().catch((e: unknown) => {
         // 접두사를 페이지 본문 로그와 통일한다 — `failureLog` 참조.
-        console.error(`${source.failureLog} (metadata):`, e);
+        console.error(
+            `${source.failureLog} (metadata):`,
+            redactDbErrorForLog(e)
+        );
         return null;
     });
     const answer = await loadMetadataAnswer(view, copy, locale, t);
@@ -111,7 +115,7 @@ export async function loadFearGreedView(
     source: FearGreedRouteSource
 ): Promise<FearGreedRouteView> {
     const view = await source.load().catch((e: unknown): FearGreedRouteView => {
-        console.error(`${source.failureLog}:`, e);
+        console.error(`${source.failureLog}:`, redactDbErrorForLog(e));
         return { snapshot: null, comparisons: [] };
     });
     // 빌드 중 FMP 실패 시 60초 degrade revalidate는 FMP 라우트(us·crypto)에만 —

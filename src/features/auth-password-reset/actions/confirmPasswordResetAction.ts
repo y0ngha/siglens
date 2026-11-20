@@ -15,6 +15,7 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 재설정 토큰을 검증·소비하고 비밀번호를 바꾼 뒤 `/login?password_reset=1`로
@@ -68,7 +69,10 @@ export async function confirmPasswordResetAction(
         return localeRedirect('/login?password_reset=1');
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[confirmPasswordResetAction] unexpected error:', err);
+        console.error(
+            '[confirmPasswordResetAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             error: {
                 code: 'unexpected',

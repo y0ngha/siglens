@@ -1,5 +1,6 @@
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 빈 earnings 응답 마커 TTL. staleness gate(24h)와 동일하게 두어 데이터 유무와 무관하게
@@ -25,7 +26,10 @@ export async function isEarningsKnownEmpty(symbol: string): Promise<boolean> {
     try {
         return (await redis.get(earningsEmptyMarkerKey(symbol))) !== null;
     } catch (error) {
-        console.error('[isEarningsKnownEmpty] redis get failed:', error);
+        console.error(
+            '[isEarningsKnownEmpty] redis get failed:',
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }
@@ -42,6 +46,9 @@ export async function markEarningsEmpty(symbol: string): Promise<void> {
             ex: EARNINGS_EMPTY_MARKER_TTL_SECONDS,
         });
     } catch (error) {
-        console.error('[markEarningsEmpty] redis set failed:', error);
+        console.error(
+            '[markEarningsEmpty] redis set failed:',
+            redactDbErrorForLog(error)
+        );
     }
 }

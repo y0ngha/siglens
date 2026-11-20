@@ -2,6 +2,7 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 한 심볼의 카드 분석(번역 + 라벨링)을 한 번에 하나만 돌리는 진행 중 잠금.
@@ -52,7 +53,7 @@ export async function withNewsCardAnalysisLock(
                   .catch((error: unknown) => {
                       console.error(
                           '[newsCardAnalysisLock] acquire failed',
-                          error
+                          redactDbErrorForLog(error)
                       );
                       return true;
                   });
@@ -67,7 +68,7 @@ export async function withNewsCardAnalysisLock(
                 .catch((error: unknown) => {
                     console.error(
                         '[newsCardAnalysisLock] release failed',
-                        error
+                        redactDbErrorForLog(error)
                     );
                 });
         }

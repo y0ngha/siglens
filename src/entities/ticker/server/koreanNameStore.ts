@@ -15,6 +15,7 @@ import {
     type SearchableKoreanEntry,
     type TickerDisplayName,
 } from '../lib/koreanNameSearch';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 function tryGetRepository(): KoreanTickerRepository | null {
     const client = tryGetDatabaseClient();
@@ -141,7 +142,10 @@ async function readAllFromDatabase(
     try {
         return await repository.findAll();
     } catch (e) {
-        console.warn('[koreanNameStore] DB read failed', e);
+        console.warn(
+            '[koreanNameStore] DB read failed',
+            redactDbErrorForLog(e)
+        );
         return [];
     }
 }
@@ -153,7 +157,10 @@ async function readBySymbolsFromDatabase(
     try {
         return await repository.findBySymbols(symbols);
     } catch (e) {
-        console.warn('[koreanNameStore] DB read failed', e);
+        console.warn(
+            '[koreanNameStore] DB read failed',
+            redactDbErrorForLog(e)
+        );
         return null;
     }
 }
@@ -263,7 +270,10 @@ export async function setKoreanTickers(
     try {
         await repository.upsertMany(newEntries);
     } catch (e) {
-        console.warn('[koreanNameStore] DB upsert failed', e);
+        console.warn(
+            '[koreanNameStore] DB upsert failed',
+            redactDbErrorForLog(e)
+        );
         return;
     }
 

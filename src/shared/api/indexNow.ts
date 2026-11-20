@@ -10,6 +10,7 @@ import {
 } from '@/shared/config/indexNow';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { SITE_HOST, SITE_URL } from '@/shared/lib/seo';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 한 번의 제출이 **어떻게 끝났는가**. 호출부(`indexNowQueue`)가 대기열 멤버를 지울지,
@@ -201,7 +202,10 @@ async function postToEndpoint(
                 return classifyFailure(response);
             }
         } catch (error) {
-            console.error('[indexnow] submit failed', { endpoint, error });
+            console.error('[indexnow] submit failed', {
+                endpoint,
+                error: redactDbErrorForLog(error),
+            });
             return { kind: 'transient', status: null };
         }
     }

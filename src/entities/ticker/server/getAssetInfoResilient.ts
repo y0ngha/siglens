@@ -5,6 +5,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { getAssetInfoStatic } from './getAssetInfoStatic';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface ResilientAssetInfo {
     /** 정상 AssetInfo, 인프라 실패 시 fallback ticker 객체, 또는 실재하지 않는 종목일 때 null. */
@@ -79,7 +80,7 @@ export const getAssetInfoResilient = cache(async function getAssetInfoResilient(
         if (!isE2E()) {
             console.error(
                 '[getAssetInfoResilient] infra failure, ticker fallback:',
-                e
+                redactDbErrorForLog(e)
             );
         }
         if (isCuratedSymbol(ticker)) await shortenRevalidateForRuntimeDegrade();

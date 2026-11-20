@@ -42,6 +42,7 @@ import {
 } from '@/shared/lib/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 서버 키 LLM을 못 쓰는 흐름(공개 API)이면 번역 없이 영문명 결과를 API 전용 키에 1시간 두고 `true`를 돌려준다.
@@ -151,7 +152,12 @@ async function resolveKrEquityAssetInfo(
                 { ...info, koreanName },
                 upper,
                 cache
-            ).catch(e => console.warn('[getAssetInfo] kr persist failed', e))
+            ).catch(e =>
+                console.warn(
+                    '[getAssetInfo] kr persist failed',
+                    redactDbErrorForLog(e)
+                )
+            )
         );
         return info;
     }
@@ -171,7 +177,10 @@ async function resolveKrEquityAssetInfo(
             cache,
             'kr-equity'
         ).catch(e =>
-            console.warn('[getAssetInfo] kr background translation failed', e)
+            console.warn(
+                '[getAssetInfo] kr background translation failed',
+                redactDbErrorForLog(e)
+            )
         )
     );
 
@@ -375,7 +384,12 @@ async function resolveUsEquityAssetInfo(
                 { ...info, koreanName },
                 fmpSymbol,
                 cache
-            ).catch(e => console.warn('[getAssetInfo] persist failed', e))
+            ).catch(e =>
+                console.warn(
+                    '[getAssetInfo] persist failed',
+                    redactDbErrorForLog(e)
+                )
+            )
         );
         return info;
     }
@@ -388,7 +402,10 @@ async function resolveUsEquityAssetInfo(
             { symbol: fmpSymbol, name, exchange, exchangeFullName },
             cache
         ).catch(e =>
-            console.warn('[getAssetInfo] background translation failed', e)
+            console.warn(
+                '[getAssetInfo] background translation failed',
+                redactDbErrorForLog(e)
+            )
         )
     );
 

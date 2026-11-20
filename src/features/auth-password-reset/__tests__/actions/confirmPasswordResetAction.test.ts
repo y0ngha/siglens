@@ -46,6 +46,10 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockConfirm = confirmPasswordReset as MockedFunction<
     typeof confirmPasswordReset
@@ -308,5 +312,30 @@ describe('confirmPasswordResetAction', () => {
                 })
             );
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockConfirm.mockRejectedValue(plantedDbError());
+            const result = await confirmPasswordResetAction(
+                { error: null },
+                makeFormData({
+                    email: 'user@example.com',
+                    token: 'tok',
+                    newPassword: 'NewPass1234',
+                })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[confirmPasswordResetAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

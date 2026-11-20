@@ -22,6 +22,7 @@ import {
     getEasternOffsetHours,
 } from '@/shared/lib/eastern';
 import { mapOrNull } from '@/shared/api/market/mapOrNull';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
 
@@ -369,7 +370,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[FmpMarketProvider] aftermarket trade fetch failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return null;
         }
@@ -392,7 +393,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[FmpMarketProvider] quote snapshot fetch failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return { quote: null, todayBar: null };
         }

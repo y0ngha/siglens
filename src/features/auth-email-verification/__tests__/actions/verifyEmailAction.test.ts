@@ -25,6 +25,10 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockVerify = verifyEmail as MockedFunction<typeof verifyEmail>;
 const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
@@ -198,5 +202,27 @@ describe('verifyEmailAction', () => {
                 })
             );
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockVerify.mockResolvedValue({ ok: true });
+            mockUserRepo(null).findByEmail.mockRejectedValue(plantedDbError());
+            const result = await verifyEmailAction(
+                { verified: false, error: null },
+                makeFormData({ email: 'user@example.com', code: '482917' })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[verifyEmailAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

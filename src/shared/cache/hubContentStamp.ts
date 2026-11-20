@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from './redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 허브 본문이 **처음 나타난 시각**을 보관한다 — RSS `pubDate`의 근거다.
@@ -118,7 +119,10 @@ export async function readHubContentStamp(
         const stored = await redis.get<unknown>(keyFor(surface));
         return isStamp(stored) ? stored : null;
     } catch (error) {
-        console.error(`[hub-content-stamp] read failed: ${surface}`, error);
+        console.error(
+            `[hub-content-stamp] read failed: ${surface}`,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }
@@ -170,7 +174,10 @@ export async function recordHubContentStamp(
         await redis.set(keyFor(surface), stamp, { ex: STAMP_TTL_SECONDS });
         return true;
     } catch (error) {
-        console.error(`[hub-content-stamp] record failed: ${surface}`, error);
+        console.error(
+            `[hub-content-stamp] record failed: ${surface}`,
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }

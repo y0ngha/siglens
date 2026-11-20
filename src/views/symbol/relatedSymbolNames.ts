@@ -7,6 +7,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import type { Locale } from '@/shared/i18n/locales';
 import { chipNameFor } from './utils/relatedSymbolChips';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 칩 이름을 확정한다(심볼 → 이름, 이름이 없는 칩은 맵에 없다).
@@ -36,7 +37,7 @@ export async function resolveChipNames(
                 if (isDynamicServerError(e)) throw e;
                 console.error(
                     `[RelatedSymbols] name lookup failed for ${symbol}:`,
-                    e
+                    redactDbErrorForLog(e)
                 );
                 return [symbol, chipNameFor(null, item, locale)] as const;
             }

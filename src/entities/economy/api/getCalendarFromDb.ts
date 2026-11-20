@@ -21,6 +21,7 @@ import {
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type CalendarReader = (
     anchorEt: string
@@ -151,7 +152,10 @@ export const getCalendarFromDb = cache(
             // 미국·한국이 같은 엔트리를 공유할 수 없다.
             return await calendarReaderFor(country, locale)(anchorEt);
         } catch (error) {
-            console.error('[getCalendarFromDb] DB read failed:', error);
+            console.error(
+                '[getCalendarFromDb] DB read failed:',
+                redactDbErrorForLog(error)
+            );
             return [];
         }
     }

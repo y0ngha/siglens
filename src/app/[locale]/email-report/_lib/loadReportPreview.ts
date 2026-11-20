@@ -5,6 +5,7 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import type { ReportSymbolsPreviewData } from '@/features/email-report-settings/ui/ReportSymbolsPreview';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 미리보기 데이터 — 배치와 **같은** `selectReportSymbols`로 고른다. 조회 실패는 `null`로
@@ -43,7 +44,10 @@ export async function loadReportPreview(
             staleExcluded: selection.staleExcluded.map(chip),
         };
     } catch (error) {
-        console.error('[email-report] preview load failed', error);
+        console.error(
+            '[email-report] preview load failed',
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

@@ -73,6 +73,7 @@ import {
     economyCalendarCacheTag,
 } from '@/entities/economy/lib/economyCalendarConstants';
 import type { CalendarCountry } from '@/entities/economy/model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 허브 페이지의 AI 콘텐츠를 **서버에서 미리 굽는다**.
@@ -408,7 +409,10 @@ function economyCalendarTargets(): HubTarget[] {
                 country,
                 logLabel
             ).catch((error: unknown) => {
-                console.error(`[${logLabel}] ingest threw`, error);
+                console.error(
+                    `[${logLabel}] ingest threw`,
+                    redactDbErrorForLog(error)
+                );
                 return null;
             });
             // 앞 단계(적재)가 쓴 행을 읽는 분석이라 병렬화하면 갓 적재된 이벤트를 놓친다.
@@ -417,14 +421,20 @@ function economyCalendarTargets(): HubTarget[] {
                 limit: HUB_CALENDAR_ANALYSIS_LIMIT,
                 logLabel,
             }).catch((error: unknown) => {
-                console.error(`[${logLabel}] analysis threw`, error);
+                console.error(
+                    `[${logLabel}] analysis threw`,
+                    redactDbErrorForLog(error)
+                );
                 return null;
             });
             const translated = await translateUnresolvedCalendarIndicators(
                 country,
                 { limit: HUB_INDICATOR_TRANSLATION_LIMIT, logLabel }
             ).catch((error: unknown) => {
-                console.error(`[${logLabel}] translation threw`, error);
+                console.error(
+                    `[${logLabel}] translation threw`,
+                    redactDbErrorForLog(error)
+                );
                 return 0;
             });
             console.log(
@@ -522,7 +532,7 @@ async function ingestCategoryBeforeDigest(
     }).catch((error: unknown) => {
         console.error(
             `[hub-prewarm] news ingest threw: ${category} — 다이제스트는 DB 기사로 계속한다`,
-            error
+            redactDbErrorForLog(error)
         );
         return null;
     });
@@ -748,7 +758,10 @@ export async function runHubPrewarm(
             }
         } catch (error) {
             failed += 1;
-            console.error(`[hub-prewarm] failed: ${target.label}`, error);
+            console.error(
+                `[hub-prewarm] failed: ${target.label}`,
+                redactDbErrorForLog(error)
+            );
         }
     }
 

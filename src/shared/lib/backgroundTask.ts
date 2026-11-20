@@ -1,4 +1,5 @@
 import type { WaitUntil } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** Runtime hooks for background tasks started via {@link fireAndForget}. */
 export interface BackgroundTaskOptions {
@@ -102,7 +103,10 @@ export function fireAndForget(
     }
 
     const guarded = promise.catch(err => {
-        console.error('[fireAndForget] background task error:', err);
+        console.error(
+            '[fireAndForget] background task error:',
+            redactDbErrorForLog(err)
+        );
     });
 
     if (!acceptingNewTasks) {

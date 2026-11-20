@@ -8,6 +8,7 @@ import {
     isCalendarCountry,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Server Action: 국가별 경제 캘린더를 FMP에서 적재한다. 본문은
@@ -33,6 +34,9 @@ export async function ensureEconomicCalendarAction(
         }
         await ingestEconomicCalendar(country, 'ensureEconomicCalendarAction');
     } catch (error) {
-        console.error('[ensureEconomicCalendarAction]', error);
+        console.error(
+            '[ensureEconomicCalendarAction]',
+            redactDbErrorForLog(error)
+        );
     }
 }

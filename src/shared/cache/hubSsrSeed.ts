@@ -1,6 +1,7 @@
 import 'server-only';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getRedisClient } from './redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 프리웜이 만든 값을 **키가 흔들리지 않는 자리**에 보관하는 작은 read/write 쌍.
@@ -58,7 +59,10 @@ export async function readHubSsrSeed<T>(surface: string): Promise<T | null> {
     try {
         return (await redis.get<T>(keyFor(surface))) ?? null;
     } catch (error) {
-        console.error(`[hub-ssr-seed] read failed: ${surface}`, error);
+        console.error(
+            `[hub-ssr-seed] read failed: ${surface}`,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }
@@ -75,6 +79,9 @@ export async function writeHubSsrSeed<T>(
     try {
         await redis.set(keyFor(surface), value, { ex: SEED_TTL_SECONDS });
     } catch (error) {
-        console.error(`[hub-ssr-seed] write failed: ${surface}`, error);
+        console.error(
+            `[hub-ssr-seed] write failed: ${surface}`,
+            redactDbErrorForLog(error)
+        );
     }
 }

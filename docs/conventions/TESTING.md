@@ -509,6 +509,15 @@ A guard that matches loosely (any `[tag] text`, bare substrings of a large corpu
 
 A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line.
 
+<a id="TE-64"></a>
+
+#### TE-64 — A source guard reads real constants, pins allowlist counts, and scopes its matches
+
+A guard that checks a hard-coded copy of a constant drifts from the code it guards: import the constant. Resolve each call's arguments (bind numbers and names to constants) per call, not per file, and match only inside the section the guard is about, not anywhere in the document. An allowlist entry keyed on `file::tag` covers every later call that reuses the key, so pin an exact count per entry and check it in both directions (a stale entry fails too). A shape the scanner cannot read (a destructured handler parameter, a spread) is reported as unparsed, never skipped.
+
+- ❌ Allowlist `src/a.ts::[tag]`; a second call with the same tag in that file passes unseen.
+- ✅ Allowlist `src/a.ts::[tag]` with count 1; a second call, or a removed one, fails the guard.
+
 ## Third-Party Contracts
 
 <a id="TE-8"></a>

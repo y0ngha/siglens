@@ -8,6 +8,7 @@ import {
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { buildSignalBrief } from '@/entities/email-report/lib/buildSignalBrief';
 import type { SymbolBrief } from '@/entities/email-report/reportModel';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 종목 한 칸의 경량 데이터를 채우는 읽기 소스. 테스트가 갈아 끼울 수 있게 주입받는다. */
 export interface SymbolBriefSources {
@@ -42,7 +43,7 @@ async function fetchBars(
     } catch (error) {
         console.warn(
             `[email-report] daily bars unavailable for ${symbol}`,
-            error
+            redactDbErrorForLog(error)
         );
         return null;
     }
@@ -70,7 +71,7 @@ export async function loadSymbolBrief(
         // 수신자의 메일 전체를 막지 않게 한다.
         console.error(
             `[email-report] brief computation failed for ${symbol}`,
-            error
+            redactDbErrorForLog(error)
         );
         return noData(symbol);
     }

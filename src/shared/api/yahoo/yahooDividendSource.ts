@@ -7,6 +7,7 @@ import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     MS_PER_DAY,
 } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -112,7 +113,11 @@ async function fetchDividendHistory(
             .toSorted((a, b) => b.exDate.localeCompare(a.exDate));
     } catch (error) {
         // 부분 degrade(요약으로 대체)라 호출부에는 에러로 전달되지 않는다 — 이 지점이 유일한 로그다.
-        console.warn('[yahooDividend] history failed', symbol, error);
+        console.warn(
+            '[yahooDividend] history failed',
+            symbol,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

@@ -12,6 +12,7 @@ import { DrizzleSeoSnapshotRepository } from '../api';
 import { isPrewarmTab } from '../lib/applicability';
 import { filterWithinMaxAge, rehydrateSnapshots } from '../lib/snapshotRows';
 import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 심볼의 SEO 스냅샷을 ISR static-safe하게 읽는다. 종목 페이지 7개 탭과
@@ -59,7 +60,7 @@ export const getSeoSnapshotsStatic = cache(async function getSeoSnapshotsStatic(
         if (isDynamicServerError(error)) throw error;
         console.error(
             '[getSeoSnapshotsStatic] read failed, degrading to unknown (null):',
-            error
+            redactDbErrorForLog(error)
         );
         if (isCuratedSymbol(upper)) await shortenRevalidateForRuntimeDegrade();
         return null;

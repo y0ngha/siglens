@@ -1,5 +1,6 @@
 import 'server-only';
 import { getRedisClient } from './redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 파라미터로 키를 정하는 생성 슬롯 핸들. */
 export interface RedisSlotHandle<A> {
@@ -43,7 +44,10 @@ export function createRedisSlot<A>(
             });
             return result === 'OK';
         } catch (error) {
-            console.error(`${logPrefix} acquire failed`, error);
+            console.error(
+                `${logPrefix} acquire failed`,
+                redactDbErrorForLog(error)
+            );
             return true;
         }
     }
@@ -54,7 +58,10 @@ export function createRedisSlot<A>(
         try {
             await redis.del(keyFn(arg));
         } catch (error) {
-            console.error(`${logPrefix} release failed`, error);
+            console.error(
+                `${logPrefix} release failed`,
+                redactDbErrorForLog(error)
+            );
         }
     }
 

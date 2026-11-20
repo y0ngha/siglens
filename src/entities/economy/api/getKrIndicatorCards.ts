@@ -16,6 +16,7 @@ import {
     buildKrIndicatorCards,
     type KrIndicatorCard,
 } from '../lib/krIndicatorCards';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const fetchKrIndicatorCards = unstable_cache(
     async (anchorEt: string): Promise<KrIndicatorCard[]> => {
@@ -52,7 +53,10 @@ export const getKrIndicatorCards = cache(
         try {
             return await fetchKrIndicatorCards(anchorEt);
         } catch (error) {
-            console.error('[getKrIndicatorCards] DB read failed:', error);
+            console.error(
+                '[getKrIndicatorCards] DB read failed:',
+                redactDbErrorForLog(error)
+            );
             return [];
         }
     }

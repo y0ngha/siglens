@@ -1,6 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // KEYS[1]=락 키, ARGV[1]=보유 토큰 — 저장된 값이 호출자의 토큰과 일치할 때만
 // DEL한다(compare-and-delete). TTL(720s)을 넘겨 실행되는 턴이 있으면 다음 턴이
@@ -56,7 +57,10 @@ export async function acquireTurnLock(
         });
         if (result !== 'OK') return null;
     } catch (error) {
-        console.warn(STORE_UNAVAILABLE_LOG, { op: 'turn-lock', error });
+        console.warn(STORE_UNAVAILABLE_LOG, {
+            op: 'turn-lock',
+            error: redactDbErrorForLog(error),
+        });
         // 명령 timeout(`REDIS_COMMAND_TIMEOUT_MS`)은 "서버는 SET을 반영했는데 응답만 늦은" 경우에도
         // 던진다. 그대로 두면 아무도 모르는 토큰의 락이 TTL(12분) 동안 남아 이 사용자의 다음 턴이
         // 전부 server_busy가 된다. 우리 토큰으로 compare-and-delete를 한 번 시도해 둔다 — 반영되지
@@ -64,7 +68,10 @@ export async function acquireTurnLock(
         void redis
             .eval(RELEASE_LOCK_SCRIPT, [key], [token])
             .catch((releaseError: unknown) =>
-                console.warn('[agent] turn lock cleanup failed', releaseError)
+                console.warn(
+                    '[agent] turn lock cleanup failed',
+                    redactDbErrorForLog(releaseError)
+                )
             );
         return null;
     }
@@ -73,7 +80,10 @@ export async function acquireTurnLock(
             try {
                 await redis.eval(RELEASE_LOCK_SCRIPT, [key], [token]);
             } catch (error) {
-                console.warn('[agent] turn lock release failed', error);
+                console.warn(
+                    '[agent] turn lock release failed',
+                    redactDbErrorForLog(error)
+                );
             }
         },
     };

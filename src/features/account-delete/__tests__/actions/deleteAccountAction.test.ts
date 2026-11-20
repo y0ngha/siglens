@@ -64,6 +64,10 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockDelete = deleteAccount as MockedFunction<typeof deleteAccount>;
@@ -234,5 +238,27 @@ describe('deleteAccountAction', () => {
             expect(result.error?.code).toBe('unexpected');
             expect(setSpy).not.toHaveBeenCalled();
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockGetCurrentUser.mockResolvedValue(USER);
+            mockDelete.mockRejectedValue(plantedDbError());
+            const result = await deleteAccountAction(
+                { error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[deleteAccountAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

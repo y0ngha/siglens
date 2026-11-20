@@ -20,6 +20,7 @@ import { unstable_cache } from 'next/cache';
 import { isFmpUnavailableAtBuild } from '@/shared/api/offlineBuild';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { isDatabaseMissingAtBuild } from '@/shared/db/config';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** FMP 실패·DB 부재로 degrade된 빌드타임 prerender의 revalidate(초). */
 export const BUILD_DEGRADED_REVALIDATE_SECONDS = 60;
@@ -197,7 +198,7 @@ export async function shortenRevalidateForRuntimeDegrade(): Promise<void> {
     } catch (error) {
         console.warn(
             '[shortenRevalidateForRuntimeDegrade] pin skipped (outside a Next render?):',
-            error
+            redactDbErrorForLog(error)
         );
     }
 }
@@ -220,7 +221,7 @@ export async function flagNoindexDegradedRender(): Promise<void> {
     } catch (error) {
         console.warn(
             '[flagNoindexDegradedRender] pin skipped (outside a Next render?):',
-            error
+            redactDbErrorForLog(error)
         );
     }
 }
@@ -239,7 +240,7 @@ export async function shortenRevalidateForIncompleteSession(): Promise<void> {
     } catch (error) {
         console.warn(
             '[shortenRevalidateForIncompleteSession] pin skipped (outside a Next render?):',
-            error
+            redactDbErrorForLog(error)
         );
     }
 }

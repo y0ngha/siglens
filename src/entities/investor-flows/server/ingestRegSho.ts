@@ -18,6 +18,7 @@ import {
     type SymbolResolver,
 } from '../lib/symbolAliasResolver';
 import type { RegShoThresholdRow } from '../model';
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 게시가 아직 안 됐을 수 있는 최근 날짜의 범위(일) — 이 안의 날짜가 "없음"이면 그 시장은 이번 실행에서 멈추고 다음 실행이 다시
@@ -131,7 +132,7 @@ async function ingestMarket(
         } catch (error) {
             deps.log(
                 `[reg-sho-threshold] ${market} ${date} failed:`,
-                error instanceof Error ? error.message : error
+                redactedErrorMessage(error)
             );
             outcome.failed = true;
             break;

@@ -9,6 +9,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { stringOrNull, toIsoOrNull } from './yahooValues';
 import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -341,7 +342,11 @@ export async function getYahooAnalystSummary(
             }
         );
     } catch (error) {
-        console.warn('[yahooAnalyst] summary failed', yahooSymbol, error);
+        console.warn(
+            '[yahooAnalyst] summary failed',
+            yahooSymbol,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

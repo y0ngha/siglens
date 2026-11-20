@@ -38,6 +38,7 @@ import {
     type RemovalSitemapEntry,
     type RemovalSitemapKind,
 } from './model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const REMOVAL_SITEMAP_CACHE_KEY_PREFIX = 'temporary-removal-sitemap:v1';
 
@@ -134,7 +135,7 @@ async function loadUncachedLegalEffectiveDates(): Promise<SerializedLegalDates> 
                 .catch((error: unknown) => {
                     console.error(
                         `[staticSitemapInputs] terms(${kind}) failed:`,
-                        error
+                        redactDbErrorForLog(error)
                     );
                     return null;
                 });
@@ -156,7 +157,10 @@ async function loadNewsLatestPublishedAt(): Promise<
         )();
         return fromIsoRecord(serialized);
     } catch (error) {
-        console.error('[staticSitemapInputs] news publishedAt failed:', error);
+        console.error(
+            '[staticSitemapInputs] news publishedAt failed:',
+            redactDbErrorForLog(error)
+        );
         return undefined;
     }
 }
@@ -172,7 +176,10 @@ async function loadLegalDates(): Promise<
         )();
         return fromIsoRecord(serialized);
     } catch (error) {
-        console.error('[staticSitemapInputs] legal dates failed:', error);
+        console.error(
+            '[staticSitemapInputs] legal dates failed:',
+            redactDbErrorForLog(error)
+        );
         return undefined;
     }
 }
@@ -247,7 +254,10 @@ export async function loadPopularSitemapInputs(): Promise<BuildPopularEntriesOpt
         )();
         return deserializePopularSitemapInputs(serialized);
     } catch (error) {
-        console.error('[popularSitemapInputs] load failed:', error);
+        console.error(
+            '[popularSitemapInputs] load failed:',
+            redactDbErrorForLog(error)
+        );
         return {};
     }
 }

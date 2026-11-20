@@ -10,6 +10,7 @@ import { INVALID_EMAIL_CODE } from '@/shared/lib/auth/constants';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 import { getTranslations } from 'next-intl/server';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 가입 1단계: 입력한 주소로 이메일 인증 코드를 발급해 보낸다.
@@ -75,7 +76,7 @@ export async function requestEmailVerificationAction(
     } catch (err) {
         console.error(
             '[requestEmailVerificationAction] unexpected error:',
-            err
+            redactDbErrorForLog(err)
         );
         return {
             submitted: false,

@@ -1,6 +1,7 @@
 import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * CUSIP 매핑을 시도했지만 얻지 못한 심볼의 "최근 실패" 표식(Redis).
@@ -86,7 +87,10 @@ export function createRedisCusipMissStore(): CusipMissStore {
                         }
                     });
                 } catch (error) {
-                    console.error('[cusip-miss] mget failed:', error);
+                    console.error(
+                        '[cusip-miss] mget failed:',
+                        redactDbErrorForLog(error)
+                    );
                     return misses;
                 }
             }
@@ -102,7 +106,10 @@ export function createRedisCusipMissStore(): CusipMissStore {
                 }
                 await pipeline.exec();
             } catch (error) {
-                console.error('[cusip-miss] record failed:', error);
+                console.error(
+                    '[cusip-miss] record failed:',
+                    redactDbErrorForLog(error)
+                );
             }
         },
         async recordFailures(allSymbols, threshold, missTtlSeconds, day) {
@@ -147,7 +154,10 @@ export function createRedisCusipMissStore(): CusipMissStore {
                 await writing.exec();
                 return marked;
             } catch (error) {
-                console.error('[cusip-miss] record failures failed:', error);
+                console.error(
+                    '[cusip-miss] record failures failed:',
+                    redactDbErrorForLog(error)
+                );
                 return [];
             }
         },

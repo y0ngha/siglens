@@ -46,6 +46,7 @@ import { loadTechnicalPromptInputs } from './technicalPromptInputs';
 import { toClientWork } from './toClientWork';
 import type { TechnicalParams } from './types';
 import { withDeadline } from './withDeadline';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 하루 무료 공개 미터의 신규 기록 해제 함수를 바깥 catch까지 들고 가는 칸. */
 interface MeterReleaseHolder {
@@ -68,7 +69,10 @@ export async function handleTechnicalStream(
     try {
         return await streamTechnical(request, params, quotaSlot, meterRelease);
     } catch (err) {
-        console.error('[streamAnalysisRoute] unexpected error:', err);
+        console.error(
+            '[streamAnalysisRoute] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         await quotaSlot.release();
         await meterRelease.current();
         return unexpectedErrorResponse(localeFromRequestHeader(request));

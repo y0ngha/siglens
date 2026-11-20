@@ -29,6 +29,10 @@ import {
 } from '@/shared/config/publicApi';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
 const IDLE: CreateSiglensApiKeyState = { status: 'idle' };
@@ -177,5 +181,16 @@ describe('createSiglensApiKeyAction', () => {
         await expect(
             createSiglensApiKeyAction(IDLE, makeFormData({ name: 'a' }))
         ).resolves.toMatchObject({ status: 'error', code: 'server_error' });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        mockGetCurrentUser.mockResolvedValue(verifiedUser);
+        mockCreate.mockRejectedValue(plantedDbError());
+        await createSiglensApiKeyAction(IDLE, makeFormData({ name: 'a' }));
+        expect(console.error).toHaveBeenCalledWith(
+            '[createSiglensApiKeyAction] failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

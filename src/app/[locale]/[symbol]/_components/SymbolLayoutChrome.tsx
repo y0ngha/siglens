@@ -17,6 +17,7 @@ import {
     SYMBOL_SUB_TAB_KEYS,
     type SymbolSubTabKey,
 } from '@/views/symbol/utils/symbolTabsConfig';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 interface SymbolLayoutChromeProps {
     /** `[locale]/[symbol]` 세그먼트 파라미터(레이아웃이 받은 그대로). */
@@ -84,7 +85,7 @@ export async function SymbolLayoutChrome({
         ).catch((e: unknown) => {
             console.error(
                 '[SymbolLayout] getSymbolFearGreedChipStatic failed:',
-                e
+                redactDbErrorForLog(e)
             );
             return null;
         }),

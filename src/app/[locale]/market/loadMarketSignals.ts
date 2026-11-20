@@ -9,6 +9,7 @@ import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 시장 허브 두 로더의 결과와 degrade 판정 — metadata·본문·구조화데이터가 같은 값을 본다. */
 export interface LoadMarketSignalsResult {
@@ -38,11 +39,17 @@ const loadMarketSignalsOnce = cache(async (scope: DashboardScope) => {
     const label = `loadMarketSignals:${scope.id}`;
     const [summary, sectorData] = await Promise.all([
         getMarketSummaryStatic(scope).catch(e => {
-            console.error(`[${label}] getMarketSummaryStatic failed:`, e);
+            console.error(
+                `[${label}] getMarketSummaryStatic failed:`,
+                redactDbErrorForLog(e)
+            );
             return { indices: [], sectors: [] };
         }),
         getSectorSignalsStatic(scope, DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
-            console.error(`[${label}] getSectorSignalsStatic failed:`, e);
+            console.error(
+                `[${label}] getSectorSignalsStatic failed:`,
+                redactDbErrorForLog(e)
+            );
             return { computedAt: '', stocks: [], failed: true };
         }),
     ]);

@@ -17,6 +17,7 @@ import {
 } from '../lib/recentDilutionEvent';
 import type { OfferingRecord } from '../model';
 import { getInvestorFlowsDataProvider } from './getInvestorFlowsDataProvider';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface RecentDilutionEventDeps {
     /** `sinceDate` 이후 증자 공시(최신순 `limit`건). */
@@ -103,7 +104,7 @@ export const getRecentDilutionEvent = cache(
             if (isDynamicServerError(error)) throw error;
             console.error(
                 '[getRecentDilutionEvent] 증자 공시 조회 실패, 배지 생략:',
-                error
+                redactDbErrorForLog(error)
             );
             return null;
         }

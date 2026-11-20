@@ -2,6 +2,7 @@
 
 import { ingestMarketNewsCategory } from '../api/ingestMarketNewsCategory';
 import type { NewsFeedCategoryId } from '../lib/categoryConfig';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Server Action: `category`의 새 시장 뉴스를 받아(소스는 카테고리가 정한다 — 미국·암호화폐는
@@ -23,6 +24,9 @@ export async function ensureMarketNewsCardsAnalyzedAction(
             logLabel: 'ensureMarketNewsCardsAnalyzedAction',
         });
     } catch (error) {
-        console.error('[ensureMarketNewsCardsAnalyzedAction]', error);
+        console.error(
+            '[ensureMarketNewsCardsAnalyzedAction]',
+            redactDbErrorForLog(error)
+        );
     }
 }

@@ -11,6 +11,7 @@ import {
 import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { normalizeQuotaIp } from '../lib/normalizeQuotaIp';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 비회원 "하루 무료 전체 공개" 미터가 시작되는 시각(KST 2026-10-11 00:00).
@@ -169,7 +170,7 @@ export async function decideMeteredReveal(
             nextKstMidnightEpochSeconds(now),
         ]);
     } catch (error) {
-        console.warn('[meter] redis unavailable', error);
+        console.warn('[meter] redis unavailable', redactDbErrorForLog(error));
         return { state: 'unavailable' };
     }
 
@@ -195,7 +196,10 @@ export async function decideMeteredReveal(
                         );
                     }
                 } catch (error) {
-                    console.warn('[meter] release failed', error);
+                    console.warn(
+                        '[meter] release failed',
+                        redactDbErrorForLog(error)
+                    );
                 }
             },
         };

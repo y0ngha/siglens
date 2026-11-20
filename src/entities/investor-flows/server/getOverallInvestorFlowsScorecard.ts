@@ -2,6 +2,7 @@ import 'server-only';
 import type { InvestorFlowsScorecard } from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { getInvestorFlowsScorecard } from './getInvestorFlowsScorecard';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 수급 탭이 있는 시장 — 크립토에는 수급 원천이 없다. */
 const FLOWS_MARKET_PROFILES: ReadonlySet<MarketProfileId> = new Set([
@@ -43,7 +44,7 @@ export async function getOverallInvestorFlowsScorecard(
     } catch (error) {
         console.warn(
             '[getOverallInvestorFlowsScorecard] investor flows scorecard failed:',
-            error
+            redactDbErrorForLog(error)
         );
         return undefined;
     }

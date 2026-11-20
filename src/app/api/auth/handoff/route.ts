@@ -12,6 +12,7 @@ import {
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +50,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     try {
         code = await issueHandoffCode({ userId: user.id, next, state });
     } catch (error) {
-        console.error('[handoff] redis unavailable', error);
+        console.error(
+            '[handoff] redis unavailable',
+            redactDbErrorForLog(error)
+        );
         return noStoreRedirect(fallback);
     }
     const consume = new URL(

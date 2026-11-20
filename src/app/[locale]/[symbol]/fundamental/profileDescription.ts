@@ -4,6 +4,7 @@ import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import type { Locale } from '@/shared/i18n/locales';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * AI 번역 회사 설명을 기다리는 상한. 넘기면 원문(FMP `profile.description`)으로 렌더한다.
@@ -66,7 +67,7 @@ export async function loadProfileDescription(
     ).catch((e: unknown): typeof DEGRADED => {
         console.error(
             '[loadProfileDescription] getProfileDescription failed, degrading to original:',
-            e
+            redactDbErrorForLog(e)
         );
         return DEGRADED;
     });

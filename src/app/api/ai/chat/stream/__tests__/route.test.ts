@@ -102,6 +102,10 @@ import sharp from 'sharp';
 import { POST } from '@/app/api/ai/chat/stream/route';
 import { getActiveAgentTurns } from '@/app/api/ai/chat/stream/_lib/turnSlots';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const AI_ORIGIN = new URL(AI_SITE_URL).origin;
 
@@ -1454,5 +1458,25 @@ describe('POST /api/ai/chat/stream', () => {
             expect(m.runTurn).not.toHaveBeenCalled();
             expect(release).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it('repository가 DB 에러를 던져도 알람 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        const release = vi.fn();
+        m.lock.mockResolvedValue({ release });
+        m.repo.findForUser.mockRejectedValueOnce(plantedDbError());
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const res = await POST(
+                post({ conversationId: 'c1', message: 'x' })
+            );
+            expect(res.status).toBe(500);
+            expect(err).toHaveBeenCalledWith(
+                '[agent-stream] failed:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(err);
+        } finally {
+            err.mockRestore();
+        }
     });
 });

@@ -10,6 +10,7 @@ import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 재설정 메일 발송을 요청한다. 형식 오류만 `errorCode`로 알리고, 그 밖의
@@ -65,7 +66,10 @@ export async function requestPasswordResetAction(
 
         return { submitted: true };
     } catch (err) {
-        console.error('[requestPasswordResetAction] unexpected error:', err);
+        console.error(
+            '[requestPasswordResetAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         // enumeration 회피: 에러가 발생해도 submitted:true 반환하여 이메일 존재 여부를 노출하지 않음.
         return { submitted: true };
     }

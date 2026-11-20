@@ -25,6 +25,10 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 describe('loadReportPreview', () => {
     beforeEach(() => {
@@ -121,5 +125,21 @@ describe('loadReportPreview', () => {
 
         expect(await loadReportPreview('u-1')).toBeNull();
         expect(error).toHaveBeenCalled();
+    });
+
+    it('DB 에러는 접두사는 그대로 두고 파라미터 없이 남긴다', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            mockFindWatchlist.mockRejectedValue(plantedDbError());
+
+            expect(await loadReportPreview('u-1')).toBeNull();
+            expect(error).toHaveBeenCalledWith(
+                '[email-report] preview load failed',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(error);
+        } finally {
+            error.mockRestore();
+        }
     });
 });

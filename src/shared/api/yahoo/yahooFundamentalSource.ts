@@ -7,6 +7,7 @@ import {
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -222,7 +223,7 @@ async function fetchAll(symbol: string): Promise<YahooFundamentals> {
                 console.warn(
                     '[yahooFundamental] quoteSummary failed',
                     symbol,
-                    e
+                    redactDbErrorForLog(e)
                 );
                 return null;
             }),
@@ -264,7 +265,11 @@ export function getYahooFundamentals(
     if (hit && Date.now() - hit.at < DEDUP_WINDOW_MS) return hit.value;
 
     const value = fetchAll(key).catch((e: unknown) => {
-        console.warn('[yahooFundamental] fetch failed', key, e);
+        console.warn(
+            '[yahooFundamental] fetch failed',
+            key,
+            redactDbErrorForLog(e)
+        );
         // 실패는 캐시에 남기지 않는다 — 다음 요청이 재시도하도록 항목을 지운다.
         cache.delete(key);
         return EMPTY;

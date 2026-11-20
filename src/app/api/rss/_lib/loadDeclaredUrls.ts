@@ -1,4 +1,5 @@
 import { loadStaticChildEntries } from '@/app/api/sitemap/_shared/childEntries';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 정적 sitemap이 선언한 URL 집합 — RSS는 여기 실린 허브만 항목으로 낸다. 못 읽으면 `null`이고
@@ -11,7 +12,10 @@ export async function loadDeclaredUrls(
         const entries = await loadStaticChildEntries(now);
         return new Set(entries.map(entry => entry.url));
     } catch (error) {
-        console.error('[rss] static sitemap entries failed:', error);
+        console.error(
+            '[rss] static sitemap entries failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

@@ -25,6 +25,7 @@ import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `getLocale()`의 문자열을 지원 로케일로 좁힌다 — 핸드오프 URL과 `aiSignedOutUrl`이 `Locale`을 받는다. */
 async function requestLocale(): Promise<Locale> {
@@ -50,7 +51,10 @@ async function aiLogoutTarget(userId: string | null): Promise<string> {
             url.searchParams.set('code', code);
             return url.href;
         } catch (error) {
-            console.error('[logoutAction] logout code not issued', error);
+            console.error(
+                '[logoutAction] logout code not issued',
+                redactDbErrorForLog(error)
+            );
         }
     }
     return aiSignedOutUrl(locale).href;
@@ -83,7 +87,10 @@ async function expireAuthCookiesAfterError(): Promise<void> {
             secure
         );
     } catch (error) {
-        console.error('[logoutAction] auth cookies not expired', error);
+        console.error(
+            '[logoutAction] auth cookies not expired',
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -116,7 +123,10 @@ export async function logoutAction(): Promise<void> {
         );
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[logoutAction] unexpected error:', err);
+        console.error(
+            '[logoutAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         await expireAuthCookiesAfterError();
         redirect(
             onAiHost

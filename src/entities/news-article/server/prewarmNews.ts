@@ -28,6 +28,7 @@ import { newsCacheTag } from '../lib/newsCacheTag';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { selectUnanalyzed } from '../lib/selectUnanalyzed';
 import { withNewsCardAnalysisLock } from './newsCardAnalysisLock';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 적재를 돌리되 FMP 장애·402 같은 소스 실패는 삼키고 `null`을 돌려준다(fail-open) —
@@ -54,7 +55,10 @@ async function ingestFailOpen(
         profileId
     ).catch((err: unknown) => {
         if (err instanceof NewsIngestWriteError) throw err;
-        console.error(`[prewarmNews] ingest failed for ${symbol}:`, err);
+        console.error(
+            `[prewarmNews] ingest failed for ${symbol}:`,
+            redactDbErrorForLog(err)
+        );
         return null;
     });
 }

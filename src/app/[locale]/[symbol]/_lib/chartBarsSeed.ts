@@ -7,6 +7,7 @@ import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 차트 탭의 기술적 사실 요약을 그릴 수 있는가 — 메타데이터 색인 게이트(`hasPriceData`)와 본문의 크롤용
@@ -61,7 +62,10 @@ export async function seedChartBars(
         marketProfile,
         fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[SymbolPage] getSeedBarsStatic failed:', e);
+        console.error(
+            '[SymbolPage] getSeedBarsStatic failed:',
+            redactDbErrorForLog(e)
+        );
         return null;
     });
     if (seedBars === null) return false;

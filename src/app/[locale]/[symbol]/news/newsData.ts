@@ -15,6 +15,7 @@ import {
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 애널리스트 등급 이벤트(뉴스 탭 애널리스트 의견 섹션). CachedFundamentalProvider가
@@ -67,7 +68,7 @@ export async function getEarningsReportComparison(
             ) {
                 console.warn(
                     `[newsData] failed to refresh earnings reports for ${symbol}:`,
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
             if (comparisonItems.length === 0) throw error;

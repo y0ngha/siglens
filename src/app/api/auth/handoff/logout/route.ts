@@ -13,6 +13,7 @@ import { consumeLogoutCode } from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,10 @@ export async function GET(request: NextRequest): Promise<Response> {
             request.nextUrl.searchParams.get('code')
         );
     } catch (error) {
-        console.error('[handoff] redis unavailable', error);
+        console.error(
+            '[handoff] redis unavailable',
+            redactDbErrorForLog(error)
+        );
         payload = null;
     }
     // `aiSignedOutUrl` builds its path with `localePath` — noRawRedirect guard.

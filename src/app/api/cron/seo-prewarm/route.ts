@@ -4,6 +4,7 @@ import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { acquirePrewarmLock } from './lock';
 import { runSeoPrewarmJob } from './runSeoPrewarmJob';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,
@@ -35,7 +36,7 @@ export async function PATCH(request: Request): Promise<Response> {
     } catch (error) {
         console.error(
             '[seo-prewarm] redis unavailable — lock acquire threw:',
-            error
+            redactDbErrorForLog(error)
         );
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }

@@ -5,6 +5,7 @@ import {
 import type { SlottedOptionsSnapshot } from '@/entities/options-chain/lib/optionsSlots';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 옵션 시장 여부(`options:has`, 12h). `hasOptionsMarket`은 Yahoo 인프라 실패 시 throw하므로 여기서
@@ -24,7 +25,7 @@ export function loadHasOptionsMarket(
         [],
         SECONDS_PER_HALF_DAY
     ).catch((e: unknown) => {
-        console.error(failureLog, e);
+        console.error(failureLog, redactDbErrorForLog(e));
         return false;
     });
 }
@@ -47,7 +48,7 @@ export function loadOptionsSnapshot(
     ).catch((e: unknown) => {
         console.error(
             '[OptionsPage] fetchOptionsSnapshot failed, degrading to null:',
-            e
+            redactDbErrorForLog(e)
         );
         return null;
     });

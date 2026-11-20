@@ -7,6 +7,7 @@ import {
     DEFAULT_REDIRECT_PATH,
     sanitizeNextPath,
 } from '@/shared/lib/auth/redirect';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const LOG_PREFIX = '[cancelOAuthSignupAction]';
 
@@ -26,17 +27,26 @@ async function discardPendingSignup(token: string): Promise<string> {
         const next = await store.peek(token).then(
             pending => sanitizeNextPath(pending?.next),
             (error: unknown) => {
-                console.warn(`${LOG_PREFIX} peek failed:`, error);
+                console.warn(
+                    `${LOG_PREFIX} peek failed:`,
+                    redactDbErrorForLog(error)
+                );
                 return DEFAULT_REDIRECT_PATH;
             }
         );
         // Best-effort cleanup: if Redis is unavailable, the token will TTL-expire on its own.
         await store.delete(token).catch((error: unknown) => {
-            console.warn(`${LOG_PREFIX} delete failed:`, error);
+            console.warn(
+                `${LOG_PREFIX} delete failed:`,
+                redactDbErrorForLog(error)
+            );
         });
         return next === DEFAULT_REDIRECT_PATH ? '' : authNextQuery(next);
     } catch (error) {
-        console.warn(`${LOG_PREFIX} discard failed:`, error);
+        console.warn(
+            `${LOG_PREFIX} discard failed:`,
+            redactDbErrorForLog(error)
+        );
         return '';
     }
 }

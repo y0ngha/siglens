@@ -22,6 +22,7 @@ import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
 
@@ -63,7 +64,10 @@ async function recordSymbolView(today: string, symbol: string): Promise<void> {
         repo = new DrizzleSymbolViewRepository(db);
         await repo.recordView(today, symbol);
     } catch (error) {
-        console.error('[symbol-views] recordView failed:', error);
+        console.error(
+            '[symbol-views] recordView failed:',
+            redactDbErrorForLog(error)
+        );
         // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
         return;
     }

@@ -5,6 +5,7 @@ import { releasePrewarmLock } from './lock';
 import { pruneExpiredRows } from './pruneExpiredRows';
 import { recordSignalHistory } from './recordSignalHistory';
 import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 신호 이력 단계의 상한(ms). 스캐너 한 번(미국 약 100종목, 봉은 대부분 캐시 적중)과 DB 쓰기 몇 번이면
@@ -20,7 +21,10 @@ async function logFailure(
     try {
         await step();
     } catch (error) {
-        console.error(`[seo-prewarm] ${label} failed:`, error);
+        console.error(
+            `[seo-prewarm] ${label} failed:`,
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -29,7 +33,10 @@ async function releaseLockSafely(token: string): Promise<void> {
     try {
         await releasePrewarmLock(token);
     } catch (error) {
-        console.error('[seo-prewarm] lock release failed:', error);
+        console.error(
+            '[seo-prewarm] lock release failed:',
+            redactDbErrorForLog(error)
+        );
     }
 }
 

@@ -11,6 +11,10 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { loadPortfolioHoldings } from '../loadPortfolioHoldings';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 function record(symbol: string) {
     return {
@@ -87,5 +91,20 @@ describe('loadPortfolioHoldings', () => {
             '[portfolio] holdings load failed',
             cause
         );
+    });
+
+    it('DB 에러는 접두사는 그대로 두고 파라미터 없이 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockFindByUser.mockRejectedValue(plantedDbError());
+
+        await expect(loadPortfolioHoldings('user-1')).resolves.toBeNull();
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[portfolio] holdings load failed',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(errorSpy);
     });
 });

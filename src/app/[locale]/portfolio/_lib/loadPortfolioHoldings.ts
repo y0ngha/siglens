@@ -3,6 +3,7 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/portfolio` 위치 카드 그리드에 쓸 회원 보유종목(심볼 오름차순). 조회 실패는 로그를 남기고
@@ -24,7 +25,10 @@ export async function loadPortfolioHoldings(
             .map(toView)
             .toSorted((a, b) => a.symbol.localeCompare(b.symbol));
     } catch (error) {
-        console.error('[portfolio] holdings load failed', error);
+        console.error(
+            '[portfolio] holdings load failed',
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

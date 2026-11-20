@@ -37,6 +37,7 @@ import type {
     GradesEvent,
     IncomeGrowthRow,
 } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const TTL = FMP_FUNDAMENTAL_CACHE_TTL_SECONDS;
 export const PEER_LIMIT = 10;
@@ -163,7 +164,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
             ).catch(error => {
                 console.error(
                     '[CachedFundamentalProvider] key-metrics fetch failed (not cached):',
-                    error
+                    redactDbErrorForLog(error)
                 );
                 return null;
             })
@@ -177,7 +178,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
             ).catch(error => {
                 console.error(
                     '[CachedFundamentalProvider] ratios fetch failed (not cached):',
-                    error
+                    redactDbErrorForLog(error)
                 );
                 return null;
             })

@@ -13,6 +13,10 @@ vi.mock('@/shared/lib/byokGate', () => ({
 }));
 
 import { resolveCallerTier } from '../../server/resolveCallerTier';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 /** ISR/prerender에서 `getCurrentUser()`가 `cookies()`를 읽을 때 Next 16.4가 던지는 실제 메시지. */
 const CACHE_SCOPE_ERROR = new Error(
@@ -86,5 +90,17 @@ describe('resolveCallerTier', () => {
 
         await expect(resolveCallerTier('scope')).resolves.toBe('free');
         expect(console.error).toHaveBeenCalled();
+    });
+
+    it('DB 에러는 scope 접두를 지키되 파라미터 없이 남긴다', async () => {
+        mockGetCurrentUser.mockRejectedValue(plantedDbError());
+
+        await expect(resolveCallerTier('getBarsAction')).resolves.toBe('free');
+
+        expect(console.error).toHaveBeenCalledWith(
+            '[getBarsAction] Failed to resolve caller tier:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

@@ -8,6 +8,7 @@ import {
     isCalendarCountry,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Server Action: 발표된 Medium+ 미분석 이벤트를 AI 분석으로 채운다. 본문은
@@ -35,6 +36,9 @@ export async function ensureEconomicEventsAnalyzedAction(
             logLabel: 'ensureEconomicEventsAnalyzedAction',
         });
     } catch (error) {
-        console.error('[ensureEconomicEventsAnalyzedAction]', error);
+        console.error(
+            '[ensureEconomicEventsAnalyzedAction]',
+            redactDbErrorForLog(error)
+        );
     }
 }

@@ -7,6 +7,7 @@ import {
     signGuestId,
     verifyGuestCookie,
 } from '@/shared/config/guestCookie';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Reads the `siglens_guest` cookie without minting one. Used by routes that
@@ -57,7 +58,10 @@ export async function mintGuestIdOnResponse(): Promise<string | null> {
         const now = Date.now();
         if (now - lastMintErrorAt >= MINT_ERROR_LOG_INTERVAL_MS) {
             lastMintErrorAt = now;
-            console.error('[guestId] mint on response failed', error);
+            console.error(
+                '[guestId] mint on response failed',
+                redactDbErrorForLog(error)
+            );
         }
         return null;
     }

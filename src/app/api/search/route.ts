@@ -7,6 +7,7 @@ import {
     searchTickerQuery,
 } from '@/entities/ticker/server/searchTickerQuery';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 요청 URL(`?q=`)을 읽으므로 빌드 시점에 굳을 수 없다. 캐시는 아래 `Cache-Control`이 맡는다.
 export const dynamic = 'force-dynamic';
@@ -65,7 +66,10 @@ export async function GET(request: Request): Promise<Response> {
             headers: { 'Cache-Control': SEARCH_CACHE_CONTROL },
         });
     } catch (err) {
-        console.error('[api/search] unexpected error:', err);
+        console.error(
+            '[api/search] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return NextResponse.json(
             { error: 'search_failed' },
             { status: 500, headers: NO_STORE }

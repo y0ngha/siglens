@@ -10,6 +10,7 @@ import type {
     RequestEmailVerificationOptions,
     RequestEmailVerificationResult,
 } from './authUseCaseTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const PURPOSE = 'email_verification' as const;
 
@@ -47,7 +48,7 @@ export async function requestEmailVerification(
         .catch((error: unknown) => {
             console.warn(
                 '[requestEmailVerification] emailDispatcher.sendEmail failed',
-                error
+                redactDbErrorForLog(error)
             );
             return false;
         });

@@ -14,6 +14,7 @@ import {
     SECONDS_PER_DAY,
     MS_PER_HOUR,
 } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface VerifiableCrawler {
     readonly id: string;
@@ -243,7 +244,10 @@ async function hasStoredVerification(key: string): Promise<boolean> {
         // Upstash는 '1'을 숫자 1로 역직렬화한다 — 문자열로 맞춰 비교한다.
         return stored !== null && String(stored) === '1';
     } catch (error) {
-        console.warn('[verified-crawler] cache read failed', error);
+        console.warn(
+            '[verified-crawler] cache read failed',
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }
@@ -254,7 +258,10 @@ async function storeVerification(key: string): Promise<void> {
     try {
         await redis.set(key, '1', { ex: VERIFIED_TTL_SECONDS });
     } catch (error) {
-        console.warn('[verified-crawler] cache write failed', error);
+        console.warn(
+            '[verified-crawler] cache write failed',
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -326,7 +333,10 @@ export async function isVerifiedCrawler(
         if (inFlight.size >= MAX_IN_FLIGHT_VERIFICATIONS) return false;
         pending = resolveVerdict(crawler, address, memoryKey)
             .catch((error: unknown) => {
-                console.warn('[verified-crawler] verification failed', error);
+                console.warn(
+                    '[verified-crawler] verification failed',
+                    redactDbErrorForLog(error)
+                );
                 return false;
             })
             .finally(() => inFlight.delete(memoryKey));

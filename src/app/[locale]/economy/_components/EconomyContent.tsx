@@ -25,6 +25,7 @@ import { buildEconomyPageJsonLd } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
 import { economyDescription, economyTitle } from '../constants';
 import { EconomyDegraded } from './EconomyDegraded';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/economy` 본문의 서버 데이터 섹션(스냅샷·브리핑·캘린더) — 페이지 셸이 Suspense 없이 그린다.
@@ -50,7 +51,10 @@ export async function EconomyContent() {
         CALENDAR_COUNTRY,
         locale
     ).catch((e: unknown) => {
-        console.error('[EconomyContent] getCalendarFromDb failed:', e);
+        console.error(
+            '[EconomyContent] getCalendarFromDb failed:',
+            redactDbErrorForLog(e)
+        );
         return [];
     });
     // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI로 채운다.
@@ -60,7 +64,7 @@ export async function EconomyContent() {
             (e: unknown): Record<string, string> => {
                 console.error(
                     '[EconomyContent] resolveIndicatorLabels failed:',
-                    e
+                    redactDbErrorForLog(e)
                 );
                 return {};
             }
@@ -69,7 +73,10 @@ export async function EconomyContent() {
 
     // throw가 전파되면 빈 렌더가 ISR에 굳으므로 null로 폴백해 EconomyDegraded를 반환한다.
     const snapshot = await getEconomySnapshotStatic().catch(e => {
-        console.error('[EconomyContent] snapshot failed:', e);
+        console.error(
+            '[EconomyContent] snapshot failed:',
+            redactDbErrorForLog(e)
+        );
         return null;
     });
     // 빌드 중 FMP가 실패했으면 이 prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
@@ -84,7 +91,10 @@ export async function EconomyContent() {
         snapshot,
         macroBriefingDayKey(now)
     ).catch(e => {
-        console.error('[EconomyContent] peekMacroBriefingStatic failed:', e);
+        console.error(
+            '[EconomyContent] peekMacroBriefingStatic failed:',
+            redactDbErrorForLog(e)
+        );
         return null;
     });
 

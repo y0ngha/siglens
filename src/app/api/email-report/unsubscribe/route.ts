@@ -5,6 +5,7 @@ import { REPORT_UNSUBSCRIBE_PAGE_PATH } from '@/entities/email-report/lib/report
 import { unsubscribeWithSignature } from '@/entities/email-report/unsubscribeWithSignature';
 import { getDatabaseClient } from '@/shared/db/client';
 import { SITE_URL } from '@/shared/lib/seo';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_OK,
@@ -36,7 +37,10 @@ export async function POST(request: Request): Promise<Response> {
             headers: NO_STORE,
         });
     } catch (error) {
-        console.error('[email-report] one-click unsubscribe failed', error);
+        console.error(
+            '[email-report] one-click unsubscribe failed',
+            redactDbErrorForLog(error)
+        );
         return new Response(null, {
             status: HTTP_STATUS_SERVICE_UNAVAILABLE,
             headers: NO_STORE,

@@ -10,6 +10,7 @@ import { getServerPrimaryKey } from '../serverKeys';
 import { callDeepseekAgent } from './deepseek';
 import { callGeminiAgent } from './gemini';
 import { AGENT_PROVIDER_STALLED } from './openAiCompatibleStream';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 파일럿(spec R12): agent 모델은 서버에서 고정한다. 클라이언트/core가 넘기는 `model`은 무시한다.
@@ -121,11 +122,15 @@ export function createAgentProvider(
                 !fallbackKey
             )
                 throw err;
+            const loggable = redactDbErrorForLog(err);
             console.warn(
                 JSON.stringify({
                     tag: '[agent-router] deepseek failed, falling back',
                     fallbackModel: AGENT_FALLBACK_MODEL,
-                    message: err instanceof Error ? err.message : String(err),
+                    message:
+                        loggable instanceof Error
+                            ? loggable.message
+                            : String(loggable),
                 })
             );
             if (state) state.fallbackUsed = true;

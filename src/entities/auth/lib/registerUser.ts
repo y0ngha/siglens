@@ -13,6 +13,7 @@ import type {
     RegisterUserInput,
     RegisterUserResult,
 } from './authUseCaseTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
@@ -105,7 +106,7 @@ export async function registerUser(
         await dependencies.users.deleteUser(user.id).catch(deleteErr => {
             console.warn(
                 '[registerUser] compensating delete failed — user row may be orphaned',
-                deleteErr
+                redactDbErrorForLog(deleteErr)
             );
         });
         throw err;

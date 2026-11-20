@@ -38,6 +38,7 @@ import {
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
 import { refreshFundamentalStamps } from './fundamentalStamps';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `IndexNowCounts`(`indexNowSubmitted`·`indexNowOk`·`indexNowFailed`)를 함께 싣는다 —
@@ -399,7 +400,7 @@ export async function runPrewarmBatch(
     const hubs = await runHubPrewarm(clock.now).catch(error => {
         console.error(
             '[hub-prewarm] 단계 전체 실패 — 심볼 배치는 계속한다',
-            error
+            redactDbErrorForLog(error)
         );
         return null;
     });
@@ -512,7 +513,10 @@ export async function runPrewarmBatch(
                     isPastDeadline,
                     clock
                 ).catch((error): SymbolOutcome => {
-                    console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
+                    console.error(
+                        `[seo-prewarm] ${u.symbol} failed:`,
+                        redactDbErrorForLog(error)
+                    );
                     return {
                         symbol: u.symbol,
                         tabsDropped: 0,
@@ -567,7 +571,10 @@ export async function runPrewarmBatch(
         changedHubUrls: hubs?.changedUrls ?? [],
         now,
     }).catch(error => {
-        console.error('[seo-prewarm] indexnow submission threw:', error);
+        console.error(
+            '[seo-prewarm] indexnow submission threw:',
+            redactDbErrorForLog(error)
+        );
         return INDEXNOW_BATCH_FAILED;
     });
     counts.indexNowSubmitted = indexNow.indexNowSubmitted;
@@ -580,7 +587,10 @@ export async function runPrewarmBatch(
         // 단계 자체가 던지지 않게 만들었지만, 예산 집계·결과 반환은 무슨 일이 있어도 가야 한다.
         const stamps = await refreshFundamentalStamps(isPastDeadline).catch(
             error => {
-                console.error('[seo-prewarm] fundamental stamps threw', error);
+                console.error(
+                    '[seo-prewarm] fundamental stamps threw',
+                    redactDbErrorForLog(error)
+                );
                 return { checked: 0, recorded: 0 };
             }
         );
@@ -837,7 +847,7 @@ async function processSymbol(
             } else {
                 console.error(
                     `[seo-prewarm] unit-error ${u.symbol}:${tab}`,
-                    error
+                    redactDbErrorForLog(error)
                 );
                 // FIX 2(감사) — worker 제거 이후 run* 함수가 {status:'error'}를 반환하는
                 // 대신 throw하게 됐다. resolveHarvest가 error 상태를 markSkipped로 변환하던

@@ -239,6 +239,10 @@ import {
     __activeStreamCount,
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_USER_ID = '22222222-2222-4222-8222-222222222222';
@@ -1377,5 +1381,15 @@ describe('BYOK 가드 — 생성 호출은 byokOnly 검사를 거친다', () => 
             tier: 'member',
         });
         expect(core.calls[0].userApiKey).toBeUndefined();
+    });
+
+    it('키 조회가 DB 에러로 실패해도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        m.findKey.mockRejectedValue(plantedDbError());
+        await run({ model: FREE_MODEL });
+        expect(console.error).toHaveBeenCalledWith(
+            '[api/v1 run_fresh_analysis] key lookup failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });
