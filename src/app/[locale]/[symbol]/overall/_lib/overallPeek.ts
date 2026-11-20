@@ -3,6 +3,7 @@ import {
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 
+import { overallPeekTag } from '@/entities/analysis/lib/overallPeekTag';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
@@ -45,7 +46,8 @@ export function loadOverallPeek(
                 undefined,
                 locale
             ),
-        [],
+        // 프리웜이 종합 분석을 데운 뒤 이 항목만 털 수 있게 한다(`overallPeekTag`).
+        [overallPeekTag(symbol)],
         SECONDS_PER_HALF_DAY
     ).catch((error: unknown) => {
         console.error(

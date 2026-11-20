@@ -157,6 +157,26 @@ test.describe('flows(한국): DART 지분공시', () => {
                 .getByRole('link', { name: '수급', exact: true })
         ).toHaveAttribute('href', /\/005930\.KS\/flows$/);
     });
+
+    test('한국 종목 탭 순서: 종합은 차트 바로 다음, 내 위치는 마지막', async ({
+        page,
+    }) => {
+        await page.goto(`/${KR_SYMBOL}`);
+        await expect(
+            page
+                .getByRole('navigation', { name: '분석 종류' })
+                .getByRole('link')
+        ).toHaveText([
+            '차트',
+            '종합',
+            '뉴스',
+            '펀더멘털',
+            '재무제표',
+            '수급',
+            '공포 탐욕 지수',
+            '내 위치',
+        ]);
+    });
 });
 
 test.describe('flows(한국): 모바일(390px)', () => {

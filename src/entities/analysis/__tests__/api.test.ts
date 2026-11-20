@@ -33,6 +33,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
         runFinancialsAnalysis: vi.fn(),
         runCongressTrend: vi.fn(),
         runOverallAnalysis: vi.fn(),
+        peekOverallAnalysisCache: vi.fn(),
         isEtRegularSessionOpen: vi.fn(),
         computeFinancialsScorecard: vi.fn(),
     };
@@ -195,6 +196,7 @@ import {
     runFinancialsAnalysis,
     runCongressTrend,
     runOverallAnalysis,
+    peekOverallAnalysisCache,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
     DEEPSEEK_V4_1_FLASH_MODEL,
@@ -230,6 +232,7 @@ import {
     prewarmFinancials,
     prewarmCongress,
     prewarmOverall,
+    hasPrewarmedOverall,
 } from '../api';
 
 const mockProvider = {
@@ -1251,6 +1254,39 @@ describe('prewarmOverall', () => {
                 errorSpy.mockRestore();
             }
         });
+    });
+});
+
+describe('hasPrewarmedOverall', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('종합 탭 엿보기와 같은 키(기본 모델·reasoning off·기본 타임프레임·기본 로케일)로 core를 읽는다', async () => {
+        vi.mocked(peekOverallAnalysisCache).mockResolvedValue(null);
+
+        await hasPrewarmedOverall('AAPL');
+
+        expect(peekOverallAnalysisCache).toHaveBeenCalledWith(
+            'AAPL',
+            'AAPL',
+            '1Day',
+            DEEPSEEK_V4_1_FLASH_MODEL,
+            false,
+            undefined,
+            undefined,
+            'ko'
+        );
+    });
+
+    it('결과가 있으면 true, 없으면 false', async () => {
+        vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce({
+            headlineKo: 'x',
+        } as never);
+        expect(await hasPrewarmedOverall('AAPL')).toBe(true);
+
+        vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(null);
+        expect(await hasPrewarmedOverall('AAPL')).toBe(false);
     });
 });
 

@@ -7,6 +7,7 @@ import {
     snapshotBoundaryFor,
     snapshotCloseBoundaryFor,
     secondsUntilNextSnapshotBoundary,
+    TWICE_WEEKLY_MAX_GAP_MS,
 } from '../lib/freshness';
 
 describe('lastCompletedEtCloseWithBuffer', () => {
@@ -314,6 +315,101 @@ describe('snapshotBoundaryFor — 주 2회 앵커(slow-refresh 탭)', () => {
             );
         }
     );
+});
+
+describe('snapshotBoundaryFor — cadence 인자(twice-weekly)', () => {
+    it.each([
+        ['2026-09-13T12:00:00Z', '2026-09-12T00:00:00.000Z'], // 일
+        ['2026-09-14T12:00:00Z', '2026-09-12T00:00:00.000Z'], // 월
+        ['2026-09-15T12:00:00Z', '2026-09-12T00:00:00.000Z'], // 화
+        ['2026-09-16T12:00:00Z', '2026-09-16T00:00:00.000Z'], // 수
+        ['2026-09-17T12:00:00Z', '2026-09-16T00:00:00.000Z'], // 목
+        ['2026-09-18T12:00:00Z', '2026-09-16T00:00:00.000Z'], // 금
+        ['2026-09-19T12:00:00Z', '2026-09-19T00:00:00.000Z'], // 토
+    ])(
+        'technical·news는 twice-weekly면 요일마다 수/토 앵커를 쓴다: now=%s → %s',
+        (now, expected) => {
+            expect(
+                snapshotBoundaryFor(
+                    'AAPL',
+                    'technical',
+                    new Date(now),
+                    'twice-weekly'
+                ).toISOString()
+            ).toBe(expected);
+            expect(
+                snapshotBoundaryFor(
+                    'AAPL',
+                    'news',
+                    new Date(now),
+                    'twice-weekly'
+                ).toISOString()
+            ).toBe(expected);
+        }
+    );
+
+    it.each(['technical', 'news'] as const)(
+        '%s 탭은 cadence를 생략하거나 session이면 시장 마감 경계다',
+        tab => {
+            const now = new Date('2026-09-17T05:00:00Z');
+            const close = snapshotCloseBoundaryFor('AAPL', now).getTime();
+            expect(snapshotBoundaryFor('AAPL', tab, now).getTime()).toBe(close);
+            expect(
+                snapshotBoundaryFor('AAPL', tab, now, 'session').getTime()
+            ).toBe(close);
+        }
+    );
+
+    it('slow-refresh 탭은 cadence와 무관하게 앵커를 쓴다', () => {
+        const now = new Date('2026-09-17T05:00:00Z');
+        expect(
+            snapshotBoundaryFor('AAPL', 'fundamental', now, 'session').getTime()
+        ).toBe(
+            snapshotBoundaryFor(
+                'AAPL',
+                'fundamental',
+                now,
+                'twice-weekly'
+            ).getTime()
+        );
+    });
+
+    it('국내·크립토 심볼도 twice-weekly면 같은 UTC 앵커를 쓴다', () => {
+        const now = new Date('2026-09-17T05:00:00Z');
+        const anchor = '2026-09-16T00:00:00.000Z';
+        expect(
+            snapshotBoundaryFor(
+                '005930.KS',
+                'technical',
+                now,
+                'twice-weekly'
+            ).toISOString()
+        ).toBe(anchor);
+        expect(
+            snapshotBoundaryFor(
+                'BTCUSD',
+                'news',
+                now,
+                'twice-weekly'
+            ).toISOString()
+        ).toBe(anchor);
+    });
+
+    it('TWICE_WEEKLY_MAX_GAP_MS는 두 앵커 사이 가장 긴 간격(토→수 4일)이다', () => {
+        const sat = snapshotBoundaryFor(
+            'AAPL',
+            'technical',
+            new Date('2026-09-19T12:00:00Z'),
+            'twice-weekly'
+        ).getTime();
+        const wed = snapshotBoundaryFor(
+            'AAPL',
+            'technical',
+            new Date('2026-09-23T12:00:00Z'),
+            'twice-weekly'
+        ).getTime();
+        expect(wed - sat).toBe(TWICE_WEEKLY_MAX_GAP_MS);
+    });
 });
 
 /**

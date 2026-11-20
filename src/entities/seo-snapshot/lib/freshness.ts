@@ -155,6 +155,22 @@ function twiceWeeklyAnchorFor(now: Date): Date {
 }
 
 /**
+ * 한 (심볼, 탭)의 갱신 주기.
+ *
+ * - `session`: 시장 세션 마감마다(기본).
+ * - `twice-weekly`: 수/토 앵커마다 — 조회가 거의 없는 심볼의 차트·뉴스 탭용(`runPrewarmBatch`의
+ *   `QUIET_CADENCE_TABS`). 슬로 탭과 같은 앵커를 쓰므로 행 나이가 `SNAPSHOT_MAX_AGE_MS`(7일)
+ *   절벽에 닿지 않는다(위 (a)).
+ */
+export type PrewarmCadence = 'session' | 'twice-weekly';
+
+/**
+ * 두 앵커(수/토 00:00 UTC) 사이의 가장 긴 간격 — 토 → 수. 이 주기로 도는 행의 나이는 정상
+ * 운영에서 이 값에 그날 밤 처리 지연을 더한 정도까지 간다(기아 감시 문턱 계산에 쓴다).
+ */
+export const TWICE_WEEKLY_MAX_GAP_MS = 4 * MS_PER_DAY;
+
+/**
  * 탭별 신선도 경계. `SLOW_REFRESH_TABS`(fundamental/financials/congress)는 주 2회
  * 앵커를, 나머지는 기존 시장 마감 경계(`snapshotCloseBoundaryFor`)를 그대로 쓴다.
  *
@@ -172,13 +188,17 @@ function twiceWeeklyAnchorFor(now: Date): Date {
  * 않다 — 세 탭이 원래 거래일마다 돌던 것이 주 2회로 줄어든 것이므로, 수·토는
  * 종전 수준이고 나머지 닷새가 가벼워진다. 수·토에 처리량 경보가 뜬다면 그건 이
  * 변경이 만든 새 천장이 아니라 원래 있던 천장이다.
+ *
+ * `cadence: 'twice-weekly'`는 탭 종류와 무관하게 같은 앵커를 고른다 — 조회 없는 심볼의
+ * technical/news를 슬로 탭처럼 다루는 용도다. 인자를 생략하면 종전 동작 그대로다.
  */
 export function snapshotBoundaryFor(
     symbol: string,
     tab: SeoSnapshotTab,
-    now: Date
+    now: Date,
+    cadence: PrewarmCadence = 'session'
 ): Date {
-    return SLOW_REFRESH_TABS.has(tab)
+    return SLOW_REFRESH_TABS.has(tab) || cadence === 'twice-weekly'
         ? twiceWeeklyAnchorFor(now)
         : snapshotCloseBoundaryFor(symbol, now);
 }

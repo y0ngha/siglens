@@ -564,6 +564,19 @@ Typecheck, lint and Vitest never execute Playwright specs. When a source trigger
 
 When behavior or a constant changes, update every layer in the same change; scoped `yarn test` runs skip e2e, so a mismatch only surfaces in CI. Import constants into e2e specs instead of restating the literal, and assert current catalog strings rather than old copy. When user-visible catalog text (ko or any locale) changes, grep `e2e/` and the unit tests for the old literal in the same change (`getByText`, `getByRole` names, `findIndex` regexes) and update every hit; an e2e matcher on the old copy fails CI, and an index lookup that returns -1 can keep passing silently. The same applies to what is rendered at the default e2e viewport: a class change that hides or shows a label by breakpoint (`hidden sm:inline` to `hidden 2xl:inline`) changes the accessible name there, so grep `e2e/specs` for the old label and run the affected specs; unit gates do not cover accessible names by viewport.
 
+<a id="TE-65"></a>
+
+#### TE-65 — An e2e update must pin the changed behaviour and fail against the old code
+
+"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Three recurring ways to pass without pinning:
+
+- Order change: adjusting the array a spec iterates keeps the old and new orders green. Assert the exact order (`toHaveText([...])`) and prove it by swapping two items.
+- Moved spec: moving a spec to another route to keep it passing leaves the route it left uncovered. Give the original route an equivalent assertion (for a link, host, path and decoded query, not only `href` containing a fragment).
+- Awaited mount: scope the locator to the container whose client mount is awaited. A bare `.first()` can match a server-rendered copy and return at once, so the wait never waits.
+
+- ❌ Reorder the tab list in the spec's loop; the old order still passes.
+- ✅ `await expect(tabs).toHaveText(['A', 'B', 'C'])`, run against the old code to see it fail.
+
 <a id="TE-50"></a>
 
 #### TE-50 — Assert inline JSON through the SSR response
