@@ -3,6 +3,26 @@ import { renderHook, act } from '@testing-library/react';
 import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
 import { _resetRegisterServiceWorkerForTests } from '@/features/pwa-install/lib/registerServiceWorker';
 import { PWA_BANNER_DISMISSED_STORAGE_KEY } from '@/features/pwa-install/lib/bannerDismissal';
+import { VISIT_HISTORY_STORAGE_KEY } from '@/features/visitor-ping/lib/visitHistoryStorage';
+
+/** 재방문일: 첫 방문일이 한참 전이라 어느 날 실행해도 `first < today`다. */
+function seedVisitHistory(first: string, last: string = first): void {
+    localStorage.setItem(
+        VISIT_HISTORY_STORAGE_KEY,
+        JSON.stringify(
+            first === last
+                ? { first, prev: null, last, days: 1 }
+                : { first, prev: first, last, days: 2 }
+        )
+    );
+}
+
+const TRIGGER_AND_PROMPT_EVENTS = [
+    'click',
+    'keydown',
+    'pointerup',
+    'beforeinstallprompt',
+];
 
 describe('usePwaInstall', () => {
     beforeAll(() => {
@@ -34,6 +54,8 @@ describe('usePwaInstall', () => {
     beforeEach(() => {
         _resetRegisterServiceWorkerForTests();
         localStorage.clear();
+        // 기존 케이스는 재방문일을 전제로 한다. 첫 방문일 케이스는 아래 describe가 따로 다룬다.
+        seedVisitHistory('2020-01-01');
         Object.defineProperty(navigator, 'userAgent', {
             value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
             configurable: true,
@@ -390,12 +412,7 @@ describe('usePwaInstall', () => {
             expect(second.result.current.showBanner).toBe(false);
         });
 
-        it('저장소 접근이 throw해도(프라이빗 모드) 배너는 뜨고 닫힌다', () => {
-            const getItem = vi
-                .spyOn(Storage.prototype, 'getItem')
-                .mockImplementation(() => {
-                    throw new Error('SecurityError');
-                });
+        it('저장소 쓰기만 throw해도(쿼터) 배너는 뜨고 닫힌다', () => {
             const setItem = vi
                 .spyOn(Storage.prototype, 'setItem')
                 .mockImplementation(() => {
@@ -410,8 +427,190 @@ describe('usePwaInstall', () => {
                 result.current.handleDismiss();
             });
             expect(result.current.showBanner).toBe(false);
-            getItem.mockRestore();
             setItem.mockRestore();
+        });
+    });
+
+    /**
+     * 재방문일부터만 띄운다. 첫 방문일에는 방아쇠 리스너도 설치 프롬프트 수신도 붙이지 않는다 —
+     * 입력이 와도 아무 일이 없다는 단언이 아니라 리스너가 없다는 단언이다(TE-65).
+     */
+    describe('재방문일(방문 이력)', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        const listenedEvents = (spy: { mock: { calls: unknown[][] } }) =>
+            spy.mock.calls.map(call => call[0]);
+
+        it('이력이 없는 첫 방문: 첫 입력에도 배너를 띄우지 않고, 방아쇠·설치 프롬프트 리스너를 붙이지 않는다', () => {
+            localStorage.clear();
+            const addListener = vi.spyOn(window, 'addEventListener');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+                window.dispatchEvent(new Event('keydown'));
+            });
+            expect(result.current.showBanner).toBe(false);
+            expect(
+                listenedEvents(addListener).filter(type =>
+                    TRIGGER_AND_PROMPT_EVENTS.includes(String(type))
+                )
+            ).toEqual([]);
+        });
+
+        it('첫 방문일 당일(first === today)도 같다', () => {
+            localStorage.clear();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-11-20T03:00:00Z'));
+            seedVisitHistory('2026-11-20');
+            const addListener = vi.spyOn(window, 'addEventListener');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(false);
+            expect(
+                listenedEvents(addListener).filter(type =>
+                    TRIGGER_AND_PROMPT_EVENTS.includes(String(type))
+                )
+            ).toEqual([]);
+        });
+
+        it('첫 방문일에는 Android 설치 프롬프트도 받아 두지 않는다', async () => {
+            localStorage.clear();
+            Object.defineProperty(navigator, 'userAgent', {
+                value: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                configurable: true,
+            });
+            const mockPrompt = vi.fn().mockResolvedValue(undefined);
+            const promptEvent = Object.assign(
+                new Event('beforeinstallprompt'),
+                {
+                    prompt: mockPrompt,
+                    userChoice: Promise.resolve({
+                        outcome: 'accepted' as const,
+                    }),
+                }
+            );
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(promptEvent);
+                window.dispatchEvent(new Event('click'));
+            });
+            await act(async () => {
+                await result.current.handleInstall();
+            });
+            expect(mockPrompt).not.toHaveBeenCalled();
+            expect(result.current.showBanner).toBe(false);
+        });
+
+        it('저장된 이력이 깨졌으면 배너를 띄우지 않는다', () => {
+            localStorage.setItem(VISIT_HISTORY_STORAGE_KEY, '{broken');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(false);
+        });
+
+        it('저장소를 읽을 수 없으면(프라이빗 모드) 배너를 띄우지 않고 던지지 않는다', () => {
+            vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new Error('SecurityError');
+            });
+            const addListener = vi.spyOn(window, 'addEventListener');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(false);
+            expect(
+                listenedEvents(addListener).filter(type =>
+                    TRIGGER_AND_PROMPT_EVENTS.includes(String(type))
+                )
+            ).toEqual([]);
+        });
+
+        it('기기 시계가 첫 방문일보다 과거로 가면 배너를 띄우지 않는다', () => {
+            localStorage.clear();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-11-18T03:00:00Z'));
+            seedVisitHistory('2026-11-20');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(false);
+        });
+
+        it('둘째 날(first < today)이면 오늘의 핑이 아직 안 돌았어도 배너를 띄운다', () => {
+            localStorage.clear();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-11-21T03:00:00Z'));
+            seedVisitHistory('2026-11-20');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(true);
+        });
+
+        it('둘째 날 오늘의 핑이 이미 이력을 앞으로 썼어도(first는 그대로) 배너를 띄운다', () => {
+            localStorage.clear();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-11-21T03:00:00Z'));
+            seedVisitHistory('2026-11-20', '2026-11-21');
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(true);
+        });
+
+        /**
+         * 방문 이력 쓰기와의 순서. `VisitorPing`은 첫 신뢰 입력 뒤에 이력을 쓴다 — 훅은 마운트 때 한 번
+         * 읽으므로 그 뒤의 쓰기가 이번 페이지의 판정을 뒤집지 못해야 한다.
+         */
+        it('첫 방문일: 마운트 뒤 같은 페이지에서 핑이 이력을 써도 배너는 뜨지 않는다', () => {
+            localStorage.clear();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-11-20T03:00:00Z'));
+            const { result } = renderHook(() => usePwaInstall());
+            seedVisitHistory('2026-11-20');
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(false);
+        });
+
+        it('둘째 날: 마운트 뒤 핑이 이력을 앞으로 써도 판정은 마운트 때 값이라 배너가 뜬다', () => {
+            localStorage.clear();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-11-21T03:00:00Z'));
+            seedVisitHistory('2026-11-20');
+            const { result } = renderHook(() => usePwaInstall());
+            seedVisitHistory('2026-11-20', '2026-11-21');
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(true);
+        });
+
+        it('마운트 뒤에 이력이 지워져도(다른 탭) 마운트 때의 재방문 판정을 유지한다', () => {
+            const { result } = renderHook(() => usePwaInstall());
+            localStorage.clear();
+            act(() => {
+                window.dispatchEvent(new Event('click'));
+            });
+            expect(result.current.showBanner).toBe(true);
+        });
+
+        it('판정은 읽기만 한다: 이력 키를 쓰거나 지우지 않는다', () => {
+            const setItem = vi.spyOn(Storage.prototype, 'setItem');
+            const removeItem = vi.spyOn(Storage.prototype, 'removeItem');
+            renderHook(() => usePwaInstall());
+            expect(setItem).not.toHaveBeenCalled();
+            expect(removeItem).not.toHaveBeenCalled();
         });
     });
 });

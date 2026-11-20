@@ -1,5 +1,6 @@
 import {
     advanceVisitHistory,
+    isReturnVisitDay,
     parseVisitHistory,
     visitSignalsOf,
 } from '@/entities/visitor/lib/visitHistory';
@@ -35,5 +36,25 @@ export function claimVisitSignals(today: string): VisitSignals | null {
         return visitSignalsOf(next, today);
     } catch {
         return null;
+    }
+}
+
+/**
+ * 오늘이 이 브라우저의 첫 방문일보다 뒤인가. 저장된 첫 방문 날짜만 브라우저 안에서 읽는다 — 쓰지도,
+ * 서버로 보내지도 않는다(개인정보처리방침 v15 §7의 `siglens:visit-history:v1` 항목이 이 읽기를 고지한다).
+ *
+ * 앱 설치 안내(`features/pwa-install`)가 재방문일부터 뜨게 하는 데 쓴다. 저장소를 읽을 수 없거나(프라이빗
+ * 모드·차단) 값이 깨졌으면 `false` — 이력을 모르는 브라우저에는 안내를 띄우지 않는다. 던지지 않는다.
+ */
+export function readIsReturnVisitDay(today: string): boolean {
+    try {
+        return isReturnVisitDay(
+            parseVisitHistory(
+                window.localStorage.getItem(VISIT_HISTORY_STORAGE_KEY)
+            ),
+            today
+        );
+    } catch {
+        return false;
     }
 }

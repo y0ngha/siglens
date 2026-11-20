@@ -502,6 +502,8 @@ Guard exceptions keyed on line numbers break on any edit above them. Key on stab
 
 A guard that matches loosely (any `[tag] text`, bare substrings of a large corpus) passes for items whose evidence is gone. Prove it by removing each guarded item's evidence from an in-memory copy of the real data and expecting that item to be reported; assert zero survivors. Mutating one hand-picked item does not show the other items are guarded.
 
+A guard on a promise (a policy or notice sentence) asserts each clause that code behaviour depends on, per locale; a single short phrase lets the second half of the promise be dropped unnoticed.
+
 - ❌ The author deletes one phrase from the source, sees the guard fail, and ships; most other phrases still match through a loose template or substring.
 - ✅ A test loops over every parsed item, deletes its evidence in memory, and asserts the guard flags it.
 
@@ -578,6 +580,15 @@ When behavior or a constant changes, update every layer in the same change; scop
 
 - ❌ Reorder the tab list in the spec's loop; the old order still passes.
 - ✅ `await expect(tabs).toHaveText(['A', 'B', 'C'])`, run against the old code to see it fail.
+
+<a id="TE-66"></a>
+
+#### TE-66 — An e2e absence assertion needs proof the code under test already ran
+
+"The element never appears" passes vacuously if asserted before the component that could render it has run. A hydration-start marker or a frame count is not that proof; it only holds by an incidental margin that shrinks on a slower runner. Sync on an interaction only a hydrated handler can answer (an ARIA state flip such as `aria-expanded`), and keep a positive control through the same helper, differing only in the seed. Likewise, before waiting on state the app writes (a localStorage key), confirm the writer runs under automation: code that skips `navigator.webdriver` never writes it, so seed the state explicitly and say that reason in the helper's comment.
+
+- ❌ `await page.waitForTimeout(1500); await expect(banner).toHaveCount(0);`
+- ✅ Open and close the menu, wait on `aria-expanded`, then assert `toHaveCount(0)`; the same helper with a different seed shows the banner.
 
 <a id="TE-50"></a>
 

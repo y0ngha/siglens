@@ -153,6 +153,20 @@ export function advanceVisitHistory(
     };
 }
 
+/**
+ * 오늘이 첫 방문일보다 뒤인가 — 앱 설치 안내를 띄워도 되는 "재방문일"인지 판정한다.
+ *
+ * `first < today`는 오늘 방문이 이력에 반영됐는지와 무관하다. 둘째 날 첫 입력 뒤 `advanceVisitHistory`가
+ * `last`만 올리고 `first`는 그대로이므로 같은 값이 나온다. 이력이 없거나(첫 방문 전) 첫 방문 당일이거나
+ * 기기 시계가 첫 방문일보다 과거로 갔으면 `false`다.
+ */
+export function isReturnVisitDay(
+    history: VisitHistory | null,
+    today: string
+): boolean {
+    return history !== null && history.first < today;
+}
+
 function firstBucket(k: number): FirstVisitBucket {
     if (k < 1) return 'new';
     if (k < 7) return 'd1_6';

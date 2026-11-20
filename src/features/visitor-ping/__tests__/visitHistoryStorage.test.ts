@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     VISIT_HISTORY_STORAGE_KEY,
     claimVisitSignals,
+    readIsReturnVisitDay,
 } from '@/features/visitor-ping/lib/visitHistoryStorage';
 
 describe('VISIT_HISTORY_STORAGE_KEY', () => {
@@ -90,5 +91,83 @@ describe('claimVisitSignals', () => {
                 window.localStorage.getItem(VISIT_HISTORY_STORAGE_KEY) ?? 'null'
             )
         ).toMatchObject({ days: 1 });
+    });
+});
+
+describe('readIsReturnVisitDay', () => {
+    const seed = (first: string, last: string = first): void => {
+        window.localStorage.setItem(
+            VISIT_HISTORY_STORAGE_KEY,
+            JSON.stringify(
+                first === last
+                    ? { first, prev: null, last, days: 1 }
+                    : { first, prev: first, last, days: 2 }
+            )
+        );
+    };
+
+    beforeEach(() => {
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('이력이 없으면 false다', () => {
+        expect(readIsReturnVisitDay('2026-11-20')).toBe(false);
+    });
+
+    it('첫 방문일 당일은 false다', () => {
+        seed('2026-11-20');
+        expect(readIsReturnVisitDay('2026-11-20')).toBe(false);
+    });
+
+    it('다음 날은 true다', () => {
+        seed('2026-11-20');
+        expect(readIsReturnVisitDay('2026-11-21')).toBe(true);
+    });
+
+    it('오늘의 핑이 이미 이력을 앞으로 썼어도(first < today) true다', () => {
+        seed('2026-11-20', '2026-11-21');
+        expect(readIsReturnVisitDay('2026-11-21')).toBe(true);
+    });
+
+    it('기기 시계가 과거로 갔으면 false다', () => {
+        seed('2026-11-20');
+        expect(readIsReturnVisitDay('2026-11-19')).toBe(false);
+    });
+
+    it('깨진 JSON이면 false다', () => {
+        window.localStorage.setItem(VISIT_HISTORY_STORAGE_KEY, '{broken');
+        expect(readIsReturnVisitDay('2026-11-21')).toBe(false);
+    });
+
+    it('모양이 맞지 않는 값이면 false다', () => {
+        window.localStorage.setItem(
+            VISIT_HISTORY_STORAGE_KEY,
+            JSON.stringify({ first: '2020-01-01' })
+        );
+        expect(readIsReturnVisitDay('2026-11-21')).toBe(false);
+    });
+
+    it('getItem이 던지면 false다(던지지 않는다)', () => {
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            throw new Error('blocked');
+        });
+        expect(readIsReturnVisitDay('2026-11-21')).toBe(false);
+    });
+
+    it('읽기만 한다: setItem·removeItem을 부르지 않고 저장값이 그대로다', () => {
+        seed('2026-11-20');
+        const before = window.localStorage.getItem(VISIT_HISTORY_STORAGE_KEY);
+        const setItem = vi.spyOn(Storage.prototype, 'setItem');
+        const removeItem = vi.spyOn(Storage.prototype, 'removeItem');
+        expect(readIsReturnVisitDay('2026-11-21')).toBe(true);
+        expect(setItem).not.toHaveBeenCalled();
+        expect(removeItem).not.toHaveBeenCalled();
+        expect(window.localStorage.getItem(VISIT_HISTORY_STORAGE_KEY)).toBe(
+            before
+        );
     });
 });

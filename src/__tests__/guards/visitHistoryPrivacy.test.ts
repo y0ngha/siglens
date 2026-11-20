@@ -252,6 +252,39 @@ describe(`재방문 이력 ↔ 방침 v${VERSION}`, () => {
         ).toEqual([]);
     });
 
+    /**
+     * 앱 설치 안내가 저장된 첫 방문 날짜를 읽는다(`readIsReturnVisitDay`). 저장 목적이 "집계"뿐이던
+     * 항목에 두 번째 용도가 생겼으므로, 읽기만 하고 서버로 더 보내지 않는다는 문장이 모든 로케일의 같은
+     * 항목에 있어야 한다. 문장이 사라지면 코드가 고지를 앞서 나간 것이다(CS-14).
+     */
+    const INSTALL_PROMPT_READ_PHRASE: Record<string, string> = {
+        ko: '앱 설치 안내',
+        en: 'app install prompt',
+        ja: 'アプリのインストール案内',
+        zh: '应用安装提示',
+    };
+
+    /** 약속의 뒷절: 이 읽기 때문에 서버로 더 보내는 정보는 없다. 이 절을 지우는 개정을 잡는다. */
+    const NOTHING_MORE_SENT_PHRASE: Record<string, string> = {
+        ko: '서버로 더 전송되는 정보는 없습니다',
+        en: 'Nothing more is sent to the server',
+        ja: 'サーバーへ追加で送信される情報はありません',
+        zh: '不会向服务器额外发送任何信息',
+    };
+
+    it.each(LOCALES)(
+        '%s 방문 이력 항목이 앱 설치 안내를 위한 첫 방문 날짜 읽기를 고지한다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l => l.includes('siglens:visit-history:v1')) ?? '';
+            expect(line).not.toBe('');
+            expect(line).toContain(INSTALL_PROMPT_READ_PHRASE[locale] ?? '');
+            expect(line).toContain(NOTHING_MORE_SENT_PHRASE[locale] ?? '');
+        }
+    );
+
     it('원문이 재방문 창의 일수(GUEST_RETURN_WINDOWS)를 그대로 적는다', () => {
         expect(KO).toContain(`${d7.startDay}~${d7.endDay}일`);
         expect(KO).toContain(`${d30.startDay}~${d30.endDay}일`);
