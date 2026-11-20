@@ -1,5 +1,6 @@
 import {
     buildChartImageUrl,
+    buildMarketPageUrl,
     buildSymbolPageUrl,
     buildUnsubscribeApiUrl,
     buildUnsubscribePageUrl,
@@ -57,5 +58,28 @@ describe('reportLinks', () => {
 
         expect(url.pathname).toBe('/ja/AAPL');
         expect(url.searchParams.get('utm_campaign')).toBe('email_report');
+    });
+
+    it('종목 페이지 URL은 메일 출처 UTM 세 쌍을 싣는다', () => {
+        const url = new URL(buildSymbolPageUrl(SITE, 'ko', 'AAPL'));
+
+        expect(url.searchParams.get('utm_source')).toBe('email');
+        expect(url.searchParams.get('utm_medium')).toBe('email');
+        expect(url.searchParams.get('utm_campaign')).toBe('email_report');
+    });
+
+    it('시장 페이지 URL은 로케일 경로와 같은 UTM을 싣는다', () => {
+        const url = new URL(buildMarketPageUrl(SITE, 'en'));
+
+        expect(url.pathname).toBe('/en/market');
+        expect(url.searchParams.get('utm_source')).toBe('email');
+        expect(url.searchParams.get('utm_medium')).toBe('email');
+        expect(url.searchParams.get('utm_campaign')).toBe('email_report');
+    });
+
+    it('한국어 시장 페이지 URL은 로케일 접두사가 없다', () => {
+        expect(new URL(buildMarketPageUrl(SITE, 'ko')).pathname).toBe(
+            '/market'
+        );
     });
 });

@@ -22,10 +22,17 @@ describe('resolveUserId', () => {
     });
 
     it('조회가 던지면 로그를 남기고 비회원으로 접는다', async () => {
-        const error = new Error('db down');
+        const error = new Error(
+            'Failed query: select … params: SECRET-SESSION-TOKEN',
+            { cause: Object.assign(new Error('x'), { code: '57P01' }) }
+        );
         getCurrentUser.mockRejectedValue(error);
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         await expect(resolveUserId('[t]')).resolves.toBeNull();
-        expect(spy).toHaveBeenCalledWith('[t] getCurrentUser failed:', error);
+        // 에러 이름과 DB 코드만 남는다 — 세션 토큰 파라미터가 로그에 닿지 않는다.
+        expect(spy).toHaveBeenCalledWith(
+            '[t] getCurrentUser failed: Error code=57P01'
+        );
+        expect(JSON.stringify(spy.mock.calls)).not.toContain('SECRET');
     });
 });

@@ -64,16 +64,28 @@ export function buildUnsubscribeApiUrl(
     return `${siteUrl}${REPORT_UNSUBSCRIBE_API_PATH}?${unsubscribeParams(secret, userId)}`;
 }
 
+/**
+ * 메일 본문 콘텐츠 링크가 공유하는 유입 추적 UTM. `utm_source`·`utm_medium=email`은 방문 비콘의
+ * 출처 분류(`classifyEntrySource`)가 `email`로 읽는다. 계정 관리 링크(설정·수신거부)에는 붙이지 않는다.
+ */
+function emailUtmQuery(): string {
+    return new URLSearchParams({
+        utm_source: 'email',
+        utm_medium: 'email',
+        utm_campaign: 'email_report',
+    }).toString();
+}
+
 /** 종목 페이지 절대 URL(유입 추적용 UTM 포함). */
 export function buildSymbolPageUrl(
     siteUrl: string,
     locale: Locale,
     symbol: string
 ): string {
-    const params = new URLSearchParams({
-        utm_source: 'email',
-        utm_medium: 'email',
-        utm_campaign: 'email_report',
-    });
-    return `${siteUrl}${localePath(locale, `/${encodeURIComponent(symbol)}`)}?${params.toString()}`;
+    return `${siteUrl}${localePath(locale, `/${encodeURIComponent(symbol)}`)}?${emailUtmQuery()}`;
+}
+
+/** 시장 페이지(`/market`) 절대 URL(유입 추적용 UTM 포함). 시장 브리핑 메일의 링크다. */
+export function buildMarketPageUrl(siteUrl: string, locale: Locale): string {
+    return `${siteUrl}${localePath(locale, '/market')}?${emailUtmQuery()}`;
 }

@@ -27,6 +27,7 @@ import {
     type FunnelEventRecord,
 } from '@/entities/funnel/api';
 import { getDatabaseClient } from '@/shared/db/client';
+import { describeDbErrorForLog } from '@/shared/db/describeDbErrorForLog';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
@@ -88,7 +89,9 @@ async function recordAndPrune(
         repo = new DrizzleFunnelEventRepository(db);
         await repo.record(event);
     } catch (error) {
-        console.error('[funnel] record failed:', error);
+        console.error(
+            `[funnel] record failed: ${describeDbErrorForLog(error)}`
+        );
         // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
         return;
     }

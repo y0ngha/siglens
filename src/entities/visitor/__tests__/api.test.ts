@@ -59,7 +59,7 @@ function makeSelectDb(rows: unknown[]): SiglensDatabase {
 }
 
 describe('DrizzleVisitorRepository', () => {
-    it('recordVisit은 진단 컬럼과 user_id까지 담아 삽입한다', async () => {
+    it('recordVisit은 진단 컬럼·사이트·방문 이력 구간값·user_id까지 담아 삽입한다', async () => {
         const { db, values } = makeInsertDb();
         const visit = {
             visitorHash: 'hash-1',
@@ -68,6 +68,11 @@ describe('DrizzleVisitorRepository', () => {
             country: 'KR',
             landingPath: '/ko/AAPL',
             entrySource: 'chatgpt' as const,
+            landingSite: 'main' as const,
+            firstVisitBucket: 'd7_13' as const,
+            lastVisitBucket: 'd7_13' as const,
+            visitDaysBucket: 'n2' as const,
+            returnWindow: 'd7' as const,
             userId: 'user-1',
         };
         await new DrizzleVisitorRepository(db).recordVisit(visit);
@@ -87,6 +92,11 @@ describe('DrizzleVisitorRepository', () => {
             country: null,
             landingPath: null,
             entrySource: null,
+            landingSite: null,
+            firstVisitBucket: null,
+            lastVisitBucket: null,
+            visitDaysBucket: null,
+            returnWindow: null,
             userId: null,
         });
         expect(onConflictDoUpdate).toHaveBeenCalledWith(
@@ -97,7 +107,7 @@ describe('DrizzleVisitorRepository', () => {
         const [{ set, setWhere }] = onConflictDoUpdate.mock.calls.find(
             ([arg]) => arg !== undefined
         ) as [{ set: { userId: unknown }; setWhere: never }];
-        // 충돌 시 user_id만 채운다 — 첫 진입 출처(entry_source)는 첫 행 값을 그대로 둔다.
+        // 충돌 시 user_id만 채운다 — 첫 진입 출처·사이트·구간값은 첫 행 값을 그대로 둔다.
         expect(Object.keys(set)).toEqual(['userId']);
         const rendered = new PgDialect().sqlToQuery(set.userId as never);
         expect(rendered.sql).toBe(
@@ -186,5 +196,106 @@ describe('DrizzleVisitorRepository', () => {
         expect(pattern.test('/ja/guide')).toBe(true);
         expect(pattern.test('/guidebook')).toBe(false);
         expect(pattern.test('/AAPL')).toBe(false);
+    });
+
+    it('entrySourceBySite는 (사이트, 출처)별로 묶고 새 방문·재방문을 구간값 기준으로 센다', async () => {
+        const rows = [
+            {
+                site: 'main',
+                entrySource: 'paid',
+                count: 5,
+                newVisitors: 3,
+                returning: 2,
+            },
+        ];
+        const orderBy = vi.fn().mockResolvedValue(rows);
+        const groupBy = vi.fn(() => ({ orderBy }));
+        const where = vi.fn(() => ({ groupBy }));
+        const from = vi.fn(() => ({ where }));
+        const select = vi.fn((_selection: unknown) => ({ from }));
+        const db = { select } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleVisitorRepository(db).entrySourceBySite('2026-10-21')
+        ).resolves.toEqual(rows);
+
+        const dialect = new PgDialect();
+        const [[selection]] = select.mock.calls as unknown as [
+            [{ newVisitors: unknown; returning: unknown }],
+        ];
+        expect(dialect.sqlToQuery(selection.newVisitors as never).sql).toBe(
+            `(count(*) filter (where "visitor_days"."first_visit_bucket" = 'new'))::int`
+        );
+        expect(dialect.sqlToQuery(selection.returning as never).sql).toBe(
+            `(count(*) filter (where "visitor_days"."first_visit_bucket" <> 'new'))::int`
+        );
+        expect(groupBy).toHaveBeenCalledTimes(1);
+        expect(
+            dialect.sqlToQuery((where.mock.calls[0] as unknown[])[0] as never)
+                .params
+        ).toEqual(['2026-10-21']);
+    });
+
+    it('visitDaysDistribution은 구간값이 있는 행만 (사이트, 구간)별로 센다', async () => {
+        const rows = [{ site: 'main', bucket: 'n1', count: 7 }];
+        const orderBy = vi.fn().mockResolvedValue(rows);
+        const groupBy = vi.fn(() => ({ orderBy }));
+        const where = vi.fn(() => ({ groupBy }));
+        const from = vi.fn(() => ({ where }));
+        const db = {
+            select: vi.fn(() => ({ from })),
+        } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleVisitorRepository(db).visitDaysDistribution('2026-10-21')
+        ).resolves.toEqual(rows);
+
+        const rendered = new PgDialect().sqlToQuery(
+            (where.mock.calls[0] as unknown[])[0] as never
+        );
+        expect(rendered.sql).toContain('"visit_days_bucket" is not null');
+        expect(rendered.params).toEqual(['2026-10-21']);
+    });
+
+    it('returnWindowCounts는 창 중앙값(1·10·33일)만큼 옮긴 범위와 마지막 창 끝(+36일)까지의 행으로 센다', async () => {
+        const rows = [{ site: 'main', newVisitors: 10, d1: 4, d7: 2, d30: 1 }];
+        const execute = vi.fn().mockResolvedValue(rows);
+        const db = { execute } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleVisitorRepository(db).returnWindowCounts(
+                '2026-09-01',
+                '2026-09-07'
+            )
+        ).resolves.toEqual(rows);
+
+        const [[query]] = execute.mock.calls as unknown as [[unknown]];
+        const rendered = new PgDialect().sqlToQuery(query as never);
+        const sqlText = rendered.sql.replace(/\s+/g, ' ');
+        expect(sqlText).toContain(
+            `return_window = 'd7' and "date" between $7::date + $8::int and $9::date + $10::int`
+        );
+        expect(sqlText).toContain(
+            `where "date" between $15::date and $16::date + $17::int and first_visit_bucket is not null`
+        );
+        expect(rendered.params).toEqual([
+            '2026-09-01',
+            '2026-09-07',
+            '2026-09-01',
+            1,
+            '2026-09-07',
+            1,
+            '2026-09-01',
+            10,
+            '2026-09-07',
+            10,
+            '2026-09-01',
+            33,
+            '2026-09-07',
+            33,
+            '2026-09-01',
+            '2026-09-07',
+            36,
+        ]);
     });
 });

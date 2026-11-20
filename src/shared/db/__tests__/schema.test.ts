@@ -169,3 +169,84 @@ describe('funnel_events 마이그레이션', () => {
         );
     });
 });
+
+/**
+ * 방문 이력 구간값 컬럼(개인정보처리방침 v15 §2) — 널 허용 `text` 다섯 개만 더하고 인덱스·기본값·
+ * 백필은 없다. 구 코드는 새 컬럼을 이름에 올리지 않아 안전하지만, 새 코드는 스키마가 먼저 적용돼야 한다.
+ */
+describe('visitor_visit_signals 마이그레이션', () => {
+    const sql = readFileSync(
+        join(process.cwd(), 'drizzle/0059_visitor_visit_signals.sql'),
+        'utf8'
+    );
+
+    it('visitor_days에 널 허용 text 컬럼 다섯 개만 더한다', () => {
+        const statements = sql
+            .split('--> statement-breakpoint')
+            .map(statement => statement.trim());
+        expect(statements).toEqual(
+            [
+                'landing_site',
+                'first_visit_bucket',
+                'last_visit_bucket',
+                'visit_days_bucket',
+                'return_window',
+            ].map(
+                column =>
+                    `ALTER TABLE "visitor_days" ADD COLUMN "${column}" text;`
+            )
+        );
+    });
+
+    it('저널에 등록돼 있다 — 등록 없이는 db:migrate가 건너뛴다', () => {
+        const journal = JSON.parse(
+            readFileSync(
+                join(process.cwd(), 'drizzle/meta/_journal.json'),
+                'utf8'
+            )
+        ) as { entries: Array<{ tag: string }> };
+        expect(journal.entries.map(entry => entry.tag)).toContain(
+            '0059_visitor_visit_signals'
+        );
+    });
+});
+
+/**
+ * `landing_path`의 옛 공유 링크·대화 id를 지우는 데이터 마이그레이션(개인정보처리방침 v15 §2). 스키마는
+ * 바꾸지 않는다. 실제 치환은 `visitor/__tests__/landingPathBackfill.db.test.ts`가 본다.
+ */
+describe('backfill_landing_path_identifiers 마이그레이션', () => {
+    const sql = readFileSync(
+        join(
+            process.cwd(),
+            'drizzle/0060_backfill_landing_path_identifiers.sql'
+        ),
+        'utf8'
+    );
+
+    it('visitor_days.landing_path만 고치는 UPDATE 두 개로 이루어진다', () => {
+        const statements = sql
+            .split('--> statement-breakpoint')
+            .map(statement => statement.replace(/^--.*$/gm, '').trim());
+        expect(statements).toHaveLength(2);
+        for (const statement of statements) {
+            expect(statement).toMatch(
+                /^UPDATE "visitor_days" SET "landing_path" = regexp_replace\([\s\S]*WHERE "landing_path" ~ /
+            );
+            expect(statement).not.toMatch(/DELETE|DROP|ALTER|INSERT/i);
+        }
+    });
+
+    it('0059 뒤에 저널에 등록돼 있다', () => {
+        const journal = JSON.parse(
+            readFileSync(
+                join(process.cwd(), 'drizzle/meta/_journal.json'),
+                'utf8'
+            )
+        ) as { entries: Array<{ tag: string }> };
+        const tags = journal.entries.map(entry => entry.tag);
+        expect(tags.indexOf('0060_backfill_landing_path_identifiers')).toBe(
+            tags.indexOf('0059_visitor_visit_signals') + 1
+        );
+    });
+});

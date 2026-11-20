@@ -12,7 +12,7 @@ import { pageReload } from '@/shared/lib/pageReload';
  * Reloading picks up the current build. The guard stops a reload loop while the
  * ALB still mixes old and new instances: at most one reload per window.
  */
-const RELOAD_MARK_KEY = 'siglens:version-skew-reload-at';
+export const RELOAD_MARK_KEY = 'siglens:version-skew-reload-at';
 const RELOAD_WINDOW_MS = 60_000;
 
 /**

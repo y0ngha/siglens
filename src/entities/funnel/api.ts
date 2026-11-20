@@ -1,6 +1,15 @@
 import 'server-only';
 
-import { and, count, eq, gte, lt, sql } from 'drizzle-orm';
+import {
+    and,
+    count,
+    countDistinct,
+    gte,
+    inArray,
+    lt,
+    eq,
+    sql,
+} from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { funnelEvents, users, visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -13,6 +22,7 @@ import { RETENTION_WINDOWS } from './retentionWindows';
 import type {
     FunnelKeyEventCount,
     MeterCohortRow,
+    ShareEventCount,
     SignupBreakdownRow,
     SignupCohortRow,
 } from './types';
@@ -67,6 +77,11 @@ export interface FunnelEventRepository {
      * 사람의 가입 전환을 같은 기간 안에서 비교하는 용도다.
      */
     meterCohort(from: Date, toExclusive: Date): Promise<MeterCohortRow[]>;
+    /**
+     * `[from, toExclusive)` 구간의 공유 이벤트(`share_created`·`share_opened`)를 이벤트 × 공유한 분석
+     * 종류별로 센다. `visitors`는 `visitor_hash` 고유 수다.
+     */
+    shareEventCounts(from: Date, toExclusive: Date): Promise<ShareEventCount[]>;
 }
 
 /**
@@ -199,5 +214,34 @@ export class DrizzleFunnelEventRepository implements FunnelEventRepository {
             order by 1
         `);
         return [...rows];
+    }
+
+    async shareEventCounts(
+        from: Date,
+        toExclusive: Date
+    ): Promise<ShareEventCount[]> {
+        // 키 이름이 `kind`가 아니라 `shareKind`인 이유: `countByKeyAndEvent`가 `kind`를 게이트 표로 모은다.
+        const shareKind = sql<
+            string | null
+        >`${funnelEvents.context} ->> 'shareKind'`;
+        return this.db
+            .select({
+                event: funnelEvents.event,
+                shareKind,
+                count: count(),
+                visitors: countDistinct(funnelEvents.visitorHash),
+            })
+            .from(funnelEvents)
+            .where(
+                and(
+                    inArray(funnelEvents.event, [
+                        'share_created',
+                        'share_opened',
+                    ]),
+                    gte(funnelEvents.occurredAt, from),
+                    lt(funnelEvents.occurredAt, toExclusive)
+                )
+            )
+            .groupBy(funnelEvents.event, shareKind);
     }
 }

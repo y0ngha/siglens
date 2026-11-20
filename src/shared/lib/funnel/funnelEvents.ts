@@ -1,3 +1,7 @@
+import {
+    SHAREABLE_KIND_VALUES,
+    type ShareableKind,
+} from '@/shared/db/constants';
 import type { SignupNudgeVariant } from '@/shared/lib/anonAnalysisCount';
 
 /**
@@ -127,6 +131,13 @@ export interface FunnelContextByEvent {
     watchlist_added: { source: WatchlistSource };
     watchlist_merged: { count: number };
     report_enabled: { source: ReportEnabledSource };
+    /**
+     * 분석 공유 링크를 만들었다. 키는 `kind`가 아니라 `shareKind`다 — `countByKeyAndEvent`가 `kind`를
+     * 게이트 표로 모으므로 `kind`로 두면 공유 행이 퍼널 게이트 표에 섞인다. 종목·id·URL은 싣지 않는다.
+     */
+    share_created: { shareKind: ShareableKind };
+    /** 공유 링크 페이지를 열었다. 링크 미리보기 봇이 세지 않도록 클라이언트에서만 보낸다. */
+    share_opened: { shareKind: ShareableKind };
 }
 export type FunnelEvent = keyof FunnelContextByEvent;
 export type ContextOf<E extends FunnelEvent> = FunnelContextByEvent[E];
@@ -146,6 +157,8 @@ const EVENT_SET: Record<FunnelEvent, true> = {
     watchlist_added: true,
     watchlist_merged: true,
     report_enabled: true,
+    share_created: true,
+    share_opened: true,
 };
 export const FUNNEL_EVENTS = Object.keys(EVENT_SET) as readonly FunnelEvent[];
 
@@ -182,6 +195,13 @@ function isNudgeKindContext(ctx: Record<string, unknown>): boolean {
     );
 }
 
+function isShareContext(ctx: Record<string, unknown>): boolean {
+    return (
+        hasOnlyKeys(ctx, ['shareKind']) &&
+        isOneOf(SHAREABLE_KIND_VALUES, ctx.shareKind)
+    );
+}
+
 const CONTEXT_VALIDATORS: {
     [E in FunnelEvent]: (ctx: Record<string, unknown>) => boolean;
 } = {
@@ -214,6 +234,8 @@ const CONTEXT_VALIDATORS: {
     report_enabled: ctx =>
         hasOnlyKeys(ctx, ['source']) &&
         isOneOf(REPORT_ENABLED_SOURCES, ctx.source),
+    share_created: isShareContext,
+    share_opened: isShareContext,
 };
 
 /** 라우트 입력 검증. 모르는 event·여분 키·잘못된 enum은 전부 거부한다. */

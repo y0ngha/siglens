@@ -7,6 +7,7 @@ import {
 import { isDueAt, toLocalSlot } from '@/entities/email-report/lib/localSlot';
 import {
     buildChartImageUrl,
+    buildMarketPageUrl,
     buildSymbolPageUrl,
     buildUnsubscribeApiUrl,
     buildUnsubscribePageUrl,
@@ -316,7 +317,7 @@ export async function runEmailReportBatch(
                 settingsUrl: `${deps.siteUrl}${localePath(locale, '/email-report')}`,
                 ...(marketBriefing && {
                     marketBriefing: {
-                        marketUrl: `${deps.siteUrl}${localePath(locale, '/market')}`,
+                        marketUrl: buildMarketPageUrl(deps.siteUrl, locale),
                     },
                 }),
                 t,

@@ -579,6 +579,8 @@ Fake LLMs and similar doubles that parse a vendor or core message format break s
 
 Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Tests that pass anyway are vacuous: a mocked query builder whose condition argument is never inspected, a SQL assertion built from short `toContain` fragments, a new tracking call with no click-and-assert test, a Redis Lua script whose `eval` is mocked so only the arguments are asserted (run the script against a real or emulated Redis, or assert its effects), or a "renders independently" test that mounts only the inner component. A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only through the data flag passes even when the renderer ignores the flag; assert the rendered output, and make fixtures discriminating (values where on and off differ) so a no-op mutation fails. Render the real condition (for SQL, its text and params), assert the full clause, drive the instrumented element, and assert on the composed tree.
 
+An absence assertion over recorded calls ("no raw value is stored" by stringifying `mock.calls`) first asserts the call count; an empty array passes it vacuously.
+
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
 - ✅ Render the condition to SQL plus params and assert both.
 - ❌ A last-line defensive guard (a security or invariant check that "cannot happen" behind an earlier check) has no test, so deleting it still passes. ✅ Drive the input past the earlier check and assert the guard rejects it.

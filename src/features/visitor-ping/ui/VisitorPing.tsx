@@ -2,61 +2,92 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import {
+    LEGACY_VISIT_MARKER_STORAGE_KEY,
+    VISIT_MARKER_STORAGE_KEY,
+} from '@/features/visitor-ping/lib/visitMarker';
+import { claimVisitSignals } from '@/features/visitor-ping/lib/visitHistoryStorage';
 import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { hasAdClickId } from '@/shared/lib/googleAds';
 
-/**
- * 마지막으로 비콘을 보낸 `${KST 날짜}:${member|guest}`를 담는다. 날짜만 담던 이전 키
- * `siglens:visit`은 읽지 않는다 — 다음 방문에 한 번 더 보낼 뿐이고 서버가 흡수한다.
- */
-const STORAGE_KEY = 'siglens:visit:v2';
+function removeLegacyMarker(): void {
+    try {
+        window.localStorage.removeItem(LEGACY_VISIT_MARKER_STORAGE_KEY);
+    } catch {
+        // 저장소가 막혀 있으면 지울 것도 없다.
+    }
+}
 
 /** 마지막 전송 마커. 사파리 프라이빗 모드 등으로 못 읽으면 `null` — 매번 보내고 서버가 중복을 흡수한다. */
 function readLastMarker(): string | null {
     try {
-        return window.localStorage.getItem(STORAGE_KEY);
+        return window.localStorage.getItem(VISIT_MARKER_STORAGE_KEY);
     } catch {
         return null;
     }
 }
 
+/** `utm_*` 값 하나의 상한. 분류표의 어떤 키도 이보다 길지 않고, 본문을 서버 상한(1KB) 안에 둔다. */
+const MAX_UTM_LENGTH = 64;
+
 /** 첫 진입 출처 신호. 서버가 정해진 분류값으로 바꾸고 원본은 버린다(`entrySourceOf`). */
 interface EntryOrigin {
     referrerHost: string | null;
     utmSource: string | null;
+    utmMedium: string | null;
+    /** URL에 광고 클릭 식별자(`gclid`·`gbraid`·`wbraid`)가 있었는가. 식별자의 값은 보내지 않는다. */
+    adClick: boolean;
+}
+
+function boundedUtm(value: string | null): string | null {
+    return value !== null && value !== '' && value.length <= MAX_UTM_LENGTH
+        ? value
+        : null;
 }
 
 /**
- * 이 문서를 처음 연 순간의 Referer 호스트와 `utm_source`. 경로·쿼리 전체는 보내지 않는다 —
- * 호스트 이름과 `utm_source` 값만 떼어 낸다.
+ * 이 문서를 처음 연 순간의 Referer 호스트, `utm_source`·`utm_medium`, 광고 클릭 식별자 유무.
+ * 경로·쿼리 전체는 보내지 않는다 — 호스트 이름과 두 `utm_*` 값, 불리언 하나만 떼어 낸다.
  */
 function readEntryOrigin(): EntryOrigin {
     const referrerHost = URL.canParse(document.referrer)
         ? new URL(document.referrer).hostname || null
         : null;
-    const utmSource =
-        new URLSearchParams(window.location.search).get('utm_source') || null;
-    return { referrerHost, utmSource };
+    const params = new URLSearchParams(window.location.search);
+    return {
+        referrerHost,
+        utmSource: boundedUtm(params.get('utm_source')),
+        utmMedium: boundedUtm(params.get('utm_medium')),
+        adClick: hasAdClickId(window.location.search),
+    };
 }
 
 function sendPresence(isMember: boolean, origin: EntryOrigin): void {
     // 신원을 마커에 넣는 이유: 비회원으로 보낸 날 가입·로그인하면 같은 날 마커가 남아 서버의
     // `COALESCE(user_id, excluded.user_id)` 채움이 영영 돌지 않는다. 신원이 바뀐 첫 방문에
     // 한 번 더 보내면 서버가 같은 (방문자, 날짜) 행에 user_id만 채운다.
-    const today = `${kstDateKey(new Date())}:${isMember ? 'member' : 'guest'}`;
+    removeLegacyMarker();
+    const dateKey = kstDateKey(new Date());
+    const today = `${dateKey}:${isMember ? 'member' : 'guest'}`;
     if (readLastMarker() === today) return;
 
-    const hasOrigin = origin.referrerHost !== null || origin.utmSource !== null;
+    // 전송 마커 뒤에서만 이력을 건드린다 — 입력을 만들지 않는 브라우저는 아무것도 쓰지 않는다.
+    // 같은 날 다시 불러도 이력은 그대로라 같은 구간값이 나간다. 저장소가 막혔으면 `null`.
+    const visit = claimVisitSignals(dateKey);
     postBeacon({
         url: '/api/presence',
-        ...(hasOrigin && { body: origin }),
-        onDelivered: () => window.localStorage.setItem(STORAGE_KEY, today),
+        body: { ...origin, visit },
+        onDelivered: () =>
+            window.localStorage.setItem(VISIT_MARKER_STORAGE_KEY, today),
     });
 }
 
 /**
  * 하루 한 번, 방문 사실과 첫 진입 출처를 알린다. IP와 User-Agent는 이미 요청 헤더에 있어
- * 본문에는 출처 신호(Referer 호스트·`utm_source`)만 싣고, 둘 다 없으면 본문 없이 보낸다.
+ * 본문에는 출처 신호(Referer 호스트·`utm_source`·`utm_medium`·광고 클릭 여부)와 방문 이력
+ * 구간값(`visit`, 저장소가 막혔으면 `null`)을 싣는다. 본문은 언제나 보낸다.
+ * 구간값은 `entities/visitor/lib/visitHistory`가 정의하고 개인정보처리방침 v15가 고지한다.
  *
  * 출처는 **마운트 시점에 한 번** 읽어 둔다(`originRef`). 루트 레이아웃에 붙어 클라이언트
  * 내비게이션에도 남아 있으므로, 첫 입력이 다른 페이지로 옮긴 뒤에 와도 처음 연 문서의
