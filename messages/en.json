@@ -3756,6 +3756,22 @@
                 "aria": "Meaning of {name}",
                 "entry": "Look up patterns, candlesticks and indicators in the chart guide",
                 "label": "Meaning"
+            },
+            "conclusion": {
+                "title": "At a glance",
+                "resistance": "Resistance",
+                "support": "Support",
+                "invalidation": "Invalidation level",
+                "invalidationHelpLabel": "About the invalidation level",
+                "invalidationHelp": "The price at which this analysis considers its assumed trend broken.",
+                "locked": "Members only",
+                "none": "None",
+                "planVoid": "Broken",
+                "trendUnknown": "No trend information",
+                "caveat": "Summarizes the move up to analysis time. Not a forecast.",
+                "planVoidDescription": "At the time of analysis, the closing price was already below this price.",
+                "trendHeadline": "<prefix>Current trend:</prefix> <value>{v0}</value>",
+                "analyzedAt": "Analysis time"
             }
         },
         "backtesting": {

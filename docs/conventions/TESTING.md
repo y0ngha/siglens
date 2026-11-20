@@ -444,6 +444,8 @@ A document listener registered in `useEffect`/`useEffectEvent` attaches in the p
 - ❌ `render(); await findByText('first'); fireEvent.keyDown(document, { key: 'Escape' });`
 - ✅ `await waitFor(() => expect(getByRole('dialog')).toHaveFocus()); fireEvent.keyDown(...)`.
 
+The same applies to e2e geometry: a bounding box read once while an open or resize animation is still running samples a mid-motion value and flakes. Wrap the read and its assertion in `expect(async () => { ... }).toPass()` so it retries until stable, or wait for the motion to end; do not add a fixed sleep.
+
 <a id="TE-37"></a>
 
 #### TE-37 — Non-isolated lanes restore every global they mutate
@@ -600,6 +602,8 @@ Fake LLMs and similar doubles that parse a vendor or core message format break s
 #### TE-53 — A test must fail when the behaviour it names is removed
 
 Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Tests that pass anyway are vacuous: a mocked query builder whose condition argument is never inspected, a SQL assertion built from short `toContain` fragments, a new tracking call with no click-and-assert test, a Redis Lua script whose `eval` is mocked so only the arguments are asserted (run the script against a real or emulated Redis, or assert its effects), or a "renders independently" test that mounts only the inner component. A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only through the data flag passes even when the renderer ignores the flag; assert the rendered output, and make fixtures discriminating (values where on and off differ) so a no-op mutation fails. Render the real condition (for SQL, its text and params), assert the full clause, drive the instrumented element, and assert on the composed tree.
+
+A component that reads shared async state (a hook that falls back to a seed while a run is in flight) is tested with the states the real hook produces; read the hook, then build the cases from those states. A convenient mock that hands the component a combination the hook never emits (live result while analysing) passes while the real transition is untested.
 
 An absence assertion over recorded calls ("no raw value is stored" by stringifying `mock.calls`) first asserts the call count; an empty array passes it vacuously.
 

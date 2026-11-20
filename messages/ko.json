@@ -3807,6 +3807,22 @@
                 "analyzing": "AI가 정밀 분석 중입니다… 광고 수익은 더 나은 AI 모델 도입과 서버 유지비에 쓰입니다.",
                 "done": "분석 결과가 도움이 되셨나요? 하단 제휴 링크를 이용해 주시면 시그렌즈 서비스를 이어가는 데 큰 힘이 됩니다."
             },
+            "conclusion": {
+                "analyzedAt": "분석 시각",
+                "caveat": "분석 시점까지의 흐름을 정리한 내용이며, 예측이 아니에요.",
+                "invalidation": "무효화 기준",
+                "invalidationHelp": "이 분석이 전제한 흐름이 깨졌다고 보는 가격이에요.",
+                "invalidationHelpLabel": "무효화 기준 설명",
+                "locked": "회원 전용",
+                "none": "없음",
+                "planVoid": "이탈",
+                "planVoidDescription": "분석 시점의 종가가 이미 이 가격 아래였어요.",
+                "resistance": "저항선",
+                "support": "지지선",
+                "title": "한눈에 보기",
+                "trendHeadline": "<prefix>현재 추세</prefix> <value>{v0}</value>",
+                "trendUnknown": "추세 정보 없음"
+            },
             "duration": {
                 "minutesSeconds": "{v0}분 {v1}초",
                 "seconds": "{v0}초"

@@ -93,6 +93,37 @@ test.describe('@webkit symbol overlays: 모바일', () => {
         ).toBeAttached();
         await expect(page.locator(FLOATING_LINK)).toBeHidden();
 
+        // 한눈에 보기 카드는 시트 콘텐츠 맨 위(인라인 링크 위)에 있고 세 행을 갖는다.
+        // 시트는 PEEK에서 아래가 잘려 있어 보임이 아니라 DOM 존재와 순서로 확인한다.
+        const sheetCard = page.locator(
+            '[data-vaul-drawer] [data-analysis-conclusion]'
+        );
+        await expect(sheetCard).toBeAttached();
+        await expect(sheetCard.locator('dl > div')).toHaveCount(3);
+        await expect(sheetCard.locator('h2')).toHaveText('한눈에 보기');
+        // 목적: PEEK에서도 카드 제목과 헤드라인(분석 중이면 진행 문구, 끝났으면 추세)이 뷰포트
+        // 안에 있다. 첫 가격 행은 툴바 높이에 달려 있어 단언하지 않는다.
+        // vaul의 열림 애니메이션이 끝나기 전(약 1초)에는 시트가 아직 움직이므로 한 번 읽지 않고
+        // 값이 맞을 때까지 다시 읽는다.
+        await expect(async () => {
+            const viewportHeight = await page.evaluate(
+                () => window.innerHeight
+            );
+            const headingBox = await sheetCard.locator('h2').boundingBox();
+            const headlineBox = await sheetCard
+                .locator('[data-conclusion-headline]')
+                .boundingBox();
+            expect(headingBox).not.toBeNull();
+            expect(headlineBox).not.toBeNull();
+            expect(headingBox?.y ?? Infinity).toBeGreaterThanOrEqual(0);
+            expect(
+                (headingBox?.y ?? Infinity) + (headingBox?.height ?? 0)
+            ).toBeLessThanOrEqual(viewportHeight);
+            expect(
+                (headlineBox?.y ?? Infinity) + (headlineBox?.height ?? 0)
+            ).toBeLessThanOrEqual(viewportHeight);
+        }).toPass({ timeout: 10_000 });
+
         // 첫 입력이 배너의 방아쇠다. 배너는 DOM에 올라오되 CSS로 숨겨진다.
         await page.keyboard.press('Tab');
         const banner = page.locator('[data-testid="pwa-banner-shell"]');

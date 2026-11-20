@@ -5,7 +5,7 @@
  * wait for the lazily loaded module.
  */
 
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { Bar, KeyLevels } from '@y0ngha/siglens-core';
 import { ChartSharePanel } from '@/views/share/ui/chart/ChartSharePanel';
 import { toShareKeyLevels } from '@/views/share/lib/shareKeyLevels';
@@ -71,6 +71,14 @@ describe('ChartSharePanel', () => {
         const props = mockAnalysisPanel.mock.lastCall?.[0];
         expect(props).not.toHaveProperty('onReanalyze');
         expect(props).not.toHaveProperty('onActionPricesVisibilityChange');
+    });
+
+    it('keeps the trend badge: the share page has no conclusion card above the panel', async () => {
+        render(<ChartSharePanel result={{} as never} symbol="AAPL" />);
+        await waitFor(() => expect(mockAnalysisPanel).toHaveBeenCalled());
+        const props = mockAnalysisPanel.mock.lastCall?.[0];
+        expect(props).not.toHaveProperty('hideTrendBadge');
+        expect(screen.queryByText('한눈에 보기')).toBeNull();
     });
 
     it('passes the empty clustered structure when the snapshot has no keyLevels', async () => {

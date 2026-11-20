@@ -585,6 +585,18 @@ className="text-[#1a2b3c]"
 ✅ <div className={SURFACE_CARD}><div className={SURFACE_NESTED}>…</div></div>
 ```
 
+<a id="DS-18"></a>
+
+#### DS-18 — 한 줄에서 컨트롤과 값은 줄어들지 않고, 접두 문구가 줄어든다
+
+컨트롤(버튼·트리거)과 핵심 값이 텍스트 형제와 한 줄을 나누면 `shrink-0`은 컨트롤과 값에 주고 라벨·접두 문구가 `truncate`로 양보한다. 고정 최소 폭 라벨이 컨트롤을 형제 아래로 밀면 클릭할 수 없고, 한 문자열 헤드라인 전체를 자르면 중요한 값이 먼저 잘린다(긴 로케일에서 특히). 접두와 값은 별도 span(리치 텍스트 키)으로 나눈다.
+가장 좁은 컨테이너 폭에서 가장 긴 실제 값(긴 통화, 배지)과 가장 긴 로케일로 재고, 컨트롤은 히트 테스트로 눌리는지 확인한다.
+
+```
+❌ <span className="truncate">{`근접 가격 ${value}`}</span>
+✅ <span className="truncate">{prefix}</span><span className="shrink-0">{value}</span>
+```
+
 <a id="DS-4"></a>
 
 #### DS-4 — 제목(h1~h6)은 위계 단계마다 공유 토큰을 쓰고, 부모 제목과 달라야 한다

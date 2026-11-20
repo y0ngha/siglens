@@ -3756,6 +3756,22 @@
                 "aria": "{name}の意味を見る",
                 "entry": "パターン、ローソク足、指標の意味はチャートガイドで確認できます",
                 "label": "意味を見る"
+            },
+            "conclusion": {
+                "title": "ひと目で確認",
+                "resistance": "レジスタンスライン",
+                "support": "サポートライン",
+                "invalidation": "無効化の基準",
+                "invalidationHelpLabel": "無効化の基準について",
+                "invalidationHelp": "この分析が前提とした流れが崩れたとみなす価格です。",
+                "locked": "会員限定",
+                "none": "なし",
+                "planVoid": "割れ",
+                "trendUnknown": "トレンド情報なし",
+                "caveat": "分析時点までの流れをまとめたもので、予測ではありません。",
+                "planVoidDescription": "分析時点の終値はすでにこの価格を下回っていました。",
+                "trendHeadline": "<prefix>現在のトレンド：</prefix><value>{v0}</value>",
+                "analyzedAt": "分析日時"
             }
         },
         "backtesting": {

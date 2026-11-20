@@ -3756,6 +3756,22 @@
                 "aria": "{name} 查看含义",
                 "entry": "形态、K线和指标的含义可在图表指南中查看",
                 "label": "查看含义"
+            },
+            "conclusion": {
+                "title": "一览",
+                "resistance": "阻力位",
+                "support": "支撑位",
+                "invalidation": "失效标准",
+                "invalidationHelpLabel": "关于失效标准",
+                "invalidationHelp": "视为本次分析所依据的走势已被打破的价格。",
+                "locked": "会员专享",
+                "none": "无",
+                "planVoid": "已跌破",
+                "trendUnknown": "暂无趋势信息",
+                "caveat": "整理至分析时点的走势，并非对未来的预测。",
+                "planVoidDescription": "分析时的收盘价已低于该价格。",
+                "trendHeadline": "<prefix>当前趋势：</prefix><value>{v0}</value>",
+                "analyzedAt": "分析时间"
             }
         },
         "backtesting": {
