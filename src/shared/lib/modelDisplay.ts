@@ -37,6 +37,12 @@ export const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplayInfo>> = {
     'gemini-3.6-flash': { label: 'Flash 3.6', fullName: 'Gemini 3.6 Flash' },
     'gemini-3.8-flash': { label: 'Flash 3.8', fullName: 'Gemini 3.8 Flash' },
     'gemini-4-argon': { label: 'Argon 4', fullName: 'Gemini 4 Argon' },
+    'gemini-4-carbon': { label: 'Carbon 4', fullName: 'Gemini 4 Carbon' },
+    'gemini-4-neon': { label: 'Neon 4', fullName: 'Gemini 4 Neon' },
+    'gemini-4-hydrogen': {
+        label: 'Hydrogen 4',
+        fullName: 'Gemini 4 Hydrogen',
+    },
     'gemini-3.1-pro-preview': {
         label: 'Pro 3.1',
         fullName: 'Gemini 3.1 Pro Preview',
@@ -46,12 +52,12 @@ export const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplayInfo>> = {
     'claude-opus-5-5': { label: 'Opus 5.5', fullName: 'Claude Opus 5.5' },
     'claude-opus-4-8': { label: 'Opus 4.8', fullName: 'Claude Opus 4.8' },
     'claude-opus-5': { label: 'Opus 5', fullName: 'Claude Opus 5' },
-    'claude-fable-5-1': { label: 'Fable 5.1', fullName: 'Claude Fable 5.1' },
+    'claude-fable-5-2': { label: 'Fable 5.2', fullName: 'Claude Fable 5.2' },
     'gpt-6-luna': { label: 'GPT 6 Luna', fullName: 'GPT-6 Luna' },
     'gpt-6-sol': { label: 'GPT 6 Sol', fullName: 'GPT-6 Sol' },
-    'gpt-6.1-sol': { label: 'GPT 6.1 Sol', fullName: 'GPT-6.1 Sol' },
+    'gpt-6.2-sol': { label: 'GPT 6.2 Sol', fullName: 'GPT-6.2 Sol' },
     'gpt-5.6-sol': { label: 'GPT 5.6 Sol', fullName: 'GPT-5.6 Sol' },
-    'gpt-6-astra': { label: 'GPT 6 Astra', fullName: 'GPT-6 Astra' },
+    'gpt-6.2-astra': { label: 'GPT 6.2 Astra', fullName: 'GPT-6.2 Astra' },
     'deepseek-v4.1-flash': {
         label: 'DeepSeek Flash',
         fullName: 'DeepSeek V4.1 Flash',
