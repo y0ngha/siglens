@@ -25,6 +25,7 @@ import {
     type AssembledPromptRecord,
     type MarketSessionSpec,
     type PriorAnalysis,
+    type Tier,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
@@ -139,6 +140,11 @@ export interface SaveAnalysisHistoryInput {
      */
     prompt?: AssembledPromptRecord;
     inputFingerprint?: string;
+    /**
+     * 이 분석을 생성한 요청의 tier. 생략하면 `NULL`로 남는다. 응답에 필터가 적용된 뒤의 tier가
+     * 아니라 **생성 시점** tier다(free 프리웜과 회원 분석은 스킬 세트가 다르다).
+     */
+    tier?: Tier;
 }
 
 /** `findRecentForPrompt` 입력. */
@@ -284,6 +290,7 @@ export class DrizzleAnalysisHistoryRepository {
                         timeframe: input.timeframe,
                         tab: input.tab,
                         modelId: input.modelId,
+                        tier: input.tier ?? null,
                         locale: input.locale,
                         result: input.result,
                         inputFingerprint: input.inputFingerprint ?? null,

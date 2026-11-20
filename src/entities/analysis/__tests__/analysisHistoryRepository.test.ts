@@ -169,6 +169,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            tier: null,
             locale: 'ko',
             result: readableResult,
             inputFingerprint: null,
@@ -237,6 +238,27 @@ describe('DrizzleAnalysisHistoryRepository', () => {
         // 아무것도 쓰이지 않는다. 두 경로를 구분하는 신호는 이 단언뿐이다.
         expect(consoleError).not.toHaveBeenCalled();
         consoleError.mockRestore();
+    });
+
+    it('writes the generation tier when supplied', async () => {
+        const { historyValues, db } = makeDb();
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        await repository.saveAnalysisHistory({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            modelId: 'analysis-worker',
+            tier: 'member',
+            locale: 'ko',
+            result: readableResult,
+            generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+            prompt: promptRecord,
+        });
+
+        expect(historyValues).toHaveBeenCalledWith(
+            expect.objectContaining({ tier: 'member' })
+        );
     });
 
     it('passes inputFingerprint through when supplied', async () => {

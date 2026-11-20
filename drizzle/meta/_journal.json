@@ -428,6 +428,13 @@
       "when": 1795160263959,
       "tag": "0060_backfill_landing_path_identifiers",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795178274826,
+      "tag": "0061_signal_price_analysis_tier",
+      "breakpoints": true
     }
   ]
 }

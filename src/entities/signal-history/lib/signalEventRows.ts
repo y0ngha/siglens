@@ -72,6 +72,10 @@ export function planSignalEpisodes(input: {
                 signalType: signal.type,
                 direction: signal.direction,
                 changePercent: stock.changePercent,
+                priceAtDetection:
+                    Number.isFinite(stock.price) && stock.price > 0
+                        ? stock.price
+                        : null,
                 koreanName: stock.koreanName === '' ? null : stock.koreanName,
                 computedAt: input.result.computedAt,
             }))

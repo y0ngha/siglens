@@ -1157,6 +1157,13 @@ export const analysisHistory = pgTable(
         /** 'technical' | 'overall' */
         tab: varchar('tab', { length: 16 }).notNull(),
         modelId: varchar('model_id', { length: 64 }).notNull(),
+        /**
+         * 이 분석을 **생성한** 요청의 tier(`free` | `pro` 등). 같은 종목이라도 free 프리웜과 회원
+         * 분석은 스킬 세트가 달라 tier 없이는 결과를 해석할 수 없다. user enum이 아닌 varchar인
+         * 이유는 `signal_events.signal_type`과 같다(tier가 늘어도 DB 제약이 막지 않게).
+         * 이 컬럼이 생기기 전 행과 tier를 알리지 않은 작성자의 행은 null.
+         */
+        tier: varchar('tier', { length: 16 }),
         /** 감사용 — 읽기 필터 금지. 테이블 JSDoc 참조. */
         locale: contentLocaleEnum('locale').notNull(),
         /** 정규화된 AnalysisResponse. */
@@ -2006,6 +2013,14 @@ export const signalEvents = pgTable(
         direction: varchar('direction', { length: 8 }).notNull(),
         /** 그날 등락률(%). 목록에 함께 보여 준다. */
         changePercent: doublePrecision('change_percent').notNull(),
+        /**
+         * 에피소드가 처음 기록될 때 스캐너가 보고한 가격(시세가 있으면 시세, 없으면 마지막 일봉
+         * 종가) — 마감 + 정착 시간 뒤의 값이다. 이어지는 동안 갱신하지 않는다(첫 포착 가격).
+         * 단위는 그 시장의 자국 통화(`market` 컬럼으로 구분: 미국 USD, 한국 KRW)다. 시세를 못 받아
+         * 폴백한 경우 스캐너가 가진 일봉의 마지막 종가라 직전 세션 종가일 수 있다.
+         * 가격을 알 수 없으면 null이고, 이 컬럼이 생기기 전 행도 null이다.
+         */
+        priceAtDetection: doublePrecision('price_at_detection'),
         /** 기록 시점의 한글 종목명. 없으면 null — 목록이 이름 조회 없이 그려지게 남긴다. */
         koreanName: text('korean_name'),
         /** 스캐너 계산 시각. */

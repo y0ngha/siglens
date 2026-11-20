@@ -12,6 +12,8 @@ export interface SignalEpisodeInsert {
     readonly signalType: SignalType;
     readonly direction: SignalDirection;
     readonly changePercent: number;
+    /** 처음 포착될 때 스캐너가 보고한 가격. 유한한 양수가 아니면 null. 이어질 때 갱신하지 않는다. */
+    readonly priceAtDetection: number | null;
     readonly koreanName: string | null;
     /** 스캐너 계산 시각(ISO). */
     readonly computedAt: string;

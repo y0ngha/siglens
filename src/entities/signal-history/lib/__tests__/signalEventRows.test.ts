@@ -173,6 +173,7 @@ describe('planSignalEpisodes', () => {
                 signalType: 'golden_cross',
                 direction: 'bullish',
                 changePercent: 2.5,
+                priceAtDetection: 100,
                 koreanName: '엔비디아',
                 computedAt: '2026-11-13T21:20:00.000Z',
             },
@@ -222,5 +223,54 @@ describe('planSignalEpisodes', () => {
         });
 
         expect(plan.inserts).toHaveLength(1);
+    });
+
+    it('스캐너가 보고한 가격을 첫 포착 가격으로 복사한다', () => {
+        const plan = planSignalEpisodes({ ...BASE, openKeys: [] });
+
+        expect(
+            plan.inserts.map(row => `${row.symbol}:${row.priceAtDetection}`)
+        ).toEqual(['NVDA:100', 'NVDA:100', 'AAPL:200']);
+    });
+
+    it.each([
+        ['NaN', Number.NaN],
+        ['Infinity', Number.POSITIVE_INFINITY],
+        ['0', 0],
+        ['음수', -5],
+    ])('가격이 %s면 null로 남긴다', (_label, price) => {
+        const plan = planSignalEpisodes({
+            ...BASE,
+            result: {
+                ...RESULT,
+                stocks: [
+                    {
+                        symbol: 'AAPL',
+                        koreanName: '',
+                        sectorSymbol: 'XLK',
+                        price,
+                        changePercent: -1,
+                        trend: 'sideways',
+                        signals: [signal('golden_cross')],
+                    },
+                ],
+            },
+            openKeys: [],
+        });
+
+        expect(plan.inserts).toHaveLength(1);
+        expect(plan.inserts[0]?.priceAtDetection).toBeNull();
+    });
+
+    it('이어진 에피소드의 plan에는 가격이 없다 — 첫 포착 가격을 덮어쓰지 않는다', () => {
+        const plan = planSignalEpisodes({
+            ...BASE,
+            openKeys: [{ symbol: 'AAPL', signalType: 'golden_cross' }],
+        });
+
+        expect(plan.extends).toEqual([
+            { symbol: 'AAPL', signalType: 'golden_cross' },
+        ]);
+        expect(plan.extends[0]).not.toHaveProperty('priceAtDetection');
     });
 });

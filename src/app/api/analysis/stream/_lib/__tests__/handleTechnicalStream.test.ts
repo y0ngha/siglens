@@ -487,10 +487,43 @@ describe('handleTechnicalStream', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 modelId: 'analysis-worker',
+                tier: 'free',
                 locale: 'ko',
                 result: { entry: 1 },
                 prompt: undefined,
             });
+        });
+
+        it('이력에는 BYOK 게이트가 정한 생성 tier를 남긴다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done',
+                unfilteredResult: { entry: 1 },
+            } as never);
+            await (
+                await handleTechnicalStream(request(), {
+                    ...params,
+                    modelId: 'm1' as never,
+                })
+            ).text();
+            expect(schedulePersistAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ tier: 'member' })
+            );
+        });
+
+        it('미터로 공개된 비회원 분석도 이력에는 생성 tier(free)를 남긴다', async () => {
+            vi.mocked(resolveMeterGate).mockResolvedValue({
+                kind: 'revealed',
+                tierConfig: { depth: 'member' } as never,
+                release: vi.fn(),
+            });
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done',
+                unfilteredResult: { entry: 1 },
+            } as never);
+            await (await handleTechnicalStream(request(), params)).text();
+            expect(schedulePersistAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ tier: 'free' })
+            );
         });
 
         it('요청한 모델이 있으면 그 모델명으로 저장한다', async () => {

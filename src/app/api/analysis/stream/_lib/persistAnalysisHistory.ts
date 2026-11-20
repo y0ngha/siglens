@@ -1,4 +1,4 @@
-import type { AssembledPromptRecord } from '@y0ngha/siglens-core';
+import type { AssembledPromptRecord, Tier } from '@y0ngha/siglens-core';
 import { after } from 'next/server';
 import {
     DrizzleAnalysisHistoryRepository,
@@ -22,6 +22,8 @@ export interface PersistAnalysisHistoryInput {
     timeframe: string;
     tab: AnalysisHistoryTab;
     modelId: string;
+    /** 이 분석을 생성한 요청의 tier(`tierContext.tier`). */
+    tier: Tier;
     locale: Locale;
     result: unknown;
     /**
@@ -57,6 +59,7 @@ export function schedulePersistAnalysisHistory(
                 timeframe: input.timeframe,
                 tab: input.tab,
                 modelId: input.modelId,
+                tier: input.tier,
                 locale: input.locale,
                 result: input.result,
                 generatedAt,

@@ -316,6 +316,8 @@ async function streamTechnical(
             timeframe,
             tab: 'technical',
             modelId: modelId ?? DEFAULT_TECHNICAL_MODEL_ID,
+            // 필터 전 결과와 같은 이유로 **생성** tier를 남긴다(free 프리웜과 회원 분석은 스킬 세트가 다르다).
+            tier,
             locale: requestLocale,
             // 이력에는 **필터 전** 결과를 남긴다. `result.result`는 이 요청의 tier가 *볼 수 있는* 만큼만
             // 담아 free는 `riskLevel`이 null이고, `PriorAnalysis`는 trend와 riskLevel을 모두 요구하므로
