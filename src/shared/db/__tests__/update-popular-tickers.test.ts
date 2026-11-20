@@ -6,7 +6,7 @@ import {
     visitKrRejection,
     visitUsRejection,
     writePopularTickerArtifacts,
-} from '../../../../update-popular-tickers';
+} from '../../../../scripts/update-popular-tickers';
 
 describe('createYahooOptionsProbe', () => {
     it('uses the Yahoo alias before probing options', async () => {

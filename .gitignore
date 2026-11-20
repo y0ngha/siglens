@@ -96,6 +96,7 @@ next-env.d.ts
 !/scripts/skills-digest.ts
 # 차트 가이드: 스킬 → 가이드 링크 맵 생성기(guideCoverage 가드가 import한다).
 !/scripts/generate-guide-links.ts
+!/scripts/update-popular-tickers.ts
 !/scripts/__tests__/
 !/scripts/__tests__/**
 # SP-A: one-time backfill script + pure helpers (tracked so users can run them).

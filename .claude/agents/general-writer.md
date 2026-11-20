@@ -90,7 +90,7 @@ The only permitted output is the exit signal JSON.
 {
   "agent": "general-writer",
   "status": "done",
-  "files_changed": ["src/entities/x/lib/foo.ts", "src/entities/x/lib/foo.test.ts"],
+  "files_changed": ["src/entities/<x>/lib/foo.ts", "src/entities/<x>/lib/foo.test.ts"],
   "gates": { "tsc": "pass", "test": "pass", "lint": "pass" },
   "notes": "Deviations from the design or anything the upstream model must know (empty string if none)"
 }

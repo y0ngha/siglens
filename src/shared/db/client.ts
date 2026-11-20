@@ -183,10 +183,10 @@ export function stripLibpqOnlyParams(databaseUrl: string): string {
  * postgres-js(TCP) + drizzle 클라이언트를 만든다.
  *
  * 기대하는 URL 형태:
- *   - Neon(현재): `postgresql://user:pass@<endpoint>-pooler.<region>.aws.neon.tech/db?sslmode=require&channel_binding=require`
+ *   - Neon(이전 호스트, 파서는 계속 지원): `postgresql://user:pass@<endpoint>-pooler.<region>.aws.neon.tech/db?sslmode=require&channel_binding=require`
  *     → `sslmode=require`는 `verify-full`로 끌어올려지고(체인 + 호스트명 검증),
  *       `channel_binding`은 떼며, pooler 호스트라 `prepare`가 꺼진다.
- *   - RDS(이전 후): `postgresql://user:pass@<endpoint>:5432/siglens?sslmode=verify-full`
+ *   - RDS(현재): `postgresql://user:pass@<endpoint>:5432/siglens?sslmode=verify-full`
  *     → CA는 이미지의 `NODE_EXTRA_CA_CERTS`(RDS 글로벌 번들, Dockerfile 참조)로 신뢰한다.
  *   - 로컬/E2E: `postgres://user:pass@localhost:5434/db` (`sslmode` 없음) → 평문 그대로.
  *

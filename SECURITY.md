@@ -51,7 +51,7 @@ Fixes ship through the normal tag-driven deploy pipeline. You will be credited i
 - Automated scanner output submitted without a demonstrated impact
 - Missing rate limits or missing security headers with no concrete exploit path
 - Social engineering, phishing, or physical attacks against the maintainer or users
-- Vulnerabilities in third-party services Siglens depends on (FMP, Upstash, Neon, Resend, Cloudflare, AWS, or the AI model providers) — please report those to the vendor
+- Vulnerabilities in third-party services Siglens depends on (FMP, Upstash, Resend, Cloudflare, AWS (including the managed PostgreSQL database), or the AI model providers) — please report those to the vendor
 - The correctness or profitability of AI analysis output. Siglens is analysis-only and provides no order execution; a report you disagree with is not a security issue
 - Anything that requires an already-compromised user device or browser extension
 

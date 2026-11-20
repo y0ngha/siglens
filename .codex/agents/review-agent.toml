@@ -105,7 +105,7 @@ Additionally, based on changed file locations:
 | Diff touches authentication flows or session management | `docs/architecture/AUTH.md` |
 | Only test files changed, no source files | Skip all conditional docs |
 
-Determine the trigger by reading the actual file content of the diff — do NOT match on directory paths (`src/domain/`, `src/infrastructure/`). FSD migration is in progress; concrete layer paths are unstable.
+Determine the trigger by reading the actual file content of the diff, not only the directory name. The layer layout is stable (`src/app`, `src/views`, `src/widgets`, `src/features`, `src/entities`, `src/shared`); the pre-FSD `domain/`, `components/` and `infrastructure/` directories no longer exist.
 
 **Round 2+ note:** On round 2+, "changed file locations" refers to the `modified_files` list provided by the orchestrator, not the full diff.
 
@@ -118,16 +118,19 @@ Determine the trigger by reading the actual file content of the diff — do NOT 
 Evaluate each item silently. Do not output results — violations go into findings only.
 
 **Layer Dependencies**
-- [ ] domain/: no external library imports (technicalindicators, lodash, etc.)
-- [ ] components/: no direct imports from infrastructure (AlpacaProvider, claudeClient, etc.)
-- [ ] Lightweight Charts is not imported outside components/chart/
+- [ ] Dependency direction is `app → views → widgets → features → entities → shared`; no layer imports from a layer above it (`.oxlintrc.json` enforces this with `no-restricted-imports`)
+- [ ] `@y0ngha/siglens-core` is imported from the package root only (no `dist/` deep imports) and is never wrapped in a re-export-only file
+- [ ] Same-layer cross-slice imports only where root `CLAUDE.md` "Layer Dependency Rules" allows them (`shared`, `entities`, `features`), with no cycles; widgets never import other widgets
+- [ ] No barrel files (`index.ts` or re-export-only files); symbols are imported from their defining file
+- [ ] `entities/<x>/api.ts` is server-only and imported only from the same entity or `app`; `entities/<x>/actions/` may be imported from features, widgets, views and app
+- [ ] Lightweight Charts (`lightweight-charts`) is imported only inside chart widgets (today `src/widgets/chart` and `src/widgets/fear-greed`), never from `app/` or `entities/api/` (`docs/conventions/REACT.md` Lightweight Charts Rules; review-time rule, nothing lints it)
+- [ ] Pure logic modules import no external libraries; providers are wrapped in entity/shared adapters (root `CLAUDE.md` Task Execution Rule 5)
+- [ ] Analysis logic (indicators, signals, patterns, prompts) is not re-implemented locally; it belongs in `@y0ngha/siglens-core`
 
-**Domain Rules**
-- [ ] Indicator initial period values are null (no 0 or NaN)
-- [ ] Domain functions are pure (no fetch, console.log, Date.now())
-- [ ] Domain functions have explicit return types
-- [ ] IndicatorResult fields are added only after calculation functions are implemented (no hardcoded empty arrays)
-- [ ] MA/EMA uses Record<number, (number | null)[]> structure
+**Analysis Logic Boundary**
+- [ ] No local re-implementation of analysis logic (indicator math, signal or pattern detection, analysis prompts, response normalization, tier or usage-limit policy); it belongs in `@y0ngha/siglens-core` (see `docs/architecture/SCOPE.md`, local-only)
+- [ ] Core indicator arrays keep `null` for warm-up periods; siglens code renders or maps `null` explicitly and never coerces it to `0` or `NaN`
+- [ ] Core symbols are imported directly from `@y0ngha/siglens-core`, with no thin re-export wrapper
 
 **Components**
 - [ ] 'use client' declared when useState/useEffect is used
@@ -135,8 +138,7 @@ Evaluate each item silently. Do not output results — violations go into findin
 - [ ] Timeframe is managed as client state only (no URL query parameters)
 
 **Tests**
-- [ ] Corresponding test file exists for domain/ and infrastructure/ files
-- [ ] Initial null range test case is included
+- [ ] Corresponding test file exists for new or changed logic files (lib, model, api, actions, hooks)
 - [ ] Test structure: describe → describe(context) → it
 
 ---

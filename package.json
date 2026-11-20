@@ -67,7 +67,7 @@
         "release:patch": "dotenv -e .env.local -- release-it patch --verbose",
         "release:minor": "dotenv -e .env.local -- release-it minor --verbose",
         "release:major": "dotenv -e .env.local -- release-it major --verbose",
-        "update-popular-tickers": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx update-popular-tickers.ts",
+        "update-popular-tickers": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/update-popular-tickers.ts",
         "update-popular-cryptos": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx scripts/update-popular-cryptos.ts",
         "db:backfill:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/backfillContentLocale.ts",
         "db:backfill:snapshot-first-gen": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/backfillSnapshotFirstGeneratedAt.ts",

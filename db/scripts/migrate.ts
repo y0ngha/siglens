@@ -17,7 +17,7 @@ if (!databaseUrl) {
 /**
  * **대상 확인 + 원격 쓰기 가드.**
  *
- * 이 스크립트는 `dotenv -e .env.local`로 실행되고, 그 파일은 운영 Neon
+ * 이 스크립트는 `dotenv -e .env.local`로 실행되고, 그 파일은 운영 DB(Amazon RDS)
  * 인스턴스를 가리킨다. 즉 `yarn db:migrate`는 기본값이 **운영 스키마 변경**이다.
  * 마이그레이션은 되돌리기 어렵고(`DROP INDEX` 포함), 로컬에 적용하려던 사람이
  * 그대로 치면 운영이 바뀐다.

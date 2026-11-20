@@ -46,7 +46,7 @@ export const MARKET_NEWS_LIST_PAGE_SIZE = 10;
  * 값은 두 화면 모두 10페이지 분량이다(5×10, 10×5). SSR HTML에 나가는 것은 첫
  * 페이지뿐이라 크롤러가 보는 마크업은 상한과 무관하다.
  *
- * ponytail: 액션은 조회 후 잘라낸다 — SQL `LIMIT`이면 Neon 전송량까지 줄지만
+ * ponytail: 액션은 조회 후 잘라낸다 — SQL `LIMIT`이면 DB 전송량까지 줄지만
  * repository 시그니처를 바꿔야 하고, 지금 비용의 대부분은 전송·압축 쪽이다.
  */
 export const NEWS_ROW_SERIALIZATION_LIMIT = 50;

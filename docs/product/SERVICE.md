@@ -1,6 +1,6 @@
 # Service Overview
 
-U.S. stock AI analysis platform.
+AI analysis platform for U.S. stocks, Korean stocks and crypto.
 Provides chart rendering, indicator calculations, and AI-powered comprehensive analysis.
 No order/trade functionality. Analysis only.
 
@@ -45,7 +45,7 @@ Investors who want a single, consolidated interpretation of multiple indicators.
    - Pattern detection via Skills (head and shoulders, wedge, etc.)
    - Support/resistance levels
    - Overall market direction (bullish / bearish / neutral)
-4. Timeframe switching (1-minute to daily)
+4. Timeframe switching (5-minute to daily)
 5. On-demand AI re-analysis
 ```
 
@@ -82,7 +82,7 @@ Developer portal: /developers.
 ## Tech Stack
 
 ```
-Next.js     16.3  (App Router + Turbopack)
+Next.js     16.4  (App Router + Turbopack)
 React       19.3
 TypeScript  7.0 (네이티브 컴파일러)
 Node.js     24 (LTS, `.nvmrc`·운영 이미지 `node:24-alpine`와 동일)
@@ -92,16 +92,15 @@ yarn        4.18.0
 ```
 Charts      lightweight-charts
 Styles      Tailwind CSS
-Linting     ESLint + Stylelint + Prettier
-Tests       Vitest + Testing Library + jsdom
+Linting     oxlint + Stylelint (CSS), formatting with oxfmt
+Tests       Vitest + Testing Library + happy-dom (jsdom for files that opt in)
 ```
 
 External infrastructure dependencies:
 
 ```
-Vercel      Next.js deployment and serverless/edge runtime
+AWS         EC2 (Next.js container), RDS (PostgreSQL), S3 (ISR cache store)
 Upstash     Redis cache, analysis job state, email tokens
-Neon        PostgreSQL database
 Resend      Email verification and password reset delivery
 Cloudflare  DNS, edge security, cache/traffic controls
 ```
@@ -124,15 +123,16 @@ files, not source code.
 skills/                        ← project root (not src/)
 ├── patterns/
 │   ├── head-and-shoulders.md
-│   ├── inverse-head-and-shoulders.md
 │   ├── double-top.md
-│   ├── double-bottom.md
 │   ├── ascending-wedge.md
-│   └── descending-wedge.md
+│   └── ...
+├── candlesticks/
 ├── indicators/
-│   └── (향후 보조지표 시그널 스킬)
-└── strategies/
-    └── (향후 대순환 분석 등)
+├── strategies/
+├── support-resistance/
+├── fundamental/
+├── news/
+└── _core/
 ```
 
 ### Layer Responsibility
@@ -143,7 +143,7 @@ Core prompt builders consume the data structure only; file I/O stays in siglens.
 
 ```
 entities/skill/api.ts
-  → recursively scans skills/ subdirectories for .md files (file I/O — allowed in infrastructure layer)
+  → recursively scans skills/ subdirectories for .md files (server-only file I/O)
   → parses frontmatter + body
   → returns Skill[]
 
@@ -153,7 +153,7 @@ entities/analysis/actions/*
 
 @y0ngha/siglens-core prompt builder
   → buildAnalysisPrompt(symbol, bars, indicators, skills)
-  → filters by confidenceWeight (< 0.5 excluded)
+  → injects every skill, labelled by confidenceWeight (Low / Medium / High)
   → builds the prompt     (pure function, no file access)
 ```
 
@@ -161,6 +161,6 @@ entities/analysis/actions/*
 
 - Read all `.md` files in the `skills/` directory
 - Check the `indicators` field in each file's frontmatter to identify required indicators
-- Skills with `confidence_weight < 0.5` are excluded from the prompt entirely
+- `confidence_weight` is a display label (Low / Medium / High), not an exclusion filter; every skill is injected (see `skills/CLAUDE.md`)
 - Refer to the Skills System section in `docs/product/DOMAIN.md` for the full file format spec,
   type definitions, and `Skill` interface

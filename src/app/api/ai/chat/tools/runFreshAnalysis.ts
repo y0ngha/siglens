@@ -373,7 +373,7 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
          * 아예 빼 뒀었다. 동기 보강으로 바뀌면서 근거가 뒤집혔다.
          *
          * 위치가 중요하다 — 인자 검증(`KINDS`)과 슬롯 포화(`busy`) 거절 **뒤**다.
-         * 앞에 두면 그 값싼 거절들이 FMP 왕복과 Neon upsert를 먼저 지불한다.
+         * 앞에 두면 그 값싼 거절들이 FMP 왕복과 DB upsert를 먼저 지불한다.
          *
          * 받아들인 트레이드오프: 이 await는 `MAX_CONCURRENT_FRESH` 슬롯과
          * `registerActiveStream()` 드레인 핸들을 **쥔 채로** 돈다. 그래서 수급이
@@ -382,7 +382,7 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
          * 대신 수급 쪽이 스스로 바운드를 든다 — `ensureSymbolNewsFresh`는 바깥
          * 세계로 나가는 두 대기(FMP 적재·LLM 보강)에 벽시계 예산을 걸어 그 둘의
          * 합을 18초로 묶는다(`INGEST_BUDGET_MS` 주석). 전체 상한은 거기에
-         * `isRecentlyFetched`(Redis)와 `listBySymbol`(Neon) 왕복이 더해진
+         * `isRecentlyFetched`(Redis)와 `listBySymbol`(DB) 왕복이 더해진
          * 값이다 — 그 둘은 재시도 사다리가 없어 꼬리가 짧지만 0은 아니다.
          *
          * 이게 유일한 실질 바운드다: 이 툴의 `costClass: 'expensive'`
