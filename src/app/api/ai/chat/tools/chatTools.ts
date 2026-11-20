@@ -20,6 +20,7 @@ import {
     INDEX_HISTORY_RESULT_MAX_CHARS,
     SWING_HISTORY_RESULT_MAX_CHARS,
     ANALYST_VIEWS_RESULT_MAX_CHARS,
+    BARS_ANNOTATE_HEADROOM_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -93,6 +94,13 @@ export interface ToolRuntime {
      * 넘기는 promise는 절대 reject하지 않아야 한다(`loadAnalysisChartBlock`처럼 실패를 `null`로 접는다).
      */
     emitChart?: (pending: Promise<ChatBlock | null>) => void;
+    /**
+     * `get_bars_indicators`가 봉 수를 맞출 문자 수 상한. 실행기(`createToolExecutor`)가 자기 `resultCaps.bars`에서
+     * `annotate`가 앞에 붙이는 몫(`BARS_ANNOTATE_HEADROOM_CHARS`)을 뺀 값으로 채운다 — 에이전트와 공개 API가 각자의 상한에
+     * 맞춰 오래된 봉을 줄이고, 결과 전체가 `{ truncated, preview }`로 무너지지 않게 한다. 도구를 실행기 없이 직접 부르면
+     * (테스트) 비어 있고, 그때는 에이전트 상한 `BARS_RESULT_MAX_CHARS`를 쓴다.
+     */
+    barsResultMaxChars?: number;
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해
@@ -104,6 +112,7 @@ export type ToolRuntimeInput = Omit<
     | 'allowUnofficialSources'
     | 'substituteFreshTechnicalForOverall'
     | 'emitChart'
+    | 'barsResultMaxChars'
 >;
 
 /** 차트 블록을 낸 도구 호출 — core가 `tool_start`에 싣는 것과 같은 이름·인자(교정 전). */
@@ -116,7 +125,7 @@ export interface ChartToolCall {
 export interface ToolResultCaps {
     /** Default for tools without a class of their own. */
     standard: number;
-    /** `get_bars_indicators` (the tool also fits itself against `BARS_RESULT_MAX_CHARS`). */
+    /** `get_bars_indicators` (the tool fits its bar count to this cap minus `BARS_ANNOTATE_HEADROOM_CHARS`, via `ToolRuntime.barsResultMaxChars`). */
     bars: number;
     /** `get_market_overview`. */
     aggregate: number;
@@ -325,6 +334,10 @@ export function createToolExecutor(
         ensureSymbolData,
         allowUnofficialSources,
         substituteFreshTechnicalForOverall,
+        barsResultMaxChars: Math.max(
+            1,
+            resultCaps.bars - BARS_ANNOTATE_HEADROOM_CHARS
+        ),
     };
 
     // One executor per turn (`stream/route.ts`), so this closure is the turn's
@@ -336,11 +349,11 @@ export function createToolExecutor(
     const isAnalysis = (name: string): boolean =>
         name === 'get_cached_analysis' || name === 'run_fresh_analysis';
     const ceilingFor = (name: string): number => {
-        // `get_bars_indicators` already fits itself against
-        // `BARS_RESULT_MAX_CHARS` (`getBarsIndicators.ts`'s
-        // `fitBarsToBudget`) — routing it through the shared 4,000 default
-        // here would re-cut an already-fit 6,500-char result down to 4,000
-        // and collapse it into a front-cut preview blob.
+        // `get_bars_indicators` already fits itself against this same cap
+        // (`ToolRuntime.barsResultMaxChars`, set above from `resultCaps.bars`;
+        // `getBarsIndicators.ts`'s `fitBarsToBudget`) — routing it through the
+        // shared 4,000 default here would re-cut an already-fit result and
+        // collapse it into a front-cut preview blob.
         if (name === 'get_bars_indicators') return resultCaps.bars;
         if (name === 'get_market_overview') return resultCaps.aggregate;
         if (name === 'get_economy') return resultCaps.economy;

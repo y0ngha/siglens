@@ -16,8 +16,23 @@ export const TOOL_RESULT_MAX_CHARS = 4_000;
  * (`lastBarInProgress` + `lastCompletedClose`) — only ~108 under 6,000, so a few
  * MA crosses would have tipped the DEFAULT request into `fitBarsToBudget`
  * trimming bars. 6,500 restores ~600 chars of headroom for that live shape.
+ *
+ * Raised 6,500 → 7,000 (2026-11-20): `latest.oscillatorZones` + `oscillatorSummary`
+ * add ~260 chars to that live-shape default request (5,892 → 6,155 measured
+ * with a typical tally). The tally's longest form ("0 of 4 available
+ * oscillators oversold; 0 overbought; neutral: … (just below its overbought
+ * line …) … ; not available: CCI", ~290 chars vs ~125 typical) brings the
+ * worst case to ~6,330 — ~170 under 6,500, below the 250 floor this ceiling
+ * keeps so a few MA crosses cannot tip the DEFAULT request into trimming bars.
  */
-export const BARS_RESULT_MAX_CHARS = 6_500;
+export const BARS_RESULT_MAX_CHARS = 7_000;
+
+/**
+ * Chars the executor reserves under a `get_bars_indicators` cap for what `annotate` prepends after the tool has fit
+ * itself (`symbolCorrectedFrom: "<symbol>"`, ~40 chars for a single symbol). The tool fits against
+ * `cap - this`, so the annotated result still ends under `cap` and `truncateToolResult` never sees an overflow.
+ */
+export const BARS_ANNOTATE_HEADROOM_CHARS = 100;
 
 /**
  * `get_market_overview` ceiling. Measured on a representative worst-case

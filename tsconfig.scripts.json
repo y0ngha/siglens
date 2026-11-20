@@ -44,6 +44,8 @@
         "scripts/update-popular-cryptos.ts",
         "scripts/update-popular-tickers.ts",
         "scripts/validate-skills.ts",
+        "scripts/__tests__/agent-eval-checks.test.ts",
+        "scripts/__tests__/agent-eval-local-guard.test.ts",
         "scripts/__tests__/pattern-index.test.ts",
         "scripts/__tests__/seed-crypto-korean-names.test.ts",
         "scripts/__tests__/skills-digest.test.ts",
