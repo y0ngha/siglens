@@ -10,23 +10,29 @@
 //
 // 플래그
 //   --label <name>      결과 JSON에 적는 이름(old/new 등).
-//   --only a,b          케이스 id만 돌린다(conv의 턴은 conv 하나로 센다).
+//   --only a,b          케이스 id만 돌린다(conv의 턴은 conv 하나로 센다). 모르는 id는 시작 전에 거절한다(종료 코드 2).
 //   --cache             conv(4턴) 케이스까지 돌려 접두사 캐시 검사를 켠다. 없으면 conv는 건너뛴다.
 //   --out <file>        transcript JSON 저장 경로(필수 — 레포 밖 스크래치 경로를 쓴다).
 //   --compare a b       두 결과 JSON을 견줘 표로 출력한다(서버·DB 불필요).
-//   --no-web-search     이 서버에 web_search용 키가 없다면 준다(holder 검사가 web_search 미호출을 실패로 치지 않는다).
+//   --no-web-search     web_search가 없는 서버라고 강제로 알린다. 주지 않으면 dev-server.sh가 쓴 상태 파일(AGENT_EVAL_STATE_FILE,
+//                       기본 scripts/agent-eval/.server-state.json)에서 읽고, 그것도 없으면 턴 결과로 추정한다.
+//                       web_search를 내놓지 않은 서버에서 holder 케이스는 실패가 아니라 "평가 불가"로 보고된다.
 //   --site <url>        기본 http://localhost:4200
 //   --ai <url>          기본 http://ai.localhost:4200
+//   --turn-at-fallback  user 행에 turn_at이 없으면(시각을 저장하지 않는 옛 앱) created_at으로 메모를 다시 만든다.
 //
 // 환경변수: DATABASE_URL(없으면 .env.e2e의 DATABASE_URL 한 줄만 읽는다. 값은 출력하지 않는다).
+// AGENT_EVAL_NOTE_CORE: 기준 메모를 만들 core 패키지 디렉터리(없으면 설치된 core). 옛 앱(OLD)을 잴 때 새 core를
+// 가리키면 검사가 같은 형식의 "정답" 메모로 판정한다 — 이때 메모는 모델이 본 문구가 아니라 그 시각의 기준값이다.
 // 시작 때 사이트 두 주소와 DB 주소가 모두 localhost/127.0.0.1(또는 *.localhost)이 아니면 종료 코드 2로 멈춘다.
 //
 // 로그인은 사이트 호스트의 /login 폼으로 시드된 e2e 회원(e2e/support/authUser.ts)을 쓴다. 세션 쿠키는
 // 호스트 한정이라 ai 호스트로 복사해 넣는다. 요청은 ai 호스트 페이지 안에서 fetch로 보낸다 —
 // 브라우저가 Origin을 알아서 붙이고 *.localhost를 해석한다. 헤드리스 UA는 봇으로 403이라 데스크톱 UA를 쓴다.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { chromium } from '@playwright/test';
-import { buildAgentTurnContext } from '@y0ngha/siglens-core';
+import * as installedCore from '@y0ngha/siglens-core';
 import { tsImport } from 'tsx/esm/api';
 import postgres from 'postgres';
 import { CASES } from './cases.mjs';
@@ -36,7 +42,9 @@ import {
     isLocalUrl,
     parseSseFrames,
     runChecks,
+    selectCases,
 } from './checks.mjs';
+import { isStrictLocalAddress } from './localGuard.mjs';
 
 const E2E_EMAIL = 'e2e-auth-user@test.com';
 const E2E_PASSWORD = 'E2eAuthUser1!';
@@ -104,12 +112,19 @@ const databaseUrl = process.env.DATABASE_URL ?? databaseUrlFromE2eEnv();
 const outPath = option('out');
 const label = option('label') ?? 'run';
 const only = option('only')?.split(',');
+const { selected, errors: selectionErrors } = selectCases(
+    CASES,
+    only,
+    flag('cache')
+);
+if (selectionErrors.length > 0) fail(selectionErrors.join('\n'), 2);
 
 if (
     !isLocalUrl(siteUrl) ||
     !isLocalUrl(aiUrl) ||
     !databaseUrl ||
-    !isLocalUrl(databaseUrl)
+    // DB는 `*.localhost`도 받지 않는 엄격한 판정을 쓴다(사이트 주소는 `ai.localhost`가 필요해 isLocalUrl).
+    !isStrictLocalAddress(databaseUrl)
 )
     fail(
         'refusing to run: the site URL, the AI URL and DATABASE_URL must all point at localhost / 127.0.0.1 (this script spends real provider tokens and reads chat rows).',
@@ -118,10 +133,14 @@ if (
 if (!outPath) fail('--out <file> is required');
 
 const sql = postgres(databaseUrl, { max: 1 });
+const { buildAgentTurnContext } = process.env.AGENT_EVAL_NOTE_CORE
+    ? createRequire(import.meta.url)(process.env.AGENT_EVAL_NOTE_CORE)
+    : installedCore;
 
 /** 대화의 행을 읽는다. 컬럼명은 transcript가 쓰는 camelCase로 별칭을 단다. */
 const readRows = conversationId =>
-    sql`select id, seq, role, content, tool_name as "toolName", tool_calls as "toolCalls", turn_at as "turnAt"
+    sql`select id, seq, role, content, tool_name as "toolName", tool_calls as "toolCalls", turn_at as "turnAt",
+        created_at as "createdAt"
         from chat_messages where conversation_id = ${conversationId} order by seq`;
 
 /**
@@ -219,7 +238,15 @@ async function runCase(page, testCase) {
             const frames = parseSseFrames(text);
             const meta = frames.find(f => f.event === 'meta')?.data;
             const conversationId = meta?.conversationId ?? acc.conversationId;
-            const rows = conversationId ? await readRows(conversationId) : [];
+            const rows = (
+                conversationId ? await readRows(conversationId) : []
+            ).map(row =>
+                flag('turn-at-fallback') &&
+                row.role === 'user' &&
+                (row.turnAt === null || row.turnAt === undefined)
+                    ? { ...row, turnAt: row.createdAt }
+                    : row
+            );
             const transcript = buildTranscript({
                 question: turn.question,
                 frames,
@@ -231,7 +258,7 @@ async function runCase(page, testCase) {
                         timeZone: EVAL_TIME_ZONE,
                         krSession: krEquitySession,
                     }),
-                webSearchAvailable: !flag('no-web-search'),
+                webSearchAvailable: serverWebSearch,
             });
             const checked = runChecks(
                 { ...turn, id: `${testCase.id}-t${index + 1}` },
@@ -243,6 +270,7 @@ async function runCase(page, testCase) {
                 transcripts: [...acc.transcripts, transcript],
                 fails: [...acc.fails, ...checked.fails],
                 reviews: [...acc.reviews, ...checked.reviews],
+                notEvaluable: [...acc.notEvaluable, ...checked.notEvaluable],
             };
         },
         Promise.resolve({
@@ -250,6 +278,7 @@ async function runCase(page, testCase) {
             transcripts: [],
             fails: [],
             reviews: [],
+            notEvaluable: [],
         })
     );
     return {
@@ -257,12 +286,33 @@ async function runCase(page, testCase) {
         turns: done.transcripts,
         fails: done.fails,
         reviews: done.reviews,
+        notEvaluable: done.notEvaluable,
+        // 이 케이스의 마지막 턴에서 본 web_search 가용 여부(true/false/null=알 수 없음).
+        webSearchAvailable: done.transcripts.at(-1)?.webSearchAvailable ?? null,
     };
 }
 
-const selected = CASES.filter(c => (only ? only.includes(c.id) : true)).filter(
-    c => !c.cache || flag('cache')
-);
+/**
+ * 이 서버가 web_search를 내놓는지. dev-server.sh가 키 유무(값 아님)로 쓴 상태 파일을 읽는다 — 서버가 내놓는 도구
+ * 목록은 HTTP로 보이지 않는다. `--no-web-search`는 강제로 끈다. 파일이 없거나 읽을 수 없으면 null(알 수 없음):
+ * 그때는 각 턴에서 web_search 호출·`unavailable` 결과로 추정한다(`inferWebSearchAvailable`).
+ */
+function readServerWebSearch() {
+    if (flag('no-web-search')) return false;
+    try {
+        const state = JSON.parse(
+            readFileSync(
+                process.env.AGENT_EVAL_STATE_FILE ??
+                    new URL('.server-state.json', import.meta.url),
+                'utf8'
+            )
+        );
+        return typeof state.webSearch === 'boolean' ? state.webSearch : null;
+    } catch {
+        return null;
+    }
+}
+const serverWebSearch = readServerWebSearch();
 
 // KRX 휴장일 목록은 앱이 쥐고 있다(core에는 없다). 서버와 같은 스펙을 앱 소스에서 그대로 읽는다.
 const { KR_EQUITY_SESSION: krEquitySession } = await tsImport(
@@ -295,12 +345,21 @@ try {
         result.reviews.forEach(line =>
             process.stdout.write(`    review ${line}\n`)
         );
+        result.notEvaluable.forEach(line =>
+            process.stdout.write(`    NOT EVALUABLE ${line}\n`)
+        );
         return [...acc, result];
     }, Promise.resolve([]));
     writeFileSync(
         outPath,
         JSON.stringify(
-            { label, startedAt: new Date().toISOString(), results },
+            {
+                label,
+                startedAt: new Date().toISOString(),
+                // 이 실행이 확인한 서버 사실. webSearch가 false면 holder 케이스는 평가 불가로 나온다.
+                server: { webSearch: serverWebSearch },
+                results,
+            },
             null,
             2
         )

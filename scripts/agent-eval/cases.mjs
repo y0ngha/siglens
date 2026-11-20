@@ -76,7 +76,7 @@ export const CASES = [
         question: '지금 미국장 열려 있어? 다음 개장은 언제야?',
         mustCall: [],
         mustNotCall: [],
-        checks: ['clockBoundary'],
+        checks: ['clockBoundary', 'noWrongZoneConversion'],
     },
     {
         id: 'quote',
@@ -111,7 +111,11 @@ export const CASES = [
                 question: '오늘 무슨 요일이고 한국장은 언제 열려?',
                 mustCall: [],
                 mustNotCall: [],
-                checks: ['cachedPrefix', 'weekdayAndKrxBoundary'],
+                checks: [
+                    'cachedPrefix',
+                    'weekdayAndKrxBoundary',
+                    'noWrongZoneConversion',
+                ],
             },
         ],
     },

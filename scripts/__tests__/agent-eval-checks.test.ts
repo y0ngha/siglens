@@ -9,16 +9,20 @@ import {
     buildTranscript,
     CACHE_TOLERANCE_TOKENS,
     CHECKS,
-    clockVariants,
+    answerHasClock,
+    extractClockTimes,
+    extractEarningsDayCounts,
     compareRuns,
     hasDateToken,
     isFigureSentence,
+    inferWebSearchAvailable,
     isLocalUrl,
     mentionsWeekday,
     OFFER_RE,
     parseSseFrames,
     parseTurnNote,
     runChecks,
+    selectCases,
     splitSentences,
     storedOscillatorZones,
 } from '../agent-eval/checks.mjs';
@@ -31,7 +35,7 @@ interface Transcript {
     toolRows: { toolName: string; content: string }[];
     turnAt: string | null;
     turnContext: string | null;
-    webSearchAvailable?: boolean;
+    webSearchAvailable?: boolean | null;
     steps: { promptTokens: number; cachedTokens: number }[];
 }
 
@@ -51,7 +55,7 @@ const NOTE = [
     '## Now',
     "- User's local time: 2026-11-20 23:09 KST (Friday; this week Mon 2026-11-16 to Sun 2026-11-22)",
     '- UTC: Fri 2026-11-20 14:09 · ET: Fri 2026-11-20 09:09 · KST: Fri 2026-11-20 23:09',
-    '- US stocks (NYSE/Nasdaq): pre-market hours; opens Fri 2026-11-20 09:30 ET (in 21m)',
+    '- US stocks (NYSE/Nasdaq): pre-market hours; opens Fri 2026-11-20 09:30 ET (Fri 2026-11-20 23:30 KST) (in 21m)',
     '- Korean stocks (KRX): closed; opens Mon 2026-11-23 09:00 KST (in 2d 9h)',
 ].join('\n');
 
@@ -64,6 +68,7 @@ describe('parseTurnNote', () => {
     it('요일과 두 시장 줄의 상태·경계를 읽는다', () => {
         expect(parseTurnNote(NOTE)).toEqual({
             weekdayEnglish: 'Friday',
+            local: { hour: '23', minute: '09', zone: 'KST' },
             us: {
                 state: 'pre-market hours',
                 verb: 'opens',
@@ -72,6 +77,13 @@ describe('parseTurnNote', () => {
                 hour: '09',
                 minute: '30',
                 zone: 'ET',
+                user: {
+                    weekday: 'Fri',
+                    date: '2026-11-20',
+                    hour: '23',
+                    minute: '30',
+                    zone: 'KST',
+                },
             },
             kr: {
                 state: 'closed',
@@ -81,6 +93,7 @@ describe('parseTurnNote', () => {
                 hour: '09',
                 minute: '00',
                 zone: 'KST',
+                user: null,
             },
         });
     });
@@ -88,7 +101,7 @@ describe('parseTurnNote', () => {
     it('경계가 없는 줄은 상태만, KRX 줄이 없으면 kr은 null', () => {
         const note = [
             '## Now',
-            "- User's local time: x (Saturday; this week y)",
+            "- User's local time: 2026-11-21 10:00 KST (Saturday; this week y)",
             '- US stocks (NYSE/Nasdaq): closed',
         ].join('\n');
         expect(parseTurnNote(note)).toMatchObject({
@@ -152,14 +165,41 @@ describe('문장·토큰 도우미', () => {
         expect(OFFER_RE.test('웹 검색으로 확인했습니다.')).toBe(false);
     });
 
-    it('시각 표기 변형은 0 패딩·시 분 표기를 모두 편다', () => {
-        expect(clockVariants('09', '30')).toEqual([
-            '09:30',
-            '9:30',
-            '9시 30분',
-            '09시 30분',
-        ]);
-        expect(clockVariants('09', '00')).toContain('9시');
+    it.each([
+        ['23', '30', '23:30', true],
+        ['23', '30', '오후 11시 30분', true],
+        ['23', '30', '밤 11시 30분', true],
+        ['23', '30', '밤 11시 반', true],
+        ['23', '30', '23시 30분', true],
+        ['23', '30', '오후 11:30', true],
+        ['15', '30', '오후 3시 30분', true],
+        ['15', '30', '3시 반(오후)', false],
+        ['15', '30', '15시 반', true],
+        ['09', '30', '오전 9시 30분', true],
+        ['09', '30', '9시 30분', true],
+        ['09', '30', '09:30', true],
+        ['09', '00', '오전 9시', true],
+        ['09', '00', '9시 30분', false],
+        ['00', '00', '오전 12시', true],
+        ['12', '00', '오후 12시', true],
+        // 틀린 시각
+        ['23', '30', '22:30', false],
+        ['23', '30', '밤 10시 30분', false],
+        ['23', '30', '오전 11시 30분', false],
+        ['23', '30', '11시 30분', false],
+        ['15', '30', '오전 3시 30분', false],
+        ['09', '30', '19:30', false],
+        ['09', '30', '오후 9시 30분', false],
+    ])('경계 %s:%s 를 "%s"로 쓰면 맞는 표기=%s', (hour, minute, text, ok) => {
+        expect(answerHasClock(`개장은 ${text}입니다.`, hour, minute)).toBe(ok);
+    });
+
+    it('extractClockTimes: 콜론·시·반·오전오후를 하루 중 분으로 바꾼다', () => {
+        expect(
+            extractClockTimes(
+                '23:30, 밤 11시 30분, 오후 3시 반, 오전 12시, 9시'
+            ).map(t => t.minutes)
+        ).toEqual([1410, 1410, 930, 0, 540]);
     });
 
     it('요일은 풀네임·(약어)·영문을 인정하고 문장 속 한 글자는 인정하지 않는다', () => {
@@ -212,6 +252,59 @@ describe('oscillatorsNamed', () => {
         expect(result.reviews).toEqual([
             'osc: neutral MFI may be called a zone: "MFI도 과매도입니다."',
         ]);
+    });
+
+    describe('도구가 돌려준 신호 이름 속 구간 단어', () => {
+        const withSignals = (answer: string, signals: { type: string }[]) =>
+            CHECKS.oscillatorsNamed(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [
+                        {
+                            toolName: 'get_bars_indicators',
+                            content: JSON.stringify({
+                                latest: { oscillatorZones: zones },
+                                signals,
+                            }),
+                        },
+                    ],
+                })
+            );
+        const signalSentence =
+            '스토캐스틱, 윌리엄스, CCI가 과매도입니다. 자금 흐름이 식는 신호(MFI 과매수 후 반전)가 켜졌어요.';
+
+        it('신호 이름을 옮긴 말은 구간 주장이 아니다(도구가 그 신호를 돌려줬을 때)', () => {
+            expect(
+                withSignals(signalSentence, [
+                    { type: 'mfi_overbought_reversal' },
+                ]).reviews
+            ).toEqual([]);
+        });
+
+        it('도구가 그 신호를 돌려주지 않았으면 같은 문장도 구간 주장으로 본다', () => {
+            expect(
+                withSignals(signalSentence, [{ type: 'golden_cross' }]).reviews
+            ).toHaveLength(1);
+        });
+
+        it('진짜 구간 주장은 신호가 있어도 그대로 걸린다', () => {
+            const result = withSignals(
+                '스토캐스틱, 윌리엄스, CCI가 과매도입니다. MFI는 과매수 구간입니다.',
+                [{ type: 'mfi_overbought_reversal' }]
+            );
+            expect(result.reviews).toEqual([
+                'osc: neutral MFI may be called a zone: "MFI는 과매수 구간입니다."',
+            ]);
+        });
+
+        it('같은 문장에 신호 이름과 진짜 구간 주장이 함께 있으면 걸린다', () => {
+            const result = withSignals(
+                '스토캐스틱, 윌리엄스, CCI가 과매도입니다. MFI 과매수 후 반전 신호가 떴고 MFI는 지금 과매수예요.',
+                [{ type: 'mfi_overbought_reversal' }]
+            );
+            expect(result.reviews).toHaveLength(1);
+        });
     });
 
     it('부정문은 review 대상이 아니다', () => {
@@ -278,6 +371,47 @@ describe('firstFigureHasDate', () => {
         ]);
     });
 
+    it('실패: 날짜가 두 번째·세 번째 문장에만 있다', () => {
+        expect(
+            run(
+                '종가는 231.42달러입니다. 거래량은 늘었습니다. 9월 12일 기준입니다.'
+            ).fails
+        ).toHaveLength(1);
+        expect(
+            run(
+                'AAPL은 상승 추세입니다. RSI 44로 중립입니다. 2026-09-12 종가 기준입니다.'
+            ).fails
+        ).toHaveLength(1);
+    });
+
+    it('실패: 첫 수치 문장 앞의 머리글에 날짜가 있어도 그 문장에는 없다', () => {
+        const result = run(
+            '## 9월 12일 종가 기준\n현재가는 231.42달러입니다.\n전일 대비 1.2% 올랐습니다.'
+        );
+        expect(result.fails).toEqual([
+            'asof: the first figure sentence has no date or time token: "현재가는 231.42달러입니다."',
+        ]);
+    });
+
+    it('통과: 글머리표 한 줄이 문장이고 그 줄에 날짜가 있다', () => {
+        expect(
+            run('- 9월 12일 종가 231.42달러\n- 전일 대비 1.2% 상승').fails
+        ).toEqual([]);
+    });
+
+    it('단위 없는 지표 정수("RSI 44")도 수치 문장으로 센다', () => {
+        expect(
+            run('RSI 44로 중립입니다. 9월 12일 종가 기준입니다.').fails
+        ).toHaveLength(1);
+    });
+
+    it('한국어 종결 "다."는 공백 없이 이어져도 문장 경계다', () => {
+        expect(splitSentences('상승했다.가격은 231.42달러다.')).toEqual([
+            '상승했다.',
+            '가격은 231.42달러다.',
+        ]);
+    });
+
     it('수치 문장이 없으면 실패가 아니라 review', () => {
         const result = run('추세는 상승입니다.');
         expect(result.fails).toEqual([]);
@@ -320,6 +454,18 @@ describe('dividendVerbatim', () => {
 });
 
 describe('noOffer · webSearchWhenMissing', () => {
+    it('noOffer: web_search를 내놓지 않은 실행의 제안 문구는 실패가 아니라 평가 불가', () => {
+        const result = CHECKS.noOffer(
+            {},
+            transcript({
+                answer: '원하시면 더 찾아볼게요.',
+                webSearchAvailable: false,
+            })
+        );
+        expect(result.fails).toEqual([]);
+        expect(result.notEvaluable).toHaveLength(1);
+    });
+
     it('noOffer: 제안 문구가 있으면 실패, 없으면 통과', () => {
         expect(
             CHECKS.noOffer(
@@ -359,9 +505,12 @@ describe('noOffer · webSearchWhenMissing', () => {
         });
 
         it('보유자가 없고 web_search를 쓸 수 있었는데 부르지 않았으면 실패', () => {
-            const result = run({ toolRows: [flows('{"holders":[]}')] });
+            const result = run({
+                toolRows: [flows('{"holders":[]}')],
+                webSearchAvailable: true,
+            });
             expect(result.fails).toEqual([
-                'search: the first result lacks "Two Sigma" and web_search was available but not called',
+                'search: the first result lacks "Two Sigma" and web_search was offered but was not called',
             ]);
         });
 
@@ -369,13 +518,15 @@ describe('noOffer · webSearchWhenMissing', () => {
             expect(run({}).fails).toHaveLength(1);
         });
 
-        it('web_search를 쓸 수 없는 실행이면 실패가 아니라 review', () => {
+        it('web_search를 내놓지 않은 실행이면 실패가 아니라 평가 불가', () => {
             const flag = run({
                 toolRows: [flows('{}')],
                 webSearchAvailable: false,
             });
             expect(flag.fails).toEqual([]);
-            expect(flag.reviews).toHaveLength(1);
+            expect(flag.notEvaluable).toEqual([
+                'search: not evaluable (web_search not offered); the first result lacks "Two Sigma"',
+            ]);
             const unavailable = run({
                 toolRows: [
                     flows('{}'),
@@ -386,7 +537,17 @@ describe('noOffer · webSearchWhenMissing', () => {
                 ],
             });
             expect(unavailable.fails).toEqual([]);
-            expect(unavailable.reviews).toHaveLength(1);
+            expect(unavailable.notEvaluable).toHaveLength(1);
+        });
+
+        it('가용 여부를 모르는 실행(null)에서 부르지 않았으면 실패하고 모른다고 밝힌다', () => {
+            const result = run({
+                toolRows: [flows('{}')],
+                webSearchAvailable: null,
+            });
+            expect(result.fails).toEqual([
+                'search: the first result lacks "Two Sigma" and web_search may have been offered (availability unknown) but was not called',
+            ]);
         });
     });
 });
@@ -395,16 +556,34 @@ describe('clockBoundary', () => {
     const run = (answer: string, turnContext: string | null = NOTE) =>
         CHECKS.clockBoundary({}, transcript({ answer, turnContext }));
 
-    it('통과: US 줄의 경계 시각 09:30을 말한다(표기 변형 허용)', () => {
+    it('통과: 장 시간대 시각 09:30을 말한다(표기 변형 허용)', () => {
         expect(run('지금은 장 시작 전이고 09:30 ET에 열립니다.').fails).toEqual(
             []
         );
         expect(run('미국장은 9시 30분(ET)에 개장합니다.').fails).toEqual([]);
+        expect(run('오전 9시 30분(미국 동부)에 개장합니다.').fails).toEqual([]);
+    });
+
+    it('통과: 같은 시각을 사용자 시간대(KST 23:30)로 말해도 맞다', () => {
+        [
+            '한국시간 23:30에 열립니다.',
+            '한국시간 오후 11시 30분에 열립니다.',
+            '한국시간 밤 11시 30분에 개장합니다.',
+            '밤 11시 반에 개장합니다.',
+            '23시 30분(KST)에 개장합니다.',
+        ].forEach(answer => expect(run(answer).fails).toEqual([]));
+    });
+
+    it('실패: A/B에서 나온 틀린 환산 22:30 KST는 통과하지 못한다', () => {
+        expect(run('한국시간 22:30에 열립니다.').fails).toEqual([
+            'clock: the answer does not state the US boundary as 09:30 ET / 23:30 KST',
+        ]);
+        expect(run('한국시간 밤 10시 30분에 열립니다.').fails).toHaveLength(1);
     });
 
     it('실패: 경계 시각이 없다', () => {
         expect(run('곧 열립니다.').fails).toEqual([
-            'clock: the answer does not state the US boundary 09:30 ET',
+            'clock: the answer does not state the US boundary as 09:30 ET / 23:30 KST',
         ]);
     });
 
@@ -414,6 +593,7 @@ describe('clockBoundary', () => {
 
     it('"9:30"은 "19:30" 속에서 잡히지 않는다(토큰 경계)', () => {
         expect(run('개장은 19:30입니다.').fails).toHaveLength(1);
+        expect(run('개장은 123:30입니다.').fails).toHaveLength(1);
         expect(run('개장은 119시 30분입니다.').fails).toHaveLength(1);
         expect(run('개장은 (09:30)입니다.').fails).toEqual([]);
     });
@@ -479,14 +659,204 @@ describe('weekdayAndKrxBoundary', () => {
 
     it('KRX 시각은 토큰 경계로 센다("19:00"은 "09:00"이 아니다)', () => {
         expect(run('오늘은 금요일이고 19:00에 엽니다.').fails).toEqual([
-            'clock: the answer does not state the KRX boundary 09:00 KST',
+            'clock: the answer does not state the KRX boundary as 09:00 KST',
         ]);
     });
 
     it('실패: KRX 시각이 빠졌다', () => {
         expect(run('오늘은 금요일입니다.').fails).toEqual([
-            'clock: the answer does not state the KRX boundary 09:00 KST',
+            'clock: the answer does not state the KRX boundary as 09:00 KST',
         ]);
+    });
+});
+
+describe('weekdayAndKrxBoundary: 사용자 시간대 표기', () => {
+    const noteWithUserPart = NOTE.replace(
+        'opens Mon 2026-11-23 09:00 KST (in 2d 9h)',
+        'opens Mon 2026-11-23 09:00 KST (Sun 2026-11-22 19:00 ET) (in 2d 9h)'
+    );
+    it('장 시간대(09:00 KST)와 사용자 시간대(19:00 ET) 어느 쪽 표기든 맞다', () => {
+        [
+            '금요일, 한국장은 월요일 오전 9시에 엽니다.',
+            '금요일, 일요일 오후 7시(ET)에 엽니다.',
+        ].forEach(answer =>
+            expect(
+                CHECKS.weekdayAndKrxBoundary(
+                    {},
+                    transcript({ answer, turnContext: noteWithUserPart })
+                ).fails
+            ).toEqual([])
+        );
+    });
+    it('둘 다 아닌 시각은 실패', () => {
+        expect(
+            CHECKS.weekdayAndKrxBoundary(
+                {},
+                transcript({
+                    answer: '금요일, 오전 10시에 엽니다.',
+                    turnContext: noteWithUserPart,
+                })
+            ).fails
+        ).toEqual([
+            'clock: the answer does not state the KRX boundary as 09:00 KST / 19:00 ET',
+        ]);
+    });
+});
+
+describe('noWrongZoneConversion', () => {
+    const run = (answer: string, turnContext: string | null = NOTE) =>
+        CHECKS.noWrongZoneConversion({}, transcript({ answer, turnContext }));
+
+    it('통과: 한국시간 라벨 시각이 메모의 사용자 시간대 경계와 같다', () => {
+        expect(
+            run('미국장은 한국시간 오후 11시 30분에 개장합니다.').fails
+        ).toEqual([]);
+        expect(run('개장은 23:30 KST입니다.').fails).toEqual([]);
+    });
+
+    it('통과: 한국장 경계(09:00 KST)와 현재 시각도 맞는 값이다', () => {
+        expect(run('한국장은 한국시간 09:00에 개장합니다.').fails).toEqual([]);
+    });
+
+    it('실패: ET 09:30을 22:30 KST로 환산한 실수(A/B에서 나온 것)', () => {
+        const result = run('미국장은 한국시간 22:30에 개장합니다.');
+        expect(result.fails).toHaveLength(1);
+        expect(result.fails[0]).toContain('"22:30" is labelled KST');
+    });
+
+    it('실패: KST 라벨이 뒤에 붙어도 가까운 시각을 본다', () => {
+        expect(run('개장 시각은 오후 10시 30분 KST입니다.').fails).toHaveLength(
+            1
+        );
+    });
+
+    it('라벨이 없는 시각이나 개장·마감을 말하지 않는 문장은 보지 않는다', () => {
+        expect(run('미국장은 22:30에 개장합니다.').fails).toEqual([]);
+        expect(run('한국시간 22:30에 분석을 만들었습니다.').fails).toEqual([]);
+    });
+
+    it('사용자 시간대가 KST가 아니면 메모에 환산이 없어 평가 불가가 아닌 review로 남긴다', () => {
+        const note = NOTE.replace('23:09 KST', '09:09 ET');
+        const result = run('한국시간 22:30에 개장합니다.', note);
+        expect(result.fails).toEqual([]);
+        expect(result.reviews).toHaveLength(1);
+    });
+
+    it('메모가 없으면 실패', () => {
+        expect(run('x', null).fails).toHaveLength(1);
+    });
+});
+
+describe('earningsReview', () => {
+    const fundamentals = (body: Record<string, unknown>) => ({
+        toolName: 'get_fundamentals',
+        content: JSON.stringify(body),
+    });
+    const run = (toolRows: Transcript['toolRows'], answer = '') =>
+        CHECKS.earningsReview(
+            {},
+            transcript({ answer, toolRows, turnContext: NOTE })
+        );
+
+    it('도구 출력 모양(analyst.daysToEarnings)에서 일수를 읽어 답변의 일수와 나란히 보여 준다', () => {
+        const result = run(
+            [fundamentals({ analyst: { daysToEarnings: 12 } })],
+            '발표까지 12일 남았습니다.'
+        );
+        expect(result.fails).toEqual([]);
+        expect(result.notEvaluable ?? []).toEqual([]);
+        expect(result.reviews).toEqual([
+            'earn: tool daysToEarnings=12, answer day counts=[12], note weekday=Friday',
+        ]);
+    });
+
+    it('실적까지 남은 일수만 센다(이동평균·손익 기간 "N일"은 뺀다)', () => {
+        const answer = [
+            '실적 발표까지 12일 남았고 발표 후 3일 뒤 변동성이 커집니다.',
+            '200일선과 50일 이동평균 위에 있고, 과거 10일 손실 구간도 있었습니다.',
+            '실적 발표가 19일 후라 26일 수익률은 참고만 하세요.',
+            'The report is in 7 days.',
+        ].join('\n');
+        expect(extractEarningsDayCounts(answer)).toEqual([
+            '12',
+            '3',
+            '19',
+            '7',
+        ]);
+        const result = run(
+            [fundamentals({ analyst: { daysToEarnings: 12 } })],
+            answer
+        );
+        expect(result.reviews).toEqual([
+            'earn: tool daysToEarnings=12, answer day counts=[12, 3, 19, 7], note weekday=Friday',
+        ]);
+    });
+
+    it.each([
+        '200일선 근처입니다.',
+        '50일 이동평균 위입니다. 실적도 있습니다.',
+        '실적 전 10일 손실이 컸습니다.',
+        '실적 이후 26일 수익률은 높았습니다.',
+        '발표까지 3일간 변동이 컸습니다.',
+        '2026-11-20 기준 12일 평균 거래량입니다.',
+    ])('세지 않는다: %s', text => {
+        expect(extractEarningsDayCounts(text)).toEqual([]);
+    });
+
+    it('필드가 없거나 null이면 통과가 아니라 평가 불가', () => {
+        [
+            run([fundamentals({ analyst: {} })]),
+            run([fundamentals({ analyst: { daysToEarnings: null } })]),
+            run([fundamentals({ daysToEarnings: 12 })]),
+            run([]),
+        ].forEach(result => {
+            expect(result.fails).toEqual([]);
+            expect(result.reviews).toEqual([]);
+            expect(result.notEvaluable).toHaveLength(1);
+        });
+    });
+
+    it('runChecks가 평가 불가를 따로 모은다', () => {
+        const result = runChecks(
+            { checks: ['earningsReview'] },
+            transcript({ toolRows: [] })
+        );
+        expect(result.notEvaluable).toHaveLength(1);
+        expect(result.fails).toEqual([]);
+    });
+});
+
+describe('selectCases · inferWebSearchAvailable', () => {
+    const cases = [{ id: 'a' }, { id: 'b' }, { id: 'conv', cache: true }];
+    it('--only는 고른 것만 돌리고 모르는 id는 거절한다', () => {
+        expect(selectCases(cases, ['b'], false)).toEqual({
+            selected: [{ id: 'b' }],
+            errors: [],
+        });
+        const bad = selectCases(cases, ['a', 'zzz'], false);
+        expect(bad.errors).toEqual([
+            'unknown case id(s): zzz. Valid ids: a, b, conv',
+        ]);
+    });
+    it('conv는 --cache 없이는 고를 수 없고, 없으면 기본 실행에서도 빠진다', () => {
+        expect(selectCases(cases, ['conv'], false).errors).toEqual([
+            'case conv needs --cache',
+        ]);
+        expect(selectCases(cases, ['conv'], true).errors).toEqual([]);
+        expect(
+            selectCases(cases, undefined, false).selected.map(c => c.id)
+        ).toEqual(['a', 'b']);
+        expect(selectCases(cases, undefined, true).selected).toHaveLength(3);
+    });
+    it('web_search 가용 여부: 호출했으면 true, unavailable 결과면 false, 단서가 없으면 null', () => {
+        const started = [{ event: 'tool_start', data: { name: 'web_search' } }];
+        expect(inferWebSearchAvailable(started, [])).toBe(true);
+        expect(
+            inferWebSearchAvailable(started, [
+                { toolName: 'web_search', content: '{"error":"unavailable"}' },
+            ])
+        ).toBe(false);
+        expect(inferWebSearchAvailable([], [])).toBeNull();
     });
 });
 
@@ -576,6 +946,7 @@ describe('실행기 보조 함수', () => {
         expect(isLocalUrl('http://localhost:4200')).toBe(true);
         expect(isLocalUrl('http://127.0.0.1:5433/db')).toBe(true);
         expect(isLocalUrl('http://ai.localhost:4200')).toBe(true);
+        expect(isLocalUrl('http://[::1]:8079')).toBe(true);
         expect(isLocalUrl('postgres://u:p@localhost:5433/siglens')).toBe(true);
         expect(isLocalUrl('https://ai.siglens.io')).toBe(false);
         expect(isLocalUrl('postgres://u:p@db.example.com:5432/x')).toBe(false);
@@ -682,7 +1053,7 @@ describe('실행기 보조 함수', () => {
             toolRows: [{ toolName: 'get_quote', content: '{"price":1}' }],
             turnAt: '2026-11-20T14:09:00.000Z',
             turnContext: `${NOTE}\n(2026-11-20T14:09:00.000Z)`,
-            webSearchAvailable: true,
+            webSearchAvailable: null,
             steps: [
                 { promptTokens: 100, cachedTokens: 40 },
                 { promptTokens: 50, cachedTokens: 140 },

@@ -16,7 +16,7 @@ cd "$(dirname "$0")/../.."
 [ -f .env.e2e ] || { echo "missing .env.e2e" >&2; exit 1; }
 
 # 에이전트가 실제로 쓰는 키(이름은 llm-provider 어댑터와 webSearch.ts에 있다).
-ALLOWLIST="DEEPSEEK_CHAT_API_KEY FMP_API_KEY GEMINI_CHAT_API_KEY BRAVE_SEARCH_API_KEY NAVER_AI_CLIENT_ID NAVER_AI_CLIENT_SECRET"
+ALLOWLIST="DEEPSEEK_CHAT_API_KEY FMP_API_KEY GEMINI_CHAT_API_KEY BRAVE_SEARCH_API_KEY NAVER_AI_CLIENT_ID NAVER_AI_CLIENT_SECRET NAVER_CLIENT_ID NAVER_CLIENT_SECRET DART_API_KEY"
 
 key_names() {
     # 이름만 뽑는다(값은 읽지 않는다). `export KEY=...` 꼴의 줄도 같은 키로 센다.
@@ -41,6 +41,22 @@ if [ -f .env.local ]; then
 fi
 
 export AGENT_REAL_PROVIDER=1
+# .env.e2e의 E2E_TEST=1은 시세·재무·뉴스·수급 provider까지 고정 픽스처(모든 종목이 같은 봉)로 바꾼다. 평가는 실제
+# 데이터가 필요하므로 끈다(빈 값으로 미리 설정해 두면 dotenv가 덮지 않는다). DB 드라이버는 E2E와 무관하게 postgres-js다.
+export E2E_TEST=
+# DB·Redis 주소는 호출한 셸에서 DATABASE_URL·UPSTASH_REDIS_REST_URL을 주면 그 값이 .env.e2e보다 우선한다(다른 포트의
+# 스택). 서버가 실제로 쓸 두 값(셸 값이 있으면 그것, 없으면 .env.e2e의 값)의 호스트가 localhost / 127.0.0.1 / ::1이
+# 아니면 서버를 띄우기 전에 종료 코드 2로 멈춘다(운영 Redis·DB에 캐시·한도 키나 대화 행을 쓰지 않게). 앱이 읽는 DB·Redis
+# 주소 변수는 이 둘뿐이다. 출력은 `이름 -> 호스트:포트`만이다(자격 증명·토큰 없음). 판정은 localGuard.mjs.
+node scripts/agent-eval/localGuard.mjs DATABASE_URL UPSTASH_REDIS_REST_URL || exit 2
+# 서버가 내놓는 도구 목록은 HTTP로 보이지 않는다. run.mjs가 web_search 가용 여부를 알 수 있게, 키 유무(값 아님)만
+# 상태 파일에 적는다(`availableToolNames`와 같은 규칙: Brave 키가 있거나 Naver AI 키 쌍이 있으면 제공).
+web_search=false
+if [ -n "${BRAVE_SEARCH_API_KEY:-}" ] || { [ -n "${NAVER_AI_CLIENT_ID:-}" ] && [ -n "${NAVER_AI_CLIENT_SECRET:-}" ]; }; then
+    web_search=true
+fi
+printf '{"webSearch": %s}\n' "$web_search" > "${AGENT_EVAL_STATE_FILE:-scripts/agent-eval/.server-state.json}"
+echo "agent-eval dev server: web_search offered -> $web_search"
 export NEXT_PUBLIC_SITE_URL=http://localhost:4200
 # 이 값이 없으면 페이지가 운영 챗으로 요청을 보낸다.
 export NEXT_PUBLIC_AI_SITE_URL=http://ai.localhost:4200
