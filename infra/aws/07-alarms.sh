@@ -74,7 +74,7 @@ P2="--alarm-actions $ALARM_SNS_LOW"
 #   | sort n desc
 # P2 (로그 그룹 /siglens/app):
 #   fields @timestamp, @message
-#   | parse @message /(?<cause>getSeedBarsStatic failed|\[isr-cache\] s3 get failed|\[isr-cache\] s3 set failed|\[isr-cache\] tag sync failed|\[isr-cache\] tag publish failed|\[isr-cache\] tag prune failed|\[getOrSetCache\] get failed|\[getOrSetCache\] set failed|getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|getMarketFearGreedCryptoStatic failed|\[MarketContent:kr\]|\[seo-prewarm\] unit-error|\[seo-prewarm\] unit-timeout|\[seo-prewarm\] batch failed|\[seo-prewarm\] batch deadline reached|NAVER_CLIENT_ID\/SECRET|non-OK response|\[KR_EQUITY_SESSION\]|\[seo-prewarm\] redis unavailable|\[kr-tickers\] sync failed|\[agent\] busy|\[agent\] web search budget exhausted|\[xPosts\] daily read budget exhausted)/
+#   | parse @message /(?<cause>getSeedBarsStatic failed|\[isr-cache\] s3 get failed|\[isr-cache\] s3 set failed|\[isr-cache\] tag sync failed|\[isr-cache\] tag publish failed|\[isr-cache\] tag prune failed|\[getOrSetCache\] get failed|\[getOrSetCache\] set failed|getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|getMarketFearGreedCryptoStatic failed|\[loadMarketSignals:kr\] getMarketSummaryStatic failed|\[loadMarketSignals:kr\] getSectorSignalsStatic failed|\[seo-prewarm\] unit-error|\[seo-prewarm\] unit-timeout|\[seo-prewarm\] batch failed|\[seo-prewarm\] batch deadline reached|NAVER_CLIENT_ID\/SECRET|non-OK response|\[KR_EQUITY_SESSION\]|\[seo-prewarm\] redis unavailable|\[kr-tickers\] sync failed|\[agent\] busy|\[agent\] web search budget exhausted|\[xPosts\] daily read budget exhausted)/
 #   | filter ispresent(cause)
 #   | stats count() as n by cause
 #   | sort n desc
@@ -239,13 +239,24 @@ put_alert_filter siglens-agent-x-budget '"[xPosts] daily read budget exhausted"'
 #     yahoo가 무인증이라 429가 주 원인, KRX ETF 상장폐지도 같은 증상.
 #   - `[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed` —
 #     `/fear-greed/crypto`. US와 같은 FMP fail-open 구조(21개 심볼, 실패당 로그 2줄).
-#   - `[MarketContent:kr]` — `/market/kr`. 지수 3 + ETF 6 + 종목 20을 무인증
-#     yahoo로 긁고(리필당 49회), 실패하면 빈 배열로 fail-open해서 canonical
-#     null + noindex가 ISR에 굳는다.
-# 25점: US·crypto는 실패 1회가 로그 2줄이라 50점 → 15분 안에 두 라우트(또는 같은 라우트 2회)가
+#   - `[loadMarketSignals:kr] getMarketSummaryStatic failed` /
+#     `[loadMarketSignals:kr] getSectorSignalsStatic failed` — `/market/kr`.
+#     **로더가 던져서 빈 값으로 폴백한 경우만** 센다(`loadMarketSignals.ts`가 각 로더를 catch해
+#     `[loadMarketSignals:<scope id>]` 접두로 로그를 남기고 빈 배열로 fail-open하면
+#     canonical null + noindex가 ISR에 굳는다. `:kr`만 센다). 둘 다 실패한 KR 한 번의 렌더는
+#     2줄(요약 + 섹터 로더, React `cache()`로 요청당 한 번)이라 25 x 2 = 50점이다.
+#     ⚠️ yahoo 429·장애는 여기 걸리지 않는다: `YahooMarketProvider.getQuote`가 오류를
+#     `null`로 접고(`[YahooMarketProvider] getQuote failed` 경고만 남는데 이를 매치하는
+#     필터는 없다) core가 그 null을 0-가격 행으로 바꿔 배열이 비지 않으므로, 던지지도
+#     `degraded`(indices·sectors·stocks가 전부 빔)로 판정되지도 않는다.
+#     예전 `[MarketContent:kr]`는 코드에 없는 문구라 한 번도 매치되지 않았다 — 문구가 소스에
+#     있는지는 src/__tests__/guards/alarmFilterPhrases.test.ts가 지킨다.
+# 25점(가중치 변경 없음): siglens-p2는 15분 합계 100점 이상에서 발화한다. KR 한 번의 완전 degrade는
+# 50점이라 **KR 단독 한 번의 재생성으로는 임계값에 못 미친다**(같은 창에 다른 신호가 더해져야 한다).
+# US·crypto는 실패 1회가 로그 2줄이라 50점 → 15분 안에 두 라우트(또는 같은 라우트 2회)가
 # 실패하면 발화한다. 네 페이지는 약 1시간마다 재생성되므로 한 15분 창에 나올 수 있는 실패는
 # 많아야 4회다 — 그 이상을 요구하는 가중치는 전부 실패해도 울리지 않는다.
-put_alert_filter siglens-market-data-loader-failed '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed" ?"[MarketContent:kr]"' P2 25
+put_alert_filter siglens-market-data-loader-failed '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed" ?"[loadMarketSignals:kr] getMarketSummaryStatic failed" ?"[loadMarketSignals:kr] getSectorSignalsStatic failed"' P2 25
 
 # 설정/자격증명 신호 (네이버 뉴스 + KR 캘린더 지평선 + prewarm redis 통합).
 # "발생 자체가 이상 신호"라 1건=100점.
