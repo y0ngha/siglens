@@ -442,3 +442,9 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 #### TC-34 — 변환 뒤 바뀐 모든 파일을 다시 스캔한다
 
 블록 안으로 들어간 import, 밀려난 지시문, 만들어진 중복을 `grep '^import'` 등으로 점검한다.
+
+<a id="TC-38"></a>
+
+#### TC-38 — CloudWatch 필터 문구는 소스에 실제로 있어야 한다
+
+`infra/aws/*.sh`의 metric filter는 `console.*` 문구를 글자 그대로 매치하므로, 로그 문구를 바꾸거나 필터에 없는 문구를 적으면 알람이 조용히 죽는다. 필터의 따옴표 용어는 모두 ASCII여야 하고, `src`·`scripts`·`cache-handler`·설치된 core `dist`의 **문자열·템플릿 리터럴 안에** 있어야 한다. 주석에만 남은 문구는 근거가 아니다. `${}` 슬롯이 만드는 문구는 슬롯 값이 소스의 따옴표 리터럴로 정확히 있고 템플릿의 마지막 고정 문구에 닿을 때만 인정한다. `src/__tests__/guards/alarmFilterPhrases.test.ts`가 이를 검사한다. 소스 밖에서 만들어지는 문구는 그 테스트의 허용 목록에 이유와 함께 둔다.

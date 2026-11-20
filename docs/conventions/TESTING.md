@@ -494,6 +494,21 @@ A static-rendering guard lists every framework API that reads request context (l
 
 Guard exceptions keyed on line numbers break on any edit above them. Key on stable identifiers and run `yarn test src/__tests__/guards` before committing. When a script feeds a config list, dry-run its output against the invariant tests over that list.
 
+<a id="TE-62"></a>
+
+#### TE-62 — Falsify a source guard against the real data, item by item
+
+A guard that matches loosely (any `[tag] text`, bare substrings of a large corpus) passes for items whose evidence is gone. Prove it by removing each guarded item's evidence from an in-memory copy of the real data and expecting that item to be reported; assert zero survivors. Mutating one hand-picked item does not show the other items are guarded.
+
+- ❌ The author deletes one phrase from the source, sees the guard fail, and ships; most other phrases still match through a loose template or substring.
+- ✅ A test loops over every parsed item, deletes its evidence in memory, and asserts the guard flags it.
+
+<a id="TE-63"></a>
+
+#### TE-63 — A parser-based guard accounts for every candidate
+
+A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line.
+
 ## Third-Party Contracts
 
 <a id="TE-8"></a>
