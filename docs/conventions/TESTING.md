@@ -590,6 +590,8 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 
 An absence assertion over recorded calls ("no raw value is stored" by stringifying `mock.calls`) first asserts the call count; an empty array passes it vacuously.
 
+A "no write happens" test spies the operation that must not happen (update, insert, delete) and asserts `not.toHaveBeenCalled()`; asserting the mock's shape (`not.toHaveProperty('update')`) passes whatever the code does, and a stray call surfaces as a TypeError instead of the named assertion. Falsify it by adding the call.
+
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
 - ✅ Render the condition to SQL plus params and assert both.
 - ❌ A last-line defensive guard (a security or invariant check that "cannot happen" behind an earlier check) has no test, so deleting it still passes. ✅ Drive the input past the earlier check and assert the guard rejects it.
