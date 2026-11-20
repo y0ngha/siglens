@@ -93,7 +93,7 @@ Co-Authored-By: Codex Sonnet 4.6 <noreply@anthropic.com>"
 
 Split commits when multiple concerns are mixed:
 ```bash
-git add src/domain/indicators/rsi.ts src/__tests__/domain/indicators/rsi.test.ts
+git add src/shared/lib/adsense.ts src/shared/lib/__tests__/adsense.test.ts
 git commit -m "feat: RSI 인디케이터 구현"
 
 git add docs/product/DOMAIN.md

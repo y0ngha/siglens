@@ -183,14 +183,14 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 ### FSD 6-Layer 의존 방향
 
 ```
-app  →  pages  →  widgets  →  features  →  entities  →  shared
+app  →  views  →  widgets  →  features  →  entities  →  shared
                                                           ↑
                                           @y0ngha/siglens-core (외부, 모든 레이어 직접 import 가능)
 ```
 
 - 각 레이어는 자기 위 레이어를 import할 수 없다 (예: entities는 features를 import할 수 없음).
 - 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/analysis`는 `entities/ticker`를 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
-  - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). ESLint `{ from: 'shared', allow: ['shared'] }` 규칙으로 강제.
+  - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). 이 예외 구간은 oxlint가 제한하지 않는다.
   - **예외**: entities 간 cross-import 허용 (analysis → news-article, earnings-report 등 도메인 조합 필요).
   - **예외**: features 간 cross-import 허용 (auth-signup → auth-email-verification 등).
   - cross-import를 허용하는 곳에서도 **순환은 금지**다. 파일 단위 런타임 순환과 entities·features 슬라이스 순환은 0건이어야 한다 (`src/__tests__/guards/importCycles.test.ts`).
@@ -206,12 +206,14 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 
 ### Server Action 예외
 
-`entities/<x>/actions/`(Next.js `'use server'` 파일)는 features/widgets/pages/app에서 import 가능하다.
+`entities/<x>/actions/`(Next.js `'use server'` 파일)는 features/widgets/views/app에서 import 가능하다.
 `entities/<x>/api.ts`는 server-only이므로 same-entity 또는 app 레이어에서만 import.
 
-### ESLint 강제
+### oxlint 강제
 
-위 규칙은 oxlint의 `no-restricted-imports` 패턴(레이어별 override)으로 정적 검증된다. 위반 시 PR 머지 불가. 자세한 설정은 `.oxlintrc.json`.
+- 아래 방향 레이어 규칙은 oxlint `no-restricted-imports`(`.oxlintrc.json`의 레이어별 override)가 강제한다.
+- 순환은 `src/__tests__/guards/importCycles.test.ts`, widgets 간 import는 `src/__tests__/guards/noCrossWidgetImports.test.ts`, barrel(`index.ts`와 re-export 전용 파일)은 `src/__tests__/guards/noBarrelFiles.test.ts`가 강제한다.
+- 위 가드들이 다루지 않는 같은 레이어 슬라이스 간 import 금지(entities·features·shared 예외 밖)는 리뷰 시점 규칙이다. 위반 시 PR 머지 불가.
 
 ---
 
@@ -248,7 +250,6 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 #### RT-1 — Verify gates by running them, and verify claims exhaustively
 
 - "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
-- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
 - A `@y0ngha/siglens-core` version bump has no changed files in `src/`, so the consumers are every importer of each changed core export: grep the export name across `src` and run those tests (e.g. a changed tool spec is also pinned by the public `src/app/api/v1` tests), not only the folder you edited.
 - Source-scanning guards also live in route/slice `__tests__` folders outside `src/__tests__/guards` (`src/app/[locale]/__tests__`, `src/shared/i18n/__tests__`). When a change moves calls, directives (`'use client'`) or exports into a helper, include those folders in the scope and update the guard to follow the moved code.
 - Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards` and `src/shared/i18n/__tests__` (e.g. `noClientHookInServerComponent`), because scoped runs skip the repo-wide guards. Before removing a `'use client'` directive, confirm the component calls no client-only hook.
@@ -256,7 +257,7 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 - Rerun every gate covering a file after each code-changing review fix, React Doctor included; a pass on the earlier version does not carry over to the fixed one.
 - A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
 - A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule. The same sweep applies to any review finding that names a pattern, even when no rule text changed: grep the whole PR diff for that pattern before pushing the fix. "Every changed file" includes test files and test helpers: code rules (no `!` assertions, no `any`, no `let`/`for`/`push`) apply there too, so a sweep limited to production files leaves the same violation behind.
-- ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
+- ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[locale]/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
 
 ---
 

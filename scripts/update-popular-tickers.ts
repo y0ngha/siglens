@@ -34,16 +34,13 @@ import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import {
     insertKrTrendingItems,
     type KrTrendingItem,
-} from './scripts/lib/krTrendingInsert';
+} from './lib/krTrendingInsert';
 import {
     classifyVisitSymbol,
     extractExistingKrTickers,
     selectVisitCandidates,
-} from './scripts/lib/visitCandidates';
-import {
-    loadVisitSources,
-    type VisitSources,
-} from './scripts/lib/visitSources';
+} from './lib/visitCandidates';
+import { loadVisitSources, type VisitSources } from './lib/visitSources';
 
 // --- Constants ---
 

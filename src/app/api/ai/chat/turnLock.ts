@@ -16,7 +16,7 @@ const RELEASE_LOCK_SCRIPT =
  * acquired *before* the pre-turn repository calls (conversation lookup, history read, user-row
  * append, `edit`/`regenerate` mutations — all via `withRetry(DB_TRANSIENT_RETRY)`, up to 4
  * attempts) even run, not just before the deadline timer starts, and is released only after the
- * partial-output save and SSE teardown that follow the deadline. A degraded Neon can burn
+ * partial-output save and SSE teardown that follow the deadline. A degraded database can burn
  * several seconds per retried call across that many pre-turn queries; 60s of margin was not
  * enough headroom for that plus the deadline itself, so 660s could self-race (TTL expiring
  * mid-save lets a second turn interleave `seq`). 120s covers pre-turn reads + save + teardown.

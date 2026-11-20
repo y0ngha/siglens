@@ -42,6 +42,7 @@
         "scripts/seedEconomicEventAnalysis.ts",
         "scripts/skills-digest.ts",
         "scripts/update-popular-cryptos.ts",
+        "scripts/update-popular-tickers.ts",
         "scripts/validate-skills.ts",
         "scripts/__tests__/pattern-index.test.ts",
         "scripts/__tests__/seed-crypto-korean-names.test.ts",
