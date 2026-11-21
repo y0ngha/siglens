@@ -102,7 +102,6 @@ function aiSitemapXml(): string {
  *   `not-found.tsx`(브랜드 바·홈 링크가 있는 404)가 404 상태로 렌더되게 한다.
  *
  * 페이지 메타데이터도 noindex지만, 리다이렉트·404까지 덮도록 헤더로도 막는다.
- * (spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`)
  */
 const LP_PATH_BY_HOST = {
     main: '/lp/stock-analysis',

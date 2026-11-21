@@ -15,11 +15,11 @@ function unquote(cell: string): string {
 
 /** 헤더 이름(소문자) → 열 번호. */
 function headerIndex(headerLine: string): Map<string, number> {
-    const index = new Map<string, number>();
-    headerLine
-        .split('|')
-        .forEach((name, i) => index.set(unquote(name).toLowerCase(), i));
-    return index;
+    return new Map(
+        headerLine
+            .split('|')
+            .map((name, i) => [unquote(name).toLowerCase(), i] as const)
+    );
 }
 
 function cellAt(
@@ -53,6 +53,7 @@ function toIsoDate(raw: string | null): string | null {
  * 수량은 소수(`587563.823483`)로 올 수 있어 반올림한다. 유니버스 밖 심볼·깨진 행은 버린다.
  * 장외(TRF) 보고분만 담긴 파일이다 — 소비자는 "장외 공매도 비중"으로 표기해야 한다.
  */
+// CONVENTIONS.md#CP-6 예외: 심볼별 첫 행만 남기는 Map에 파일 전체(수천 행)를 한 번에 모은다. 행마다 Map을 복사하면 O(N²)다.
 export function parseCnmsShortVolume(
     text: string,
     resolveSymbol: SymbolResolver
@@ -93,6 +94,7 @@ export function parseCnmsShortVolume(
  * `daysToCoverQuantity`가 `999.99`이면 평균 거래량이 0이라 계산 불가라는 FINRA의 상한 표기다 —
  * 값 그대로 저장하지 않고 null로 둔다.
  */
+// CONVENTIONS.md#CP-6 예외: 심볼별 첫 행만 남기는 Map에 파일 전체(수천 행)를 한 번에 모은다. 행마다 Map을 복사하면 O(N²)다.
 export function parseShortInterest(
     text: string,
     resolveSymbol: SymbolResolver

@@ -192,7 +192,7 @@ lines.reduce((acc, line) => { ... }, init);
 
 #### CP-6 — No `push` accumulation in pure calculations or functional contexts
 
-Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created, and compute min/max/sum with `reduce` or `Math.max`/`Math.min` instead of a `let` reassigned inside a loop. The same holds for `Map`/`Set` folds and request chunking: build them with `new Map(entries)` (later entries win) or `Array.from({ length }, …)` after a filter/sort, not a `for…of` + `continue` + `Map.set`/`push` loop. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation. It applies only where the immutable form has a real cost; a `reduce` over a constant-size object or a short list stays immutable, and a lint warning alone does not justify rewriting it to `push`/in-place mutation. Where the exception is used, a one-line comment names the cost that justifies the mutable accumulator.
+Build results in pure calculations, `useMemo`, `reduce` and `map` with `map`, `filter`, `flatMap`, `reduce`, spread, `new Map(entries)` (the last entry per key wins; first-wins needs a reversed source or a loop) or `Array.from({ length }, …)` (also for request chunking), not with a loop that `push`es, `Map.set`s or `Set.add`s into an outer value, mutates an object you just created (`{ ...source, property }`), or reassigns a `let` min/max/sum (`Math.max`, `reduce`). The sliding-window / O(N) exception above is the only sanctioned local mutation, and only where the immutable form has a real cost; a short list stays immutable and a lint warning alone does not justify `push`. Where used, a comment names the cost; in `src/shared/lib/**` and `src/entities/*/lib/**` it reads `// CONVENTIONS.md#CP-6 예외: <cost>` above the function, loop or accumulator (guard `accumulator-in-loop`). `push` inside a `map`/`filter`/`reduce`/`flatMap` callback or a `useMemo` factory is never allowed (guard `push-in-functional-callback`).
 
 ```typescript
 // ❌
@@ -564,12 +564,16 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | One import statement per module | oxlint `import/no-duplicates` (autofix) | all code | Merge the specifiers into the first import. |
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
-| No lint-disable comments | `src/__tests__/guards/lintDisableDirectives.test.ts` | code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
+| No lint-disable comments | `codeRules.test.ts` rule `lint-disable-directive`, zero tolerance | comments in code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
 | No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support) | Early return, or bind a local `const` and throw a readable error; for a Map or array lookup, destructure or use `entries()` instead of indexing. Do not evade it (`TS-1`). |
 | No new non-null assertion in tests (TS-1) | `codeRules.test.ts` rule `non-null-assertion`, per-file baseline (`TOOLCHAIN.md#TC-41`) | test files and e2e | Bind the value and narrow it, or use `defined(value, 'what')` from `src/shared/test-utils/defined.ts`. |
 | No assertion by mock call index (TE-27) | `codeRules.test.ts` rule `mock-call-index`, per-file baseline | test files and e2e | `mock.calls.find(...)` by a discriminating argument, or `toHaveBeenCalledWith`. |
 | No `let x = a;` + `if` that only assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-if`, zero tolerance | all code | `const x = c ? b : a;` or a small named function. |
 | No `let x;` + `try` that assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-try`, per-file baseline | all code | `const x = await load().catch(() => null)` or a small named function. |
+| No `push`/`Map.set`/`Set.add` accumulation in a loop (CP-6) | `codeRules.test.ts` rule `accumulator-in-loop`, zero tolerance | production code in `src/shared/lib/**` and `src/entities/*/lib/**` | `map`/`flatMap`/`reduce`, or `// CONVENTIONS.md#CP-6 예외: <cost>` above the function, loop or accumulator. |
+| No `push` in a `map`/`filter`/`reduce`/`flatMap` callback or `useMemo` factory (CP-6) | rule `push-in-functional-callback`, zero tolerance | production code | Return the values from the callback. |
+| No `??=`, `||=`, `&&=` in components and hooks (EF-4) | rule `logical-assignment-in-react`, zero tolerance | production `.tsx` and `use*.ts` | Write the check and the assignment out. |
+| No citation of local-only docs (CM-9) | rule `local-doc-citation`, zero tolerance | comments and strings of code, and `.sh`/`.css`/`.yml` text, under the scan roots; strings in test files are fixtures and skipped | State the fact inline. |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
@@ -745,7 +749,7 @@ Comments, JSDoc, tests and tracked docs must not point at gitignored or local-on
 scratch logs, runbooks, production logs): a reader of the repository cannot open it, and the pointer cannot be checked
 for staleness. State the fact or the reason inline, and cite only tracked files or rule IDs. Identifiers from local
 benchmark, audit or eval sheets (`B-12`, "case 7 of the prompt eval") are local-only references too: write the
-measured fact instead of the case ID.
+measured fact instead of the case ID. If the pointer was the instruction's only target, drop the instruction. Guard: `local-doc-citation`.
 
 ```typescript
 // ❌ see docs/superpowers/specs/funnel.md §4 for why member prompts are excluded

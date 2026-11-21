@@ -738,7 +738,7 @@ async function releaseAfter<T>(guard: { current: boolean }, task: () => Promise<
 
 #### EF-4 — No logical assignment (`??=`, `||=`, `&&=`) in components and hooks
 
-React Compiler bails out on logical assignment operators (react-doctor `react-hooks-js/todo`), which silently disables memoization for that component or hook. Write the check and the assignment explicitly.
+React Compiler bails out on logical assignment operators (react-doctor `react-hooks-js/todo`), which silently disables memoization for that component or hook. Write the check and the assignment explicitly. Guard: `logical-assignment-in-react`.
 
 ```typescript
 // ❌ cache.current ??= new Map();

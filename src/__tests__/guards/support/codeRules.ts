@@ -40,7 +40,27 @@ export interface CodeRule {
     /** 이 파일을 검사하는가(저장소 루트 기준 경로). */
     appliesTo(file: string): boolean;
     /** 노드 하나에서 찾은 위반 수. 형제 문장 묶음을 보는 규칙은 묶음 노드에서 센다. */
-    countAt(node: AstNode): number;
+    countAt?(node: AstNode): number;
+    /**
+     * 파일 전체를 보고 찾은 위반 수. 조상·범위·주석이 필요한 규칙이 쓴다. 코드가 아닌 텍스트 파일
+     * (`.sh`·`.css`)에서는 `ctx.ast`가 `null`이고 `countFile`을 가진 규칙만 돈다.
+     */
+    countFile?(ctx: FileContext): number;
+}
+
+export interface CommentRange {
+    readonly start: number;
+    readonly end: number;
+    /** `//`·`/*`를 뺀 본문. */
+    readonly value: string;
+}
+
+export interface FileContext {
+    readonly path: string;
+    readonly text: string;
+    /** 코드 파일의 babel `File` 노드. 텍스트 파일은 `null`. */
+    readonly ast: AstNode | null;
+    readonly commentRanges: readonly CommentRange[];
 }
 
 /** `{ [ruleKey]: { [repoPath]: count } }`. 0인 항목은 담지 않는다. */
@@ -63,13 +83,23 @@ export interface ScanResult {
 }
 
 const CODE_FILE = /\.(?:ts|tsx|mts|mjs|cjs|js)$/;
-const SCAN_ROOTS = ['src', 'e2e', 'scripts', 'cache-handler', 'db'];
+/** AST가 없는 텍스트 파일. 문서 인용 규칙만 전체 본문을 본다. */
+const TEXT_FILE = /\.(?:sh|css|scss|ya?ml)$/;
+const SCAN_ROOTS = ['src', 'e2e', 'scripts', 'cache-handler', 'db', 'infra'];
 
-/** 엔진이 이보다 적게 스캔했다면 파일 열거가 깨진 것이다(공허한 통과 방지). */
+/**
+ * 엔진이 이보다 적게 스캔했다면 파일 열거가 깨진 것이다(공허한 통과 방지).
+ * 2026-11-22에 재 보니 스캔한 파일이 6,400여 개였다. 코드 파일 수가 5,000 아래로 내려가면
+ * 열거가 아니라 이 숫자가 낡은 것이니 다시 재서 고친다.
+ */
 export const MIN_SCANNED_FILES = 5000;
 
 export function isCodeFile(file: string): boolean {
     return CODE_FILE.test(file) && !file.endsWith('.d.ts');
+}
+
+export function isTextFile(file: string): boolean {
+    return TEXT_FILE.test(file);
 }
 
 /** 테스트 파일: `*.test.*`·`*.spec.*`, `__tests__/`, `__integration__/`, 테스트 유틸, e2e. */
@@ -315,6 +345,397 @@ function countLetThenTry(node: AstNode): number {
     });
 }
 
+// ------------------------------------------------- scope-aware and text rules
+
+const FUNCTION_TYPES = new Set([
+    'FunctionDeclaration',
+    'FunctionExpression',
+    'ArrowFunctionExpression',
+    'ObjectMethod',
+    'ClassMethod',
+    'ClassPrivateMethod',
+]);
+
+const LOOP_TYPES = new Set([
+    'ForStatement',
+    'ForInStatement',
+    'ForOfStatement',
+    'WhileStatement',
+    'DoWhileStatement',
+]);
+
+/** 문장·멤버 목록을 가진 노드. 이 노드의 직계 자식이 "문장 단위"다(주석이 붙는 자리). */
+const MEMBER_CONTAINERS = new Set([
+    'Program',
+    'BlockStatement',
+    'ClassBody',
+    'ObjectExpression',
+    'TSModuleBlock',
+    'StaticBlock',
+]);
+
+/** 모든 자식 노드를 소스 순서로. `walk`와 달리 순서가 필요한 스코프 규칙이 쓴다. */
+function childNodes(node: AstNode): readonly AstNode[] {
+    return Object.entries(node)
+        .filter(
+            ([key]) => key !== 'loc' && key !== 'extra' && key !== 'comments'
+        )
+        .flatMap(([, value]) =>
+            Array.isArray(value)
+                ? value.filter(isNode)
+                : isNode(value)
+                  ? [value]
+                  : []
+        )
+        .toSorted((a, b) => (a.start ?? 0) - (b.start ?? 0));
+}
+
+function isCall(node: AstNode): boolean {
+    return (
+        node.type === 'CallExpression' || node.type === 'OptionalCallExpression'
+    );
+}
+
+/** 멤버 체인의 뿌리 식별자 이름(`a.b.c` -> `a`). `this`·호출 결과 등이면 `null`. */
+function rootName(node: AstNode | null): string | null {
+    const target = unwrap(node);
+    return isMember(target)
+        ? rootName(child(target, 'object'))
+        : nameOf(target);
+}
+
+interface Binding {
+    readonly name: string;
+    /** `new Map()`·`new Set()`으로 만든 값인가. */
+    readonly collection: boolean;
+    /** 선언이 함수 안의 몇 겹 반복문 안에 있는가. */
+    readonly loopDepth: number;
+    /** 선언을 담은 문장의 시작 위치. 그 문장 위 주석을 예외 표시로 인정한다. */
+    readonly statementStart: number;
+}
+
+function isCollectionInit(init: AstNode | null): boolean {
+    const target = unwrap(init);
+    if (target === null || target.type !== 'NewExpression') return false;
+    const name = nameOf(child(target, 'callee'));
+    return name === 'Map' || name === 'Set';
+}
+
+/** 함수 본문에서 선언된 지역 이름. 안쪽 함수는 들어가지 않는다. */
+function bindingsIn(
+    node: AstNode,
+    loopDepth: number,
+    root: boolean,
+    statementStart: number
+): readonly Binding[] {
+    if (!root && FUNCTION_TYPES.has(node.type)) return [];
+    if (node.type === 'VariableDeclarator') {
+        const name = nameOf(child(node, 'id'));
+        return name === null
+            ? []
+            : [
+                  {
+                      name,
+                      collection: isCollectionInit(child(node, 'init')),
+                      loopDepth,
+                      statementStart,
+                  },
+              ];
+    }
+    const depth = LOOP_TYPES.has(node.type) ? loopDepth + 1 : loopDepth;
+    return childNodes(node).flatMap(inner =>
+        bindingsIn(
+            inner,
+            depth,
+            false,
+            MEMBER_CONTAINERS.has(node.type)
+                ? (inner.start ?? statementStart)
+                : statementStart
+        )
+    );
+}
+
+interface Frame {
+    readonly node: AstNode;
+    readonly bindings: readonly Binding[];
+    /** `items.forEach(cb)`의 `cb`인가: 본문 전체가 반복이다. */
+    readonly callbackLoop: boolean;
+    /** 이 함수가 만들어진 자리의 바깥 함수 안 반복 깊이. */
+    readonly enteredLoopDepth: number;
+}
+
+function isForEachCallback(fn: AstNode, parent: AstNode | null): boolean {
+    if (parent === null || !isCall(parent)) return false;
+    return (
+        dotName(unwrap(child(parent, 'callee'))) === 'forEach' &&
+        children(parent, 'arguments').includes(fn)
+    );
+}
+
+const COLLECTION_WRITES = new Set(['push', 'set', 'add']);
+
+/**
+ * 호출 `x.push(...)`·`m.set(...)`·`s.add(...)`가 선언 이후 반복 안에서 도는 지역 누적이면
+ * 그 누적기의 선언 정보를, 아니면 `null`.
+ */
+function localAccumulator(
+    call: AstNode,
+    frames: readonly Frame[],
+    loopDepth: number
+): Binding | null {
+    const callee = unwrap(child(call, 'callee'));
+    const method = dotName(callee);
+    if (callee === null || method === null || !COLLECTION_WRITES.has(method)) {
+        return null;
+    }
+    const target = child(callee, 'object');
+    const name = method === 'push' ? rootName(target) : nameOf(unwrap(target));
+    if (name === null) return null;
+    const declaredIn = frames.findLastIndex(frame =>
+        frame.bindings.some(binding => binding.name === name)
+    );
+    const binding = frames[declaredIn]?.bindings.find(b => b.name === name);
+    if (binding === undefined) return null;
+    if (method !== 'push' && !binding.collection) return null;
+    const accumulating =
+        declaredIn === frames.length - 1
+            ? loopDepth > binding.loopDepth
+            : loopDepth > 0 ||
+              frames
+                  .slice(declaredIn + 1)
+                  .some(
+                      (frame, offset) =>
+                          frame.callbackLoop ||
+                          frame.enteredLoopDepth >
+                              (offset === 0 ? binding.loopDepth : 0)
+                  );
+    return accumulating ? binding : null;
+}
+
+/** `start` 바로 위에 이어 붙은 주석들(사이에 공백만 있는 것). */
+function leadingComments(
+    ctx: FileContext,
+    start: number
+): readonly CommentRange[] {
+    const previous = ctx.commentRanges.find(
+        comment =>
+            comment.end <= start &&
+            ctx.text.slice(comment.end, start).trim() === ''
+    );
+    return previous === undefined
+        ? []
+        : [previous, ...leadingComments(ctx, previous.start)];
+}
+
+const CP6_MARKER = 'CONVENTIONS.md#CP-6';
+
+/** 이유가 말하는 비용: `O(N²)`, "복사", "할당", copy, allocation, "per ..." 같은 토큰이 하나는 있어야 한다. */
+const COST_TOKEN = /O\(|복사|할당|\bcop(?:y|ies)\b|\balloc|\bper\b/i;
+
+/** 마커 뒤에 비용을 밝힌 이유가 붙어 있는가("예외:"만 쓰거나 비용 없는 변명이면 아니다). */
+function hasCp6Reason(comment: CommentRange): boolean {
+    const at = comment.value.indexOf(CP6_MARKER);
+    if (at < 0) return false;
+    const rest = comment.value.slice(at + CP6_MARKER.length);
+    return (
+        rest.replace(/예외|[\s*:()\-—.,]/g, '').length >= 8 &&
+        COST_TOKEN.test(rest)
+    );
+}
+
+/**
+ * 이 호출을 감싼 문장·함수 위, 누적기 선언 문장 위, 또는 함수 본문 첫머리에 CP-6 예외 주석이
+ * 있는가.
+ */
+function isCp6Annotated(
+    ctx: FileContext,
+    trail: readonly AstNode[],
+    frames: readonly Frame[],
+    binding: Binding
+): boolean {
+    const anchors = trail.flatMap((node, index) => {
+        const parent = trail[index - 1];
+        return parent !== undefined &&
+            MEMBER_CONTAINERS.has(parent.type) &&
+            typeof node.start === 'number'
+            ? [node.start]
+            : [];
+    });
+    const leading = [...anchors, binding.statementStart].flatMap(start =>
+        leadingComments(ctx, start)
+    );
+    const opening = frames.flatMap(frame => {
+        const body = child(frame.node, 'body');
+        if (body === null || body.type !== 'BlockStatement') return [];
+        const bodyStart = body.start ?? 0;
+        const first = children(body, 'body')[0]?.start ?? body.end ?? bodyStart;
+        return ctx.commentRanges.filter(
+            comment => comment.start >= bodyStart && comment.end <= first
+        );
+    });
+    return [...leading, ...opening].some(hasCp6Reason);
+}
+
+function collectAccumulations(
+    ctx: FileContext,
+    node: AstNode,
+    parent: AstNode | null,
+    trail: readonly AstNode[],
+    frames: readonly Frame[],
+    loopDepth: number
+): readonly AstNode[] {
+    const isFunction = FUNCTION_TYPES.has(node.type);
+    const here = isFunction
+        ? [
+              ...frames,
+              {
+                  node,
+                  bindings: bindingsIn(node, 0, true, node.start ?? 0),
+                  callbackLoop: isForEachCallback(node, parent),
+                  enteredLoopDepth: loopDepth,
+              },
+          ]
+        : frames;
+    const depth = isFunction
+        ? 0
+        : LOOP_TYPES.has(node.type)
+          ? loopDepth + 1
+          : loopDepth;
+    const next = [...trail, node];
+    const accumulator = isCall(node)
+        ? localAccumulator(node, here, depth)
+        : null;
+    const own =
+        accumulator !== null && !isCp6Annotated(ctx, next, here, accumulator)
+            ? [node]
+            : [];
+    return [
+        ...own,
+        ...childNodes(node).flatMap(inner =>
+            collectAccumulations(ctx, inner, node, next, here, depth)
+        ),
+    ];
+}
+
+/** 반복 안에서 지역 `push`·`Map#set`·`Set#add`로 쌓는 호출 중 CP-6 예외 주석이 없는 것. */
+export function findAccumulatorsInLoop(ctx: FileContext): readonly AstNode[] {
+    return ctx.ast === null || !/\.(?:push|set|add)\(/.test(ctx.text)
+        ? []
+        : collectAccumulations(ctx, ctx.ast, null, [], [], 0);
+}
+
+const PURE_LOGIC_DIR = /^src\/(?:shared\/lib\/|entities\/[^/]+\/lib\/)/;
+
+const FUNCTIONAL_METHODS = new Set([
+    'map',
+    'filter',
+    'reduce',
+    'reduceRight',
+    'flatMap',
+]);
+
+function isFunctionalCallback(fn: AstNode, parent: AstNode | null): boolean {
+    if (parent === null || !isCall(parent)) return false;
+    if (!children(parent, 'arguments').includes(fn)) return false;
+    const callee = unwrap(child(parent, 'callee'));
+    const method = dotName(callee) ?? nameOf(callee);
+    return (
+        method !== null &&
+        (FUNCTIONAL_METHODS.has(method) || method === 'useMemo')
+    );
+}
+
+function collectPushInCallback(
+    node: AstNode,
+    parent: AstNode | null,
+    inCallback: boolean
+): readonly AstNode[] {
+    const inside =
+        inCallback ||
+        (FUNCTION_TYPES.has(node.type) && isFunctionalCallback(node, parent));
+    const own =
+        inside &&
+        isCall(node) &&
+        dotName(unwrap(child(node, 'callee'))) === 'push'
+            ? [node]
+            : [];
+    return [
+        ...own,
+        ...childNodes(node).flatMap(inner =>
+            collectPushInCallback(inner, node, inside)
+        ),
+    ];
+}
+
+/** `map`·`filter`·`reduce`·`flatMap` 콜백이나 `useMemo` 팩토리 안의 `push`. */
+export function findPushInFunctionalCallback(
+    ctx: FileContext
+): readonly AstNode[] {
+    return ctx.ast === null || !ctx.text.includes('.push(')
+        ? []
+        : collectPushInCallback(ctx.ast, null, false);
+}
+
+const REACT_FILE = /(?:\.tsx|(?:^|\/)use[A-Z][^/]*\.ts)$/;
+
+const LOGICAL_ASSIGNMENT = new Set(['??=', '||=', '&&=']);
+
+/** 로컬 전용 문서를 가리키는 경로. 앞이 `/`·`.`·`-`·단어 문자면 URL·상대 경로라 제외한다. */
+const LOCAL_DOC = /(?<![\w./-])docs\/(?!(?:product|conventions)\b)\w/g;
+
+function countLocalDocs(text: string): number {
+    return [...text.matchAll(LOCAL_DOC)].length;
+}
+
+function stringValueOf(node: AstNode): string | null {
+    if (
+        (node.type === 'StringLiteral' || node.type === 'JSXText') &&
+        typeof node.value === 'string'
+    ) {
+        return node.value;
+    }
+    const raw =
+        node.type === 'TemplateElement' && typeof node.value === 'object'
+            ? Reflect.get(node.value ?? {}, 'raw')
+            : null;
+    return typeof raw === 'string' ? raw : null;
+}
+
+/**
+ * 주석과(프로덕션 파일은) 문자열·템플릿에 적힌 로컬 문서 인용 수.
+ * 테스트 파일의 문자열은 심은 소스·메시지 픽스처이므로 세지 않고 주석만 본다.
+ * 텍스트 파일(`.sh`·`.css`)은 본문 전체를 본다.
+ */
+function countLocalDocCitations(ctx: FileContext): number {
+    if (ctx.ast === null) return countLocalDocs(ctx.text);
+    const comments = ctx.commentRanges.map(c => countLocalDocs(c.value));
+    const literals = isTestFile(ctx.path)
+        ? []
+        : [...walk(ctx.ast)]
+              .map(stringValueOf)
+              .map(value => (value === null ? 0 : countLocalDocs(value)));
+    return [...comments, ...literals].reduce((sum, n) => sum + n, 0);
+}
+
+/** 사유(`--`)를 달아 억제 주석을 허용하는 파일. 늘리려면 이 목록을 고치는 PR에서 사유를 설명한다. */
+export const ALLOWED_LINT_DISABLE_FILES: readonly string[] = [
+    'src/app/global-error.tsx',
+    'src/app/not-found.tsx',
+];
+
+/** 주석 본문이 억제 지시어로 시작하는가(`eslint-` 또는 `oxlint-` 다음 `disable`). */
+const LINT_DISABLE = /^\s*(?:eslint|oxlint)-disable/;
+
+function countLintDisables(ctx: FileContext): number {
+    const allowed = ALLOWED_LINT_DISABLE_FILES.includes(ctx.path);
+    return ctx.commentRanges.filter(
+        comment =>
+            LINT_DISABLE.test(comment.value) &&
+            // 허용 파일이어도 첫 줄에 `--` 사유가 있어야 한다.
+            !(allowed && (comment.value.split('\n')[0] ?? '').includes('--'))
+    ).length;
+}
+
 export const CODE_RULES: readonly CodeRule[] = [
     {
         key: 'non-null-assertion',
@@ -348,6 +769,51 @@ export const CODE_RULES: readonly CodeRule[] = [
         appliesTo: () => true,
         countAt: countLetThenTry,
     },
+    {
+        key: 'accumulator-in-loop',
+        docRef: 'CONVENTIONS.md#CP-6',
+        mode: 'zero',
+        fix: 'Build it with map/filter/reduce/flatMap, or, if a loop is the cheaper O(N) form, put `CONVENTIONS.md#CP-6 예외: <cost>` in a comment above the function or loop.',
+        appliesTo: file => PURE_LOGIC_DIR.test(file) && !isTestFile(file),
+        countFile: ctx => findAccumulatorsInLoop(ctx).length,
+    },
+    {
+        key: 'push-in-functional-callback',
+        docRef: 'CONVENTIONS.md#CP-6',
+        mode: 'zero',
+        fix: 'Return the values from the callback (flatMap/map/reduce) instead of pushing into an outer array.',
+        appliesTo: file => !isTestFile(file),
+        countFile: ctx => findPushInFunctionalCallback(ctx).length,
+    },
+    {
+        key: 'logical-assignment-in-react',
+        docRef: 'REACT.md#EF-4',
+        mode: 'zero',
+        fix: 'Write the condition out (`if (ref.current === null) ref.current = value`) or use a ternary.',
+        appliesTo: file => REACT_FILE.test(file) && !isTestFile(file),
+        countAt: node =>
+            node.type === 'AssignmentExpression' &&
+            typeof node.operator === 'string' &&
+            LOGICAL_ASSIGNMENT.has(node.operator)
+                ? 1
+                : 0,
+    },
+    {
+        key: 'local-doc-citation',
+        docRef: 'CONVENTIONS.md#CM-9',
+        mode: 'zero',
+        fix: 'State the fact inline instead of citing a local-only doc (only docs/product and docs/conventions are tracked).',
+        appliesTo: () => true,
+        countFile: countLocalDocCitations,
+    },
+    {
+        key: 'lint-disable-directive',
+        docRef: 'CONVENTIONS.md (Lint and guard rules)',
+        mode: 'zero',
+        fix: 'Fix the reported problem instead of suppressing it. Only the files in ALLOWED_LINT_DISABLE_FILES may disable, with a "--" reason.',
+        appliesTo: file => isCodeFile(file),
+        countFile: countLintDisables,
+    },
 ];
 
 // ------------------------------------------------------------------- scanning
@@ -355,7 +821,7 @@ export const CODE_RULES: readonly CodeRule[] = [
 interface Parsed {
     readonly ast: AstNode;
     readonly errors: number;
-    readonly commentsAndStrings: readonly { start: number; end: number }[];
+    readonly commentRanges: readonly CommentRange[];
 }
 
 function pluginsFor(file: string): ('typescript' | 'jsx')[] {
@@ -370,14 +836,14 @@ function parseSource(file: string, text: string): Parsed {
         plugins: pluginsFor(file),
         attachComment: false,
     });
-    const ranges = (result.comments ?? []).flatMap(({ start, end }) =>
-        start === undefined || end === undefined ? [] : [{ start, end }]
+    const ranges = (result.comments ?? []).flatMap(({ start, end, value }) =>
+        start === undefined || end === undefined ? [] : [{ start, end, value }]
     );
     return {
         // babel은 `File` 노드를 돌려주는데 구조적으로 AstNode와 같다.
         ast: result as unknown as AstNode,
         errors: (result.errors ?? []).length,
-        commentsAndStrings: ranges,
+        commentRanges: ranges,
     };
 }
 
@@ -403,7 +869,7 @@ function blankNonCode(text: string, parsed: Parsed): string {
                 ? [{ start: node.start, end: node.end }]
                 : []
         );
-    return [...parsed.commentsAndStrings, ...strings]
+    return [...parsed.commentRanges, ...strings]
         .toSorted((a, b) => b.start - a.start)
         .reduce(
             (out, { start, end }) =>
@@ -424,6 +890,27 @@ function scanOne(
     problems: readonly string[];
 } {
     const rules = allRules.filter(rule => rule.appliesTo(source.path));
+    if (!isCodeFile(source.path) && !isTextFile(source.path)) {
+        return { counts: new Map(), problems: [] };
+    }
+    if (!isCodeFile(source.path)) {
+        // 텍스트 파일(.sh·.css 등): AST 없이 파일 전체를 보는 규칙만 돈다.
+        const ctx: FileContext = {
+            path: source.path,
+            text: source.text,
+            ast: null,
+            commentRanges: [],
+        };
+        return {
+            counts: new Map(
+                rules.flatMap(rule => {
+                    const found = rule.countFile?.(ctx) ?? 0;
+                    return found > 0 ? [[rule.key, found] as const] : [];
+                })
+            ),
+            problems: [],
+        };
+    }
     const parsed = tryParse(source);
     if (typeof parsed === 'string') {
         return { counts: new Map(), problems: [`${source.path}: ${parsed}`] };
@@ -432,12 +919,23 @@ function scanOne(
     const counts = new Map<string, number>();
     for (const node of walk(parsed.ast)) {
         for (const rule of rules) {
-            const found = rule.countAt(node);
+            const found = rule.countAt?.(node) ?? 0;
             if (found > 0) {
                 counts.set(rule.key, (counts.get(rule.key) ?? 0) + found);
             }
         }
     }
+    const ctx: FileContext = {
+        path: source.path,
+        text: source.text,
+        ast: parsed.ast,
+        commentRanges: parsed.commentRanges,
+    };
+    rules.forEach(rule => {
+        const found = rule.countFile?.(ctx) ?? 0;
+        if (found > 0)
+            counts.set(rule.key, (counts.get(rule.key) ?? 0) + found);
+    });
     const mockRuleApplies = rules.some(rule => rule.key === 'mock-call-index');
     // 판정이 조용히 멈추는 것을 막는 교차 검증(TESTING.md#TE-63): 코드 텍스트에 `.mock.calls[`가
     // 보이는데 AST가 그만큼 못 셌다면 판정이 깨진 것이다.
@@ -488,8 +986,11 @@ export function scanSources(
     };
 }
 
-/** 검사 대상 파일 경로. 추적 파일과 아직 추가 안 된 새 파일을 보고, 무시된 스크래치는 뺀다. */
-export function listCodeFiles(root: string): string[] {
+/**
+ * 검사 대상 파일 경로(코드 파일과 `.sh`·`.css` 같은 텍스트 파일). 추적 파일과 아직 추가 안 된 새
+ * 파일을 보고, 무시된 스크래치는 뺀다. 스캔 루트 아래와 저장소 루트의 설정 파일을 본다.
+ */
+export function listScanFiles(root: string): string[] {
     const listed = execFileSync(
         'git',
         [
@@ -499,13 +1000,14 @@ export function listCodeFiles(root: string): string[] {
             '--exclude-standard',
             '--',
             ...SCAN_ROOTS,
+            ':(glob)*',
         ],
         { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
     )
         .split('\n')
         .filter(Boolean);
     return [...new Set(listed)]
-        .filter(isCodeFile)
+        .filter(file => isCodeFile(file) || isTextFile(file))
         .filter(file => existsSync(path.join(root, file)))
         .toSorted();
 }
@@ -526,7 +1028,7 @@ export function checkScanFloor(result: ScanResult): ScanResult {
 export function scanRepo(root: string): ScanResult {
     return checkScanFloor(
         scanSources(
-            listCodeFiles(root).map(file => ({
+            listScanFiles(root).map(file => ({
                 path: file,
                 text: readFileSync(path.join(root, file), 'utf8'),
             }))

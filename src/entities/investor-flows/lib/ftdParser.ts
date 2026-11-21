@@ -72,7 +72,7 @@ export function parseFtdFile(text: string): ParsedFtdFile {
     let malformedLines = 0;
     let dataLines = 0;
     let parsedQuantity = 0;
-    // 파일 하나가 수만 행이라 줄 단위로 한 번에 훑는다(CP-6 예외: 행 배열을 spread로 다시 만들면 O(N²)).
+    // 파일 하나가 수만 행이라 줄 단위로 한 번에 훑는다(CONVENTIONS.md#CP-6 예외: 행 배열을 spread로 다시 만들면 O(N²)).
     for (const line of body) {
         if (line.trim() === '') continue;
         const count = TRAILER_RECORD_COUNT.exec(line);
@@ -172,6 +172,7 @@ export function resolveFtdRows(
  * `/files/data/other/fails-deliver-data/`이고 `cnsfails202308b_0.zip`처럼 접미사가 붙기도 한다(2026-10-16 페이지 실측) —
  * 그래서 URL을 만들지 않고 링크에서 읽는다. 같은 파일 키가 여러 번 나오면 **처음** 링크를 쓴다. 키 내림차순(최신 먼저).
  */
+// CONVENTIONS.md#CP-6 예외: 링크마다 파일 키 Map에 처음 것만 남긴다(한 페이지 수백 링크). 링크마다 Map을 복사하면 O(N²)다.
 export function extractFtdFileLinks(html: string): FtdFileLink[] {
     const pattern =
         /href="(\/files\/[^"]*?\/cnsfails(\d{4})(0[1-9]|1[0-2])([ab])(?:_\d+)?\.zip)"/gi;

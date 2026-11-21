@@ -463,10 +463,10 @@ if (failures.length === 0) {
     process.exit(0);
 }
 
-const byGate = failures.reduce((acc, f) => {
-    (acc[f.gate] ??= []).push(f.detail);
-    return acc;
-}, {});
+const byGate = failures.reduce(
+    (acc, f) => ({ ...acc, [f.gate]: [...(acc[f.gate] ?? []), f.detail] }),
+    {}
+);
 for (const [gate, details] of Object.entries(byGate).sort()) {
     console.error(`\n✗ ${gate} — ${details.length}건`);
     for (const detail of details.slice(0, 15)) console.error(`    ${detail}`);
