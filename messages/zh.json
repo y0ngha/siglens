@@ -402,15 +402,16 @@
         },
         "signup": {
             "SignupContent": {
-                "50f3e4": "开始社交登录后，将有条款同意步骤。"
+                "50f3e4": "开始社交登录后，将有条款同意步骤。",
+                "emailDivider": "或使用电子邮件注册"
             },
             "page": {
-                "1c6c68": "通过电子邮件开始",
                 "8ba06b": "社交登录注册",
                 "925d56": "成为会员可查看更多内容",
                 "9922a0": "已有账户？",
                 "e2d231": "登录 →",
-                "f0c59b": "您将使用以下信息注册 SIGLENS"
+                "f0c59b": "您将使用以下信息注册 SIGLENS",
+                "subtitleOptional": "注册免费。即使不注册，也可以像现在一样查看图表和AI分析。"
             }
         },
         "symbol": {
@@ -625,7 +626,7 @@
                     "washoutBelowMa200": "长期下跌中的超卖（仅供参考）",
                     "washoutInUptrend": "上升趋势中的短期超卖"
                 },
-                "reason": "您收到此邮件是因为您在 {v0} 邮件报告设置中开启了接收。",
+                "reason": "您收到此邮件是因为您已同意接收 {v0} 邮件报告。",
                 "sectionBrief": "其他自选股",
                 "sectionNews": "重要新闻",
                 "sectionOptions": "期权动向",
@@ -889,6 +890,13 @@
                 "stepCode": "第 2 步：确认验证码",
                 "stepDetails": "第 3 步：设置密码和显示名称",
                 "stepEmail": "第 1 步：请求邮箱验证"
+            },
+            "SignupBenefits": {
+                "detail": "开启“{feature}”，详细查看所有股票的AI分析",
+                "emailReport": "仅在您需要时，通过邮件接收持仓和自选股的动态",
+                "heading": "会员权益",
+                "models": "可额外选用{count}个AI模型",
+                "timeframes": "查看从{from}到{to}更短周期的图表和AI分析"
             }
         },
         "contact-form": {
@@ -966,6 +974,11 @@
                 "clearedToast": "已清除排除记录：{v0}",
                 "excludedToast": "已从报告中排除：{v0}",
                 "includedToast": "已重新加入报告：{v0}"
+            },
+            "EmailReportSignupOptIn": {
+                "description": "每{weekday}{time}，我们会通过邮件发送您的持仓和自选股动态。如果您还没有添加股票，我们会整理当天出现信号的代表性股票。时间按这台设备的时区计算，您可以随时在邮件报告设置中修改或关闭。",
+                "label": "接收邮件报告",
+                "legend": "可选项目"
             }
         },
         "email-report-unsubscribe": {
@@ -2414,6 +2427,9 @@
             },
             "toast": {
                 "close": "关闭通知"
+            },
+            "OptionalConsentCheckbox": {
+                "optional": "(可选)"
             }
         },
         "skillSummary": {

@@ -1,9 +1,16 @@
+import {
+    readSignupEmailReportOptIn,
+    type SignupEmailReportOptIn,
+} from '@/entities/email-report/lib/signupOptIn';
+
 /** `readConsentForm`이 돌려주는 동의 폼 입력. */
 export interface ConsentFormInput {
     /** 대기 중인 OAuth 가입 토큰(앞뒤 공백 제거). 비었으면 빈 문자열. */
     token: string;
     /** 필수 약관 두 개(개인정보·이용약관)에 모두 동의했는가. */
     agreed: boolean;
+    /** 선택 항목인 메일 리포트 수신. 필수 동의와 별개로 읽는다. */
+    emailReportOptIn: SignupEmailReportOptIn;
 }
 
 /** 체크박스 상태를 실어 나르는 숨은 입력이 "동의"일 때 보내는 값. */
@@ -30,5 +37,6 @@ export function readConsentForm(formData: FormData): ConsentFormInput {
         agreed:
             readField(formData, 'agreed_privacy') === CONSENT_AGREED_VALUE &&
             readField(formData, 'agreed_tos') === CONSENT_AGREED_VALUE,
+        emailReportOptIn: readSignupEmailReportOptIn(formData),
     };
 }

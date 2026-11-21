@@ -29,6 +29,7 @@ import { EMAIL_MAX_LENGTH } from '@/shared/config/email';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
+    EMAIL_REPORT_CONSENT_SOURCE_VALUES,
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
     SYMBOL_MAX_LENGTH,
@@ -429,29 +430,79 @@ export const watchlistItems = pgTable(
  * 기준 로컬 시(`send_hour`)라서, cron은 매시 각 행의 로컬 요일·시를 계산해 매칭한다 —
  * UTC로 미리 환산해 저장하지 않는 이유는 DST가 있는 타임존에서 환산 결과가 철마다 바뀌기 때문이다.
  */
-export const emailReportSubscriptions = pgTable('email_report_subscriptions', {
-    userId: uuid('user_id')
-        .primaryKey()
-        .references(() => users.id, { onDelete: 'cascade' }),
-    enabled: boolean('enabled').notNull().default(false),
-    /** 요일 비트마스크 — bit n = `Date#getDay()`의 n(0=일요일 … 6=토요일). */
-    daysOfWeek: integer('days_of_week').notNull(),
-    /** 회원 로컬 시각의 시(0–23). */
-    sendHour: integer('send_hour').notNull(),
-    /** IANA 타임존 이름(예: `Asia/Seoul`). */
-    timezone: text('timezone').notNull(),
-    /** 메일 본문 로케일 — 설정을 저장한 화면의 로케일. */
-    locale: contentLocaleEnum('locale').notNull().default('ko'),
-    /** 마지막으로 수신을 켠 시각(수신 동의 기록). 한 번도 켜지 않았으면 null. */
-    consentedAt: timestamp('consented_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-        .notNull()
-        .defaultNow()
-        .$onUpdateFn(nowFn),
-});
+export const emailReportSubscriptions = pgTable(
+    'email_report_subscriptions',
+    {
+        userId: uuid('user_id')
+            .primaryKey()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        enabled: boolean('enabled').notNull().default(false),
+        /** 요일 비트마스크 — bit n = `Date#getDay()`의 n(0=일요일 … 6=토요일). */
+        daysOfWeek: integer('days_of_week').notNull(),
+        /** 회원 로컬 시각의 시(0–23). */
+        sendHour: integer('send_hour').notNull(),
+        /** IANA 타임존 이름(예: `Asia/Seoul`). */
+        timezone: text('timezone').notNull(),
+        /** 메일 본문 로케일 — 설정을 저장한 화면의 로케일. */
+        locale: contentLocaleEnum('locale').notNull().default('ko'),
+        /** 마지막으로 수신을 켠 시각(수신 동의 기록). 한 번도 켜지 않았으면 null. */
+        consentedAt: timestamp('consented_at', { withTimezone: true }),
+        /**
+         * 마지막으로 수신을 켠 화면(`settings` | `signup_email` | `signup_oauth`). `consented_at`과
+         * 같은 규칙으로 꺼진 상태에서 켤 때만 바뀐다. 동의 기록이 없으면 null.
+         */
+        consentSource: text('consent_source', {
+            enum: EMAIL_REPORT_CONSENT_SOURCE_VALUES,
+        }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'email_report_subscriptions_consent_source_check',
+            sql`${table.consentSource} IS NULL OR ${table.consentSource} IN ('settings','signup_email','signup_oauth')`
+        ),
+    ]
+);
+
+/**
+ * 가입 때 메일 리포트를 고른 회원에게 보내는 첫 리포트의 발송 기록. 회원당 한 행이라 PK가
+ * "한 번만"을 보장한다. cron이 보내기 전에 행을 삽입해 선점한다.
+ */
+export const emailReportWelcomes = pgTable(
+    'email_report_welcomes',
+    {
+        userId: uuid('user_id')
+            .primaryKey()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        /** `sending`(선점) → `sent` | `failed`. */
+        status: text('status', {
+            enum: ['sending', 'sent', 'failed'],
+        }).notNull(),
+        attempts: smallint('attempts').notNull().default(1),
+        error: text('error'),
+        sentAt: timestamp('sent_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'email_report_welcomes_status_check',
+            sql`${table.status} IN ('sending','sent','failed')`
+        ),
+        index('email_report_welcomes_created_at_idx').on(table.createdAt),
+    ]
+);
 
 /**
  * 메일 리포트 발송 기록 — 회원의 로컬 날짜당 한 행.

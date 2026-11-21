@@ -5,6 +5,7 @@ import { useFinalizeOAuthSignup } from '@/features/auth-oauth-consent/hooks/useF
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { CONSENT_DECLINED_VALUE } from '@/features/auth-oauth-consent/lib/readConsentForm';
+import { detectBrowserTimeZone } from '@/features/email-report-settings/lib/settingsForm';
 
 vi.mock(
     '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',
@@ -14,6 +15,13 @@ vi.mock(
 );
 
 vi.mock('@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup');
+
+vi.mock('@/features/email-report-settings/lib/settingsForm', async () => ({
+    ...(await vi.importActual(
+        '@/features/email-report-settings/lib/settingsForm'
+    )),
+    detectBrowserTimeZone: vi.fn(),
+}));
 
 vi.mock('../hooks/usePageShowReload', () => ({
     usePageShowReload: vi.fn(),
@@ -28,6 +36,7 @@ vi.mock('react-dom', async () => {
 
 const mockUseFinalizeOAuthSignup = vi.mocked(useFinalizeOAuthSignup);
 const mockFormAction = vi.fn();
+const mockDetectTimeZone = vi.mocked(detectBrowserTimeZone);
 
 function setupHook(
     state: FinalizeOAuthSignupState = {},
@@ -53,6 +62,8 @@ describe('OAuthConsentForm', () => {
     };
 
     beforeEach(() => {
+        mockDetectTimeZone.mockReset();
+        mockDetectTimeZone.mockReturnValue('Asia/Tokyo');
         setupHook();
         mockUseFormStatus.mockReturnValue({ pending: false });
     });
@@ -192,5 +203,72 @@ describe('OAuthConsentForm', () => {
             'input[name="agreed_tos"]'
         ) as HTMLInputElement;
         expect(hiddenInput.value).toBe('true');
+    });
+
+    describe('메일 리포트 수신 선택', () => {
+        function hiddenValue(container: HTMLElement, name: string): string {
+            return (
+                container.querySelector<HTMLInputElement>(
+                    `input[type="hidden"][name="${name}"]`
+                )?.value ?? 'MISSING'
+            );
+        }
+
+        it('필수 동의 아래의 선택 항목이며 처음에는 선택되어 있지 않다', () => {
+            const { container } = render(<OAuthConsentForm {...baseProps} />);
+            const optIn = screen.getByRole('checkbox', {
+                name: /메일 리포트 받기/,
+            });
+
+            expect(optIn).not.toBeChecked();
+            expect(optIn).not.toBeRequired();
+            expect(optIn).toHaveAttribute('aria-describedby');
+            expect(hiddenValue(container, 'email_report_opt_in')).toBe('false');
+        });
+
+        it('"모두 동의"를 눌러도 선택 항목은 켜지지 않는다', async () => {
+            const user = userEvent.setup();
+            const { container } = render(<OAuthConsentForm {...baseProps} />);
+
+            await user.click(screen.getByLabelText('모두 동의'));
+
+            expect(
+                screen.getByLabelText(/개인정보 수집 및 이용 동의/)
+            ).toBeChecked();
+            expect(
+                screen.getByRole('checkbox', { name: /메일 리포트 받기/ })
+            ).not.toBeChecked();
+            expect(hiddenValue(container, 'email_report_opt_in')).toBe('false');
+        });
+
+        it('체크하면 true와 브라우저 시간대를 싣고, 풀면 false다', async () => {
+            const user = userEvent.setup();
+            const { container } = render(<OAuthConsentForm {...baseProps} />);
+            const optIn = screen.getByRole('checkbox', {
+                name: /메일 리포트 받기/,
+            });
+
+            await user.click(optIn);
+            expect(hiddenValue(container, 'email_report_opt_in')).toBe('true');
+            expect(hiddenValue(container, 'email_report_timezone')).toBe(
+                'Asia/Tokyo'
+            );
+
+            await user.click(optIn);
+            expect(hiddenValue(container, 'email_report_opt_in')).toBe('false');
+        });
+
+        it('Space 키로 켠다', async () => {
+            const user = userEvent.setup();
+            render(<OAuthConsentForm {...baseProps} />);
+            const optIn = screen.getByRole('checkbox', {
+                name: /메일 리포트 받기/,
+            });
+
+            optIn.focus();
+            await user.keyboard(' ');
+
+            expect(optIn).toBeChecked();
+        });
     });
 });

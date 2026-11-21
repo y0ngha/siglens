@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
+import { SignupBenefits } from '@/features/auth-signup/ui/SignupBenefits';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { AuthCrossLink } from '@/shared/ui/auth/AuthCrossLink';
 import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';
@@ -53,7 +54,9 @@ export default async function SignupPage({
     return (
         <AuthCardShell
             title={t('page.925d56')}
-            subtitle={t('page.1c6c68')}
+            subtitle={t('page.subtitleOptional')}
+            // 일본어·중국어 문장은 공백이 없고 전역 keep-all이 줄을 못 나눠 좁은 화면에서 넘친다.
+            subtitleClassName="wrap-anywhere"
             footer={
                 <p>
                     {t('page.9922a0')}{' '}
@@ -66,7 +69,8 @@ export default async function SignupPage({
                 </p>
             }
         >
-            <Suspense fallback={<AuthFormSkeleton rows={3} />}>
+            <SignupBenefits />
+            <Suspense fallback={<AuthFormSkeleton rows={1} leadingAction />}>
                 <SignupContent />
             </Suspense>
         </AuthCardShell>

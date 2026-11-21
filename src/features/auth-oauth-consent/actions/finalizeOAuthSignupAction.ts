@@ -38,6 +38,8 @@ import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { readConsentForm } from '../lib/readConsentForm';
 
 interface ActiveTermsIds {
@@ -169,7 +171,7 @@ export async function finalizeOAuthSignupAction(
     formData: FormData
 ): Promise<FinalizeOAuthSignupState> {
     try {
-        const { token, agreed } = readConsentForm(formData);
+        const { token, agreed, emailReportOptIn } = readConsentForm(formData);
         if (!token) {
             return localeRedirect(OAUTH_ERROR_REDIRECT.consentInvalid);
         }
@@ -206,6 +208,16 @@ export async function finalizeOAuthSignupAction(
         const created = await createUserWithAgreements(db, consumed, terms);
         if (!created.ok) {
             return localeRedirect(created.redirectTo);
+        }
+
+        // 선택 사항이라 실패해도 가입은 이어 간다(결과를 쓰지 않는다).
+        if (emailReportOptIn.optIn) {
+            await recordSignupEmailReportOptIn(db, {
+                userId: created.value,
+                timezone: emailReportOptIn.timezone,
+                locale: await resolveRequestLocale(),
+                source: 'signup_oauth',
+            });
         }
 
         await issueSignupCookies(db, created.value);

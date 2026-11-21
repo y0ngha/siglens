@@ -402,15 +402,16 @@
         },
         "signup": {
             "SignupContent": {
-                "50f3e4": "After starting social login, there is a terms agreement step."
+                "50f3e4": "After starting social login, there is a terms agreement step.",
+                "emailDivider": "Or sign up with email"
             },
             "page": {
-                "1c6c68": "Start with Email",
                 "8ba06b": "Social Login Signup",
                 "925d56": "Become a member to see more",
                 "9922a0": "Already have an account?",
                 "e2d231": "Log In →",
-                "f0c59b": "You will sign up for SIGLENS with the information below"
+                "f0c59b": "You will sign up for SIGLENS with the information below",
+                "subtitleOptional": "Signing up is free. You can keep viewing charts and AI analysis without an account, just as you do now."
             }
         },
         "symbol": {
@@ -625,7 +626,7 @@
                     "washoutBelowMa200": "Oversold in a long-term decline (for reference)",
                     "washoutInUptrend": "Short-term oversold within an uptrend"
                 },
-                "reason": "You're receiving this because you turned on email reports in your {v0} email report settings.",
+                "reason": "You're receiving this because you agreed to receive {v0} email reports.",
                 "sectionBrief": "Other watchlist symbols",
                 "sectionNews": "Top news",
                 "sectionOptions": "Options activity",
@@ -889,6 +890,13 @@
                 "stepCode": "Step 2: Confirm the verification code",
                 "stepDetails": "Step 3: Set your password and display name",
                 "stepEmail": "Step 1: Request email verification"
+            },
+            "SignupBenefits": {
+                "detail": "Turn on ''{feature}'' to see the AI analysis of every symbol in detail",
+                "emailReport": "Get updates on your holdings and watchlist by email, only if you want them",
+                "heading": "Member benefits",
+                "models": "{count, plural, one {Choose from # more AI model} other {Choose from # more AI models}}",
+                "timeframes": "Charts and AI analysis on shorter timeframes, from {from} to {to}"
             }
         },
         "contact-form": {
@@ -966,6 +974,11 @@
                 "clearedToast": "Exclusion history cleared: {v0}",
                 "excludedToast": "Excluded from report: {v0}",
                 "includedToast": "Included in report again: {v0}"
+            },
+            "EmailReportSignupOptIn": {
+                "description": "Every {weekday} at {time}, we email you updates on your holdings and watchlist. If you have not added any symbols, we summarize the notable symbols that triggered signals that day. The time follows this device's time zone, and you can change it or turn it off anytime in the email report settings.",
+                "label": "Receive the email report",
+                "legend": "Optional items"
             }
         },
         "email-report-unsubscribe": {
@@ -2414,6 +2427,9 @@
             },
             "toast": {
                 "close": "Dismiss notification"
+            },
+            "OptionalConsentCheckbox": {
+                "optional": "(Optional)"
             }
         },
         "skillSummary": {

@@ -23,6 +23,7 @@ import type {
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type { OAuthProvider } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { SIGNED_UP_USER_TIER } from './lib/authUseCaseConstants';
 import { isSessionToken } from './lib/isSessionToken';
 
 const sessionColumns = {
@@ -31,13 +32,6 @@ const sessionColumns = {
     expiresAt: sessions.expiresAt,
     createdAt: sessions.createdAt,
 };
-
-/**
- * 가입(이메일/비밀번호·OAuth) 시 부여하는 tier. 가입한 사용자는 member이고, 사용자 행이 없는
- * 익명 방문자는 {@link DrizzleUserRepository.getUserTier}를 거쳐 core의 `DEFAULT_TIER`('free')로
- * 떨어진다 — 이 상수와 무관하다.
- */
-const SIGNED_UP_USER_TIER: Tier = 'member';
 
 /**
  * {@link DrizzleSessionRepository.pruneExpiredSessions} 한 번이 지우는 최대 행 수.

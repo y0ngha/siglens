@@ -11,6 +11,7 @@ import type {
 } from '@/shared/lib/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type { Locale } from '@/shared/i18n/locales';
+import type { EmailReportConsentSource } from './constants';
 import type * as schema from './schema';
 
 /** Connection configuration required to instantiate a database client. */
@@ -311,6 +312,8 @@ export interface EmailReportSubscriptionRecord {
     timezone: string;
     locale: Locale;
     consentedAt: Date | null;
+    /** Screen on which consent was last given; `null` when never consented. */
+    consentSource: EmailReportConsentSource | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -323,6 +326,8 @@ export interface UpsertEmailReportSubscriptionInput {
     sendHour: number;
     timezone: string;
     locale: Locale;
+    /** Recorded only on an off-to-on transition, like `consentedAt`. */
+    consentSource: EmailReportConsentSource;
 }
 
 /** An enabled subscription joined with the recipient's address — the cron's work list. */

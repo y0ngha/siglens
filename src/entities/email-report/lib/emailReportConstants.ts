@@ -1,3 +1,4 @@
+import type { Tier } from '@y0ngha/siglens-core';
 import type { Weekday } from '../model';
 
 /** 리포트 한 통에 싣는 최대 종목 수(전체 카드). 보유·관심종목 합집합의 앞부분. */
@@ -18,3 +19,9 @@ export const DEFAULT_EMAIL_REPORT_TIMEZONE = 'Asia/Seoul';
 
 /** 화면 표시 순서 — 월요일 시작. */
 export const WEEKDAYS_MONDAY_FIRST: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 0];
+
+/** 메일 리포트 대상 등급(가입 회원 이상, 무료 회원 포함). `api.ts`의 발송 대상 필터와 가입 화면의 혜택 목록이 같은 값을 쓴다. */
+export const EMAIL_REPORT_TIERS = [
+    'member',
+    'pro',
+] as const satisfies readonly Tier[];

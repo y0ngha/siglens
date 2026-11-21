@@ -26,6 +26,7 @@ describe('toSettingsView', () => {
             timezone: 'Europe/London',
             locale: 'en',
             consentedAt: new Date('2026-10-01T00:00:00.000Z'),
+            consentSource: 'settings',
             createdAt: new Date('2026-10-01T00:00:00.000Z'),
             updatedAt: new Date('2026-10-02T00:00:00.000Z'),
         };

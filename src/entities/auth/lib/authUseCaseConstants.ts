@@ -1,3 +1,12 @@
+import type { Tier } from '@y0ngha/siglens-core';
+
+/**
+ * 가입(이메일/비밀번호·OAuth) 시 부여하는 tier. 가입한 사용자는 member이고, 사용자 행이 없는
+ * 익명 방문자는 `DrizzleUserRepository.getUserTier`를 거쳐 core의 `DEFAULT_TIER`('free')로
+ * 떨어진다 — 이 상수와 무관하다. 가입 화면의 회원 혜택 목록도 이 값을 기준으로 계산한다.
+ */
+export const SIGNED_UP_USER_TIER: Tier = 'member';
+
 /** @internal 가입 시 이미 있는 이메일을 만났을 때의 오류 코드. */
 export const EMAIL_ALREADY_EXISTS_CODE = 'email_already_exists' as const;
 

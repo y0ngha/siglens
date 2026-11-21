@@ -11,6 +11,9 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 | from | to | 사유 |
 |---|---|---|
 | `features/auth-signup` | `features/auth-email-verification` | 회원가입 3단계 흐름에서 이메일 인증 phase 전환 필요. 공유 로직을 entities로 추출하면 useActionState 연결이 깨짐 |
+| `features/auth-signup` | `features/email-report-settings` | 가입 3단계 화면이 선택 항목인 메일 리포트 수신 행(`EmailReportSignupOptIn`)을 재사용한다. 수신 일정·시간대 규칙의 소스가 email-report-settings라 가입 쪽에서 다시 만들지 않는다. 반대 방향 import 없음 |
+| `features/auth-signup` | `features/reasoning-toggle` | 가입 화면의 회원 혜택 목록(`SignupBenefits`)이 '상세 분석'을 이름으로 부른다. 그 이름의 단일 소스(`REASONING_FEATURE_LABEL_KEY`)는 reasoning-toggle이 소유하므로 정의 파일에서 상수를 재사용한다. 반대 방향 import 없음 |
+| `features/auth-oauth-consent` | `features/email-report-settings` | 소셜 로그인 가입의 동의 화면도 같은 메일 리포트 수신 선택 행을 쓴다. 반대 방향 import 없음 |
 | `features/symbol-model` | `features/analysis-nudge` | symbol-model provider가 공유 회원가입 넛지 모달을 단 하나만 호스팅한다. reasoning 토글(잠금 클릭)과 익명 자동 넛지(그날 서로 다른 3개 종목을 분석한 뒤, 하루·세션 1회)가 이 단일 인스턴스를 함께 연다. 자동 넛지는 '상세 분석'과 '메일 리포트' 두 문구를 번갈아 쓴다 |
 | `features/symbol-model` | `features/premium-gate` | 모델 선택 상태가 premium 모델 게이트(인증/BYOK 안내 모달)를 함께 호스팅한다 |
 | `features/symbol-model` | `features/reasoning-toggle` | reasoning 토글 상태/라벨을 symbol-model provider가 함께 조율한다 |
