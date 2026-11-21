@@ -1,3 +1,5 @@
+import { BACKTEST_DATA_PUBLIC_PATH } from '@/entities/backtest-case/lib/fetchBacktestRunData';
+import { backtestResultsFileUrl } from '@/entities/backtest-case/lib/resultsFileUrl';
 import { SITE_NAME } from '@/shared/config/brand';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandName, brandTitle } from '@/shared/lib/brandName';
@@ -13,16 +15,6 @@ import {
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import { BACKTEST_RUN, BACKTEST_STATS } from './backtestingData';
-
-/**
- * 공개 채점 기록(CSV)의 원본 URL. siglens 레포 master의 `backtest-results/<runId>/`를 가리킨다 —
- * 실행 결과 폴더는 실행마다 새로 만들고 덮어쓰지 않으므로 master 경로가 그 실행의 기록이다.
- */
-const RESULTS_RAW_BASE =
-    'https://raw.githubusercontent.com/y0ngha/siglens/master/backtest-results';
-function rawResultsFileUrl(file: string): string {
-    return `${RESULTS_RAW_BASE}/${BACKTEST_RUN.run.runId}/${file}`;
-}
 
 /** `/backtesting` 페이지가 `<JsonLd>`로 각각 내보내는 세 노드. */
 export interface BacktestingJsonLd {
@@ -108,17 +100,23 @@ export function buildBacktestingJsonLd(
                 {
                     '@type': 'DataDownload',
                     encodingFormat: 'application/json',
-                    contentUrl: `${SITE_URL}/backtesting/data.json`,
+                    contentUrl: `${SITE_URL}${BACKTEST_DATA_PUBLIC_PATH}`,
                 },
                 {
                     '@type': 'DataDownload',
                     encodingFormat: 'text/csv',
-                    contentUrl: rawResultsFileUrl('trades.csv'),
+                    contentUrl: backtestResultsFileUrl(
+                        BACKTEST_RUN.run.runId,
+                        'trades.csv'
+                    ),
                 },
                 {
                     '@type': 'DataDownload',
                     encodingFormat: 'text/csv',
-                    contentUrl: rawResultsFileUrl('decisions.csv'),
+                    contentUrl: backtestResultsFileUrl(
+                        BACKTEST_RUN.run.runId,
+                        'decisions.csv'
+                    ),
                 },
             ],
         },

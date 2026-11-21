@@ -9,7 +9,14 @@ export interface RssItem {
     readonly title: string;
     /** 절대 허브 URL. */
     readonly link: string;
-    /** `${link}#${본문 해시 앞 12자}` — `isPermaLink="false"`로 나간다. */
+    /**
+     * `${link}#${본문 해시 앞 12자}` — `isPermaLink="false"`로 나간다.
+     *
+     * 항목의 정체성은 **본문 내용**이다. 요청 시각, 생성 시각, 스탬프 시각(`at`)은 섞지 않는다. 그래서 같은 본문이면
+     * 피드를 몇 번 다시 만들어도 guid가 같고(리더가 중복으로 보지 않는다), 본문이 바뀌면 새 항목이 된다. 같은 날
+     * 장중과 장 마감 뒤 브리핑은 서로 다른 항목이다. 형식을 바꾸면 구독자 리더에 지금 항목이 한 번 모두 새 글로
+     * 다시 뜨므로 바꾸지 않는다. 링크는 허브 주소다 — 브리핑별 주소는 없다(날짜별 브리핑 URL은 만들지 않기로 했다).
+     */
     readonly guid: string;
     /** 이 본문이 처음 확인된 시각. */
     readonly pubDate: Date;
