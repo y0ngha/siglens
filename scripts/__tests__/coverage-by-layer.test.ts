@@ -479,4 +479,8 @@ describe('workflow wiring', () => {
             'scripts/coverage-by-layer.ts coverage/coverage-summary.json'
         );
     });
+
+    it('marks the coverage run so the scan guards use their longer timeout', () => {
+        expect(workflow).toMatch(/COVERAGE_RUN: '1'/);
+    });
 });

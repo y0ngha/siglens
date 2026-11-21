@@ -44,7 +44,10 @@ jobs:
                   SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
               run: yarn install --immutable --mode=skip-build
 
+            # 계측으로 느려지는 스캔 가드의 제한 시간을 늘린다(`src/__tests__/guards/support/controlUsage.ts`).
             - name: Test with coverage
+              env:
+                  COVERAGE_RUN: '1'
               run: >-
                   yarn test-coverage
                   --coverage.reporter=json-summary
