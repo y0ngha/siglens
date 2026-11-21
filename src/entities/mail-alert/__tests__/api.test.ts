@@ -100,6 +100,7 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
 
         await repo.findByOwner({ kind: 'member', userId: 'u-1' });
         await repo.findByOwner({ kind: 'guest', subscriberId: 's-1' });
+        await repo.findByOwner({ kind: 'link', subscriberId: 's-2' });
 
         const rendered = where.mock.calls.map(call => render(call[0]));
         expect(rendered).toContainEqual({
@@ -110,7 +111,30 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
             sql: '"mail_alert_subscribers"."id" = $1 and "mail_alert_subscribers"."user_id" is null',
             params: ['s-1'],
         });
+        // 서명된 링크가 증명한 소유자는 id만으로 가리킨다(user_id 조건 없음).
+        expect(rendered).toContainEqual({
+            sql: '"mail_alert_subscribers"."id" = $1',
+            params: ['s-2'],
+        });
     });
+
+    it.each([
+        { kind: 'guest', subscriberId: 's-1' },
+        { kind: 'link', subscriberId: 's-1' },
+    ] as const)(
+        'setIncludePortfolio: %j 소유자는 DB를 열지 않고 거절한다(포트폴리오는 회원 것)',
+        async owner => {
+            const transaction = vi.fn();
+            const db = { transaction } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleMailAlertSubscriberRepository(
+                    db
+                ).setIncludePortfolio(owner, true)
+            ).resolves.toEqual({ found: false, subscriberDeleted: false });
+            expect(transaction).not.toHaveBeenCalled();
+        }
+    );
 
     it('findAllForDelivery: 항목이 있거나 보유·관심종목 함께 받기가 켜진 구독자만 묶는다', async () => {
         const orderBy = vi.fn().mockResolvedValue([]);

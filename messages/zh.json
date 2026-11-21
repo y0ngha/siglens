@@ -118,6 +118,25 @@
                     "subtitle": "点击下方按钮后，将不再向您发送定期邮件报告。",
                     "description": "退订 SIGLENS 定期邮件报告。"
                 }
+            },
+            "alerts": {
+                "empty": "目前没有正在接收的提醒邮件。",
+                "login": "登录",
+                "page": {
+                    "description": "用于查看并停止所接收提醒邮件的设置页面。",
+                    "subtitle": "查看正在接收的提醒邮件，并可随时停止。",
+                    "title": "提醒邮件设置"
+                },
+                "topicFearGreed": "{market}恐惧与贪婪指数进入极端区间",
+                "topicSignal": "新出现的{hubName}个股",
+                "topicSymbol": "{symbol}的新信号",
+                "unavailable": "目前无法加载设置，请稍后再试。",
+                "unidentifiedBody": "通过提醒邮件底部的设置链接进入，或登录后即可管理提醒邮件。",
+                "unidentifiedTitle": "请通过邮件中的链接打开"
+            },
+            "alertsLink": {
+                "description": "查看并更改正在接收的新信号和恐惧与贪婪指数提醒项目。",
+                "title": "提醒邮件设置"
             }
         },
         "fear-greed": {
@@ -779,6 +798,16 @@
                 "symbolNotFound": "该代码不存在。",
                 "unauthenticated": "请先登录。"
             }
+        },
+        "mail-alert": {
+            "codeEmail": {
+                "codeLine": "验证码：{v0}",
+                "expiry": "该验证码 {v0} 分钟内有效。",
+                "heading": "{v0} 提醒邮件订阅",
+                "ignore": "若非本人操作，请忽略此邮件。",
+                "intro": "请输入下方验证码以完成提醒邮件订阅。",
+                "subject": "[{v0}] 提醒邮件验证码"
+            }
         }
     },
     "features": {
@@ -1354,6 +1383,59 @@
                 "thanks": "感谢您的反馈",
                 "title": "您觉得 SIGLENS 怎么样？"
             }
+        },
+        "mail-alert": {
+            "addThis": "也订阅此项",
+            "allStopped": "已停止接收所有提醒邮件，并已删除订阅信息和发送记录。",
+            "button": "通过邮件接收",
+            "cancel": "取消",
+            "cardFearGreed": "指数进入极度恐惧或极度贪婪的当天早晨，我们会通过邮件通知您",
+            "cardSignalHub": "每天早晨通过邮件接收新出现的{hubName}个股",
+            "changeEmail": "更换邮箱",
+            "close": "关闭",
+            "codeLabel": "验证码",
+            "codePrompt": "请输入发送到{email}的{length}位验证码",
+            "confirm": "确认并订阅",
+            "emailLabel": "邮箱",
+            "errExpired": "验证码已过期，请重新获取。",
+            "errInvalid": "无法处理请求，请刷新后重试。",
+            "errInvalidEmail": "请检查邮箱地址。",
+            "errLimit": "最多可订阅{max}项，请在提醒邮件设置中整理。",
+            "errRateLimited": "请稍后再试。",
+            "errTooMany": "错误次数过多，请重新获取验证码。",
+            "errUnavailable": "目前无法订阅，请稍后再试。",
+            "errWrongCode": "验证码不正确。",
+            "fearGreedRule": "当分数跌破{fear}分进入极度恐惧，或升至{greed}分以上进入极度贪婪的当天通知您。离开该区间后{gap}个交易日内再次进入的，不会重复通知。",
+            "includePortfolio": "同时接收持仓和自选股的新信号",
+            "known": "正在向{email}发送。",
+            "loading": "加载中",
+            "manage": "提醒邮件设置",
+            "marketCrypto": "加密货币",
+            "marketKr": "韩国",
+            "marketUs": "美国",
+            "member": "将发送到{email}。",
+            "noTopics": "目前没有订阅的项目。",
+            "notice": "此邮箱地址仅用于发送提醒邮件。取消订阅后会立即删除。",
+            "otherEmail": "使用其他邮箱",
+            "privacyLink": "查看隐私政策",
+            "receive": "订阅",
+            "removeTopic": "停止接收：{label}",
+            "resend": "重新获取验证码",
+            "resendWait": "重新获取验证码（{seconds}秒）",
+            "schedule": "收盘后，我们只汇总新出现的内容，在韩国时间上午{from}点至{to}点之间以一封邮件发送。没有变化的日子不会发送。",
+            "sendCode": "获取验证码",
+            "signupLink": "注册",
+            "stop": "停止接收",
+            "stopAll": "停止接收所有提醒邮件",
+            "stopAllConfirm": "确定全部停止吗？订阅信息和发送记录将立即删除。",
+            "stopAllYes": "是，全部停止",
+            "stopped": "已停止接收。",
+            "subscribed": "已在订阅。",
+            "successGuest": "已订阅。有新消息的日子，我们会在早晨发送到{email}。",
+            "successSignup": "成为会员后，可一次性接收自选股的全部提醒。",
+            "titleFearGreed": "{market}恐惧与贪婪指数进入极端区间时，我们会通过邮件通知您",
+            "titleSignalHub": "我们会通过邮件通知您新出现的{hubName}个股",
+            "titleSymbol": "{name}出现新信号时，我们会通过邮件通知您"
         }
     },
     "shared": {

@@ -204,6 +204,7 @@ const EXPECTED_COOKIE_WRITERS = [
     'app/api/auth/handoff/start/route.ts',
     'entities/auth/actions/currentUserAction.ts',
     'entities/auth/lib/mainSessionHintCookie.ts',
+    'entities/mail-alert/server/mailAlertGuestCookie.ts',
     'features/account-delete/actions/deleteAccountAction.ts',
     'features/auth-login/actions/loginAction.ts',
     'features/auth-logout/actions/logoutAction.ts',

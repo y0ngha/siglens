@@ -48,12 +48,18 @@ function ownerOfAddress(email: string) {
 /**
  * 구독자 행의 소유자 조건. 회원은 `user_id`로, 비회원은 서명된 쿠키가 담은 구독자 id로 **그리고**
  * `user_id`가 비어 있을 때만 행을 가리킨다 — id를 알아도 연결된(회원) 행은 건드릴 수 없고, 회원은 자기
- * `user_id`가 아닌 행(비회원 행 포함)을 id로 가리킬 길이 없다(DB-12).
+ * `user_id`가 아닌 행(비회원 행 포함)을 id로 가리킬 길이 없다(DB-12). 서명된 메일 링크(`link`)만 id로 행을
+ * 가리키며(비회원·연결된 행 모두), 그 권한은 호출자가 먼저 확인한 HMAC 서명이 준다.
  */
 function ownerCondition(owner: MailAlertOwner): SQL {
-    return owner.kind === 'member'
-        ? sql`${mailAlertSubscribers.userId} = ${owner.userId}`
-        : sql`${mailAlertSubscribers.id} = ${owner.subscriberId} and ${mailAlertSubscribers.userId} is null`;
+    switch (owner.kind) {
+        case 'member':
+            return sql`${mailAlertSubscribers.userId} = ${owner.userId}`;
+        case 'guest':
+            return sql`${mailAlertSubscribers.id} = ${owner.subscriberId} and ${mailAlertSubscribers.userId} is null`;
+        case 'link':
+            return sql`${mailAlertSubscribers.id} = ${owner.subscriberId}`;
+    }
 }
 
 /** 회원 본인의 인증된 주소(인증되지 않았으면 null) — 비회원 때 만든 행을 가져오거나 지울 때만 쓴다. */
@@ -282,11 +288,18 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
         );
     }
 
-    /** 끄면서 받을 항목이 하나도 없으면 구독자를 지운다(`removeTopic`과 같은 규칙). */
+    /**
+     * 끄면서 받을 항목이 하나도 없으면 구독자를 지운다(`removeTopic`과 같은 규칙). 보유·관심종목은 회원
+     * 것이라 회원이 아닌 소유자(비회원, 메일 링크)는 DB를 건드리지 않고 `found: false`로 거절한다 — 비회원
+     * 행에는 이 스위치가 켜질 길이 없고, 켜져 있으면 발송이 존재하지 않는 포트폴리오를 읽는다.
+     */
     async setIncludePortfolio(
         owner: MailAlertOwner,
         value: boolean
     ): Promise<{ found: boolean; subscriberDeleted: boolean }> {
+        if (owner.kind !== 'member') {
+            return { found: false, subscriberDeleted: false };
+        }
         return withRetry(
             () =>
                 this.db.transaction(async tx => {
@@ -318,6 +331,34 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                 }),
             DB_TRANSIENT_RETRY
         );
+    }
+
+    /**
+     * 회원 계정 주소와 같은 주소의 연결 안 된 행을 그 회원에게 연결한다. 주소 일치와 "회원에게 아직 행이
+     * 없음"은 같은 문장 안에서 확인한다. 인증 전 계정은 `upsertVerified`가 연결하지 못하므로, 호출자(흐름)가
+     * 같은 요청에서 그 주소의 코드 확인을 마친 뒤에만 부른다 — 그 확인이 이 호출의 증거다.
+     */
+    async linkVerifiedMember(
+        userId: string,
+        subscriberId: string
+    ): Promise<boolean> {
+        const linked = await withRetry(
+            () =>
+                this.db
+                    .update(mailAlertSubscribers)
+                    .set({ userId, updatedAt: sql`now()` })
+                    .where(
+                        and(
+                            eq(mailAlertSubscribers.id, subscriberId),
+                            isNull(mailAlertSubscribers.userId),
+                            sql`${mailAlertSubscribers.email} = (select ${users.email} from ${users} where ${users.id} = ${userId})`,
+                            sql`not exists (select 1 from ${mailAlertSubscribers} as other where other.user_id = ${userId})`
+                        )
+                    )
+                    .returning({ id: mailAlertSubscribers.id }),
+            DB_TRANSIENT_RETRY
+        );
+        return linked.length > 0;
     }
 
     /** 소유자의 구독자 행을 지운다(수신 거부). 항목·발송 기록은 FK 연쇄로 사라진다. */

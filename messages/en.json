@@ -118,6 +118,25 @@
                     "subtitle": "Press the button below to stop receiving scheduled email reports.",
                     "description": "Stop receiving SIGLENS scheduled email reports."
                 }
+            },
+            "alerts": {
+                "empty": "You are not receiving any alert emails.",
+                "login": "Log in",
+                "page": {
+                    "description": "Settings to review the alert emails you receive and stop any of them.",
+                    "subtitle": "See the alert emails you receive and stop any of them.",
+                    "title": "Alert email settings"
+                },
+                "topicFearGreed": "{market} Fear & Greed Index entering an extreme zone",
+                "topicSignal": "Newly detected {hubName} stocks",
+                "topicSymbol": "New signals for {symbol}",
+                "unavailable": "We cannot load your settings right now. Please try again shortly.",
+                "unidentifiedBody": "Use the settings link at the bottom of an alert email, or log in to manage your alert emails.",
+                "unidentifiedTitle": "Please open this from the link in your email"
+            },
+            "alertsLink": {
+                "description": "See which new signal and Fear & Greed Index alerts you receive, and change them.",
+                "title": "Alert email settings"
             }
         },
         "fear-greed": {
@@ -779,6 +798,16 @@
                 "symbolNotFound": "That symbol doesn't exist.",
                 "unauthenticated": "Please sign in."
             }
+        },
+        "mail-alert": {
+            "codeEmail": {
+                "codeLine": "Verification code: {v0}",
+                "expiry": "This code is valid for {v0} minutes.",
+                "heading": "{v0} alert email sign-up",
+                "ignore": "If you did not request this, please ignore this email.",
+                "intro": "Enter the code below to finish signing up for alert emails.",
+                "subject": "[{v0}] Alert email verification code"
+            }
         }
     },
     "features": {
@@ -1354,6 +1383,59 @@
                 "thanks": "Thanks for the feedback",
                 "title": "How do you like SIGLENS?"
             }
+        },
+        "mail-alert": {
+            "addThis": "Add this too",
+            "allStopped": "You will no longer receive alert emails. We deleted your sign-up details and delivery history.",
+            "button": "Get by email",
+            "cancel": "Cancel",
+            "cardFearGreed": "Get an email in the morning when the index enters Extreme Fear or Extreme Greed",
+            "cardSignalHub": "Get newly detected {hubName} stocks by email in the morning",
+            "changeEmail": "Change email",
+            "close": "Close",
+            "codeLabel": "Verification code",
+            "codePrompt": "Enter the {length}-digit code we sent to {email}",
+            "confirm": "Confirm and subscribe",
+            "emailLabel": "Email",
+            "errExpired": "The code has expired. Please request a new one.",
+            "errInvalid": "We could not process the request. Refresh and try again.",
+            "errInvalidEmail": "Please check the email address.",
+            "errLimit": "You can receive up to {max} items. Please tidy up in alert email settings.",
+            "errRateLimited": "Please try again in a moment.",
+            "errTooMany": "Too many wrong attempts. Please request a new code.",
+            "errUnavailable": "We cannot take requests right now. Please try again shortly.",
+            "errWrongCode": "That code does not match.",
+            "fearGreedRule": "We notify you on the day the score falls below {fear} and enters Extreme Fear, or rises to {greed} or above and enters Extreme Greed. If the index leaves the zone and re-enters within {gap} trading days, we do not notify you again.",
+            "includePortfolio": "Also receive new signals for my holdings and watchlist",
+            "known": "You are receiving alerts at {email}.",
+            "loading": "Loading",
+            "manage": "Alert email settings",
+            "marketCrypto": "Crypto",
+            "marketKr": "Korea",
+            "marketUs": "US",
+            "member": "We will send alerts to {email}.",
+            "noTopics": "You have no items selected.",
+            "notice": "We only use this address to send alert emails. If you unsubscribe, we delete it right away.",
+            "otherEmail": "Use a different address",
+            "privacyLink": "View the privacy policy",
+            "receive": "Subscribe",
+            "removeTopic": "Stop receiving: {label}",
+            "resend": "Send the code again",
+            "resendWait": "Send the code again ({seconds}s)",
+            "schedule": "After the market closes, we collect only what is new and send it as one email between {from}:00 and {to}:00 AM Korea time. We send nothing on days with no changes.",
+            "sendCode": "Send verification code",
+            "signupLink": "Sign up",
+            "stop": "Stop receiving",
+            "stopAll": "Stop all alert emails",
+            "stopAllConfirm": "Stop everything? We will delete your sign-up details and delivery history right away.",
+            "stopAllYes": "Yes, stop all",
+            "stopped": "You have stopped receiving this.",
+            "subscribed": "You are already receiving this.",
+            "successGuest": "You are subscribed. On days with something new, we will email {email} in the morning.",
+            "successSignup": "Members can receive alerts for their whole watchlist at once.",
+            "titleFearGreed": "We'll email you when the {market} Fear & Greed Index enters an extreme zone",
+            "titleSignalHub": "We'll email you the newly detected {hubName} stocks",
+            "titleSymbol": "We'll email you when a new signal appears for {name}"
         }
     },
     "shared": {

@@ -1,5 +1,12 @@
-/** 같은 이메일의 비밀번호 재설정·이메일 인증 토큰이 Redis 키에서 충돌하지 않게 가르는 용도 태그. */
-export type EmailTokenPurpose = 'password_reset' | 'email_verification';
+/**
+ * 같은 이메일의 비밀번호 재설정·이메일 인증·알림 메일 신청 토큰이 Redis 키에서 충돌하지 않게 가르는 용도 태그.
+ * 알림 메일 신청 코드를 따로 두는 이유: 가입용 `verified` 마커와 섞이면 알림 메일을 위해 확인한 주소가
+ * 가입 증명으로 쓰인다.
+ */
+export type EmailTokenPurpose =
+    | 'password_reset'
+    | 'email_verification'
+    | 'mail_alert';
 
 /**
  * Redis에 저장되는 email-token 값. `pending`은 토큰 발급 상태로, 검증 때 상수 시간 비교를 하도록

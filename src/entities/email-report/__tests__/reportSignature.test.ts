@@ -30,6 +30,25 @@ describe('reportSignature', () => {
         );
     });
 
+    it('알림 메일의 세 용도는 서로의 서명을 받아들이지 않는다', () => {
+        const purposes = [
+            'alert-session',
+            'alert-manage',
+            'alert-unsubscribe',
+        ] as const;
+        purposes.forEach(signed => {
+            const sig = signReportValue(SECRET, signed, 'sub-1');
+            purposes.forEach(checked => {
+                expect(verifyReportValue(SECRET, checked, 'sub-1', sig)).toBe(
+                    signed === checked
+                );
+            });
+            expect(verifyReportValue(SECRET, 'unsubscribe', 'sub-1', sig)).toBe(
+                false
+            );
+        });
+    });
+
     it('비밀값이 다르면 실패한다', () => {
         const sig = signReportValue('other-secret', 'unsubscribe', 'user-1');
 

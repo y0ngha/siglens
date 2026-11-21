@@ -68,6 +68,7 @@ function makeDeps(deleted = true) {
         },
         oauthAccounts: { findByUserId: vi.fn().mockResolvedValue([]) },
         oauthRevoker: { revokeToken: vi.fn() },
+        mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         apiKeys: {
             listActiveKeyHashes: vi.fn().mockResolvedValue([KEY_HASH]),
             revokeAuth: revokeApiKeyAuth,

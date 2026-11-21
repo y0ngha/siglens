@@ -42,6 +42,7 @@ describe('mailAlertConstants', () => {
         expect(MAIL_ALERT_RATE_LIMITS).toEqual({
             codePerEmail: { limit: 3, windowSeconds: 3600 },
             codePerIp: { limit: 10, windowSeconds: 3600 },
+            confirmPerIp: { limit: 30, windowSeconds: 1800 },
             wrongCodePerEmail: { limit: 5, windowSeconds: 1800 },
             topicAddPerIp: { limit: 30, windowSeconds: 3600 },
         });

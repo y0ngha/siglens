@@ -459,7 +459,15 @@ export interface MailAlertDeliveryTarget {
  */
 export type MailAlertOwner =
     | { kind: 'member'; userId: string }
-    | { kind: 'guest'; subscriberId: string };
+    | { kind: 'guest'; subscriberId: string }
+    /**
+     * A subscriber named by a signed mail link (`alert-manage` / `alert-unsubscribe`, verified by the
+     * caller with the HMAC secret before this value is built). It matches by id only, for guest and
+     * member-linked rows alike. The HMAC over the id is the authorization here, not the row state, so
+     * this owner must never be built from unsigned input: it is as strong as the secret, exactly like
+     * the report unsubscribe link. It is not allowed to change `include_portfolio` (a member setting).
+     */
+    | { kind: 'link'; subscriberId: string };
 
 /**
  * Persistence operations for mail-alert subscribers and their topics. `upsertVerified` is keyed by the
@@ -497,12 +505,24 @@ export interface MailAlertSubscriberRepository {
         owner: MailAlertOwner,
         topic: MailAlertTopicRecord
     ): Promise<RemoveMailAlertTopicOutcome>;
-    /** Turning it off with no topics left deletes the subscriber. `found` is false when the owner has no row. */
+    /**
+     * Turning it off with no topics left deletes the subscriber. `found` is false when the owner has no
+     * row, and always for a guest or link owner (the portfolio is a member's own setting; nothing is
+     * written).
+     */
     setIncludePortfolio(
         owner: MailAlertOwner,
         value: boolean
     ): Promise<{ found: boolean; subscriberDeleted: boolean }>;
     deleteByOwner(owner: MailAlertOwner): Promise<boolean>;
+    /**
+     * Links the unlinked subscriber row to a member whose own account address equals the row's address
+     * (compared inside the statement), when that member has no row yet. The caller may call it only after
+     * the emailed code for that address was verified in the same request; it exists for members whose
+     * account email is not `email_verified`, which `upsertVerified` therefore cannot link. Returns whether
+     * the row was linked.
+     */
+    linkVerifiedMember(userId: string, subscriberId: string): Promise<boolean>;
     /**
      * Account deletion: removes the row linked to the user and, when the account's address is verified,
      * the unlinked row with that address. Call it before the `users` row is deleted (the address is read

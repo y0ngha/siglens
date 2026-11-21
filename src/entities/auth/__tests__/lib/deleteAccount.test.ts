@@ -2,7 +2,10 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
-import type { DeleteAccountApiKeys } from '@/entities/auth/lib/authUseCaseTypes';
+import type {
+    DeleteAccountApiKeys,
+    DeleteAccountMailAlerts,
+} from '@/entities/auth/lib/authUseCaseTypes';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
@@ -42,6 +45,7 @@ function makeDependencies(deleted: boolean): {
         oauthAccounts: OAuthAccountRepository;
         oauthRevoker: OAuthRevoker;
         apiKeys: DeleteAccountApiKeys;
+        mailAlerts: DeleteAccountMailAlerts;
     };
     deleteUser: ReturnType<typeof vi.fn>;
 } {
@@ -67,6 +71,7 @@ function makeDependencies(deleted: boolean): {
                 listActiveKeyHashes: vi.fn().mockResolvedValue([]),
                 revokeAuth: vi.fn().mockResolvedValue(undefined),
             },
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         },
         deleteUser,
     };
@@ -166,6 +171,7 @@ describe('deleteAccount', () => {
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -208,6 +214,7 @@ describe('deleteAccount', () => {
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -238,6 +245,7 @@ describe('deleteAccount', () => {
                 revokeToken: vi.fn().mockResolvedValue(undefined),
             },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -281,6 +289,7 @@ describe('deleteAccount', () => {
                 revokeToken: vi.fn().mockRejectedValue(revokeError),
             },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -378,6 +387,47 @@ describe('deleteAccount', () => {
                 { ...dependencies, apiKeys }
             );
             expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('mail alert cleanup', () => {
+        it('destroys the mail alert subscription BEFORE the user row is deleted (the address is read from it)', async () => {
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const order: string[] = [];
+            deleteUser.mockImplementation(async () => {
+                order.push('delete');
+                return true;
+            });
+            const mailAlerts = {
+                deleteForAccount: vi.fn(async () => {
+                    order.push('mail-alerts');
+                    return 1;
+                }),
+            };
+
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, mailAlerts }
+            );
+
+            expect(order).toEqual(['mail-alerts', 'delete']);
+            expect(mailAlerts.deleteForAccount).toHaveBeenCalledWith('user-1');
+        });
+
+        it('still deletes the account when the cleanup fails', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const mailAlerts = {
+                deleteForAccount: vi.fn().mockRejectedValue(new Error('db')),
+            };
+
+            const result = await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, mailAlerts }
+            );
+
+            expect(deleteUser).toHaveBeenCalledWith('user-1');
+            expect(result.ok).toBe(true);
         });
     });
 

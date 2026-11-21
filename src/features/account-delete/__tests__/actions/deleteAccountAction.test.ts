@@ -56,6 +56,11 @@ vi.mock('@/entities/oauth-account/api', () => ({
 vi.mock('@/entities/oauth-account/server/revoker', () => ({
     compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
+vi.mock('@/entities/mail-alert/server/accountCleanup', () => ({
+    createMailAlertAccountCleanup: vi.fn(() => ({
+        deleteForAccount: vi.fn(),
+    })),
+}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -211,6 +216,10 @@ describe('deleteAccountAction', () => {
                     }),
                     oauthRevoker: expect.objectContaining({
                         revokeToken: expect.any(Function),
+                    }),
+                    // 회원 행을 지우기 전에 알림 메일 신청을 파기하는 포트가 연결돼 있다.
+                    mailAlerts: expect.objectContaining({
+                        deleteForAccount: expect.any(Function),
                     }),
                 }),
                 expect.any(Object)
