@@ -14,6 +14,7 @@ import type {
     SignalEpisodeInsert,
     SignalEpisodeRow,
     SignalEpisodeKey,
+    SignalEpisodeStartedRow,
     SignalHistoryMarket,
     SignalHubCount,
 } from './types';
@@ -66,6 +67,20 @@ export interface SignalHistoryRepository {
         signalTypes: readonly string[],
         sinceSession: string
     ): Promise<SignalHubCount[]>;
+    /**
+     * `market`에서 기록된 가장 최근 마지막 포착 세션(`YYYY-MM-DD`). 기록이 하나도 없으면 `null`.
+     * 알림 발송기가 "그 세션이 이미 기록됐는가"를 가리는 영속 표식이다(Redis 표식은 사라질 수 있다).
+     */
+    latestRecordedSession(market: SignalHistoryMarket): Promise<string | null>;
+    /**
+     * `market`에서 `sessionDate`에 **처음** 포착된(에피소드가 그날 시작된) 행 중 `signalTypes`에 드는 것.
+     * 신호별 페이지가 읽는 행과 같아서 메일과 페이지가 어긋나지 않는다(기본키 범위 스캔).
+     */
+    findEpisodesStartedOn(
+        market: SignalHistoryMarket,
+        sessionDate: string,
+        signalTypes: readonly string[]
+    ): Promise<SignalEpisodeStartedRow[]>;
 }
 
 /**
@@ -215,6 +230,52 @@ export class DrizzleSignalHistoryRepository implements SignalHistoryRepository {
                         )
                     )
                     .groupBy(signalEvents.signalType),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    async latestRecordedSession(
+        market: SignalHistoryMarket
+    ): Promise<string | null> {
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        latest: sql<
+                            string | null
+                        >`max(${signalEvents.lastSeenSession})::text`,
+                    })
+                    .from(signalEvents)
+                    .where(eq(signalEvents.market, market)),
+            DB_TRANSIENT_RETRY
+        );
+        return row?.latest ?? null;
+    }
+
+    async findEpisodesStartedOn(
+        market: SignalHistoryMarket,
+        sessionDate: string,
+        signalTypes: readonly string[]
+    ): Promise<SignalEpisodeStartedRow[]> {
+        if (signalTypes.length === 0) return [];
+        return withRetry(
+            () =>
+                this.db
+                    .select({
+                        symbol: signalEvents.symbol,
+                        signalType: signalEvents.signalType,
+                        changePercent: signalEvents.changePercent,
+                        koreanName: signalEvents.koreanName,
+                    })
+                    .from(signalEvents)
+                    .where(
+                        and(
+                            eq(signalEvents.market, market),
+                            eq(signalEvents.sessionDate, sessionDate),
+                            inArray(signalEvents.signalType, [...signalTypes])
+                        )
+                    )
+                    .orderBy(signalEvents.symbol, signalEvents.signalType),
             DB_TRANSIENT_RETRY
         );
     }

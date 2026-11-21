@@ -52,3 +52,11 @@ export interface SignalEpisodePlan {
     readonly inserts: readonly SignalEpisodeInsert[];
     readonly extends: readonly SignalEpisodeKey[];
 }
+
+/** 한 세션에 처음 포착된 에피소드 한 줄 — 알림 메일이 읽는다. */
+export interface SignalEpisodeStartedRow {
+    readonly symbol: string;
+    readonly signalType: string;
+    readonly changePercent: number;
+    readonly koreanName: string | null;
+}

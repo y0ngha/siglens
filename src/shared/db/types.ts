@@ -11,7 +11,11 @@ import type {
 import type { LlmProvider } from '../config/llmProviders';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type { Locale } from '@/shared/i18n/locales';
-import type { EmailReportConsentSource } from './constants';
+import type {
+    EmailReportConsentSource,
+    MailAlertConsentSourceValue,
+    MailAlertTopicKindValue,
+} from './constants';
 import type * as schema from './schema';
 
 /** Connection configuration required to instantiate a database client. */
@@ -387,6 +391,149 @@ export interface EmailReportDeliveryRepository {
     ): Promise<void>;
     /** Deletes rows created before `cutoff`; returns the count. */
     pruneOlderThan(cutoff: Date): Promise<number>;
+}
+
+/** A persisted mail-alert subscriber — one row per verified address (member or guest). */
+export interface MailAlertSubscriberRecord {
+    id: string;
+    /** Normalized (lower-case, trimmed) address. */
+    email: string;
+    /** Set when a member with the same verified address exists; `null` for a pure guest. */
+    userId: string | null;
+    locale: Locale;
+    includePortfolio: boolean;
+    consentedAt: Date;
+    consentSource: MailAlertConsentSourceValue;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Input for creating (or re-confirming) a subscriber after the emailed code was verified. There is
+ * deliberately no `userId`: the repository resolves the owner itself (see `upsertVerified`), so a
+ * caller cannot link the session user to an address that is not theirs.
+ */
+export interface UpsertVerifiedMailAlertSubscriberInput {
+    /** Already normalized with `normalizeEmail`. */
+    email: string;
+    locale: Locale;
+    consentSource: MailAlertConsentSourceValue;
+}
+
+/** One stored topic of a subscriber: `symbol` → upper-case symbol, `signal` → signal type, `fear_greed` → market. */
+export interface MailAlertTopicRecord {
+    kind: MailAlertTopicKindValue;
+    key: string;
+}
+
+export type AddMailAlertTopicOutcome =
+    | 'added'
+    | 'exists'
+    | 'limit_reached'
+    /** The owner has no subscriber row (deleted between the caller's lookup and this call, or not theirs). */
+    | 'subscriber_missing';
+
+export interface RemoveMailAlertTopicOutcome {
+    /** The topic existed and was removed. */
+    deleted: boolean;
+    /** Removing it left the subscriber with nothing to receive, so the row was deleted too. */
+    subscriberDeleted: boolean;
+}
+
+/** A subscriber with everything the sender needs — one row per deliverable subscriber. */
+export interface MailAlertDeliveryTarget {
+    id: string;
+    email: string;
+    locale: Locale;
+    userId: string | null;
+    includePortfolio: boolean;
+    topics: MailAlertTopicRecord[];
+}
+
+/**
+ * Who a subscriber-row operation acts for. Every by-id method binds this in the statement (DB-12):
+ * a member addresses only the row whose `user_id` is theirs; a guest addresses a row by id **and**
+ * only while it is unlinked (`user_id IS NULL`). The guest id comes from the signed
+ * `siglens_mail_alert` cookie that app-B issues, never from request input. A member can therefore not
+ * reach a guest row by id, a guest id cannot reach a linked row, and one member cannot reach another's.
+ */
+export type MailAlertOwner =
+    | { kind: 'member'; userId: string }
+    | { kind: 'guest'; subscriberId: string };
+
+/**
+ * Persistence operations for mail-alert subscribers and their topics. `upsertVerified` is keyed by the
+ * verified address, `findAllForDelivery` is the cron's system-wide read, and `deleteForAccount` /
+ * `findForMember` take the authenticated `userId`; every other method takes a {@link MailAlertOwner}.
+ */
+export interface MailAlertSubscriberRepository {
+    /**
+     * Creates the subscriber or re-confirms an existing one (unique by email). An existing row keeps
+     * its first consent time and screen. `user_id` is resolved in the same statement as the `users` row
+     * whose email equals the verified address and is `email_verified`, provided that user has no
+     * subscriber row yet; otherwise the row stays a guest (`user_id` null). It is filled only when it
+     * was still null.
+     */
+    upsertVerified(
+        input: UpsertVerifiedMailAlertSubscriberInput
+    ): Promise<{ id: string; created: boolean }>;
+    findByOwner(
+        owner: MailAlertOwner
+    ): Promise<MailAlertSubscriberRecord | null>;
+    /**
+     * By `user_id`, else the unlinked row whose address equals the user's own address (read from
+     * `users`, and only when `email_verified`), which gets linked. An unverified account adopts nothing.
+     */
+    findForMember(userId: string): Promise<MailAlertSubscriberRecord | null>;
+    listTopics(owner: MailAlertOwner): Promise<MailAlertTopicRecord[]>;
+    /** Idempotent insert under a per-subscriber lock so concurrent calls cannot exceed `max`. */
+    addTopic(
+        owner: MailAlertOwner,
+        topic: MailAlertTopicRecord,
+        max: number
+    ): Promise<AddMailAlertTopicOutcome>;
+    /** Removes the topic; deletes the subscriber too when nothing is left to receive. */
+    removeTopic(
+        owner: MailAlertOwner,
+        topic: MailAlertTopicRecord
+    ): Promise<RemoveMailAlertTopicOutcome>;
+    /** Turning it off with no topics left deletes the subscriber. `found` is false when the owner has no row. */
+    setIncludePortfolio(
+        owner: MailAlertOwner,
+        value: boolean
+    ): Promise<{ found: boolean; subscriberDeleted: boolean }>;
+    deleteByOwner(owner: MailAlertOwner): Promise<boolean>;
+    /**
+     * Account deletion: removes the row linked to the user and, when the account's address is verified,
+     * the unlinked row with that address. Call it before the `users` row is deleted (the address is read
+     * from it).
+     */
+    deleteForAccount(userId: string): Promise<number>;
+    /** Subscribers with at least one topic or the portfolio switch on. */
+    findAllForDelivery(): Promise<MailAlertDeliveryTarget[]>;
+}
+
+/** Final state of a claimed mail-alert delivery. */
+export type MailAlertDeliveryOutcome = 'sent' | 'failed';
+
+/**
+ * Idempotency log for mail-alert deliveries (one row per subscriber per KST alert date). Cron-only:
+ * these methods are keyed by ids the sender just read or claimed itself and are never reachable from a
+ * user request, so they take no {@link MailAlertOwner}.
+ */
+export interface MailAlertDeliveryRepository {
+    /** Claims the (subscriber, alertDate) slot; returns the row id, or `null` when already claimed. */
+    claim(subscriberId: string, alertDate: string): Promise<string | null>;
+    finish(
+        id: string,
+        outcome: MailAlertDeliveryOutcome,
+        itemKeys: readonly string[],
+        error: string | null
+    ): Promise<void>;
+    /** Item keys of `sent` deliveries with `alert_date >= sinceAlertDate`, per subscriber. */
+    recentItemKeys(sinceAlertDate: string): Promise<Map<string, Set<string>>>;
+    /** Deletes deliveries whose `alert_date` is before `alertDate`; returns the count. */
+    pruneBefore(alertDate: string): Promise<number>;
 }
 
 /** `korean_tickers`의 상장 상태만 담은 최소 행. 상폐 판정 로직(`planKrTickerReconcile`,

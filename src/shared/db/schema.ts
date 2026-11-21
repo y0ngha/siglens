@@ -30,6 +30,9 @@ import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
     EMAIL_REPORT_CONSENT_SOURCE_VALUES,
+    MAIL_ALERT_CONSENT_SOURCE_VALUES,
+    MAIL_ALERT_DELIVERY_STATUS_VALUES,
+    MAIL_ALERT_TOPIC_KIND_VALUES,
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
     SYMBOL_MAX_LENGTH,
@@ -563,6 +566,124 @@ export const emailReportExcludedSymbols = pgTable(
             .defaultNow(),
     },
     table => [primaryKey({ columns: [table.userId, table.symbol] })]
+);
+
+/**
+ * 알림 메일 구독자 — 이메일 주소당 한 행. 회원이 아니어도 만들어진다.
+ *
+ * 행은 6자리 인증 코드로 주소를 확인한 **뒤에만** 생긴다(이중 동의). `user_id`는 같은 주소의 회원이
+ * 있을 때만 채워지고(회원 계정에 연결), 회원이 삭제되면 행도 함께 지워진다. 구독자 행을 지우는 것이
+ * 곧 수신 거부다 — 받을 항목과 발송 기록은 연쇄로 사라진다. `consented_at`·`consent_source`는
+ * 처음 신청한 시각·화면이며 이후 다른 항목을 더해도 옮기지 않는다.
+ */
+export const mailAlertSubscribers = pgTable(
+    'mail_alert_subscribers',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        /** `normalizeEmail` 형태(소문자, 앞뒤 공백 없음). */
+        email: varchar('email', { length: EMAIL_MAX_LENGTH })
+            .notNull()
+            .unique(),
+        userId: uuid('user_id')
+            .unique()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        /** 메일 본문 로케일 — 처음 신청한 화면의 로케일. */
+        locale: contentLocaleEnum('locale').notNull().default('ko'),
+        /** 회원이 고른 경우에만 켜진다: 보유종목·관심종목의 새 신호도 함께 받기. */
+        includePortfolio: boolean('include_portfolio').notNull().default(false),
+        consentedAt: timestamp('consented_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        consentSource: text('consent_source', {
+            enum: MAIL_ALERT_CONSENT_SOURCE_VALUES,
+        }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'mail_alert_subscribers_consent_source_check',
+            sql`${table.consentSource} IN ('symbol','fear_greed','signal_hub','settings')`
+        ),
+    ]
+);
+
+/**
+ * 구독자가 고른 받을 항목. `(subscriber_id, kind, key)`가 기본키라 같은 항목은 한 번만 담긴다.
+ * `key`는 종류별 정규형이다: `symbol`은 대문자 심볼, `signal`은 신호 유형, `fear_greed`는
+ * 시장(`us` | `kr` | `crypto`). 항목 수 상한은 저장소가 구독자 행 잠금 아래에서 지킨다.
+ */
+export const mailAlertTopics = pgTable(
+    'mail_alert_topics',
+    {
+        subscriberId: uuid('subscriber_id')
+            .notNull()
+            .references(() => mailAlertSubscribers.id, { onDelete: 'cascade' }),
+        kind: text('kind', { enum: MAIL_ALERT_TOPIC_KIND_VALUES }).notNull(),
+        key: varchar('key', { length: 48 }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({ columns: [table.subscriberId, table.kind, table.key] }),
+        check(
+            'mail_alert_topics_kind_check',
+            sql`${table.kind} IN ('symbol','signal','fear_greed')`
+        ),
+        index('mail_alert_topics_kind_key_idx').on(table.kind, table.key),
+    ]
+);
+
+/**
+ * 알림 메일 발송 기록 — 구독자의 알림 날짜(KST)당 한 행.
+ *
+ * `(subscriber_id, alert_date)` 유니크가 "하루 한 통"의 멱등 키다. 발송기는 보내기 **전에** 행을
+ * 선점(insert)하고 충돌하면 건너뛴다. 보낼 게 없는 날은 행을 만들지 않는다. `item_keys`는 메일에 실린
+ * 항목의 키라서 이후 7일 반복 발송을 막는 데 쓴다. 구독자가 지워지면 함께 사라진다.
+ */
+export const mailAlertDeliveries = pgTable(
+    'mail_alert_deliveries',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        subscriberId: uuid('subscriber_id')
+            .notNull()
+            .references(() => mailAlertSubscribers.id, { onDelete: 'cascade' }),
+        /** 발송 슬롯의 한국 시간 날짜(`YYYY-MM-DD`). */
+        alertDate: date('alert_date').notNull(),
+        /** `pending`(선점) → `sent` | `failed`. */
+        status: text('status', {
+            enum: MAIL_ALERT_DELIVERY_STATUS_VALUES,
+        }).notNull(),
+        itemKeys: text('item_keys')
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+        error: text('error'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'mail_alert_deliveries_status_check',
+            sql`${table.status} IN ('pending','sent','failed')`
+        ),
+        uniqueIndex('mail_alert_deliveries_subscriber_date_uidx').on(
+            table.subscriberId,
+            table.alertDate
+        ),
+        index('mail_alert_deliveries_alert_date_idx').on(table.alertDate),
+    ]
 );
 
 /**

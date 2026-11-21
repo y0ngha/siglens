@@ -442,6 +442,13 @@
       "when": 1795239051454,
       "tag": "0062_email_report_consent_and_welcome",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795285711485,
+      "tag": "0063_mail_alerts",
+      "breakpoints": true
     }
   ]
 }
