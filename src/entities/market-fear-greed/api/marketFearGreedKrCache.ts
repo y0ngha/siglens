@@ -11,6 +11,7 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { buildMarketFearGreedComparisons } from '../lib/buildMarketFearGreedComparisons';
+import { compactFearGreedHistory } from '../lib/compactFearGreedHistory';
 import { hasSnapshot } from '../lib/hasSnapshot';
 import { krLookbackStartDate } from '../lib/marketFearGreedWindows';
 import {
@@ -20,7 +21,7 @@ import {
     MARKET_FEAR_GREED_KR_SYMBOLS,
 } from '../lib/marketFearGreedKrSymbols';
 import { toRealizedVolatilitySeries } from '../lib/realizedVolatility';
-import type { MarketFearGreedView } from '../model';
+import type { MarketFearGreedHubView } from '../model';
 import { fetchKrDailyCloses } from './fetchKrDailyCloses';
 
 /**
@@ -41,6 +42,8 @@ export const MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT =
             volatilitySource: KOSPI_INDEX_SYMBOL,
             lookbackDays: MARKET_FEAR_GREED_KR_LOOKBACK_DAYS,
             priceField: 'adjclose',
+            // 캐시 값에 `history`가 늘었다. 옛 Redis·데이터 캐시 항목에는 없으므로 읽히면 안 된다.
+            viewShape: 'hub-history-v1',
         })
     );
 
@@ -66,7 +69,7 @@ const TTL_SECONDS = SECONDS_PER_HOUR;
  * 여섯 번의 yahoo 호출은 1시간 Redis 캐시 뒤에 있어 시간당 6회다. 라이브러리 큐가
  * `concurrency: 4`라 실질 2배치로 끝난다 — 청크 분할 이득이 없다.
  */
-async function buildView(now: Date): Promise<MarketFearGreedView> {
+async function buildView(now: Date): Promise<MarketFearGreedHubView> {
     const from = krLookbackStartDate(now);
     // 상한을 "이미 마감·게시된 세션"으로 끊는다. 그러지 않으면 장중 시세가 종가로
     // 섞여 들어와 하루 종일 값이 흔들리면서 화면에는 "종가 기준"이라고 적힌다.
@@ -100,11 +103,12 @@ async function buildView(now: Date): Promise<MarketFearGreedView> {
         vix: toRealizedVolatilitySeries(kospiCloses),
     } as MarketFearGreedInput;
 
+    const snapshot = computeMarketFearGreedIndex(input);
+    const history = computeMarketFearGreedHistory(input);
     return {
-        snapshot: computeMarketFearGreedIndex(input),
-        comparisons: buildMarketFearGreedComparisons(
-            computeMarketFearGreedHistory(input)
-        ),
+        snapshot,
+        comparisons: buildMarketFearGreedComparisons(history),
+        history: snapshot === null ? [] : compactFearGreedHistory(history),
     };
 }
 
@@ -116,7 +120,7 @@ async function buildView(now: Date): Promise<MarketFearGreedView> {
  * `getOrSetCache`는 fetcher가 던졌을 때 아무것도 쓰지 않으므로 그게 옳은 동작이다.
  */
 export const getCachedMarketFearGreedKr = cache(
-    (): Promise<MarketFearGreedView> =>
+    (): Promise<MarketFearGreedHubView> =>
         getOrSetCache(
             CACHE_KEY,
             TTL_SECONDS,

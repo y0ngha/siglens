@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
+import { loadLpRealAnalyses } from './_lib/loadLpRealAnalyses';
 import { StockAnalysisLanding } from '@/views/lp/StockAnalysisLanding';
 
 /** Ad-only page: never indexed, no canonical, alternates or JSON-LD. */
@@ -12,7 +13,14 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
 
+/**
+ * 6h ISR, same literal as `[symbol]`: the page reads the same snapshot cache entry, and the
+ * prewarm cron's `revalidateTag` refreshes it early. Must stay a literal (AP-6).
+ */
+export const revalidate = 21600;
+
 /** `/lp/stock-analysis` 광고 랜딩. 본문은 `StockAnalysisLanding` 뷰가 그린다. */
-export default function StockAnalysisLandingPage() {
-    return <StockAnalysisLanding />;
+export default async function StockAnalysisLandingPage() {
+    const analyses = await loadLpRealAnalyses(revalidate);
+    return <StockAnalysisLanding analyses={analyses} />;
 }

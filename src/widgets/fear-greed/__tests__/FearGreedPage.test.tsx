@@ -64,6 +64,34 @@ describe('FearGreedPage', () => {
             expect(html).toContain('중립');
         });
 
+        /**
+         * 차트는 마지막 252점이라 매일 거래하는 암호화폐는 약 8개월이다. 제목이 "최근 1년"으로
+         * 고정돼 있으면 틀리므로, 그려지는 점이 걸친 기간에서 정한다.
+         */
+        it('암호화폐처럼 매일 쌓인 252점이면 제목이 "최근 8개월"이다', () => {
+            const start = Date.UTC(2025, 0, 1);
+            mockUseFearGreedFromSymbol.mockReturnValue({
+                snapshot: baseSnapshot,
+                history: Array.from({ length: 300 }, (_, i) => ({
+                    date: new Date(start + i * 86_400_000)
+                        .toISOString()
+                        .slice(0, 10),
+                    score: 50,
+                    label: 'NEUTRAL' as const,
+                })),
+                dataUpdatedAt: SEED_UPDATED_AT,
+            });
+            const html = renderServerHtml();
+            expect(html).toContain('공포 탐욕 지수 추이 (최근 8개월)');
+            expect(html).not.toContain('최근 1년');
+        });
+
+        it('그릴 점이 없으면 기존 제목(최근 1년)을 그대로 둔다', () => {
+            expect(renderServerHtml()).toContain(
+                '공포 탐욕 지수 추이 (최근 1년)'
+            );
+        });
+
         it('그룹 막대를 서버 HTML에 싣는다', () => {
             const html = renderServerHtml();
             expect(html).toContain('수급 그룹');

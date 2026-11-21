@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_URL } from '@/shared/lib/seo';
+import { CRYPTO_RE } from '../lib/lpCopyRules';
 import {
     ANALYSIS_CTA_HREF,
-    ANALYSIS_SCENARIOS,
+    FEATURES,
+    LP_ANALYSIS_SUBJECTS,
+    POPULAR,
 } from '../lib/stockAnalysisContent';
 import { CHAT_CTA_HREF, CHAT_SCENARIOS } from '../lib/stockChatContent';
 
@@ -12,16 +15,22 @@ describe('stock-analysis content', () => {
         expect(ANALYSIS_CTA_HREF).toBe(`${SITE_URL}/NVDA`);
     });
 
-    it('counts every step but lists the report step as no source', () => {
-        const [aapl] = ANALYSIS_SCENARIOS;
-        expect(aapl?.summary).toBe('5단계를 거쳐 분석했어요');
-        expect(aapl?.sources).toEqual([
-            '시세와 차트',
-            '보조지표',
-            '캔들과 차트 패턴',
-            '재무와 뉴스',
+    it('only shows analyses for symbols the page already links to', () => {
+        const linked = new Set([
+            ...POPULAR.map(stock => stock.symbol),
+            ...FEATURES.map(feature => feature.href.split('/')[1]),
         ]);
-        expect(aapl?.asOf).toBe('미국 장 마감 기준');
+        expect(LP_ANALYSIS_SUBJECTS.length).toBeGreaterThan(0);
+        LP_ANALYSIS_SUBJECTS.forEach(({ symbol }) => {
+            expect(linked.has(symbol)).toBe(true);
+        });
+    });
+
+    it('lists no crypto subject', () => {
+        LP_ANALYSIS_SUBJECTS.forEach(({ symbol, name, marketProfile }) => {
+            expect(['us-equity', 'kr-equity']).toContain(marketProfile);
+            expect(`${symbol} ${name}`).not.toMatch(CRYPTO_RE);
+        });
     });
 });
 

@@ -135,7 +135,41 @@
             },
             "symbolListTitle": "各标的恐惧与贪婪指数",
             "factorExtremes": "目前最偏向恐惧的因素是{fear},最偏向贪婪的因素是{greed}。",
-            "factorExtremeItem": "{factor}(百分位{percentile})"
+            "factorExtremeItem": "{factor}(百分位{percentile})",
+            "history": {
+                "chartRange": "{from}至{to}",
+                "chartTitle": "近期走势",
+                "colChange": "较前一交易日",
+                "colChangeDaily": "较前一天",
+                "colDate": "日期",
+                "colHigh": "最高",
+                "colLabel": "区间",
+                "colLow": "最低",
+                "colMonth": "月份",
+                "colMonthLast": "最后分数",
+                "colScore": "分数",
+                "coverage": "汇总了从{from}到{to}每天计算的{count}个分数。",
+                "date": "{year}年{month}月{day}日",
+                "downloadCsv": "CSV文件",
+                "downloadJson": "JSON文件",
+                "downloadLead": "完整记录可以下载为文件。",
+                "downloadNote": "文件中只有日期、分数和区间，不含价格数据。",
+                "extremeCell": "{score}（{day}日）",
+                "month": "{year}年{month}月",
+                "monthFrom": "{year}年{month}月（自{day}日起）",
+                "monthLastCell": "{score}（{label}）",
+                "monthUntil": "{year}年{month}月（至{day}日）",
+                "monthlyCaption": "{subject}按月恐惧与贪婪指数",
+                "monthlyCaptionOlder": "{subject}按月恐惧与贪婪指数（更早的记录）",
+                "monthlyMore": "查看更早的{count}个月",
+                "monthlyTitle": "按月记录",
+                "recalcNote": "每天的分数是与当天之前的记录比较后得出的。用于比较的记录固定为最近{years}年，因此过去的分数也可能每天略有变化。",
+                "recentCaption": "{subject}恐惧与贪婪指数，最近{count}个交易日",
+                "recentCaptionDaily": "{subject}恐惧与贪婪指数，最近{count}天",
+                "recentTitle": "最近{count}个交易日",
+                "recentTitleDaily": "最近{count}天",
+                "title": "过去的分数记录"
+            }
         },
         "forgot-password": {
             "page": {
@@ -2970,7 +3004,8 @@
                 "factorHighShort": "偏高",
                 "factorLowShort": "偏低",
                 "factorAllInRange": "所有指标均处于平常范围（25~75百分位）内。",
-                "extremeZoneMethodLink": "查看记录的归并规则"
+                "extremeZoneMethodLink": "查看记录的归并规则",
+                "extremeZonePeriodMarket": "统计期间：{v0}至{v1}（该指数有分数的日期）。"
             },
             "mobileSheet": {
                 "aiAnalysis": "AI 分析"
@@ -3914,7 +3949,8 @@
                 "486c8b": "数据加载中…"
             },
             "FearGreedHistoricalChart": {
-                "9b98f6": "近一年恐惧与贪婪指数走势图"
+                "9b98f6": "近一年恐惧与贪婪指数走势图",
+                "ariaMonths": "近{months}个月恐惧与贪婪指数趋势图"
             },
             "ShareCandlestickChart": {
                 "1b2664": "无图表数据",
@@ -4347,7 +4383,8 @@
                 "29eed9": "当前恐惧与贪婪指数与按期间比较",
                 "7da634": "恐惧与贪婪指数加载中",
                 "d6e558": "计算恐惧与贪婪指数所需数据不足。",
-                "ef5b22": "可能为上市不久或成交量数据为空的\n                    股票。请几天后再次查看，或查看同一板块的\n                    其他股票。"
+                "ef5b22": "可能为上市不久或成交量数据为空的\n                    股票。请几天后再次查看，或查看同一板块的\n                    其他股票。",
+                "trendMonths": "恐惧与贪婪指数趋势 (近{months}个月)"
             },
             "FearGreedPageError": {
                 "f929f0": "加载恐惧与贪婪指数时发生错误。请稍后重试。",

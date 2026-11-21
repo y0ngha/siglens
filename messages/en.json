@@ -135,7 +135,41 @@
             },
             "symbolListTitle": "Fear & Greed Index by Symbol",
             "factorExtremes": "The factor leaning furthest toward fear right now is {fear}, and the one leaning furthest toward greed is {greed}.",
-            "factorExtremeItem": "{factor} (percentile {percentile})"
+            "factorExtremeItem": "{factor} (percentile {percentile})",
+            "history": {
+                "chartRange": "{from} to {to}",
+                "chartTitle": "Recent trend",
+                "colChange": "Change from previous day",
+                "colChangeDaily": "Change from previous day",
+                "colDate": "Date",
+                "colHigh": "High",
+                "colLabel": "Band",
+                "colLow": "Low",
+                "colMonth": "Month",
+                "colMonthLast": "Last score",
+                "colScore": "Score",
+                "coverage": "{count} scores calculated day by day, from {from} to {to}.",
+                "date": "{month}/{day}/{year}",
+                "downloadCsv": "CSV file",
+                "downloadJson": "JSON file",
+                "downloadLead": "You can download the full history as a file.",
+                "downloadNote": "The files contain only the date, score and band. They hold no price data.",
+                "extremeCell": "{score} (day {day})",
+                "month": "{month}/{year}",
+                "monthFrom": "{month}/{year} (from day {day})",
+                "monthLastCell": "{score} ({label})",
+                "monthUntil": "{month}/{year} (through day {day})",
+                "monthlyCaption": "{subject} Fear & Greed Index by month",
+                "monthlyCaptionOlder": "{subject} Fear & Greed Index by month (earlier records)",
+                "monthlyMore": "Show earlier {count} months",
+                "monthlyTitle": "Monthly history",
+                "recalcNote": "Each daily score is ranked against the records before that day. The comparison window is fixed at the latest {years} years, so past scores can shift slightly from day to day.",
+                "recentCaption": "{subject} Fear & Greed Index, last {count} trading days",
+                "recentCaptionDaily": "{subject} Fear & Greed Index, last {count} days",
+                "recentTitle": "Last {count} trading days",
+                "recentTitleDaily": "Last {count} days",
+                "title": "Past score history"
+            }
         },
         "forgot-password": {
             "page": {
@@ -2970,7 +3004,8 @@
                 "factorHighShort": "high",
                 "factorLowShort": "low",
                 "factorAllInRange": "All factors are within the usual range (25th–75th percentile).",
-                "extremeZoneMethodLink": "How records are grouped"
+                "extremeZoneMethodLink": "How records are grouped",
+                "extremeZonePeriodMarket": "Period: {v0} to {v1} (days with a score for this index)."
             },
             "mobileSheet": {
                 "aiAnalysis": "AI analysis"
@@ -3914,7 +3949,8 @@
                 "486c8b": "Loading data…"
             },
             "FearGreedHistoricalChart": {
-                "9b98f6": "Fear & Greed Index Trend Chart for the Last Year"
+                "9b98f6": "Fear & Greed Index Trend Chart for the Last Year",
+                "ariaMonths": "Fear & Greed Index trend chart, last {months} months"
             },
             "ShareCandlestickChart": {
                 "1b2664": "No chart data available",
@@ -4347,7 +4383,8 @@
                 "29eed9": "Current Fear & Greed Index and Period Comparison",
                 "7da634": "Fear & Greed Index Loading",
                 "d6e558": "Insufficient data to calculate Fear & Greed Index.",
-                "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector."
+                "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector.",
+                "trendMonths": "Fear & Greed Index Trend (Last {months} Months)"
             },
             "FearGreedPageError": {
                 "f929f0": "An error occurred while loading the Fear & Greed Index. Please try again shortly.",

@@ -637,7 +637,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|xml|txt|js|html|css|webmanifest|map|zip|ots|woff2?|ttf|otf|eot|mp4|webm)$).*)',
+        // 데이터 파일(`.csv`·`.json`)은 로케일 접두·심볼 정규화를 타면 안 된다.
+        '/((?!api|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|csv|xml|txt|js|html|css|webmanifest|map|zip|ots|woff2?|ttf|otf|eot|mp4|webm)$).*)',
         '/robots.txt',
         '/sitemap.xml',
     ],

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MarketFearGreedCryptoView } from '@/entities/market-fear-greed/model';
+import type { MarketFearGreedCryptoHubView } from '@/entities/market-fear-greed/model';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 vi.mock('server-only', () => ({}));
@@ -7,7 +7,7 @@ vi.mock('server-only', () => ({}));
 const { mockUnstableCache } = vi.hoisted(() => ({
     mockUnstableCache: vi.fn(
         (
-            fn: () => Promise<MarketFearGreedCryptoView>,
+            fn: () => Promise<MarketFearGreedCryptoHubView>,
             _keys: unknown,
             _opts: unknown
         ) => fn
@@ -39,7 +39,7 @@ import { getCachedMarketFearGreedCrypto } from '@/entities/market-fear-greed/api
 
 const mockLoader = vi.mocked(getCachedMarketFearGreedCrypto);
 
-const sampleView: MarketFearGreedCryptoView = {
+const sampleView: MarketFearGreedCryptoHubView = {
     snapshot: {
         score: 30,
         label: 'FEAR',
@@ -49,6 +49,7 @@ const sampleView: MarketFearGreedCryptoView = {
         asOf: '2026-09-24',
     },
     comparisons: [],
+    history: [],
 };
 
 describe('getMarketFearGreedCryptoStatic', () => {

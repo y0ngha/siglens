@@ -147,6 +147,18 @@ describe('FearGreedExtremeZoneRecord', () => {
             within(block).getByRole('link', { name: '기록을 묶는 기준 보기' })
         ).toHaveAttribute('href', '/methodology#fear-greed');
         expect(block).not.toHaveTextContent('%');
+        expect(block).toHaveTextContent('이 종목 점수가 계산된 거래일');
+    });
+
+    it('subject="market"이면 종목이 아니라 지수 기준의 집계 기간 문장을 쓴다', () => {
+        render(<FearGreedExtremeZoneRecord record={RECORD} subject="market" />);
+
+        const block = screen.getByRole('group', { name: GROUP_NAME });
+        expect(block).toHaveTextContent(
+            '집계 기간: 2021년 11월 29일 ~ 2026년 10월 2일(이 지수 점수가 계산된 날).'
+        );
+        expect(block).not.toHaveTextContent('이 종목');
+        expect(block).toHaveTextContent(NOTICE);
     });
 
     it('기록이 있을 때 고지를 같은 블록에 렌더한다', () => {

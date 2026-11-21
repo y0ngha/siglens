@@ -3,10 +3,13 @@ import {
     CRYPTO_FEAR_GREED_FACTOR_KEYS,
     MARKET_FEAR_GREED_FACTOR_KEYS,
 } from '@y0ngha/siglens-core';
+import { hasPublishableHistory } from '@/entities/market-fear-greed/lib/publishableHistory';
 import type {
-    MarketFearGreedView,
+    MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
+import { FearGreedExtremeZoneRecord } from '@/views/symbol/fearGreed/FearGreedExtremeZoneRecord';
+import { buildExtremeZoneRecord } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
 import type { Locale } from '@/shared/i18n/locales';
@@ -25,6 +28,7 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { FearGreedHistorySection } from './_components/FearGreedHistorySection';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 import type { FearGreedSymbolLink } from './fearGreedRoute';
 import {
@@ -35,7 +39,7 @@ import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd'
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
-    readonly view: MarketFearGreedView<MarketFearGreedViewSnapshot>;
+    readonly view: MarketFearGreedHubView<MarketFearGreedViewSnapshot>;
     /**
      * 훅이 아니라 prop으로 받는다 — 테스트가 이 컴포넌트를 함수로 직접
      * 호출하고 그 자리에는 React 컨텍스트가 없어 `useLocale()`이 던진다.
@@ -77,6 +81,7 @@ export function FearGreedRouteBody({
     const t = useTranslations('app.fear-greed');
     const tSeo = useTranslations('shared.seo');
     const tLabel = useTranslations('shared.enumLabel');
+    const tFacts = useTranslations('views.symbol.fearGreedFacts');
     const copy = fearGreedCopyFor(market, tSeo);
     const { label: factorLabel, description: factorDescription } =
         useMarketFactorLabels(market);
@@ -96,6 +101,13 @@ export function FearGreedRouteBody({
     const reading = composeMarketFearGreedReading(view, copy, tSeo, tLabel);
     const answer = reading?.answer ?? null;
     const scoreTitle = reading?.title ?? null;
+    // 지난 점수 기록·극단 구간 기록은 한 하한(`hasPublishableHistory`)을 통과할 때만 그린다.
+    // 파일 내려받기·Dataset 배포 정보와 같은 검사라 세 표면이 서로 다른 날을 말하지 않는다.
+    const history = hasPublishableHistory(view) ? view.history : null;
+    const extremeZoneRecord =
+        history === null
+            ? null
+            : buildExtremeZoneRecord(history, tLabel, tFacts);
     const extremes =
         reading === null || view.snapshot === null
             ? null
@@ -129,6 +141,7 @@ export function FearGreedRouteBody({
 
     const datasetJsonLd = buildMarketFearGreedDatasetJsonLd({
         view,
+        market,
         name: copy.heading,
         description: copy.description,
         url,
@@ -191,6 +204,22 @@ export function FearGreedRouteBody({
                 <div className="page-container">
                     <MarketFearGreedPage view={view} market={market} />
                 </div>
+                {history !== null && (
+                    <FearGreedHistorySection
+                        market={market}
+                        subject={copy.answerSubject}
+                        locale={locale}
+                        history={history}
+                        extremeZone={
+                            extremeZoneRecord && (
+                                <FearGreedExtremeZoneRecord
+                                    record={extremeZoneRecord}
+                                    subject="market"
+                                />
+                            )
+                        }
+                    />
+                )}
                 {/* 컨테이너가 폭과 좌우 여백을 소유하고, 카드 장식(보더·배경·
                     패딩)은 안쪽 div가 갖는다. 컨테이너에 보더를 직접 걸면
                     1200px 전폭을 두르게 되어 형제 섹션과 어긋난다. */}

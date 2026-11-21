@@ -4,6 +4,7 @@
  * under `ui/` take these shapes as props.
  */
 import type { ComponentType } from 'react';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 /** A stroke icon from `shared/ui/StrokeIcons`. */
 export type LpIcon = ComponentType<{ className?: string }>;
@@ -46,4 +47,29 @@ export interface HowDemo {
 export interface FaqEntry {
     readonly q: string;
     readonly a: string;
+}
+
+/** An LP analysis subject. Crypto is excluded by type: the ad page must carry no crypto content. */
+export interface LpAnalysisSubject {
+    /** Upper-case, as stored in `seo_analysis_snapshots`. */
+    readonly symbol: string;
+    /** Korean display name. */
+    readonly name: string;
+    readonly marketProfile: Exclude<MarketProfileId, 'crypto'>;
+}
+
+/** One real, already-cached analysis excerpt shown on `/lp/stock-analysis`. */
+export interface LpRealAnalysis {
+    readonly symbol: string;
+    readonly name: string;
+    /** Absolute URL of the symbol page on the main host. */
+    readonly href: string;
+    /** '강세' | '약세' | '보합', or null when the snapshot has no trend. */
+    readonly trendLabel: string | null;
+    /** ISO instant for `<time dateTime>`. */
+    readonly asOfIso: string;
+    /** e.g. '2026년 11월 19일 미국 장 마감 기준'. */
+    readonly asOfLabel: string;
+    /** 1 or 2 plain paragraphs, already cleaned and clamped. */
+    readonly paragraphs: readonly string[];
 }

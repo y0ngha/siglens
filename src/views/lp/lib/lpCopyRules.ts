@@ -1,7 +1,8 @@
 /**
- * Copy rules for the ad-only landing pages, shared by the unit tests
- * (`landings.dom-fast.test.tsx`, `app/lp/__tests__/metadata.test.ts`) and the E2E spec
- * (`e2e/specs/ad-landing.spec.ts`) so the three can never drift.
+ * Copy rules for the ad-only landing pages, shared by production code
+ * (`realAnalysis.ts` drops cached excerpt paragraphs that break them), the unit
+ * tests (`landings.dom-fast.test.tsx`, `app/lp/__tests__/metadata.test.ts`) and
+ * the E2E spec (`e2e/specs/ad-landing.spec.ts`) so they can never drift.
  *
  * Google Ads (KR) limits any ad whose landing page mentions crypto, and these
  * pages exist only as ad final URLs, so one crypto word anywhere defeats their
