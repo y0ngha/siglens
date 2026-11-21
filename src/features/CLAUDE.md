@@ -25,7 +25,7 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 | `features/pwa-install` | `features/visitor-ping` | 설치 배너가 재방문일부터 뜨도록 `visitor-ping`이 이미 저장한 방문 이력(`readIsReturnVisitDay`)에서 첫 방문 날짜만 읽는다. 읽기 전용이며 새 저장 키·전송이 없다(방침 v15 §7). `visitor-ping`은 `pwa-install`을 import하지 않아 순환이 없다 |
 | `features/share` | `features/symbol-model` | 공유 플로우가 현재 선택된 모델/티어 상태를 읽어 공유 스냅샷에 반영한다 |
 
-이 예외는 oxlint `no-restricted-imports`의 `from: 'features', allow: ['features', ...]`로 관리됨. Phase 7 cleanup 시 해소 가능.
+features 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않는다. 순환은 `src/__tests__/guards/importCycles.test.ts`가 막는다.
 
 ## 데이터 접근
 

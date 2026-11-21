@@ -2,7 +2,7 @@
 
 Test conventions for Siglens (split out of CONVENTIONS.md). Cite rules as `TESTING.md#TE-N`.
 
-**Rule IDs**: every rule carries a stable `TE-N` ID with an anchor line above its heading. IDs are never renumbered or reused; a new rule takes the highest number among its anchors and the retired IDs below, + 1. Sections group rules by topic, so numbers are not contiguous within a section.
+**Rule IDs** follow the root `CLAUDE.md` "Rule IDs and references". Sections group rules by topic, so numbers are not contiguous within a section.
 
 Retired IDs: TE-32, TE-35
 
@@ -34,9 +34,7 @@ cache-handler/  90%
 ```
 
 The project target is 90% coverage across all measured FSD layers.
-Current Vitest coverage includes `src/entities/**`, `src/features/**`, `src/shared/**`,
-`src/widgets/**`, `src/views/**`, `src/app/**`, `src/proxy.ts`, `src/instrumentation*.ts`, and `cache-handler/**`,
-excluding declaration files, type/model-only files, and test utilities.
+The measured file set is `coverage.include`/`exclude` in `vitest.config.ts` (every layer plus `cache-handler/**`).
 Measured weekly by the `coverage-weekly` workflow (per-layer table in the run summary); PR CI does not run coverage.
 
 `src/views/**` is the FSD `pages` layer — it lives under `views/` because creating
@@ -65,48 +63,7 @@ Every new pure helper, Server Action wrapper, API/adapter function and policy-in
 
 ## Test Structure
 
-```typescript
-// ✅ 2 levels: describe → it (simple cases)
-describe('formatVolume', () => {
-    it('returns "1.2M" for 1200000', () => { ... });
-    it('returns "0" for 0', () => { ... });
-});
-
-// ✅ 3 levels: describe → describe(context) → it
-describe('calculateRSI', () => {
-    describe('when input length is less than period', () => {
-        it('returns an all-null array', () => {
-            expect(calculateRSI([100, 101], 14)).toEqual([null, null]);
-        });
-    });
-    describe('when input is valid', () => {
-        it('returns null for the first period - 1 values', () => { ... });
-        it('returns values between 0 and 100', () => { ... });
-    });
-});
-
-// ✅ 4 levels: describe(module) → describe(function) → describe(context) → it
-describe('prompt', () => {
-    describe('buildAnalysisPrompt', () => {
-        describe('current market section', () => {
-            it('includes "No data available" when bars is empty', () => { ... });
-        });
-    });
-});
-
-// ✅ 5 levels: for complex modules requiring fine-grained context separation
-describe('candle-detection', () => {
-    describe('detectCandlePatternEntries', () => {
-        describe('multi-candle pattern detection', () => {
-            describe('when a 3-bar pattern exists', () => {
-                it('excludes single patterns on involved bars', () => { ... });
-            });
-        });
-    });
-});
-```
-
-Test structure allows **2 to 5 levels**. Choose the appropriate depth based on module complexity.
+Test structure allows **2 to 5 levels** (`describe(module)` → `describe(function)` → `describe(context)` → `it`). Choose the appropriate depth based on module complexity.
 6+ levels are prohibited — merge context into describe text to reduce nesting.
 
 <a id="TE-17"></a>
@@ -175,17 +132,7 @@ Each new field or indicator output needs at least one `it()` verifying its prese
 
 #### TE-23 — Period-based indicators pin reference values
 
-Sign-only checks (`toBeGreaterThan(0)`) do not verify a calculation. Every period-based indicator test includes `toBeCloseTo` against manually calculated expected values. Warm-up constants are imported from the source, and boundary constants cover the whole dependency chain (for example nested window calculations).
-
-### Required Test Cases for Period-Based Indicators
-
-| Case | it description |
-|------|----------------|
-| Empty array | 빈 배열을 반환한다 |
-| Input shorter than period | 전부 null인 배열을 반환한다 |
-| Initial null range | 처음 period - 1개의 값은 null이다 |
-| Valid value range | period번째 이후 값은 null이 아닌 숫자다 |
-| Calculation accuracy | 첫 번째 값이 명세와 일치한다 |
+Sign-only checks (`toBeGreaterThan(0)`) do not verify a calculation. Every period-based indicator test includes `toBeCloseTo` against manually calculated expected values. Warm-up constants are imported from the source, and boundary constants cover the whole dependency chain (for example nested window calculations). Each one also covers an empty input, an input shorter than the window, and the warm-up boundary: the first `period - 1` values are `null`, or the output is shorter by the window, whichever the function returns.
 
 ## Mocking
 
@@ -628,24 +575,35 @@ Fake LLMs and similar doubles that parse a vendor or core message format break s
 
 #### TE-53 — A test must fail when the behaviour it names is removed
 
-Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Tests that pass anyway are vacuous: a mocked query builder whose condition argument is never inspected, a SQL assertion built from short `toContain` fragments, a new tracking call with no click-and-assert test, a Redis Lua script whose `eval` is mocked so only the arguments are asserted (run the script against a real or emulated Redis, or assert its effects), or a "renders independently" test that mounts only the inner component. A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only through the data flag passes even when the renderer ignores the flag; assert the rendered output, and make fixtures discriminating (values where on and off differ) so a no-op mutation fails. Render the real condition (for SQL, its text and params), assert the full clause, drive the instrumented element, and assert on the composed tree. A safety property the happy path cannot observe (a read-only database session, a no-write guarantee) passes the same way: the SELECT succeeds with or without the option. Assert the option actually sent through an exported builder, and add an env-gated real-database test that a write fails.
+Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Vacuous shapes and their fix:
 
-A CLI or script failure-path test that asserts only the exit code passes when an earlier step fails with the same code. Assert output only the intended path prints (the target line, the error message), and match resolver errors by family (`ENOTFOUND|EAI_AGAIN`), not one code.
-
-A component that reads shared async state (a hook that falls back to a seed while a run is in flight) is tested with the states the real hook produces; read the hook, then build the cases from those states. A convenient mock that hands the component a combination the hook never emits (live result while analysing) passes while the real transition is untested.
-
-An absence assertion over recorded calls ("no raw value is stored" by stringifying `mock.calls`) first asserts the call count; an empty array passes it vacuously.
-
-A "no write happens" test spies the operation that must not happen (update, insert, delete) and asserts `not.toHaveBeenCalled()`; asserting the mock's shape (`not.toHaveProperty('update')`) passes whatever the code does, and a stray call surfaces as a TypeError instead of the named assertion. Falsify it by adding the call.
+- **Mocked logic.** A query builder whose condition is never inspected, a SQL assertion built from short `toContain`
+  fragments, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
+  behaviour (the value computation, the branch predicate). Mock only the I/O boundary; render the real condition (SQL
+  text and params, the full clause); run the script on a real or emulated Redis or assert its effects; assert values
+  that differ per branch.
+- **Wrong surface.** A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only
+  through the data flag, a "renders independently" test that mounts only the inner component, a new tracking call with
+  no click-and-assert test, an "unsubscribes on unmount" test reading `result.current` after `unmount()`. Assert the
+  rendered output and the composed tree, drive the instrumented element, spy on the unsubscribe.
+- **Non-discriminating fixtures.** On and off, or the latest and the oldest candidate, give the same result. Give each
+  case a distinct value so a no-op mutation or the wrong pick fails.
+- **Unobservable properties.** A read-only session or no-write guarantee passes the happy path either way: assert the
+  option sent through an exported builder and add an env-gated real-database test that a write fails. A "no write" test
+  spies the forbidden operation and asserts `not.toHaveBeenCalled()`, not the mock's shape
+  (`not.toHaveProperty('update')`); falsify it by adding the call. An absence assertion over recorded calls asserts the
+  call count first.
+- **Untested guards and changes.** A last-line defensive guard behind an earlier check gets an input driven past that
+  check. A widened fetch window, a changed fingerprint input, and a flag that must follow a successful primary write
+  (asserted absent when that write fails) each get a test. After a key rename, negative assertions target the key the
+  code now writes, and a test flips when a deliberate guard (not caching a partial result) is reverted.
+- **Exit codes.** A CLI or script failure-path test asserts output only the intended path prints, not only the exit code
+  (an earlier step can fail with the same code), and matches resolver errors by family (`ENOTFOUND|EAI_AGAIN`).
+- **Impossible states.** A component that reads shared async state is tested with the states the real hook produces
+  (read the hook first), not a combination it never emits (a live result while analysing).
 
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
 - ✅ Render the condition to SQL plus params and assert both.
-- ❌ A last-line defensive guard (a security or invariant check that "cannot happen" behind an earlier check) has no test, so deleting it still passes. ✅ Drive the input past the earlier check and assert the guard rejects it.
-- ❌ A test for "compare against the latest previous report" uses a fixture where the latest and the oldest previous report give the same result, so selecting the wrong one still passes. ✅ Give each candidate a distinct value and assert the one the rule picks.
-- ❌ A cache's fetch window is widened and its fingerprint input changed with no test on either, or a flag that must be set only after the primary write succeeds has no test where that write fails. ✅ Assert the window width and the fingerprint input, and assert the flag is absent when the primary step fails, so moving the mark earlier or reverting the change fails the test.
-- ❌ A test mocks the collaborator that holds the behaviour under test (the function computing the value, the predicate deciding the branch) and asserts only the mock's canned output, so the production logic could be deleted. ✅ Mock only the I/O boundary, run the real derivation, and assert on values that differ per branch.
-- ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.
-- ❌ An "unsubscribes on unmount" hook test asserts on `renderHook`'s `result.current` after `unmount()`; the result stops updating after unmount, so the assertion passes whether or not cleanup runs. ✅ Spy on the unsubscribe function (or the underlying subscription) and assert it was called on unmount.
 
 <a id="TE-54"></a>
 
@@ -665,7 +623,7 @@ A new global stylesheet rule (for example a `:has()` selector) has no runtime te
 A rendered-SQL assertion (`sqlToQuery` text and params) proves the statement is built, not that it computes the right numbers: joins, `FILTER` counts, `IS DISTINCT FROM` guards and `ON CONFLICT` behaviour only show up when the statement runs. Aggregation, dedup and pruning SQL therefore gets a `*.db.test.ts` that runs the real statements against Postgres, asserts the invariants (for example `priorHolders = holders − new + exited`) and seeds through the real write path instead of hand-inserting the rows the query is meant to produce.
 
 - The test is opt-in by URL: every `*.db.test.ts` guards on the one shared variable, `describe.skipIf(!process.env.TEST_DATABASE_URL)`. It refuses any target that is not a local database (`describeTarget`: not local, or a tunnel port) and works in a throwaway schema it drops afterwards.
-- CI runs them where a Postgres already exists: the `e2e` workflow's shard 1, after `Migrate + seed e2e DB`, as `yarn test .db.test.ts` with `TEST_DATABASE_URL` set to the compose Postgres (`postgres://siglens:siglens@localhost:5433/siglens_e2e`). The step selects by the file-name pattern, so a new `*.db.test.ts` joins CI without touching the workflow — name it that way and read the shared variable, never a per-feature one.
+- CI's `e2e` workflow (shard 1, after migrating its compose Postgres) runs `yarn test .db.test.ts`, selecting by file name: a new test joins CI only when it is named `*.db.test.ts` and reads `TEST_DATABASE_URL`, never a per-feature variable.
 - Locally use a private compose project name so you cannot tear down someone else's stack: `docker compose -p <name> -f docker-compose.e2e.yml up -d --pull never postgres`, then `TEST_DATABASE_URL=postgres://siglens:siglens@localhost:5433/siglens_e2e yarn test .db.test.ts`.
 - ❌ Only `expect(sqlText).toContain('FULL OUTER JOIN')` for an aggregate query; a wrong join or filter still passes.
 - ✅ The same statement run on seeded rows, asserting the counts and the identity between two quarters.

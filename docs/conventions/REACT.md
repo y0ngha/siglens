@@ -4,11 +4,7 @@ Client-side rules for hooks, components, effects, charts, styling, React Query a
 
 ## Rule IDs
 
-Rules that are cited from code comments, reviews, or other docs carry a stable ID in the form `PREFIX-N`,
-with an explicit anchor line directly above the heading. Cite them as `REACT.md#HK-1`.
-IDs are never renumbered or reused; a new rule takes the highest existing number of its prefix + 1.
-If a rule is deleted, delete its references in the same change.
-`src/__tests__/guards/ruleReferences.test.ts` fails on any reference that does not resolve to an anchor.
+IDs follow the root `CLAUDE.md` "Rule IDs and references". Cite them as `REACT.md#HK-1`.
 
 | Prefix | Topic |
 |---|---|
@@ -19,6 +15,8 @@ If a rule is deleted, delete its references in the same change.
 | `LW` | Lightweight Charts |
 | `TW` | Tailwind CSS |
 | `RQ` | React Query and server state |
+
+Retired IDs: CR-7
 
 ---
 
@@ -60,31 +58,6 @@ useCallback(...);
 const rebuildQueue = rebuildQueueSrc;
 ```
 
-```typescript
-export function useExample(props: ExampleOptions): ExampleResult {
-    const ref = useRef<HTMLDivElement>(null);
-
-    const mutation = useMutation({ mutationFn: postSomething });
-
-    const value = mutation.data ?? initialValue;
-    const error = mutation.error?.message ?? null;
-
-    const handleSubmit = (): void => {
-        mutation.mutate(ref.current);
-    };
-
-    useLayoutEffect(() => {
-        ref.current = someValue;
-    });
-
-    useEffect(() => {
-        mutation.reset();
-    }, [dep, mutation]);
-
-    return { value, error, handleSubmit };
-}
-```
-
 ---
 
 ## Widget / Feature / Entity Folder Structure
@@ -93,30 +66,8 @@ Custom hooks must always be placed in a `hooks/` subfolder.
 Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder.
 Never mix component files, hook files, or utility files at the same directory level.
 
-```
-# ✅ Correct structure
-src/widgets/
-├── chart/
-│   ├── hooks/
-│   │   ├── useBollingerOverlay.ts
-│   │   └── useChartData.ts
-│   ├── utils/
-│   │   └── seriesDataUtils.ts
-│   └── ui/
-│       └── StockChart.tsx
-└── symbol-page/
-    ├── hooks/
-    │   ├── useAnalysis.ts
-    │   └── useBars.ts
-    └── ui/
-        └── SymbolPageClient.tsx
-
-# ❌ Incorrect — hooks or utils at the same level as components
-src/widgets/chart/
-├── StockChart.tsx
-├── useChartData.ts     ← prohibited (must be in hooks/)
-└── seriesDataUtils.ts  ← prohibited (must be in utils/)
-```
+- ✅ `widgets/chart/hooks/useChartData.ts`, `widgets/chart/utils/seriesDataUtils.ts`, `widgets/chart/ui/StockChart.tsx`
+- ❌ `widgets/chart/useChartData.ts` or `widgets/chart/seriesDataUtils.ts` next to `StockChart.tsx`
 
 **`hooks/` vs `utils/`**
 - `hooks/`: files that call React hooks (`useState`, `useEffect`, `useQuery`, etc.)
@@ -128,13 +79,7 @@ Do not define non-hook helpers (`sleep`, resolvers, label normalizers) inside a 
 
 ## Custom Hook Rules
 
-```typescript
-// ✅ 'use client' — required at the top of every custom hook file
-// Custom hooks in widgets/ always run on the client; declare 'use client' unconditionally.
-'use client';
-
-import { useState, useEffect } from 'react';
-```
+Every custom hook file starts with `'use client'`, unconditionally: custom hooks in `widgets/` always run on the client.
 
 - **DOM event listeners go in a custom hook.** A `document`/`window` listener registered in a component's `useEffect` is extracted to a hook (`useOnClickOutside`, `useEscapeKey`, …).
 - **Sibling hooks share a parameter shape.** Hooks in the same family accept the same optional properties; when one gains an option, check the others.
@@ -255,59 +200,16 @@ Add `'use client'` **only** when the component meets at least one of the followi
 Do **not** add `'use client'` to components that only render static JSX with no interactivity.
 Keeping components as Server Components by default minimizes the client bundle.
 
-```typescript
-// ✅ Required — uses useState and event handler
-'use client';
-export function TimeframeSelector({ onChange }: TimeframeSelectorProps) {
-    const [selected, setSelected] = useState<Timeframe>('1Day');
-    // ...
-}
-
-// ✅ Required — FallbackComponent receives resetErrorBoundary (client-only callback)
-'use client';
-export function ChartErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
-    return <button onClick={resetErrorBoundary}>다시 시도</button>;
-}
-
-// ✅ Not required — pure static JSX, no hooks or handlers
-// ChartSkeleton renders a loading placeholder with no interactivity
-export function ChartSkeleton() {
-    return <div className="animate-pulse bg-gray-800 rounded" />;
-}
-```
-
-> **알려진 오탐: Next.js 경고 71007 ("Props must be serializable … `resetErrorBoundary` is a function")**
->
-> `FallbackComponent`-형태 컴포넌트(`FallbackProps`를 받아 `onClick={resetErrorBoundary}`를 등록하는 컴포넌트)에 `'use client'`를 붙이면 Next.js 개발 서버 / TS 플러그인이 **71007** 경고를 낼 수 있다.
-> 이는 **알려진 정적 분석 오탐**이다. `resetErrorBoundary`는 클라이언트 부모(예: `FinancialsAiSummary`, `CongressTrendSummary`)에서 생성되어 클라이언트 렌더 트리 안에서만 전달되므로, 실제 Server→Client 직렬화 경계를 넘지 않는다. 프로덕션 빌드·CI·런타임에는 영향이 없다.
->
-> **경고를 없애기 위해 `'use client'`를 제거해서는 안 된다.** 제거하면 위 표의 두 가지 조건("이벤트 핸들러 등록", "FallbackComponent")을 동시에 위반하며, 해당 컴포넌트가 Server Component 컨텍스트에서 import될 경우 런타임 오류로 이어질 수 있다. `'use client'`를 유지하고 71007은 예상된 오탐으로 무시한다.
+> **Known false positive: Next.js warning 71007** ("Props must be serializable … `resetErrorBoundary` is a function")
+> on a `FallbackComponent` that registers `onClick={resetErrorBoundary}`. The callback is created by a client parent
+> and never crosses a Server→Client boundary; build, CI and runtime are unaffected. Do not remove `'use client'` to
+> silence it: that breaks both table conditions above and fails at runtime when a Server Component imports it.
 
 ### RSC → Client Boundary: Minimize Serialized Data
 
 When a Server Component passes data to a `'use client'` component, only the props cross the boundary as serialized JSON embedded in the HTML response. Pass only the fields the client component actually uses.
 
-```typescript
-// ❌ Serializes all 50 fields of User
-async function Page() {
-    const user = await fetchUser();
-    return <Profile user={user} />;
-}
-'use client'
-function Profile({ user }: { user: User }) {
-    return <div>{user.name}</div>;
-}
-
-// ✅ Serializes only the one field used
-async function Page() {
-    const user = await fetchUser();
-    return <Profile name={user.name} />;
-}
-'use client'
-function Profile({ name }: { name: string }) {
-    return <div>{name}</div>;
-}
-```
+❌ `<Profile user={user} />` serializes every field of `User`. ✅ `<Profile name={user.name} />` when only the name renders.
 
 ### Other Component Rules
 
@@ -409,20 +311,12 @@ items.map(item => <li key={item.title}>{item.title}</li>)
 
 // ✅ blanks and repeats dropped first, so the title is a unique key
 distinctTitles(items).map(title => <li key={title}>{title}</li>)
-<a id="CR-7"></a>
-
-#### CR-7 — Swapping to a shared component preserves what the old one encoded
-
-Before replacing a hand-rolled element with a shared component, list the constraints the old one carried (accessible name, size limits, z-index, viewport clamping) and check the shared one meets each; pass the specific label and cap the size where it does not.
-
-- ❌ Swapping a fixed-width tooltip for the shared `InfoTooltip` and silently getting a generic accessible name and a width that overflows 320px screens.
-- ✅ Pass the specific `aria-label` and cap the width to the viewport minus padding.
 <a id="CR-5"></a>
 
 #### CR-5 — Swapping to a shared component keeps the constraints the old one encoded
 
 Before replacing a hand-rolled component with a shared one, list what the old one guaranteed — accessible name, size
-limits at the smallest viewport (320px), stacking, keyboard and touch behaviour — and check the shared one meets each.
+limits at the smallest viewport (320px), stacking (z-index), viewport clamping, keyboard and touch behaviour — and check the shared one meets each.
 Pass a prop or extend the shared component instead of accepting its defaults: they silently replace the old specifics.
 
 - ❌ Swap a fixed `w-56` tooltip for the shared one (`max-w-xs`, positioned by clamping only the left edge): it overflows
@@ -623,34 +517,7 @@ asserting right after render, without calling `focus()` yourself.
 Separate side effects inside `useEffect` by responsibility.
 Never mix initialization logic and data synchronization logic in a single `useEffect`.
 
-```typescript
-// ❌ Initialization + data setup mixed in one useEffect
-useEffect(() => {
-    const chart = createChart(containerRef.current, { ... });
-    const series = chart.addSeries(CandlestickSeries, { ... });
-    series.setData(bars); // recreates the entire chart on every data change
-    return () => { chart.remove(); };
-}, [bars]);
-
-// ✅ Initialization ([]): runs once on mount, stores instance in ref
-useEffect(() => {
-    const chart = createChart(containerRef.current, { ... });
-    chartRef.current = chart;
-    seriesRef.current = chart.addSeries(CandlestickSeries, { ... });
-    return () => {
-        chart.remove();
-        chartRef.current = null;
-        seriesRef.current = null;
-    };
-}, []);
-
-// ✅ Data sync ([deps]): reuses instance on data change
-useEffect(() => {
-    if (!seriesRef.current || !chartRef.current) return;
-    seriesRef.current.setData(mappedBars);
-    chartRef.current.timeScale().fitContent();
-}, [bars]);
-```
+❌ One `[bars]` effect that creates the chart and calls `setData`, so every data change recreates the chart.
 
 **Principles**
 - Separate instance creation/destruction (`[]`) from data synchronization (`[deps]`) into distinct `useEffect` calls
@@ -674,10 +541,6 @@ oxlint 1.79+ traces calls through `useEffectEvent` and `useCallback` bodies, so 
 ```typescript
 // ❌ setState synchronously in the effect body
 useEffect(() => { setPollError(null); setAnalysisResult(null); mutate(...); }, [deps]);
-
-// ❌ useEffectEvent does not escape the rule
-const handleDerive = useEffectEvent(() => { setMessages(...); });
-useEffect(() => { handleDerive(); }, [deps]);
 
 // ✅ render-time adjustment, conditioned on a value that changed this render
 if (isSubmitArmed && canResolve) { setIsSubmitArmed(false); setPendingNav(target); }
@@ -763,31 +626,11 @@ Mirroring state into a ref from a `useEffect` leaves a window between commit and
 
 Official docs: https://tradingview.github.io/lightweight-charts/docs
 
-```
-✅ Use only inside widgets/chart/
-❌ No imports from app/ or entities/api/
-```
-
-```typescript
-// ✅ Chart initialization + cleanup required
-useEffect(() => {
-    const chart = createChart(containerRef.current, { ... });
-    const series = chart.addSeries(CandlestickSeries);
-    series.setData(data);
-    return () => { chart.remove(); };
-}, []);
-
-// ✅ Volume, RSI etc. go in separate panes
-chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' } }, 1);
-chart.addSeries(LineSeries, {}, 2);
-
-// ✅ Convert null values to WhitespaceData
-// ❌ { time: '2024-01-01', value: null }
-// ✅ { time: '2024-01-01' }
-
-// ✅ Prepend historical data
-candleSeries.setData([...newOlderBars, ...existingBars]);
-```
+- Use only inside `widgets/chart/`; never import it from `app/` or `entities/api/`.
+- The effect that creates the chart returns a `chart.remove()` cleanup (LW-1).
+- Volume, RSI and similar series go in their own pane: `chart.addSeries(HistogramSeries, opts, 1)`.
+- A null value becomes WhitespaceData: `{ time }`, never `{ time, value: null }`.
+- Prepend history with `setData([...olderBars, ...existingBars])`.
 
 <a id="LW-1"></a>
 
@@ -887,34 +730,8 @@ Fetch logic must live in entity/feature slices (api.ts or actions/).
 Widget hooks are responsible only for connecting Server Actions or entity fetch functions
 to `useQuery`/`useMutation` as `queryFn`/`mutationFn`.
 
-```typescript
-// ✅ entity action — Server Action
-// src/entities/bars/actions/getBarsAction.ts
-'use server';
-export async function getBarsAction(
-    symbol: string,
-    timeframe: Timeframe
-): Promise<BarsData> {
-    // FMP 호출 + @y0ngha/siglens-core indicator 계산
-    // ...
-}
-
-// ✅ widget hook — connects queryFn only
-// src/widgets/symbol-page/hooks/useBars.ts
-const { data } = useQuery({
-    queryKey: QUERY_KEYS.bars(symbol, timeframe),
-    queryFn: () => getBarsAction(symbol, timeframe),
-});
-
-// ❌ No inline fetch logic inside widget hooks
-const { data: barsData } = useQuery({
-    queryKey: QUERY_KEYS.bars(symbol, timeframe),
-    queryFn: async ({ signal }) => {
-        const res = await fetch(`/api/bars?symbol=${symbol}`); // prohibited
-        return res.json();
-    },
-});
-```
+❌ `queryFn: async () => (await fetch('/api/bars?symbol=' + symbol)).json()` inside a widget hook.
+✅ `queryFn: () => getBarsAction(symbol, timeframe)`, with `getBarsAction` in `entities/bars/actions/`.
 
 ### UI ↔ Data Access and Query State
 
@@ -1020,20 +837,5 @@ skeleton; user picks go through `startTransition`.
 **Validation:** `isValidTimeframe()` is exported by `@y0ngha/siglens-core` and uses the `TIMEFRAMES` constant
 as the source of truth for valid values. Never validate against hardcoded string literals at the call site.
 
-```typescript
-// ✅ Client reads timeframe from URL (keeps the route static/ISR, no CSR bailout)
-const tfParam = useUrlSearchParam('tf');
-const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
-
-// ❌ useSearchParams — CSR-bails-out the subtree; the server HTML gets only the Suspense fallback
-// const tfParam = useSearchParams().get('tf');
-
-// ❌ Server reading searchParams.tf — forces dynamic rendering, breaks ISR
-// const { tf } = await searchParams;
-
-// ✅ Client updates URL on change (inside startTransition)
-window.history.replaceState(null, '', toLocalePath(`/${symbol}?tf=${nextTimeframe}`));
-
-// ❌ Hardcoded default ignoring URL param
-const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
-```
+❌ `useSearchParams().get('tf')`, a server `searchParams.tf` read, or `useState(DEFAULT_TIMEFRAME)` that never reads the URL.
+✅ `const tf = useUrlSearchParam('tf'); const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;`

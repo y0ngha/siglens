@@ -27,18 +27,7 @@ In FSD, `app/` is the **composition root**: it wires together widgets, features,
 서버(RSC)에서 클라이언트로 초기 데이터를 주입할 때는 props 드릴링 대신
 `queryClient.setQueryData()` + `dehydrate()` + `HydrationBoundary` 패턴을 사용한다.
 `prefetchQuery`는 쓰지 않는다 — 아래 AP-2 참조.
-
-```
-/AAPL request
-  → app/[locale]/[symbol]/layout.tsx · page.tsx (RSC)
-    → QueryClient (per-request, server-only) 생성
-    → 정적 캐시 로더(getAssetInfoResilient, getQuantizedBarsStatic …)로 데이터 조회
-    → queryClient.setQueryData(key, data, { updatedAt: 고정값 })
-    → dehydrate(queryClient) → HydrationBoundary로 클라이언트에 전달
-  → SymbolPageClient (HydrationBoundary 안)
-    → useBars: hydrated 캐시에서 즉시 읽기
-    → useAnalysis: 마운트 시 자동 AI 분석 트리거
-```
+시드용 `QueryClient`는 요청마다 새로 만든다(server-only, 요청 사이에 공유하지 않는다).
 
 <a id="AP-2"></a>
 
@@ -63,11 +52,6 @@ HTML 해시가 달라진다 → 서버 재시작·ISR 재생성마다 불필요�
 
 ### Caching
 
-> **Note (cacheComponents 비활성화):** 현재 `next.config.ts`에서 `cacheComponents`는
-> 비활성화 상태다. PPR resumable slots 오류로 인한 SEO metadata placeholder 누출 때문에
-> 임시로 꺼 둔 상태이며, 추후 재활성화 시 `'use cache'` / `cacheLife` / `cacheTag` 패턴과
-> dynamic metadata 처리 방식을 함께 재설계해야 한다.
-
 <a id="AP-1"></a>
 
 ### AP-1 — ISR / Route Segment Config (⚠️ 리터럴 강제)
@@ -90,7 +74,7 @@ on-demand ISR)를 함께 export해야 빌드에서 `● (SSG)`로 전환된다. 
 - **소스와 HTML 사이의 모든 캐시 계층에서** 지킨다. 안쪽(Redis 엔트리)만 짧은 TTL을 주고 바깥(페이지 단위 data cache·ISR HTML)이 같은 값을 전체 창 동안 저장하면 소용없다. degrade 표식은 바깥 계층도 읽어야 하며, 표식이 붙은 값은 data cache 스코프 안에서 던져 저장되지 않게 하고 호출자가 표식을 받아 그 렌더의 revalidate를 낮춘다(`shortenRevalidateForRuntimeDegrade`).
 - **선택적 보강은 revalidate를 낮추지 않는 로더로 읽는다.** 핵심 콘텐츠만 페이지를 degrade시킨다. 보강 소스 장애까지 revalidate를 낮추면 장애가 전 종목의 재생성 루프가 된다. ❌ 보강을 revalidate를 낮추는 로더로 읽음 ✅ `fundamental/_components/FundamentalSections.tsx`의 `loadOptionalSection`처럼 실패를 `null`로 흡수하고 revalidate는 그대로 둔다. 단 **렌더 예산 타임아웃**(`withTimeout`)은 실패가 아니라 degrade다 — 데이터가 백그라운드에서 곧 캐시에 채워지므로 비어 있는 폴백이 전체 revalidate 동안 굳는다. 타임아웃은 `shortenRevalidateForRuntimeDegrade`로 revalidate를 낮추고 소스 실패는 경고만 남기도록, 두 경우를 하나의 `null`로 합치지 말고 구분되는 결과로 돌려준다.
 
-#### 페이지별 revalidate (값·근거는 [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md))
+#### 페이지별 revalidate
 
 사용자 신선도는 ISR이 아니라 클라 refetch가 책임지므로, revalidate는 **크롤러 SSR 신선도 + Fast Origin
 Transfer/ISR 비용** 기준으로 정한다(Fast Data Transfer는 줄지 않음 — CF 앞단 캐시 몫).
@@ -99,9 +83,9 @@ Transfer/ISR 비용** 기준으로 정한다(Fast Data Transfer는 줄지 않음
 
 news는 `ensureNewsCardsAnalyzedAction`이 새 기사 fetch 시 `revalidateTag('news:${symbol}', 'max')`로 on-demand
 무효화하므로 시간 기반은 상한선일 뿐. 종목 페이지 전수 cron은 도입하지 않는다(전수 재생성 = Fast Origin
-Transfer 폭증). 자세한 근거는 위 문서 참조.
+Transfer 폭증).
 
-### ISR 4축 규약 (`[symbol]` ISR+SEO, 2026-06-02)
+### ISR 4축 규약 (`[symbol]` ISR+SEO)
 
 PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정상 캐시하려면 4가지를 모두 지켜야 한다:
 
@@ -132,10 +116,8 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
    라우트(news)는 `news:${symbol}` 그룹 태그를 추가로 달고, 데이터 변경(뉴스 ingestion) 직후
    `revalidateTag('news:${symbol}', 'max')`로 **on-demand 무효화**해 1h를 기다리지 않고 갱신한다
    (Next 16의 `revalidateTag`는 2번째 profile 인자 필수 — 단일 인자는 deprecated).
-3. **(축 2) URL 쿼리는 `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽는다.** `useSearchParams`는
-   가장 가까운 Suspense까지 서브트리를 CSR bailout시켜 SSR HTML에 fallback만 남긴다.
-   `useUrlSearchParam`(서버 스냅샷 `null`)은 서버·하이드레이션 렌더를 기본값으로 그리고 하이드레이션 직후
-   URL 값을 반영하므로 위젯 자체가 SSR된다(차트 탭·종합 탭·`/market` 섹터 패널). 종합 탭·`/market`의
+3. **(축 2) URL 쿼리는 `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽는다.** 이유와 소비자는
+   `REACT.md` "Query Parameter — Timeframe"에 있다. 종합 탭·`/market`의
    Suspense fallback은 안전망으로만 남고, 차트 탭은 페이지 경계를 아예 두지 않는다 — React Fizz는
    완료된 경계라도 12.8KB(`progressiveChunkSize`)를 넘으면 fallback을 인라인에 두고 본문을 숨김 청크로
    **아웃라인**하므로, fallback에 h1이 있으면 raw HTML에 h1이 둘 남는다. 같은 이유로 **클라 위젯 안의
@@ -149,8 +131,7 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
    `src/__tests__/guards/serverDataSuspenseBoundaries.test.ts`). 렌더 후에도 보여야 하는 산문은 영구 서버
    sibling으로 둔다.
    server-only 정적화 헬퍼(`staticSymbolCache` 등)는 서버 파일에서만 import한다(client 번들 누출 방지).
-4. **(축 3) `generateStaticParams=[]` + `revalidate`(리터럴) 유지.** revalidate 값은 페이지마다 다르다 —
-   [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md) 참조.
+4. **(축 3) `generateStaticParams=[]` + `revalidate`(리터럴) 유지** — AP-1.
 
 5. **(축 4) `unstable_cache` 안에서 locale 없이 `getTranslations()`를 부르지 않는다.** locale 인자가 없으면
    next-intl이 `headers()`로 폴백하는데 Next는 캐시 스코프 안의 `headers()`를 거부(E838)해 원래 오류를
@@ -159,8 +140,6 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
 
 > ⚠️ 빌드 output의 `●`(SSG) 표시 ≠ 런타임 동작. 반드시 `prod build && start` 후
 > 런타임 로그의 `DYNAMIC_SERVER_USAGE` 0 + `x-nextjs-cache` HIT로 실측 검증한다.
-> (설계: `docs/superpowers/specs/2026-06-02-symbol-isr-seo-design.md`,
-> 플랜: `docs/superpowers/plans/2026-06-02-symbol-isr-seo-phase0-1.md` · `…-phase2-4.md`)
 
 ---
 
