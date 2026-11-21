@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    arrayAt,
+    keysAt,
+    numberAt,
+    readAt,
+    stringAt,
+} from '@/shared/test-utils/readAt';
+import {
     AGENT_MACRO_INSTRUMENTS,
     AGENT_MACRO_QUOTES_MAX,
 } from '@y0ngha/siglens-core';
@@ -75,9 +82,7 @@ function dailyCloses(base: number): YahooMacroDaily {
 }
 
 const run = (instruments: unknown) =>
-    getMacroQuotesTool({ instruments }, ctx, rt) as Promise<
-        Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    >;
+    getMacroQuotesTool({ instruments }, ctx, rt) as Promise<unknown>;
 
 const quoteCallFor = (symbol: string) =>
     getQuote.mock.calls.find(([s]) => s === symbol);
@@ -109,7 +114,10 @@ describe('getMacroQuotesTool', () => {
         getCloses.mockResolvedValue(null);
         for (const key of AGENT_MACRO_INSTRUMENTS) {
             const r = await run([key]);
-            expect(r.quotes[0]).toMatchObject({ instrument: key, found: true });
+            expect(readAt(r, 'quotes', 0)).toMatchObject({
+                instrument: key,
+                found: true,
+            });
         }
     });
 
@@ -136,7 +144,7 @@ describe('getMacroQuotesTool', () => {
         getCloses.mockResolvedValue(null);
         const r = await run([key]);
         expect(quoteCallFor(yahooSymbol)).toBeDefined();
-        expect(r.quotes[0].unit).toBe(unit);
+        expect(readAt(r, 'quotes', 0, 'unit')).toBe(unit);
     });
 
     it('빈 배열·열거 밖 값뿐이면 no_instruments', async () => {
@@ -159,7 +167,7 @@ describe('getMacroQuotesTool', () => {
         getQuotes.mockRejectedValue(new Error('429'));
         getCloses.mockResolvedValue(null);
         const r = await run(['wti', 'gold']);
-        expect(r.quotes).toEqual([
+        expect(readAt(r, 'quotes')).toEqual([
             { instrument: 'wti', found: false },
             { instrument: 'gold', found: false },
         ]);
@@ -180,9 +188,9 @@ describe('getMacroQuotesTool', () => {
                 { date: '2025-06-30', close: 1330, high: 1340, low: 1320 },
             ],
         });
-        const q = (await run(['usd_krw'])).quotes[0];
+        const q = readAt(await run(['usd_krw']), 'quotes', 0);
         // 현지 날짜 7/1 − 7일 = 6/24 → 6/24 행이 기준. (UTC 날짜 6/30 − 7일 = 6/23이면 6/23 행이 되었을 것)
-        expect(q.changes['1week']).toMatchObject({
+        expect(readAt(q, 'changes', '1week')).toMatchObject({
             baseDate: '2025-06-24',
             baseClose: 1310,
         });
@@ -192,7 +200,7 @@ describe('getMacroQuotesTool', () => {
         getQuote.mockResolvedValue(CL);
         getCloses.mockResolvedValue(null);
         const r = await run(['wti', 'wti', 'wti']);
-        expect(r.quotes).toHaveLength(1);
+        expect(readAt(r, 'quotes')).toHaveLength(1);
         expect(getQuote).toHaveBeenCalledTimes(1);
     });
 
@@ -210,7 +218,7 @@ describe('getMacroQuotesTool', () => {
         getQuote.mockResolvedValue(CL);
         getCloses.mockResolvedValue(null);
         const r = await run(AGENT_MACRO_INSTRUMENTS.slice(0, 8));
-        expect(r.quotes).toHaveLength(8);
+        expect(readAt(r, 'quotes')).toHaveLength(8);
     });
 
     it('선물: 계약명·만기(YYYY-MM-DD)·지연·시세 시각을 싣는다', async () => {
@@ -219,8 +227,10 @@ describe('getMacroQuotesTool', () => {
         );
         getCloses.mockResolvedValue(dailyCloses(88));
         const r = await run(['wti']);
-        expect(r.source).toBe('Yahoo Finance (futures and FX quotes, delayed)');
-        expect(r.quotes[0]).toMatchObject({
+        expect(readAt(r, 'source')).toBe(
+            'Yahoo Finance (futures and FX quotes, delayed)'
+        );
+        expect(readAt(r, 'quotes', 0)).toMatchObject({
             instrument: 'wti',
             found: true,
             name: 'Crude Oil Dec 26',
@@ -237,22 +247,24 @@ describe('getMacroQuotesTool', () => {
     it('환율: contract는 null이고 지연 0은 0으로 남는다(null로 바뀌지 않는다)', async () => {
         getQuote.mockResolvedValue(KRW);
         getCloses.mockResolvedValue(null);
-        const q = (await run(['usd_krw'])).quotes[0];
-        expect(q.contract).toBeNull();
-        expect(q.quoteDelayMinutes).toBe(0);
-        expect(q.currency).toBe('KRW');
+        const q = readAt(await run(['usd_krw']), 'quotes', 0);
+        expect(readAt(q, 'contract')).toBeNull();
+        expect(readAt(q, 'quoteDelayMinutes')).toBe(0);
+        expect(readAt(q, 'currency')).toBe('KRW');
     });
 
     it('지연 정보가 없으면 quoteDelayMinutes는 null', async () => {
         getQuote.mockResolvedValue({ ...KRW, delayMinutes: null });
         getCloses.mockResolvedValue(null);
-        expect((await run(['usd_krw'])).quotes[0].quoteDelayMinutes).toBeNull();
+        expect(
+            readAt(await run(['usd_krw']), 'quotes', 0, 'quoteDelayMinutes')
+        ).toBeNull();
     });
 
     it('만기가 없는 선물은 expiry null', async () => {
         getQuote.mockResolvedValue({ ...CL, contractExpiryIso: null });
         getCloses.mockResolvedValue(null);
-        expect((await run(['wti'])).quotes[0].contract).toEqual({
+        expect(readAt(await run(['wti']), 'quotes', 0, 'contract')).toEqual({
             name: 'Crude Oil Dec 26',
             expiry: null,
         });
@@ -261,35 +273,41 @@ describe('getMacroQuotesTool', () => {
     it('일봉이 있으면 changes 4종과 range52w를 계산한다', async () => {
         getQuote.mockResolvedValue(CL);
         getCloses.mockResolvedValue(dailyCloses(88));
-        const q = (await run(['wti'])).quotes[0];
-        expect(Object.keys(q.changes)).toEqual([
+        const q = readAt(await run(['wti']), 'quotes', 0);
+        expect(keysAt(q, 'changes')).toEqual([
             '1week',
             '1month',
             '3months',
             '1year',
         ]);
-        expect(q.changes['1week']).toMatchObject({
+        expect(readAt(q, 'changes', '1week')).toMatchObject({
             baseDate: expect.any(String),
         });
-        expect(q.changes['1week'].baseDate <= '2026-11-07').toBe(true);
-        expect(q.range52w.high).toBeGreaterThan(q.range52w.low);
-        expect(q.range52w.highDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(
+            stringAt(q, 'changes', '1week', 'baseDate') <= '2026-11-07'
+        ).toBe(true);
+        expect(numberAt(q, 'range52w', 'high')).toBeGreaterThan(
+            numberAt(q, 'range52w', 'low')
+        );
+        expect(readAt(q, 'range52w', 'highDate')).toMatch(
+            /^\d{4}-\d{2}-\d{2}$/
+        );
     });
 
     it('일봉을 못 받으면 시세만 돌려주고 changes·range52w는 null', async () => {
         getQuote.mockResolvedValue(CL);
         getCloses.mockResolvedValue(null);
-        const q = (await run(['wti'])).quotes[0];
-        expect(q.found).toBe(true);
-        expect(q.price).toBe(88.56);
-        expect(q.changes).toBeNull();
-        expect(q.range52w).toBeNull();
+        const q = readAt(await run(['wti']), 'quotes', 0);
+        expect(readAt(q, 'found')).toBe(true);
+        expect(readAt(q, 'price')).toBe(88.56);
+        expect(readAt(q, 'changes')).toBeNull();
+        expect(readAt(q, 'range52w')).toBeNull();
     });
 
     it('시세가 없으면 { instrument, found: false }', async () => {
         getQuote.mockResolvedValue(null);
         getCloses.mockResolvedValue(dailyCloses(1));
-        expect((await run(['gold'])).quotes[0]).toEqual({
+        expect(readAt(await run(['gold']), 'quotes', 0)).toEqual({
             instrument: 'gold',
             found: false,
         });
@@ -304,9 +322,9 @@ describe('getMacroQuotesTool', () => {
         getCloses.mockResolvedValue(null);
         const r = await run(['wti', 'gold', 'usd_krw']);
         expect(
-            r.quotes.map((q: { instrument: string; found: boolean }) => [
-                q.instrument,
-                q.found,
+            arrayAt(r, 'quotes').map(q => [
+                readAt(q, 'instrument'),
+                readAt(q, 'found'),
             ])
         ).toEqual([
             ['wti', true],

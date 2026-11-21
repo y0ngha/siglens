@@ -196,7 +196,7 @@ function parseModelJson(text: string): Record<string, string> {
     try {
         return JSON.parse(text) as Record<string, string>;
     } catch {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // 깨진 JSON일 때만 필요한 폴백이라 지연 require한다(.oxlintrc.json의 require 허용 목록).
         const { jsonrepair } = require('jsonrepair') as {
             jsonrepair: (input: string) => string;
         };

@@ -13,14 +13,16 @@ import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 import { economicCalendarId } from '../lib/economicCalendarId';
-import type { EconomicCalendarEventWithAnalysis } from '../model';
+import type {
+    EconomicCalendarEventWithAnalysis,
+    CalendarCountry,
+} from '../model';
 import { pastWindowStart, futureWindowEnd } from '../lib/calendarWindow';
 import {
     CALENDAR_COUNTRY,
     economyCalendarCacheTag,
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
 } from '../lib/economyCalendarConstants';
-import type { CalendarCountry } from '../model';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type CalendarReader = (

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readAt } from '@/shared/test-utils/readAt';
 import {
     ANALYST_VIEWS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
@@ -169,9 +170,7 @@ describe('getAnalystViewsTool', () => {
     });
 
     const run = (symbol = 'nvda') =>
-        getAnalystViewsTool({ symbol }, ctx, rt) as Promise<
-            Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-        >;
+        getAnalystViewsTool({ symbol }, ctx, rt) as Promise<unknown>;
 
     it('펀더멘털 탭이 없는 심볼은 not_a_stock이고 아무것도 부르지 않는다', async () => {
         isTabAllowed.mockResolvedValue(false);
@@ -186,37 +185,40 @@ describe('getAnalystViewsTool', () => {
 
     it('목표가마다 upsidePct를 붙이고 earnings는 싣지 않는다', async () => {
         const r = await run();
-        expect(r.available).toBe(true);
-        expect(r.symbol).toBe('NVDA');
-        expect(r.price).toBe(190.1);
-        expect(r.currency).toBe('USD');
-        expect(r.source).toBe('analyst views (Yahoo Finance, FMP)');
-        expect(r.targets.yahoo.upsidePct).toBeCloseTo(45.48, 1);
-        expect(r.targets.fmp.upsidePct).toBeCloseTo(64.3, 0);
-        expect(r.targets.sourcesDisagree).toBe(true);
-        expect(r.targets.gapPct).toBe(12.94);
+        expect(readAt(r, 'available')).toBe(true);
+        expect(readAt(r, 'symbol')).toBe('NVDA');
+        expect(readAt(r, 'price')).toBe(190.1);
+        expect(readAt(r, 'currency')).toBe('USD');
+        expect(readAt(r, 'source')).toBe('analyst views (Yahoo Finance, FMP)');
+        expect(readAt(r, 'targets', 'yahoo', 'upsidePct')).toBeCloseTo(
+            45.48,
+            1
+        );
+        expect(readAt(r, 'targets', 'fmp', 'upsidePct')).toBeCloseTo(64.3, 0);
+        expect(readAt(r, 'targets', 'sourcesDisagree')).toBe(true);
+        expect(readAt(r, 'targets', 'gapPct')).toBe(12.94);
         expect(r).not.toHaveProperty('earnings');
-        expect(r.degraded).toEqual([]);
+        expect(readAt(r, 'degraded')).toEqual([]);
     });
 
     it('이력은 15건으로 자르되 집계는 그대로 둔다', async () => {
         const r = await run();
-        expect(r.actions.rows).toHaveLength(15);
-        expect(r.actions.tally.last30d.downgrades).toBe(30);
+        expect(readAt(r, 'actions', 'rows')).toHaveLength(15);
+        expect(readAt(r, 'actions', 'tally', 'last30d', 'downgrades')).toBe(30);
     });
 
     it('시세가 없으면 price와 upsidePct는 null', async () => {
         getQuote.mockResolvedValue(null);
         const r = await run();
-        expect(r.price).toBeNull();
-        expect(r.targets.yahoo.upsidePct).toBeNull();
-        expect(r.targets.fmp.upsidePct).toBeNull();
+        expect(readAt(r, 'price')).toBeNull();
+        expect(readAt(r, 'targets', 'yahoo', 'upsidePct')).toBeNull();
+        expect(readAt(r, 'targets', 'fmp', 'upsidePct')).toBeNull();
     });
 
     it('시세 조회가 거부돼도 도구는 실패하지 않는다', async () => {
         const err = vi.spyOn(console, 'error').mockImplementation(() => {});
         getQuote.mockRejectedValue(new Error('boom'));
-        expect((await run()).price).toBeNull();
+        expect(readAt(await run(), 'price')).toBeNull();
         err.mockRestore();
     });
 
@@ -234,9 +236,9 @@ describe('getAnalystViewsTool', () => {
             })
         );
         const r = await run();
-        expect(r.targets.fmp).toBeNull();
-        expect(r.targets.yahoo).not.toBeNull();
-        expect(r.degraded).toEqual(['fmp']);
+        expect(readAt(r, 'targets', 'fmp')).toBeNull();
+        expect(readAt(r, 'targets', 'yahoo')).not.toBeNull();
+        expect(readAt(r, 'degraded')).toEqual(['fmp']);
     });
 
     const empty = (degraded: ('yahoo' | 'fmp')[]) =>
@@ -289,7 +291,7 @@ describe('getAnalystViewsTool', () => {
                 actions: v.actions,
             })
         );
-        expect((await run()).available).toBe(true);
+        expect(readAt(await run(), 'available')).toBe(true);
     });
 
     it('한국 종목은 KRW, 이력 없음(available false)으로 낸다', async () => {
@@ -312,10 +314,10 @@ describe('getAnalystViewsTool', () => {
             })
         );
         const r = await run('005930.KS');
-        expect(r.currency).toBe('KRW');
-        expect(r.actions.available).toBe(false);
-        expect(r.actions.rows).toEqual([]);
-        expect(r.actions.tally).toBeNull();
+        expect(readAt(r, 'currency')).toBe('KRW');
+        expect(readAt(r, 'actions', 'available')).toBe(false);
+        expect(readAt(r, 'actions', 'rows')).toEqual([]);
+        expect(readAt(r, 'actions', 'tally')).toBeNull();
     });
 
     it('Yahoo 실패로 이력을 못 읽었으면 tally는 null이고 degraded에 yahoo가 남는다', async () => {
@@ -333,9 +335,9 @@ describe('getAnalystViewsTool', () => {
             })
         );
         const r = await run();
-        expect(r.available).toBe(true); // FMP 목표가가 남아 있다
-        expect(r.actions.tally).toBeNull();
-        expect(r.degraded).toEqual(['yahoo']);
+        expect(readAt(r, 'available')).toBe(true); // FMP 목표가가 남아 있다
+        expect(readAt(r, 'actions', 'tally')).toBeNull();
+        expect(readAt(r, 'degraded')).toEqual(['yahoo']);
     });
 
     it('시세 조회와 뷰 조회는 서로 기다리지 않고 함께 시작된다', async () => {
@@ -350,7 +352,7 @@ describe('getAnalystViewsTool', () => {
         // 뷰가 끝나지 않았어도 시세 요청은 이미 나갔다.
         await vi.waitFor(() => expect(getQuote).toHaveBeenCalled());
         release();
-        expect((await pending).available).toBe(true);
+        expect(readAt(await pending, 'available')).toBe(true);
     });
 
     it('15행 + 추정치 4기간(실제보다 무거운 값)이 전용 상한 안이고, 추정치는 그대로 실린다', async () => {

@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 const {
     getEntry,
@@ -66,7 +66,6 @@ vi.mock('../upstashRest.mjs', () => ({
 }));
 
 import { createRequire } from 'node:module';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import CacheHandler, {
     collectTags,
     isImmediateExpiry,
