@@ -2,7 +2,8 @@ import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
-    nextAnonNudgeVariant,
+    claimNextAnonNudgeVariant,
+    ANON_NUDGE_VARIANT_ORDER,
     ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD,
 } from '@/shared/lib/anonAnalysisCount';
 import {
@@ -140,37 +141,64 @@ describe('recordAnonSymbolAnalysis', () => {
     });
 });
 
-describe('nextAnonNudgeVariant', () => {
+describe('claimNextAnonNudgeVariant', () => {
     beforeEach(() => {
         localStorage.clear();
     });
 
-    it('기록이 없으면 메일 리포트부터, 이후로는 번갈아 고른다', () => {
-        expect(nextAnonNudgeVariant()).toBe('emailReport');
-        expect(nextAnonNudgeVariant()).toBe('reasoning');
-        expect(nextAnonNudgeVariant()).toBe('emailReport');
+    it('문구마다 한 번씩: 메일 리포트, 상세 분석 순으로 고르고 그 뒤로는 null이다', () => {
+        expect(ANON_NUDGE_VARIANT_ORDER).toEqual(['emailReport', 'reasoning']);
+        expect(claimNextAnonNudgeVariant()).toBe('emailReport');
+        expect(claimNextAnonNudgeVariant()).toBe('reasoning');
+        expect(claimNextAnonNudgeVariant()).toBeNull();
+        expect(claimNextAnonNudgeVariant()).toBeNull();
+    });
+
+    it('다 보여 준 뒤에도 기록은 마지막 문구로 남는다', () => {
+        claimNextAnonNudgeVariant();
+        claimNextAnonNudgeVariant();
+        claimNextAnonNudgeVariant();
+        expect(localStorage.getItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY)).toBe(
+            'reasoning'
+        );
     });
 
     it('고른 문구를 문서화된 키에 기록한다', () => {
-        nextAnonNudgeVariant();
+        claimNextAnonNudgeVariant();
         expect(localStorage.getItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY)).toBe(
             'emailReport'
         );
     });
 
-    it('알 수 없는 값이 저장돼 있으면 메일 리포트로 시작한다', () => {
+    it('알 수 없는 값이 저장돼 있으면 null이고 기록을 건드리지 않는다', () => {
         localStorage.setItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY, 'garbage');
-        expect(nextAnonNudgeVariant()).toBe('emailReport');
+        expect(claimNextAnonNudgeVariant()).toBeNull();
+        expect(localStorage.getItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY)).toBe(
+            'garbage'
+        );
     });
 
-    it('저장소가 막혀 있으면 던지지 않고 메일 리포트로 고정된다', () => {
+    it('저장소를 읽을 수 없으면 던지지 않고 null이다', () => {
         const spy = vi
             .spyOn(Storage.prototype, 'getItem')
             .mockImplementation(() => {
                 throw new Error('storage blocked');
             });
         try {
-            expect(nextAnonNudgeVariant()).toBe('emailReport');
+            expect(claimNextAnonNudgeVariant()).toBeNull();
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it('저장소에 쓸 수 없으면 던지지 않고 null이다', () => {
+        const spy = vi
+            .spyOn(Storage.prototype, 'setItem')
+            .mockImplementation(() => {
+                throw new Error('quota');
+            });
+        try {
+            expect(claimNextAnonNudgeVariant()).toBeNull();
         } finally {
             spy.mockRestore();
         }

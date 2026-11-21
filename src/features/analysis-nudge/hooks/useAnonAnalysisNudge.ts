@@ -7,7 +7,7 @@ import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
-    nextAnonNudgeVariant,
+    claimNextAnonNudgeVariant,
     type SignupNudgeVariant,
 } from '@/shared/lib/anonAnalysisCount';
 import {
@@ -15,6 +15,8 @@ import {
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
 import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
+import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 /** Return value of {@link useAnonAnalysisNudge}. */
 export interface UseAnonAnalysisNudgeResult {
@@ -71,9 +73,14 @@ export interface UseAnonAnalysisNudgeResult {
  * The caller passes `openNudge` (the provider's shared opener); crossing the
  * threshold invokes it instead of a local `setState`.
  *
- * Each auto-nudge alternates its copy (`nextAnonNudgeVariant`) between the
- * reasoning and email-report pitches, and is also capped to one nudge modal
- * per tab session (`nudgeSession`) so it never stacks with another nudge.
+ * The auto-nudge opens only on a return visit day (`readIsReturnVisitDay`, a
+ * read-only look at the stored first-visit date): the first visit day never
+ * auto-opens, and nothing is marked shown then. Each copy is shown at most
+ * once per browser (`claimNextAnonNudgeVariant`: email report, then reasoning,
+ * then never again). Blocked storage never auto-opens, since the cap cannot be
+ * kept. It is also capped to one nudge modal per tab session (`nudgeSession`)
+ * so it never stacks with another nudge. Modals the visitor opens by clicking
+ * a locked control are unrelated and unchanged.
  *
  * @param openNudge Shared opener from `useSymbolModel().openSignupNudgeAs`. Must
  *   be a stable reference (the provider memoizes it with `useCallback`) so
@@ -96,12 +103,18 @@ export function useAnonAnalysisNudge(
 
             const { distinctCount } = recordAnonSymbolAnalysis(symbol);
             if (distinctCount < ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD) return;
+            // 이벤트 시점에 읽는다(렌더 상태가 아니다). 첫 방문일에는 띄우지 않고, 이때는 "오늘 보여 줬다"
+            // 표시도 하지 않는다.
+            if (!readIsReturnVisitDay(kstDateKey(new Date()))) return;
             if (hasNudgeShownToday()) return;
             if (hasNudgeShownThisSession()) return;
 
+            const variant = claimNextAnonNudgeVariant();
+            if (variant === null) return;
+
             markNudgeShownToday();
             markNudgeShownThisSession();
-            openNudge(nextAnonNudgeVariant());
+            openNudge(variant);
         },
         [isAnonymous, openNudge]
     );

@@ -8,7 +8,7 @@ import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
-    nextAnonNudgeVariant,
+    claimNextAnonNudgeVariant,
     type SignupNudgeVariant,
 } from '@/shared/lib/anonAnalysisCount';
 import {
@@ -16,6 +16,8 @@ import {
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
 import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
+import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
@@ -26,7 +28,11 @@ vi.mock('@/shared/lib/anonAnalysisCount', () => ({
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
-    nextAnonNudgeVariant: vi.fn(),
+    claimNextAnonNudgeVariant: vi.fn(),
+}));
+
+vi.mock('@/features/visitor-ping/lib/visitHistoryStorage', () => ({
+    readIsReturnVisitDay: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/nudgeSession', () => ({
@@ -43,7 +49,8 @@ const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockRecord = vi.mocked(recordAnonSymbolAnalysis);
 const mockHasShown = vi.mocked(hasNudgeShownToday);
 const mockMarkShown = vi.mocked(markNudgeShownToday);
-const mockNextVariant = vi.mocked(nextAnonNudgeVariant);
+const mockNextVariant = vi.mocked(claimNextAnonNudgeVariant);
+const mockReturnDay = vi.mocked(readIsReturnVisitDay);
 const mockSessionShown = vi.mocked(hasNudgeShownThisSession);
 const mockMarkSession = vi.mocked(markNudgeShownThisSession);
 
@@ -77,6 +84,8 @@ describe('useAnonAnalysisNudge', () => {
         mockNextVariant.mockReset();
         mockSessionShown.mockReset();
         mockMarkSession.mockReset();
+        mockReturnDay.mockReset();
+        mockReturnDay.mockReturnValue(true);
         mockVocDue.mockReset();
         mockVocDue.mockReturnValue(false);
         mockHasShown.mockReturnValue(false);
@@ -128,7 +137,7 @@ describe('useAnonAnalysisNudge', () => {
         expect(mockRecord).toHaveBeenCalledWith('AAPL');
     });
 
-    it('opens the shared modal with the next copy variant when the threshold is reached and not shown today', () => {
+    it('opens the shared modal with the claimed copy variant when the threshold is reached and not shown today', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
             distinctCount: 3,
@@ -147,6 +156,92 @@ describe('useAnonAnalysisNudge', () => {
         expect(openNudge).toHaveBeenCalledWith('reasoning');
         expect(mockMarkShown).toHaveBeenCalledTimes(1);
         expect(mockMarkSession).toHaveBeenCalledTimes(1);
+    });
+
+    describe('return visit day gate', () => {
+        const AT_THRESHOLD = { distinctCount: 3, crossedThreshold: true };
+
+        beforeEach(() => {
+            mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
+            mockRecord.mockReturnValue(AT_THRESHOLD);
+        });
+
+        it('does not open on the first visit day, and does not mark anything shown or claim a copy', () => {
+            mockReturnDay.mockReturnValue(false);
+
+            const { result } = renderHook(() =>
+                useAnonAnalysisNudge(openNudge)
+            );
+            act(() => {
+                result.current.onSymbolAnalyzed('NVDA');
+            });
+
+            expect(openNudge).not.toHaveBeenCalled();
+            expect(mockMarkShown).not.toHaveBeenCalled();
+            expect(mockMarkSession).not.toHaveBeenCalled();
+            expect(mockNextVariant).not.toHaveBeenCalled();
+        });
+
+        it('asks for the return visit day with the KST date key of now', () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-11-21T18:00:00.000Z'));
+            try {
+                const { result } = renderHook(() =>
+                    useAnonAnalysisNudge(openNudge)
+                );
+                act(() => {
+                    result.current.onSymbolAnalyzed('NVDA');
+                });
+
+                expect(mockReturnDay).toHaveBeenCalledWith(
+                    kstDateKey(new Date('2026-11-21T18:00:00.000Z'))
+                );
+                expect(mockReturnDay).toHaveBeenCalledWith('2026-11-22');
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('shows each copy once: emailReport, then reasoning, then never again', () => {
+            mockNextVariant
+                .mockReturnValueOnce('emailReport')
+                .mockReturnValueOnce('reasoning')
+                .mockReturnValue(null);
+
+            const { result } = renderHook(() =>
+                useAnonAnalysisNudge(openNudge)
+            );
+            const analyzeOnAnotherDay = (): void => {
+                act(() => {
+                    result.current.onSymbolAnalyzed('NVDA');
+                });
+            };
+            analyzeOnAnotherDay();
+            analyzeOnAnotherDay();
+            analyzeOnAnotherDay();
+
+            expect(openNudge).toHaveBeenCalledTimes(2);
+            expect(openNudge).toHaveBeenNthCalledWith(1, 'emailReport');
+            expect(openNudge).toHaveBeenNthCalledWith(2, 'reasoning');
+            // 세 번째 날에는 문구가 없어 열지도, "오늘 보여 줬다"로 표시하지도 않는다.
+            expect(mockMarkShown).toHaveBeenCalledTimes(2);
+            expect(mockMarkSession).toHaveBeenCalledTimes(2);
+        });
+
+        it('does not open when no copy is left', () => {
+            mockNextVariant.mockReturnValue(null);
+
+            const { result } = renderHook(() =>
+                useAnonAnalysisNudge(openNudge)
+            );
+            act(() => {
+                result.current.onSymbolAnalyzed('NVDA');
+            });
+
+            expect(openNudge).not.toHaveBeenCalled();
+            expect(mockMarkShown).not.toHaveBeenCalled();
+            expect(mockMarkSession).not.toHaveBeenCalled();
+        });
     });
 
     it('does not open the modal when another nudge was already shown this tab session', () => {

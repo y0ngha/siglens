@@ -161,7 +161,12 @@ vi.mock('@/shared/lib/anonAnalysisCount', () => ({
     recordAnonSymbolAnalysis: vi.fn(),
     hasNudgeShownToday: vi.fn(),
     markNudgeShownToday: vi.fn(),
-    nextAnonNudgeVariant: vi.fn(() => 'emailReport'),
+    claimNextAnonNudgeVariant: vi.fn(() => 'emailReport'),
+}));
+
+// 자동 넛지는 재방문일에만 열린다. 이 파일은 경합을 보는 것이라 재방문일로 고정한다.
+vi.mock('@/features/visitor-ping/lib/visitHistoryStorage', () => ({
+    readIsReturnVisitDay: vi.fn(() => true),
 }));
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
