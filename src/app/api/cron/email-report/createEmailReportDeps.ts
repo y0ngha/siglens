@@ -3,6 +3,7 @@ import {
     DrizzleEmailReportDeliveryRepository,
     DrizzleEmailReportExclusionRepository,
     DrizzleEmailReportSubscriptionRepository,
+    DrizzleEmailReportWelcomeRepository,
 } from '@/entities/email-report/api';
 import {
     getReportEmailTranslator,
@@ -36,6 +37,7 @@ export function createEmailReportDeps(
     return {
         subscriptions: new DrizzleEmailReportSubscriptionRepository(db),
         deliveries: new DrizzleEmailReportDeliveryRepository(db),
+        welcomes: new DrizzleEmailReportWelcomeRepository(db),
         findHoldings: userId => portfolio.findByUser(userId),
         findWatchlist: userId => watchlist.findByUser(userId),
         findExcludedSymbols: userId => exclusions.findExcludedSymbols(userId),
