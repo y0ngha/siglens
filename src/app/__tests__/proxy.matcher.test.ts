@@ -48,6 +48,10 @@ describe('proxy matcher', () => {
         );
     });
 
+    it('llms.txt는 프록시를 타지 않는다 (두 호스트 모두 rewrite로 라우트에 닿는다)', () => {
+        expect(matchesProxy('/llms.txt')).toBe(false);
+    });
+
     it('robots.txt·sitemap.xml은 명시 항목 때문에 프록시를 탄다', () => {
         expect(matchesProxy('/robots.txt')).toBe(true);
         expect(matchesProxy('/sitemap.xml')).toBe(true);

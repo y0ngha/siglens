@@ -225,6 +225,10 @@ const nextConfig: NextConfig = {
         // 동적 라우트에 진다. `.xml`이라 프록시 matcher를 타지 않고, ai 호스트는 라우트가
         // 404로 거른다. 경로 상수는 `shared/config/rssFeed.ts`(RSS_FEED_PATH)와 같아야 한다.
         { source: '/rss.xml', destination: '/api/rss' },
+        // 답변 엔진용 안내 파일. RSS와 같은 이유로 rewrite다(루트 라우트 파일은 `[symbol]`에 진다). `.txt`라 프록시
+        // matcher를 타지 않아 두 호스트 모두 이 rewrite에 닿고, 라우트가 Host로 본문을 고른다. 경로 상수는
+        // `shared/config/llmsTxt.ts`(LLMS_TXT_PATH)와 같아야 한다. `public/llms.txt`를 만들면 이 rewrite를 가린다.
+        { source: '/llms.txt', destination: '/api/llms' },
         // 공포·탐욕 기록 내려받기 여섯 개(`/fear-greed/data.csv` 등). RSS와 같은 이유로 rewrite다
         // — 루트 쪽 파일은 `[locale]/[symbol]`에 진다. `.csv`는 프록시 matcher의 확장자 제외
         // 목록에 있어 rewrite가 로케일·심볼 정규화가 붙지 않은 원래 경로를 본다(`.json`도 마찬가지).
