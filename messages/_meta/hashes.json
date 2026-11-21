@@ -727,6 +727,7 @@
     "entities.auth.error.oauthConsentExpired": "567d57a148b0",
     "entities.auth.error.oauthConsentInvalid": "b730a4389fbe",
     "entities.auth.error.oauthEmailConflict": "e91bde389c59",
+    "entities.auth.error.oauthEmailUnverified": "9f6be1d1f8f9",
     "entities.auth.error.oauthProfileInvalid": "bcfde6217259",
     "entities.auth.error.oauthUnknown": "07169dbec2ea",
     "entities.auth.error.passwordResetFailed": "315b20f12a73",

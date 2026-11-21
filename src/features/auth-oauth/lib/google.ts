@@ -23,6 +23,8 @@ interface GoogleUserInfoResponse {
     email?: string;
     name?: string;
     picture?: string;
+    /** 엄격한 boolean `true`일 때만 true. 누락·문자열·다른 타입은 미인증으로 본다. */
+    emailVerified: boolean;
 }
 
 /** 문자열일 때만 값을 쓰고, 그 외(누락·다른 타입)는 없는 것으로 본다. */
@@ -101,6 +103,7 @@ async function requestUserInfo(
         email: stringOrUndefined(fields.email),
         name: stringOrUndefined(fields.name),
         picture: stringOrUndefined(fields.picture),
+        emailVerified: fields.email_verified === true,
     };
 }
 
@@ -130,6 +133,12 @@ export const googleOAuthAdapter: OAuthProviderAdapter = {
         if (!profile) return { ok: false, reason: 'profile_fetch_failed' };
         if (!profile.sub || !profile.email)
             return { ok: false, reason: 'email_missing' };
+        // 인증되지 않은 주소는 공격자가 고른 값일 수 있다. 이미 연결된 계정도 막는다(fail
+        // closed). 로그에는 이메일·sub·응답 본문을 남기지 않는다.
+        if (!profile.emailVerified) {
+            console.warn('[googleOAuthAdapter] userinfo email is not verified');
+            return { ok: false, reason: 'email_unverified' };
+        }
 
         return {
             ok: true,

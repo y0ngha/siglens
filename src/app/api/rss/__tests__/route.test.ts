@@ -385,6 +385,84 @@ describe('GET /api/rss', () => {
     });
 });
 
+describe('GET /api/rss guid 정체성', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const stored = bodies();
+        wirePageReaders(stored);
+        stampsMatching(stored);
+        mocks.loadStaticChildEntries.mockResolvedValue(
+            buildStaticEntries(new Date('2026-10-04T12:00:00Z'))
+        );
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    async function guidsAt(instant: string): Promise<string[]> {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(instant));
+        return itemGuids(await (await GET(request())).text());
+    }
+
+    it('guid는 요청 시각과 무관하다 - 같은 본문과 스탬프면 두 요청의 guid가 같다', async () => {
+        // KST 날짜가 다른 두 시각(18시간 간격)에서 피드를 만든다.
+        const first = await guidsAt('2026-10-04T03:00:00.000Z');
+        const second = await guidsAt('2026-10-04T21:00:00.000Z');
+
+        expect(first.length).toBeGreaterThan(0);
+        expect(second).toEqual(first);
+    });
+
+    it('guid는 스탬프 시각이 아니라 본문에서 나온다', async () => {
+        const stored = bodies();
+        const marketItem = (xml: string) =>
+            xml.match(
+                new RegExp(
+                    `<guid isPermaLink="false">${SITE_URL}/market#[0-9a-f]{12}</guid>\\s*<pubDate>([^<]*)</pubDate>`
+                )
+            );
+
+        stampsMatching(stored, '2026-10-04T03:00:00.000Z');
+        const xmlBefore = await (await GET(request())).text();
+        stampsMatching(stored, '2026-10-05T07:30:00.000Z');
+        const xmlAfter = await (await GET(request())).text();
+
+        expect(itemGuids(xmlAfter)).toEqual(itemGuids(xmlBefore));
+        expect(marketItem(xmlBefore)?.[1]).toBe(
+            new Date('2026-10-04T03:00:00.000Z').toUTCString()
+        );
+        expect(marketItem(xmlAfter)?.[1]).toBe(
+            new Date('2026-10-05T07:30:00.000Z').toUTCString()
+        );
+    });
+
+    it('본문이 바뀌면 그 표면의 guid만 바뀐다', async () => {
+        const before = itemGuids(await (await GET(request())).text());
+        const changed = {
+            ...bodies(),
+            [rssMarketSurface('us')]: {
+                summary: '장 마감 뒤 새로 쓴 본문입니다.',
+            },
+        };
+        wirePageReaders(changed);
+        stampsMatching(changed);
+
+        const after = itemGuids(await (await GET(request())).text());
+
+        const isUsMarket = (guid: string) =>
+            guid.startsWith(`${SITE_URL}/market#`);
+        expect(after.filter(isUsMarket)).not.toEqual(before.filter(isUsMarket));
+        expect(after.filter(isUsMarket)).toHaveLength(1);
+        expect(after.filter(guid => !isUsMarket(guid))).toEqual(
+            before.filter(guid => !isUsMarket(guid))
+        );
+    });
+});
+
 describe('nextConfig RSS rewrite', () => {
     it('공개 /rss.xml을 API 라우트로 보낸다 — 루트 라우트 파일은 [symbol] 동적 라우트에 진다', async () => {
         const rewrites = await nextConfig.rewrites?.();

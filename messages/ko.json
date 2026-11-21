@@ -563,6 +563,7 @@
                 "oauthConsentExpired": "가입 시간이 만료되었습니다. 다시 시도해주세요.",
                 "oauthConsentInvalid": "잘못된 가입 요청입니다. 처음부터 다시 시작해주세요.",
                 "oauthEmailConflict": "이미 비밀번호로 가입된 이메일입니다. 비밀번호로 로그인해주세요.",
+                "oauthEmailUnverified": "Google 계정의 이메일 주소가 인증되지 않았습니다. Google 계정에서 이메일 인증을 마친 뒤 다시 시도해 주세요.",
                 "oauthProfileInvalid": "소셜 로그인 정보를 확인할 수 없습니다.",
                 "oauthUnknown": "소셜 로그인 중 알 수 없는 오류가 발생했습니다.",
                 "passwordResetFailed": "비밀번호 재설정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",

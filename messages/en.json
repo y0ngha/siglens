@@ -558,6 +558,7 @@
                 "oauthConsentExpired": "The sign-up window has expired. Please try again.",
                 "oauthConsentInvalid": "That sign-up request is invalid. Please start over.",
                 "oauthEmailConflict": "This email is already registered with a password. Please sign in with your password.",
+                "oauthEmailUnverified": "Your Google account's email address is not verified. Verify it in your Google account, then try again.",
                 "oauthProfileInvalid": "We could not verify your social sign-in details.",
                 "oauthUnknown": "An unknown error occurred during social sign-in.",
                 "passwordResetFailed": "An error occurred while resetting your password. Please try again in a moment.",

@@ -42,6 +42,8 @@ describe('CDN_CACHE_TAG_HEADER_RULES', () => {
         '/sitemap.xml',
         '/rss.xml',
         '/robots.txt',
+        // 두 호스트 안내 파일. 본문이 배포와 게이트로 바뀌므로 배포마다 지운다.
+        '/llms.txt',
         '/manifest.webmanifest',
         '/sw.js',
         '/offline.html',

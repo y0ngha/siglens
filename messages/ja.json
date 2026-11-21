@@ -558,6 +558,7 @@
                 "oauthConsentExpired": "登録の有効期限が切れました。もう一度お試しください。",
                 "oauthConsentInvalid": "不正な登録リクエストです。最初からやり直してください。",
                 "oauthEmailConflict": "このメールアドレスはすでにパスワードで登録されています。パスワードでログインしてください。",
+                "oauthEmailUnverified": "Google アカウントのメールアドレスが確認されていません。Google アカウントでメールアドレスを確認してから、もう一度お試しください。",
                 "oauthProfileInvalid": "ソーシャルログイン情報を確認できません。",
                 "oauthUnknown": "ソーシャルログイン中に不明なエラーが発生しました。",
                 "passwordResetFailed": "パスワードの再設定中にエラーが発生しました。しばらくしてからもう一度お試しください。",
