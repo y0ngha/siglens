@@ -2,7 +2,9 @@
 
 Test conventions for Siglens (split out of CONVENTIONS.md). Cite rules as `TESTING.md#TE-N`.
 
-**Rule IDs**: every rule carries a stable `TE-N` ID with an anchor line above its heading. IDs are never renumbered or reused; a new rule takes the highest existing number + 1 (gaps such as TE-32/TE-35 stay empty). Sections group rules by topic, so numbers are not contiguous within a section.
+**Rule IDs**: every rule carries a stable `TE-N` ID with an anchor line above its heading. IDs are never renumbered or reused; a new rule takes the highest number among its anchors and the retired IDs below, + 1. Sections group rules by topic, so numbers are not contiguous within a section.
+
+Retired IDs: TE-32, TE-35
 
 ## File Locations
 

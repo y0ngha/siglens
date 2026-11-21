@@ -6,7 +6,7 @@ General coding rules. Client-side rules (hooks, components, effects, charts, Tai
 
 Rules that are cited from code comments, reviews, or other docs carry a stable ID in the form `PREFIX-N`,
 with an explicit anchor line directly above the heading (`<a id="CP-2"></a>`).
-Cite them as `CONVENTIONS.md#CP-2`. IDs are never renumbered or reused; a new rule takes the highest existing number of its prefix + 1; if a rule is deleted, delete its references in the same change.
+Cite them as `CONVENTIONS.md#CP-2`. IDs are never renumbered or reused; a new rule takes the highest number of its prefix among anchors and `Retired IDs` + 1; if a rule is deleted, delete its references in the same change and list its ID on this file's `Retired IDs:` line.
 `src/__tests__/guards/ruleReferences.test.ts` fails on any reference that does not resolve to an anchor.
 
 | Prefix | Topic |

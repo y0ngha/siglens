@@ -164,6 +164,7 @@ Check the changed code against the live rule documents loaded in Step 2: the rel
 (Comments & Documentation, Change Synchronization and the section matching the code are always relevant),
 REACT.md for client code, SERVER.md for server code, TESTING.md for tests, FF.md, DESIGN.md for UI, and the CLAUDE.md of each touched layer.
 Cite each violated rule in the finding's `reason` as `FILE#ID` (e.g. `CONVENTIONS.md#CS-5`, `TESTING.md#TE-1`).
+A violation that an oxlint rule (`.oxlintrc.json`) or a guard test (`src/__tests__/guards`) already catches is reported by CI, not as a review finding. Do not spend a finding on it.
 
 ---
 
