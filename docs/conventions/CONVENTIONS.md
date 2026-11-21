@@ -384,6 +384,7 @@ Prefer a type guard, a narrowing helper, `satisfies`, or (when null is logically
 A cast is acceptable only when TypeScript cannot express a constraint the runtime provably satisfies, and then it **must carry a comment stating the guarantee**:
 
 - `Object.fromEntries(pairs) as Record<K, V>` and `Object.keys(record) as T[]` (keys widen to `string`, but `Record<T, …>` guarantees them) are the sanctioned safe-casts.
+- The `fromEntries` cast is sanctioned only when the key set is closed by construction. When the values come from validating external data (parsed JSON), the cast carries the guarantee the validation should have: build the fixed-key record as an explicit object literal with one validating reader per key (`{ lines: readCount(raw, 'lines'), … }`) so each field is narrowed.
 - Test files are exempt from the comment for self-documenting mock casts such as `fn as MockedFunction<typeof fn>`.
 - Replace a post-check `value!` that repeats across call sites with a helper that returns the narrowed type (or throws), e.g. `requireDatabaseUrl()`.
 - Narrow external data (parsed JSON, a `Response` body, `unknown` input) with a type guard instead of asserting its shape (`body as Foo | null`); a double assertion (`as unknown as T`) needs the same WHY comment, in tests too, unless a typed fixture or guard removes the need.

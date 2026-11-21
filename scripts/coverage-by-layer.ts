@@ -106,18 +106,30 @@ const isCount = (value: unknown): value is MetricCount =>
     typeof value.total === 'number' &&
     typeof value.covered === 'number';
 
+const readCount = (
+    path: string,
+    entry: Record<string, unknown>,
+    metric: CoverageMetric
+): MetricCount => {
+    const count = entry[metric];
+    if (!isCount(count)) {
+        throw new Error(
+            `coverage summary entry ${path} has no usable ${metric} counts`
+        );
+    }
+    return count;
+};
+
 const toFileCoverage = (path: string, value: unknown): FileCoverage => {
     if (!isRecord(value)) {
         throw new Error(`coverage summary entry is not an object: ${path}`);
     }
-    const counts = COVERAGE_METRICS.map(metric => [metric, value[metric]]);
-    const broken = counts.find(([, count]) => !isCount(count));
-    if (broken !== undefined) {
-        throw new Error(
-            `coverage summary entry ${path} has no usable ${String(broken[0])} counts`
-        );
-    }
-    return Object.fromEntries(counts) as FileCoverage;
+    return {
+        lines: readCount(path, value, 'lines'),
+        statements: readCount(path, value, 'statements'),
+        functions: readCount(path, value, 'functions'),
+        branches: readCount(path, value, 'branches'),
+    };
 };
 
 export function parseCoverageSummary(raw: string): CoverageSummary {
@@ -142,7 +154,8 @@ export function parseCoverageSummary(raw: string): CoverageSummary {
 /** 절대 경로를 저장소 루트 기준 슬래시 경로로 바꾼다. 루트 밖이면 그대로 둔다. */
 export function toRepoRelativePath(path: string, root: string): string {
     const rel = relative(root, path).replaceAll('\\', '/');
-    return rel.startsWith('..') ? path.replaceAll('\\', '/') : rel;
+    const outsideRoot = rel === '..' || rel.startsWith('../');
+    return outsideRoot ? path.replaceAll('\\', '/') : rel;
 }
 
 export function classifyPath(relativePath: string): string | null {
@@ -169,9 +182,12 @@ const sumMetric = (
 const buildRow = (id: string, files: readonly FileCoverage[]): LayerRow => ({
     id,
     files: files.length,
-    metrics: Object.fromEntries(
-        COVERAGE_METRICS.map(metric => [metric, sumMetric(files, metric)])
-    ) as LayerRow['metrics'],
+    metrics: {
+        lines: sumMetric(files, 'lines'),
+        statements: sumMetric(files, 'statements'),
+        functions: sumMetric(files, 'functions'),
+        branches: sumMetric(files, 'branches'),
+    },
 });
 
 export function buildCoverageReport(

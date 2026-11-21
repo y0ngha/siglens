@@ -96,6 +96,12 @@ describe('toRepoRelativePath', () => {
         );
     });
 
+    it('treats a top-level folder whose name starts with two dots as inside the root', () => {
+        expect(toRepoRelativePath('/repo/..cache/a.ts', ROOT)).toBe(
+            '..cache/a.ts'
+        );
+    });
+
     it('keeps a path outside the root as is', () => {
         expect(toRepoRelativePath('/other/src/shared/a.ts', ROOT)).toBe(
             '/other/src/shared/a.ts'
