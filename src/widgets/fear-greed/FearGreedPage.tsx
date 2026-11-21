@@ -1,44 +1,21 @@
 'use client';
 
 import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { SampleFooterText } from '@/shared/ui/SampleFooterText';
-import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { FEAR_GREED_CHART_HEIGHT } from './constants';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { useFearGreedShareRegistration } from './hooks/useFearGreedShareRegistration';
 import { FearGreedHero } from './FearGreedHero';
+import { LazyFearGreedHistoricalChart } from './LazyFearGreedHistoricalChart';
+import { chartWindow } from './utils/chartWindow';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { FearGreedPageSkeleton } from './ui/page/FearGreedPageSkeleton';
 import { FearGreedUnavailable } from './ui/page/FearGreedUnavailable';
-
-/**
- * 추이 차트는 `lightweight-charts`(원본 ~177KB)를 쓴다. 정적으로 import하면 이 탭의 첫 JS에
- * 실리는데 차트는 하이드레이션 뒤에야 그려지고 첫 화면 아래에 있다. 차트 탭처럼 지연 로드한다.
- * 자리는 차트와 같은 높이로 미리 잡아 도착할 때 아래 내용이 밀리지 않게 한다.
- */
-const FearGreedHistoricalChart = dynamic(
-    () =>
-        import('@/widgets/fear-greed/FearGreedHistoricalChart').then(
-            m => m.FearGreedHistoricalChart
-        ),
-    {
-        ssr: false,
-        loading: () => (
-            <div
-                aria-hidden="true"
-                className="w-full animate-pulse rounded bg-secondary-800/40 motion-reduce:animate-none"
-                style={{ height: FEAR_GREED_CHART_HEIGHT }}
-            />
-        ),
-    }
-);
 
 interface FearGreedPageProps {
     symbol: string;
@@ -107,7 +84,6 @@ function FearGreedPageBody({
     hideSampleFooter = false,
 }: Omit<FearGreedPageProps, 'hasSeed'>) {
     const t = useTranslations('widgets.fear-greed');
-    const themeVersion = useThemeVersion();
     // seed 재조회는 사람 입력 이후로 미룬다 — 크롤러 렌더마다 나가던 Server Action을 없앤다.
     const humanInteracted = useHumanInteracted();
     const { snapshot, history, dataUpdatedAt } = useFearGreedFromSymbol({
@@ -131,6 +107,8 @@ function FearGreedPageBody({
     // 렌더는 SSR과 **같은 seed**를 읽으므로 텍스트가 갈리지 않고, 입력 뒤의 재조회 결과는
     // 평범한 React 업데이트다. 추이 차트만 `ssr: false`로 브라우저에서 그린다.
     if (!snapshot) return <FearGreedUnavailable />;
+    // 제목의 기간도 차트가 그리는 점에서 정한다(암호화폐는 252일 = 약 8개월).
+    const trendWindow = chartWindow(history);
 
     return (
         <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -159,11 +137,14 @@ function FearGreedPageBody({
             </div>
 
             <section className="flex flex-col gap-2">
-                <h2 className={HEADING_SECTION}>{t('FearGreedPage.180c65')}</h2>
-                <FearGreedHistoricalChart
-                    key={themeVersion}
-                    history={history}
-                />
+                <h2 className={HEADING_SECTION}>
+                    {trendWindow.kind === 'year'
+                        ? t('FearGreedPage.180c65')
+                        : t('FearGreedPage.trendMonths', {
+                              months: trendWindow.months,
+                          })}
+                </h2>
+                <LazyFearGreedHistoricalChart history={history} />
             </section>
 
             {!hideSampleFooter && (
