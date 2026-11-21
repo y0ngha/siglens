@@ -166,6 +166,17 @@ describe('loginAction', () => {
                 value: 'tok',
             })
         );
+        // ai 호스트가 읽는 메인 로그인 흔적(부모 도메인, HttpOnly)도 함께 심는다.
+        expect(setSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_signed_in',
+                value: '1',
+                domain: 'siglens.io',
+                path: '/',
+                httpOnly: true,
+                sameSite: 'lax',
+            })
+        );
     });
 
     /**

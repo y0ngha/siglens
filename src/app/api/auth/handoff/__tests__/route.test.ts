@@ -10,6 +10,7 @@ vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({
 }));
 vi.mock('@/shared/config/aiHost', () => ({
     AI_SITE_URL: 'https://ai.siglens.io',
+    MAIN_SITE_URL: 'https://siglens.io',
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
 
@@ -18,6 +19,9 @@ import { GET } from '@/app/api/auth/handoff/route';
 
 const STATE = 'b'.repeat(64);
 const CODE = 'c'.repeat(64);
+const HINT = 'siglens_signed_in';
+const hintCookies = (res: Response) =>
+    res.headers.getSetCookie().filter(c => c.startsWith(`${HINT}=`));
 const req = (qs: string, host = 'siglens.io') =>
     new NextRequest(`https://${host}/api/auth/handoff${qs}`, {
         headers: { host },
@@ -42,6 +46,7 @@ describe('GET /api/auth/handoff (main host: issue)', () => {
             next: '/c/abc',
             state: STATE,
         });
+        expect(hintCookies(res)).toEqual([]);
     });
 
     it('no session → ai next with ?sso=none', async () => {
@@ -55,6 +60,19 @@ describe('GET /api/auth/handoff (main host: issue)', () => {
         );
         expect(res.headers.get('cache-control')).toBe('no-store');
         expect(m.issue).not.toHaveBeenCalled();
+    });
+
+    it('no session → clears the stale sign-in hint (Domain=siglens.io, Max-Age=0, HttpOnly)', async () => {
+        m.user.mockResolvedValue(null);
+        const res = await GET(req(`?to=ai&next=%2F&state=${STATE}`));
+        const [hint, ...rest] = hintCookies(res);
+        expect(rest).toEqual([]);
+        expect(hint).toContain(`${HINT}=;`);
+        expect(hint).toContain('Domain=siglens.io');
+        expect(hint).toContain('Max-Age=0');
+        expect(hint).toContain('Path=/');
+        expect(hint).toContain('HttpOnly');
+        expect(hint).toContain('SameSite=lax');
     });
 
     it.each([
@@ -117,6 +135,7 @@ describe('GET /api/auth/handoff (main host: issue)', () => {
                 'https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fabc'
             );
             expect(res.headers.get('cache-control')).toBe('no-store');
+            expect(hintCookies(res)).toEqual([]);
         }
         expect(m.user).not.toHaveBeenCalled();
     });
@@ -131,6 +150,8 @@ describe('GET /api/auth/handoff (main host: issue)', () => {
             expect(res.headers.get('location')).toBe(
                 'https://ai.siglens.io/c/abc?sso=none'
             );
+            // The session is valid: the hint stays.
+            expect(hintCookies(res)).toEqual([]);
             expect(spy).toHaveBeenCalledTimes(1);
             expect(spy.mock.calls[0]?.[0]).toBe('[handoff] redis unavailable');
         } finally {

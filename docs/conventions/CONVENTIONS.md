@@ -1023,6 +1023,10 @@ use; a disclosure names every flow and analysis kind that sends the value, and s
 nothing; a new use extends the purpose list; stores found during the revision that were never disclosed (user-supplied
 keys, bands, counters) are added in the same change. Parallel locale texts use the same enumeration and punctuation.
 
+State the bound the code actually enforces: a cookie or record lifetime is its maximum across every set path (a lazy
+catch-up path may write a fresh full term, so "as long as the session" is false), and cookie scope is the real domain
+(a parent-domain cookie covers every subdomain, not only the hosts you named).
+
 A privacy claim ("the link address is not recorded") is checked against every stored field that can hold the value
 (an older column may already keep the raw path) and against rows written before the change; when old rows contradict
 the claim, ship an idempotent backfill in the same change. User-facing examples use plain language, not internal code values.

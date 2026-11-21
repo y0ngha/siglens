@@ -105,6 +105,10 @@ try { repo.recordVisit(client); } catch { return log_and_204; }
 try { repo.recordVisit(getDatabaseClient()); } catch { return log_and_204; }
 ```
 
+The inverse also holds: a best-effort side effect (syncing a hint cookie, warming a cache) gets its own `try/catch` and log,
+separate from the primary lookup, so the function's return value depends only on that lookup and a failed side effect
+cannot turn a confirmed result into a fallback one.
+
 Cleanup code follows the same rule: do not call an unguarded cleanup step in front of a `try/catch`'d one
 (for example `detachCulling()` before a guarded series removal).
 

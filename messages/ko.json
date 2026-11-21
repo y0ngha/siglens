@@ -135,6 +135,40 @@
             },
             "factorExtremeItem": "{factor}(백분위 {percentile})",
             "factorExtremes": "지금 가장 공포 쪽에 있는 요인은 {fear}이고, 가장 탐욕 쪽에 있는 요인은 {greed}입니다.",
+            "history": {
+                "chartRange": "{from}부터 {to}까지",
+                "chartTitle": "최근 추이",
+                "colChange": "전 거래일 대비",
+                "colChangeDaily": "전날 대비",
+                "colDate": "날짜",
+                "colHigh": "최고",
+                "colLabel": "구간",
+                "colLow": "최저",
+                "colMonth": "월",
+                "colMonthLast": "마지막 점수",
+                "colScore": "점수",
+                "coverage": "{from}부터 {to}까지 날마다 계산한 점수 {count}개를 모았습니다.",
+                "date": "{year}년 {month}월 {day}일",
+                "downloadCsv": "CSV 파일",
+                "downloadJson": "JSON 파일",
+                "downloadLead": "전체 기록은 파일로 받을 수 있습니다.",
+                "downloadNote": "파일에는 날짜, 점수, 구간만 들어 있고 가격 자료는 없습니다.",
+                "extremeCell": "{score}({day}일)",
+                "month": "{year}년 {month}월",
+                "monthFrom": "{year}년 {month}월({day}일부터)",
+                "monthLastCell": "{score}({label})",
+                "monthUntil": "{year}년 {month}월({day}일까지)",
+                "monthlyCaption": "{subject} 월별 공포 탐욕 지수",
+                "monthlyCaptionOlder": "{subject} 월별 공포 탐욕 지수(이전 기록)",
+                "monthlyMore": "이전 {count}개월 보기",
+                "monthlyTitle": "월별 기록",
+                "recalcNote": "각 날의 점수는 그날 이전 기록과 비교해 매깁니다. 비교에 쓰는 기록이 최근 {years}년으로 정해져 있어서, 지난 점수도 날마다 조금씩 달라질 수 있습니다.",
+                "recentCaption": "{subject} 최근 {count}거래일 공포 탐욕 지수",
+                "recentCaptionDaily": "{subject} 최근 {count}일 공포 탐욕 지수",
+                "recentTitle": "최근 {count}거래일",
+                "recentTitleDaily": "최근 {count}일",
+                "title": "지난 점수 기록"
+            },
             "symbolListTitle": "종목별 공포 탐욕 지수"
         },
         "forgot-password": {
@@ -3481,6 +3515,7 @@
                 "extremeZoneOmitted": "이전 기록 {v0}회는 생략했습니다.",
                 "extremeZoneOngoing": "{v0} (진행 중)",
                 "extremeZonePeriod": "집계 기간: {v0} ~ {v1}(이 종목 점수가 계산된 거래일).",
+                "extremeZonePeriodMarket": "집계 기간: {v0} ~ {v1}(이 지수 점수가 계산된 날).",
                 "extremeZoneSessions": "{v0}일",
                 "extremeZoneSummary": "{v0}: {v1}회 진입, 머문 기간 중앙값 {v2}거래일",
                 "extremeZoneTitle": "극단 구간 기록",
@@ -4154,7 +4189,8 @@
                 "yearPartial": "{year}년 (진행 중)"
             },
             "FearGreedHistoricalChart": {
-                "9b98f6": "최근 1년 공포 탐욕 지수 추이 차트"
+                "9b98f6": "최근 1년 공포 탐욕 지수 추이 차트",
+                "ariaMonths": "최근 {months}개월 공포 탐욕 지수 추이 차트"
             },
             "IndicatorMenu": {
                 "panelLabel": "보조지표 설정",
@@ -4504,7 +4540,8 @@
                 "29eed9": "현재 공포 탐욕 지수와 기간별 비교",
                 "7da634": "공포 탐욕 지수 로딩 중",
                 "d6e558": "공포 탐욕 지수 산출에 필요한 데이터가 부족합니다.",
-                "ef5b22": "상장한 지 얼마 되지 않았거나 거래량 데이터가 비어 있는\n                    종목일 수 있습니다. 며칠 뒤 다시 확인하거나, 같은 섹터의\n                    다른 종목을 살펴보세요."
+                "ef5b22": "상장한 지 얼마 되지 않았거나 거래량 데이터가 비어 있는\n                    종목일 수 있습니다. 며칠 뒤 다시 확인하거나, 같은 섹터의\n                    다른 종목을 살펴보세요.",
+                "trendMonths": "공포 탐욕 지수 추이 (최근 {months}개월)"
             },
             "FearGreedPageError": {
                 "f929f0": "공포 탐욕 지수를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",

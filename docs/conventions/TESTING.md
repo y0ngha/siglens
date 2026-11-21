@@ -591,6 +591,15 @@ When behavior or a constant changes, update every layer in the same change; scop
 - ❌ `await page.waitForTimeout(1500); await expect(banner).toHaveCount(0);`
 - ✅ Open and close the menu, wait on `aria-expanded`, then assert `toHaveCount(0)`; the same helper with a different seed shows the banner.
 
+<a id="TE-67"></a>
+
+#### TE-67 — Raw-HTML e2e assertions match attributes case-insensitively
+
+React serializes some attributes in camelCase (`dateTime`, `tabIndex`), so a lowercase pattern over `page.request.get()` HTML never matches. Use the `i` flag on attribute patterns, and run a new e2e once before review; typecheck and Vitest never execute it.
+
+- ❌ `expect(html).toMatch(/<time datetime="/)`
+- ✅ `expect(html).toMatch(/<time datetime="/i)`
+
 <a id="TE-50"></a>
 
 #### TE-50 — Assert inline JSON through the SSR response

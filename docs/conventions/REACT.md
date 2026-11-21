@@ -869,6 +869,15 @@ Never use inline `style` for layout or styling. When a value is only known at ru
 
 Related: compose classes with `cn()` only (never template literals or `+`, even for static multi-part constants: `const CARD = cn('px-4 py-2', 'bg-white')`); colour tokens come from the design system (`DESIGN.md#DS-1`).
 
+<a id="TW-2"></a>
+
+#### TW-2 — Long server-rendered tables hoist repeated cell utilities to the table
+
+A row repeated hundreds of times multiplies every class on every cell, and the same markup is serialized again in the RSC payload. Put shared cell utilities on the table with descendant selectors (`[&_td]:px-3`) and keep per-cell classes only for what differs. Estimate page weight with production-sized data, counting the RSC payload, before review.
+
+- ❌ `<td className="px-3 py-2 text-right tabular-nums">` on every cell of a 1,000-row table.
+- ✅ `<table className="[&_td]:px-3 [&_td]:py-2 [&_td]:text-right [&_td]:tabular-nums">` with plain `<td>`.
+
 ---
 
 ## React Query and Server State Rules

@@ -43,3 +43,13 @@ export const FUNNEL_SIGNUP_COOKIE_NAME = 'siglens_funnel_signup';
 export const AI_SSO_PROBED_COOKIE_NAME = 'siglens_ai_sso_probed';
 /** 30분 — 한 번의 SSO 프로브 결과를 그 정도만 기억하면 재방문 루프를 막기에 충분하다. */
 export const AI_SSO_PROBED_MAX_AGE_SECONDS = 30 * SECONDS_PER_MINUTE;
+
+/**
+ * Main-host sign-in presence flag, scoped to the parent domain so ai.siglens.io
+ * can read it. Value is always "1", HttpOnly, no identifier. Set when the main
+ * host creates a session, cleared when it ends or is found dead
+ * (`entities/auth/lib/mainSessionHintCookie.ts`). The ai pages start the SSO
+ * handoff only when it is present. It is advisory only: the handoff still
+ * validates the real session, nothing trusts this cookie for authentication.
+ */
+export const MAIN_SESSION_HINT_COOKIE_NAME = 'siglens_signed_in';

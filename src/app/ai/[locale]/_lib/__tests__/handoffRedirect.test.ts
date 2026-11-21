@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({
     cookieValue: undefined as string | undefined,
     probedCookieValue: undefined as string | undefined,
+    hintCookieValue: undefined as string | undefined,
+    hintDomain: 'siglens.io' as string | null,
     userAgent: 'Mozilla/5.0 (Macintosh) Chrome/140.0 Safari/537.36',
     redirect: vi.fn((url: string) => {
         throw new Error(`NEXT_REDIRECT:${url}`);
@@ -19,10 +21,23 @@ vi.mock('next/headers', () => ({
                 m.probedCookieValue !== undefined
             )
                 return { name, value: m.probedCookieValue };
+            if (name === 'siglens_signed_in' && m.hintCookieValue !== undefined)
+                return { name, value: m.hintCookieValue };
             return undefined;
         },
     }),
 }));
+vi.mock('@/entities/auth/lib/mainSessionHintCookie', async importOriginal => {
+    const actual =
+        await importOriginal<
+            typeof import('@/entities/auth/lib/mainSessionHintCookie')
+        >();
+    return {
+        ...actual,
+        shouldStartHandoff: (value: string | undefined) =>
+            m.hintDomain === null || actual.shouldStartHandoff(value),
+    };
+});
 vi.mock('next/navigation', () => ({ redirect: m.redirect }));
 
 import { maybeHandoffRedirect } from '@/app/ai/[locale]/_lib/handoffRedirect';
@@ -32,6 +47,8 @@ describe('maybeHandoffRedirect', () => {
         vi.clearAllMocks();
         m.cookieValue = undefined;
         m.probedCookieValue = undefined;
+        m.hintCookieValue = '1';
+        m.hintDomain = 'siglens.io';
         m.userAgent = 'Mozilla/5.0 (Macintosh) Chrome/140.0 Safari/537.36';
     });
 
@@ -40,6 +57,44 @@ describe('maybeHandoffRedirect', () => {
             'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
         await maybeHandoffRedirect('ko', '/', {});
         expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('no main-host sign-in hint -> no redirect: the anonymous visitor sees the page at once', async () => {
+        m.hintCookieValue = undefined;
+        await maybeHandoffRedirect('ko', '/', {});
+        await maybeHandoffRedirect('ko', '/c/abc', {});
+        expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('a hint that is not "1" is not a sign-in -> no redirect', async () => {
+        m.hintCookieValue = '0';
+        await maybeHandoffRedirect('ko', '/', {});
+        expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('hint + ?sso=none -> no redirect (a stale hint cannot loop)', async () => {
+        await maybeHandoffRedirect('ko', '/', { sso: 'none' });
+        expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('hint + probed cookie -> no redirect (a stale hint cannot loop)', async () => {
+        m.probedCookieValue = '1';
+        await maybeHandoffRedirect('ko', '/', {});
+        expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('hint + ai-host session -> no redirect', async () => {
+        m.cookieValue = 'tok';
+        await maybeHandoffRedirect('ko', '/', {});
+        expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('gate inactive (local hosts) + no hint -> still redirects, as before', async () => {
+        m.hintDomain = null;
+        m.hintCookieValue = undefined;
+        await expect(maybeHandoffRedirect('ko', '/', {})).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
     });
 
     it('carries a prefilled ?q= through next', async () => {

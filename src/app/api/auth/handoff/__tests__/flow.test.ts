@@ -40,6 +40,7 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/auth/api', () => ({ DrizzleSessionRepository: vi.fn() }));
 vi.mock('@/shared/config/aiHost', () => ({
     AI_SITE_URL: 'https://ai.siglens.io',
+    MAIN_SITE_URL: 'https://siglens.io',
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
@@ -118,6 +119,30 @@ describe('SSO handoff: start → issue → consume', () => {
             cookies.find(c => c.startsWith('__Host-siglens_ai_sso_state='))
         ).toContain('Max-Age=0');
         // Single use: the code is gone.
+        expect(m.store.size).toBe(0);
+        // The ai session is not a main session: no main-host hint is written here.
+        expect(cookies.some(c => c.startsWith('siglens_signed_in='))).toBe(
+            false
+        );
+    });
+
+    it('stale hint chain: no main session → ends at ?sso=none with the hint cleared, nothing to loop on', async () => {
+        m.user.mockResolvedValue(null);
+        const startRes = await start(
+            request('https://ai.siglens.io/api/auth/handoff/start?next=%2F')
+        );
+        const issueRes = await issue(
+            request(new URL(startRes.headers.get('location') ?? ''))
+        );
+        expect(issueRes.headers.get('location')).toBe(
+            'https://ai.siglens.io/?sso=none'
+        );
+        const hint = issueRes.headers
+            .getSetCookie()
+            .find(c => c.startsWith('siglens_signed_in='));
+        expect(hint).toContain('Max-Age=0');
+        expect(hint).toContain('Domain=siglens.io');
+        // No code was issued, so nothing to consume.
         expect(m.store.size).toBe(0);
     });
 

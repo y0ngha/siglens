@@ -221,6 +221,16 @@ describe('deleteAccountAction', () => {
                     maxAgeSeconds: 0,
                 })
             );
+            // 계정과 모든 세션이 사라졌으니 메인 로그인 흔적도 같은 도메인·경로로 지운다.
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_signed_in',
+                    value: '',
+                    maxAge: 0,
+                    domain: 'siglens.io',
+                    path: '/',
+                })
+            );
         });
     });
 
