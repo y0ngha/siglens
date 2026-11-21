@@ -6,19 +6,17 @@
  * 읽히는 본문이라 여기 남은 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고
  * 훅을 부르지 않고 번역자를 인자로 받는다.
  */
-import type {
-    FearGreedFactor,
-    FearGreedGroupName,
-    FearGreedLabel,
-    FearGreedSnapshot,
-} from '@y0ngha/siglens-core';
 import {
     computeLabelTransitions,
     computeMarketScoreGap,
     POC_WINDOW_DEFAULT,
     summarizeExtremeZoneEpisodes,
     type ExtremeFearGreedZone,
+    type FearGreedFactor,
+    type FearGreedGroupName,
+    type FearGreedLabel,
     type FearGreedReading,
+    type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
 import {
     formatFactorRaw,

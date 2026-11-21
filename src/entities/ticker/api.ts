@@ -19,8 +19,8 @@ import {
     koreanTickers,
     profileDescriptionTranslations,
 } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
 import type {
+    SiglensDatabase,
     AssetTranslationRecord,
     AssetTranslationRepository,
     KoreanTickerRepository,

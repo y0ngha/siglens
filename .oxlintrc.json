@@ -86,6 +86,19 @@
         // 우리 위젯에 적용되지 않는다.
         "jsx-a11y/prefer-tag-over-role": "off",
 
+        // `let`을 한 번만 대입하면 const다(CONVENTIONS.md#CP-4). autofix 가능.
+        "prefer-const": "error",
+
+        // 같은 모듈의 import는 한 문장으로 합친다. autofix 가능.
+        "import/no-duplicates": "error",
+
+        // import는 파일 맨 위에 모은다. 테스트는 `vi.mock`을 import 위에 두는 형태가
+        // TESTING.md#TE-1의 정식 형태라 아래 테스트 override에서 끈다.
+        "import/first": "error",
+
+        // `any` 대신 `unknown`과 좁히기를 쓴다. 억제 주석은 금지(CONVENTIONS.md "Lint and guard rules").
+        "typescript/no-explicit-any": "error",
+
         // src/ 외(스크립트, 설정, e2e)에서는 alias import 제약을 걸지 않는다.
         "no-restricted-imports": "off"
     },
@@ -326,7 +339,9 @@
                 "src/entities/news-article/server/getNewsClient.ts",
                 "src/entities/market-news/api/getMarketNewsClient.ts",
                 "src/entities/options-chain/actions/optionsActions.ts",
-                "src/entities/options-chain/server/getOptionsProvider.ts"
+                "src/entities/options-chain/server/getOptionsProvider.ts",
+                // 모델이 깨뜨린 JSON을 읽을 때만 쓰는 `jsonrepair` 지연 로드(동기 폴백이라 await import 불가).
+                "db/scripts/translateContentLocale.ts"
             ],
             "rules": { "typescript/no-require-imports": "off" }
         },
@@ -367,6 +382,20 @@
                 "import/namespace": "off",
                 "react/exhaustive-deps": "off"
             }
+        },
+        {
+            // 테스트 파일만 `vi.mock`을 import 위에 둔다(TESTING.md#TE-1). e2e 지원 코드나
+            // 운영 코드는 해당하지 않아 규칙을 유지한다.
+            "files": [
+                "src/**/*.test.ts",
+                "src/**/*.test.tsx",
+                "src/**/__tests__/**",
+                "src/__integration__/**",
+                "e2e/**/*.spec.ts",
+                "cache-handler/__tests__/**",
+                "scripts/**/__tests__/**"
+            ],
+            "rules": { "import/first": "off" }
         },
         {
             // `react/purity`(oxlint 1.89부터 correctness)는 렌더 중 `new Date()` 같은 비순수

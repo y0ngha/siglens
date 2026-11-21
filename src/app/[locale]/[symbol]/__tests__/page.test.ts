@@ -160,10 +160,10 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,
+    isRegularSessionOpen,
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
-import { isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';

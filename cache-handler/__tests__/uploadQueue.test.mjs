@@ -1,9 +1,8 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 const { setEntry } = vi.hoisted(() => ({ setEntry: vi.fn() }));
 vi.mock('../s3Store.mjs', () => ({ setEntry: (...a) => setEntry(...a) }));
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
     DRAIN_UPLOADS_SYMBOL,
     registerDrain,

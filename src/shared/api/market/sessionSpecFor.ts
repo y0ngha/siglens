@@ -6,8 +6,10 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import type { SessionModel } from '@/shared/config/marketProfile/types';
+import {
+    type MarketProfileId,
+    type SessionModel,
+} from '@/shared/config/marketProfile/types';
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 const KR_MARKET_OPEN_MINUTE = 9 * 60; // 09:00 KST

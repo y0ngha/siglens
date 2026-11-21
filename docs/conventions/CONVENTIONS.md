@@ -517,17 +517,6 @@ import { cn } from '../../../shared/lib/cn';
 Inside the same slice, cross-segment imports stay relative (`../lib/resolveGateMode`, see "No Barrels" below); the
 alias is for crossing a slice or layer boundary.
 
-Consolidate imports from the same module into one statement (oxlint has no `no-duplicates` rule here, so review catches it):
-
-```typescript
-// ❌
-import { formatUsdPrice } from '@/shared/lib/priceFormat';
-import { formatPriceChange } from '@/shared/lib/priceFormat';
-
-// ✅
-import { formatUsdPrice, formatPriceChange } from '@/shared/lib/priceFormat';
-```
-
 <a id="CS-24"></a>
 
 #### CS-24 — Imports form one block: packages first, then `@/` aliases, then relative
@@ -572,25 +561,23 @@ import { useSymbolModel } from '@/features/symbol-model';
 
 ---
 
-## Lint Rules (oxlint)
+## Lint and guard rules
 
-Never use `eslint-disable`, `eslint-disable-next-line`, or `oxlint-disable` comments — not in production code and not in test helpers.
+Never use `eslint-disable`, `eslint-disable-next-line`, or `oxlint-disable` comments — not in production code and not in test helpers (guarded, see the table).
 When a rule produces a warning, fix the root cause in the code rather than suppressing the rule (restructure deps, use `useEffectEvent` or a ref for stable references; see `REACT.md#EF-1` / `#EF-2`).
 
-```typescript
-// ✅ import/first — imports must be at the top of the file
-import { calculateRSI } from './rsi';
-export * from './rsi';
+### Enforced rules
 
-// ❌ No imports after export *
-export * from './rsi';
-import { calculateRSI } from './rsi';
+A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn lint`, the pre-commit `oxlint --fix`, or `src/__tests__/guards`. CI reports it; review does not re-raise it. The config or guard carries the reason in a comment.
 
-// ✅ no-shadow — do not use browser/Node global names as variable names
-// Prohibited: window, document, location, event, name, length, screen
-```
-
-EOF newline: every file must end with `\n`. Auto-fixed by `yarn format`.
+| Rule | Mechanism | Scope | Fix |
+|---|---|---|---|
+| `let` that is never reassigned (CP-4) | oxlint `prefer-const` (autofix) | all code | Make it `const`. |
+| One import statement per module | oxlint `import/no-duplicates` (autofix) | all code | Merge the specifiers into the first import. |
+| Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
+| No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
+| No lint-disable comments | `src/__tests__/guards/lintDisableDirectives.test.ts` | code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
+| The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
 

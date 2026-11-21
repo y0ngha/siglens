@@ -22,6 +22,8 @@ import {
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
     SECONDS_PER_HOUR,
+    MS_PER_DAY,
+    MS_PER_SECOND,
 } from '@/shared/config/time';
 
 import {
@@ -44,7 +46,6 @@ import {
     getNextEarningsSchedule,
     listReportedEarningsDates,
 } from '@/entities/earnings-report/api';
-import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { zonedDate } from '@/shared/lib/marketSessionDate';

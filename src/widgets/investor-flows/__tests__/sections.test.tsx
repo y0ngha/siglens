@@ -13,8 +13,10 @@ import { AsOfNotice } from '../sections/AsOfNotice';
 import { InvestorFlowsContent } from '../InvestorFlowsContent';
 import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
-import type { CollectingArms } from '@/entities/investor-flows/model';
-import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
+import type {
+    CollectingArms,
+    InvestorFlowsPipelineReadiness,
+} from '@/entities/investor-flows/model';
 import {
     evaluate,
     makeEmptySnapshot,

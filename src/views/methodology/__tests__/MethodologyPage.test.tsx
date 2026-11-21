@@ -15,7 +15,7 @@ import { CRYPTO_DESCRIPTOR } from '@/shared/config/marketProfile/crypto';
 import { KR_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/krEquity';
 import { US_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/usEquity';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
-import { SITE_OPERATOR } from '@/shared/lib/legal';
+import { SITE_OPERATOR, METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
@@ -32,7 +32,6 @@ vi.mock('next-intl/server', () => ({
 import { MethodologyPage } from '../MethodologyPage';
 import { METHODOLOGY_CHANGELOG } from '../lib/methodologyChangelog';
 import { METHODOLOGY_SECTION_IDS as SECTION_IDS } from '../lib/methodologySections';
-import { METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
 
 const m = ko.views.methodology;
 
