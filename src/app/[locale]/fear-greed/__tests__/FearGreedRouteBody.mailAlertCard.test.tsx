@@ -30,7 +30,7 @@ const VIEW: MarketFearGreedHubView<MarketFearGreedViewSnapshot> = {
 };
 
 const CARD_LINE =
-    '극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요';
+    '극단적 공포나 극단적 탐욕에 들어서면 그날 점수가 확정된 다음 한국 시간 아침에 메일로 알려 드려요';
 
 describe('공포 탐욕 허브의 "메일로 받기" 카드', () => {
     it('공개 전에는 그리지 않는다', () => {

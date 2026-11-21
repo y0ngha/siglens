@@ -39,11 +39,9 @@ vi.mock('@/entities/watchlist/api', () => ({
         return { findByUser: mocks.findWatchlist };
     }),
 }));
-vi.mock('@/shared/email/dispatcher', () => ({
-    createEmailDispatcher: vi.fn(() => ({ sendEmail: vi.fn() })),
-}));
-
 import { createEmailReportDeps } from '@/app/api/cron/email-report/createEmailReportDeps';
+
+const dispatcher = { sendEmail: vi.fn() };
 
 describe('createEmailReportDeps', () => {
     beforeEach(() => {
@@ -54,7 +52,7 @@ describe('createEmailReportDeps', () => {
     });
 
     it('제외 종목 조회를 제외 저장소의 findExcludedSymbols에 회원 id로 연결한다', async () => {
-        const deps = createEmailReportDeps('secret', new Date());
+        const deps = createEmailReportDeps('secret', new Date(), dispatcher);
 
         await expect(deps.findExcludedSymbols('u-1')).resolves.toEqual([
             'AAPL',
@@ -64,7 +62,7 @@ describe('createEmailReportDeps', () => {
     });
 
     it('보유·관심종목 조회도 각 저장소에 회원 id로 연결한다', async () => {
-        const deps = createEmailReportDeps('secret', new Date());
+        const deps = createEmailReportDeps('secret', new Date(), dispatcher);
 
         await expect(deps.findHoldings('u-1')).resolves.toEqual([
             { symbol: 'MSFT' },
@@ -76,5 +74,11 @@ describe('createEmailReportDeps', () => {
         expect(mocks.findWatchlist).toHaveBeenCalledWith('u-1');
         expect(mocks.portfolioCtor).toHaveBeenCalledWith(mocks.db);
         expect(mocks.watchlistCtor).toHaveBeenCalledWith(mocks.db);
+    });
+
+    it('호출자가 넘긴 발송기를 그대로 쓴다(알림 메일 패스와 한 인스턴스를 공유한다)', () => {
+        const deps = createEmailReportDeps('secret', new Date(), dispatcher);
+
+        expect(deps.dispatcher).toBe(dispatcher);
     });
 });

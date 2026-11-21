@@ -19,6 +19,11 @@ export interface EmailMessage {
      * 메일 클라이언트에서 바로 회신할 수 있다. 생략하면 헤더 자체를 싣지 않는다.
      */
     replyTo?: string;
+    /**
+     * 같은 키로 다시 보내면 제공자가 두 번째 요청을 새 메일로 만들지 않게 하는 멱등 키. 발송 기록 행이
+     * 지워지거나 선점이 겹쳐 같은 메일을 두 번 시도하는 경우의 마지막 안전장치다. 생략하면 싣지 않는다.
+     */
+    idempotencyKey?: string;
 }
 
 /** 트랜잭셔널 이메일 발송 추상 (Resend/SendGrid/SMTP 등을 use-case에 주입). */

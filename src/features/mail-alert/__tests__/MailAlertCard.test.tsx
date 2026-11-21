@@ -41,7 +41,7 @@ describe('MailAlertCard', () => {
 
         expect(
             screen.getByText(
-                '극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요'
+                '극단적 공포나 극단적 탐욕에 들어서면 그날 점수가 확정된 다음 한국 시간 아침에 메일로 알려 드려요'
             )
         ).toBeInTheDocument();
         expect(
@@ -84,7 +84,7 @@ describe('MailAlertCard', () => {
             withLocale(<MailAlertCard target={FEAR_GREED} />, 'ko')
         );
 
-        expect(html).toContain('극단적 공포나 극단적 탐욕에 들어선 날');
+        expect(html).toContain('극단적 공포나 극단적 탐욕에 들어서면');
         expect(html).toContain('메일로 받기');
         expect(html).not.toContain('<a ');
         expect(html).not.toContain('role="dialog"');

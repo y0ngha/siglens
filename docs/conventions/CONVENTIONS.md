@@ -898,7 +898,7 @@ store found during the revision that was never disclosed (user-supplied keys, ba
 numbers (attempt caps, TTLs, windows) published in that text are pinned by a guard that reads the code constants (the
 `*Privacy.test.ts` guards), never by literals typed into the test.
 
-- Copy never promises a delivery or effect some users skip (gate it on the real state or word it conditionally), names
+- Copy never promises a delivery or effect some users skip, or a delivery timing the schedule never meets (gate it on the real state or word it conditionally; pin the real lag with a test), names
   a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it
   (a filing proves "filed", not "in progress").
 - Policies list the storage items, the data actually used and every item sent to a third party (including identifiers

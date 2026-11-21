@@ -92,6 +92,33 @@ describe('ResendEmailDispatcher', () => {
         expect(sendMock.mock.lastCall?.[0]).not.toHaveProperty('replyTo');
     });
 
+    it('idempotencyKey가 있으면 본문이 아니라 요청 옵션으로 넘긴다', async () => {
+        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        await dispatcher.sendEmail({ ...message, idempotencyKey: 'k/1/2' });
+
+        expect(sendMock).toHaveBeenCalledWith(
+            expect.not.objectContaining({ idempotencyKey: expect.anything() }),
+            { idempotencyKey: 'k/1/2' }
+        );
+    });
+
+    it('idempotencyKey가 없으면 옵션 인자를 넘기지 않는다', async () => {
+        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        await dispatcher.sendEmail(message);
+
+        expect(sendMock.mock.lastCall).toHaveLength(1);
+    });
+
     it('Resend가 error를 반환하면 false를 반환한다', async () => {
         sendMock.mockResolvedValue({ data: null, error: { message: 'fail' } });
         const dispatcher = new ResendEmailDispatcher({

@@ -1,5 +1,6 @@
 import {
     buildChartImageUrl,
+    emailUtmQuery,
     buildMarketPageUrl,
     buildSymbolPageUrl,
     buildUnsubscribeApiUrl,
@@ -81,5 +82,17 @@ describe('reportLinks', () => {
         expect(new URL(buildMarketPageUrl(SITE, 'ko')).pathname).toBe(
             '/market'
         );
+    });
+
+    it('UTM 캠페인은 메일 종류마다 갈리고 기본값은 정기 리포트다', () => {
+        expect(new URLSearchParams(emailUtmQuery()).get('utm_campaign')).toBe(
+            'email_report'
+        );
+        expect(
+            new URLSearchParams(emailUtmQuery('mail_alert')).get('utm_campaign')
+        ).toBe('mail_alert');
+        expect(
+            new URLSearchParams(emailUtmQuery('mail_alert')).get('utm_medium')
+        ).toBe('email');
     });
 });

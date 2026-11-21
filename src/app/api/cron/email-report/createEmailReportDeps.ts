@@ -11,7 +11,7 @@ import {
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import type { EmailDispatcher } from '@/shared/email/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import {
     createSymbolReportSources,
@@ -21,10 +21,14 @@ import { createMarketPickSources, loadMarketPicks } from './loadMarketPicks';
 import { createSymbolBriefSources, loadSymbolBrief } from './loadSymbolBrief';
 import type { EmailReportBatchDeps } from './runEmailReportBatch';
 
-/** 운영 의존성. `now`는 종목 스냅샷의 신선도 판정 기준이다. */
+/**
+ * 운영 의존성. `now`는 종목 스냅샷의 신선도 판정 기준이다. `dispatcher`는 호출자가 넘긴다 — 같은 요청에서
+ * 도는 알림 메일 패스와 한 인스턴스를 공유해 두 패스의 발송 속도를 함께 묶는다.
+ */
 export function createEmailReportDeps(
     secret: string,
-    now: Date
+    now: Date,
+    dispatcher: EmailDispatcher
 ): EmailReportBatchDeps {
     const { db } = getDatabaseClient();
     const portfolio = new DrizzlePortfolioRepository(db);
@@ -45,7 +49,7 @@ export function createEmailReportDeps(
         loadMarketPicks: () => loadMarketPicks(marketPickSources),
         getTranslator: getReportEmailTranslator,
         getSignalLabel: getReportSignalLabelResolver,
-        dispatcher: createEmailDispatcher(),
+        dispatcher,
         secret,
         siteUrl: SITE_URL,
     };

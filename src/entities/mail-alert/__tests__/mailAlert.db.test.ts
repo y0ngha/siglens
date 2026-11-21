@@ -914,7 +914,7 @@ describe.skipIf(!URL)(
                 });
             });
 
-            it('recentItemKeys는 sent이고 알림 날짜가 하한 이상인 행만 구독자별로 모은다', async () => {
+            it('recentItemKeys는 sent·pending이고 알림 날짜가 하한 이상인 행만 구독자별로 모은다', async () => {
                 const { id } = await subscribe();
                 const other = await subscribe();
                 const finishWith = async (
@@ -941,11 +941,13 @@ describe.skipIf(!URL)(
                     'never-delivered',
                 ]);
                 await finishWith(other.id, '2026-11-22', 'sent', ['theirs']);
+                // 선점만 하고 끝나지 않은 행의 키도 센다(보낸 뒤 기록 전에 죽은 경우).
+                await deliveries.claim(id, '2026-11-22', ['stuck']);
 
                 const keys = await deliveries.recentItemKeys('2026-11-17');
 
                 expect(keys.get(id)).toEqual(
-                    new Set(['edge', 'shared', 'recent'])
+                    new Set(['edge', 'shared', 'recent', 'stuck'])
                 );
                 expect(keys.get(other.id)).toEqual(new Set(['theirs']));
             });

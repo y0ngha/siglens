@@ -39,6 +39,7 @@
         "entities.email-report.sample",
         "entities.email-token.email",
         "entities.mail-alert.codeEmail",
+        "entities.mail-alert.email",
         "entities.market-news.category",
         "entities.portfolio.action",
         "entities.shared-analysis.og",

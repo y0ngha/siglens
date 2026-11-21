@@ -48,21 +48,26 @@ export class ResendEmailDispatcher implements EmailDispatcher {
     async sendEmail(message: EmailMessage): Promise<boolean> {
         const { timeout, cleanup } = createTimeoutRace();
         try {
-            const { error } = await Promise.race([
-                this.client.emails.send({
-                    from: this.from,
-                    to: message.to,
-                    subject: message.subject,
-                    html: message.html,
-                    text: message.text,
-                    // 헤더가 없는 메일(인증 메일)은 키 자체를 싣지 않는다 — 빈 객체를
-                    // 보내면 SDK 버전에 따라 빈 헤더 블록이 생길 수 있다.
-                    ...(message.headers ? { headers: message.headers } : {}),
-                    // SDK 필드명은 camelCase `replyTo`이고 와이어에선 `reply_to`로 직렬화된다.
-                    ...(message.replyTo ? { replyTo: message.replyTo } : {}),
-                }),
-                timeout,
-            ]);
+            const payload = {
+                from: this.from,
+                to: message.to,
+                subject: message.subject,
+                html: message.html,
+                text: message.text,
+                // 헤더가 없는 메일(인증 메일)은 키 자체를 싣지 않는다 — 빈 객체를
+                // 보내면 SDK 버전에 따라 빈 헤더 블록이 생길 수 있다.
+                ...(message.headers ? { headers: message.headers } : {}),
+                // SDK 필드명은 camelCase `replyTo`이고 와이어에선 `reply_to`로 직렬화된다.
+                ...(message.replyTo ? { replyTo: message.replyTo } : {}),
+            };
+            // 멱등 키는 본문이 아니라 두 번째 인자(요청 옵션)다. 키가 없는 메일은 옵션 자체를 넘기지 않아
+            // 기존 호출 모양이 그대로다.
+            const sending = message.idempotencyKey
+                ? this.client.emails.send(payload, {
+                      idempotencyKey: message.idempotencyKey,
+                  })
+                : this.client.emails.send(payload);
+            const { error } = await Promise.race([sending, timeout]);
             return error === null;
         } catch {
             return false;

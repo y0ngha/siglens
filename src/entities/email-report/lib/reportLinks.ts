@@ -64,15 +64,21 @@ export function buildUnsubscribeApiUrl(
     return `${siteUrl}${REPORT_UNSUBSCRIBE_API_PATH}?${unsubscribeParams(secret, userId)}`;
 }
 
+/** 정기 메일 리포트의 `utm_campaign`. */
+const EMAIL_REPORT_UTM_CAMPAIGN = 'email_report';
+
 /**
  * 메일 본문 콘텐츠 링크가 공유하는 유입 추적 UTM. `utm_source`·`utm_medium=email`은 방문 비콘의
  * 출처 분류(`classifyEntrySource`)가 `email`로 읽는다. 계정 관리 링크(설정·수신거부)에는 붙이지 않는다.
+ * 메일 종류(리포트·알림)만 `campaign`으로 갈린다.
  */
-function emailUtmQuery(): string {
+export function emailUtmQuery(
+    campaign: string = EMAIL_REPORT_UTM_CAMPAIGN
+): string {
     return new URLSearchParams({
         utm_source: 'email',
         utm_medium: 'email',
-        utm_campaign: 'email_report',
+        utm_campaign: campaign,
     }).toString();
 }
 
