@@ -30,8 +30,11 @@ const target = describeTarget(databaseUrl);
 console.log(`[migrate] target: ${formatTarget(target)}`);
 assertRemoteWriteAllowed(target, 'migrate');
 
-// "already exists" error codes from PostgreSQL
-const ALREADY_EXISTS_CODES = new Set(['42P07', '42710', '42P16']);
+// "already exists" error codes from PostgreSQL: 42P07 relation (table, index), 42710 object (type, constraint),
+// 42P16 invalid table definition (primary key already there), 42701 duplicate column. 42701 is what makes a migration
+// with an `ALTER TABLE ... ADD COLUMN` re-runnable after a later statement failed: statements run one at a time with no
+// wrapping transaction, so the earlier ones stay applied and are skipped on the next run.
+const ALREADY_EXISTS_CODES = new Set(['42P07', '42710', '42P16', '42701']);
 
 interface JournalEntry {
     idx: number;

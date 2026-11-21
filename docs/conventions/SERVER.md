@@ -500,6 +500,10 @@ For a unit chaining several capped steps (ingest + analysis + sequential transla
 is the sum of each step's worst case, written next to the caps. A budget claimed from the typical case silently
 exceeds the platform timeout.
 
+A step documented as "DB only / no external call" must not gain external dependencies. Before placing a derivation in
+a step, check whether its inputs are already stored; compute it in the step where the needed external context is
+already resolved, and update the step's comments, worst-case budget paragraph and lease derivation in the same change.
+
 <a id="CC-8"></a>
 
 #### CC-8 — Bound a drain loop with a sufficiency condition
@@ -536,6 +540,8 @@ is surfaced as a separate state. Give each failure mode an exit (retry cap, dead
 - A blanket outage (provider down, auth failure) is not a per-symbol fault; do not charge it against each item's failure budget.
 - ❌ Gate holds until `pending = 0`, while an item that always errors never leaves `pending`; a per-run counter trips the threshold in one busy day.
 - ✅ Failing items move to a terminal state after a cap, the day counter is keyed by date, and an outage trips a run-level breaker instead.
+- Keep one counter per failure kind, each with its own limit and give-up reason, defined in a single map typed so a new kind fails to compile until it is added (`satisfies Record<FailureKind, ...>`, shared by the repository and its fake). One counter compared against several limits lets one kind exhaust another's budget; test mixed failure sequences.
+- A per-row failure gets a backoff and a bounded give-up with a reason; a version-keyed job records the version it failed at so it is not reselected forever. A "missing" result from a transient provider gap is observed on several separate days before it becomes terminal.
 
 <a id="CC-12"></a>
 
@@ -845,3 +851,16 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
 - ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.
+
+<a id="DB-10"></a>
+
+#### DB-10 — A stored result that can depend on per-user input carries a marker every writer sets
+
+When a stored result (an analysis, a summary) can be conditioned on one user's input (holdings, a private prompt),
+record that at write time in a column (`personalized`) that every writer must supply. Every reader that reuses the
+row for someone else (statistics, "prior result" context, public content) filters on it. Enumerate the readers by
+grepping the repository methods, not from memory; a nullable marker is read with `IS NOT TRUE` so legacy rows stay
+eligible deliberately.
+
+- ❌ A statistics capture and a history query read the table with no marker, so one user's holdings-conditioned rows reach other users' analyses.
+- ✅ Writers pass the marker (required field), capture takes `= false` only, and the prior-result query takes `IS NOT TRUE`.

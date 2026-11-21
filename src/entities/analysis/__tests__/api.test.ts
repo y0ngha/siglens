@@ -496,6 +496,8 @@ describe('prewarmTechnical', () => {
                     modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                     // 프리웜은 항상 free tier로 생성한다.
                     tier: 'free',
+                    // 프리웜은 보유 종목 맥락이 없는 공용 분석이다.
+                    personalized: false,
                     locale: 'ko',
                     // 필터된 `result`가 아니라 `unfilteredResult`가 저장돼야
                     // 한다 — riskLevel이 살아 있는 쪽.

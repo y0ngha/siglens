@@ -65,6 +65,7 @@ vi.mock('drizzle-orm', async importOriginal => {
 });
 
 import { createHash } from 'node:crypto';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type {
     AssembledPromptRecord,
     PriorAnalysis,
@@ -148,6 +149,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt,
@@ -170,6 +172,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'technical',
             modelId: 'analysis-worker',
             tier: null,
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             inputFingerprint: null,
@@ -197,6 +200,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             // free tier가 실제로 내려주는 모양 — trend만 살아 있다.
             result: { trend: 'bullish', riskLevel: null },
@@ -226,6 +230,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'overall',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'en',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -250,6 +255,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'technical',
             modelId: 'analysis-worker',
             tier: 'member',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -261,6 +267,30 @@ describe('DrizzleAnalysisHistoryRepository', () => {
         );
     });
 
+    it.each([true, false])(
+        'writes personalized = %s as given (never defaulted)',
+        async personalized => {
+            const { historyValues, db } = makeDb();
+            const repository = new DrizzleAnalysisHistoryRepository(db);
+
+            await repository.saveAnalysisHistory({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+                modelId: 'analysis-worker',
+                personalized,
+                locale: 'ko',
+                result: readableResult,
+                generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+                prompt: promptRecord,
+            });
+
+            expect(historyValues).toHaveBeenCalledWith(
+                expect.objectContaining({ personalized })
+            );
+        }
+    );
+
     it('passes inputFingerprint through when supplied', async () => {
         const { historyValues, db } = makeDb();
         const repository = new DrizzleAnalysisHistoryRepository(db);
@@ -270,6 +300,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -295,6 +326,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -324,6 +356,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 timeframe: '1Day',
                 tab: 'overall',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -413,6 +446,28 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
 
         // limit() received core's `limit` value, not a hand-picked constant.
         expect(spies.limit).toHaveBeenCalledWith(7);
+    });
+
+    it('excludes personalised rows with `personalized IS NOT TRUE` (false and NULL stay eligible)', async () => {
+        const { db, spies } = makeSelectDb([]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+        });
+
+        const where = spies.where.mock.calls
+            .map(call => call as unknown[])
+            .find(call => call.length > 0)?.[0];
+        const { sql: whereSql } = new PgDialect().sqlToQuery(where as never);
+        expect(whereSql).toContain(
+            '"analysis_history"."personalized" IS NOT TRUE'
+        );
+        // The new condition is a raw predicate, not an `eq` filter: the forbidden-filter count stays 3.
+        expect(eqSpy).toHaveBeenCalledTimes(3);
     });
 
     it('passes the axis through to analysisHistoryQuery, defaulting to "technical"', async () => {
@@ -1042,6 +1097,7 @@ describe('DrizzleAnalysisHistoryRepository.pruneAnalysisHistory', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),

@@ -59,6 +59,38 @@ describe('db:migrate --until', () => {
         );
     });
 
+    /**
+     * 문장을 하나씩 실행하고 트랜잭션이 없어서, 중간 문장이 실패하면 앞 문장은 이미 적용된 채 남는다. 재실행이
+     * 안전하려면 "이미 있음" 오류가 문장 단위로 건너뛰어져야 하고, `ADD COLUMN`의 중복 컬럼(42701)도 거기 든다.
+     */
+    describe('이미 있음 오류는 문장 단위로 건너뛴다', () => {
+        const codes = [
+            ...(
+                /ALREADY_EXISTS_CODES = new Set\(\[([^\]]*)\]\)/.exec(
+                    SOURCE
+                )?.[1] ?? ''
+            ).matchAll(/'([0-9A-Z]{5})'/g),
+        ].map(match => match[1]);
+
+        it.each([
+            ['42P07', '테이블·인덱스'],
+            ['42710', '타입·제약'],
+            ['42P16', '기본 키'],
+            ['42701', '컬럼 추가(ADD COLUMN) 중복'],
+        ])('%s(%s)를 건너뛴다', code => {
+            expect(codes).toContain(code);
+        });
+
+        it('그 밖의 코드는 건너뛰지 않고 던진다', () => {
+            const catchBlock = SOURCE.slice(
+                SOURCE.indexOf('await sql.unsafe(statement)')
+            ).slice(0, 700);
+            expect(catchBlock).toContain('ALREADY_EXISTS_CODES.has(code)');
+            expect(catchBlock).toContain('throw err');
+            expect(codes).toHaveLength(4);
+        });
+    });
+
     it('저널에 없는 태그를 주면 던진다', () => {
         expect(SOURCE).toContain('저널에 없는 태그다');
     });

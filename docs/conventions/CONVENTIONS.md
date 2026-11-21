@@ -642,7 +642,8 @@ file or the rule it describes changes:
 - When a function's processing order or workload changes (a step appended, steps reordered), re-read its JSDoc and the
   route or caller doc that describes it, for example a "short, no lock needed" claim.
 - When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
-  JSDoc and test names that mention it and update them in the same change (see CS-8).
+  JSDoc and test names that mention it and update them in the same change (see CS-8). Grep the old phrase across the
+  whole feature directory, not only the files you edited; the stale copy is often in a file outside the change list.
 - When a method gains a cache or otherwise changes behavior, re-read the class- or module-level summary and sibling
   files that describe it, not only the method's own JSDoc; a summary listing the method under its old behavior goes stale.
 - When a symbol moves or is renamed (a function removed, a class relocated to another module), grep the old name and

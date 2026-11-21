@@ -488,10 +488,25 @@ describe('handleTechnicalStream', () => {
                 tab: 'technical',
                 modelId: 'analysis-worker',
                 tier: 'free',
+                personalized: false,
                 locale: 'ko',
                 result: { entry: 1 },
                 prompt: undefined,
             });
+        });
+
+        it('보유 종목 맥락(positionBucket)으로 생성한 분석은 personalized: true로 표시한다', async () => {
+            vi.mocked(resolveHoldingPositionBucket).mockResolvedValue(
+                'profit' as never
+            );
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done',
+                unfilteredResult: { entry: 1 },
+            } as never);
+            await (await handleTechnicalStream(request(), params)).text();
+            expect(schedulePersistAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ personalized: true })
+            );
         });
 
         it('이력에는 BYOK 게이트가 정한 생성 tier를 남긴다', async () => {

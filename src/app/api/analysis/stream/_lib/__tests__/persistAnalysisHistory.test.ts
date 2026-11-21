@@ -28,6 +28,7 @@ const input = {
     tab: 'technical' as const,
     modelId: 'deepseek-v4',
     tier: 'member' as const,
+    personalized: false,
     locale: 'ko' as const,
     result: { analyzedAt: '2026-01-01T00:00:00Z' },
     prompt: undefined,
@@ -62,11 +63,22 @@ describe('schedulePersistAnalysisHistory', () => {
             tab: 'technical',
             modelId: 'deepseek-v4',
             tier: 'member',
+            personalized: false,
             locale: 'ko',
             result: input.result,
             generatedAt: '2026-01-01T00:00:00Z',
             prompt: undefined,
         });
+    });
+
+    it('보유 종목 맥락으로 생성한 분석은 personalized: true로 저장한다', async () => {
+        schedulePersistAnalysisHistory({ ...input, personalized: true });
+        const callback = vi.mocked(after).mock.calls[0]?.[0];
+        if (typeof callback !== 'function') throw new Error('no callback');
+        await callback();
+        expect(saveAnalysisHistory).toHaveBeenCalledWith(
+            expect.objectContaining({ personalized: true })
+        );
     });
 
     it('after()가 동기적으로 throw해도 삼키고 로그만 남긴다', () => {

@@ -145,6 +145,11 @@ export interface SaveAnalysisHistoryInput {
      * 아니라 **생성 시점** tier다(free 프리웜과 회원 분석은 스킬 세트가 다르다).
      */
     tier?: Tier;
+    /**
+     * 회원의 보유 종목 맥락(보유자 힌트)으로 생성한 분석이면 true. 작성자가 **반드시** 명시한다 — 생략하면
+     * 사후 결과 라벨러가 개인화 분석을 구분 없이 가져가고, 프롬프트가 7일 뒤 사라지면 되돌릴 수 없다.
+     */
+    personalized: boolean;
 }
 
 /** `findRecentForPrompt` 입력. */
@@ -291,6 +296,7 @@ export class DrizzleAnalysisHistoryRepository {
                         tab: input.tab,
                         modelId: input.modelId,
                         tier: input.tier ?? null,
+                        personalized: input.personalized,
                         locale: input.locale,
                         result: input.result,
                         inputFingerprint: input.inputFingerprint ?? null,
@@ -339,6 +345,10 @@ export class DrizzleAnalysisHistoryRepository {
      * 호출자(예: "지금 있는 것 아무거나"를 원하는 챗 폴백)는 `includeCurrentWindow: true`로
      * 이 상한을 건너뛴다.
      *
+     * **개인화 행은 제외한다**(`personalized IS NOT TRUE`). 이 필터가 처음 배포될 때 한 번, core가 이 행들에서
+     * 도출하는 이전 분석 지문(`:hist=`)이 개인화 행이 있는 종목에서 바뀌어 그 종목의 캐시가 한 번 빗나간다
+     * (이후는 다시 안정). `model_id`·`locale`처럼 금지된 필터가 아니라 개인정보 경계다.
+     *
      * 각 행의 `result` jsonb는 {@link toPriorAnalysis}로 `PriorAnalysis`에 매핑한다.
      * `trend`/`riskLevel`이 없거나 문자열이 아닌 행은 버리고, 비유한 가격은 통과시키지
      * 않고 값 단위로 걷어 낸다.
@@ -374,6 +384,12 @@ export class DrizzleAnalysisHistoryRepository {
                                 eq(analysisHistory.symbol, input.symbol),
                                 eq(analysisHistory.timeframe, input.timeframe),
                                 eq(analysisHistory.tab, input.tab),
+                                // 개인화 분석은 이전 분석(prior)으로 쓰지 않는다 — 한 회원의 보유자 관점 플랜이 다음
+                                // 공용 분석(프리웜·비회원·다른 회원)의 입력이 되면 보유 정보가 다른 사람의 산출물에
+                                // 스며든다. 이력 테이블에는 사용자 연결이 없어 "요청자 본인의 개인화 이력"을 가려낼
+                                // 수도 없다. 컬럼이 생기기 전 행(NULL)은 개인화 여부를 알 수 없으므로 그대로 쓴다.
+                                // `IS NOT TRUE`가 false와 NULL을 모두 통과시킨다.
+                                sql`${analysisHistory.personalized} IS NOT TRUE`,
                                 gte(analysisHistory.generatedAt, since),
                                 ...(input.includeCurrentWindow
                                     ? []
