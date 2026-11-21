@@ -37,6 +37,7 @@ export const AUTH_ERROR_KEY: Record<string, string> = {
     // 두 표를 조회해야 하고, 실제로 예전엔 그 두 번째 표만 한국어 리터럴이라
     // `/en/login`이 영어 폼 위에 한국어 배너를 띄웠다.
     oauth_email_conflict: 'error.oauthEmailConflict',
+    oauth_email_unverified: 'error.oauthEmailUnverified',
     oauth_profile_invalid: 'error.oauthProfileInvalid',
     oauth_unknown: 'error.oauthUnknown',
     oauth_consent_invalid: 'error.oauthConsentInvalid',

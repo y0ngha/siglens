@@ -310,6 +310,8 @@ export class DrizzleUserRepository
                         name: input.name ?? null,
                         avatarUrl: input.avatarUrl ?? null,
                         tier: SIGNED_UP_USER_TIER,
+                        // OAuth 어댑터가 provider에서 인증된 이메일만 통과시키므로(google.ts)
+                        // 항상 true다. 새 provider도 같은 검사를 해야 이 불변식이 유지된다.
                         emailVerified: true,
                     })
                     .onConflictDoNothing({ target: users.email })

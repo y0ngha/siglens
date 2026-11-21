@@ -364,6 +364,86 @@ describe('GET /api/auth/callback/[provider]', () => {
             );
         });
 
+        describe('이메일 미인증 프로필', () => {
+            const unverifiedAdapter = () =>
+                mockGetOAuthAdapter.mockReturnValue({
+                    authorizeUrl: vi.fn(),
+                    exchangeCodeForProfile: vi.fn().mockResolvedValue({
+                        ok: false,
+                        reason: 'email_unverified',
+                    }),
+                } as never);
+
+            it('oauth_email_unverified로 돌려보내고 이메일을 URL에 싣지 않는다', async () => {
+                mockVerifyOAuthState.mockReturnValue({
+                    ok: true,
+                    next: '/en/AAPL',
+                });
+                unverifiedAdapter();
+
+                const res = await GET(
+                    makeRequest(
+                        { state: 'valid-state', code: 'auth-code' },
+                        { oauth_state: 'cookie-state' }
+                    ),
+                    DEFAULT_PARAMS
+                );
+
+                const url = new URL(res.headers.get('location') ?? '');
+                expect(url.pathname).toBe('/en/login');
+                expect(url.searchParams.get('error')).toBe(
+                    'oauth_email_unverified'
+                );
+                expect(url.searchParams.has('email')).toBe(false);
+                expect(url.searchParams.get('next')).toBe('/en/AAPL');
+                expect(url.toString()).not.toContain(FAKE_PROFILE.email);
+            });
+
+            it('계정 조회와 pending 저장소에 닿지 않는다', async () => {
+                const save = vi.fn();
+                mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+                    save,
+                    peek: vi.fn(),
+                    consume: vi.fn(),
+                    delete: vi.fn(),
+                });
+                unverifiedAdapter();
+
+                await GET(
+                    makeRequest(
+                        { state: 'valid-state', code: 'auth-code' },
+                        { oauth_state: 'cookie-state' }
+                    ),
+                    DEFAULT_PARAMS
+                );
+
+                expect(mockUserRepo.findByOAuthAccount).not.toHaveBeenCalled();
+                expect(mockUserRepo.findByEmail).not.toHaveBeenCalled();
+                expect(save).not.toHaveBeenCalled();
+                expect(mockCreateAuthSession).not.toHaveBeenCalled();
+            });
+        });
+
+        it('email_unverified가 아닌 실패 사유는 oauth_profile_invalid로 남는다', async () => {
+            mockGetOAuthAdapter.mockReturnValue({
+                authorizeUrl: vi.fn(),
+                exchangeCodeForProfile: vi
+                    .fn()
+                    .mockResolvedValue({ ok: false, reason: 'email_missing' }),
+            } as never);
+
+            const res = await GET(
+                makeRequest(
+                    { state: 'valid-state', code: 'auth-code' },
+                    { oauth_state: 'cookie-state' }
+                ),
+                DEFAULT_PARAMS
+            );
+
+            const url = new URL(res.headers.get('location') ?? '');
+            expect(url.searchParams.get('error')).toBe('oauth_profile_invalid');
+        });
+
         it('en에서 시작한 사용자의 OAuth 에러는 en 로그인으로 돌아간다', async () => {
             mockVerifyOAuthState.mockReturnValue({
                 ok: true,

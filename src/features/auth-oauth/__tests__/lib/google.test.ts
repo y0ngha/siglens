@@ -24,6 +24,7 @@ describe('googleOAuthAdapter', () => {
 
     afterEach(() => {
         vi.unstubAllGlobals();
+        vi.restoreAllMocks();
     });
 
     it('GOOGLE_CLIENT_ID/SECRET 미설정 시 빈 문자열로 빌드된다', async () => {
@@ -131,6 +132,98 @@ describe('googleOAuthAdapter', () => {
         ).resolves.toEqual({ ok: false, reason: 'email_missing' });
     });
 
+    it.each([
+        ['false', false],
+        ['누락', undefined],
+        ['문자열 "true"', 'true'],
+        ['숫자 1', 1],
+        ['null', null],
+    ])(
+        'email_verified가 %s이면 email_unverified',
+        async (_label, emailVerified) => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const calls = [
+                jsonResponse(200, { access_token: 'tok' }),
+                jsonResponse(200, {
+                    sub: 'gid',
+                    email: 'user@example.com',
+                    name: 'User',
+                    email_verified: emailVerified,
+                }),
+            ];
+            stubFetch(async () => calls.shift() ?? jsonResponse(500, {}));
+            await expect(
+                googleOAuthAdapter.exchangeCodeForProfile({
+                    code: 'c',
+                    redirectUri: REDIRECT_URI,
+                })
+            ).resolves.toEqual({ ok: false, reason: 'email_unverified' });
+        }
+    );
+
+    it('미인증 거절 로그에는 이메일과 sub가 없다', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const calls = [
+            jsonResponse(200, { access_token: 'tok' }),
+            jsonResponse(200, {
+                sub: 'secret-sub-123',
+                email: 'victim@example.com',
+                email_verified: false,
+            }),
+        ];
+        stubFetch(async () => calls.shift() ?? jsonResponse(500, {}));
+        await googleOAuthAdapter.exchangeCodeForProfile({
+            code: 'c',
+            redirectUri: REDIRECT_URI,
+        });
+        const logged = warnSpy.mock.calls
+            .flat()
+            .map(arg => String(arg))
+            .join(' ');
+        expect(logged).toContain('userinfo email is not verified');
+        expect(logged).not.toContain('victim@example.com');
+        expect(logged).not.toContain('secret-sub-123');
+    });
+
+    it('인증된 이메일이면 경고 로그를 남기지 않는다', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const calls = [
+            jsonResponse(200, { access_token: 'tok' }),
+            jsonResponse(200, {
+                sub: 'gid',
+                email: 'user@example.com',
+                email_verified: true,
+            }),
+        ];
+        stubFetch(async () => calls.shift() ?? jsonResponse(500, {}));
+        await googleOAuthAdapter.exchangeCodeForProfile({
+            code: 'c',
+            redirectUri: REDIRECT_URI,
+        });
+        const warnCount = warnSpy.mock.calls.length;
+        expect(warnCount).toBe(0);
+    });
+
+    it.each([
+        ['sub', { email: 'user@example.com', email_verified: false }],
+        ['email', { sub: 'gid', email_verified: false }],
+    ])(
+        '%s가 없으면 email_verified가 false여도 email_missing이 먼저다',
+        async (_field, userinfo) => {
+            const calls = [
+                jsonResponse(200, { access_token: 'tok' }),
+                jsonResponse(200, userinfo),
+            ];
+            stubFetch(async () => calls.shift() ?? jsonResponse(500, {}));
+            await expect(
+                googleOAuthAdapter.exchangeCodeForProfile({
+                    code: 'c',
+                    redirectUri: REDIRECT_URI,
+                })
+            ).resolves.toEqual({ ok: false, reason: 'email_missing' });
+        }
+    );
+
     it('token JSON 파싱 실패 시 token_exchange_failed', async () => {
         stubFetch(async () => new Response('not-json', { status: 200 }));
         await expect(
@@ -163,6 +256,7 @@ describe('googleOAuthAdapter', () => {
                 email: 'user@example.com',
                 name: 'User',
                 picture: 'https://img/u.png',
+                email_verified: true,
             }),
         ];
         stubFetch(async () => calls.shift()!);
@@ -280,7 +374,11 @@ describe('googleOAuthAdapter', () => {
             const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
             const calls = [
                 jsonResponse(200, { access_token: 'tok' }),
-                jsonResponse(200, { sub: 'gid', email: 'user@example.com' }),
+                jsonResponse(200, {
+                    sub: 'gid',
+                    email: 'user@example.com',
+                    email_verified: true,
+                }),
             ];
             const fetchMock = stubFetch(async () => calls.shift()!);
             await googleOAuthAdapter.exchangeCodeForProfile({

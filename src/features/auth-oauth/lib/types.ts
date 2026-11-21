@@ -9,7 +9,8 @@ import type { SocialLoginUserInput } from '@/entities/auth/lib/authUseCaseTypes'
 type OAuthProfileFailureReason =
     | 'token_exchange_failed'
     | 'profile_fetch_failed'
-    | 'email_missing';
+    | 'email_missing'
+    | 'email_unverified';
 
 /** 토큰 교환 + 프로필 조회 결과. */
 export type OAuthProfileResult =
@@ -20,6 +21,10 @@ export type OAuthProfileResult =
 export interface OAuthProviderAdapter {
     readonly id: OAuthProvider;
     authorizeUrl(params: { state: string; redirectUri: string }): string;
+    /**
+     * 프로필의 이메일이 provider에서 인증된 것일 때만 `ok: true`를 돌려줘야 한다.
+     * `createOAuthUser`가 `emailVerified: true`로 저장하므로 새 provider도 같은 검사를 한다.
+     */
     exchangeCodeForProfile(params: {
         code: string;
         redirectUri: string;
