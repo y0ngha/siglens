@@ -840,3 +840,12 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
 - ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.
+
+<a id="DB-12"></a>
+
+#### DB-12 — Row-mutating data methods bind ownership inside the statement
+
+A repository method that links, updates or deletes rows owned by an identity takes only the authenticated `userId` (or states the guest case, `user_id IS NULL`) and puts the owner in the `WHERE`. Any proof the action needs (a verified address, `email_verified`) is derived in the same statement, not taken from an argument the caller could pass wrongly. An unguessable row id is not authorization.
+
+- ❌ `deleteLink(id, email)` that trusts the caller-supplied email, or `update ... where id = $1` alone.
+- ✅ `update ... where id = $1 and user_id = $2` (and `email_verified` joined in the query).

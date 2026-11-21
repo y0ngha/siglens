@@ -308,4 +308,91 @@ describe('DrizzleSignalHistoryRepository', () => {
             expect(select).not.toHaveBeenCalled();
         });
     });
+    describe('latestRecordedSession', () => {
+        it('시장으로 거른 마지막 포착 세션의 최댓값을 문자열로 읽는다', async () => {
+            const where = vi.fn().mockResolvedValue([{ latest: '2026-11-24' }]);
+            const select = vi.fn((_fields: unknown) => ({
+                from: () => ({ where }),
+            }));
+            const db = { select } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleSignalHistoryRepository(db).latestRecordedSession(
+                    'kr'
+                )
+            ).resolves.toBe('2026-11-24');
+
+            const { sql, params } = render(onlyCallArg(where));
+            expect(sql).toContain('"signal_events"."market" = $1');
+            expect(params).toEqual(['kr']);
+            const fields = onlyCallArg(select) as Record<string, unknown>;
+            expect(render(fields['latest']).sql).toContain(
+                'max("signal_events"."last_seen_session")::text'
+            );
+        });
+
+        it('기록이 없으면(최댓값이 null) null이다', async () => {
+            const where = vi.fn().mockResolvedValue([{ latest: null }]);
+            const db = {
+                select: () => ({ from: () => ({ where }) }),
+            } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleSignalHistoryRepository(db).latestRecordedSession(
+                    'us'
+                )
+            ).resolves.toBeNull();
+        });
+    });
+
+    describe('findEpisodesStartedOn', () => {
+        it('시장과 첫 포착 세션이 같고 신호 유형 목록에 드는 행을 읽는다', async () => {
+            const rows = [
+                {
+                    symbol: 'NVDA',
+                    signalType: 'golden_cross',
+                    changePercent: 2.5,
+                    koreanName: '엔비디아',
+                },
+            ];
+            const orderBy = vi.fn().mockResolvedValue(rows);
+            const where = vi.fn((_condition: unknown) => ({ orderBy }));
+            const db = {
+                select: () => ({ from: () => ({ where }) }),
+            } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleSignalHistoryRepository(db).findEpisodesStartedOn(
+                    'us',
+                    '2026-11-24',
+                    ['golden_cross', 'death_cross']
+                )
+            ).resolves.toEqual(rows);
+
+            const { sql, params } = render(onlyCallArg(where));
+            // 이어진 에피소드(last_seen_session)가 아니라 그날 시작된 에피소드(session_date 같음)다.
+            expect(sql).toContain('"signal_events"."session_date" = $2');
+            expect(sql).not.toContain('last_seen_session');
+            expect(params).toEqual([
+                'us',
+                '2026-11-24',
+                'golden_cross',
+                'death_cross',
+            ]);
+        });
+
+        it('신호 유형 목록이 비면 쿼리하지 않는다', async () => {
+            const select = vi.fn();
+            const db = { select } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleSignalHistoryRepository(db).findEpisodesStartedOn(
+                    'us',
+                    '2026-11-24',
+                    []
+                )
+            ).resolves.toEqual([]);
+            expect(select).not.toHaveBeenCalled();
+        });
+    });
 });

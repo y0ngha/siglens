@@ -31,6 +31,36 @@ export const EMAIL_REPORT_CONSENT_SOURCE_VALUES = [
 export type EmailReportConsentSource =
     (typeof EMAIL_REPORT_CONSENT_SOURCE_VALUES)[number];
 
+/**
+ * 알림 메일 신청 화면(`mail_alert_subscribers.consent_source`)의 허용 값 — 마이그레이션 CHECK와 같다.
+ * `schema.ts`는 entities를 import할 수 없어 여기에 두고, `entities/mail-alert/model.ts`의 유니온과
+ * 같은지 `src/shared/db/__tests__/mailAlertSchema.test.ts`가 고정한다.
+ */
+export const MAIL_ALERT_CONSENT_SOURCE_VALUES = [
+    'symbol',
+    'fear_greed',
+    'signal_hub',
+    'settings',
+] as const;
+export type MailAlertConsentSourceValue =
+    (typeof MAIL_ALERT_CONSENT_SOURCE_VALUES)[number];
+
+/** `mail_alert_topics.kind`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const MAIL_ALERT_TOPIC_KIND_VALUES = [
+    'symbol',
+    'signal',
+    'fear_greed',
+] as const;
+export type MailAlertTopicKindValue =
+    (typeof MAIL_ALERT_TOPIC_KIND_VALUES)[number];
+
+/** `mail_alert_deliveries.status`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const MAIL_ALERT_DELIVERY_STATUS_VALUES = [
+    'pending',
+    'sent',
+    'failed',
+] as const;
+
 /** 공유 가능한 분석 종류 — Postgres enum이자 UI 판별자로 함께 쓴다. */
 export const SHAREABLE_KIND_VALUES = [
     'chart',

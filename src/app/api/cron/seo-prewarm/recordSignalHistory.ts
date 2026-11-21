@@ -11,6 +11,7 @@ import {
     continuationFloor,
     planSignalEpisodes,
     recordableSessionDate,
+    SIGNAL_SETTLE_MINUTES,
 } from '@/entities/signal-history/lib/signalEventRows';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import { sectorSignalsProviderFor } from '@/entities/sector-signal/api/sectorSignalsProvider';
@@ -22,16 +23,6 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-
-/**
- * 마감 뒤 이만큼 지나야 기록한다(분). 미국은 마지막 봉이 확정될 여유 15분. 한국은 시세가 20분
- * 늦게 오므로(`marketProfile` 실측 KRX 20분) 그만큼 더 기다린다 — 그 전에 계산하면 동시호가
- * 마감가가 빠진 봉으로 신호를 판정한다.
- */
-const SIGNAL_SETTLE_MINUTES: Readonly<Record<SignalHistoryMarket, number>> = {
-    us: 15,
-    kr: 35,
-};
 
 /**
  * 신호 이력 보존 기간(일, 마지막 포착 세션 기준). 신호별 페이지는 최근 몇 주만 보여 주지만, 신호가
