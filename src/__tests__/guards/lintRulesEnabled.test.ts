@@ -63,7 +63,18 @@ const FILES: Readonly<Record<string, string>> = {
         "export const early = 1;\nimport { a } from '../../src/shared/lib/dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\n",
 };
 
-let workDir = '';
+const workDir = mkdtempSync(path.join(tmpdir(), 'lint-rules-enabled-'));
+
+function isDiagnostic(value: unknown): value is Diagnostic {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'code' in value &&
+        typeof value.code === 'string' &&
+        'filename' in value &&
+        typeof value.filename === 'string'
+    );
+}
 
 function diagnosticsOf(): Diagnostic[] {
     const result = spawnSync(
@@ -80,10 +91,7 @@ function diagnosticsOf(): Diagnostic[] {
     ) {
         throw new Error(`unexpected oxlint output: ${result.stdout}`);
     }
-    return parsed.diagnostics.map((d: Diagnostic) => ({
-        code: d.code,
-        filename: d.filename,
-    }));
+    return parsed.diagnostics.filter(isDiagnostic);
 }
 
 function codesFor(diagnostics: readonly Diagnostic[], file: string): string[] {
@@ -94,7 +102,6 @@ function codesFor(diagnostics: readonly Diagnostic[], file: string): string[] {
 }
 
 beforeAll(() => {
-    workDir = mkdtempSync(path.join(tmpdir(), 'lint-rules-enabled-'));
     copyFileSync(
         path.join(ROOT, '.oxlintrc.json'),
         path.join(workDir, '.oxlintrc.json')
