@@ -1,23 +1,15 @@
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readMigrationJournal } from '@/shared/db/migrations/migrationJournal';
 import {
     LEGACY_MIGRATION_HASHES,
     MIGRATION_POLICY,
     POST_DEPLOY_MIGRATION_TAGS,
 } from '@/shared/db/migrations/migrationPolicy';
 
-const JOURNAL_TAGS = (
-    JSON.parse(
-        readFileSync(
-            path.resolve(
-                __dirname,
-                '../../../../../drizzle/meta/_journal.json'
-            ),
-            'utf-8'
-        )
-    ) as { entries: readonly { tag: string }[] }
-).entries.map(e => e.tag);
+const JOURNAL_TAGS = readMigrationJournal(
+    path.resolve(__dirname, '../../../../../drizzle')
+).map(m => m.tag);
 
 describe('migration policy', () => {
     it('every post-deploy tag is a journal tag', () => {

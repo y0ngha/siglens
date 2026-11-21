@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { isRecord } from '@/shared/lib/isRecord';
 import type {
     ExpectedMigration,
     JournalEntry,
@@ -36,15 +37,36 @@ function readOrThrow(file: string): string {
     }
 }
 
+function isJournalEntry(value: unknown): value is JournalEntry {
+    return (
+        isRecord(value) &&
+        typeof value.idx === 'number' &&
+        typeof value.tag === 'string' &&
+        value.tag.length > 0 &&
+        typeof value.when === 'number'
+    );
+}
+
 function parseEntries(raw: string): readonly JournalEntry[] {
+    const parsed = parseJson(raw);
+    const entries = isRecord(parsed) ? parsed.entries : undefined;
+    if (!Array.isArray(entries)) {
+        throw new MigrationManifestError(
+            'migration journal is not valid JSON with entries'
+        );
+    }
+    const badIndex = entries.findIndex(entry => !isJournalEntry(entry));
+    if (badIndex !== -1) {
+        throw new MigrationManifestError(
+            `migration journal entry ${badIndex} is malformed (needs idx, tag, when)`
+        );
+    }
+    return entries.filter(isJournalEntry);
+}
+
+function parseJson(raw: string): unknown {
     try {
-        const parsed: unknown = JSON.parse(raw);
-        const entries =
-            typeof parsed === 'object' && parsed !== null
-                ? (parsed as { entries?: unknown }).entries
-                : undefined;
-        if (!Array.isArray(entries)) throw new Error('entries is not an array');
-        return entries as readonly JournalEntry[];
+        return JSON.parse(raw);
     } catch (cause) {
         throw new MigrationManifestError(
             'migration journal is not valid JSON with entries',

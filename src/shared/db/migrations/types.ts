@@ -45,3 +45,10 @@ export interface MigrationReport {
     /** 0 = 막는 것 없음, 2 = 배포를 막을 대기 마이그레이션이 있다. */
     readonly exitCode: 0 | 2;
 }
+
+/** `readOnlyClientOptions()`가 돌려주는 postgres-js 옵션. 읽기 전용 세션을 요구한다. */
+export interface ReadOnlyClientOptions {
+    readonly max: 1;
+    readonly connect_timeout: number;
+    readonly connection: { readonly default_transaction_read_only: true };
+}

@@ -1,5 +1,10 @@
-const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
-const LINE_COMMENT = /--[^\n]*/g;
+/**
+ * 작은 토크나이저: 작은따옴표 리터럴, 큰따옴표 식별자, `--` 줄 주석, 블록 주석 중 **먼저 시작하는 것**을
+ * 하나로 잡는다. 그래서 리터럴 안의 `--`는 주석이 아니고(`'a--b'` 뒤의 DROP이 가려지지 않는다),
+ * 주석 안의 따옴표도 리터럴이 아니다. 달러 인용(`$$ ... $$`)은 해석하지 않는다. 그 안은 코드로
+ * 훑으므로 오탐 쪽(보수적)이다.
+ */
+const TOKEN = /'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|\/\*[\s\S]*?\*\//g;
 
 /**
  * 되돌리기 어려운 DDL/DML 패턴. 보수적으로 넓게 잡는다(오탐은 사람이 한 번 더 보면 되지만
@@ -16,11 +21,20 @@ const DESTRUCTIVE_PATTERNS: readonly RegExp[] = [
     /\bSET\s+NOT\s+NULL\b/i,
 ];
 
+/** 주석은 공백으로, 리터럴·식별자는 내용을 비운 따옴표만 남긴다(리터럴 속 단어는 DDL이 아니다). */
+function stripCommentsAndLiterals(sql: string): string {
+    return sql.replace(TOKEN, token => {
+        if (token.startsWith("'")) return "''";
+        if (token.startsWith('"')) return '""';
+        return ' ';
+    });
+}
+
 /**
- * 마이그레이션 SQL이 파괴적인가. SQL 주석(`--` 줄 주석과 블록 주석)은 먼저 지운다
- * (drizzle의 `--> statement-breakpoint`도 주석이다).
+ * 마이그레이션 SQL이 파괴적인가. SQL 주석(`--` 줄 주석과 블록 주석, drizzle의
+ * `--> statement-breakpoint` 포함)과 리터럴 내용은 판정에서 뺀다.
  */
 export function isDestructiveMigrationSql(sql: string): boolean {
-    const code = sql.replace(BLOCK_COMMENT, ' ').replace(LINE_COMMENT, ' ');
+    const code = stripCommentsAndLiterals(sql);
     return DESTRUCTIVE_PATTERNS.some(pattern => pattern.test(code));
 }

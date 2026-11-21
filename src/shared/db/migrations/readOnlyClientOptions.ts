@@ -1,3 +1,5 @@
+import type { ReadOnlyClientOptions } from '@/shared/db/migrations/types';
+
 /**
  * 점검 CLI(`db/scripts/checkMigrations.ts`)가 쓰는 postgres-js 옵션.
  *
@@ -6,10 +8,10 @@
  * 쓰기는 서버가 25006으로 거부한다. 그래서 점검 CLI는 쓰기 가드(`assertRemoteWriteAllowed`)를
  * 부르지 않는다. 이 옵션이 빠지면 그 전제가 조용히 무너지므로 테스트가 값을 고정한다.
  */
-export function readOnlyClientOptions() {
+export function readOnlyClientOptions(): ReadOnlyClientOptions {
     return {
         max: 1,
         connect_timeout: 10,
         connection: { default_transaction_read_only: true },
-    } as const;
+    };
 }

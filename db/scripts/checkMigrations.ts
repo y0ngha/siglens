@@ -34,6 +34,8 @@ async function main(): Promise<number> {
         `[check-migrations] target: ${formatTarget(describeTarget(databaseUrl))}`
     );
 
+    // 저널·SQL을 못 읽으면 MigrationManifestError(메시지에는 파일 이름뿐)가 그대로 올라가
+    // main()의 catch에서 exit 1이 된다. 읽지 못한 채 "대기 없음"으로 흘리지 않는 닫힌 쪽 동작이다.
     const expected = readMigrationJournal(
         path.resolve(__dirname, '../../drizzle')
     );

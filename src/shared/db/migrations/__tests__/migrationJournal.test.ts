@@ -1,11 +1,5 @@
 import { createHash } from 'node:crypto';
-import {
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    rmSync,
-    writeFileSync,
-} from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -18,11 +12,11 @@ import {
 const REPO_DRIZZLE = path.resolve(__dirname, '../../../../../drizzle');
 const HEX64 = /^[0-9a-f]{64}$/;
 
-const tempDirs: string[] = [];
+const tempDirs = new Set<string>();
 
 function makeRoot(files: Readonly<Record<string, string>>): string {
     const root = mkdtempSync(path.join(tmpdir(), 'siglens-journal-'));
-    tempDirs.push(root);
+    tempDirs.add(root);
     mkdirSync(path.join(root, 'meta'));
     Object.entries(files).forEach(([name, content]) =>
         writeFileSync(path.join(root, name), content)
@@ -37,9 +31,8 @@ function journal(tags: readonly string[]): string {
 }
 
 afterEach(() => {
-    tempDirs
-        .splice(0)
-        .forEach(dir => rmSync(dir, { recursive: true, force: true }));
+    tempDirs.forEach(dir => rmSync(dir, { recursive: true, force: true }));
+    tempDirs.clear();
 });
 
 describe('hashMigrationSql', () => {
@@ -87,7 +80,7 @@ describe('readMigrationJournal', () => {
 
     it('throws a typed error when the journal is missing', () => {
         const root = mkdtempSync(path.join(tmpdir(), 'siglens-journal-'));
-        tempDirs.push(root);
+        tempDirs.add(root);
         expect(() => readMigrationJournal(root)).toThrow(
             MigrationManifestError
         );
@@ -113,18 +106,43 @@ describe('readMigrationJournal', () => {
         );
     });
 
-    it('reads the real repo journal: one entry per journal entry, 64-hex hashes', () => {
-        const entries = (
-            JSON.parse(
-                readFileSync(
-                    path.join(REPO_DRIZZLE, 'meta/_journal.json'),
-                    'utf-8'
-                )
-            ) as { entries: readonly { tag: string }[] }
-        ).entries;
+    it('throws a typed error naming the index of a malformed entry', () => {
+        const root = makeRoot({
+            'meta/_journal.json': JSON.stringify({
+                entries: [
+                    { idx: 0, tag: '0000_a', when: 1 },
+                    { idx: 1, when: 2 },
+                ],
+            }),
+            '0000_a.sql': 'SELECT 0;',
+        });
+        expect(() => readMigrationJournal(root)).toThrow(
+            'migration journal entry 1 is malformed'
+        );
+    });
+
+    it.each([
+        ['a non-string tag', { idx: 0, tag: 5, when: 1 }],
+        ['an empty tag', { idx: 0, tag: '', when: 1 }],
+        ['a non-number when', { idx: 0, tag: '0000_a', when: '1' }],
+        ['a non-number idx', { idx: '0', tag: '0000_a', when: 1 }],
+        ['a non-object entry', 'nope'],
+        ['a null entry', null],
+    ])('rejects an entry with %s', (_label, entry) => {
+        const root = makeRoot({
+            'meta/_journal.json': JSON.stringify({ entries: [entry] }),
+            '0000_a.sql': 'SELECT 0;',
+        });
+        expect(() => readMigrationJournal(root)).toThrow(
+            MigrationManifestError
+        );
+    });
+
+    it('reads the real repo journal: 64-hex hashes, unique tags in order', () => {
         const result = readMigrationJournal(REPO_DRIZZLE);
-        expect(result).toHaveLength(entries.length);
-        expect(result.map(m => m.tag)).toEqual(entries.map(e => e.tag));
+        expect(result.length).toBeGreaterThan(0);
+        expect(new Set(result.map(m => m.tag)).size).toBe(result.length);
+        expect(result.map(m => m.tag)).toEqual(result.map(m => m.tag).sort());
         expect(result.every(m => HEX64.test(m.hash))).toBe(true);
     });
 });

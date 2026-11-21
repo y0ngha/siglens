@@ -56,4 +56,36 @@ describe('isDestructiveMigrationSql', () => {
             true
         );
     });
+
+    it('does not treat -- inside a string literal as a comment', () => {
+        expect(
+            isDestructiveMigrationSql(
+                'INSERT INTO t (v) VALUES (\'a--b\'); DROP TABLE "t";'
+            )
+        ).toBe(true);
+    });
+
+    it('ignores keywords inside string literals and quoted identifiers', () => {
+        expect(
+            isDestructiveMigrationSql(
+                "COMMENT ON TABLE \"drop\" IS 'we DROP nothing; it''s fine';"
+            )
+        ).toBe(false);
+    });
+
+    it('still reads an ALTER COLUMN type change on a quoted column', () => {
+        expect(
+            isDestructiveMigrationSql(
+                'ALTER TABLE "t" ALTER COLUMN "weird--name" SET DATA TYPE text;'
+            )
+        ).toBe(true);
+    });
+
+    it('does not let an apostrophe inside a comment open a literal', () => {
+        expect(
+            isDestructiveMigrationSql(
+                '-- don\'t\nDROP TABLE "t"; -- it\'s done'
+            )
+        ).toBe(true);
+    });
 });

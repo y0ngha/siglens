@@ -1,15 +1,15 @@
+import { isRecord } from '@/shared/lib/isRecord';
+
 /** postgres-js·drizzle 어느 쪽이든 SQLSTATE는 `code`에 있고, 감싸이면 `cause`에 있다. */
 const UNDEFINED_TABLE = '42P01';
 const MAX_CAUSE_DEPTH = 8;
 
 function codeAt(error: unknown, depth: number): boolean {
-    if (depth >= MAX_CAUSE_DEPTH || typeof error !== 'object' || error === null)
-        return false;
-    const { code, cause } = error as { code?: unknown; cause?: unknown };
-    return code === UNDEFINED_TABLE || codeAt(cause, depth + 1);
+    if (depth >= MAX_CAUSE_DEPTH || !isRecord(error)) return false;
+    return error.code === UNDEFINED_TABLE || codeAt(error.cause, depth + 1);
 }
 
-/** 저널 테이블(`drizzle.__drizzle_migrations`)이 없을 때의 에러인가(`42P01`). */
+/** 에러 또는 그 `cause` 체인에 `42P01`(저널 테이블 `drizzle.__drizzle_migrations` 없음)이 있는가. */
 export function isUndefinedTableError(error: unknown): boolean {
     return codeAt(error, 0);
 }

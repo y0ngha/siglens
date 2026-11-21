@@ -41,6 +41,10 @@ describe('db:check:migrations CLI', () => {
         expect(result.combined).toContain(
             '[check-migrations] target: db.check-test.invalid/prod (REMOTE)'
         );
+        // 저널 읽기 실패와 가르는 근거: 접속 시도 뒤에만 나오는 이름 해석 오류가 있다.
+        // 해석 실패 코드는 리졸버에 따라 ENOTFOUND 또는 EAI_AGAIN이다.
+        expect(result.combined).toMatch(/ENOTFOUND|EAI_AGAIN|getaddrinfo/);
+        expect(result.combined).not.toContain('manifest unreadable');
         expect(result.combined).not.toContain(SECRET);
     }, 120_000);
 });
