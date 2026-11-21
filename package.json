@@ -25,6 +25,7 @@
         "db:dev:reset": "scripts/db-dev.sh reset",
         "db:tunnel": "scripts/db-tunnel.sh",
         "db:migrate": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/migrate.ts",
+        "db:check:migrations": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/checkMigrations.ts",
         "db:seed:terms": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
         "db:seed:guide": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedGuide.ts",
         "guide:links": "tsx scripts/generate-guide-links.ts",

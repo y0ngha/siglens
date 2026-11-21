@@ -1,12 +1,12 @@
 import postgres from 'postgres';
 import { readFileSync } from 'fs';
-import crypto from 'crypto';
 import path from 'path';
 import {
     assertRemoteWriteAllowed,
     describeTarget,
     formatTarget,
 } from './lib/dbTarget';
+import { hashMigrationSql } from '../../src/shared/db/migrations/migrationJournal';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
 
@@ -85,10 +85,7 @@ async function runMigrations(): Promise<void> {
             path.join(drizzleRoot, `${entry.tag}.sql`),
             'utf-8'
         );
-        const hash = crypto
-            .createHash('sha256')
-            .update(migrationSql)
-            .digest('hex');
+        const hash = hashMigrationSql(migrationSql);
 
         if (appliedHashes.has(hash)) {
             console.log(`skip (already applied): ${entry.tag}`);
