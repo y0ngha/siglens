@@ -160,8 +160,7 @@ fi
 ### 있었다. 2026-08 감사로 오프셋을 Redis 영속 커서(`runPrewarmBatch.ts`의
 ### `advanceRotationCursor`, "실행 횟수"에만 묶임)로 바꾼 뒤로는 그 결합이
 ### 사라졌다 — 스케줄 간격은 이제 순수하게 "야간 처리량"만 결정한다(자세한
-### 배경은 `runPrewarmBatch.ts`의 `selectFairBatch` doc-comment 참고). 그래도
-### 간격을 바꾸면 처리량 추정치(docs/reference/CRON.md)가 stale해지니 함께 갱신할 것.
+### 배경은 `runPrewarmBatch.ts`의 `selectFairBatch` doc-comment 참고).
 # FIX Z(감사) — 20,25분 두 슬롯을 빼고 30분부터 시작(cron(0/5 20-23 ...)이면
 # 20:00/20:05/...도 포함되므로, 30분부터 도는 조밀한 표현이 없어 명시 리스트로 튼다).
 aws events put-rule --name "$RULE_EVENING" \
@@ -216,7 +215,7 @@ for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_EARLY_LATE
   log "target wired: $RULE -> $DESTINATION_NAME"
 done
 
-log "seo-prewarm eventbridge schedule ready — RUN A DELIVERY SPIKE before trusting the schedule (manual invoke or watch first scheduled 202, see docs/reference/CRON.md)"
+log "seo-prewarm eventbridge schedule ready — RUN A DELIVERY SPIKE before trusting the schedule (manual invoke or watch first scheduled 202)"
 
 ### 6) 로그 메트릭 필터 (알람은 07-alarms.sh의 `siglens-p2` 점수 알람 하나로 통합) ###
 # 2026-10 CloudWatch 무료 티어 통합: 이 스크립트의 알람 5+3개는 모두 폐기됐다.

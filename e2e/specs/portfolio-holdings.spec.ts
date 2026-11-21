@@ -21,8 +21,7 @@ import type { Locator, Page } from '@playwright/test';
  * asset_translations (e2e/setup/seed.ts), so savePortfolioHoldingAction's
  * getAssetInfo existence check resolves it via the DB (never FMP) —
  * deterministic company-name enrichment ("Apple Inc.") with zero dependency
- * on FMP_API_KEY, which this harness intentionally never provides
- * (docs/qa/E2E.md). A never-seeded symbol would still SAVE successfully
+ * on FMP_API_KEY, which this harness intentionally never provides. A never-seeded symbol would still SAVE successfully
  * (getAssetInfo throwing on a missing FMP key is the documented
  * degrade-tolerant "accept" path — design §5), so it cannot be used to prove
  * rejection; the worst-case test below instead drives a symbol that is
@@ -42,7 +41,7 @@ import type { Locator, Page } from '@playwright/test';
  *
  * Isolation: this is the only spec that touches this user's AAPL holding row.
  * beforeEach normalizes it away (UI delete if present) so repeated runs
- * against the persisted e2e Postgres (docs/qa/E2E.md: `e2e:down -v` is the
+ * against the persisted e2e Postgres (`e2e:down -v` is the
  * only reset) start from a known-clean state, mirroring
  * account-api-key.spec.ts's register/delete normalization. The worst-case
  * (invalid symbol) test never reaches the DB, so it cannot race the main flow

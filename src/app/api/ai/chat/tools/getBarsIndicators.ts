@@ -372,8 +372,7 @@ interface BarsConfluenceView {
  * cached series. It is a descriptive tally, not a forecast: siglens-trader
  * retired this rule on 2026-09-24 after its backtests found it
  * indistinguishable from baseline, and on daily bars a met entry rule
- * trailed baseline 10-day returns in every period measured 2000–2026
- * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
+ * trailed baseline 10-day returns in every period measured 2000–2026.
  *
  * `htfBars` (loaded once for `higherTimeframe`, §3.1) is threaded into core's
  * own HTF alignment gate when available, so the score's 92 snap matches the
@@ -440,8 +439,7 @@ interface PullbackView {
 
 /**
  * The short-term sell-off reading siglens-trader switched to on 2026-09-24,
- * re-measured on independent data for siglens
- * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
+ * re-measured on independent data for siglens.
  * Classification, thresholds and base-rate wording all live in core
  * (`evaluatePullback`, `PULLBACK_BASE_RATES`) — the same reading the analysis
  * prompt renders as `### Short-term sell-off check (computed, 1Day bars)`, so the chat and the analysis

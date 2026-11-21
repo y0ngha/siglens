@@ -1,7 +1,7 @@
 /**
  * Pure helpers that turn a cached SEO snapshot row into the excerpt card shown
  * on `/lp/stock-analysis`. Display-only selection of already generated text; no
- * analysis logic lives here (`docs/architecture/SCOPE.md` §6).
+ * analysis logic lives here.
  */
 import type { Trend } from '@y0ngha/siglens-core';
 import { narrowTechnicalContent } from '@/entities/seo-snapshot/lib/technicalContent';

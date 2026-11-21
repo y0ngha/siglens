@@ -6,7 +6,7 @@
  *
  *   yarn rules:ratchet                       현황 보고. 늘었거나 낡은 항목이 있으면 종료 코드 1.
  *   yarn rules:ratchet --tighten             기존 항목만 min(현재, 기준선)으로 줄이고 0인 항목을 지운다(0 항목 정리를 위해 주기적으로 돌린다).
- *   yarn rules:ratchet --move <옛> <새>      이름을 바꾸거나 지운(옛 경로가 사라진) 파일의 항목을 새 경로로 옮긴다.
+ *   yarn rules:ratchet --move <옛> <새>      이름을 바꾸거나 지운(옛 경로가 사라진) 파일의 항목을 새 경로로 옮긴다. `--tighten`보다 먼저 돌린다.
  *   yarn rules:ratchet --against <git ref>   ref의 기준선 대비 올라간 값과 git 이름 변경으로 설명되지 않는 새 키를 나열한다.
  *   yarn rules:ratchet --init                기준선 파일이 없을 때 한 번만 만든다.
  */

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+    ALLOWED_LINT_DISABLE_FILES,
     CODE_RULES,
     MIN_SCANNED_FILES,
     checkScanFloor,
@@ -55,6 +56,23 @@ describe('code rules: live repository', () => {
             const scan = liveScan();
             expect(scan.problems).toEqual([]);
             expect(scan.scanned).toBeGreaterThan(MIN_SCANNED_FILES);
+        },
+        SCAN_TIMEOUT_MS
+    );
+
+    it(
+        'scans root configs, infra scripts and stylesheets as well as src',
+        () => {
+            const { paths } = liveScan();
+            expect(paths).toEqual(
+                expect.arrayContaining([
+                    'next.config.ts',
+                    'src/app/globals.css',
+                    'src/shared/lib/withConcurrencyLimit.ts',
+                ])
+            );
+            expect(paths.some(file => file.startsWith('infra/'))).toBe(true);
+            expect(paths.some(file => file.endsWith('.sh'))).toBe(true);
         },
         SCAN_TIMEOUT_MS
     );
@@ -271,6 +289,500 @@ describe('code rules: planted predicates', () => {
             ['not adjacent', 'let x;\nlog();\ntry { x = f(); } catch {}', 0],
         ])('%s -> %i', (_name, text, expected) => {
             expect(countOf('let-then-try', PROD_PATH, text)).toBe(expected);
+        });
+    });
+
+    describe('accumulator-in-loop', () => {
+        const PURE = 'src/shared/lib/planted.ts';
+        const NOTE =
+            '// CONVENTIONS.md#CP-6 예외: 입력이 수십 개라 복사 비용이 없다';
+        it.each([
+            [
+                'push in a for-of',
+                'export function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}',
+                1,
+            ],
+            [
+                'push in a while loop',
+                'export function f() {\n const out = [];\n while (go()) { out.push(1); }\n return out;\n}',
+                1,
+            ],
+            [
+                'push in a forEach callback',
+                'export function f(xs: number[]) {\n const out: number[] = [];\n xs.forEach(x => out.push(x));\n return out;\n}',
+                1,
+            ],
+            [
+                'push on a member of a local',
+                'export function f(xs: number[]) {\n const acc = { list: [] as number[] };\n for (const x of xs) acc.list.push(x);\n return acc;\n}',
+                1,
+            ],
+            [
+                'Map#set on a local map in a for-of',
+                'export function f(xs: string[]) {\n const m = new Map<string, number>();\n for (const x of xs) m.set(x, 1);\n return m;\n}',
+                1,
+            ],
+            [
+                'Set#add on a local set in a for-of',
+                'export function f(xs: string[]) {\n const s = new Set<string>();\n for (const x of xs) s.add(x);\n return s;\n}',
+                1,
+            ],
+            [
+                'push in a closure called from a loop body',
+                'export function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) { const add = () => out.push(x); add(); }\n return out;\n}',
+                1,
+            ],
+            [
+                'a note above the function',
+                `${NOTE}\nexport function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}`,
+                0,
+            ],
+            [
+                'a note above the loop',
+                `export function f(xs: number[]) {\n const out: number[] = [];\n ${NOTE}\n for (const x of xs) out.push(x);\n return out;\n}`,
+                0,
+            ],
+            [
+                'a note above the accumulator',
+                `export function f(xs: number[]) {\n ${NOTE}\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}`,
+                0,
+            ],
+            [
+                'a note opening the function body',
+                `export function f(xs: number[]) {\n ${NOTE}\n log();\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}`,
+                0,
+            ],
+            [
+                'a note above a forEach statement',
+                `export function f(xs: number[]) {\n const out: number[] = [];\n ${NOTE}\n xs.forEach(x => out.push(x));\n return out;\n}`,
+                0,
+            ],
+            [
+                'a marker without a reason',
+                '// CONVENTIONS.md#CP-6 예외:\nexport function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}',
+                1,
+            ],
+            [
+                'a reason that names no cost',
+                '// CONVENTIONS.md#CP-6 예외: 입력이 아주 작아서 그냥 이렇게 쓴다\nexport function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}',
+                1,
+            ],
+            [
+                'a reason that names a copy cost in English',
+                '// CONVENTIONS.md#CP-6 예외: spreading would copy the array per element\nexport function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}',
+                0,
+            ],
+            [
+                'a reason that names an allocation cost',
+                '// CONVENTIONS.md#CP-6 예외: 행마다 새 배열 할당이 겹친다\nexport function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}',
+                0,
+            ],
+            [
+                'a note about something else',
+                '// 입력을 한 번에 훑는다\nexport function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}',
+                1,
+            ],
+            [
+                'a module-level cache written in a loop',
+                'const cache: number[] = [];\nexport function f(xs: number[]) {\n for (const x of xs) cache.push(x);\n}',
+                0,
+            ],
+            [
+                'a parameter written in a loop',
+                'export function f(out: number[], xs: number[]) {\n for (const x of xs) out.push(x);\n}',
+                0,
+            ],
+            [
+                'a fresh array per iteration',
+                'export function f(xs: number[][]) {\n return xs.map(x => { const row: number[] = []; for (const y of x) row.push(y); return row; });\n}',
+                1,
+            ],
+            [
+                'an array declared inside the loop body',
+                'export function f(xs: number[]) {\n for (const x of xs) { const row: number[] = []; row.push(x); use(row); }\n}',
+                0,
+            ],
+            [
+                'a push outside any loop',
+                'export function f() {\n const out: number[] = [];\n out.push(1);\n return out;\n}',
+                0,
+            ],
+            [
+                'set on something that is not a Map',
+                'export function f(xs: number[]) {\n const o = makeThing();\n for (const x of xs) o.set(x);\n}',
+                0,
+            ],
+            [
+                'a closure that is not called in a loop',
+                'export function f() {\n const out: number[] = [];\n const add = (x: number) => out.push(x);\n return add;\n}',
+                0,
+            ],
+        ])('%s -> %i', (_name, text, expected) => {
+            expect(countOf('accumulator-in-loop', PURE, text)).toBe(expected);
+        });
+
+        it('counts every unannotated site in a file', () => {
+            expect(
+                countOf(
+                    'accumulator-in-loop',
+                    PURE,
+                    'export function f(xs: number[]) {\n const a = [];\n const m = new Map();\n for (const x of xs) { a.push(x); m.set(x, 1); }\n}'
+                )
+            ).toBe(2);
+        });
+
+        it.each([
+            ['src/entities/ticker/lib/x.ts', 1],
+            ['src/shared/lib/sse/x.ts', 1],
+            ['src/app/x.ts', 0],
+            ['src/entities/ticker/model.ts', 0],
+            ['src/widgets/chart/utils/x.ts', 0],
+            ['scripts/x.ts', 0],
+            ['src/shared/lib/__tests__/x.test.ts', 0],
+        ])('applies by path: %s -> %i', (file, expected) => {
+            expect(
+                countOf(
+                    'accumulator-in-loop',
+                    file,
+                    'export function f(xs: number[]) {\n const out: number[] = [];\n for (const x of xs) out.push(x);\n return out;\n}'
+                )
+            ).toBe(expected);
+        });
+    });
+
+    describe('push-in-functional-callback', () => {
+        it.each([
+            ['map', 'xs.map(x => { out.push(x); return x; });', 1],
+            ['filter', 'xs.filter(x => out.push(x) > 0);', 1],
+            [
+                'reduce',
+                'xs.reduce((acc, x) => { acc.push(x); return acc; }, []);',
+                1,
+            ],
+            ['flatMap', 'xs.flatMap(x => { out.push(x); return []; });', 1],
+            [
+                'useMemo factory',
+                'const v = useMemo(() => { const r = []; r.push(1); return r; }, []);',
+                1,
+            ],
+            [
+                'React.useMemo factory',
+                'const v = React.useMemo(() => { const r = []; r.push(1); return r; }, []);',
+                1,
+            ],
+            [
+                'a nested function inside the callback',
+                'xs.map(x => { const add = () => out.push(x); add(); return x; });',
+                1,
+            ],
+            ['a plain for loop', 'for (const x of xs) out.push(x);', 0],
+            [
+                'a forEach callback (the loop rule covers it)',
+                'xs.forEach(x => out.push(x));',
+                0,
+            ],
+            ['after the callback', 'xs.map(x => x);\nout.push(1);', 0],
+            [
+                'a callback argument that is not functional',
+                'run(() => out.push(1));',
+                0,
+            ],
+            ['a map callback without push', 'xs.map(x => x * 2);', 0],
+        ])('%s -> %i', (_name, text, expected) => {
+            expect(
+                countOf('push-in-functional-callback', 'src/app/x.ts', text)
+            ).toBe(expected);
+        });
+
+        it('does not apply to test files', () => {
+            expect(
+                countOf(
+                    'push-in-functional-callback',
+                    TEST_PATH,
+                    'xs.map(x => { out.push(x); return x; });'
+                )
+            ).toBe(0);
+        });
+
+        it('applies to scripts and .mjs files', () => {
+            expect(
+                countOf(
+                    'push-in-functional-callback',
+                    'scripts/x.mjs',
+                    'xs.map(x => { out.push(x); return x; });'
+                )
+            ).toBe(1);
+        });
+    });
+
+    describe('logical-assignment-in-react', () => {
+        it.each([
+            [
+                '??= in a component',
+                'src/widgets/a/Foo.tsx',
+                'ref.current ??= 1;',
+                1,
+            ],
+            [
+                '||= in a component',
+                'src/widgets/a/Foo.tsx',
+                'let a = 0;\na ||= 1;',
+                1,
+            ],
+            [
+                '&&= in a component',
+                'src/widgets/a/Foo.tsx',
+                'let a = 0;\na &&= 1;',
+                1,
+            ],
+            [
+                '??= in a hook',
+                'src/shared/hooks/useFoo.ts',
+                'ref.current ??= 1;',
+                1,
+            ],
+            [
+                '??= in a plain module',
+                'src/shared/lib/foo.ts',
+                'ref.current ??= 1;',
+                0,
+            ],
+            [
+                '??= in a file that only starts with "use"',
+                'src/shared/lib/useful.ts',
+                'ref.current ??= 1;',
+                0,
+            ],
+            [
+                '??= in a component test',
+                'src/widgets/a/Foo.test.tsx',
+                'ref.current ??= 1;',
+                0,
+            ],
+            [
+                'explicit form',
+                'src/widgets/a/Foo.tsx',
+                'ref.current = ref.current ?? 1;',
+                0,
+            ],
+            [
+                'plain assignment',
+                'src/widgets/a/Foo.tsx',
+                'ref.current = 1;',
+                0,
+            ],
+            [
+                'text in a string',
+                'src/widgets/a/Foo.tsx',
+                "const s = 'a ??= b';",
+                0,
+            ],
+        ])('%s -> %i', (_name, file, text, expected) => {
+            expect(countOf('logical-assignment-in-react', file, text)).toBe(
+                expected
+            );
+        });
+    });
+
+    describe('local-doc-citation', () => {
+        it.each([
+            [
+                'a line comment',
+                'src/a/x.ts',
+                '// see docs/architecture/X.md\n',
+                1,
+            ],
+            [
+                'a block comment',
+                'src/a/x.ts',
+                '/** docs/reference/CRON.md */\n',
+                1,
+            ],
+            [
+                'a string literal',
+                'src/a/x.ts',
+                "const a = 'docs/architecture/X.md';",
+                1,
+            ],
+            [
+                'a template literal',
+                'src/a/x.ts',
+                'const a = `see docs/qa/E2E.md ${b}`;',
+                1,
+            ],
+            [
+                'JSX text',
+                'src/a/X.tsx',
+                'const a = <p>docs/superpowers/plans/x.md</p>;',
+                1,
+            ],
+            [
+                'two citations in one comment',
+                'src/a/x.ts',
+                '// docs/qa/A.md and docs/qa/B.md\n',
+                2,
+            ],
+            [
+                'an agents-only folder',
+                'src/a/x.ts',
+                '// docs/__agents_only__/x.md\n',
+                1,
+            ],
+            [
+                'a framework URL',
+                'src/a/x.ts',
+                '// https://nextjs.org/docs/app/guides\n',
+                0,
+            ],
+            [
+                'a relative path',
+                'src/a/x.ts',
+                '// ../../docs/architecture/X.md\n',
+                0,
+            ],
+            [
+                'the tracked conventions docs',
+                'src/a/x.ts',
+                '// docs/conventions/TESTING.md\n',
+                0,
+            ],
+            [
+                'the tracked product docs',
+                'src/a/x.ts',
+                '// docs/product/README.md\n',
+                0,
+            ],
+            [
+                'a word that ends in docs',
+                'src/a/x.ts',
+                '// mydocs/architecture\n',
+                0,
+            ],
+            ['code with no citation', 'src/a/x.ts', 'const a = 1;', 0],
+        ])('%s -> %i', (_name, file, text, expected) => {
+            expect(countOf('local-doc-citation', file, text)).toBe(expected);
+        });
+
+        it('counts a comment in a test file but not a planted source string', () => {
+            expect(
+                countOf(
+                    'local-doc-citation',
+                    TEST_PATH,
+                    "const planted = 'docs/architecture/X.md';\nconst t = `docs/qa/Y.md`;"
+                )
+            ).toBe(0);
+            expect(
+                countOf(
+                    'local-doc-citation',
+                    TEST_PATH,
+                    '// docs/architecture/X.md\n'
+                )
+            ).toBe(1);
+        });
+
+        it.each([
+            ['infra/aws/x.sh', '# see docs/reference/CRON.md\n', 1],
+            ['src/app/x.css', '/* docs/superpowers/plans/x.md */\n', 1],
+            ['infra/aws/x.sh', '# see docs/conventions/TESTING.md\n', 0],
+        ])(
+            'scans the whole body of a text file: %s -> %i',
+            (file, text, expected) => {
+                expect(countOf('local-doc-citation', file, text)).toBe(
+                    expected
+                );
+            }
+        );
+
+        it('ignores files that are neither code nor a scanned text type', () => {
+            expect(
+                countOf('local-doc-citation', 'src/a/x.md', 'docs/qa/E2E.md')
+            ).toBe(0);
+        });
+    });
+
+    describe('lint-disable-directive', () => {
+        const ALLOWED = 'src/app/global-error.tsx';
+        it.each([
+            [
+                'a line comment',
+                'src/a/x.ts',
+                '// eslint-disable-next-line no-console\n',
+                1,
+            ],
+            [
+                'a trailing comment',
+                'src/a/x.ts',
+                'const a = 1; // eslint-disable-line foo\n',
+                1,
+            ],
+            ['a block comment', 'src/a/x.ts', '/* oxlint-disable foo */\n', 1],
+            [
+                'an oxlint line comment',
+                'src/a/x.ts',
+                '// oxlint-disable-next-line foo\n',
+                1,
+            ],
+            [
+                'a reason outside the allowlist',
+                'src/a/x.ts',
+                '// eslint-disable-next-line foo -- 사유\n',
+                1,
+            ],
+            [
+                'a test file',
+                'src/a/x.test.ts',
+                '// eslint-disable-next-line foo\n',
+                1,
+            ],
+            [
+                'an allowlisted file without a reason',
+                ALLOWED,
+                '/* eslint-disable foo */\n',
+                1,
+            ],
+            [
+                'an allowlisted file with a reason',
+                ALLOWED,
+                '/* eslint-disable foo -- 사유\n * 설명 */\n',
+                0,
+            ],
+            [
+                "another tool's comment",
+                'src/a/x.ts',
+                '// react-doctor-disable-next-line foo\n',
+                0,
+            ],
+            [
+                'a sentence that mentions disabling',
+                'src/a/x.ts',
+                '// how to disable lint is documented elsewhere\n',
+                0,
+            ],
+            [
+                'text in a string',
+                'src/a/x.ts',
+                "const s = '// eslint-disable-next-line foo';",
+                0,
+            ],
+        ])('%s -> %i', (_name, file, text, expected) => {
+            expect(countOf('lint-disable-directive', file, text)).toBe(
+                expected
+            );
+        });
+
+        it('keeps the allowlist at two files that still carry a reasoned directive', () => {
+            expect(ALLOWED_LINT_DISABLE_FILES).toHaveLength(2);
+            ALLOWED_LINT_DISABLE_FILES.forEach(allowed => {
+                const text = readFileSync(path.join(ROOT, allowed), 'utf8');
+                expect(
+                    /(?:eslint|oxlint)-disable/.test(text),
+                    `${allowed} must still carry a directive`
+                ).toBe(true);
+                expect(
+                    countOf('lint-disable-directive', allowed, text),
+                    `${allowed} directive needs a "--" reason`
+                ).toBe(0);
+            });
         });
     });
 

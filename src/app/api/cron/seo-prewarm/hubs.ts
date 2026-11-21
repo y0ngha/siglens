@@ -166,7 +166,7 @@ async function readBackWithRetry<T>(
  *
  * `alreadyFresh`와 `noData`를 `generated`와 **합치지 않는** 이유가 둘 있다.
  *
- * ① ISR 과금: 이 크론은 하룻밤 126번 돈다(`docs/reference/CRON.md`의 EventBridge
+ * ① ISR 과금: 이 크론은 하룻밤 126번 돈다(EventBridge
  *    규칙 4개). core 캐시가 살아 있으면 `run*`은 즉시 캐시값을 돌려주므로, 그때도
  *    태그를 털면 데이터가 하나도 안 변했는데 무효화만 9 × 126 = 1,134회 나간다 —
  *    src/app/CLAUDE.md#AP-2에서 이미 한 번 겪은 과금 패턴이다.

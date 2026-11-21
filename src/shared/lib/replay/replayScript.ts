@@ -84,17 +84,23 @@ export function sliceSegments(
     segments: readonly Segment[],
     n: number
 ): Segment[] {
-    const out: Segment[] = [];
-    let left = n;
-    for (const segment of segments) {
-        if (left <= 0) break;
-        const text = segment.text.slice(0, left);
-        out.push(
-            text.length === segment.text.length ? segment : { ...segment, text }
-        );
-        left -= text.length;
-    }
-    return out;
+    // 한 줄의 세그먼트는 몇 개뿐이라 단계마다 배열을 다시 만들어도 비용이 없다.
+    return segments.reduce<{ out: Segment[]; left: number }>(
+        (state, segment) => {
+            if (state.left <= 0) return state;
+            const text = segment.text.slice(0, state.left);
+            return {
+                out: [
+                    ...state.out,
+                    text.length === segment.text.length
+                        ? segment
+                        : { ...segment, text },
+                ],
+                left: state.left - text.length,
+            };
+        },
+        { out: [], left: n }
+    ).out;
 }
 
 export interface LineGroup {

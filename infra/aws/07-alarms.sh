@@ -262,7 +262,7 @@ put_alert_filter siglens-market-data-loader-failed '?"[FearGreedRoute] getMarket
 # "발생 자체가 이상 신호"라 1건=100점.
 #
 # **필터 패턴은 ASCII만 쓴다.** CloudWatch metric filter는 non-ASCII 리터럴을
-# 매칭하지 못한다(FIX F — `infra/aws/13-seo-prewarm.sh`, `docs/reference/CRON.md`).
+# 매칭하지 못한다(FIX F — `infra/aws/13-seo-prewarm.sh`).
 #   - `NAVER_CLIENT_ID/SECRET` / `non-OK response` — `/news/kr`의 유일한 소스인
 #     네이버 뉴스 API. 키가 비거나 구독이 만료되면 빈 피드 + noindex가 굳는다.
 #   - `[KR_EQUITY_SESSION]` — `KR_CALENDAR_HORIZON`(현재 2026-12-31) 만료.

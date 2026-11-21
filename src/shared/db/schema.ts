@@ -1110,7 +1110,7 @@ export const seoAnalysisSnapshots = pgTable(
  * **한계(의도적)**
  * - 원본 행과의 FK가 없다 — `entity_id`가 테이블마다 타입이 달라(uuid/text)
  *   단일 FK를 걸 수 없다. 원본 삭제 시 고아 행이 남는다. 정리는
- *   `docs/reference/CRON.md`의 후속 항목으로 둔다(고아 행은 조회 키가
+ *   후속 작업으로 둔다(고아 행은 조회 키가
  *   맞지 않아 화면에 새어 나오지 않는다).
  * - `field`가 문자열이다 — 오타를 막으려고 호출부는
  *   `shared/db/contentTranslationFields.ts`의 상수만 쓴다.

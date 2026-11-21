@@ -60,6 +60,7 @@ const UNITS = [
  * 허용 집합에서 값 몇 개를 빼는 것뿐이다. 이 집합의 목적은 **표기 차이를 환각으로
  * 잘못 잡지 않는 것**이고(아래 주석), 좁힐수록 손실이 커지는 방향이다.
  */
+// CONVENTIONS.md#CP-6 예외: 재귀 깊이가 UNITS 길이로 묶이고 조기 break가 있어, 지역 배열 하나에 모으는 편이 단계마다 배열을 다시 만드는 것보다 복사가 없다(O(N)).
 function unitParts(n: number, depth = 0): number[] {
     if (!Number.isFinite(n) || depth > UNITS.length) return [];
     const abs = Math.abs(n);
@@ -97,6 +98,7 @@ const MAGNITUDE_SCALE: Record<string, number> = {
     B: 1e9,
 };
 
+// CONVENTIONS.md#CP-6 예외: 입력 산문의 숫자 수만큼 한 번에 모으는 지역 누산기다. 숫자마다 집합·배열을 펼쳐 다시 만들면 O(N²)다.
 export function buildAllowedNumbers(
     factNumbers: readonly number[],
     proseTexts: readonly string[]
@@ -155,6 +157,7 @@ function isYearToken(token: string, text: string, end: number): boolean {
     return text.slice(end, end + 1) === '년';
 }
 
+// CONVENTIONS.md#CP-6 예외: 본문의 가격 토큰마다 continue로 거르며 모으는 단일 패스(O(N))다. 토큰마다 배열을 다시 만들면 O(N²)다.
 export function findUnsupportedNumbers(
     text: string,
     allowed: readonly number[]

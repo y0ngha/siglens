@@ -314,25 +314,26 @@ export function deduplicatePopularTickerEntries(
     const beforeSection = fileContent.slice(0, sectionStart);
     const section = fileContent.slice(sectionStart, arrayEnd);
     const afterSection = fileContent.slice(arrayEnd);
-    const seenTickers = new Set<string>();
-    const removedTickers: string[] = [];
-
-    const deduplicatedSection = section
-        .split('\n')
-        .filter(line => {
-            const tickerMatch = line.match(TICKER_LITERAL_LINE_PATTERN);
-            const ticker = tickerMatch?.[2];
-            if (ticker === undefined) return true;
-
-            if (!seenTickers.has(ticker)) {
-                seenTickers.add(ticker);
-                return true;
-            }
-
-            removedTickers.push(ticker);
-            return false;
-        })
+    const lines = section.split('\n');
+    const tickers = lines.map(
+        line => line.match(TICKER_LITERAL_LINE_PATTERN)?.[2]
+    );
+    // 같은 티커의 첫 줄만 남기고 나머지는 중복이다.
+    const firstIndex = new Map(
+        tickers
+            .flatMap((ticker, index) =>
+                ticker === undefined ? [] : [[ticker, index] as const]
+            )
+            .toReversed()
+    );
+    const isDuplicate = (ticker: string | undefined, index: number): boolean =>
+        ticker !== undefined && firstIndex.get(ticker) !== index;
+    const deduplicatedSection = lines
+        .filter((_, index) => !isDuplicate(tickers[index], index))
         .join('\n');
+    const removedTickers = tickers.flatMap((ticker, index) =>
+        ticker !== undefined && isDuplicate(ticker, index) ? [ticker] : []
+    );
 
     return {
         content: `${beforeSection}${deduplicatedSection}${afterSection}`,

@@ -33,7 +33,7 @@ interface StringSlot {
 
 /** 값 트리의 문자열 잎(객체 값·배열 원소)을 수집한다. 키 이름은 건드리지 않는다. */
 function collectStringSlots(root: unknown): StringSlot[] {
-    // CP-6 예외: 수백 KB 트리를 재귀로 훑으며 단계마다 배열을 펼쳐 합치면 잎 수만큼 복사가 겹친다(O(N²)). 지역 누산기 하나로 O(N)을 유지한다.
+    // CONVENTIONS.md#CP-6 예외: 수백 KB 트리를 재귀로 훑으며 단계마다 배열을 펼쳐 합치면 잎 수만큼 복사가 겹친다(O(N²)). 지역 누산기 하나로 O(N)을 유지한다.
     const slots: StringSlot[] = [];
     const walk = (node: unknown): void => {
         if (Array.isArray(node)) {
