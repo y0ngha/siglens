@@ -13,6 +13,7 @@ import { cn } from '@/shared/lib/cn';
 import {
     buildExpirationTabs,
     findActiveTabIndex,
+    findActiveTabValue,
 } from './utils/expirationTabs';
 import { ExpirationChip } from './ui/expiration/ExpirationChip';
 import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
@@ -70,7 +71,7 @@ export function ExpirationSelector({
     const values = tabs.map(tab => tab.value);
     const handleKeyDown = useRovingKeyboardNav({
         items: values,
-        activeItem: values[activeIndex]!,
+        activeItem: findActiveTabValue(tabs, value),
         onChange,
         focusItem: next => buttonRefs.current[values.indexOf(next)]?.focus(),
     });

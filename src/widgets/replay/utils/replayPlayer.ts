@@ -115,7 +115,10 @@ export async function playScenario(
     index: number,
     firstRun: boolean
 ): Promise<void> {
-    const scenario = ctx.scenarios[index]!;
+    const scenario = ctx.scenarios[index];
+    if (scenario === undefined) {
+        throw new Error(`unknown replay scenario index: ${index}`);
+    }
     const base: Frame = {
         index,
         typed: 0,
@@ -135,11 +138,11 @@ export async function playScenario(
     }
     await waitPlaying(ctx, AFTER_TYPING_MS);
     const typed = scenario.question.length;
-    for (let t = 0; t < scenario.tools.length; t++) {
+    for (const [t, tool] of scenario.tools.entries()) {
         ctx.setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t });
         // Frame-by-frame timed playback: waiting serially is the feature.
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
-        await waitPlaying(ctx, scenario.tools[t]!.ms);
+        await waitPlaying(ctx, tool.ms);
         ctx.setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t + 1 });
         await waitPlaying(ctx, TOOL_GAP_MS);
     }

@@ -74,10 +74,7 @@ export function lastIndexOnOrBefore(
     bars: readonly Bar[],
     targetDate: string
 ): number {
-    for (let i = bars.length - 1; i >= 0; i--) {
-        if (barDate(bars[i]!) <= targetDate) return i;
-    }
-    return -1;
+    return bars.findLastIndex(bar => barDate(bar) <= targetDate);
 }
 
 function calendarChange(
@@ -91,8 +88,8 @@ function calendarChange(
     // `-1`: the series begins after the target date. The last bar itself can
     // never qualify (it is dated after the target), so a hit is always older.
     if (baseIndex < 0) return null;
-    const base = bars[baseIndex]!;
-    if (!Number.isFinite(base.close)) return null;
+    const base = bars[baseIndex];
+    if (base === undefined || !Number.isFinite(base.close)) return null;
     return {
         baseDate: barDate(base),
         baseClose: base.close,

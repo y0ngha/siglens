@@ -48,14 +48,18 @@ const FILES: Readonly<Record<string, string>> = {
     [`${PROD}/importFirst.ts`]:
         "export const early = 1;\nimport { a } from './dep';\nexport const late = a + early;\n",
     [`${PROD}/explicitAny.ts`]: 'export const loose: any = 1;\n',
+    [`${PROD}/nonNull.ts`]:
+        'const maybe = (): string | undefined => undefined;\nexport const forced = maybe()!;\n',
+    [`${E2E_SUPPORT}/nonNull.ts`]:
+        'const maybe = (): string | undefined => undefined;\nexport const forced = maybe()!;\n',
     // 테스트 경로: import/first는 꺼져 있다(vi.mock을 import 위에 두는 TE-1 형태).
     // prefer-const는 켜져 있어야 린터가 이 파일을 실제로 읽었다는 증거가 된다.
     [`${TEST}/mockAboveImports.ts`]:
-        "export const early = 1;\nimport { a } from '../dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\n",
+        "export const early = 1;\nimport { a } from '../dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\nconst maybe = (): string | undefined => undefined;\nexport const forced = maybe()!;\n",
     [`${SCRIPTS_TEST}/mockAboveImports.test.ts`]:
-        "export const early = 1;\nimport { a } from '../../../src/shared/lib/dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\n",
+        "export const early = 1;\nimport { a } from '../../../src/shared/lib/dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\nconst maybe = (): string | undefined => undefined;\nexport const forced = maybe()!;\n",
     [`${E2E_SPEC}/mockAboveImports.spec.ts`]:
-        "export const early = 1;\nimport { a } from '../src/shared/lib/dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\n",
+        "export const early = 1;\nimport { a } from '../src/shared/lib/dep';\nlet neverReassigned = a + early;\nexport const value = neverReassigned;\nconst maybe = (): string | undefined => undefined;\nexport const forced = maybe()!;\n",
     // e2e 지원 코드는 테스트 파일이 아니라 import/first가 계속 적용된다.
     [`${E2E_SUPPORT}/importFirst.ts`]:
         "export const early = 1;\nimport { a } from '../../src/shared/lib/dep';\nexport const late = a + early;\n",
@@ -118,7 +122,7 @@ afterAll(() => {
 
 describe('.oxlintrc.json keeps the mechanized rules on', () => {
     it(
-        '운영 코드에서는 네 규칙이 모두 보고된다',
+        '운영 코드에서는 다섯 규칙이 모두 보고된다',
         () => {
             const diagnostics = diagnosticsOf();
             expect(codesFor(diagnostics, `${PROD}/preferConst.ts`)).toContain(
@@ -133,6 +137,12 @@ describe('.oxlintrc.json keeps the mechanized rules on', () => {
             expect(codesFor(diagnostics, `${PROD}/explicitAny.ts`)).toContain(
                 'typescript(no-explicit-any)'
             );
+            expect(codesFor(diagnostics, `${PROD}/nonNull.ts`)).toContain(
+                'typescript(no-non-null-assertion)'
+            );
+            expect(
+                codesFor(diagnostics, `${E2E_SUPPORT}/nonNull.ts`)
+            ).toContain('typescript(no-non-null-assertion)');
             expect(
                 codesFor(diagnostics, `${E2E_SUPPORT}/importFirst.ts`)
             ).toContain('import(first)');
@@ -141,7 +151,7 @@ describe('.oxlintrc.json keeps the mechanized rules on', () => {
     );
 
     it(
-        '테스트 경로에서는 import/first만 꺼지고 나머지 규칙은 계속 켜져 있다',
+        '테스트 경로에서는 import/first와 non-null 단언 규칙만 꺼지고 나머지 규칙은 계속 켜져 있다',
         () => {
             const diagnostics = diagnosticsOf();
             [
@@ -153,6 +163,9 @@ describe('.oxlintrc.json keeps the mechanized rules on', () => {
                 const codes = codesFor(diagnostics, file);
                 expect(codes).toContain('eslint(prefer-const)');
                 expect(codes).not.toContain('import(first)');
+                expect(codes).not.toContain(
+                    'typescript(no-non-null-assertion)'
+                );
             });
         },
         SCAN_TIMEOUT_MS

@@ -76,6 +76,12 @@ describe('deriveReplayView', () => {
         ]);
     });
 
+    it('throws a named error when the frame points at a scenario that does not exist', () => {
+        expect(() =>
+            deriveReplayView(SCENARIOS, frameAt({ index: 5 }))
+        ).toThrow('unknown replay scenario index: 5');
+    });
+
     it('shows everything with no caret on the complete frame', () => {
         const view = deriveReplayView(SCENARIOS, completeFrame(0));
         expect(view.typing).toBe(false);

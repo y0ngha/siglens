@@ -81,6 +81,23 @@ describe('loadSymbolReport', () => {
         expect(report.plain).toBeNull();
     });
 
+    it('신선해도 기술 분석 내용을 읽을 수 없으면 그 행의 평문·시각도 싣지 않는다', async () => {
+        const src = sources({
+            findSnapshots: vi.fn().mockResolvedValue([
+                snapshot({
+                    content: { summary: 42 },
+                    plain: '남으면 안 되는 설명',
+                }),
+            ]),
+        });
+
+        const report = await loadSymbolReport('AAPL', 'ko', NOW, src);
+
+        expect(report.technical).toBeNull();
+        expect(report.plain).toBeNull();
+        expect(report.analyzedAt).toBeNull();
+    });
+
     it('경계값(정확히 최대 보관 기간)은 신선한 것으로 본다', async () => {
         const edge = new Date(NOW.getTime() - SNAPSHOT_MAX_AGE_MS);
         const src = sources({

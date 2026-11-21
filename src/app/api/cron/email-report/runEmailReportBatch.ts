@@ -365,7 +365,8 @@ export async function runEmailReportBatch(
                 next = due.length;
                 return;
             }
-            const item = due[next++]!;
+            const item = due[next++];
+            if (item === undefined) return;
             try {
                 await processOne(item);
             } catch (error) {

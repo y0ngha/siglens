@@ -215,16 +215,10 @@ export function earningsReactions(
                 dates[afterIndex - 1] === date
                     ? afterIndex - 2
                     : afterIndex - 1;
-            if (beforeIndex < 0) return [];
-            return [
-                {
-                    date,
-                    movePct: pctVs(
-                        bars[afterIndex]!.close,
-                        bars[beforeIndex]!.close
-                    ),
-                },
-            ];
+            const after = bars[afterIndex];
+            const before = bars[beforeIndex];
+            if (after === undefined || before === undefined) return [];
+            return [{ date, movePct: pctVs(after.close, before.close) }];
         })
         .slice(0, EARNINGS_REACTIONS_COUNT);
 }

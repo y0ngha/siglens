@@ -450,6 +450,9 @@ async function run(): Promise<void> {
             `\n[plan] ${total} requests → ${chunkCount} batch(es) of up to ${CHUNK_SIZE} each (model=${GEMINI_MODEL})`
         );
 
+        // 드라이런이 아니면 위에서 GEMINI_API_KEY를 확인했으므로 클라이언트가 있다.
+        if (!ai) throw new Error('Gemini client not initialized');
+
         let translated = 0;
         let skipped = 0;
         let failedBatches = 0;
@@ -468,7 +471,7 @@ async function run(): Promise<void> {
             try {
                 const displayName = `siglens-crypto-korean-${chunkNo}-${Date.now()}`;
                 console.log(`  [submit] ${displayName}...`);
-                const batch = await ai!.batches.create({
+                const batch = await ai.batches.create({
                     model: GEMINI_MODEL,
                     src: inlined,
                     config: { displayName },

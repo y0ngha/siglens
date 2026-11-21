@@ -80,12 +80,12 @@ function truncateString(value: string, limit: number): string {
 function findCharLimit(lengths: readonly number[], excess: number): number {
     const sorted = [...lengths].sort((a, b) => b - a);
     let cut = 0;
-    for (let i = 0; i < sorted.length; i += 1) {
+    for (const [i, length] of sorted.entries()) {
         const next = sorted[i + 1] ?? MIN_KEEP_CHARS;
         const floor = Math.max(next, MIN_KEEP_CHARS);
-        const gain = (sorted[i]! - floor) * (i + 1);
+        const gain = (length - floor) * (i + 1);
         if (cut + gain >= excess) {
-            return sorted[i]! - Math.ceil((excess - cut) / (i + 1));
+            return length - Math.ceil((excess - cut) / (i + 1));
         }
         cut += gain;
     }

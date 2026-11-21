@@ -99,6 +99,11 @@
         // `any` 대신 `unknown`과 좁히기를 쓴다. 억제 주석은 금지(CONVENTIONS.md "Lint and guard rules").
         "typescript/no-explicit-any": "error",
 
+        // `x!`는 타입 검사를 끌 뿐 런타임 TypeError를 막지 않는다. 운영 코드는 early return,
+        // 의미 있는 에러를 던지는 가드, 불변식을 담은 타입으로 좁힌다(CONVENTIONS.md#TS-1).
+        // 테스트는 아래 override에서 끈다(기존 1,800여 곳은 기준선으로 줄여 간다).
+        "typescript/no-non-null-assertion": "error",
+
         // src/ 외(스크립트, 설정, e2e)에서는 alias import 제약을 걸지 않는다.
         "no-restricted-imports": "off"
     },
@@ -395,7 +400,10 @@
                 "cache-handler/__tests__/**",
                 "scripts/**/__tests__/**"
             ],
-            "rules": { "import/first": "off" }
+            "rules": {
+                "import/first": "off",
+                "typescript/no-non-null-assertion": "off"
+            }
         },
         {
             // `react/purity`(oxlint 1.89부터 correctness)는 렌더 중 `new Date()` 같은 비순수

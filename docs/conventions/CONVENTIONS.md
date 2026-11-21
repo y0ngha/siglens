@@ -19,6 +19,8 @@ Cite them as `CONVENTIONS.md#CP-2`. IDs are never renumbered or reused; a new ru
 
 Prefixes `HK` `CR` `AX` `EF` `LW` `TW` `RQ` live in [`REACT.md`](REACT.md); `SA` `CC` `DC` `DB` in [`SERVER.md`](SERVER.md); `TE` in [`TESTING.md`](TESTING.md); `I18` in [`I18N.md`](I18N.md).
 
+Retired IDs: TS-4
+
 ## Coding Paradigm
 
 Siglens follows **Declarative** and **Functional Programming** paradigms.
@@ -379,14 +381,14 @@ Exempt (Next.js file conventions — the framework fixes the signature and the r
 
 #### TS-1 — `as` assertions: guards first, documented safe-casts only
 
-Prefer a type guard, a narrowing helper, `satisfies`, or (when null is logically impossible) the `!` operator over `as`. A cast that hides a value which can really be `null`/`undefined`/another shape is the bug being avoided.
+Prefer a type guard, a narrowing helper or `satisfies` over `as`. Never reach for the `!` operator instead: it silences the compiler without narrowing, so an impossible `null` fails later as an unhelpful `TypeError` (production code is linted, see "Enforced rules"). A cast that hides a value which can really be `null`/`undefined`/another shape is the bug being avoided. Replacing a `!` or `as` means real narrowing (a closed key type or `switch`, a named error on the impossible branch, a restructure that makes the value known); a type predicate that claims more than it checks, a fail-open `?? fallback` or a silent `return` on an "impossible" branch only moves the bug.
 
 A cast is acceptable only when TypeScript cannot express a constraint the runtime provably satisfies, and then it **must carry a comment stating the guarantee**:
 
 - `Object.fromEntries(pairs) as Record<K, V>` and `Object.keys(record) as T[]` (keys widen to `string`, but `Record<T, …>` guarantees them) are the sanctioned safe-casts.
 - The `fromEntries` cast is sanctioned only when the key set is closed by construction. When the values come from validating external data (parsed JSON), the cast carries the guarantee the validation should have: build the fixed-key record as an explicit object literal with one validating reader per key (`{ lines: readCount(raw, 'lines'), … }`) so each field is narrowed.
 - Test files are exempt from the comment for self-documenting mock casts such as `fn as MockedFunction<typeof fn>`.
-- Replace a post-check `value!` that repeats across call sites with a helper that returns the narrowed type (or throws), e.g. `requireDatabaseUrl()`.
+- Replace a post-check narrowing that repeats across call sites (`if (!x) throw` before every use) with a helper that returns the narrowed type or throws, e.g. `requireDatabaseUrl()`; for a one-off, bind a local `const` and return early or throw a readable error.
 - Narrow external data (parsed JSON, a `Response` body, `unknown` input) with a type guard instead of asserting its shape (`body as Foo | null`); a double assertion (`as unknown as T`) needs the same WHY comment, in tests too, unless a typed fixture or guard removes the need.
 - A parsed file (JSON manifest, config) and a caught error are external data too: narrow them with `isRecord` plus a per-item guard instead of `parsed as {entries?}` or `error as {code?}`. A malformed item then throws a named error with its index instead of flowing on as `undefined`.
 
@@ -407,20 +409,6 @@ const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 When you keep a local `readonly T[]` to back a `value is T` guard (for example `isSkillCategory`), it must list every member of the upstream union, and a `@y0ngha/siglens-core` bump that adds union members is a sync trigger. TypeScript cannot detect a strict subset — the failure shows up at runtime as silently filtered data.
 
 Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an upstream `Record<T, …>`, a compile-time exhaustiveness check paired with `satisfies`, or exporting the list from core itself.
-
-<a id="TS-4"></a>
-
-#### TS-4 — Narrow with a local binding instead of a non-null assertion
-
-Do not use `x!` (including `array.find(...)!` in tests). A `!` silences the compiler and fails later with an unhelpful `undefined` error. Bind the value to a local `const` and narrow it with a guard or an explicit assertion that fails with a readable message.
-
-```ts
-// ❌
-const row = rows.find(r => r.id === id)!;
-// ✅
-const row = rows.find(r => r.id === id);
-if (!row) throw new Error(`row ${id} not found`);
-```
 
 #### Other TypeScript rules
 
@@ -577,6 +565,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
 | No lint-disable comments | `src/__tests__/guards/lintDisableDirectives.test.ts` | code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
+| No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support); test files are exempt for now | Early return, or bind a local `const` and throw a readable error; for a Map or array lookup, destructure or use `entries()` instead of indexing. Do not evade it (`TS-1`). |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
