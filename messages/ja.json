@@ -135,7 +135,41 @@
             },
             "symbolListTitle": "銘柄別の恐怖強欲指数",
             "factorExtremes": "現在もっとも恐怖寄りの要因は{fear}で、もっとも強欲寄りの要因は{greed}です。",
-            "factorExtremeItem": "{factor}(パーセンタイル{percentile})"
+            "factorExtremeItem": "{factor}(パーセンタイル{percentile})",
+            "history": {
+                "chartRange": "{from}から{to}まで",
+                "chartTitle": "直近の推移",
+                "colChange": "前取引日比",
+                "colChangeDaily": "前日比",
+                "colDate": "日付",
+                "colHigh": "最高",
+                "colLabel": "区間",
+                "colLow": "最低",
+                "colMonth": "月",
+                "colMonthLast": "最終スコア",
+                "colScore": "スコア",
+                "coverage": "{from}から{to}まで、毎日計算したスコア{count}件をまとめています。",
+                "date": "{year}年{month}月{day}日",
+                "downloadCsv": "CSVファイル",
+                "downloadJson": "JSONファイル",
+                "downloadLead": "全期間の記録はファイルでダウンロードできます。",
+                "downloadNote": "ファイルには日付、スコア、区間だけが入っており、価格データは含まれません。",
+                "extremeCell": "{score}（{day}日）",
+                "month": "{year}年{month}月",
+                "monthFrom": "{year}年{month}月（{day}日から）",
+                "monthLastCell": "{score}（{label}）",
+                "monthUntil": "{year}年{month}月（{day}日まで）",
+                "monthlyCaption": "{subject}の月別恐怖強欲指数",
+                "monthlyCaptionOlder": "{subject}の月別恐怖強欲指数（以前の記録）",
+                "monthlyMore": "以前の{count}か月を表示",
+                "monthlyTitle": "月別の記録",
+                "recalcNote": "各日のスコアは、その日より前の記録と比べて決めています。比べる記録は直近{years}年と決まっているため、過去のスコアも日によって少しずつ変わることがあります。",
+                "recentCaption": "{subject}の恐怖強欲指数、直近{count}取引日",
+                "recentCaptionDaily": "{subject}の恐怖強欲指数、直近{count}日",
+                "recentTitle": "直近{count}取引日",
+                "recentTitleDaily": "直近{count}日",
+                "title": "過去のスコア履歴"
+            }
         },
         "forgot-password": {
             "page": {
@@ -2970,7 +3004,8 @@
                 "factorHighShort": "高め",
                 "factorLowShort": "低め",
                 "factorAllInRange": "すべての指標が平常範囲（25〜75パーセンタイル）に収まっています。",
-                "extremeZoneMethodLink": "記録のまとめ方を見る"
+                "extremeZoneMethodLink": "記録のまとめ方を見る",
+                "extremeZonePeriodMarket": "集計期間：{v0}〜{v1}（この指数のスコアが計算された日）。"
             },
             "mobileSheet": {
                 "aiAnalysis": "AI分析"
@@ -3914,7 +3949,8 @@
                 "486c8b": "データ読み込み中…"
             },
             "FearGreedHistoricalChart": {
-                "9b98f6": "過去1年間の恐怖強欲指数推移チャート"
+                "9b98f6": "過去1年間の恐怖強欲指数推移チャート",
+                "ariaMonths": "直近{months}か月の恐怖強欲指数推移チャート"
             },
             "ShareCandlestickChart": {
                 "1b2664": "チャートデータがありません",
@@ -4347,7 +4383,8 @@
                 "29eed9": "現在の恐怖強欲指数と期間別比較",
                 "7da634": "恐怖強欲指数読み込み中",
                 "d6e558": "恐怖強欲指数算出に必要なデータが不足しています。",
-                "ef5b22": "上場して間もないか、出来高データが空の\n                    銘柄である可能性があります。数日後に再度確認するか、同じセクターの\n                    他の銘柄を調べてみてください。"
+                "ef5b22": "上場して間もないか、出来高データが空の\n                    銘柄である可能性があります。数日後に再度確認するか、同じセクターの\n                    他の銘柄を調べてみてください。",
+                "trendMonths": "恐怖強欲指数推移 (直近{months}か月)"
             },
             "FearGreedPageError": {
                 "f929f0": "恐怖強欲指数の読み込み中にエラーが発生しました。しばらくしてからもう一度お試しください。",

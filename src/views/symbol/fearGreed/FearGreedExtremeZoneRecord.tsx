@@ -10,11 +10,18 @@ import type {
 
 interface FearGreedExtremeZoneRecordProps {
     readonly record: ExtremeZoneRecord;
+    /**
+     * 기록의 주인. 종목 탭은 `'symbol'`(기본), 시장 허브(`/fear-greed*`)는 `'market'`이다.
+     * 바뀌는 건 집계 기간 문장뿐이다 — "이 종목 점수"라는 말이 시장 지수에는 맞지 않는다.
+     */
+    readonly subject?: 'symbol' | 'market';
 }
 
 /**
  * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록
  * (siglens-core#256).
+ *
+ * 종목 탭과 시장 허브(`app/[locale]/fear-greed`)가 함께 쓴다.
  *
  * 서버 렌더 본문이다 — 크롤러가 JS 없이 표를 읽는다. 기록은 core
  * `summarizeExtremeZoneEpisodes`가 만들고, 이 컴포넌트는 그리기만 한다.
@@ -27,15 +34,17 @@ interface FearGreedExtremeZoneRecordProps {
  */
 export function FearGreedExtremeZoneRecord({
     record,
+    subject = 'symbol',
 }: FearGreedExtremeZoneRecordProps) {
     const t = useTranslations('views.symbol.fearGreedFacts');
     const headingId = useId();
     // 같은 구간으로 다시 들어온 날을 한 기록으로 묶는 기준(재진입 간격)은 `/methodology`가
     // 설명한다 — 모든 종목 페이지에서 같은 문장이 반복되지 않게 링크로 대신한다.
-    const period = t('extremeZonePeriod', {
-        v0: record.from,
-        v1: record.to,
-    });
+    const periodArgs = { v0: record.from, v1: record.to };
+    const period =
+        subject === 'market'
+            ? t('extremeZonePeriodMarket', periodArgs)
+            : t('extremeZonePeriod', periodArgs);
 
     return (
         <div aria-labelledby={headingId} role="group" className="space-y-2">
