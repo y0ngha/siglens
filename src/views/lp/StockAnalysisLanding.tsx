@@ -1,40 +1,37 @@
 /**
  * The `/lp/stock-analysis` ad landing page.
  */
-import { SITE_HOST } from '@/shared/lib/seo';
-import { ReportReplay } from '@/widgets/replay/ReportReplay';
+import { cn } from '@/shared/lib/cn';
 import {
     ANALYSIS_CTA,
     ANALYSIS_CTA_HREF,
-    ANALYSIS_SCENARIOS,
     FEATURES,
     POPULAR,
+    REAL_ANALYSIS_COPY,
 } from './lib/stockAnalysisContent';
+import type { LpRealAnalysis } from './lib/types';
 import { LpCtaLink } from './ui/LpCtaLink';
 import { LpDisclaimer } from './ui/LpDisclaimer';
 import { LpEndCta } from './ui/LpEndCta';
 import { LpSection } from './ui/LpSection';
 import { LpShell } from './ui/LpShell';
-import { ReplayDoneIcon } from './ui/ReplayDoneIcon';
 import { FeatureCard } from './ui/stock-analysis/FeatureCard';
 import { PopularStockLinks } from './ui/stock-analysis/PopularStockLinks';
+import { RealAnalysisCard } from './ui/stock-analysis/RealAnalysisCard';
 
-const REPLAY_LABELS = {
-    host: SITE_HOST,
-    region: '시그렌즈 분석 과정 예시',
-    badge: '예시 화면',
-    pause: '일시정지',
-    resume: '다시 재생',
-    sources: '근거',
-} as const;
+interface StockAnalysisLandingProps {
+    readonly analyses: readonly LpRealAnalysis[];
+}
 
 /**
  * `siglens.io/lp/stock-analysis`: ad-only landing for the `AI 주식 분석` ad
  * group, in `siglens.io/about`'s visual language (left-aligned hero with an
- * eyebrow, the auto-playing address-bar replay, icon data tiles, the closing
- * CTA card). Korean-only hard-coded copy with no crypto wording.
+ * eyebrow, real cached analysis excerpts, icon data tiles, the closing CTA
+ * card). Korean-only hard-coded copy with no crypto wording. The excerpts come
+ * from the prewarmed snapshots (`analyses`); a symbol without a usable one is
+ * simply absent, and with none left the whole section is omitted.
  */
-export function StockAnalysisLanding() {
+export function StockAnalysisLanding({ analyses }: StockAnalysisLandingProps) {
     return (
         <LpShell
             selfHref="/lp/stock-analysis"
@@ -58,25 +55,32 @@ export function StockAnalysisLanding() {
                     </LpCtaLink>
                 </section>
 
-                <LpSection
-                    id="lp-replay"
-                    align="start"
-                    title="종목 하나를 열면 이렇게 분석해요"
-                    sub="시세와 차트를 불러와 지표와 패턴을 계산하고, AI가 한 편의 리포트로 정리합니다."
-                    className="motion-safe:animate-[fade-up_400ms_ease-out_both]"
-                >
-                    <div className="mt-6">
-                        <ReportReplay
-                            scenarios={ANALYSIS_SCENARIOS}
-                            labels={REPLAY_LABELS}
-                            sourcesSeparator={false}
-                            doneIcon={<ReplayDoneIcon />}
-                        />
-                    </div>
-                    <p className="mt-2 text-xs text-secondary-400">
-                        예시 화면이에요. 수치는 실제와 다를 수 있어요.
-                    </p>
-                </LpSection>
+                {analyses.length > 0 && (
+                    <LpSection
+                        id="lp-real-analysis"
+                        align="start"
+                        title={REAL_ANALYSIS_COPY.title}
+                        sub={REAL_ANALYSIS_COPY.sub}
+                        className="motion-safe:animate-[fade-up_400ms_ease-out_both]"
+                    >
+                        <ul
+                            className={cn(
+                                'mt-6 grid gap-3',
+                                analyses.length > 1 && 'sm:grid-cols-2'
+                            )}
+                        >
+                            {analyses.map(analysis => (
+                                <RealAnalysisCard
+                                    key={analysis.symbol}
+                                    analysis={analysis}
+                                />
+                            ))}
+                        </ul>
+                        <p className="mt-2 text-xs text-secondary-400">
+                            {REAL_ANALYSIS_COPY.note}
+                        </p>
+                    </LpSection>
+                )}
 
                 <LpSection
                     id="lp-features"
