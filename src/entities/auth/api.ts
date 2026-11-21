@@ -21,6 +21,7 @@ import type {
     UserTierRepository,
 } from '@/shared/db/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 import type { OAuthProvider } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { isSessionToken } from './lib/isSessionToken';
@@ -176,12 +177,15 @@ export class DrizzleUserRepository
 {
     constructor(private readonly db: SiglensDatabase) {}
 
-    /** 이메일로 사용자를 찾는다(비밀번호 해시 제외). */
+    /**
+     * 이메일로 사용자를 찾는다(비밀번호 해시 제외). `users.email`은 항상 소문자로 저장되므로
+     * 대소문자가 섞인 입력도 같은 행을 찾도록 경계에서 한 번 더 정규화한다(멱등).
+     */
     async findByEmail(email: string): Promise<AuthUserRecord | null> {
         const [user] = await this.db
             .select(authUserColumns)
             .from(users)
-            .where(eq(users.email, email))
+            .where(eq(users.email, normalizeEmail(email)))
             .limit(1);
 
         return user ?? null;
@@ -305,7 +309,9 @@ export class DrizzleUserRepository
                 this.db
                     .insert(users)
                     .values({
-                        email: input.email,
+                        // provider가 준 주소의 대소문자가 섞여 있어도 이메일 가입과 같은
+                        // 소문자 키로 저장해야 유니크 충돌이 같은 사람을 잡는다(멱등).
+                        email: normalizeEmail(input.email),
                         passwordHash: null,
                         name: input.name ?? null,
                         avatarUrl: input.avatarUrl ?? null,

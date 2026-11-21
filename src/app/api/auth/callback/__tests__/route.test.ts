@@ -283,6 +283,80 @@ describe('GET /api/auth/callback/[provider]', () => {
         });
     });
 
+    describe('대소문자가 섞인 provider 이메일', () => {
+        const MIXED_CASE_EMAIL = 'Foo@Gmail.com';
+        const LOWERCASE_EMAIL = 'foo@gmail.com';
+
+        const useMixedCaseProfile = () =>
+            mockGetOAuthAdapter.mockReturnValue({
+                id: 'google',
+                exchangeCodeForProfile: vi.fn().mockResolvedValue({
+                    ok: true,
+                    profile: { ...FAKE_PROFILE, email: MIXED_CASE_EMAIL },
+                }),
+            } as never);
+
+        const callGet = () =>
+            GET(
+                makeRequest(
+                    { state: 'valid-state', code: 'auth-code' },
+                    { oauth_state: 'cookie-state' }
+                ),
+                DEFAULT_PARAMS
+            );
+
+        it('소문자 계정과 충돌로 처리하고 소문자 이메일로 조회한다', async () => {
+            useMixedCaseProfile();
+            mockUserRepo.findByEmail.mockImplementation(async email =>
+                email === LOWERCASE_EMAIL
+                    ? { ...FAKE_USER, email: LOWERCASE_EMAIL }
+                    : null
+            );
+            const save = vi.fn();
+            mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+                save,
+                peek: vi.fn(),
+                consume: vi.fn(),
+                delete: vi.fn(),
+            });
+
+            const res = await callGet();
+
+            const location = new URL(res.headers.get('location') ?? '');
+            expect(location.searchParams.get('error')).toBe(
+                'oauth_email_conflict'
+            );
+            expect(location.searchParams.get('email')).toBe(LOWERCASE_EMAIL);
+            expect(mockUserRepo.findByEmail).toHaveBeenCalledWith(
+                LOWERCASE_EMAIL
+            );
+            expect(mockUserRepo.findByEmail).not.toHaveBeenCalledWith(
+                MIXED_CASE_EMAIL
+            );
+            expect(save).not.toHaveBeenCalled();
+        });
+
+        it('신규 사용자면 pending 저장소에 소문자 이메일을 맡긴다', async () => {
+            useMixedCaseProfile();
+            const save = vi.fn().mockResolvedValue('pending-token');
+            mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+                save,
+                peek: vi.fn(),
+                consume: vi.fn(),
+                delete: vi.fn(),
+            });
+
+            const res = await callGet();
+
+            expect(res.headers.get('location')).toContain(
+                'token=pending-token'
+            );
+            expect(save).toHaveBeenCalledWith(
+                expect.objectContaining({ email: LOWERCASE_EMAIL })
+            );
+        });
+    });
+
     describe('pendingStore 미설정', () => {
         it('pendingStore가 null이면 oauth_unknown으로 리다이렉트한다', async () => {
             mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue(null);
