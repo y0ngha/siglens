@@ -17,6 +17,24 @@ describe('buildSampleReportEmail', () => {
         expect(html).not.toContain('golden_cross');
     });
 
+    it('푸터 사유는 설정에서 켠 것이 아니라 수신에 동의한 것으로 적는다(가입 화면 동의도 같은 문구를 쓴다)', async () => {
+        const { html } = await buildSampleReportEmail('ko');
+
+        expect(html).toContain(
+            '시그렌즈 메일 리포트 수신에 동의하셔서 보내 드리는 메일이에요.'
+        );
+        expect(html).not.toContain('설정에서 수신을 켜');
+    });
+
+    it('푸터 사유는 영어 카탈로그에서도 동의 문구다', async () => {
+        const { html } = await buildSampleReportEmail('en');
+
+        expect(html).toContain(
+            'because you agreed to receive SIGLENS email reports.'
+        );
+        expect(html).not.toContain('turned on email reports');
+    });
+
     it('로케일마다 그 언어의 카탈로그를 쓴다', async () => {
         const { html } = await buildSampleReportEmail('en');
 

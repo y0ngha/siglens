@@ -24,12 +24,30 @@ export function SignupContent() {
     // 의미 있는 값이므로 반드시 넘긴다 — 생략하면 로그인 후 ko 홈으로 떨어진다.
     const nextParam = next === '/' ? undefined : next;
     return (
-        <>
-            <SignupForm next={nextParam} />
-            <p className="mt-6 mb-2 text-xs text-secondary-500">
-                {t('SignupContent.50f3e4')}
-            </p>
-            <SocialLoginButtons next={nextParam} />
-        </>
+        <SignupForm
+            next={nextParam}
+            socialSlot={
+                <>
+                    {/* 버튼과 안내를 한 요소로 묶는다 — 부모의 space-y-4와 안내의 mt-2가 겹쳐 안내가 버튼에서 16px 떨어지던 것을 8px로 맞춘다. */}
+                    <div>
+                        <SocialLoginButtons next={nextParam} divider="none" />
+                        <p className="mt-2 text-xs text-secondary-500">
+                            {t('SignupContent.50f3e4')}
+                        </p>
+                    </div>
+                    <div className="my-6 flex items-center gap-3 text-xs text-secondary-500">
+                        <span
+                            aria-hidden
+                            className="h-px flex-1 bg-secondary-700"
+                        />
+                        {t('SignupContent.emailDivider')}
+                        <span
+                            aria-hidden
+                            className="h-px flex-1 bg-secondary-700"
+                        />
+                    </div>
+                </>
+            }
+        />
     );
 }

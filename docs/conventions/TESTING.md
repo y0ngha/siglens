@@ -606,6 +606,8 @@ React serializes some attributes in camelCase (`dateTime`, `tabIndex`), so a low
 
 Playwright `hasText` cannot read `<script>` element text. Fetch the SSR HTML with `page.request.get()` and assert on the body.
 
+Strip `<script>` blocks first when the text also appears in script payloads, and bind the pattern to the target element by its id; a greedy pattern over the whole body matches outside the section.
+
 <a id="TE-51"></a>
 
 #### TE-51 — Stubs emit only production statuses

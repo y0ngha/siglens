@@ -1,4 +1,5 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 
 const { signupFormSpy, socialSpy, searchParamsRef } = vi.hoisted(() => ({
     signupFormSpy: vi.fn(),
@@ -10,13 +11,13 @@ vi.mock('next/navigation', () => ({
     useSearchParams: () => searchParamsRef.value,
 }));
 vi.mock('@/features/auth-signup/ui/SignupForm', () => ({
-    SignupForm: (props: { next?: string }) => {
+    SignupForm: (props: { next?: string; socialSlot?: ReactNode }) => {
         signupFormSpy(props);
-        return <div data-testid="signup-form" />;
+        return <div data-testid="signup-form">{props.socialSlot}</div>;
     },
 }));
 vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
-    SocialLoginButtons: (props: { next?: string }) => {
+    SocialLoginButtons: (props: { next?: string; divider?: string }) => {
         socialSpy(props);
         return <div data-testid="social" />;
     },
@@ -39,6 +40,36 @@ describe('SignupContent', () => {
         expect(socialSpy).toHaveBeenCalledWith(
             expect.objectContaining({ next: '/market' })
         );
+    });
+
+    it('소셜 로그인 버튼은 폼의 socialSlot으로 넘기고 위쪽 구분선은 끈다', () => {
+        render(<SignupContent />);
+        expect(screen.getByTestId('signup-form')).toContainElement(
+            screen.getByTestId('social')
+        );
+        expect(socialSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ divider: 'none' })
+        );
+    });
+
+    it('소셜 버튼 뒤에 약관 안내 문구와 "또는 이메일로 가입" 구분을 순서대로 둔다', () => {
+        render(<SignupContent />);
+        const slot = screen.getByTestId('signup-form');
+        const note = screen.getByText(
+            '소셜 로그인 시작 후 약관 동의 단계가 있습니다.'
+        );
+        const divider = screen.getByText('또는 이메일로 가입');
+
+        expect(slot).toContainElement(note);
+        expect(slot).toContainElement(divider);
+        expect(
+            screen.getByTestId('social').compareDocumentPosition(note) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            note.compareDocumentPosition(divider) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
     });
 
     it('drops an open-redirect next to undefined', () => {

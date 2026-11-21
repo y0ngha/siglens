@@ -59,6 +59,27 @@ describe('SignupForm', () => {
             );
         });
 
+        it('socialSlot은 이메일 입력과 단계 표시보다 앞(문서 순서)에 그린다', () => {
+            render(<SignupForm socialSlot={<p>Google 소셜</p>} />);
+            const social = screen.getByText('Google 소셜');
+
+            expect(
+                social.compareDocumentPosition(
+                    screen.getByLabelText('이메일')
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            expect(
+                social.compareDocumentPosition(
+                    screen.getByText('1단계: 이메일 인증 요청')
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('socialSlot을 넘기지 않으면 아무것도 더 그리지 않는다', () => {
+            render(<SignupForm />);
+            expect(screen.queryByText('Google 소셜')).not.toBeInTheDocument();
+        });
+
         it('renders step indicator for phase 1', () => {
             render(<SignupForm />);
             expect(
@@ -153,6 +174,17 @@ describe('SignupForm', () => {
             expect(
                 screen.getByRole('button', { name: '코드 확인' })
             ).toBeInTheDocument();
+        });
+
+        it('socialSlot은 이메일 단계에서만 보이고 코드 단계에서는 사라진다', () => {
+            setupPhase2WithGuardBypass();
+            const { rerender } = render(
+                <SignupForm socialSlot={<p>Google 소셜</p>} />
+            );
+            rerender(<SignupForm socialSlot={<p>Google 소셜</p>} />);
+
+            expect(screen.getByLabelText('인증 코드')).toBeInTheDocument();
+            expect(screen.queryByText('Google 소셜')).not.toBeInTheDocument();
         });
 
         it('renders email edit button', () => {
@@ -272,6 +304,17 @@ describe('SignupForm', () => {
             expect(screen.getByRole('alert')).toHaveTextContent(
                 koMessage('entities.auth.error.serviceUnavailable')
             );
+        });
+
+        it('socialSlot은 상세 단계에서도 보이지 않는다', () => {
+            setupPhase3WithGuardBypass();
+            const { rerender } = render(
+                <SignupForm socialSlot={<p>Google 소셜</p>} />
+            );
+            rerender(<SignupForm socialSlot={<p>Google 소셜</p>} />);
+
+            expect(screen.getByLabelText('비밀번호')).toBeInTheDocument();
+            expect(screen.queryByText('Google 소셜')).not.toBeInTheDocument();
         });
 
         it('renders hidden next input when next prop is provided', () => {

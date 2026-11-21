@@ -19,6 +19,18 @@ export const OAUTH_PROVIDER_VALUES = [
 export const TERMS_KIND_VALUES = ['privacy', 'tos'] as const;
 export type TermsKind = (typeof TERMS_KIND_VALUES)[number];
 
+/**
+ * 메일 리포트 수신을 마지막으로 켠 화면. `email_report_subscriptions.consent_source` 컬럼의 허용 값이며
+ * (마이그레이션 CHECK와 같다), 정책 문서의 "수신에 동의한 화면"과 짝이다.
+ */
+export const EMAIL_REPORT_CONSENT_SOURCE_VALUES = [
+    'settings',
+    'signup_email',
+    'signup_oauth',
+] as const;
+export type EmailReportConsentSource =
+    (typeof EMAIL_REPORT_CONSENT_SOURCE_VALUES)[number];
+
 /** 공유 가능한 분석 종류 — Postgres enum이자 UI 판별자로 함께 쓴다. */
 export const SHAREABLE_KIND_VALUES = [
     'chart',

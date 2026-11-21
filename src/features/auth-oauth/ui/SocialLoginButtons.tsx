@@ -29,10 +29,18 @@ const PROVIDERS: readonly SocialProvider[] = [
 interface SocialLoginButtonsProps {
     /** 로그인 후 돌아갈 경로. 시작 라우트가 검증해 state에 서명해 싣는다. */
     next?: string;
+    /**
+     * 위쪽 구분선. 로그인 화면은 폼 아래에 붙으므로 기본 `'top'`이고, 회원가입처럼 이 목록이 폼
+     * 위에 오는 화면은 자체 구분선을 두므로 `'none'`으로 끈다.
+     */
+    divider?: 'top' | 'none';
 }
 
 /** 로그인·회원가입 화면의 소셜 로그인 링크 목록. 각 링크는 OAuth 시작 라우트로 간다. */
-export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
+export function SocialLoginButtons({
+    next,
+    divider = 'top',
+}: SocialLoginButtonsProps) {
     const t = useTranslations('features.auth-oauth');
     // 라벨은 로케일마다 번역한다(구글 브랜드 가이드도 현지화 문구를 허용한다).
     // 키를 `PROVIDERS`에 변수로 두면 정적 스캔이 못 잡아 `i18n:extract --write`가
@@ -42,10 +50,12 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
     };
     return (
         <div className="space-y-3">
-            <div
-                aria-hidden
-                className="my-6 flex items-center gap-3 border-t border-secondary-700 pt-3 text-xs tracking-[0.2em] text-secondary-500 uppercase"
-            />
+            {divider === 'top' ? (
+                <div
+                    aria-hidden
+                    className="my-6 flex items-center gap-3 border-t border-secondary-700 pt-3 text-xs tracking-[0.2em] text-secondary-500 uppercase"
+                />
+            ) : null}
 
             {PROVIDERS.map(provider => (
                 <a

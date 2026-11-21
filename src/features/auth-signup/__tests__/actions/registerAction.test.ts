@@ -71,6 +71,12 @@ vi.mock('@/entities/terms/api', () => ({
 vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
 }));
+vi.mock('@/entities/email-report/server/recordSignupEmailReportOptIn', () => ({
+    recordSignupEmailReportOptIn: vi.fn(),
+}));
+vi.mock('@/shared/i18n/requestLocale', () => ({
+    resolveRequestLocale: vi.fn(async () => 'en'),
+}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -80,6 +86,7 @@ import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessa
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import {
     getDatabaseClient,
@@ -96,6 +103,9 @@ const mockRegister = registerUser as MockedFunction<typeof registerUser>;
 const mockLogin = loginUser as MockedFunction<typeof loginUser>;
 const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
+>;
+const mockRecordOptIn = recordSignupEmailReportOptIn as MockedFunction<
+    typeof recordSignupEmailReportOptIn
 >;
 const mockRedirect = redirect as MockedFunction<typeof redirect>;
 const mockGetDatabaseClient = getDatabaseClient as MockedFunction<
@@ -174,6 +184,8 @@ describe('registerAction', () => {
             consume: vi.fn(),
         });
         mockRedirect.mockClear();
+        mockRecordOptIn.mockReset();
+        mockRecordOptIn.mockResolvedValue(true);
         // Default: active terms exist for both kinds
         MockTermsRepository.mockImplementation(function () {
             return {
@@ -567,6 +579,109 @@ describe('registerAction', () => {
 
             expect(errorSpy).not.toHaveBeenCalled();
             errorSpy.mockRestore();
+        });
+    });
+
+    describe('메일 리포트 수신 선택', () => {
+        function mockSignupSuccess(): void {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+        }
+
+        it('수신을 골랐으면 가입한 회원 id·시간대·요청 로케일로 한 번 기록하고 가입을 이어 간다', async () => {
+            mockSignupSuccess();
+            await expect(
+                registerAction(
+                    { error: null },
+                    makeConsentFormData({
+                        email_report_opt_in: 'true',
+                        email_report_timezone: 'America/New_York',
+                    })
+                )
+            ).rejects.toThrow('NEXT_REDIRECT');
+            expect(mockRecordOptIn).toHaveBeenCalledTimes(1);
+            expect(mockRecordOptIn).toHaveBeenCalledWith(expect.anything(), {
+                userId: 'u1',
+                timezone: 'America/New_York',
+                locale: 'en',
+                source: 'signup_email',
+            });
+        });
+
+        it('시간대가 틀리면 기본 시간대로 기록한다', async () => {
+            mockSignupSuccess();
+            await expect(
+                registerAction(
+                    { error: null },
+                    makeConsentFormData({
+                        email_report_opt_in: 'true',
+                        email_report_timezone: 'Mars/Base',
+                    })
+                )
+            ).rejects.toThrow('NEXT_REDIRECT');
+            expect(mockRecordOptIn).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ timezone: 'Asia/Seoul' })
+            );
+        });
+
+        it('수신을 고르지 않았으면 기록하지 않는다', async () => {
+            mockSignupSuccess();
+            await expect(
+                registerAction(
+                    { error: null },
+                    makeConsentFormData({ email_report_opt_in: 'false' })
+                )
+            ).rejects.toThrow('NEXT_REDIRECT');
+            expect(mockRecordOptIn).not.toHaveBeenCalled();
+        });
+
+        it('기록이 실패해도(false) 가입은 그대로 리다이렉트한다', async () => {
+            mockSignupSuccess();
+            mockRecordOptIn.mockResolvedValue(false);
+            await expect(
+                registerAction(
+                    { error: null },
+                    makeConsentFormData({ email_report_opt_in: 'true' })
+                )
+            ).rejects.toThrow('NEXT_REDIRECT');
+            expect(mockRecordOptIn).toHaveBeenCalledTimes(1);
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ value: 'tok' })
+            );
+        });
+
+        it('필수 동의가 없으면 수신을 골랐어도 기록하지 않는다', async () => {
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData({
+                    agreed_tos: 'false',
+                    email_report_opt_in: 'true',
+                })
+            );
+            expect(result.error?.code).toBe('consent_required');
+            expect(mockRecordOptIn).not.toHaveBeenCalled();
+        });
+
+        it('가입이 실패하면 수신을 골랐어도 기록하지 않는다', async () => {
+            mockRegister.mockResolvedValue({
+                ok: false,
+                error: {
+                    code: 'email_already_exists',
+                    field: 'email',
+                    message: 'x',
+                },
+            });
+            await registerAction(
+                { error: null },
+                makeConsentFormData({ email_report_opt_in: 'true' })
+            );
+            expect(mockRecordOptIn).not.toHaveBeenCalled();
         });
     });
 

@@ -91,4 +91,76 @@ test.describe('auth signup (3-phase)', () => {
             page.getByRole('heading', { level: 1, name: '계정 설정' })
         ).toBeVisible({ timeout: 15_000 });
     });
+
+    test('signup page: benefits in the server HTML, Google above the email field', async ({
+        page,
+        request,
+    }) => {
+        // The benefits list is a server component outside Suspense, so its
+        // heading is in the HTML a crawler or a no-JS client receives.
+        const response = await request.get('/signup');
+        expect(response.ok()).toBe(true);
+        // Strip <script> payloads (RSC flight data) so only rendered markup counts.
+        const html = (await response.text()).replace(
+            /<script[\s\S]*?<\/script>/g,
+            ''
+        );
+        expect(html).toMatch(
+            /<h2[^>]*id="signup-benefits-heading"[^>]*>\s*회원 혜택/
+        );
+
+        await page.goto('/signup');
+        const google = page.getByRole('link', { name: 'Google로 계속하기' });
+        const email = page.getByLabel('이메일');
+        await expect(google).toBeVisible({ timeout: 15_000 });
+        await expect(email).toBeVisible();
+
+        const googleBox = await google.boundingBox();
+        const emailBox = await email.boundingBox();
+        expect(googleBox, 'Google link should be laid out').not.toBeNull();
+        expect(emailBox, 'email field should be laid out').not.toBeNull();
+        expect(googleBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(
+            emailBox?.y ?? Number.NEGATIVE_INFINITY
+        );
+    });
+
+    test('mail report opt-in: unchecked by default, not ticked by 모두 동의, saved when chosen', async ({
+        page,
+    }) => {
+        const email = `e2e-signup-optin-${Date.now()}@test.com`;
+        const password = 'E2eSignup1!';
+
+        await page.goto('/signup');
+        await page.getByLabel('이메일').fill(email);
+        await page.getByRole('button', { name: '인증 코드 받기' }).click();
+
+        const codeField = page.getByLabel('인증 코드');
+        await expect(codeField).toBeVisible({ timeout: 15_000 });
+        const debug = await getEmailDebug(email);
+        expect(debug?.code).toMatch(/^\d{6}$/);
+        await codeField.fill(debug?.code ?? '');
+        await page.getByRole('button', { name: '코드 확인' }).click();
+
+        const passwordField = page.getByLabel('비밀번호', { exact: true });
+        await expect(passwordField).toBeVisible({ timeout: 15_000 });
+        await passwordField.fill(password);
+
+        const optIn = page.getByRole('checkbox', { name: /메일 리포트 받기/ });
+        await expect(optIn).not.toBeChecked();
+        // The master only toggles the two required consents.
+        await page.getByLabel('모두 동의').check();
+        await expect(optIn).not.toBeChecked();
+
+        await optIn.check();
+        await page.getByRole('button', { name: '회원가입' }).click();
+        await page.waitForURL(url => !url.pathname.startsWith('/signup'));
+
+        // The choice was stored as an enabled subscription with the default
+        // Monday schedule, visible on the settings page.
+        await page.goto('/email-report');
+        await expect(page.getByRole('switch')).toBeChecked({
+            timeout: 15_000,
+        });
+        await expect(page.getByRole('checkbox', { name: '월' })).toBeChecked();
+    });
 });

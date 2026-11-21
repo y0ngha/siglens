@@ -21,6 +21,12 @@ vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
+vi.mock('@/entities/email-report/server/recordSignupEmailReportOptIn', () => ({
+    recordSignupEmailReportOptIn: vi.fn(),
+}));
+vi.mock('@/shared/i18n/requestLocale', () => ({
+    resolveRequestLocale: vi.fn(async () => 'ja'),
+}));
 vi.mock('@/entities/terms/api');
 vi.mock('@/entities/agreement/api');
 vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
@@ -89,7 +95,9 @@ import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
 import { getDatabaseClient } from '@/shared/db/client';
 import { cookies } from 'next/headers';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
 
+const mockRecordOptIn = recordSignupEmailReportOptIn as unknown as Mock;
 const mockRedirect = redirect as unknown as Mock;
 const mockCreateStore = createPendingOAuthSignupStoreFromEnv as unknown as Mock;
 const MockTermsRepo = DrizzleTermsRepository as MockedClass<
@@ -370,5 +378,75 @@ describe('finalizeOAuthSignupAction', () => {
         await expectRedirectTo(
             'https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fabc'
         );
+    });
+
+    describe('메일 리포트 수신 선택', () => {
+        function prepareSuccess(): void {
+            setupMocks();
+            (cookies as Mock).mockResolvedValue({ set: vi.fn() });
+            (createAuthSession as Mock).mockResolvedValue({
+                cookie: { name: 'session', value: 'test-session' },
+            });
+        }
+
+        it('수신을 골랐으면 새 회원 id·시간대·요청 로케일로 한 번 기록하고 가입을 이어 간다', async () => {
+            prepareSuccess();
+            await expectRedirectTo(
+                '/portfolio',
+                buildFormData({
+                    email_report_opt_in: 'true',
+                    email_report_timezone: 'Europe/London',
+                })
+            );
+            expect(mockRecordOptIn).toHaveBeenCalledTimes(1);
+            expect(mockRecordOptIn).toHaveBeenCalledWith(expect.anything(), {
+                userId: 'new-user-id',
+                timezone: 'Europe/London',
+                locale: 'ja',
+                source: 'signup_oauth',
+            });
+            expect(createAuthSession as Mock).toHaveBeenCalledTimes(1);
+        });
+
+        it('수신을 고르지 않았으면 기록하지 않는다', async () => {
+            prepareSuccess();
+            await expectRedirectTo(
+                '/portfolio',
+                buildFormData({ email_report_opt_in: 'false' })
+            );
+            expect(mockRecordOptIn).not.toHaveBeenCalled();
+        });
+
+        it('기록이 실패해도(false) 가입은 그대로 리다이렉트한다', async () => {
+            prepareSuccess();
+            mockRecordOptIn.mockResolvedValue(false);
+            await expectRedirectTo(
+                '/portfolio',
+                buildFormData({ email_report_opt_in: 'true' })
+            );
+            expect(mockRecordOptIn).toHaveBeenCalledTimes(1);
+            expect(createAuthSession as Mock).toHaveBeenCalledTimes(1);
+        });
+
+        it('필수 동의가 없으면 수신을 골랐어도 기록하지 않는다', async () => {
+            const result = await finalizeOAuthSignupAction(
+                {},
+                buildFormData({
+                    agreed_tos: 'false',
+                    email_report_opt_in: 'true',
+                })
+            );
+            expect(result.error?.code).toBe('consent_required');
+            expect(mockRecordOptIn).not.toHaveBeenCalled();
+        });
+
+        it('계정 생성이 실패하면(이메일 충돌) 수신을 골랐어도 기록하지 않는다', async () => {
+            setupMocks({ existingUser: { id: 'existing-id' } });
+            await expectRedirectTo(
+                '/login?error=oauth_email_conflict',
+                buildFormData({ email_report_opt_in: 'true' })
+            );
+            expect(mockRecordOptIn).not.toHaveBeenCalled();
+        });
     });
 });

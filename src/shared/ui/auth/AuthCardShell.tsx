@@ -7,6 +7,8 @@ import type { ReactNode } from 'react';
 interface AuthCardShellProps {
     title: string;
     subtitle?: string;
+    /** 부제 `<p>`에 더할 클래스. 줄바꿈 규칙처럼 화면마다 다른 문구 사정을 호출하는 쪽이 정한다. */
+    subtitleClassName?: string;
     children: ReactNode;
     footer?: ReactNode;
 }
@@ -15,6 +17,7 @@ interface AuthCardShellProps {
 export function AuthCardShell({
     title,
     subtitle,
+    subtitleClassName,
     children,
     footer,
 }: AuthCardShellProps) {
@@ -60,12 +63,19 @@ export function AuthCardShell({
                             {SITE_NAME}
                         </span>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-semibold text-secondary-50">
+                    {/* items-start 열에서 제목 줄의 가장 긴 끊김 없는 구간이 래퍼 폭을 정하면 ja처럼
+                        띄어쓰기 없는 제목·부제목이 열 밖으로 나간다. 래퍼를 열 폭에 고정한다. */}
+                    <div className="w-full min-w-0">
+                        <h1 className="text-2xl font-semibold wrap-break-word text-secondary-50">
                             {title}
                         </h1>
                         {subtitle ? (
-                            <p className="mt-1 text-sm text-secondary-400">
+                            <p
+                                className={cn(
+                                    'mt-1 text-sm text-secondary-400',
+                                    subtitleClassName
+                                )}
+                            >
                                 {subtitle}
                             </p>
                         ) : null}

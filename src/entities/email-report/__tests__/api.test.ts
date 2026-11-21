@@ -28,6 +28,7 @@ const subscriptionRow = {
     timezone: 'Asia/Seoul',
     locale: 'ko',
     consentedAt: new Date('2026-10-01T00:00:00.000Z'),
+    consentSource: 'settings',
     createdAt: new Date('2026-10-01T00:00:00.000Z'),
     updatedAt: new Date('2026-10-01T00:00:01.000Z'),
 };
@@ -39,11 +40,26 @@ const UPSERT_INPUT: UpsertEmailReportSubscriptionInput = {
     sendHour: 21,
     timezone: 'America/New_York',
     locale: 'en',
+    consentSource: 'signup_email',
 };
 
 const dialect = new PgDialect();
 const toSqlText = (value: unknown): string =>
     dialect.sqlToQuery(value as SQL).sql;
+
+/** 주어진 SQL 문장과 바인딩 값으로 렌더되는 Drizzle `SQL` 조각만 맞는 비대칭 매처. */
+function sqlMatching(text: string, params: unknown[]) {
+    return {
+        asymmetricMatch: (value: unknown): boolean => {
+            if (!is(value, SQL)) return false;
+            const query = dialect.sqlToQuery(value);
+            return (
+                query.sql === text &&
+                JSON.stringify(query.params) === JSON.stringify(params)
+            );
+        },
+    };
+}
 
 function makeUpsertDb(rows: unknown[]) {
     const returning = vi.fn().mockResolvedValue(rows);
@@ -140,6 +156,53 @@ describe('DrizzleEmailReportSubscriptionRepository.upsert', () => {
         expect(is(conflictArgs.set.consentedAt, SQL)).toBe(true);
         expect(toSqlText(conflictArgs.set.consentedAt)).toBe(
             'case when "email_report_subscriptions"."enabled" then "email_report_subscriptions"."consented_at" else now() end'
+        );
+    });
+
+    it('켜는 저장은 수신을 켠 화면을 신규 행에 넣고, 기존 행에는 꺼져 있을 때만 바꾼다', async () => {
+        const { db, values, onConflictDoUpdate } = makeUpsertDb([
+            subscriptionRow,
+        ]);
+        await new DrizzleEmailReportSubscriptionRepository(db).upsert(
+            UPSERT_INPUT
+        );
+
+        expect(values).toHaveBeenCalledWith(
+            expect.objectContaining({ consentSource: 'signup_email' })
+        );
+        expect(onConflictDoUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                set: expect.objectContaining({
+                    consentSource: sqlMatching(
+                        'case when "email_report_subscriptions"."enabled" then "email_report_subscriptions"."consent_source" else $1 end',
+                        ['signup_email']
+                    ),
+                }),
+            })
+        );
+    });
+
+    it('끄는 저장은 수신을 켠 화면을 신규 행에 남기지 않고, 기존 행의 값은 보존한다', async () => {
+        const { db, values, onConflictDoUpdate } = makeUpsertDb([
+            subscriptionRow,
+        ]);
+        await new DrizzleEmailReportSubscriptionRepository(db).upsert({
+            ...UPSERT_INPUT,
+            enabled: false,
+        });
+
+        expect(values).toHaveBeenCalledWith(
+            expect.objectContaining({ consentSource: null })
+        );
+        expect(onConflictDoUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                set: expect.objectContaining({
+                    consentSource: sqlMatching(
+                        '"email_report_subscriptions"."consent_source"',
+                        []
+                    ),
+                }),
+            })
         );
     });
 

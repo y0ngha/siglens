@@ -13,7 +13,7 @@ function isWeekday(value: unknown): value is Weekday {
  * `Intl.supportedValuesOf('timeZone')`은 별칭(`Asia/Calcutta` 등)을 빠뜨려 브라우저가
  * 돌려준 정상 값을 거부하므로 쓰지 않는다.
  */
-function isValidTimeZone(timezone: string): boolean {
+export function isValidTimeZone(timezone: string): boolean {
     if (timezone.length === 0 || timezone.length > 64) return false;
     try {
         new Intl.DateTimeFormat('en-US', { timeZone: timezone });

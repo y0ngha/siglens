@@ -38,6 +38,9 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { readSignupEmailReportOptIn } from '@/entities/email-report/lib/signupOptIn';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { readSignupForm } from '../lib/readSignupForm';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
@@ -56,6 +59,7 @@ export async function registerAction(
     try {
         const { email, password, name, next, hasRequiredConsent } =
             readSignupForm(formData);
+        const emailReportOptIn = readSignupEmailReportOptIn(formData);
 
         if (!hasRequiredConsent) {
             return {
@@ -119,6 +123,17 @@ export async function registerAction(
                     message: registerResult.error.message,
                 },
             };
+        }
+
+        // 선택 사항이라 실패해도 가입은 이어 간다(결과를 쓰지 않는다). 계정이 만들어진 뒤에만
+        // 도달하므로 동의는 이 계정에 대해서만 기록된다.
+        if (emailReportOptIn.optIn) {
+            await recordSignupEmailReportOptIn(db, {
+                userId: registerResult.user.id,
+                timezone: emailReportOptIn.timezone,
+                locale: await resolveRequestLocale(),
+                source: 'signup_email',
+            });
         }
 
         const secure = isSecureCookieEnv();

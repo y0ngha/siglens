@@ -2,6 +2,9 @@ import * as schema from '@/shared/db/schema';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contentLocaleEnum } from '@/shared/db/schema';
+import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
+import { EMAIL_REPORT_CONSENT_SOURCE_VALUES } from '@/shared/db/constants';
 import { LOCALES } from '@/shared/i18n/locales';
 
 describe('schema 테이블 export', () => {
@@ -299,6 +302,114 @@ describe('signal_price_analysis_tier 마이그레이션', () => {
         expect(schema.analysisHistory.tier.name).toBe('tier');
         expect(schema.signalEvents.priceAtDetection.name).toBe(
             'price_at_detection'
+        );
+    });
+});
+
+/**
+ * 메일 리포트 수신 동의 출처 컬럼과 첫 리포트 발송 기록 테이블(빈 채로 둔다) — 한 마이그레이션이 둘을 더한다.
+ * 컬럼은 널 허용이라 앱 배포 전에 적용해도 옛 코드가 깨지지 않고, 백필은 설정 화면이 동의 시각을 남긴
+ * 유일한 경로였다는 사실에 기댄다. 새 코드는 컬럼 이름으로 INSERT하므로 스키마가 앱 배포보다 먼저 적용돼야 한다.
+ */
+describe('email_report_consent_and_welcome 마이그레이션', () => {
+    const sql = readFileSync(
+        join(
+            process.cwd(),
+            'drizzle/0062_email_report_consent_and_welcome.sql'
+        ),
+        'utf8'
+    );
+    const dialect = new PgDialect();
+
+    it('동의 출처 컬럼은 널 허용이고 기본값이 없다', () => {
+        expect(schema.emailReportSubscriptions.consentSource.name).toBe(
+            'consent_source'
+        );
+        expect(schema.emailReportSubscriptions.consentSource.notNull).toBe(
+            false
+        );
+        expect(schema.emailReportSubscriptions.consentSource.hasDefault).toBe(
+            false
+        );
+    });
+
+    it('스키마의 CHECK와 마이그레이션 SQL의 CHECK가 허용 값 상수와 정확히 같은 값을 같은 순서로 적는다', () => {
+        const check = getTableConfig(
+            schema.emailReportSubscriptions
+        ).checks.find(
+            c => c.name === 'email_report_subscriptions_consent_source_check'
+        );
+        const literals = (text: string): string[] =>
+            [
+                ...(/IN \(([^)]*)\)/.exec(text)?.[1] ?? '').matchAll(
+                    /'([^']+)'/g
+                ),
+            ].map(match => match[1] ?? '');
+        const schemaCheck = dialect.sqlToQuery(check?.value as SQL).sql;
+        const migrationCheck =
+            sql
+                .split('--> statement-breakpoint')
+                .find(statement =>
+                    statement.includes(
+                        'email_report_subscriptions_consent_source_check'
+                    )
+                ) ?? '';
+
+        expect(literals(schemaCheck)).toEqual([
+            ...EMAIL_REPORT_CONSENT_SOURCE_VALUES,
+        ]);
+        expect(literals(migrationCheck)).toEqual([
+            ...EMAIL_REPORT_CONSENT_SOURCE_VALUES,
+        ]);
+    });
+
+    it('컬럼 추가는 재실행해도 안전하다(IF NOT EXISTS)', () => {
+        expect(sql).toContain('ADD COLUMN IF NOT EXISTS "consent_source" text');
+    });
+
+    it('백필은 동의 시각이 있는 행만 settings로 채우고 CHECK보다 먼저 실행된다', () => {
+        const backfill = `UPDATE "email_report_subscriptions" SET "consent_source" = 'settings' WHERE "consented_at" IS NOT NULL;`;
+        expect(sql).toContain(backfill);
+        expect(
+            sql.indexOf('ADD COLUMN IF NOT EXISTS "consent_source"')
+        ).toBeLessThan(sql.indexOf(backfill));
+        expect(sql.indexOf(backfill)).toBeLessThan(
+            sql.indexOf('ADD CONSTRAINT "email_report_subscriptions_consent')
+        );
+    });
+
+    it('첫 리포트 발송 기록 테이블이 export되고 회원 삭제에 연쇄된다', () => {
+        expect(schema.emailReportWelcomes).toBeDefined();
+        const config = getTableConfig(schema.emailReportWelcomes);
+        expect(config.name).toBe('email_report_welcomes');
+        expect(config.primaryKeys).toHaveLength(0);
+        expect(
+            config.columns.find(column => column.name === 'user_id')?.primary
+        ).toBe(true);
+        expect(config.foreignKeys).toHaveLength(1);
+        expect(sql).toContain('ON DELETE cascade');
+    });
+
+    it('상태 CHECK와 만든 시각 인덱스를 둔다', () => {
+        const config = getTableConfig(schema.emailReportWelcomes);
+        expect(config.checks.map(check => check.name)).toEqual([
+            'email_report_welcomes_status_check',
+        ]);
+        expect(config.indexes.map(index => index.config.name)).toEqual([
+            'email_report_welcomes_created_at_idx',
+        ]);
+    });
+
+    it('0061 뒤에 저널에 등록돼 있다', () => {
+        const journal = JSON.parse(
+            readFileSync(
+                join(process.cwd(), 'drizzle/meta/_journal.json'),
+                'utf8'
+            )
+        ) as { entries: Array<{ tag: string }> };
+        const tags = journal.entries.map(entry => entry.tag);
+        expect(tags.indexOf('0062_email_report_consent_and_welcome')).toBe(
+            tags.indexOf('0061_signal_price_analysis_tier') + 1
         );
     });
 });
