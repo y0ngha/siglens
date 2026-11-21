@@ -1,7 +1,7 @@
 # `shared/` — Framework-Agnostic Utilities
 
 > FSD의 가장 하위 레이어. 어떤 레이어도 shared를 import 가능하지만, shared는 자기 자신만 import 가능.
-> (예외: byokGate 등 일부 모듈이 entities를 참조 — ESLint 규칙에서 허용.)
+> (예외: byokGate가 entities를 참조 — 아래 표.)
 
 ## 하위 구조
 
@@ -21,7 +21,7 @@
 |---|---|---|
 | `shared/lib/byokGate.ts` | `entities/api-key`, `entities/user-tier`, `entities/user` | Tier 확인 + BYOK 검증 cross-cutting utility. 7개 entity action에서 호출되므로 entities 레이어로 이동하면 역방향 의존 발생. DI로 해소 가능하나 과설계 |
 
-이 예외는 ESLint `from: 'shared', allow: ['shared', 'entities']`로 관리됨.
+oxlint의 shared override는 상위 레이어(features·widgets·views·app)만 막는다. shared → entities를 이 표로 한정하는 것은 리뷰 몫이다.
 
 ## 규칙
 

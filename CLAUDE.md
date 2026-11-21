@@ -302,13 +302,13 @@ Guidance lives in exactly one place. Pick the home by the kind of rule:
 
 **Promotion.** Review fixes are first logged in the local scratch file `docs/__agents_only__/fix-log.md` (gitignored, shared across worktrees, append-only for other sessions). When the same violation recurs, `mistake-managing-agent` promotes it as a durable rule (do/don't + why, at most one ❌/✅ pair, no PR narration) into the home above and assigns the next ID (see above; never fill a gap left by a removed rule). Rule documents are read in full on every review, so their total size is budgeted:
 
-Rule-document budget: 420,000 bytes.
+Rule-document budget: 390,000 bytes.
 
 The budget only goes down; raising it needs the user's approval stated in the PR body. `yarn rules:size` prints per-file bytes and headroom, and `src/__tests__/guards/ruleDocSize.test.ts` fails when the 16 rule documents (`docs/conventions/*.md`, this file, the layer `CLAUDE.md` files, `skills/CLAUDE.md`) exceed it. Before adding a rule, `mistake-managing-agent` checks the headroom and greps **every** rule home (not only the destination) so a rule is never duplicated: an existing rule is extended by at most one sentence or example. A rule with a crisp syntactic test is reported for mechanization instead of written as prose. When headroom is short, it first frees bytes by shrinking rules that a lint rule or guard now enforces, merging duplicates into the older ID, and retiring rules about things that no longer exist; a bullet no other doc, lint rule or guard states is never deleted.
 
 **Public vs local.** `docs/conventions/` and every CLAUDE.md are public. Infra IDs, resource names, runbook steps, audit results and production incident detail stay in the local `docs/architecture/` runbooks.
 
-**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before.
+**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before. A compression keeps each rule's exact scope: compare subject and quantifier clause by clause, not only the do/don't verb.
 
 ---
 

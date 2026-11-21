@@ -18,7 +18,6 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 | `entities/analysis` (`server/overallAnalysisRunner.ts`, `api.ts`의 `prewarmOverall`) | `entities/investor-flows/server/getOverallInvestorFlowsScorecard` | 종합 분석이 수급 점수표(`investorFlowsScorecard`)를 입력으로 받는다. 웹·공개 API·SEO 프리웜 세 경로가 같은 함수를 불러야 core의 inputHash(캐시 키)가 일치한다 — server-only deep import |
 | `entities/investor-flows/server/getInvestorFlowsEvaluationOptions.ts` | `entities/bars/server/sessionBarsStaticCache` (`getSessionBarsStatic`) | 숏스퀴즈 점수(core `squeezeContext`)의 완결 일봉. 화면 점수표·AI 해석·에이전트 도구·종합 분석 프리웜이 같은 세션 키 봉을 읽어야 core 캐시 키·inputHash가 맞고, 6h 봉 캐시를 읽으면 12h 수급 탭이 clamp된다(`symbolTabRevalidateClamp`) — server-only 지연 import |
 | `entities/analysis` (`api.ts`의 프리웜, `server/overallAnalysisRunner.ts`) | `entities/financials-statements/server/getFinancialsSnapshot` | 종합 분석의 재무 축이 재무 탭과 같은 스냅샷(같은 캐시 키·태그)을 읽어야 core inputHash가 웹·공개 API·SEO 프리웜 세 경로에서 일치한다 — server-only deep import |
-| `entities/investor-flows/server/getInvestorFlowsEvaluationOptions.ts` | `entities/bars/server/sessionBarsStaticCache` (`getSessionBarsStatic`) | 숏스퀴즈 점수(core `squeezeContext`)의 완결 일봉. 화면 점수표·AI 해석·에이전트 도구·종합 분석 프리웜이 같은 세션 키 봉을 읽어야 core 캐시 키·inputHash가 맞고, 6h 봉 캐시를 읽으면 12h 수급 탭이 clamp된다(`symbolTabRevalidateClamp`) — server-only 지연 import |
 | `entities/sitemap-entry/server.ts` | `entities/market-news/api/marketNewsRepository` (`DrizzleMarketNewsRepository`), `entities/terms/api` (`DrizzleTermsRepository`) | `loadStaticSitemapInputs`이 sitemap `lastmod`를 채우려 뉴스 최신 게시일(market-news)과 활성 약관 발효일(terms)을 조합하는 multi-entity orchestration |
 | `entities/analysis` (`server/overallAnalysisRunner.ts`, `api.ts`), `entities/news-article` (`server/newsAnalysisRunner.ts`, `api.ts`) | `entities/economy/api/loadNewsMacroCalendar` | 뉴스 분석과 종합 분석의 뉴스 축이 동일한 매크로 캘린더를 넘겨야 core의 뉴스 캐시 키가 두 경로에서 일치한다 — server-only deep import, `economy` barrel 제외 대상 |
 | `entities/fundamental-facts/server/getFundamentalFacts.ts` | `entities/earnings-report/api` (`getNextEarningsSchedule`), `entities/earnings-report/server/earningsReportsRepository`, `entities/financials-statements/server/getFinancialsSnapshot`, `entities/investor-flows/server/getInvestorFlowsScorecard` | 펀더멘털 탭 사실 블록이 실적·재무·수급을 조합하는 multi-entity orchestration. 페이지 본문·메타데이터·프리웜 스탬프가 같은 함수를 불러야 색인 판정이 갈리지 않고, 각 탭과 같은 캐시 키를 읽는다 — server-only deep import |
@@ -29,7 +28,7 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 | `entities/siglens-api-key/api.ts` | `entities/llm-provider/lib/retiredModelSuccessors` (`resolveRetiredModelId`) | 저장된 API 기본 모델(`users.api_default_model`)과 브라우저에 저장된 모델 선택이 퇴역 ID를 같은 후속 모델로 옮겨야 한다 — 매핑을 두 번 두지 않는다. 순수 데이터 import |
 | `entities/index-history/server/loadIndexMonthEnds.ts`, `entities/bars/server/loadDailyCloseHistory.ts` | `entities/market-fear-greed/lib/parseFmpEodRows` (`parseDailyCloseRows`) | FMP EOD 응답에서 쓸 수 있는 일별 종가만 추리는 규칙(`typeof` 검사로 `null` 종가 차단)을 두 번 두지 않는다 — 지수 장기 이력과 공포·탐욕 요인이 같은 파서를 쓴다. 순수 함수 import |
 
-이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.
+entities 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않는다. 순환은 `src/__tests__/guards/importCycles.test.ts`가 막는다. 이 표는 사유가 비자명한 조합을 적은 것이지 허용 목록이 아니다.
 
 ## `lib/` 순수성
 

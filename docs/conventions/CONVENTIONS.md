@@ -4,10 +4,7 @@ General coding rules. Client-side rules (hooks, components, effects, charts, Tai
 
 ## Rule IDs
 
-Rules that are cited from code comments, reviews, or other docs carry a stable ID in the form `PREFIX-N`,
-with an explicit anchor line directly above the heading (`<a id="CP-2"></a>`).
-Cite them as `CONVENTIONS.md#CP-2`. IDs are never renumbered or reused; a new rule takes the highest number of its prefix among anchors and `Retired IDs` + 1; if a rule is deleted, delete its references in the same change and list its ID on this file's `Retired IDs:` line.
-`src/__tests__/guards/ruleReferences.test.ts` fails on any reference that does not resolve to an anchor.
+IDs follow the root `CLAUDE.md` "Rule IDs and references". Cite them as `CONVENTIONS.md#CP-2`.
 
 | Prefix | Topic |
 |---|---|
@@ -16,8 +13,6 @@ Cite them as `CONVENTIONS.md#CP-2`. IDs are never renumbered or reused; a new ru
 | `NC` | Constants & literals, numeric and nil guards |
 | `CM` | Comments & documentation |
 | `CS` | Change synchronization |
-
-Prefixes `HK` `CR` `AX` `EF` `LW` `TW` `RQ` live in [`REACT.md`](REACT.md); `SA` `CC` `DC` `DB` in [`SERVER.md`](SERVER.md); `TE` in [`TESTING.md`](TESTING.md); `I18` in [`I18N.md`](I18N.md).
 
 Retired IDs: TS-4
 
@@ -45,28 +40,10 @@ const result = closes.filter(c => c > 0).map(c => c * 2);
 - Algorithms where index arithmetic is central to the logic
 - Cases where the imperative form is measurably more readable than the functional equivalent
 
-```typescript
-// ✅ Acceptable — sliding window where for-loop is more efficient and readable
-for (let i = 0; i + period <= values.length; i++) {
-    const window = values.slice(i, i + period);
-    results.push(compute(window));
-}
-```
-
 **Exception — `while` is allowed when the algorithm's termination condition is naturally expressed as a predicate, not as a counter:**
 - Binary search (convergent boundary `low`/`high` pointers)
 - Pointer-convergence loops (two pointers approaching each other)
 - Cases where a `for` header equivalent would be an empty `for (; condition; )` — use `while` instead for clarity
-
-```typescript
-// ✅ Acceptable — binary search where while expresses the convergence condition directly
-while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    if (bars[mid].time === time) return mid;
-    if (bars[mid].time < time) low = mid + 1;
-    else high = mid - 1;
-}
-```
 
 The goal is readable, maintainable code — not mechanical adherence to a style. When `map`/`reduce` produces convoluted code or unnecessary O(n²) complexity, prefer `for (let i = 0; ...)`. When the loop condition is a convergence predicate rather than a counter, prefer `while`.
 
@@ -141,10 +118,6 @@ function calculateRSI(closes: number[], period: number): (number | null)[] { ...
 // ❌ arr.sort()              ✅ arr.toSorted()
 // ❌ arr.splice(i, 1)        ✅ arr.filter((_, idx) => idx !== i)
 // Applies to: push, pop, shift, unshift, splice, reverse, sort
-
-// ✅ Extract nested functions to module-level with explicit parameters
-// ❌ function parent() { function child() { uses parentVar } }
-// ✅ function child(parentVar: T) { ... }  // extracted, explicit params
 ```
 
 **Exception — Local state-accumulator mutation is allowed when `reduce + spread` causes O(N²) complexity:**
@@ -187,6 +160,11 @@ lines.reduce((acc, _line, idx) => { const line = lines[idx]; ... }, init);
 // ✅
 lines.reduce((acc, line) => { ... }, init);
 ```
+
+Generators that build lazy data pipelines are defined only in pure calculation utilities (`shared/lib/`,
+`entities/*/lib/`); widgets, components and Server Actions receive materialized arrays. Use one only where it pays
+(several transforms over 1,000+ bars, or taking the first N); otherwise plain `map`/`filter` reads better. A generator
+is one-shot: materialize it, or wrap it in a factory, before a second read.
 
 <a id="CP-6"></a>
 
@@ -300,17 +278,6 @@ Directories       lowercase kebab indicators/, stock-chart/
 interface Bar { time: number; open: number; }
 type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 
-// ❌ No any
-const data: any = response;
-
-// ✅ Return types must be explicitly declared on non-component functions
-function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
-
-// ❌ Do NOT annotate return types on UI-rendering functions (components)
-// TypeScript infers JSX.Element / ReactNode automatically; annotating adds noise
-export function StockChart({ symbol }: StockChartProps): JSX.Element { ... } // ❌
-export function StockChart({ symbol }: StockChartProps) { ... }              // ✅
-
 // ✅ Initial period values must be null
 // (null = skip rendering, 0 = renders as invalid data in charts)
 const result: (number | null)[] = new Array(period - 1).fill(null);
@@ -324,35 +291,13 @@ interface Skill { confidenceWeight: number; }
 type SignalStrength = 'strong' | 'moderate' | 'weak';
 interface Signal { strength: SignalStrength; }
 
-// Callback parameter type annotations are required when TypeScript cannot infer
-// the type from context. When the type is already inferred from the surrounding
-// expression, explicit annotations are optional (but allowed for clarity).
-// bars.map(bar => ...)                   ✅ inferred from Bar[] — annotation optional
-// bars.map((bar: Bar) => ...)            ✅ explicit — also fine
-// items.map((p: Omit<T, 'id'>) => ...)  ✅ required — Omit<> not inferrable from context
-
-// ✅ No hardcoded literals — extract to constants
-// ❌ period = 14
-// ✅ period = RSI_DEFAULT_PERIOD  (@y0ngha/siglens-core public constant or shared/config)
+// Callback parameter annotations are optional when the type is inferred from context
+// (bars.map(bar => ...)); `strict` (noImplicitAny) already rejects an un-inferrable one.
 
 // ✅ Types must be declared at the top of the file, not inside functions
 // ❌ function process() { interface Item { id: string; } ... }
 // ✅ interface Item { id: string; }
 //    function process() { ... }
-
-// ✅ Return named interfaces instead of inline object types
-// ❌ function getCredentials() { return { apiKey, secretKey }; }
-// ✅ interface Credentials { apiKey: string; secretKey: string; }
-//    function getCredentials(): Credentials { ... }
-
-// ✅ Prefer type guards over `as` type assertions
-// ❌ const user = data as User;
-// ✅ if ('name' in data) { /* data is User */ }
-// Exception: DOM elements, third-party library return types (add comment explaining why)
-
-// ✅ Hardcoded array indices → named constants
-// ❌ result.split('\n\n')[1]
-// ✅ const SECTION_INDEX = 1; result.split('\n\n')[SECTION_INDEX]
 
 // ✅ Related interfaces with shared fields must use extends
 // ❌ interface B { ...all fields of A...; extra: string }
@@ -375,7 +320,7 @@ async function loginAction(data: FormData): Promise<LoginResult> { ... }
 export async function GET(req: Request): Promise<NextResponse> { ... }
 ```
 
-Exempt (Next.js file conventions — the framework fixes the signature and the return is self-evident): `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `opengraph-image.tsx`, `twitter-image.tsx`, `icon.tsx`, `apple-icon.tsx`, `sitemap.ts`, `robots.ts`, `manifest.ts` under `app/**`. React components also stay unannotated (see above).
+Exempt (Next.js file conventions — the framework fixes the signature and the return is self-evident): `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `opengraph-image.tsx`, `twitter-image.tsx`, `icon.tsx`, `apple-icon.tsx`, `sitemap.ts`, `robots.ts`, `manifest.ts` under `app/**`. React components stay unannotated: TypeScript infers `JSX.Element`, and an annotation only adds noise.
 
 <a id="TS-1"></a>
 
@@ -417,7 +362,6 @@ Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an u
 - **Define each type once** in its canonical module and import it everywhere else. A duplicated declaration drifts the first time one copy changes.
 - **No aliases without a distinct role.** `type SaveState = ApiKeyActionState; type DeleteState = ApiKeyActionState` adds indirection only; use the original. Extract a named alias when a role is genuinely distinct or a union repeats.
 - **Named types over inline shapes**, for props, constants, and especially return types such as `Promise<{ a; b }>` in Server Actions and adapters: declare an `interface`/`type` and reuse it.
-- **No checks that duplicate type guarantees.** If `AssetInfo.name` is required, `!!assetInfo?.name` should be `!!assetInfo`.
 
 ---
 
@@ -473,21 +417,8 @@ if (!(Number.isFinite(tp) && tp > 0 && tp > entryPrice)) return '';
 
 ## Pure Function Rules (shared/lib, entities/lib)
 
-```typescript
-// ✅ Pure functions only
-// ❌ No side effects: fetch, console.log, Date.now() are all prohibited
-function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | null)[] {
-    // pure calculation only
-}
-```
-
-Where pure-only applies to `entities/*/lib/` and the sanctioned exception for injected-repository pipeline steps, see `src/entities/CLAUDE.md#EN-1`.
-
----
-
-## Test Rules
-
-Test rules live in [TESTING.md](./TESTING.md) (rule IDs `TE-N`).
+Functions here are pure: no `fetch`, `console.log` or `Date.now()`. Scope and the injected-repository exception:
+`src/entities/CLAUDE.md#EN-1`.
 
 ---
 
@@ -527,25 +458,12 @@ import { helper } from './helper';
 
 ### No Barrels — Import from the Defining File
 
-`index.ts`/`index.tsx` barrel은 금지다(`src/__tests__/guards/noBarrelFiles.test.ts`가 강제).
-모든 import — 테스트와 `vi.mock`/`vi.importActual`/`await import()` 경로 포함 — 는 심볼을 **정의한
-파일**을 가리킨다.
+Barrels are banned (root `CLAUDE.md`; `src/__tests__/guards/noBarrelFiles.test.ts`). Every import, including tests and
+`vi.mock`/`vi.importActual`/`await import()` paths, names the file that defines the symbol: `vi.mock` intercepts by
+module path, so a different path is not mocked.
 
-- 다른 슬라이스·레이어의 심볼: `@/` path alias로 정의 파일을 직접 import
-- 같은 슬라이스 내부 segment 간 참조: relative import (`../model/types`)
-- `vi.mock`은 코드가 실제로 import하는 **정의 파일 경로**를 mock한다(모듈 단위로 가로채므로 경로가 다르면 mock이 적용되지 않는다)
-
-```typescript
-// ✅ 같은 slice 내 — relative import
-// src/features/auth/ui/LoginForm.tsx
-import type { AuthFormState } from '../model/types';
-
-// ✅ 다른 slice — 정의 파일 직접 import
-import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
-
-// ❌ 슬라이스 루트(barrel) import — barrel은 존재하지 않는다
-import { useSymbolModel } from '@/features/symbol-model';
-```
+❌ `import { useSymbolModel } from '@/features/symbol-model';`
+✅ `import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';`
 
 ---
 
@@ -580,18 +498,15 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 
 ## Comments & Documentation
 
-The repo allows multi-line JSDoc and comment blocks when the WHY is non-obvious; see the "Documentation Policy" in
-the root `CLAUDE.md`. The rules below target comments that restate the code or state things that are not true.
-
 <a id="CM-1"></a>
 
 #### CM-1 — Comments explain WHY, not WHAT
 
 A comment earns its place by recording a reason, constraint or tradeoff the code cannot show. Delete comments that
 label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
-`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options interface's name (`/** [[useX]] options. */` — say what the options control instead), and
-`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name (or a props
-JSDoc that only lists field names), a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options
+interface's name (`/** [[useX]] options. */`: say what the options control instead) or only lists a props interface's
+field names, a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
 export), comments framed as history ("회귀:", "previously…", "fixed in…"; state the current reason
 instead), and
 structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
@@ -617,46 +532,38 @@ export interface WatchlistCount { memberCount: number }
 
 #### CM-2 — Comments must be factually accurate and stay in step with the code
 
-Every claim in a comment (behavior, callers, narrowing target, browser or accessibility semantics, geometry, time
-conversions) must match reality, and a false WHY is worse than none. Re-verify the claim whenever the code, the
-file or the rule it describes changes:
+Every claim in a comment or JSDoc (behaviour, callers, timing, narrowing target, browser or accessibility semantics,
+geometry, time conversions, numbers) matches reality when written and after every change; a false WHY is worse than none.
 
-- "Only X uses this" claims go stale when a second caller appears; name callers explicitly or drop the claim.
-- Before writing a claim about consumers, callers, usage counts or per-method behavior ("used in two places", "both validate at import time", "all queries retry", "reason is used for logging"), grep the repo for the actual callers and read each method; a claim that holds for one member does not hold for the group.
-- A consistency guarantee ("both paths see the same value", "cannot diverge") states the condition it holds under (warm cache, no budget timeout, same inputs); and when a refactor moves only some callers onto a shared loader, the comment lists exactly which moved and which keep their own path instead of saying "every surface".
-  ❌ "Every surface reads the hint from the shared cache." ✅ "Pages A, B and C read it from the shared cache; the agent tool keeps its own lite read. Both agree once the 12 h cache is warm."
-- When a function's processing order or workload changes (a step appended, steps reordered), re-read its JSDoc and the
-  route or caller doc that describes it, for example a "short, no lock needed" claim.
-- When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
-  JSDoc and test names that mention it and update them in the same change (see CS-8).
-- When a method gains a cache or otherwise changes behavior, re-read the class- or module-level summary and sibling
-  files that describe it, not only the method's own JSDoc; a summary listing the method under its old behavior goes stale.
-- When a symbol moves or is renamed (a function removed, a class relocated to another module), grep the old name and
-  every "lives in the same module" style location claim in comments and test files, and update them in the same change.
-  ❌ A test comment saying the repo class is "in the same module" after it moved to `server/`. ✅ The comment names the new location or is dropped.
-- After reversing a layout contract, grep the whole repo (`src/`, `e2e/`, `docs/`) for the old wording, including
-  test names.
-- A time-zone comment must match the literal exactly; check DST dates with
+- **Verify at the source before writing.** Grep the callers before a claim about consumers, counts or per-method
+  behaviour ("only X uses this", "both validate at import time", "all queries retry"), read each member (what holds for
+  one does not hold for the group), and name the callers or drop the claim. Identifiers named in a comment exist; a
+  version or number cited after a merge is re-read against the merged state. Claims about other files, live systems or
+  other components (a boot option, a deployed setting, "same order as the other tabs", a robots-blocked URL's headers)
+  are checked there and dropped if they do not hold. A vendor or model claim says only what the cited source says about
+  that exact subject, and copies of the comment are worded identically. A "stable"/"memoized" claim matches the
+  dependency list (otherwise say what the identity depends on); a timing claim (on mount, after commit, before the
+  response) matches the real hook or call order; runtime layout or a diagnosed mechanism is stated as fact only when
+  measured, and a suspected cause is labelled as suspected. A time-zone comment matches the literal; check DST with
   `new Date(...).toLocaleString('en-US', { timeZone })`.
-- After splitting a function or JSDoc, check that each paragraph stays on the half it describes and that no
-  sentence is cut in the middle or loses a field the next paragraph relies on.
-- Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
-- A JSDoc or comment names only identifiers that exist (grep them), and a version or number cited after a merge is re-read against the merged state.
-- A "stable" / "memoized" claim in a JSDoc must match the hook's dependency list; if the deps change when the inputs change, say what the identity depends on instead of calling it stable.
-- Numeric figures in a comment (widths, lengths, limits) are derived from the value; when that value becomes per-locale or otherwise variable, re-derive every figure instead of keeping the old one.
-- A comment explaining why a list is ordered (newest first, grouped by tier) is re-read whenever entries are added, removed or replaced, and so is a test comment naming an identifier: grep the full identifier, not just a prefix.
-- A comment claiming parity with other components or tabs ("same order as the other tabs") or relying on platform behavior (a robots-blocked URL's headers being read) is checked against those components and that behavior; drop the claim if it does not hold.
-- A JSDoc describes only what its own unit does: a reducer's doc does not claim UI behaviour (what is rendered, focused or announced), and a view's doc does not claim state-transition rules. Attribute each behaviour to the unit that implements it.
-- A JSDoc does not hardcode a count that another constant owns ("탭이 9개" vs `TABS.length`); say it generically or point at the constant. When a symbol is renamed or its nature changes (hardcoded text becoming translated keys), update every comment that cites it, including sibling references in test files.
-- A policy value (TTL, limit) owned by another file is not restated in a comment elsewhere; point at the owning constant or file so a later change cannot leave a stale copy.
-- When a setup file, config or helper changes what a lane, module or option does (for example module-cache reuse
-  becoming a per-test reset), re-read the config or JSDoc that describes the old behavior (`vitest.config.ts` lane
-  docs, header comments) in the same edit; grep the old wording repo-wide, and its concept and paraphrases too ("module cache" also hides as "evaluated module"), not only the exact phrase. Re-read the header doc of every file you
-  touched, including the file that holds the change itself, not only the config that points at it.
-- A comment about a vendor's or another model's behaviour states only what the cited source says about that exact subject; wording borrowed from a different page ("ignores or removes") or a workflow claim the source does not make is dropped, and copies of the same comment are worded identically.
-- A comment about runtime layout or a diagnosed mechanism states what was measured in a browser or run; behaviour that was not verified ("returns on error", "partly covers the button") is not written as fact, and a suspected cause is labelled as suspected.
-- A comment about when an effect, callback or request runs (on mount, after commit, before the response) is checked against the actual hook or call order; a comment stating the opposite of the code's timing is worse than none.
-- After a design change to cancellation, retry or error semantics, re-read every JSDoc, route doc and public doc that states the old behavior, including status codes: once a response has started streaming the status is already sent, so a failure surfaces as an error body, not a different HTTP status.
+- **State the condition and the owner.** A consistency guarantee ("both paths see the same value", "cannot diverge")
+  names the condition it holds under (warm cache, no budget timeout, same inputs), and a partial move onto a shared
+  loader lists which callers moved and which keep their own path. A JSDoc describes only its own unit (a reducer's doc
+  claims no rendering, a view's doc no state-transition rules). A count or policy value another constant or file owns
+  (`TABS.length`, a TTL) is pointed at, not restated.
+- **Re-read on every change.** When a function's processing order, workload, input, data source, location, caching or
+  name changes, or it is split, moved or deleted, grep the old name, its concept and paraphrases repo-wide (`src/`,
+  `e2e/`, `docs/`; CS-8) and update in the same change the comments, JSDoc, test names, sibling test comments ("in
+  the same module"), class- or module-level summaries and sibling files, route and public docs, and the header doc of
+  every touched file, including the one that holds the change. This covers a reversed layout contract, a setup, config
+  or helper change to what a lane or module does (`vitest.config.ts` lane docs), hardcoded text becoming translated
+  keys, and changed cancellation, retry or error semantics including status codes (once a response streams, a failure
+  is an error body, not another status). Re-derive figures from a value that became per-locale or variable, re-read an
+  ordering comment when entries change, grep a full identifier rather than a prefix, and after a split check that each
+  paragraph sits on the half it describes, with no sentence cut and no field lost.
+
+❌ "Every surface reads the hint from the shared cache." ✅ "Pages A, B and C read it from the shared cache; the agent
+tool keeps its own lite read. Both agree once the 12 h cache is warm."
 
 <a id="CM-3"></a>
 
@@ -669,9 +576,9 @@ compares; two residency figures with different binding conditions say so), and f
 version, the check date and the command to re-check. Schedules and windows come from the schedule source, cited by
 file, not from assumptions about business hours. When there is no measurement, say so ("no baseline yet").
 
-When moving code or trimming history comments, keep the measured evidence (figures, conditions, re-check command); drop
-only the narration of the past fix.
-When rewriting a comment, drop only the pointer to local audit or history notes (CM-9) and keep the measured figures (rates, counts, sizes) with their conditions; a figure removed together with its pointer leaves the claim unsourced.
+When moving code or trimming or rewriting a comment, keep the measured evidence (figures with their conditions and
+units, the re-check command) and drop only the narration of the past fix or the pointer to local notes (CM-9); a figure
+removed together with its pointer leaves the claim unsourced.
 
 ```typescript
 // ❌ unverifiable
@@ -754,7 +661,6 @@ measured fact instead of the case ID. If the pointer was the instruction's only 
 ```typescript
 // ❌ see docs/superpowers/specs/funnel.md §4 for why member prompts are excluded
 // ❌ regression guard for benchmark case B-12
-// ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
 // ✅ Member-only prompts are excluded: the funnel measures anonymous visitors before signup.
 ```
 
@@ -870,15 +776,9 @@ A condition that must hold in both a route's `generateMetadata` and its body com
 that switches the robots directive and the rendered content) is one `_lib` predicate that both call. A comment saying
 "same expression as the body" is not enforcement.
 
-- ❌ `page.tsx` metadata and `_components/Body` each spell out the degrade condition, with a comment promising they match.
-- ✅ `_lib/isDegraded(data)` is imported by both.
-
 A summary label follows the same rule: derive it from the aggregate it summarizes, never copy it from one component.
 Validate label/aggregate consistency where the data enters, and regenerate bundled copies (an archive of the same data)
 in the same change.
-
-- ❌ An item's verdict copied from its first part, so a half-right item is published as "correct".
-- ✅ The verdict is computed from the item's total score, and the validator rejects a label that disagrees with it.
 
 <a id="CS-3"></a>
 
@@ -989,33 +889,32 @@ before deleting it.
 
 #### CS-14 — Policy and notice text matches code behavior line by line
 
-Privacy policies, terms and in-product copy (prompts, toasts, banners) state exactly what the code does. Copy never promises a delivery or effect the code skips for some users; gate the prompt on the real state or word it conditionally. Policies list the storage items, the data
-actually used and every item sent to a third party (including identifiers embedded in links). Label a state only when the data can show it (a filing proves "filed", not "in progress"). Compare each sentence
-with the code path; on a mismatch change the code or the text, never leave both. When a new code path starts writing
-user data, update the text in the same change. Keep non-advertising storage items out of the advertising-cookie
-paragraph.
+Privacy policies, terms and in-product copy (prompts, toasts, banners) state exactly what the code does. Compare each
+sentence with every code path that reads or writes the data; on a mismatch change the code or the text, never leave
+both. Update the text in the same change as a new path that writes user data, a new use (extend the purpose list), or a
+store found during the revision that was never disclosed (user-supplied keys, bands, counters).
 
-Check each claim kind against every reader and writer, not only the new one: "hashed"/"anonymised" must match what is
-stored raw; "used only for X" must hold for every host or route that reads the same cookie or key; identifiers held by
-a processor (e.g. a member id inside cache or quota keys) and every new event belong in the stored-data, purpose and
-retention sections; in-product copy names a cause only when every code path that shows it guarantees that cause.
-An absolute claim ("never uses the server key", "only X") is written only after auditing every transitive path, including
-indirect callers such as search or name-translation helpers that reach the same dependency. A stated fact holds only for
-the scope the text names: "no language prefix" is written for the listed pages, not for the whole site.
-
-Also check these claim kinds: a retention period counted "after storage" must hold for counters whose TTL refreshes on
-every write (state the real trigger); "encrypted" must not imply the server cannot read the value when it decrypts at
-use; a disclosure names every flow and analysis kind that sends the value, and says "may send" where a cache hit sends
-nothing; a new use extends the purpose list; stores found during the revision that were never disclosed (user-supplied
-keys, bands, counters) are added in the same change. Parallel locale texts use the same enumeration and punctuation.
-
-State the bound the code actually enforces: a cookie or record lifetime is its maximum across every set path (a lazy
-catch-up path may write a fresh full term, so "as long as the session" is false), and cookie scope is the real domain
-(a parent-domain cookie covers every subdomain, not only the hosts you named).
-
-A privacy claim ("the link address is not recorded") is checked against every stored field that can hold the value
-(an older column may already keep the raw path) and against rows written before the change; when old rows contradict
-the claim, ship an idempotent backfill in the same change. User-facing examples use plain language, not internal code values.
+- Copy never promises a delivery or effect some users skip (gate it on the real state or word it conditionally), names
+  a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it
+  (a filing proves "filed", not "in progress").
+- Policies list the storage items, the data actually used and every item sent to a third party (including identifiers
+  embedded in links). Processor-held identifiers (a member id inside cache or quota keys) and every new event appear in
+  the stored-data, purpose and retention sections; non-advertising items stay out of the advertising-cookie paragraph.
+- Each claim word holds for every reader and writer: "hashed"/"anonymised" against what is stored raw; "used only for X"
+  for every host or route that reads the same cookie or key; "encrypted" does not imply the server cannot read a value
+  it decrypts at use; a disclosure names every flow and analysis kind that sends the value and says "may send" where a
+  cache hit sends nothing. An absolute claim ("never uses the server key", "only X") is written only after auditing
+  every transitive path, including indirect callers such as search or name-translation helpers, and a stated fact holds
+  only for the scope the text names ("no language prefix" for the listed pages, not the whole site).
+- State the bound the code enforces: retention from its real trigger (a TTL refreshed on every write is not "after
+  storage"), a cookie or record lifetime as the maximum across every set path (a lazy catch-up path may write a fresh
+  full term, so "as long as the session" is false), and cookie scope as the real domain (a parent-domain cookie covers
+  every subdomain).
+- A privacy claim ("the link address is not recorded") is checked against every stored field that can hold the value
+  (an older column may keep the raw path) and against rows written before the change; when old rows contradict it, ship
+  an idempotent backfill in the same change.
+- Parallel locale texts use the same enumeration and punctuation; user-facing examples use plain language, not
+  internal code values.
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.
@@ -1037,9 +936,6 @@ the code actually established. A flag that covers several cases (absent vs. stal
 prove exactness) is split per case or set from the narrower check. Explanatory text attached to such a result (a hint
 or note read by a user or a model) follows the same limit: it states only the case the code distinguished ("none usable
 for this caller", not "none exists") and names only fields or tools that are present in that response.
-
-- ❌ A substitute result flagged `overallMissing` although a stale overall existed.
-- ✅ Flag "missing" only when none was found; mark the stale case separately.
 
 <a id="CS-16"></a>
 
@@ -1151,188 +1047,3 @@ text shows nothing.
 
 - ❌ `value < 0 ? '-' : '+'` on the raw `-0.004`, printing `-0.00%`.
 - ✅ Round first (`const r = Number(value.toFixed(2))`), then derive sign and colour from `r`; `0` gets the neutral colour and the same prefix as an exact zero.
-
----
-
-## Layer Dependency Rules
-
-`→ see the "Layer Dependency Rules" section of CLAUDE.md` for the authoritative layer dependency rules.
-
----
-
-## Iteration Protocol
-
-Use JavaScript's iteration protocol (`Symbol.iterator`) and generators to compose data pipelines.
-
-### When to Use
-
-| Situation | Approach |
-|---|---|
-| Applying multiple transforms in a single pass over an array | Generator pipeline |
-| Making a custom data structure consumable with `for...of` | Implement `Symbol.iterator` |
-| Exposing pure calculation data as an iterable to external consumers | `Iterable` interface |
-| Processing thousands of Bar records step by step | Lazy evaluation (see section below) |
-
-### Symbol.iterator — Custom Iterables
-
-```typescript
-// ✅ Custom iterable — expose results as an iterable from pure calculation utilities
-class SlidingWindow<T> implements Iterable<T[]> {
-    constructor(private items: T[], private size: number) {}
-
-    [Symbol.iterator](): Iterator<T[]> {
-        let index = 0;
-        const { items, size } = this;
-        return {
-            next(): IteratorResult<T[]> {
-                if (index + size > items.length) return { done: true, value: undefined };
-                return { done: false, value: items.slice(index++, index + size - 1) };
-            },
-        };
-    }
-}
-
-// ✅ Consume naturally with for...of
-for (const window of new SlidingWindow(closes, 14)) {
-    // window: number[]
-}
-```
-
-### Generator Functions
-
-```typescript
-// ✅ Express a sliding window as a generator — used purely in calculation helpers
-function* slidingWindow<T>(items: T[], size: number): Generator<T[]> {
-    for (let i = 0; i + size <= items.length; i++) {
-        yield items.slice(i, i + size);
-    }
-}
-
-// ✅ Compose generators — iterable pipeline with no intermediate arrays
-function* map<T, U>(iter: Iterable<T>, fn: (v: T) => U): Generator<U> {
-    for (const item of iter) yield fn(item);
-}
-
-function* filter<T>(iter: Iterable<T>, pred: (v: T) => boolean): Generator<T> {
-    for (const item of iter) if (pred(item)) yield item;
-}
-
-// ✅ Usage — pipeline with no intermediate arrays
-const gains = filter(
-    map(slidingWindow(closes, 2), ([prev, curr]) => curr - prev),
-    (delta) => delta > 0,
-);
-```
-
-### Pitfalls
-
-```typescript
-// ❌ Do not define generators directly in Server Actions or UI components.
-//    Generator-based iterables belong in pure calculation utilities only.
-
-// ❌ Do not consume a generator more than once — iterators are one-shot
-const gen = slidingWindow(closes, 14);
-const a = [...gen]; // consumed
-const b = [...gen]; // ❌ b is always an empty array
-
-// ✅ When reuse is needed, materialize to an array or wrap in a factory function
-const windows = () => slidingWindow(closes, 14); // new generator on each call
-```
-
----
-
-## Lazy Evaluation
-
-Use lazy evaluation when data is large (thousands of Bars or more) or when multiple transformation stages would create many intermediate arrays.
-
-### When to Choose Lazy Evaluation
-
-```
-✅ Use lazy evaluation when:
-- The Bar array has 1,000+ items and requires multi-stage transforms (filter → map → reduce)
-- Only the first N results are needed — generators short-circuit without processing the rest
-- Computing streaming indicators one value at a time
-
-❌ Skip lazy evaluation when:
-- There is only one transformation stage or the dataset is small (a few hundred items or fewer)
-  → plain .map() / .filter() is more readable
-- The result must be shared across multiple consumers
-  → materialize to an array first, then share
-```
-
-### Pattern 1 — Generator Pipeline
-
-```typescript
-// ✅ shared/lib or @y0ngha/siglens-core — reusable lazy utilities
-function* lazyMap<T, U>(iter: Iterable<T>, fn: (v: T) => U): Generator<U> {
-    for (const item of iter) yield fn(item);
-}
-
-function* lazyFilter<T>(iter: Iterable<T>, pred: (v: T) => boolean): Generator<T> {
-    for (const item of iter) if (pred(item)) yield item;
-}
-
-function* lazyTake<T>(iter: Iterable<T>, n: number): Generator<T> {
-    let count = 0;
-    for (const item of iter) {
-        if (count++ >= n) return;
-        yield item;
-    }
-}
-
-// ✅ Extract the first N closing prices from bullish candles — no intermediate arrays
-function getFirstNBullishCloses(bars: Bar[], n: number): number[] {
-    const bullish = lazyFilter(bars, (b) => b.close > b.open);
-    const closes = lazyMap(bullish, (b) => b.close);
-    return [...lazyTake(closes, n)];
-}
-```
-
-### Pattern 2 — Streaming Accumulation
-
-```typescript
-// ✅ Compute a cumulative average in a single pass over the input
-function* cumulativeAverage(values: Iterable<number>): Generator<number> {
-    let sum = 0;
-    let count = 0;
-    for (const v of values) {
-        sum += v;
-        count++;
-        yield sum / count;
-    }
-}
-```
-
-### Pattern 3 — Explicit Materialization Point
-
-```typescript
-// ✅ Define the pipeline lazily; materialize only at the final consumption point
-function calculateLazyRSI(closes: number[], period: number): (number | null)[] {
-    // Pipeline definition — nothing runs yet
-    const windows = slidingWindow(closes, period);
-    const rsiValues = lazyMap(windows, computeRSIFromWindow);
-
-    // Materialize here — actual computation happens at this point
-    const prefix: null[] = new Array(period - 1).fill(null);
-    return [...prefix, ...rsiValues];
-}
-
-// ❌ Do not create an intermediate array at every stage
-function calculateEagerRSI(closes: number[], period: number): (number | null)[] {
-    const windows = closes                     // intermediate array
-        .map((_, i) => closes.slice(i, i + period))
-        .filter((w) => w.length === period);   // intermediate array
-    return windows.map(computeRSIFromWindow);  // intermediate array
-}
-```
-
-### Lazy Evaluation and Layer Rules
-
-```
-shared/lib/     Lazy pipeline definitions allowed (pure generator functions)
-entities/lib/   Lazy pipeline definitions allowed (pure generator functions)
-                Materialize (spread / Array.from) only as the last step inside the function
-entities/api/   Call entity/shared generator functions and consume their results
-widgets/        Do not define lazy pipelines directly
-                Receive already-materialized arrays via entity/shared functions
-```
