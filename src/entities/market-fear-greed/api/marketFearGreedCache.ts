@@ -10,6 +10,7 @@ import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { secondsUntilSessionRoll } from '@/shared/lib/marketSessionDate';
 import { buildMarketFearGreedComparisons } from '../lib/buildMarketFearGreedComparisons';
+import { compactFearGreedHistory } from '../lib/compactFearGreedHistory';
 import { hasSnapshot } from '../lib/hasSnapshot';
 import {
     lastPublishedSessionDate,
@@ -21,7 +22,7 @@ import {
     MARKET_FEAR_GREED_SYMBOLS,
 } from '../lib/marketFearGreedSymbols';
 import { sessionKeyedTtlSeconds } from '../lib/sessionKeyedTtl';
-import type { MarketFearGreedView } from '../model';
+import type { MarketFearGreedHubView } from '../model';
 import { fetchDailyCloses } from './fetchDailyCloses';
 
 /**
@@ -42,6 +43,8 @@ export const MARKET_FEAR_GREED_CONFIG_FINGERPRINT =
             symbols: MARKET_FEAR_GREED_SYMBOLS,
             lookbackDays: MARKET_FEAR_GREED_LOOKBACK_DAYS,
             priceSource: 'etf:adjClose,index:price',
+            // 캐시 값에 `history`가 늘었다. 옛 Redis·데이터 캐시 항목에는 없으므로 읽히면 안 된다.
+            viewShape: 'hub-history-v1',
         })
     );
 
@@ -58,7 +61,7 @@ const MARKET_FEAR_GREED_CACHE_KEY = `market:fear-greed:${MARKET_FEAR_GREED_CONFI
  */
 async function buildMarketFearGreedView(
     now: Date
-): Promise<MarketFearGreedView> {
+): Promise<MarketFearGreedHubView> {
     const from = lookbackStartDate(now);
     const to = lastPublishedSessionDate(now);
 
@@ -76,11 +79,12 @@ async function buildMarketFearGreedView(
         series.map(({ key, closes }) => [key, closes])
     ) as MarketFearGreedInput;
 
+    const snapshot = computeMarketFearGreedIndex(input);
+    const history = computeMarketFearGreedHistory(input);
     return {
-        snapshot: computeMarketFearGreedIndex(input),
-        comparisons: buildMarketFearGreedComparisons(
-            computeMarketFearGreedHistory(input)
-        ),
+        snapshot,
+        comparisons: buildMarketFearGreedComparisons(history),
+        history: snapshot === null ? [] : compactFearGreedHistory(history),
     };
 }
 
@@ -97,7 +101,7 @@ async function buildMarketFearGreedView(
  * 아무것도 쓰지 않는다.
  */
 export const getCachedMarketFearGreed = cache(
-    (): Promise<MarketFearGreedView> => {
+    (): Promise<MarketFearGreedHubView> => {
         const now = new Date();
         const to = lastPublishedSessionDate(now);
         return getOrSetCache(

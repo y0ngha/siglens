@@ -4,7 +4,7 @@ import {
     MARKET_FEAR_GREED_FACTOR_KEYS,
 } from '@y0ngha/siglens-core';
 import type {
-    MarketFearGreedView,
+    MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
@@ -35,7 +35,7 @@ import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd'
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
-    readonly view: MarketFearGreedView<MarketFearGreedViewSnapshot>;
+    readonly view: MarketFearGreedHubView<MarketFearGreedViewSnapshot>;
     /**
      * 훅이 아니라 prop으로 받는다 — 테스트가 이 컴포넌트를 함수로 직접
      * 호출하고 그 자리에는 React 컨텍스트가 없어 `useLocale()`이 던진다.
@@ -129,6 +129,7 @@ export function FearGreedRouteBody({
 
     const datasetJsonLd = buildMarketFearGreedDatasetJsonLd({
         view,
+        market,
         name: copy.heading,
         description: copy.description,
         url,

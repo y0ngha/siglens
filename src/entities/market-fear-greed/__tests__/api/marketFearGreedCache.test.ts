@@ -271,5 +271,27 @@ describe('entity ↔ core 배선 (실제 core 계산)', () => {
 
         expect(view.snapshot).toBeNull();
         expect(view.comparisons).toEqual([]);
+        expect(view.history).toEqual([]);
+    });
+
+    it('일별 기록은 날짜 오름차순이고 앞쪽 워밍업 null이 없다', async () => {
+        const view = await getCachedMarketFearGreed();
+
+        expect(view.history.length).toBeGreaterThan(20);
+        expect(view.history[0].score).not.toBeNull();
+        expect(view.history.map(p => p.date)).toEqual(
+            view.history.map(p => p.date).toSorted()
+        );
+    });
+
+    it('기록의 마지막 점은 스냅샷 기준일이고 점수는 화면과 같은 정수다', async () => {
+        const view = await getCachedMarketFearGreed();
+
+        const last = view.history.at(-1);
+        expect(last?.date).toBe(view.snapshot?.asOf);
+        expect(last?.score).toBe(
+            Math.round(view.snapshot?.score ?? Number.NaN)
+        );
+        expect(Number.isInteger(last?.score)).toBe(true);
     });
 });

@@ -6,7 +6,7 @@ import {
     getCachedMarketFearGreedCrypto,
     MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT,
 } from './marketFearGreedCryptoCache';
-import type { MarketFearGreedCryptoView } from '../model';
+import type { MarketFearGreedCryptoHubView } from '../model';
 
 /**
  * ISR-safe 암호화폐 시장 공포·탐욕 판독값. 미국·한국판과 같은 3중 래핑이고 이유도 같다.
@@ -18,7 +18,7 @@ import type { MarketFearGreedCryptoView } from '../model';
  *   봐야 한다. 요청 내 메모가 없으면 캐시 만료 경계 양쪽에 떨어져 서로 다른 답을 본다.
  */
 export const getMarketFearGreedCryptoStatic = cache(
-    (): Promise<MarketFearGreedCryptoView> =>
+    (): Promise<MarketFearGreedCryptoHubView> =>
         unstable_cache(
             () => getCachedMarketFearGreedCrypto(),
             [

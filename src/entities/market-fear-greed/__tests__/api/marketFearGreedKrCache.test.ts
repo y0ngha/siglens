@@ -1,7 +1,11 @@
 vi.mock('server-only', () => ({}));
 
-const computeMarketFearGreedIndex = vi.fn((..._args: unknown[]) => ({}));
-const computeMarketFearGreedHistory = vi.fn((..._args: unknown[]) => []);
+const computeMarketFearGreedIndex = vi.fn(
+    (..._args: unknown[]): unknown => ({})
+);
+const computeMarketFearGreedHistory = vi.fn(
+    (..._args: unknown[]): unknown[] => []
+);
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
@@ -57,6 +61,7 @@ describe('getCachedMarketFearGreedKr', () => {
         vi.clearAllMocks();
         fetchKrDailyCloses.mockResolvedValue(CLOSES);
         computeMarketFearGreedIndex.mockReturnValue({ score: 50 });
+        computeMarketFearGreedHistory.mockReturnValue([]);
         getOrSetCache.mockResolvedValue({ snapshot: null, comparisons: [] });
     });
 
@@ -92,6 +97,38 @@ describe('getCachedMarketFearGreedKr', () => {
         );
         // 파생 시리즈는 창 크기만큼 짧아진다 — 원본을 그대로 넣은 게 아님을 고정한다.
         expect((input.vix as unknown[]).length).toBeLessThan(CLOSES.length);
+    });
+
+    it('keeps the compacted history next to the snapshot', async () => {
+        computeMarketFearGreedHistory.mockReturnValue([
+            { date: '2026-01-01', score: null, label: null },
+            { date: '2026-01-02', score: 24.5, label: 'EXTREME_FEAR' },
+            { date: '2026-01-03', score: null, label: null },
+            { date: '2026-01-04', score: 40.2, label: 'FEAR' },
+        ]);
+
+        await getCachedMarketFearGreedKr();
+        const view = await runFetcher();
+
+        expect(view).toMatchObject({
+            history: [
+                { date: '2026-01-02', score: 25, label: 'EXTREME_FEAR' },
+                { date: '2026-01-03', score: null, label: null },
+                { date: '2026-01-04', score: 40, label: 'FEAR' },
+            ],
+        });
+    });
+
+    it('carries an empty history when the snapshot is null', async () => {
+        computeMarketFearGreedIndex.mockReturnValue(null);
+        computeMarketFearGreedHistory.mockReturnValue([
+            { date: '2026-01-02', score: 24.5, label: 'EXTREME_FEAR' },
+        ]);
+
+        await getCachedMarketFearGreedKr();
+        const view = await runFetcher();
+
+        expect(view).toMatchObject({ history: [] });
     });
 
     it('refuses to cache a reading with no snapshot', async () => {
