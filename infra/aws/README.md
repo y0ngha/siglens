@@ -30,6 +30,26 @@ Cloudflare IP 허용목록도 함께 사라졌다). 런타임은
 > 액티브 레디니스 모니터링을 활성화하려면 opt-in 스크립트를 참고:
 > `infra/aws/11-readiness-canary.sh` (빌링 리소스 생성 — 자동 실행 아님).
 
+## 마이그레이션 게이트 (launch gate)
+
+새 인스턴스는 이미지가 기대하는 DB 마이그레이션이 **모두 적용됐을 때만** 트래픽을 받는다.
+배포는 마이그레이션을 적용하지 않는다(적용은 `ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate`, 사람이 한다).
+
+- `cloudflared.service`의 두 번째 `ExecStartPre`인 `siglens-wait-migrations.sh`(user-data.sh)가
+  `GET /api/ready/migrations`를 폴링한다. 터널이 붙는 순간이 트래픽이 오는 순간이라 그 앞에서 막는다.
+- `503 missing`/`manifest_unavailable`(확정) -> 닫힘. `/run/siglens/migration-gate-failed`를 남기고,
+  launch 훅 스크립트가 이를 보고 즉시 `ABANDON`한다. instance refresh는 실패하고 옛 인스턴스가 서빙을 이어간다
+  (`deploy.sh`가 `[migration-gate]` 로그와 `yarn db:check:migrations`를 보라는 안내를 낸다).
+- DB에 닿지 못한 `unknown`은 최대 96초(12 x (3 + 5)) 재시도한 뒤 **열린 쪽**으로 통과한다.
+- 이미 InService인 인스턴스(launch 훅 CONTINUE 뒤 `/var/lib/siglens/launch-completed`가 생긴다)는 재부팅 때
+  막히지 않는다. 로그에 `blocked on an InService instance, passing (missing <n>)`이 남는다.
+- 막힌 배포는 `deploy.sh`가 `siglens-lt`를 배포 전 최신 버전에서 새 버전(`revert-after-<tag>`)을 만들어 되돌린다
+  (타임아웃으로 refresh가 아직 돌고 있으면 되돌리지 않고, 취소 먼저라는 안내만 낸다).
+- 엔드포인트는 박스 안 게이트 전용이다: `cf-ray`/`cf-connecting-ip`가 붙은 요청은 404.
+- 비상 스위치: SSM `/siglens/MIGRATION_GATE` = `enforce`(기본) | `report` | `off`.
+  `/api/health`와 selfcheck는 건드리지 않는다(DB 블립이 인스턴스 교체로 번지면 안 된다).
+- `TimeoutStartSec=540` = wait-healthy 60 x (2 + 5) = 420 + 게이트 12 x (3 + 5) = 96, 여유 24. 게이트를 늘리면 이 값도 올린다.
+
 ## SIGTERM graceful drain (H1)
 
 `src/instrumentation.ts`의 `register()`가 Node 서버 부팅 시 SIGTERM/SIGINT 핸들러를

@@ -105,6 +105,12 @@ EXISTING=$(aws ssm get-parameters-by-path --path /siglens/ --recursive \
   --output json \
   | jq -r '.Parameters[].Name | ltrimstr("/siglens/")')
 
+# 마이그레이션 게이트 우회가 SSM에 남아 있으면 알린다(값은 읽지 않는다). report/off는 비상용이라
+# 배포가 통과한 뒤 지우지 않으면 게이트가 조용히 꺼진 채로 남는다. 위에서 이미 받은 목록만 쓴다.
+if grep -qxF "MIGRATION_GATE" <<<"$EXISTING"; then
+  log "WARN: SSM /siglens/MIGRATION_GATE is set — the migration gate may be overridden (report/off). Delete it once the deploy is clean: aws ssm delete-parameter --name /siglens/MIGRATION_GATE"
+fi
+
 is_optional() {
   local k="$1"
   for opt in "${OPTIONAL_KEYS[@]}"; do

@@ -132,6 +132,12 @@ RUN node -e "const {S3Client}=require('@aws-sdk/client-s3'); new S3Client({regio
 # 빌드는 통과하고 서버 기동 시 ESM resolution 크래시로 터진다(crash-loop → ASG 인스턴스 교체).
 # 실제로 import해 그래프 전체를 로드시켜 빌드 단계에서 잡는다.
 RUN node --input-type=module -e "await import('./cache-handler/index.mjs'); console.log('cache-handler ok')" || (echo 'FAIL: cache-handler 모듈 그래프 로드 실패' && exit 1)
+# 마이그레이션 게이트(`/api/ready/migrations`)가 런타임에 읽는 저널과 SQL. standalone 트레이싱에는
+# 잡히지 않으므로 명시 복사한다(스냅샷은 필요 없어 복사하지 않는다). 이 파일들이 빠지면 앱은
+# `manifest_unavailable`로 게이트를 닫아 배포가 막힌다 — 그 실패를 런타임이 아니라 여기 빌드에서 잡는다.
+COPY --chown=node:node --from=builder /app/drizzle/meta/_journal.json ./drizzle/meta/_journal.json
+COPY --chown=node:node --from=builder /app/drizzle/*.sql ./drizzle/
+RUN node -e "const j=require('./drizzle/meta/_journal.json');const fs=require('fs');j.entries.forEach(e=>fs.accessSync('drizzle/'+e.tag+'.sql'));console.log('migrations manifest ok',j.entries.length)" || (echo 'FAIL: drizzle manifest missing' && exit 1)
 USER node
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
