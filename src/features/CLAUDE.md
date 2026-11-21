@@ -14,13 +14,14 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 | `features/auth-signup` | `features/email-report-settings` | 가입 3단계 화면이 선택 항목인 메일 리포트 수신 행(`EmailReportSignupOptIn`)을 재사용한다. 수신 일정·시간대 규칙의 소스가 email-report-settings라 가입 쪽에서 다시 만들지 않는다. 반대 방향 import 없음 |
 | `features/auth-signup` | `features/reasoning-toggle` | 가입 화면의 회원 혜택 목록(`SignupBenefits`)이 '상세 분석'을 이름으로 부른다. 그 이름의 단일 소스(`REASONING_FEATURE_LABEL_KEY`)는 reasoning-toggle이 소유하므로 정의 파일에서 상수를 재사용한다. 반대 방향 import 없음 |
 | `features/auth-oauth-consent` | `features/email-report-settings` | 소셜 로그인 가입의 동의 화면도 같은 메일 리포트 수신 선택 행을 쓴다. 반대 방향 import 없음 |
-| `features/symbol-model` | `features/analysis-nudge` | symbol-model provider가 공유 회원가입 넛지 모달을 단 하나만 호스팅한다. reasoning 토글(잠금 클릭)과 익명 자동 넛지(그날 서로 다른 3개 종목을 분석한 뒤, 하루·세션 1회)가 이 단일 인스턴스를 함께 연다. 자동 넛지는 '상세 분석'과 '메일 리포트' 두 문구를 번갈아 쓴다 |
+| `features/symbol-model` | `features/analysis-nudge` | symbol-model provider가 공유 회원가입 넛지 모달을 단 하나만 호스팅한다. reasoning 토글(잠금 클릭)과 익명 자동 넛지(재방문일에, 그날 서로 다른 3개 종목을 분석한 뒤, 하루·세션 1회, '메일 리포트'와 '상세 분석' 두 문구를 한 번씩만)가 이 단일 인스턴스를 함께 연다 |
 | `features/symbol-model` | `features/premium-gate` | 모델 선택 상태가 premium 모델 게이트(인증/BYOK 안내 모달)를 함께 호스팅한다 |
 | `features/symbol-model` | `features/reasoning-toggle` | reasoning 토글 상태/라벨을 symbol-model provider가 함께 조율한다 |
 | `features/analysis-nudge` | `features/reasoning-toggle` | 회원가입 넛지 copy가 reasoning 기능을 이름으로 부른다. 그 이름(`REASONING_FEATURE_LABEL_KEY`)의 단일 소스는 reasoning-toggle이 소유하므로 정의 파일에서 상수를 재사용한다 |
 | `features/portfolio-management` | `features/ticker-search` | 보유종목 추가 폼의 종목 선택에 `TickerAutocomplete`를 재사용한다 |
 | `features/ticker-search` | `features/watchlist` | 검색 결과 행(헤더 자동완성·모바일 오버레이)의 ★가 `SearchWatchlistStar`(`useWatchlist` 기반)를 쓴다. 반대 방향("종목 검색" 버튼이 오버레이를 여는 것)은 `shared/model/SearchOverlayTriggerContext`로 풀어 두 슬라이스의 **직접** 순환은 두지 않는다. `/watchlist`의 "보유로 전환"(`HoldingForm` 재사용)은 관심 목록 화면 조합부를 `views/watchlist`로 올려 features 밖에서 조합한다 — feature 슬라이스 사이의 순환은 `src/__tests__/guards/importCycles.test.ts`가 막는다 |
 | `features/email-report-nudge` | `features/watchlist` | 메일 리포트 넛지의 조건(보유∪관심 > 0)과 종목 CTA(관심종목 토글)가 통합 훅 `useWatchlist`를 쓴다. 회원/비회원 분기와 낙관적 업데이트를 넛지가 다시 구현하지 않기 위해 정의 파일에서 직접 import한다 |
+| `features/analysis-nudge` | `features/visitor-ping` | 가입 안내 창이 재방문일부터 뜨도록 `visitor-ping`이 이미 저장한 방문 이력(`readIsReturnVisitDay`)에서 첫 방문 날짜만 읽는다. 읽기 전용이며 새 저장 키·전송이 없다(방침 v15 §7). `visitor-ping`은 `analysis-nudge`를 import하지 않아 순환이 없다 |
 | `features/pwa-install` | `features/visitor-ping` | 설치 배너가 재방문일부터 뜨도록 `visitor-ping`이 이미 저장한 방문 이력(`readIsReturnVisitDay`)에서 첫 방문 날짜만 읽는다. 읽기 전용이며 새 저장 키·전송이 없다(방침 v15 §7). `visitor-ping`은 `pwa-install`을 import하지 않아 순환이 없다 |
 | `features/share` | `features/symbol-model` | 공유 플로우가 현재 선택된 모델/티어 상태를 읽어 공유 스냅샷에 반영한다 |
 

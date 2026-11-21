@@ -274,6 +274,58 @@ describe(`재방문 이력 ↔ 방침 v${VERSION}`, () => {
         zh: '不会向服务器额外发送任何信息',
     };
 
+    /** 비회원 안내 문구 항목(§7)을 찾는 각 로케일의 시작 문구. */
+    const GUEST_NUDGE_LINE_MARKER: Record<string, string> = {
+        ko: '- 비회원:',
+        en: '- Non-members:',
+        ja: '- 非会員:',
+        zh: '- 非会员:',
+    };
+
+    /**
+     * 비회원 가입 안내 창도 같은 첫 방문 날짜를 읽는다(`useAnonAnalysisNudge`의 `readIsReturnVisitDay`).
+     * 두 번째 읽기 용도이므로 같은 항목이 가입 안내 창을 이름으로 적어야 한다.
+     */
+    const SIGNUP_PROMPT_READ_PHRASE: Record<string, string> = {
+        ko: '회원가입 안내 창',
+        en: 'signup prompt',
+        ja: '会員登録の案内',
+        zh: '注册提示',
+    };
+
+    /** 안내 문구를 한 번씩만 보여 주는 동작(`claimNextAnonNudgeVariant`)의 고지 문구. */
+    const NUDGE_NOT_REPEATED_PHRASE: Record<string, string> = {
+        ko: '다시 띄우지 않는',
+        en: 'is not shown again',
+        ja: '再び表示しない',
+        zh: '不再显示相同',
+    };
+
+    it.each(LOCALES)(
+        '%s 방문 이력 항목이 회원가입 안내 창을 위한 첫 방문 날짜 읽기를 고지한다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l => l.includes('siglens:visit-history:v1')) ?? '';
+            expect(line).toContain(SIGNUP_PROMPT_READ_PHRASE[locale] ?? '');
+        }
+    );
+
+    it.each(LOCALES)(
+        '%s 비회원 안내 문구 항목이 같은 문구를 다시 띄우지 않는 용도를 고지한다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l =>
+                        l.includes(GUEST_NUDGE_LINE_MARKER[locale] ?? '')
+                    ) ?? '';
+            expect(line).not.toBe('');
+            expect(line).toContain(NUDGE_NOT_REPEATED_PHRASE[locale] ?? '');
+        }
+    );
+
     it.each(LOCALES)(
         '%s 방문 이력 항목이 앱 설치 안내를 위한 첫 방문 날짜 읽기를 고지한다',
         locale => {
