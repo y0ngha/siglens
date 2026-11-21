@@ -30,6 +30,7 @@
         "db:seed:guide": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedGuide.ts",
         "guide:links": "tsx scripts/generate-guide-links.ts",
         "env:gate": "tsx scripts/generate-env-gate.ts",
+        "rules:size": "tsx scripts/rule-doc-size.ts",
         "db:seed:crypto": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-assets.ts",
         "db:seed:crypto-korean": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-korean-names.ts",
         "db:seed:kr-names": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-kr-listed-names.ts",
