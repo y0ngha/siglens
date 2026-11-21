@@ -148,12 +148,21 @@ export interface DeleteAccountApiKeys {
     revokeAuth(keyHashes: readonly string[]): Promise<unknown>;
 }
 
-/** `deleteAccount`가 주입받는 저장소와 OAuth 폐기기, API 키 포트. */
+/**
+ * 계정 삭제가 알림 메일 신청을 함께 파기하기 위한 포트. 구독자 행의 주소는 회원 행에서 읽으므로
+ * 회원 행을 지우기 **전에** 불러야 한다(`MailAlertSubscriberRepository.deleteForAccount`).
+ */
+export interface DeleteAccountMailAlerts {
+    deleteForAccount(userId: string): Promise<number>;
+}
+
+/** `deleteAccount`가 주입받는 저장소와 OAuth 폐기기, API 키·알림 메일 포트. */
 export interface DeleteAccountDependencies {
     users: UserRepository;
     oauthAccounts: OAuthAccountRepository;
     oauthRevoker: OAuthRevoker;
     apiKeys: DeleteAccountApiKeys;
+    mailAlerts: DeleteAccountMailAlerts;
 }
 
 /** 만료 쿠키의 이름·속성 재정의. 생략하면 세션 쿠키 기본값. */

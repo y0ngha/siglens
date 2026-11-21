@@ -118,7 +118,7 @@ export const ENV_REGISTRY = [
         requirement: 'required',
         sources: ['ssm'],
         readBy: ['siglens'],
-        note: 'HMAC secret for email-report links; the report cron sends nothing and link routes reject without it.',
+        note: 'HMAC secret for email-report links and the mail-alert cookie and links; the report cron sends nothing, link routes reject, and mail-alert sign-up is unavailable without it.',
     },
     {
         name: 'FMP_API_KEY',

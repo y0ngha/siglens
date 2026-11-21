@@ -41,3 +41,81 @@ export type MailAlertItem =
           readonly date: string;
           readonly score: number;
       };
+
+/**
+ * 대화상자가 열릴 때 서버가 알려 주는 이 화면 항목의 상태. 주소는 가린 모양(`maskEmail`)만 내려간다.
+ *
+ * - `new`: 코드로 주소를 확인해야 한다. 이메일 인증 전 회원이면 `accountEmail`이 채워져 그 주소를 고정해 보여 준다.
+ * - `member`: 이메일이 인증된 회원 — 코드 없이 받을 수 있다. `includePortfolio`는 지금 켜져 있는지.
+ * - `known`: 같은 브라우저에서 이미 신청한 주소(서명된 쿠키)로 이 항목만 더한다.
+ * - `subscribed`: 이 항목은 이미 받고 있다.
+ */
+export type MailAlertState =
+    | { readonly status: 'unavailable' }
+    | { readonly status: 'new'; readonly accountEmail: string | null }
+    | {
+          readonly status: 'member';
+          readonly maskedEmail: string;
+          readonly includePortfolio: boolean;
+      }
+    | { readonly status: 'known'; readonly maskedEmail: string }
+    | { readonly status: 'subscribed'; readonly maskedEmail: string };
+
+/** 코드 요청(1단계) 결과. `invalid_email`만 형식 오류이고, 주소·계정 존재 여부는 어느 상태에도 드러나지 않는다. */
+export type MailAlertRequestCodeState =
+    | { readonly status: 'idle' }
+    | { readonly status: 'code_sent'; readonly email: string }
+    | { readonly status: 'invalid_email' }
+    | { readonly status: 'rate_limited' }
+    | { readonly status: 'unavailable' };
+
+/** 코드 확인(2단계) 결과. */
+export type MailAlertConfirmState =
+    | { readonly status: 'idle' }
+    | { readonly status: 'subscribed'; readonly maskedEmail: string }
+    | {
+          readonly status:
+              | 'wrong_code'
+              | 'expired'
+              | 'too_many'
+              | 'rate_limited'
+              | 'limit_reached'
+              | 'invalid'
+              | 'unavailable';
+      };
+
+/** 항목 추가·보유 종목 함께 받기 같은 변경 결과. `needs_code`는 코드 확인부터 해야 한다는 뜻이다. */
+export type MailAlertAddResult =
+    | { readonly status: 'subscribed'; readonly maskedEmail: string }
+    | {
+          readonly status:
+              | 'needs_code'
+              | 'limit_reached'
+              | 'rate_limited'
+              | 'invalid'
+              | 'unavailable';
+      };
+
+/** 항목 하나 제거, 모두 그만 받기, 보유 종목 스위치 결과. */
+export interface MailAlertChangeResult {
+    readonly status:
+        | 'ok'
+        | 'subscriber_removed'
+        | 'not_found'
+        | 'invalid'
+        | 'unavailable';
+}
+
+/** 메일 속 링크가 싣는 서명된 구독자 id. 없으면 세션이나 쿠키로 소유자를 정한다. */
+export interface MailAlertLinkAuth {
+    readonly s: string;
+    readonly sig: string;
+}
+
+/** 설정 화면이 그리는 구독자의 현재 항목. */
+export interface MailAlertManageView {
+    readonly maskedEmail: string;
+    readonly topics: readonly MailAlertTopic[];
+    /** 회원일 때만 스위치가 의미 있다. */
+    readonly includePortfolio: boolean | null;
+}

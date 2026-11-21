@@ -8,6 +8,8 @@ import type {
     MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
+import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
+import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
 import { FearGreedExtremeZoneRecord } from '@/views/symbol/fearGreed/FearGreedExtremeZoneRecord';
 import { buildExtremeZoneRecord } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
@@ -82,6 +84,12 @@ export function FearGreedRouteBody({
     const tSeo = useTranslations('shared.seo');
     const tLabel = useTranslations('shared.enumLabel');
     const tFacts = useTranslations('views.symbol.fearGreedFacts');
+    const tAlert = useTranslations('features.mail-alert');
+    const alertMarketLabel: Record<FearGreedMarketId, string> = {
+        us: tAlert('marketUs'),
+        kr: tAlert('marketKr'),
+        crypto: tAlert('marketCrypto'),
+    };
     const copy = fearGreedCopyFor(market, tSeo);
     const { label: factorLabel, description: factorDescription } =
         useMarketFactorLabels(market);
@@ -204,6 +212,18 @@ export function FearGreedRouteBody({
                 <div className="page-container">
                     <MarketFearGreedPage view={view} market={market} />
                 </div>
+                {/* 페이지 앞부분(답 문장·게이지) 뒤, 이력 앞에 둔다. 공개 전에는 그리지 않는다. */}
+                {isMailAlertLaunched() && (
+                    <div className="page-container pt-6">
+                        <MailAlertCard
+                            target={{
+                                kind: 'fear_greed',
+                                market,
+                                marketLabel: alertMarketLabel[market],
+                            }}
+                        />
+                    </div>
+                )}
                 {history !== null && (
                     <FearGreedHistorySection
                         market={market}

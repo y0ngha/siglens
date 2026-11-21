@@ -90,6 +90,16 @@ describe.skipIf(!URL)(
             return { id, email };
         }
 
+        /** 인증된 회원과 그 주소로 연결된 구독자 행. 보유·관심종목 스위치는 회원 행에만 있다. */
+        async function subscribeMember(): Promise<{
+            userId: string;
+            id: string;
+        }> {
+            const member = await createMember();
+            const { id } = await subscribe({ email: member.email });
+            return { userId: member.id, id };
+        }
+
         /** 소유자 조건 없이 행을 그대로 읽는다 — 저장소가 소유자를 지키는지 밖에서 확인하는 용도. */
         async function findRow(id: string): Promise<{
             userId: string | null;
@@ -120,6 +130,8 @@ describe.skipIf(!URL)(
             ({ kind: 'guest', subscriberId }) as const;
         const asMember = (userId: string) =>
             ({ kind: 'member', userId }) as const;
+        const asLink = (subscriberId: string) =>
+            ({ kind: 'link', subscriberId }) as const;
 
         async function countRows(
             table: string,
@@ -406,29 +418,20 @@ describe.skipIf(!URL)(
             });
 
             it('항목이 남아 있으면 구독자를 지키고, 보유·관심종목 함께 받기가 켜져 있으면 마지막 항목을 지워도 지킨다', async () => {
-                const kept = await subscribe();
-                await subscribers.addTopic(
-                    asGuest(kept.id),
-                    signalTopic('a'),
-                    30
-                );
-                await subscribers.addTopic(
-                    asGuest(kept.id),
-                    signalTopic('b'),
-                    30
-                );
+                const kept = await subscribeMember();
+                const owner = asMember(kept.userId);
+                await subscribers.addTopic(owner, signalTopic('a'), 30);
+                await subscribers.addTopic(owner, signalTopic('b'), 30);
                 await expect(
-                    subscribers.removeTopic(asGuest(kept.id), signalTopic('a'))
+                    subscribers.removeTopic(owner, signalTopic('a'))
                 ).resolves.toEqual({ deleted: true, subscriberDeleted: false });
 
-                await subscribers.setIncludePortfolio(asGuest(kept.id), true);
+                await subscribers.setIncludePortfolio(owner, true);
                 await expect(
-                    subscribers.removeTopic(asGuest(kept.id), signalTopic('b'))
+                    subscribers.removeTopic(owner, signalTopic('b'))
                 ).resolves.toEqual({ deleted: true, subscriberDeleted: false });
                 expect(await findRow(kept.id)).not.toBeNull();
-                expect(await subscribers.listTopics(asGuest(kept.id))).toEqual(
-                    []
-                );
+                expect(await subscribers.listTopics(owner)).toEqual([]);
             });
 
             it('담지 않은 항목을 지우려 하면 아무것도 바꾸지 않는다', async () => {
@@ -461,38 +464,47 @@ describe.skipIf(!URL)(
 
         describe('setIncludePortfolio', () => {
             it('끄면서 받을 항목이 없으면 구독자를 지우고, 항목이 있으면 지킨다', async () => {
-                const empty = await subscribe();
-                await subscribers.setIncludePortfolio(asGuest(empty.id), true);
+                const empty = await subscribeMember();
+                await subscribers.setIncludePortfolio(
+                    asMember(empty.userId),
+                    true
+                );
                 expect((await findRow(empty.id))?.includePortfolio).toBe(true);
                 await expect(
-                    subscribers.setIncludePortfolio(asGuest(empty.id), false)
+                    subscribers.setIncludePortfolio(
+                        asMember(empty.userId),
+                        false
+                    )
                 ).resolves.toEqual({ found: true, subscriberDeleted: true });
                 expect(await findRow(empty.id)).toBeNull();
 
-                const withTopic = await subscribe();
-                await subscribers.addTopic(
-                    asGuest(withTopic.id),
-                    signalTopic('a'),
-                    30
-                );
-                await subscribers.setIncludePortfolio(
-                    asGuest(withTopic.id),
-                    true
-                );
+                const withTopic = await subscribeMember();
+                const owner = asMember(withTopic.userId);
+                await subscribers.addTopic(owner, signalTopic('a'), 30);
+                await subscribers.setIncludePortfolio(owner, true);
                 await expect(
-                    subscribers.setIncludePortfolio(
-                        asGuest(withTopic.id),
-                        false
-                    )
+                    subscribers.setIncludePortfolio(owner, false)
                 ).resolves.toEqual({ found: true, subscriberDeleted: false });
             });
 
-            it('없는 구독자는 found=false다', async () => {
+            it('비회원 소유자는 거절하고 아무것도 쓰지 않는다(비회원에게는 포트폴리오가 없다)', async () => {
+                const guest = await subscribe();
+                await subscribers.addTopic(
+                    asGuest(guest.id),
+                    signalTopic('a'),
+                    30
+                );
+
                 await expect(
-                    subscribers.setIncludePortfolio(
-                        asGuest('00000000-0000-4000-8000-000000000000'),
-                        true
-                    )
+                    subscribers.setIncludePortfolio(asGuest(guest.id), true)
+                ).resolves.toEqual({ found: false, subscriberDeleted: false });
+                expect((await findRow(guest.id))?.includePortfolio).toBe(false);
+            });
+
+            it('행이 없는 회원은 found=false다', async () => {
+                const lonely = await createMember();
+                await expect(
+                    subscribers.setIncludePortfolio(asMember(lonely.id), true)
                 ).resolves.toEqual({ found: false, subscriberDeleted: false });
             });
         });
@@ -510,9 +522,9 @@ describe.skipIf(!URL)(
                     { kind: 'fear_greed', key: 'us' },
                     30
                 );
-                const portfolioOnly = await subscribe();
+                const portfolioOnly = await subscribeMember();
                 await subscribers.setIncludePortfolio(
-                    asGuest(portfolioOnly.id),
+                    asMember(portfolioOnly.userId),
                     true
                 );
                 const nothing = await subscribe();
@@ -524,7 +536,6 @@ describe.skipIf(!URL)(
 
                 expect(byId.has(nothing.id)).toBe(false);
                 expect(byId.get(portfolioOnly.id)).toMatchObject({
-                    email: portfolioOnly.email,
                     includePortfolio: true,
                     topics: [],
                 });
@@ -730,6 +741,100 @@ describe.skipIf(!URL)(
                 expect(await subscribers.listTopics(asGuest(guest.id))).toEqual(
                     []
                 );
+            });
+        });
+
+        describe('서명된 링크 소유자(link)', () => {
+            it('비회원 행과 회원에게 연결된 행을 모두 id로 읽고 바꾸고 지운다', async () => {
+                const guest = await subscribe();
+                const member = await createMember();
+                const linked = await subscribe({ email: member.email });
+
+                await Promise.all(
+                    [guest.id, linked.id].map(async id => {
+                        await expect(
+                            subscribers.addTopic(
+                                asLink(id),
+                                signalTopic('a'),
+                                30
+                            )
+                        ).resolves.toBe('added');
+                        expect(
+                            (await subscribers.findByOwner(asLink(id)))?.id
+                        ).toBe(id);
+                        expect(
+                            await subscribers.listTopics(asLink(id))
+                        ).toEqual([signalTopic('a')]);
+                        await expect(
+                            subscribers.removeTopic(
+                                asLink(id),
+                                signalTopic('a')
+                            )
+                        ).resolves.toEqual({
+                            deleted: true,
+                            subscriberDeleted: true,
+                        });
+                    })
+                );
+                expect(await findRow(guest.id)).toBeNull();
+                expect(await findRow(linked.id)).toBeNull();
+            });
+
+            it('다른 행은 건드리지 않고, 보유·관심종목 스위치는 바꾸지 못한다', async () => {
+                const member = await createMember();
+                const mine = await subscribe({ email: member.email });
+                const other = await subscribe();
+
+                await expect(
+                    subscribers.setIncludePortfolio(asLink(mine.id), true)
+                ).resolves.toEqual({ found: false, subscriberDeleted: false });
+                expect((await findRow(mine.id))?.includePortfolio).toBe(false);
+                await expect(
+                    subscribers.deleteByOwner(asLink(mine.id))
+                ).resolves.toBe(true);
+                expect(await findRow(other.id)).not.toBeNull();
+                await expect(
+                    subscribers.deleteByOwner(
+                        asLink('00000000-0000-4000-8000-000000000000')
+                    )
+                ).resolves.toBe(false);
+            });
+        });
+
+        describe('linkVerifiedMember', () => {
+            it('인증 전 회원의 같은 주소 행을 연결한다(주소 일치, 회원에게 행 없음)', async () => {
+                const member = await createMember({ verified: false });
+                const row = await subscribe({ email: member.email });
+                expect((await findRow(row.id))?.userId).toBeNull();
+
+                await expect(
+                    subscribers.linkVerifiedMember(member.id, row.id)
+                ).resolves.toBe(true);
+                expect((await findRow(row.id))?.userId).toBe(member.id);
+                await expect(
+                    subscribers.deleteForAccount(member.id)
+                ).resolves.toBe(1);
+            });
+
+            it('다른 주소의 행, 이미 연결된 행, 회원에게 이미 행이 있으면 연결하지 않는다', async () => {
+                const member = await createMember({ verified: false });
+                const stranger = await subscribe();
+                await expect(
+                    subscribers.linkVerifiedMember(member.id, stranger.id)
+                ).resolves.toBe(false);
+
+                const owner = await createMember();
+                const ownRow = await subscribe({ email: owner.email });
+                await expect(
+                    subscribers.linkVerifiedMember(member.id, ownRow.id)
+                ).resolves.toBe(false);
+
+                const mine = await subscribe({ email: member.email });
+                await subscribers.linkVerifiedMember(member.id, mine.id);
+                const second = await subscribe();
+                await expect(
+                    subscribers.linkVerifiedMember(member.id, second.id)
+                ).resolves.toBe(false);
             });
         });
 

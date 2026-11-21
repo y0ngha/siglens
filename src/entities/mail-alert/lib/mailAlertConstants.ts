@@ -21,20 +21,31 @@ export const MAIL_ALERT_MAX_SIGNAL_ITEMS = 20;
 /** 신호별 새 종목 섹션 하나에 싣는 줄 수 상한. 넘치면 "외 N종목"으로 줄인다. */
 export const MAIL_ALERT_MAX_HUB_ROWS = 10;
 
-/** 게스트 브라우저 쿠키 수명(초). 같은 브라우저에서 코드를 다시 묻지 않는 기간이다. 구독 PR(app-B)의 액션이 쓴다. */
+/** 게스트 브라우저 쿠키 수명(초). 같은 브라우저에서 코드를 다시 묻지 않는 기간이다. */
 export const MAIL_ALERT_COOKIE_MAX_AGE_SECONDS = 180 * SECONDS_PER_DAY;
 
-/** 남용 방지 한도. 키에는 해시만 담긴다. 구독 PR(app-B)의 액션이 쓴다. */
+/** 남용 방지 한도. 키에는 해시만 담긴다. */
 export const MAIL_ALERT_RATE_LIMITS = {
     /** 주소(해시)당 코드 요청. */
     codePerEmail: { limit: 3, windowSeconds: SECONDS_PER_HOUR },
     /** IP(해시)당 코드 요청. */
     codePerIp: { limit: 10, windowSeconds: SECONDS_PER_HOUR },
-    /** 주소(해시)당 틀린 코드 입력. 넘으면 대기 중인 코드를 지운다. */
+    /**
+     * 주소(해시)당 코드 확인 시도. 시도마다 비교 **전에** 센다 — 동시에 들어온 요청도 한도를 넘어 비교되지
+     * 못한다. 넘으면 대기 중인 코드를 지운다. 새 코드를 보내면 이 카운터는 0으로 돌아간다.
+     */
     wrongCodePerEmail: { limit: 5, windowSeconds: 30 * 60 },
+    /** IP(해시)당 코드 확인 시도. 제3자가 남의 주소 카운터를 계속 채워 두는 것을 막는다. */
+    confirmPerIp: { limit: 30, windowSeconds: 30 * 60 },
     /** IP(해시)당 항목 추가. */
     topicAddPerIp: { limit: 30, windowSeconds: SECONDS_PER_HOUR },
 } as const;
+
+/** 코드 요청 폼의 봇 함정 입력 이름. 사람 눈에는 보이지 않으며, 채워진 요청은 성공처럼 응답하고 아무것도 보내지 않는다. */
+export const MAIL_ALERT_HONEYPOT_FIELD = 'mail_alert_website';
+
+/** 같은 화면에서 코드를 다시 받기까지 기다리는 시간(초). 서버 한도(주소당 시간당 3회)와 별개로 연타를 막는 화면 쿨다운이다. */
+export const MAIL_ALERT_RESEND_COOLDOWN_SECONDS = 60;
 
 /** 알림을 보내는 신호 유형 — 신호별 종목 페이지가 여는 유형과 같은 목록 하나만 쓴다. */
 export const MAIL_ALERT_SIGNAL_TYPES: readonly SignalType[] = SIGNAL_HUBS.map(

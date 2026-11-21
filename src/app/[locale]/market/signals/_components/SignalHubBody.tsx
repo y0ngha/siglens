@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { loadGuideCatalog } from '@/entities/guide/api';
+import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { SIGNAL_HUB_MARKET_ORDER } from '@/entities/signal-history/lib/signalHubRows';
 import {
     SIGNAL_HUBS,
@@ -29,6 +30,7 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
 import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
 import { isSignalHubDataIndexable } from '../_lib/isSignalHubDataIndexable';
 import { loadSignalHub } from '../_lib/loadSignalHub';
@@ -139,6 +141,19 @@ export async function SignalHubBody({
                     <p className="mt-3 max-w-3xl text-sm leading-relaxed text-secondary-300">
                         {t('intro', { signal: copy.signalLabel })}
                     </p>
+
+                    {/* 소개 문단 뒤, 가이드 앞. 공개 전에는 그리지 않는다. */}
+                    {isMailAlertLaunched() && (
+                        <div className="mt-6">
+                            <MailAlertCard
+                                target={{
+                                    kind: 'signal',
+                                    signalType: hub.signalType,
+                                    hubName: copy.signalLabel,
+                                }}
+                            />
+                        </div>
+                    )}
 
                     {guideEntry !== null && (
                         <section

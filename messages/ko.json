@@ -97,6 +97,25 @@
             }
         },
         "email-report": {
+            "alerts": {
+                "empty": "받고 있는 알림 메일이 없어요.",
+                "login": "로그인하기",
+                "page": {
+                    "description": "받고 있는 알림 메일 항목을 확인하고 그만 받을 수 있는 설정 화면이에요.",
+                    "subtitle": "받고 있는 알림 메일 항목을 확인하고 그만 받을 수 있어요.",
+                    "title": "알림 메일 설정"
+                },
+                "topicFearGreed": "{market} 공포 탐욕 지수 극단 구간 진입",
+                "topicSignal": "새로 잡힌 {hubName} 종목",
+                "topicSymbol": "{symbol} 새 신호",
+                "unavailable": "지금은 설정을 불러올 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+                "unidentifiedBody": "알림 메일 아래의 설정 링크로 들어오거나, 로그인하면 알림 메일을 관리할 수 있어요.",
+                "unidentifiedTitle": "메일 속 링크로 열어 주세요"
+            },
+            "alertsLink": {
+                "description": "새 신호와 공포 탐욕 지수 알림을 어떤 항목으로 받고 있는지 확인하고 바꿀 수 있어요.",
+                "title": "알림 메일 설정"
+            },
             "page": {
                 "190fd1": "리포트에 담기는 종목",
                 "411c76": "메일 리포트",
@@ -690,6 +709,16 @@
                 "verifySubject": "{v0} 회원가입 인증 코드"
             }
         },
+        "mail-alert": {
+            "codeEmail": {
+                "codeLine": "인증 코드: {v0}",
+                "expiry": "코드는 {v0}분 동안 쓸 수 있어요.",
+                "heading": "{v0} 알림 메일 신청",
+                "ignore": "직접 요청하지 않았다면 이 메일은 무시해 주세요.",
+                "intro": "알림 메일 신청을 마치려면 아래 코드를 입력해 주세요.",
+                "subject": "[{v0}] 알림 메일 인증 코드"
+            }
+        },
         "market-news": {
             "category": {
                 "articles": {
@@ -1028,6 +1057,59 @@
                 "83a2ba": "메일 리포트 설정으로 가기",
                 "c13cc8": "메일 리포트를 더 이상 보내지 않아요."
             }
+        },
+        "mail-alert": {
+            "addThis": "이 항목도 받기",
+            "allStopped": "알림 메일을 모두 그만 받아요. 신청 정보와 발송 기록을 지웠어요.",
+            "button": "메일로 받기",
+            "cancel": "취소",
+            "cardFearGreed": "극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요",
+            "cardSignalHub": "새로 잡힌 {hubName} 종목을 아침에 메일로 받아 보세요",
+            "changeEmail": "이메일 바꾸기",
+            "close": "닫기",
+            "codeLabel": "인증 코드",
+            "codePrompt": "{email}로 보낸 {length}자리 코드를 입력해 주세요",
+            "confirm": "확인하고 받기",
+            "emailLabel": "이메일",
+            "errExpired": "코드가 만료됐어요. 다시 받아 주세요.",
+            "errInvalid": "요청을 처리하지 못했어요. 새로고침한 뒤 다시 시도해 주세요.",
+            "errInvalidEmail": "이메일 주소를 확인해 주세요.",
+            "errLimit": "받을 항목은 {max}개까지예요. 알림 메일 설정에서 정리해 주세요.",
+            "errRateLimited": "잠시 뒤 다시 시도해 주세요.",
+            "errTooMany": "여러 번 틀려서 코드를 다시 받아야 해요.",
+            "errUnavailable": "지금은 신청할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+            "errWrongCode": "인증 코드가 맞지 않아요.",
+            "fearGreedRule": "점수가 {fear}점 아래로 내려가 극단적 공포에 들어서거나 {greed}점 이상으로 올라 극단적 탐욕에 들어선 날 알려 드려요. 구간을 벗어났다가 {gap}거래일 안에 다시 들어오면 새로 알리지 않아요.",
+            "includePortfolio": "담아 둔 보유 종목과 관심종목의 새 신호도 함께 받기",
+            "known": "{email}로 받고 있어요.",
+            "loading": "불러오는 중이에요",
+            "manage": "알림 메일 설정",
+            "marketCrypto": "크립토",
+            "marketKr": "한국",
+            "marketUs": "미국",
+            "member": "{email}로 보내 드려요.",
+            "noTopics": "받고 있는 항목이 없어요.",
+            "notice": "알림 메일을 보내는 데만 이 주소를 써요. 수신을 거부하면 바로 지워요.",
+            "otherEmail": "다른 주소로 받기",
+            "privacyLink": "개인정보처리방침 보기",
+            "receive": "받기",
+            "removeTopic": "{label} 그만 받기",
+            "resend": "코드 다시 받기",
+            "resendWait": "코드 다시 받기 ({seconds}초)",
+            "schedule": "장이 끝난 뒤 새로 잡힌 것만 모아 한국 시간 아침 {from}시에서 {to}시 사이에 한 통으로 보내 드려요. 달라진 게 없는 날은 보내지 않아요.",
+            "sendCode": "인증 코드 받기",
+            "signupLink": "회원가입 하기",
+            "stop": "그만 받기",
+            "stopAll": "알림 메일 모두 그만 받기",
+            "stopAllConfirm": "정말 모두 그만 받을까요? 신청 정보와 발송 기록을 바로 지워요.",
+            "stopAllYes": "네, 모두 그만 받기",
+            "stopped": "그만 받기로 했어요.",
+            "subscribed": "이미 받고 있어요.",
+            "successGuest": "신청했어요. 새로 잡힌 소식이 있는 날 아침에 {email}로 보내 드려요.",
+            "successSignup": "회원이 되면 담아 둔 관심종목 전체를 한 번에 받을 수 있어요.",
+            "titleFearGreed": "{market} 공포 탐욕 지수가 극단 구간에 들어서면 메일로 알려 드려요",
+            "titleSignalHub": "새로 잡힌 {hubName} 종목을 메일로 알려 드려요",
+            "titleSymbol": "{name}에 새 신호가 잡히면 메일로 알려 드려요"
         },
         "portfolio-holding": {
             "PortfolioChip": {
