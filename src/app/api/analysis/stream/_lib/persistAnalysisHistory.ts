@@ -24,6 +24,8 @@ export interface PersistAnalysisHistoryInput {
     modelId: string;
     /** 이 분석을 생성한 요청의 tier(`tierContext.tier`). */
     tier: Tier;
+    /** 회원 보유 종목 맥락으로 생성한 분석인가(`positionBucket !== undefined`). */
+    personalized: boolean;
     locale: Locale;
     result: unknown;
     /**
@@ -60,6 +62,7 @@ export function schedulePersistAnalysisHistory(
                 tab: input.tab,
                 modelId: input.modelId,
                 tier: input.tier,
+                personalized: input.personalized,
                 locale: input.locale,
                 result: input.result,
                 generatedAt,

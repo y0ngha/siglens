@@ -1164,6 +1164,14 @@ export const analysisHistory = pgTable(
          * 이 컬럼이 생기기 전 행과 tier를 알리지 않은 작성자의 행은 null.
          */
         tier: varchar('tier', { length: 16 }),
+        /**
+         * 회원의 보유 종목 맥락으로 생성한 분석이면 true(프롬프트에 보유자 힌트가 실리고 결과가 보유자
+         * 관점의 플랜이다), 아니면 false. 이 컬럼이 생기기 전에 쓴 행은 null — 개인화 여부를 알 수 없는
+         * 행이라 소비자는 null을 false로 취급하지 말 것. `prompt_dynamic`이 7일 뒤 비워지고 행이 90일 뒤
+         * 지워지므로 나중에 프롬프트에서 되짚을 수 없다. 개인화 분석은 회원 보유 정보에서 파생된 산출물이라
+         * 사후 결과 라벨러(`analysis_outcomes`)가 가져가지 않는다.
+         */
+        personalized: boolean('personalized'),
         /** 감사용 — 읽기 필터 금지. 테이블 JSDoc 참조. */
         locale: contentLocaleEnum('locale').notNull(),
         /** 정규화된 AnalysisResponse. */
@@ -1191,6 +1199,152 @@ export const analysisHistory = pgTable(
             table.tab,
             table.generatedAt.desc()
         ),
+        /**
+         * 결과 사후 라벨러의 캡처 스캔(`generated_at ≥ now − 6일`)과 90일 prune이 둘 다
+         * `generated_at` 단독 범위로 거른다. 복합 `analysis_history_lookup_idx`는 선두가
+         * `symbol`이라 이 범위를 도울 수 없다.
+         */
+        index('analysis_history_generated_at_idx').on(table.generatedAt),
+    ]
+);
+
+/**
+ * 분석이 **말한 것**과 그 **사후 결과 라벨**을 한 행에 남기는 측정 테이블(`analysis_history`와 같은 id).
+ *
+ * `analysis_history`는 90일 뒤, `prompt_dynamic`은 7일 뒤 사라진다. 라벨은 분석 생성 약 한 달 뒤에야
+ * 계산되고(일봉 20봉 창), 라벨 정의가 바뀌면 다시 계산해야 하므로 입력(`subject`, `bars_snapshot`)을 함께
+ * 보관한다. 그래서 FK를 걸지 않고 보존 기간도 따로 둔다(`OUTCOME_RETENTION_DAYS`, `generated_at` 기준).
+ *
+ * **사용자 데이터가 없다.** 회원 id·비회원 식별자·IP·보유 종목·프롬프트 본문 어느 것도 담지 않는다.
+ * `subject`는 core `extractOutcomeSubject`가 숫자·enum·레벨 라벨만 복사한 사본이고 `labels`·`bars_snapshot`은
+ * 시장 봉에서만 나온다. 그래서 `users`를 참조하지 않으며 dev 시드 제외 목록(`EXCLUDED_TABLES`)에도 넣지 않는다.
+ *
+ * 이 테이블은 저장만 한다. 집계·표시는 읽는 쪽 몫이고, 읽는 쪽이 알아야 할 규칙과 체계적으로 빠지는 행은 아래와 같다.
+ *
+ * 읽는 규칙
+ * - 라벨은 측정값이다. 비율은 항상 표본 수 `n`과 함께 쓴다.
+ * - `labels->>'anchorSource' = 'generated_at'`(분석이 본 봉을 몰라 생성 시각의 봉으로 대신한 행, 기준가가 분석이
+ *   본 가격이 아니다)이거나 `labels->'plan'->>'anchorBarUnobserved' = 'true'`(형성 중이던 앵커 봉의 나머지에서
+ *   체결됐을 수 있는 행)이면 따로 센다.
+ * - 계획 결과는 `labels->'plan'->>'recommendation'`(판정)별로 나눠 센다. `void_at_entry`는 승리가 아니다.
+ * - 무작위 보행 귀무확률(`rwNullTargetFirst`)은 체결된 **모든** 계획(`target_first`, `stop_first`, `ambiguous`,
+ *   `open_at_horizon`)의 `target_first` 비율과만 비교한다. 해결된 거래만의 비율과 비교하지 않는다.
+ * - 패턴의 제외 사유 `target_reached`와 `target_reached_on_breakout`은 서로 다른 모집단이라 따로 센다.
+ * - 출력 로케일마다 행이 하나라 같은 시점의 near-duplicate가 있다. 집계 전에 `locale`을 한 값으로 고르거나
+ *   (프리웜은 항상 `ko`) (symbol, timeframe, 앵커 봉, tier)로 중복을 지운다. `input_fingerprint`는 로케일을 가로질러
+ *   같은 입력을 가리키지만 현재 어떤 작성자도 채우지 않아 대부분 null이다. 채워진 행에서만 정확한 키로 쓴다.
+ * - `anchor_close_basis`: 일봉에서 분석이 본 앵커 종가가 공식 종가인지 실시간 시세인지의 구분이다. 첫 라벨이 생긴 뒤
+ *   `'after_close_quote'` 행 중 분할·배당이 없는 행의 `subject.anchor.close / bars_snapshot.anchorBar` 종가 비율이
+ *   1에서 얼마나 벗어나는지 보면 시세와 공식 종가의 차이가 통계에 영향을 주는지 알 수 있다.
+ *
+ * 체계적으로 빠지거나 치우치는 행
+ * - 보유 종목 맥락으로 생성한 분석(`analysis_history.personalized = true`)과 컬럼이 생기기 전에 쓴 행(null)은 캡처하지
+ *   않는다. null 행은 개인화였을 수 있어, 그 행들이 이전 분석(prior)으로 새 분석에 들어갔을 수 있다 — 컬럼이 생긴 뒤
+ *   일봉 이전 분석 조회 기간(약 51일, core `analysisHistoryQuery`) 동안 생성된 분석은 이 점을 감안해 읽는다.
+ *   분봉은 조회 기간이 더 짧다.
+ * - 실제로 생성된 분석만 저장된다(캐시 적중은 이력을 쓰지 않는다). 프리웜 행은 항상 `ko`다. 종합(overall) 탭은
+ *   캡처하지 않는다. 추론 모드(reasoning)는 기록하지 않는다.
+ * - `unlabelable`: `subject_invalid`(core가 주장을 읽지 못함), `timeframe_unsupported`, `anchor_mismatch`(분할·가격
+ *   기준 점프), `anchor_missing`(제공자 결측, 제공자 조회 기간보다 오래된 분봉 행), `label_error`.
+ *   `forward_stalled`와 `bars_unavailable`은 거래정지·상장폐지 종목에서 나오므로 생존 편향이 있고, 실패 쪽이
+ *   적게 세어질 수 있다.
+ * - `generated_at` 앵커 행(`dataAsOf` 없음)은 별도 묶음이다.
+ * - 캡처가 6일 안에 못 가져간 분석은 영영 못 가져온다(`capture backlog` 로그). 한국 일봉은 하루 늦게 성숙한다.
+ * - 보유 종목 맥락 분석은 이전 분석 조회(`findRecentForPrompt`)에서도 빠진다.
+ */
+export const analysisOutcomes = pgTable(
+    'analysis_outcomes',
+    {
+        /** = `analysis_history.id`. FK 없음: 원본 행은 90일 뒤 지워지고 이 행은 더 오래 남는다. */
+        analysisId: uuid('analysis_id').primaryKey(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        timeframe: varchar('timeframe', { length: 8 }).notNull(),
+        /** `analysis_history.model_id` 사본. `analysis-worker` 같은 자리표시자일 수 있다. */
+        modelId: varchar('model_id', { length: 64 }).notNull(),
+        /** 분석을 **생성한** 요청의 tier. 옛 행·tier 미기록 작성자는 null. */
+        tier: varchar('tier', { length: 16 }),
+        promptVersion: varchar('prompt_version', { length: 32 }),
+        /** `analysis_history.locale` 사본 — 로케일별 near-duplicate를 가르는 키. */
+        locale: contentLocaleEnum('locale').notNull(),
+        /** `analysis_history.input_fingerprint` 사본(없으면 null). 위 테이블 JSDoc의 중복 제거 규칙 참조. */
+        inputFingerprint: varchar('input_fingerprint', { length: 32 }),
+        generatedAt: timestamp('generated_at', {
+            withTimezone: true,
+        }).notNull(),
+        /**
+         * 일봉 앵커 종가의 출처. 라벨 단계에서 그룹의 세션 스펙이 풀린 뒤, 저장된 `generated_at`과 subject 앵커 봉의
+         * 날짜로만 정한다(캡처는 DB만 쓰므로 여기서 정하지 않는다).
+         * `'eod_published'`: 봉 날짜가 생성 시각의 `lastClosedSessionDate` 이하라 공식 종가였다.
+         * `'after_close_quote'`: 세션 마감 뒤 EOD 발행 전에 생성돼 분석이 본 종가가 실시간 시세에서 왔다.
+         * NULL이 되는 경우는 이것뿐이다: (1) `pending` 행, (2) 봉 창을 평가하기 전에 끝난 `unlabelable` 행
+         * (`subject_invalid`, `timeframe_unsupported`, `bars_unavailable`, `label_error`, `anchor_missing`),
+         * (3) subject에 앵커가 없다, (4) 분봉이다(분봉 봉은 시세로 만들지 않아 구분이 없다), (5) 생성 시각에 일봉 앵커가
+         * 마감 전 형성 중이었다. 라벨된 행과 `anchor_mismatch`·`forward_stalled`로 끝난 행은 (3)~(5)가 아니면 값이 있다.
+         * 종목 조회 실패로 비는 값은 없다.
+         * 첫 라벨이 생긴 뒤 `'after_close_quote'` 행 중 분할·배당이 없는 행의 `subject.anchor.close /
+         * bars_snapshot.anchorBar` 종가 비율을 보면 시세와 공식 종가의 차이가 통계에 영향을 주는지 알 수 있다.
+         */
+        anchorCloseBasis: varchar('anchor_close_basis', { length: 24 }),
+        /** core `OutcomeSubject` — 캡처 시점에 `analysis_history.result`에서 복사한 분석 주장. */
+        subject: jsonb('subject').notNull(),
+        /** 'pending' | 'labeled' | 'unlabelable'. */
+        status: varchar('status', { length: 16 }).notNull(),
+        /**
+         * `unlabelable`의 사유: subject_invalid, timeframe_unsupported, anchor_missing, anchor_mismatch,
+         * bars_unavailable, forward_stalled, label_error. 그 밖의 상태는 null.
+         */
+        skipReason: varchar('skip_reason', { length: 32 }),
+        /**
+         * 실패 종류별 횟수는 `load_failures`, `row_errors`, `anchor_missing_seen` 세 카운터로 따로 센다. 종류마다 포기
+         * 한도와 사유가 달라서(`bars_unavailable`, `label_error`, `anchor_missing`) 하나의 카운터를 나눠 쓰면 한 종류의
+         * 누적이 다른 종류의 포기를 앞당긴다. 아직 봉이 모자라 미룬 횟수는 세지 않는다. 이 컬럼: 그룹 봉 로드 실패
+         * (제공자 장애·종목 해석 실패·빈 봉·타임아웃).
+         */
+        loadFailures: integer('load_failures').notNull().default(0),
+        /** 행 하나를 처리하다 던진 횟수(한도 초과 시 `label_error`). */
+        rowErrors: integer('row_errors').notNull().default(0),
+        /** 앵커 봉을 못 찾은 관측 횟수(앞 봉 검증 실패 포함, 한도 초과 시 `anchor_missing`). */
+        anchorMissingSeen: integer('anchor_missing_seen').notNull().default(0),
+        nextAttemptAt: timestamp('next_attempt_at', {
+            withTimezone: true,
+        }).notNull(),
+        /**
+         * 마지막으로 본 앵커 이후 완결 봉 수(`insufficient_forward.have`). 다음 시도에서 늘었는지 비교해
+         * 상장폐지·거래정지로 더는 자라지 않는 행을 포기한다(`forward_stalled`).
+         */
+        forwardHave: integer('forward_have'),
+        /** `forward_have`가 처음 자라지 않은 시각. 다시 자라면 null로 돌아간다. */
+        stalledSince: timestamp('stalled_since', { withTimezone: true }),
+        /**
+         * 재라벨이 던진 행에 그 시점의 `OUTCOME_LABEL_VERSION`을 적어 둔다. 선택은 이 값이 현재 버전인 행을
+         * 건너뛰므로 같은 버전에서 같은 오류를 매 실행 되풀이하지 않고, 버전이 오르면 다시 시도한다.
+         * `label_version`은 건드리지 않는다(낡은 라벨이 낡았다는 사실을 가리지 않기 위해).
+         */
+        relabelFailedVersion: integer('relabel_failed_version'),
+        labelVersion: integer('label_version'),
+        /** core `AnalysisOutcomeLabels`. */
+        labels: jsonb('labels'),
+        /** core `OutcomeWindow` — 정의가 바뀌면 공급자 호출 없이 이 창으로 다시 라벨한다. */
+        barsSnapshot: jsonb('bars_snapshot'),
+        labeledAt: timestamp('labeled_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('analysis_outcomes_pending_idx')
+            .on(table.nextAttemptAt)
+            .where(sql`${table.status} = 'pending'`),
+        index('analysis_outcomes_symbol_tf_idx').on(
+            table.symbol,
+            table.timeframe,
+            table.generatedAt.desc()
+        ),
+        index('analysis_outcomes_generated_at_idx').on(table.generatedAt),
+        /** 재라벨 후보 선택(`status = 'labeled' AND label_version < 현재`)이 후보가 없을 때도 전 행을 훑지 않게 한다. */
+        index('analysis_outcomes_relabel_idx')
+            .on(table.labelVersion)
+            .where(sql`${table.status} = 'labeled'`),
     ]
 );
 
