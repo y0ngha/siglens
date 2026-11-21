@@ -197,6 +197,19 @@ describe('getOptionsSummaryTool', () => {
         ).toEqual({ symbol: 'AAPL', available: false, reason: 'no_snapshot' });
     });
 
+    it('체인이 하나도 없으면 available:false', async () => {
+        hasMarket.mockResolvedValue(true);
+        fetchSnapshot.mockResolvedValue({
+            underlyingPrice: 200,
+            capturedAt: '2026-09-10T00:00:00.000Z',
+            chains: [],
+        });
+        expect(
+            await getOptionsSummaryTool({ symbol: 'AAPL' }, ctx, rt)
+        ).toEqual({ symbol: 'AAPL', available: false, reason: 'no_snapshot' });
+        expect(summarize).not.toHaveBeenCalled();
+    });
+
     it('chains[0]이 당일 만기(daysToExpiration 0)면 건너뛰고 D+1 이상인 첫 체인을 선택한다', async () => {
         hasMarket.mockResolvedValue(true);
         fetchSnapshot.mockResolvedValue({

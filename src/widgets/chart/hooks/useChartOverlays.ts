@@ -323,19 +323,19 @@ export function useChartOverlays({
         );
         entriesRef.current = next;
 
-        const titled: TitledSeries[] = specs.flatMap((spec, i) =>
-            spec.title === ''
-                ? []
-                : [
-                      {
-                          series: next.get(keys[i])!.series,
-                          title: spec.title,
-                          price: spec.points[1].value,
-                          priority: spec.labelPriority,
-                          entry: next.get(keys[i])!,
-                      },
-                  ]
-        );
+        const titled: TitledSeries[] = specs.flatMap((spec, i) => {
+            const entry = next.get(keys[i]);
+            if (spec.title === '' || entry === undefined) return [];
+            return [
+                {
+                    series: entry.series,
+                    title: spec.title,
+                    price: spec.points[1].value,
+                    priority: spec.labelPriority,
+                    entry,
+                },
+            ];
+        });
         const detachCulling = attachLabelCulling(chart, titled);
         return () => {
             try {

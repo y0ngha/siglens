@@ -164,7 +164,7 @@ function fitBarsToBudget<T extends { bars: BarPoint[] }>(
 }
 
 const last = <T>(arr: readonly T[] | undefined): T | null =>
-    arr && arr.length > 0 ? arr[arr.length - 1]! : null;
+    arr?.at(-1) ?? null;
 
 /** Same significant-digit rounding as `roundIndicators`, but null-safe for a value that may be `null`/non-finite. */
 const roundOrNull = (v: number | null): number | null =>
@@ -339,10 +339,18 @@ function latestCandlePatterns(
 ): BarCandlePattern[] {
     const detectionBars = getDetectionBars(bars);
     const entries = detectCandlePatternEntries(bars);
-    return selectLastCandlePatternEntries(entries).map(entry => ({
-        date: isoTimestamp(detectionBars[entry.barIndex]!.time, timeframe),
-        pattern: entry.singlePattern ?? entry.multiPattern,
-    }));
+    return selectLastCandlePatternEntries(entries).map(entry => {
+        const bar = detectionBars[entry.barIndex];
+        if (bar === undefined) {
+            throw new Error(
+                `candle pattern barIndex ${entry.barIndex} is outside the detection window`
+            );
+        }
+        return {
+            date: isoTimestamp(bar.time, timeframe),
+            pattern: entry.singlePattern ?? entry.multiPattern,
+        };
+    });
 }
 
 /**
@@ -922,18 +930,21 @@ function computeCloseStreak(
     if (completed.length < 2) return null;
     // moves[j] = direction of the close move INTO bar j + 1 (NaN when either close is non-finite).
     const moves = completed.slice(1).map((b, j) => {
-        const diff = b.close - completed[j]!.close;
+        // j < completed.length - 1 이라 completed[j]는 항상 있다.
+        const diff = b.close - completed[j].close;
         return Number.isFinite(diff) ? Math.sign(diff) : Number.NaN;
     });
-    const lastMove = moves[moves.length - 1]!;
-    if (Number.isNaN(lastMove)) return null;
+    const lastMove = moves.at(-1);
+    if (lastMove === undefined || Number.isNaN(lastMove)) return null;
     // Last move that differs from the final one; -1 = the streak spans every loaded bar.
     const breakIdx = moves.findLastIndex(m => m !== lastMove);
     if (breakIdx >= 0 && Number.isNaN(moves[breakIdx])) return null;
+    const sinceBar = completed[breakIdx + 2];
+    if (sinceBar === undefined) return null;
     return {
         direction: directionOf(lastMove),
         days: moves.length - 1 - breakIdx,
-        sinceDate: isoTimestamp(completed[breakIdx + 2]!.time, timeframe),
+        sinceDate: isoTimestamp(sinceBar.time, timeframe),
         truncated: breakIdx === -1,
     };
 }
@@ -1363,11 +1374,12 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
         asset?.fmpSymbol,
         session
     );
-    if (barsData.bars.length === 0) return { symbol, timeframe, found: false };
+    const latestRawBar = barsData.bars.at(-1);
+    if (latestRawBar === undefined) return { symbol, timeframe, found: false };
     // 한국의 죽은 리스팅(잘못된 접미사 등)은 묵은 봉을 "현재"로 내보내지 않고 데이터 오류로 돌린다.
     const lastTradeDate = staleKrListingDate(
         profile,
-        barsData.bars[barsData.bars.length - 1]!.time * MS_PER_SECOND,
+        latestRawBar.time * MS_PER_SECOND,
         Date.now()
     );
     if (lastTradeDate !== null)
@@ -1379,7 +1391,8 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
             lastTradeDate,
         };
     const { bars, indicators, longDailyBars } = seriesFor(barsData, timeframe);
-    if (bars.length === 0) return { symbol, timeframe, found: false };
+    const latestBar = bars.at(-1);
+    if (latestBar === undefined) return { symbol, timeframe, found: false };
     const requestedBars: BarPoint[] = bars.slice(-count).map(b => ({
         t: isoTimestamp(b.time, timeframe),
         o: b.open,
@@ -1454,9 +1467,8 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
     // prices are skipped by it, so a trailing placeholder must not date it).
     const asOfTime =
         isAggregatedTimeframe(timeframe) && longDailyBars !== null
-            ? (longDailyBars.findLast(hasUsablePrices)?.time ??
-              bars.at(-1)!.time)
-            : bars.at(-1)!.time;
+            ? (longDailyBars.findLast(hasUsablePrices)?.time ?? latestBar.time)
+            : latestBar.time;
     const asOf = isoTimestamp(asOfTime, timeframe);
 
     return fitBarsToBudget(

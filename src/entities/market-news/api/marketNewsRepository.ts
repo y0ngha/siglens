@@ -229,10 +229,15 @@ export class DrizzleMarketNewsRepository {
             locale,
             TRANSLATABLE_ENTITY.marketNews
         );
-        return localized.map((item, index) => ({
-            ...item,
-            tickers: visibleRows[index]!.tickers,
-        }));
+        return localized.map((item, index) => {
+            const row = visibleRows[index];
+            if (row === undefined) {
+                throw new Error(
+                    `localized item ${index} has no matching market news row`
+                );
+            }
+            return { ...item, tickers: row.tickers };
+        });
     }
 
     /**

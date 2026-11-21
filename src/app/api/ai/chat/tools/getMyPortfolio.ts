@@ -293,6 +293,16 @@ export async function loadMyPortfolio(
         ])
     );
 
+    const rawTotalFor = (
+        currency: string
+    ): ReturnType<typeof rawCurrencyTotal> => {
+        const total = rawTotalByCurrency.get(currency);
+        if (total === undefined) {
+            throw new Error(`no portfolio total for currency ${currency}`);
+        }
+        return total;
+    };
+
     // 상세를 실을 stale 종목을 **가장 오래된 순**으로 고른다 — 상한에 걸려 잘려도
     // 가장 의심스러운 종목이 남도록.
     const staleSymbols = rawHoldings
@@ -309,7 +319,7 @@ export async function loadMyPortfolio(
     );
 
     const holdings: HoldingView[] = rawHoldings.map(h => {
-        const rawTotal = rawTotalByCurrency.get(h.currency)!;
+        const rawTotal = rawTotalFor(h.currency);
         return {
             symbol: h.symbol,
             companyName: h.companyName,
@@ -339,7 +349,7 @@ export async function loadMyPortfolio(
     });
 
     const totals: CurrencyTotal[] = currencies.map(currency => {
-        const rawTotal = rawTotalByCurrency.get(currency)!;
+        const rawTotal = rawTotalFor(currency);
         return {
             currency,
             marketValue:

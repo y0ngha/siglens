@@ -137,16 +137,26 @@ async function main(): Promise<void> {
     const repo = new DrizzleTermsRepository(db);
 
     const originals = seeds.filter(seed => seed.locale === undefined);
-    const translations = seeds.filter(seed => seed.locale !== undefined);
+    const translations = seeds.filter(
+        (
+            seed
+        ): seed is ParsedSeed & { locale: NonNullable<ParsedSeed['locale']> } =>
+            seed.locale !== undefined
+    );
 
     // 번역은 원문 행의 uuid를 `entityId`로 쓰므로 원문을 먼저 적재해야 한다.
     const idByKey = new Map<string, string>();
     for (const seed of originals) {
+        // parseSeedFile이 원문에 발효일이 있음을 보장한다.
+        if (seed.effectiveDate === undefined) {
+            throw new Error(
+                `original seed ${seed.kind} v${seed.version} has no effectiveDate`
+            );
+        }
         const id = await repo.upsertFromSeed({
             kind: seed.kind,
             version: seed.version,
-            // parseSeedFile이 원문에 발효일이 있음을 보장한다.
-            effectiveDate: seed.effectiveDate!,
+            effectiveDate: seed.effectiveDate,
             body: seed.body,
         });
         idByKey.set(`${seed.kind}:${seed.version}`, id);
@@ -160,7 +170,7 @@ async function main(): Promise<void> {
             if (termsId === undefined) return;
             await repo.upsertTranslation({
                 termsId,
-                locale: seed.locale!,
+                locale: seed.locale,
                 body: seed.body,
             });
             console.log(

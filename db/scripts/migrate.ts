@@ -5,14 +5,11 @@ import {
     assertRemoteWriteAllowed,
     describeTarget,
     formatTarget,
+    requireDatabaseUrl,
 } from './lib/dbTarget';
 import { hashMigrationSql } from '../../src/shared/db/migrations/migrationJournal';
 
-const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is required');
-}
+const databaseUrl = requireDatabaseUrl();
 
 /**
  * **대상 확인 + 원격 쓰기 가드.**
@@ -62,7 +59,7 @@ function parseUntil(argv: readonly string[]): string | null {
 
 async function runMigrations(): Promise<void> {
     const until = parseUntil(process.argv.slice(2));
-    const sql = postgres(databaseUrl!, { max: 1 });
+    const sql = postgres(databaseUrl, { max: 1 });
     const drizzleRoot = path.resolve(__dirname, '../../drizzle');
 
     const journal: { entries: JournalEntry[] } = JSON.parse(

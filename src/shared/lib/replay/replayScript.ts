@@ -61,8 +61,15 @@ export function parseReplayLine(kind: 'p' | 'li', raw: string): ReplayLine {
     const parts = raw.split(TAG);
     const segments = parts.flatMap((part, i): Segment[] => {
         if (i % 3 === 1) return []; // tag name — read alongside the next part
-        if (i % 3 === 2)
-            return [{ text: part, tone: TONE_BY_TAG[parts[i - 1]!]! }];
+        if (i % 3 === 2) {
+            // TAG가 b|up|down만 잡으므로 사전에 항상 있다. 없으면 TAG와 사전이 어긋난 것이다.
+            const tag = parts[i - 1];
+            const tone = tag === undefined ? undefined : TONE_BY_TAG[tag];
+            if (tone === undefined) {
+                throw new Error(`unknown replay tag: ${String(tag)}`);
+            }
+            return [{ text: part, tone }];
+        }
         return part ? [{ text: part, tone: 'plain' }] : [];
     });
     return { kind, segments };

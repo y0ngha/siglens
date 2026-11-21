@@ -87,9 +87,10 @@ export function buildGuideLinks(
 ): GuideLinks {
     const skillByBasename = new Map<string, SkillMeta>();
     for (const skill of skills) {
-        if (skillByBasename.has(skill.basename)) {
+        const existing = skillByBasename.get(skill.basename);
+        if (existing !== undefined) {
             throw new Error(
-                `스킬 basename이 겹친다: ${skill.basename} (${skillByBasename.get(skill.basename)!.dir}, ${skill.dir})`
+                `스킬 basename이 겹친다: ${skill.basename} (${existing.dir}, ${skill.dir})`
             );
         }
         skillByBasename.set(skill.basename, skill);

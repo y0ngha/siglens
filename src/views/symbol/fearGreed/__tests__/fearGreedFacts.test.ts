@@ -516,6 +516,17 @@ describe('시계열 문장 (P1/P2/P5)', () => {
             );
         });
 
+        it('표본 수가 홀수면 가운데 한 값이 중앙값이다', () => {
+            // 1..61: 가운데 값은 31. 짝수 표본의 평균 경로로 계산하면 다른 값이 나온다.
+            const line = buildFearGreedYearRangeLine(
+                scoredHistory(
+                    history(Array.from({ length: 61 }, (_, i) => i + 1))
+                ),
+                tFacts
+            )!;
+            expect(line).toContain('중앙값은 31점');
+        });
+
         it('표본이 60개 미만이면 분포를 말하지 않는다', () => {
             expect(
                 buildFearGreedYearRangeLine(

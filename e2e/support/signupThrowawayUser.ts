@@ -39,12 +39,14 @@ export async function signupThrowawayUser(
         debug,
         'verification email should be captured in Redis'
     ).not.toBeNull();
-    expect(debug?.code, 'captured email should contain a 6-digit code').toMatch(
+    const code = debug?.code;
+    expect(code, 'captured email should contain a 6-digit code').toMatch(
         /^\d{6}$/
     );
+    if (!code) throw new Error('captured email has no verification code');
 
     // Phase 2: confirm the code → advances to phase 3.
-    await codeField.fill(debug!.code!);
+    await codeField.fill(code);
     await page.getByRole('button', { name: '코드 확인' }).click();
 
     const passwordField = page.getByLabel('비밀번호', { exact: true });

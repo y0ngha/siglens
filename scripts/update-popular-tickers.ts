@@ -321,9 +321,9 @@ export function deduplicatePopularTickerEntries(
         .split('\n')
         .filter(line => {
             const tickerMatch = line.match(TICKER_LITERAL_LINE_PATTERN);
-            if (!tickerMatch) return true;
+            const ticker = tickerMatch?.[2];
+            if (ticker === undefined) return true;
 
-            const ticker = tickerMatch[2]!;
             if (!seenTickers.has(ticker)) {
                 seenTickers.add(ticker);
                 return true;

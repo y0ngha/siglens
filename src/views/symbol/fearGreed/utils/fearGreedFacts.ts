@@ -162,12 +162,13 @@ export function buildFearGreedGroupComparisonLine(
 function findMostExtremeFactor(
     factors: readonly FearGreedFactor[]
 ): FearGreedFactor | null {
-    if (factors.length === 0) return null;
-    return factors.toSorted(
-        (a, b) =>
-            Math.abs(b.percentile - MEDIAN_PERCENTILE) -
-            Math.abs(a.percentile - MEDIAN_PERCENTILE)
-    )[0]!;
+    return (
+        factors.toSorted(
+            (a, b) =>
+                Math.abs(b.percentile - MEDIAN_PERCENTILE) -
+                Math.abs(a.percentile - MEDIAN_PERCENTILE)
+        )[0] ?? null
+    );
 }
 
 /**
@@ -309,18 +310,25 @@ export function buildFearGreedYearRangeLine(
 ): string | null {
     const window = points.slice(-TRADING_DAYS.year);
     const current = window.at(-1);
-    if (current === undefined || window.length < MIN_DISTRIBUTION_SAMPLE) {
+    const extremes = scoreExtremes(window);
+    if (
+        current === undefined ||
+        extremes === null ||
+        window.length < MIN_DISTRIBUTION_SAMPLE
+    ) {
         return null;
     }
 
-    const { min, max } = scoreExtremes(window)!;
+    const { min, max } = extremes;
 
     const sorted = window.map(p => p.score).toSorted((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
+    const upperMid = sorted[mid];
+    const lowerMid = sorted[mid - 1];
+    // 표본 하한(MIN_DISTRIBUTION_SAMPLE)이 위에서 보장하므로 두 값은 항상 있다.
+    if (upperMid === undefined || lowerMid === undefined) return null;
     const median =
-        sorted.length % 2 === 0
-            ? (sorted[mid - 1]! + sorted[mid]!) / 2
-            : sorted[mid]!;
+        sorted.length % 2 === 0 ? (lowerMid + upperMid) / 2 : upperMid;
     const rank = sorted.filter(s => s <= current.score).length;
     const percentile = Math.round((rank / sorted.length) * 100);
 

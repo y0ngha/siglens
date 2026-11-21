@@ -40,7 +40,8 @@ const WHITESPACE_RE = /\s/;
 /** `text.slice(0, end).trimEnd().length` — 끝의 공백 구간만 거꾸로 훑는다. */
 function trimmedEndLength(text: string, end: number): number {
     let length = end;
-    while (length > 0 && WHITESPACE_RE.test(text[length - 1]!)) length -= 1;
+    while (length > 0 && WHITESPACE_RE.test(text.charAt(length - 1)))
+        length -= 1;
     return length;
 }
 
@@ -68,7 +69,7 @@ const initialState = (): FilterState => ({
 /** 새 조각의 글자만 훑어 줄 위치를 갱신한다(조각 길이에 비례). */
 function scanDelta(state: FilterState, delta: string, offset: number): void {
     for (let i = 0; i < delta.length; i++) {
-        const ch = delta[i]!;
+        const ch = delta.charAt(i);
         if (ch === '\n') {
             state.lineStart = offset + i + 1;
             state.lineFirstChar = '';

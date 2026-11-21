@@ -74,8 +74,9 @@ async function searchBrave(
     url.searchParams.set('q', query);
     url.searchParams.set('count', String(COUNT));
     url.searchParams.set('search_lang', locale === 'ko' ? 'ko' : 'en');
-    if (typeof freshness === 'string' && FRESHNESS[freshness])
-        url.searchParams.set('freshness', FRESHNESS[freshness]!);
+    const freshnessParam =
+        typeof freshness === 'string' ? FRESHNESS[freshness] : undefined;
+    if (freshnessParam) url.searchParams.set('freshness', freshnessParam);
 
     let response: Response;
     try {

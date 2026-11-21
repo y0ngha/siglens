@@ -71,16 +71,19 @@ export function hideSegmentsAcrossGaps<T extends TimedPoint>(
     let g = 0;
     let previousIndex = -1;
     for (let i = 0; i < data.length; i += 1) {
-        const point = data[i]!;
+        const point = data[i];
+        if (point === undefined) continue;
         if (typeof point.time !== 'number') return data as T[];
         if (point.value === undefined) continue;
-        if (previousIndex >= 0) {
+        // `previousIndex`가 -1이면 `undefined`라 첫 점은 건너뛴다.
+        const previousPoint = data[previousIndex];
+        if (previousPoint !== undefined) {
             // 앞선 반복에서 `typeof time === 'number'`를 이미 확인한 점이다.
-            const previous = data[previousIndex]!.time as number;
-            while (g < gapTimes.length && gapTimes[g]! <= previous) g += 1;
-            if (g < gapTimes.length && gapTimes[g]! < point.time) {
+            const previous = previousPoint.time as number;
+            while (g < gapTimes.length && gapTimes[g] <= previous) g += 1;
+            if (g < gapTimes.length && gapTimes[g] < point.time) {
                 out ??= data.slice();
-                out[previousIndex] = { ...data[previousIndex]!, ...style };
+                out[previousIndex] = { ...previousPoint, ...style };
             }
         }
         previousIndex = i;
