@@ -9,7 +9,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 const INFRA = join(process.cwd(), 'infra/aws');
 
@@ -18,11 +18,9 @@ const FAKE_AWS = `#!/usr/bin/env bash
 printf '%s' "$FAKE_SSM_JSON"
 `;
 
-const dirs: string[] = [];
-
 function run(ssmNames: readonly string[]) {
     const dir = mkdtempSync(join(tmpdir(), 'check-env-'));
-    dirs.push(dir);
+    onTestFinished(() => rmSync(dir, { recursive: true, force: true }));
     const infra = join(dir, 'infra');
     const bin = join(dir, 'bin');
     mkdirSync(infra);
@@ -32,12 +30,13 @@ function run(ssmNames: readonly string[]) {
     writeFileSync(join(infra, '.env'), '');
     writeFileSync(join(bin, 'aws'), FAKE_AWS);
     chmodSync(join(bin, 'aws'), 0o755);
-    const example = join(dir, '.env.example');
-    writeFileSync(example, 'REQUIRED_ONE=\n');
+    const gate = join(dir, 'env-gate.txt');
+    writeFileSync(gate, 'required REQUIRED_ONE\n');
 
-    const result = spawnSync('bash', [join(infra, 'check-env.sh'), example], {
+    const result = spawnSync('bash', [join(infra, 'check-env.sh'), gate], {
         encoding: 'utf8',
         env: {
+            NODE_ENV: 'test',
             PATH: `${bin}:${process.env.PATH ?? ''}`,
             FAKE_SSM_JSON: JSON.stringify({
                 Parameters: ssmNames.map(name => ({
@@ -48,12 +47,6 @@ function run(ssmNames: readonly string[]) {
     });
     return { status: result.status, out: result.stdout + result.stderr };
 }
-
-afterEach(() => {
-    dirs.splice(0).forEach(dir =>
-        rmSync(dir, { recursive: true, force: true })
-    );
-});
 
 describe('check-env.sh MIGRATION_GATE warning', () => {
     it('SSM에 MIGRATION_GATE가 있으면 경고하고 통과한다', () => {

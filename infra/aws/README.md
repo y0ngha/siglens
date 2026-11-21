@@ -163,9 +163,16 @@ CRON_SECRET을 바꾼 뒤엔 둘 중 하나만 돌려도 두 cron이 함께 갱�
 
 ## env 완전성 게이트 (M5)
 
-`deploy.sh`는 롤 이전에 `check-env.sh`를 호출한다. `.env.example`의 모든 필수 키
-(`NEXT_PUBLIC_*`·`SIGLENS_GITHUB_TOKEN`·주석 제외)가 SSM `/siglens/*`에 있는지
-확인하고, 누락 시 키 목록을 출력하며 배포를 중단한다. 비상시 `SKIP_ENV_CHECK=1`.
+`deploy.sh`는 롤 이전에 `check-env.sh`를 호출한다. `infra/aws/env-gate.txt`의 모든 `required` 키가
+SSM `/siglens/*`에 있는지 확인하고, 누락 시 키 목록을 출력하며 배포를 중단한다. `optional` 키가
+SSM에 없으면 경고 한 줄만 남기고 통과한다(없으면 기능이 꺼지는 키). `override` 키(킬 스위치·튜닝값처럼 없는 게 정상인 키)는 없어도 경고하지 않는다. 반대로 SSM에 **있으면** 이름만 담은 `WARN: N override key(s) set in SSM: ...` 한 줄을 남긴다(장애 대응 뒤 켜 둔 채 잊은 스위치를 알리려는 것, 값은 출력하지 않음, `MIGRATION_GATE`는 별도 WARN). 비상시 `SKIP_ENV_CHECK=1`.
+
+`env-gate.txt`는 **생성 파일**이다. 키의 단일 목록과 분류(필수/선택/override, 어디서 받는지)는
+`src/shared/config/envRegistry.ts`이고, `yarn env:gate`가 거기서 SSM 키만 뽑아 이 파일을 쓴다
+(`required KEY` / `optional KEY` / `override KEY`). 직접 고치지 않는다 — 레지스트리와 다르면
+`src/__tests__/guards/envRegistry.test.ts`가 실패한다. 새 SSM 키를 쓰려면 레지스트리에 등록하고
+`yarn env:gate`를 돌린 뒤 `.env.example`에 설명 줄을 더한다. 배포 잡에는 Node 도구가 없어서
+`check-env.sh`는 커밋된 텍스트 파일을 읽는다.
 
 키 적재는 `04-params.sh <env-file>` (SSM SecureString upsert).
 
