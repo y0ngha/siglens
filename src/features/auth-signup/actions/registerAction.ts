@@ -13,6 +13,7 @@ import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
@@ -148,6 +149,7 @@ export async function registerAction(
                 secure,
             })
         );
+        setMainSessionHint(cookieStore, { secure });
         // 신규 계정 생성이 확정된 뒤에만 도달한다 — 다음 페이지의 GoogleAdsTag가
         // 이 플래그를 읽어 가입 전환을 한 번 기록하고 지운다.
         cookieStore.set(createSignupConversionCookie({ secure }));

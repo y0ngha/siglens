@@ -32,6 +32,7 @@ vi.mock('@/shared/db/client', () => ({
 }));
 vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
+    MAIN_SESSION_HINT_COOKIE_NAME: 'siglens_signed_in',
 }));
 vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
@@ -73,6 +74,11 @@ const mockGetCurrentUser = getCurrentUser as MockedFunction<
 const mockIssueLogoutCode = issueLogoutCode as MockedFunction<
     typeof issueLogoutCode
 >;
+/** 메인 로그인 흔적을 지우는 쓰기가 있었는지 — 이름으로 찾는다(호출 순서에 기대지 않는다). */
+const hintWrites = (spy: Mock) =>
+    spy.mock.calls
+        .map(([cookie]) => cookie as { name: string })
+        .filter(cookie => cookie.name === 'siglens_signed_in');
 const EXPIRED_COOKIE = {
     name: 'siglens_session',
     value: '',
@@ -108,7 +114,48 @@ describe('logoutAction', () => {
         getSpy.mockReturnValue(undefined);
         await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT:/');
         expect(mockLogout).not.toHaveBeenCalled();
-        expect(setSpy).not.toHaveBeenCalled();
+        // 세션 쿠키가 없어도 메인 호스트에서는 흔적만 남은 브라우저를 정리한다.
+        expect(setSpy).toHaveBeenCalledTimes(1);
+        expect(hintWrites(setSpy)).toEqual([
+            expect.objectContaining({
+                name: 'siglens_signed_in',
+                value: '',
+                maxAge: 0,
+                domain: 'siglens.io',
+                path: '/',
+                httpOnly: true,
+            }),
+        ]);
+    });
+
+    it('메인 호스트 성공 경로는 로그인 흔적을 정확히 한 번 만료시킨다', async () => {
+        getSpy.mockReturnValue({ value: 'tok' });
+        mockLogout.mockResolvedValue({
+            ok: true,
+            sessionInvalidated: true,
+            cookie: EXPIRED_COOKIE,
+        });
+        await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT:/');
+        expect(hintWrites(setSpy)).toEqual([
+            expect.objectContaining({ value: '', maxAge: 0 }),
+        ]);
+    });
+
+    it('메인 호스트 오류 경로도 로그인 흔적을 만료시킨다', async () => {
+        getSpy.mockReturnValue({ value: 'tok' });
+        mockLogout.mockRejectedValue(new Error('DB connection lost'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT:/');
+        expect(hintWrites(setSpy)).toEqual([
+            expect.objectContaining({
+                value: '',
+                maxAge: 0,
+                domain: 'siglens.io',
+            }),
+        ]);
+        errorSpy.mockRestore();
     });
 
     it('unexpected logoutUser error 는 catch 블록에서 redirect(/) 로 폴백한다', async () => {
@@ -208,6 +255,8 @@ describe('logoutAction', () => {
             expect(mockRedirect).toHaveBeenCalledWith(
                 `https://siglens.io/api/auth/handoff/logout?code=${'c'.repeat(64)}`
             );
+            // 메인 세션이 살아남을 수 있다 — 흔적은 메인 로그아웃 라우트가 지운다.
+            expect(hintWrites(setSpy)).toEqual([]);
         });
 
         it('코드를 못 만들면 ai 랜딩 ?sso=none으로 보낸다(자동 재로그인 방지)', async () => {
@@ -234,6 +283,7 @@ describe('logoutAction', () => {
             getSpy.mockReturnValue(undefined);
 
             await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT');
+            expect(hintWrites(setSpy)).toEqual([]);
             expect(mockGetCurrentUser).not.toHaveBeenCalled();
             expect(mockIssueLogoutCode).not.toHaveBeenCalled();
             expect(mockRedirect).toHaveBeenCalledWith(
@@ -259,6 +309,7 @@ describe('logoutAction', () => {
                     maxAgeSeconds: 0,
                 })
             );
+            expect(hintWrites(setSpy)).toEqual([]);
             errorSpy.mockRestore();
         });
     });
