@@ -208,6 +208,33 @@ describe('DrizzleUserRepository', () => {
         expect(result).toEqual(userRecord);
     });
 
+    it('looks the user up by the lowercased, trimmed email', async () => {
+        const { db, where } = makeSelectDb([userRecord]);
+        const repository = new DrizzleUserRepository(db);
+
+        await repository.findByEmail('  Foo@Gmail.com ');
+
+        const condition = where.mock.calls
+            .flatMap(args => args)
+            .find(
+                (arg): arg is { queryChunks: unknown[] } =>
+                    typeof arg === 'object' &&
+                    arg !== null &&
+                    'queryChunks' in arg
+            );
+        const boundValues = (condition?.queryChunks ?? [])
+            .filter(
+                (chunk): chunk is { value: unknown } =>
+                    typeof chunk === 'object' &&
+                    chunk !== null &&
+                    'encoder' in chunk &&
+                    'value' in chunk
+            )
+            .map(chunk => chunk.value);
+        expect(boundValues).toContain('foo@gmail.com');
+        expect(boundValues).not.toContain('  Foo@Gmail.com ');
+    });
+
     it('returns null when no user is found by email', async () => {
         const { db } = makeSelectDb([]);
         const repository = new DrizzleUserRepository(db);
@@ -435,6 +462,24 @@ describe('DrizzleUserRepository', () => {
             target: [oauthAccounts.provider, oauthAccounts.providerAccountId],
         });
         expect(result).toEqual(userRecord);
+    });
+
+    it('stores a mixed-case provider email in lowercase', async () => {
+        const { db, userValues } = makeOAuthInsertDb({
+            userRows: [userRecord],
+            accountRows: [{ id: 'oauth-account-1' }],
+        });
+        const repository = new DrizzleUserRepository(db);
+
+        await repository.createOAuthUser({
+            email: 'Foo@Gmail.com',
+            provider: 'google',
+            providerAccountId: 'provider-user-1',
+        });
+
+        expect(userValues).toHaveBeenCalledWith(
+            expect.objectContaining({ email: 'foo@gmail.com' })
+        );
     });
 
     it('creates an OAuth user with avatarUrl provided', async () => {

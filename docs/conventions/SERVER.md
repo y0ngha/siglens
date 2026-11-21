@@ -434,6 +434,21 @@ handed to a logger callback, a message re-thrown as a new string).
 - ❌ `catch (error) { console.error('[loginAction] failed:', error); }`
 - ✅ `catch (error) { console.error('[loginAction] failed:', redactDbErrorForLog(error)); }`
 
+<a id="SA-27"></a>
+
+#### SA-27 — Sign-in paths trust provider identity data only after the same checks on every path
+
+An OAuth or other sign-in entry path applies every check the email path applies before it looks up or writes a user:
+
+- A provider's email is trusted only when its verification claim is strictly `=== true`; the adapter refuses otherwise, before any lookup, and the writer that records `email_verified = true` states the invariant it relies on.
+- An identifier with a canonical form (email: trim + lowercase) is normalized at the single entry point of every path that reads or writes it, and again at the repository boundary (`findByEmail`, `createOAuthUser`), because the column's unique constraint is case-sensitive.
+- A documented "already normalized" input contract is enforced in code, not assumed.
+
+Without these, a mixed-case or unverified address bypasses the duplicate check or squats another person's account.
+
+- ❌ The OAuth adapter passes the provider's raw `email` to `findByEmail` and inserts it as verified.
+- ✅ The adapter requires `email_verified === true`, normalizes the email once, and the repository normalizes again.
+
 ---
 
 ## Concurrency, Batching & Background Work
