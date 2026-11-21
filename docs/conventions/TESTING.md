@@ -319,6 +319,7 @@ A new `if (value < THRESHOLD)` branch needs a case for the branch taken and one 
 
 - ❌ Testing `formatImpliedMove(0.04)` for the floor branch with only `value <= 0` cases.
 - ✅ Below-floor, above-floor and exact-boundary cases.
+- A rule stated as a condition on the input's state ("add the follow-up only when the lead is intact") is tested at the boundary where the implemented check and the stated condition disagree: ❌ only a too-long follow-up. ✅ also a clamped lead followed by a short follow-up.
 - A branch that only logs (a new failure log on a non-OK response) is a branch: assert the log call, and give each sibling step the same non-OK case.
 
 <a id="TE-33"></a>
