@@ -20,16 +20,17 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
 import { FearGreedRouteBody } from '@/app/[locale]/fear-greed/FearGreedRouteBody';
 import { loadFearGreedSymbolLinks } from '@/app/[locale]/fear-greed/fearGreedRoute';
 import type {
-    MarketFearGreedView,
+    MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
-const EMPTY_VIEW: MarketFearGreedView<MarketFearGreedViewSnapshot> = {
+const EMPTY_VIEW: MarketFearGreedHubView<MarketFearGreedViewSnapshot> = {
     snapshot: null,
     comparisons: [],
+    history: [],
 };
 
 describe('허브의 "종목별 공포·탐욕 지수" 목록', () => {

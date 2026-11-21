@@ -24,7 +24,7 @@ import FearGreedCryptoRoutePage, {
     revalidate,
 } from '@/app/[locale]/fear-greed/crypto/page';
 import { getMarketFearGreedCryptoStatic } from '@/entities/market-fear-greed/api/marketFearGreedCryptoStaticCache';
-import type { MarketFearGreedCryptoView } from '@/entities/market-fear-greed/model';
+import type { MarketFearGreedCryptoHubView } from '@/entities/market-fear-greed/model';
 import { CRYPTO_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { SITE_URL } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
@@ -34,7 +34,7 @@ const mockLoader = getMarketFearGreedCryptoStatic as MockedFunction<
     typeof getMarketFearGreedCryptoStatic
 >;
 
-const READY: MarketFearGreedCryptoView = {
+const READY: MarketFearGreedCryptoHubView = {
     snapshot: {
         score: 27.877412031782065,
         label: 'FEAR',
@@ -44,9 +44,14 @@ const READY: MarketFearGreedCryptoView = {
         asOf: '2026-09-24',
     },
     comparisons: [],
+    history: [],
 };
 
-const EMPTY: MarketFearGreedCryptoView = { snapshot: null, comparisons: [] };
+const EMPTY: MarketFearGreedCryptoHubView = {
+    snapshot: null,
+    comparisons: [],
+    history: [],
+};
 
 const PARAMS = { params: Promise.resolve({ locale: 'ko' }) };
 

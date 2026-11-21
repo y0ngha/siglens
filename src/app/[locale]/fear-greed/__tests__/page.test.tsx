@@ -21,7 +21,7 @@ import FearGreedRoutePage, {
     revalidate,
 } from '@/app/[locale]/fear-greed/page';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
+import type { MarketFearGreedHubView } from '@/entities/market-fear-greed/model';
 import { SITE_URL } from '@/shared/lib/seo';
 import { clampSeoDescription } from '@/shared/lib/seoClamp';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
@@ -30,7 +30,7 @@ const mockGetMarketFearGreedStatic = getMarketFearGreedStatic as MockedFunction<
     typeof getMarketFearGreedStatic
 >;
 
-const SAMPLE_SNAPSHOT: MarketFearGreedView = {
+const SAMPLE_SNAPSHOT: MarketFearGreedHubView = {
     snapshot: {
         score: 62,
         label: 'GREED',
@@ -40,6 +40,7 @@ const SAMPLE_SNAPSHOT: MarketFearGreedView = {
         asOf: '2026-08-14',
     },
     comparisons: [],
+    history: [],
 };
 
 describe('/fear-greed page', () => {
@@ -47,6 +48,7 @@ describe('/fear-greed page', () => {
         mockGetMarketFearGreedStatic.mockResolvedValue({
             snapshot: null,
             comparisons: [],
+            history: [],
         });
     });
 
@@ -124,6 +126,7 @@ describe('/fear-greed page', () => {
                 mockGetMarketFearGreedStatic.mockResolvedValue({
                     snapshot: null,
                     comparisons: [],
+                    history: [],
                 });
             });
 
@@ -317,6 +320,7 @@ describe('/fear-greed page', () => {
             mockGetMarketFearGreedStatic.mockResolvedValue({
                 snapshot: null,
                 comparisons: [],
+                history: [],
             });
             const { container } = render(
                 await FearGreedRoutePage({
@@ -362,6 +366,7 @@ describe('/fear-greed page', () => {
             mockGetMarketFearGreedStatic.mockResolvedValue({
                 snapshot: null,
                 comparisons: [],
+                history: [],
             });
 
             render(
@@ -410,9 +415,9 @@ const ANSWER_SNAPSHOT = {
     confidence: 'normal',
     sampleSize: 200,
     asOf: '2026-11-05',
-} as const satisfies NonNullable<MarketFearGreedView['snapshot']>;
+} as const satisfies NonNullable<MarketFearGreedHubView['snapshot']>;
 
-const ANSWER_VIEW: MarketFearGreedView = {
+const ANSWER_VIEW: MarketFearGreedHubView = {
     snapshot: ANSWER_SNAPSHOT,
     comparisons: [
         {
@@ -430,6 +435,7 @@ const ANSWER_VIEW: MarketFearGreedView = {
         },
         { key: '1y', date: '2025-11-05', score: 33.7, label: 'FEAR' },
     ],
+    history: [],
 };
 
 const ANSWER =
@@ -550,6 +556,7 @@ describe('/fear-greed 답 문장', () => {
         mockGetMarketFearGreedStatic.mockResolvedValue({
             snapshot: null,
             comparisons: [],
+            history: [],
         });
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko' }),

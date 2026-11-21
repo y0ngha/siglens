@@ -5,6 +5,7 @@ vi.mock('@/entities/market-fear-greed/api/marketFearGreedStaticCache', () => ({
     getMarketFearGreedStatic: vi.fn(async () => ({
         snapshot: null,
         comparisons: [],
+        history: [],
     })),
 }));
 vi.mock(
@@ -13,6 +14,7 @@ vi.mock(
         getMarketFearGreedCryptoStatic: vi.fn(async () => ({
             snapshot: null,
             comparisons: [],
+            history: [],
         })),
     })
 );
@@ -22,6 +24,7 @@ vi.mock(
         getMarketFearGreedKrStatic: vi.fn(async () => ({
             snapshot: null,
             comparisons: [],
+            history: [],
         })),
     })
 );
@@ -75,7 +78,11 @@ describe('fear-greed 라우트의 빌드 degrade revalidate 배선', () => {
         async (market, calls) => {
             await loadFearGreedView({
                 market,
-                load: async () => ({ snapshot: null, comparisons: [] }),
+                load: async () => ({
+                    snapshot: null,
+                    comparisons: [],
+                    history: [],
+                }),
                 failureLog: '[test]',
             });
             expect(mockShorten).toHaveBeenCalledTimes(calls);
