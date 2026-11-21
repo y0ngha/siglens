@@ -869,7 +869,6 @@ Never use inline `style` for layout or styling. When a value is only known at ru
 
 Related: compose classes with `cn()` only (never template literals or `+`, even for static multi-part constants: `const CARD = cn('px-4 py-2', 'bg-white')`); colour tokens come from the design system (`DESIGN.md#DS-1`).
 
-
 <a id="TW-2"></a>
 
 #### TW-2 — Long server-rendered tables hoist repeated cell utilities to the table
