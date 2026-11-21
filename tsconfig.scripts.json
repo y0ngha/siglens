@@ -18,6 +18,7 @@
         // 전부 `server-only` TS2882로 깨진다 — 자세한 사정은 그 파일 주석에.
         "scripts/next-ambient.d.ts",
         "scripts/backfillEconomicCalendar.ts",
+        "scripts/coverage-by-layer.ts",
         "scripts/indexnow-backfill.ts",
         "scripts/funnel-report.ts",
         "scripts/lib/funnelReport.ts",
@@ -44,6 +45,7 @@
         "scripts/update-popular-cryptos.ts",
         "scripts/update-popular-tickers.ts",
         "scripts/validate-skills.ts",
+        "scripts/__tests__/coverage-by-layer.test.ts",
         "scripts/__tests__/pattern-index.test.ts",
         "scripts/__tests__/seed-crypto-korean-names.test.ts",
         "scripts/__tests__/skills-digest.test.ts",
