@@ -89,6 +89,29 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
         ).rejects.toThrow('Failed to upsert mail alert subscriber');
     });
 
+    it('findByOwner: 회원은 user_id로, 비회원은 id와 user_id null로 행을 가리킨다', async () => {
+        const where = vi.fn((_condition: unknown) => ({
+            limit: vi.fn().mockResolvedValue([]),
+        }));
+        const db = {
+            select: () => ({ from: () => ({ where }) }),
+        } as unknown as SiglensDatabase;
+        const repo = new DrizzleMailAlertSubscriberRepository(db);
+
+        await repo.findByOwner({ kind: 'member', userId: 'u-1' });
+        await repo.findByOwner({ kind: 'guest', subscriberId: 's-1' });
+
+        const rendered = where.mock.calls.map(call => render(call[0]));
+        expect(rendered).toContainEqual({
+            sql: '"mail_alert_subscribers"."user_id" = $1',
+            params: ['u-1'],
+        });
+        expect(rendered).toContainEqual({
+            sql: '"mail_alert_subscribers"."id" = $1 and "mail_alert_subscribers"."user_id" is null',
+            params: ['s-1'],
+        });
+    });
+
     it('findAllForDelivery: 항목이 있거나 보유·관심종목 함께 받기가 켜진 구독자만 묶는다', async () => {
         const orderBy = vi.fn().mockResolvedValue([]);
         const having = vi.fn((_condition: unknown) => ({ orderBy }));

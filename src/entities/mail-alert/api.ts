@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq, gte, isNull, lt, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lt, sql, type SQL } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     mailAlertDeliveries,
@@ -13,6 +13,7 @@ import type {
     MailAlertDeliveryOutcome,
     MailAlertDeliveryRepository,
     MailAlertDeliveryTarget,
+    MailAlertOwner,
     MailAlertSubscriberRecord,
     MailAlertSubscriberRepository,
     MailAlertTopicRecord,
@@ -42,6 +43,17 @@ const subscriberColumns = {
  */
 function ownerOfAddress(email: string) {
     return sql`(select ${users.id} from ${users} where ${users.email} = ${email} and ${users.emailVerified} and not exists (select 1 from ${mailAlertSubscribers} where ${mailAlertSubscribers.userId} = ${users.id}))`;
+}
+
+/**
+ * 구독자 행의 소유자 조건. 회원은 `user_id`로, 비회원은 서명된 쿠키가 담은 구독자 id로 **그리고**
+ * `user_id`가 비어 있을 때만 행을 가리킨다 — id를 알아도 연결된(회원) 행은 건드릴 수 없고, 회원은 자기
+ * `user_id`가 아닌 행(비회원 행 포함)을 id로 가리킬 길이 없다(DB-12).
+ */
+function ownerCondition(owner: MailAlertOwner): SQL {
+    return owner.kind === 'member'
+        ? sql`${mailAlertSubscribers.userId} = ${owner.userId}`
+        : sql`${mailAlertSubscribers.id} = ${owner.subscriberId} and ${mailAlertSubscribers.userId} is null`;
 }
 
 /** 회원 본인의 인증된 주소(인증되지 않았으면 null) — 비회원 때 만든 행을 가져오거나 지울 때만 쓴다. */
@@ -98,13 +110,16 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
         return row;
     }
 
-    async findById(id: string): Promise<MailAlertSubscriberRecord | null> {
+    /** 소유자의 구독자 행. 소유자 조건은 {@link ownerCondition}. */
+    async findByOwner(
+        owner: MailAlertOwner
+    ): Promise<MailAlertSubscriberRecord | null> {
         const [row] = await withRetry(
             () =>
                 this.db
                     .select(subscriberColumns)
                     .from(mailAlertSubscribers)
-                    .where(eq(mailAlertSubscribers.id, id))
+                    .where(ownerCondition(owner))
                     .limit(1),
             DB_TRANSIENT_RETRY
         );
@@ -146,7 +161,8 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
         return adopted ?? null;
     }
 
-    async listTopics(subscriberId: string): Promise<MailAlertTopicRecord[]> {
+    /** 소유자의 항목. 구독자 id는 소유자 조건으로 같은 문장 안에서 고른다. */
+    async listTopics(owner: MailAlertOwner): Promise<MailAlertTopicRecord[]> {
         return withRetry(
             () =>
                 this.db
@@ -155,7 +171,15 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                         key: mailAlertTopics.key,
                     })
                     .from(mailAlertTopics)
-                    .where(eq(mailAlertTopics.subscriberId, subscriberId))
+                    .where(
+                        inArray(
+                            mailAlertTopics.subscriberId,
+                            this.db
+                                .select({ id: mailAlertSubscribers.id })
+                                .from(mailAlertSubscribers)
+                                .where(ownerCondition(owner))
+                        )
+                    )
                     .orderBy(mailAlertTopics.createdAt, mailAlertTopics.key),
             DB_TRANSIENT_RETRY
         );
@@ -163,7 +187,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
 
     /** 이미 담은 항목은 상한과 무관하게 멱등 성공(`exists`)이다. */
     async addTopic(
-        subscriberId: string,
+        owner: MailAlertOwner,
         topic: MailAlertTopicRecord,
         max: number
     ): Promise<AddMailAlertTopicOutcome> {
@@ -173,11 +197,12 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                     const [locked] = await tx
                         .select({ id: mailAlertSubscribers.id })
                         .from(mailAlertSubscribers)
-                        .where(eq(mailAlertSubscribers.id, subscriberId))
+                        .where(ownerCondition(owner))
                         .for('no key update');
                     if (locked === undefined) {
                         return 'subscriber_missing' as const;
                     }
+                    const subscriberId = locked.id;
                     const owned = await tx
                         .select({
                             kind: mailAlertTopics.kind,
@@ -213,7 +238,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
      * 지울 항목이 없었으면 구독자는 건드리지 않는다.
      */
     async removeTopic(
-        subscriberId: string,
+        owner: MailAlertOwner,
         topic: MailAlertTopicRecord
     ): Promise<RemoveMailAlertTopicOutcome> {
         return withRetry(
@@ -221,15 +246,17 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                 this.db.transaction(async tx => {
                     const [locked] = await tx
                         .select({
+                            id: mailAlertSubscribers.id,
                             includePortfolio:
                                 mailAlertSubscribers.includePortfolio,
                         })
                         .from(mailAlertSubscribers)
-                        .where(eq(mailAlertSubscribers.id, subscriberId))
+                        .where(ownerCondition(owner))
                         .for('no key update');
                     if (locked === undefined) {
                         return { deleted: false, subscriberDeleted: false };
                     }
+                    const subscriberId = locked.id;
                     const removed = await tx
                         .delete(mailAlertTopics)
                         .where(
@@ -245,6 +272,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                     }
                     const subscriberDeleted = await deleteIfNothingToReceive(
                         tx,
+                        owner,
                         subscriberId,
                         locked.includePortfolio
                     );
@@ -256,7 +284,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
 
     /** 끄면서 받을 항목이 하나도 없으면 구독자를 지운다(`removeTopic`과 같은 규칙). */
     async setIncludePortfolio(
-        subscriberId: string,
+        owner: MailAlertOwner,
         value: boolean
     ): Promise<{ found: boolean; subscriberDeleted: boolean }> {
         return withRetry(
@@ -265,17 +293,24 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                     const [locked] = await tx
                         .select({ id: mailAlertSubscribers.id })
                         .from(mailAlertSubscribers)
-                        .where(eq(mailAlertSubscribers.id, subscriberId))
+                        .where(ownerCondition(owner))
                         .for('no key update');
                     if (locked === undefined) {
                         return { found: false, subscriberDeleted: false };
                     }
+                    const subscriberId = locked.id;
                     await tx
                         .update(mailAlertSubscribers)
                         .set({ includePortfolio: value, updatedAt: sql`now()` })
-                        .where(eq(mailAlertSubscribers.id, subscriberId));
+                        .where(
+                            and(
+                                eq(mailAlertSubscribers.id, subscriberId),
+                                ownerCondition(owner)
+                            )
+                        );
                     const subscriberDeleted = await deleteIfNothingToReceive(
                         tx,
+                        owner,
                         subscriberId,
                         value
                     );
@@ -285,12 +320,13 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
         );
     }
 
-    async deleteById(subscriberId: string): Promise<boolean> {
+    /** 소유자의 구독자 행을 지운다(수신 거부). 항목·발송 기록은 FK 연쇄로 사라진다. */
+    async deleteByOwner(owner: MailAlertOwner): Promise<boolean> {
         const deleted = await withRetry(
             () =>
                 this.db
                     .delete(mailAlertSubscribers)
-                    .where(eq(mailAlertSubscribers.id, subscriberId))
+                    .where(ownerCondition(owner))
                     .returning({ id: mailAlertSubscribers.id }),
             DB_TRANSIENT_RETRY
         );
@@ -359,6 +395,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
  */
 async function deleteIfNothingToReceive(
     tx: Pick<SiglensDatabase, 'select' | 'delete'>,
+    owner: MailAlertOwner,
     subscriberId: string,
     includePortfolio: boolean
 ): Promise<boolean> {
@@ -371,7 +408,12 @@ async function deleteIfNothingToReceive(
     if (remaining.length > 0) return false;
     await tx
         .delete(mailAlertSubscribers)
-        .where(eq(mailAlertSubscribers.id, subscriberId));
+        .where(
+            and(
+                eq(mailAlertSubscribers.id, subscriberId),
+                ownerCondition(owner)
+            )
+        );
     return true;
 }
 

@@ -127,6 +127,7 @@ For each routable group:
      #### PREFIX-N — Rule title
      ```
    - Cite the rule elsewhere only as `FILE#ID`.
+   - After adding or sharpening a rule, grep the current branch's diff against master for the violating pattern and list any hit in the exit signal as `own_diff_hits` (you never edit code), so the orchestrator fixes it before pushing.
 5. Record the count of **newly added** rules as `promoted`; track already-documented groups separately. Count IDs you retired as `retired` and duplicates you merged as `merged`.
 
 ### 6. Clean fix-log.md

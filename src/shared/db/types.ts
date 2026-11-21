@@ -430,7 +430,7 @@ export type AddMailAlertTopicOutcome =
     | 'added'
     | 'exists'
     | 'limit_reached'
-    /** The subscriber was deleted between the caller's lookup and this call. */
+    /** The owner has no subscriber row (deleted between the caller's lookup and this call, or not theirs). */
     | 'subscriber_missing';
 
 export interface RemoveMailAlertTopicOutcome {
@@ -450,7 +450,22 @@ export interface MailAlertDeliveryTarget {
     topics: MailAlertTopicRecord[];
 }
 
-/** Persistence operations for mail-alert subscribers and their topics. */
+/**
+ * Who a subscriber-row operation acts for. Every by-id method binds this in the statement (DB-12):
+ * a member addresses only the row whose `user_id` is theirs; a guest addresses a row by id **and**
+ * only while it is unlinked (`user_id IS NULL`). The guest id comes from the signed
+ * `siglens_mail_alert` cookie that app-B issues, never from request input. A member can therefore not
+ * reach a guest row by id, a guest id cannot reach a linked row, and one member cannot reach another's.
+ */
+export type MailAlertOwner =
+    | { kind: 'member'; userId: string }
+    | { kind: 'guest'; subscriberId: string };
+
+/**
+ * Persistence operations for mail-alert subscribers and their topics. `upsertVerified` is keyed by the
+ * verified address, `findAllForDelivery` is the cron's system-wide read, and `deleteForAccount` /
+ * `findForMember` take the authenticated `userId`; every other method takes a {@link MailAlertOwner}.
+ */
 export interface MailAlertSubscriberRepository {
     /**
      * Creates the subscriber or re-confirms an existing one (unique by email). An existing row keeps
@@ -462,30 +477,32 @@ export interface MailAlertSubscriberRepository {
     upsertVerified(
         input: UpsertVerifiedMailAlertSubscriberInput
     ): Promise<{ id: string; created: boolean }>;
-    findById(id: string): Promise<MailAlertSubscriberRecord | null>;
+    findByOwner(
+        owner: MailAlertOwner
+    ): Promise<MailAlertSubscriberRecord | null>;
     /**
      * By `user_id`, else the unlinked row whose address equals the user's own address (read from
      * `users`, and only when `email_verified`), which gets linked. An unverified account adopts nothing.
      */
     findForMember(userId: string): Promise<MailAlertSubscriberRecord | null>;
-    listTopics(subscriberId: string): Promise<MailAlertTopicRecord[]>;
+    listTopics(owner: MailAlertOwner): Promise<MailAlertTopicRecord[]>;
     /** Idempotent insert under a per-subscriber lock so concurrent calls cannot exceed `max`. */
     addTopic(
-        subscriberId: string,
+        owner: MailAlertOwner,
         topic: MailAlertTopicRecord,
         max: number
     ): Promise<AddMailAlertTopicOutcome>;
     /** Removes the topic; deletes the subscriber too when nothing is left to receive. */
     removeTopic(
-        subscriberId: string,
+        owner: MailAlertOwner,
         topic: MailAlertTopicRecord
     ): Promise<RemoveMailAlertTopicOutcome>;
-    /** Turning it off with no topics left deletes the subscriber. `found` is false for an unknown id. */
+    /** Turning it off with no topics left deletes the subscriber. `found` is false when the owner has no row. */
     setIncludePortfolio(
-        subscriberId: string,
+        owner: MailAlertOwner,
         value: boolean
     ): Promise<{ found: boolean; subscriberDeleted: boolean }>;
-    deleteById(subscriberId: string): Promise<boolean>;
+    deleteByOwner(owner: MailAlertOwner): Promise<boolean>;
     /**
      * Account deletion: removes the row linked to the user and, when the account's address is verified,
      * the unlinked row with that address. Call it before the `users` row is deleted (the address is read
@@ -499,7 +516,11 @@ export interface MailAlertSubscriberRepository {
 /** Final state of a claimed mail-alert delivery. */
 export type MailAlertDeliveryOutcome = 'sent' | 'failed';
 
-/** Idempotency log for mail-alert deliveries (one row per subscriber per KST alert date). */
+/**
+ * Idempotency log for mail-alert deliveries (one row per subscriber per KST alert date). Cron-only:
+ * these methods are keyed by ids the sender just read or claimed itself and are never reachable from a
+ * user request, so they take no {@link MailAlertOwner}.
+ */
 export interface MailAlertDeliveryRepository {
     /** Claims the (subscriber, alertDate) slot; returns the row id, or `null` when already claimed. */
     claim(subscriberId: string, alertDate: string): Promise<string | null>;

@@ -33,8 +33,8 @@ export type EmailReportConsentSource =
 
 /**
  * 알림 메일 신청 화면(`mail_alert_subscribers.consent_source`)의 허용 값 — 마이그레이션 CHECK와 같다.
- * `schema.ts`는 entities를 import할 수 없어 여기에 두고, `entities/mail-alert/model.ts`의 유니온과
- * 같은지 `src/shared/db/__tests__/mailAlertSchema.test.ts`가 고정한다.
+ * `schema.ts`는 entities를 import할 수 없어 여기에 두고, 이 값들이 `entities/mail-alert/model.ts`의
+ * 유니온과 같은지는 `src/shared/db/__tests__/mailAlertSchema.test.ts`가 고정한다.
  */
 export const MAIL_ALERT_CONSENT_SOURCE_VALUES = [
     'symbol',

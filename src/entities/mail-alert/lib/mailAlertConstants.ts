@@ -21,10 +21,10 @@ export const MAIL_ALERT_MAX_SIGNAL_ITEMS = 20;
 /** 신호별 새 종목 섹션 하나에 싣는 줄 수 상한. 넘치면 "외 N종목"으로 줄인다. */
 export const MAIL_ALERT_MAX_HUB_ROWS = 10;
 
-/** 게스트 브라우저 쿠키 수명(초). 같은 브라우저에서 코드를 다시 묻지 않는 기간이다. */
+/** 게스트 브라우저 쿠키 수명(초). 같은 브라우저에서 코드를 다시 묻지 않는 기간이다. 구독 PR(app-B)의 액션이 쓴다. */
 export const MAIL_ALERT_COOKIE_MAX_AGE_SECONDS = 180 * SECONDS_PER_DAY;
 
-/** 남용 방지 한도. 키에는 해시만 담긴다. */
+/** 남용 방지 한도. 키에는 해시만 담긴다. 구독 PR(app-B)의 액션이 쓴다. */
 export const MAIL_ALERT_RATE_LIMITS = {
     /** 주소(해시)당 코드 요청. */
     codePerEmail: { limit: 3, windowSeconds: SECONDS_PER_HOUR },
