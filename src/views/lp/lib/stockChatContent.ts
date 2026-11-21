@@ -1,6 +1,6 @@
 /**
  * Hard-coded Korean copy for `/lp/stock-chat`. Ad-only page: Korean only, no
- * crypto wording (`__tests__/lpCopyRules.ts` checks the rendered page).
+ * crypto wording (`lib/lpCopyRules.ts` checks the rendered page).
  */
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import type {
