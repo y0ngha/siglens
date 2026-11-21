@@ -64,6 +64,20 @@ describe('redirectSignedIn', () => {
         });
     });
 
+    it('메인 로그인 흔적(siglens_signed_in)을 부모 도메인·HttpOnly로 심는다', async () => {
+        const response = await redirectSignedIn('user-1', '/');
+
+        const hint = response.headers
+            .getSetCookie()
+            .find(c => c.startsWith('siglens_signed_in='));
+        expect(hint).toContain('siglens_signed_in=1');
+        expect(hint).toContain('Domain=siglens.io');
+        expect(hint).toContain('Path=/');
+        expect(hint).toContain('HttpOnly');
+        expect(hint).toContain('Secure');
+        expect(hint).toContain('Max-Age=86400');
+    });
+
     it('공백 문자로 우회한 off-origin next는 신뢰된 base의 기본 경로로 보낸다', async () => {
         const response = await redirectSignedIn('user-1', '/\t/evil.com');
 

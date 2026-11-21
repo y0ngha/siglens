@@ -7,6 +7,7 @@ import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { createExpiredMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
@@ -87,6 +88,9 @@ export async function deleteAccountAction(
         const cookieStore = await cookies();
         cookieStore.set(applyAuthCookie(result.cookie));
         cookieStore.set(createExpiredAuthHintCookie({ secure }));
+        // 계정과 모든 세션이 사라졌다 — 어느 호스트에서 탈퇴했든 흔적도 함께 지운다.
+        const expiredMainHint = createExpiredMainSessionHintCookie({ secure });
+        if (expiredMainHint) cookieStore.set(expiredMainHint);
         // 예전엔 `/?account_deleted=1`로 보냈지만 그 쿼리를 읽는 곳이 없었다 —
         // 받을 쪽 없는 파라미터는 URL에 남아 공유·북마크만 더럽힌다.
         return localeRedirect('/');

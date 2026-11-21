@@ -19,6 +19,7 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/auth/api', () => ({ DrizzleSessionRepository: vi.fn() }));
 vi.mock('@/shared/config/aiHost', () => ({
     AI_SITE_URL: 'https://ai.siglens.io',
+    MAIN_SITE_URL: 'https://siglens.io',
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
 
@@ -74,6 +75,12 @@ describe('GET /api/auth/handoff/logout (main host: end the main session too)', (
                 .getSetCookie()
                 .some(c => c.startsWith('siglens_session=;'))
         ).toBe(true);
+        const hint = res.headers
+            .getSetCookie()
+            .filter(c => c.startsWith('siglens_signed_in='));
+        expect(hint).toHaveLength(1);
+        expect(hint[0]).toContain('Domain=siglens.io');
+        expect(hint[0]).toContain('Max-Age=0');
     });
 
     /** Logout CSRF: a code minted for the attacker's own account must not end the victim's session. */

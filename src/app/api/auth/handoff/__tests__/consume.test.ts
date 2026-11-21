@@ -83,6 +83,10 @@ describe('GET /api/auth/handoff/consume (ai host: exchange)', () => {
         for (const c of cookies)
             expect(c.toLowerCase()).not.toContain('domain=');
         expect(cookies.some(c => c.startsWith('siglens_auth=1'))).toBe(true);
+        // An ai-host session never writes the main-host sign-in hint.
+        expect(cookies.some(c => c.startsWith('siglens_signed_in='))).toBe(
+            false
+        );
         // The single-use state cookie is cleared.
         const state = cookies.find(c =>
             c.startsWith('__Host-siglens_ai_sso_state=')

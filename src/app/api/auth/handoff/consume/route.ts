@@ -92,6 +92,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
     const response = redirectClearingState(new URL(next, AI_SITE_URL));
     response.cookies.set(applyAuthCookie(cookie));
+    // 메인 로그인 흔적(`siglens_signed_in`)은 심지 않는다 — 이건 ai 호스트 세션이다.
     response.cookies.set(
         createAuthHintCookie({
             maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,

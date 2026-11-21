@@ -9,6 +9,8 @@ import {
     isHandoffToken,
     issueHandoffCode,
 } from '@/entities/auth/server/handoffStore';
+import { createExpiredMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
@@ -44,7 +46,16 @@ export async function GET(request: NextRequest): Promise<Response> {
     const fallback = new URL(next, AI_SITE_URL);
     fallback.searchParams.set('sso', 'none');
     const user = await getCurrentUser();
-    if (!user) return noStoreRedirect(fallback);
+    if (!user) {
+        // 흔적은 있었는데 세션은 없다(만료·다른 기기에서 로그아웃). 흔적을 지워 이 왕복이
+        // 한 번으로 끝나게 한다 — 이어지는 `?sso=none`이 probed 쿠키를 심으니 루프도 없다.
+        const response = noStoreRedirect(fallback);
+        const expiredMainHint = createExpiredMainSessionHintCookie({
+            secure: isSecureCookieEnv(),
+        });
+        if (expiredMainHint) response.cookies.set(expiredMainHint);
+        return response;
+    }
 
     let code: string;
     try {

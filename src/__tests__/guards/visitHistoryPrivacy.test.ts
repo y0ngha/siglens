@@ -12,6 +12,7 @@ import { OAUTH_STATE_TTL_SECONDS } from '@/features/auth-oauth/lib/state';
 import { HANDOFF_STATE_TTL_SECONDS } from '@/entities/auth/server/handoffStore';
 import { LOCALES } from '@/shared/i18n/locales';
 import { AI_SSO_PROBED_MAX_AGE_SECONDS } from '@/shared/config/cookieNames';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import { SHARE_MARKS_MAX_CREATED } from '@/shared/lib/funnel/shareMarks';
 import * as storageKeys from '@/shared/lib/storageKeys';
 import { STORAGE_KEYS, STORAGE_PREFIX } from '@/widgets/chart/constants';
@@ -200,6 +201,7 @@ const EXPECTED_COOKIE_WRITERS = [
     'app/api/auth/callback/_lib/redirectToConsent.ts',
     'app/api/auth/handoff/consume/route.ts',
     'app/api/auth/handoff/logout/route.ts',
+    'app/api/auth/handoff/route.ts',
     'app/api/auth/handoff/start/route.ts',
     'entities/auth/actions/currentUserAction.ts',
     'features/account-delete/actions/deleteAccountAction.ts',
@@ -426,6 +428,7 @@ describe(`쿠키 ↔ 방침 v${VERSION} §7`, () => {
                 'siglens_signup_conversion',
                 'siglens_funnel_signup',
                 'siglens_ai_sso_probed',
+                'siglens_signed_in',
                 'siglens_oauth_state',
                 'siglens_ai_sso_state',
             ])
@@ -450,6 +453,40 @@ describe(`쿠키 ↔ 방침 v${VERSION} §7`, () => {
         expect(KO_7).toContain(
             `${AI_SSO_PROBED_MAX_AGE_SECONDS / 60}분 뒤 만료`
         );
+    });
+
+    const SIGNED_IN_LIFETIME_PHRASE: Record<string, string> = {
+        ko: `최대 ${DEFAULT_SESSION_TTL_SECONDS / 86400}일`,
+        en: `up to ${DEFAULT_SESSION_TTL_SECONDS / 86400} days`,
+        ja: `最大${DEFAULT_SESSION_TTL_SECONDS / 86400}日`,
+        zh: `最长${DEFAULT_SESSION_TTL_SECONDS / 86400}天`,
+    };
+
+    it.each(LOCALES)(
+        '%s §7의 siglens_signed_in 항목이 HttpOnly와 최대 수명을 적는다',
+        locale => {
+            const line =
+                (POLICY_7[locale] ?? '')
+                    .split('\n')
+                    .find(l => l.includes('**siglens_signed_in**')) ?? '';
+            expect(line).not.toBe('');
+            expect(line).toContain('HttpOnly');
+            expect(line).toContain(SIGNED_IN_LIFETIME_PHRASE[locale] ?? '');
+        }
+    );
+
+    /**
+     * `siglens_signed_in`의 약속(HttpOnly, 값 `1`, 식별자 없음, 두 호스트가 읽음, 최대 수명)은 코드의
+     * 쿠키 서술자와 같아야 한다. 수명은 세션 쿠키 상수에서 오므로 일수로 대조한다.
+     */
+    it('한국어 §7의 siglens_signed_in 항목이 코드의 수명(세션 쿠키와 같음)을 적는다', () => {
+        const line =
+            KO_7.split('\n').find(l => l.includes('**siglens_signed_in**')) ??
+            '';
+        expect(line).not.toBe('');
+        expect(line).toContain(`최대 ${DEFAULT_SESSION_TTL_SECONDS / 86400}일`);
+        expect(line).toContain('HttpOnly');
+        expect(line).toContain('`1`');
     });
 });
 

@@ -135,7 +135,7 @@ describe('loginAction error handling and cookie behavior', () => {
         ).rejects.toThrow('NEXT_REDIRECT');
     });
 
-    it('sets both auth cookie and hint cookie on success', async () => {
+    it('sets the auth cookie, the auth hint and the main session hint on success', async () => {
         mockLoginUser.mockResolvedValue({
             ok: true,
             user: { id: '1' },
@@ -157,6 +157,12 @@ describe('loginAction error handling and cookie behavior', () => {
             // NEXT_REDIRECT expected
         }
 
-        expect(setCalls).toHaveLength(2);
+        // 세션 쿠키, `siglens_auth_hint`, 메인 로그인 흔적(`siglens_signed_in`). 흔적은
+        // 메인 호스트 도메인이 풀릴 때만 쓰인다(테스트 환경은 siglens.io 기본값).
+        expect(setCalls).toMatchObject([
+            [{ name: 'session' }],
+            [{ name: 'siglens_auth_hint' }],
+            [{ name: 'siglens_signed_in' }],
+        ]);
     });
 });

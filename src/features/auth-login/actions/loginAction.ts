@@ -12,6 +12,7 @@ import { cookies } from 'next/headers';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { createMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import { loginUser } from '@/entities/auth/lib/loginUser';
 import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
@@ -79,6 +80,8 @@ export async function loginAction(
                 secure,
             })
         );
+        const mainHint = createMainSessionHintCookie({ secure });
+        if (mainHint) cookieStore.set(mainHint);
         // 리다이렉트 싱크 바로 앞에서 URL 파서로 같은-오리진 경로만 남긴다.
         // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을
         // 파서가 호스트째로 떼어낸다.
