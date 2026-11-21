@@ -51,7 +51,7 @@ export interface EnvSpec {
 }
 
 export const ENV_REGISTRY = [
-    // ── SSM required (배포 게이트가 막는 29개) ───────────────────────────────
+    // ── SSM required (없으면 배포 게이트가 막는 키) ───────────────────────────────
     // *_API_KEY(CHAT 없음) 4개는 core의 resolveServerApiKey가 읽는다. 4개 provider 모두
     // TIER_CONFIG.models.free에 있어 서버가 대납한다. core는 호출 시점에 검증하므로 키가 없어도
     // 부팅은 되고, 그 provider로 라우팅되는 첫 분석이 SSE 200 안에서 조용히 실패한다 — 게이트가

@@ -23,6 +23,7 @@ export const ENV_GATE_HEADER =
 export function renderEnvGate(registry: readonly EnvSpec[]): string {
     const lines = registry
         .filter(spec => spec.sources.includes('ssm'))
+        // 코드 단위 순서로 정렬해 Node/ICU 빌드와 무관하게 같은 파일을 만든다(이름 유일성은 가드가 보장).
         .toSorted((a, b) => (a.name < b.name ? -1 : 1))
         .map(spec => `${spec.requirement} ${spec.name}`);
     return `${[ENV_GATE_HEADER, ...lines].join('\n')}\n`;
