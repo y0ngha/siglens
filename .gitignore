@@ -96,6 +96,8 @@ next-env.d.ts
 !/scripts/skills-digest.ts
 # 차트 가이드: 스킬 → 가이드 링크 맵 생성기(guideCoverage 가드가 import한다).
 !/scripts/generate-guide-links.ts
+# 주간 커버리지 워크플로(`coverage-weekly`)가 실행하는 레이어별 표 생성기.
+!/scripts/coverage-by-layer.ts
 !/scripts/update-popular-tickers.ts
 !/scripts/__tests__/
 !/scripts/__tests__/**
