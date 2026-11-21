@@ -102,7 +102,7 @@ return result;
 const result = condition ? newValue : value;
 ```
 
-A `let` assigned inside `try` and read after it is the same smell: make the guarded call a `const` (`const x = await load().catch(() => null)`).
+A `let` assigned inside `try` and read after it is the same smell: make the guarded call a `const` (`const x = await load().catch(() => null)`). Two shapes are machine-checked (see "Enforced rules"): `let x = a;` directly followed by an `if` that only assigns `x`, and `let x;` directly followed by a `try` that assigns it. Loop state and effect-cleanup flags stay a judgment call.
 
 In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
 
@@ -565,7 +565,11 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
 | No lint-disable comments | `src/__tests__/guards/lintDisableDirectives.test.ts` | code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
-| No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support); test files are exempt for now | Early return, or bind a local `const` and throw a readable error; for a Map or array lookup, destructure or use `entries()` instead of indexing. Do not evade it (`TS-1`). |
+| No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support) | Early return, or bind a local `const` and throw a readable error; for a Map or array lookup, destructure or use `entries()` instead of indexing. Do not evade it (`TS-1`). |
+| No new non-null assertion in tests (TS-1) | `codeRules.test.ts` rule `non-null-assertion`, per-file baseline (`TOOLCHAIN.md#TC-41`) | test files and e2e | Bind the value and narrow it, or use `defined(value, 'what')` from `src/shared/test-utils/defined.ts`. |
+| No assertion by mock call index (TE-27) | `codeRules.test.ts` rule `mock-call-index`, per-file baseline | test files and e2e | `mock.calls.find(...)` by a discriminating argument, or `toHaveBeenCalledWith`. |
+| No `let x = a;` + `if` that only assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-if`, zero tolerance | all code | `const x = c ? b : a;` or a small named function. |
+| No `let x;` + `try` that assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-try`, per-file baseline | all code | `const x = await load().catch(() => null)` or a small named function. |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---

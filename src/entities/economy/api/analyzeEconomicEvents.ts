@@ -74,11 +74,10 @@ async function analyzeAndPersistEvent(
 
     const runResult = await runEconomicEventAnalysis(input);
 
-    let analysis: EconomicEventAnalysis | null = null;
-
-    if (runResult.status === 'cached' || runResult.status === 'done') {
-        analysis = runResult.result;
-    }
+    const analysis: EconomicEventAnalysis | null =
+        runResult.status === 'cached' || runResult.status === 'done'
+            ? runResult.result
+            : null;
 
     if (analysis === null) {
         console.warn(

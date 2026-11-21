@@ -86,8 +86,8 @@ export function readThemes(): Themes {
 }
 
 export function relativeLuminance(hex: string): number {
-    let h = hex.slice(1);
-    if (h.length === 3) h = [...h].map(c => c + c).join('');
+    const raw = hex.slice(1);
+    const h = raw.length === 3 ? [...raw].map(c => c + c).join('') : raw;
     if (h.length !== 6) {
         throw new Error(`지원하지 않는 hex 형식: ${hex} (3·6자리만)`);
     }
@@ -119,8 +119,8 @@ function resolve(
 
 function composite(fg: string, alpha: number, bg: string): string {
     const px = (h: string): number[] => {
-        let s = h.slice(1);
-        if (s.length === 3) s = [...s].map(c => c + c).join('');
+        const raw = h.slice(1);
+        const s = raw.length === 3 ? [...raw].map(c => c + c).join('') : raw;
         return [0, 2, 4].map(i => parseInt(s.slice(i, i + 2), 16));
     };
     const [f, b] = [px(fg), px(bg)];

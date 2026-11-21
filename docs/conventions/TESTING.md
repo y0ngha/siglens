@@ -251,7 +251,7 @@ When a function starts passing a new argument or dependency to a mocked collabor
 
 #### TE-27 — Never assert by call index
 
-Do not use `mock.calls[0]` or `[1]`: a late call from an earlier test can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`.
+Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. `codeRules.test.ts` (rule `mock-call-index`, per-file baseline, `TOOLCHAIN.md#TC-41`) fails any new one.
 
 Assert what was written (the key and TTL), not just how many times the collaborator was called.
 
