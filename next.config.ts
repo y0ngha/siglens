@@ -3,6 +3,7 @@ import bundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { createRequire } from 'module';
 import { CDN_CACHE_TAG_HEADER_RULES } from './src/shared/config/cdnCacheTags';
+import { FEAR_GREED_DATA_REWRITES } from './src/shared/config/fearGreedData';
 
 const require = createRequire(import.meta.url);
 
@@ -224,6 +225,10 @@ const nextConfig: NextConfig = {
         // 동적 라우트에 진다. `.xml`이라 프록시 matcher를 타지 않고, ai 호스트는 라우트가
         // 404로 거른다. 경로 상수는 `shared/config/rssFeed.ts`(RSS_FEED_PATH)와 같아야 한다.
         { source: '/rss.xml', destination: '/api/rss' },
+        // 공포·탐욕 기록 내려받기 여섯 개(`/fear-greed/data.csv` 등). RSS와 같은 이유로 rewrite다
+        // — 루트 쪽 파일은 `[locale]/[symbol]`에 진다. `.csv`는 프록시 matcher의 확장자 제외
+        // 목록에 있어 rewrite가 로케일·심볼 정규화가 붙지 않은 원래 경로를 본다(`.json`도 마찬가지).
+        ...FEAR_GREED_DATA_REWRITES,
         { source: '/sitemap.xml', destination: '/api/sitemap' },
         { source: '/sitemap-static.xml', destination: '/api/sitemap/static' },
         { source: '/sitemap-popular.xml', destination: '/api/sitemap/popular' },

@@ -66,4 +66,21 @@ describe('proxy matcher', () => {
     ])('공개 API %s는 프록시를 타지 않는다', pathname => {
         expect(matchesProxy(pathname)).toBe(false);
     });
+
+    /**
+     * 공포·탐욕 기록 파일(`/fear-greed/data.csv` 등)은 rewrite로 라우트 핸들러에 닿는다. 프록시를
+     * 타면 로케일 접두·심볼 정규화가 붙어 rewrite 출처와 맞지 않는다. `csv`가 확장자 제외 목록에서
+     * 빠지는 순간을 잡는다.
+     */
+    it.each([
+        '/fear-greed/data.csv',
+        '/fear-greed/kr/data.csv',
+        '/fear-greed/crypto/data.json',
+    ])('공포·탐욕 데이터 파일 %s는 프록시를 타지 않는다', pathname => {
+        expect(matchesProxy(pathname)).toBe(false);
+    });
+
+    it('공포·탐욕 허브 페이지는 프록시를 탄다', () => {
+        expect(matchesProxy('/fear-greed/kr')).toBe(true);
+    });
 });

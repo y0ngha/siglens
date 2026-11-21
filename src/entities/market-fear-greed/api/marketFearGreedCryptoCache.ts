@@ -9,6 +9,7 @@ import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { secondsUntilSessionRoll } from '@/shared/lib/marketSessionDate';
 import { buildCalendarDayComparisons } from '../lib/buildMarketFearGreedComparisons';
+import { compactFearGreedHistory } from '../lib/compactFearGreedHistory';
 import { hasSnapshot } from '../lib/hasSnapshot';
 import {
     cryptoLookbackStartDate,
@@ -21,7 +22,7 @@ import {
     MARKET_FEAR_GREED_CRYPTO_SAFE_HAVEN,
     MARKET_FEAR_GREED_CRYPTO_UNIVERSE,
 } from '../lib/marketFearGreedCryptoSymbols';
-import type { MarketFearGreedCryptoView } from '../model';
+import type { MarketFearGreedCryptoHubView } from '../model';
 import { fetchCryptoDailyBars } from './fetchCryptoDailyBars';
 
 /**
@@ -36,6 +37,8 @@ export const MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT =
             universe: MARKET_FEAR_GREED_CRYPTO_UNIVERSE,
             lookbackDays: MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS,
             priceSource: 'eod-full:close,volume',
+            // 캐시 값에 `history`가 늘었다. 옛 Redis·데이터 캐시 항목에는 없으므로 읽히면 안 된다.
+            viewShape: 'hub-history-v1',
         })
     );
 
@@ -48,7 +51,7 @@ const CACHE_KEY = `market:fear-greed:crypto:${MARKET_FEAR_GREED_CRYPTO_CONFIG_FI
  * 어제 봉을 늦게 내면 1시간 간격으로 몇 번 더). 미국판 `getMarketSummary`(11+)와 같은
  * `Promise.all` 규모라 청크 분할 이득이 없다.
  */
-async function buildView(now: Date): Promise<MarketFearGreedCryptoView> {
+async function buildView(now: Date): Promise<MarketFearGreedCryptoHubView> {
     const from = cryptoLookbackStartDate(now);
     const to = lastClosedUtcDate(now);
 
@@ -73,11 +76,12 @@ async function buildView(now: Date): Promise<MarketFearGreedCryptoView> {
         ),
     };
 
+    const snapshot = computeCryptoFearGreedIndex(input);
+    const history = computeCryptoFearGreedHistory(input);
     return {
-        snapshot: computeCryptoFearGreedIndex(input),
-        comparisons: buildCalendarDayComparisons(
-            computeCryptoFearGreedHistory(input)
-        ),
+        snapshot,
+        comparisons: buildCalendarDayComparisons(history),
+        history: snapshot === null ? [] : compactFearGreedHistory(history),
     };
 }
 
@@ -93,7 +97,7 @@ async function buildView(now: Date): Promise<MarketFearGreedCryptoView> {
  * 던지면 아무것도 쓰지 않는다.
  */
 export const getCachedMarketFearGreedCrypto = cache(
-    (): Promise<MarketFearGreedCryptoView> => {
+    (): Promise<MarketFearGreedCryptoHubView> => {
         const now = new Date();
         const to = lastClosedUtcDate(now);
         return getOrSetCache(

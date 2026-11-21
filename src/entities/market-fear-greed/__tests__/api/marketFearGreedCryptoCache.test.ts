@@ -62,6 +62,7 @@ describe('getCachedMarketFearGreedCrypto', () => {
         vi.clearAllMocks();
         fetchCryptoDailyBars.mockResolvedValue(BARS);
         computeCryptoFearGreedIndex.mockReturnValue({ score: 50 });
+        computeCryptoFearGreedHistory.mockReturnValue([]);
         getOrSetCache.mockResolvedValue({ snapshot: null, comparisons: [] });
     });
 
@@ -170,12 +171,39 @@ describe('getCachedMarketFearGreedCrypto', () => {
         ]);
     });
 
-    it('core가 null이면 snapshot: null 뷰를 만들고, 그 뷰는 캐시하지 않는다', async () => {
-        computeCryptoFearGreedIndex.mockReturnValue(null);
+    it('일별 기록은 앞쪽 null을 자르고 점수를 정수로 만든다', async () => {
+        computeCryptoFearGreedHistory.mockReturnValue([
+            { date: '2026-01-01', score: null, label: null },
+            { date: '2026-01-02', score: 24.49, label: 'EXTREME_FEAR' },
+            { date: '2026-01-03', score: null, label: null },
+            { date: '2026-01-04', score: 75.5, label: 'EXTREME_GREED' },
+        ]);
 
         await getCachedMarketFearGreedCrypto();
-        const view = (await runFetcher()) as { snapshot: unknown };
+        const view = await runFetcher();
+
+        expect(view).toMatchObject({
+            history: [
+                { date: '2026-01-02', score: 24, label: 'EXTREME_FEAR' },
+                { date: '2026-01-03', score: null, label: null },
+                { date: '2026-01-04', score: 76, label: 'EXTREME_GREED' },
+            ],
+        });
+    });
+
+    it('core가 null이면 snapshot: null 뷰를 만들고, 그 뷰는 캐시하지 않는다', async () => {
+        computeCryptoFearGreedIndex.mockReturnValue(null);
+        computeCryptoFearGreedHistory.mockReturnValue([
+            { date: '2026-01-02', score: 24, label: 'EXTREME_FEAR' },
+        ]);
+
+        await getCachedMarketFearGreedCrypto();
+        const view = (await runFetcher()) as {
+            snapshot: unknown;
+            history: unknown[];
+        };
         expect(view.snapshot).toBeNull();
+        expect(view.history).toEqual([]);
 
         const guard = lastGetOrSetCall()[3] as (v: {
             snapshot: unknown;

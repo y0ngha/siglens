@@ -223,3 +223,64 @@ test.describe('crypto market fear & greed', () => {
         expect(await res.text()).toContain('/fear-greed/crypto</loc>');
     });
 });
+
+/**
+ * 공포·탐욕 기록 내려받기 파일. 여섯 공개 경로가 rewrite로 라우트 핸들러에 닿고, 프록시
+ * matcher가 `.csv`·`.json`을 건드리지 않아야 한다. E2E fixture는 점수가 있는 점을 20개
+ * 넘게 만든다 — 하한 밑으로 내려가면 파일이 503이 되어 아래 테스트가 크게 깨지는데, 그게
+ * 의도다.
+ */
+test.describe('fear & greed data files', () => {
+    test('us csv가 200과 noindex 헤더, 헤더 줄, 20줄 이상의 데이터를 돌려준다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed/data.csv', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-type']).toMatch(/^text\/csv/);
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
+        const lines = (await res.text()).split('\n').filter(Boolean);
+        expect(lines[0]).toBe('date,score,label');
+        expect(lines.length - 1).toBeGreaterThanOrEqual(20);
+    });
+
+    test('crypto json이 schemaVersion 1과 20점 이상을 돌려준다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed/crypto/data.json', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-type']).toMatch(/^application\/json/);
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
+        const body = (await res.json()) as {
+            schemaVersion: number;
+            points: unknown[];
+        };
+        expect(body.schemaVersion).toBe(1);
+        expect(body.points.length).toBeGreaterThanOrEqual(20);
+    });
+
+    test('kr csv가 200이다', async ({ page }) => {
+        const res = await page.request.get('/fear-greed/kr/data.csv', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-type']).toMatch(/^text\/csv/);
+        expect(res.headers()['x-robots-tag']).toBe('noindex');
+    });
+
+    test('허브 HTML에 DataDownload JSON-LD와 csv 주소가 들어 있다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed');
+        const html = await res.text();
+
+        expect(html).toContain('"@type":"DataDownload"');
+        expect(html).toContain('/fear-greed/data.csv');
+    });
+});
