@@ -8,12 +8,14 @@ import { PgDialect } from 'drizzle-orm/pg-core';
 import {
     emailReportDeliveries,
     emailReportSubscriptions,
+    emailReportWelcomes,
 } from '@/shared/db/schema';
 import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import {
     DrizzleEmailReportDeliveryRepository,
     DrizzleEmailReportExclusionRepository,
     DrizzleEmailReportSubscriptionRepository,
+    DrizzleEmailReportWelcomeRepository,
 } from '@/entities/email-report/api';
 import type {
     SiglensDatabase,
@@ -497,5 +499,217 @@ describe('DrizzleEmailReportExclusionRepository', () => {
                 'AAPL'
             )
         ).resolves.toBe(false);
+    });
+});
+
+describe('DrizzleEmailReportWelcomeRepository', () => {
+    const NOW = new Date('2026-11-21T01:00:00.000Z');
+
+    /** 트랜잭션 콜백에 실제 Drizzle SQL 캡처 DB를 넘기고, 쿼리 순서대로 결과를 준다. */
+    function txDb(results: unknown[][]) {
+        const { db: tx, captured } = createSqlCaptureDb(
+            (_query, index) => results[index] ?? []
+        );
+        const db = {
+            transaction: (cb: (t: SiglensDatabase) => Promise<unknown>) =>
+                cb(tx),
+        } as unknown as SiglensDatabase;
+        return { db, captured };
+    }
+
+    const recipientRow = {
+        userId: 'u-1',
+        email: 'one@example.com',
+        daysOfWeek: 0b0000010,
+        sendHour: 8,
+        timezone: 'Asia/Seoul',
+        locale: 'ko',
+        consentedAt: new Date('2026-11-21T00:30:00.000Z'),
+        attempts: 1,
+    };
+
+    it('claimDue: 대상 조회, 새 대상 삽입, 재시도 갱신, 수신자 조회를 한 트랜잭션에서 순서대로 한다', async () => {
+        const { db, captured } = txDb([
+            [{ userId: 'u-1' }, { userId: 'u-2' }],
+            [{ userId: 'u-1' }],
+            [{ userId: 'u-2' }],
+            [recipientRow, { ...recipientRow, userId: 'u-2', attempts: 2 }],
+        ]);
+
+        const claimed = await new DrizzleEmailReportWelcomeRepository(
+            db
+        ).claimDue(NOW);
+
+        expect(claimed.map(r => [r.userId, r.attempts])).toEqual([
+            ['u-1', 1],
+            ['u-2', 2],
+        ]);
+        expect(captured).toHaveLength(4);
+        const [eligible, insert, update, select] = captured;
+        // 가입 화면에서 고른, 켜져 있고, 창 안에 동의했고, 인증된 회원 등급만.
+        expect(eligible?.sql).toContain('"consent_source" in');
+        expect(eligible?.sql).toContain('"consented_at" >');
+        expect(eligible?.sql).toContain('"email_verified" = $');
+        expect(eligible?.sql).toContain('"tier" in');
+        // 동의 뒤 정기 리포트가 이미 나간 회원은 제외한다.
+        expect(eligible?.sql).toContain('not exists');
+        expect(eligible?.sql).toContain('"email_report_deliveries"');
+        expect(eligible?.params).toEqual(
+            expect.arrayContaining([
+                'signup_email',
+                'signup_oauth',
+                new Date(NOW.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+                'member',
+                'pro',
+            ])
+        );
+        // 충돌하면 건너뛰므로 두 번째 cron은 이미 잡힌 회원을 다시 얻지 못한다.
+        expect(insert?.sql).toMatch(
+            /^insert into "email_report_welcomes".* on conflict \("user_id"\) do nothing returning "user_id"$/
+        );
+        expect(insert?.params).toEqual(
+            expect.arrayContaining(['u-1', 'u-2', 'sending', 1])
+        );
+        expect(update?.sql).toMatch(
+            /^update "email_report_welcomes" set "status" = \$1, "attempts" = "email_report_welcomes"\."attempts" \+ 1/
+        );
+        expect(update?.sql).toContain('"attempts" < $');
+        // 방금 삽입한 행(u-1)은 같은 트랜잭션의 재시도 갱신에서 제외한다.
+        expect(update?.sql).toContain('"user_id" not in');
+        expect(update?.params).toEqual(
+            expect.arrayContaining([
+                'sending',
+                3,
+                'failed',
+                new Date(NOW.getTime() - 30 * 60 * 1000).toISOString(),
+                'u-1',
+                'u-2',
+            ])
+        );
+        expect(select?.sql).toContain('from "email_report_welcomes"');
+        expect(select?.params).toEqual(expect.arrayContaining(['u-1', 'u-2']));
+    });
+
+    it('claimDue: 대상이 없으면 삽입·갱신 없이 빈 목록이다', async () => {
+        const { db, captured } = txDb([[]]);
+
+        await expect(
+            new DrizzleEmailReportWelcomeRepository(db).claimDue(NOW)
+        ).resolves.toEqual([]);
+        expect(captured).toHaveLength(1);
+    });
+
+    it('claimDue: 이미 다른 실행이 잡았거나 보낸 회원이면 수신자 조회 없이 빈 목록이다', async () => {
+        const { db, captured } = txDb([[{ userId: 'u-1' }], [], []]);
+
+        await expect(
+            new DrizzleEmailReportWelcomeRepository(db).claimDue(NOW)
+        ).resolves.toEqual([]);
+        expect(captured).toHaveLength(3);
+    });
+
+    it('claimDue: 동의 시각이 비어 있는 행은 돌려주지 않는다', async () => {
+        const { db } = txDb([
+            [{ userId: 'u-1' }],
+            [{ userId: 'u-1' }],
+            [],
+            [{ ...recipientRow, consentedAt: null }],
+        ]);
+
+        await expect(
+            new DrizzleEmailReportWelcomeRepository(db).claimDue(NOW)
+        ).resolves.toEqual([]);
+    });
+
+    it('finish: sent는 보낸 시각을 함께 찍고 회원 행만 조건으로 쓴다', async () => {
+        const { db, captured } = createSqlCaptureDb();
+
+        await new DrizzleEmailReportWelcomeRepository(db).finish(
+            'u-1',
+            'sent',
+            null
+        );
+
+        const query = captured[0];
+        expect(query?.sql).toMatch(/^update "email_report_welcomes" set /);
+        expect(query?.sql).toContain('"sent_at" = now()');
+        expect(query?.sql).toMatch(
+            /where "email_report_welcomes"\."user_id" = \$\d+$/
+        );
+        expect(query?.params).toEqual(['sent', null, 'u-1']);
+    });
+
+    it('finish: failed는 이미 sent인 행을 덮어쓰지 않고 보낸 시각을 찍지 않는다', async () => {
+        const { db, captured } = createSqlCaptureDb();
+
+        await new DrizzleEmailReportWelcomeRepository(db).finish(
+            'u-1',
+            'failed',
+            'boom'
+        );
+
+        const query = captured[0];
+        expect(query?.sql).not.toContain('"sent_at"');
+        expect(query?.sql).toContain('"status" <> $');
+        expect(query?.params).toEqual(['failed', 'boom', 'u-1', 'sent']);
+    });
+
+    it('finish: retry는 failed로 돌리며 시도 횟수를 되돌리고 sent는 덮어쓰지 않는다', async () => {
+        const { db, captured } = createSqlCaptureDb();
+
+        await new DrizzleEmailReportWelcomeRepository(db).finish(
+            'u-1',
+            'retry',
+            'request in flight'
+        );
+
+        const query = captured[0];
+        expect(query?.sql).toContain('"attempts" = greatest(');
+        expect(query?.sql).toContain('"status" <> $');
+        expect(query?.params).toEqual([
+            'failed',
+            'request in flight',
+            'u-1',
+            'sent',
+        ]);
+    });
+
+    it('findWelcomed: 기준 뒤에 보낸 회원과 기준 뒤에 갱신된 처리 중 회원의 id 집합', async () => {
+        const { db, captured } = createSqlCaptureDb([
+            { userId: 'u-1' },
+            { userId: 'u-2' },
+        ]);
+        const sentSince = new Date('2026-11-20T13:00:00.000Z');
+        const inFlightSince = new Date('2026-11-21T00:30:00.000Z');
+
+        const welcomed = await new DrizzleEmailReportWelcomeRepository(
+            db
+        ).findWelcomed(sentSince, inFlightSince);
+
+        expect(welcomed).toEqual(new Set(['u-1', 'u-2']));
+        expect(captured[0]?.sql).toContain('"sent_at" >');
+        expect(captured[0]?.sql).toContain('"updated_at" >');
+        expect(captured[0]?.params).toEqual([
+            'sent',
+            sentSince.toISOString(),
+            'sending',
+            inFlightSince.toISOString(),
+        ]);
+    });
+
+    it('pruneOlderThan: 지운 행 수를 돌려준다', async () => {
+        const returning = vi
+            .fn()
+            .mockResolvedValue([{ userId: 'a' }, { userId: 'b' }]);
+        const where = vi.fn(() => ({ returning }));
+        const del = vi.fn(() => ({ where }));
+        const repo = new DrizzleEmailReportWelcomeRepository({
+            delete: del,
+        } as unknown as SiglensDatabase);
+
+        await expect(
+            repo.pruneOlderThan(new Date('2026-07-01T00:00:00Z'))
+        ).resolves.toBe(2);
+        expect(del).toHaveBeenCalledWith(emailReportWelcomes);
     });
 });

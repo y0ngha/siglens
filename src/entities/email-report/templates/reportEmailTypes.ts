@@ -33,6 +33,18 @@ export interface SymbolBriefRow {
     pageUrl: string;
 }
 
+/** 첫 리포트 맨 위 안내 블록의 재료. 광고성 문구 없이 동의 결과와 일정만 담는다. */
+export interface ReportEmailWelcome {
+    consentedAt: Date;
+    /** 수신 요일 비트마스크(`email_report_subscriptions.days_of_week`). */
+    daysOfWeek: number;
+    sendHour: number;
+    /** 회원의 IANA 시간대. */
+    timezone: string;
+    /** 보낼 종목이 없을 때 안내하는 샘플 메일 주소. */
+    sampleUrl: string;
+}
+
 /** `buildReportEmail`의 입력. 발송 cron과 비회원 샘플 페이지가 같은 모양으로 넘긴다. */
 export interface BuildReportEmailInput {
     to: string;
@@ -50,6 +62,11 @@ export interface BuildReportEmailInput {
      * 그날 신호가 잡힌 대표 종목이다 — 제목·인사말·표 제목이 브리핑용으로 바뀌고 시장 페이지 링크가 붙는다.
      */
     marketBriefing?: { readonly marketUrl: string };
+    /**
+     * 가입 때 메일 리포트를 고른 회원의 첫 리포트면 채운다. 제목과 머리글이 바뀌고 맨 위에 동의 시각·일정
+     * 안내가 붙는다. 보낼 종목이 없으면(`sections`와 `briefRows`가 모두 빔) 샘플 메일 링크가 대신 실린다.
+     */
+    welcome?: ReportEmailWelcome;
     t: ReportEmailTranslator;
     signalLabel: SignalLabelResolver;
 }

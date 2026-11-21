@@ -11,7 +11,14 @@ import type {
     SymbolBrief,
     SymbolReport,
 } from '@/entities/email-report/reportModel';
-import type { EmailReportRecipient } from '@/shared/db/types';
+import {
+    WELCOME_STALE_SENDING_MS,
+    WELCOME_SUPPRESSES_REPORT_MS,
+} from '@/entities/email-report/lib/emailReportConstants';
+import type {
+    EmailReportRecipient,
+    EmailReportWelcomeRecipient,
+} from '@/shared/db/types';
 import type { EmailMessage } from '@/shared/email/types';
 import {
     PLANTED_EMAIL,
@@ -33,6 +40,17 @@ function recipient(
         sendHour: 8,
         timezone: 'Asia/Seoul',
         locale: 'ko',
+        ...overrides,
+    };
+}
+
+function welcomeRecipient(
+    overrides: Partial<EmailReportWelcomeRecipient> = {}
+): EmailReportWelcomeRecipient {
+    return {
+        ...recipient({ userId: 'w-1', email: 'welcome@example.com' }),
+        consentedAt: new Date('2026-10-04T22:30:00.000Z'),
+        attempts: 1,
         ...overrides,
     };
 }
@@ -67,6 +85,10 @@ function brief(symbol: string): SymbolBrief {
 function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
     let claimSeq = 0;
     const sent: EmailMessage[] = [];
+    const sendEmail = vi.fn(async (message: EmailMessage) => {
+        sent.push(message);
+        return true;
+    });
     const deps: EmailReportBatchDeps = {
         subscriptions: {
             findEnabledRecipients: vi.fn().mockResolvedValue([recipient()]),
@@ -75,6 +97,12 @@ function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
             claim: vi.fn(async () => `claim-${++claimSeq}`),
             finish: vi.fn().mockResolvedValue(undefined),
             pruneOlderThan: vi.fn().mockResolvedValue(3),
+        },
+        welcomes: {
+            claimDue: vi.fn().mockResolvedValue([]),
+            finish: vi.fn().mockResolvedValue(undefined),
+            findWelcomed: vi.fn().mockResolvedValue(new Set<string>()),
+            pruneOlderThan: vi.fn().mockResolvedValue(0),
         },
         findHoldings: vi.fn().mockResolvedValue([
             { symbol: 'AAPL', quantity: '1', averagePrice: '100' },
@@ -90,10 +118,12 @@ function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
             .fn()
             .mockResolvedValue((type: string): string | null => type),
         dispatcher: {
-            sendEmail: vi.fn(async (message: EmailMessage) => {
-                sent.push(message);
-                return true;
-            }),
+            sendEmail,
+            sendKeyedEmail: vi.fn(async (message: EmailMessage) =>
+                (await sendEmail(message))
+                    ? ('accepted' as const)
+                    : ('rejected' as const)
+            ),
         },
         secret: SECRET,
         siteUrl: 'https://siglens.io',
@@ -195,6 +225,32 @@ describe('runEmailReportBatch', () => {
             null
         );
         expect(counts.skipped).toBe(1);
+    });
+
+    it('skipped 기록이 던지면 선점 실패가 아니라 발송 실패로 세고 실패 행을 남긴다', async () => {
+        const { deps } = makeDeps({
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
+        });
+        vi.mocked(deps.deliveries.finish)
+            .mockRejectedValueOnce(new Error('write failed'))
+            .mockResolvedValue(undefined);
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.deliveries.finish).toHaveBeenCalledWith(
+            'claim-1',
+            'failed',
+            [],
+            'write failed'
+        );
+        expect(counts).toMatchObject({ failed: 1, skipped: 0 });
+        const claimFailedLogged = vi
+            .mocked(console.error)
+            .mock.calls.some(call =>
+                String(call[0]).startsWith('[email-report] claim failed')
+            );
+        expect(claimFailedLogged).toBe(false);
     });
 
     it('보유도 관심종목도 없으면 그날 신호 종목으로 시장 브리핑을 보낸다(요약 표만, AI 리포트 없음)', async () => {
@@ -628,5 +684,354 @@ describe('runEmailReportBatch', () => {
         expect(stored).not.toContain(PLANTED_TOKEN);
         expect(stored).not.toContain(PLANTED_EMAIL);
         expect(stored).not.toContain('Failed query');
+    });
+});
+
+describe('runEmailReportBatch: 가입 첫 리포트', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    /** 정기 대상 없이 첫 리포트 대상만 있는 배치. */
+    function makeWelcomeDeps(
+        welcomes: EmailReportWelcomeRecipient[],
+        overrides: Partial<EmailReportBatchDeps> = {}
+    ) {
+        const made = makeDeps({
+            subscriptions: {
+                findEnabledRecipients: vi.fn().mockResolvedValue([]),
+            },
+            ...overrides,
+        });
+        vi.mocked(made.deps.welcomes.claimDue).mockResolvedValue(welcomes);
+        return made;
+    }
+
+    it('선점한 회원에게 환영 제목의 실제 리포트를 멱등 키와 함께 보내고 sent로 기록한다', async () => {
+        const { deps, sent } = makeWelcomeDeps([welcomeRecipient()]);
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.claimDue).toHaveBeenCalledWith(NOW);
+        expect(sent).toHaveLength(1);
+        expect(sent[0]?.to).toBe('welcome@example.com');
+        expect(sent[0]?.subject).toBe('welcomeSubject');
+        expect(sent[0]?.idempotencyKey).toBe('email-report-welcome/w-1');
+        expect(sent[0]?.headers?.['List-Unsubscribe']).toContain(
+            '/api/email-report/unsubscribe?u=w-1'
+        );
+        // 실제 리포트: 보유 종목 카드가 실린다.
+        expect(sent[0]?.html).toContain('MSFT');
+        expect(deps.welcomes.finish).toHaveBeenCalledWith('w-1', 'sent', null);
+        // 정기 발송 기록은 건드리지 않는다.
+        expect(deps.deliveries.claim).not.toHaveBeenCalled();
+        expect(counts).toMatchObject({
+            welcomeSent: 1,
+            welcomeFailed: 0,
+            welcomeFallback: 0,
+        });
+    });
+
+    it('발송이 거부되면 failed로 기록하고 실패로 센다', async () => {
+        const { deps } = makeWelcomeDeps([welcomeRecipient()]);
+        vi.mocked(deps.dispatcher.sendKeyedEmail).mockResolvedValue('rejected');
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.finish).toHaveBeenCalledWith(
+            'w-1',
+            'failed',
+            'dispatcher rejected'
+        );
+        expect(counts).toMatchObject({ welcomeSent: 0, welcomeFailed: 1 });
+    });
+
+    it('같은 멱등 키의 첫 요청이 이미 수락됐다는 응답은 실패가 아니라 sent로 기록한다', async () => {
+        const { deps } = makeWelcomeDeps([welcomeRecipient()]);
+        vi.mocked(deps.dispatcher.sendKeyedEmail).mockResolvedValue(
+            'already_accepted'
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.finish).toHaveBeenCalledWith('w-1', 'sent', null);
+        expect(counts).toMatchObject({ welcomeSent: 1, welcomeFailed: 0 });
+    });
+
+    it('같은 키의 요청이 처리 중이면 시도를 쓰지 않는 retry로 돌려놓고 실패로 세지 않는다', async () => {
+        const { deps } = makeWelcomeDeps([welcomeRecipient()]);
+        vi.mocked(deps.dispatcher.sendKeyedEmail).mockResolvedValue(
+            'in_flight'
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.finish).toHaveBeenCalledWith(
+            'w-1',
+            'retry',
+            'request in flight'
+        );
+        expect(counts).toMatchObject({
+            welcomeSent: 0,
+            welcomeFailed: 0,
+            welcomeRetryLater: 1,
+        });
+    });
+
+    it('조립 중 예외는 가려진 오류 문구로 failed 기록하고 다른 회원은 계속 보낸다', async () => {
+        const { deps, sent } = makeWelcomeDeps(
+            [
+                welcomeRecipient({ userId: 'w-bad', email: 'bad@example.com' }),
+                welcomeRecipient({ userId: 'w-ok', email: 'ok@example.com' }),
+            ],
+            {
+                findHoldings: vi.fn(async (userId: string) => {
+                    if (userId === 'w-bad') throw plantedDbError();
+                    return [
+                        { symbol: 'AAPL', quantity: '1', averagePrice: '1' },
+                    ];
+                }),
+            }
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.finish).toHaveBeenCalledWith(
+            'w-bad',
+            'failed',
+            'Error code=57014'
+        );
+        expect(deps.welcomes.finish).toHaveBeenCalledWith('w-ok', 'sent', null);
+        expect(sent.map(m => m.to)).toEqual(['ok@example.com']);
+        expect(counts).toMatchObject({ welcomeSent: 1, welcomeFailed: 1 });
+        const stored = vi
+            .mocked(deps.welcomes.finish)
+            .mock.calls.map(call => String(call[2]))
+            .join('\n');
+        expect(stored).not.toContain(PLANTED_TOKEN);
+        expect(stored).not.toContain(PLANTED_EMAIL);
+    });
+
+    it('실패 기록마저 던져도 배치는 끝까지 돈다', async () => {
+        const { deps } = makeWelcomeDeps([welcomeRecipient()], {
+            findHoldings: vi.fn().mockRejectedValue(new Error('db down')),
+        });
+        vi.mocked(deps.welcomes.finish).mockRejectedValue(new Error('db down'));
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(counts.welcomeFailed).toBe(1);
+        expect(deps.deliveries.pruneOlderThan).toHaveBeenCalled();
+    });
+
+    it('보낸 뒤 기록이 던지면 failed로 바꿔 기록을 시도한다(행이 남아 있으면 다음 실행이 같은 멱등 키로 다시 보낸다)', async () => {
+        const { deps } = makeWelcomeDeps([welcomeRecipient()]);
+        vi.mocked(deps.welcomes.finish)
+            .mockRejectedValueOnce(new Error('write failed'))
+            .mockResolvedValue(undefined);
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.finish).toHaveBeenCalledWith(
+            'w-1',
+            'failed',
+            'write failed'
+        );
+        expect(counts.welcomeFailed).toBe(1);
+    });
+
+    it('보유도 관심종목도 없고 시장 브리핑 종목도 없으면 안내와 샘플 링크만 담아 보낸다', async () => {
+        const { deps, sent } = makeWelcomeDeps([welcomeRecipient()], {
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
+            loadMarketPicks: vi.fn().mockResolvedValue([]),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(1);
+        expect(sent[0]?.html).toContain('welcomeNoData');
+        expect(sent[0]?.html).toContain(
+            'https://siglens.io/email-report/sample'
+        );
+        expect(sent[0]?.html).not.toContain('briefColSymbol');
+        expect(sent[0]?.html).not.toContain('marketHint');
+        expect(deps.loadReport).not.toHaveBeenCalled();
+        expect(deps.welcomes.finish).toHaveBeenCalledWith('w-1', 'sent', null);
+        expect(counts).toMatchObject({ welcomeSent: 1, welcomeFallback: 1 });
+    });
+
+    it('종목이 없어도 로케일에 맞는 샘플 링크를 쓴다', async () => {
+        const { deps, sent } = makeWelcomeDeps(
+            [welcomeRecipient({ locale: 'en' })],
+            {
+                findHoldings: vi.fn().mockResolvedValue([]),
+                findWatchlist: vi.fn().mockResolvedValue([]),
+            }
+        );
+
+        await runEmailReportBatch(deps, NOW);
+
+        expect(sent[0]?.html).toContain(
+            'https://siglens.io/en/email-report/sample'
+        );
+    });
+
+    it('담은 종목이 없어도 시장 브리핑 종목이 있으면 그것으로 첫 리포트를 만든다', async () => {
+        const { deps, sent } = makeWelcomeDeps([welcomeRecipient()], {
+            findHoldings: vi.fn().mockResolvedValue([]),
+            findWatchlist: vi.fn().mockResolvedValue([]),
+            loadMarketPicks: vi.fn().mockResolvedValue(['NVDA']),
+        });
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent[0]?.html).toContain('NVDA');
+        expect(sent[0]?.html).not.toContain('welcomeNoData');
+        expect(counts).toMatchObject({ welcomeSent: 1, welcomeFallback: 0 });
+    });
+
+    it('시간대가 깨진 회원은 서울 날짜로 만들어 보낸다', async () => {
+        const { deps, sent } = makeWelcomeDeps([
+            welcomeRecipient({ timezone: 'Mars/Base' }),
+        ]);
+
+        await runEmailReportBatch(deps, NOW);
+
+        expect(sent[0]?.html).toContain('d=2026-10-05');
+    });
+
+    it('첫 리포트를 최근 12시간 안에 받은 회원은 정기 회차를 건너뛰고 다른 회원은 보낸다', async () => {
+        const { deps, sent } = makeDeps({
+            subscriptions: {
+                findEnabledRecipients: vi
+                    .fn()
+                    .mockResolvedValue([
+                        recipient({ userId: 'u-1', email: 'one@example.com' }),
+                        recipient({ userId: 'u-2', email: 'two@example.com' }),
+                    ]),
+            },
+        });
+        vi.mocked(deps.welcomes.findWelcomed).mockResolvedValue(
+            new Set(['u-1'])
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        // 최근 12시간 안에 보낸 회원과, 30분 안에 갱신된 처리 중 행(겹친 실행)을 함께 건너뛴다.
+        expect(deps.welcomes.findWelcomed).toHaveBeenCalledWith(
+            new Date(NOW.getTime() - WELCOME_SUPPRESSES_REPORT_MS),
+            new Date(NOW.getTime() - WELCOME_STALE_SENDING_MS)
+        );
+        expect(deps.deliveries.claim).toHaveBeenCalledTimes(1);
+        expect(deps.deliveries.claim).toHaveBeenCalledWith('u-2', '2026-10-05');
+        expect(sent.map(m => m.to)).toEqual(['two@example.com']);
+        expect(counts).toMatchObject({
+            due: 2,
+            sent: 1,
+            suppressedByWelcome: 1,
+            alreadyClaimed: 0,
+        });
+    });
+
+    it('첫 리포트를 방금 보낸 같은 실행에서 그 회원의 정기 회차를 건너뛴다', async () => {
+        const { deps, sent } = makeDeps({
+            subscriptions: {
+                findEnabledRecipients: vi
+                    .fn()
+                    .mockResolvedValue([recipient({ userId: 'w-1' })]),
+            },
+        });
+        vi.mocked(deps.welcomes.claimDue).mockResolvedValue([
+            welcomeRecipient(),
+        ]);
+        const sentUsers = new Set<string>();
+        vi.mocked(deps.welcomes.finish).mockImplementation(async userId => {
+            sentUsers.add(userId);
+        });
+        // 호출 시점의 스냅샷을 돌려준다 — 첫 리포트 처리보다 먼저 조회하면 비어 있어 이 테스트가 깨진다.
+        vi.mocked(deps.welcomes.findWelcomed).mockImplementation(
+            async () => new Set(sentUsers)
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(1);
+        expect(sent[0]?.subject).toBe('welcomeSubject');
+        expect(deps.deliveries.claim).not.toHaveBeenCalled();
+        expect(counts).toMatchObject({
+            welcomeSent: 1,
+            suppressedByWelcome: 1,
+            sent: 0,
+        });
+    });
+
+    it('첫 리포트 선점이 실패해도 정기 회차는 그대로 돈다', async () => {
+        const { deps, sent } = makeDeps();
+        vi.mocked(deps.welcomes.claimDue).mockRejectedValue(
+            new Error('claim down')
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(1);
+        expect(sent[0]?.subject).not.toBe('welcomeSubject');
+        expect(counts).toMatchObject({ sent: 1, welcomeSent: 0 });
+    });
+
+    it('최근 첫 리포트 조회가 실패하면 건너뛰기 없이 정기 회차를 보낸다', async () => {
+        const { deps, sent } = makeDeps();
+        vi.mocked(deps.welcomes.findWelcomed).mockRejectedValue(
+            new Error('lookup down')
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(1);
+        expect(counts).toMatchObject({ sent: 1, suppressedByWelcome: 0 });
+    });
+
+    it('마감이 지나면 첫 리포트도 더 처리하지 않고 deferred로 센다', async () => {
+        const clock = vi
+            .fn()
+            .mockReturnValueOnce(0)
+            .mockReturnValue(BATCH_DEADLINE_MS + 1);
+        const { deps, sent } = makeWelcomeDeps(
+            [
+                welcomeRecipient({ userId: 'a' }),
+                welcomeRecipient({ userId: 'b' }),
+            ],
+            { clock }
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(sent).toHaveLength(0);
+        expect(deps.welcomes.finish).not.toHaveBeenCalled();
+        expect(counts.deferred).toBe(2);
+    });
+
+    it('첫 리포트 기록도 보관 기간이 지나면 지운다', async () => {
+        const { deps } = makeDeps();
+        vi.mocked(deps.welcomes.pruneOlderThan).mockResolvedValue(2);
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(deps.welcomes.pruneOlderThan).toHaveBeenCalledWith(
+            new Date(NOW.getTime() - DELIVERY_RETENTION_MS)
+        );
+        expect(counts.welcomePruned).toBe(2);
+    });
+
+    it('첫 리포트 기록 정리가 실패해도 배치는 끝난다', async () => {
+        const { deps } = makeDeps();
+        vi.mocked(deps.welcomes.pruneOlderThan).mockRejectedValue(
+            new Error('prune down')
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(counts.welcomePruned).toBe(0);
+        expect(counts.pruned).toBe(3);
     });
 });

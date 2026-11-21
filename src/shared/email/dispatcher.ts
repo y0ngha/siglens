@@ -1,6 +1,6 @@
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { isE2E } from '@/shared/api/e2eEnv';
-import type { EmailDispatcher } from './types';
+import type { KeyedEmailDispatcher, KeyedEmailOutcome } from './types';
 import { E2eEmailDispatcher } from './E2eEmailDispatcher';
 import {
     ResendEmailDispatcher,
@@ -19,9 +19,13 @@ function readResendConfig(): ResendConfig | null {
 }
 
 /** 발송 수단이 설정되지 않은 환경(키 없음, E2E인데 Redis 없음)에서 항상 거절(false)하는 대체 구현. */
-class NoopEmailDispatcher implements EmailDispatcher {
+class NoopEmailDispatcher implements KeyedEmailDispatcher {
     async sendEmail(): Promise<boolean> {
         return false;
+    }
+
+    async sendKeyedEmail(): Promise<KeyedEmailOutcome> {
+        return 'rejected';
     }
 }
 
@@ -38,7 +42,7 @@ class NoopEmailDispatcher implements EmailDispatcher {
  * `e2eFakeOAuthAdapter` import와 같은 근거이며, `E2E_TEST`가 없으면 운영 경로는
  * 그대로다.
  */
-export function createEmailDispatcher(): EmailDispatcher {
+export function createEmailDispatcher(): KeyedEmailDispatcher {
     if (isE2E()) {
         const redis = getRedisClient();
         // 가짜는 캡처 값을 쓸 Redis 클라이언트가 필요하므로 없으면 noop으로 폴백한다.
