@@ -14,7 +14,7 @@ import { createExpiredSessionCookie } from '@/entities/auth/lib/sessionCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { createExpiredMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -81,8 +81,7 @@ async function setLoggedOutCookies(
  * 흔적이 계속 사실을 말해야 한다(메인 `handoff/logout` 라우트가 세션과 함께 지운다).
  */
 async function expireMainSessionHint(secure: boolean): Promise<void> {
-    const expired = createExpiredMainSessionHintCookie({ secure });
-    if (expired) (await cookies()).set(expired);
+    clearMainSessionHint(await cookies(), { secure });
 }
 
 /**

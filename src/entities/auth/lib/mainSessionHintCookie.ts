@@ -88,3 +88,34 @@ export function createExpiredMainSessionHintCookie(params: {
 export function shouldStartHandoff(hintValue: string | undefined): boolean {
     return mainSessionHintDomain() === null || hintValue === '1';
 }
+
+/** `cookies()`(Server Action)와 `NextResponse.cookies`(라우트 핸들러)가 함께 만족하는 쓰기 면. */
+interface MainSessionHintCookieWriter {
+    set(cookie: MainSessionHintCookieDescriptor): unknown;
+}
+
+/**
+ * 흔적 쿠키를 심는다. 게이트가 꺼진 환경(로컬 호스트)에서는 아무것도 하지 않는다.
+ *
+ * 세션을 만드는 호출부(`loginAction`, `registerAction`, `finalizeOAuthSignupAction`, OAuth 콜백)는
+ * 메인 호스트에서만 실행된다: 로그인·가입 폼 페이지(`app/[locale]/login`, `signup`)는 메인에만 있고
+ * ai 호스트의 프록시는 모든 경로를 `app/ai/[locale]/*`로 rewrite하는데 그 아래에 이 폼이 없다.
+ * ai 호스트의 로그인 CTA는 메인 `/login`으로 보낸다. 그래서 여기서 호스트를 따로 가르지 않는다
+ * (ai 호스트 세션을 만드는 `handoff/consume`은 일부러 이 함수를 부르지 않는다).
+ */
+export function setMainSessionHint(
+    store: MainSessionHintCookieWriter,
+    params: { secure: boolean }
+): void {
+    const cookie = createMainSessionHintCookie(params);
+    if (cookie) store.set(cookie);
+}
+
+/** 흔적 쿠키를 지운다. 게이트가 꺼진 환경에서는 아무것도 하지 않는다. */
+export function clearMainSessionHint(
+    store: MainSessionHintCookieWriter,
+    params: { secure: boolean }
+): void {
+    const cookie = createExpiredMainSessionHintCookie(params);
+    if (cookie) store.set(cookie);
+}

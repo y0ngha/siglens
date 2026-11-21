@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { createMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
@@ -46,8 +46,7 @@ export async function redirectSignedIn(
             secure,
         })
     );
-    const mainHint = createMainSessionHintCookie({ secure });
-    if (mainHint) response.cookies.set(mainHint);
+    setMainSessionHint(response.cookies, { secure });
     response.cookies.set(expiredOAuthStateCookie());
     return response;
 }

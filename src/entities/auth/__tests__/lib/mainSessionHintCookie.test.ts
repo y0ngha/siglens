@@ -16,10 +16,12 @@ vi.mock('@/shared/config/aiHost', () => ({
 import { MAIN_SESSION_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import {
+    clearMainSessionHint,
     createExpiredMainSessionHintCookie,
     createMainSessionHintCookie,
     mainSessionHintDomain,
     resolveMainSessionHintDomain,
+    setMainSessionHint,
     shouldStartHandoff,
 } from '@/entities/auth/lib/mainSessionHintCookie';
 
@@ -89,6 +91,24 @@ describe('main session hint cookie (gate active)', () => {
         expect(expired?.path).toBe(set?.path);
     });
 
+    it('setMainSessionHint writes the set descriptor to the store', () => {
+        const set = vi.fn();
+        setMainSessionHint({ set }, { secure: true });
+        expect(set).toHaveBeenCalledTimes(1);
+        expect(set).toHaveBeenCalledWith(
+            createMainSessionHintCookie({ secure: true })
+        );
+    });
+
+    it('clearMainSessionHint writes the expired descriptor to the store', () => {
+        const set = vi.fn();
+        clearMainSessionHint({ set }, { secure: false });
+        expect(set).toHaveBeenCalledTimes(1);
+        expect(set).toHaveBeenCalledWith(
+            createExpiredMainSessionHintCookie({ secure: false })
+        );
+    });
+
     it('shouldStartHandoff is true only for the hint value 1', () => {
         expect(shouldStartHandoff('1')).toBe(true);
         expect(shouldStartHandoff(undefined)).toBe(false);
@@ -108,6 +128,13 @@ describe('main session hint cookie (gate inactive: local hosts)', () => {
         expect(
             createExpiredMainSessionHintCookie({ secure: false })
         ).toBeNull();
+    });
+
+    it('set and clear helpers do not touch the store', () => {
+        const set = vi.fn();
+        setMainSessionHint({ set }, { secure: false });
+        clearMainSessionHint({ set }, { secure: false });
+        expect(set).not.toHaveBeenCalled();
     });
 
     it('shouldStartHandoff is always true (legacy: always probe)', () => {

@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { createExpiredMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
@@ -67,7 +67,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
     response.cookies.set(applyAuthCookie(result.cookie));
     response.cookies.set(createExpiredAuthHintCookie({ secure }));
-    const expiredMainHint = createExpiredMainSessionHintCookie({ secure });
-    if (expiredMainHint) response.cookies.set(expiredMainHint);
+    clearMainSessionHint(response.cookies, { secure });
     return response;
 }

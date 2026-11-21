@@ -11,8 +11,8 @@ import { logActionError } from '@/shared/lib/logActionError';
 import { applyAuthCookie } from '../lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '../lib/authHintCookie';
 import {
-    createExpiredMainSessionHintCookie,
-    createMainSessionHintCookie,
+    clearMainSessionHint,
+    setMainSessionHint,
 } from '../lib/mainSessionHintCookie';
 import { getCurrentUser } from '../server/getCurrentUser';
 import { createExpiredSessionCookie } from '../lib/sessionCookie';
@@ -89,8 +89,6 @@ async function syncMainSessionHint(signedIn: boolean): Promise<void> {
     const present = store.get(MAIN_SESSION_HINT_COOKIE_NAME)?.value === '1';
     if (signedIn === present) return;
     const secure = isSecureCookieEnv();
-    const descriptor = signedIn
-        ? createMainSessionHintCookie({ secure })
-        : createExpiredMainSessionHintCookie({ secure });
-    if (descriptor) store.set(descriptor);
+    if (signedIn) setMainSessionHint(store, { secure });
+    else clearMainSessionHint(store, { secure });
 }

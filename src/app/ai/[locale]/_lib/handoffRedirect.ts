@@ -14,9 +14,11 @@ import { buildHandoffNext } from './handoffTarget';
 /**
  * ai 호스트 세션도 `?sso=none`(또는 프록시가 그에 맞춰 심는 probed 쿠키)도 없고, 메인 호스트
  * 로그인 흔적 쿠키(`siglens_signed_in`)가 있으면 SSO 핸드오프로 한 번 튕긴다. 흔적이 없는
- * 방문자(대부분의 익명 방문)는 왕복 없이 바로 화면을 본다. 목적지는 ai 호스트의 `/api/auth/handoff/start`(상대 경로라
- * 어느 환경에서도 ai 호스트에 머문다) — 브라우저 바인딩 state 쿠키를 먼저 심어야 하는데
- * Server Component 렌더는 쿠키를 설정할 수 없기 때문이다(`api/auth/handoff/start/route.ts`).
+ * 방문자(대부분의 익명 방문)는 왕복 없이 바로 화면을 본다.
+ *
+ * 목적지는 ai 호스트의 `/api/auth/handoff/start`(상대 경로라 어느 환경에서도 ai 호스트에
+ * 머문다) — 브라우저 바인딩 state 쿠키를 먼저 심어야 하는데 Server Component 렌더는
+ * 쿠키를 설정할 수 없기 때문이다(`api/auth/handoff/start/route.ts`).
  *
  * **ai 페이지 `/`와 `/c/[id]`는 다른 데이터 접근·렌더보다 먼저 이것을 불러야 한다** —
  * 메인 사이트에 로그인한 사용자가 익명 랜딩이나 자기 대화의 404를 보지 않게 하려는 것이다.

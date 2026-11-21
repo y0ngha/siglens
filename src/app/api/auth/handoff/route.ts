@@ -9,7 +9,7 @@ import {
     isHandoffToken,
     issueHandoffCode,
 } from '@/entities/auth/server/handoffStore';
-import { createExpiredMainSessionHintCookie } from '@/entities/auth/lib/mainSessionHintCookie';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
@@ -30,6 +30,11 @@ export const dynamic = 'force-dynamic';
  * state — see `handoff/start/route.ts` for the login-CSRF rationale. Start
  * always supplies a valid state, so this cannot loop.
  */
+// The only side effect besides issuing a code is clearing the non-secret,
+// non-auth presence hint on the no-user branch: idempotent, and a cross-site
+// trigger can at worst cost one missed automatic sign-in. The route is a
+// browser-navigation hop by design (`noStoreRedirect`, no-store).
+// react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     const params = request.nextUrl.searchParams;
     if (isAiHost(request.headers.get('host')) || params.get('to') !== 'ai') {
@@ -50,10 +55,9 @@ export async function GET(request: NextRequest): Promise<Response> {
         // 흔적은 있었는데 세션은 없다(만료·다른 기기에서 로그아웃). 흔적을 지워 이 왕복이
         // 한 번으로 끝나게 한다 — 이어지는 `?sso=none`이 probed 쿠키를 심으니 루프도 없다.
         const response = noStoreRedirect(fallback);
-        const expiredMainHint = createExpiredMainSessionHintCookie({
+        clearMainSessionHint(response.cookies, {
             secure: isSecureCookieEnv(),
         });
-        if (expiredMainHint) response.cookies.set(expiredMainHint);
         return response;
     }
 
