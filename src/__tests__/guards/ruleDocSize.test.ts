@@ -3,11 +3,12 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 import {
-    formatSizeTable,
+    judgeBudget,
     measureRuleDocs,
     parseBudget,
     ruleDocPaths,
     totalBytes,
+    type RuleDocSize,
 } from './support/ruleDocs';
 
 /**
@@ -30,18 +31,10 @@ function lineCount(file: string): number {
     return readFileSync(path.join(ROOT, file), 'utf8').split('\n').length;
 }
 
-/** 예산 초과 시 실패 메시지. 통과면 `null`. */
-function budgetViolation(
-    sizes: Parameters<typeof formatSizeTable>[0],
+const budgetViolation = (
+    sizes: readonly RuleDocSize[],
     budget: number | null
-): string | null {
-    if (budget === null) {
-        return 'CLAUDE.md must contain exactly one "Rule-document budget: N bytes." line';
-    }
-    return totalBytes(sizes) <= budget
-        ? null
-        : `rule documents exceed the budget\n${formatSizeTable(sizes, budget)}`;
-}
+): string | null => judgeBudget(sizes, budget).violation;
 
 describe('rule document size', () => {
     it(`every rule document stays at or under ${MAX_LINES} lines`, () => {

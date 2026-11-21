@@ -457,3 +457,12 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 
 - ❌ 새 설정 버전을 만들어 기본으로 지정한 뒤 롤아웃 시작이 실패하면 막힌 버전이 기본으로 남아, 이후 교체가 같은 실패를 반복한다.
 - ✅ 지정 전에 이전 기본값을 기록하고 시작 실패·실패 결과에서 되돌린다. 타임아웃에서는 먼저 롤아웃을 취소하라는 안내를 출력한다.
+
+<a id="TC-41"></a>
+
+#### TC-41 — 규칙 기준선은 줄이기만 한다
+
+`src/__tests__/guards/codeRules.baseline.json`은 `ratchet` 규칙(`non-null-assertion`, `mock-call-index`, `let-then-try`)의 파일별 위반 수를 얼려 둔 기준선이다. `codeRules.test.ts`는 수가 늘거나 새 파일에 위반이 생기면(새 파일은 0에서 시작) 실패하고, 파일이 사라졌는데 남은 항목도 실패한다. 파일이 있는데 위반이 0이 된 항목은 통과하고 줄일 수 있는 항목으로 보고된다(같은 파일을 줄이는 PR 둘이 합쳐져도 master가 깨지지 않게). `yarn rules:ratchet --tighten`을 주기적으로 돌려 줄이고 0 항목을 지운다. 파일의 이름을 바꾸거나 지웠다면(옛 경로가 사라졌을 때만) `--move <옛> <새>`로 항목을 따라 옮기고, 고친 파일을 새 파일로 넘기는 용도로는 거절된다. 값이 같거나 작다는 이유만으로 사라진 항목과 새 항목을 짝짓지 않는다. 도구에는 올리는 경로가 없다. 값을 올리거나 규칙 키를 더하는 것은 JSON을 손으로 고치는 일이고 사용자 승인을 PR 본문에 적어야 한다. 줄 번호가 아니라 파일별 개수만 쓴다(`TESTING.md#TE-44`).
+
+- ❌ 새 테스트의 `mock.calls[0]`이 가드에 걸리자 기준선의 숫자를 올려 통과시킨다.
+- ✅ `mock.calls.find(...)`나 `toHaveBeenCalledWith`로 고친다. `yarn rules:ratchet --against origin/master`가 올라간 값과, git 이름 변경(`-M`)으로 짝지어지지 않은 새 키를 나열한다.

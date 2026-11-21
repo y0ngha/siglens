@@ -418,8 +418,8 @@ describe('semantic text token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
 /** hex 두 개를 알파로 섞는다. */
 function mix(fg: string, alpha: number, bg: string): string {
     const px = (h: string): number[] => {
-        let s = h.slice(1);
-        if (s.length === 3) s = [...s].map(c => c + c).join('');
+        const raw = h.slice(1);
+        const s = raw.length === 3 ? [...raw].map(c => c + c).join('') : raw;
         return [0, 2, 4].map(i => parseInt(s.slice(i, i + 2), 16));
     };
     const [f, b] = [px(fg), px(bg)];

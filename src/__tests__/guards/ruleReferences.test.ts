@@ -172,6 +172,12 @@ function findRetiredDeclarationProblems(docs: readonly RuleDoc[]): string[] {
             match => match[1] ?? ''
         ),
     }));
+    const prefixesByDoc = new Map(
+        anchorsByDoc.map(({ relative, anchors }) => [
+            relative,
+            new Set(anchors.map(prefixOf)),
+        ])
+    );
     const declared = docs.flatMap(({ relative, text }) =>
         parseRetiredIds(text).map(id => ({ relative, id }))
     );
@@ -179,12 +185,7 @@ function findRetiredDeclarationProblems(docs: readonly RuleDoc[]): string[] {
         if (!RULE_ID_PATTERN.test(id)) {
             return [`${relative}: Retired IDs 형식 오류 ${id}`];
         }
-        const ownPrefixes = new Set(
-            (
-                anchorsByDoc.find(doc => doc.relative === relative)?.anchors ??
-                []
-            ).map(prefixOf)
-        );
+        const ownPrefixes = prefixesByDoc.get(relative) ?? new Set<string>();
         const duplicate =
             declared.findIndex(other => other.id === id) !== index;
         const revived = anchorsByDoc

@@ -9,10 +9,9 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-    formatSizeTable,
+    judgeBudget,
     measureRuleDocs,
     parseBudget,
-    totalBytes,
     type RuleDocSize,
 } from '../src/__tests__/guards/support/ruleDocs';
 
@@ -28,16 +27,8 @@ export function buildRuleDocReport(
     sizes: readonly RuleDocSize[],
     budget: number | null
 ): RuleDocReport {
-    if (budget === null) {
-        return {
-            output: 'CLAUDE.md must contain exactly one "Rule-document budget: N bytes." line',
-            exitCode: 1,
-        };
-    }
-    return {
-        output: formatSizeTable(sizes, budget),
-        exitCode: totalBytes(sizes) <= budget ? 0 : 1,
-    };
+    const { violation, output } = judgeBudget(sizes, budget);
+    return { output, exitCode: violation === null ? 0 : 1 };
 }
 
 const executedDirectly =

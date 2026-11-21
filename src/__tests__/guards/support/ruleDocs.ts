@@ -58,6 +58,40 @@ export function totalBytes(sizes: readonly RuleDocSize[]): number {
     return sizes.reduce((sum, { bytes }) => sum + bytes, 0);
 }
 
+export const NO_BUDGET_LINE_MESSAGE =
+    'CLAUDE.md must contain exactly one "Rule-document budget: N bytes." line';
+
+export interface BudgetVerdict {
+    /** 위반 설명. 통과면 `null`. 가드가 그대로 단언하고 스크립트는 종료 코드로 바꾼다. */
+    readonly violation: string | null;
+    /** 사람이 읽을 출력: 통과·초과면 크기 표, 예산 줄이 없으면 그 안내. */
+    readonly output: string;
+}
+
+/**
+ * 가드(`ruleDocSize.test.ts`)와 `yarn rules:size`가 같은 판정·같은 문구를 쓰게 하는 단일 출처.
+ * 예산 줄이 없거나(0번 또는 중복) 합계가 예산을 넘으면 위반이다.
+ */
+export function judgeBudget(
+    sizes: readonly RuleDocSize[],
+    budget: number | null
+): BudgetVerdict {
+    if (budget === null) {
+        return {
+            violation: NO_BUDGET_LINE_MESSAGE,
+            output: NO_BUDGET_LINE_MESSAGE,
+        };
+    }
+    const table = formatSizeTable(sizes, budget);
+    return {
+        violation:
+            totalBytes(sizes) <= budget
+                ? null
+                : `rule documents exceed the budget\n${table}`,
+        output: table,
+    };
+}
+
 /** 파일별 바이트(큰 순), 합계, 여유분(예산 - 합계; 음수면 초과)을 한 문자열로. */
 export function formatSizeTable(
     sizes: readonly RuleDocSize[],
