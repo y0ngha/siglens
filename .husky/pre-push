@@ -49,9 +49,11 @@ wait "$pid_lint" || status=1
 
 run_check "3/$total_checks typecheck" "$tmp_dir/typecheck.log" yarn typecheck || status=1
 # i18n 게이트: 키 패리티·ICU 따옴표·한글 잔존·용어집, 그리고 미추출 한국어 기준선.
-# 둘 다 초 단위이고 모델을 부르지 않는다(결정적) — 사람이 손으로 칠 때만 도는
-# 게이트는 결국 돌지 않는다.
-run_check "4/$total_checks i18n" "$tmp_dir/i18n.log" sh -c 'yarn i18n:lint && yarn i18n:verify' || status=1
+# 셋 다 초 단위이고 모델을 부르지 않는다(결정적) — 사람이 손으로 칠 때만 도는
+# 게이트는 결국 돌지 않는다. i18n:extract:check는 CI의 "i18n extract drift"(extract --write 후
+# git diff)와 같은 산출물을 계산하되 쓰지 않고 비교만 한다 — 소스 줄 번호가 밀려 skips.json이
+# 어긋나는 것을 push 전에 잡는다.
+run_check "4/$total_checks i18n" "$tmp_dir/i18n.log" sh -c 'yarn i18n:lint && yarn i18n:verify && yarn i18n:extract:check' || status=1
 
 # 20260924 test, build는 github actions에서만 돌린다. 로컬에서 돌리면 prerender마다 FMP/Neon/Upstash를 부르므로
 # (1) 로컬 .env.local에 프로덕션 자격증명이 들어있고, (2) prerender마다 실 서비스를 부르므로 느리고, (3) prerender마다 실 서비스를 부르므로 비용이 발생한다. 따라서 로컬 pre-push에서는 test, build를 돌리지 않는다. 대신 github actions에서만 test, build를 돌린다.
