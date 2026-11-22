@@ -37,6 +37,7 @@ import type {
     SignalEpisodeRow,
     SignalEpisodeKey,
     SignalEpisodeStartedRow,
+    SignalLatestEpisodeRow,
     SignalHistoryMarket,
     SignalHubCount,
     SignalHubSymbolCounts,
@@ -106,6 +107,25 @@ export interface SignalHistoryRepository {
         sinceSession: string,
         perMarketLimit: number
     ): Promise<SignalEpisodeRow[]>;
+    /**
+     * `market`의 가장 최근 **완료된** 세션 D(`signal_scan_sessions.completed_at`이 채워진 가장 늦은 세션)까지
+     * 시작돼 D 이후에도 이어진(`last_seen_session >= D`) 에피소드 중 `signalTypes`에 드는 것 — 처음 포착된 세션이 최신인 순, 같은 날이면 등락률 크기순,
+     * 최대 `limit`개. 완료된 세션이 없으면 빈 목록(표가 아직 없는 환경은 `42P01`을 던진다 — 호출부가
+     * 대신할 데이터원으로 넘어간다). 가이드 라이브 블록이 읽는다.
+     *
+     * 비용: 기본키 `(market, session_date, symbol, signal_type)`의 `session_date <= D` 범위를 **거꾸로** 훑으며
+     * `last_seen_session >= D`를 행 필터로 거르고, 정렬 첫 키가 `session_date desc`라 `limit`개를 채우면 멈춘다.
+     * 2026-11-22 로컬 EXPLAIN ANALYZE(미국 12만 행 합성, 신호 한 종류): 정렬 없는 인덱스 역방향 스캔 312행,
+     * 0.4ms. 최악은 최근 첫 포착 행 중 이어진 것이 적어 더 먼 과거까지 훑는 경우인데, 에피소드가 끊기지 않고
+     * 오래 이어지는 상태 신호(52주 신고가 등)도 `limit`이 작아 수천 행 안에서 끝나고 결과는 1시간 캐시된다.
+     * 그래서 지금은 인덱스를 더하지 않는다. 표가 수백만 행으로 커져 이 스캔이 눈에 띄게 느려지면
+     * `(market, last_seen_session)` 인덱스를 추가한다(마이그레이션은 그때).
+     */
+    listLatestSessionEpisodes(
+        signalTypes: readonly string[],
+        market: SignalHistoryMarket,
+        limit: number
+    ): Promise<SignalLatestEpisodeRow[]>;
     /**
      * `signalType`이 `sinceSession` 이후 첫 포착된 서로 다른 종목 수 — 시장별. 페이지 색인 판정과 사이트맵
      * 집계(`recentCountsByType`)가 같은 수를 보게, 목록 상한과 무관하게 전체를 센다.
@@ -505,6 +525,55 @@ export class DrizzleSignalHistoryRepository
             row.market === 'us' || row.market === 'kr'
                 ? [{ ...row, market: row.market }]
                 : []
+        );
+    }
+
+    async listLatestSessionEpisodes(
+        signalTypes: readonly string[],
+        market: SignalHistoryMarket,
+        limit: number
+    ): Promise<SignalLatestEpisodeRow[]> {
+        if (signalTypes.length === 0 || limit <= 0) return [];
+        const latestCompleted = sql`(
+            SELECT max(${signalScanSessions.sessionDate})
+            FROM ${signalScanSessions}
+            WHERE ${signalScanSessions.market} = ${market}
+              AND ${signalScanSessions.completedAt} IS NOT NULL
+        )`;
+        return withRetry(
+            () =>
+                this.db
+                    .select({
+                        symbol: signalEvents.symbol,
+                        koreanName: signalEvents.koreanName,
+                        signalType: signalEvents.signalType,
+                        sessionDate: signalEvents.sessionDate,
+                        changePercent: signalEvents.changePercent,
+                    })
+                    .from(signalEvents)
+                    .where(
+                        and(
+                            eq(signalEvents.market, market),
+                            inArray(signalEvents.signalType, [...signalTypes]),
+                            // 가장 최근 완료 세션 D 기준으로, D까지 시작됐고(`session_date <= D`) D 이후에도
+                            // 이어진(`last_seen_session >= D`) 에피소드. `>=`인 이유: 다음 세션 D+1을 여러
+                            // 실행에 나눠 기록하는 동안 이미 늘어난 에피소드(last_seen = D+1)와 아직 못 만난
+                            // 에피소드(last_seen = D)가 모두 보여야 한다 — `=`로 두면 D+1이 일부만 기록된
+                            // 동안 이어진 에피소드가 목록에서 사라진다. `session_date <= D`는 D+1에 새로
+                            // 열린(미완료 세션의) 행이 먼저 나오지 않게 한다. D의 서브쿼리가 null(완료 세션
+                            // 없음)이면 두 비교가 모두 거짓이라 빈 목록이다.
+                            sql`${signalEvents.lastSeenSession} >= ${latestCompleted}`,
+                            sql`${signalEvents.sessionDate} <= ${latestCompleted}`
+                        )
+                    )
+                    .orderBy(
+                        desc(signalEvents.sessionDate),
+                        desc(sql`abs(${signalEvents.changePercent})`),
+                        signalEvents.symbol,
+                        signalEvents.signalType
+                    )
+                    .limit(limit),
+            DB_TRANSIENT_RETRY
         );
     }
 

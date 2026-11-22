@@ -229,7 +229,7 @@
     },
     {
         "file": "src/app/[locale]/guide/_lib/loadGuideLiveSymbols.ts",
-        "line": 130,
+        "line": 183,
         "reason": "developer-diagnostic",
         "text": "`[guide-live] ${source} 조회 실패 — 비운 채로 진행한다`"
     },
@@ -997,7 +997,7 @@
     },
     {
         "file": "src/entities/signal-history/api.ts",
-        "line": 847,
+        "line": 916,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 사이트맵 집계 실패"
     },
