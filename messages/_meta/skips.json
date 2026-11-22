@@ -571,43 +571,43 @@
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 19,
+        "line": 20,
         "reason": "log-fallback-message",
         "text": "이미 사용 중인 이메일입니다."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 21,
+        "line": 22,
         "reason": "log-fallback-message",
         "text": "이메일 인증을 완료해야 회원가입이 가능합니다."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",
-        "line": 22,
+        "line": 23,
         "reason": "log-fallback-message",
         "text": "필수 동의 항목을 확인해주세요."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 16,
+        "line": 21,
         "reason": "log-fallback-message",
         "text": "인증 코드가 올바르지 않습니다."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 17,
+        "line": 22,
         "reason": "log-fallback-message",
         "text": "인증 코드가 만료되었습니다."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 19,
+        "line": 24,
         "reason": "log-fallback-message",
         "text": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 21,
+        "line": 26,
         "reason": "log-fallback-message",
         "text": "인증 코드를 여러 번 잘못 입력했습니다. 새 코드를 받아 주세요."
     },

@@ -57,10 +57,12 @@ describe('Email verification edge cases', () => {
         }
     });
 
-    it('returns ok: true when already verified', async () => {
+    it('rejects a wrong code when already verified (no free pass for a stranger)', async () => {
         const emailTokens = createMockEmailTokens({
             get: vi.fn().mockResolvedValue({
                 status: 'verified',
+                tokenHash: hashEmailToken('654321'),
+                bindingHash: hashEmailToken('binding'),
             }),
         });
 
@@ -69,7 +71,8 @@ describe('Email verification edge cases', () => {
             { emailTokens, ...ALLOW_ALL }
         );
 
-        expect(result.ok).toBe(true);
+        expect(result.ok).toBe(false);
+        expect(emailTokens.set).not.toHaveBeenCalled();
     });
 
     it('returns ok: true and sets verified status on correct code', async () => {
@@ -90,7 +93,10 @@ describe('Email verification edge cases', () => {
         expect(emailTokens.set).toHaveBeenCalledWith(
             'email_verification',
             'test@example.com',
-            { status: 'verified' },
+            expect.objectContaining({
+                status: 'verified',
+                tokenHash: hashEmailToken(code),
+            }),
             expect.any(Number)
         );
     });

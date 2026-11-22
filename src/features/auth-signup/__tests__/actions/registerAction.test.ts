@@ -166,13 +166,16 @@ function makeConsentFormData(overrides: Record<string, string> = {}): FormData {
 
 describe('registerAction', () => {
     let setSpy: Mock;
+    let getSpy: Mock;
 
     beforeEach(() => {
         resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         setSpy = vi.fn();
+        getSpy = vi.fn().mockReturnValue(undefined);
         mockCookies.mockResolvedValue({
             set: setSpy,
+            get: getSpy,
         } as unknown as Awaited<ReturnType<typeof cookies>>);
         mockRegister.mockReset();
         mockLogin.mockReset();
@@ -383,6 +386,80 @@ describe('registerAction', () => {
                         delete: expect.any(Function),
                     }),
                     agreements: expect.any(DrizzleAgreementRepository),
+                })
+            );
+        });
+    });
+
+    describe('인증 바인딩 쿠키', () => {
+        it('siglens_signup_verify 쿠키 값을 registerUser에 verificationBinding으로 넘긴다', async () => {
+            getSpy.mockImplementation((name: string) =>
+                name === 'siglens_signup_verify'
+                    ? { name, value: 'nonce-from-cookie' }
+                    : undefined
+            );
+            mockRegister.mockResolvedValue({
+                ok: false,
+                error: {
+                    code: 'email_not_verified',
+                    field: 'email' as const,
+                    message: 'x',
+                },
+            });
+
+            await registerAction({ error: null }, makeConsentFormData());
+
+            expect(mockRegister).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    verificationBinding: 'nonce-from-cookie',
+                }),
+                expect.anything()
+            );
+        });
+
+        it('쿠키가 없으면 verificationBinding은 null이다(다른 브라우저)', async () => {
+            mockRegister.mockResolvedValue({
+                ok: false,
+                error: {
+                    code: 'email_not_verified',
+                    field: 'email' as const,
+                    message: 'x',
+                },
+            });
+
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+
+            expect(mockRegister).toHaveBeenCalledWith(
+                expect.objectContaining({ verificationBinding: null }),
+                expect.anything()
+            );
+            expect(result.error?.code).toBe('email_not_verified');
+            expect(setSpy).not.toHaveBeenCalled();
+        });
+
+        it('가입이 성공하면 바인딩 쿠키를 만료시킨다', async () => {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+
+            await expect(
+                registerAction({ error: null }, makeConsentFormData())
+            ).rejects.toThrow('NEXT_REDIRECT');
+
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_signup_verify',
+                    value: '',
+                    maxAge: 0,
+                    httpOnly: true,
+                    sameSite: 'strict',
                 })
             );
         });

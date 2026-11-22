@@ -11,6 +11,12 @@ import { createFakeFixedWindowLimiter } from '@/shared/test-utils/fakeFixedWindo
 
 const VALID_CODE = '123456';
 const STORED_HASH = hashEmailToken(VALID_CODE);
+const OLD_BINDING_HASH = hashEmailToken('previous-browser-nonce');
+const VERIFIED_MARKER = {
+    status: 'verified',
+    tokenHash: STORED_HASH,
+    bindingHash: OLD_BINDING_HASH,
+} as const satisfies EmailTokenValue;
 const IP_HASH = 'iphash';
 const IP_KEY = `auth:signup-verify:ip:${IP_HASH}`;
 const ATTEMPTS_KEY = `auth:signup-verify:e:${hashEmailToken('user@example.com')}`;
@@ -86,9 +92,9 @@ describe('verifyEmail', () => {
         expect(setToken).not.toHaveBeenCalled();
     });
 
-    it('returns ok true idempotently when entry is already verified', async () => {
+    it('rotates the binding when the right code is proven again on a verified marker (newest browser wins)', async () => {
         const { dependencies, setToken } = makeDependencies({
-            stored: { status: 'verified' },
+            stored: VERIFIED_MARKER,
         });
 
         const result = await verifyEmail(
@@ -96,7 +102,35 @@ describe('verifyEmail', () => {
             dependencies
         );
 
-        expect(result).toEqual({ ok: true });
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        const written = setToken.mock.calls.find(
+            call => call[1] === 'user@example.com'
+        )?.[2];
+        expect(written).toEqual({
+            status: 'verified',
+            tokenHash: STORED_HASH,
+            bindingHash: hashEmailToken(result.bindingToken),
+        });
+        expect(hashEmailToken(result.bindingToken)).not.toBe(OLD_BINDING_HASH);
+    });
+
+    it('returns invalid_verification_code and writes nothing when a verified marker meets a wrong code', async () => {
+        const { dependencies, setToken } = makeDependencies({
+            stored: VERIFIED_MARKER,
+        });
+
+        const result = await verifyEmail(
+            { email: 'user@example.com', code: '999999' },
+            dependencies
+        );
+
+        expect(result).toEqual({
+            ok: false,
+            error: expect.objectContaining({
+                code: 'invalid_verification_code',
+            }),
+        });
         expect(setToken).not.toHaveBeenCalled();
     });
 
@@ -168,7 +202,10 @@ describe('verifyEmail', () => {
             dependencies
         );
 
-        expect(result).toEqual({ ok: true });
+        expect(result).toEqual({
+            ok: true,
+            bindingToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+        });
         expect(getToken).toHaveBeenCalledWith(
             'email_verification',
             'user@example.com'
@@ -176,9 +213,48 @@ describe('verifyEmail', () => {
         expect(setToken).toHaveBeenCalledWith(
             'email_verification',
             'user@example.com',
-            { status: 'verified' },
+            {
+                status: 'verified',
+                tokenHash: STORED_HASH,
+                bindingHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+            },
             EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS
         );
+    });
+
+    it('stores the hash of the returned binding token, never the token itself', async () => {
+        const { dependencies, setToken } = makeDependencies();
+
+        const result = await verifyEmail(
+            { email: 'user@example.com', code: VALID_CODE },
+            dependencies
+        );
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        const written = setToken.mock.calls.find(
+            call => call[1] === 'user@example.com'
+        )?.[2];
+        expect(written).toMatchObject({
+            bindingHash: hashEmailToken(result.bindingToken),
+        });
+        expect(JSON.stringify(written)).not.toContain(result.bindingToken);
+    });
+
+    it('issues a different binding token on every verification', async () => {
+        const first = await verifyEmail(
+            { email: 'user@example.com', code: VALID_CODE },
+            makeDependencies().dependencies
+        );
+        const second = await verifyEmail(
+            { email: 'user@example.com', code: VALID_CODE },
+            makeDependencies().dependencies
+        );
+
+        expect(first.ok && second.ok).toBe(true);
+        if (first.ok && second.ok) {
+            expect(first.bindingToken).not.toBe(second.bindingToken);
+        }
     });
 
     describe('남용 한도', () => {
@@ -289,12 +365,14 @@ describe('verifyEmail', () => {
 
             await Promise.all(['1', '2', '3', '4'].map(code => verify(code)));
 
-            await expect(verify(VALID_CODE)).resolves.toEqual({ ok: true });
+            await expect(verify(VALID_CODE)).resolves.toMatchObject({
+                ok: true,
+            });
         });
 
         it('keeps a verified marker when the attempts are over the cap', async () => {
             const { dependencies, deleteToken } = makeDependencies({
-                stored: { status: 'verified' },
+                stored: VERIFIED_MARKER,
                 blockKey: ATTEMPTS_KEY,
             });
 
@@ -349,7 +427,30 @@ describe('verifyEmail', () => {
 
             expect(sent).toMatchObject({ ok: true, codeIssued: true });
             expect(limiter.count(ATTEMPTS_KEY)).toBe(0);
-            await expect(verify(VALID_CODE)).resolves.toEqual({ ok: true });
+            await expect(verify(VALID_CODE)).resolves.toMatchObject({
+                ok: true,
+            });
+        });
+
+        it('counts attempts on the verified path too: the 6th try is refused even with the right code', async () => {
+            const { dependencies, setToken } = makeDependencies({
+                stored: VERIFIED_MARKER,
+            });
+            const verify = (code: string) =>
+                verifyEmail({ email: 'user@example.com', code }, dependencies);
+
+            await Promise.all(
+                ['1', '2', '3', '4', '5'].map(code => verify(code))
+            );
+            const sixth = await verify(VALID_CODE);
+
+            expect(sixth).toEqual({
+                ok: false,
+                error: expect.objectContaining({
+                    code: 'too_many_verification_attempts',
+                }),
+            });
+            expect(setToken).not.toHaveBeenCalled();
         });
     });
 });
