@@ -7,6 +7,17 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import type { CopyReportState } from '../model/types';
 
+/**
+ * 복사 결과(`copied`/`failed`) 표시 모양. 반투명 틴트 보더는 컨트롤 보더 가드의
+ * 이름 단위 예외(`ALLOWED_CONSTANTS`)다 — 잠깐 보이는 결과 표시이고 상태는 보더가
+ * 아니라 문구("복사됨"/"복사 실패")와 채움이 전한다. 평상시 `idle`은 예외에 넣지 않고
+ * 여는 태그 안에 둬서 가드가 계속 본다.
+ */
+const RESULT_CLASSES: Record<Exclude<CopyReportState, 'idle'>, string> = {
+    copied: 'border-primary-400/40 bg-primary-400/10 text-primary-300',
+    failed: 'border-chart-bearish/40 bg-chart-bearish/10 text-ui-danger-text',
+};
+
 interface CopyReportButtonProps {
     copyState: CopyReportState;
     /** 분석 진행 중 — 곧 바뀔 결과를 복사하지 않도록 비활성화한다. */
@@ -38,15 +49,13 @@ export function CopyReportButton({
             aria-disabled={isBusy}
             className={cn(
                 'focus-visible:ring-primary-500 min-h-11 touch-manipulation rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                // 상태별 색은 이 여는 태그 안에 둔다 — controlBorderTokenGuard의
-                // 요소 예외가 이 태그 단위로 걸려 있어, 상수로 빼면 검사 대상이 바뀐다.
+                // 진행 중 모양은 `aria-disabled:` 변형이라 controlBorderTokenGuard가
+                // 비활성(WCAG 1.4.11 면제)으로 읽는다. 그래서 예외 목록이 필요 없다.
                 isBusy
-                    ? 'border-secondary-700 text-secondary-500 cursor-not-allowed'
-                    : {
-                          copied: 'border-primary-400/40 bg-primary-400/10 text-primary-300',
-                          failed: 'border-chart-bearish/40 bg-chart-bearish/10 text-ui-danger-text',
-                          idle: 'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100',
-                      }[copyState]
+                    ? 'aria-disabled:border-secondary-700 aria-disabled:text-secondary-500 aria-disabled:cursor-not-allowed'
+                    : copyState === 'idle'
+                      ? 'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100'
+                      : RESULT_CLASSES[copyState]
             )}
             title={
                 isBusy ? t('AnalysisPanel.39c545') : t('AnalysisPanel.32f681')

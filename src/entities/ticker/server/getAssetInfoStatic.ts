@@ -5,6 +5,11 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 
 /**
+ * 종목 정보 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const ASSET_INFO_STATIC_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
+/**
  * ISR static-safe asset-info fetch. `getAssetInfoAction`(='use server' → getAssetInfo:
  * crypto_assets DB → FMP 크립토 목록(인스턴스 메모리) → asset_translations DB →
  * 12h 임시 Redis 항목 → yahoo/FMP)을 Next data cache로 감싸 static generate가 내부 redis/DB no-store
@@ -47,6 +52,9 @@ export function getAssetInfoStatic(ticker: string): Promise<AssetInfo | null> {
         // 렌더 예산: FMP 폴백이 느리면 짧게 실패해 resilient 래퍼가 degrade한다.
         () => runWithRenderBudget(() => getAssetInfoAction(upper)),
         ['asset-info-static', upper],
-        { revalidate: SECONDS_PER_DAY, tags: [`symbol:${upper}`] }
+        {
+            revalidate: ASSET_INFO_STATIC_REVALIDATE_SECONDS,
+            tags: [`symbol:${upper}`],
+        }
     )();
 }

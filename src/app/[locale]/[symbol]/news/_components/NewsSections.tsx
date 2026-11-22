@@ -33,6 +33,11 @@ import {
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
+ * 뉴스 탭 섹션 정적 캐시(`news:earnings`·`news:grades`·`news:analyst-history`)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const NEWS_SECTION_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
+
+/**
  * Yahoo 변경 이력(목표가 포함)을 기다리는 최대 시간. 이력은 보강이라 크롤러가 받는 본문을 이것 때문에 오래 붙잡지
  * 않는다 — 넘기면 기존 등급 목록으로 그린다.
  */
@@ -98,7 +103,7 @@ async function loadAnalystHistoryItems(
         symbol,
         load: () => getAnalystActionHistory(symbol),
         budgetMs: ANALYST_HISTORY_BUDGET_MS,
-        ttlSeconds: SECONDS_PER_HALF_DAY,
+        ttlSeconds: NEWS_SECTION_REVALIDATE_SECONDS,
         failureLog:
             '[AnalystActionsSection] Yahoo history load failed, using grade events:',
     });
@@ -203,7 +208,7 @@ export async function EventCalendarSection({
             symbol,
             () => getEarningsReportComparison(symbol, today),
             [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
+            NEWS_SECTION_REVALIDATE_SECONDS
         ).catch((error: unknown) =>
             degradeSection(
                 '[EventCalendarSection] earnings load failed, degrading:',
@@ -251,7 +256,7 @@ export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
         symbol,
         () => getGradeEvents(symbol),
         [newsCacheTag(symbol)],
-        SECONDS_PER_HALF_DAY
+        NEWS_SECTION_REVALIDATE_SECONDS
     ).catch((error: unknown) =>
         degradeSection(
             '[AnalystActionsSection] grades load failed, degrading:',

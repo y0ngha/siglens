@@ -19,6 +19,11 @@ import { isE2EFlowsPipelineCollecting } from './e2eFlowsPipeline';
 import { loadInvestorFlowsPipelineReadiness } from './loadInvestorFlowsPipelineReadiness';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
+/**
+ * 수급 파이프라인 준비 상태 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const INVESTOR_FLOWS_READINESS_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
+
 /** 종목 무관 캐시의 `symbol:` 태그 자리에 들어가는 센티널(`staticSymbolCache`는 키 형식을 강제하지 않는다). */
 const READINESS_CACHE_SCOPE = '__INVESTOR_FLOWS_PIPELINE__';
 
@@ -84,7 +89,7 @@ export const getInvestorFlowsPipelineReadiness = cache(
                 READINESS_CACHE_SCOPE,
                 loadFromDatabase,
                 [INVESTOR_FLOWS_READINESS_TAG],
-                SECONDS_PER_HALF_DAY
+                INVESTOR_FLOWS_READINESS_REVALIDATE_SECONDS
             );
         } catch (error) {
             if (isDynamicServerError(error)) throw error;

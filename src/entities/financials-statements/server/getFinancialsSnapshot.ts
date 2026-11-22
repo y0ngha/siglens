@@ -7,6 +7,11 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { ANNUAL_LIMIT } from '../lib/financialsSnapshot';
 
 /**
+ * 재무제표 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
+/**
  * per-symbol Next data cache 태그 — `revalidateTag('financials:AAPL')`로
  * 그룹 무효화가 가능하다. staticSymbolCache의 `symbol:${symbol}` 태그와 함께
  * 두 수준의 무효화(심볼 전체 / 재무 그룹)를 지원한다.
@@ -56,7 +61,7 @@ export const getFinancialsSnapshot = cache(
                 symbol,
                 fetcher,
                 extraTags,
-                SECONDS_PER_DAY
+                FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS
             );
         }
 
