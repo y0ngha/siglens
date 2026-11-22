@@ -1756,16 +1756,6 @@
                 "percentagePoint": "pp",
                 "thousandPeople": "K"
             },
-            "entryRecommendation": {
-                "avoid": "Hold off",
-                "enter": "Enter now",
-                "wait": "Wait"
-            },
-            "entryStance": {
-                "avoid": "Conservative risk management and position sizing take priority over aggressive moves in this zone.",
-                "enter": "A phased entry may be worth considering once key support is confirmed.",
-                "wait": "A wait-and-see stance is more appropriate until the trend is reconfirmed."
-            },
             "fearGreed": {
                 "extremeFear": "Extreme Fear",
                 "extremeGreed": "Extreme Greed",
@@ -3725,7 +3715,6 @@
         "analysis": {
             "AnalysisPanel": {
                 "251228": "Key Price Levels",
-                "720097": "Risk",
                 "034be7": "Trading Strategy",
                 "06c8ed": "Chart",
                 "0b5eb6": "Trendline",
@@ -3757,13 +3746,13 @@
                 "e5c85b": "Copied",
                 "e815ab": "Copy Failed",
                 "ecb4cc": "Sign Up",
-                "edb872": "Entry Opinion",
                 "f0256c": "Sign up to receive detailed analysis with all analysis techniques applied.",
                 "f0cdeb": "AI Analysis",
                 "fb0cf0": "Key Prices",
                 "bcc718": "View on Chart",
                 "f66b28": "View {v0} on chart",
-                "currentTrend": "Current trend: {v0}"
+                "currentTrend": "Current trend: {v0}",
+                "volatilityLabel": "Volatility"
             },
             "AnalysisProgress": {
                 "784c44": "AI Analysis in Progress"
@@ -3807,11 +3796,18 @@
                 "levelConvergence": ", {v0} converging reasons",
                 "levelsResistance": "- Resistance: {v0}",
                 "levelsSupport": "- Support: {v0}",
+                "planAboveZone": "The current price is above the planned entry zone.",
+                "planBelowZone": "The current price is below the planned entry zone.",
+                "planInZone": "The current price is inside the planned entry zone.",
+                "planNoSetupNoRoomAbove": "No target leaves room above the entry zone, so there is no level to plan from.",
+                "planNoSetupNoStop": "A stop loss level cannot be set, so there is no level to plan from.",
+                "planNoSetupNoZone": "There is no entry zone, so there is no level to plan from.",
+                "planNoSetupStopped": "The current price is below the stop loss level, so there is no level to plan from.",
                 "reportTitle": "[{v0}] Technical analysis report",
                 "resistanceNote": "On the upside, confirming resistance around {v0} matters.",
                 "responseStance": "How to respond:",
                 "riskHigh": "Keep the possibility of widening volatility front of mind.",
-                "riskLabel": "Risk:",
+                "riskLabel": "Volatility:",
                 "riskLow": "For the current reading to hold, key support and resistance need to confirm.",
                 "riskMedium": "The reading can change quickly depending on whether key levels break.",
                 "scenarioHeading": "Scenarios:",
@@ -3821,7 +3817,7 @@
                 "stanceNeutral": "In terms of response, a confirmation-first approach fits until direction is re-established.",
                 "supportNote": "On the downside, whether support around {v0} holds is the key.",
                 "targetZone": "- Reference target zone: {v0}",
-                "trendSummary": "The current move reads as {v1} within a {v0} trend, with {v2} risk.",
+                "trendSummary": "The current move reads as {v1} within a {v0} trend, with {v2} volatility.",
                 "upside": "- Upside: {v0} → {v1}"
             },
             "panel": {
@@ -3919,6 +3915,18 @@
                 "planVoidDescription": "At the time of analysis, the closing price was already below this price.",
                 "trendHeadline": "<prefix>Current trend:</prefix> <value>{v0}</value>",
                 "analyzedAt": "Analysis time"
+            },
+            "planState": {
+                "aboveZone": "Above the plan zone",
+                "belowZone": "Below the plan zone",
+                "inZone": "Inside the plan zone",
+                "label": "Plan status",
+                "noSetup": "No level to plan from",
+                "reasonNoRoomAbove": "No target leaves room above the entry zone",
+                "reasonNoStop": "A stop loss level cannot be set",
+                "reasonNoZone": "There is no entry zone",
+                "reasonStopped": "Price is below the stop loss level",
+                "stopAtr": "The stop loss is based on price range (ATR), not on a price level"
             }
         },
         "backtesting": {

@@ -143,6 +143,13 @@ const makeActionRecommendation = (
     exit: '청산 전략',
     riskReward: '리스크/리워드',
     entryRecommendation: 'wait',
+    planState: {
+        position: 'above_zone',
+        distanceAtr: 1.2,
+        atr: 2,
+        stopDistanceAtr: 1.1,
+        stopBasis: 'model',
+    },
     ...overrides,
 });
 
@@ -798,7 +805,47 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('UniqueStrategy')).toBeInTheDocument();
     });
 
-    it('renders ActionRecommendationSection with entry recommendation', () => {
+    it('renders the plan state badge for a close inside the zone', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    actionRecommendation: makeActionRecommendation({
+                        entryRecommendation: 'enter',
+                        planState: {
+                            position: 'in_zone',
+                            distanceAtr: 0,
+                            atr: 2,
+                            stopDistanceAtr: 1.1,
+                            stopBasis: 'model',
+                        },
+                    }),
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+
+        expect(screen.getByText('계획 상태')).toBeInTheDocument();
+        expect(screen.getByText('계획 구간 안')).toBeInTheDocument();
+        expect(screen.getByText('매매 전략')).toBeInTheDocument();
+    });
+
+    it('labels the grade in the header as volatility, not risk', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({ riskLevel: 'high' })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+
+        expect(screen.getByText('변동성')).toBeInTheDocument();
+        expect(screen.queryByText('리스크')).not.toBeInTheDocument();
+    });
+
+    it('does not show the legacy verdict labels any more', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -812,42 +859,9 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        expect(screen.getByText('지금 진입')).toBeInTheDocument();
-        expect(screen.getByText('매매 전략')).toBeInTheDocument();
-    });
-
-    it('renders ActionRecommendationSection with wait recommendation', () => {
-        render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={makeAnalysis({
-                    actionRecommendation: makeActionRecommendation({
-                        entryRecommendation: 'wait',
-                    }),
-                })}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-            />
-        );
-
-        expect(screen.getByText('관망')).toBeInTheDocument();
-    });
-
-    it('renders ActionRecommendationSection with avoid recommendation', () => {
-        render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={makeAnalysis({
-                    actionRecommendation: makeActionRecommendation({
-                        entryRecommendation: 'avoid',
-                    }),
-                })}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-            />
-        );
-
-        expect(screen.getByText('진입 보류')).toBeInTheDocument();
+        expect(screen.queryByText('지금 진입')).not.toBeInTheDocument();
+        expect(screen.queryByText('관망')).not.toBeInTheDocument();
+        expect(screen.queryByText('진입 보류')).not.toBeInTheDocument();
     });
 
     it('renders action recommendation text fields', () => {
@@ -1572,13 +1586,14 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('주요 레벨')).toBeInTheDocument();
     });
 
-    it('skips rendering action recommendation section without entryRecommendation', () => {
+    it('shows no plan badge on an old result without planState', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis({
                     actionRecommendation: makeActionRecommendation({
-                        entryRecommendation: undefined,
+                        entryRecommendation: 'enter',
+                        planState: undefined,
                     }),
                 })}
                 keyLevels={EMPTY_KEY_LEVELS}
@@ -1586,7 +1601,8 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        expect(screen.queryByText('진입 의견')).not.toBeInTheDocument();
+        expect(screen.queryByText('계획 상태')).not.toBeInTheDocument();
+        expect(screen.queryByText('지금 진입')).not.toBeInTheDocument();
         expect(screen.getByText('매매 전략')).toBeInTheDocument();
     });
 

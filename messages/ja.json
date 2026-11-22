@@ -1756,16 +1756,6 @@
                 "percentagePoint": "%ポイント",
                 "thousandPeople": "千人"
             },
-            "entryRecommendation": {
-                "avoid": "エントリー見送り",
-                "enter": "今すぐエントリー",
-                "wait": "様子見"
-            },
-            "entryStance": {
-                "avoid": "積極的な対応より保守的な管理とポジション調整が優先される局面です。",
-                "enter": "主要サポート確認後、分割エントリーの可能性を検討できます。",
-                "wait": "トレンド再確認まで様子見の姿勢がより適切です。"
-            },
             "fearGreed": {
                 "extremeFear": "極度の恐怖",
                 "extremeGreed": "極度の強欲",
@@ -3725,7 +3715,6 @@
         "analysis": {
             "AnalysisPanel": {
                 "251228": "主要価格帯",
-                "720097": "リスク",
                 "034be7": "売買戦略",
                 "06c8ed": "チャート",
                 "0b5eb6": "トレンドライン",
@@ -3757,13 +3746,13 @@
                 "e5c85b": "コピーされました",
                 "e815ab": "コピー失敗",
                 "ecb4cc": "会員登録",
-                "edb872": "エントリー意見",
                 "f0256c": "会員登録すると、すべての分析手法を適用した詳細な分析を受けられます。",
                 "f0cdeb": "AI分析",
                 "fb0cf0": "主要価格",
                 "bcc718": "チャートで表示",
                 "f66b28": "{v0}をチャートで表示",
-                "currentTrend": "現在のトレンド：{v0}"
+                "currentTrend": "現在のトレンド：{v0}",
+                "volatilityLabel": "ボラティリティ"
             },
             "AnalysisProgress": {
                 "784c44": "AI分析進行中"
@@ -3807,11 +3796,18 @@
                 "levelConvergence": "、根拠{v0}件が収束",
                 "levelsResistance": "- レジスタンス: {v0}",
                 "levelsSupport": "- サポート: {v0}",
+                "planAboveZone": "現在価格は計画したエントリー範囲より上にあります。",
+                "planBelowZone": "現在価格は計画したエントリー範囲より下にあります。",
+                "planInZone": "現在価格は計画したエントリー範囲の中にあります。",
+                "planNoSetupNoRoomAbove": "エントリー範囲の上に余裕のある目標価格がないため、計画の基準にできる水準がありません。",
+                "planNoSetupNoStop": "損切りの基準を決められないため、計画の基準にできる水準がありません。",
+                "planNoSetupNoZone": "エントリー範囲がないため、計画の基準にできる水準がありません。",
+                "planNoSetupStopped": "現在価格が損切りの基準を下回っているため、計画の基準にできる水準がありません。",
                 "reportTitle": "[{v0}] テクニカル分析レポート",
                 "resistanceNote": "上方では{v0}付近のレジスタンス確認が重要です。",
                 "responseStance": "対応の視点:",
                 "riskHigh": "ボラティリティ拡大の可能性をまず念頭に置く必要があります。",
-                "riskLabel": "リスク:",
+                "riskLabel": "ボラティリティ:",
                 "riskLow": "現在の解釈が維持されるには、重要なサポートとレジスタンスの確認が必要です。",
                 "riskMedium": "重要な価格帯を抜けるかどうかで、解釈が急速に変わり得ます。",
                 "scenarioHeading": "シナリオ:",
@@ -3821,7 +3817,7 @@
                 "stanceNeutral": "対応の視点では、方向性が再確認されるまで確認重視のアプローチが適切です。",
                 "supportNote": "下方では{v0}付近のサポートを維持できるかが鍵です。",
                 "targetZone": "- 目標参考ゾーン: {v0}",
-                "trendSummary": "現在の流れは{v0}の中で{v1}と解釈され、リスクは{v2}水準です。",
+                "trendSummary": "現在の流れは{v0}の中で{v1}と解釈され、ボラティリティは{v2}水準です。",
                 "upside": "- 上方: {v0} → {v1}"
             },
             "panel": {
@@ -3919,6 +3915,18 @@
                 "planVoidDescription": "分析時点の終値はすでにこの価格を下回っていました。",
                 "trendHeadline": "<prefix>現在のトレンド：</prefix><value>{v0}</value>",
                 "analyzedAt": "分析日時"
+            },
+            "planState": {
+                "aboveZone": "計画の範囲より上",
+                "belowZone": "計画の範囲より下",
+                "inZone": "計画の範囲内",
+                "label": "計画の状態",
+                "noSetup": "計画の基準にできる水準なし",
+                "reasonNoRoomAbove": "エントリー範囲の上に余裕のある目標価格がありません",
+                "reasonNoStop": "損切りの基準を決められません",
+                "reasonNoZone": "エントリー範囲がありません",
+                "reasonStopped": "現在価格が損切りの基準を下回っています",
+                "stopAtr": "損切りは価格帯ではなく値幅(ATR)が基準です"
             }
         },
         "backtesting": {

@@ -14,7 +14,7 @@ const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
 export interface LockedSections {
     /** 잠긴 조각이 하나라도 있다 — 업셀 카드·복사 버튼 숨김의 기준. */
     hasLockedDetails: boolean;
-    /** 리스크 배지 숨김. (주요 레벨은 core가 같은 깊이에서 이미 비워 보낸다.) */
+    /** 변동성 배지 숨김. (주요 레벨은 core가 같은 깊이에서 이미 비워 보낸다.) */
     hasLockedPartialDetail: boolean;
     /** 매매 전략 섹션·미터 공개 띠 숨김. */
     hasLockedActionDetail: boolean;
