@@ -207,7 +207,10 @@ put_alert_filter siglens-seed-bars-failed '"getSeedBarsStatic failed"' P2 20
 put_alert_filter siglens-redis-cache-failures '?"[getOrSetCache] get failed" ?"[getOrSetCache] set failed"' P2 10
 
 # 에이전트 용량 초과(busy) — 인스턴스 하나가 새 분석 동시 실행 상한(10) 또는 에이전트 턴
-# 동시 상한(4)·분석 스트림 슬롯에 걸려 요청을 거절했다. 마커는 `[agent] busy`
+# 상한(일하는 턴 4, 새 분석을 기다리며 주차한 턴을 합친 하드 상한 14)·분석 스트림 슬롯에 걸려
+# 요청을 거절했다. 턴 요청은 거절 전에 FIFO 대기열(8명, 15초)에서 기다리므로 거절 사유(`reason`)는
+# `queue_full`(줄이 참)·`queue_timeout`(15초 초과)이고, 막은 쪽은 `blockedBy`
+# (`agent_turn_slots`·`analysis_stream_slots`)에 남는다. 새 분석 상한은 `fresh_analysis_slots`. 마커는 `[agent] busy`
 # (tools/runFreshAnalysis.ts의 AGENT_BUSY_LOG, stream/route.ts 용량 게이트). 사용자에겐
 # "지금 혼잡"으로만 보이므로 1건이라도 나면 알린다. 사용자별 턴 락(409)은 한 사람의
 # 중복 전송이라 마커를 찍지 않는다. P2: 사이트 다운이 아니라 증설 신호.

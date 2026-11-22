@@ -28,6 +28,7 @@ import {
     createToolExecutor,
 } from '@/app/api/ai/chat/tools/chatTools';
 import { createFollowUpTextFilter } from '@/app/api/ai/chat/followUps';
+import type { TurnSlot } from './turnSlots';
 import { persistedStatusFor } from './persistedStatus';
 import { isConversationGone, type ReadyTurn } from './prepareTurn';
 import { createTurnCharts } from './turnCharts';
@@ -69,6 +70,13 @@ export interface AgentTurnStreamParams {
     timeZone: string | undefined;
     /** 턴이 끝나면(성공·실패·중단) 정확히 한 번 불리는 슬롯·락 반납. */
     release: () => Promise<void>;
+    /**
+     * 이 턴이 쥔 슬롯. 새 분석(`run_fresh_analysis`) 결과만 기다리는 동안 주차해 "일하는 턴" 수에서
+     * 뺀다. 반납은 `release`가 한다.
+     */
+    slot: TurnSlot;
+    /** 줄에서 기다린 시간(ms). 기다리지 않았으면 0. `[Agent]` 줄에 싣는다. */
+    queuedMs: number;
 }
 
 /**
@@ -84,6 +92,8 @@ export function agentTurnStream({
     locale,
     timeZone,
     release,
+    slot,
+    queuedMs,
 }: AgentTurnStreamParams): ReadableStream<Uint8Array> {
     const {
         repo,
@@ -103,6 +113,14 @@ export function agentTurnStream({
         { analysisModel: AGENT_MODEL },
         { onChart: charts.register }
     );
+    // 도구 호출 id별 주차 해제 함수 — 새 분석을 기다리는 동안만 슬롯을 "일하는 턴"에서 뺀다.
+    const unparkByCall = new Map<string, () => void>();
+    const unparkCall = (id: string): void => {
+        const unpark = unparkByCall.get(id);
+        if (unpark === undefined) return;
+        unparkByCall.delete(id);
+        unpark();
+    };
     const toolTimings: Array<{
         name: string;
         ms: number;
@@ -157,12 +175,22 @@ export function agentTurnStream({
                         globalLimits: agentGlobalLimitsFromEnv(),
                         maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
                         onEvent: event => {
-                            if (event.type === 'tool_end')
+                            if (
+                                event.type === 'tool_start' &&
+                                event.name === 'run_fresh_analysis'
+                            ) {
+                                // 같은 id가 다시 오면 앞 주차를 먼저 풀어 해제 함수가 새지 않게 한다.
+                                unparkCall(event.id);
+                                unparkByCall.set(event.id, slot.park());
+                            }
+                            if (event.type === 'tool_end') {
+                                unparkCall(event.id);
                                 toolTimings.push({
                                     name: event.name,
                                     ms: event.ms,
                                     status: event.status,
                                 });
+                            }
                             if (event.type === 'text') {
                                 const delta = followUpFilter.push(event.delta);
                                 if (delta) emit({ ...event, delta });
@@ -291,6 +319,7 @@ export function agentTurnStream({
                         promptVersion: result.promptVersion,
                         ms: result.usage.ms,
                         stopReason: result.stopReason,
+                        queuedMs,
                     })
                 );
                 emit({ type: 'usage', usage: result.usage });
@@ -308,6 +337,8 @@ export function agentTurnStream({
                     ...(title !== undefined ? { title } : {}),
                 };
             } finally {
+                // `tool_end`가 안 온 호출(중단·시간 초과 경로)도 반납 전에 푼다.
+                [...unparkByCall.keys()].forEach(unparkCall);
                 await release();
             }
         },
