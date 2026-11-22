@@ -170,3 +170,59 @@ test.describe('home page', () => {
         });
     }
 });
+
+/**
+ * 홈 공유 카드는 `(home)/opengraph-image.tsx` 파일 컨벤션이 낸다. 메타데이터가 옛 공용
+ * `/og-image.png`를 함께 선언하면 `og:image`가 둘이 되어 크롤러가 어느 쪽을 고를지 모른다 —
+ * 단위 테스트는 `generateMetadata` 반환값만 보므로, 빌드된 HTML에서 한 장인지 확인한다.
+ */
+test.describe('home share card', () => {
+    /*
+     * 이미지 URL 모양은 Next 소스에서 정했다. 파일이 `(home)` 라우트 그룹 아래라
+     * `getMetadataRouteSuffix`(next/dist/lib/metadata/get-metadata-route.js)가 부모 경로
+     * 해시를 붙여 `opengraph-image-xxxxxx`가 되고, twitter 카드는 별도 라우트
+     * `twitter-image-yyyyyy`다. 동적 이미지라 캐시 무효화용 `?hash` 쿼리가 붙을 수 있다.
+     * ko는 접두사가 없는 로케일이지만 Next가 매칭된 라우트 경로(`/ko/…`)로 URL을 만든다
+     * (src/proxy.ts의 메타데이터 이미지 주석). 소스만으로 ko 모양을 확정할 수 없어
+     * `/…`와 `/ko/…` 두 모양을 모두 받는다.
+     */
+    for (const { path, prefix } of [
+        { path: '/', prefix: '(/ko)?' },
+        { path: '/en', prefix: '/en' },
+    ]) {
+        const card = (name: string) =>
+            new RegExp(`^https?://[^/]+${prefix}/${name}-[0-9a-z]+(\\?.*)?$`);
+
+        test(`${path}: og:image와 twitter:image가 홈 카드 하나씩이다`, async ({
+            page,
+        }) => {
+            await page.goto(path);
+
+            const og = page.locator('meta[property="og:image"]');
+            const twitter = page.locator('meta[name="twitter:image"]');
+            await expect(og).toHaveCount(1);
+            await expect(twitter).toHaveCount(1);
+            await expect(og).toHaveAttribute(
+                'content',
+                card('opengraph-image')
+            );
+            await expect(twitter).toHaveAttribute(
+                'content',
+                card('twitter-image')
+            );
+            await expect(og).not.toHaveAttribute('content', /og-image\.png/);
+            await expect(
+                page.locator('meta[property="og:image:type"]')
+            ).toHaveAttribute('content', 'image/png');
+        });
+    }
+
+    test('다른 페이지는 공용 og-image.png를 그대로 쓴다', async ({ page }) => {
+        await page.goto('/about');
+
+        await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+            'content',
+            /\/og-image\.png/
+        );
+    });
+});
