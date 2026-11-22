@@ -178,10 +178,6 @@ describe('getPeriodColor', () => {
             expect(getPeriodColor(20)).toBe('#eab308');
         });
 
-        it('기간 50에 대해 사용하지 않는 period10 토큰(#f97316)을 반환한다', () => {
-            expect(getPeriodColor(50)).toBe('#f97316');
-        });
-
         it('기간 60에 대해 #22c55e를 반환한다', () => {
             expect(getPeriodColor(60)).toBe('#22c55e');
         });

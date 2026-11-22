@@ -28,7 +28,6 @@ import {
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from './constants';
-import { withChartMaPeriods } from './utils/chartMaPeriods';
 import { OverlayLegend } from './OverlayLegend';
 import type { ToggleSetting } from './types';
 import { useActionRecommendationOverlay } from './hooks/useActionRecommendationOverlay';
@@ -228,15 +227,10 @@ export function StockChart({
     );
     useExtendedSessionBand(seriesRef, extendedRanges);
 
-    // core가 계산하지 않는 차트 전용 이동평균 기간(50)을 이미 가진 봉으로 채운다.
-    const chartIndicators = useMemo(
-        () => withChartMaPeriods(indicators, bars),
-        [indicators, bars]
-    );
     const indicatorParams: IndicatorHookParams = {
         chartRef: indicatorChartRef,
         bars,
-        indicators: chartIndicators,
+        indicators,
         lineWidth: DEFAULT_LINE_WIDTH,
     };
     // 일목균형표 선행 구름은 마지막 **그려진** 봉(정규장 + 시간외) 오른쪽에서 시작해야 한다.
@@ -281,7 +275,7 @@ export function StockChart({
     const overlayLegendItems = useOverlayLegend({
         chartRef,
         bars,
-        indicators: chartIndicators,
+        indicators,
         labelConfigs,
     });
 

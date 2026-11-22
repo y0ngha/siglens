@@ -5,8 +5,7 @@
  * 그 상태를 지표 메뉴 binding과 범례 라벨 설정으로 내보내는 훅.
  */
 import { useMemo } from 'react';
-import { EMA_DEFAULT_PERIODS } from '@y0ngha/siglens-core';
-import { CHART_MA_PERIODS } from '../utils/chartMaPeriods';
+import { EMA_DEFAULT_PERIODS, MA_DEFAULT_PERIODS } from '@y0ngha/siglens-core';
 import type { IndicatorHookParams } from '../model/chartHookParams';
 import type { IndicatorBinding } from '../model/indicatorRegistry';
 import {
@@ -58,7 +57,7 @@ export function usePriceOverlayIndicators(
         () => ({
             ma: {
                 active: ma.visiblePeriods.length > 0,
-                availablePeriods: CHART_MA_PERIODS,
+                availablePeriods: MA_DEFAULT_PERIODS,
                 visiblePeriods: ma.visiblePeriods,
                 onTogglePeriod: ma.togglePeriod,
             },
