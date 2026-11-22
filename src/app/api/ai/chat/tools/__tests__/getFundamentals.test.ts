@@ -20,6 +20,7 @@ const {
     loadSecQuarters,
     getAnalystViews,
     getFmpGrades,
+    getKrValuation,
 } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getProvider: vi.fn(),
@@ -38,6 +39,10 @@ const {
     loadSecQuarters: vi.fn(),
     getAnalystViews: vi.fn(),
     getFmpGrades: vi.fn(),
+    getKrValuation: vi.fn(),
+}));
+vi.mock('@/entities/kr-valuation/server/getKrValuation', () => ({
+    getKrValuation,
 }));
 vi.mock('@/shared/api/fmp/getFmpGradesConsensus', () => ({
     getFmpGradesConsensus: getFmpGrades,
@@ -106,6 +111,8 @@ vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
 }));
 
 import type { ResolvedNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
+import { providerKrValuation } from '@/entities/kr-valuation/lib/computeKrValuation';
+import type { KrValuation } from '@/entities/kr-valuation/model';
 import {
     daysUntil,
     earningsDateCertainty,
@@ -271,7 +278,7 @@ describe('getFundamentalsTool', () => {
         expect(r.price).toBe(23550);
     });
 
-    describe('한국 종목 시총·PER·PBR (KRX 상장주식수 기준)', () => {
+    describe('한국 종목 시총(KRX 상장주식수 기준)과 PER·PBR(DART 기준)', () => {
         const dayBar = (iso: string, close: number) => ({
             time: Date.parse(`${iso}T00:00:00Z`) / 1000,
             open: close,
@@ -310,11 +317,34 @@ describe('getFundamentalsTool', () => {
                 marketCapCloseDate: string | null;
             };
             valuation: {
-                pe: number;
-                pb: number;
+                pe: number | null;
+                pb: number | null;
                 ps: number;
                 evToEbitda: number | null;
+                epsTtm?: number | null;
+                bps?: number | null;
+                basis?: KrValuation['basis'];
+                nullReason?: KrValuation['nullReason'];
             };
+        };
+        /** DART 기준 값 — 제공처 값(20·4·800)과 눈에 띄게 다르다. */
+        const DART_VALUATION: KrValuation = {
+            pe: 12.3456789,
+            pb: 1.2345678,
+            epsTtm: 1363.6363,
+            bps: 13_633.633,
+            nullReason: {},
+            basis: {
+                source: 'dart',
+                statements: 'consolidated',
+                ttmEnd: '2026-06-30',
+                equityAsOf: '2026-06-30',
+                epsShares: 'issued_incl_treasury',
+                bpsShares: 'outstanding_ex_treasury',
+                sharesAsOf: '2026-06-30',
+                priceDate: '2026-10-23',
+                note: 'P/E = the 2026-10-23 close / …',
+            },
         };
 
         beforeEach(() => {
@@ -332,9 +362,16 @@ describe('getFundamentalsTool', () => {
                 ],
                 indicators: {},
             });
+            getKrValuation.mockImplementation(
+                async (
+                    _symbol: string,
+                    _price: unknown,
+                    provider: { pe: number; pb: number; epsTtm: number }
+                ) => providerKrValuation(provider, 'dart_unavailable')
+            );
         });
 
-        it('상장주식수 × 직전 완료 종가로 시총을 내고 PER·PBR을 같은 비율로 맞춘다', async () => {
+        it('상장주식수 × 직전 완료 종가로 시총을 내되 PER·PBR·PSR은 그 비율로 다시 곱하지 않는다', async () => {
             findListedShares.mockResolvedValue(880_000_000);
             const r = (await getFundamentalsTool(
                 { symbol: '010140.KS' },
@@ -351,12 +388,79 @@ describe('getFundamentalsTool', () => {
                 sharesOutstanding: 880_000_000,
                 marketCapCloseDate: '2026-10-23',
             });
-            const scale = 14_810_400_000_000 / 14_375_000_000_000;
-            expect(r.valuation.pe).toBeCloseTo(20 * scale, 4);
-            expect(r.valuation.pb).toBeCloseTo(4 * scale, 4);
-            expect(r.valuation.ps).toBeCloseTo(1 * scale, 4);
+            // 제공처 값이 곱해지지 않고 그대로 나간다(시총 비율 1.0303을 곱하면 20.6·4.12·1.03).
+            expect(r.valuation).toMatchObject({ pe: 20, pb: 4, ps: 1 });
             // EV includes net debt; not recomputable from market cap alone.
             expect(r.valuation.evToEbitda).toBeNull();
+        });
+
+        it('PER·PBR은 DART 기준 값으로 내고 EPS·BPS·기준을 함께 싣는다', async () => {
+            findListedShares.mockResolvedValue(880_000_000);
+            getKrValuation.mockResolvedValue(DART_VALUATION);
+            const r = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as KrResult;
+            expect(r.valuation.pe).toBeCloseTo(12.3457, 3);
+            expect(r.valuation.pb).toBeCloseTo(1.2346, 3);
+            expect(r.valuation.epsTtm).toBeCloseTo(1363.64, 1);
+            expect(r.valuation.bps).toBeCloseTo(13_633.6, 0);
+            expect(r.valuation.basis).toEqual(DART_VALUATION.basis);
+            // 시총은 KRX 상장주식수 기준 그대로다.
+            expect(r.profile.sharesBasis).toBe('krx_listed');
+            // PSR은 제공처 값이고 DART 계산의 영향을 받지 않는다.
+            expect(r.valuation.ps).toBe(1);
+        });
+
+        it('같은 종목의 마지막 완료 종가와 제공처 값을 `getKrValuation`에 넘긴다', async () => {
+            findListedShares.mockResolvedValue(880_000_000);
+            await getFundamentalsTool({ symbol: '010140.KS' }, ctx, rt);
+            const call = getKrValuation.mock.calls.find(
+                ([symbol]) => symbol === '010140.KS'
+            );
+            expect(call?.[1]).toEqual({ close: 16830, date: '2026-10-23' });
+            expect(call?.[2]).toEqual({ pe: 20, pb: 4, epsTtm: 800 });
+        });
+
+        it('PER·PBR이 빈 이유는 nullReason으로 싣고, 빈 값이 없으면 키를 싣지 않는다', async () => {
+            findListedShares.mockResolvedValue(880_000_000);
+            getKrValuation.mockResolvedValue({
+                ...DART_VALUATION,
+                pe: null,
+                nullReason: { pe: 'loss' },
+            });
+            const empty = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as KrResult;
+            expect(empty.valuation.pe).toBeNull();
+            expect(empty.valuation.nullReason).toEqual({ pe: 'loss' });
+
+            getKrValuation.mockResolvedValue(DART_VALUATION);
+            const full = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as KrResult;
+            expect(full.valuation).not.toHaveProperty('nullReason');
+        });
+
+        it('DART를 못 쓰면 제공처 값 그대로이고 basis가 provider라고 말한다', async () => {
+            findListedShares.mockResolvedValue(880_000_000);
+            const r = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as KrResult;
+            expect(r.valuation).toMatchObject({
+                pe: 20,
+                pb: 4,
+                epsTtm: 800,
+                bps: null,
+            });
+            expect(r.valuation.basis?.source).toBe('provider');
         });
 
         it('정규장이 열려 마지막 봉이 진행 중이면 직전 완료 봉의 종가를 쓴다', async () => {
@@ -386,12 +490,17 @@ describe('getFundamentalsTool', () => {
                 )) as KrResult;
                 expect(r.profile.marketCap).toBe(880_000_000 * 16500);
                 expect(r.profile.marketCapCloseDate).toBe('2026-10-22');
+                // PER·PBR 분자도 같은 완료 종가다.
+                const call = getKrValuation.mock.calls.find(
+                    ([symbol]) => symbol === '010140.KS'
+                );
+                expect(call?.[1]).toEqual({ close: 16500, date: '2026-10-22' });
             } finally {
                 vi.useRealTimers();
             }
         });
 
-        it('상장주식수가 없으면 프로바이더 값 그대로 두고 provider로 표시한다', async () => {
+        it('상장주식수가 없으면 시총은 프로바이더 값 그대로 두고 provider로 표시한다', async () => {
             findListedShares.mockResolvedValue(null);
             const r = (await getFundamentalsTool(
                 { symbol: '010140.KS' },
@@ -434,7 +543,7 @@ describe('getFundamentalsTool', () => {
             }
         });
 
-        it('일봉 로드가 실패하면 provider로 폴백한다', async () => {
+        it('일봉 로드가 실패하면 시총은 provider로 폴백하고 PER·PBR 분자 종가는 null로 넘긴다', async () => {
             const consoleErrorSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => {});
@@ -450,22 +559,128 @@ describe('getFundamentalsTool', () => {
                     rt
                 )) as KrResult;
                 expect(r.profile.sharesBasis).toBe('provider');
+                const call = getKrValuation.mock.calls.find(
+                    ([symbol]) => symbol === '010140.KS'
+                );
+                expect(call?.[1]).toBeNull();
             } finally {
                 consoleErrorSpy.mockRestore();
                 consoleWarnSpy.mockRestore();
             }
         });
 
-        it('미국 종목은 상장주식수 조회도 새 필드도 없다', async () => {
+        it('제공처 지표가 없으면(null) `getKrValuation`을 부르지 않고 valuation은 null이다', async () => {
+            getProvider.mockReturnValue(
+                fakeProvider({
+                    getProfile: krProvider().getProfile,
+                    getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
+                })
+            );
+            findListedShares.mockResolvedValue(880_000_000);
+            const r = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as { valuation: unknown };
+            expect(r.valuation).toBeNull();
+            expect(getKrValuation).not.toHaveBeenCalled();
+        });
+
+        // 실측 3,541자(2026-11-22): 모든 섹션 + DART 기준 블록(`valuation.basis` 노트 포함, +≈660자) + 5분기 + 8 반응 + 확정 배당.
+        it('한국 종목 최악 케이스(DART 기준 블록 + 5분기 + 8 반응 + 확정 배당)도 공용 도구 예산 안에 든다', async () => {
+            findListedShares.mockResolvedValue(880_000_000);
+            getKrValuation.mockResolvedValue({
+                ...DART_VALUATION,
+                pe: null,
+                pb: null,
+                nullReason: { pe: 'missing', pb: 'missing' },
+                basis: {
+                    ...DART_VALUATION.basis,
+                    ttmEnd: '2026-09-30',
+                    equityAsOf: '2026-09-30',
+                    note: 'P/E = the 2026-11-20 close / trailing-4-quarter DART consolidated controlling-interest EPS to 2026-09-30 (net income per issued share, common and preferred, treasury shares included); P/B = the 2026-11-20 close / DART consolidated controlling-interest equity at 2026-09-30 per outstanding share (common and preferred, treasury shares excluded).',
+                },
+            });
+            getIncomeStatements.mockResolvedValue(
+                Array.from({ length: 8 }, (_, i) => ({
+                    fiscalYear: '2026',
+                    period: `Q${(i % 4) + 1}`,
+                    date: `2026-0${(i % 9) + 1}-28`,
+                    filingDate: '2026-10-01',
+                    reportedCurrency: 'KRW',
+                    revenue: 123_456_789_012,
+                    grossProfit: null,
+                    operatingIncome: null,
+                    netIncome: null,
+                    ebitda: null,
+                    eps: 12.3456,
+                    epsDiluted: 12.3456,
+                    grossMargin: null,
+                    operatingMargin: null,
+                    netMargin: null,
+                }))
+            );
+            const days = Array.from({ length: 400 }, (_, i) =>
+                new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10)
+            );
+            getCachedBars.mockResolvedValue({
+                bars: days.map((d, i) => dayBar(d, 16_000 + i * 1.2345)),
+                indicators: {},
+            });
+            listReportedEarningsDates.mockResolvedValue(
+                days.filter((_, i) => i % 40 === 20)
+            );
+            fetchDividendSource.mockResolvedValue({
+                kind: 'fmp',
+                rows: [
+                    {
+                        exDate: '2026-08-10',
+                        amount: 270,
+                        payDate: '2026-08-13',
+                    },
+                    {
+                        exDate: '2026-05-11',
+                        amount: 260,
+                        payDate: '2026-05-14',
+                    },
+                ],
+            });
+            fetchKrAnnualDividend.mockResolvedValue({
+                fiscalYear: 2025,
+                dpsCommon: 6000,
+                dartYieldPct: 4.3,
+            });
+            const r = (await getFundamentalsTool(
+                { symbol: '010140.KS' },
+                ctx,
+                rt
+            )) as { recentQuarters: unknown[]; earningsReactions: unknown[] };
+            expect(r.recentQuarters).toHaveLength(5);
+            expect(r.earningsReactions).toHaveLength(8);
+            expect(JSON.stringify(r)).toContain('annualReported');
+            expect(JSON.stringify(r)).toContain('"basis"');
+            expect(JSON.stringify(r).length).toBeLessThan(
+                TOOL_RESULT_MAX_CHARS
+            );
+        });
+
+        it('미국 종목은 상장주식수 조회도 DART 기준도 새 필드도 없다', async () => {
             resolveMarketProfile.mockResolvedValue('us-equity');
             getProvider.mockReturnValue(fakeProvider());
             const r = (await getFundamentalsTool(
                 { symbol: 'AAPL' },
                 ctx,
                 rt
-            )) as { profile: Record<string, unknown> };
+            )) as {
+                profile: Record<string, unknown>;
+                valuation: Record<string, unknown>;
+            };
             expect(findListedShares).not.toHaveBeenCalled();
+            expect(getKrValuation).not.toHaveBeenCalled();
             expect(r.profile).not.toHaveProperty('sharesBasis');
+            expect(r.valuation).not.toHaveProperty('basis');
+            expect(r.valuation).not.toHaveProperty('epsTtm');
+            expect(r.valuation).not.toHaveProperty('bps');
         });
     });
 

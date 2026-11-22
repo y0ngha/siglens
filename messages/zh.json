@@ -4803,7 +4803,11 @@
                 "dc14bc": "衡量包含债务在内的企业总价值与营业利润（折旧摊销前）的比值。",
                 "f4d48c": "结合市盈率和利润增长率的指标。",
                 "f63f21": "通常数值越低越被视为低估，越高越被视为高估。",
-                "fccdcd": "衡量公司一年内每股赚取的净利润。"
+                "fccdcd": "衡量公司一年内每股赚取的净利润。",
+                "krBasisDartConsolidated": "PER和PBR依据DART合并财务报表中归属于母公司股东的数据计算。净利润为截至{ttmEnd}的最近4个季度，净资产为{equityAsOf}的数值。每股收益按已发行股份总数计算，每股净资产按扣除库存股后的股份数计算。",
+                "krBasisDartSeparate": "该公司不提交合并财务报表，因此PER和PBR依据DART单体财务报表计算。净利润为截至{ttmEnd}的最近4个季度，净资产为{equityAsOf}的数值。每股收益按已发行股份总数计算，每股净资产按扣除库存股后的股份数计算。",
+                "krBasisDartEquityOnly": "PBR是用{equityAsOf}的DART财务报表净资产除以扣除库存股后的股份数得出的。由于无法得出最近4个季度的净利润，PER留空。",
+                "krBasisProvider": "PER和PBR采用数据提供方的数值。"
             },
             "analystBuyCount": "买入 {v0}",
             "analystRating": {

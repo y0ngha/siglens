@@ -4976,7 +4976,11 @@
                 "dc14bc": "빚까지 포함한 기업 전체 가치를 영업이익(감가상각\n                                전 기준)으로 나눈 값이에요.",
                 "f4d48c": "PER에 이익 성장률까지 함께 본 값이에요.",
                 "f63f21": "보통 낮을수록 저평가, 높을수록 고평가로 봐요.",
-                "fccdcd": "회사가 1년간 번 순이익을 1주당 얼마 벌었는지로\n                                환산한 값이에요."
+                "fccdcd": "회사가 1년간 번 순이익을 1주당 얼마 벌었는지로\n                                환산한 값이에요.",
+                "krBasisDartConsolidated": "PER과 PBR은 DART 연결 재무제표의 지배주주 기준으로 계산했어요. 순이익은 {ttmEnd}까지 최근 4분기, 자본은 {equityAsOf} 기준이고, 주당 순이익은 발행주식 총수로, 주당 순자산은 자기주식을 뺀 주식수로 나눴어요.",
+                "krBasisDartEquityOnly": "PBR은 DART 재무제표의 {equityAsOf} 자본을 자기주식을 뺀 주식수로 나눠 계산했어요. 최근 4분기 순이익을 구하지 못해 PER은 비워 뒀어요.",
+                "krBasisDartSeparate": "이 회사는 연결 재무제표를 내지 않아 DART 별도 재무제표로 PER과 PBR을 계산했어요. 순이익은 {ttmEnd}까지 최근 4분기, 자본은 {equityAsOf} 기준이고, 주당 순이익은 발행주식 총수로, 주당 순자산은 자기주식을 뺀 주식수로 나눴어요.",
+                "krBasisProvider": "PER과 PBR은 데이터 제공처 기준이에요."
             },
             "analystBuyCount": "매수 {v0}",
             "analystRating": {

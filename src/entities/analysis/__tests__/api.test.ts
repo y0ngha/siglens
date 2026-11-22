@@ -69,6 +69,14 @@ vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: vi.fn(() => mockFundamentalProvider),
 }));
 
+// 한국 종목은 PER·PBR을 DART 기준으로 바꿔 끼운 provider를 core에 넘긴다 — 감싸는 호출 자체를 관찰한다.
+const { withKrValuation } = vi.hoisted(() => ({
+    withKrValuation: vi.fn((provider: unknown) => provider),
+}));
+vi.mock('@/entities/kr-valuation/server/withKrValuation', () => ({
+    withKrValuation,
+}));
+
 vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
     getFinancialStatementsProvider: vi.fn(() => mockFinancialsProvider),
 }));
@@ -559,6 +567,23 @@ describe('prewarmFundamental', () => {
         mockGetFundamentalDataProvider.mockReturnValue(mockFundamentalProvider);
     });
 
+    it('dataProvider는 `withKrValuation`이 심볼과 함께 감싼 것이다', async () => {
+        const wrapped = { label: 'dart-aware provider' };
+        withKrValuation.mockReturnValueOnce(wrapped);
+
+        await prewarmFundamental('005930.KS', false);
+
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ dataProvider: wrapped })
+        );
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(background)으로 읽는다.
+        expect(withKrValuation).toHaveBeenCalledWith(
+            mockFundamentalProvider,
+            '005930.KS',
+            { mode: 'background' }
+        );
+    });
+
     it('calls runFundamentalAnalysis with the anonymous-free branch shape', async () => {
         await prewarmFundamental('AAPL', false);
 
@@ -867,6 +892,23 @@ describe('prewarmOverall', () => {
             }
         }
     );
+
+    it('fundamentalProvider는 `withKrValuation`이 심볼과 함께 감싼 것이다(프리웜도 탭·에이전트와 같은 기준)', async () => {
+        const wrapped = { label: 'dart-aware provider' };
+        withKrValuation.mockReturnValueOnce(wrapped);
+
+        await prewarmOverall('005930.KS', 'Samsung', false);
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ fundamentalProvider: wrapped })
+        );
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(background)으로 읽는다.
+        expect(withKrValuation).toHaveBeenCalledWith(
+            mockFundamentalProvider,
+            '005930.KS',
+            { mode: 'background' }
+        );
+    });
 
     it('kr-equity → 이벤트 창을 core에 넘기는 것과 같은 KR 세션으로 계산한다', async () => {
         mockResolveMarketProfile.mockResolvedValue('kr-equity');
