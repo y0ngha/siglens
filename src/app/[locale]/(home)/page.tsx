@@ -121,7 +121,7 @@ export const revalidate = 3600;
 export default async function Home({ params }: HomeRouteProps) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
-    // 넷은 서로 독립이라 병렬로 푼다. 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
+    // 서로 독립이라 병렬로 푼다. 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
     const [t, tNav, tSeo, tJsonLd, tMail] = await Promise.all([
         getTranslations('app.home'),
         getTranslations(),

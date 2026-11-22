@@ -19,9 +19,10 @@ interface StatsBarProps {
  * `list-none`은 Safari/VoiceOver에서 list 의미를 지우므로 `role="list"`를 명시한다.
  * 가운뎃점 구분자(`DotSeparator`)는 장식이라 스스로 `aria-hidden`이며, 항목 수를 흔들지 않도록 별도
  * `<li>`가 아니라 각 통계 항목 **안**(앞쪽)에 둔다.
+ *
+ * 홈 가격대 띠(`HomeMethodBand`) 안에서만 쓰인다 — 카드 제목이 왼쪽 정렬이라 통계 줄도 모든 너비에서
+ * 왼쪽 정렬이다(가운데 정렬이면 제목과 줄이 어긋난다).
  */
-// 홈 가격대 띠(`HomeMethodBand`) 안에서만 쓰인다 — 카드 제목이 왼쪽 정렬이라 통계 줄도 모든 너비에서
-// 왼쪽 정렬이다(가운데 정렬이면 제목과 줄이 어긋난다).
 export function StatsBar({ counts }: StatsBarProps) {
     const t = useTranslations('widgets.home');
     // `shared.lib.skillStats.count`는 카운트+라벨이 한 ICU 문자열로 합쳐져

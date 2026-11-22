@@ -30,7 +30,7 @@ interface PopularTickerTabsProps {
  * 인기 종목의 시장 탭(미국·한국·암호화폐)과 패널별 접기 상태.
  *
  * 격자는 서버 컴포넌트가 만든 노드를 `panels[].grid`로 받는다 — 비활성 패널도 `hidden`으로
- * 마운트하고 접힌 카드는 `display:none`일 뿐이라 모든 종목 링크(약 95개)가 서버 HTML에 남는다.
+ * 마운트하고 접힌 카드는 `display:none`일 뿐이라 모든 종목 링크가 서버 HTML에 남는다.
  * 탭·펼침 상태는 저장소에서 복원하지 않는다(서버 HTML과 첫 하이드레이션이 같아야 밀림이 없다).
  */
 export function PopularTickerTabs({

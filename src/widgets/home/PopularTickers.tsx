@@ -111,12 +111,14 @@ const CRYPTO_STYLES: Record<CryptoCategoryId, CardStyle> = {
 const TICKER_CARDS = toCategoryCards(TICKER_CATEGORIES, CATEGORY_STYLES);
 const CRYPTO_CARDS = toCategoryCards(CRYPTO_CATEGORIES, CRYPTO_STYLES);
 
+/** 카드 `id`는 `string`이라 `CategoryId` 집합을 넓은 타입으로 읽어 비교한다(좁히는 단언 없이). */
+const KR_IDS: ReadonlySet<string> = KR_CATEGORY_IDS;
+
 /**
  * 업종 라벨만 보면 어느 시장인지 알 수 없다 — `반도체·IT`(한국)와 `AI·반도체`(미국)가 한 격자에
  * 섞이면 구분할 방법이 없다. 라벨마다 "한국"을 붙이는 대신 시장 탭이 한 번만 밝힌다.
  */
-const isKrCard = (card: CategoryCard) =>
-    KR_CATEGORY_IDS.has(card.id as CategoryId);
+const isKrCard = (card: CategoryCard) => KR_IDS.has(card.id);
 const US_CARDS = TICKER_CARDS.filter(card => !isKrCard(card));
 const KR_CARDS = TICKER_CARDS.filter(isKrCard);
 
