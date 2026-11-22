@@ -424,6 +424,10 @@ export function getPeriodColor(period: number): string {
             return CHART_COLORS.period10;
         case 20:
             return CHART_COLORS.period20;
+        case 50:
+            // 차트 전용 50일선 — 20(노랑)·60(초록) 사이라 겹치지 않는 주황. EMA/MA 어느 선택 기간도
+            // 10을 쓰지 않아 `period10` 토큰이 비어 있다.
+            return CHART_COLORS.period10;
         case 60:
             return CHART_COLORS.period60;
         case 120:
