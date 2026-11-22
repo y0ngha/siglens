@@ -17,7 +17,7 @@ import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 /**
  * 클라이언트 번들에 실리는 파일이 `@y0ngha/siglens-core`에서 가져오는 값은 core의 브라우저
  * 진입점(`dist/index.client.js`)에도 있어야 한다. 서버 진입점에만 있는 심볼은 빌드와 Vitest(node
- * 진입점)를 통과하고 브라우저에서만 "X is not a function"으로 깨진다(#1414의 `calculateMA`).
+ * 진입점)를 통과하고 브라우저에서만 "X is not a function"으로 깨진다.
  *
  * 판정 워커는 `support/coreClientExports.ts`(그래프 범위와 한계는 그 파일 머리). 기준선이 없다 —
  * 위반 0건이 기준이고, 예외를 두려면 이 가드를 의도적으로 고쳐야 한다.

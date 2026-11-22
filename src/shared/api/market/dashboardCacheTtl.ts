@@ -6,7 +6,7 @@ import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor
 /**
  * 서버 캐시(`sectorSignalsCache`, `marketSummaryCache`)만 쓰는 대시보드 TTL 계산.
  * `sessionSpecFor.ts`는 클라이언트 번들에도 닿는데 `computeBarsEffectiveTtl`은 core 브라우저
- * 진입점에 없으므로(`coreClientExports` 가드), TTL 계산은 이 서버 전용 모듈로 분리했다.
+ * 진입점에 없으므로(`coreClientExports` 가드), TTL 계산은 이 서버 전용 모듈에 둔다.
  */
 
 /**

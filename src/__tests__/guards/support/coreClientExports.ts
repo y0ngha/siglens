@@ -9,7 +9,7 @@ import { buildImportGraph, fileImports, SRC } from './importGraph';
  *
  * 번들러는 브라우저 번들에서 `browser` 조건으로, Vitest·서버는 `default`(`dist/index.js`)로
  * core를 푼다. 서버 진입점에만 있는 심볼을 클라이언트 코드가 import하면 빌드와 단위
- * 테스트는 통과하고 브라우저에서만 "X is not a function"으로 깨진다(#1414의 `calculateMA`).
+ * 테스트는 통과하고 브라우저에서만 "X is not a function"으로 깨진다.
  *
  * 클라이언트 그래프 = `'use client'` 파일 + 거기서 정적·동적 import(`export … from` 포함)로
  * 닿는 모듈. 서버 경계에서 멈춘다: `import 'server-only'` 파일, `'use server'` 파일(클라이언트가
@@ -67,9 +67,8 @@ export const isServerPath = (file: string): boolean =>
     file.startsWith('app/api/') || /^entities\/[^/]+\/api\.tsx?$/.test(file);
 
 /**
- * `roots`(절대 경로)에서 출발해 서버 경계 안쪽의 클라이언트 그래프 파일을 모은다. 각 파일은
- * `roots`에 `'use client'`인 것만 넣는 것이 아니라, 호출부가 정한 시작점이 곧 클라이언트
- * 경계라고 본다.
+ * `roots`(절대 경로, 호출부가 정한 클라이언트 경계)에서 값 import를 따라가며 서버 경계
+ * 안쪽의 파일을 모은다.
  */
 export function clientGraphFiles(roots: readonly string[]): string[] {
     const seen = new Set<string>();
