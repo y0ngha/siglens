@@ -9,7 +9,7 @@ describe('emailStepErrorSlot', () => {
         expect(emailStepErrorSlot('invalid_email')).toBe('field');
     });
 
-    it.each(['redis_unavailable', 'unexpected'] as const)(
+    it.each(['rate_limited', 'redis_unavailable', 'unexpected'] as const)(
         'puts %s in the banner',
         code => {
             expect(emailStepErrorSlot(code)).toBe('banner');
@@ -27,6 +27,8 @@ describe('codeStepErrorSlot', () => {
 
     it.each([
         'email_already_exists',
+        'rate_limited',
+        'too_many_verification_attempts',
         'redis_unavailable',
         'unexpected',
     ] as const)('puts %s in the banner', code => {

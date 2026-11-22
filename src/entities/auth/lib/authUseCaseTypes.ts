@@ -232,10 +232,25 @@ export interface RequestEmailVerificationInput {
     email: string;
 }
 
-/** `requestEmailVerification`이 주입받는 토큰 저장소와 메일 발송기. */
+/**
+ * 한 번의 한도 확인. `true`면 허용이다(고정 창 방식, Redis 장애는 통과). 호출 한 번이 시도 한 번이다.
+ * 알림 메일의 `MailAlertRateLimiter`와 같은 모양이지만 auth가 mail-alert를 import하지 않도록 따로 둔다.
+ */
+export type EmailCodeRateLimiter = (rule: {
+    readonly key: string;
+    readonly limit: number;
+    readonly windowSeconds: number;
+}) => Promise<boolean>;
+
+/** `requestEmailVerification`이 주입받는 토큰 저장소, 메일 발송기와 남용 한도 포트. */
 export interface RequestEmailVerificationDependencies {
     emailTokens: EmailTokenStore;
     emailDispatcher: EmailDispatcher;
+    rateLimit: EmailCodeRateLimiter;
+    /** 한도 카운터를 0으로 되돌린다(새 코드를 보낼 때 확인 시도 카운터에 쓴다). */
+    resetCounter: (key: string) => Promise<void>;
+    /** 요청 IP의 해시 — 원본 IP는 키에도 로그에도 남지 않는다. */
+    ipHash: () => Promise<string>;
 }
 
 /** 코드로 메일 본문을 만드는 빌더. */
@@ -243,10 +258,14 @@ export interface RequestEmailVerificationOptions {
     buildMessage: (code: string) => EmailMessage;
 }
 
-/** 코드 요청 결과. 잘못된 이메일은 `ok: true`(`codeIssued: false`). */
+/**
+ * 코드 요청 결과. 잘못된 이메일은 `ok: true`(`codeIssued: false`). 한도에 걸리면 코드도 메일도 없이
+ * `rate_limited`다 — 가짜 성공이 아니라 명시적 오류다(주소·IP만으로 정해지므로 계정 존재 여부는 새지 않는다).
+ */
 export type RequestEmailVerificationResult =
     | { ok: true; codeIssued: true; emailDispatched: boolean }
-    | { ok: true; codeIssued: false; emailDispatched: false };
+    | { ok: true; codeIssued: false; emailDispatched: false }
+    | { ok: false; reason: 'rate_limited' };
 
 /** 이메일 인증 코드 확인 입력. `code`는 사용자가 입력한 원문. */
 export interface VerifyEmailInput {
@@ -261,9 +280,12 @@ export interface VerifyEmailError {
     message: string;
 }
 
-/** `verifyEmail`이 주입받는 토큰 저장소. */
+/** `verifyEmail`이 주입받는 토큰 저장소와 남용 한도 포트. */
 export interface VerifyEmailDependencies {
     emailTokens: EmailTokenStore;
+    rateLimit: EmailCodeRateLimiter;
+    /** 요청 IP의 해시. */
+    ipHash: () => Promise<string>;
 }
 
 /** 인증 코드 확인 결과. */

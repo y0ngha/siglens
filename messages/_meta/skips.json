@@ -589,15 +589,27 @@
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 12,
+        "line": 16,
         "reason": "log-fallback-message",
         "text": "인증 코드가 올바르지 않습니다."
     },
     {
         "file": "src/entities/auth/lib/verifyEmail.ts",
-        "line": 13,
+        "line": 17,
         "reason": "log-fallback-message",
         "text": "인증 코드가 만료되었습니다."
+    },
+    {
+        "file": "src/entities/auth/lib/verifyEmail.ts",
+        "line": 19,
+        "reason": "log-fallback-message",
+        "text": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
+    },
+    {
+        "file": "src/entities/auth/lib/verifyEmail.ts",
+        "line": 21,
+        "reason": "log-fallback-message",
+        "text": "인증 코드를 여러 번 잘못 입력했습니다. 새 코드를 받아 주세요."
     },
     {
         "file": "src/entities/congress-trades/server/getCongressTradesResilient.ts",

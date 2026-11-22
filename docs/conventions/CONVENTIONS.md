@@ -893,7 +893,9 @@ before deleting it.
 Privacy policies, terms and in-product copy (prompts, toasts, banners) state exactly what the code does. Compare each
 sentence with every code path that reads or writes the data; on a mismatch change the code or the text, never leave
 both. Update the text in the same change as a new path that writes user data, a new use (extend the purpose list), or a
-store found during the revision that was never disclosed (user-supplied keys, bands, counters).
+store found during the revision that was never disclosed (user-supplied keys, bands, counters). A security limit's
+numbers (attempt caps, TTLs, windows) published in that text are pinned by a guard that reads the code constants (the
+`*Privacy.test.ts` guards), never by literals typed into the test.
 
 - Copy never promises a delivery or effect some users skip (gate it on the real state or word it conditionally), names
   a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it

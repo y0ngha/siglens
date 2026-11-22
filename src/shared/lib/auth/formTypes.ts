@@ -54,6 +54,7 @@ type UnexpectedErrorCode = 'unexpected';
 type RequestEmailVerificationErrorCode =
     | LocalInfraErrorCode
     | 'invalid_email'
+    | 'rate_limited'
     | UnexpectedErrorCode;
 
 type SignupFormErrorCode =

@@ -2,6 +2,7 @@
 
 import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createEmailVerificationGuards } from '@/entities/auth/server/createEmailVerificationGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
@@ -57,10 +58,15 @@ export async function requestEmailVerificationAction(
             namespace: 'entities.email-token.email',
         });
 
-        // ok: true 고정 (enumeration 회피); codeIssued/emailDispatched 는 운영 디버깅용 필드.
-        await requestEmailVerification(
+        // 성공은 ok: true 고정 (enumeration 회피); codeIssued/emailDispatched 는 운영 디버깅용 필드.
+        // 한도(`rate_limited`)는 주소·IP만으로 정해지고 계정 존재 여부와 무관하다.
+        const result = await requestEmailVerification(
             { email },
-            { emailTokens, emailDispatcher },
+            {
+                emailTokens,
+                emailDispatcher,
+                ...createEmailVerificationGuards(),
+            },
             {
                 buildMessage: code =>
                     buildEmailVerificationEmail({
@@ -71,6 +77,16 @@ export async function requestEmailVerificationAction(
                     }),
             }
         );
+
+        if (!result.ok) {
+            return {
+                submitted: false,
+                error: {
+                    code: result.reason,
+                    message: tAuth('tooManyRequests'),
+                },
+            };
+        }
 
         return { submitted: true, error: null };
     } catch (err) {
