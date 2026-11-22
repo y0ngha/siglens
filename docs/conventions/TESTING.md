@@ -463,7 +463,7 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 #### TE-63 — A parser-based guard accounts for every candidate
 
-A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line.
+A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); limits it cannot cover are stated in the guard's header.
 
 <a id="TE-64"></a>
 
@@ -524,11 +524,12 @@ When behavior or a constant changes, update every layer in the same change; scop
 
 #### TE-65 — An e2e update must pin the changed behaviour and fail against the old code
 
-"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Three recurring ways to pass without pinning:
+"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Recurring ways to pass without pinning:
 
 - Order change: adjusting the array a spec iterates keeps the old and new orders green. Assert the exact order (`toHaveText([...])`) and prove it by swapping two items.
 - Moved spec: moving a spec to another route to keep it passing leaves the route it left uncovered. Give the original route an equivalent assertion (for a link, host, path and decoded query, not only `href` containing a fragment).
 - Awaited mount: scope the locator to the container whose client mount is awaited. A bare `.first()` can match a server-rendered copy and return at once, so the wait never waits.
+- Alert locator: every page carries Next's empty route announcer (`role="alert"`), so `page.getByRole('alert')` needs `.filter({ hasText })` or a container scope (`e2eAlertLocatorScope.test.ts` enforces it).
 
 - ❌ Reorder the tab list in the spec's loop; the old order still passes.
 - ✅ `await expect(tabs).toHaveText(['A', 'B', 'C'])`, run against the old code to see it fail.
