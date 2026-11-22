@@ -54,7 +54,7 @@ function makeDependencies(options?: {
     getToken: ReturnType<typeof vi.fn>;
     consumeToken: ReturnType<typeof vi.fn>;
     findEmailAuthUserByEmail: ReturnType<typeof vi.fn>;
-    updatePassword: ReturnType<typeof vi.fn>;
+    resetPasswordRevokingSessions: ReturnType<typeof vi.fn>;
     hashPassword: ReturnType<typeof vi.fn>;
     verifyPassword: ReturnType<typeof vi.fn>;
 } {
@@ -90,7 +90,9 @@ function makeDependencies(options?: {
         >()
         .mockResolvedValue(consumed);
     const findEmailAuthUserByEmail = vi.fn().mockResolvedValue(foundUser);
-    const updatePassword = vi.fn().mockResolvedValue(updateResult);
+    const resetPasswordRevokingSessions = vi
+        .fn()
+        .mockResolvedValue(updateResult);
     const hashPassword = vi.fn().mockResolvedValue(hashed);
     const verifyPassword = vi.fn().mockResolvedValue(samePassword);
 
@@ -102,7 +104,7 @@ function makeDependencies(options?: {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn(),
-                updatePassword,
+                resetPasswordRevokingSessions,
             },
             emailTokens: {
                 set: vi.fn(),
@@ -123,7 +125,7 @@ function makeDependencies(options?: {
         getToken,
         consumeToken,
         findEmailAuthUserByEmail,
-        updatePassword,
+        resetPasswordRevokingSessions,
         hashPassword,
         verifyPassword,
     };
@@ -131,8 +133,12 @@ function makeDependencies(options?: {
 
 describe('confirmPasswordReset', () => {
     it('returns weak_password error when password fails validation', async () => {
-        const { dependencies, getToken, consumeToken, updatePassword } =
-            makeDependencies();
+        const {
+            dependencies,
+            getToken,
+            consumeToken,
+            resetPasswordRevokingSessions,
+        } = makeDependencies();
 
         const result = await confirmPasswordReset(
             { email: 'user@example.com', token: RAW_TOKEN, newPassword: 'abc' },
@@ -143,15 +149,14 @@ describe('confirmPasswordReset', () => {
         if (!result.ok) expect(result.error.code).toBe('weak_password');
         expect(getToken).not.toHaveBeenCalled();
         expect(consumeToken).not.toHaveBeenCalled();
-        expect(updatePassword).not.toHaveBeenCalled();
+        expect(resetPasswordRevokingSessions).not.toHaveBeenCalled();
     });
 
     it('returns expired_token error when the token does not exist', async () => {
-        const { dependencies, consumeToken, updatePassword } = makeDependencies(
-            {
+        const { dependencies, consumeToken, resetPasswordRevokingSessions } =
+            makeDependencies({
                 peekedToken: null,
-            }
-        );
+            });
 
         const result = await confirmPasswordReset(
             {
@@ -172,15 +177,16 @@ describe('confirmPasswordReset', () => {
         });
         // Token does not exist — consume must not be called.
         expect(consumeToken).not.toHaveBeenCalled();
-        expect(updatePassword).not.toHaveBeenCalled();
+        expect(resetPasswordRevokingSessions).not.toHaveBeenCalled();
     });
 
     it('returns expired_token error when consume returns null (TOCTOU race)', async () => {
         // get succeeds (token existed at pre-validation time) but consume returns null
         // because a concurrent caller won the race and consumed the token first.
-        const { dependencies, updatePassword } = makeDependencies({
-            consumedToken: null,
-        });
+        const { dependencies, resetPasswordRevokingSessions } =
+            makeDependencies({
+                consumedToken: null,
+            });
 
         const result = await confirmPasswordReset(
             {
@@ -199,7 +205,7 @@ describe('confirmPasswordReset', () => {
                 message: '비밀번호 재설정 토큰이 만료되었습니다.',
             },
         });
-        expect(updatePassword).not.toHaveBeenCalled();
+        expect(resetPasswordRevokingSessions).not.toHaveBeenCalled();
     });
 
     it('returns invalid_token error when token entry is in verified state', async () => {
@@ -227,7 +233,7 @@ describe('confirmPasswordReset', () => {
     });
 
     it('returns invalid_token error when the supplied token does not match', async () => {
-        const { dependencies, consumeToken, updatePassword } =
+        const { dependencies, consumeToken, resetPasswordRevokingSessions } =
             makeDependencies();
 
         const result = await confirmPasswordReset(
@@ -243,7 +249,7 @@ describe('confirmPasswordReset', () => {
         if (!result.ok) expect(result.error.code).toBe('invalid_token');
         // Caught at pre-validation — token must not be consumed.
         expect(consumeToken).not.toHaveBeenCalled();
-        expect(updatePassword).not.toHaveBeenCalled();
+        expect(resetPasswordRevokingSessions).not.toHaveBeenCalled();
     });
 
     it('returns invalid_token error when the user no longer exists', async () => {
@@ -281,8 +287,12 @@ describe('confirmPasswordReset', () => {
     });
 
     it('returns same_password error and does not consume the token', async () => {
-        const { dependencies, consumeToken, updatePassword, verifyPassword } =
-            makeDependencies({ isSamePassword: true });
+        const {
+            dependencies,
+            consumeToken,
+            resetPasswordRevokingSessions,
+            verifyPassword,
+        } = makeDependencies({ isSamePassword: true });
 
         const result = await confirmPasswordReset(
             {
@@ -303,10 +313,10 @@ describe('confirmPasswordReset', () => {
         });
         expect(verifyPassword).toHaveBeenCalledWith(NEW_PASSWORD, 'old-hash');
         expect(consumeToken).not.toHaveBeenCalled();
-        expect(updatePassword).not.toHaveBeenCalled();
+        expect(resetPasswordRevokingSessions).not.toHaveBeenCalled();
     });
 
-    it('returns invalid_token when updatePassword fails', async () => {
+    it('returns invalid_token when resetPasswordRevokingSessions fails', async () => {
         const { dependencies } = makeDependencies({
             updatePasswordResult: false,
         });
@@ -329,7 +339,7 @@ describe('confirmPasswordReset', () => {
             dependencies,
             getToken,
             consumeToken,
-            updatePassword,
+            resetPasswordRevokingSessions,
             hashPassword,
             verifyPassword,
         } = makeDependencies();
@@ -352,7 +362,7 @@ describe('confirmPasswordReset', () => {
             callOrder.push('hash');
             return 'new-hashed-password';
         });
-        updatePassword.mockImplementation(async () => {
+        resetPasswordRevokingSessions.mockImplementation(async () => {
             callOrder.push('update');
             return true;
         });
@@ -377,7 +387,7 @@ describe('confirmPasswordReset', () => {
         );
         expect(verifyPassword).toHaveBeenCalledWith(NEW_PASSWORD, 'old-hash');
         expect(hashPassword).toHaveBeenCalledWith(NEW_PASSWORD);
-        expect(updatePassword).toHaveBeenCalledWith(
+        expect(resetPasswordRevokingSessions).toHaveBeenCalledWith(
             'user-1',
             'new-hashed-password'
         );
@@ -394,8 +404,8 @@ describe('confirmPasswordReset', () => {
         // Simulate the atomic semantics: the first consume returns the value,
         // every subsequent consume on the same key returns null. Both callers
         // share the same dependency container; only the winning caller should
-        // reach updatePassword.
-        const { dependencies, consumeToken, updatePassword } =
+        // reach resetPasswordRevokingSessions.
+        const { dependencies, consumeToken, resetPasswordRevokingSessions } =
             makeDependencies();
         let consumed = false;
         consumeToken.mockImplementation(async () => {
@@ -431,7 +441,7 @@ describe('confirmPasswordReset', () => {
         if (failure && !failure.ok) {
             expect(failure.error.code).toBe('expired_token');
         }
-        expect(updatePassword).toHaveBeenCalledTimes(1);
+        expect(resetPasswordRevokingSessions).toHaveBeenCalledTimes(1);
     });
 
     describe('남용 한도와 로그인 잠금 해제', () => {
@@ -457,8 +467,12 @@ describe('confirmPasswordReset', () => {
         });
 
         it('returns rate_limited without reading the token when the IP rule blocks', async () => {
-            const { dependencies, getToken, consumeToken, updatePassword } =
-                makeDependencies({ blockKey: CONFIRM_IP_KEY });
+            const {
+                dependencies,
+                getToken,
+                consumeToken,
+                resetPasswordRevokingSessions,
+            } = makeDependencies({ blockKey: CONFIRM_IP_KEY });
 
             const result = await confirmPasswordReset(
                 {
@@ -475,7 +489,7 @@ describe('confirmPasswordReset', () => {
             });
             expect(getToken).not.toHaveBeenCalled();
             expect(consumeToken).not.toHaveBeenCalled();
-            expect(updatePassword).not.toHaveBeenCalled();
+            expect(resetPasswordRevokingSessions).not.toHaveBeenCalled();
         });
 
         it('does not count a password that fails validation', async () => {

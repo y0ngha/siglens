@@ -15,6 +15,7 @@ vi.mock('@/entities/auth/lib/requestPasswordReset', () => ({
 }));
 // DrizzleUserRepository는 @/entities/auth/api에서 직접 import되므로
 // 해당 경로를 별도로 mock한다.
+vi.mock('@/shared/lib/afterWithDrain', () => ({ afterWithDrain: vi.fn() }));
 vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
@@ -45,6 +46,7 @@ vi.mock('@/shared/email/dispatcher', () => ({
 }));
 
 import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
@@ -99,11 +101,7 @@ describe('requestPasswordResetAction', () => {
 
     describe('항상 submitted: true 를 반환 (enumeration 회피)', () => {
         it('코어 호출 후 submitted: true 를 반환한다', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: true,
-                emailDispatched: true,
-            });
+            mockRequest.mockResolvedValue({ ok: true });
             const result = await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })
@@ -129,11 +127,7 @@ describe('requestPasswordResetAction', () => {
         });
 
         it('재설정 전용 로그 이름의 한도 포트를 코어에 넘긴다', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: false,
-                emailDispatched: false,
-            });
+            mockRequest.mockResolvedValue({ ok: true });
             await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })
@@ -151,27 +145,24 @@ describe('requestPasswordResetAction', () => {
             );
         });
 
-        it('메일 발송이 실패해도 submitted: true다(계정 열거 방지)', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: true,
-                emailDispatched: false,
-            });
+        it('토큰 저장·메일 발송을 응답 뒤로 미루는 afterWithDrain을 코어에 넘긴다(N69)', async () => {
+            mockRequest.mockResolvedValue({ ok: true });
             const result = await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })
             );
             expect(result).toEqual({ submitted: true });
+            expect(mockRequest).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ deferDispatch: afterWithDrain }),
+                expect.anything()
+            );
         });
     });
 
     describe('buildMessage 콜백', () => {
         it('코어에 buildMessage 콜백을 전달하며, 호출 시 email/token이 채워진 메시지를 반환한다', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: true,
-                emailDispatched: true,
-            });
+            mockRequest.mockResolvedValue({ ok: true });
             await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })
@@ -202,11 +193,7 @@ describe('requestPasswordResetAction', () => {
          */
         it('비-기본 로케일이 메일 링크에 전달된다', async () => {
             mockGetLocale.mockResolvedValue('ja');
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: true,
-                emailDispatched: true,
-            });
+            mockRequest.mockResolvedValue({ ok: true });
             await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })
@@ -223,11 +210,7 @@ describe('requestPasswordResetAction', () => {
 
     describe('입력 정규화', () => {
         it('email은 trim 후 코어로 전달한다', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: true,
-                emailDispatched: true,
-            });
+            mockRequest.mockResolvedValue({ ok: true });
             await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: '  user@example.com  ' })
@@ -269,11 +252,7 @@ describe('requestPasswordResetAction', () => {
         );
 
         it('형식이 맞으면 코어를 호출한다 — 위 가드가 항상 막지 않는다', async () => {
-            mockRequest.mockResolvedValue({
-                ok: true,
-                tokenIssued: false,
-                emailDispatched: false,
-            });
+            mockRequest.mockResolvedValue({ ok: true });
             const state = await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })

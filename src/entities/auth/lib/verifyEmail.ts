@@ -6,6 +6,7 @@ import {
 } from './tokenUtils';
 import {
     EMAIL_VERIFICATION_RATE_LIMITS,
+    RATE_LIMITED_MESSAGE,
     EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS,
 } from './authUseCaseConstants';
 import { emailVerificationAttemptsKey } from './emailVerificationKeys';
@@ -20,8 +21,6 @@ const PURPOSE = 'email_verification' as const;
 const BINDING_TOKEN_BYTES = 32;
 const INVALID_CODE_MESSAGE = '인증 코드가 올바르지 않습니다.';
 const EXPIRED_CODE_MESSAGE = '인증 코드가 만료되었습니다.';
-const RATE_LIMITED_MESSAGE =
-    '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 const TOO_MANY_ATTEMPTS_MESSAGE =
     '인증 코드를 여러 번 잘못 입력했습니다. 새 코드를 받아 주세요.';
 

@@ -12,6 +12,10 @@ import {
  */
 export const SIGNED_UP_USER_TIER: Tier = 'member';
 
+/** @internal 인증 한도(로그인·가입 코드·비밀번호 재설정)에 걸렸을 때 화면에 보이는 문구. */
+export const RATE_LIMITED_MESSAGE =
+    '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+
 /** @internal 가입 시 이미 있는 이메일을 만났을 때의 오류 코드. */
 export const EMAIL_ALREADY_EXISTS_CODE = 'email_already_exists' as const;
 

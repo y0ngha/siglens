@@ -5,6 +5,7 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { createAuthSession } from './sessionCookie';
 import {
     LOGIN_RATE_LIMITS,
+    RATE_LIMITED_MESSAGE,
     LOGIN_TIMING_DUMMY_HASH,
 } from './authUseCaseConstants';
 import {
@@ -24,8 +25,6 @@ import type {
 } from './authUseCaseTypes';
 
 const INVALID_CREDENTIALS_MESSAGE = '이메일 또는 비밀번호가 올바르지 않습니다.';
-const RATE_LIMITED_MESSAGE =
-    '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 const TOO_MANY_LOGIN_ATTEMPTS_MESSAGE =
     '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 

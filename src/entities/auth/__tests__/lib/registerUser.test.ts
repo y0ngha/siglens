@@ -78,7 +78,7 @@ function makeDependencies(options?: {
                 findById: vi.fn(),
                 createEmailUser,
                 deleteUser,
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             agreements: { insertMany },
             passwordHasher: { hashPassword },

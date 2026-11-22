@@ -58,7 +58,7 @@ function makeDependencies(deleted: boolean): {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser,
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: {
                 findByUserId: vi.fn().mockResolvedValue([]),
@@ -166,7 +166,7 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
@@ -209,7 +209,7 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
@@ -236,7 +236,7 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: {
                 findByUserId: vi.fn().mockRejectedValue(lookupError),
@@ -269,7 +269,7 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: {
                 findByUserId: vi.fn().mockResolvedValue([
