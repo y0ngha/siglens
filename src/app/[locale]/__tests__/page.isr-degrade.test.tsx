@@ -21,8 +21,8 @@ vi.mock('@/widgets/home/StatsBar', () => ({
 vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
     HomeWatchlistCard: () => null,
 }));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
+vi.mock('@/widgets/home/PopularTickers', () => ({
+    PopularTickers: () => null,
 }));
 vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
     // 컴포넌트가 아닌 상수도 이 배럴을 통해 나간다 — 빠뜨리면 `page.tsx`가
@@ -37,9 +37,6 @@ vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
         { href: '/news', labelKey: 'shared.config.nav.full.news.us' },
     ],
 }));
-vi.mock('@/widgets/home/CryptoShowcase', () => ({
-    CryptoShowcase: () => null,
-}));
 vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
 }));
@@ -48,9 +45,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-}));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
 }));
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => null,

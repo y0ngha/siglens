@@ -35,6 +35,11 @@ type MailAlertCardTarget =
 
 interface MailAlertCardProps {
     readonly target: MailAlertCardTarget;
+    /**
+     * 공포 탐욕 카드의 문구에 시장 이름을 넣는다. 시장별 허브(`/fear-greed*`)는 페이지가 이미 시장을 말하니
+     * 꺼 두고, 시장을 알리는 문맥이 없는 홈에서만 켠다. 신호 허브 카드에는 영향이 없다.
+     */
+    readonly showMarketInLine?: boolean;
 }
 
 function topicOf(target: MailAlertCardTarget): MailAlertTopic {
@@ -48,13 +53,18 @@ function topicOf(target: MailAlertCardTarget): MailAlertTopic {
  * 링크는 담지 않는다(버튼은 대화상자를 여는 `<button>`). 대화상자는 누를 때 내려받는다. 데이터 읽기·쿠키
  * 접근이 없어 정적 페이지를 동적으로 만들지 않는다.
  */
-export function MailAlertCard({ target }: MailAlertCardProps) {
+export function MailAlertCard({
+    target,
+    showMarketInLine = false,
+}: MailAlertCardProps) {
     const t = useTranslations('features.mail-alert');
     const [isOpen, setIsOpen] = useState(false);
     const topic = topicOf(target);
     const line =
         target.kind === 'fear_greed'
-            ? t('cardFearGreed')
+            ? showMarketInLine
+                ? t('cardFearGreedMarket', { market: target.marketLabel })
+                : t('cardFearGreed')
             : t('cardSignalHub', { hubName: target.hubName });
     const title =
         target.kind === 'fear_greed'

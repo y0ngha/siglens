@@ -38,8 +38,12 @@ vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { defined } from '@/shared/test-utils/defined';
 
-import { CategoryCardGrid, type CategoryCard } from '../../ui/CategoryCardGrid';
+import {
+    CategoryCardGridBody,
+    type CategoryCard,
+} from '../../ui/CategoryCardGrid';
 
 const CARDS: CategoryCard[] = [
     {
@@ -51,32 +55,24 @@ const CARDS: CategoryCard[] = [
     },
 ];
 
-describe('CategoryCardGrid', () => {
-    it('섹션 헤딩과 nav 랜드마크를 렌더한다', () => {
-        render(
-            <CategoryCardGrid
-                heading="암호화폐 인기 종목"
-                ariaLabel="암호화폐 인기 종목 탐색"
-                cards={CARDS}
-            />
-        );
-        expect(
-            screen.getByRole('heading', { name: '암호화폐 인기 종목' })
-        ).toBeInTheDocument();
-        expect(
-            screen.getByRole('navigation', { name: '암호화폐 인기 종목 탐색' })
-        ).toBeInTheDocument();
+const BASE_CARD = defined(CARDS[0]);
+
+describe('CategoryCardGridBody', () => {
+    it('제목과 nav 랜드마크는 그리지 않는다(PopularTickers가 소유한다)', () => {
+        render(<CategoryCardGridBody cards={CARDS} />);
+        expect(screen.queryByRole('navigation')).toBeNull();
+        expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
     });
 
     it('카드 라벨을 헤딩으로 렌더한다', () => {
-        render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
+        render(<CategoryCardGridBody cards={CARDS} />);
         expect(
             screen.getByRole('heading', { name: '메이저' })
         ).toBeInTheDocument();
     });
 
     it('칩에 한글명과 티커를 모두 표시하고 /symbol로 링크한다', () => {
-        render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
+        render(<CategoryCardGridBody cards={CARDS} />);
         const link = screen.getByRole('link', { name: /BTCUSD/ });
         expect(link).toHaveAttribute('href', '/BTCUSD');
         expect(link).toHaveTextContent('비트코인');
@@ -84,9 +80,7 @@ describe('CategoryCardGrid', () => {
     });
 
     it('카드 요소에 DOM id를 달지 않는다(카테고리 id가 문서 내에서 겹칠 수 있다)', () => {
-        const { container } = render(
-            <CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />
-        );
+        const { container } = render(<CategoryCardGridBody cards={CARDS} />);
 
         expect(container.querySelector('#major')).toBeNull();
         expect(container.querySelector('[id]')).toBeNull();
@@ -94,12 +88,10 @@ describe('CategoryCardGrid', () => {
 
     it('labelKey가 있으면 h3 제목과 종목 목록 aria-label이 같은 번역 제목을 쓴다', () => {
         render(
-            <CategoryCardGrid
-                heading="h"
-                ariaLabel="a"
+            <CategoryCardGridBody
                 cards={[
                     {
-                        ...CARDS[0]!,
+                        ...BASE_CARD,
                         label: '원문 라벨',
                         labelKey: 'tickerCategory.Major',
                     },
@@ -114,18 +106,41 @@ describe('CategoryCardGrid', () => {
         );
     });
 
-    it('cards가 빈 배열이면 카드 없이 nav를 렌더한다', () => {
-        render(
-            <CategoryCardGrid
-                heading="테스트"
-                ariaLabel="테스트 탐색"
-                cards={[]}
-            />
-        );
-        expect(
-            screen.getByRole('navigation', { name: '테스트 탐색' })
-        ).toBeInTheDocument();
+    it('cards가 빈 배열이면 카드를 그리지 않는다', () => {
+        render(<CategoryCardGridBody cards={[]} />);
         expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
+    });
+
+    it('첫 3장은 항상 보이고 4번째부터 접힘 클래스를 단다(DOM에서는 빼지 않는다)', () => {
+        const many: CategoryCard[] = Array.from({ length: 8 }, (_, i) => ({
+            ...BASE_CARD,
+            id: `c${i}`,
+            label: `카드${i}`,
+            items: [{ symbol: `S${i}`, name: `종목${i}` }],
+        }));
+        const { container } = render(<CategoryCardGridBody cards={many} />);
+
+        const cards = Array.from(
+            container.querySelectorAll<HTMLElement>('div.border-l-2')
+        );
+        expect(cards).toHaveLength(8);
+        const collapsed = cards.map(
+            card =>
+                /group-data-\[collapsed=true\]\/grid:([\w-]+:)?hidden/.exec(
+                    card.className
+                )?.[0] ?? null
+        );
+        expect(collapsed).toEqual([
+            null,
+            null,
+            null,
+            'group-data-[collapsed=true]/grid:max-md:hidden',
+            'group-data-[collapsed=true]/grid:max-lg:hidden',
+            'group-data-[collapsed=true]/grid:max-lg:hidden',
+            'group-data-[collapsed=true]/grid:hidden',
+            'group-data-[collapsed=true]/grid:hidden',
+        ]);
+        expect(container.querySelectorAll('a')).toHaveLength(8);
     });
 });
 
@@ -133,15 +148,13 @@ describe('CategoryCardGrid', () => {
  * 카드가 티커 칩만 나열하면 크롤러가 받는 것은 링크 묶음뿐이다(검색 노출 정책).
  * 카테고리가 무엇을 묶은 것인지 한 문장이 h3 아래 있어야 한다.
  */
-describe('CategoryCardGrid 카테고리 설명', () => {
+describe('CategoryCardGridBody 카테고리 설명', () => {
     it('descriptionKey가 있으면 h3 아래 한 줄 설명을 렌더한다', () => {
         render(
-            <CategoryCardGrid
-                heading="암호화폐 인기 종목"
-                ariaLabel="암호화폐 인기 종목 탐색"
+            <CategoryCardGridBody
                 cards={[
                     {
-                        ...CARDS[0],
+                        ...BASE_CARD,
                         descriptionKey: 'categoryDescription.Major',
                     },
                 ]}
@@ -158,46 +171,31 @@ describe('CategoryCardGrid 카테고리 설명', () => {
     });
 
     it('descriptionKey가 없으면 설명 단락을 만들지 않는다', () => {
-        const { container } = render(
-            <CategoryCardGrid
-                heading="암호화폐 인기 종목"
-                ariaLabel="암호화폐 인기 종목 탐색"
-                cards={CARDS}
-            />
-        );
+        const { container } = render(<CategoryCardGridBody cards={CARDS} />);
         expect(container.querySelectorAll('p')).toHaveLength(0);
     });
 
-    it('watchlistSource가 있으면 알약마다 링크와 형제인 ★를 붙이고 앵커 id를 단다', () => {
+    it('watchlistSource가 있으면 알약마다 링크와 형제인 ★를 붙인다', () => {
         render(
-            <CategoryCardGrid
-                heading="h"
-                ariaLabel="a"
+            <CategoryCardGridBody
                 cards={CARDS}
                 watchlistSource="home_popular"
-                sectionId="popular"
             />
         );
         const star = screen.getByTestId('star-BTCUSD');
         expect(star).toHaveTextContent('home_popular');
         // ★는 링크 안이 아니라 옆에 있다 — 누르면 담기만 하고 이동하지 않는다.
         expect(star.closest('a')).toBeNull();
-        expect(screen.getByRole('navigation', { name: 'a' })).toHaveAttribute(
-            'id',
-            'popular'
-        );
     });
 
     it('watchlistSource가 없으면 ★를 그리지 않는다', () => {
-        render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
+        render(<CategoryCardGridBody cards={CARDS} />);
         expect(screen.queryByTestId('star-BTCUSD')).toBeNull();
     });
 
     it('watchlistSource가 있으면 ★들을 관심종목 스코프 하나로 감싼다', () => {
         render(
-            <CategoryCardGrid
-                heading="h"
-                ariaLabel="a"
+            <CategoryCardGridBody
                 cards={CARDS}
                 watchlistSource="home_popular"
             />
@@ -208,7 +206,7 @@ describe('CategoryCardGrid 카테고리 설명', () => {
     });
 
     it('watchlistSource가 없으면 관심종목 스코프를 두지 않는다', () => {
-        render(<CategoryCardGrid heading="h" ariaLabel="a" cards={CARDS} />);
+        render(<CategoryCardGridBody cards={CARDS} />);
         expect(screen.queryByTestId('pill-scope')).toBeNull();
     });
 });
