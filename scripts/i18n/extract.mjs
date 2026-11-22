@@ -44,7 +44,8 @@ const WRITE = args.includes('--write') || APPLY || CHECK;
  *
  * `--write`가 쓰는 파일은 전부 여기를 지난다. `--check`는 같은 호출에서 쓰는 대신
  * 디스크 내용과 비교하므로, "쓰기 모드에선 쓰지만 검사 모드에선 비교하지 않는 파일"이
- * 생길 수 없다. 새 산출물을 `writeFileSync`로 직접 쓰면 패리티 테스트가 실패한다.
+ * 생길 수 없다. 새 산출물은 반드시 이 함수로 쓰고, `__tests__/extractCheck.test.ts`의
+ * `OUTPUTS`에도 추가해 차이·삭제 검사가 그 파일까지 돌게 한다(테스트는 나열된 산출물만 본다).
  */
 const driftedFiles = [];
 function emitFile(absPath, content) {
