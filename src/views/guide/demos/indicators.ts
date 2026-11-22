@@ -4,6 +4,8 @@
  */
 import {
     calculateIndicators,
+    GOLDEN_CROSS_FAST_PERIOD,
+    GOLDEN_CROSS_SLOW_PERIOD,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
 import { toCoreBars } from '@/views/guide/demos/generators';
@@ -11,6 +13,7 @@ import {
     DIVERGENCE_LOW_1,
     DIVERGENCE_LOW_2,
     getDivergenceSeries,
+    getGoldenCrossSeries,
     getIntradaySeries,
     getRegimeSeries,
     getSharedSeries,
@@ -233,7 +236,7 @@ const macdDemo = windowed(185, c => {
     };
 });
 
-/** SIGLENS 골든크로스는 20일선이 50일선을 넘는 것이라 core가 내지 않는 50일 단순이동평균을 직접 계산한다. */
+/** 50일 단순이동평균처럼 core가 내지 않는 기간(`MA_DEFAULT_PERIODS`에 없음)을 직접 계산한다. */
 function sma(values: readonly number[], period: number): Num[] {
     return values.map((_, index) =>
         index < period - 1
@@ -244,24 +247,35 @@ function sma(values: readonly number[], period: number): Num[] {
     );
 }
 
-/** 골든크로스 데모의 단기 이동평균 기간. core 기본 기간이라 core 결과(`maOf`)에서 그대로 꺼낸다. */
-export const GOLDEN_CROSS_SHORT = 20;
-/** 골든크로스 데모의 장기 이동평균 기간. core 기본 기간(`MA_DEFAULT_PERIODS`)에 없어 이 파일의 `sma`로 계산한다. */
-export const GOLDEN_CROSS_LONG = 50;
+/**
+ * 이동평균 데모의 구간 시작. 200일선은 199번째 봉부터 값이 나오므로 그 뒤부터 잘라, 두 선이 구간 처음부터
+ * 끝까지 그려지게 한다.
+ */
+export const MA_DEMO_START = GOLDEN_CROSS_SLOW_PERIOD;
 
-const maDemo = windowed(175, c => {
-    const closes = getSharedSeries().bars.map(b => b.close);
-    const short = maOf(c.r, GOLDEN_CROSS_SHORT);
-    const long = sma(closes, GOLDEN_CROSS_LONG);
-    const idx = c.find(crossedUp(short, long));
-    return {
-        overlays: [
-            overlayLine(c.s(short), 'MA20', 'a'),
-            overlayLine(c.s(long), 'MA50', 'b'),
-            ...marker(idx, 'Golden cross', 'bull', 'below'),
-        ],
-    };
-});
+/**
+ * SIGLENS 골든크로스는 50일선이 200일선을 넘는 것이다(판정 기간은 core 상수). 50일선은 core가 내지 않아
+ * 이 파일의 `sma`로 계산하고, 200일선은 core 결과에서 꺼낸다. 시세는 200봉이 넘어야 해서 따로 둔
+ * `getGoldenCrossSeries`를 쓴다.
+ */
+const maDemo = windowed(
+    MA_DEMO_START,
+    c => {
+        const closes = getGoldenCrossSeries().bars.map(b => b.close);
+        const fast = sma(closes, GOLDEN_CROSS_FAST_PERIOD);
+        const slow = maOf(c.r, GOLDEN_CROSS_SLOW_PERIOD);
+        const idx = c.find(crossedUp(fast, slow));
+        return {
+            overlays: [
+                overlayLine(c.s(fast), `MA${GOLDEN_CROSS_FAST_PERIOD}`, 'a'),
+                overlayLine(c.s(slow), `MA${GOLDEN_CROSS_SLOW_PERIOD}`, 'b'),
+                ...marker(idx, 'Golden cross', 'bull', 'below'),
+            ],
+        };
+    },
+    getGoldenCrossSeries,
+    100
+);
 
 const emaDemo = windowed(40, c => ({
     overlays: [

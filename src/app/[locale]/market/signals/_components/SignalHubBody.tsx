@@ -1,5 +1,12 @@
 import type { ReactElement } from 'react';
 import { getTranslations } from 'next-intl/server';
+import {
+    CROSS_LOOKBACK_BARS,
+    GOLDEN_CROSS_FAST_PERIOD,
+    GOLDEN_CROSS_SLOW_PERIOD,
+    SHORT_MA_CROSS_FAST_PERIOD,
+    SHORT_MA_CROSS_SLOW_PERIOD,
+} from '@y0ngha/siglens-core';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { SIGNAL_HUB_MARKET_ORDER } from '@/entities/signal-history/lib/signalHubRows';
@@ -12,6 +19,7 @@ import type {
     SignalEpisodeRow,
     SignalHistoryMarket,
 } from '@/entities/signal-history/types';
+import { SIGNAL_SCAN_UNIVERSE_SIZE } from '@/shared/config/signalScanUniverse/signalScanUniverse';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
@@ -39,6 +47,15 @@ import { buildSignalHubItemListJsonLd } from '../_lib/signalHubItemListJsonLd';
 import { SignalHubRowItem } from './SignalHubRowItem';
 
 const MARKET_PATH = '/market';
+
+/** 골든·데드크로스 정의 문구의 숫자 — 판정에 쓰는 core 상수 그대로(50/200, 최근 3봉, 단기 교차 20/50). */
+const DEFINITION_VALUES = {
+    bars: CROSS_LOOKBACK_BARS,
+    fast: GOLDEN_CROSS_FAST_PERIOD,
+    slow: GOLDEN_CROSS_SLOW_PERIOD,
+    shortFast: SHORT_MA_CROSS_FAST_PERIOD,
+    shortSlow: SHORT_MA_CROSS_SLOW_PERIOD,
+} as const;
 
 /** 처음 포착 세션별로 묶는다(이미 최신순으로 온다). */
 function groupBySession(
@@ -139,8 +156,20 @@ export async function SignalHubBody({
                         {copy.title}
                     </h1>
                     <p className="mt-3 max-w-3xl text-sm leading-relaxed text-secondary-300">
-                        {t('intro', { signal: copy.signalLabel })}
+                        {t('intro', {
+                            signal: copy.signalLabel,
+                            usCount: SIGNAL_SCAN_UNIVERSE_SIZE.us,
+                            krCount: SIGNAL_SCAN_UNIVERSE_SIZE.kr,
+                        })}
                     </p>
+                    {hub.definitionKey !== undefined && (
+                        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-secondary-300">
+                            {/* 키를 리터럴로 적어야 추출기가 두 키를 모두 읽는다. 숫자는 core 상수라 판정과 문구가 어긋나지 않는다. */}
+                            {hub.definitionKey === 'definitionGoldenCross'
+                                ? t('definitionGoldenCross', DEFINITION_VALUES)
+                                : t('definitionDeathCross', DEFINITION_VALUES)}
+                        </p>
+                    )}
 
                     {/* 소개 문단 뒤, 가이드 앞. 공개 전에는 그리지 않는다. */}
                     {isMailAlertLaunched() && (

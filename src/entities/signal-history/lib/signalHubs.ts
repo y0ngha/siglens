@@ -8,6 +8,11 @@ export interface SignalHub {
     readonly signalType: SignalType;
     /** 신호 설명을 빌려 올 가이드 항목 — 제목·요약·링크(4개 로케일 번역이 이미 있다). */
     readonly guide: { readonly category: GuideCategory; readonly slug: string };
+    /**
+     * 소개 문단 뒤에 한 줄 정의를 붙일 신호 페이지만 가진다. 값은 `app.market.signalHub`의 명시 키라
+     * 번역 추출기가 두 키를 모두 읽는다(슬러그 분기 없음).
+     */
+    readonly definitionKey?: 'definitionGoldenCross' | 'definitionDeathCross';
 }
 
 /**
@@ -23,11 +28,13 @@ export const SIGNAL_HUBS: readonly SignalHub[] = [
         slug: 'golden-cross',
         signalType: 'golden_cross',
         guide: { category: 'indicators', slug: 'ma' },
+        definitionKey: 'definitionGoldenCross',
     },
     {
         slug: 'death-cross',
         signalType: 'death_cross',
         guide: { category: 'indicators', slug: 'ma' },
+        definitionKey: 'definitionDeathCross',
     },
     {
         slug: '52-week-high',

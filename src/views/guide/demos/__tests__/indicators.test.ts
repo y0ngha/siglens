@@ -1,6 +1,18 @@
+import {
+    calculateIndicators,
+    CROSS_LOOKBACK_BARS,
+    detectSignals,
+    GOLDEN_CROSS_FAST_PERIOD,
+    GOLDEN_CROSS_SLOW_PERIOD,
+} from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { INDICATOR_DEMOS } from '@/views/guide/demos/indicators';
-import { getSharedSeries } from '@/views/guide/demos/sharedSeries';
+import { defined as required } from '@/shared/test-utils/defined';
+import { toCoreBars } from '@/views/guide/demos/generators';
+import { INDICATOR_DEMOS, MA_DEMO_START } from '@/views/guide/demos/indicators';
+import {
+    getGoldenCrossSeries,
+    getSharedSeries,
+} from '@/views/guide/demos/sharedSeries';
 import type {
     DemoOverlay,
     DemoPane,
@@ -302,18 +314,53 @@ describe('elder-impulse demo', () => {
 
 describe('ma demo', () => {
     const d = demo('ma');
-    const [short, long] = series(d);
+    const [fast, slow] = series(d);
 
-    it('shows MA20 and MA50 (the SIGLENS golden-cross pair)', () => {
-        expect([short.label, long.label]).toEqual(['MA20', 'MA50']);
+    it('draws the 50- and 200-day lines the SIGLENS golden cross uses', () => {
+        expect([fast.label, slow.label]).toEqual([
+            `MA${GOLDEN_CROSS_FAST_PERIOD}`,
+            `MA${GOLDEN_CROSS_SLOW_PERIOD}`,
+        ]);
     });
 
-    it('marks a true 20-over-50 upward cross', () => {
+    it('runs on a series longer than 260 bars so the 200-day line exists', () => {
+        expect(getGoldenCrossSeries().bars.length).toBeGreaterThanOrEqual(260);
+        expect(slow.values.every(v => v !== null)).toBe(true);
+    });
+
+    it('marks a true 50-over-200 upward cross', () => {
         const m = firstMarker(d);
-        expect(short.values[m.i]!).toBeGreaterThan(long.values[m.i]!);
-        expect(short.values[m.i - 1]!).toBeLessThanOrEqual(
-            long.values[m.i - 1]!
+        expect(required(fast.values[m.i])).toBeGreaterThan(
+            required(slow.values[m.i])
         );
+        expect(required(fast.values[m.i - 1])).toBeLessThanOrEqual(
+            required(slow.values[m.i - 1])
+        );
+    });
+
+    it('core detectSignals reports golden_cross on the marked bar, and not on the bar before', () => {
+        const { bars } = getGoldenCrossSeries();
+        const marked = MA_DEMO_START + firstMarker(d).i;
+        const goldenAt = (end: number): boolean => {
+            const window = toCoreBars(bars.slice(0, end + 1));
+            return detectSignals(window, calculateIndicators(window)).some(
+                signal =>
+                    signal.type === 'golden_cross' &&
+                    signal.phase === 'confirmed'
+            );
+        };
+
+        expect(goldenAt(marked)).toBe(true);
+        expect(goldenAt(marked + CROSS_LOOKBACK_BARS - 1)).toBe(true);
+        expect(goldenAt(marked - 1)).toBe(false);
+    });
+
+    it('the 50-day line is the plain 50-bar average of the closes', () => {
+        const closes = getGoldenCrossSeries().bars.map(b => b.close);
+        const abs = MA_DEMO_START + 5;
+        const expected =
+            closes.slice(abs - 49, abs + 1).reduce((a, b) => a + b, 0) / 50;
+        expect(required(fast.values[5])).toBeCloseTo(expected, 8);
     });
 });
 

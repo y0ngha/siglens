@@ -26,6 +26,17 @@ describe('SIGNAL_HUBS', () => {
         }
     });
 
+    it('정의 문구 키는 골든·데드크로스 허브에만 있고 서로 짝이 맞다', () => {
+        const withDefinition = SIGNAL_HUBS.filter(
+            hub => hub.definitionKey !== undefined
+        ).map(hub => [hub.signalType, hub.definitionKey]);
+
+        expect(withDefinition).toEqual([
+            ['golden_cross', 'definitionGoldenCross'],
+            ['death_cross', 'definitionDeathCross'],
+        ]);
+    });
+
     it('빌려 오는 가이드 항목이 시드에 실제로 있다 — 없으면 설명 카드가 조용히 빠진다', () => {
         for (const hub of SIGNAL_HUBS) {
             expect(

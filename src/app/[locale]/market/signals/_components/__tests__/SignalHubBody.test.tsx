@@ -45,10 +45,22 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 
 import { screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { findSignalHub } from '@/entities/signal-history/lib/signalHubs';
+import {
+    CROSS_LOOKBACK_BARS,
+    GOLDEN_CROSS_FAST_PERIOD,
+    GOLDEN_CROSS_SLOW_PERIOD,
+    SHORT_MA_CROSS_FAST_PERIOD,
+    SHORT_MA_CROSS_SLOW_PERIOD,
+} from '@y0ngha/siglens-core';
+import {
+    findSignalHub,
+    type SignalHub,
+} from '@/entities/signal-history/lib/signalHubs';
 import type { SignalEpisodeRow } from '@/entities/signal-history/types';
+import { SIGNAL_SCAN_UNIVERSE_SIZE } from '@/shared/config/signalScanUniverse/signalScanUniverse';
 import type { Locale } from '@/shared/i18n/locales';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { defined } from '@/shared/test-utils/defined';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import ko from '../../../../../../../messages/ko.json';
 import { SignalHubBody } from '../SignalHubBody';
@@ -90,9 +102,9 @@ function countsOf(list: readonly SignalEpisodeRow[]) {
     };
 }
 
-async function renderBody(locale: Locale = 'ko') {
+async function renderBody(locale: Locale = 'ko', hub: SignalHub = GOLDEN) {
     intl.locale = locale;
-    const tree = await SignalHubBody({ hub: GOLDEN, locale });
+    const tree = await SignalHubBody({ hub, locale });
     return renderWithIntl(
         (await resolveAsyncServerTree(tree)) as ReactElement,
         {
@@ -132,6 +144,52 @@ describe('SignalHubBody', () => {
         expect(
             screen.getByRole('link', { name: c.breadcrumbMarket })
         ).toHaveAttribute('href', '/market');
+    });
+
+    it('소개 문구의 종목 수는 스캔 대상 수에서 온다', async () => {
+        await renderBody();
+
+        const intro = c.intro
+            .replace('{signal}', SIGNAL)
+            .replace('{usCount}', String(SIGNAL_SCAN_UNIVERSE_SIZE.us))
+            .replace('{krCount}', String(SIGNAL_SCAN_UNIVERSE_SIZE.kr));
+        expect(screen.getByText(intro)).toBeInTheDocument();
+        expect(intro).not.toMatch(/약 \d+종목/);
+    });
+
+    it('골든크로스 페이지에만 50일선이 200일선을 넘은 종목이라는 정의를 붙인다', async () => {
+        await renderBody();
+
+        const definition = c.definitionGoldenCross
+            .replace('{bars}', String(CROSS_LOOKBACK_BARS))
+            .replace('{fast}', String(GOLDEN_CROSS_FAST_PERIOD))
+            .replace('{slow}', String(GOLDEN_CROSS_SLOW_PERIOD))
+            .replace('{shortFast}', String(SHORT_MA_CROSS_FAST_PERIOD))
+            .replace('{shortSlow}', String(SHORT_MA_CROSS_SLOW_PERIOD));
+        expect(screen.getByText(definition)).toBeInTheDocument();
+        expect(definition).toContain(
+            '최근 3거래일 안에 50일 이동평균선이 200일'
+        );
+        expect(definition).toContain('20일선과 50일선의 교차는 단기 이평');
+    });
+
+    it('데드크로스 페이지는 위에서 아래로 내려간 종목이라는 정의를 붙인다', async () => {
+        await renderBody('ko', defined(findSignalHub('death-cross')));
+
+        const definition = c.definitionDeathCross
+            .replace('{bars}', String(CROSS_LOOKBACK_BARS))
+            .replace('{fast}', String(GOLDEN_CROSS_FAST_PERIOD))
+            .replace('{slow}', String(GOLDEN_CROSS_SLOW_PERIOD))
+            .replace('{shortFast}', String(SHORT_MA_CROSS_FAST_PERIOD))
+            .replace('{shortSlow}', String(SHORT_MA_CROSS_SLOW_PERIOD));
+        expect(screen.getByText(definition)).toBeInTheDocument();
+        expect(definition).toContain('위에서 아래로');
+    });
+
+    it('정의 키가 없는 신호 페이지에는 정의 문구가 없다', async () => {
+        await renderBody('ko', defined(findSignalHub('rsi-oversold')));
+
+        expect(screen.queryByText(/이동평균선을/)).toBeNull();
     });
 
     it('미국·한국으로 나눠 처음 포착 세션별로 묶고 종목 페이지로 링크한다', async () => {
@@ -288,6 +346,24 @@ describe('SignalHubBody', () => {
         );
         expect(
             screen.getByRole('link', { name: 'NVDA이름' })
+        ).not.toHaveAttribute('rel');
+    });
+
+    it('한국 종목도 따라갈 목록 밖이면 nofollow, 안이면 rel이 없다', async () => {
+        const rowsWithKr = [...FIVE_ROWS, row('999999.KQ', 'kr', '2026-11-13')];
+        hubData.value = {
+            rows: rowsWithKr,
+            counts: countsOf(rowsWithKr),
+            degraded: false,
+        };
+
+        await renderBody();
+
+        expect(
+            screen.getByRole('link', { name: '999999.KQ이름' })
+        ).toHaveAttribute('rel', 'nofollow');
+        expect(
+            screen.getByRole('link', { name: '005930.KS이름' })
         ).not.toHaveAttribute('rel');
     });
 

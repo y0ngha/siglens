@@ -41,6 +41,8 @@ const SIGNAL_TYPE_SET = {
     rsi_bullish_divergence: true,
     rsi_overbought: true,
     rsi_oversold: true,
+    short_ma_bearish_cross: true,
+    short_ma_bullish_cross: true,
     squeeze_momentum_bearish: true,
     squeeze_momentum_bullish: true,
     supertrend_bearish_flip: true,

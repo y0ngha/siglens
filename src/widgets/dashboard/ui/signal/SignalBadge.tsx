@@ -51,6 +51,8 @@ const SIGNAL_BADGE_LABEL_KEY: Record<SignalType, string> = {
     new_52w_low: 'signalType.new_52w_low',
     gap_up: 'signalType.gap_up',
     gap_down: 'signalType.gap_down',
+    short_ma_bullish_cross: 'signalType.short_ma_bullish_cross',
+    short_ma_bearish_cross: 'signalType.short_ma_bearish_cross',
 };
 
 interface SignalBadgeProps {
