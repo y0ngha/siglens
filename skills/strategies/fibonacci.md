@@ -8,19 +8,19 @@ confidence_weight: 0.5
 overlay_kind: fibonacci
 gating:
   tier: always_on
-token_cost: 663
-digest_hash: "cc9a5ed1"
+token_cost: 706
+digest_hash: "a7d1c27a"
 ---
 
 ## Overview
 
-Fibonacci levels are reference levels the market watches, not predictions (Batchelor & Ramyar, "Magic numbers in the Dow", 2006: no clustering of trend ratios at Fibonacci values beyond chance). Weight them only where they coincide with other structure (prior swing, MA, volume node). Whatever reaction they get comes from many participants watching the same levels, not from the ratios themselves.
+Fibonacci levels are reference levels the market watches, not predictions (Batchelor & Ramyar, "Magic numbers in the Dow", 2006: no clustering of trend ratios at Fibonacci values beyond chance). Whatever reaction they get comes from many participants watching the same levels, not from the ratios themselves. Cite a level as a reference price, and note which other structures (prior swing, MA, volume node) sit within a small distance of it as a plain observation.
 
 This skill covers both retracement (where a pullback may stop) and extension (where the next leg may reach). All level prices are computed by the app and listed in `## Market Reference` — the model cites them, never computes them.
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.5 — widely watched, but no standalone predictive power. Confidence rises when a listed level coincides with a prior swing, horizontal S/R, a key MA (MA20/50/200), a volume node, or a level from another horizon (cluster), and when a reversal candle confirms at the level. It falls when the level stands alone, the swing structure is unclear, the market is choppy, or several listed levels sit within about 1% of each other (ambiguous zone).
+confidence_weight: 0.5 — widely watched, but no standalone predictive power. Describe whether a listed level coincides with a prior swing, horizontal S/R, a key MA (MA20/50/200), a volume node, or a level from another horizon (overlap); the overlap is an observation about the chart and carries no strength or edge claim. Note when the swing structure is unclear, the market is choppy, or several listed levels sit within about 1% of each other (ambiguous zone).
 
 ## Levels
 
@@ -52,11 +52,11 @@ confidence_weight: 0.5 — widely watched, but no standalone predictive power. C
 
 ## Cluster
 
-A zone where listed levels from different horizons converge, or where a listed level meets horizontal S/R, a key MA or a volume node, is stronger than any single level. More independent structures in the zone = stronger zone.
+A zone where listed levels from different horizons converge, or where a listed level meets horizontal S/R, a key MA or a volume node, can be described as an overlap zone: state which levels sit within what distance of each other, as a plain observation with no strength claim.
 
 ## Trade Use
 
-- **Pullback entry**: in a confirmed trend, price reaches a listed 38.2/50/61.8% level and at least one confirmation appears — reversal candle at the level, RSI divergence, volume drying up on the pullback then expanding on the turn, or coincidence with S/R or an MA. Enter on the confirmation close (mirror for downtrends).
+- **Pullback entry**: in a confirmed trend, price reaches a listed 38.2/50/61.8% level and at least one confirmation appears — reversal candle at the level, RSI divergence, or volume drying up on the pullback then expanding on the turn. Note separately whether the level also sits near S/R or an MA, as a plain observation. Enter on the confirmation close (mirror for downtrends).
 - **Stop**: beyond the next deeper listed level.
 - **Targets**: retest of the swing extreme, then listed extension levels.
 - **Invalidation**: a close beyond the listed 78.6% level → trend likely broken.
@@ -64,7 +64,7 @@ A zone where listed levels from different horizons converge, or where a listed l
 
 ## Caveats
 
-- Not a standalone tool; a level without confluence is weak.
+- Not a standalone tool. An overlap with other structure is an observation, not a strength claim, and a level without overlap is not a weaker one.
 - Swing selection is subjective — use the anchor the app lists, not your own swing.
 - Don't draw levels on minor swings.
 
@@ -93,18 +93,18 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 
 Additional output rules:
 - If price is within about 1% of a listed level, describe the reaction there.
-- Highlight a cluster as the stronger zone; call a level with no confluence weak.
+- Describe a cluster as an overlap of listed levels; make no strength claim about it, and do not call a lone level weak.
 - If price has closed beyond a listed 78.6% retracement, note that the trend is likely invalidated.
 - Set the `trend` field: `bullish` if price is bouncing from a retracement level in an uptrend, `bearish` if rejecting from a retracement level in a downtrend, `neutral` if between levels or no clear trend.
 
 <!-- PROMPT_DIGEST:START -->
 피보나치 전략 (confidence_weight 0.5)
-Fibonacci levels are reference levels the market watches, not predictions (Batchelor & Ramyar 2006: no clustering beyond chance). Weight them only where they coincide with other structure (prior swing, MA, volume node).
+Fibonacci levels are reference levels the market watches, not predictions (Batchelor & Ramyar 2006: no clustering beyond chance). Cite a level as a reference price, and note which other structures (prior swing, MA, volume node) sit within a small distance of it as a plain observation.
 
 Retracement 23.6/38.2/50/61.8/78.6% of a completed swing (50% = midpoint, not Fibonacci). Uptrend: levels = support on pullbacks; downtrend: resistance on bounces. Price reacts in a zone, not at the exact price. Depth: <38.2% strong trend; 38.2–50% ordinary pullback; 50–61.8% deep, momentum weakening; 61.8–78.6% trend questionable; close beyond 78.6% = trend likely broken.
 Extension 100/127.2/161.8/200/261.8% = profit-target zones, not entries. Two-point `Fib ext` projects the anchor swing; three-point A-B-C (A swing start, B swing end, C retracement end) is valid only once C exists. 100% conservative, 161.8% primary, 200/261.8% only in strong trends (near 261.8% warn of exhaustion).
-Cluster: listed levels from different horizons, or a level meeting S/R / MA / volume node = stronger zone; a lone level is weak.
-Entry use: pullback to a listed 38.2/50/61.8% + ≥1 confirmation (reversal candle, RSI divergence, volume dry-up then expansion, S/R or MA coincidence); stop beyond the next deeper listed level; targets = swing extreme, then listed extensions.
+Cluster: listed levels from different horizons, or a level meeting S/R / MA / volume node = an overlap zone, described as a plain observation with no strength claim; do not call a lone level weak.
+Entry use: pullback to a listed 38.2/50/61.8% + ≥1 confirmation (reversal candle, RSI divergence, or volume dry-up then expansion; note S/R or MA proximity separately as a plain observation); stop beyond the next deeper listed level; targets = swing extreme, then listed extensions.
 
 Market Reference (per horizon Short/Medium/Long, under Resistance-above / Support-below): nearest-list rows `Fib N%` and `Fib ext N%`; a complete `Fib table:` line (every standard ratio — use it for a ratio further than the rows cover); a `Fib anchor: swing low X → swing high Y (leg)` line — cite it for the swing, never pick your own. Only when Point C exists: `Fib ABC ext 100%`…`261.8%` rows + `Fib ABC table:` + `Fib ABC anchor: A x → B y → C z (up|down)` — prefer these for targets; absent → say no A-B-C extension yet. Never calculate a level yourself. Listed retracements → keyLevels. Listed extensions → priceTargets.bullish.targets / priceTargets.bearish.targets as {price, basis} items (basis = ratio + horizon) plus that side's condition — each side is an object, never a bare list.
 

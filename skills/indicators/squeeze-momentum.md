@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [squeeze_momentum_bullish, squeeze_momentum_bearish]
-token_cost: 534
-digest_hash: "c4622160"
+token_cost: 537
+digest_hash: "535d0376"
 ---
 
 ## Overview
@@ -69,9 +69,9 @@ When the squeeze fires (`sqzOff` transitions from false to true), evaluate momen
 
 - The squeeze can persist for many bars — a long squeeze is not a fading signal. In fact, prolonged squeezes (10+ bars) historically produce larger moves upon release.
 - In choppy, low-volatility markets, the squeeze may cycle on and off frequently without producing meaningful moves. Confirm with ADX (ADX > 20 indicates sufficient trend strength).
-- The momentum value from linear regression is a smooth, lagging measure. It will not capture sharp intraday reversals — it reflects the underlying directional bias over the window period.
+- The momentum value from linear regression is a smooth, lagging measure. It will not capture sharp short-term reversals — it reflects the underlying directional bias over the window period.
 - Do not use momentum zero-crossings in isolation on very short timeframes — noise can cause frequent crossings without sustained directional moves. Require the cross to hold for at least 1-2 bars.
-- This indicator is best applied on daily and hourly charts. On minute charts, reduce the KC/BB lengths to 10-14 for more responsive signals.
+- This indicator is best applied on hourly or longer bars. On minute bars, reduce the KC/BB lengths to 10-14 for more responsive signals.
 
 <!-- PROMPT_DIGEST:START -->
 ### Squeeze Momentum (BB:20, KC:20, mult:1.5)
@@ -101,5 +101,5 @@ Params: BB length 20, KC length 20, KC multiplier 1.5 (applied to both BB deviat
 
 **Combos:** +MACD histogram at release (aligned = very high prob); +RSI (>50 with sqzOff+mom>0 reinforces bullish; <50 with sqzOff+mom<0 reinforces bearish); +Volume (buy surge on release); +KC width; +Supertrend alignment.
 
-**Caveats:** long squeeze not a fading signal (10+ bars → larger moves); choppy low-vol cycles on/off — confirm ADX>20; momentum lags (won't catch sharp intraday reversals); require zero-cross to hold 1-2 bars on short TF; best daily/hourly (minute: reduce KC/BB to 10-14).
+**Caveats:** long squeeze not a fading signal (10+ bars → larger moves); choppy low-vol cycles on/off — confirm ADX>20; momentum lags (won't catch sharp short-term reversals); require zero-cross to hold 1-2 bars on short TF; best on hourly or longer bars (minute: reduce KC/BB to 10-14).
 <!-- PROMPT_DIGEST:END -->

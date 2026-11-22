@@ -11,8 +11,8 @@ gating:
   state:
     feature: keltner
     predicate: bandDistAtr
-token_cost: 568
-digest_hash: "66f319b3"
+token_cost: 571
+digest_hash: "75d04eb5"
 ---
 
 ## Overview
@@ -62,7 +62,7 @@ Keltner Channel, originally developed by Chester Keltner in the 1960s and modern
 - Keltner Channel bands are smoother than Bollinger Bands because ATR changes more gradually than standard deviation. This means Keltner is slower to react to sudden volatility spikes — both an advantage (fewer false signals) and a disadvantage (slower adaptation).
 - The squeeze setup requires both Bollinger Bands and Keltner Channel to be applied simultaneously. The squeeze is not a Keltner-only signal.
 - In strongly trending markets, price can ride outside the Keltner band for extended periods (band walk). Do not take mean reversion trades against a strong trend.
-- The standard parameters (EMA 20, ATR 10, multiplier 2.0) work well on daily charts. For shorter timeframes, consider EMA 10 with multiplier 1.5 for more responsive signals.
+- The standard parameters (EMA 20, ATR 10, multiplier 2.0) are the usual reference. For shorter timeframes, consider EMA 10 with multiplier 1.5 for more responsive signals.
 
 <!-- PROMPT_DIGEST:START -->
 ### Keltner Channel (EMA 20, ATR 10, multiplier 2.0) — ATR-based volatility channel
@@ -90,6 +90,6 @@ Channel width: widening = ATR rising, vol expanding, larger trend moves; narrowi
 
 Combinations: Keltner + Bollinger (squeeze, primary synergy); + RSI (RSI OB/OS + price at band extreme = dual-confirmation reversion); + MACD (histogram expanding in breakout direction on squeeze release = high-prob); + ADX (ADX > 25 + price outside band = continuation; ADX < 20 + price at extreme = reversion).
 
-Caveats: smoother/slower than Bollinger — fewer false signals but slower to adapt to spikes. In strong trends price can band-walk outside for long periods — don't take mean-reversion against a strong trend. Standard params suit daily; shorter timeframes use EMA 10, multiplier 1.5.
+Caveats: smoother/slower than Bollinger — fewer false signals but slower to adapt to spikes. In strong trends price can band-walk outside for long periods — don't take mean-reversion against a strong trend. Standard params are the usual reference; shorter timeframes use EMA 10, multiplier 1.5.
 <!-- PROMPT_DIGEST:END -->
 

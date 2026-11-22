@@ -11,8 +11,8 @@ gating:
   state:
     feature: donchian
     predicate: channelProximity
-token_cost: 520
-digest_hash: "f905be8a"
+token_cost: 522
+digest_hash: "cfb7f3de"
 ---
 
 ## Overview
@@ -64,7 +64,7 @@ Donchian Channel, developed by Richard Donchian in the 1940s — widely regarded
 
 - Donchian Channel is purely price-based — it does not incorporate volume. Always cross-reference breakouts with volume indicators.
 - In ranging markets, the channel bands are flat and breakout signals generate frequent whipsaws. Use ADX or channel-width analysis to filter out range-bound conditions.
-- The standard 20-period lookback is designed for daily charts. For intraday trading, shorter periods (10-15) may be appropriate. For position trading, longer periods (50-55) reduce noise.
+- The standard 20-period lookback is the usual reference. On shorter bar timeframes, shorter periods (10-15) may be appropriate; for position trading, longer periods (50-55) reduce noise.
 - Donchian Channel breakout systems have a historically low win rate (typically 35-45%) but achieve profitability through large average wins exceeding small average losses. Traders must be psychologically prepared for frequent small losses.
 - The simplicity of Donchian Channel is both its strength and weakness — it reacts identically to genuine breakouts and false breakouts. Filters (ATR, volume, ADX) are essential companions.
 
@@ -97,5 +97,5 @@ Combinations:
 - + OBV: new OBV high on upper-band breakout = volume conviction.
 - + MACD: histogram expanding in breakout direction = momentum alignment.
 
-Caveats: price-only, no volume — always cross-reference volume indicators; ranging markets = flat bands, frequent whipsaws (filter with ADX / channel-width); 20 = daily standard (10–15 intraday, 50–55 position); historically low win rate (typically 35–45%) but profitable via large wins > small losses — prepare for frequent small losses; reacts identically to genuine and false breakouts — filters (ATR/volume/ADX) essential.
+Caveats: price-only, no volume — always cross-reference volume indicators; ranging markets = flat bands, frequent whipsaws (filter with ADX / channel-width); 20 = standard (10–15 on short bar timeframes, 50–55 position); historically low win rate (typically 35–45%) but profitable via large wins > small losses — prepare for frequent small losses; reacts identically to genuine and false breakouts — filters (ATR/volume/ADX) essential.
 <!-- PROMPT_DIGEST:END -->

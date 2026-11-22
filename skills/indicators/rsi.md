@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_oversold, rsi_overbought, rsi_bullish_divergence, rsi_bearish_divergence]
-token_cost: 344
-digest_hash: "f52ddf23"
+token_cost: 348
+digest_hash: "6be01b28"
 ---
 
 ## Overview
@@ -27,7 +27,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 
 ### Mid-line Crossover (50 line)
 
-- RSI crosses above 50 from below: bullish momentum shift — consider as a buy-side signal (most reliable on daily or higher timeframes).
+- RSI crosses above 50 from below: bullish momentum shift — consider as a buy-side signal (more reliable on longer bar timeframes than on short ones).
 - RSI crosses below 50 from above: bearish momentum shift.
 
 ### Divergence Signals
@@ -63,7 +63,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 - RSI > 80 / RSI < 20: extreme in high-vol markets — confirm with other indicators.
 
 **Mid-line (50):**
-- Crosses above 50 from below: bullish momentum shift (buy-side; most reliable daily+).
+- Crosses above 50 from below: bullish momentum shift (buy-side; more reliable on longer bar timeframes).
 - Crosses below 50 from above: bearish momentum shift.
 
 **Divergence:**

@@ -17,7 +17,7 @@ gating:
   signal_kind: event
   triggers: [head_and_shoulders]
 token_cost: 1044
-digest_hash: "57cb3fab"
+digest_hash: "2fe02287"
 ---
 
 ## Detection Criteria
@@ -59,7 +59,7 @@ Factors that decrease confidence:
 - **Trending market pullback**: In a strong uptrend, a temporary three-peak pullback may resemble H&S but is merely a consolidation. Check if the broader trend context supports reversal.
 - **Asymmetric shoulders exceeding 10%**: When shoulder heights differ by more than 10%, the pattern loses structural integrity and should not be classified as H&S.
 - **Insufficient depth**: If the head-to-neckline distance is less than 3% of the neckline price, the pattern is too shallow to produce a meaningful move.
-- **Premature neckline break**: A brief intraday break below the neckline that immediately reverses (wick only, no close below) is not a confirmed break.
+- **Premature neckline break**: A brief within-bar break below the neckline that immediately reverses (wick only, no close below) is not a confirmed break.
 - **Low-volume pattern formation**: If the entire pattern forms on declining volume without a volume surge on the neckline break, the signal is unreliable.
 
 ## Entry/Exit Considerations
@@ -102,7 +102,7 @@ When this pattern is detected, include the following in the analysis response:
 - Confirmed by decisive CLOSE below neckline on above-average volume. Low-volume break may be false.
 - Retest: price often retests neckline from below; failure to reclaim it reinforces bearish signal.
 - Invalidation: close ABOVE right shoulder high negates the pattern (stop reference).
-- Wick-only intraday break with no close below = not confirmed.
+- Wick-only within-bar break with no close below = not confirmed.
 
 ### False positives (do NOT classify as H&S)
 - Shoulder heights differ by >10% (loses structural integrity).

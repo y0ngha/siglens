@@ -11,8 +11,8 @@ gating:
   state:
     feature: chandelier
     predicate: level
-token_cost: 424
-digest_hash: "703e6029"
+token_cost: 431
+digest_hash: "27f4f5f0"
 ---
 
 ## Overview
@@ -48,7 +48,7 @@ As an entry signal it is **NONE — do not use it to enter.** As a trailing-stop
 
 - This is **not an entry signal** — using a Chandelier flip to enter inverts its purpose and trades the lag.
 - The stop is lagging by construction (it hangs from a 22-bar extreme); in a sharp reversal it gives back open profit before triggering.
-- The 22/3 parameters suit daily swing trades; tighter multiples on intraday data whipsaw out of normal volatility.
+- The 22/3 parameters are the standard swing-trade reference; tighter multiples on short bar timeframes whipsaw out of normal volatility.
 
 <!-- PROMPT_DIGEST:START -->
 ### Chandelier Exit Signal Guide
@@ -66,5 +66,5 @@ Combinations:
 - + ATR/volatility lens (Yang-Zhang / EWMA): read how wide the stop is in the current vol regime.
 - + trend regime (Hurst / Regression R²): a flip flag is more meaningful when the regime lens confirms a genuine trend change vs range noise.
 
-Caveats: NOT an entry signal — a Chandelier flip to enter inverts its purpose and trades the lag; lagging by construction (hangs from a 22-bar extreme — in a sharp reversal gives back open profit before triggering); 22/3 suits daily swing, tighter multiples whipsaw on intraday.
+Caveats: NOT an entry signal — a Chandelier flip to enter inverts its purpose and trades the lag; lagging by construction (hangs from a 22-bar extreme — in a sharp reversal gives back open profit before triggering); 22/3 is the standard swing reference, tighter multiples whipsaw on short bar timeframes.
 <!-- PROMPT_DIGEST:END -->

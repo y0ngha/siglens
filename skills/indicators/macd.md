@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [macd_bullish_cross, macd_bearish_cross, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
-token_cost: 448
-digest_hash: "d35b1318"
+token_cost: 453
+digest_hash: "a547b928"
 ---
 
 ## Overview
@@ -55,7 +55,7 @@ MACD (Moving Average Convergence Divergence) is computed as the difference betwe
 
 - MACD is a lagging indicator by nature. Do not rely on it for precise entry timing in fast-moving markets.
 - In horizontal/ranging markets, signal-line crossovers occur frequently and are largely noise. Confirm market structure with ADX before using MACD signals.
-- The 12/26/9 setting is optimized for daily bars. For intraday timeframes (1-minute, 5-minute), shorter settings (e.g., 6/12/5) may provide more responsive signals.
+- The 12/26/9 setting is the standard reference. On shorter bar timeframes (1-minute, 5-minute), shorter settings (e.g., 6/12/5) may provide more responsive signals.
 
 <!-- PROMPT_DIGEST:START -->
 ### MACD (12, 26, 9) — momentum oscillator + trend tracker
@@ -80,6 +80,6 @@ Divergence: bearish = price higher high while MACD line/histogram lower high →
 
 Combinations: + EMA(20/60) trend filter (only take buys above EMA, sells below); + RSI (OB/OS context); + Bollinger (crossover within squeeze breakout = high-prob trend initiation); + ADX (ADX > 25 = reliable, ADX < 20 = low-confidence).
 
-Caveats: lagging — don't rely on precise entry timing in fast markets. In horizontal/ranging markets signal-line crossovers = largely noise; confirm structure with ADX. 12/26/9 tuned for daily; intraday may use ~6/12/5.
+Caveats: lagging — don't rely on precise entry timing in fast markets. In horizontal/ranging markets signal-line crossovers = largely noise; confirm structure with ADX. 12/26/9 is the standard reference; short bar timeframes may use ~6/12/5.
 <!-- PROMPT_DIGEST:END -->
 

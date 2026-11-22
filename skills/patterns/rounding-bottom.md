@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_bottom]
-token_cost: 959
-digest_hash: "77352afa"
+token_cost: 963
+digest_hash: "3293fab3"
 ---
 
 ## Detection Criteria
@@ -26,7 +26,7 @@ digest_hash: "77352afa"
 - The pattern consists of three phases: gradual decline (left side), stabilization (bottom), and gradual rise (right side). The transition between phases should be smooth, not abrupt.
 - The left rim and right rim should be at approximately similar price levels (within 5%). The right rim reaching the left rim level completes the visual "saucer" shape.
 - Volume should follow a U-shaped pattern as well: declining during the left side, reaching a minimum at the bottom, and gradually increasing during the right side.
-- The pattern typically forms over several months to years on daily charts. On weekly charts, the formation period is shorter but still measured in months.
+- The pattern typically forms over several months to years when read on daily bars. On weekly bars, the formation period is shorter but still measured in months.
 - The pattern requires a minimum of 30 bars for structural validity, but reliable formations typically span 50+ bars.
 - The pattern is confirmed when price closes above the left rim (neckline/resistance level) with increased volume.
 - Engine rule: Pivots are confirmed swings: a swing counts once price reverses 1.5 ATR from it, measured with the ATR of the bar that confirms it, so a confirmed pivot never moves when bars are added, and no bar is both a swing high and a swing low. A quadratic curve fitted to the closes between two confirmed swing-high rims (rims at least 30 bars apart, within 5% of each other in price AND at most 25% of the depth apart, depth measured from the lower rim). No bar between the rims may go above the lower rim by more than 0.25 ATR once price has left the rims (the other rim's own leg is not counted). The curve must open upward with its vertex in the middle half of the span (25%–75%), explain at least 60% of the closes' variance (R² ≥ 0.6), and have at least 40% of the closes in the bottom third of the saucer's depth (a U, not a V). Depth (from the lower rim to the saucer bottom) is at least 2.5× ATR and a minimum share of price (0.5% on 5–30 minute, 1% on 1–4 hour, 3% on daily bars); the right rim must be no more than max(20 bars, half the span) before the last bar. Unlike a cup, the rim match stays at 5% (a looser match turned W-shaped bases into rounding bottoms) and no prior advance is required.
@@ -91,7 +91,7 @@ When this pattern is detected, include the following in the analysis response:
 - Three phases: gradual decline (left), stabilization (bottom), gradual rise (right); smooth transitions, not abrupt.
 - Left rim & right rim at ~similar price levels (within 5%). Right rim reaching left-rim level completes the saucer.
 - Volume follows U-shape: declining left, minimum at bottom, gradually increasing right.
-- Typically months–years on daily; minimum 30 bars for validity, reliable formations 50+ bars.
+- Typically months–years when read on daily bars; minimum 30 bars for validity, reliable formations 50+ bars.
 - Confirmed when price CLOSES above left rim (neckline/resistance) with increased volume.
 - Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); quadratic fit on the closes between two confirmed swing-high rims (≥30 bars apart, within 5% AND ≤25% of the depth apart), no bar between above the lower rim by >0.25 ATR (the other rim's own leg excluded), vertex in the middle half of the span, R² ≥ 0.6, ≥40% of closes in the bottom third (U not V), depth from the lower rim ≥2.5× ATR and the price-share minimum, right rim ≤ max(20 bars, half the span) before the last bar.
 

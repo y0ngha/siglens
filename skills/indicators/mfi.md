@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [mfi_oversold_bounce, mfi_overbought_reversal]
-token_cost: 565
-digest_hash: "2e919e64"
+token_cost: 572
+digest_hash: "a2f56260"
 ---
 
 ## Overview
@@ -55,7 +55,7 @@ MFI (Money Flow Index) is a volume-weighted momentum oscillator that combines bo
 - MFI uses Typical Price, which weights high, low, and close equally. Extreme intrabar volatility (long shadows) can distort the Typical Price calculation.
 - Like RSI, MFI in a strong trend can remain at extreme levels for extended periods. Do not use overbought/oversold readings as automatic reversal signals — always confirm with trend context (ADX, price structure).
 - MFI requires reliable volume data. For instruments with fragmented volume (e.g., forex, some ETFs with multiple venues), MFI signals may be less reliable.
-- MFI is most effective on daily or higher timeframes where volume data is more meaningful. Intraday MFI is susceptible to volume spikes from algorithmic trading that do not reflect genuine directional conviction.
+- MFI is most effective on daily or longer bar timeframes where volume data is more meaningful. MFI on short bar timeframes is susceptible to volume spikes from algorithmic trading that do not reflect genuine directional conviction.
 - Due to volume weighting, MFI generally exhibits less extreme readings than RSI on the same price action — high-volume, less-volatile bars dampen the oscillator. A reading of 80 on MFI typically reflects stronger conviction than 80 on RSI, because it required sustained volume backing rather than pure price momentum.
 
 <!-- PROMPT_DIGEST:START -->
@@ -81,6 +81,6 @@ Zero-flow (50 line): cross above 50 from below = positive money flow dominates, 
 
 Combinations: + RSI (both at same extreme = dual confirmation; RSI OB but MFI not = weaker); + OBV (both same direction = high-confidence volume consensus); + Bollinger (MFI < 20 + price at lower band = high-prob reversion buy); + MACD (golden cross + MFI rising above 50 = reversal with capital-flow confirmation).
 
-Caveats: Typical Price distorted by extreme intrabar volatility (long shadows). Like RSI, in strong trends can stay extreme — don't treat OB/OS as automatic reversals, confirm with ADX/structure. Needs reliable volume (weak for forex, multi-venue ETFs). Best on daily+; intraday susceptible to algo volume spikes. Generally less extreme than RSI on same action — MFI 80 typically reflects stronger conviction than RSI 80.
+Caveats: Typical Price distorted by extreme intrabar volatility (long shadows). Like RSI, in strong trends can stay extreme — don't treat OB/OS as automatic reversals, confirm with ADX/structure. Needs reliable volume (weak for forex, multi-venue ETFs). Best on daily or longer bars; short bar timeframes are susceptible to algo volume spikes. Generally less extreme than RSI on same action — MFI 80 typically reflects stronger conviction than RSI 80.
 <!-- PROMPT_DIGEST:END -->
 

@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_top]
-token_cost: 779
-digest_hash: "4df9ba68"
+token_cost: 780
+digest_hash: "2c503ab2"
 ---
 
 ## Detection Criteria
@@ -55,10 +55,10 @@ Factors that decrease confidence:
 ## False Positive Conditions
 
 - **Strong uptrend consolidation**: In a powerful uptrend, two peaks at similar levels may simply represent consolidation before continuation higher. Examine the broader trend context.
-- **Peaks too close together (< 10 bars)**: When peaks form within a very short timeframe, the pattern may just be intraday volatility rather than a structural reversal signal.
+- **Peaks too close together (< 10 bars)**: When peaks form within a very short timeframe, the pattern may just be short-term volatility rather than a structural reversal signal.
 - **No volume divergence**: If the second peak shows equal or higher volume than the first, buying pressure has not weakened and the pattern is less likely to result in reversal.
 - **Shallow trough**: If the trough between peaks is less than 3% of the peak price, there is insufficient selling pressure to constitute a valid neckline.
-- **Premature neckline break**: An intraday wick below the neckline without a closing break is not confirmation.
+- **Premature neckline break**: A within-bar wick below the neckline without a closing break is not confirmation.
 
 ## Entry/Exit Considerations
 
@@ -96,10 +96,10 @@ Signals: second-peak volume LOWER than first (weakening buying); neckline break 
 
 False positives / invalidation:
 - Strong uptrend: two peaks may be consolidation before continuation — check trend context.
-- Peaks < 10 bars apart = intraday noise.
+- Peaks < 10 bars apart = short-term noise.
 - No volume divergence (2nd peak equal/higher volume) = less likely reversal.
 - Trough < 3% of peak price = invalid neckline.
-- Intraday wick below neckline without close = not confirmed.
+- Within-bar wick below neckline without close = not confirmed.
 
 ### Geometry (do not calculate targets)
 `geometry` = { breakoutLevel: the neckline price (the lowest confirmed trough between the extremes), extremeLevel: the average of the two peak prices, direction: 'down', invalidationLevel: the higher of the two peaks (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
