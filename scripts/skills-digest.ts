@@ -376,8 +376,8 @@ export interface UpdateResult {
 
 /**
  * Recompute `digest_hash`, `digest_text_hash` + `token_cost` for a single
- * file's content and return the rewritten content. Only files with an `ok` digest section are
- * touched — files with no digest, or a malformed one, are left completely
+ * file's content and return the rewritten content. Only files with an `ok`
+ * digest section are touched — files with no digest, or a malformed one, are left completely
  * alone (that's `verify`'s job to flag, not this mode's to "fix").
  */
 export function updateFileContent(
@@ -579,7 +579,24 @@ export interface CliArgs {
  */
 export function parseCliArgs(args: string[]): CliArgs {
     const digestUnchangedOk = args.includes('--digest-unchanged-ok');
-    const paths = args.filter(arg => !arg.startsWith('--'));
+    // An unknown flag is an error: silently skipping it would turn a typo such
+    // as `--digest-unchanged` into a flagless run nobody notices (TESTING.md#TE-63).
+    const unknownFlag = args.find(
+        arg => arg.startsWith('--') && arg !== '--digest-unchanged-ok'
+    );
+    // Resolved and de-duplicated, so `a.md a.md` names one file.
+    const paths = [
+        ...new Set(
+            args.filter(arg => !arg.startsWith('--')).map(arg => resolve(arg))
+        ),
+    ];
+    if (unknownFlag !== undefined) {
+        return {
+            digestUnchangedOk,
+            paths,
+            error: `unknown flag: ${unknownFlag}`,
+        };
+    }
     if (digestUnchangedOk && paths.length === 0) {
         return {
             digestUnchangedOk,
@@ -607,14 +624,14 @@ async function main(): Promise<void> {
     }
     const { digestUnchangedOk, paths: explicit } = parsed;
     const all = await listSkillFiles();
-    const files =
-        explicit.length > 0
-            ? all.filter(file => explicit.some(arg => resolve(arg) === file))
-            : all;
-    if (explicit.length > 0 && files.length !== explicit.length) {
-        console.error('✖ a path argument is not a skill file under skills/');
+    const notSkill = explicit.filter(path => !all.includes(path));
+    if (notSkill.length > 0) {
+        console.error(
+            `✖ not a skill file under skills/: ${notSkill.join(', ')}`
+        );
         process.exit(2);
     }
+    const files = explicit.length > 0 ? explicit : all;
     if (mode === 'verify') {
         runVerify(files);
     } else {

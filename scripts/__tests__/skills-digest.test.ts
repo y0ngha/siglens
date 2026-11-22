@@ -12,7 +12,7 @@
  */
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     computeDigestHash,
@@ -554,8 +554,20 @@ describe('parseCliArgs', () => {
     it('accepts the flag with a path', () => {
         expect(parseCliArgs(['--digest-unchanged-ok', 'skills/a.md'])).toEqual({
             digestUnchangedOk: true,
-            paths: ['skills/a.md'],
+            paths: [resolve('skills/a.md')],
         });
+    });
+
+    it('rejects an unknown flag instead of ignoring a typo', () => {
+        expect(parseCliArgs(['--digest-unchanged', 'skills/a.md']).error).toBe(
+            'unknown flag: --digest-unchanged'
+        );
+    });
+
+    it('counts a repeated path once', () => {
+        expect(parseCliArgs(['skills/a.md', './skills/a.md']).paths).toEqual([
+            resolve('skills/a.md'),
+        ]);
     });
 
     it('accepts no args and paths without the flag', () => {
