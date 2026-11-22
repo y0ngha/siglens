@@ -434,7 +434,7 @@ A guard that walks imports follows `import … from`, `export … from` re-expor
 
 #### TE-42 — Strip comments before matching source text
 
-A safety guard that matches a comment instead of the code line passes vacuously. Strip comments before matching, and pin explicit lists (excluded columns, allowed paths) rather than patterns.
+A safety guard that matches a comment instead of the code line passes vacuously. Strip comments before matching, and pin explicit lists (excluded columns, allowed paths) rather than patterns. Test a script's behaviour (for example a check mode) by running it on a temp copy, not by counting calls in its own source.
 
 <a id="TE-43"></a>
 
