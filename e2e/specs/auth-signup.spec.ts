@@ -127,10 +127,13 @@ test.describe('auth signup (3-phase)', () => {
         await page.getByLabel('모두 동의').check();
         await page.getByRole('button', { name: '회원가입' }).click();
 
-        await expect(page.getByRole('alert')).toContainText(
-            '이메일 인증을 완료해야 회원가입이 가능합니다.',
-            { timeout: 15_000 }
-        );
+        // The page also renders Next's empty route announcer (role="alert"), so match the
+        // banner by its text instead of the first alert on the page.
+        await expect(
+            page.getByRole('alert').filter({
+                hasText: '이메일 인증을 완료해야 회원가입이 가능합니다.',
+            })
+        ).toBeVisible({ timeout: 15_000 });
         await expect(page).toHaveURL(/\/signup/);
     });
 
