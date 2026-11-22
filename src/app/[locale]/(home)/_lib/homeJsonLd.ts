@@ -1,5 +1,6 @@
 import type { Locale } from '@/shared/i18n/locales';
 import { SECTOR_ETFS, SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
+import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
 import { brandName } from '@/shared/lib/brandName';
 import {
     brandIntroName,
@@ -54,6 +55,8 @@ export function buildHomeFaq(t: SeoTranslator, locale: Locale): FaqItem[] {
             v0: brandName(locale),
             v1: SCANNER_INDUSTRY_COUNT,
             v2: SCANNER_THEME_COUNT,
+            // q10: 비회원이 하루에 세부 가격(지지·저항·무효화)을 볼 수 있는 종목 수 — core 정책 값이다(I18-6).
+            v3: resolveMeterDailySymbols(),
         }),
     }));
 }

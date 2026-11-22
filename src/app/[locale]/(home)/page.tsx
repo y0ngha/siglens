@@ -160,12 +160,12 @@ export default async function Home({ params }: HomeRouteProps) {
                         locale={locale}
                         copy={{
                             aiTeaser: t('page.aiTeaser'),
-                            eyebrow: t('page.c26658'),
-                            headline: t('page.2f20c8'),
-                            intro: t('page.eafd49', {
+                            eyebrow: t('page.eyebrow'),
+                            headline: t('page.headline'),
+                            intro: t('page.intro', {
                                 v0: skillCounts.indicators,
                             }),
-                            introTail: t('page.79bd8f'),
+                            introTail: t('page.introTail'),
                         }}
                         quickLinks={HERO_QUICK_LINKS.map(
                             ({ href, labelKey }) => ({

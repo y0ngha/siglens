@@ -172,6 +172,16 @@ describe('Home page ISR empty-cache prevention', () => {
         ).toHaveAttribute('href', '/market');
     });
 
+    it('지표 개수를 못 읽으면 소개 문단은 "0종" 대신 숫자 없는 문장을 쓴다', async () => {
+        mockCountSkillFiles.mockRejectedValue(new Error('ENOENT'));
+        mockLoadShowcaseSkills.mockResolvedValue([]);
+
+        render(await Home({ params: Promise.resolve({ locale: 'ko' }) }));
+
+        expect(screen.getByText(/^보조지표로 차트를 읽고/)).toBeInTheDocument();
+        expect(screen.queryByText(/0종/)).not.toBeInTheDocument();
+    });
+
     it('loadShowcaseSkills throw → Home resolves (non-empty element, does not throw)', async () => {
         // countSkillFiles succeeds but loadShowcaseSkills rejects.
         mockCountSkillFiles.mockResolvedValue({

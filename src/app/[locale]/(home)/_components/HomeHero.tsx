@@ -17,11 +17,11 @@ export interface HomeHeroQuickLink {
 export interface HomeHeroCopy {
     /** SIGLENS AI 안내 줄의 설명. */
     readonly aiTeaser: string;
-    /** 제목 위 한 줄 소개. */
+    /** 제목 위 한 줄. 타이밍이 아니라 지켜볼 가격을 본다는 포지셔닝을 말한다(조언 어조 금지). */
     readonly eyebrow: string;
-    /** H1 첫 구절. 둘째 구절은 로케일 브랜드명이다. */
+    /** H1 첫 구절(가격대 지도 포지셔닝, 주식과 코인 포함). 둘째 구절은 로케일 브랜드명이다. */
     readonly headline: string;
-    /** 제목 아래 소개 문단의 첫 문장(스킬 개수가 들어간 문장). */
+    /** 제목 아래 소개 문단의 첫 문장(보조지표 개수가 들어간 문장, 개수 0이면 숫자 없는 변형). */
     readonly intro: string;
     /** 소개 문단의 둘째 문장. `sm` 이상에서만 줄을 바꾼다. */
     readonly introTail: string;
@@ -69,8 +69,12 @@ export function HomeHero({ locale, copy, quickLinks }: HomeHeroProps) {
                 {/*
                     제목 크기는 뷰포트가 아니라 자기 글상자 폭을 따른다. `lg`에서 히어로가 2단으로 갈리며
                     텍스트 컬럼이 좁아지는데 `vw` 기준 clamp은 그걸 볼 수 없다. 래퍼를 컨테이너로 삼아
-                    `cqw`를 쓰면 한 규칙으로 전 구간이 맞는다 — 글상자 폭 288~672px에서 2줄을 유지하는
-                    한계치가 7.50~7.64cqw로 거의 일정해, 7.4cqw는 모든 폭에서 여유를 두고 2줄에 든다.
+                    `cqw`를 쓰면 한 규칙으로 전 구간이 맞는다. 제목 글자(Pretendard 700, `tracking-tight`)를
+                    실측한 폭은 ko 헤드라인 "주식과 코인의 가격대 지도"가 11.39em이라 한 줄에 드는 한계치가
+                    8.78cqw이고(브랜드 줄은 8.67em, 11.53cqw), 7.4cqw는 글상자 폭 288~672px 어디서나 여유를 두고
+                    헤드라인 한 줄 + 브랜드 한 줄, 곧 2줄에 든다. en 헤드라인 "A price-level map for stocks and
+                    crypto"는 15.78em(한계치 6.34cqw)이라 `lg`에서도 `text-balance`로 두 줄에 나뉘어 브랜드 줄까지
+                    3줄이 된다 — 규칙을 로케일별로 나누지 않고 이 줄 수를 받아들인다.
 
                     하한 2.1rem은 모바일(글상자 288px)에서 글자가 21px까지 떨어지는 걸 막는다 — 이 폭에서는
                     4줄로 흐르는 게 정상이다. 상한 3.25rem은 글상자 최대치(`max-w-2xl` 672px)에서 도달하지
@@ -122,9 +126,11 @@ export function HomeHero({ locale, copy, quickLinks }: HomeHeroProps) {
                 일러스트는 텍스트 컬럼(H1, 소개, 검색, 빠른 이동) 뒤에 온다. 모바일에서 장식 그림이
                 H1과 검색 상자보다 먼저 와 첫 화면을 차지하던 문제를 바로잡았다 — 읽는 순서도
                 H1, 검색, 일러스트다. `lg` 이상은 그리드가 텍스트를 왼쪽, 일러스트를 오른쪽에 두므로
-                배치가 같다. `HeroIllustration`이 `width`/`height`를 내려 자리를 미리 잡아 CLS는 없다.
+                배치가 같다. `lg` 미만은 그리드가 한 열이라 그림이 빠른 이동 링크 아래 ~265px을 차지할
+                뿐 정보가 없다 — 클래스로 첫 페인트부터 숨겨 모바일 높이를 줄인다(모바일 LCP는 이미
+                텍스트다). `HeroIllustration`이 `width`/`height`를 내려 자리를 미리 잡아 CLS는 없다.
             */}
-            <div>
+            <div className="hidden lg:block">
                 <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
             </div>
         </div>

@@ -111,3 +111,72 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
         }
     });
 });
+
+/**
+ * 홈 포지셔닝 문구의 문체 가드. 대시, 가운뎃점 나열, 이모지는 사용자에게 AI가 쓴 글로 읽히고,
+ * "확신"은 수익을 보장하는 어조라 제품이 하는 일(가격대 정리, 예측 아님)과 맞지 않는다.
+ * 대상은 사이트 설명(`shared.seo.root.*`)과 홈 히어로 문구(`app.home.page`의 눈썹·제목·소개).
+ */
+describe('홈 포지셔닝 카피 문체', () => {
+    const HOME_PAGE_KEYS = [
+        'eyebrow',
+        'headline',
+        'intro',
+        'introTail',
+    ] as const;
+    const CATALOGS = [
+        ['ko', koMessages],
+        ['en', enMessages],
+        ['ja', jaMessages],
+        ['zh', zhMessages],
+    ] as const;
+
+    const copyOf = (messages: (typeof CATALOGS)[number][1]) => [
+        ...Object.entries(messages.shared.seo.root).map(
+            ([key, value]) => [`shared.seo.root.${key}`, value] as const
+        ),
+        ...HOME_PAGE_KEYS.map(
+            key =>
+                [`app.home.page.${key}`, messages.app.home.page[key]] as const
+        ),
+    ];
+
+    it.each(CATALOGS)(
+        '%s 카피에 대시·가운뎃점·이모지가 없다',
+        (_locale, messages) => {
+            for (const [key, value] of copyOf(messages)) {
+                expect(value, key).not.toMatch(
+                    /[\u2014\u2013\u2015\u00b7\u30fb\u2022]/
+                );
+                expect(value, key).not.toMatch(/\p{Extended_Pictographic}/u);
+            }
+        }
+    );
+
+    it.each(CATALOGS)(
+        '%s 카피 값에 줄바꿈·들여쓰기가 없다(I18-15)',
+        (_locale, messages) => {
+            for (const [key, value] of copyOf(messages)) {
+                expect(value, key).not.toMatch(/\s{2,}|[\n\t]/);
+            }
+        }
+    );
+
+    it('ko 카피에 "확신"이 없다', () => {
+        for (const [key, value] of copyOf(koMessages)) {
+            expect(value, key).not.toContain('확신');
+        }
+    });
+
+    it('ko 눈썹·제목·소개에 예측·보장 어조의 단어가 없다', () => {
+        for (const key of HOME_PAGE_KEYS) {
+            expect(koMessages.app.home.page[key], key).not.toMatch(
+                /수익|정확|타이밍을 잡|예측해/
+            );
+        }
+    });
+
+    it('소개 문장은 지표 개수 0일 때 숫자 없는 변형을 갖는다', () => {
+        expect(koMessages.app.home.page.intro).toMatch(/\{v0, plural, =0 \{/);
+    });
+});
