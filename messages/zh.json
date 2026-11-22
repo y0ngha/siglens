@@ -599,6 +599,8 @@
                 "samePassword": "不能使用与当前相同的密码。",
                 "serviceUnavailable": "服务暂时不可用，请稍后再试。",
                 "signupAutoLoginFailed": "注册已完成，但自动登录失败。请从登录页面重新登录。",
+                "tooManyCodeAttempts": "验证码错误次数过多。请点击“修改电子邮件”获取新的验证码。",
+                "tooManyRequests": "请求过于频繁。请稍后重试。",
                 "unknown": "发生未知错误。请稍后重试。",
                 "userNotFound": "未找到该账户。",
                 "verificationEmailFailed": "发送验证邮件时发生错误。请稍后重试。",

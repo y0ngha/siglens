@@ -43,6 +43,14 @@ describe('signupFocusTarget', () => {
                 signupFocusTarget('email', { ...NO_ERRORS, email: error })
             ).toEqual({ error, fieldId: null });
         });
+
+        it('does not move focus for a rate limit error', () => {
+            const error = { code: 'rate_limited' as const, message: 'm' };
+
+            expect(
+                signupFocusTarget('email', { ...NO_ERRORS, email: error })
+            ).toEqual({ error, fieldId: null });
+        });
     });
 
     describe('code step', () => {
@@ -67,6 +75,17 @@ describe('signupFocusTarget', () => {
                 signupFocusTarget('code', { ...NO_ERRORS, code: error })
             ).toEqual({ error, fieldId: null });
         });
+
+        it.each(['rate_limited', 'too_many_verification_attempts'] as const)(
+            'does not move focus for %s',
+            code => {
+                const error = { code, message: 'm' };
+
+                expect(
+                    signupFocusTarget('code', { ...NO_ERRORS, code: error })
+                ).toEqual({ error, fieldId: null });
+            }
+        );
     });
 
     describe('details step', () => {

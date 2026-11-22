@@ -599,6 +599,8 @@
                 "samePassword": "You cannot reuse your current password.",
                 "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
                 "signupAutoLoginFailed": "Your account was created but automatic sign-in failed. Please sign in from the login page.",
+                "tooManyCodeAttempts": "Too many incorrect codes. Select Edit Email to get a new code.",
+                "tooManyRequests": "Too many requests. Please try again in a moment.",
                 "unknown": "An unknown error occurred. Please try again in a moment.",
                 "userNotFound": "We could not find that account.",
                 "verificationEmailFailed": "An error occurred while sending the verification email. Please try again in a moment.",

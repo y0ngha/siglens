@@ -9,6 +9,13 @@ vi.mock('@/entities/auth/lib/errorMessages', () => ({
 vi.mock('@/entities/auth/lib/verifyEmail', () => ({
     verifyEmail: vi.fn(),
 }));
+vi.mock('@/entities/auth/server/createEmailVerificationGuards', () => ({
+    createEmailVerificationGuards: vi.fn(() => ({
+        rateLimit: vi.fn(),
+        resetCounter: vi.fn(),
+        ipHash: vi.fn(),
+    })),
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(),
 }));
@@ -180,6 +187,50 @@ describe('verifyEmailAction', () => {
                 })
             );
             expect(result.error?.code).toBe('expired_verification_code');
+        });
+    });
+
+    describe('한도 초과', () => {
+        it.each([
+            ['rate_limited', '요청 한도'],
+            ['too_many_verification_attempts', '시도 한도'],
+        ] as const)(
+            '%s를 폼 상태로 그대로 돌려주고 계정을 조회하지 않는다',
+            async (code, message) => {
+                mockVerify.mockResolvedValue({
+                    ok: false,
+                    error: { code, field: 'code', message },
+                });
+                const { findByEmail } = mockUserRepo(null);
+                const result = await verifyEmailAction(
+                    { verified: false, error: null },
+                    makeFormData({
+                        email: 'user@example.com',
+                        code: '482917',
+                    })
+                );
+                expect(result).toEqual({
+                    verified: false,
+                    error: { code, message },
+                });
+                expect(findByEmail).not.toHaveBeenCalled();
+            }
+        );
+
+        it('한도 가드를 코어 의존성에 펼쳐 넘긴다', async () => {
+            mockVerify.mockResolvedValue({ ok: true });
+            mockUserRepo(null);
+            await verifyEmailAction(
+                { verified: false, error: null },
+                makeFormData({ email: 'user@example.com', code: '482917' })
+            );
+            expect(mockVerify).toHaveBeenCalledWith(
+                { email: 'user@example.com', code: '482917' },
+                expect.objectContaining({
+                    rateLimit: expect.any(Function),
+                    ipHash: expect.any(Function),
+                })
+            );
         });
     });
 

@@ -14,6 +14,12 @@ function createMockEmailTokens(
     } as unknown as VerifyEmailDependencies['emailTokens'];
 }
 
+/** 한도는 통과시키는 포트 — 이 파일은 코드 비교 경계만 본다(한도는 verifyEmail.test가 다룬다). */
+const ALLOW_ALL = {
+    rateLimit: async () => true,
+    ipHash: async () => 'iphash',
+};
+
 describe('Email verification edge cases', () => {
     it('returns expired error when no token stored', async () => {
         const emailTokens = createMockEmailTokens({
@@ -22,7 +28,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code: '123456' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(false);
@@ -42,7 +48,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code: '111111' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(false);
@@ -60,7 +66,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code: 'any-code' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(true);
@@ -77,7 +83,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'test@example.com', code },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(true);
@@ -94,7 +100,7 @@ describe('Email verification edge cases', () => {
 
         const result = await verifyEmail(
             { email: 'not-an-email', code: '123456' },
-            { emailTokens }
+            { emailTokens, ...ALLOW_ALL }
         );
 
         expect(result.ok).toBe(false);

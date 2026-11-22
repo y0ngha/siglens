@@ -18,6 +18,14 @@ vi.mock('@/entities/email-token/templates/emailVerificationEmail', () => ({
     })),
 }));
 
+vi.mock('@/entities/auth/server/createEmailVerificationGuards', () => ({
+    createEmailVerificationGuards: vi.fn(() => ({
+        rateLimit: vi.fn(),
+        resetCounter: vi.fn(),
+        ipHash: vi.fn(),
+    })),
+}));
+
 const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn() }));
 vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
@@ -29,6 +37,7 @@ import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
 import { INVALID_EMAIL_CODE } from '@/shared/lib/auth/constants';
+import { koMessage } from '@/shared/test-utils/koMessage';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestEmailVerification as MockedFunction<
@@ -84,6 +93,47 @@ describe('requestEmailVerificationAction', () => {
             );
             expect(result.submitted).toBe(true);
             expect(result.error).toBeNull();
+        });
+    });
+
+    describe('한도 초과', () => {
+        it('rate_limited를 submitted: false 오류로 매핑한다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: false,
+                reason: 'rate_limited',
+            });
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result).toEqual({
+                submitted: false,
+                error: {
+                    code: 'rate_limited',
+                    message: koMessage('entities.auth.error.tooManyRequests'),
+                },
+            });
+        });
+
+        it('한도 가드를 코어 의존성에 펼쳐 넘긴다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: true,
+                emailDispatched: true,
+            });
+            await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(mockRequest).toHaveBeenCalledWith(
+                { email: 'user@example.com' },
+                expect.objectContaining({
+                    rateLimit: expect.any(Function),
+                    resetCounter: expect.any(Function),
+                    ipHash: expect.any(Function),
+                }),
+                expect.any(Object)
+            );
         });
     });
 
