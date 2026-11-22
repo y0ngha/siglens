@@ -62,6 +62,8 @@ describe('confirmPasswordReset — consume TOCTOU branches', () => {
         const deps = makeDeps({
             consumedToken: {
                 status: 'verified',
+                tokenHash: STORED_TOKEN_HASH,
+                bindingHash: STORED_TOKEN_HASH,
             },
         });
 

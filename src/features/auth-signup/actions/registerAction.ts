@@ -12,6 +12,8 @@ import {
 import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createExpiredSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
+import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import {
@@ -99,6 +101,9 @@ export async function registerAction(
         }
 
         const userRepo = new DrizzleUserRepository(db);
+        const verificationBinding =
+            (await cookies()).get(SIGNUP_VERIFICATION_COOKIE_NAME)?.value ??
+            null;
 
         const registerResult = await registerUser(
             {
@@ -106,6 +111,7 @@ export async function registerAction(
                 password,
                 name,
                 agreedTermsIds: [privacyTerms.id, tosTerms.id],
+                verificationBinding,
             },
             {
                 users: userRepo,
@@ -158,6 +164,8 @@ export async function registerAction(
 
         const cookieStore = await cookies();
         cookieStore.set(applyAuthCookie(loginResult.cookie));
+        // 가입이 끝나 마커가 지워졌으니 역할을 다한 바인딩 쿠키도 지운다.
+        cookieStore.set(createExpiredSignupVerificationCookie());
         cookieStore.set(
             createAuthHintCookie({
                 maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,

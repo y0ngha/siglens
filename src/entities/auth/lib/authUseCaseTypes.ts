@@ -41,6 +41,11 @@ export interface RegisterUserInput {
     name?: string;
     avatarUrl?: string;
     agreedTermsIds: readonly string[];
+    /**
+     * `siglens_signup_verify` 쿠키 값(인증한 브라우저가 받은 무작위 값). 없으면 `null`.
+     * 마커에 저장된 해시와 맞아야 가입이 진행된다.
+     */
+    verificationBinding: string | null;
 }
 
 /** 이메일 가입 결과. 성공 시 비밀번호 해시 없는 사용자 레코드. */
@@ -291,5 +296,9 @@ export interface VerifyEmailDependencies {
 
 /** 인증 코드 확인 결과. */
 export type VerifyEmailResult =
-    | { ok: true }
+    | {
+          ok: true;
+          /** 인증한 브라우저의 쿠키에 심을 무작위 값(원문). 해시만 마커에 저장된다. */
+          bindingToken: string;
+      }
     | { ok: false; error: VerifyEmailError };

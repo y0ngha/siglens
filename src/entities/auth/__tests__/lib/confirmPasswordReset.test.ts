@@ -183,7 +183,11 @@ describe('confirmPasswordReset', () => {
 
     it('returns invalid_token error when token entry is in verified state', async () => {
         const { dependencies, consumeToken } = makeDependencies({
-            peekedToken: { status: 'verified' },
+            peekedToken: {
+                status: 'verified',
+                tokenHash: STORED_TOKEN_HASH,
+                bindingHash: STORED_TOKEN_HASH,
+            },
         });
 
         const result = await confirmPasswordReset(
