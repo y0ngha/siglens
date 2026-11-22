@@ -1,10 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { EXTREME_ZONE_REENTRY_GAP } from '@y0ngha/siglens-core';
+import { defined } from '@/shared/test-utils/defined';
 import { FearGreedExtremeZoneRecord } from '../FearGreedExtremeZoneRecord';
 import type { ExtremeZoneRecord } from '../utils/fearGreedFacts';
 
-const NOTICE = '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않아요';
+const NOTICE = '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않습니다';
 const GROUP_NAME = '극단 구간 기록';
 
 const BASE: Omit<ExtremeZoneRecord, 'sections'> = {
@@ -159,6 +160,30 @@ describe('FearGreedExtremeZoneRecord', () => {
         );
         expect(block).not.toHaveTextContent('이 종목');
         expect(block).toHaveTextContent(NOTICE);
+    });
+
+    it("dayUnit='calendar'(크립토)이면 거래일 대신 일로 쓴다", () => {
+        render(
+            <FearGreedExtremeZoneRecord record={RECORD} dayUnit="calendar" />
+        );
+
+        const block = screen.getByRole('group', { name: GROUP_NAME });
+        expect(block).toHaveTextContent('이 종목 점수가 계산된 날');
+        expect(block).toHaveTextContent('머문 기간 중앙값 4.5일');
+        expect(block).not.toHaveTextContent('거래일');
+        expect(
+            within(defined(screen.getAllByRole('table').at(0)))
+                .getAllByRole('columnheader')
+                .map(h => h.textContent)
+        ).toContain('머문 일수');
+    });
+
+    it('dayUnit 기본값은 거래일 문구다', () => {
+        render(<FearGreedExtremeZoneRecord record={RECORD} />);
+
+        expect(
+            screen.getByRole('group', { name: GROUP_NAME })
+        ).toHaveTextContent('중앙값 4.5거래일');
     });
 
     it('기록이 있을 때 고지를 같은 블록에 렌더한다', () => {

@@ -121,7 +121,12 @@ export function FearGreedFactsSummary({
                 />
             </p>
             {model.extremeZoneRecord !== null && (
-                <FearGreedExtremeZoneRecord record={model.extremeZoneRecord} />
+                <FearGreedExtremeZoneRecord
+                    record={model.extremeZoneRecord}
+                    dayUnit={
+                        marketProfile === 'crypto' ? 'calendar' : 'trading'
+                    }
+                />
             )}
             {/* AI 서술 없이 규칙으로만 계산한 점수라는 고지. 요약 문장 전부 아래에 둔다. */}
             <AnalysisProvenanceNote

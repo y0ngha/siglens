@@ -235,6 +235,11 @@ export function FearGreedRouteBody({
                                 <FearGreedExtremeZoneRecord
                                     record={extremeZoneRecord}
                                     subject="market"
+                                    dayUnit={
+                                        market === 'crypto'
+                                            ? 'calendar'
+                                            : 'trading'
+                                    }
                                 />
                             )
                         }

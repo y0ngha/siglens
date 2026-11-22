@@ -369,7 +369,7 @@ describe('FearGreedFactsSummary', () => {
             });
             expect(block).toHaveTextContent('집계 기간:');
             expect(block).toHaveTextContent(
-                '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않아요'
+                '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않습니다'
             );
         });
 
