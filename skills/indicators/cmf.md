@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cmf_bullish_flip, cmf_bearish_flip]
-token_cost: 508
-digest_hash: "f4da832a"
+token_cost: 515
+digest_hash: "ea713526"
+digest_text_hash: "0809fcac"
 ---
 
 ## Overview
@@ -33,8 +34,8 @@ CMF (Chaikin Money Flow), developed by Marc Chaikin, measures the accumulation/d
 
 ### Breakout Confirmation
 
-- Price breaking above resistance + CMF > 0 and rising: the breakout is supported by genuine buying pressure — high-probability follow-through.
-- Price breaking above resistance + CMF < 0 or falling: the breakout lacks volume conviction — higher probability of false breakout or quick reversal.
+- Price breaking above resistance + CMF > 0 and rising: the breakout is supported by buying pressure — follow-through is plausible but not assured.
+- Price breaking above resistance + CMF < 0 or falling: the breakout lacks volume conviction — a false breakout or quick reversal is a real risk.
 - Price breaking below support + CMF < 0 and falling: the breakdown is confirmed by selling pressure — downside continuation likely.
 - CMF as a breakout filter significantly reduces false breakout entries.
 
@@ -80,7 +81,7 @@ Zero-line crossover:
 - Most meaningful when it persists for multiple bars (genuine capital-flow shift vs noise).
 
 Breakout confirmation:
-- Break resistance + CMF>0 & rising = supported by buying, high follow-through; + CMF<0/falling = lacks conviction, likely false.
+- Break resistance + CMF>0 & rising = supported by buying, follow-through plausible; + CMF<0/falling = lacks volume support, false breakout is a real risk.
 - Break support + CMF<0 & falling = confirmed breakdown, downside continuation.
 
 Divergence:

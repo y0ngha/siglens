@@ -11,6 +11,7 @@ gating:
   triggers: [bearish_engulfing]
 token_cost: 296
 digest_hash: "5f95477e"
+digest_text_hash: "4c0d91ed"
 ---
 
 ## Overview

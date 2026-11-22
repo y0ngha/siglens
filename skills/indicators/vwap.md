@@ -11,8 +11,9 @@ gating:
   state:
     feature: vwap
     predicate: bandDistAtr
-token_cost: 459
-digest_hash: "8995ddc8"
+token_cost: 456
+digest_hash: "c947b632"
+digest_text_hash: "5a65db73"
 ---
 
 ## Overview
@@ -35,7 +36,7 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 
 ### VWAP Breakout Signals
 
-- Price breaking above VWAP with above-average volume: strong bullish signal — institutional buying may be driving the move. High-probability intraday long entry.
+- Price breaking above VWAP with above-average volume: bullish signal — institutional buying may be driving the move. An intraday long-entry candidate.
 - Price breaking below VWAP with above-average volume: strong bearish signal — sellers have pushed through institutional fair value.
 - Volume is essential to validate a VWAP breakout. A breakout on low volume is likely a false move.
 
@@ -52,7 +53,7 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 
 ## Key Combinations
 
-- VWAP + Volume: VWAP alone is insufficient — volume at the point of breakout is the confirmation. High-volume VWAP breaks are the highest-probability setups.
+- VWAP + Volume: VWAP alone is insufficient — volume at the point of breakout is the confirmation. High-volume VWAP breaks are the breaks with volume confirmation.
 - VWAP + Stochastic RSI: VWAP provides the directional bias; Stochastic RSI identifies the short-term entry timing within that bias.
 - VWAP + Volume Profile: VWAP and POC (Point of Control) convergence zones are worth mentioning as an observation. When VWAP is near the POC, the time-based average and the volume-distribution peak sit at about the same price; make no strength claim.
 
@@ -79,7 +80,7 @@ Institutional fair-value benchmark. Primarily intraday; significance diminishes 
 - Note when the session traded heavy volume near the level (an observation, no strength claim).
 
 **Breakout:**
-- Break above VWAP with above-average volume = strong bullish, high-prob intraday long.
+- Break above VWAP with above-average volume = bullish, intraday long-entry candidate.
 - Break below with above-average volume = strong bearish.
 - Volume essential — low-volume break likely false.
 
@@ -89,7 +90,7 @@ Institutional fair-value benchmark. Primarily intraday; significance diminishes 
 
 **Timeframe:** most meaningful intraday (1–15min); hourly still useful; daily and longer bars lose value unless anchored VWAP from a significant event (earnings, gap day, swing high/low).
 
-**Combos:** +Volume (confirmation at breakout = highest prob); +Stochastic RSI (VWAP = bias, StochRSI = entry timing); +Volume Profile (VWAP near POC = same price, an observation, no strength claim).
+**Combos:** +Volume (volume confirms the breakout); +Stochastic RSI (VWAP = bias, StochRSI = entry timing); +Volume Profile (VWAP near POC = same price, an observation, no strength claim).
 
 **Caveats:** session-based, resets daily — not a multi-day S/R level; daily bars = session average not standard VWAP; don't use alone; late-session volume sensitivity — single high-volume late bar (closing auction, block print, news spike) can distort VWAP; re-assess reliability on heavy late-session days.
 <!-- PROMPT_DIGEST:END -->

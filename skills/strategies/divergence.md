@@ -12,6 +12,7 @@ gating:
   triggers: [rsi_bullish_divergence, rsi_bearish_divergence, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
 token_cost: 1097
 digest_hash: "653e4643"
+digest_text_hash: "60136ff2"
 ---
 
 ## Overview

@@ -18,6 +18,7 @@ gating:
   triggers: [inverse_head_and_shoulders]
 token_cost: 1081
 digest_hash: "01ec0a4d"
+digest_text_hash: "011ed3c8"
 ---
 
 ## Detection Criteria

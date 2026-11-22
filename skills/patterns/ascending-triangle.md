@@ -18,6 +18,7 @@ gating:
   triggers: [ascending_triangle]
 token_cost: 903
 digest_hash: "c16765a8"
+digest_text_hash: "1fbe8ecc"
 ---
 
 ## Detection Criteria

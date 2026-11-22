@@ -8,6 +8,7 @@ gating:
   tier: always_on
 token_cost: 851
 digest_hash: "9e00c7b7"
+digest_text_hash: "c56b6114"
 ---
 
 ## Indicator Core (compressed)

@@ -8,6 +8,7 @@ gating:
   tier: always_on
 token_cost: 210
 digest_hash: "2672409f"
+digest_text_hash: "39d576ee"
 ---
 
 # 성장 투자 분석 프레임

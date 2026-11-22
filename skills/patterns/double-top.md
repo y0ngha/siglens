@@ -18,6 +18,7 @@ gating:
   triggers: [double_top]
 token_cost: 780
 digest_hash: "2c503ab2"
+digest_text_hash: "573f73c8"
 ---
 
 ## Detection Criteria

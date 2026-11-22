@@ -18,6 +18,7 @@ gating:
   triggers: [pennant]
 token_cost: 1147
 digest_hash: "c5759bc9"
+digest_text_hash: "21c6e88f"
 ---
 
 ## Detection Criteria

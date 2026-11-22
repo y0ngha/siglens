@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
-token_cost: 743
-digest_hash: "3bec964d"
+token_cost: 739
+digest_hash: "89b36e0a"
+digest_text_hash: "4208cac8"
 ---
 
 ## Overview
@@ -42,7 +43,7 @@ The Ichimoku Cloud (Ichimoku Kinko Hyo — "equilibrium at a glance") is a multi
 
 - Chikou Span (current close plotted 26 bars ago) above the price candles from 26 bars ago: bullish trend confirmation — the current period's momentum exceeds the historical period's price level.
 - Chikou Span below the price candles from 26 bars ago: bearish confirmation.
-- Use the Chikou Span as a final confirmation layer: when TK cross, price above cloud, and Chikou above past price all align simultaneously, this is the highest-confidence bullish Ichimoku signal.
+- Use the Chikou Span as a final confirmation layer: when TK cross, price above cloud, and Chikou above past price all align simultaneously, this is the fullest bullish Ichimoku alignment.
 
 ### Cloud Shape and Future Structure
 
@@ -57,7 +58,7 @@ The strongest Ichimoku signals occur when all three layers agree:
 2. Tenkan-sen above Kijun-sen (short-term bullish momentum)
 3. Chikou Span above past price (historical confirmation)
 
-When all three align, the probability of trend continuation is significantly elevated.
+When all three align, all three layers read the same trend direction.
 
 ## Key Combinations
 
@@ -96,14 +97,14 @@ Kumo breakout:
 Chikou Span confirmation:
 - Chikou (close plotted 26 bars ago) above the price candles from 26 bars ago = bullish confirmation (current momentum exceeds historical price level).
 - Chikou below past-price candles = bearish confirmation.
-- Final confirmation layer; when TK cross + price above cloud + Chikou above past price all align = highest-confidence bullish signal.
+- Final confirmation layer; when TK cross + price above cloud + Chikou above past price all align = fullest bullish alignment.
 
 Cloud shape / future structure:
 - Senkou A above Senkou B (bullish/green cloud) = projected equilibrium bullish, future structural support.
 - Senkou B above Senkou A (bearish/red cloud) = projected equilibrium bearish.
 - Upcoming cloud (26 bars ahead) switching bearish→bullish (cloud twist) = forward-looking bullish; balance of power projected to shift to buyers.
 
-Three-signal alignment (strongest signals): (1) price above cloud, (2) Tenkan above Kijun, (3) Chikou above past price. All three aligned → trend continuation probability significantly elevated (bearish mirror when all inverted).
+Three-signal alignment (strongest signals): (1) price above cloud, (2) Tenkan above Kijun, (3) Chikou above past price. All three aligned → all three layers read the same trend direction (bearish mirror when all inverted).
 
 Confluence: ADX > 25 + price above cloud = structural + strength confirmation. Kijun/cloud boundary at about the same price as the Volume Profile POC = an observation, no strength claim. Price above both cloud and MA(200) = highest-timeframe bullish consensus.
 

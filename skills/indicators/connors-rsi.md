@@ -13,6 +13,7 @@ gating:
     predicate: level
 token_cost: 418
 digest_hash: "8283b4d7"
+digest_text_hash: "d0a118ae"
 ---
 
 ## Overview

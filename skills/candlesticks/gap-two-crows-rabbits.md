@@ -11,6 +11,7 @@ gating:
   triggers: [upside_gap_two_crows, downside_gap_two_rabbits]
 token_cost: 268
 digest_hash: "824b98c3"
+digest_text_hash: "19c3fc0a"
 ---
 
 ## Overview

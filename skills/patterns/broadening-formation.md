@@ -18,6 +18,7 @@ gating:
   triggers: [broadening_formation]
 token_cost: 778
 digest_hash: "f6b4723d"
+digest_text_hash: "67246f91"
 ---
 
 ## Detection Criteria

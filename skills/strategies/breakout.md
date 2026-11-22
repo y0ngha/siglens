@@ -11,6 +11,7 @@ gating:
   triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
 token_cost: 1176
 digest_hash: "8a8a73e8"
+digest_text_hash: "58da5c9d"
 ---
 
 ## Overview

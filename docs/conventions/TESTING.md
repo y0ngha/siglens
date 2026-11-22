@@ -463,7 +463,7 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 #### TE-63 — A parser-based guard accounts for every candidate
 
-A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); limits it cannot cover are stated in the guard's header.
+A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header.
 
 <a id="TE-64"></a>
 

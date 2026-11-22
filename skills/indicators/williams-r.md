@@ -12,7 +12,8 @@ gating:
     feature: williamsR
     predicate: level
 token_cost: 568
-digest_hash: "f780b2eb"
+digest_hash: "6a37c218"
+digest_text_hash: "9c6f1754"
 ---
 
 ## Overview
@@ -50,7 +51,7 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 - Williams %R + Stochastic: Williams %R is equivalent to Fast Stochastic %K with a -100 shift, but the Stochastic indicator shown on this project is Slow Stochastic (Fast %K smoothed by 3-period SMA). Comparing unsmoothed %R against smoothed Slow %K therefore reveals short-term momentum divergence: when %R extremes appear before Slow %K confirms, an early turning point is likely.
 - Williams %R + RSI: %R reacts faster to price changes due to its simpler calculation. Use %R for early entry timing and RSI for broader overbought/oversold context.
 - Williams %R + MACD: MACD provides trend direction while %R provides entry timing within the trend context. Enter long when MACD is bullish and %R crosses above -80.
-- Williams %R + Bollinger Bands: %R oversold + price at Bollinger lower band = high-probability mean reversion buy in ranging markets.
+- Williams %R + Bollinger Bands: %R oversold + price at Bollinger lower band = mean reversion buy candidate in ranging markets.
 
 ## Caveats
 
@@ -84,7 +85,7 @@ Close relative to highest high over lookback. Range 0 to -100. `%R = Fast Stocha
 - Bearish: price higher high while %R lower high → upside weakening, reversal down.
 - Most reliable at extreme OB/OS levels.
 
-**Combos:** +Stochastic (%R = Fast %K −100; project's Stochastic is Slow %K [Fast %K smoothed 3] — comparing unsmoothed %R vs smoothed Slow %K reveals early turning points when %R extremes appear before Slow %K confirms); +RSI (%R faster for early entry timing, RSI for context); +MACD (enter long when MACD bullish & %R crosses above -80); +BB (%R oversold + price at lower band = high-prob mean reversion buy in ranges).
+**Combos:** +Stochastic (%R = Fast %K −100; project's Stochastic is Slow %K [Fast %K smoothed 3] — comparing unsmoothed %R vs smoothed Slow %K reveals early turning points when %R extremes appear before Slow %K confirms); +RSI (%R faster for early entry timing, RSI for context); +MACD (enter long when MACD bullish & %R crosses above -80); +BB (%R oversold + price at lower band = mean reversion buy candidate in ranges).
 
 **Caveats:** frequent false signals in strong trends (can stay >-20 many bars — don't sell on overbought alone); %R = %K−100 fixed offset, identical info — don't use both together; 14 = the usual reference, 10/21 for other timeframes; no volume — combine OBV/MFI.
 <!-- PROMPT_DIGEST:END -->

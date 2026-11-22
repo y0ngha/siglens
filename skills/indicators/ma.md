@@ -9,6 +9,7 @@ gating:
   tier: always_on
 token_cost: 504
 digest_hash: "90c83a09"
+digest_text_hash: "c01161bf"
 ---
 
 ## Overview

@@ -16,8 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_triangle]
-token_cost: 880
-digest_hash: "bc2c793d"
+token_cost: 882
+digest_hash: "90efe86d"
+digest_text_hash: "041ed269"
 ---
 
 ## Detection Criteria
@@ -62,7 +63,7 @@ Factors that decrease confidence:
 - **Upward breakout (bull trap risk)**: Upward breakouts are not a rare exception — Bulkowski (dt.html) measures 53% upward. A close above the descending trendline is a legitimate bullish resolution, not merely a failed bearish pattern. However, beware of false breakouts — check volume confirmation.
 - **Apex breakdown**: Breakdowns occurring very close to or past the apex point have significantly reduced reliability and measured move potential.
 - **No volume confirmation**: A breakdown below support without a volume surge may be a false breakdown. Price may quickly reverse back inside the triangle.
-- **Strong support context**: If the horizontal support coincides with a major historical support level and is being tested for the first time, the likelihood of a bounce increases.
+- **Strong support context**: If the horizontal support coincides with a major historical support level and is being tested for the first time, a bounce becomes more plausible.
 - **Premature breakdown**: A within-bar wick below support without a closing break is not confirmation.
 
 ## Entry/Exit Considerations
@@ -102,7 +103,7 @@ False positives / invalidation:
 - Upward break (53%) is a normal bullish resolution, not a rare failure — check volume (bull trap risk).
 - Apex/near-apex breakdown = reduced reliability & target.
 - Breakdown without volume surge may be false.
-- Support at major historical level tested first time → higher bounce odds.
+- Support at major historical level tested first time → a bounce is more plausible.
 
 ### Geometry (do not calculate targets)
 `geometry` = { breakoutLevel: the flat support trendline at the last bar, extremeLevel: breakout plus the triangle height (width at the first touch, the widest point), direction: 'down', invalidationLevel: the last confirmed touch of the descending resistance line — the most recent lower high, a fixed price }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).

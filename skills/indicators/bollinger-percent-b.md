@@ -11,6 +11,7 @@ gating:
   triggers: [bollinger_percentb_oversold, bollinger_percentb_overbought]
 token_cost: 679
 digest_hash: "7633808e"
+digest_text_hash: "930e7cce"
 ---
 
 ## Overview

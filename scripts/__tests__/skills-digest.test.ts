@@ -21,6 +21,7 @@ import {
     estimateTokenCost,
     extractDigestSection,
     joinFrontmatter,
+    parseCliArgs,
     readFrontmatterScalar,
     splitFrontmatter,
     updateFileContent,
@@ -285,10 +286,12 @@ describe('verifyFileContent', () => {
         const originalBody = BODY.trim();
         const hash = computeDigestHash(originalBody);
         const tokens = estimateTokenCost(digestText);
-        const header = `${FRONTMATTER}\ndigest_hash: "${hash}"`.replace(
-            'token_cost: 0',
-            `token_cost: ${tokens}`
-        );
+        const textHash = computeDigestHash(digestText);
+        const header =
+            `${FRONTMATTER}\ndigest_hash: "${hash}"\ndigest_text_hash: "${textHash}"`.replace(
+                'token_cost: 0',
+                `token_cost: ${tokens}`
+            );
         const content = buildFile({ header, digest: digestText });
         expect(verifyFileContent(content)).toEqual([]);
     });
@@ -296,10 +299,12 @@ describe('verifyFileContent', () => {
     it('flags a stale digest_hash', () => {
         const digestText = 'compressed digest text';
         const tokens = estimateTokenCost(digestText);
-        const header = `${FRONTMATTER}\ndigest_hash: "deadbeef"`.replace(
-            'token_cost: 0',
-            `token_cost: ${tokens}`
-        );
+        const textHash = computeDigestHash(digestText);
+        const header =
+            `${FRONTMATTER}\ndigest_hash: "deadbeef"\ndigest_text_hash: "${textHash}"`.replace(
+                'token_cost: 0',
+                `token_cost: ${tokens}`
+            );
         const content = buildFile({ header, digest: digestText });
         const violations = verifyFileContent(content);
         expect(violations).toHaveLength(1);
@@ -310,11 +315,40 @@ describe('verifyFileContent', () => {
         const digestText = 'compressed digest text';
         const originalBody = BODY.trim();
         const hash = computeDigestHash(originalBody);
-        const header = `${FRONTMATTER}\ndigest_hash: "${hash}"`; // token_cost stays 0
+        const textHash = computeDigestHash(digestText);
+        const header = `${FRONTMATTER}\ndigest_hash: "${hash}"\ndigest_text_hash: "${textHash}"`; // token_cost stays 0
         const content = buildFile({ header, digest: digestText });
         const violations = verifyFileContent(content);
         expect(violations).toHaveLength(1);
         expect(violations[0].kind).toBe('token-cost-mismatch');
+    });
+
+    it('flags a hand-edited digest whose digest_text_hash was never refreshed', () => {
+        const synced = updateFileContent(buildFile({ digest: 'first digest' }));
+        const edited = synced.content.replace('first digest', 'edited digest');
+        const kinds = verifyFileContent(edited).map(v => v.kind);
+        expect(kinds).toContain('digest-text-hash-mismatch');
+        expect(kinds).not.toContain('hash-mismatch');
+    });
+
+    it('flags a missing digest_text_hash', () => {
+        const synced = updateFileContent(buildFile({ digest: 'first digest' }));
+        const stripped = synced.content.replace(/^digest_text_hash:.*\n/m, '');
+        const violations = verifyFileContent(stripped);
+        expect(violations.map(v => v.kind)).toEqual([
+            'digest-text-hash-mismatch',
+        ]);
+        expect(violations[0].detail).toContain('(missing)');
+    });
+
+    it('flags a body edit that was not followed by digest-update', () => {
+        const synced = updateFileContent(buildFile({ digest: 'first digest' }));
+        const edited = synced.content.replace(
+            'Some body text',
+            'Some other body text'
+        );
+        const kinds = verifyFileContent(edited).map(v => v.kind);
+        expect(kinds).toEqual(['hash-mismatch']);
     });
 
     it('flags invalid-frontmatter when there is no --- block', () => {
@@ -376,6 +410,17 @@ describe('updateFileContent', () => {
         expect(newSplit.header).toContain('triggers: [rsi_oversold]');
     });
 
+    it('writes digest_text_hash as the hash of the trimmed digest text', () => {
+        const result = updateFileContent(
+            buildFile({ digest: '  padded digest  ' })
+        );
+        const header = splitFrontmatter(result.content)?.header ?? '';
+        expect(readFrontmatterScalar(header, 'digest_text_hash')).toBe(
+            computeDigestHash('padded digest')
+        );
+        expect(result.backfilled).toBe(true);
+    });
+
     it('is idempotent: a second run produces zero changes', () => {
         const digestText = 'a fresh compressed digest';
         const content = buildFile({ digest: digestText });
@@ -410,5 +455,114 @@ describe('updateFileContent', () => {
         } finally {
             rmSync(dir, { recursive: true, force: true });
         }
+    });
+});
+
+describe('updateFileContent digest re-authoring guard', () => {
+    const synced = (digest: string): string =>
+        updateFileContent(buildFile({ digest })).content;
+    const editBody = (content: string): string =>
+        content.replace('Some body text', 'Some edited body text');
+
+    it('refuses a body-only edit and writes nothing', () => {
+        const content = editBody(synced('first digest'));
+        const result = updateFileContent(content);
+        expect(result.refused).toBe(true);
+        expect(result.changed).toBe(false);
+        expect(result.content).toBe(content);
+    });
+
+    it('accepts a body edit that comes with a re-authored digest', () => {
+        const content = editBody(synced('first digest')).replace(
+            'first digest',
+            'second digest'
+        );
+        const result = updateFileContent(content);
+        expect(result.refused).toBeUndefined();
+        expect(result.changed).toBe(true);
+        expect(verifyFileContent(result.content)).toEqual([]);
+    });
+
+    it('accepts a body-only edit when digestUnchangedOk is set', () => {
+        const content = editBody(synced('first digest'));
+        const result = updateFileContent(content, { digestUnchangedOk: true });
+        expect(result.refused).toBeUndefined();
+        expect(result.changed).toBe(true);
+        expect(verifyFileContent(result.content)).toEqual([]);
+    });
+
+    it('refreshes hash and token_cost for a digest-only edit', () => {
+        const content = synced('first digest').replace(
+            'first digest',
+            'a noticeably longer second digest'
+        );
+        const result = updateFileContent(content);
+        expect(result.changed).toBe(true);
+        expect(verifyFileContent(result.content)).toEqual([]);
+    });
+
+    it('backfills a missing digest_text_hash even when the body hash is current', () => {
+        const stripped = synced('first digest').replace(
+            /^digest_text_hash:.*\n/m,
+            ''
+        );
+        const result = updateFileContent(stripped);
+        expect(result.changed).toBe(true);
+        expect(result.backfilled).toBe(true);
+        expect(verifyFileContent(result.content)).toEqual([]);
+    });
+
+    it('backfills a file with no digest_text_hash even when its body also changed', () => {
+        const stripped = editBody(synced('first digest')).replace(
+            /^digest_text_hash:.*\n/m,
+            ''
+        );
+        const result = updateFileContent(stripped);
+        expect(result.refused).toBeUndefined();
+        expect(result.changed).toBe(true);
+    });
+});
+
+describe('updateFileContent backfill of a body-stale file', () => {
+    it('marks bodyHashStale when digest_text_hash is absent and digest_hash is stale', () => {
+        const synced = updateFileContent(buildFile({ digest: 'first digest' }));
+        const stale = synced.content
+            .replace('Some body text', 'Some edited body text')
+            .replace(/^digest_text_hash:.*\n/m, '');
+        const result = updateFileContent(stale);
+        expect(result.backfilled).toBe(true);
+        expect(result.bodyHashStale).toBe(true);
+    });
+
+    it('does not mark bodyHashStale when only digest_text_hash is absent', () => {
+        const synced = updateFileContent(buildFile({ digest: 'first digest' }));
+        const result = updateFileContent(
+            synced.content.replace(/^digest_text_hash:.*\n/m, '')
+        );
+        expect(result.backfilled).toBe(true);
+        expect(result.bodyHashStale).toBe(false);
+    });
+});
+
+describe('parseCliArgs', () => {
+    it('rejects --digest-unchanged-ok without a file path', () => {
+        expect(parseCliArgs(['--digest-unchanged-ok']).error).toMatch(
+            /requires at least one skill file path/
+        );
+    });
+
+    it('accepts the flag with a path', () => {
+        expect(parseCliArgs(['--digest-unchanged-ok', 'skills/a.md'])).toEqual({
+            digestUnchangedOk: true,
+            paths: ['skills/a.md'],
+        });
+    });
+
+    it('accepts no args and paths without the flag', () => {
+        expect(parseCliArgs([])).toEqual({
+            digestUnchangedOk: false,
+            paths: [],
+        });
+        expect(parseCliArgs(['skills/a.md']).digestUnchangedOk).toBe(false);
     });
 });

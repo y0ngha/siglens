@@ -18,6 +18,7 @@ gating:
   triggers: [double_bottom]
 token_cost: 786
 digest_hash: "17e4009a"
+digest_text_hash: "90dbe030"
 ---
 
 ## Detection Criteria
