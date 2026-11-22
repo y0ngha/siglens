@@ -54,6 +54,9 @@ function makeDeps(overrides: {
         passwordVerifier: {
             verifyPassword: vi.fn().mockResolvedValue(false),
         },
+        rateLimit: vi.fn().mockResolvedValue(true),
+        resetCounter: vi.fn().mockResolvedValue(undefined),
+        ipHash: vi.fn().mockResolvedValue('iphash'),
     } as unknown as ConfirmPasswordResetDependencies;
 }
 

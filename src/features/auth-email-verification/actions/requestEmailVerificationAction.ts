@@ -2,7 +2,7 @@
 
 import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
-import { createEmailVerificationGuards } from '@/entities/auth/server/createEmailVerificationGuards';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
@@ -66,7 +66,7 @@ export async function requestEmailVerificationAction(
             {
                 emailTokens,
                 emailDispatcher,
-                ...createEmailVerificationGuards(),
+                ...createAuthRateLimitGuards('signupEmailCodeRateLimit'),
             },
             {
                 buildMessage: code =>

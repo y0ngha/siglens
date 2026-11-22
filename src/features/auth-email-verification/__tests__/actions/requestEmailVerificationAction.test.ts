@@ -18,8 +18,8 @@ vi.mock('@/entities/email-token/templates/emailVerificationEmail', () => ({
     })),
 }));
 
-vi.mock('@/entities/auth/server/createEmailVerificationGuards', () => ({
-    createEmailVerificationGuards: vi.fn(() => ({
+vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
+    createAuthRateLimitGuards: vi.fn(() => ({
         rateLimit: vi.fn(),
         resetCounter: vi.fn(),
         ipHash: vi.fn(),

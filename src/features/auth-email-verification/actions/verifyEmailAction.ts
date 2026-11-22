@@ -3,7 +3,7 @@
 import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { DrizzleUserRepository } from '@/entities/auth/api';
-import { createEmailVerificationGuards } from '@/entities/auth/server/createEmailVerificationGuards';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
@@ -44,7 +44,10 @@ export async function verifyEmailAction(
         }
         const result = await verifyEmail(
             { email, code },
-            { emailTokens, ...createEmailVerificationGuards() }
+            {
+                emailTokens,
+                ...createAuthRateLimitGuards('signupEmailCodeRateLimit'),
+            }
         );
 
         if (!result.ok) {

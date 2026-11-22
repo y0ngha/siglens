@@ -529,19 +529,25 @@
     },
     {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
-        "line": 15,
+        "line": 22,
         "reason": "log-fallback-message",
         "text": "비밀번호 재설정 토큰이 유효하지 않습니다."
     },
     {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
-        "line": 16,
+        "line": 23,
         "reason": "log-fallback-message",
         "text": "비밀번호 재설정 토큰이 만료되었습니다."
     },
     {
         "file": "src/entities/auth/lib/confirmPasswordReset.ts",
-        "line": 18,
+        "line": 25,
+        "reason": "log-fallback-message",
+        "text": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
+    },
+    {
+        "file": "src/entities/auth/lib/confirmPasswordReset.ts",
+        "line": 27,
         "reason": "log-fallback-message",
         "text": "현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다."
     },
@@ -565,9 +571,21 @@
     },
     {
         "file": "src/entities/auth/lib/loginUser.ts",
-        "line": 13,
+        "line": 26,
         "reason": "log-fallback-message",
         "text": "이메일 또는 비밀번호가 올바르지 않습니다."
+    },
+    {
+        "file": "src/entities/auth/lib/loginUser.ts",
+        "line": 28,
+        "reason": "log-fallback-message",
+        "text": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
+    },
+    {
+        "file": "src/entities/auth/lib/loginUser.ts",
+        "line": 30,
+        "reason": "log-fallback-message",
+        "text": "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."
     },
     {
         "file": "src/entities/auth/lib/registerUser.ts",

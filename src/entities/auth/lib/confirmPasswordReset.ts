@@ -1,10 +1,17 @@
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { ConfirmPasswordResetError } from '@/shared/lib/auth/types';
 import { normalizeEmail, validatePassword } from '@/shared/lib/auth/validation';
 import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
 import {
     PASSWORD_RESET_EXPIRED_TOKEN_CODE,
     PASSWORD_RESET_INVALID_TOKEN_CODE,
+    PASSWORD_RESET_RATE_LIMITS,
 } from './authUseCaseConstants';
+import {
+    loginEmailIpKey,
+    loginEmailKey,
+    passwordResetConfirmIpKey,
+} from './authRateLimitKeys';
 import type {
     ConfirmPasswordResetDependencies,
     ConfirmPasswordResetInput,
@@ -14,6 +21,8 @@ import type {
 const PURPOSE = 'password_reset' as const;
 const INVALID_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 유효하지 않습니다.';
 const EXPIRED_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 만료되었습니다.';
+const RATE_LIMITED_MESSAGE =
+    '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 const SAME_PASSWORD_MESSAGE =
     '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.';
 
@@ -50,6 +59,11 @@ function samePasswordError(): ConfirmPasswordResetError {
  * 노출하면 무효 토큰으로도 현재 비밀번호를 probe할 수 있으므로, 먼저 get(소비 없음)으로
  * 토큰을 선검증한 뒤 same-password를 확인하고, 마지막으로 consume으로 원자적으로 소비·재검증한다
  * (TOCTOU 방어).
+ *
+ * 남용 한도: IP(해시)당 확인 시도만 센다. 형식이 맞는 입력은 토큰 조회 **전에** 세므로 한도에 걸리면 Redis
+ * 조회도 없다. 주소별 한도는 없다(제3자가 주인의 링크를 죽일 수 있고, 256비트 토큰은 추측 상한이 필요 없다).
+ * 성공하면 그 주소의 로그인 잠금(`auth:login:e:*`)과 이 IP의 주소+IP 쌍 키를 푼다 — 로그인 한도가 걸린 주인이
+ * 비밀번호 재설정으로 다시 들어올 수 있다는 약속이 이 삭제로 지켜진다. 실패에서는 아무것도 지우지 않는다.
  */
 export async function confirmPasswordReset(
     input: ConfirmPasswordResetInput,
@@ -59,6 +73,18 @@ export async function confirmPasswordReset(
 
     if (passwordError !== null) {
         return { ok: false, error: passwordError };
+    }
+
+    const ipHash = await dependencies.ipHash();
+    const allowed = await dependencies.rateLimit({
+        key: passwordResetConfirmIpKey(ipHash),
+        ...PASSWORD_RESET_RATE_LIMITS.confirmPerIp,
+    });
+    if (!allowed) {
+        return {
+            ok: false,
+            error: { code: 'rate_limited', message: RATE_LIMITED_MESSAGE },
+        };
     }
 
     const email = normalizeEmail(input.email);
@@ -114,6 +140,18 @@ export async function confirmPasswordReset(
     if (!updated) {
         return { ok: false, error: invalidTokenError() };
     }
+
+    // 잠금 해제는 비밀번호가 실제로 바뀐 뒤에만. 해제 실패가 이미 끝난 재설정을 실패로 보이게 하지 않는다.
+    const emailHash = hashEmailToken(email);
+    await Promise.all([
+        dependencies.resetCounter(loginEmailKey(emailHash)),
+        dependencies.resetCounter(loginEmailIpKey(emailHash, ipHash)),
+    ]).catch((error: unknown) => {
+        console.warn(
+            '[confirmPasswordReset] login lock release failed after a reset:',
+            redactDbErrorForLog(error)
+        );
+    });
 
     return { ok: true };
 }

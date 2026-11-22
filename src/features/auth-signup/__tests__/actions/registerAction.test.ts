@@ -38,12 +38,10 @@ vi.mock('@/entities/auth/lib/errorMessages', () => ({
 }));
 vi.mock('@/entities/auth/lib/sessionCookie', () => ({
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
+    createAuthSession: vi.fn(),
 }));
 vi.mock('@/entities/auth/lib/sessionCookieOptions', () => ({
     isSecureCookieEnv: vi.fn(() => false),
-}));
-vi.mock('@/entities/auth/lib/loginUser', () => ({
-    loginUser: vi.fn(),
 }));
 vi.mock('@/entities/auth/lib/registerUser', () => ({
     registerUser: vi.fn(),
@@ -80,7 +78,8 @@ vi.mock('@/shared/i18n/requestLocale', () => ({
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser } from '@/entities/auth/lib/loginUser';
+import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
+import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
 import { registerUser } from '@/entities/auth/lib/registerUser';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { createEmailTokenStore } from '@/entities/email-token/api';
@@ -100,7 +99,10 @@ import {
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockRegister = registerUser as MockedFunction<typeof registerUser>;
-const mockLogin = loginUser as MockedFunction<typeof loginUser>;
+const mockCreateSession = createAuthSession as MockedFunction<
+    typeof createAuthSession
+>;
+const mockVerifyPassword = vi.mocked(bcryptPasswordVerifier.verifyPassword);
 const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
@@ -178,7 +180,8 @@ describe('registerAction', () => {
             get: getSpy,
         } as unknown as Awaited<ReturnType<typeof cookies>>);
         mockRegister.mockReset();
-        mockLogin.mockReset();
+        mockCreateSession.mockReset();
+        mockVerifyPassword.mockReset();
         mockCreateTokenStore.mockReset();
         mockCreateTokenStore.mockReturnValue({
             set: vi.fn(),
@@ -365,9 +368,7 @@ describe('registerAction', () => {
 
         it('name이 빈 문자열이면 undefined로 전달된다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -442,9 +443,7 @@ describe('registerAction', () => {
 
         it('가입이 성공하면 바인딩 쿠키를 만료시킨다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -468,9 +467,7 @@ describe('registerAction', () => {
     describe('약관 ID 전달', () => {
         it('agreedTermsIds로 활성 약관 ID 두 개를 전달한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -509,7 +506,7 @@ describe('registerAction', () => {
             );
             expect(result.error?.code).toBe('weak_password');
             expect(result.error?.field).toBe('password');
-            expect(mockLogin).not.toHaveBeenCalled();
+            expect(mockCreateSession).not.toHaveBeenCalled();
             expect(setSpy).not.toHaveBeenCalled();
         });
 
@@ -528,7 +525,7 @@ describe('registerAction', () => {
             );
             expect(result.error?.code).toBe('email_already_exists');
             expect(result.error?.field).toBe('email');
-            expect(mockLogin).not.toHaveBeenCalled();
+            expect(mockCreateSession).not.toHaveBeenCalled();
         });
 
         it('email_not_verified 에러도 폼 상태로 그대로 반환한다', async () => {
@@ -545,7 +542,7 @@ describe('registerAction', () => {
                 makeConsentFormData()
             );
             expect(result.error?.code).toBe('email_not_verified');
-            expect(mockLogin).not.toHaveBeenCalled();
+            expect(mockCreateSession).not.toHaveBeenCalled();
         });
 
         it('예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다', async () => {
@@ -560,31 +557,27 @@ describe('registerAction', () => {
             expect(mockRegister).not.toHaveBeenCalled();
         });
 
-        it('회원가입 성공 후 자동 로그인이 실패하면 auto_login_failed 에러를 반환한다', async () => {
+        it('회원가입 성공 후 세션 생성이 던지면 service_unavailable을 반환하고 쿠키를 심지 않는다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: false,
-                error: {
-                    code: 'invalid_credentials',
-                    message: '이메일 또는 비밀번호가 올바르지 않습니다.',
-                },
-            });
+            mockCreateSession.mockRejectedValue(new Error('db down'));
             const result = await registerAction(
                 { error: null },
                 makeConsentFormData()
             );
-            expect(result.error?.code).toBe('auto_login_failed');
+            expect(result.error?.code).toBe('service_unavailable');
             expect(setSpy).not.toHaveBeenCalled();
             expect(mockRedirect).not.toHaveBeenCalled();
+            errorSpy.mockRestore();
         });
     });
 
     describe('성공 케이스', () => {
         it('회원가입 + 자동 로그인 성공 시 name과 next를 반영해 redirect한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -638,14 +631,29 @@ describe('registerAction', () => {
             );
         });
 
+        it('자동 로그인은 가입한 회원 id로 세션을 직접 만들고 비밀번호를 다시 검증하지 않는다', async () => {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockCreateSession.mockResolvedValue({
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+
+            await expect(
+                registerAction({ error: null }, makeConsentFormData())
+            ).rejects.toThrow('NEXT_REDIRECT');
+
+            expect(mockCreateSession).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: FAKE_USER.id })
+            );
+            expect(mockVerifyPassword).not.toHaveBeenCalled();
+        });
+
         it('redirect 제어 신호는 에러 로그로 기록하지 않는다', async () => {
             const errorSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => undefined);
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -662,9 +670,7 @@ describe('registerAction', () => {
     describe('메일 리포트 수신 선택', () => {
         function mockSignupSuccess(): void {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -765,9 +771,7 @@ describe('registerAction', () => {
     describe('가입 후 라우팅 정책', () => {
         it('돌아갈 곳(next)이 없으면 /portfolio로 리다이렉트한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -778,9 +782,7 @@ describe('registerAction', () => {
 
         it('특정 페이지(next=/AAPL)에서 가입했으면 그 페이지로 리다이렉트한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });
@@ -795,9 +797,7 @@ describe('registerAction', () => {
         /** 같은-호스트 `/api/auth/handoff`는 서버 fetch로 소진돼 ai 호스트로 가지 않는다. */
         it('SIGLENS AI에서 가입했으면 ai 호스트 핸드오프 start URL로 리다이렉트한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
-            mockLogin.mockResolvedValue({
-                ok: true,
-                user: FAKE_USER,
+            mockCreateSession.mockResolvedValue({
                 session: { id: 's1' } as never,
                 cookie: FAKE_COOKIE,
             });

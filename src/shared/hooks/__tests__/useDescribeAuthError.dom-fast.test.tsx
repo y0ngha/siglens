@@ -60,6 +60,16 @@ describe('useDescribeAuthError', () => {
         ).toBe(koMessages.entities.auth.error.tooManyCodeAttempts);
     });
 
+    it('translates the login attempt limit to its own message', () => {
+        const describeAuthError = renderDescribe();
+        expect(
+            describeAuthError({
+                code: 'too_many_login_attempts',
+                message: '원문',
+            })
+        ).toBe(koMessages.entities.auth.error.tooManyLoginAttempts);
+    });
+
     it('falls back to the raw message for an unknown or missing code', () => {
         const describeAuthError = renderDescribe();
         expect(describeAuthError({ code: 'unexpected', message: '원문' })).toBe(

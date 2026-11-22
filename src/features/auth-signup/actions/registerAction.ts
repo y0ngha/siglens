@@ -1,7 +1,6 @@
 'use server';
 
 import { localeHref } from '@/shared/i18n/localeRedirect';
-import { getTranslations } from 'next-intl/server';
 
 import { redirect } from 'next/navigation';
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
@@ -20,18 +19,17 @@ import {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
 } from '@/entities/auth/lib/errorMessages';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import {
+    DEFAULT_SESSION_TTL_SECONDS,
+    createAuthSession,
+} from '@/entities/auth/lib/sessionCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { loginUser } from '@/entities/auth/lib/loginUser';
 import { registerUser } from '@/entities/auth/lib/registerUser';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import {
-    bcryptPasswordHasher,
-    bcryptPasswordVerifier,
-} from '@/entities/auth/lib/bcrypt';
+import { bcryptPasswordHasher } from '@/entities/auth/lib/bcrypt';
 import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
@@ -56,8 +54,6 @@ export async function registerAction(
     _prev: SignupFormState,
     formData: FormData
 ): Promise<SignupFormState> {
-    // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
-    const tAuth = await getTranslations('entities.auth.error');
     try {
         const { email, password, name, next, hasRequiredConsent } =
             readSignupForm(formData);
@@ -143,27 +139,18 @@ export async function registerAction(
         }
 
         const secure = isSecureCookieEnv();
-        const loginResult = await loginUser(
-            { email, password },
-            {
-                users: userRepo,
-                sessions: new DrizzleSessionRepository(db),
-                passwordVerifier: bcryptPasswordVerifier,
-            },
-            { secureCookie: secure }
-        );
-
-        if (!loginResult.ok) {
-            return {
-                error: {
-                    code: 'auto_login_failed',
-                    message: tAuth('signupAutoLoginFailed'),
-                },
-            };
-        }
+        // 자동 로그인은 `loginUser`를 거치지 않고 세션을 직접 만든다: 비밀번호를 이 요청에서 막 정했으므로
+        // 두 번째 bcrypt 비교는 중복이고, 로그인 한도에 걸린 IP가 이미 끝난 가입을 로그인 실패로
+        // 바꾸면 안 된다.
+        const { cookie: sessionCookie } = await createAuthSession({
+            userId: registerResult.user.id,
+            sessions: new DrizzleSessionRepository(db),
+            now: new Date(),
+            secureCookie: secure,
+        });
 
         const cookieStore = await cookies();
-        cookieStore.set(applyAuthCookie(loginResult.cookie));
+        cookieStore.set(applyAuthCookie(sessionCookie));
         // 가입이 끝나 마커가 지워졌으니 역할을 다한 바인딩 쿠키도 지운다.
         cookieStore.set(createExpiredSignupVerificationCookie());
         cookieStore.set(

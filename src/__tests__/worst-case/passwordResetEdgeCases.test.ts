@@ -41,6 +41,9 @@ function createMockDependencies(
             verifyPassword: vi.fn().mockResolvedValue(false),
             ...overrides.passwordVerifier,
         } as unknown as ConfirmPasswordResetDependencies['passwordVerifier'],
+        rateLimit: vi.fn().mockResolvedValue(true),
+        resetCounter: vi.fn().mockResolvedValue(undefined),
+        ipHash: vi.fn().mockResolvedValue('iphash'),
     };
 }
 

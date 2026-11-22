@@ -60,7 +60,6 @@ type RequestEmailVerificationErrorCode =
 
 type SignupFormErrorCode =
     | RegisterUserErrorCode
-    | 'auto_login_failed'
     | 'consent_required'
     | 'service_unavailable'
     | LocalInfraErrorCode;

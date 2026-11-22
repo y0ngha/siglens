@@ -23,6 +23,13 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
 }));
+vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
+    createAuthRateLimitGuards: vi.fn(() => ({
+        rateLimit: vi.fn(),
+        resetCounter: vi.fn(),
+        ipHash: vi.fn(),
+    })),
+}));
 vi.mock('@/entities/email-token/templates/passwordResetEmail', () => ({
     buildPasswordResetEmail: vi.fn(({ email, token }) => ({
         to: email,
@@ -39,6 +46,7 @@ vi.mock('@/shared/email/dispatcher', () => ({
 
 import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { createEmailTokenStore } from '@/entities/email-token/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
 import { getLocale } from 'next-intl/server';
@@ -101,6 +109,59 @@ describe('requestPasswordResetAction', () => {
                 makeFormData({ email: 'user@example.com' })
             );
             expect(result.submitted).toBe(true);
+        });
+    });
+
+    describe('남용 한도', () => {
+        it('한도에 걸리면 submitted: false와 rate_limited 코드를 돌려준다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: false,
+                reason: 'rate_limited',
+            });
+            const result = await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result).toEqual({
+                submitted: false,
+                errorCode: 'rate_limited',
+            });
+        });
+
+        it('재설정 전용 로그 이름의 한도 포트를 코어에 넘긴다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                tokenIssued: false,
+                emailDispatched: false,
+            });
+            await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(createAuthRateLimitGuards).toHaveBeenCalledWith(
+                'passwordResetRateLimit'
+            );
+            expect(mockRequest).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    rateLimit: expect.any(Function),
+                    ipHash: expect.any(Function),
+                }),
+                expect.anything()
+            );
+        });
+
+        it('메일 발송이 실패해도 submitted: true다(계정 열거 방지)', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                tokenIssued: true,
+                emailDispatched: false,
+            });
+            const result = await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result).toEqual({ submitted: true });
         });
     });
 
