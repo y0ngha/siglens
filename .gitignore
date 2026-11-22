@@ -142,6 +142,9 @@ next-env.d.ts
 !/scripts/db-dev-seed-from-prod.sh
 !/scripts/signal-universe/
 !/scripts/signal-universe/**
+# 에이전트 턴 슬롯 부하 시험(개발 도구, CI 미사용).
+!/scripts/load/
+!/scripts/load/**
 !/scripts/lib/
 !/scripts/lib/**
 # i18n 툴링 — `yarn i18n:extract/translate/verify/lint/routes`가 이 파일들을

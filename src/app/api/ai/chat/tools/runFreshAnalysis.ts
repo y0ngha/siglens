@@ -15,6 +15,7 @@ import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTabl
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import { fitProse, type ProseSpec } from './fitProse';
@@ -38,7 +39,7 @@ import { logToolDegrade } from './logToolDegrade';
  * than queueing. Raised 2 → 10 (2026-09-13) now that one turn may run up to
  * 3 analyses and several users can do so at once.
  */
-const MAX_CONCURRENT_FRESH = 10;
+export const MAX_CONCURRENT_FRESH = 10;
 let inFlight = 0;
 export function __resetFreshSemaphoreForTests(): void {
     inFlight = 0;
@@ -68,6 +69,22 @@ export function tryAcquireFreshSlot(): (() => void) | null {
         inFlight -= 1;
         releaseStream();
     };
+}
+
+/** `E2E_FAKE_FRESH_ANALYSIS_MS`의 상한 — 부하 시험이 잡을 수 있는 가장 긴 새 분석(overall 중앙값 120초)을 덮는다. */
+export const E2E_FRESH_HOLD_MAX_MS = 180_000;
+
+/**
+ * E2E fake 모드 전용 시험 이음매: 새 분석 슬롯을 `E2E_FAKE_FRESH_ANALYSIS_MS`만큼 쥔 채 기다린 뒤
+ * 고정 결과를 돌려준다(실제 분석·모델은 부르지 않는다). 에이전트 턴 슬롯 주차·대기열 부하 시험이
+ * "새 분석을 기다리는 턴"을 결정적으로 만드는 데 쓴다. E2E fake 모드가 아니거나 값이 없으면 0.
+ */
+function e2eFreshHoldMs(): number {
+    if (!isE2EFakeMode()) return 0;
+    const ms = Number(process.env.E2E_FAKE_FRESH_ANALYSIS_MS);
+    return Number.isFinite(ms) && ms > 0
+        ? Math.min(ms, E2E_FRESH_HOLD_MAX_MS)
+        : 0;
 }
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
@@ -361,6 +378,21 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
     const release = tryAcquireFreshSlot();
     if (release === null) return { error: 'busy', retryAfterSeconds: 60 };
     try {
+        const holdMs = e2eFreshHoldMs();
+        if (holdMs > 0) {
+            // 턴이 중단되면 보류를 끊는다 — 슬롯은 아래 `finally`가 돌려준다.
+            await new Promise<void>(resolve => {
+                const done = (): void => {
+                    clearTimeout(timer);
+                    ctx.signal.removeEventListener('abort', done);
+                    resolve();
+                };
+                const timer = setTimeout(done, holdMs);
+                if (ctx.signal.aborted) done();
+                else ctx.signal.addEventListener('abort', done, { once: true });
+            });
+            return { status: 'done', result: { e2e: true, symbol, kind } };
+        }
         /*
          * 뉴스 축을 입력으로 쓰는 kind만 수급한다. `technical`·`options`는 DB의
          * 뉴스를 아예 읽지 않으므로 적재해도 답이 한 글자도 안 바뀐다.
