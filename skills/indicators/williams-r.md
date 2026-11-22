@@ -11,7 +11,7 @@ gating:
   state:
     feature: williamsR
     predicate: level
-token_cost: 564
+token_cost: 568
 digest_hash: "f780b2eb"
 ---
 
@@ -86,5 +86,5 @@ Close relative to highest high over lookback. Range 0 to -100. `%R = Fast Stocha
 
 **Combos:** +Stochastic (%R = Fast %K −100; project's Stochastic is Slow %K [Fast %K smoothed 3] — comparing unsmoothed %R vs smoothed Slow %K reveals early turning points when %R extremes appear before Slow %K confirms); +RSI (%R faster for early entry timing, RSI for context); +MACD (enter long when MACD bullish & %R crosses above -80); +BB (%R oversold + price at lower band = high-prob mean reversion buy in ranges).
 
-**Caveats:** frequent false signals in strong trends (can stay >-20 many bars — don't sell on overbought alone); %R = %K−100 fixed offset, identical info — don't use both together; 14 standard daily, 10/21 for shorter TF; no volume — combine OBV/MFI.
+**Caveats:** frequent false signals in strong trends (can stay >-20 many bars — don't sell on overbought alone); %R = %K−100 fixed offset, identical info — don't use both together; 14 = the usual reference, 10/21 for other timeframes; no volume — combine OBV/MFI.
 <!-- PROMPT_DIGEST:END -->

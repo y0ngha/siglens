@@ -16,7 +16,7 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_bottom]
-token_cost: 959
+token_cost: 963
 digest_hash: "3293fab3"
 ---
 
@@ -91,7 +91,7 @@ When this pattern is detected, include the following in the analysis response:
 - Three phases: gradual decline (left), stabilization (bottom), gradual rise (right); smooth transitions, not abrupt.
 - Left rim & right rim at ~similar price levels (within 5%). Right rim reaching left-rim level completes the saucer.
 - Volume follows U-shape: declining left, minimum at bottom, gradually increasing right.
-- Typically months–years on daily; minimum 30 bars for validity, reliable formations 50+ bars.
+- Typically months–years when read on daily bars; minimum 30 bars for validity, reliable formations 50+ bars.
 - Confirmed when price CLOSES above left rim (neckline/resistance) with increased volume.
 - Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); quadratic fit on the closes between two confirmed swing-high rims (≥30 bars apart, within 5% AND ≤25% of the depth apart), no bar between above the lower rim by >0.25 ATR (the other rim's own leg excluded), vertex in the middle half of the span, R² ≥ 0.6, ≥40% of closes in the bottom third (U not V), depth from the lower rim ≥2.5× ATR and the price-share minimum, right rim ≤ max(20 bars, half the span) before the last bar.
 

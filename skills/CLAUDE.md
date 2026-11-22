@@ -187,6 +187,7 @@ skill) flags a missing digest, malformed markers, a stale `digest_hash` or a sta
   cited measurement states its scope (pooled/daily, n, period) and comes from a source the consumed core release
   exports.
   When a rule, category or gating changes, update the body, the digest and the index grouping together.
+  `skills:digest-update` only re-hashes the body, so `skills:digest-verify` passes with a stale digest; after a body edit, re-read the digest block (the text actually injected) and re-author it by hand.
 - Examples match the condition they illustrate: a "support holds, enter long" example must not use a price below the
   support; a pattern's description must match what it signals (a UTAD signals completed distribution, not buying).
 - Adding a skill or changing its display name/summary also updates the skill-card catalog keys in every locale; the
@@ -208,9 +209,9 @@ skill still works on the previous version.
 ### SK-3 — When an exclusive rule changes, update every restatement
 
 An exclusive rule (allowed sources, permitted values) is usually restated in the skill body, the digest, the output
-rules and injected directives. Grep the rule name and its synonyms (by the claim's meaning, not only the phrase a reviewer quoted) across skills, prompt and directive files, update
-all restatements in the same change (also after removing a claim, in every skill's body and digest), and A/B on the
-real LLM when the rule affects instruction following.
+rules and injected directives. Grep the rule name and its synonyms by the claim's meaning, not only the exact phrase,
+across skills, prompt and directive files, and update all restatements in the same change (also after removing a
+claim, in every skill's body and digest). A/B on the real LLM when the rule affects instruction following.
 This includes the always-on index (`skills/_core/pattern-index.md`): grep the rule and its synonyms in both its body
 and its `PROMPT_DIGEST`, and also in intro, "beyond this catalog" and notation passages, since a gated-doc edit that
 leaves the index restating the old rule is the usual miss.

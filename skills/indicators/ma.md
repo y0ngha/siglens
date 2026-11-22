@@ -7,8 +7,8 @@ confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
 gating:
   tier: always_on
-token_cost: 499
-digest_hash: "9d4cd402"
+token_cost: 504
+digest_hash: "90c83a09"
 ---
 
 ## Overview
@@ -58,7 +58,7 @@ MA (Simple Moving Average) calculates the arithmetic mean of closing prices over
 
 - SMA lags more than EMA because it weights all periods equally. In fast-moving markets, SMA support/resistance levels may be broken before the SMA catches up.
 - MA(200) is widely observed and can act as a self-fulfilling support/resistance level due to the sheer number of market participants referencing it.
-- Golden and dead crosses are most reliable on daily timeframes. On minute or hourly charts, they produce frequent false signals.
+- Golden and dead crosses are more reliable on longer bar timeframes. On minute or hourly bars, they produce frequent false signals.
 - Flat, horizontal MAs indicate no trend. Trend-following strategies using MAs are ineffective in this context.
 
 <!-- PROMPT_DIGEST:START -->
@@ -85,6 +85,6 @@ Mean reversion: price significantly above MA(200) → reversion pressure rises; 
 
 Combinations: golden cross + rising volume more reliable than on declining volume. MA(60)/MA(200) position sets trend regime, RSI gives OB/OS within it. MA alignment = structural trend, MACD crossover = timing. Bollinger middle band IS MA(20).
 
-Caveats: SMA lags more than EMA (equal weighting) — levels may break before SMA catches up. MA(200) self-fulfilling (widely watched). Golden/dead crosses most reliable on daily; frequent false signals on minute/hourly. Flat horizontal MAs = no trend, trend-following ineffective.
+Caveats: SMA lags more than EMA (equal weighting) — levels may break before SMA catches up. MA(200) self-fulfilling (widely watched). Golden/dead crosses more reliable on longer bar timeframes; frequent false signals on minute/hourly bars. Flat horizontal MAs = no trend, trend-following ineffective.
 <!-- PROMPT_DIGEST:END -->
 

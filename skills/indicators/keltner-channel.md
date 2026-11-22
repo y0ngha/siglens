@@ -11,7 +11,7 @@ gating:
   state:
     feature: keltner
     predicate: bandDistAtr
-token_cost: 568
+token_cost: 571
 digest_hash: "75d04eb5"
 ---
 
@@ -90,6 +90,6 @@ Channel width: widening = ATR rising, vol expanding, larger trend moves; narrowi
 
 Combinations: Keltner + Bollinger (squeeze, primary synergy); + RSI (RSI OB/OS + price at band extreme = dual-confirmation reversion); + MACD (histogram expanding in breakout direction on squeeze release = high-prob); + ADX (ADX > 25 + price outside band = continuation; ADX < 20 + price at extreme = reversion).
 
-Caveats: smoother/slower than Bollinger — fewer false signals but slower to adapt to spikes. In strong trends price can band-walk outside for long periods — don't take mean-reversion against a strong trend. Standard params suit daily; shorter timeframes use EMA 10, multiplier 1.5.
+Caveats: smoother/slower than Bollinger — fewer false signals but slower to adapt to spikes. In strong trends price can band-walk outside for long periods — don't take mean-reversion against a strong trend. Standard params are the usual reference; shorter timeframes use EMA 10, multiplier 1.5.
 <!-- PROMPT_DIGEST:END -->
 

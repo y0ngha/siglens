@@ -9,7 +9,7 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cmf_bullish_flip, cmf_bearish_flip]
-token_cost: 501
+token_cost: 508
 digest_hash: "f4da832a"
 ---
 
@@ -95,5 +95,5 @@ Combinations:
 - + OBV: rising OBV + positive CMF = strong volume consensus.
 - + Breakout patterns (triangles/rectangles): excellent filter — only act when CMF confirms direction.
 
-Caveats: sensitive to close position (midpoint close → CLV 0, nil contribution regardless of volume); fixed window (sudden change may be an extreme bar dropping out, not new info); ignores gaps (gap-up close near narrow-range low → negative CLV despite bullish action); 21 = daily standard (10 shorter TF, 40 weekly); values beyond ±0.4 exceptional (rarely reach ±1); distorted on limit-up/down halt bars (close pinned, extreme CLV not genuine) — discount halt bars.
+Caveats: sensitive to close position (midpoint close → CLV 0, nil contribution regardless of volume); fixed window (sudden change may be an extreme bar dropping out, not new info); ignores gaps (gap-up close near narrow-range low → negative CLV despite bullish action); 21 = the usual reference (10 for shorter timeframes, 40 for weekly analysis); values beyond ±0.4 exceptional (rarely reach ±1); distorted on limit-up/down halt bars (close pinned, extreme CLV not genuine) — discount halt bars.
 <!-- PROMPT_DIGEST:END -->
