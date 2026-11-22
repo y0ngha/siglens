@@ -304,10 +304,7 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
             token: 'getFundamentalFacts',
             revalidate: FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS,
         },
-        {
-            token: 'getFundamentalFacts',
-            revalidate: PRICE_TARGET_REVALIDATE_SECONDS,
-        },
+        // 목표가 캐시 두 개(pt-consensus, pt-summary)가 같은 상수를 쓴다
         {
             token: 'getFundamentalFacts',
             revalidate: PRICE_TARGET_REVALIDATE_SECONDS,
