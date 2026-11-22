@@ -11,8 +11,8 @@ gating:
   state:
     feature: stochRsi
     predicate: level
-token_cost: 379
-digest_hash: "5e6d88c8"
+token_cost: 387
+digest_hash: "2cbdb57c"
 ---
 
 ## Overview
@@ -45,7 +45,7 @@ Stochastic RSI applies the Stochastic formula to RSI values rather than price, c
 
 ## Key Combinations
 
-- StochRSI + VWAP + Volume Profile: This combination is effective for identifying short-term inflection points aligned with institutional support/resistance levels.
+- StochRSI + VWAP + Volume Profile: Note short-term inflection points that occur near the VWAP or the Volume Profile POC price, as an observation with no strength claim.
 - StochRSI + MACD or ADX: Filter StochRSI signals by trend direction. Only take StochRSI buy signals when MACD is positive and ADX confirms a trend.
 - StochRSI + Bollinger Bands: StochRSI signal from the lower extreme near the Bollinger lower band creates a strong confluence for a short-term bounce entry.
 
@@ -79,7 +79,7 @@ Stochastic formula applied to RSI values (2nd-order, more sensitive). Range 0–
 - Bullish: price lower low while StochRSI higher low → potential reversal.
 - Bearish: price higher high while StochRSI lower high → losing strength.
 
-**Combos:** +VWAP+Volume Profile (short-term inflections at institutional S/R); +MACD/ADX (only take buy signals when MACD positive & ADX confirms trend); +BB (lower extreme near BB lower band = strong bounce confluence).
+**Combos:** +VWAP+Volume Profile (note short-term inflections near the VWAP or POC price as an observation); +MACD/ADX (only take buy signals when MACD positive & ADX confirms trend); +BB (lower extreme near BB lower band = strong bounce confluence).
 
 **Caveats:** extremely sensitive, whipsaws common in low-vol/sideways — never sole trigger; can appear to lag despite designed to lead; use for timing within established bias; values persist >0.8 or <0.2 in trends — avoid mean-reversion assumptions.
 <!-- PROMPT_DIGEST:END -->

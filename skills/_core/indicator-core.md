@@ -6,8 +6,8 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 844
-digest_hash: "7014b9b0"
+token_cost: 851
+digest_hash: "9e00c7b7"
 ---
 
 ## Indicator Core (compressed)
@@ -50,7 +50,7 @@ Interpret only the values present in this prompt's indicator section.
 - **CMF:** -1..+1 money-flow; >0 accumulation / <0 distribution; zero-line flip = flow shift.
 - **VWAP:** session volume-weighted avg (intraday bars only); price vs VWAP = institutional fair-value bias.
 - **Buy/Sell Volume:** buy/(buy+sell) ratio; ≥0.65 buy pressure / ≤0.35 sell pressure; price-volume divergence = exhaustion.
-- **Volume Profile:** volume-by-price; POC / high-volume nodes = magnet levels, low-volume gaps = fast-move zones.
+- **Volume Profile:** volume-by-price; POC / high-volume nodes = reference levels where price often returns, low-volume gaps = fast-move zones.
 
 ### Regime alignment (cross-indicator)
 
@@ -87,7 +87,7 @@ Volume:
 - **CMF:** -1..+1 money-flow; >0 accumulation / <0 distribution; zero-line flip = flow shift.
 - **VWAP:** session volume-weighted avg (intraday bars only); price vs VWAP = institutional fair-value bias.
 - **Buy/Sell Volume:** buy/(buy+sell) ratio; ≥0.65 buy pressure / ≤0.35 sell pressure; price-volume divergence = exhaustion.
-- **Volume Profile:** volume-by-price; POC / high-volume nodes = magnet levels, low-volume gaps = fast-move zones.
+- **Volume Profile:** volume-by-price; POC / high-volume nodes = reference levels where price often returns, low-volume gaps = fast-move zones.
 Regime alignment (cross-indicator):
 - Determine trend regime FIRST (ADX strength + DMI direction + MA structure). ADX = strength only, never direction — direction from +DI/-DI and price vs MA stack.
 - Strong trend (ADX > 25): oscillator overbought/oversold are NOT standalone reversal signals — RSI/Stochastic can band-walk extreme for many bars; counter-trend divergences in strong trends often false.

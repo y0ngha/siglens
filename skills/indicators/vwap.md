@@ -11,7 +11,7 @@ gating:
   state:
     feature: vwap
     predicate: bandDistAtr
-token_cost: 454
+token_cost: 459
 digest_hash: "8995ddc8"
 ---
 
@@ -66,7 +66,7 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 <!-- PROMPT_DIGEST:START -->
 ### VWAP — intraday volume-weighted fair value (resets each session)
 
-Institutional fair-value benchmark. Primarily intraday; significance diminishes on daily+ timeframes.
+Institutional fair-value benchmark. Primarily intraday; significance diminishes on daily and longer bars.
 
 **Price position:**
 - Above VWAP = buying pressure dominant, bullish intraday bias (institutions accumulated below).
@@ -87,7 +87,7 @@ Institutional fair-value benchmark. Primarily intraday; significance diminishes 
 - Price >1–2% above VWAP = extended, mean-reversion risk (esp. low-vol).
 - Price significantly below VWAP = deeply discounted, potential institutional buying (support).
 
-**Timeframe:** most meaningful intraday (1–15min); hourly still useful; daily+ loses value unless anchored VWAP from a significant event (earnings, gap day, swing high/low).
+**Timeframe:** most meaningful intraday (1–15min); hourly still useful; daily and longer bars lose value unless anchored VWAP from a significant event (earnings, gap day, swing high/low).
 
 **Combos:** +Volume (confirmation at breakout = highest prob); +Stochastic RSI (VWAP = bias, StochRSI = entry timing); +Volume Profile (VWAP near POC = same price, an observation, no strength claim).
 

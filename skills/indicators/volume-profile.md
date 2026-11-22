@@ -7,8 +7,8 @@ confidence_weight: 0.85
 usage_roles: [confirmation, measurement]
 gating:
   tier: always_on
-token_cost: 412
-digest_hash: "b9b2298b"
+token_cost: 425
+digest_hash: "9a3e7f61"
 ---
 
 ## Overview
@@ -42,7 +42,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 
 ### High-Volume Nodes (HVN) and Low-Volume Nodes (LVN)
 
-- High-Volume Nodes (HVN): areas of high-volume concentration act as strong support/resistance. Price tends to consolidate or reverse in HVN zones.
+- High-Volume Nodes (HVN): areas of high-volume concentration. Price often consolidates or reverses in HVN zones; cite an HVN as a reference level (an observation, no strength claim).
 - Low-Volume Nodes (LVN): areas of sparse volume between clusters. Price tends to fall through LVNs quickly in the direction of momentum.
 
 ## Key Combinations
@@ -74,7 +74,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 
 **Thin volume zones** (low vol between high-volume nodes): price moves rapidly through in either direction. Thin zone above price = upside acceleration path; below = downside. Prepare for faster-than-usual movement.
 
-**HVN/LVN:** High-Volume Nodes = strong S/R, price consolidates/reverses. Low-Volume Nodes = price falls through quickly in direction of momentum.
+**HVN/LVN:** High-Volume Nodes = reference levels where price often consolidates/reverses (observation, no strength claim). Low-Volume Nodes = price falls through quickly in direction of momentum.
 
 **Combos:** +VWAP (VWAP near POC = both at about the same price, an observation); +MA(20/60) (POC near an MA = same price, an observation); +BB (POC near middle band = same price, an observation). No strength claim for any overlap.
 
