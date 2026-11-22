@@ -348,7 +348,7 @@ export type SkipReason =
     | 'missing-digest'
     | 'malformed-markers';
 
-export interface UpdateOptions {
+interface UpdateOptions {
     /** Allow a body-changed refresh although the digest text did not change. */
     digestUnchangedOk?: boolean;
 }
@@ -365,6 +365,12 @@ export interface UpdateResult {
     /** `digest_text_hash` was absent and has been filled in (one-time backfill). */
     backfilled?: boolean;
     /**
+     * The body changed but the digest text did not, and the refresh went
+     * through only because `digestUnchangedOk` was set. The CLI logs it so the
+     * exemption is visible (TESTING.md#TE-63).
+     */
+    exempted?: boolean;
+    /**
      * A backfill where `digest_hash` was also stale (the body changed since the
      * last update). The guard cannot tell whether the digest was re-authored,
      * so the CLI logs it distinctly for a manual body-vs-digest check.
@@ -377,8 +383,9 @@ export interface UpdateResult {
 /**
  * Recompute `digest_hash`, `digest_text_hash` + `token_cost` for a single
  * file's content and return the rewritten content. Only files with an `ok`
- * digest section are touched — files with no digest, or a malformed one, are left completely
- * alone (that's `verify`'s job to flag, not this mode's to "fix").
+ * digest section are touched — files with no digest, or a malformed one, are
+ * left completely alone (that's `verify`'s job to flag, not this mode's to
+ * "fix").
  */
 export function updateFileContent(
     content: string,
@@ -427,12 +434,8 @@ export function updateFileContent(
     const backfilled = currentTextHash === undefined;
     const bodyChanged = currentHash !== computedHash;
     const digestRewritten = currentTextHash !== computedTextHash;
-    if (
-        bodyChanged &&
-        !backfilled &&
-        !digestRewritten &&
-        !options.digestUnchangedOk
-    ) {
+    const needsExemption = bodyChanged && !backfilled && !digestRewritten;
+    if (needsExemption && !options.digestUnchangedOk) {
         return { changed: false, refused: true, content };
     }
 
@@ -461,6 +464,7 @@ export function updateFileContent(
         changed: true,
         backfilled,
         bodyHashStale: backfilled && bodyChanged,
+        exempted: needsExemption,
         content: joinFrontmatter(newHeader, split.body),
     };
 }
@@ -545,6 +549,11 @@ function runUpdateMeta(files: string[], options: UpdateOptions): void {
         if (result.changed) {
             writeFileSync(file, result.content);
             updated++;
+            if (result.exempted) {
+                console.log(
+                    `  ! ${rel}: body changed, digest kept as is (--digest-unchanged-ok)`
+                );
+            }
             if (result.backfilled) {
                 backfilled++;
                 console.log(
@@ -566,7 +575,7 @@ function runUpdateMeta(files: string[], options: UpdateOptions): void {
     if (refused > 0) process.exit(1);
 }
 
-export interface CliArgs {
+interface CliArgs {
     digestUnchangedOk: boolean;
     paths: string[];
     error?: string;

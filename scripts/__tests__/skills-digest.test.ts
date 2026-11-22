@@ -488,7 +488,18 @@ describe('updateFileContent digest re-authoring guard', () => {
         const result = updateFileContent(content, { digestUnchangedOk: true });
         expect(result.refused).toBeUndefined();
         expect(result.changed).toBe(true);
+        expect(result.exempted).toBe(true);
         expect(verifyFileContent(result.content)).toEqual([]);
+    });
+
+    it('does not mark a re-authored digest as exempted, even with the flag', () => {
+        const content = editBody(synced('first digest')).replace(
+            'first digest',
+            'second digest'
+        );
+        const result = updateFileContent(content, { digestUnchangedOk: true });
+        expect(result.changed).toBe(true);
+        expect(result.exempted).toBe(false);
     });
 
     it('refreshes hash and token_cost for a digest-only edit', () => {
