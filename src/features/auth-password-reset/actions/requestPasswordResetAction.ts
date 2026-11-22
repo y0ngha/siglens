@@ -64,6 +64,8 @@ export async function requestPasswordResetAction(
             }
         );
 
+        // 가입 코드 요청과 달리 발송 실패를 알리지 않는다: 여기서는 발송이 계정이 있는 주소에서만 일어나므로
+        // 실패를 드러내면 계정 존재 여부가 열거된다. 항상 submitted: true다.
         return { submitted: true };
     } catch (err) {
         console.error(

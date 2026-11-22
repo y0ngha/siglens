@@ -23,6 +23,7 @@ export type DetailsStepErrorSlot = 'password' | 'consent' | 'banner';
 const EMAIL_STEP_SLOT: Record<EmailStepErrorCode, StepErrorSlot> = {
     invalid_email: 'field',
     rate_limited: 'banner',
+    email_send_failed: 'banner',
     redis_unavailable: 'banner',
     unexpected: 'banner',
 };

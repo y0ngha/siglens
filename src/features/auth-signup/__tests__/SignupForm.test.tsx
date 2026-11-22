@@ -112,6 +112,27 @@ describe('SignupForm', () => {
             );
         });
 
+        it('shows the send failure banner and stays on the email step instead of the code step', () => {
+            setupPhase(
+                {
+                    submitted: false,
+                    error: {
+                        code: 'email_send_failed',
+                        message: '원문',
+                    },
+                },
+                { verified: false, error: null }
+            );
+            render(<SignupForm />);
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                koMessage('entities.auth.error.verificationEmailFailed')
+            );
+            expect(screen.getByLabelText('이메일')).toBeInTheDocument();
+            expect(
+                screen.queryByText(/인증 코드를 보냈어요/)
+            ).not.toBeInTheDocument();
+        });
+
         it('allows typing in the email field', async () => {
             const user = userEvent.setup();
             render(<SignupForm />);

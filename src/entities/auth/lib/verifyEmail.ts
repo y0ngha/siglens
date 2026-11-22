@@ -4,7 +4,7 @@ import {
     EMAIL_VERIFICATION_RATE_LIMITS,
     EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS,
 } from './authUseCaseConstants';
-import { emailVerificationAttemptsKey } from './requestEmailVerification';
+import { emailVerificationAttemptsKey } from './emailVerificationKeys';
 import type {
     VerifyEmailDependencies,
     VerifyEmailError,

@@ -44,13 +44,16 @@ describe('signupFocusTarget', () => {
             ).toEqual({ error, fieldId: null });
         });
 
-        it('does not move focus for a rate limit error', () => {
-            const error = { code: 'rate_limited' as const, message: 'm' };
+        it.each(['rate_limited', 'email_send_failed'] as const)(
+            'does not move focus for %s',
+            code => {
+                const error = { code, message: 'm' };
 
-            expect(
-                signupFocusTarget('email', { ...NO_ERRORS, email: error })
-            ).toEqual({ error, fieldId: null });
-        });
+                expect(
+                    signupFocusTarget('email', { ...NO_ERRORS, email: error })
+                ).toEqual({ error, fieldId: null });
+            }
+        );
     });
 
     describe('code step', () => {

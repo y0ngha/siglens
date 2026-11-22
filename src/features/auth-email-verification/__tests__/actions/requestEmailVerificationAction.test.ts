@@ -115,6 +115,26 @@ describe('requestEmailVerificationAction', () => {
             });
         });
 
+        it('email_send_failed를 submitted: false 오류와 발송 실패 문구로 매핑한다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: false,
+                reason: 'email_send_failed',
+            });
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result).toEqual({
+                submitted: false,
+                error: {
+                    code: 'email_send_failed',
+                    message: koMessage(
+                        'entities.auth.error.verificationEmailFailed'
+                    ),
+                },
+            });
+        });
+
         it('한도 가드를 코어 의존성에 펼쳐 넘긴다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,

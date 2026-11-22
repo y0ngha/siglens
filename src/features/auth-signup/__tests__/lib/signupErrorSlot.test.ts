@@ -9,12 +9,14 @@ describe('emailStepErrorSlot', () => {
         expect(emailStepErrorSlot('invalid_email')).toBe('field');
     });
 
-    it.each(['rate_limited', 'redis_unavailable', 'unexpected'] as const)(
-        'puts %s in the banner',
-        code => {
-            expect(emailStepErrorSlot(code)).toBe('banner');
-        }
-    );
+    it.each([
+        'rate_limited',
+        'email_send_failed',
+        'redis_unavailable',
+        'unexpected',
+    ] as const)('puts %s in the banner', code => {
+        expect(emailStepErrorSlot(code)).toBe('banner');
+    });
 });
 
 describe('codeStepErrorSlot', () => {

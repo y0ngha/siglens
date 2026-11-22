@@ -139,41 +139,86 @@ describe('requestEmailVerification', () => {
         );
     });
 
-    it('reports emailDispatched false when the dispatcher resolves false', async () => {
-        const { dependencies } = makeDependencies({ sendEmailResolves: false });
-        const { buildMessage } = makeBuildMessage();
+    describe.each([
+        ['resolves false', { sendEmailResolves: false }],
+        ['throws', { sendEmailThrows: true }],
+    ] as const)('when the dispatcher %s', (_name, failure) => {
+        it('returns email_send_failed instead of a sent state', async () => {
+            const { dependencies } = makeDependencies(failure);
+            const { buildMessage } = makeBuildMessage();
 
-        const result = await requestEmailVerification(
-            { email: 'user@example.com' },
-            dependencies,
-            { buildMessage }
-        );
+            const result = await requestEmailVerification(
+                { email: 'user@example.com' },
+                dependencies,
+                { buildMessage }
+            );
 
-        expect(result).toEqual({
-            ok: true,
-            codeIssued: true,
-            emailDispatched: false,
+            expect(result).toEqual({ ok: false, reason: 'email_send_failed' });
+        });
+
+        it('releases only the per-address cooldown and keeps every other counter', async () => {
+            const { dependencies, limiter } = makeDependencies(failure);
+            const { buildMessage } = makeBuildMessage();
+
+            await requestEmailVerification(
+                { email: 'user@example.com' },
+                dependencies,
+                { buildMessage }
+            );
+
+            expect(limiter.count(KEYS.cooldown)).toBe(0);
+            expect(limiter.count(KEYS.ipHour)).toBe(1);
+            expect(limiter.count(KEYS.ipDay)).toBe(1);
+            expect(limiter.count(KEYS.emailHour)).toBe(1);
+            expect(limiter.count(KEYS.emailDay)).toBe(1);
+        });
+
+        it('keeps the pending record because the mail may still have been delivered', async () => {
+            const { dependencies, setToken } = makeDependencies(failure);
+            const { buildMessage } = makeBuildMessage();
+
+            await requestEmailVerification(
+                { email: 'user@example.com' },
+                dependencies,
+                { buildMessage }
+            );
+
+            expect(setToken).toHaveBeenCalledTimes(1);
+            expect(
+                setToken.mock.calls.filter(
+                    ([, , value]) => value.status === 'pending'
+                )
+            ).toHaveLength(1);
+        });
+
+        it('lets the next request through right away instead of rate_limited', async () => {
+            const { dependencies } = makeDependencies(failure);
+            const { buildMessage } = makeBuildMessage();
+            const request = () =>
+                requestEmailVerification(
+                    { email: 'user@example.com' },
+                    dependencies,
+                    { buildMessage }
+                );
+
+            await request();
+            const retry = await request();
+
+            expect(retry).not.toEqual({ ok: false, reason: 'rate_limited' });
         });
     });
 
-    it('keeps codeIssued true and reports emailDispatched false when the dispatcher throws', async () => {
-        const { dependencies, setToken } = makeDependencies({
-            sendEmailThrows: true,
-        });
+    it('keeps the cooldown after a successful send', async () => {
+        const { dependencies, limiter } = makeDependencies();
         const { buildMessage } = makeBuildMessage();
 
-        const result = await requestEmailVerification(
+        await requestEmailVerification(
             { email: 'user@example.com' },
             dependencies,
             { buildMessage }
         );
 
-        expect(setToken).toHaveBeenCalledTimes(1);
-        expect(result).toEqual({
-            ok: true,
-            codeIssued: true,
-            emailDispatched: false,
-        });
+        expect(limiter.count(KEYS.cooldown)).toBe(1);
     });
 
     describe('남용 한도', () => {
