@@ -2,7 +2,15 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+    afterAll,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
 import { DrizzleSignalHistoryRepository } from '../api';
@@ -13,7 +21,7 @@ vi.mock('server-only', () => ({}));
 /**
  * 신호 기록 진행 표식과 신호 페이지 목록 쿼리를 진짜 Postgres에서 본다(TESTING.md#TE-55): 한 트랜잭션 쓰기
  * (실패하면 행도 표식도 그대로), 재계산 구간 삭제와 옛 골든·데드크로스 이름 바꾸기, 시도 횟수 세션별 초기화,
- * 시장별 상한과 정렬, 완료 시각 보존. 모킹된 DB로는 `ON CONFLICT`·`DISTINCT ON`·윈도 함수·트랜잭션
+ * 시장별 상한과 정렬, 완료 시각 보존, 가이드 라이브 블록의 "최근 완료 세션" 읽기. 모킹된 DB로는 `ON CONFLICT`·`DISTINCT ON`·윈도 함수·트랜잭션
  * 롤백이 보이지 않는다. `TEST_DATABASE_URL`이 없으면 건너뛴다. 로컬 실행:
  *   docker run -d --name <unique> -e POSTGRES_PASSWORD=x -e POSTGRES_USER=siglens -e POSTGRES_DB=siglens_test \
  *     -p 127.0.0.1:55433:5432 --pull never postgres:17-alpine
@@ -867,6 +875,250 @@ describe.skipIf(!URL)(
                         '2026-11-01'
                     )
                 ).toEqual({ us: 0, kr: 0 });
+            });
+        });
+        describe('listLatestSessionEpisodes', () => {
+            const TYPE = 'rsi_oversold';
+            const OTHER_TYPE = 'rsi_overbought';
+
+            /** 이 describe는 파일 끝이라 앞선 describe가 남긴 행과 표식을 지우고 시작해도 된다. */
+            beforeEach(async () => {
+                await client`DELETE FROM signal_events`;
+                await client`DELETE FROM signal_scan_sessions`;
+            });
+
+            const complete = (market: 'us' | 'kr', sessionDate: string) =>
+                repo.upsertScanSession({
+                    market,
+                    sessionDate,
+                    universeSize: 10,
+                    recorded: 10,
+                    failed: 0,
+                    stale: 0,
+                    completedAt: `${sessionDate}T22:00:00.000Z`,
+                });
+
+            const incomplete = (market: 'us' | 'kr', sessionDate: string) =>
+                repo.upsertScanSession({
+                    market,
+                    sessionDate,
+                    universeSize: 10,
+                    recorded: 3,
+                    failed: 0,
+                    stale: 0,
+                    completedAt: null,
+                });
+
+            /** 기록기가 쓰는 길(`applySymbolScan`)로 에피소드를 넣는다. */
+            const record = (
+                market: 'us' | 'kr',
+                symbol: string,
+                firstSeen: string,
+                lastSeen: string,
+                extra: Partial<ScanEpisodeInsert> = {}
+            ) =>
+                repo.applySymbolScan({
+                    market,
+                    symbol,
+                    session: lastSeen,
+                    rebuildFrom: null,
+                    relabelCutover: null,
+                    lastSeenUpdates: [],
+                    inserts: [
+                        episode({
+                            market,
+                            symbol,
+                            sessionDate: firstSeen,
+                            lastSeenSession: lastSeen,
+                            signalType: TYPE,
+                            ...extra,
+                        }),
+                    ],
+                });
+
+            const symbolsOf = (
+                rows: readonly { readonly symbol: string }[]
+            ): string[] => rows.map(row => row.symbol);
+
+            it('완료 표식이 없는 세션은 쓰지 않는다 — 더 새 미완료 세션이 있어도 가장 최근 완료 세션이 이긴다', async () => {
+                await complete('us', '2026-11-18');
+                await incomplete('us', '2026-11-20');
+                await record('us', 'OLD', '2026-11-18', '2026-11-18');
+                await record('us', 'NEW', '2026-11-20', '2026-11-20');
+
+                const rows = await repo.listLatestSessionEpisodes(
+                    [TYPE],
+                    'us',
+                    10
+                );
+
+                expect(symbolsOf(rows)).toEqual(['OLD']);
+            });
+
+            it('완료 세션이 하나도 없는 시장은 빈 목록이다(미완료 세션만 있어도)', async () => {
+                await record('kr', '005930.KS', '2026-11-18', '2026-11-18');
+                expect(
+                    await repo.listLatestSessionEpisodes([TYPE], 'kr', 10)
+                ).toEqual([]);
+
+                await incomplete('kr', '2026-11-18');
+                expect(
+                    await repo.listLatestSessionEpisodes([TYPE], 'kr', 10)
+                ).toEqual([]);
+            });
+
+            it('시장끼리 섞이지 않는다 — 다른 시장의 완료 세션을 빌려 오지 않는다', async () => {
+                await complete('us', '2026-11-20');
+                await complete('kr', '2026-11-18');
+                await record('us', 'AAPL', '2026-11-20', '2026-11-20');
+                await record('kr', '005930.KS', '2026-11-18', '2026-11-18');
+
+                expect(
+                    symbolsOf(
+                        await repo.listLatestSessionEpisodes([TYPE], 'kr', 10)
+                    )
+                ).toEqual(['005930.KS']);
+                expect(
+                    symbolsOf(
+                        await repo.listLatestSessionEpisodes([TYPE], 'us', 10)
+                    )
+                ).toEqual(['AAPL']);
+            });
+
+            it('마지막 포착 세션이 완료 세션보다 이른(이미 끊긴) 에피소드는 뺀다', async () => {
+                await complete('us', '2026-11-20');
+                await record('us', 'ENDED', '2026-11-10', '2026-11-12');
+                await record('us', 'OPEN', '2026-11-10', '2026-11-20');
+
+                expect(
+                    symbolsOf(
+                        await repo.listLatestSessionEpisodes([TYPE], 'us', 10)
+                    )
+                ).toEqual(['OPEN']);
+            });
+
+            it('다음 세션이 일부만 기록된 동안에도 이어진 에피소드는 사라지지 않고, 그 세션에 새로 열린 행은 아직 안 나온다', async () => {
+                await complete('us', '2026-11-20');
+                await incomplete('us', '2026-11-21');
+                // 11-21을 이미 만나 늘어난 에피소드(last_seen = 11-21).
+                await record('us', 'EXTENDED', '2026-11-18', '2026-11-20');
+                await repo.applySymbolScan({
+                    market: 'us',
+                    symbol: 'EXTENDED',
+                    session: '2026-11-21',
+                    rebuildFrom: null,
+                    relabelCutover: null,
+                    lastSeenUpdates: [
+                        {
+                            signalType: TYPE,
+                            sessionDate: '2026-11-18',
+                            lastSeenSession: '2026-11-21',
+                        },
+                    ],
+                    inserts: [],
+                });
+                // 아직 못 만난 에피소드(last_seen = 11-20).
+                await record('us', 'PENDING', '2026-11-18', '2026-11-20');
+                // 11-21에 새로 열린 행 — 미완료 세션의 것이다.
+                await record('us', 'FRESH', '2026-11-21', '2026-11-21');
+
+                const rows = await repo.listLatestSessionEpisodes(
+                    [TYPE],
+                    'us',
+                    10
+                );
+
+                expect(symbolsOf(rows).toSorted()).toEqual([
+                    'EXTENDED',
+                    'PENDING',
+                ]);
+            });
+
+            it('신호 유형으로 거르고, 첫 포착 최신순 → 등락률 크기순 → 종목순으로 limit개를 돌려준다', async () => {
+                await complete('us', '2026-11-20');
+                await record('us', 'Z1', '2026-11-20', '2026-11-20', {
+                    changePercent: -5,
+                });
+                await record('us', 'Z2', '2026-11-20', '2026-11-20', {
+                    changePercent: 9,
+                });
+                await record('us', 'Z0', '2026-11-20', '2026-11-20', {
+                    changePercent: -9,
+                });
+                await record('us', 'Z3', '2026-11-19', '2026-11-20', {
+                    changePercent: 20,
+                });
+                await record('us', 'Z4', '2026-11-20', '2026-11-20', {
+                    changePercent: 99,
+                    signalType: OTHER_TYPE,
+                });
+
+                const all = await repo.listLatestSessionEpisodes(
+                    [TYPE],
+                    'us',
+                    10
+                );
+                expect(symbolsOf(all)).toEqual(['Z0', 'Z2', 'Z1', 'Z3']);
+                expect(all[0]).toEqual({
+                    symbol: 'Z0',
+                    koreanName: null,
+                    signalType: TYPE,
+                    sessionDate: '2026-11-20',
+                    changePercent: -9,
+                });
+
+                const limited = await repo.listLatestSessionEpisodes(
+                    [TYPE],
+                    'us',
+                    3
+                );
+                expect(symbolsOf(limited)).toEqual(['Z0', 'Z2', 'Z1']);
+
+                const both = await repo.listLatestSessionEpisodes(
+                    [TYPE, OTHER_TYPE],
+                    'us',
+                    10
+                );
+                expect(symbolsOf(both)).toEqual(['Z4', 'Z0', 'Z2', 'Z1', 'Z3']);
+            });
+
+            it('0064 표가 아직 없는 스키마에서는 42P01을 던진다(호출부가 스캐너로 대신한다)', async () => {
+                const bareSchema = `${SCHEMA}_bare`;
+                await admin.unsafe(`CREATE SCHEMA "${bareSchema}"`);
+                const bare = postgres(URL as string, {
+                    max: 1,
+                    connection: { search_path: bareSchema },
+                });
+                try {
+                    await migration('0056_signal_events.sql').reduce(
+                        (previous, statement) =>
+                            previous.then(() =>
+                                bare.unsafe(statement).then(() => {})
+                            ),
+                        Promise.resolve()
+                    );
+                    const bareRepo = new DrizzleSignalHistoryRepository(
+                        drizzle(bare, { schema })
+                    );
+
+                    const error: unknown = await bareRepo
+                        .listLatestSessionEpisodes([TYPE], 'us', 10)
+                        .then(
+                            () => null,
+                            (thrown: unknown) => thrown
+                        );
+
+                    // drizzle이 드라이버 오류를 감싸므로 코드는 원인에 있을 수 있다.
+                    const code = [error, (error as Error | null)?.cause]
+                        .map(e => (e as { code?: string } | null)?.code)
+                        .find(Boolean);
+                    expect(code).toBe('42P01');
+                } finally {
+                    await bare.end();
+                    await admin.unsafe(
+                        `DROP SCHEMA IF EXISTS "${bareSchema}" CASCADE`
+                    );
+                }
             });
         });
     }

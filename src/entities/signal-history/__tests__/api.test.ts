@@ -354,6 +354,96 @@ describe('DrizzleSignalHistoryRepository', () => {
             expect(select).not.toHaveBeenCalled();
         });
     });
+    describe('listLatestSessionEpisodes', () => {
+        function dbCapturing(rows: unknown[]) {
+            const limit = vi.fn().mockResolvedValue(rows);
+            const orderBy = vi.fn(() => ({ limit }));
+            const where = vi.fn((_condition: unknown) => ({ orderBy }));
+            const select = vi.fn((_fields: unknown) => ({
+                from: () => ({ where }),
+            }));
+            return {
+                db: { select } as unknown as SiglensDatabase,
+                select,
+                where,
+                limit,
+            };
+        }
+
+        it('시장·신호 유형으로 거르고, 마지막 포착 세션이 그 시장의 최근 완료 세션인 행만 읽는다', async () => {
+            const rows = [
+                {
+                    symbol: 'NVDA',
+                    koreanName: '엔비디아',
+                    signalType: 'rsi_oversold',
+                    sessionDate: '2026-11-20',
+                    changePercent: -3.1,
+                },
+            ];
+            const { db, where, limit } = dbCapturing(rows);
+
+            await expect(
+                new DrizzleSignalHistoryRepository(
+                    db
+                ).listLatestSessionEpisodes(
+                    ['rsi_oversold', 'rsi_overbought'],
+                    'us',
+                    10
+                )
+            ).resolves.toEqual(rows);
+
+            const { sql, params } = render(onlyCallArg(where));
+            expect(sql).toContain('"signal_events"."market" = $1');
+            expect(sql).toContain('"signal_events"."signal_type" in ($2, $3)');
+            expect(sql).toContain('"signal_events"."last_seen_session" >= (');
+            expect(sql).toContain('"signal_events"."session_date" <= (');
+            expect(sql).toContain('max("signal_scan_sessions"."session_date")');
+            expect(sql).toContain(
+                '"signal_scan_sessions"."completed_at" IS NOT NULL'
+            );
+            // 서브쿼리의 시장도 같은 값이어야 한다(다른 시장의 완료 세션을 빌려 오지 않는다).
+            expect(params).toEqual([
+                'us',
+                'rsi_oversold',
+                'rsi_overbought',
+                'us',
+                'us',
+            ]);
+            expect(limit).toHaveBeenCalledWith(10);
+        });
+
+        it('이름 붙인 열만 고른다 — 행 전체를 읽지 않는다', async () => {
+            const { db, select } = dbCapturing([]);
+
+            await new DrizzleSignalHistoryRepository(
+                db
+            ).listLatestSessionEpisodes(['rsi_oversold'], 'kr', 5);
+
+            expect(Object.keys(onlyCallArg(select) as object)).toEqual([
+                'symbol',
+                'koreanName',
+                'signalType',
+                'sessionDate',
+                'changePercent',
+            ]);
+        });
+
+        it('신호 유형이 비거나 한도가 0 이하면 쿼리하지 않는다', async () => {
+            const select = vi.fn();
+            const repo = new DrizzleSignalHistoryRepository({
+                select,
+            } as unknown as SiglensDatabase);
+
+            await expect(
+                repo.listLatestSessionEpisodes([], 'us', 5)
+            ).resolves.toEqual([]);
+            await expect(
+                repo.listLatestSessionEpisodes(['rsi_oversold'], 'us', 0)
+            ).resolves.toEqual([]);
+            expect(select).not.toHaveBeenCalled();
+        });
+    });
+
     describe('countHubSymbols', () => {
         it('시장별 종목 수를 돌려주고, 없는 시장은 0이다', async () => {
             const groupBy = vi

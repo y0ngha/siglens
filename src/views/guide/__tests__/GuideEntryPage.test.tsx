@@ -117,6 +117,7 @@ const LIVE: readonly LiveSymbolGroup[] = [
                 name: '엔비디아',
                 changePercent: 1,
                 basis: 'scanner',
+                firstSeenSession: null,
                 detectedOn: '2026-10-25T00:00:00.000Z',
                 match: null,
             },
@@ -214,6 +215,7 @@ describe('GuideEntryPage', () => {
                             name: null,
                             changePercent: null,
                             basis: 'snapshot',
+                            firstSeenSession: null,
                             detectedOn: '2026-10-24T21:00:00.000Z',
                             match: {
                                 kind: 'pattern',
