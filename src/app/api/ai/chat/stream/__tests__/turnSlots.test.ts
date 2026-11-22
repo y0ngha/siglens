@@ -305,6 +305,27 @@ describe('turnSlots', () => {
         expect(getActiveAgentTurns()).toBe(4);
     });
 
+    it('테스트 초기화는 줄에 남은 대기자의 타이머와 abort 리스너까지 정리한다', async () => {
+        await takeMany(MAX_ACTIVE_AGENT_TURNS);
+        const controller = new AbortController();
+        const settled = vi.fn();
+        void acquireTurnSlot({
+            signal: controller.signal,
+            canAcceptStream: open,
+        }).then(settled);
+        expect(getQueuedAgentTurns()).toBe(1);
+        expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+        __resetTurnSlotsForTests();
+
+        expect(getQueuedAgentTurns()).toBe(0);
+        expect(vi.getTimerCount()).toBe(0);
+        controller.abort();
+        await vi.advanceTimersByTimeAsync(AGENT_TURN_QUEUE_WAIT_MS);
+        expect(settled).not.toHaveBeenCalled();
+        expect(getActiveAgentTurns()).toBe(0);
+    });
+
     it('일하는 턴이 0이어도 들어온 턴이 14면 받지 않는다', async () => {
         const parkedTurns = await takeParked(MAX_ADMITTED_AGENT_TURNS);
         expect(getActiveAgentTurns()).toBe(0);

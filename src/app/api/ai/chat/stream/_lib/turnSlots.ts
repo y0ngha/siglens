@@ -65,6 +65,8 @@ export interface AcquireOptions {
 interface Waiter {
     canAcceptStream: () => boolean;
     settle: (result: AcquireResult) => void;
+    /** 결과를 내지 않고 타이머·abort 리스너만 정리하고 줄에서 뺀다(테스트 초기화용). */
+    dispose: () => void;
 }
 
 let admitted = 0;
@@ -192,6 +194,7 @@ export function acquireTurnSlot({
                         : result
                 );
             },
+            dispose: () => cleanup(),
         };
         // 맨 앞이 나가면 뒤 대기자가 새 맨 앞이 된다 — 자리가 이미 나 있으면 1초 재확인을
         // 기다리지 않고 바로 들여보낸다.
@@ -210,8 +213,9 @@ export function acquireTurnSlot({
     });
 }
 
-/** 테스트 전용 — 모듈 상태를 비운다(줄에 남은 대기자는 타이머와 함께 버린다). */
+/** 테스트 전용 — 모듈 상태를 비운다(줄에 남은 대기자는 타이머·abort 리스너를 정리하고 버린다). */
 export function __resetTurnSlotsForTests(): void {
+    [...queue].forEach(waiter => waiter.dispose());
     queue.splice(0);
     admitted = 0;
     parked = 0;
