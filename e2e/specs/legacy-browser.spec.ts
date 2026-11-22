@@ -34,7 +34,7 @@ test.describe('legacy browser without ES2022/ES2023 built-ins', () => {
     });
 
     for (const { path, heading } of [
-        { path: '/', heading: /주식과 코인 분석 서비스/ },
+        { path: '/', heading: /주식과 코인의 가격대 지도/ },
         { path: '/AAPL', heading: /AAPL/ },
     ]) {
         test(`${path} renders and hydrates without missing-method errors`, async ({

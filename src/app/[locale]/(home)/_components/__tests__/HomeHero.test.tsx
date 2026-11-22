@@ -12,8 +12,8 @@ import { HomeHero } from '@/app/[locale]/(home)/_components/HomeHero';
 
 const COPY = {
     aiTeaser: 'AI에게 물어보세요',
-    eyebrow: '주식 분석',
-    headline: 'AI 주식 분석',
+    eyebrow: '언제 살지보다 어떤 가격을 지켜볼지',
+    headline: '주식과 코인의 가격대 지도',
     intro: '지표 13개로 분석합니다.',
     introTail: '무료입니다.',
 };
@@ -34,8 +34,26 @@ describe('HomeHero', () => {
         renderHero('ko');
 
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            'AI 주식 분석 시그렌즈(SIGLENS)'
+            '주식과 코인의 가격대 지도 시그렌즈(SIGLENS)'
         );
+    });
+
+    it('눈썹 문구를 H1 위에 그린다', () => {
+        renderHero();
+
+        const eyebrow = screen.getByText('언제 살지보다 어떤 가격을 지켜볼지');
+        const h1 = screen.getByRole('heading', { level: 1 });
+        expect(
+            eyebrow.compareDocumentPosition(h1) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('일러스트 래퍼는 lg 이상에서만 보인다', () => {
+        renderHero();
+
+        const wrapper = screen.getByTestId('hero-illustration').parentElement;
+        expect(wrapper).toHaveClass('hidden', 'lg:block');
     });
 
     it('소개 문단 두 문장을 NBSP로 잇는다(모바일에서는 <br>이 숨는다)', () => {

@@ -412,3 +412,12 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 
 - ❌ 새 테스트의 `mock.calls[0]`이 가드에 걸리자 기준선의 숫자를 올려 통과시킨다.
 - ✅ `mock.calls.find(...)`나 `toHaveBeenCalledWith`로 고친다. `yarn rules:ratchet --against origin/master`가 올라간 값과, git 이름 변경(`-M`)으로 짝지어지지 않은 새 키를 나열한다.
+
+<a id="TC-42"></a>
+
+#### TC-42 — `public/` 에셋은 제자리에서 고치거나 바로 지우지 않는다
+
+`public/` 파일은 `immutable`로 오래 캐시되고 태그 퍼지는 브라우저 캐시에 닿지 않으며, CDN·ISR에 캐시된 HTML은 배포 뒤에도 옛 경로를 요청한다. 내용이 바뀌면 버전 접미사가 붙은 새 파일명으로 만들고 모든 참조를 옮긴다. 마지막 참조를 없앤 릴리스에서는 옛 파일을 남기고 다음 릴리스에서 지운다.
+
+- ❌ `hero-dashboard.svg`를 덮어쓰거나, 참조를 없앤 같은 릴리스에서 지운다.
+- ✅ `hero-dashboard-v2.svg`를 추가하고 옛 파일은 한 릴리스 뒤에 지운다.

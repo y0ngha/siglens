@@ -771,6 +771,7 @@ fallback이 실제 헤더의 행 구조와 다르면(한 줄 대 두 줄) 교체
 
 요소에 `opacity`가 걸려 있으면 최종 알파는 `baseAlpha * elementOpacity`다. 불투명도를 무시하고 재면 `disabled:opacity-40` 버튼이
 8.82:1로 읽히는데 실제 렌더는 2.26:1이다.
+SVG의 장식 선·도형에 거는 `opacity`·`stroke-opacity`도 같고, 테스트는 색 hex만이 아니라 불투명도 값도 고정한다.
 
 <a id="DS-13"></a>
 
