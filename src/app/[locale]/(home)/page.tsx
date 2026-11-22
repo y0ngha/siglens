@@ -12,7 +12,6 @@ import { RSS_ALTERNATE_TYPES } from '@/shared/config/rssFeed';
 import { DEFAULT_LOCALE, resolveLocale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 import { enterLocale } from '@/shared/lib/enterLocale';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     brandIntroName,
     buildFaqJsonLd,
@@ -45,7 +44,8 @@ interface HomeRouteProps {
  * 홈 메타데이터. 루트 레이아웃은 canonical을 깔지 않으므로 홈이 self-canonical을 직접 선언한다.
  *
  * `openGraph`/`twitter`는 **완전히** 선언한다 — Next는 이 최상위 키를 부모와 병합하지 않고
- * 교체하므로, 부분 선언하면 `images`·`type`·`url`이 통째로 빠져 공유 카드에 미리보기가 없다.
+ * 교체하므로, 부분 선언하면 `type`·`url`이 통째로 빠진다. 이미지는 선언하지 않고 같은 세그먼트의
+ * `opengraph-image.tsx`·`twitter-image.tsx` 파일 컨벤션이 로케일별 카드를 채운다.
  */
 export async function generateMetadata({
     params,
@@ -79,20 +79,10 @@ export async function generateMetadata({
             // 공유 카드가 어느 언어에서 눌러도 한국어 페이지로 간다.
             url: localizedAbsoluteUrl(SITE_URL, locale),
             ...localeOpenGraph(locale),
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: title,
-                },
-            ],
+            // `images`는 선언하지 않는다 — 같은 세그먼트의 `opengraph-image.tsx`
+            // 파일 컨벤션이 로케일별 공유 카드를 채운다(`twitter-image.tsx`도 같다).
         },
-        twitter: buildTwitterMetadata({
-            title,
-            description,
-            images: ['/og-image.png'],
-        }),
+        twitter: buildTwitterMetadata({ title, description }),
     };
 }
 

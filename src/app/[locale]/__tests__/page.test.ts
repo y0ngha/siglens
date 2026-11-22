@@ -147,17 +147,19 @@ describe('홈 generateMetadata', () => {
     );
 
     it.each(['ko', 'en'])(
-        '%s: og·twitter 이미지를 잃지 않는다',
+        '%s: og·twitter 메타를 유지하고 이미지는 파일 컨벤션에 맡긴다',
         async locale => {
             const meta = await load(locale);
             const og = meta.openGraph as Record<string, unknown> | undefined;
             const twitter = meta.twitter as Record<string, unknown> | undefined;
 
-            expect(og?.['images']).toBeDefined();
+            // 이미지는 `(home)/opengraph-image.tsx`·`twitter-image.tsx` 파일 컨벤션이
+            // 채운다 — 옛 공용 `/og-image.png`를 다시 박으면 카드가 이중이 된다.
+            expect(og?.['images']).toBeUndefined();
             expect(og?.['type']).toBe('website');
             expect(og?.['url']).toBeTruthy();
             expect(twitter?.['card']).toBe('summary_large_image');
-            expect(twitter?.['images']).toBeDefined();
+            expect(twitter?.['images']).toBeUndefined();
         }
     );
 });
