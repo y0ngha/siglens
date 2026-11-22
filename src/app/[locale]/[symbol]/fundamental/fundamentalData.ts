@@ -29,6 +29,7 @@ import {
 } from '@/entities/ticker/server/descriptionTranslationFailure';
 import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 
 // 펀더멘털 탭 섹션 로더 — provider 위임과 회사 설명 번역(`getProfileDescription`)만 둔다. Redis 캐싱
 // (`fundamental:*` 키)·per/psr enrich는 `getFundamentalDataProvider`가 돌려주는 CachedFundamentalProvider가
@@ -129,11 +130,17 @@ async function translateAndStoreDescription(
     return translated;
 }
 
-/** TTM 밸류에이션 지표(밸류에이션 카드). */
+/**
+ * TTM 밸류에이션 지표(밸류에이션 카드). 한국 종목의 PER·PBR·EPS는 DART 기준 값으로 바꿔 끼운다(`withKrValuation`) —
+ * AI 분석 입력과 에이전트가 같은 기준을 본다.
+ */
 export const getKeyMetricsTtm = (
     symbol: string
 ): Promise<FundamentalValuationMetrics | null> =>
-    getFundamentalDataProvider(symbol).getKeyMetricsTtm(symbol);
+    withKrValuation(
+        getFundamentalDataProvider(symbol),
+        symbol
+    ).getKeyMetricsTtm(symbol);
 
 /**
  * 동종 기업 목록(동종 기업 표). 표는 티커·회사명·시총만 그려 per/psr enrich가 필요 없으므로 raw 경로로

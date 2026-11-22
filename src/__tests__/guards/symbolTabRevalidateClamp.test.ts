@@ -234,7 +234,12 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
     ],
     'fundamental/page.tsx': [
         { token: "'fundamental:profile'", revalidate: time.SECONDS_PER_DAY },
-        { token: "'fundamental:metrics-v2'", revalidate: time.SECONDS_PER_DAY },
+        { token: "'fundamental:metrics-v3'", revalidate: time.SECONDS_PER_DAY },
+        {
+            token: 'loadPageKrValuation',
+            via: "entities/kr-valuation/server/loadPageKrValuation → staticSymbolCache('fundamental:kr-valuation-v1') 24h; 일시적 대체 값은 캐시하지 않고 섹션이 이 렌더의 revalidate를 낮춘다",
+            revalidate: time.SECONDS_PER_DAY,
+        },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
         {
             token: 'getFundamentalFacts',

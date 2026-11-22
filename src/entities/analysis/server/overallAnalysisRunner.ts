@@ -11,6 +11,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
@@ -262,7 +263,10 @@ export async function executeOverallAnalysis({
         companyName,
         timeframe,
         modelId,
-        fundamentalProvider: getFundamentalDataProvider(symbol),
+        fundamentalProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol
+        ),
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],

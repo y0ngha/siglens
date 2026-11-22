@@ -26,6 +26,7 @@ import {
     getDescriptor,
 } from '@/shared/config/marketProfile/registry';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -255,7 +256,12 @@ export async function prewarmFundamental(
     return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        dataProvider: getFundamentalDataProvider(symbol),
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(`background`)으로 읽는다.
+        dataProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol,
+            { mode: 'background' }
+        ),
         // 방문자 경로와 같은 통화를 넘겨야 prewarm이 채운 캐시의 산출 텍스트가 갈리지 않는다.
         currency: currencyForSymbol(symbol),
         currentPrice: () =>
@@ -432,7 +438,11 @@ export async function prewarmOverall(
         companyName,
         timeframe,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        fundamentalProvider: getFundamentalDataProvider(symbol),
+        fundamentalProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol,
+            { mode: 'background' }
+        ),
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],

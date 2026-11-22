@@ -50,7 +50,10 @@ import {
     fetchCorpCodeZip,
     fetchDisclosureList,
     fetchAlotMatter,
+    fetchCompanyInfo,
     fetchExecutiveStock,
+    fetchFinancialStatementsAll,
+    fetchStockTotalQuantity,
     fetchMajorStock,
     isDartEnabled,
 } from '../dartClient';
@@ -266,6 +269,93 @@ describe('dartClient', () => {
         });
     });
 
+    describe('financial statements, share totals and company info', () => {
+        it('asks fnlttSinglAcntAll.json for one report and fs_div and returns its rows', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({
+                    status: '000',
+                    message: '정상',
+                    list: [{ account_id: 'ifrs-full_Equity' }],
+                })
+            );
+            expect(
+                await fetchFinancialStatementsAll(
+                    '00126292',
+                    2026,
+                    '11012',
+                    'CFS'
+                )
+            ).toEqual([{ account_id: 'ifrs-full_Equity' }]);
+            const params = requestTo(
+                '/api/fnlttSinglAcntAll.json'
+            ).searchParams;
+            expect(params.get('corp_code')).toBe('00126292');
+            expect(params.get('bsns_year')).toBe('2026');
+            expect(params.get('reprt_code')).toBe('11012');
+            expect(params.get('fs_div')).toBe('CFS');
+        });
+
+        it('returns null for 013 on a statement request, so the caller can fall back to separate statements or an earlier report', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '013', message: '조회된 데이타가 없습니다.' })
+            );
+            expect(
+                await fetchFinancialStatementsAll(
+                    '00126292',
+                    2026,
+                    '11013',
+                    'OFS'
+                )
+            ).toBeNull();
+        });
+
+        it('asks stockTotqySttus.json for one report and returns null for 013', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({
+                    status: '000',
+                    message: '정상',
+                    list: [{ se: '보통주', istc_totqy: '115,858,891' }],
+                })
+            );
+            expect(
+                await fetchStockTotalQuantity('00126292', 2026, '11012')
+            ).toEqual([{ se: '보통주', istc_totqy: '115,858,891' }]);
+            const params = requestTo('/api/stockTotqySttus.json').searchParams;
+            expect(params.get('corp_code')).toBe('00126292');
+            expect(params.get('bsns_year')).toBe('2026');
+            expect(params.get('reprt_code')).toBe('11012');
+
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '013', message: '조회된 데이타가 없습니다.' })
+            );
+            expect(
+                await fetchStockTotalQuantity('00126292', 2026, '11013')
+            ).toBeNull();
+        });
+
+        it('reads company.json as one flat object (not a list) and returns null for 013', async () => {
+            fetchSpy.mockResolvedValueOnce(
+                json({
+                    status: '000',
+                    message: '정상',
+                    corp_code: '00126292',
+                    acc_mt: '12',
+                })
+            );
+            expect(await fetchCompanyInfo('00126292')).toMatchObject({
+                acc_mt: '12',
+            });
+            expect(
+                requestTo('/api/company.json').searchParams.get('corp_code')
+            ).toBe('00126292');
+
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '013', message: '조회된 데이타가 없습니다.' })
+            );
+            expect(await fetchCompanyInfo('99999999')).toBeNull();
+        });
+    });
+
     describe('quota guard', () => {
         it('counts each request under the KST date key and expires the counter after two days', async () => {
             fetchSpy.mockImplementation(async () =>
@@ -365,6 +455,41 @@ describe('dartClient', () => {
             mockGetRedis.mockRestore();
         });
 
+        it('keeps a reserve for other callers: a reserved request stops without a request or a counter increment, others still run', async () => {
+            const counterKey = dartDailyCallCounterKey(TODAY_KST);
+            redisState.store.set(
+                counterKey,
+                String(DART_DAILY_CALL_BUDGET - 6_000)
+            );
+            await expect(
+                fetchCompanyInfo('00126292', { reserve: 6_000 })
+            ).rejects.toBeInstanceOf(DartQuotaError);
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(redisState.store.get(counterKey)).toBe(
+                String(DART_DAILY_CALL_BUDGET - 6_000)
+            );
+            // The reserve is not a breaker: a caller without a reserve (the crons) keeps going.
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '013', message: '' })
+            );
+            expect(await fetchMajorStock('00126380')).toEqual([]);
+            expect(redisState.store.has(DART_QUOTA_BREAKER_KEY)).toBe(false);
+        });
+
+        it('a reserved request runs while the counter is below budget minus the reserve', async () => {
+            redisState.store.set(
+                dartDailyCallCounterKey(TODAY_KST),
+                String(DART_DAILY_CALL_BUDGET - 6_001)
+            );
+            fetchSpy.mockResolvedValueOnce(
+                json({ status: '013', message: '' })
+            );
+            expect(
+                await fetchCompanyInfo('00126292', { reserve: 6_000 })
+            ).toBeNull();
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        });
+
         it('still requests (fail-open) when a Redis command fails', async () => {
             vi.spyOn(console, 'warn').mockImplementation(() => {});
             redisState.fail = true;
@@ -431,6 +556,19 @@ describe('dartClient', () => {
             expect((caught as DartApiError).httpStatus).toBe(503);
             expect(dartFatalReason(caught)).toBeNull();
             expect(fetchSpy).toHaveBeenCalledTimes(2);
+        });
+
+        it('does not retry a 5xx when the request-path options say maxRetries 0', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            fetchSpy.mockImplementation(
+                async () => new Response('', { status: 503 })
+            );
+            await expect(
+                fetchStockTotalQuantity('00126292', 2026, '11012', {
+                    maxRetries: 0,
+                })
+            ).rejects.toBeInstanceOf(DartApiError);
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
         });
 
         it('retries a network failure and recovers', async () => {

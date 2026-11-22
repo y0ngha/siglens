@@ -70,6 +70,12 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
     getRatiosTtm: vi.fn().mockResolvedValue(null),
     getStockPeers: vi.fn().mockResolvedValue([]),
 }));
+const { mockLoadKrValuation } = vi.hoisted(() => ({
+    mockLoadKrValuation: vi.fn(),
+}));
+vi.mock('@/entities/kr-valuation/server/loadPageKrValuation', () => ({
+    loadPageKrValuation: mockLoadKrValuation,
+}));
 const { mockLoadGrades } = vi.hoisted(() => ({ mockLoadGrades: vi.fn() }));
 vi.mock('@/shared/api/fmp/loadPageGradesConsensus', () => ({
     loadPageGradesConsensus: mockLoadGrades,
@@ -221,10 +227,17 @@ vi.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
     ),
 }));
 vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
-    ValuationCard: ({ metrics }: { metrics: unknown }) => (
+    ValuationCard: ({
+        metrics,
+        basis,
+    }: {
+        metrics: unknown;
+        basis?: { source: string } | null;
+    }) => (
         <div
             data-testid="valuation-card"
             data-degraded={metrics === null ? 'true' : 'false'}
+            data-basis={basis?.source ?? 'none'}
         />
     ),
 }));
@@ -630,6 +643,68 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         );
 
         consoleSpy.mockRestore();
+    });
+
+    describe('ValuationSection 한국 종목 PER·PBR (DART 기준 + 계산 기준 캡션)', () => {
+        const DART_PAGE = {
+            metrics: { peRatioTTM: 7.7 },
+            basis: { source: 'dart' },
+            transient: false,
+        };
+
+        beforeEach(() => {
+            mockLoadKrValuation.mockReset();
+            vi.mocked(shortenRevalidateForRuntimeDegrade).mockClear();
+        });
+
+        it('한국 종목은 지표와 기준을 한 로더에서 받아 카드에 넘긴다(미국용 지표 로더는 부르지 않는다)', async () => {
+            mockLoadKrValuation.mockResolvedValue(DART_PAGE);
+            mockGetKeyMetricsTtm.mockClear();
+            render(await ValuationSection({ symbol: '029780.KS' }));
+            expect(mockLoadKrValuation).toHaveBeenCalledWith('029780.KS');
+            expect(mockGetKeyMetricsTtm).not.toHaveBeenCalled();
+            const card = screen.getByTestId('valuation-card');
+            expect(card.getAttribute('data-degraded')).toBe('false');
+            expect(card.getAttribute('data-basis')).toBe('dart');
+            expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+        });
+
+        it('일시적 대체 값이면 값은 그대로 그리고 이 렌더의 revalidate를 낮춘다', async () => {
+            mockLoadKrValuation.mockResolvedValue({
+                metrics: { peRatioTTM: 7.4 },
+                basis: { source: 'provider' },
+                transient: true,
+            });
+            render(await ValuationSection({ symbol: '029780.KS' }));
+            expect(
+                screen.getByTestId('valuation-card').getAttribute('data-basis')
+            ).toBe('provider');
+            expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+        });
+
+        it('로더가 던지면 빈 카드로 내려가고 revalidate를 낮춘다', async () => {
+            mockLoadKrValuation.mockRejectedValue(new Error('provider down'));
+            const error = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            render(await ValuationSection({ symbol: '029780.KS' }));
+            const card = screen.getByTestId('valuation-card');
+            expect(card.getAttribute('data-degraded')).toBe('true');
+            expect(card.getAttribute('data-basis')).toBe('none');
+            expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+            error.mockRestore();
+        });
+
+        it('미국 종목은 한국 로더를 거치지 않고 캡션도 없다', async () => {
+            mockGetKeyMetricsTtm.mockResolvedValue({
+                peRatioTTM: 30,
+            } as Awaited<ReturnType<typeof getKeyMetricsTtm>>);
+            render(await ValuationSection({ symbol: 'AAPL' }));
+            expect(mockLoadKrValuation).not.toHaveBeenCalled();
+            expect(
+                screen.getByTestId('valuation-card').getAttribute('data-basis')
+            ).toBe('none');
+        });
     });
 
     it('PeersSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {

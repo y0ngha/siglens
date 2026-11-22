@@ -4803,7 +4803,11 @@
                 "dc14bc": "This value is the total value of the company, including debt, divided by operating profit (before depreciation).",
                 "f4d48c": "This value considers earnings growth rate along with PER.",
                 "f63f21": "Typically, the lower it is, the more undervalued; the higher, the more overvalued.",
-                "fccdcd": "This value converts the net profit earned by the company in one year into how much was earned per share."
+                "fccdcd": "This value converts the net profit earned by the company in one year into how much was earned per share.",
+                "krBasisDartConsolidated": "P/E and P/B use DART consolidated financial statements, attributable to the parent's shareholders. Net income covers the four quarters to {ttmEnd} and equity is as of {equityAsOf}. EPS is divided by total issued shares and book value per share by shares excluding treasury stock.",
+                "krBasisDartSeparate": "This company does not file consolidated financial statements, so P/E and P/B use its DART separate financial statements. Net income covers the four quarters to {ttmEnd} and equity is as of {equityAsOf}. EPS is divided by total issued shares and book value per share by shares excluding treasury stock.",
+                "krBasisDartEquityOnly": "P/B divides equity from the DART financial statements as of {equityAsOf} by shares excluding treasury stock. P/E is left blank because trailing four-quarter net income could not be built.",
+                "krBasisProvider": "P/E and P/B follow the data provider's figures."
             },
             "analystBuyCount": "Buy {v0}",
             "analystRating": {
