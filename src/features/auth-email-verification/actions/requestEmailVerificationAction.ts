@@ -58,8 +58,9 @@ export async function requestEmailVerificationAction(
             namespace: 'entities.email-token.email',
         });
 
-        // 성공은 ok: true 고정 (enumeration 회피); codeIssued/emailDispatched 는 운영 디버깅용 필드.
-        // 한도(`rate_limited`)는 주소·IP만으로 정해지고 계정 존재 여부와 무관하다.
+        // 한도(`rate_limited`)와 발송 실패(`email_send_failed`)는 주소·IP·제공자 상태로만 정해지고 DB를 읽지
+        // 않으므로 계정 존재 여부와 무관하다. 발송이 실패했는데 submitted: true를 주면 화면이 "보냈다"며
+        // 오지 않을 코드를 기다리게 한다.
         const result = await requestEmailVerification(
             { email },
             {
@@ -83,7 +84,10 @@ export async function requestEmailVerificationAction(
                 submitted: false,
                 error: {
                     code: result.reason,
-                    message: tAuth('tooManyRequests'),
+                    message:
+                        result.reason === 'email_send_failed'
+                            ? tAuth('verificationEmailFailed')
+                            : tAuth('tooManyRequests'),
                 },
             };
         }

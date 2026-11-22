@@ -23,6 +23,7 @@ export const AUTH_ERROR_KEY: Record<string, string> = {
     invalid_verification_code: 'error.invalidCode',
     expired_verification_code: 'error.expiredCode',
     rate_limited: 'error.tooManyRequests',
+    email_send_failed: 'error.verificationEmailFailed',
     too_many_verification_attempts: 'error.tooManyCodeAttempts',
     invalid_token: 'error.invalidResetToken',
     expired_token: 'error.expiredResetToken',

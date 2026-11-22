@@ -261,11 +261,12 @@ export interface RequestEmailVerificationOptions {
 /**
  * 코드 요청 결과. 잘못된 이메일은 `ok: true`(`codeIssued: false`). 한도에 걸리면 코드도 메일도 없이
  * `rate_limited`다 — 가짜 성공이 아니라 명시적 오류다(주소·IP만으로 정해지므로 계정 존재 여부는 새지 않는다).
+ * 메일 발송이 실패하면 `email_send_failed`다(코드는 저장돼 있다).
  */
 export type RequestEmailVerificationResult =
-    | { ok: true; codeIssued: true; emailDispatched: boolean }
+    | { ok: true; codeIssued: true; emailDispatched: true }
     | { ok: true; codeIssued: false; emailDispatched: false }
-    | { ok: false; reason: 'rate_limited' };
+    | { ok: false; reason: 'rate_limited' | 'email_send_failed' };
 
 /** 이메일 인증 코드 확인 입력. `code`는 사용자가 입력한 원문. */
 export interface VerifyEmailInput {

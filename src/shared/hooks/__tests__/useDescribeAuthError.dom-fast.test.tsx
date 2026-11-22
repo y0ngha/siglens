@@ -40,6 +40,13 @@ describe('useDescribeAuthError', () => {
         ).toBe(koMessages.entities.auth.error.expiredCode);
     });
 
+    it('translates email_send_failed to the verification mail failure copy', () => {
+        const describeAuthError = renderDescribe();
+        expect(
+            describeAuthError({ code: 'email_send_failed', message: '원문' })
+        ).toBe(koMessages.entities.auth.error.verificationEmailFailed);
+    });
+
     it('translates the signup verification limit errors to their own messages', () => {
         const describeAuthError = renderDescribe();
         expect(
