@@ -7,11 +7,14 @@ import {
     SIGNAL_HISTORY_CACHE_TAG,
 } from '@/entities/signal-history/api';
 import {
-    latestEpisodePerSymbol,
     orderForDisplay,
     signalHubWindowStart,
 } from '@/entities/signal-history/lib/signalHubRows';
-import type { SignalEpisodeRow } from '@/entities/signal-history/types';
+import { SIGNAL_HUB_MAX_ROWS_PER_MARKET } from '@/entities/signal-history/lib/signalHubs';
+import type {
+    SignalEpisodeRow,
+    SignalHubSymbolCounts,
+} from '@/entities/signal-history/types';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import {
     shortenRevalidateForRuntimeDegrade,
@@ -22,23 +25,27 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { isDatabaseMissingAtBuild } from '@/shared/db/config';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
-/**
- * 한 페이지가 읽는 최대 에피소드 수 — 폭주 방어용 상한이다. 스캐너 대상은 미국 약 100·한국 약 30종목이고
- * 한 종목이 30일 안에 같은 신호를 여러 번 열 수 있어(끊겼다 다시 잡힘) 에피소드는 종목 수보다 많다.
- * 상한에 걸려 오래된 쪽이 잘려도 종목별 최신 에피소드만 남기므로 화면에는 최근 종목이 남는다.
- *
- * 전제: 사이트맵 집계(`recentCountsByType`)는 상한 없이 `count(distinct)`로 종목을 센다. 지금 규모(약 130종목)에서는
- * 상한에 닿지 않아 두 값이 같다. 스캐너 대상이 크게 늘어 상한에 걸리면 페이지 종목 수가 사이트맵 집계보다 적어져
- * 색인 판정(`isSignalHubDataIndexable`·사이트맵)이 갈릴 수 있으니, 그때는 상한을 대상 수에 맞춰 올린다.
- */
-const MAX_EPISODES = 600;
-
 export interface SignalHubData {
-    /** 종목마다 가장 최근 에피소드 한 줄, 화면 순서(미국 → 한국, 시장 안에서 첫 포착 최신순). */
+    /**
+     * 종목마다 가장 최근 에피소드 한 줄, 화면 순서(미국 → 한국, 시장 안에서 첫 포착 최신순). 시장마다
+     * `SIGNAL_HUB_MAX_ROWS_PER_MARKET`개까지만 담는다.
+     */
     readonly rows: readonly SignalEpisodeRow[];
+    /**
+     * 기간 안에 이 신호가 잡힌 서로 다른 종목 수(시장별) — 상한으로 잘리기 전의 전체다. 색인 판정과
+     * 사이트맵(`recentCountsByType`)이 같은 수를 보고, 목록이 잘렸는지 알리는 문구가 쓴다.
+     */
+    readonly counts: SignalHubSymbolCounts;
     /** 기록을 못 읽었다(DB 장애·오프라인 빌드). 빈 목록과 구분한다 — 이때는 색인도 하지 않는다. */
     readonly degraded: boolean;
 }
+
+/** 기록을 못 읽었을 때의 값 — 빈 목록과 구분하려고 `degraded`를 켠다. */
+const DEGRADED_HUB: SignalHubData = {
+    rows: [],
+    counts: { us: 0, kr: 0 },
+    degraded: true,
+};
 
 /**
  * 신호 페이지 데이터. DB 읽기는 `unstable_cache` 안에서만 한다(`src/app/CLAUDE.md` 축 1 — 캐시 밖 DB
@@ -51,30 +58,34 @@ export interface SignalHubData {
  */
 export const loadSignalHub = cache(
     async (signalType: string): Promise<SignalHubData> => {
-        if (isOfflineBuild()) return { rows: [], degraded: true };
+        if (isOfflineBuild()) return DEGRADED_HUB;
         if (isDatabaseMissingAtBuild()) {
             await shortenRevalidateIfDatabaseMissingAtBuild();
-            return { rows: [], degraded: true };
+            return DEGRADED_HUB;
         }
         const since = signalHubWindowStart(new Date());
         try {
-            const rows = await unstable_cache(
-                () => {
+            const { rows, counts } = await unstable_cache(
+                async () => {
                     const { db } = getDatabaseClient();
-                    return new DrizzleSignalHistoryRepository(
-                        db
-                    ).listRecentEpisodes(signalType, since, MAX_EPISODES);
+                    const repository = new DrizzleSignalHistoryRepository(db);
+                    const [hubRows, hubCounts] = await Promise.all([
+                        repository.listHubRows(
+                            signalType,
+                            since,
+                            SIGNAL_HUB_MAX_ROWS_PER_MARKET
+                        ),
+                        repository.countHubSymbols(signalType, since),
+                    ]);
+                    return { rows: hubRows, counts: hubCounts };
                 },
-                ['signal-hub', 'v2', signalType, since],
+                ['signal-hub', 'v3', signalType, since],
                 {
                     revalidate: SECONDS_PER_HOUR,
                     tags: [SIGNAL_HISTORY_CACHE_TAG],
                 }
             )();
-            return {
-                rows: orderForDisplay(latestEpisodePerSymbol(rows)),
-                degraded: false,
-            };
+            return { rows: orderForDisplay(rows), counts, degraded: false };
         } catch (error) {
             console.error(
                 '[signal-hub] 기록 조회 실패',
@@ -82,7 +93,7 @@ export const loadSignalHub = cache(
                 redactDbErrorForLog(error)
             );
             await shortenRevalidateForRuntimeDegrade();
-            return { rows: [], degraded: true };
+            return DEGRADED_HUB;
         }
     }
 );

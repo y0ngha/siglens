@@ -210,47 +210,6 @@ describe('DrizzleSignalHistoryRepository', () => {
         expect(params).toEqual(['2025-10-09']);
     });
 
-    describe('listRecentEpisodes', () => {
-        it('신호·첫 포착 세션 하한으로 거르고 최신순·등락률 크기순으로 limit까지 읽는다', async () => {
-            const limit = vi.fn().mockResolvedValue([
-                {
-                    market: 'us',
-                    symbol: 'NVDA',
-                    koreanName: '엔비디아',
-                    sessionDate: '2026-11-13',
-                    lastSeenSession: '2026-11-14',
-                    changePercent: 2,
-                },
-                {
-                    market: 'zz',
-                    symbol: 'BAD',
-                    koreanName: null,
-                    sessionDate: '2026-11-13',
-                    lastSeenSession: '2026-11-13',
-                    changePercent: 1,
-                },
-            ]);
-            const orderBy = vi.fn((..._order: unknown[]) => ({ limit }));
-            const where = vi.fn((_condition: unknown) => ({ orderBy }));
-            const db = {
-                select: vi.fn(() => ({ from: () => ({ where }) })),
-            } as unknown as SiglensDatabase;
-
-            const rows = await new DrizzleSignalHistoryRepository(
-                db
-            ).listRecentEpisodes('golden_cross', '2026-10-16', 50);
-
-            // 시장 값이 'us' | 'kr'이 아닌 행은 버린다.
-            expect(rows.map(row => row.symbol)).toEqual(['NVDA']);
-            expect(limit).toHaveBeenCalledWith(50);
-            const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"signal_type" = $1');
-            expect(sql).toContain('"session_date" >= $2');
-            expect(params).toEqual(['golden_cross', '2026-10-16']);
-            expect(orderBy.mock.calls.find(Boolean)).toHaveLength(3);
-        });
-    });
-
     describe('recentCountsByType', () => {
         it('신호 목록·세션 하한으로 거르고 신호별로 묶는다', async () => {
             const groupBy = vi.fn().mockResolvedValue([
@@ -393,6 +352,112 @@ describe('DrizzleSignalHistoryRepository', () => {
                 )
             ).resolves.toEqual([]);
             expect(select).not.toHaveBeenCalled();
+        });
+    });
+    describe('countHubSymbols', () => {
+        it('시장별 종목 수를 돌려주고, 없는 시장은 0이다', async () => {
+            const groupBy = vi
+                .fn()
+                .mockResolvedValue([{ market: 'us', symbols: 150 }]);
+            const where = vi.fn(() => ({ groupBy }));
+            const db = {
+                select: vi.fn(() => ({ from: () => ({ where }) })),
+            } as unknown as SiglensDatabase;
+
+            await expect(
+                new DrizzleSignalHistoryRepository(db).countHubSymbols(
+                    'golden_cross',
+                    '2026-10-24'
+                )
+            ).resolves.toEqual({ us: 150, kr: 0 });
+
+            const { sql, params } = render(onlyCallArg(where));
+            expect(sql).toContain('"signal_type" = $1');
+            expect(sql).toContain('"session_date" >= $2');
+            expect(params).toEqual(['golden_cross', '2026-10-24']);
+        });
+    });
+
+    describe('loadScanCursors', () => {
+        it('종목이 없으면 쿼리하지 않는다', async () => {
+            const select = vi.fn();
+            const db = { select } as unknown as SiglensDatabase;
+
+            const cursors = await new DrizzleSignalHistoryRepository(
+                db
+            ).loadScanCursors('us', []);
+
+            expect(cursors.size).toBe(0);
+            expect(select).not.toHaveBeenCalled();
+        });
+
+        it('시장과 종목으로 거르고 종목을 키로 한 맵을 돌려준다', async () => {
+            const where = vi.fn().mockResolvedValue([
+                {
+                    symbol: 'NVDA',
+                    lastSession: '2026-11-19',
+                    attemptSession: null,
+                    attempts: 0,
+                    lastOutcome: 'recorded',
+                },
+            ]);
+            const db = {
+                select: vi.fn(() => ({ from: () => ({ where }) })),
+            } as unknown as SiglensDatabase;
+
+            const cursors = await new DrizzleSignalHistoryRepository(
+                db
+            ).loadScanCursors('us', ['NVDA', 'AAPL']);
+
+            expect(cursors.get('NVDA')).toEqual({
+                lastSession: '2026-11-19',
+                attemptSession: null,
+                attempts: 0,
+                lastOutcome: 'recorded',
+            });
+            const { sql, params } = render(onlyCallArg(where));
+            expect(sql).toContain('"market" = $1');
+            expect(params).toEqual(['us', 'NVDA', 'AAPL']);
+        });
+    });
+
+    describe('applySymbolScan', () => {
+        it('재계산이 없고 쓸 행도 없으면 표식 upsert 하나만 한 트랜잭션에서 한다', async () => {
+            const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+            const values = vi.fn(() => ({ onConflictDoUpdate }));
+            const tx = {
+                insert: vi.fn(() => ({ values })),
+                delete: vi.fn(),
+                update: vi.fn(),
+                execute: vi.fn(),
+            };
+            const transaction = vi.fn(
+                async (run: (tx: unknown) => Promise<void>) => run(tx)
+            );
+            const db = { transaction } as unknown as SiglensDatabase;
+
+            await new DrizzleSignalHistoryRepository(db).applySymbolScan({
+                market: 'us',
+                symbol: 'NVDA',
+                session: '2026-11-20',
+                rebuildFrom: null,
+                relabelCutover: null,
+                lastSeenUpdates: [],
+                inserts: [],
+            });
+
+            expect(transaction).toHaveBeenCalledTimes(1);
+            expect(tx.delete).not.toHaveBeenCalled();
+            expect(tx.update).not.toHaveBeenCalled();
+            expect(tx.execute).not.toHaveBeenCalled();
+            expect(tx.insert).toHaveBeenCalledTimes(1);
+            expect(onlyCallArg(values)).toMatchObject({
+                market: 'us',
+                symbol: 'NVDA',
+                lastSession: '2026-11-20',
+                attempts: 0,
+                lastOutcome: 'recorded',
+            });
         });
     });
 });

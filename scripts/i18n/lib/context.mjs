@@ -194,7 +194,7 @@ const E2E_STUB_RE =
 const LOG_FALLBACK_MESSAGE_DIR_RE = /^src\/entities\/auth\/lib\//;
 
 const CATALOG_BACKED_DATA_RE =
-    /src\/shared\/config\/(canonical-korean-names|popular-tickers|dashboard-tickers|dashboard-tickers-kr|crypto-categories|economyIndicators|economyIndicatorsKr|economyLabelKey|tickerCategoryLabel)\.ts$|src\/entities\/economy\/lib\/indicatorNameKo\.ts$|src\/entities\/market-news\/lib\/categoryConfig\.ts$/;
+    /src\/shared\/config\/(canonical-korean-names|popular-tickers|dashboard-tickers|dashboard-tickers-kr|crypto-categories|economyIndicators|economyIndicatorsKr|economyLabelKey|tickerCategoryLabel)\.ts$|src\/shared\/config\/signalScanUniverse\/krIndexUniverse\.generated\.ts$|src\/entities\/economy\/lib\/indicatorNameKo\.ts$|src\/entities\/market-news\/lib\/categoryConfig\.ts$/;
 
 /**
  * **한글 종목 검색에만 쓰는 매칭 데이터** — 별칭(`쉐브론`)과 영문 글자 읽기표(`에스`).

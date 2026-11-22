@@ -361,7 +361,7 @@
     },
     {
         "file": "src/app/[locale]/market/signals/_lib/loadSignalHub.ts",
-        "line": 80,
+        "line": 91,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 기록 조회 실패"
     },
@@ -997,7 +997,7 @@
     },
     {
         "file": "src/entities/signal-history/api.ts",
-        "line": 325,
+        "line": 847,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 사이트맵 집계 실패"
     },
@@ -3190,6 +3190,1962 @@
         "line": 199,
         "reason": "catalog-backed-data",
         "text": "리노공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 15,
+        "reason": "catalog-backed-data",
+        "text": "KODEX 200 (069500) + KODEX 코스닥 150 (229200) holdings via samsungfund.com, holdin"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 18,
+        "reason": "catalog-backed-data",
+        "text": "하이트진로"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 19,
+        "reason": "catalog-backed-data",
+        "text": "유한양행"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 20,
+        "reason": "catalog-backed-data",
+        "text": "CJ대한통운"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 21,
+        "reason": "catalog-backed-data",
+        "text": "두산"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 23,
+        "reason": "catalog-backed-data",
+        "text": "한국앤컴퍼니"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 24,
+        "reason": "catalog-backed-data",
+        "text": "기아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 25,
+        "reason": "catalog-backed-data",
+        "text": "SK하이닉스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 26,
+        "reason": "catalog-backed-data",
+        "text": "영풍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 27,
+        "reason": "catalog-backed-data",
+        "text": "현대건설"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 28,
+        "reason": "catalog-backed-data",
+        "text": "삼성화재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 29,
+        "reason": "catalog-backed-data",
+        "text": "한화"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 30,
+        "reason": "catalog-backed-data",
+        "text": "DB하이텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 32,
+        "reason": "catalog-backed-data",
+        "text": "세아베스틸지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 33,
+        "reason": "catalog-backed-data",
+        "text": "대한전선"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 34,
+        "reason": "catalog-backed-data",
+        "text": "현대해상"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 35,
+        "reason": "catalog-backed-data",
+        "text": "대상"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 36,
+        "reason": "catalog-backed-data",
+        "text": "오리온홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 37,
+        "reason": "catalog-backed-data",
+        "text": "아세아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 39,
+        "reason": "catalog-backed-data",
+        "text": "아모레퍼시픽홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 40,
+        "reason": "catalog-backed-data",
+        "text": "미원상사"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 41,
+        "reason": "catalog-backed-data",
+        "text": "세아제강지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 42,
+        "reason": "catalog-backed-data",
+        "text": "대웅"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 43,
+        "reason": "catalog-backed-data",
+        "text": "삼양식품"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 44,
+        "reason": "catalog-backed-data",
+        "text": "태광산업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 45,
+        "reason": "catalog-backed-data",
+        "text": "대한항공"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 47,
+        "reason": "catalog-backed-data",
+        "text": "포스코퓨처엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 48,
+        "reason": "catalog-backed-data",
+        "text": "롯데정밀화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 49,
+        "reason": "catalog-backed-data",
+        "text": "현대제철"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 50,
+        "reason": "catalog-backed-data",
+        "text": "신세계"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 51,
+        "reason": "catalog-backed-data",
+        "text": "농심"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 52,
+        "reason": "catalog-backed-data",
+        "text": "롯데지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 53,
+        "reason": "catalog-backed-data",
+        "text": "롯데칠성"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 54,
+        "reason": "catalog-backed-data",
+        "text": "현대차"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 55,
+        "reason": "catalog-backed-data",
+        "text": "코스모화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 56,
+        "reason": "catalog-backed-data",
+        "text": "POSCO홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 57,
+        "reason": "catalog-backed-data",
+        "text": "DB손해보험"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 58,
+        "reason": "catalog-backed-data",
+        "text": "에스엘"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 59,
+        "reason": "catalog-backed-data",
+        "text": "삼성전자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 60,
+        "reason": "catalog-backed-data",
+        "text": "NH투자증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 61,
+        "reason": "catalog-backed-data",
+        "text": "동원산업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 63,
+        "reason": "catalog-backed-data",
+        "text": "녹십자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 64,
+        "reason": "catalog-backed-data",
+        "text": "삼성SDI"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 65,
+        "reason": "catalog-backed-data",
+        "text": "대한유화"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 66,
+        "reason": "catalog-backed-data",
+        "text": "미래에셋증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 67,
+        "reason": "catalog-backed-data",
+        "text": "GS리테일"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 68,
+        "reason": "catalog-backed-data",
+        "text": "오뚜기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 69,
+        "reason": "catalog-backed-data",
+        "text": "DN오토모티브"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 70,
+        "reason": "catalog-backed-data",
+        "text": "이수페타시스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 71,
+        "reason": "catalog-backed-data",
+        "text": "율촌화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 72,
+        "reason": "catalog-backed-data",
+        "text": "호텔신라"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 73,
+        "reason": "catalog-backed-data",
+        "text": "한미사이언스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 74,
+        "reason": "catalog-backed-data",
+        "text": "삼성전기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 75,
+        "reason": "catalog-backed-data",
+        "text": "한샘"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 76,
+        "reason": "catalog-backed-data",
+        "text": "한올바이오파마"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 77,
+        "reason": "catalog-backed-data",
+        "text": "HD한국조선해양"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 78,
+        "reason": "catalog-backed-data",
+        "text": "한화솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 79,
+        "reason": "catalog-backed-data",
+        "text": "영원무역홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 80,
+        "reason": "catalog-backed-data",
+        "text": "OCI홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 82,
+        "reason": "catalog-backed-data",
+        "text": "고려아연"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 83,
+        "reason": "catalog-backed-data",
+        "text": "삼성중공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 85,
+        "reason": "catalog-backed-data",
+        "text": "LG이노텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 86,
+        "reason": "catalog-backed-data",
+        "text": "롯데케미칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 88,
+        "reason": "catalog-backed-data",
+        "text": "현대위아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 89,
+        "reason": "catalog-backed-data",
+        "text": "금호석유화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 91,
+        "reason": "catalog-backed-data",
+        "text": "현대모비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 92,
+        "reason": "catalog-backed-data",
+        "text": "한화에어로스페이스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 93,
+        "reason": "catalog-backed-data",
+        "text": "삼성에피스홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 94,
+        "reason": "catalog-backed-data",
+        "text": "에스원"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 95,
+        "reason": "catalog-backed-data",
+        "text": "한솔케미칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 96,
+        "reason": "catalog-backed-data",
+        "text": "동원시스템즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 97,
+        "reason": "catalog-backed-data",
+        "text": "한국전력"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 98,
+        "reason": "catalog-backed-data",
+        "text": "삼성증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 99,
+        "reason": "catalog-backed-data",
+        "text": "SK텔레콤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 100,
+        "reason": "catalog-backed-data",
+        "text": "현대엘리베이터"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 101,
+        "reason": "catalog-backed-data",
+        "text": "한국카본"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 102,
+        "reason": "catalog-backed-data",
+        "text": "삼성에스디에스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 103,
+        "reason": "catalog-backed-data",
+        "text": "한온시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 104,
+        "reason": "catalog-backed-data",
+        "text": "코웨이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 105,
+        "reason": "catalog-backed-data",
+        "text": "한화머시너리앤서비스홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 106,
+        "reason": "catalog-backed-data",
+        "text": "포스코DX"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 107,
+        "reason": "catalog-backed-data",
+        "text": "롯데쇼핑"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 108,
+        "reason": "catalog-backed-data",
+        "text": "기업은행"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 109,
+        "reason": "catalog-backed-data",
+        "text": "동서"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 110,
+        "reason": "catalog-backed-data",
+        "text": "삼성E&A"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 111,
+        "reason": "catalog-backed-data",
+        "text": "삼성물산"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 112,
+        "reason": "catalog-backed-data",
+        "text": "팬오션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 113,
+        "reason": "catalog-backed-data",
+        "text": "삼성카드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 114,
+        "reason": "catalog-backed-data",
+        "text": "제일기획"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 116,
+        "reason": "catalog-backed-data",
+        "text": "LG유플러스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 117,
+        "reason": "catalog-backed-data",
+        "text": "삼성생명"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 119,
+        "reason": "catalog-backed-data",
+        "text": "두산에너빌리티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 120,
+        "reason": "catalog-backed-data",
+        "text": "LG디스플레이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 121,
+        "reason": "catalog-backed-data",
+        "text": "파라다이스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 123,
+        "reason": "catalog-backed-data",
+        "text": "강원랜드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 125,
+        "reason": "catalog-backed-data",
+        "text": "카카오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 126,
+        "reason": "catalog-backed-data",
+        "text": "한국가스공사"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 128,
+        "reason": "catalog-backed-data",
+        "text": "키움증권"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 129,
+        "reason": "catalog-backed-data",
+        "text": "한화오션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 130,
+        "reason": "catalog-backed-data",
+        "text": "한미반도체"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 131,
+        "reason": "catalog-backed-data",
+        "text": "대우건설"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 132,
+        "reason": "catalog-backed-data",
+        "text": "포스코인터내셔널"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 133,
+        "reason": "catalog-backed-data",
+        "text": "한국항공우주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 134,
+        "reason": "catalog-backed-data",
+        "text": "한전KPS"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 135,
+        "reason": "catalog-backed-data",
+        "text": "LG생활건강"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 136,
+        "reason": "catalog-backed-data",
+        "text": "LG화학"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 137,
+        "reason": "catalog-backed-data",
+        "text": "한전기술"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 138,
+        "reason": "catalog-backed-data",
+        "text": "신한지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 139,
+        "reason": "catalog-backed-data",
+        "text": "산일전기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 140,
+        "reason": "catalog-backed-data",
+        "text": "현대로템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 141,
+        "reason": "catalog-backed-data",
+        "text": "LG씨엔에스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 142,
+        "reason": "catalog-backed-data",
+        "text": "LG전자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 143,
+        "reason": "catalog-backed-data",
+        "text": "엘앤에프"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 144,
+        "reason": "catalog-backed-data",
+        "text": "셀트리온"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 145,
+        "reason": "catalog-backed-data",
+        "text": "TKG휴켐스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 146,
+        "reason": "catalog-backed-data",
+        "text": "대웅제약"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 147,
+        "reason": "catalog-backed-data",
+        "text": "현대백화점"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 148,
+        "reason": "catalog-backed-data",
+        "text": "한국금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 149,
+        "reason": "catalog-backed-data",
+        "text": "지역난방공사"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 150,
+        "reason": "catalog-backed-data",
+        "text": "HD현대마린엔진"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 151,
+        "reason": "catalog-backed-data",
+        "text": "금호타이어"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 153,
+        "reason": "catalog-backed-data",
+        "text": "LIG디펜스앤에어로스페이스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 154,
+        "reason": "catalog-backed-data",
+        "text": "미스토홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 155,
+        "reason": "catalog-backed-data",
+        "text": "한화엔진"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 156,
+        "reason": "catalog-backed-data",
+        "text": "현대글로비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 157,
+        "reason": "catalog-backed-data",
+        "text": "하나금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 158,
+        "reason": "catalog-backed-data",
+        "text": "한화생명"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 159,
+        "reason": "catalog-backed-data",
+        "text": "아모레퍼시픽"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 160,
+        "reason": "catalog-backed-data",
+        "text": "후성"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 161,
+        "reason": "catalog-backed-data",
+        "text": "SK이노베이션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 162,
+        "reason": "catalog-backed-data",
+        "text": "CJ제일제당"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 163,
+        "reason": "catalog-backed-data",
+        "text": "풍산"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 164,
+        "reason": "catalog-backed-data",
+        "text": "KB금융"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 165,
+        "reason": "catalog-backed-data",
+        "text": "영원무역"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 166,
+        "reason": "catalog-backed-data",
+        "text": "씨에스윈드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 167,
+        "reason": "catalog-backed-data",
+        "text": "코오롱인더"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 168,
+        "reason": "catalog-backed-data",
+        "text": "한미약품"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 169,
+        "reason": "catalog-backed-data",
+        "text": "에스디바이오센서"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 170,
+        "reason": "catalog-backed-data",
+        "text": "메리츠금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 171,
+        "reason": "catalog-backed-data",
+        "text": "BNK금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 172,
+        "reason": "catalog-backed-data",
+        "text": "iM금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 173,
+        "reason": "catalog-backed-data",
+        "text": "이마트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 174,
+        "reason": "catalog-backed-data",
+        "text": "한국타이어앤테크놀로지"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 175,
+        "reason": "catalog-backed-data",
+        "text": "한국콜마"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 176,
+        "reason": "catalog-backed-data",
+        "text": "JB금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 177,
+        "reason": "catalog-backed-data",
+        "text": "한진칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 178,
+        "reason": "catalog-backed-data",
+        "text": "종근당"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 179,
+        "reason": "catalog-backed-data",
+        "text": "더블유게임즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 180,
+        "reason": "catalog-backed-data",
+        "text": "코스맥스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 181,
+        "reason": "catalog-backed-data",
+        "text": "HL만도"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 182,
+        "reason": "catalog-backed-data",
+        "text": "삼성바이오로직스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 183,
+        "reason": "catalog-backed-data",
+        "text": "두산밥캣"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 184,
+        "reason": "catalog-backed-data",
+        "text": "넷마블"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 185,
+        "reason": "catalog-backed-data",
+        "text": "크래프톤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 186,
+        "reason": "catalog-backed-data",
+        "text": "HD현대"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 187,
+        "reason": "catalog-backed-data",
+        "text": "HD현대일렉트릭"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 188,
+        "reason": "catalog-backed-data",
+        "text": "HD건설기계"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 189,
+        "reason": "catalog-backed-data",
+        "text": "미원에스씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 190,
+        "reason": "catalog-backed-data",
+        "text": "오리온"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 191,
+        "reason": "catalog-backed-data",
+        "text": "한화시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 192,
+        "reason": "catalog-backed-data",
+        "text": "에이피알"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 193,
+        "reason": "catalog-backed-data",
+        "text": "롯데웰푸드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 194,
+        "reason": "catalog-backed-data",
+        "text": "BGF리테일"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 195,
+        "reason": "catalog-backed-data",
+        "text": "SK케미칼"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 196,
+        "reason": "catalog-backed-data",
+        "text": "효성티앤씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 197,
+        "reason": "catalog-backed-data",
+        "text": "효성중공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 198,
+        "reason": "catalog-backed-data",
+        "text": "HS효성첨단소재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 199,
+        "reason": "catalog-backed-data",
+        "text": "한일시멘트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 200,
+        "reason": "catalog-backed-data",
+        "text": "SK바이오사이언스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 201,
+        "reason": "catalog-backed-data",
+        "text": "현대오토에버"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 202,
+        "reason": "catalog-backed-data",
+        "text": "우리금융지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 203,
+        "reason": "catalog-backed-data",
+        "text": "카카오뱅크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 204,
+        "reason": "catalog-backed-data",
+        "text": "SK바이오팜"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 205,
+        "reason": "catalog-backed-data",
+        "text": "HD현대중공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 206,
+        "reason": "catalog-backed-data",
+        "text": "하이브"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 207,
+        "reason": "catalog-backed-data",
+        "text": "SK아이이테크놀로지"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 208,
+        "reason": "catalog-backed-data",
+        "text": "LG에너지솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 209,
+        "reason": "catalog-backed-data",
+        "text": "DL이앤씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 210,
+        "reason": "catalog-backed-data",
+        "text": "카카오페이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 212,
+        "reason": "catalog-backed-data",
+        "text": "SK스퀘어"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 213,
+        "reason": "catalog-backed-data",
+        "text": "HD현대마린솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 214,
+        "reason": "catalog-backed-data",
+        "text": "에코프로머티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 215,
+        "reason": "catalog-backed-data",
+        "text": "두산로보틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 217,
+        "reason": "catalog-backed-data",
+        "text": "이수스페셜티케미컬"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 218,
+        "reason": "catalog-backed-data",
+        "text": "달바글로벌"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 221,
+        "reason": "catalog-backed-data",
+        "text": "삼천당제약"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 222,
+        "reason": "catalog-backed-data",
+        "text": "에임드바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 223,
+        "reason": "catalog-backed-data",
+        "text": "하림지주"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 224,
+        "reason": "catalog-backed-data",
+        "text": "동진쎄미켐"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 225,
+        "reason": "catalog-backed-data",
+        "text": "서부T&D"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 226,
+        "reason": "catalog-backed-data",
+        "text": "네이처셀"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 227,
+        "reason": "catalog-backed-data",
+        "text": "포스코엠텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 228,
+        "reason": "catalog-backed-data",
+        "text": "성광벤드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 229,
+        "reason": "catalog-backed-data",
+        "text": "성우하이텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 230,
+        "reason": "catalog-backed-data",
+        "text": "브이티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 231,
+        "reason": "catalog-backed-data",
+        "text": "시노펙스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 232,
+        "reason": "catalog-backed-data",
+        "text": "동화기업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 233,
+        "reason": "catalog-backed-data",
+        "text": "아난티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 235,
+        "reason": "catalog-backed-data",
+        "text": "한컴"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 236,
+        "reason": "catalog-backed-data",
+        "text": "원익홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 237,
+        "reason": "catalog-backed-data",
+        "text": "피에스케이홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 238,
+        "reason": "catalog-backed-data",
+        "text": "다우데이타"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 239,
+        "reason": "catalog-backed-data",
+        "text": "케이엠더블유"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 240,
+        "reason": "catalog-backed-data",
+        "text": "우리기술"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 241,
+        "reason": "catalog-backed-data",
+        "text": "제룡전기"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 242,
+        "reason": "catalog-backed-data",
+        "text": "동성화인텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 245,
+        "reason": "catalog-backed-data",
+        "text": "SFA반도체"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 246,
+        "reason": "catalog-backed-data",
+        "text": "감성코퍼레이션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 247,
+        "reason": "catalog-backed-data",
+        "text": "에프에스티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 248,
+        "reason": "catalog-backed-data",
+        "text": "솔브레인홀딩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 249,
+        "reason": "catalog-backed-data",
+        "text": "주성엔지니어링"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 250,
+        "reason": "catalog-backed-data",
+        "text": "삼표시멘트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 251,
+        "reason": "catalog-backed-data",
+        "text": "이오테크닉스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 252,
+        "reason": "catalog-backed-data",
+        "text": "오스코텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 253,
+        "reason": "catalog-backed-data",
+        "text": "우리기술투자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 254,
+        "reason": "catalog-backed-data",
+        "text": "에스엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 255,
+        "reason": "catalog-backed-data",
+        "text": "카페24"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 256,
+        "reason": "catalog-backed-data",
+        "text": "성호전자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 257,
+        "reason": "catalog-backed-data",
+        "text": "현대바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 258,
+        "reason": "catalog-backed-data",
+        "text": "쏠리드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 259,
+        "reason": "catalog-backed-data",
+        "text": "코나아이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 260,
+        "reason": "catalog-backed-data",
+        "text": "안랩"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 261,
+        "reason": "catalog-backed-data",
+        "text": "유진로봇"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 263,
+        "reason": "catalog-backed-data",
+        "text": "리노공업"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 264,
+        "reason": "catalog-backed-data",
+        "text": "에스피지"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 266,
+        "reason": "catalog-backed-data",
+        "text": "큐렉소"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 267,
+        "reason": "catalog-backed-data",
+        "text": "LS마린솔루션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 268,
+        "reason": "catalog-backed-data",
+        "text": "티씨케이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 269,
+        "reason": "catalog-backed-data",
+        "text": "신성델타테크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 271,
+        "reason": "catalog-backed-data",
+        "text": "하나마이크론"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 272,
+        "reason": "catalog-backed-data",
+        "text": "셀트리온제약"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 273,
+        "reason": "catalog-backed-data",
+        "text": "웹젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 274,
+        "reason": "catalog-backed-data",
+        "text": "원익QnC"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 275,
+        "reason": "catalog-backed-data",
+        "text": "컴투스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 276,
+        "reason": "catalog-backed-data",
+        "text": "대주전자재료"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 277,
+        "reason": "catalog-backed-data",
+        "text": "제주반도체"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 278,
+        "reason": "catalog-backed-data",
+        "text": "젬백스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 279,
+        "reason": "catalog-backed-data",
+        "text": "비츠로셀"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 280,
+        "reason": "catalog-backed-data",
+        "text": "비에이치아이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 281,
+        "reason": "catalog-backed-data",
+        "text": "유진테크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 282,
+        "reason": "catalog-backed-data",
+        "text": "차바이오텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 283,
+        "reason": "catalog-backed-data",
+        "text": "에코프로"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 284,
+        "reason": "catalog-backed-data",
+        "text": "펩트론"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 285,
+        "reason": "catalog-backed-data",
+        "text": "테크윙"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 286,
+        "reason": "catalog-backed-data",
+        "text": "브이엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 287,
+        "reason": "catalog-backed-data",
+        "text": "로보스타"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 288,
+        "reason": "catalog-backed-data",
+        "text": "휴림로봇"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 290,
+        "reason": "catalog-backed-data",
+        "text": "테스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 291,
+        "reason": "catalog-backed-data",
+        "text": "네오위즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 292,
+        "reason": "catalog-backed-data",
+        "text": "씨젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 293,
+        "reason": "catalog-backed-data",
+        "text": "고영"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 294,
+        "reason": "catalog-backed-data",
+        "text": "쎄트렉아이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 295,
+        "reason": "catalog-backed-data",
+        "text": "미래에셋벤처투자"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 296,
+        "reason": "catalog-backed-data",
+        "text": "에스앤에스텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 297,
+        "reason": "catalog-backed-data",
+        "text": "위메이드맥스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 298,
+        "reason": "catalog-backed-data",
+        "text": "로보티즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 299,
+        "reason": "catalog-backed-data",
+        "text": "위메이드"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 300,
+        "reason": "catalog-backed-data",
+        "text": "나노신소재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 301,
+        "reason": "catalog-backed-data",
+        "text": "와이지엔터테인먼트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 302,
+        "reason": "catalog-backed-data",
+        "text": "아이티센글로벌"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 303,
+        "reason": "catalog-backed-data",
+        "text": "한라캐스트"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 304,
+        "reason": "catalog-backed-data",
+        "text": "티에스이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 305,
+        "reason": "catalog-backed-data",
+        "text": "두산테스나"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 306,
+        "reason": "catalog-backed-data",
+        "text": "피엔티"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 307,
+        "reason": "catalog-backed-data",
+        "text": "파크시스템스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 308,
+        "reason": "catalog-backed-data",
+        "text": "리가켐바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 309,
+        "reason": "catalog-backed-data",
+        "text": "휴젤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 310,
+        "reason": "catalog-backed-data",
+        "text": "필옵틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 311,
+        "reason": "catalog-backed-data",
+        "text": "하나머티리얼즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 312,
+        "reason": "catalog-backed-data",
+        "text": "선익시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 313,
+        "reason": "catalog-backed-data",
+        "text": "서진시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 314,
+        "reason": "catalog-backed-data",
+        "text": "코미코"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 315,
+        "reason": "catalog-backed-data",
+        "text": "인텔리안테크"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 316,
+        "reason": "catalog-backed-data",
+        "text": "데브시스터즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 317,
+        "reason": "catalog-backed-data",
+        "text": "HK이노엔"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 318,
+        "reason": "catalog-backed-data",
+        "text": "알테오젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 319,
+        "reason": "catalog-backed-data",
+        "text": "제이앤티씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 320,
+        "reason": "catalog-backed-data",
+        "text": "인카금융서비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 321,
+        "reason": "catalog-backed-data",
+        "text": "덕산네오룩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 322,
+        "reason": "catalog-backed-data",
+        "text": "클래시스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 323,
+        "reason": "catalog-backed-data",
+        "text": "케어젠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 324,
+        "reason": "catalog-backed-data",
+        "text": "아이쓰리시스템"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 325,
+        "reason": "catalog-backed-data",
+        "text": "파마리서치"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 326,
+        "reason": "catalog-backed-data",
+        "text": "메가스터디교육"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 328,
+        "reason": "catalog-backed-data",
+        "text": "SFA넥셀"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 329,
+        "reason": "catalog-backed-data",
+        "text": "심텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 330,
+        "reason": "catalog-backed-data",
+        "text": "넥슨게임즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 331,
+        "reason": "catalog-backed-data",
+        "text": "올릭스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 332,
+        "reason": "catalog-backed-data",
+        "text": "와이씨"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 333,
+        "reason": "catalog-backed-data",
+        "text": "에스티팜"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 334,
+        "reason": "catalog-backed-data",
+        "text": "원익IPS"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 335,
+        "reason": "catalog-backed-data",
+        "text": "코스메카코리아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 336,
+        "reason": "catalog-backed-data",
+        "text": "에코프로비엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 337,
+        "reason": "catalog-backed-data",
+        "text": "펌텍코리아"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 338,
+        "reason": "catalog-backed-data",
+        "text": "스튜디오드래곤"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 339,
+        "reason": "catalog-backed-data",
+        "text": "네오셈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 340,
+        "reason": "catalog-backed-data",
+        "text": "실리콘투"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 341,
+        "reason": "catalog-backed-data",
+        "text": "펄어비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 342,
+        "reason": "catalog-backed-data",
+        "text": "이녹스첨단소재"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 343,
+        "reason": "catalog-backed-data",
+        "text": "레인보우로보틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 344,
+        "reason": "catalog-backed-data",
+        "text": "천보"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 345,
+        "reason": "catalog-backed-data",
+        "text": "레이크머티리얼즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 346,
+        "reason": "catalog-backed-data",
+        "text": "엘앤씨바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 347,
+        "reason": "catalog-backed-data",
+        "text": "카카오게임즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 348,
+        "reason": "catalog-backed-data",
+        "text": "에이치브이엠"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 349,
+        "reason": "catalog-backed-data",
+        "text": "에이비엘바이오"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 350,
+        "reason": "catalog-backed-data",
+        "text": "보로노이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 351,
+        "reason": "catalog-backed-data",
+        "text": "현대무벡스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 352,
+        "reason": "catalog-backed-data",
+        "text": "피에스케이"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 353,
+        "reason": "catalog-backed-data",
+        "text": "태성"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 354,
+        "reason": "catalog-backed-data",
+        "text": "루닛"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 355,
+        "reason": "catalog-backed-data",
+        "text": "디앤디파마텍"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 356,
+        "reason": "catalog-backed-data",
+        "text": "넥스틴"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 357,
+        "reason": "catalog-backed-data",
+        "text": "엔켐"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 358,
+        "reason": "catalog-backed-data",
+        "text": "씨앤씨인터내셔널"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 359,
+        "reason": "catalog-backed-data",
+        "text": "솔브레인"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 360,
+        "reason": "catalog-backed-data",
+        "text": "지아이이노베이션"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 361,
+        "reason": "catalog-backed-data",
+        "text": "디어유"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 362,
+        "reason": "catalog-backed-data",
+        "text": "유일로보틱스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 363,
+        "reason": "catalog-backed-data",
+        "text": "가온칩스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 365,
+        "reason": "catalog-backed-data",
+        "text": "LS머트리얼즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 366,
+        "reason": "catalog-backed-data",
+        "text": "기가비스"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 367,
+        "reason": "catalog-backed-data",
+        "text": "삼현"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 368,
+        "reason": "catalog-backed-data",
+        "text": "큐리옥스바이오시스템즈"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 369,
+        "reason": "catalog-backed-data",
+        "text": "클로봇"
+    },
+    {
+        "file": "src/shared/config/signalScanUniverse/krIndexUniverse.generated.ts",
+        "line": 370,
+        "reason": "catalog-backed-data",
+        "text": "오름테라퓨틱"
     },
     {
         "file": "src/shared/config/supportedAssets.ts",

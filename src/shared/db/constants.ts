@@ -61,6 +61,14 @@ export const MAIL_ALERT_DELIVERY_STATUS_VALUES = [
     'failed',
 ] as const;
 
+/** `signal_scan_cursors.last_outcome`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const SIGNAL_SCAN_OUTCOME_VALUES = [
+    'recorded',
+    'failed',
+    'stale',
+] as const;
+export type SignalScanOutcome = (typeof SIGNAL_SCAN_OUTCOME_VALUES)[number];
+
 /** 공유 가능한 분석 종류 — Postgres enum이자 UI 판별자로 함께 쓴다. */
 export const SHAREABLE_KIND_VALUES = [
     'chart',

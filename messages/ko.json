@@ -345,7 +345,8 @@
                 "marketUs": "미국 주식",
                 "otherSignals": "다른 신호가 잡힌 종목",
                 "signalStocks": "{signal} 종목",
-                "title": "{signal} 종목: 최근 30일 미국·한국 주식"
+                "title": "{signal} 종목: 최근 30일 미국·한국 주식",
+                "truncated": "{total}종목 중 가장 최근에 잡힌 {shown}종목이에요."
             }
         },
         "news": {

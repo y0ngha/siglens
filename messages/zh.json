@@ -345,7 +345,8 @@
                 "marketUs": "美股",
                 "otherSignals": "出现其他信号的股票",
                 "signalStocks": "{signal}股票",
-                "title": "{signal}股票：近30天美股与韩股"
+                "title": "{signal}股票：近30天美股与韩股",
+                "truncated": "在{total}只股票中，显示最近出现信号的{shown}只。"
             }
         },
         "news": {
