@@ -17,7 +17,7 @@ vi.mock('@/shared/cache/fixedWindowRateLimit', () => ({
     checkFixedWindowRateLimit: mocks.rateLimit,
 }));
 
-import { createEmailVerificationGuards } from '@/entities/auth/server/createEmailVerificationGuards';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 
 beforeEach(() => {
     mocks.rateLimit.mockReset().mockResolvedValue(true);
@@ -25,9 +25,9 @@ beforeEach(() => {
     mocks.redisPair.value = true;
 });
 
-describe('createEmailVerificationGuards', () => {
-    it('rateLimit은 규칙에 로그 이름을 붙여 공용 헬퍼로 보낸다', async () => {
-        const guards = createEmailVerificationGuards();
+describe('createAuthRateLimitGuards', () => {
+    it('rateLimit은 규칙에 호출자가 준 로그 이름을 붙여 공용 헬퍼로 보낸다', async () => {
+        const guards = createAuthRateLimitGuards('signupEmailCodeRateLimit');
 
         await expect(
             guards.rateLimit({ key: 'k', limit: 3, windowSeconds: 60 })
@@ -40,9 +40,22 @@ describe('createEmailVerificationGuards', () => {
         });
     });
 
+    it.each(['passwordResetRateLimit', 'loginRateLimit'])(
+        'rateLimit은 호출자가 준 로그 이름(%s)을 그대로 쓴다',
+        async logTag => {
+            const guards = createAuthRateLimitGuards(logTag);
+
+            await guards.rateLimit({ key: 'k', limit: 3, windowSeconds: 60 });
+
+            expect(mocks.rateLimit).toHaveBeenCalledWith(
+                expect.objectContaining({ logTag })
+            );
+        }
+    );
+
     it('rateLimit은 공용 헬퍼의 거부를 그대로 돌려준다', async () => {
         mocks.rateLimit.mockResolvedValue(false);
-        const guards = createEmailVerificationGuards();
+        const guards = createAuthRateLimitGuards('signupEmailCodeRateLimit');
 
         await expect(
             guards.rateLimit({ key: 'k', limit: 1, windowSeconds: 60 })
@@ -50,7 +63,7 @@ describe('createEmailVerificationGuards', () => {
     });
 
     it('resetCounter는 Redis 키를 지우고, Redis가 없으면 아무 일도 하지 않는다', async () => {
-        const guards = createEmailVerificationGuards();
+        const guards = createAuthRateLimitGuards('signupEmailCodeRateLimit');
 
         await guards.resetCounter('auth:signup-verify:e:abc');
         expect(mocks.del).toHaveBeenCalledWith('auth:signup-verify:e:abc');
@@ -61,7 +74,7 @@ describe('createEmailVerificationGuards', () => {
     });
 
     it('ipHash는 원본 IP가 아니라 해시다', async () => {
-        const guards = createEmailVerificationGuards();
+        const guards = createAuthRateLimitGuards('signupEmailCodeRateLimit');
 
         await expect(guards.ipHash()).resolves.toBe('hash(203.0.113.9)');
     });

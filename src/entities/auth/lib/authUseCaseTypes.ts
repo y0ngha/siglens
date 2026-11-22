@@ -83,11 +83,16 @@ interface AuthSessionOptions {
     path?: string;
 }
 
-/** `loginUser`가 주입받는 사용자·세션 저장소와 비밀번호 검증기. */
+/** `loginUser`가 주입받는 사용자·세션 저장소, 비밀번호 검증기와 남용 한도 포트. */
 export interface LoginUserDependencies {
     users: EmailAuthUserRepository;
     sessions: SessionRepository;
     passwordVerifier: PasswordVerifier;
+    rateLimit: AuthRateLimiter;
+    /** 한도 카운터를 0으로 되돌린다(성공한 로그인이 주소+IP 쌍 키를 푼다). */
+    resetCounter: (key: string) => Promise<void>;
+    /** 요청 IP의 해시 — 원본 IP는 키에도 로그에도 남지 않는다. */
+    ipHash: () => Promise<string>;
 }
 
 /** `loginUser` 옵션. 테스트에서 `now`를 고정할 수 있다. */
@@ -194,11 +199,14 @@ export interface RequestPasswordResetInput {
     email: string;
 }
 
-/** `requestPasswordReset`이 주입받는 사용자 저장소·토큰 저장소·메일 발송기. */
+/** `requestPasswordReset`이 주입받는 사용자 저장소·토큰 저장소·메일 발송기와 남용 한도 포트. */
 export interface RequestPasswordResetDependencies {
     users: EmailAuthUserRepository;
     emailTokens: EmailTokenStore;
     emailDispatcher: EmailDispatcher;
+    rateLimit: AuthRateLimiter;
+    /** 요청 IP의 해시 — 원본 IP는 키에도 로그에도 남지 않는다. */
+    ipHash: () => Promise<string>;
 }
 
 /** 토큰으로 메일 본문을 만드는 빌더. 링크 구성은 호출자(feature)가 정한다. */
@@ -206,10 +214,14 @@ export interface RequestPasswordResetOptions {
     buildMessage: (token: string) => EmailMessage;
 }
 
-/** 재설정 요청 결과. 존재하지 않는 계정도 `ok: true`(`tokenIssued: false`)라 계정 존재 여부가 새지 않는다. */
+/**
+ * 재설정 요청 결과. 존재하지 않는 계정도 `ok: true`(`tokenIssued: false`)라 계정 존재 여부가 새지 않는다.
+ * 한도에 걸리면 `rate_limited`다 — 주소·IP로만 정해지고 DB를 읽지 않으므로 열거 신호가 아니다.
+ */
 export type RequestPasswordResetResult =
     | { ok: true; tokenIssued: true; emailDispatched: boolean }
-    | { ok: true; tokenIssued: false; emailDispatched: false };
+    | { ok: true; tokenIssued: false; emailDispatched: false }
+    | { ok: false; reason: 'rate_limited' };
 
 /** 비밀번호 재설정 확정 입력. `token`은 메일로 받은 원문 토큰. */
 export interface ConfirmPasswordResetInput {
@@ -223,13 +235,18 @@ export type ConfirmPasswordResetResult =
     | { ok: true }
     | { ok: false; error: ConfirmPasswordResetError };
 
-/** `confirmPasswordReset`이 주입받는 저장소·토큰 저장소·해셔·검증기. */
+/** `confirmPasswordReset`이 주입받는 저장소·토큰 저장소·해셔·검증기와 남용 한도 포트. */
 export interface ConfirmPasswordResetDependencies {
     emailAuthUsers: EmailAuthUserRepository;
     users: UserRepository;
     emailTokens: EmailTokenStore;
     passwordHasher: PasswordHasher;
     passwordVerifier: PasswordVerifier;
+    rateLimit: AuthRateLimiter;
+    /** 한도 카운터를 0으로 되돌린다(재설정 성공이 로그인 잠금을 푼다). */
+    resetCounter: (key: string) => Promise<void>;
+    /** 요청 IP의 해시. */
+    ipHash: () => Promise<string>;
 }
 
 /** 이메일 인증 코드 요청 입력. */
@@ -238,10 +255,13 @@ export interface RequestEmailVerificationInput {
 }
 
 /**
- * 한 번의 한도 확인. `true`면 허용이다(고정 창 방식, Redis 장애는 통과). 호출 한 번이 시도 한 번이다.
- * 알림 메일의 `MailAlertRateLimiter`와 같은 모양이지만 auth가 mail-alert를 import하지 않도록 따로 둔다.
+ * 인증 흐름(가입 코드·비밀번호 재설정·로그인)이 공유하는 한 번의 한도 확인.
+ * `true`면 허용이다(고정 창 방식, Redis 장애는 통과). 호출 한 번이 시도 한 번이다.
+ *
+ * 알림 메일의 `MailAlertRateLimiter`와 같은 모양이지만, auth가 mail-alert를
+ * import하지 않도록 따로 둔다.
  */
-export type EmailCodeRateLimiter = (rule: {
+export type AuthRateLimiter = (rule: {
     readonly key: string;
     readonly limit: number;
     readonly windowSeconds: number;
@@ -251,7 +271,7 @@ export type EmailCodeRateLimiter = (rule: {
 export interface RequestEmailVerificationDependencies {
     emailTokens: EmailTokenStore;
     emailDispatcher: EmailDispatcher;
-    rateLimit: EmailCodeRateLimiter;
+    rateLimit: AuthRateLimiter;
     /** 한도 카운터를 0으로 되돌린다(새 코드를 보낼 때 확인 시도 카운터에 쓴다). */
     resetCounter: (key: string) => Promise<void>;
     /** 요청 IP의 해시 — 원본 IP는 키에도 로그에도 남지 않는다. */
@@ -289,7 +309,7 @@ export interface VerifyEmailError {
 /** `verifyEmail`이 주입받는 토큰 저장소와 남용 한도 포트. */
 export interface VerifyEmailDependencies {
     emailTokens: EmailTokenStore;
-    rateLimit: EmailCodeRateLimiter;
+    rateLimit: AuthRateLimiter;
     /** 요청 IP의 해시. */
     ipHash: () => Promise<string>;
 }

@@ -10,8 +10,8 @@ vi.mock('@/entities/auth/lib/errorMessages', () => ({
 vi.mock('@/entities/auth/lib/verifyEmail', () => ({
     verifyEmail: vi.fn(),
 }));
-vi.mock('@/entities/auth/server/createEmailVerificationGuards', () => ({
-    createEmailVerificationGuards: vi.fn(() => ({
+vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
+    createAuthRateLimitGuards: vi.fn(() => ({
         rateLimit: vi.fn(),
         resetCounter: vi.fn(),
         ipHash: vi.fn(),

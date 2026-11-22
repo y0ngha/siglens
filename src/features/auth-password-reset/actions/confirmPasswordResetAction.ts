@@ -6,6 +6,7 @@ import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
@@ -53,6 +54,7 @@ export async function confirmPasswordResetAction(
                 emailTokens,
                 passwordHasher: bcryptPasswordHasher,
                 passwordVerifier: bcryptPasswordVerifier,
+                ...createAuthRateLimitGuards('passwordResetRateLimit'),
             }
         );
 

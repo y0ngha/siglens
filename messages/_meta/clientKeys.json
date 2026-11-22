@@ -9487,7 +9487,6 @@
                 "app.signup.SignupContent.50f3e4",
                 "app.signup.SignupContent.emailDivider",
                 "entities.auth.error.emailAlreadyRegistered",
-                "entities.auth.error.signupAutoLoginFailed",
                 "entities.auth.error.tooManyRequests",
                 "entities.auth.error.verificationEmailFailed",
                 "entities.auth.error.verificationFailed",
