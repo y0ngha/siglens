@@ -8,6 +8,7 @@ gating:
   tier: always_on
 token_cost: 271
 digest_hash: "399c6927"
+digest_text_hash: "625bd0c4"
 ---
 
 # 어닝 반응 분석 프레임

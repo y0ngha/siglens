@@ -18,6 +18,7 @@ gating:
   triggers: [symmetrical_triangle]
 token_cost: 1066
 digest_hash: "82790610"
+digest_text_hash: "99172f40"
 ---
 
 ## Detection Criteria

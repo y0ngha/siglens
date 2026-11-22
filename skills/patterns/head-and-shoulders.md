@@ -18,6 +18,7 @@ gating:
   triggers: [head_and_shoulders]
 token_cost: 1044
 digest_hash: "2fe02287"
+digest_text_hash: "beebf910"
 ---
 
 ## Detection Criteria

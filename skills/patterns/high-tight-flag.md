@@ -18,6 +18,7 @@ gating:
   triggers: [high_tight_flag]
 token_cost: 554
 digest_hash: "0c3e3a06"
+digest_text_hash: "252741b2"
 ---
 
 ## Detection Criteria

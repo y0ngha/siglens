@@ -18,6 +18,7 @@ gating:
   triggers: [cup_and_handle]
 token_cost: 949
 digest_hash: "5d6b34c7"
+digest_text_hash: "e11bb31f"
 ---
 
 ## Detection Criteria

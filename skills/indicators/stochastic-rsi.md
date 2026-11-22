@@ -11,8 +11,9 @@ gating:
   state:
     feature: stochRsi
     predicate: level
-token_cost: 387
-digest_hash: "2cbdb57c"
+token_cost: 384
+digest_hash: "287fc4b6"
+digest_text_hash: "baa51fa6"
 ---
 
 ## Overview
@@ -29,7 +30,7 @@ Stochastic RSI applies the Stochastic formula to RSI values rather than price, c
 
 ### %K / %D Crossover Signals
 
-- %K crosses above %D from below 0.2: a strong bullish momentum reversal signal — RSI is turning upward from an oversold extreme. This is one of the highest-quality StochRSI signals.
+- %K crosses above %D from below 0.2: a strong bullish momentum reversal signal — RSI is turning upward from an oversold extreme. This is the standard StochRSI bullish cross.
 - %K crosses below %D from above 0.8: a strong bearish momentum reversal signal — RSI is turning downward from an overbought extreme.
 - Crossovers in the mid-range (0.4–0.6) are lower quality and should be confirmed by other indicators.
 
@@ -67,7 +68,7 @@ Stochastic formula applied to RSI values (2nd-order, more sensitive). Range 0–
 - Reacts faster than RSI; catches turning points before RSI.
 
 **%K/%D crossovers:**
-- %K crosses above %D from below 0.2 = strong bullish reversal (one of highest-quality StochRSI signals).
+- %K crosses above %D from below 0.2 = bullish reversal (the standard StochRSI bullish cross).
 - %K crosses below %D from above 0.8 = strong bearish reversal.
 - Mid-range (0.4–0.6) crossovers = lower quality, confirm with other indicators.
 

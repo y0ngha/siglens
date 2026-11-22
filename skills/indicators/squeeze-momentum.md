@@ -10,12 +10,13 @@ gating:
   signal_kind: event
   triggers: [squeeze_momentum_bullish, squeeze_momentum_bearish]
 token_cost: 537
-digest_hash: "535d0376"
+digest_hash: "8519622b"
+digest_text_hash: "b72fdb3b"
 ---
 
 ## Overview
 
-The Squeeze Momentum Indicator, originally developed by LazyBear (PineScript: https://www.tradingview.com/v/4IneGo8h/), combines Bollinger Bands (BB) and Keltner Channel (KC) to detect periods of volatility compression ("squeeze") and measures the momentum of the subsequent release. The core insight is that when BB contracts inside KC, price is coiling — energy is building for a high-probability breakout. The linear regression momentum value reveals the directional bias of that energy.
+The Squeeze Momentum Indicator, originally developed by LazyBear (PineScript: https://www.tradingview.com/v/4IneGo8h/), combines Bollinger Bands (BB) and Keltner Channel (KC) to detect periods of volatility compression ("squeeze") and measures the momentum of the subsequent release. The core insight is that when BB contracts inside KC, price is coiling — energy is building for a breakout. The linear regression momentum value reveals the directional bias of that energy.
 
 **Parameters used:** BB length = 20, KC length = 20, KC multiplier = 1.5 (applied to both BB deviation and KC ATR offset).
 
@@ -43,8 +44,8 @@ The momentum value is derived from a linear regression of `close − avg(avg(hig
 
 ### Combined Squeeze + Momentum Signals
 
-- **sqzOff + momentum > 0 + rising**: Highest-probability bullish breakout — squeeze just released with strong upward momentum. Classic buy setup.
-- **sqzOff + momentum < 0 + falling**: Highest-probability bearish breakdown — squeeze just released with strong downward momentum. Classic short setup.
+- **sqzOff + momentum > 0 + rising**: Aligned bullish breakout — squeeze just released with strong upward momentum. Classic buy setup.
+- **sqzOff + momentum < 0 + falling**: Aligned bearish breakdown — squeeze just released with strong downward momentum. Classic short setup.
 - **sqzOn + momentum rising (positive)**: Bullish energy accumulating within the squeeze — anticipate upside breakout.
 - **sqzOn + momentum falling (negative)**: Bearish energy accumulating within the squeeze — anticipate downside breakdown.
 - **sqzOff + momentum direction change**: Squeeze released but momentum is already reversing — potential false breakout or early exhaustion.
@@ -59,7 +60,7 @@ When the squeeze fires (`sqzOff` transitions from false to true), evaluate momen
 
 ## Recommended Combinations
 
-- **Squeeze Momentum + MACD**: MACD histogram direction at the moment of squeeze release confirms the breakout direction. Both aligned = very high-probability setup.
+- **Squeeze Momentum + MACD**: MACD histogram direction at the moment of squeeze release confirms the breakout direction. Both aligned = momentum and MACD agree on the release direction.
 - **Squeeze Momentum + RSI**: RSI above 50 with sqzOff + momentum > 0 reinforces bullish breakout. RSI below 50 with sqzOff + momentum < 0 reinforces bearish breakdown.
 - **Squeeze Momentum + Volume Analysis**: Buy volume surge during squeeze release (sqzOff) dramatically increases breakout reliability.
 - **Squeeze Momentum + Keltner Channel**: The squeeze is defined by BB/KC relationship, so reviewing the Keltner Channel width provides additional context on whether the squeeze is tightening or loosening.
@@ -91,15 +92,15 @@ Params: BB length 20, KC length 20, KC multiplier 1.5 (applied to both BB deviat
 - crossing zero: reversal — neg→pos bullish, pos→neg bearish (most significant).
 
 **Combined:**
-- sqzOff + mom>0 + rising = highest-prob bullish breakout (classic buy).
-- sqzOff + mom<0 + falling = highest-prob bearish breakdown (classic short).
+- sqzOff + mom>0 + rising = aligned bullish breakout (classic buy).
+- sqzOff + mom<0 + falling = aligned bearish breakdown (classic short).
 - sqzOn + mom rising (positive) = bullish energy accumulating, anticipate upside breakout.
 - sqzOn + mom falling (negative) = bearish accumulating, anticipate downside breakdown.
 - sqzOff + mom direction change = potential false breakout / early exhaustion.
 
 **Directional bias at release** (sqzOff false→true): mom>0 = bullish breakout expected; mom<0 = bearish. `increasing` field = real-time acceleration (rising abs = gaining strength).
 
-**Combos:** +MACD histogram at release (aligned = very high prob); +RSI (>50 with sqzOff+mom>0 reinforces bullish; <50 with sqzOff+mom<0 reinforces bearish); +Volume (buy surge on release); +KC width; +Supertrend alignment.
+**Combos:** +MACD histogram at release (aligned = both agree on direction); +RSI (>50 with sqzOff+mom>0 reinforces bullish; <50 with sqzOff+mom<0 reinforces bearish); +Volume (buy surge on release); +KC width; +Supertrend alignment.
 
 **Caveats:** long squeeze not a fading signal (10+ bars → larger moves); choppy low-vol cycles on/off — confirm ADX>20; momentum lags (won't catch sharp short-term reversals); require zero-cross to hold 1-2 bars on short TF; best on hourly or longer bars (minute: reduce KC/BB to 10-14).
 <!-- PROMPT_DIGEST:END -->

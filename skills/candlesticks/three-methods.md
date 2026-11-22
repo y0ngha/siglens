@@ -11,6 +11,7 @@ gating:
   triggers: [rising_three_methods, falling_three_methods]
 token_cost: 276
 digest_hash: "913413f0"
+digest_text_hash: "bb294d61"
 ---
 
 ## Overview

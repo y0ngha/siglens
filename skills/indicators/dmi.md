@@ -11,6 +11,7 @@ gating:
   triggers: [dmi_bullish_cross, dmi_bearish_cross]
 token_cost: 355
 digest_hash: "e0ea8271"
+digest_text_hash: "3ea5bfa9"
 ---
 
 ## Overview

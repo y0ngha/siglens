@@ -10,7 +10,8 @@ gating:
   signal_kind: event
   triggers: [rsi_oversold, rsi_overbought, rsi_bullish_divergence, rsi_bearish_divergence]
 token_cost: 348
-digest_hash: "6be01b28"
+digest_hash: "e66c9b20"
+digest_text_hash: "19884cb8"
 ---
 
 ## Overview
@@ -43,7 +44,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 
 ## Recommended Combinations
 
-- RSI + Bollinger Bands: Confirm volatility extremes. RSI < 30 near lower band = high-probability mean reversion.
+- RSI + Bollinger Bands: Confirm volatility extremes. RSI < 30 near lower band = mean reversion candidate.
 - RSI + MACD: Use RSI for overbought/oversold and MACD for trend direction confirmation.
 - RSI + Volume: Divergence between RSI and volume can confirm signal strength.
 - RSI + ADX: When ADX > 25 and RSI is in extreme zone, the trend context changes interpretation — overbought in a strong uptrend is a continuation signal, not a reversal.
@@ -75,7 +76,7 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 - Bearish FS: RSI fails to exceed prior peak in overbought, then breaks below prior trough — strong sell.
 - Bullish FS: RSI holds above prior trough in oversold, then breaks above prior peak — strong buy.
 
-**Combos:** +BB (RSI<30 near lower band = high-prob mean reversion); +MACD (trend direction); +Volume; +ADX (ADX>25 & RSI extreme in strong uptrend = continuation, NOT reversal).
+**Combos:** +BB (RSI<30 near lower band = mean reversion candidate); +MACD (trend direction); +Volume; +ADX (ADX>25 & RSI extreme in strong uptrend = continuation, NOT reversal).
 
 **Caveats:** trending markets keep RSI extreme many bars — don't use alone in strong trends; divergence in strong trend often false (cross-check ADX/EMA slope).
 <!-- PROMPT_DIGEST:END -->

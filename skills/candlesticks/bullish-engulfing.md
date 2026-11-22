@@ -11,6 +11,7 @@ gating:
   triggers: [bullish_engulfing]
 token_cost: 280
 digest_hash: "f73c8705"
+digest_text_hash: "d9e4243c"
 ---
 
 ## Overview

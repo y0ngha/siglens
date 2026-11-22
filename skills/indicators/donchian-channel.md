@@ -11,8 +11,9 @@ gating:
   state:
     feature: donchian
     predicate: channelProximity
-token_cost: 522
-digest_hash: "cfb7f3de"
+token_cost: 535
+digest_hash: "1344f2ee"
+digest_text_hash: "029a7b66"
 ---
 
 ## Overview
@@ -39,7 +40,7 @@ Donchian Channel, developed by Richard Donchian in the 1940s — widely regarded
 
 - Widening channel (upper band rising, lower band falling or stable): volatility is expanding — the market is making new highs and/or lows more frequently. Active trending conditions.
 - Narrowing channel (upper and lower bands converging): volatility is contracting — the market is consolidating within a tightening range. A breakout is likely imminent.
-- Channel at its narrowest point in several weeks: maximum compression — a significant directional move is probable.
+- Channel at its narrowest point in several weeks: maximum compression — a directional move often follows a compression, though its direction is not given by the channel.
 
 ### Turtle Trading Exit Rule
 
@@ -55,7 +56,7 @@ Donchian Channel, developed by Richard Donchian in the 1940s — widely regarded
 
 ## Recommended Combinations
 
-- Donchian Channel + ATR: ATR confirms whether a Donchian breakout is accompanied by genuine volatility expansion. Breakout + rising ATR = high-probability trend initiation. Breakout + flat ATR = potential false breakout.
+- Donchian Channel + ATR: ATR confirms whether a Donchian breakout is accompanied by genuine volatility expansion. Breakout + rising ATR = trend initiation backed by volatility expansion. Breakout + flat ATR = potential false breakout.
 - Donchian Channel + ADX: ADX > 25 when a Donchian breakout occurs = the market is already trending, and the breakout represents trend acceleration. ADX < 20 = the breakout is from a range, and confirmation is critical.
 - Donchian Channel + OBV: OBV confirming the breakout direction (new OBV high on upper-band breakout) adds volume conviction to the price breakout.
 - Donchian Channel + MACD: MACD histogram expanding in the breakout direction confirms momentum alignment.
@@ -85,14 +86,14 @@ Support/resistance:
 Channel width (volatility):
 - Widening = expanding volatility, active trending.
 - Narrowing (bands converging) = contracting volatility, consolidation, breakout likely imminent.
-- Narrowest in several weeks = maximum compression, significant directional move probable.
+- Narrowest in several weeks = maximum compression; a directional move often follows, direction not given by the channel.
 
 Turtle exit: long exits at 10-day low; short exits at 10-day high (asymmetric 20-day entry / 10-day exit — let winners run, cut losses short).
 
 Trend: consistently near upper band = strong uptrend; near lower band = strong downtrend; oscillating between = ranging (mean-reversion outperforms breakout).
 
 Combinations:
-- + ATR: breakout + rising ATR = high-prob trend initiation; + flat ATR = potential false breakout.
+- + ATR: breakout + rising ATR = trend initiation backed by volatility expansion; + flat ATR = potential false breakout.
 - + ADX: ADX>25 at breakout = trend acceleration; ADX<20 = breakout from a range, confirmation critical.
 - + OBV: new OBV high on upper-band breakout = volume conviction.
 - + MACD: histogram expanding in breakout direction = momentum alignment.

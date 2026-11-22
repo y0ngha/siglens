@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [parabolic_sar_flip, parabolic_sar_bearish_flip]
-token_cost: 552
-digest_hash: "496596af"
+token_cost: 565
+digest_hash: "498d91b7"
+digest_text_hash: "04ef7bdf"
 ---
 
 ## Overview
@@ -33,7 +34,7 @@ Parabolic SAR (Stop and Reverse), developed by J. Welles Wilder in 1978, plots d
 
 ### Dot Spacing as Momentum Indicator
 
-- Dots accelerating away from price (widening gap): trend momentum is strong and increasing — high confidence in trend continuation.
+- Dots accelerating away from price (widening gap): trend momentum is strong and increasing — consistent with trend continuation.
 - Dots converging toward price (narrowing gap): trend momentum is weakening — the SAR is catching up to price, and a flip is approaching. Tighten risk management.
 - When dots and price converge after a long trend, the eventual flip signal is more likely to indicate a genuine reversal rather than a whipsaw.
 
@@ -45,9 +46,9 @@ Parabolic SAR (Stop and Reverse), developed by J. Welles Wilder in 1978, plots d
 
 ## Recommended Combinations
 
-- Parabolic SAR + ADX: Use ADX as a trend filter — only follow SAR signals when ADX > 25 (trending). When ADX < 20 (ranging), SAR flip signals are unreliable. This combination eliminates the majority of whipsaw losses.
-- Parabolic SAR + MACD: MACD confirms the trend direction behind a SAR flip. A SAR bullish flip + MACD golden cross = high-conviction long entry.
-- Parabolic SAR + RSI: RSI provides overbought/oversold context. A SAR bearish flip while RSI is in overbought territory (> 70) strengthens the sell signal. A SAR bullish flip while RSI is oversold (< 30) strengthens the buy signal.
+- Parabolic SAR + ADX: Use ADX as a trend filter — only follow SAR signals when ADX > 25 (trending). When ADX < 20 (ranging), SAR flip signals are unreliable. This combination can reduce whipsaw losses.
+- Parabolic SAR + MACD: MACD confirms the trend direction behind a SAR flip. A SAR bullish flip + MACD golden cross = long-entry candidate with momentum agreeing.
+- Parabolic SAR + RSI: RSI provides overbought/oversold context. A SAR bearish flip while RSI is in overbought territory (> 70) gives a second reading in the same direction. A SAR bullish flip while RSI is oversold (< 30) does the same on the buy side. Indicator agreement is context, not a measured edge.
 - Parabolic SAR + ATR: Use ATR to adjust the AF parameters. In high-volatility environments, a slower initial AF (0.01) reduces false flips. In low-volatility environments, the standard 0.02 works well.
 
 ## Caveats
@@ -71,11 +72,11 @@ Reversal (flip):
 - Flip from above to below price = downtrend ended, bullish reversal — close shorts / consider longs.
 - Most reliable in trending markets; in ranging markets flips are frequent and produce whipsaw losses.
 
-Dot spacing (momentum): accelerating away/widening gap = strong, increasing momentum, high confidence in continuation; converging/narrowing gap = momentum weakening, flip approaching, tighten risk. Convergence after a long trend → the flip is more likely a genuine reversal than a whipsaw.
+Dot spacing (momentum): accelerating away/widening gap = strong, increasing momentum, consistent with continuation; converging/narrowing gap = momentum weakening, flip approaching, tighten risk. Convergence after a long trend → the flip is more likely a genuine reversal than a whipsaw.
 
 Trailing stop: use SAR values directly as stop levels. Long: stop at current SAR dot (below price), exit if price closes below SAR. Short: stop at current SAR dot (above price), exit if price closes above SAR.
 
-Combinations: + ADX (only follow SAR when ADX > 25; ADX < 20 = unreliable — eliminates most whipsaws); + MACD (SAR bullish flip + MACD golden cross = high-conviction long); + RSI (SAR bearish flip while RSI > 70 strengthens sell; SAR bullish flip while RSI < 30 strengthens buy); + ATR (high-vol: slower AF start 0.01 reduces false flips; low-vol: standard 0.02).
+Combinations: + ADX (only follow SAR when ADX > 25; ADX < 20 = unreliable — can reduce whipsaws); + MACD (SAR bullish flip + MACD golden cross = long-entry candidate, momentum agrees); + RSI (SAR bearish flip while RSI > 70 = second reading, same direction; SAR bullish flip while RSI < 30 likewise (agreement, not a measured edge)); + ATR (high-vol: slower AF start 0.01 reduces false flips; low-vol: standard 0.02).
 
 Caveats: poor in ranging/choppy markets — always filter with trend strength (ADX, EMA slope). Standard params are the usual reference. Lagging — confirms reversals, doesn't predict. In strong trends can stay one side long — let the flip determine exit, don't exit just because SAR ran many bars. Gap openings can instantly flip even with trend intact — verify gap-triggered flips with volume/other indicators. First few bars after a flip most whipsaw-prone (AF reset to 0.02 sits SAR near price) — consider requiring 2–3 bars hold or a volume/momentum filter.
 <!-- PROMPT_DIGEST:END -->

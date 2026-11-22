@@ -11,6 +11,7 @@ gating:
   triggers: [piercing_line, dark_cloud_cover]
 token_cost: 296
 digest_hash: "a1878d4f"
+digest_text_hash: "5bec89ab"
 ---
 
 ## Overview

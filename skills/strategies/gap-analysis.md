@@ -11,6 +11,7 @@ gating:
   triggers: [gap_up, gap_down]
 token_cost: 462
 digest_hash: "654754e0"
+digest_text_hash: "d94a4e2f"
 ---
 
 ## Overview
