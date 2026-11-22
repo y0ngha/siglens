@@ -567,7 +567,6 @@
         "src/widgets/home/__tests__/SkillsShowcase.test.tsx": 2,
         "src/widgets/home/__tests__/StatsBar.test.tsx": 2,
         "src/widgets/home/__tests__/categoryDescriptionCoverage.test.ts": 6,
-        "src/widgets/home/__tests__/ui/CategoryCardGrid.test.tsx": 1,
         "src/widgets/home/__tests__/utils/toCategoryCards.test.ts": 4,
         "src/widgets/home/__tests__/utils/toSkillShowcaseItems.test.ts": 1,
         "src/widgets/investor-flows/__tests__/krContent.test.tsx": 6,

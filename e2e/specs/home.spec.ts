@@ -83,4 +83,90 @@ test.describe('home page', () => {
             .click();
         await page.waitForURL('**/economy');
     });
+
+    /**
+     * 인기 종목은 시장 탭 하나로 묶여 있다. 기본은 미국 주식이고, 탭을 바꾸면 한국 종목이 보이고
+     * 미국 종목은 숨는다(둘 다 서버 HTML에는 있다 — 단위 테스트가 링크 집합을 고정한다).
+     */
+    test('인기 종목 탭을 한국 주식으로 바꾸면 한국 종목이 보이고 미국 종목은 숨는다', async ({
+        page,
+    }) => {
+        await page.goto('/');
+        const popular = page.locator('#popular');
+
+        await expect(popular.locator('a[href="/AAPL"]')).toBeVisible();
+        await popular.getByRole('tab', { name: '한국 주식' }).click();
+
+        await expect(popular.locator('a[href="/005930.KS"]')).toBeVisible();
+        await expect(popular.locator('a[href="/AAPL"]')).toBeHidden();
+    });
+
+    test('모바일에서 "모든 업종 보기"를 누르면 접힌 업종 카드가 펼쳐진다', async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto('/');
+        const popular = page.locator('#popular');
+        const titles = popular.locator(
+            '[role="tabpanel"]:not([hidden]) h3:visible'
+        );
+
+        await expect(titles).toHaveCount(3);
+        const button = popular.getByRole('button', { name: '모든 업종 보기' });
+        await button.click();
+
+        await expect(button).toHaveCount(0);
+        await expect(
+            popular.getByRole('button', { name: '접기' })
+        ).toHaveAttribute('aria-expanded', 'true');
+        expect(await titles.count()).toBeGreaterThan(3);
+    });
+
+    /** FAQ는 접혀 있되 첫 문항(브랜드 소개 답변)만 열려 있고, 나머지는 누르면 열린다. */
+    test('FAQ는 첫 문항만 열려 있고 세 번째 문항은 눌러서 연다', async ({
+        page,
+    }) => {
+        await page.goto('/');
+        const items = page.locator(
+            'section[aria-labelledby="faq-heading"] details'
+        );
+
+        await expect(items.first()).toHaveJSProperty('open', true);
+        await expect(items.nth(2)).toHaveJSProperty('open', false);
+
+        await items.nth(2).locator('summary').click();
+        await expect(items.nth(2)).toHaveJSProperty('open', true);
+    });
+
+    /**
+     * 페이지 길이 소프트 상한 — 섹션이 다시 부풀어 오르는 것을 잡는다.
+     *
+     * 상한은 WP-25 목표치(메일 카드 꺼짐 기준 모바일 5,500px, 데스크톱 3,600px)다. E2E 픽스처에는 오늘의
+     * 신호가 없어 실제보다 짧게 나온다. CI가 첫 실측값을 보고하면 그 값 + 15%로 조인다(측정값은 아래
+     * `console.log`와 테스트 첨부에 남는다).
+     */
+    for (const { name, width, height, ceiling } of [
+        { name: 'mobile 390x844', width: 390, height: 844, ceiling: 5500 },
+        { name: 'desktop 1440x900', width: 1440, height: 900, ceiling: 3600 },
+    ]) {
+        test(`페이지 길이가 ${name}에서 상한 이하다`, async ({
+            page,
+        }, testInfo) => {
+            await page.setViewportSize({ width, height });
+            await page.goto('/');
+            await page.evaluate(() => document.fonts.ready);
+            const total = await page.evaluate(
+                () => document.documentElement.scrollHeight
+            );
+
+            console.log(
+                `[home length] ${name}: ${total}px (ceiling ${ceiling})`
+            );
+            await testInfo.attach('home-length', {
+                body: `${name}: ${total}px (ceiling ${ceiling})`,
+                contentType: 'text/plain',
+            });
+            expect(total).toBeLessThanOrEqual(ceiling);
+        });
+    }
 });

@@ -139,7 +139,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         // 아래 여섯 개 KR 카테고리의 종목 합집합은 `POPULAR_TICKERS`의 KR 블록과
         // **정확히 같아야 한다.**
         //
-        // 이 그리드(`widgets/home/TickerCategories` → `CategoryCardGrid`)가 저장소
+        // 이 그리드(`widgets/home/PopularTickers` → `CategoryCardGridBody`)가 저장소
         // 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한 `<a>`**다. 검색
         // 자동완성은 `<button>` + `router.push`라 링크가 아니고, 크로스링크 카드는
         // 같은 심볼의 다른 탭만 잇는다. 여기 빠진 종목은 sitemap에만 있는 고아가 된다.

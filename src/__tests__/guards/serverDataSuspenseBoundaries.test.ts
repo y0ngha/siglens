@@ -60,6 +60,12 @@ describe('홈 — 스킬 쇼케이스', () => {
         );
     });
 
+    it('스킬 묶음·오늘의 시장·가이드 분류 라벨을 한 바깥 Promise.all에서 함께 기다린다', () => {
+        expect(source).toMatch(
+            /Promise\.all\(\[\s*Promise\.all\(\[\s*loadSkillCounts\(\),\s*loadShowcase\(\),?\s*\]\),\s*loadHomeTodayMarket\(\),\s*loadGuideCategoryCopy\(locale\),?\s*\]\)/
+        );
+    });
+
     it('죽은 SkillsShowcaseSkeleton이 다시 생기지 않는다', () => {
         const thisFile = path.resolve(__filename);
         expect(

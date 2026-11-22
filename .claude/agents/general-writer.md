@@ -33,6 +33,8 @@ If the instruction file conflicts with this document, **the instruction file win
 - **Never run git write operations.** `git commit` / `git push` / `git tag` / branch creation
   are all forbidden (git-agent's responsibility). Read-only git commands
   (`git status`, `git diff --name-only`) are allowed.
+  `git rm`, `git add`, `git restore` and `git mv` are git writes too; delete files with `rm`
+  and move them with `mv`, and leave staging to git-agent.
 - **Never call another agent.** Routing is handled by the main orchestrator.
 - **Never use `--no-verify`.** Do not bypass hooks under any circumstance.
 - **Use `yarn` only** for package installation. `npm` / `pnpm` are prohibited.

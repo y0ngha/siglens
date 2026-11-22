@@ -261,6 +261,19 @@
                     "step7Text": "当判断不明确时，点击标的页面右下角的“向 SIGLENS AI 提问”按钮。SIGLENS AI 会在新标签页中打开，并预先填好关于该标的的问题；它会自行查询行情、图表指标和新闻数据，回答指标解读、情景比较与交易策略等问题。"
                 }
             },
+            "methodBand": {
+                "guideCategoriesLabel": "图表指南分类",
+                "heading": "价位是这样确定的",
+                "historyBody": "公开用历史数据对同类分析做事后检验的结果。",
+                "historyLink": "查看回测结果",
+                "historyTitle": "过往记录",
+                "invalidationBody": "每次分析都会写明判断失效的价格。未注册用户每天最多也可以查看 {count} 只标的。",
+                "invalidationLink": "查看图表指南",
+                "invalidationTitle": "失效标准",
+                "levelsBody": "结合辅助指标与图表形态，挑出当下值得关注的支撑位和阻力位。",
+                "levelsLink": "查看分析方法",
+                "levelsTitle": "支撑位与阻力位"
+            },
             "not-found": {
                 "03ecab": "您请求的页面可能不存在或已移动。\n                        请在下方搜索股票，或查看热门股票。",
                 "4da438": "报告错误 →",
@@ -270,10 +283,7 @@
                 "f8a2cd": "可能是系统错误。请告知我们，我们将进行确认。"
             },
             "page": {
-                "167f34": "查看用主要10只股票的历史数据对技术分析和AI情景\n                                进行事后检验的结果。",
                 "24e60c": "跳过至搜索",
-                "dfbacd": "基于历史数据验证的结果",
-                "ee41ec": "查看回测结果 →",
                 "aiTeaser": "用 AI 聊天助手问股票与加密货币",
                 "eyebrow": "与其问何时买，不如看该盯哪些价位",
                 "headline": "股票与加密货币的价格区间地图",
@@ -285,7 +295,8 @@
                 "radarRequestCta": "申请添加个股",
                 "radarRequestPrompt": "没有想看的个股?",
                 "radarTitle": "个股雷达",
-                "radarViewAll": "查看全部"
+                "radarViewAll": "查看全部",
+                "skillsSummary": "查看 {count} 种分析方法"
             },
             "todayMarket": {
                 "asOf": "截至{date}",
@@ -1391,6 +1402,7 @@
             "button": "通过邮件接收",
             "cancel": "取消",
             "cardFearGreed": "指数进入极度恐惧或极度贪婪的当天早晨，我们会通过邮件通知您",
+            "cardFearGreedMarket": "{market}恐惧与贪婪指数进入极度恐惧或极度贪婪的当天早晨，我们会通过邮件通知您",
             "cardSignalHub": "每天早晨通过邮件接收新出现的{hubName}个股",
             "changeEmail": "更换邮箱",
             "close": "关闭",
@@ -4824,12 +4836,17 @@
                 "analyzeTitle": "分析{v0}",
                 "tickerListLabel": "{v0}标的列表"
             },
-            "CryptoShowcase": {
-                "5c8e33": "热门加密货币",
-                "ab6a33": "探索热门加密货币"
-            },
             "HeroIllustration": {
                 "alt": "K线图上标出支撑区间、阻力位和虚线失效标准的插图"
+            },
+            "PopularTickers": {
+                "collapse": "收起",
+                "crypto": "加密货币",
+                "expand": "显示全部行业",
+                "heading": "热门标的",
+                "kr": "韩股",
+                "tabsLabel": "选择市场",
+                "us": "美股"
             },
             "SkillsShowcase": {
                 "158954": "AI 分析方法",
@@ -4841,12 +4858,6 @@
             },
             "StatsBar": {
                 "deac8e": "SIGLENS 分析规模"
-            },
-            "TickerCategories": {
-                "227844": "韩国主题热门股票",
-                "0ab969": "探索美国主题热门股票",
-                "bc06f5": "探索韩国主题热门股票",
-                "f6087a": "美国主题热门股票"
             },
             "categoryDescription": {
                 "AIsemiconductors": "制造AI算力芯片与服务器的公司，随数据中心投资周期波动。",

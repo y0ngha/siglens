@@ -261,6 +261,19 @@
                     "step7Text": "판단이 애매할 때는 종목 페이지 오른쪽 아래의 '시그렌즈 AI에게 물어보기' 버튼을 누르면 됩니다. 그 종목에 대한 질문이 미리 채워진 채 시그렌즈 AI가 새 탭에서 열리고, 시그렌즈 AI가 시세, 차트 지표, 뉴스 데이터를 직접 조회해 지표 해석, 시나리오 비교, 매매 전략 같은 질문에 답합니다."
                 }
             },
+            "methodBand": {
+                "guideCategoriesLabel": "차트 가이드 분류",
+                "heading": "가격대는 이렇게 정해요",
+                "historyBody": "같은 방식의 분석을 과거 데이터로 사후 검증한 결과를 공개해요.",
+                "historyLink": "백테스팅 결과 보기",
+                "historyTitle": "지난 기록",
+                "invalidationBody": "분석마다 그 판단이 깨졌다고 볼 가격을 함께 적어 둬요. 비회원도 하루 {count}종목까지 볼 수 있어요.",
+                "invalidationLink": "차트 가이드 보기",
+                "invalidationTitle": "무효화 기준",
+                "levelsBody": "보조지표와 차트 패턴으로 지금 지켜볼 지지선과 저항선을 골라요.",
+                "levelsLink": "분석 방법 보기",
+                "levelsTitle": "지지선과 저항선"
+            },
             "not-found": {
                 "03ecab": "요청하신 페이지가 존재하지 않거나 이동되었을 수\n                        있습니다. 아래에서 종목을 검색하거나, 인기 종목을 확인해\n                        보세요.",
                 "4da438": "오류 제보하기 →",
@@ -270,11 +283,8 @@
                 "f8a2cd": "시스템 오류일 수 있습니다. 알려주시면\n                            확인하겠습니다."
             },
             "page": {
-                "167f34": "주요 10개 종목의 과거 데이터로 기술적 분석과 AI 시나리오를\n                                사후 검증한 결과를 확인하세요.",
                 "24e60c": "검색으로 건너뛰기",
                 "aiTeaser": "주식과 코인, AI 챗봇에게 물어보세요",
-                "dfbacd": "과거 데이터로 검증한 결과",
-                "ee41ec": "백테스팅 결과 보기 →",
                 "eyebrow": "언제 살지보다 어떤 가격을 지켜볼지",
                 "headline": "주식과 코인의 가격대 지도",
                 "intro": "{v0, plural, =0 {보조지표로 차트를 읽고, 지지선과 저항선, 지금 흐름이 깨졌다고 볼 가격을 정리해요.} other {보조지표 {v0}종으로 차트를 읽고, 지지선과 저항선, 지금 흐름이 깨졌다고 볼 가격을 정리해요.}}",
@@ -285,7 +295,8 @@
                 "radarRequestCta": "종목 요청하기",
                 "radarRequestPrompt": "보고 싶은 종목이 없나요?",
                 "radarTitle": "종목 레이더",
-                "radarViewAll": "전체 보기"
+                "radarViewAll": "전체 보기",
+                "skillsSummary": "분석 기법 {count}개 보기"
             },
             "todayMarket": {
                 "asOf": "{date} 기준",
@@ -1065,6 +1076,7 @@
             "button": "메일로 받기",
             "cancel": "취소",
             "cardFearGreed": "극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요",
+            "cardFearGreedMarket": "{market} 공포 탐욕 지수가 극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요",
             "cardSignalHub": "새로 잡힌 {hubName} 종목을 아침에 메일로 받아 보세요",
             "changeEmail": "이메일 바꾸기",
             "close": "닫기",
@@ -4981,12 +4993,17 @@
                 "analyzeTitle": "{v0} 분석",
                 "tickerListLabel": "{v0} 종목 목록"
             },
-            "CryptoShowcase": {
-                "5c8e33": "암호화폐 인기 종목",
-                "ab6a33": "암호화폐 인기 종목 탐색"
-            },
             "HeroIllustration": {
                 "alt": "캔들 차트 위에 지지 구간, 저항선, 점선으로 표시한 무효화 기준을 그린 일러스트"
+            },
+            "PopularTickers": {
+                "collapse": "접기",
+                "crypto": "암호화폐",
+                "expand": "모든 업종 보기",
+                "heading": "인기 종목",
+                "kr": "한국 주식",
+                "tabsLabel": "시장 선택",
+                "us": "미국 주식"
             },
             "SkillsShowcase": {
                 "158954": "AI 분석 기법",
@@ -4998,12 +5015,6 @@
             },
             "StatsBar": {
                 "deac8e": "시그렌즈 분석 규모"
-            },
-            "TickerCategories": {
-                "227844": "한국 테마별 인기 종목",
-                "0ab969": "미국 테마별 인기 종목 탐색",
-                "bc06f5": "한국 테마별 인기 종목 탐색",
-                "f6087a": "미국 테마별 인기 종목"
             },
             "categoryDescription": {
                 "AIsemiconductors": "AI 연산에 쓰이는 칩과 서버를 만드는 기업입니다. 데이터센터 투자 사이클을 따라 움직입니다.",

@@ -261,6 +261,19 @@
                     "step7Text": "判断に迷うときは、銘柄ページ右下の「SIGLENS AIに質問する」ボタンを押します。その銘柄についての質問が入力された状態でSIGLENS AIが新しいタブで開き、SIGLENS AIが株価、チャート指標、ニュースのデータを自ら取得して、指標の解釈、シナリオの比較、売買戦略といった質問に回答します。"
                 }
             },
+            "methodBand": {
+                "guideCategoriesLabel": "チャートガイドの分類",
+                "heading": "価格帯の決め方",
+                "historyBody": "同じ方式の分析を過去データで事後検証した結果を公開しています。",
+                "historyLink": "バックテスト結果を見る",
+                "historyTitle": "過去の記録",
+                "invalidationBody": "分析ごとに、その判断が崩れたとみる価格を併記します。非会員の方も1日{count}銘柄まで確認できます。",
+                "invalidationLink": "チャートガイドを見る",
+                "invalidationTitle": "無効化の基準",
+                "levelsBody": "補助指標とチャートパターンから、今見ておきたいサポートラインとレジスタンスラインを選びます。",
+                "levelsLink": "分析方法を見る",
+                "levelsTitle": "サポートラインとレジスタンスライン"
+            },
             "not-found": {
                 "03ecab": "お探しのページは存在しないか、移動された可能性があります。\n                        以下で銘柄を検索するか、人気銘柄をご確認ください。",
                 "4da438": "エラーを報告する →",
@@ -270,10 +283,7 @@
                 "f8a2cd": "システムエラーの可能性があります。お知らせいただければ\n                            確認いたします。"
             },
             "page": {
-                "167f34": "主要10銘柄の過去データでテクニカル分析とAIシナリオを\n                                事後検証した結果をご確認ください。",
                 "24e60c": "検索にスキップ",
-                "dfbacd": "過去データで検証した結果",
-                "ee41ec": "バックテスト結果を見る →",
                 "aiTeaser": "株と仮想通貨をAIチャットに質問",
                 "eyebrow": "買い時より、見ておきたい価格を",
                 "headline": "株式と暗号資産の価格帯マップ",
@@ -285,7 +295,8 @@
                 "radarRequestCta": "銘柄をリクエスト",
                 "radarRequestPrompt": "見たい銘柄がありませんか?",
                 "radarTitle": "銘柄レーダー",
-                "radarViewAll": "すべて見る"
+                "radarViewAll": "すべて見る",
+                "skillsSummary": "分析手法{count}件を見る"
             },
             "todayMarket": {
                 "asOf": "{date}時点",
@@ -1391,6 +1402,7 @@
             "button": "メールで受け取る",
             "cancel": "キャンセル",
             "cardFearGreed": "指数が極度の恐怖または極度の強欲に入った日の朝にメールでお知らせします",
+            "cardFearGreedMarket": "{market}の恐怖強欲指数が極度の恐怖または極度の強欲に入った日の朝にメールでお知らせします",
             "cardSignalHub": "新しく検出された{hubName}の銘柄を朝にメールで受け取れます",
             "changeEmail": "メールアドレスを変更",
             "close": "閉じる",
@@ -4824,12 +4836,17 @@
                 "analyzeTitle": "{v0}を分析",
                 "tickerListLabel": "{v0}の銘柄リスト"
             },
-            "CryptoShowcase": {
-                "5c8e33": "暗号資産人気銘柄",
-                "ab6a33": "暗号資産人気銘柄を探索"
-            },
             "HeroIllustration": {
                 "alt": "ローソク足チャートに、サポート帯、レジスタンスライン、点線の無効化の基準を描いたイラスト"
+            },
+            "PopularTickers": {
+                "collapse": "閉じる",
+                "crypto": "暗号資産",
+                "expand": "すべての業種を見る",
+                "heading": "人気銘柄",
+                "kr": "韓国株",
+                "tabsLabel": "市場を選択",
+                "us": "米国株"
             },
             "SkillsShowcase": {
                 "158954": "AI分析手法",
@@ -4841,12 +4858,6 @@
             },
             "StatsBar": {
                 "deac8e": "SIGLENS分析規模"
-            },
-            "TickerCategories": {
-                "227844": "韓国テーマ別人気銘柄",
-                "0ab969": "米国テーマ別人気銘柄を探索",
-                "bc06f5": "韓国テーマ別人気銘柄を探索",
-                "f6087a": "米国テーマ別人気銘柄"
             },
             "categoryDescription": {
                 "AIsemiconductors": "AI演算に使われるチップやサーバーを手がける企業。データセンター投資サイクルに連動します。",
