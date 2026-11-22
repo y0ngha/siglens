@@ -345,7 +345,8 @@
                 "marketUs": "US stocks",
                 "otherSignals": "Stocks with other signals",
                 "signalStocks": "{signal} stocks",
-                "title": "{signal} stocks: last 30 days in the US and Korea"
+                "title": "{signal} stocks: last 30 days in the US and Korea",
+                "truncated": "Showing the {shown} most recent of {total} stocks."
             }
         },
         "news": {

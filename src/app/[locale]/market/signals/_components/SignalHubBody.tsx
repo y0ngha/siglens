@@ -206,6 +206,14 @@ export async function SignalHubBody({
                                         >
                                             {marketLabel[market]}
                                         </h2>
+                                        {data.counts[market] > rows.length && (
+                                            <p className="mt-1 text-xs text-secondary-400">
+                                                {t('truncated', {
+                                                    total: data.counts[market],
+                                                    shown: rows.length,
+                                                })}
+                                            </p>
+                                        )}
                                         {rows.length === 0 ? (
                                             <p className="mt-3 text-sm text-secondary-400">
                                                 {t('empty')}

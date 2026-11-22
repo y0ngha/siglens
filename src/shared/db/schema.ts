@@ -35,6 +35,7 @@ import {
     MAIL_ALERT_TOPIC_KIND_VALUES,
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
+    SIGNAL_SCAN_OUTCOME_VALUES,
     SYMBOL_MAX_LENGTH,
     TERMS_KIND_VALUES,
     USER_TIER_VALUES,
@@ -2223,4 +2224,75 @@ export const signalEvents = pgTable(
             table.lastSeenSession
         ),
     ]
+);
+
+/**
+ * 신호 기록기가 종목별로 어디까지 기록했는지 — 한 세션을 여러 번의 실행에 걸쳐 기록하고, 놓친 세션을
+ * 따라잡기 위한 영속 진행 표식이다. Redis 표식은 사라질 수 있고 "세션당 한 번"만 알려 줘서, 종목 수가
+ * 늘어 한 실행에 다 못 끝내는 규모에서는 쓸 수 없다.
+ *
+ * 한 행 = (시장, 종목). `last_session`은 그 종목의 신호가 `signal_events`에 반영된 마지막 세션이다.
+ * 아직 한 번도 성공하지 못했으면 null(처음 기록하는 종목). 실패·낡은 데이터 시도는 `attempt_session`의
+ * 세션 안에서 `attempts`로 센다 — 세션이 바뀌면 다시 1부터다.
+ *
+ * 개인 식별 정보가 없다(시장 데이터의 처리 진행뿐).
+ */
+export const signalScanCursors = pgTable(
+    'signal_scan_cursors',
+    {
+        /** 대시보드 범위 id(`us` | `kr`). */
+        market: varchar('market', { length: 8 }).notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        /** `signal_events`에 반영된 마지막 세션(`YYYY-MM-DD`). 첫 성공 전에는 null. */
+        lastSession: date('last_session'),
+        /** 아래 `attempts`가 속한 세션. 세션이 바뀌면 시도 횟수를 다시 센다. */
+        attemptSession: date('attempt_session'),
+        attempts: smallint('attempts').notNull().default(0),
+        /** 가장 최근 시도의 결과: 기록됨 / 조회 실패 / 마지막 봉이 그 세션이 아님. */
+        lastOutcome: text('last_outcome', {
+            enum: SIGNAL_SCAN_OUTCOME_VALUES,
+        }).notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        primaryKey({ columns: [table.market, table.symbol] }),
+        check(
+            'signal_scan_cursors_last_outcome_check',
+            sql`${table.lastOutcome} IN ('recorded','failed','stale')`
+        ),
+    ]
+);
+
+/**
+ * 시장·세션별 기록 완료 표식 — 메일 발송기와 신호 페이지가 "그 세션이 끝까지 기록됐는가"를 읽는 영속
+ * 값이다. `signal_events`의 `max(last_seen_session)`으로는 알 수 없다: 한 세션을 여러 실행에 나눠 기록하면
+ * 첫 종목이 들어간 순간부터 그 값이 참이 된다.
+ *
+ * `completed_at`은 대상 종목이 전부 정리된(기록됐거나 한 세션에 3번 실패한) 순간에 한 번 채운다. 나머지
+ * 숫자는 가장 최근 실행이 본 집계다. 개인 식별 정보가 없다.
+ */
+export const signalScanSessions = pgTable(
+    'signal_scan_sessions',
+    {
+        market: varchar('market', { length: 8 }).notNull(),
+        sessionDate: date('session_date').notNull(),
+        /** 그 세션 시작 때의 대상 종목 수. */
+        universeSize: integer('universe_size').notNull(),
+        recorded: integer('recorded').notNull(),
+        failed: integer('failed').notNull(),
+        stale: integer('stale').notNull(),
+        /** 모든 대상이 정리된 시각. 아직이면 null. */
+        completedAt: timestamp('completed_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [primaryKey({ columns: [table.market, table.sessionDate] })]
 );

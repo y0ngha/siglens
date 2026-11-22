@@ -345,7 +345,8 @@
                 "marketUs": "米国株",
                 "otherSignals": "ほかのシグナルが出た銘柄",
                 "signalStocks": "{signal}銘柄",
-                "title": "{signal}銘柄：直近30日の米国・韓国株"
+                "title": "{signal}銘柄：直近30日の米国・韓国株",
+                "truncated": "{total}銘柄のうち、直近で検出された{shown}銘柄を表示しています。"
             }
         },
         "news": {

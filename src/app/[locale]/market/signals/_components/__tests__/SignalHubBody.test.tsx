@@ -16,7 +16,11 @@ vi.mock('next-intl/server', async () => {
     };
 });
 const hubData = vi.hoisted(() => ({
-    value: { rows: [] as unknown[], degraded: false },
+    value: {
+        rows: [] as unknown[],
+        counts: { us: 0, kr: 0 },
+        degraded: false,
+    },
 }));
 vi.mock('../../_lib/loadSignalHub', () => ({
     loadSignalHub: vi.fn(async () => hubData.value),
@@ -27,7 +31,15 @@ vi.mock('@/entities/guide/api', () => ({
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: ({ data }: { data: Record<string, unknown> }) => (
-        <script data-testid="json-ld" data-type={String(data['@type'])} />
+        <script
+            data-testid="json-ld"
+            data-type={String(data['@type'])}
+            data-items={
+                Array.isArray(data.itemListElement)
+                    ? data.itemListElement.length
+                    : undefined
+            }
+        />
     ),
 }));
 
@@ -70,6 +82,14 @@ const FIVE_ROWS: SignalEpisodeRow[] = [
     row('000660.KS', 'kr', '2026-11-11'),
 ];
 
+/** 줄 수와 같은 전체 종목 수 — 상한으로 잘리지 않은 보통의 경우. */
+function countsOf(list: readonly SignalEpisodeRow[]) {
+    return {
+        us: list.filter(r => r.market === 'us').length,
+        kr: list.filter(r => r.market === 'kr').length,
+    };
+}
+
 async function renderBody(locale: Locale = 'ko') {
     intl.locale = locale;
     const tree = await SignalHubBody({ hub: GOLDEN, locale });
@@ -82,7 +102,11 @@ async function renderBody(locale: Locale = 'ko') {
 }
 
 beforeEach(() => {
-    hubData.value = { rows: FIVE_ROWS, degraded: false };
+    hubData.value = {
+        rows: FIVE_ROWS,
+        counts: countsOf(FIVE_ROWS),
+        degraded: false,
+    };
     catalog.value = {
         entries: [
             {
@@ -161,7 +185,11 @@ describe('SignalHubBody', () => {
     });
 
     it('행이 모자라면 구조화데이터를 내지 않는다(메타데이터 noindex와 같은 판정)', async () => {
-        hubData.value = { rows: FIVE_ROWS.slice(0, 4), degraded: false };
+        hubData.value = {
+            rows: FIVE_ROWS.slice(0, 4),
+            counts: countsOf(FIVE_ROWS.slice(0, 4)),
+            degraded: false,
+        };
 
         await renderBody();
 
@@ -169,8 +197,10 @@ describe('SignalHubBody', () => {
     });
 
     it('한 시장에 행이 없으면 그 시장은 빈 안내를 보인다', async () => {
+        const usOnly = FIVE_ROWS.filter(r => r.market === 'us');
         hubData.value = {
-            rows: FIVE_ROWS.filter(r => r.market === 'us'),
+            rows: usOnly,
+            counts: countsOf(usOnly),
             degraded: false,
         };
 
@@ -181,7 +211,11 @@ describe('SignalHubBody', () => {
     });
 
     it('기록을 못 읽으면(degraded) 목록 대신 안내를 보이고 구조화데이터도 내지 않는다', async () => {
-        hubData.value = { rows: [], degraded: true };
+        hubData.value = {
+            rows: [],
+            counts: { us: 0, kr: 0 },
+            degraded: true,
+        };
 
         await renderBody();
 
@@ -211,5 +245,64 @@ describe('SignalHubBody', () => {
         expect(
             screen.getByRole('link', { name: '005930' })
         ).toBeInTheDocument();
+    });
+    it('상한으로 잘렸으면 전체 수와 보여 주는 수를 알리고, 그 시장에만 붙인다', async () => {
+        hubData.value = {
+            rows: FIVE_ROWS,
+            counts: { us: 250, kr: 2 },
+            degraded: false,
+        };
+
+        await renderBody();
+
+        const us = screen.getByRole('region', { name: c.marketUs });
+        expect(
+            within(us).getByText(
+                c.truncated.replace('{total}', '250').replace('{shown}', '3')
+            )
+        ).toBeInTheDocument();
+        const kr = screen.getByRole('region', { name: c.marketKr });
+        expect(within(kr).queryByText(/가장 최근에 잡힌/)).toBeNull();
+    });
+
+    it('잘리지 않았으면 안내 문구를 내지 않는다', async () => {
+        await renderBody();
+
+        expect(screen.queryByText(/가장 최근에 잡힌/)).toBeNull();
+    });
+
+    it('인기 목록 밖 종목 링크에만 nofollow를 붙인다', async () => {
+        const longtail = row('ZZZZ', 'us', '2026-11-13');
+        const rowsWithLongtail = [...FIVE_ROWS, longtail];
+        hubData.value = {
+            rows: rowsWithLongtail,
+            counts: countsOf(rowsWithLongtail),
+            degraded: false,
+        };
+
+        await renderBody();
+
+        expect(screen.getByRole('link', { name: 'ZZZZ이름' })).toHaveAttribute(
+            'rel',
+            'nofollow'
+        );
+        expect(
+            screen.getByRole('link', { name: 'NVDA이름' })
+        ).not.toHaveAttribute('rel');
+    });
+
+    it('ItemList 항목 수는 화면에 그린 줄 수와 같다(전체 종목 수가 아니다)', async () => {
+        hubData.value = {
+            rows: FIVE_ROWS,
+            counts: { us: 250, kr: 2 },
+            degraded: false,
+        };
+
+        await renderBody();
+
+        const itemList = screen
+            .getAllByTestId('json-ld')
+            .find(node => node.dataset.type === 'ItemList');
+        expect(itemList?.dataset.items).toBe(String(FIVE_ROWS.length));
     });
 });

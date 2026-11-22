@@ -12,7 +12,11 @@ vi.mock('next-intl/server', async () => {
     };
 });
 vi.mock('../../_lib/loadSignalHub', () => ({
-    loadSignalHub: vi.fn(async () => ({ rows: [], degraded: false })),
+    loadSignalHub: vi.fn(async () => ({
+        rows: [],
+        counts: { us: 0, kr: 0 },
+        degraded: false,
+    })),
 }));
 vi.mock('@/entities/guide/api', () => ({
     loadGuideCatalog: vi.fn(async () => ({

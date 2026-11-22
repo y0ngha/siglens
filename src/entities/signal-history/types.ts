@@ -31,7 +31,7 @@ export interface SignalEpisodeRow {
 
 /**
  * 신호 하나의 기간 집계 — 사이트맵이 색인할 신호 페이지와 lastmod를 고른다. 페이지가 종목마다 한 줄만
- * 그리므로(`latestEpisodePerSymbol`) 색인 판정도 에피소드 수가 아니라 종목 수로 한다.
+ * 그리므로(`listHubRows`가 종목마다 한 줄만 고른다) 색인 판정도 에피소드 수가 아니라 종목 수로 한다.
  */
 export interface SignalHubCount {
     readonly signalType: string;
@@ -59,4 +59,87 @@ export interface SignalEpisodeStartedRow {
     readonly signalType: string;
     readonly changePercent: number;
     readonly koreanName: string | null;
+}
+
+/** 종목별 기록 진행 한 줄 — `signal_scan_cursors`. */
+export interface ScanCursor {
+    /** `signal_events`에 반영된 마지막 세션(`YYYY-MM-DD`). 첫 성공 전에는 null. */
+    readonly lastSession: string | null;
+    /** `attempts`가 속한 세션. 세션이 바뀌면 시도 횟수를 다시 센다. */
+    readonly attemptSession: string | null;
+    readonly attempts: number;
+    readonly lastOutcome: 'recorded' | 'failed' | 'stale';
+}
+
+/** 기록하려다 실패한 이유: 조회 실패 / 마지막 봉이 그 세션이 아님. */
+export type ScanFailureOutcome = 'failed' | 'stale';
+
+/** 이어진(아직 끊기지 않은) 에피소드 한 줄 — 계획 수립이 읽는다. */
+export interface OpenEpisode {
+    readonly signalType: string;
+    /** 처음 포착된 세션(기본키의 일부). */
+    readonly sessionDate: string;
+    readonly lastSeenSession: string;
+}
+
+/** 종목 한 개 스캔의 새 에피소드 — 끝난 에피소드도 있어 마지막 포착 세션을 함께 준다. */
+export interface ScanEpisodeInsert extends SignalEpisodeInsert {
+    readonly lastSeenSession: string;
+}
+
+/** 이미 있는 에피소드의 마지막 포착 세션을 늘린다(줄이지 않는다). */
+export interface LastSeenUpdate {
+    readonly signalType: string;
+    /** 에피소드의 처음 포착 세션 — 기본키로 행을 가리킨다. */
+    readonly sessionDate: string;
+    readonly lastSeenSession: string;
+}
+
+/**
+ * 종목 한 개를 한 번에 기록하는 쓰기 묶음. 전부 한 트랜잭션이다 — 중간에 실패하면 행도 진행 표식도
+ * 그대로라서 다음 실행이 같은 일을 다시 한다.
+ */
+export interface SymbolScanWrite {
+    readonly market: SignalHistoryMarket;
+    readonly symbol: string;
+    /** 이번 기록이 반영하는 마지막 세션 — 진행 표식의 `last_session`이 된다. */
+    readonly session: string;
+    /**
+     * 처음 기록하는 종목의 재계산 구간 시작 세션. 값이 있으면 그 세션 이후 행을 지우고 다시 넣고,
+     * 그 이전의 옛 골든·데드크로스 행은 단기 이평 교차 이름으로 바꾼다.
+     */
+    readonly rebuildFrom: string | null;
+    /**
+     * 옛 20/50 골든·데드크로스 행을 판별하는 기록 시각 기준(ISO). 이 시각보다 먼저 기록된 `golden_cross`·
+     * `death_cross` 행만 단기 이평 교차 이름으로 바뀐다 — 새 코드가 쓴 50/200 행은 건드리지 않는다.
+     * app-2가 새 기록 코드의 배포 시각을 상수로 정해 넣는다. `null`이면 이름 바꾸기를 하지 않는다.
+     * 같은 값을 `openEpisodesSince`의 `relabelCutover`에도 넘겨야 계획이 바뀔 이름으로 에피소드를 이어 간다.
+     */
+    readonly relabelCutover: string | null;
+    readonly lastSeenUpdates: readonly LastSeenUpdate[];
+    readonly inserts: readonly ScanEpisodeInsert[];
+}
+
+/** 시장·세션별 기록 집계 한 줄 — `signal_scan_sessions`. */
+export interface ScanSessionRow {
+    readonly market: SignalHistoryMarket;
+    readonly sessionDate: string;
+    readonly universeSize: number;
+    readonly recorded: number;
+    readonly failed: number;
+    readonly stale: number;
+    /** 모든 대상이 정리된 시각(ISO). 아직이면 null — 이미 채워진 값을 null로 되돌리지 않는다. */
+    readonly completedAt: string | null;
+}
+
+/** 신호 페이지가 고른 종목 수 — 시장별. 색인 판정과 사이트맵이 같은 값을 쓴다. */
+export interface SignalHubSymbolCounts {
+    readonly us: number;
+    readonly kr: number;
+}
+
+/** 진행 표식 정리 결과. */
+export interface ScanProgressPruneResult {
+    readonly sessions: number;
+    readonly cursors: number;
 }

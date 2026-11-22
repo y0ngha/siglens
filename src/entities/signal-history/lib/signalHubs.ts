@@ -71,6 +71,14 @@ export const SIGNAL_HUB_WINDOW_DAYS = 30;
  */
 export const SIGNAL_HUB_MIN_INDEXABLE_ROWS = 5;
 
+/**
+ * 신호 페이지가 시장마다 그리는 종목 수의 상한 — 가장 최근에 첫 포착된 순이다. 스캔 대상이 S&P 500 +
+ * 코스피 200 + 코스닥 150으로 커지면 MACD 교차 같은 신호는 한 페이지에 수백 종목이 잡혀, 페이지 무게와
+ * 크롤 예산(색인되지 않는 종목 페이지로 가는 링크 수)이 함께 커진다. 색인 판정·소개 문구의 종목 수는
+ * 이 상한과 무관하게 전체 수(`countHubSymbols`)를 쓴다.
+ */
+export const SIGNAL_HUB_MAX_ROWS_PER_MARKET = 100;
+
 /** 신호 페이지 경로(로케일 접두사 없음 — 링크 컴포넌트·`localizedAbsoluteUrl`이 붙인다). */
 export function signalHubPath(slug: string): string {
     return `/market/signals/${slug}`;

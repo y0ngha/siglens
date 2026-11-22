@@ -140,6 +140,8 @@ next-env.d.ts
 !/scripts/db-dev.sh
 !/scripts/db-tunnel.sh
 !/scripts/db-dev-seed-from-prod.sh
+!/scripts/signal-universe/
+!/scripts/signal-universe/**
 !/scripts/lib/
 !/scripts/lib/**
 # i18n 툴링 — `yarn i18n:extract/translate/verify/lint/routes`가 이 파일들을

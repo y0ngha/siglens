@@ -10,7 +10,11 @@ const notFound = vi.hoisted(() =>
 );
 vi.mock('next/navigation', () => ({ notFound }));
 const hubData = vi.hoisted(() => ({
-    value: { rows: [] as unknown[], degraded: false },
+    value: {
+        rows: [] as unknown[],
+        counts: { us: 0, kr: 0 },
+        degraded: false,
+    },
 }));
 vi.mock('../../_lib/loadSignalHub', () => ({
     loadSignalHub: vi.fn(async () => hubData.value),
@@ -34,7 +38,11 @@ function rows(count: number): unknown[] {
 
 beforeEach(() => {
     notFound.mockClear();
-    hubData.value = { rows: rows(5), degraded: false };
+    hubData.value = {
+        rows: rows(5),
+        counts: { us: 5, kr: 0 },
+        degraded: false,
+    };
 });
 
 describe('/market/signals/[signal]', () => {
@@ -67,15 +75,35 @@ describe('/market/signals/[signal]', () => {
     });
 
     it('행이 모자라면 noindex,follow', async () => {
-        hubData.value = { rows: rows(4), degraded: false };
+        hubData.value = {
+            rows: rows(4),
+            counts: { us: 4, kr: 0 },
+            degraded: false,
+        };
 
         const meta = await generateMetadata({ params: params('golden-cross') });
 
         expect(meta.robots).toEqual({ index: false, follow: true });
     });
 
+    it('줄 수는 상한으로 적어도 전체 종목 수가 기준 이상이면 index', async () => {
+        hubData.value = {
+            rows: rows(2),
+            counts: { us: 120, kr: 0 },
+            degraded: false,
+        };
+
+        const meta = await generateMetadata({ params: params('golden-cross') });
+
+        expect(meta.robots).toMatchObject({ index: true, follow: true });
+    });
+
     it('기록을 못 읽으면(degraded) noindex,follow', async () => {
-        hubData.value = { rows: [], degraded: true };
+        hubData.value = {
+            rows: [],
+            counts: { us: 0, kr: 0 },
+            degraded: true,
+        };
 
         const meta = await generateMetadata({ params: params('death-cross') });
 

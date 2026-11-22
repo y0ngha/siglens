@@ -449,6 +449,13 @@
       "when": 1795285711485,
       "tag": "0063_mail_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795307643463,
+      "tag": "0064_signal_scan_progress",
+      "breakpoints": true
     }
   ]
 }
