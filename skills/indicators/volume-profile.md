@@ -7,8 +7,8 @@ confidence_weight: 0.85
 usage_roles: [confirmation, measurement]
 gating:
   tier: always_on
-token_cost: 394
-digest_hash: "1bfae4db"
+token_cost: 412
+digest_hash: "b9b2298b"
 ---
 
 ## Overview
@@ -22,7 +22,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 - The POC is the price level with the highest volume within the selected period — the market's center of gravity or equilibrium price.
 - Price above POC: the market is trading above its most-agreed-upon fair value — a bullish structural positioning.
 - Price below POC: the market is trading below its fair value center — a bearish structural positioning.
-- POC acts as a strong magnet: price frequently returns to the POC after extended moves. When price approaches POC from above or below, expect strong support or resistance.
+- Price often revisits the POC after extended moves. When price approaches the POC from above or below, cite it as a reference level (an observation, no strength claim).
 - A decisive close through the POC with high volume signals a potential trend flip — buyers and sellers are reversing their relative positions at the most significant level.
 
 ### Value Area (VAH and VAL)
@@ -47,9 +47,9 @@ Volume Profile distributes cumulative traded volume across price levels within a
 
 ## Key Combinations
 
-- Volume Profile + VWAP: When VWAP is near the POC, the level has dual confirmation — institutional intraday fair value and session-long volume distribution agree. This creates the strongest support/resistance zones.
-- Volume Profile + Moving Averages: When POC aligns with MA(20) or MA(60), the technical level has multi-system support.
-- Volume Profile + Bollinger Bands: The POC near the Bollinger middle band confirms the volume-weighted equilibrium coincides with the price mean — a powerful pivot zone.
+- Volume Profile + VWAP: When VWAP is near the POC, session fair value and the session-long volume distribution sit at about the same price. Mention this as an observation, with no strength claim.
+- Volume Profile + Moving Averages: When POC aligns with MA(20) or MA(60), the POC and the moving average sit at about the same price; mention it as an observation.
+- Volume Profile + Bollinger Bands: The POC near the Bollinger middle band shows the volume-weighted equilibrium and the price mean sit at about the same price; mention it as an observation.
 
 ## Caveats
 
@@ -63,7 +63,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 
 **POC (Point of Control)** = highest-volume price level, market center of gravity / equilibrium.
 - Price above POC = bullish structural positioning; below POC = bearish.
-- Strong magnet — price frequently returns to POC after extended moves; expect strong support/resistance on approach.
+- Price often revisits the POC after extended moves; cite it as a reference level on approach (observation, no strength claim).
 - Decisive close through POC on high volume = potential trend flip.
 
 **Value Area (~70% of session volume; VAH upper, VAL lower):**
@@ -76,7 +76,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 
 **HVN/LVN:** High-Volume Nodes = strong S/R, price consolidates/reverses. Low-Volume Nodes = price falls through quickly in direction of momentum.
 
-**Combos:** +VWAP (VWAP near POC = dual confirmation, strongest S/R); +MA(20/60) (POC alignment = multi-system support); +BB (POC near middle band = powerful pivot zone).
+**Combos:** +VWAP (VWAP near POC = both at about the same price, an observation); +MA(20/60) (POC near an MA = same price, an observation); +BB (POC near middle band = same price, an observation). No strength claim for any overlap.
 
 **Caveats:** valid only for its computed period (30 vs 500 bars differ); 80% rule is probabilistic, not guaranteed; low-liquidity/pre-market distorts distributions; POC/VAH/VAL shift as bars added.
 <!-- PROMPT_DIGEST:END -->

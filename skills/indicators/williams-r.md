@@ -12,7 +12,7 @@ gating:
     feature: williamsR
     predicate: level
 token_cost: 564
-digest_hash: "6508ba52"
+digest_hash: "f780b2eb"
 ---
 
 ## Overview
@@ -56,7 +56,7 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 
 - Like all oscillators, Williams %R generates frequent false signals in strong trending markets. An asset in a strong uptrend can remain above -20 for many bars — do not sell solely based on overbought readings during trends.
 - %R is related to Fast Stochastic %K by a fixed linear offset (`%R = %K - 100`), so it carries identical informational content on a shifted scale. Using both simultaneously adds no new signal — choose one or the other.
-- The 14-period setting is standard for daily charts. For shorter timeframes, periods of 10 or 21 may provide better sensitivity depending on the asset's characteristics.
+- The 14-period setting is the usual reference. For other timeframes, periods of 10 or 21 may provide better sensitivity depending on the asset's characteristics.
 - %R does not incorporate volume information. Combine with volume-based indicators (OBV, MFI) for more robust signal confirmation.
 
 <!-- PROMPT_DIGEST:START -->

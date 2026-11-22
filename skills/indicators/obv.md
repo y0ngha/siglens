@@ -7,8 +7,8 @@ confidence_weight: 0.8
 usage_roles: [confirmation, measurement]
 gating:
   tier: always_on
-token_cost: 517
-digest_hash: "2bf75817"
+token_cost: 525
+digest_hash: "79d1374b"
 ---
 
 ## Overview
@@ -52,7 +52,7 @@ OBV (On-Balance Volume), developed by Joe Granville in 1963, is a cumulative vol
 - OBV treats all volume equally regardless of the magnitude of the price move. A 0.01% gain with 10M volume adds the same as a 5% gain with 10M volume.
 - In low-volume environments or for thinly traded stocks, OBV can produce noisy, unreliable signals.
 - Gap days can distort OBV significantly — a large gap up on moderate volume inflates OBV disproportionately.
-- OBV works best on daily or higher timeframes. Intraday OBV is heavily influenced by market microstructure noise.
+- OBV works best on daily or longer bar timeframes. OBV on short bar timeframes is heavily influenced by market microstructure noise.
 
 <!-- PROMPT_DIGEST:START -->
 ### OBV (On-Balance Volume) — cumulative volume indicator
@@ -75,6 +75,6 @@ OBV flat: sideways while price oscillates = accumulation/distribution equilibriu
 
 Combinations: + RSI (both diverging at same point = dual-confirmation reversal); + MACD (OBV breakout + MACD golden cross = volume + price confirmation); + Volume Profile (OBV direction + POC alignment = strong S/R zone); + Bollinger (OBV breakout during squeeze = directional commitment).
 
-Caveats: cumulative — absolute value meaningless, only direction/slope matter. Treats all volume equally regardless of price-move magnitude. Noisy, unreliable signals for low-volume/thinly-traded stocks. Gap days distort it disproportionately. Best on daily+; intraday dominated by microstructure noise.
+Caveats: cumulative — absolute value meaningless, only direction/slope matter. Treats all volume equally regardless of price-move magnitude. Noisy, unreliable signals for low-volume/thinly-traded stocks. Gap days distort it disproportionately. Best on daily or longer bars; short bar timeframes are dominated by microstructure noise.
 <!-- PROMPT_DIGEST:END -->
 

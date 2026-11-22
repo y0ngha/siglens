@@ -6,8 +6,8 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 843
-digest_hash: "7e67defc"
+token_cost: 844
+digest_hash: "7014b9b0"
 ---
 
 ## Indicator Core (compressed)
@@ -48,7 +48,7 @@ Interpret only the values present in this prompt's indicator section.
 
 - **OBV:** cumulative volume flow; OBV trend confirming/diverging from price = conviction signal.
 - **CMF:** -1..+1 money-flow; >0 accumulation / <0 distribution; zero-line flip = flow shift.
-- **VWAP:** session volume-weighted avg (intraday only); price vs VWAP = institutional fair-value bias.
+- **VWAP:** session volume-weighted avg (intraday bars only); price vs VWAP = institutional fair-value bias.
 - **Buy/Sell Volume:** buy/(buy+sell) ratio; ≥0.65 buy pressure / ≤0.35 sell pressure; price-volume divergence = exhaustion.
 - **Volume Profile:** volume-by-price; POC / high-volume nodes = magnet levels, low-volume gaps = fast-move zones.
 
@@ -85,7 +85,7 @@ Volatility/Bands:
 Volume:
 - **OBV:** cumulative volume flow; confirming/diverging from price = conviction signal.
 - **CMF:** -1..+1 money-flow; >0 accumulation / <0 distribution; zero-line flip = flow shift.
-- **VWAP:** session volume-weighted avg (intraday only); price vs VWAP = institutional fair-value bias.
+- **VWAP:** session volume-weighted avg (intraday bars only); price vs VWAP = institutional fair-value bias.
 - **Buy/Sell Volume:** buy/(buy+sell) ratio; ≥0.65 buy pressure / ≤0.35 sell pressure; price-volume divergence = exhaustion.
 - **Volume Profile:** volume-by-price; POC / high-volume nodes = magnet levels, low-volume gaps = fast-move zones.
 Regime alignment (cross-indicator):

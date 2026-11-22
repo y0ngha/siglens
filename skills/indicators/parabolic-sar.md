@@ -10,7 +10,7 @@ gating:
   signal_kind: event
   triggers: [parabolic_sar_flip, parabolic_sar_bearish_flip]
 token_cost: 549
-digest_hash: "c68cfd71"
+digest_hash: "496596af"
 ---
 
 ## Overview
@@ -53,7 +53,7 @@ Parabolic SAR (Stop and Reverse), developed by J. Welles Wilder in 1978, plots d
 ## Caveats
 
 - Parabolic SAR performs poorly in ranging or choppy markets. Frequent flips generate whipsaw losses — always filter with a trend strength indicator (ADX, EMA slope).
-- The standard parameters (AF start 0.02, AF max 0.20) are optimized for daily charts. Shorter timeframes may benefit from higher AF start values; longer timeframes from lower values.
+- The standard parameters (AF start 0.02, AF max 0.20) are the usual reference. Shorter timeframes may benefit from higher AF start values; longer timeframes from lower values.
 - SAR is a lagging indicator that follows price action — it does not predict reversals, it confirms them after they begin.
 - In strongly trending markets, SAR can stay on one side for extended periods. Do not exit a position solely because SAR has been running for many bars — let the flip signal determine the exit.
 - Gap openings can cause the SAR to instantly flip, even if the underlying trend is intact. Verify gap-triggered flips with volume and other indicators.

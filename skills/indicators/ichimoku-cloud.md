@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
-token_cost: 734
-digest_hash: "2548155d"
+token_cost: 743
+digest_hash: "3bec964d"
 ---
 
 ## Overview
@@ -62,7 +62,7 @@ When all three align, the probability of trend continuation is significantly ele
 ## Key Combinations
 
 - Ichimoku + ADX: When ADX > 25 and price is above the Ichimoku cloud, the trend has both Ichimoku structural support and ADX strength confirmation.
-- Ichimoku + Volume Profile: When the Kijun-sen or cloud boundary aligns with the Volume Profile POC, the support/resistance level has dual structural and volume-distribution backing.
+- Ichimoku + Volume Profile: When the Kijun-sen or cloud boundary aligns with the Volume Profile POC, the two sit at about the same price; mention it as an observation.
 - Ichimoku + MA(200): When price is above both the Ichimoku cloud and MA(200), the highest-timeframe trend consensus is bullish.
 
 ## Caveats
@@ -105,7 +105,7 @@ Cloud shape / future structure:
 
 Three-signal alignment (strongest signals): (1) price above cloud, (2) Tenkan above Kijun, (3) Chikou above past price. All three aligned → trend continuation probability significantly elevated (bearish mirror when all inverted).
 
-Confluence: ADX > 25 + price above cloud = structural + strength confirmation. Kijun/cloud boundary aligned with Volume Profile POC = dual S/R backing. Price above both cloud and MA(200) = highest-timeframe bullish consensus.
+Confluence: ADX > 25 + price above cloud = structural + strength confirmation. Kijun/cloud boundary at about the same price as the Volume Profile POC = an observation, no strength claim. Price above both cloud and MA(200) = highest-timeframe bullish consensus.
 
 Caveats: in choppy/sideways markets price repeatedly enters/exits cloud → conflicting signals; ineffective in ranging conditions. 9/26/52 designed for 6-day rice markets; some use 10/30/60 for 5-day weeks. Meaningful signals emerge over longer periods; short-term reads = noise. For automation reference actual close vs price 26 bars ago (Chikou is plotted shifted).
 <!-- PROMPT_DIGEST:END -->

@@ -11,8 +11,8 @@ gating:
   state:
     feature: vwap
     predicate: bandDistAtr
-token_cost: 441
-digest_hash: "698e45a9"
+token_cost: 454
+digest_hash: "8995ddc8"
 ---
 
 ## Overview
@@ -31,7 +31,7 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 
 - Price pulling back to VWAP from above and holding: VWAP is acting as support — a buying opportunity in the direction of the prevailing trend.
 - Price rallying to VWAP from below and stalling: VWAP is acting as resistance — a potential short entry point.
-- The strength of VWAP as support/resistance increases when high-volume accumulation occurred near that level during the session.
+- Note when the session traded heavy volume near the VWAP level; this is an observation, not a strength claim.
 
 ### VWAP Breakout Signals
 
@@ -48,18 +48,18 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 
 - VWAP is most meaningful for intraday (1-minute to 15-minute) analysis where session-based volume accumulation is relevant.
 - On hourly charts, VWAP is still useful as a reference level for the current session.
-- On daily charts and above, VWAP loses its analytical value unless using an anchored VWAP from a significant event (earnings release, gap day, swing low/high).
+- On daily and longer bars, VWAP loses its analytical value unless using an anchored VWAP from a significant event (earnings release, gap day, swing low/high).
 
 ## Key Combinations
 
 - VWAP + Volume: VWAP alone is insufficient — volume at the point of breakout is the confirmation. High-volume VWAP breaks are the highest-probability setups.
 - VWAP + Stochastic RSI: VWAP provides the directional bias; Stochastic RSI identifies the short-term entry timing within that bias.
-- VWAP + Volume Profile: VWAP and POC (Point of Control) convergence zones create especially strong support/resistance. When VWAP is near the POC, the level has both time-based and volume-distribution support.
+- VWAP + Volume Profile: VWAP and POC (Point of Control) convergence zones are worth mentioning as an observation. When VWAP is near the POC, the time-based average and the volume-distribution peak sit at about the same price; make no strength claim.
 
 ## Caveats
 
 - VWAP is session-based. Its value resets each day, making it irrelevant as a multi-day support/resistance level in most cases.
-- On daily bars, VWAP represents the session average rather than a standard chart-based VWAP. Its interpretation differs from intraday use.
+- On daily and longer bars, VWAP represents the session average rather than a standard chart-based VWAP. Its interpretation differs from intraday use.
 - Do not use VWAP alone as a decision tool. It is most effective when combined with volume analysis and trend context.
 - **Late-session volume sensitivity**: VWAP is an equally weighted volume-price average across the session, so a single high-volume bar late in the day (e.g., a closing auction surge, block print, or news-driven spike) can pull VWAP significantly. This can create a distorted reference level that persists into the next session if an anchored VWAP is carried over. On days with heavy late-session volume, re-assess VWAP reliability before treating it as fair value.
 
@@ -76,7 +76,7 @@ Institutional fair-value benchmark. Primarily intraday; significance diminishes 
 **Support/Resistance:**
 - Pullback to VWAP from above & holding = support (buy in direction of prevailing trend).
 - Rally to VWAP from below & stalling = resistance (short entry).
-- Strength increases when high-volume accumulation occurred near that level.
+- Note when the session traded heavy volume near the level (an observation, no strength claim).
 
 **Breakout:**
 - Break above VWAP with above-average volume = strong bullish, high-prob intraday long.
@@ -89,7 +89,7 @@ Institutional fair-value benchmark. Primarily intraday; significance diminishes 
 
 **Timeframe:** most meaningful intraday (1–15min); hourly still useful; daily+ loses value unless anchored VWAP from a significant event (earnings, gap day, swing high/low).
 
-**Combos:** +Volume (confirmation at breakout = highest prob); +Stochastic RSI (VWAP = bias, StochRSI = entry timing); +Volume Profile (VWAP near POC = strongest S/R).
+**Combos:** +Volume (confirmation at breakout = highest prob); +Stochastic RSI (VWAP = bias, StochRSI = entry timing); +Volume Profile (VWAP near POC = same price, an observation, no strength claim).
 
 **Caveats:** session-based, resets daily — not a multi-day S/R level; daily bars = session average not standard VWAP; don't use alone; late-session volume sensitivity — single high-volume late bar (closing auction, block print, news spike) can distort VWAP; re-assess reliability on heavy late-session days.
 <!-- PROMPT_DIGEST:END -->

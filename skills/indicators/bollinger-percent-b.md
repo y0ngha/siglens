@@ -1,6 +1,6 @@
 ---
 name: Bollinger %B & BandWidth Signal Guide
-description: 볼린저 %B·BandWidth 신호 해석 가이드 — 평균 회귀 이벤트(일봉 숏의 측정 엣지), 스퀴즈, "태그는 신호가 아니다" 원칙
+description: 볼린저 %B·BandWidth 신호 해석 가이드 — 평균 회귀 이벤트(일봉에서 측정된 숏 엣지), 스퀴즈, "태그는 신호가 아니다" 원칙
 type: indicator_guide
 indicators: ['bollingerDerived']
 confidence_weight: 0.55
@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bollinger_percentb_oversold, bollinger_percentb_overbought]
-token_cost: 669
-digest_hash: "b87d3178"
+token_cost: 679
+digest_hash: "7633808e"
 ---
 
 ## Overview
@@ -42,11 +42,11 @@ This is the **single pro-indicator with a measured standalone edge**, and even t
 
 Our 2-year, look-ahead-safe forward-edge study (10 large-cap US equities, pooled) found:
 
-- **%B overbought-reversal SHORT on the DAILY timeframe** (cross down through 0.95) is the real signal: roughly +0.94% excess return at h=5 (t ≈ 2.19, n=113) and +2.00% at h=10 (t ≈ 3.10, n=112) — coherent across two horizons with the right sign.
+- **%B overbought-reversal SHORT on daily bars (the measured timeframe)** (cross down through 0.95) is the real signal: roughly +0.94% excess return at h=5 (t ≈ 2.19, n=113) and +2.00% at h=10 (t ≈ 3.10, n=112) — coherent across two horizons with the right sign.
 - The %B oversold-long side was *not* confirmed: its only significant cell (1H, h=24) is isolated and likely an artifact. **Treat the long-side cross as weaker than the short-side.**
 - Across 126 cells only 3 cleared significance versus ~6 expected by chance, so even %B is best described as MODEST, consistent with the literature ("contrarian Bollinger works, naive breakout does not"; edge decays over time).
 
-The practical implication: the daily short reversion is the designated edge, but it still **requires confirmation** before acting — never trade a bare %B cross.
+The practical implication: the short reversion measured on daily bars is the designated edge, but it still **requires confirmation** before acting — never trade a bare %B cross.
 
 ## Recommended Combinations
 
@@ -59,7 +59,7 @@ The practical implication: the daily short reversion is the designated edge, but
 - **Bollinger's own Rule 6**: "Tags of the bands are just that, tags — not signals." A %B touch or extreme is context, never a standalone trigger. This guide encodes that as the event-gate-plus-confirmation requirement.
 - The long-side oversold cross is empirically weaker than the short-side overbought cross; weight it down accordingly.
 - BandWidth predicts volatility expansion, not direction — never infer a side from the squeeze alone.
-- The measured edge is daily and short-horizon (≈5–10 bars). Do not extrapolate it to intraday or to multi-week holds.
+- The measured edge comes from daily bars and a short horizon (≈5–10 bars). Do not extrapolate it to other bar timeframes or to multi-week holds.
 
 <!-- PROMPT_DIGEST:START -->
 ### Bollinger %B & BandWidth Signal Guide
@@ -77,7 +77,7 @@ BandWidth / Squeeze:
 - BandWidth expansion confirms a breakout has real volatility behind it.
 
 Measured reliability: the single pro-indicator with a measured standalone edge, and even that is modest — confidence weight 0.55 (highest of the twelve, still well below RSI/MACD 0.9).
-- DAILY %B overbought-reversal SHORT (cross down through 0.95) is the real signal: ~+0.94% excess return at h=5 (t≈2.19, n=113) and +2.00% at h=10 (t≈3.10, n=112) — coherent across two horizons.
+- %B overbought-reversal SHORT on daily bars (cross down through 0.95) is the real signal: ~+0.94% excess return at h=5 (t≈2.19, n=113) and +2.00% at h=10 (t≈3.10, n=112) — coherent across two horizons.
 - %B oversold-LONG side NOT confirmed (only significant cell 1H h=24, isolated/likely artifact) — treat the long-side cross as WEAKER than the short-side.
 - Across 126 cells only 3 cleared significance vs ~6 expected by chance — MODEST. Requires confirmation; never trade a bare %B cross.
 
@@ -86,5 +86,5 @@ Combinations:
 - %B + BandWidth: only take reversion crosses when BandWidth is normal/expanded; inside a tight squeeze an extreme %B is more likely the start of an expansion than a reversion.
 - %B + regime lens (Hurst / Variance Ratio / Regression R²): reversion edge strongest in mean-reverting / low-R² regime; suppress the counter-trend %B short in a clean trend (high R², H>0.5).
 
-Caveats: Bollinger's Rule 6 — "tags of the bands are just tags, not signals" (context + confirmation always required); long-side oversold cross empirically weaker than short-side; BandWidth = vol expansion not direction; edge is daily short-horizon (≈5–10 bars), do not extrapolate to intraday or multi-week holds.
+Caveats: Bollinger's Rule 6 — "tags of the bands are just tags, not signals" (context + confirmation always required); long-side oversold cross empirically weaker than short-side; BandWidth = vol expansion not direction; edge was measured on daily bars at a short horizon (≈5–10 bars), do not extrapolate to other bar timeframes or multi-week holds.
 <!-- PROMPT_DIGEST:END -->

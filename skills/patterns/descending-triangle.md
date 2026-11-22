@@ -17,7 +17,7 @@ gating:
   signal_kind: event
   triggers: [descending_triangle]
 token_cost: 880
-digest_hash: "3f710352"
+digest_hash: "bc2c793d"
 ---
 
 ## Detection Criteria
@@ -63,7 +63,7 @@ Factors that decrease confidence:
 - **Apex breakdown**: Breakdowns occurring very close to or past the apex point have significantly reduced reliability and measured move potential.
 - **No volume confirmation**: A breakdown below support without a volume surge may be a false breakdown. Price may quickly reverse back inside the triangle.
 - **Strong support context**: If the horizontal support coincides with a major historical support level and is being tested for the first time, the likelihood of a bounce increases.
-- **Premature breakdown**: An intraday wick below support without a closing break is not confirmation.
+- **Premature breakdown**: A within-bar wick below support without a closing break is not confirmation.
 
 ## Entry/Exit Considerations
 
@@ -92,7 +92,7 @@ Geometry:
 - Price converges (range narrows) toward apex. Minimum 15 bars.
 - Engine: lines through confirmed pivots (window 8→5 pivots, grown back to ≤16 while all touches kept), bars contained within 0.25 ATR, touch = within 0.35 ATR, lines interleave (≥2 touches each from the other's first touch); upper falling ≥1.5 ATR + flat lower (≤min(0.75 ATR, 1% price) move) (in between = not drawn), ≥2 touches each, end width ≤0.7× start; direction fixed down; ≥15 bars; height ≥2.5 ATR and the price-share minimum. Lines drawn solid first→last touch, dashed to the bar the printed value is read. Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
-Confirmation: close BELOW horizontal support with increased volume. Intraday wick below support without a close = not confirmed. Volume should decline as triangle narrows.
+Confirmation: close BELOW horizontal support with increased volume. Within-bar wick below support without a close = not confirmed. Volume should decline as triangle narrows.
 
 Confidence (weight 0.55) — Bulkowski dt.html: breaks UP 53% of the time; failure 22% up / 23% down; 50% of down breakouts meet target; performance almost halved since the 1990s.
 - Increase: 3+ touches on support, 3+ on resistance, declining volume, breakdown in first 2/3 (50%–75% point most reliable), prior downtrend.

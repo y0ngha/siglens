@@ -16,13 +16,13 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [high_tight_flag]
-token_cost: 552
-digest_hash: "4e4bf76f"
+token_cost: 554
+digest_hash: "0c3e3a06"
 ---
 
 ## Detection Criteria
 
-- **Pole**: a rise of at least 90% from the pole base (lowest low) to the pole top (highest high) within 40 bars. Bulkowski (htf.html): "Price must rise at least 90% (shoot for a double) in 2 months or less." On daily bars this is the only timeframe where the rule realistically fires; on intraday charts it effectively never does.
+- **Pole**: a rise of at least 90% from the pole base (lowest low) to the pole top (highest high) within 40 bars. Bulkowski (htf.html): "Price must rise at least 90% (shoot for a double) in 2 months or less." The rule fires realistically only on bars long enough for a 90% rise to occur within 40 bars (daily or longer); on short bar timeframes it effectively never does.
 - **Pole top**: the highest high among the last 31 bars, not exceeded by any earlier bar in its pole lookback (otherwise it is a lower high inside a longer consolidation).
 - **Flag**: at least 3 bars after the pole top, giving back no more than 25% of the pole top. Bulkowski: it "usually doesn't look like a flag or pennant, just a pause in the price rise."
 - **Confirmation**: a CLOSE above the highest peak in the pattern — usually the pole top. Bulkowski: "Only buy when price closes above the highest peak in the chart pattern (including the flagpole)" — his newer research found that a flag-trendline break "fail[s] too often."
@@ -55,7 +55,7 @@ Factors that decrease confidence:
 - **Pole too small or too slow**: under +90%, or taking longer than ~40 bars — that is a regular bull flag or a trend, not a high tight flag.
 - **Deep flag**: more than 25% give-back from the pole top.
 - **Unconfirmed**: no close above the highest peak — Bulkowski warns early entries risk the pattern never confirming.
-- **Intraday timeframe**: a +90% pole is implausible; treat an intraday hit with suspicion.
+- **Short bar timeframes**: a +90% pole within 40 bars is implausible; treat a hit there with suspicion.
 
 ## Entry/Exit Considerations
 
@@ -78,7 +78,7 @@ When this pattern is detected, include the following in the analysis response:
 하이 타이트 플래그 (High Tight Flag) — bullish continuation, confidence_weight 0.7 (Bulkowski htf.html: failure 15%, rank 30/39, 82% meet a HALF-height target, throwback 67%).
 
 ### Detection
-- Pole: ≥+90% from pole base (lowest low) to pole top (highest high) within 40 bars (Bulkowski: ≥90% in ≤2 months). Realistic on daily bars only.
+- Pole: ≥+90% from pole base (lowest low) to pole top (highest high) within 40 bars (Bulkowski: ≥90% in ≤2 months). Realistic only on daily or longer bars.
 - Flag: ≥3 bars after the pole top, give-back ≤25% of the pole top; usually just a pause, not a neat flag.
 - Engine: the pole/flag rules are evaluated on bars up to the last confirmed pivot (not the last bar); pole top must be a confirmed swing high, flag low = a confirmed swing low after it (none yet → not listed).
 - Replaces bull_flag / pennant for the same pause.
