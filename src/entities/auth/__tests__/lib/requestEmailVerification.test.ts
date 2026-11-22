@@ -156,6 +156,28 @@ describe('requestEmailVerification', () => {
             expect(result).toEqual({ ok: false, reason: 'email_send_failed' });
         });
 
+        it('still reports email_send_failed when releasing the cooldown fails', async () => {
+            const { dependencies } = makeDependencies(failure);
+            const { buildMessage } = makeBuildMessage();
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            const result = await requestEmailVerification(
+                { email: 'user@example.com' },
+                {
+                    ...dependencies,
+                    // first call resets the attempt counter, second releases the cooldown
+                    resetCounter: vi
+                        .fn()
+                        .mockResolvedValueOnce(undefined)
+                        .mockRejectedValueOnce(new Error('redis')),
+                },
+                { buildMessage }
+            );
+
+            expect(result).toEqual({ ok: false, reason: 'email_send_failed' });
+            warn.mockRestore();
+        });
+
         it('releases only the per-address cooldown and keeps every other counter', async () => {
             const { dependencies, limiter } = makeDependencies(failure);
             const { buildMessage } = makeBuildMessage();

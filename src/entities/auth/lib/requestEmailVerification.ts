@@ -94,9 +94,16 @@ export async function requestEmailVerification(
         });
 
     if (!emailDispatched) {
-        await dependencies.resetCounter(
-            emailVerificationCooldownKey(emailHash)
-        );
+        // Releasing the cooldown is best-effort: if it fails the user waits out the 60 s,
+        // but the answer must still say the mail was not sent rather than `unexpected`.
+        await dependencies
+            .resetCounter(emailVerificationCooldownKey(emailHash))
+            .catch((error: unknown) => {
+                console.warn(
+                    '[requestEmailVerification] cooldown release failed after a send failure:',
+                    redactDbErrorForLog(error)
+                );
+            });
         return { ok: false, reason: 'email_send_failed' };
     }
 
