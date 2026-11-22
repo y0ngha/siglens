@@ -465,6 +465,8 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header.
 
+`coreClientExports.test.ts` fails when client-bundle code imports a core value missing from the browser entry (`dist/index.client.js`), with no baseline. A bundle-reachability guard walks value edges only (type-only imports are erased); fix a latent violation's cause instead of baselining it.
+
 <a id="TE-64"></a>
 
 #### TE-64 — A source guard reads real constants, pins allowlist counts, and scopes its matches
