@@ -26,9 +26,10 @@ const PURPOSE = 'password_reset' as const;
 /**
  * 1회용 비밀번호 재설정 토큰을 발급해 메일로 보낸다. 토큰은 해시만 저장한다.
  *
- * 잘못된 이메일·없는 계정·비밀번호 없는(OAuth 전용) 계정은 모두 `ok: true`
- * (`tokenIssued: false`)로 같게 응답해 계정 존재 여부가 새지 않게 한다. 발송 실패는
- * 던지지 않고 `emailDispatched: false`로 알린다.
+ * 잘못된 이메일·없는 계정·비밀번호 없는(OAuth 전용) 계정·기존 계정 모두 `ok: true`로
+ * 같게 응답한다. 계정이 있을 때만 하는 I/O(토큰 저장·메일 발송)는 `deferDispatch`로 응답 뒤에
+ * 돌려, 응답 시간으로도 계정 존재 여부가 새지 않게 한다 — 응답 경로의 await는 두 경우 모두
+ * 한도 확인과 계정 조회뿐이다. 그 대가로 발송 성공 여부는 호출자가 알 수 없고, 실패는 로그로만 남는다.
  *
  * 남용 한도(가입 코드 요청 `requestEmailVerification`과 같은 숫자·순서). 형식 검사는 먼저 하고 세지 않는다.
  * 그 뒤 IP(해시) 한도를 주소 한도보다 먼저 세고, 첫 거부에서 멈춰 `rate_limited`를 돌려준다(DB·토큰·메일 없음).
@@ -44,7 +45,7 @@ export async function requestPasswordReset(
     const emailError = validateEmail(email);
 
     if (emailError !== null) {
-        return { ok: true, tokenIssued: false, emailDispatched: false };
+        return { ok: true };
     }
 
     const emailHash = hashEmailToken(email);
@@ -72,30 +73,31 @@ export async function requestPasswordReset(
 
     const user = await dependencies.users.findEmailAuthUserByEmail(email);
 
-    if (user === null || user.passwordHash === null) {
-        return { ok: true, tokenIssued: false, emailDispatched: false };
+    if (user !== null && user.passwordHash !== null) {
+        const rawToken = generateUrlSafeToken(PASSWORD_RESET_TOKEN_BYTE_LENGTH);
+        const tokenHash = hashEmailToken(rawToken);
+
+        // 토큰 저장(Redis)과 메일 발송(Resend)은 응답 뒤로 미룬다. 계정이 있을 때만 하는 I/O라
+        // 응답 경로에서 기다리면 응답 시간으로 계정 존재 여부가 드러난다.
+        dependencies.deferDispatch(async () => {
+            try {
+                await dependencies.emailTokens.set(
+                    PURPOSE,
+                    email,
+                    { status: 'pending', tokenHash },
+                    PASSWORD_RESET_TTL_SECONDS
+                );
+                await dependencies.emailDispatcher.sendEmail(
+                    options.buildMessage(rawToken)
+                );
+            } catch (error: unknown) {
+                console.warn(
+                    '[requestPasswordReset] deferred token store/dispatch failed',
+                    redactDbErrorForLog(error)
+                );
+            }
+        });
     }
 
-    const rawToken = generateUrlSafeToken(PASSWORD_RESET_TOKEN_BYTE_LENGTH);
-    const tokenHash = hashEmailToken(rawToken);
-
-    await dependencies.emailTokens.set(
-        PURPOSE,
-        email,
-        { status: 'pending', tokenHash },
-        PASSWORD_RESET_TTL_SECONDS
-    );
-
-    const message = options.buildMessage(rawToken);
-    const emailDispatched = await dependencies.emailDispatcher
-        .sendEmail(message)
-        .catch((error: unknown) => {
-            console.warn(
-                '[requestPasswordReset] emailDispatcher.sendEmail failed',
-                redactDbErrorForLog(error)
-            );
-            return false;
-        });
-
-    return { ok: true, tokenIssued: true, emailDispatched };
+    return { ok: true };
 }

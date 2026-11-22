@@ -30,7 +30,7 @@ function createMockDependencies(
             ...overrides.emailAuthUsers,
         } as unknown as ConfirmPasswordResetDependencies['emailAuthUsers'],
         users: {
-            updatePassword: vi.fn().mockResolvedValue(true),
+            resetPasswordRevokingSessions: vi.fn().mockResolvedValue(true),
             ...overrides.users,
         } as unknown as ConfirmPasswordResetDependencies['users'],
         passwordHasher: {

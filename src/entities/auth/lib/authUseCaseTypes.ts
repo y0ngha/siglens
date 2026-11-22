@@ -207,6 +207,11 @@ export interface RequestPasswordResetDependencies {
     rateLimit: AuthRateLimiter;
     /** 요청 IP의 해시 — 원본 IP는 키에도 로그에도 남지 않는다. */
     ipHash: () => Promise<string>;
+    /**
+     * 응답을 보낸 뒤 `task`를 실행한다(운영은 `afterWithDrain`). 계정이 있을 때만 하는 I/O를
+     * 응답 경로 밖으로 빼 응답 시간이 계정 존재 여부를 드러내지 않게 한다. `task`는 스스로 실패를 처리한다.
+     */
+    deferDispatch: (task: () => Promise<void>) => void;
 }
 
 /** 토큰으로 메일 본문을 만드는 빌더. 링크 구성은 호출자(feature)가 정한다. */
@@ -215,12 +220,11 @@ export interface RequestPasswordResetOptions {
 }
 
 /**
- * 재설정 요청 결과. 존재하지 않는 계정도 `ok: true`(`tokenIssued: false`)라 계정 존재 여부가 새지 않는다.
+ * 재설정 요청 결과. 계정 유무와 발송 성패와 관계없이 `ok: true` 하나라 계정 존재 여부가 새지 않는다.
  * 한도에 걸리면 `rate_limited`다 — 주소·IP로만 정해지고 DB를 읽지 않으므로 열거 신호가 아니다.
  */
 export type RequestPasswordResetResult =
-    | { ok: true; tokenIssued: true; emailDispatched: boolean }
-    | { ok: true; tokenIssued: false; emailDispatched: false }
+    | { ok: true }
     | { ok: false; reason: 'rate_limited' };
 
 /** 비밀번호 재설정 확정 입력. `token`은 메일로 받은 원문 토큰. */

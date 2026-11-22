@@ -46,7 +46,7 @@ function makeDeps(overrides: {
         },
         emailAuthUsers: {
             findEmailAuthUserByEmail: vi.fn().mockResolvedValue(user),
-            updatePassword: vi.fn().mockResolvedValue(true),
+            resetPasswordRevokingSessions: vi.fn().mockResolvedValue(true),
         },
         passwordHasher: {
             hashPassword: vi.fn().mockResolvedValue('new-hash'),

@@ -65,7 +65,11 @@ function makeDependencies(options?: {
     findEmailAuthUserByEmail: ReturnType<typeof vi.fn>;
     setToken: ReturnType<typeof vi.fn>;
     sendEmail: ReturnType<typeof vi.fn>;
+    /** 응답 뒤로 미룬 작업. 실행하기 전에는 아무 것도 하지 않은 것과 같다. */
+    deferred: Array<() => Promise<void>>;
+    runDeferred: () => Promise<void>;
 } {
+    const deferred: Array<() => Promise<void>> = [];
     const limiter = createFakeFixedWindowLimiter();
     const blockKey = options?.blockKey;
     const foundUser = options && 'user' in options ? options.user : user;
@@ -93,16 +97,23 @@ function makeDependencies(options?: {
                 return allowed && rule.key !== blockKey;
             },
             ipHash: async () => IP_HASH,
+            deferDispatch: task => {
+                deferred.push(task);
+            },
         },
         limiter,
         findEmailAuthUserByEmail,
         setToken,
         sendEmail,
+        deferred,
+        runDeferred: async () => {
+            await Promise.all(deferred.map(task => task()));
+        },
     };
 }
 
 describe('requestPasswordReset', () => {
-    it('returns tokenIssued false for an invalid email without repository access', async () => {
+    it('returns ok without dispatching for an invalid email without repository access', async () => {
         const { dependencies, findEmailAuthUserByEmail, setToken, sendEmail } =
             makeDependencies();
         const { buildMessage, calls } = makeBuildMessage();
@@ -113,18 +124,14 @@ describe('requestPasswordReset', () => {
             { buildMessage }
         );
 
-        expect(result).toEqual({
-            ok: true,
-            tokenIssued: false,
-            emailDispatched: false,
-        });
+        expect(result).toEqual({ ok: true });
         expect(findEmailAuthUserByEmail).not.toHaveBeenCalled();
         expect(setToken).not.toHaveBeenCalled();
         expect(sendEmail).not.toHaveBeenCalled();
         expect(calls).toHaveLength(0);
     });
 
-    it('returns tokenIssued false when no account matches the email', async () => {
+    it('returns ok without dispatching when no account matches the email', async () => {
         const { dependencies, findEmailAuthUserByEmail, setToken, sendEmail } =
             makeDependencies({ user: null });
         const { buildMessage } = makeBuildMessage();
@@ -135,11 +142,7 @@ describe('requestPasswordReset', () => {
             { buildMessage }
         );
 
-        expect(result).toEqual({
-            ok: true,
-            tokenIssued: false,
-            emailDispatched: false,
-        });
+        expect(result).toEqual({ ok: true });
         expect(findEmailAuthUserByEmail).toHaveBeenCalledWith(
             'missing@example.com'
         );
@@ -147,7 +150,7 @@ describe('requestPasswordReset', () => {
         expect(sendEmail).not.toHaveBeenCalled();
     });
 
-    it('returns tokenIssued false for OAuth-only accounts without a password hash', async () => {
+    it('returns ok without dispatching for OAuth-only accounts without a password hash', async () => {
         const { dependencies, setToken, sendEmail } = makeDependencies({
             user: { ...user, passwordHash: null },
         });
@@ -159,17 +162,14 @@ describe('requestPasswordReset', () => {
             { buildMessage }
         );
 
-        expect(result).toEqual({
-            ok: true,
-            tokenIssued: false,
-            emailDispatched: false,
-        });
+        expect(result).toEqual({ ok: true });
         expect(setToken).not.toHaveBeenCalled();
         expect(sendEmail).not.toHaveBeenCalled();
     });
 
-    it('persists a token hash, dispatches the email, and reports emailDispatched true', async () => {
-        const { dependencies, setToken, sendEmail } = makeDependencies();
+    it('persists a token hash and dispatches the email once the deferred task runs', async () => {
+        const { dependencies, setToken, sendEmail, deferred, runDeferred } =
+            makeDependencies();
         const { buildMessage, calls } = makeBuildMessage();
 
         const result = await requestPasswordReset(
@@ -178,11 +178,13 @@ describe('requestPasswordReset', () => {
             { buildMessage }
         );
 
-        expect(result).toEqual({
-            ok: true,
-            tokenIssued: true,
-            emailDispatched: true,
-        });
+        expect(result).toEqual({ ok: true });
+        // 응답 경로에서는 토큰 저장도 메일 발송도 기다리지 않는다.
+        expect(deferred).toHaveLength(1);
+        expect(setToken).not.toHaveBeenCalled();
+        expect(sendEmail).not.toHaveBeenCalled();
+
+        await runDeferred();
 
         expect(setToken).toHaveBeenCalledTimes(1);
         const [purpose, email, value, ttl] = setToken.mock.calls[0] as [
@@ -206,40 +208,109 @@ describe('requestPasswordReset', () => {
         );
     });
 
-    it('reports emailDispatched false when the dispatcher resolves false', async () => {
-        const { dependencies } = makeDependencies({ sendEmailResolves: false });
+    it('sends the mail only after the token is stored', async () => {
+        const { dependencies, setToken, sendEmail, runDeferred } =
+            makeDependencies();
+        const order: string[] = [];
+        setToken.mockImplementation(async () => {
+            order.push('set');
+        });
+        sendEmail.mockImplementation(async () => {
+            order.push('send');
+            return true;
+        });
         const { buildMessage } = makeBuildMessage();
 
-        const result = await requestPasswordReset(
+        await requestPasswordReset(
             { email: 'user@example.com' },
             dependencies,
-            { buildMessage }
+            {
+                buildMessage,
+            }
         );
+        await runDeferred();
 
-        expect(result).toEqual({
-            ok: true,
-            tokenIssued: true,
-            emailDispatched: false,
-        });
+        expect(order).toEqual(['set', 'send']);
     });
 
-    it('keeps tokenIssued true and reports emailDispatched false when the dispatcher throws', async () => {
-        const { dependencies, setToken } = makeDependencies({
-            sendEmailThrows: true,
-        });
-        const { buildMessage } = makeBuildMessage();
+    it('keeps the response identical when the deferred dispatch fails, and logs it without secrets', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+            const { dependencies, runDeferred } = makeDependencies({
+                sendEmailThrows: true,
+            });
+            const { buildMessage } = makeBuildMessage();
 
-        const result = await requestPasswordReset(
-            { email: 'user@example.com' },
-            dependencies,
-            { buildMessage }
-        );
+            const result = await requestPasswordReset(
+                { email: 'user@example.com' },
+                dependencies,
+                { buildMessage }
+            );
+            await expect(runDeferred()).resolves.toBeUndefined();
 
-        expect(setToken).toHaveBeenCalledTimes(1);
-        expect(result).toEqual({
-            ok: true,
-            tokenIssued: true,
-            emailDispatched: false,
+            expect(result).toEqual({ ok: true });
+            expect(warn).toHaveBeenCalledTimes(1);
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringContaining('[requestPasswordReset]'),
+                expect.anything()
+            );
+        } finally {
+            warn.mockRestore();
+        }
+    });
+
+    describe('응답 시간 동등성(N69)', () => {
+        /**
+         * 시계를 재지 않고 "응답 전에 기다린 일"의 순서를 비교한다. 계정이 있을 때만 하는
+         * I/O(토큰 저장·메일 발송)가 응답 경로에 들어오면 두 로그가 달라진다.
+         */
+        async function awaitedCalls(
+            foundUser: EmailAuthUserRecord | null
+        ): Promise<string[]> {
+            const { dependencies, setToken, sendEmail } = makeDependencies({
+                user: foundUser,
+            });
+            const log: string[] = [];
+            const rateLimit = dependencies.rateLimit;
+            dependencies.rateLimit = async rule => {
+                log.push(`rateLimit:${rule.key}`);
+                return rateLimit(rule);
+            };
+            const findUser = dependencies.users.findEmailAuthUserByEmail;
+            dependencies.users = {
+                findEmailAuthUserByEmail: async email => {
+                    log.push('findUser');
+                    return findUser(email);
+                },
+            };
+            // 발송이 영원히 끝나지 않아도 응답은 나가야 한다.
+            setToken.mockImplementation(() => new Promise(() => {}));
+            sendEmail.mockImplementation(() => new Promise(() => {}));
+            const { buildMessage } = makeBuildMessage();
+
+            const result = await requestPasswordReset(
+                { email: 'user@example.com' },
+                dependencies,
+                { buildMessage }
+            );
+            expect(result).toEqual({ ok: true });
+            log.push(`setToken:${setToken.mock.calls.length}`);
+            log.push(`sendEmail:${sendEmail.mock.calls.length}`);
+            return log;
+        }
+
+        it('awaits exactly the same work whether or not the account exists', async () => {
+            const existing = await awaitedCalls(user);
+            const missing = await awaitedCalls(null);
+            const oauthOnly = await awaitedCalls({
+                ...user,
+                passwordHash: null,
+            });
+
+            expect(existing).toEqual(missing);
+            expect(existing).toEqual(oauthOnly);
+            expect(existing).toContain('findUser');
+            expect(existing.slice(-2)).toEqual(['setToken:0', 'sendEmail:0']);
         });
     });
 
@@ -416,9 +487,9 @@ describe('requestPasswordReset', () => {
             const second = await request('user@example.com');
             const other = await request('other@example.com');
 
-            expect(first).toMatchObject({ ok: true, tokenIssued: true });
+            expect(first).toEqual({ ok: true });
             expect(second).toEqual({ ok: false, reason: 'rate_limited' });
-            expect(other).toMatchObject({ ok: true, tokenIssued: true });
+            expect(other).toEqual({ ok: true });
         });
     });
 });

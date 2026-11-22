@@ -134,7 +134,15 @@ export interface UserRepository {
         input: CreateEmailUserInput
     ): Promise<AuthUserRecord | null>;
     deleteUser(userId: string): Promise<boolean>;
-    updatePassword(userId: string, passwordHash: string): Promise<boolean>;
+    /**
+     * 비밀번호 해시를 바꾸고 그 사용자의 세션을 **모두** 지운다(같은 트랜잭션). 반환값은 사용자 행이
+     * 바뀌었는지이며, 바뀐 행이 없으면 세션도 건드리지 않는다. 유출된 비밀번호로 만든 세션이
+     * 재설정 뒤에도 살아 있지 않게 한다.
+     */
+    resetPasswordRevokingSessions(
+        userId: string,
+        passwordHash: string
+    ): Promise<boolean>;
 }
 
 /** Interface for credential lookup required by email login. */

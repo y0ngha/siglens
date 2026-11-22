@@ -6,6 +6,7 @@ import {
     PASSWORD_RESET_EXPIRED_TOKEN_CODE,
     PASSWORD_RESET_INVALID_TOKEN_CODE,
     PASSWORD_RESET_RATE_LIMITS,
+    RATE_LIMITED_MESSAGE,
 } from './authUseCaseConstants';
 import {
     loginEmailIpKey,
@@ -21,8 +22,6 @@ import type {
 const PURPOSE = 'password_reset' as const;
 const INVALID_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 유효하지 않습니다.';
 const EXPIRED_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 만료되었습니다.';
-const RATE_LIMITED_MESSAGE =
-    '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 const SAME_PASSWORD_MESSAGE =
     '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.';
 
@@ -59,6 +58,10 @@ function samePasswordError(): ConfirmPasswordResetError {
  * 노출하면 무효 토큰으로도 현재 비밀번호를 probe할 수 있으므로, 먼저 get(소비 없음)으로
  * 토큰을 선검증한 뒤 same-password를 확인하고, 마지막으로 consume으로 원자적으로 소비·재검증한다
  * (TOCTOU 방어).
+ *
+ * 성공하면 그 사용자의 세션을 전부 지운다(`resetPasswordRevokingSessions`가 해시 교체와 같은 트랜잭션에서).
+ * 유출된 비밀번호로 만든 세션이 재설정 뒤에도 살아 있지 않게 하는 것이 목적이며, 이 재설정을 끝낸 브라우저도
+ * 예외가 아니라 로그인 화면(`/login?password_reset=1`)에서 새로 로그인한다.
  *
  * 남용 한도: IP(해시)당 확인 시도만 센다. 형식이 맞는 입력은 토큰 조회 **전에** 세므로 한도에 걸리면 Redis
  * 조회도 없다. 주소별 한도는 없다(제3자가 주인의 링크를 죽일 수 있고, 256비트 토큰은 추측 상한이 필요 없다).
@@ -132,7 +135,7 @@ export async function confirmPasswordReset(
     const passwordHash = await dependencies.passwordHasher.hashPassword(
         input.newPassword
     );
-    const updated = await dependencies.users.updatePassword(
+    const updated = await dependencies.users.resetPasswordRevokingSessions(
         user.id,
         passwordHash
     );
