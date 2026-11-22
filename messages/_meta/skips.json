@@ -889,7 +889,7 @@
     },
     {
         "file": "src/entities/investor-flows/server/getInvestorFlowsPipelineReadiness.ts",
-        "line": 92,
+        "line": 97,
         "reason": "developer-diagnostic",
         "text": "[getInvestorFlowsPipelineReadiness] 상태 조회 실패, unknown:"
     },
@@ -901,7 +901,7 @@
     },
     {
         "file": "src/entities/investor-flows/server/getRecentDilutionEvent.ts",
-        "line": 106,
+        "line": 111,
         "reason": "developer-diagnostic",
         "text": "[getRecentDilutionEvent] 증자 공시 조회 실패, 배지 생략:"
     },

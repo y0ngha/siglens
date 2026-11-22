@@ -11,6 +11,12 @@ import {
 import { getInvestorFlowsDataProvider } from './getInvestorFlowsDataProvider';
 
 /**
+ * 수급 스냅샷 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ * 장애 degrade 엔트리의 10분({@link INVESTOR_FLOWS_DEGRADED_SNAPSHOT_TTL_SECONDS})은 일부러 낮춘 값이다.
+ */
+export const INVESTOR_FLOWS_SNAPSHOT_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
+
+/**
  * FMP 일시 오류로 일부가 빈 스냅샷(`degraded`)을 캐시에 두는 시간 — 12시간 동안 "불러오지 못했어요"가 굳지 않게 짧게 둔다.
  * 이 짧은 읽기가 그 렌더의 ISR revalidate를 10분으로 낮춰, 장애 중 degrade 페이지가 10분마다 한 번만 다시 만들어진다.
  */
@@ -75,7 +81,7 @@ export async function getInvestorFlowsSnapshot(
                 return snapshot;
             },
             tags,
-            SECONDS_PER_HALF_DAY
+            INVESTOR_FLOWS_SNAPSHOT_REVALIDATE_SECONDS
         );
     } catch (error) {
         if (!(error instanceof DegradedSnapshotError)) throw error;

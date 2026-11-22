@@ -9,6 +9,11 @@ import {
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
 
 /**
+ * AI 분석 peek 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS = SECONDS_PER_QUARTER_DAY;
+
+/**
  * 캐시된 기술적 분석을 ISR 정적 렌더에서 안전하게 peek한다. `peekAnalysisCache`(redis
  * 읽기 전용 — enqueue/생성 없음)를 Next data cache로 감싸 static generate가 redis
  * no-store fetch에 막히지 않게 한다. 종목당 캐시이며 revalidate=6h
@@ -65,6 +70,9 @@ export function peekAnalysisStatic(
                 locale
             ),
         ['peek-analysis-static', upper, timeframe, modelId, 'free', locale],
-        { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${upper}`] }
+        {
+            revalidate: PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS,
+            tags: [`symbol:${upper}`],
+        }
     )();
 }

@@ -37,6 +37,11 @@ import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityC
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
+/**
+ * 펀더멘털 섹션 정적 캐시(`fundamental:profile`·`fundamental:metrics-v3` 등)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const FUNDAMENTAL_SECTION_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
 /** TTM 재무비율 캐시 키 — 수익성 카드와 재무 건전성 카드가 같은 캐시 엔트리를 공유한다. */
 const RATIOS_CACHE_KEY = 'fundamental:ratios-v2';
 
@@ -59,7 +64,7 @@ interface LocalizedSectionProps extends SymbolSectionProps {
  * "장애가 이어지는 동안 방문당 최대 5분에 한 번 재렌더"뿐이라, 큐레이션 종목으로 한정하지 않는다.
  *
  * 키는 페이지 게이트(`getProfileResilient`의 `fundamental:profile`)·다른 섹션과 공유되는 리터럴이라
- * 호출부가 그대로 적는다(revalidate clamp 가드가 그 리터럴을 찾는다).
+ * 호출부가 그대로 적는다(revalidate clamp 가드가 `FUNDAMENTAL_SECTION_REVALIDATE_SECONDS`를 읽는다).
  */
 function loadSection<T, F>(
     key: string,
@@ -73,7 +78,7 @@ function loadSection<T, F>(
         symbol,
         load,
         [],
-        SECONDS_PER_DAY
+        FUNDAMENTAL_SECTION_REVALIDATE_SECONDS
     ).catch(async (error: unknown): Promise<F> => {
         console.error(failureLog, redactDbErrorForLog(error));
         await shortenRevalidateForRuntimeDegrade();
@@ -100,7 +105,7 @@ function loadOptionalSection<T, F>(
         symbol,
         load,
         [],
-        SECONDS_PER_DAY
+        FUNDAMENTAL_SECTION_REVALIDATE_SECONDS
     ).catch((error: unknown): F => {
         console.warn(failureLog, redactDbErrorForLog(error));
         return fallback;

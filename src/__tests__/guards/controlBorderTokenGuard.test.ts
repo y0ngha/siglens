@@ -97,10 +97,11 @@ export function borderColourPart(token: string): string | null {
     // 각각 다른 시점에 구멍이 됐다.
     const { bare, variants, unknown } = stripVariants(token);
     // 포커스 계열은 경계가 아니라 포커스 표시(2.4.11/2.4.13)라 대상이 아니고,
-    // 비활성은 1.4.11이 명시적으로 면제한다.
+    // 비활성은 1.4.11이 명시적으로 면제한다. `aria-disabled`는 `disabled`와 같은
+    // 부류다(포커스를 유지하려고 속성 대신 ARIA로 표현할 뿐).
     if (
         variants.some(v =>
-            /^(?:focus|focus-visible|focus-within|peer-focus|group-focus|disabled)$/.test(
+            /^(?:focus|focus-visible|focus-within|peer-focus|group-focus|disabled|aria-disabled)$/.test(
                 v
             )
         )
@@ -195,38 +196,15 @@ function decorativeIn(tokens: string[], file?: string): string[] {
  * 항목을 추가하려면 그 컨트롤이 보더 없이 무엇으로 식별되는지 함께 적을 것.
  */
 const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([
+    // 리포트 복사 버튼의 `copied`/`failed` 결과 표시. 잠깐 보이는 상태이고 문구와
+    // 채움이 상태를 전한다. 평상시 `idle`은 여는 태그 안에 있어 예외가 아니다.
+    'widgets/analysis/ui/CopyReportButton.tsx::RESULT_CLASSES',
     // (카드용 공용 클래스 `cardStyles.ts::CARD_LINK_CLASSES`는 호버가 경계선 대신
     // `surface-raised-hover` 면 밝기라 더는 보더 토큰이 없다. 상수에 담긴 호버도
     // 이 스캐너가 본다 — 클래스를 상수로 옮겨도 감시가 꺼지지 않는다.)
     // (SIGLENS AI 첫 화면의 질문 카드 `EmptyState.tsx::CARD`는 이제 경계가 아예
     // 없다 — `surface-raised` 표면으로 뜨며, 근거는 그 파일의 `CARD` 주석과
     // DESIGN.md §경계 예외에 있다.)
-]);
-
-/** 요소 스캐너의 예외. `파일:줄` 단위이며 근거를 함께 적는다. */
-const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
-    // 리포트 복사 버튼. `disabled` 분기(`showProgress || isAnalyzing`)만
-    // 장식 보더를 쓰며, WCAG 1.4.11은 비활성 컨트롤을 면제한다.
-    //
-    // 이 예외는 **여는 태그 전체**를 면제한다. 처음 넣었을 때 근거 주석에
-    // "활성 분기는 다른 색을 쓴다"고 적었는데 사실이 아니었고 — `copied`/`failed`만
-    // 그랬다 — 평상시 기본 상태인 `idle`이 장식 보더인 채로 그 주석 뒤에 숨었다.
-    // 이 자리에 분기를 추가할 때는 이 예외가 그것까지 덮는다는 걸 확인할 것.
-    // 줄 번호 키라 이 파일이 위에서 길어지면 함께 옮겨야 한다 —
-    // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025 → 1055 → 1066 → 1187 → 1140 → 1143 → 1142 → 1201 → 1204 → 1217 → 1232 → 1233 → 1277 → 1301 → 1292 → 1317 → 1320).
-    // 1233 (1232에서 +1, 퍼널 import 추가): 차트 탭 SSR로 가격 표기를 페이지 로케일에 고정하며 포맷 헬퍼·훅 호출이 위에 늘었다.
-    // 1277 (1233에서 +44): 하루 무료 공개 미터의 노출 훅·잠금 카드 문구 선택·공개 띠가 위에 늘었다.
-    // 1301 (1277에서 +24): 차트 가이드 "뜻 보기" 링크(import, 신호·패턴·전략 카드의 가이드 경로 계산과 링크)가 위에 늘었다.
-    // 1292 (1302에서 −10): 패널 전용 가격 포매터 두 개를 shared `formatAnalysisPrice`(한국 종목 호가 단위)로 옮겼다.
-    // 1317 (1292에서 +25): 국내 ETF 호가표(`krxTickTable`) prop을 패널과 하위 카드에 전달했다.
-    // 1320 (1317에서 +3): 위쪽 선 카드 리터럴을 `SURFACE_NESTED`/`SURFACE_CARD`로 옮기며 줄이 늘었다.
-    // ui/CopyReportButton.tsx:35: 패널 SRP 분해로 버튼이 전용 컴포넌트 파일로 옮겨졌다
-    // (비활성은 이제 `aria-disabled`지만 같은 진행 중 분기다).
-    'widgets/analysis/ui/CopyReportButton.tsx:35',
-
-    // (SignalStockCard의 링크 카드는 이제 `SURFACE_CARD` 면이라 장식 보더가 없다.
-    // 칩(rounded-full, 텍스트 한 줄)은 보더가 곧 경계라 카드와 다르다 —
-    // RelatedSymbols·CategoryCardGrid의 칩은 경계 토큰으로 고쳤다.)
 ]);
 
 const CLASSNAME_RE = /className="([^"]*)"/;
@@ -261,9 +239,7 @@ function productFiles(extensions?: string[]): string[] {
     );
 }
 
-function findDecorativeControlBorders(
-    allowed: ReadonlySet<string> = ALLOWED_ELEMENTS
-): string[] {
+function findDecorativeControlBorders(): string[] {
     const offenders: string[] = [];
     for (const file of productFiles(['.tsx'])) {
         const source = blankComments(readFileSync(file, 'utf8'));
@@ -276,9 +252,7 @@ function findDecorativeControlBorders(
             );
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
-            const line = lineOf(source, index);
-            if (allowed.has(`${rel}:${line}`)) continue;
-            offenders.push(`${rel}:${line} ${bare.join(' ')}`);
+            offenders.push(`${rel}:${lineOf(source, index)} ${bare.join(' ')}`);
         }
     }
     return offenders.sort();
@@ -348,15 +322,15 @@ describe('control border token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
         expect(findPropHeldBorders()).toEqual([]);
     });
 
-    // `파일:줄` 키는 그 줄이 움직이면 조용히 빗나간다 — 아무것도 면제하지 않거나,
-    // 더 나쁘게는 **다른 요소**를 면제한다. 어느 쪽이든 가드는 초록이라 신호가 없다.
-    it('예외 목록에 낡은 항목이 없다', () => {
-        const rawElements = new Set(
-            findDecorativeControlBorders(new Set()).map(o => o.split(' ')[0])
-        );
-        for (const key of ALLOWED_ELEMENTS) {
-            expect(rawElements, `면제 대상이 사라짐: ${key}`).toContain(key);
+    // 예외 키는 이름 단위(`파일::상수`)만 허용한다. `파일:줄` 키는 줄이 움직이면
+    // 조용히 빗나가 아무것도 면제하지 않거나 다른 요소를 면제한다.
+    it('예외 목록에 줄 번호 키가 없다', () => {
+        for (const key of ALLOWED_CONSTANTS) {
+            expect(key, `줄 번호 키 금지: ${key}`).not.toMatch(/:\d+$/);
         }
+    });
+
+    it('예외 목록에 낡은 항목이 없다', () => {
         const rawConstants = new Set(
             findConstantHeldBorders(new Set()).map(o => {
                 const [loc, , name] = o.split(' ');
@@ -366,6 +340,15 @@ describe('control border token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
         for (const key of ALLOWED_CONSTANTS) {
             expect(rawConstants, `면제 대상이 사라짐: ${key}`).toContain(key);
         }
+    });
+
+    it('비활성 변형은 보더 색 판정에서 빠진다', () => {
+        expect(isDecorativeBorder('border-secondary-700')).toBe(true);
+        expect(isDecorativeBorder('hover:border-secondary-700')).toBe(true);
+        expect(isDecorativeBorder('disabled:border-secondary-700')).toBe(false);
+        expect(isDecorativeBorder('aria-disabled:border-secondary-700')).toBe(
+            false
+        );
     });
 
     it('토큰 파싱이 두께·스타일·방향과 색을 가른다', () => {

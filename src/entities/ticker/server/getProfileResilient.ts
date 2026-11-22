@@ -7,6 +7,11 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
+/**
+ * 프로필 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const PROFILE_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
 export interface ResilientProfile {
     /**
      * FMP company profile, or null when the ticker genuinely has no profile
@@ -58,7 +63,7 @@ export async function getProfileResilient(
             upper,
             () => getFundamentalDataProvider(upper).getProfile(upper),
             [],
-            SECONDS_PER_DAY
+            PROFILE_REVALIDATE_SECONDS
         );
         return { profile, degraded: false };
     } catch (e) {
