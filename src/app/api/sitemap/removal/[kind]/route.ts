@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { isRemovalSitemapKind } from '@/entities/sitemap-entry/model';
 
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
-import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 
 interface RouteContext {
     params: Promise<{ kind: string }>;

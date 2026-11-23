@@ -1,11 +1,11 @@
 import { constants } from 'node:http2';
 import { NextResponse } from 'next/server';
-import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 import {
     SITEMAP_CACHE_CONTROL,
-    SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
+import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
 import { buildRssItem } from '@/app/api/rss/_lib/buildRssItem';
 import { loadDeclaredUrls } from '@/app/api/rss/_lib/loadDeclaredUrls';
 import { rssSources } from '@/app/api/rss/sources';
@@ -42,7 +42,7 @@ export async function GET(request: Request): Promise<Response> {
     if (declaredUrls === null) {
         return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
             status: HTTP_STATUS_SERVICE_UNAVAILABLE,
-            headers: { 'Retry-After': SITEMAP_RETRY_AFTER_SECONDS },
+            headers: { 'Retry-After': RETRY_AFTER_SECONDS },
         });
     }
     const settled = await Promise.all(
