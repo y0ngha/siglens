@@ -890,6 +890,14 @@ describe('code rules: planted predicates', () => {
                 "const r = renderSql(a);\nconst s = r.sql;\nconst t = s;\nexpect(t).toContain('x');",
             ],
             [
+                'a seven-deep helper chain declared bottom-up',
+                [7, 6, 5, 4, 3, 2]
+                    .map(n => `function h${n}(q) { return h${n - 1}(q); }\n`)
+                    .join('') +
+                    'function h1(q) { return renderSql(q); }\n' +
+                    "expect(h7(a).sql).toContain('x');",
+            ],
+            [
                 'a destructured sql',
                 "const { sql } = renderSql(a);\nexpect(sql).toContain('x');",
             ],

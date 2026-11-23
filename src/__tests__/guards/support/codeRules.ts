@@ -885,13 +885,11 @@ export interface SqlSubstringFinding {
     readonly reason: string | null;
 }
 
+/** 별칭·도우미 사슬 추적의 반복 상한. 실제 파일은 3겹 안에서 끝난다. */
+const MAX_TRACKING_PASSES = 50;
+
 function lineAt(text: string, offset: number): number {
-    let line = 1;
-    for (let index = text.indexOf('\n'); index !== -1 && index < offset;) {
-        line += 1;
-        index = text.indexOf('\n', index + 1);
-    }
-    return line;
+    return text.slice(0, offset).split('\n').length;
 }
 
 function isFunctionNode(node: AstNode | null): node is AstNode {
@@ -1082,8 +1080,22 @@ function createSqlTextModel(ast: AstNode) {
 
     functions.forEach(({ name }) => localFunctions.add(name));
 
-    // 별칭·도우미 사슬을 고정점까지 따라간다(한 번에 한 겹씩 풀리므로 몇 번 돈다).
-    Array.from({ length: 5 }).forEach(() => {
+    // 별칭·도우미 사슬을 고정점까지 따라간다(한 번에 한 겹씩 풀리므로 추적 집합이
+    // 더 자라지 않을 때까지 돈다). 상한을 넘으면 조용히 놓치지 않고 실패한다(TE-63).
+    const trackedSize = (): number =>
+        renderFns.size + renderedNames.size + sqlNames.size + sqlListNames.size;
+    const settle = (pass: number): void => {
+        const before = trackedSize();
+        growTrackedNames();
+        if (trackedSize() === before) return;
+        if (pass >= MAX_TRACKING_PASSES) {
+            throw new Error(
+                `sql-substring-assertion: alias chain did not settle in ${MAX_TRACKING_PASSES} passes`
+            );
+        }
+        settle(pass + 1);
+    };
+    function growTrackedNames(): void {
         // `list.some(s => s.includes(..))`의 `s`도 SQL 텍스트다.
         nodes.forEach(node => {
             const callee = unwrap(child(node, 'callee'));
@@ -1135,7 +1147,8 @@ function createSqlTextModel(ast: AstNode) {
                 }
             });
         });
-    });
+    }
+    settle(1);
 
     return { isSqlText, isSqlList, isRendered, returnedExprs };
 }
