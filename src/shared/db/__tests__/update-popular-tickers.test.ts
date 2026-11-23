@@ -2,6 +2,9 @@ import {
     collectPopularOptionsTickers,
     createYahooOptionsProbe,
     deduplicatePopularTickerEntries,
+    fetchEodBars,
+    fetchProfile,
+    fetchScreenerResults,
     renderPopularOptionsTickersFile,
     visitKrRejection,
     visitUsRejection,
@@ -19,6 +22,53 @@ describe('createYahooOptionsProbe', () => {
         expect(options).toHaveBeenCalledWith('BRK-B', undefined, {
             validateResult: false,
         });
+    });
+});
+
+describe('FMP symbol edges', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const stubFetch = (body: unknown) => {
+        const requested: URL[] = [];
+        vi.stubGlobal('fetch', async (url: string) => {
+            requested.push(new URL(url));
+            return { ok: true, json: async () => body };
+        });
+        return requested;
+    };
+
+    it('canonicalises screener symbols from FMP notation', async () => {
+        stubFetch([
+            { symbol: 'BRK-B', companyName: 'Berkshire' },
+            { symbol: 'PBR-A', companyName: 'Petrobras' },
+            { symbol: 'AAPL', companyName: 'Apple' },
+        ]);
+
+        const results = await fetchScreenerResults('key', false);
+
+        expect(results.map(r => r.symbol)).toEqual(['BRK.B', 'PBR-A', 'AAPL']);
+    });
+
+    it('sends FMP notation when requesting EOD bars for a canonical symbol', async () => {
+        const requested = stubFetch([]);
+
+        await fetchEodBars('key', 'BRK.B', '2026-01-01', '2026-01-10');
+
+        expect(requested.map(u => u.searchParams.get('symbol'))).toEqual([
+            'BRK-B',
+        ]);
+    });
+
+    it('sends FMP notation when requesting a profile for a canonical symbol', async () => {
+        const requested = stubFetch([]);
+
+        await fetchProfile('key', 'BRK.B');
+
+        expect(requested.map(u => u.searchParams.get('symbol'))).toEqual([
+            'BRK-B',
+        ]);
     });
 });
 

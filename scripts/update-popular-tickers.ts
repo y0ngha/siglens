@@ -28,6 +28,7 @@ import {
     writeFileSync,
 } from 'fs';
 import { dirname, resolve } from 'path';
+import { fromFmpSymbol, toFmpSymbol } from '@/shared/lib/fmpSymbol';
 import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import YahooFinance from 'yahoo-finance2';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
@@ -444,7 +445,7 @@ function commitArtifactPairAtomically(
 
 // --- FMP API ---
 
-async function fetchScreenerResults(
+export async function fetchScreenerResults(
     apiKey: string,
     includeEtf: boolean
 ): Promise<ScreenerResult[]> {
@@ -474,17 +475,20 @@ async function fetchScreenerResults(
     const raw = (await res.json()) as ScreenerResult[];
 
     if (!Array.isArray(raw)) return [];
-    return raw.filter(r => typeof r.symbol === 'string' && r.symbol.length > 0);
+    // FMP notation (`BRK-B`) → canonical app symbol (`BRK.B`) at the inbound edge.
+    return raw
+        .filter(r => typeof r.symbol === 'string' && r.symbol.length > 0)
+        .map(r => ({ ...r, symbol: fromFmpSymbol(r.symbol) }));
 }
 
-async function fetchEodBars(
+export async function fetchEodBars(
     apiKey: string,
     symbol: string,
     from: string,
     to: string
 ): Promise<EodBar[]> {
     const params = new URLSearchParams({
-        symbol,
+        symbol: toFmpSymbol(symbol),
         from,
         to,
         apikey: apiKey,
@@ -505,11 +509,14 @@ async function fetchEodBars(
     return raw;
 }
 
-async function fetchProfile(
+export async function fetchProfile(
     apiKey: string,
     symbol: string
 ): Promise<FmpProfile | null> {
-    const params = new URLSearchParams({ symbol, apikey: apiKey });
+    const params = new URLSearchParams({
+        symbol: toFmpSymbol(symbol),
+        apikey: apiKey,
+    });
     const res = await fetch(`${FMP_BASE_URL}/profile?${params}`);
     if (!res.ok) {
         console.warn(`  profile fetch failed for ${symbol}: ${res.status}`);
