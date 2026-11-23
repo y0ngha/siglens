@@ -9,6 +9,7 @@ import {
     MIN_SCANNED_FILES,
     checkScanFloor,
     isTestFile,
+    issueRefLinesOf,
     scanRepo,
     scanSources,
     type CodeRule,
@@ -85,7 +86,19 @@ describe('code rules: live repository', () => {
                 liveBaseline(),
                 new Set(liveScan().paths)
             );
-            expect(describeComparison(comparison)).toEqual([]);
+            // 개수만으로는 어느 줄인지 모르므로 이슈·PR 번호 규칙은 파일의 모든 참조를 file:line으로 덧붙인다.
+            const issueRefLines = comparison.regressions
+                .filter(({ rule }) => rule.key === 'issue-ref-in-comment')
+                .flatMap(({ file }) =>
+                    issueRefLinesOf(
+                        file,
+                        readFileSync(path.join(ROOT, file), 'utf8')
+                    ).map(line => `${file}:${line} cites an issue/PR number`)
+                );
+            expect([
+                ...describeComparison(comparison),
+                ...issueRefLines,
+            ]).toEqual([]);
         },
         SCAN_TIMEOUT_MS
     );
@@ -697,6 +710,77 @@ describe('code rules: planted predicates', () => {
             expect(
                 countOf('local-doc-citation', 'src/a/x.md', 'docs/qa/E2E.md')
             ).toBe(0);
+        });
+    });
+
+    describe('issue-ref-in-comment', () => {
+        const SRC = 'src/a/x.ts';
+        it.each([
+            ['a line comment', SRC, '// see #1234\nconst a = 1;', 1],
+            [
+                'a trailing line comment',
+                SRC,
+                'const a = 1; // fixed in #1234',
+                1,
+            ],
+            ['a block comment', SRC, '/* regression of #1234 */\n', 1],
+            [
+                'a JSDoc',
+                SRC,
+                '/**\n * Added in PR #1234.\n */\nconst a = 1;',
+                1,
+            ],
+            [
+                'a JSX comment',
+                'src/a/X.tsx',
+                'const a = <p>{/* #1234 */}</p>;',
+                1,
+            ],
+            ['a test file', 'src/a/x.test.ts', '// PR #951 CI\n', 1],
+            ['a three-digit number', SRC, '// hotfix #801\n', 1],
+            ['a cross-repo reference', SRC, '// siglens-core#252\n', 1],
+            ['two in one comment', SRC, '// #1234 and #1235\n', 2],
+            ['a string literal', SRC, "const a = '#1234';", 0],
+            ['a template literal', SRC, 'const a = `PR #1234 ${b}`;', 0],
+            ['JSX text', 'src/a/X.tsx', 'const a = <p>#1234</p>;', 0],
+            [
+                'a URL with the number',
+                SRC,
+                '// https://github.com/x/y/pull/1234\n',
+                0,
+            ],
+            ['a URL anchor', SRC, '// https://x.dev/a#1234\n', 0],
+            ['a hex colour with letters', SRC, '/* #1e1e1e */\n', 0],
+            ['a hex colour with a trailing letter', SRC, '// #818cf8\n', 0],
+            ['a repeated-digit colour', SRC, '// #000\n// #111111\n', 0],
+            ['the React hydration error code', SRC, '// React #418\n', 0],
+            [
+                'the code with a hydration word',
+                SRC,
+                '// 하이드레이션 불일치(#418)\n',
+                0,
+            ],
+            ['a bare 418 reference', SRC, '// fixed in #418\n', 1],
+            ['another number next to React', SRC, '// React fix #419\n', 1],
+            ['a digit-only colour (documented limit)', SRC, '// #123456\n', 1],
+            ['an HTML entity', SRC, '// &#1234; entity\n', 0],
+            ['a single-digit step', SRC, '// step #1\n', 0],
+            ['a two-digit number', SRC, '// item #12\n', 0],
+            ['a number without a hash', SRC, '// PR 1234\n', 0],
+            ['a rule ID', SRC, '// CM-11 and TE-63\n', 0],
+            ['outside src', 'scripts/x.ts', '// #1234\n', 0],
+            ['a markdown file', 'src/a/x.md', '// #1234\n', 0],
+        ])('%s -> %i', (_name, file, text, expected) => {
+            expect(countOf('issue-ref-in-comment', file, text)).toBe(expected);
+        });
+
+        it('names the line of each reference', () => {
+            expect(
+                issueRefLinesOf(
+                    'src/a/x.ts',
+                    'const a = 1;\n/**\n * a\n * PR #1234\n */\n// x #4321\n'
+                )
+            ).toEqual([4, 6]);
         });
     });
 

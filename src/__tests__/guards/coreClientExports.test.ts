@@ -124,7 +124,7 @@ describe('검출기 픽스처', () => {
     });
 
     it('클라이언트 파일이 import한 일반 모듈의 위반도 잡는다(전이)', () => {
-        const helper = write(
+        write(
             'transitive/helper.ts',
             "import { runAnalysis } from '@y0ngha/siglens-core';\nexport const h = runAnalysis;\n"
         );
@@ -132,7 +132,6 @@ describe('검출기 픽스처', () => {
             'transitive/Client.tsx',
             "'use client';\nimport { h } from './helper';\nexport const c = h;\n"
         );
-        expect(helper).toBeTruthy();
         expect(scan(client)).toEqual(['helper.ts:1 runAnalysis']);
     });
 

@@ -76,7 +76,7 @@ describe('GET /api/auth/handoff/start (ai host: bind browser)', () => {
         [
             'protocol-relative after locale strip',
             '%2Fko%2F%2Fevil.com',
-            // Any `//` left in the path is rejected outright (open-redirect hotfix #801).
+            // Any `//` left in the path is rejected outright (open-redirect guard).
             '/',
         ],
         [

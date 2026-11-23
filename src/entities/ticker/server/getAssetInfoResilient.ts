@@ -36,13 +36,12 @@ export interface ResilientAssetInfo {
  * ISR 정적화: inner 데이터 호출을 `getAssetInfoStatic`(=unstable_cache(getAssetInfo))으로
  * 정적화해 static gen 중 redis no-store fetch가 `DYNAMIC_SERVER_USAGE`를 throw하지 않게 한다.
  *
- * degrade 응답의 캐싱(#545 connection() 제거 배경): 이 함수의 소비자는 전부 `[symbol]` ISR
- * 라우트(generateStaticParams=[])다. 과거 #545는 degrade 렌더가 ISR(revalidate=3600)로 1h
- * 굳지 않도록 catch에서 `connection()`으로 동적화하려 했으나, ISR 라우트의 on-demand cold-gen
- * 안에서 `connection()`은 "단일 렌더 동적화"가 아니라 `DYNAMIC_SERVER_USAGE`를 throw해 cold-gen을
- * 500으로 깨뜨린다(ISR은 per-request 동적화가 불가). #545 추가 시점엔 ISR 자체가 깨져 있어(전
- * 라우트 DSU) 이 500이 가려져 있다가, Phase 0~2가 ISR을 정상화하면서 드러났다. 그래서 connection()을
- * 제거하고 degrade 렌더가 ISR로 캐시되는 것을 허용한다 — degrade는 `degraded:true`로 noindex라
+ * degrade 응답의 캐싱(`connection()`을 쓰지 않는 이유): 이 함수의 소비자는 전부 `[symbol]` ISR
+ * 라우트(generateStaticParams=[])다. catch에서 `connection()`으로 동적화해 degrade 렌더가 ISR(revalidate=3600)로
+ * 1h 굳지 않게 하는 방법은 쓰지 않는다. ISR 라우트의 on-demand cold-gen 안에서 `connection()`은
+ * "단일 렌더 동적화"가 아니라 `DYNAMIC_SERVER_USAGE`를 throw해 cold-gen을 500으로 깨뜨린다(ISR은
+ * per-request 동적화가 불가). 그래서 `connection()` 없이 degrade 렌더가 ISR로 캐시되는
+ * 것을 허용한다 — degrade는 `degraded:true`로 noindex라
  * 검색 노출 위험이 없고, 다음 revalidate(또는 데이터 갱신 시 on-demand 무효화)에 인프라가 복구돼
  * 있으면 정상 데이터로 자동 갱신된다. 500(깨진 페이지)보다 degraded 200(noindex, fallback UX)이 낫다.
  *

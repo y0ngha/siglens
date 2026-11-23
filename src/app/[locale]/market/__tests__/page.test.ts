@@ -326,7 +326,7 @@ describe('Market page', () => {
             // and once for sectorSignals. mockSetQueryData is shared across all QueryClient
             // instances created by MockQueryClientClass.
             // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary }, { updatedAt })
-            // updatedAt 옵션은 dehydrate 시 ISR HTML 결정성 보장용(2026-06-06 PR #573 R8 fix).
+            // updatedAt 옵션은 dehydrate 시 ISR HTML 결정성 보장용이다.
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['market-summary', 'us'],
                 expect.objectContaining({

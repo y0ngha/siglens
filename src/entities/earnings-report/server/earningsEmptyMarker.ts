@@ -17,7 +17,7 @@ function earningsEmptyMarkerKey(symbol: string): string {
  *
  * ETF·지수·잘못된 심볼은 FMP가 빈 응답을 주어 `earningsReports` 테이블에 레코드가
  * 생기지 않는다 → `getLatestFetchedAt`이 항상 `null` → staleness가 항상 stale로 판정되어
- * 매 요청 FMP를 호출하는 영구 cache-miss 루프가 발생한다(#567). 이 마커가 있으면 TTL 동안
+ * 매 요청 FMP를 호출하는 영구 cache-miss 루프가 발생한다. 이 마커가 있으면 TTL 동안
  * FMP 재호출을 건너뛴다. Redis 미설정/장애 시 `false`로 degrade(기존 동작대로 fetch).
  */
 export async function isEarningsKnownEmpty(symbol: string): Promise<boolean> {

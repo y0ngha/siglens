@@ -13,7 +13,7 @@ const {
     MOCK_CRYPTO_SESSION: { type: 'crypto' } as never,
     MOCK_EQUITY_SESSION: { type: 'equity' } as never,
     MOCK_KR_SESSION: { type: 'kr-equity' } as never,
-    // Task S3/S2 (prior-analysis-context wiring gap, PR #784 review) —
+    // Task S3/S2 (prior-analysis-context wiring) —
     // hoisted so individual tests can assert what prewarmTechnical/
     // prewarmOverall read from and write to analysis_history.
     mockFindRecentForPrompt: vi.fn(),
@@ -332,7 +332,7 @@ describe('prewarmTechnical', () => {
                 // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
                 providerFallback: true,
                 positionBucket: undefined,
-                // Task S3 (prior-analysis-context, PR #784 review) — the SSE
+                // Task S3 (prior-analysis-context) — the SSE
                 // route's non-bot branch always supplies both; prewarm must
                 // match so it computes the SAME core cache key (see the
                 // `priorAnalyses`/`onPromptAssembled` describe block below).

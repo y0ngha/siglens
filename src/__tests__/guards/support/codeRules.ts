@@ -736,6 +736,61 @@ function countLintDisables(ctx: FileContext): number {
     ).length;
 }
 
+/**
+ * 주석에 적힌 이슈·PR 번호(`#` 뒤 숫자) 판정(CONVENTIONS.md#CM-11).
+ *
+ * 주석(줄·블록·JSDoc)만 본다. 문자열·템플릿·JSX 텍스트는 AST 노드가 달라 처음부터 제외된다. 기준선 없이 위반 0을 요구한다(예외 없음, 외부 식별자도 서술로 바꾼다).
+ * `#` 뒤 숫자가 3자리 이상이고 바로 뒤에 단어 문자가 없으면 참조다. 제외:
+ * - URL 안(`.../pull/<번호>`, URL 끝 앵커): 판정 전에 URL을 공백으로 지운다.
+ * - `&#123;` 같은 HTML 엔티티, `/#123`, `##123`: `#` 앞이 `&`·`/`·`#`인 경우.
+ * - `#818cf8` 같은 16진 색: 숫자 뒤에 글자가 붙으므로 걸리지 않는다.
+ * - `#000`·`#111111`처럼 한 숫자만 반복한 색(숫자만으로 된 색의 흔한 꼴).
+ * - `#418`: React 하이드레이션 오류 코드이지 이슈 번호가 아니다. 같은 주석에 `React`·`hydration`·`하이드레이션`이
+ *   있을 때만 건너뛴다(`REACT_ERROR_CODES`); 맥락 없는 `#418`은 참조로 센다.
+ *
+ * 한계: `#12`처럼 두 자리 이하와 `PR 1234`·`issue 1234`처럼 `#` 없는 서술은 보지 않는다.
+ * 한 숫자 반복이 아닌 숫자만의 색(`#` 뒤 여섯 자리 등)은 참조로 잘못 센다(`fix` 문구가 대안을 안내한다).
+ * 같은 숫자를 반복한 이슈 번호는 색과 구별할 수 없어 놓친다.
+ */
+const ISSUE_REF = /(?<![&/#])#(\d{3,})(?!\w)/g;
+const URL_IN_COMMENT = /https?:\/\/\S+/g;
+const REACT_ERROR_CODES: ReadonlySet<string> = new Set(['418']);
+
+const REACT_CONTEXT = /React|hydration|하이드레이션/i;
+
+function isIssueRefToken(digits: string, comment: string): boolean {
+    if (/^(\d)\1+$/.test(digits)) return false;
+    return !(REACT_ERROR_CODES.has(digits) && REACT_CONTEXT.test(comment));
+}
+
+/** 주석에서 찾은 이슈·PR 번호 참조의 1부터 시작하는 줄 번호. */
+export function findIssueRefLines(ctx: FileContext): readonly number[] {
+    return ctx.commentRanges.flatMap(comment => {
+        const body = comment.value.replace(URL_IN_COMMENT, url =>
+            ' '.repeat(url.length)
+        );
+        return [...body.matchAll(ISSUE_REF)]
+            .filter(match => isIssueRefToken(match[1] ?? '', comment.value))
+            .map(match => {
+                const offset = comment.start + 2 + (match.index ?? 0);
+                return ctx.text.slice(0, offset).split('\n').length;
+            });
+    });
+}
+
+/** 심은 소스 하나의 이슈·PR 번호 참조 줄 번호. 가드 실패 메시지가 파일:줄을 붙이는 데 쓴다. */
+export function issueRefLinesOf(file: string, text: string): readonly number[] {
+    const parsed = tryParse({ path: file, text });
+    return typeof parsed === 'string'
+        ? []
+        : findIssueRefLines({
+              path: file,
+              text,
+              ast: parsed.ast,
+              commentRanges: parsed.commentRanges,
+          });
+}
+
 export const CODE_RULES: readonly CodeRule[] = [
     {
         key: 'non-null-assertion',
@@ -805,6 +860,15 @@ export const CODE_RULES: readonly CodeRule[] = [
         fix: 'State the fact inline instead of citing a local-only doc (only docs/product and docs/conventions are tracked).',
         appliesTo: () => true,
         countFile: countLocalDocCitations,
+    },
+    {
+        key: 'issue-ref-in-comment',
+        docRef: 'CONVENTIONS.md#CM-11',
+        mode: 'zero',
+        fix: 'Delete the issue/PR number and state the current constraint and its reason instead (a comment is not a changelog). A digit-only colour such as #123456 is not recognised as a colour: write it as rgb(), a token name or a hex with a letter.',
+        appliesTo: file =>
+            file.startsWith('src/') && /\.tsx?$/.test(file) && isCodeFile(file),
+        countFile: ctx => findIssueRefLines(ctx).length,
     },
     {
         key: 'lint-disable-directive',
