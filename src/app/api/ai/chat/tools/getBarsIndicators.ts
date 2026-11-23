@@ -785,7 +785,7 @@ export const MA_CROSS_SLOW_PERIOD = 200;
  * The agent asks "when did the last golden/dead cross happen", so the scan
  * must reach back a full year.
  */
-export const MA_CROSS_LOOKBACK_BARS = 252;
+const MA_CROSS_LOOKBACK_BARS = 252;
 
 /**
  * Detection is core's (`findMaCrosses`); this only adapts it to the tool
