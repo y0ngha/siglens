@@ -47,9 +47,9 @@ import {
 import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import {
     SITEMAP_CACHE_CONTROL,
-    SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
+import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
 import { hashHubBody } from '@/shared/cache/hubContentStamp';
 import { SITE_URL } from '@/shared/lib/seo';
 
@@ -348,9 +348,7 @@ describe('GET /api/rss', () => {
         const res = await GET(request());
 
         expect(res.status).toBe(503);
-        expect(res.headers.get('Retry-After')).toBe(
-            SITEMAP_RETRY_AFTER_SECONDS
-        );
+        expect(res.headers.get('Retry-After')).toBe(RETRY_AFTER_SECONDS);
         expect(res.headers.get('Cache-Control')).toBeNull();
         expect(await res.text()).toBe(SITEMAP_UNAVAILABLE_BODY);
         expect(console.error).toHaveBeenCalledWith(
