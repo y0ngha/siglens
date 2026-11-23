@@ -20,9 +20,9 @@
  * `lib/translateRequest.mjs`).
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { hashOf } from './lib/hashOf.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -78,9 +78,6 @@ const source = flatten(readJson(`${ROOT}/messages/ko.json`));
 const target = flatten(readJson(`${ROOT}/messages/${locale}.json`));
 const hashes = readJson(`${ROOT}/messages/_meta/hashes.json`);
 const glossary = readJson(`${ROOT}/messages/glossary.json`);
-
-const hashOf = text =>
-    createHash('sha1').update(text).digest('hex').slice(0, 12);
 
 const stale = Object.keys(source).filter(key => {
     if (TRANSLATE_ALL) return true;
