@@ -216,8 +216,13 @@ describe('createOgFontLoader', () => {
         const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
-        const load = createOgFontLoader(sources(base));
-        await expect(load('ja')).rejects.toBeInstanceOf(OgFontUnavailableError);
-        errorSpy.mockRestore();
+        try {
+            const load = createOgFontLoader(sources(base));
+            await expect(load('ja')).rejects.toBeInstanceOf(
+                OgFontUnavailableError
+            );
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

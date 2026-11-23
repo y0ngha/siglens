@@ -131,6 +131,8 @@ export function createOgFontLoader(
             bytesByUrl.delete(url);
             failedAtByUrl.set(url, Date.now());
             // 다운로드 시도당 한 줄 — 이 promise를 기다리던 렌더마다 찍지 않는다.
+            // 오류 객체는 DB 오류가 아니어도 SERVER.md 규칙대로 redact 헬퍼를 거친다
+            // (DB 오류가 아니면 그대로 돌려준다).
             console.error(
                 `[og-font] download failed url=${url}:`,
                 redactDbErrorForLog(error)
