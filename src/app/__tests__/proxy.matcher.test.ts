@@ -48,6 +48,10 @@ describe('proxy matcher', () => {
         );
     });
 
+    it('벤치마크 manifest.sha256은 프록시를 타지 않는다', () => {
+        expect(matchesProxy('/benchmark/2026-10/manifest.sha256')).toBe(false);
+    });
+
     it('llms.txt는 프록시를 타지 않는다 (두 호스트 모두 rewrite로 라우트에 닿는다)', () => {
         expect(matchesProxy('/llms.txt')).toBe(false);
     });
