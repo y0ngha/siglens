@@ -10,6 +10,7 @@ import {
     type Bar,
     type BuySellVolumeResult,
 } from '@y0ngha/siglens-core';
+import { defined } from '@/shared/test-utils/defined';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { CRYPTO_DESCRIPTOR } from '@/shared/config/marketProfile/crypto';
 import { KR_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/krEquity';
@@ -365,6 +366,18 @@ describe('MethodologyPage', () => {
             expect(ko.widgets.backtesting.strategy.step7).toContain(
                 '수수료·슬리피지'
             );
+        });
+
+        it('says results are shown against holding strategies, with no figure', async () => {
+            await renderPage();
+            const section = defined(
+                defined(document.getElementById('backtesting')).closest(
+                    'section'
+                )
+            );
+            expect(section).toHaveTextContent('보유 전략과 비교');
+            expect(section).toHaveTextContent('임의 날짜에 진입한 경우');
+            expect(m.backtesting.caveat).not.toMatch(/\d/);
         });
     });
 

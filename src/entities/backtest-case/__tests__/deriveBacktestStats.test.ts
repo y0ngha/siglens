@@ -1,8 +1,9 @@
 import type {
+    BacktestBenchmarks,
     BacktestLegExitReason,
-    BacktestRunData,
     BacktestTrade,
 } from '@y0ngha/siglens-core';
+import type { VerifiedBacktestRunData } from '@/entities/backtest-case/model';
 import summary from '../../../../backtest-results/2026-11-daily-ai/summary.json';
 import backtestData from '@/entities/backtest-case/data/data.json';
 import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
@@ -51,14 +52,57 @@ function trade(
     };
 }
 
-const baseline = (ticker: string, buyHoldPct: number) => ({
+// 필드마다 다른 값을 둔다 — 두 필드를 바꿔 읽는 회귀가 같은 값 때문에 가려지지 않게.
+const baseline = (
+    ticker: string,
+    buyHoldPct: number,
+    exposureMatchedHoldPct: number,
+    markToMarketMaxDrawdownPct: number
+) => ({
     ticker,
     buyHoldPct,
     buyHoldMaxDrawdownPct: -10,
     tradingDays: 10,
+    exposureMatchedHoldPct,
+    markToMarketMaxDrawdownPct,
 });
 
-function run(trades: BacktestTrade[]): BacktestRunData {
+const BENCHMARKS: BacktestBenchmarks = {
+    version: 1,
+    tradesSha256: 'd'.repeat(64),
+    barsFingerprint: 'e'.repeat(64),
+    coreSha: 'abc123',
+    holdPortfolio: { returnPct: 1.5, maxDrawdownPct: -7.5 },
+    exposureMatchedHold: {
+        exposurePct: 41.5,
+        returnPct: 0.6,
+        maxDrawdownPct: -4.25,
+    },
+    strategyMarkToMarketMaxDrawdownPct: -12.75,
+    perTradeExcess: {
+        basis: 'same_length_drift',
+        n: 3,
+        meanPct: 0.125,
+        ci95: { low: -1.5, high: 1.75 },
+        clusters: 'week',
+    },
+    randomEntry: {
+        draws: 100,
+        seed: 7,
+        returnPct: { p5: -5.5, median: 1.25, p95: 6.5 },
+        maxDrawdownPct: { p5: -20.5, median: -9.5, p95: -3.5 },
+        shareAboveStrategyReturn: 0.37,
+        shareWithSmallerDrawdown: 0.21,
+    },
+    bracket: {
+        n: 2,
+        initialPlan: { resolvedRaces: 2, targetFirstShare: 0.5 },
+        placebo: { resolvedRaces: 6, targetFirstShare: 0.33 },
+        storedTargetFirstShare: 0.75,
+    },
+};
+
+function run(trades: BacktestTrade[]): VerifiedBacktestRunData {
     return {
         run: {
             runId: 't',
@@ -73,8 +117,11 @@ function run(trades: BacktestTrade[]): BacktestRunData {
             resultsUrl: '',
             releaseUrl: '',
         },
-        baselines: [baseline('AAA', 5), baseline('BBB', -5)],
-        spy: baseline('SPY', 3),
+        baselines: [
+            baseline('AAA', 5, 2.5, -6.25),
+            baseline('BBB', -5, -2.75, -8.5),
+        ],
+        spy: baseline('SPY', 3, 1.5, -3.25),
         trendRecognition: {
             windowDays: 10,
             directionalCalls: 0,
@@ -86,6 +133,7 @@ function run(trades: BacktestTrade[]): BacktestRunData {
             },
         },
         trades,
+        benchmarks: BENCHMARKS,
     };
 }
 
@@ -122,6 +170,25 @@ describe('deriveBacktestStats', () => {
         expect(stats.portfolioMaxDrawdownPct).toBe(-10.23);
     });
 
+    it('passes the generator baselines through per ticker without recomputing them', () => {
+        expect(stats.perTicker.map(p => p.ticker)).toEqual(['AAA', 'BBB']);
+        expect(stats.perTicker[0]).toMatchObject({
+            buyHoldPct: 5,
+            buyHoldMaxDrawdownPct: -10,
+            exposureMatchedHoldPct: 2.5,
+            markToMarketMaxDrawdownPct: -6.25,
+        });
+        expect(stats.perTicker[1]).toMatchObject({
+            buyHoldPct: -5,
+            exposureMatchedHoldPct: -2.75,
+            markToMarketMaxDrawdownPct: -8.5,
+        });
+    });
+
+    it('passes the benchmark block through by reference', () => {
+        expect(stats.benchmarks).toBe(BENCHMARKS);
+    });
+
     it('leaves still-open trades out of the equity curves and the win rate', () => {
         const withOpen = deriveBacktestStats(
             run([
@@ -156,8 +223,12 @@ describe('deriveBacktestStats', () => {
         expect(shipped.portfolioMaxDrawdownPct).toBe(
             summary.portfolio.maxDrawdownPct
         );
-        expect(shipped.meanExposurePct).toBe(summary.portfolio.meanExposurePct);
         expect(shipped.trendRecognition).toEqual(summary.trendRecognition);
+        expect(shipped.benchmarks).toEqual(summary.benchmarks);
+        expect(shipped.benchmarks.holdPortfolio.returnPct).toBeCloseTo(
+            summary.benchmark.meanTickerBuyHoldPct,
+            2
+        );
         for (const expected of summary.perTicker) {
             const actual = shipped.perTicker.find(
                 p => p.ticker === expected.ticker
@@ -168,6 +239,8 @@ describe('deriveBacktestStats', () => {
                 strategyPct: expected.strategyPct,
                 strategyMaxDrawdownPct: expected.strategyMaxDrawdownPct,
                 exposurePct: expected.exposurePct,
+                buyHoldPct: expected.buyHoldPct,
+                buyHoldMaxDrawdownPct: expected.buyHoldMaxDrawdownPct,
             });
         }
     });

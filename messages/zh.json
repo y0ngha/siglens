@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI 技术分析回测数据集",
-                "variableMeasured": "按每日 AI 分析交易的各标的胜率、收益率和最大回撤"
+                "variableMeasured": "按每日 AI 分析交易的各标的胜率、收益率、最大回撤，以及与持有策略的对比"
             }
         },
         "economy": {
@@ -2049,7 +2049,7 @@
             "accountDeleteFullTitle": "{v0} 注销账户",
             "accountDeleteTitle": "注销账户",
             "backtesting": {
-                "description": "对 NVDA、AAPL、TSLA 等 10 只美国大盘股应用两年每日 AI 分析的回测。按入场区间、目标价和止损价操作的胜率、收益率和回撤按标的整理。过往结果不代表未来表现。",
+                "description": "对美国大盘股和指数 ETF 在每个交易日应用 AI 分析的回测。按入场区间、目标价和止损价操作的结果按标的整理，并与一直持有以及随机日期入场作了对比。过往结果不代表未来表现。",
                 "title": "AI 股票分析回测：美国大盘股 10 只，两年结果"
             },
             "backtestingOgAlt": "{v0} AI 回测结果",
@@ -2808,7 +2808,7 @@
             },
             "backtesting": {
                 "body": "回测页面在过去两年的每个交易日运行 SIGLENS 的 AI 分析，计算完全按照页面给出的入场区间、目标价和止损价操作会得到什么结果。仓位分成两半，分别在第一目标价和最终目标价平仓，触及止损价则平仓。",
-                "caveat": "未计入手续费和滑点，且标的是事后选定的，可能存在幸存者偏差。交易笔数和期间与结果一同列出，过往结果不代表未来表现。",
+                "caveat": "未计入手续费和滑点，且标的是事后选定的，可能存在幸存者偏差。结果与持有策略对比展示，包括一直持有、只按 AI 策略的持仓比例持有，以及在随机日期入场。交易笔数和期间与结果一同列出，过往结果不代表未来表现。",
                 "link": "查看回测结果",
                 "title": "回测"
             },
@@ -3935,29 +3935,44 @@
             },
             "hero": {
                 "title": "如果 {v0} 年来一直照着 AI 分析操作",
-                "lead": "我们每个交易日运行 SIGLENS 的 AI 技术分析，并完全按照页面给出的入场区间、目标价和止损价操作。标的是美国大盘股和指数 ETF 共 {v0} 只。",
+                "lead": "我们每个交易日运行 SIGLENS 的 AI 技术分析，并完全按照页面给出的入场区间、目标价和止损价操作。标的是美国大盘股和指数 ETF 共 {v0, number} 只。",
                 "disclaimer": "以上是基于历史数据的结果，不代表未来表现。",
-                "portfolioLabel": "组合收益率（{v0} 只等权）",
-                "maxDrawdownLabel": "最大回撤（按平仓）",
+                "portfolioLabel": "组合收益率（{v0, number} 只等权）",
+                "portfolioSub": "如果同样的 {v0, number} 只标的一直持有，为 {v1}；只按 AI 策略的持仓比例（{v2}）持有，为 {v3}",
+                "maxDrawdownLabel": "最大回撤（按每日评估）",
+                "maxDrawdownSub": "按已平仓计算 {v0}，一直持有 {v1}",
                 "winRateLabel": "胜率",
-                "winRateSub": "{v0}/{v1} 笔",
+                "winRateSub": "{v0, number}/{v1, number} 笔。最初设定的第一目标价先于止损价触及的比例为 {v2}（{v3, number} 笔中），把同样的幅度放在随机日期则为 {v4}（{v5, number} 次中）",
                 "tradesLabel": "交易笔数",
-                "tradesValue": "{v0} 笔",
+                "tradesValue": "{v0, number} 笔",
                 "meanReturnLabel": "每笔平均收益率",
+                "meanReturnSub": "与同一标的在期间内任意一天起持有相同天数的平均相比，每笔平均差异为 {v0}（95% 区间 {v1}~{v2}）",
                 "meanHoldingLabel": "平均持有时间",
                 "tradingDays": "{v0} 个交易日"
             },
             "comparison": {
-                "heading": "各标的结果",
-                "note": "每个标的投入相同金额，并按 AI 分析进行交易的结果。最大回撤只按已平仓交易计算，可能小于真实账户的回撤。",
+                "heading": "与持有策略对比",
+                "note": "与同一时期从头到尾持有每只标的，以及只按 AI 策略在市场中的时间比例持有、其余为现金的情况作了对比。所有回撤都按每日收盘价评估。",
                 "colTicker": "标的",
                 "colTrades": "交易",
                 "colWinRate": "胜率",
                 "colStrategy": "AI 策略",
-                "colStrategyMdd": "最大回撤",
+                "colStrategyMdd": "最大回撤（每日评估）",
                 "colExposure": "持仓时间占比",
-                "rowPortfolio": "{v0} 只标的组合",
-                "tableRegion": "各标的结果表"
+                "colBuyHold": "一直持有",
+                "colMatchedHold": "按比例持有",
+                "colBuyHoldMdd": "持有时最大回撤",
+                "rowPortfolio": "{v0, number} 只标的组合",
+                "tableRegion": "与持有策略对比表"
+            },
+            "timing": {
+                "heading": "入场时点的效果",
+                "excess": "逐笔减去同一标的在期间内任意一天起持有相同天数的平均收益率后，每笔交易的平均差异为 {v0}（95% 区间 {v1}~{v2}，{v3, number} 笔）。",
+                "verdictHigher": "95% 区间大于 0，所以 AI 交易的收益率比持有相同天数更高。",
+                "verdictLower": "95% 区间小于 0，所以 AI 交易的收益率比持有相同天数更低。",
+                "verdictNone": "95% 区间包含 0，所以 AI 交易的收益率与持有相同天数没有明显差别。",
+                "randomReturn": "把相同的持有期放到随机日期，运行 {v0, number} 次，组合收益率中间 90% 落在 {v1}~{v2}，高于 AI 策略的情况占 {v3}。",
+                "randomDrawdown": "在同一测试中，最大回撤小于 AI 策略（{v0}）的情况占 {v1}。随机日期测试没有在止损价立即平仓的规则，所以这个差异中包含该规则的影响。"
             },
             "strategy": {
                 "heading": "使用的策略",
