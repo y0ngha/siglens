@@ -791,6 +791,624 @@ export function issueRefLinesOf(file: string, text: string): readonly number[] {
           });
 }
 
+// ---------------------------------------------------- sql-substring-assertion
+
+/**
+ * **렌더된 SQL 부분 문자열 단언**(TESTING.md#TE-53). 렌더된 SQL 텍스트에 `toContain`·`toMatch`·
+ * `toHaveLength`·`toBeTruthy`·`not.toBe('')`·`expect.stringContaining`을 쓰거나, `.includes()`·
+ * `.match()`·`/re/.test()`로 일부만 확인한 결과를 단언하면 위반이다. 조건을 뒤집어도
+ * (`is null`↔`is not null`, `or`↔`and`, 인자 순서) 통과하기 때문이다. 전체 문자열 `toBe`·`toEqual`만 허용한다.
+ *
+ * SQL 텍스트로 보는 식:
+ * - `renderSql(...)`(또는 그것을 부르는 같은 파일의 도우미)가 돌려준 값의 `.sql`·`.text`
+ * - 임의 객체의 `.sql`(`captured[0].sql`, `toSQL().sql`)
+ * - 위 식으로 묶인 변수, 구조 분해(`{ sql }`·`{ sql: s }`·`{ text }`)로 꺼낸 변수
+ * - 그 식에 `replace`·`toLowerCase`·`trim`·`split`·`match` 같은 문자열 메서드를 건 결과, `?? ''`, `String(...)`,
+ *   템플릿 리터럴·`+` 이어 붙임, `split(..)[i]`
+ * - SQL 텍스트의 목록(`[a.sql, b.sql]`, `xs.map(x => renderSql(x).sql)`)을 `.join(..)`한 결과와 그 요소(`find`·`at`·`[i]`)
+ * - 길이·개수(`sql.length`, `sql.split(..).length`), `toSatisfy`, 속성으로 숨긴 부분 확인
+ *   (`toMatchObject({ sql: /re/ })`, `objectContaining({ sql: expect.stringContaining(..) })`), 목록 콜백 검사
+ *   (`list.some(s => s.includes(..))`, `.every`·`.filter`·`.findIndex`)도 부분 확인이다.
+ * - `toMatchInlineSnapshot`·`toMatchSnapshot`은 전체 문자열을 못 박는 단언이므로 허용한다.
+ *
+ * 예외: 부재 확인(`.not.toContain`·`.not.toMatch`, `.includes()`를 `toBe(false)`로)만, 같은 문장이나 바로
+ * 윗줄에 `// sql-absence: <사유>`를 달면 허용한다. 사유가 비어 있거나 글자·숫자가 없으면 예외가 아니다.
+ * 예외는 그 문장 하나에만 적용되고 `sqlAbsenceExemptionsOf`가 목록을 내보내 가드가 출력한다.
+ *
+ * 한계: 파일 경계를 넘는 도우미(다른 파일이 반환한 SQL 문자열), `readFileSync`로 읽은 마이그레이션
+ * SQL 텍스트, `Array.from`·`Object.values`·`reduce`·`for..of`로 만든 목록, 배열 구조 분해(`const [a] = list`)는 SQL 텍스트로
+ * 알아보지 못한다. 변수 추적은 파일 안에서 이름 기준이라 같은 이름을 다른
+ * 뜻으로 재사용하면 과하게 잡을 수 있다(그때는 이름을 바꾼다).
+ */
+const SQL_PROPS = new Set(['sql', 'text']);
+const SQL_STRING_METHODS = new Set([
+    'replace',
+    'replaceAll',
+    'toLowerCase',
+    'toUpperCase',
+    'trim',
+    'trimStart',
+    'trimEnd',
+    'normalize',
+    'slice',
+    'substring',
+    // 일치한 조각의 배열이라 개수(`toHaveLength`)만 보면 부분 확인이다.
+    'match',
+    'matchAll',
+    'split',
+]);
+/** 목록에서 한 요소(또는 그 부분)를 꺼내는 메서드: 결과도 SQL 텍스트다. */
+const SQL_LIST_PICKERS = new Set(['find', 'findLast', 'at', 'pop', 'shift']);
+/** 목록의 요소마다 콜백을 부르는 메서드: 콜백 매개변수가 SQL 텍스트다. */
+const SQL_LIST_CALLBACKS = new Set([
+    'some',
+    'every',
+    'find',
+    'findLast',
+    'findIndex',
+    'filter',
+    'forEach',
+    'map',
+    'flatMap',
+    'reduce',
+]);
+const SQL_LIST_KEEPERS = new Set([
+    'filter',
+    'slice',
+    'toSorted',
+    'toReversed',
+    'concat',
+    'flat',
+]);
+const SQL_PROBE_METHODS = new Set([
+    'includes',
+    'startsWith',
+    'endsWith',
+    'search',
+    'indexOf',
+]);
+const SQL_PARTIAL_MATCHERS = new Set([
+    'toContain',
+    'toMatch',
+    'toHaveLength',
+    'toBeTruthy',
+    'toSatisfy',
+]);
+const SQL_EQUALITY_MATCHERS = new Set(['toBe', 'toEqual', 'toStrictEqual']);
+const SQL_ABSENCE_REASON = /^\s*sql-absence:\s*(\S[\s\S]*)$/;
+const SQL_ABSENCE_WORD = /[\p{L}\p{N}]{2,}/u;
+
+export interface SqlSubstringFinding {
+    readonly line: number;
+    /** 사유가 있는 `// sql-absence:` 예외로 덮인 부재 확인인가. 덮였으면 위반이 아니다. */
+    readonly exempt: boolean;
+    readonly reason: string | null;
+}
+
+/** 별칭·도우미 사슬 추적의 반복 상한. 실제 파일은 3겹 안에서 끝난다. */
+const MAX_TRACKING_PASSES = 50;
+
+function lineAt(text: string, offset: number): number {
+    return text.slice(0, offset).split('\n').length;
+}
+
+function isFunctionNode(node: AstNode | null): node is AstNode {
+    return (
+        node !== null &&
+        (node.type === 'ArrowFunctionExpression' ||
+            node.type === 'FunctionExpression')
+    );
+}
+
+function patternName(node: AstNode | null): string | null {
+    return node?.type === 'AssignmentPattern'
+        ? nameOf(child(node, 'left'))
+        : nameOf(node);
+}
+
+function isStringLiteralOf(node: AstNode | null, value: string): boolean {
+    return (
+        node !== null &&
+        ((node.type === 'StringLiteral' && node.value === value) ||
+            (node.type === 'TemplateLiteral' &&
+                children(node, 'expressions').length === 0 &&
+                children(node, 'quasis').every(
+                    quasi =>
+                        typeof quasi.value === 'object' &&
+                        Reflect.get(quasi.value ?? {}, 'cooked') === value
+                )))
+    );
+}
+
+/** 이 파일의 SQL 렌더·SQL 텍스트 식을 알아보는 판정기. */
+function createSqlTextModel(ast: AstNode) {
+    const nodes = [...walk(ast)];
+    const renderFns = new Set(['renderSql']);
+    const renderedNames = new Set<string>();
+    const sqlNames = new Set<string>();
+    const sqlListNames = new Set<string>();
+    const localFunctions = new Set<string>();
+
+    const callsRender = (root: AstNode): boolean =>
+        [...walk(root)].some(
+            inner =>
+                (inner.type === 'CallExpression' &&
+                    renderFns.has(nameOf(child(inner, 'callee')) ?? '')) ||
+                (isMember(inner) &&
+                    ['sqlToQuery', 'toSQL'].includes(dotName(inner) ?? ''))
+        );
+
+    const isRendered = (expr: AstNode | null): boolean => {
+        const node = unwrap(expr);
+        if (node === null) return false;
+        if (node.type === 'AwaitExpression') {
+            return isRendered(child(node, 'argument'));
+        }
+        if (node.type === 'Identifier') {
+            return renderedNames.has(nameOf(node) ?? '');
+        }
+        return (
+            (node.type === 'CallExpression' ||
+                node.type === 'OptionalCallExpression') &&
+            renderFns.has(nameOf(child(node, 'callee')) ?? '')
+        );
+    };
+
+    /** 콜백(화살표·함수식)이 돌려주는 식들. */
+    const returnedExprs = (fn: AstNode | null): readonly AstNode[] => {
+        const body = fn === null ? null : child(fn, 'body');
+        if (body === null) return [];
+        return body.type === 'BlockStatement'
+            ? [...walk(body)].flatMap(inner => {
+                  const argument =
+                      inner.type === 'ReturnStatement'
+                          ? child(inner, 'argument')
+                          : null;
+                  return argument === null ? [] : [argument];
+              })
+            : [body];
+    };
+
+    /** SQL 텍스트의 목록: `[a.sql, b.sql]`, `xs.map(x => render(x).sql)`, 거기에 filter·slice 등을 건 결과. */
+    const isSqlList = (expr: AstNode | null): boolean => {
+        const node = unwrap(expr);
+        if (node === null) return false;
+        if (node.type === 'Identifier') {
+            return sqlListNames.has(nameOf(node) ?? '');
+        }
+        if (node.type === 'ArrayExpression') {
+            return children(node, 'elements').some(element =>
+                element.type === 'SpreadElement'
+                    ? isSqlList(child(element, 'argument'))
+                    : isSqlText(element)
+            );
+        }
+        if (
+            node.type !== 'CallExpression' &&
+            node.type !== 'OptionalCallExpression'
+        ) {
+            return false;
+        }
+        const callee = unwrap(child(node, 'callee'));
+        const method = dotName(callee);
+        if (callee === null || method === null) return false;
+        if (method === 'map' || method === 'flatMap') {
+            return children(node, 'arguments').some(argument =>
+                returnedExprs(argument).some(
+                    returned => isSqlText(returned) || isSqlList(returned)
+                )
+            );
+        }
+        return (
+            SQL_LIST_KEEPERS.has(method) && isSqlList(child(callee, 'object'))
+        );
+    };
+
+    const isSqlText = (expr: AstNode | null): boolean => {
+        const node = unwrap(expr);
+        if (node === null) return false;
+        if (node.type === 'Identifier') return sqlNames.has(nameOf(node) ?? '');
+        if (node.type === 'TemplateLiteral') {
+            return children(node, 'expressions').some(isSqlText);
+        }
+        if (node.type === 'BinaryExpression' && node.operator === '+') {
+            return (
+                isSqlText(child(node, 'left')) ||
+                isSqlText(child(node, 'right'))
+            );
+        }
+        if (isMember(node) && node.computed === true) {
+            return (
+                isSqlText(child(node, 'object')) ||
+                isSqlList(child(node, 'object'))
+            );
+        }
+        const prop = dotName(node);
+        if (prop !== null) {
+            return (
+                prop === 'sql' ||
+                (SQL_PROPS.has(prop) && isRendered(child(node, 'object')))
+            );
+        }
+        if (node.type === 'LogicalExpression') {
+            return isSqlText(child(node, 'left'));
+        }
+        if (
+            node.type !== 'CallExpression' &&
+            node.type !== 'OptionalCallExpression'
+        ) {
+            return false;
+        }
+        const callee = unwrap(child(node, 'callee'));
+        if (nameOf(callee) === 'String') {
+            return isSqlText(children(node, 'arguments')[0] ?? null);
+        }
+        if (
+            localFunctions.has(nameOf(callee) ?? '') &&
+            children(node, 'arguments').some(isSqlText)
+        ) {
+            // 같은 파일의 도우미가 SQL 텍스트를 받아 돌려준 값(`whereOnly(sql)`)도 SQL 일부다.
+            return true;
+        }
+        const method = dotName(callee);
+        if (callee === null || method === null) return false;
+        if (method === 'join') return isSqlList(child(callee, 'object'));
+        if (SQL_LIST_PICKERS.has(method)) {
+            return isSqlList(child(callee, 'object'));
+        }
+        return (
+            SQL_STRING_METHODS.has(method) && isSqlText(child(callee, 'object'))
+        );
+    };
+
+    const declarators = nodes.filter(
+        node => node.type === 'VariableDeclarator'
+    );
+    const functions = nodes.flatMap(node => {
+        if (node.type === 'FunctionDeclaration') {
+            const name = nameOf(child(node, 'id'));
+            return name === null ? [] : [{ name, body: node }];
+        }
+        const init = child(node, 'init');
+        const name = nameOf(child(node, 'id'));
+        return node.type === 'VariableDeclarator' &&
+            name !== null &&
+            isFunctionNode(init)
+            ? [{ name, body: init }]
+            : [];
+    });
+
+    functions.forEach(({ name }) => localFunctions.add(name));
+
+    // 별칭·도우미 사슬을 고정점까지 따라간다(한 번에 한 겹씩 풀리므로 추적 집합이
+    // 더 자라지 않을 때까지 돈다). 상한을 넘으면 조용히 놓치지 않고 실패한다(TE-63).
+    const trackedSize = (): number =>
+        renderFns.size + renderedNames.size + sqlNames.size + sqlListNames.size;
+    const settle = (pass: number): void => {
+        const before = trackedSize();
+        growTrackedNames();
+        if (trackedSize() === before) return;
+        if (pass >= MAX_TRACKING_PASSES) {
+            throw new Error(
+                `sql-substring-assertion: alias chain did not settle in ${MAX_TRACKING_PASSES} passes`
+            );
+        }
+        settle(pass + 1);
+    };
+    function growTrackedNames(): void {
+        // `list.some(s => s.includes(..))`의 `s`도 SQL 텍스트다.
+        nodes.forEach(node => {
+            const callee = unwrap(child(node, 'callee'));
+            const method = dotName(callee);
+            if (
+                node.type !== 'CallExpression' ||
+                callee === null ||
+                method === null ||
+                !SQL_LIST_CALLBACKS.has(method) ||
+                !isSqlList(child(callee, 'object'))
+            ) {
+                return;
+            }
+            children(node, 'arguments').forEach(argument => {
+                const first = children(argument, 'params')[0];
+                const param = patternName(first ?? null);
+                if (param !== null) sqlNames.add(param);
+            });
+        });
+        functions.forEach(({ name, body }) => {
+            if (callsRender(body)) renderFns.add(name);
+        });
+        declarators.forEach(declarator => {
+            const id = child(declarator, 'id');
+            const init = child(declarator, 'init');
+            const name = nameOf(id);
+            if (name !== null) {
+                if (
+                    renderFns.has(nameOf(unwrap(init)) ?? '') &&
+                    !isFunctionNode(init)
+                ) {
+                    renderFns.add(name);
+                } else if (isRendered(init)) renderedNames.add(name);
+                else if (isSqlText(init)) sqlNames.add(name);
+                else if (isSqlList(init)) sqlListNames.add(name);
+                return;
+            }
+            if (id?.type !== 'ObjectPattern') return;
+            const rendered = isRendered(init);
+            children(id, 'properties').forEach(property => {
+                const key = nameOf(child(property, 'key'));
+                const bound = patternName(child(property, 'value'));
+                if (
+                    key !== null &&
+                    bound !== null &&
+                    (key === 'sql' || (rendered && SQL_PROPS.has(key)))
+                ) {
+                    sqlNames.add(bound);
+                }
+            });
+        });
+    }
+    settle(1);
+
+    return { isSqlText, isSqlList, isRendered, returnedExprs };
+}
+
+/** `expect(<arg>)` 체인을 풀어 `{ arg, negated, matcher, matcherArgs }`로 돌려준다. */
+function parseExpectChain(call: AstNode) {
+    const callee = unwrap(child(call, 'callee'));
+    const matcher = dotName(callee);
+    if (callee === null || matcher === null) return null;
+    const walkChain = (
+        node: AstNode | null,
+        negated: boolean
+    ): { arg: AstNode | null; negated: boolean } | null => {
+        const target = unwrap(node);
+        if (target === null) return null;
+        if (target.type === 'CallExpression') {
+            return nameOf(child(target, 'callee')) === 'expect'
+                ? { arg: children(target, 'arguments')[0] ?? null, negated }
+                : null;
+        }
+        const name = dotName(target);
+        return name === 'not' || name === 'resolves' || name === 'rejects'
+            ? walkChain(child(target, 'object'), negated !== (name === 'not'))
+            : null;
+    };
+    const root = walkChain(child(callee, 'object'), false);
+    return root === null
+        ? null
+        : {
+              ...root,
+              matcher,
+              matcherArgs: children(call, 'arguments'),
+          };
+}
+
+function hasStringContaining(node: AstNode): boolean {
+    return [...walk(node)].some(inner => {
+        if (inner.type !== 'CallExpression') return false;
+        const callee = child(inner, 'callee');
+        return (
+            isMember(callee) &&
+            nameOf(child(callee, 'object')) === 'expect' &&
+            ['stringContaining', 'stringMatching'].includes(
+                dotName(callee) ?? ''
+            )
+        );
+    });
+}
+
+type SqlModel = ReturnType<typeof createSqlTextModel>;
+
+/** 부분 확인 호출(`sql.includes(..)`, `/re/.test(sql)`, `list.some(s => s.includes(..))`)인가. */
+function isSqlProbe(expr: AstNode | null, model: SqlModel): boolean {
+    const node = unwrap(expr);
+    // `list.filter(s => s.includes(..)).length`처럼 개수로 바꾼 것도 같은 부분 확인이다.
+    if (node !== null && dotName(node) === 'length') {
+        return isSqlProbe(child(node, 'object'), model);
+    }
+    if (
+        node === null ||
+        (node.type !== 'CallExpression' &&
+            node.type !== 'OptionalCallExpression')
+    ) {
+        return false;
+    }
+    const callee = unwrap(child(node, 'callee'));
+    if (callee === null) return false;
+    const method = dotName(callee);
+    if (method === 'test') {
+        return model.isSqlText(children(node, 'arguments')[0] ?? null);
+    }
+    if (method === null) return false;
+    if (SQL_PROBE_METHODS.has(method)) {
+        return model.isSqlText(child(callee, 'object'));
+    }
+    // 목록을 훑는 검사: 콜백이 요소 SQL을 부분 확인하면 부분 확인이다.
+    return (
+        (method === 'some' ||
+            method === 'every' ||
+            method === 'findIndex' ||
+            method === 'filter') &&
+        model.isSqlList(child(callee, 'object')) &&
+        children(node, 'arguments').some(argument =>
+            [...walk(argument)].some(
+                inner => inner !== node && isSqlProbe(inner, model)
+            )
+        )
+    );
+}
+
+type SqlJudgement = 'ok' | 'partial' | 'absence';
+
+/** `{ sql: expect.stringContaining(..) }`·`{ sql: /re/ }`처럼 객체 속성으로 숨긴 부분 확인인가. */
+function hasPartialSqlProperty(node: AstNode, rendered: boolean): boolean {
+    return [...walk(node)].some(inner => {
+        if (inner.type !== 'ObjectProperty') return false;
+        const key = nameOf(child(inner, 'key'));
+        const value = child(inner, 'value');
+        if (key === null || value === null) return false;
+        if (key !== 'sql' && !(rendered && key === 'text')) return false;
+        return value.type === 'RegExpLiteral' || hasStringContaining(value);
+    });
+}
+
+function judgeSqlExpect(
+    chain: NonNullable<ReturnType<typeof parseExpectChain>>,
+    model: SqlModel
+): SqlJudgement {
+    const { arg, negated, matcher, matcherArgs } = chain;
+    const rendered = model.isRendered(arg);
+    const text = model.isSqlText(arg);
+    const list = model.isSqlList(arg);
+    // `toMatchInlineSnapshot`·`toMatchSnapshot`은 전체 문자열을 못 박는 단언이라 허용한다.
+    const hidden = matcherArgs.some(
+        argument =>
+            hasPartialSqlProperty(argument, rendered) ||
+            ((rendered || text || list) && hasStringContaining(argument))
+    );
+    if (hidden) return 'partial';
+    const probe = isSqlProbe(arg, model);
+    // `sql.length`·`sql.split(..).length`는 길이나 개수만 보는 부분 확인이다.
+    const argNode = unwrap(arg);
+    const lengthOfSql =
+        argNode !== null &&
+        dotName(argNode) === 'length' &&
+        model.isSqlText(child(argNode, 'object'));
+    if (lengthOfSql) return 'partial';
+    if (!probe && !text) return 'ok';
+    const first = matcherArgs[0] ?? null;
+    if (probe) {
+        // `includes(..)`처럼 일부만 본 불리언: `false`를 기대하는 쪽이 부재 확인이다.
+        const expectsFalse =
+            (matcher === 'toBe' &&
+                first?.type === 'BooleanLiteral' &&
+                first.value === negated) ||
+            (matcher === 'toBeFalsy' && !negated);
+        return expectsFalse ? 'absence' : 'partial';
+    }
+    if (negated && (matcher === 'toContain' || matcher === 'toMatch')) {
+        return 'absence';
+    }
+    if (SQL_PARTIAL_MATCHERS.has(matcher)) {
+        // `not.toBeTruthy()`는 빈 문자열 확인이라 전체 단언이다.
+        return negated && matcher === 'toBeTruthy' ? 'ok' : 'partial';
+    }
+    if (negated && matcher === 'toBeFalsy') return 'partial';
+    if (SQL_EQUALITY_MATCHERS.has(matcher)) {
+        // `toEqual(/re/)`는 정규식이 전체를 대신하지 못한다.
+        return first?.type === 'RegExpLiteral' ||
+            (negated && isStringLiteralOf(first, ''))
+            ? 'partial'
+            : 'ok';
+    }
+    return 'ok';
+}
+
+function absenceReasons(ctx: FileContext) {
+    return ctx.commentRanges.flatMap(comment => {
+        const reason = SQL_ABSENCE_REASON.exec(comment.value.trim())?.[1];
+        if (reason === undefined || !SQL_ABSENCE_WORD.test(reason)) return [];
+        const line = lineAt(ctx.text, comment.start);
+        const lineStart = ctx.text.lastIndexOf('\n', comment.start - 1) + 1;
+        return [
+            {
+                line,
+                reason: reason.trim(),
+                alone: ctx.text.slice(lineStart, comment.start).trim() === '',
+            },
+        ];
+    });
+}
+
+/** 렌더된 SQL 부분 문자열 단언과 부재 확인 예외를 줄 번호와 함께 돌려준다. */
+export function findSqlSubstringAssertions(
+    ctx: FileContext
+): readonly SqlSubstringFinding[] {
+    if (ctx.ast === null || !/sql|toSQL/i.test(ctx.text)) return [];
+    const model = createSqlTextModel(ctx.ast);
+    const statements = [...walk(ctx.ast)].filter(
+        node =>
+            node.type === 'ExpressionStatement' ||
+            node.type === 'ReturnStatement'
+    );
+    const reasons = absenceReasons(ctx);
+    const findings = [...walk(ctx.ast)]
+        .filter(node => node.type === 'CallExpression')
+        .flatMap(call => {
+            const chain = parseExpectChain(call);
+            const judgement =
+                chain === null ? 'ok' : judgeSqlExpect(chain, model);
+            if (judgement === 'ok') return [];
+            const start = call.start ?? 0;
+            const statement = statements
+                .filter(
+                    s =>
+                        (s.start ?? 0) <= start &&
+                        (s.end ?? 0) >= (call.end ?? 0)
+                )
+                .toSorted((a, b) => (b.start ?? 0) - (a.start ?? 0))[0];
+            const first = lineAt(ctx.text, statement?.start ?? start);
+            const last = lineAt(ctx.text, statement?.end ?? start);
+            const covering =
+                judgement === 'absence'
+                    ? reasons.find(
+                          r =>
+                              (r.alone && r.line === first - 1) ||
+                              (r.line >= first && r.line <= last)
+                      )
+                    : undefined;
+            return [
+                {
+                    line: lineAt(ctx.text, start),
+                    exempt: covering !== undefined,
+                    reason: covering?.reason ?? null,
+                },
+            ];
+        });
+    return findings.toSorted((a, b) => a.line - b.line);
+}
+
+function parsedContext(file: string, text: string): FileContext | null {
+    const parsed = tryParse({ path: file, text });
+    return typeof parsed === 'string'
+        ? null
+        : {
+              path: file,
+              text,
+              ast: parsed.ast,
+              commentRanges: parsed.commentRanges,
+          };
+}
+
+/** 위반 줄 번호. 가드 실패 메시지가 파일:줄을 붙이는 데 쓴다. */
+export function sqlSubstringLinesOf(
+    file: string,
+    text: string
+): readonly number[] {
+    const ctx = parsedContext(file, text);
+    return ctx === null
+        ? []
+        : findSqlSubstringAssertions(ctx)
+              .filter(finding => !finding.exempt)
+              .map(finding => finding.line);
+}
+
+/** `// sql-absence: <사유>`로 허용된 부재 확인 목록. 가드가 출력해 눈에 보이게 한다. */
+export function sqlAbsenceExemptionsOf(
+    file: string,
+    text: string
+): readonly { readonly line: number; readonly reason: string }[] {
+    const ctx = parsedContext(file, text);
+    return ctx === null
+        ? []
+        : findSqlSubstringAssertions(ctx).flatMap(finding =>
+              finding.exempt && finding.reason !== null
+                  ? [{ line: finding.line, reason: finding.reason }]
+                  : []
+          );
+}
+
 export const CODE_RULES: readonly CodeRule[] = [
     {
         key: 'non-null-assertion',
@@ -869,6 +1487,16 @@ export const CODE_RULES: readonly CodeRule[] = [
         appliesTo: file =>
             file.startsWith('src/') && /\.tsx?$/.test(file) && isCodeFile(file),
         countFile: ctx => findIssueRefLines(ctx).length,
+    },
+    {
+        key: 'sql-substring-assertion',
+        docRef: 'TESTING.md#TE-53',
+        mode: 'zero',
+        fix: 'Pin the full rendered SQL with toBe/toEqual. A pure absence check may carry `// sql-absence: <reason>` on the same or previous line.',
+        appliesTo: isTestFile,
+        countFile: ctx =>
+            findSqlSubstringAssertions(ctx).filter(finding => !finding.exempt)
+                .length,
     },
     {
         key: 'lint-disable-directive',

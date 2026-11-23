@@ -356,7 +356,7 @@
         "src/entities/bars/__tests__/lib/fearGreedWindow.test.ts": 2,
         "src/entities/bars/__tests__/lib/symbolFearGreed.test.ts": 2,
         "src/entities/bars/__tests__/sharedBarsImmutability.test.ts": 1,
-        "src/entities/chat-conversation/__tests__/api.test.ts": 32,
+        "src/entities/chat-conversation/__tests__/api.test.ts": 31,
         "src/entities/earnings-report/__tests__/resolveEarningsDates.test.ts": 1,
         "src/entities/earnings-report/__tests__/server/earningsReportsRepository.test.ts": 1,
         "src/entities/economy/__tests__/economySnapshotCache.test.ts": 2,

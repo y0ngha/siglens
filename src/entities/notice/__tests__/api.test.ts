@@ -116,14 +116,10 @@ describe('DrizzleNoticeRepository.findActive', () => {
         expect(whereSpy).toHaveBeenCalledTimes(1);
         const [[condition]] = whereSpy.mock.calls;
         const { sql: text, params } = new PgDialect().sqlToQuery(condition);
-        // 바깥 괄호·공백 같은 drizzle 포맷은 고정하지 않고, and/or 결합 구조만 고정한다 —
-        // 각 경계는 "null이면 무제한 or 양 끝 포함 비교"이고 세 조건은 and로 묶인다.
-        expect(text).toContain('"notices"."is_active" = $1 and (');
-        expect(text).toContain(
-            '("notices"."starts_at" is null or "notices"."starts_at" <= NOW()) and ('
-        );
-        expect(text).toContain(
-            '("notices"."ends_at" is null or "notices"."ends_at" >= NOW())'
+        // 전체 절을 못 박는다: 각 경계는 "null이면 무제한 or 양 끝 포함 비교"이고 세 조건은 and로 묶인다.
+        // 괄호·결합자·비교 방향이 바뀌면 이 문자열이 달라진다.
+        expect(text).toBe(
+            '("notices"."is_active" = $1 and ("notices"."starts_at" is null or "notices"."starts_at" <= NOW()) and ("notices"."ends_at" is null or "notices"."ends_at" >= NOW()))'
         );
         expect(params).toEqual([true]);
     });

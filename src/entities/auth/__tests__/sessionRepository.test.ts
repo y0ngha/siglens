@@ -202,11 +202,10 @@ describe('DrizzleSessionRepository', () => {
             expect(captured).toHaveLength(1);
             const { sql: text, params } = captured[0]!;
             const lower = text.toLowerCase();
-            expect(lower).toMatch(/^delete from "sessions"/);
             // 바깥 DELETE는 id IN (서브쿼리), 서브쿼리가 인덱스 컬럼(expires_at)으로 만료를 거른다.
-            expect(lower).toContain('"id" in (select "id" from "sessions"');
-            expect(lower).toContain('"sessions"."expires_at" < $1');
-            expect(lower).toContain('limit $2');
+            expect(lower).toBe(
+                'delete from "sessions" where "sessions"."id" in (select "id" from "sessions" where "sessions"."expires_at" < $1 limit $2) returning "id"'
+            );
             expect(params[0]).toBe(NOW.toISOString());
             expect(params[1]).toBe(EXPIRED_SESSION_PRUNE_BATCH_SIZE);
         });

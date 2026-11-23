@@ -807,7 +807,7 @@ describe('DrizzleUserRepository', () => {
             const { sql: conditionSql, params } = renderSql(
                 deleteConditions[0]
             );
-            expect(conditionSql).toMatch(/"user_id" = \$1$/);
+            expect(conditionSql).toBe('"sessions"."user_id" = $1');
             expect(params).toEqual(['user-1']);
         });
 

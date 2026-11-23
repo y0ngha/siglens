@@ -198,7 +198,7 @@ When a function starts passing a new argument or dependency to a mocked collabor
 
 #### TE-27 — Never assert by call index
 
-Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. `codeRules.test.ts` (rule `mock-call-index`, per-file baseline, `TOOLCHAIN.md#TC-41`) fails any new one.
+Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. Guard: `mock-call-index`.
 
 Assert what was written (the key and TTL), not just how many times the collaborator was called.
 
@@ -463,7 +463,7 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 #### TE-63 — A parser-based guard accounts for every candidate
 
-A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header.
+A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header. A rename that silences a new guard is a matcher gap to close, not a fix.
 
 `coreClientExports.test.ts` fails when client-bundle code imports a core value missing from the browser entry (`dist/index.client.js`), with no baseline. A bundle-reachability guard walks value edges only (type-only imports are erased); fix a latent violation's cause instead of baselining it.
 
@@ -580,10 +580,9 @@ Fake LLMs and similar doubles that parse a vendor or core message format break s
 
 Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Vacuous shapes and their fix:
 
-- **Mocked logic.** A query builder whose condition is never inspected, a SQL assertion built from short `toContain`
-  fragments, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
+- **Mocked logic.** A query builder whose condition is never inspected, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
   behaviour (the value computation, the branch predicate). Mock only the I/O boundary; render the real condition (SQL
-  text and params, the full clause, never a column or keyword that also appears elsewhere in the SQL); run the script on a real or emulated Redis or assert its effects; assert values
+  text and params), pin rendered SQL as a full string (absence checks: `// sql-absence: <reason>`; guard-enforced); run the script on a real or emulated Redis or assert its effects; assert values
   that differ per branch.
 - **Wrong surface.** A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only
   through the data flag, a "renders independently" test that mounts only the inner component, a new tracking call with
@@ -606,7 +605,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
   (read the hook first), not a combination it never emits (a live result while analysing).
 
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
-- ✅ Render the condition to SQL plus params and assert both.
+- ✅ Assert the full rendered SQL and params.
 
 <a id="TE-54"></a>
 

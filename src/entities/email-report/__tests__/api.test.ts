@@ -279,11 +279,9 @@ describe('DrizzleEmailReportSubscriptionRepository.findEnabledRecipients', () =>
         const sqlText = dialect.sqlToQuery(
             (where.mock.calls[0] as unknown as [SQL])[0]
         );
-        expect(sqlText.sql).toContain(
-            '"email_report_subscriptions"."enabled" = $1'
+        expect(sqlText.sql).toBe(
+            '("email_report_subscriptions"."enabled" = $1 and "users"."email_verified" = $2 and "users"."tier" in ($3, $4))'
         );
-        expect(sqlText.sql).toContain('"users"."email_verified" = $2');
-        expect(sqlText.sql).toContain('"users"."tier" in ($3, $4)');
         expect(sqlText.params).toEqual([true, true, 'member', 'pro']);
     });
 });
@@ -426,17 +424,15 @@ describe('DrizzleEmailReportExclusionRepository', () => {
         expect(captured).toHaveLength(3);
         // 상한 판정용 개수 조회는 이 회원의 행만 읽는다.
         expect(captured[1]).toEqual({
-            sql: expect.stringMatching(
-                /^select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"\."user_id" = \$1/
-            ),
+            sql: 'select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"."user_id" = $1',
             params: ['user-1'],
         });
         expect(captured[0]).toEqual({
             sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
             params: ['user-1'],
         });
-        expect(captured[2].sql).toMatch(
-            /^insert into "email_report_excluded_symbols" \("user_id", "symbol", "created_at"\) values \(\$1, \$2, default\) on conflict \("user_id","symbol"\) do nothing/
+        expect(captured[2].sql).toBe(
+            'insert into "email_report_excluded_symbols" ("user_id", "symbol", "created_at") values ($1, $2, default) on conflict ("user_id","symbol") do nothing'
         );
         expect(captured[2].params).toEqual(['user-1', 'AAPL']);
     });
@@ -470,8 +466,8 @@ describe('DrizzleEmailReportExclusionRepository', () => {
             )
         ).resolves.toBe('excluded');
         // 삽입은 여전히 나가지만 충돌 무시라 행이 늘지 않는다.
-        expect(captured[2].sql).toMatch(
-            /^insert into "email_report_excluded_symbols".* on conflict \("user_id","symbol"\) do nothing/
+        expect(captured[2].sql).toBe(
+            'insert into "email_report_excluded_symbols" ("user_id", "symbol", "created_at") values ($1, $2, default) on conflict ("user_id","symbol") do nothing'
         );
     });
 
@@ -484,9 +480,7 @@ describe('DrizzleEmailReportExclusionRepository', () => {
             )
         ).resolves.toBe(true);
         expect(removed.captured[0]).toEqual({
-            sql: expect.stringMatching(
-                /^delete from "email_report_excluded_symbols" where \("email_report_excluded_symbols"\."user_id" = \$1 and "email_report_excluded_symbols"\."symbol" = \$2\) returning /
-            ),
+            sql: 'delete from "email_report_excluded_symbols" where ("email_report_excluded_symbols"."user_id" = $1 and "email_report_excluded_symbols"."symbol" = $2) returning "symbol"',
             params: ['user-1', 'AAPL'],
         });
 

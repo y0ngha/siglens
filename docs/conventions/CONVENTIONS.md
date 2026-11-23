@@ -79,7 +79,7 @@ return result;
 const result = condition ? newValue : value;
 ```
 
-A `let` assigned inside `try` and read after it is the same smell: make the guarded call a `const` (`const x = await load().catch(() => null)`). Two shapes are machine-checked (see "Enforced rules"): `let x = a;` directly followed by an `if` that only assigns `x`, and `let x;` directly followed by a `try` that assigns it. Loop state and effect-cleanup flags stay a judgment call.
+A `let` assigned inside `try` and read after it is the same smell: make the guarded call a `const` (`const x = await load().catch(() => null)`). Two shapes are machine-checked (see "Enforced rules"). Loop state and effect-cleanup flags stay a judgment call.
 
 In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
 
@@ -493,6 +493,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | No `??=`, `||=`, `&&=` in components and hooks (EF-4) | rule `logical-assignment-in-react`, zero tolerance | production `.tsx` and `use*.ts` | Write the check and the assignment out. |
 | No citation of local-only docs (CM-9) | rule `local-doc-citation`, zero tolerance | comments and strings of code, and `.sh`/`.css`/`.yml` text, under the scan roots; strings in test files are fixtures and skipped | State the fact inline. |
 | No issue/PR number `#123`+ in a comment (CM-11) | `codeRules.test.ts` rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418` in a React/hydration comment, hex colours with a letter and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
+| No partial assertion on rendered SQL (TE-53) | rule `sql-substring-assertion`, zero tolerance | tests: `toContain`/`toMatch`/`toHaveLength`/`toBeTruthy`/`not.toBe('')`/`stringContaining`/`.includes()`/`.length` on `renderSql().sql`, `captured[n].sql`, aliases, joins, splits; absence checks need `// sql-absence: <reason>` (logged), snapshots are full pins; not seen: other-file helpers, `Array.from`/`reduce` lists, array destructuring | `toBe` the full rendered SQL. |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
@@ -732,7 +733,7 @@ A module-level JSDoc does not replace per-symbol docs. Each exported component, 
 #### CM-11 — Comments describe the current design and WHY, not history
 
 A comment or JSDoc states the present constraint and reason. It does not narrate PRs, audits, review rounds, issue or PR
-numbers (`#1234`; machine-checked, see "Enforced rules") or what the code used to do, and it does not announce planned future changes ("a later change will move..."), which go stale
+numbers (guard-checked) or what the code used to do, and it does not announce planned future changes ("a later change will move..."), which go stale
 as soon as the plan lands or changes. When a refactor changes a strategy (for example how a chart is remounted on theme change), re-read
 the comments and helpers that describe the old strategy and rewrite or delete them; a comment that contradicts the code
 is worse than none.

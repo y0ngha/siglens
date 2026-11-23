@@ -56,15 +56,16 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
         ]);
         expect(row['email']).toBe('a@x.io');
         const owner = render(row['userId']);
-        expect(owner.sql).toContain('"users"."email_verified"');
-        expect(owner.sql).toContain('not exists');
+        expect(owner.sql).toBe(
+            '(select "users"."id" from "users" where "users"."email" = $1 and "users"."email_verified" and not exists (select 1 from "mail_alert_subscribers" where "mail_alert_subscribers"."user_id" = "users"."id"))'
+        );
         expect(owner.params).toEqual(['a@x.io']);
         const config = onlyCallArg(onConflictDoUpdate) as {
             set: Record<string, unknown>;
         };
         // 처음 동의 값은 충돌 갱신 대상이 아니다.
         expect(Object.keys(config.set).sort()).toEqual(['updatedAt', 'userId']);
-        expect(render(config.set['userId']).sql).toContain(
+        expect(render(config.set['userId']).sql).toBe(
             'coalesce("mail_alert_subscribers"."user_id", excluded.user_id)'
         );
     });
@@ -218,8 +219,9 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
         expect(keys.get('s1')).toEqual(new Set(['a', 'b', 'c']));
         expect(keys.get('s2')).toEqual(new Set());
         const { sql, params } = render(onlyCallArg(where));
-        expect(sql).toContain('"mail_alert_deliveries"."status" = $1');
-        expect(sql).toContain('"mail_alert_deliveries"."alert_date" >= $2');
+        expect(sql).toBe(
+            '("mail_alert_deliveries"."status" = $1 and "mail_alert_deliveries"."alert_date" >= $2)'
+        );
         expect(params).toEqual(['sent', '2026-11-17']);
     });
 
@@ -235,7 +237,7 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
             new DrizzleMailAlertDeliveryRepository(db).pruneBefore('2026-08-25')
         ).resolves.toBe(2);
         const { sql, params } = render(onlyCallArg(where));
-        expect(sql).toContain('"mail_alert_deliveries"."alert_date" < $1');
+        expect(sql).toBe('"mail_alert_deliveries"."alert_date" < $1');
         expect(params).toEqual(['2026-08-25']);
     });
 });
