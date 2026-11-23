@@ -975,6 +975,8 @@ partial source (filings only, daily candles, an estimate) says so in its name or
 not labelled with the real-world quantity it approximates. When the data cannot support the stronger term, use the
 weaker one or show the basis next to the value. Each rendered figure names its own basis (reference value,
 denominator, comparison) in the same card; a basis written once for several tables must hold for every table it covers.
+A verdict sentence follows the producer's definition (`no_edge`: not shown to beat placebo), tested on a boundary row.
+A product-reserved term (golden cross) never labels another definition.
 
 - ❌ "Order flow" computed from daily candles; "buy/sell volume" for a close-location estimate.
 - ✅ "Estimated volume split (from daily candles)"; a flow score captioned with the filings it is built from.

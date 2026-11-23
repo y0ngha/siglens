@@ -385,7 +385,7 @@ This includes a clock passed as an argument: if a dependency (an LRU, a cache) a
 
 - ❌ Passing a synthetic `now` of `999` to a limiter whose backing cache expires entries on `Date.now()`; a 1 ms TTL elapses in real CI time and a new window opens.
 - ✅ Freeze the clock for the suite (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
-- ❌ A cache key's date segment is matched with a regex (`/:\d{4}-\d{2}-\d{2}$/`) against the wall clock, so any date passes. ✅ Pin the clock with `vi.setSystemTime` and assert the exact key.
+- ❌ A date-keyed cache key matched by a date regex. ✅ Pin the clock; assert the exact key.
 
 <a id="TE-9"></a>
 
@@ -582,7 +582,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 
 - **Mocked logic.** A query builder whose condition is never inspected, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
   behaviour (the value computation, the branch predicate). Mock only the I/O boundary; render the real condition (SQL
-  text and params), pin rendered SQL as a full string (absence checks: `// sql-absence: <reason>`; guard-enforced); run the script on a real or emulated Redis or assert its effects; assert values
+  text and params), pin rendered SQL as a full string (guard-enforced); run the script on a real or emulated Redis or assert its effects; assert values
   that differ per branch.
 - **Wrong surface.** A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only
   through the data flag, a "renders independently" test that mounts only the inner component, a new tracking call with
