@@ -448,8 +448,9 @@ describe('DrizzleNewsRepository', () => {
             // drizzle의 `isNotNull`은 ' is not null' 조각을, `isNull`은 ' is null'
             // 조각을 남긴다 — 방향이 뒤집히면 여기서 걸린다.
             const { sql } = renderSql((where.mock.calls[0] as [unknown])[0]);
-            expect(sql).toContain(' is not null');
-            expect(sql).not.toMatch(/ is null/);
+            expect(sql).toBe(
+                '(("news"."symbol" = $1 and "news"."published_at" >= $2) and "news"."analyzed_at" is not null)'
+            );
         });
 
         it('결과가 없으면 빈 Set을 돌려준다', async () => {

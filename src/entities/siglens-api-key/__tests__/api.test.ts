@@ -41,8 +41,9 @@ describe('listActiveByUser', () => {
         const { sql, params } = render(
             (where.mock.calls as unknown[][]).find(call => call.length > 0)?.[0]
         );
-        expect(sql).toContain('"user_id" = $1');
-        expect(sql).toContain('"revoked_at" is null');
+        expect(sql).toBe(
+            '("siglens_api_keys"."user_id" = $1 and "siglens_api_keys"."revoked_at" is null)'
+        );
         expect(params).toEqual([OWNER]);
     });
 
@@ -136,8 +137,9 @@ describe('createWithinLimit', () => {
         const { sql, params } = render(
             (fx.countWhere.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"user_id" = $1');
-        expect(sql).toContain('"revoked_at" is null');
+        expect(sql).toBe(
+            '("siglens_api_keys"."user_id" = $1 and "siglens_api_keys"."revoked_at" is null)'
+        );
         expect(params).toEqual([OWNER]);
     });
 
@@ -187,9 +189,9 @@ describe('revokeOwned', () => {
         const { db, where } = makeUpdateDb([]);
         await new DrizzleSiglensApiKeyRepository(db).revokeOwned(OTHER, KEY_ID);
         const { sql, params } = render((where.mock.calls as unknown[][])[0][0]);
-        expect(sql).toContain('"id" = $1');
-        expect(sql).toContain('"user_id" = $2');
-        expect(sql).toContain('"revoked_at" is null');
+        expect(sql).toBe(
+            '("siglens_api_keys"."id" = $1 and "siglens_api_keys"."user_id" = $2 and "siglens_api_keys"."revoked_at" is null)'
+        );
         expect(params).toEqual([KEY_ID, OTHER]);
     });
 
@@ -221,9 +223,9 @@ describe('findActivePrincipalByHash', () => {
             HASH
         );
         const { sql, params } = render((where.mock.calls as unknown[][])[0][0]);
-        expect(sql).toContain('"key_hash" = $1');
-        expect(sql).toContain('"revoked_at" is null');
-        expect(sql).toContain('"email_verified" = $2');
+        expect(sql).toBe(
+            '("siglens_api_keys"."key_hash" = $1 and "siglens_api_keys"."revoked_at" is null and "users"."email_verified" = $2)'
+        );
         expect(params).toEqual([HASH, true]);
     });
 
@@ -262,8 +264,9 @@ describe('touchLastUsed', () => {
             db as unknown as SiglensDatabase
         ).touchLastUsed(KEY_ID);
         const { sql, params } = render((where.mock.calls as unknown[][])[0][0]);
-        expect(sql).toContain('"last_used_at" IS NULL');
-        expect(sql).toContain('make_interval');
+        expect(sql).toBe(
+            '("siglens_api_keys"."id" = $1 and ("siglens_api_keys"."last_used_at" IS NULL OR "siglens_api_keys"."last_used_at" < now() - make_interval(secs => $2)))'
+        );
         expect(params).toEqual([KEY_ID, 60]);
     });
 });
@@ -282,8 +285,9 @@ describe('listActiveKeyHashesByUser', () => {
             Object.keys((select.mock.calls as unknown[][])[0][0] as object)
         ).toEqual(['keyHash']);
         const { sql, params } = render((where.mock.calls as unknown[][])[0][0]);
-        expect(sql).toContain('"user_id" = $1');
-        expect(sql).toContain('"revoked_at" is null');
+        expect(sql).toBe(
+            '("siglens_api_keys"."user_id" = $1 and "siglens_api_keys"."revoked_at" is null)'
+        );
         expect(params).toEqual([OWNER]);
     });
 });

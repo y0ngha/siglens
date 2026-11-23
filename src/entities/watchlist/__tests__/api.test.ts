@@ -72,9 +72,7 @@ describe('DrizzleWatchlistRepository', () => {
                     params: ['user-1'],
                 },
                 {
-                    sql: expect.stringMatching(
-                        /^insert into "watchlist_items" .* on conflict \("user_id","symbol"\) do nothing returning "id"$/
-                    ),
+                    sql: 'insert into "watchlist_items" ("id", "user_id", "symbol", "company_name", "created_at") values (default, $1, $2, $3, default), (default, $4, $5, $6, default) on conflict ("user_id","symbol") do nothing returning "id"',
                     params: [
                         'user-1',
                         'MSFT',
@@ -179,9 +177,7 @@ describe('DrizzleWatchlistRepository', () => {
                     params: ['user-1'],
                 },
                 {
-                    sql: expect.stringMatching(
-                        /^insert into "watchlist_items" \("id", "user_id", "symbol", "company_name", "created_at"\) values \(default, \$1, \$2, \$3, default\) on conflict \("user_id","symbol"\) do update set "company_name" = coalesce\("watchlist_items"\."company_name", \$4\) returning /
-                    ),
+                    sql: 'insert into "watchlist_items" ("id", "user_id", "symbol", "company_name", "created_at") values (default, $1, $2, $3, default) on conflict ("user_id","symbol") do update set "company_name" = coalesce("watchlist_items"."company_name", $4) returning "id", "user_id", "symbol", "company_name", "created_at"',
                     params: ['user-1', 'AAPL', 'Apple Inc.', 'Apple Inc.'],
                 },
             ]);
@@ -221,11 +217,9 @@ describe('DrizzleWatchlistRepository', () => {
                 created: false,
             });
             expect(captured.map(q => q.sql)).toEqual([
-                expect.stringContaining('for no key update'),
-                expect.stringContaining('from "watchlist_items"'),
-                expect.stringContaining(
-                    'on conflict ("user_id","symbol") do update'
-                ),
+                'select "id" from "users" where "users"."id" = $1 for no key update',
+                'select "symbol" from "watchlist_items" where "watchlist_items"."user_id" = $1',
+                'insert into "watchlist_items" ("id", "user_id", "symbol", "company_name", "created_at") values (default, $1, $2, $3, default) on conflict ("user_id","symbol") do update set "company_name" = coalesce("watchlist_items"."company_name", $4) returning "id", "user_id", "symbol", "company_name", "created_at"',
             ]);
         });
 

@@ -55,8 +55,10 @@ describe('DrizzleSignalHistoryRepository', () => {
                 { symbol: 'NVDA', signalType: 'golden_cross' },
             ]);
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"market" = $1');
-            expect(sql).toContain('"last_seen_session" >= $3');
+            // 종목 목록 × 신호 목록이 아니라 쌍 목록이다.
+            expect(sql).toBe(
+                '("signal_events"."market" = $1 and "signal_events"."symbol" in ($2) and "signal_events"."last_seen_session" >= $3)'
+            );
             expect(params).toEqual(['kr', '005930.KS', '2026-11-12']);
         });
 
@@ -160,11 +162,8 @@ describe('DrizzleSignalHistoryRepository', () => {
             expect(extended).toBe(1);
             expect(set).toHaveBeenCalledWith({ lastSeenSession: '2026-11-13' });
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"last_seen_session" >= $2');
-            expect(sql).toContain('"last_seen_session" < $3');
-            // 종목 목록 × 신호 목록이 아니라 쌍 목록이다.
-            expect(sql).toMatch(
-                /\("[^"]+"\."symbol", "[^"]+"\."signal_type"\) in \(\(\$4, \$5\), \(\$6, \$7\)\)/
+            expect(sql).toBe(
+                '("signal_events"."market" = $1 and "signal_events"."last_seen_session" >= $2 and "signal_events"."last_seen_session" < $3 and ("signal_events"."symbol", "signal_events"."signal_type") in (($4, $5), ($6, $7)))'
             );
             expect(params).toEqual([
                 'us',
@@ -206,7 +205,7 @@ describe('DrizzleSignalHistoryRepository', () => {
 
         expect(deleted).toBe(2);
         const { sql, params } = render(onlyCallArg(where));
-        expect(sql).toContain('"last_seen_session" < $1');
+        expect(sql).toBe('"signal_events"."last_seen_session" < $1');
         expect(params).toEqual(['2025-10-09']);
     });
 
@@ -237,15 +236,17 @@ describe('DrizzleSignalHistoryRepository', () => {
                 },
             ]);
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"session_date" >= $3');
+            expect(sql).toBe(
+                '("signal_events"."signal_type" in ($1, $2) and "signal_events"."session_date" >= $3)'
+            );
             // 색인 판정은 종목 수(같은 종목의 여러 에피소드는 한 줄), lastmod는 마지막 포착 세션.
             const fields = onlyCallArg(select) as Record<string, unknown>;
             const selection = render(fields['symbols']).sql;
-            expect(selection).toContain(
-                'count(distinct ("signal_events"."market", "signal_events"."symbol"))'
+            expect(selection).toBe(
+                'count(distinct ("signal_events"."market", "signal_events"."symbol"))::int'
             );
-            expect(render(fields['latestSession']).sql).toContain(
-                'max("signal_events"."last_seen_session")'
+            expect(render(fields['latestSession']).sql).toBe(
+                'max("signal_events"."last_seen_session")::text'
             );
             expect(params).toEqual([
                 'golden_cross',
@@ -282,10 +283,10 @@ describe('DrizzleSignalHistoryRepository', () => {
             ).resolves.toBe('2026-11-24');
 
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"signal_events"."market" = $1');
+            expect(sql).toBe('"signal_events"."market" = $1');
             expect(params).toEqual(['kr']);
             const fields = onlyCallArg(select) as Record<string, unknown>;
-            expect(render(fields['latest']).sql).toContain(
+            expect(render(fields['latest']).sql).toBe(
                 'max("signal_events"."last_seen_session")::text'
             );
         });
@@ -330,8 +331,9 @@ describe('DrizzleSignalHistoryRepository', () => {
 
             const { sql, params } = render(onlyCallArg(where));
             // 이어진 에피소드(last_seen_session)가 아니라 그날 시작된 에피소드(session_date 같음)다.
-            expect(sql).toContain('"signal_events"."session_date" = $2');
-            expect(sql).not.toContain('last_seen_session');
+            expect(sql).toBe(
+                '("signal_events"."market" = $1 and "signal_events"."session_date" = $2 and "signal_events"."signal_type" in ($3, $4))'
+            );
             expect(params).toEqual([
                 'us',
                 '2026-11-24',
@@ -393,13 +395,8 @@ describe('DrizzleSignalHistoryRepository', () => {
             ).resolves.toEqual(rows);
 
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"signal_events"."market" = $1');
-            expect(sql).toContain('"signal_events"."signal_type" in ($2, $3)');
-            expect(sql).toContain('"signal_events"."last_seen_session" >= (');
-            expect(sql).toContain('"signal_events"."session_date" <= (');
-            expect(sql).toContain('max("signal_scan_sessions"."session_date")');
-            expect(sql).toContain(
-                '"signal_scan_sessions"."completed_at" IS NOT NULL'
+            expect(sql.replace(/\s+/g, ' ').trim()).toBe(
+                '("signal_events"."market" = $1 and "signal_events"."signal_type" in ($2, $3) and "signal_events"."last_seen_session" >= ( SELECT max("signal_scan_sessions"."session_date") FROM "signal_scan_sessions" WHERE "signal_scan_sessions"."market" = $4 AND "signal_scan_sessions"."completed_at" IS NOT NULL ) and "signal_events"."session_date" <= ( SELECT max("signal_scan_sessions"."session_date") FROM "signal_scan_sessions" WHERE "signal_scan_sessions"."market" = $5 AND "signal_scan_sessions"."completed_at" IS NOT NULL ))'
             );
             // 서브쿼리의 시장도 같은 값이어야 한다(다른 시장의 완료 세션을 빌려 오지 않는다).
             expect(params).toEqual([
@@ -462,8 +459,9 @@ describe('DrizzleSignalHistoryRepository', () => {
             ).resolves.toEqual({ us: 150, kr: 0 });
 
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"signal_type" = $1');
-            expect(sql).toContain('"session_date" >= $2');
+            expect(sql).toBe(
+                '("signal_events"."signal_type" = $1 and "signal_events"."session_date" >= $2)'
+            );
             expect(params).toEqual(['golden_cross', '2026-10-24']);
         });
     });
@@ -506,7 +504,9 @@ describe('DrizzleSignalHistoryRepository', () => {
                 lastOutcome: 'recorded',
             });
             const { sql, params } = render(onlyCallArg(where));
-            expect(sql).toContain('"market" = $1');
+            expect(sql).toBe(
+                '("signal_scan_cursors"."market" = $1 and "signal_scan_cursors"."symbol" in ($2, $3))'
+            );
             expect(params).toEqual(['us', 'NVDA', 'AAPL']);
         });
     });

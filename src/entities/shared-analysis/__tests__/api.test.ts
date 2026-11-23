@@ -142,14 +142,10 @@ describe('DrizzleSharedAnalysisRepository', () => {
             expect(captured).toHaveLength(1);
             const { sql: text, params } = captured[0]!;
             const lower = text.toLowerCase();
-            expect(lower).toMatch(/^delete from "shared_analyses"/);
-            expect(lower).toContain(
-                '"id" in (select "id" from "shared_analyses"'
+            expect(lower).toBe(
+                'delete from "shared_analyses" where ("shared_analyses"."id" in (select "id" from "shared_analyses" where "shared_analyses"."expires_at" < $1 limit $2) and "shared_analyses"."expires_at" < $3) returning "id"'
             );
-            // 서브쿼리와 바깥 DELETE 양쪽에 만료 조건 — 동시 재공유(만료 연장) 경합 차단.
-            expect(
-                lower.match(/"shared_analyses"\."expires_at" < \$\d/g)
-            ).toHaveLength(2);
+            // 위 전체 문자열이 서브쿼리($1)와 바깥 DELETE($3) 양쪽의 만료 조건을 못 박는다 — 동시 재공유(만료 연장) 경합 차단.
             expect(params).toContain(SHARED_ANALYSIS_PRUNE_BATCH_SIZE);
             // 유예 기간이 빠지면 막 만료된 링크가 "만료됨" 대신 not_found가 된다.
             expect(params.filter(p => p === CUTOFF.toISOString())).toHaveLength(

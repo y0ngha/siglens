@@ -12,6 +12,8 @@ import {
     issueRefLinesOf,
     scanRepo,
     scanSources,
+    sqlAbsenceExemptionsOf,
+    sqlSubstringLinesOf,
     type CodeRule,
     type RuleCounts,
 } from './support/codeRules';
@@ -95,10 +97,50 @@ describe('code rules: live repository', () => {
                         readFileSync(path.join(ROOT, file), 'utf8')
                     ).map(line => `${file}:${line} cites an issue/PR number`)
                 );
+            const sqlLines = comparison.regressions
+                .filter(({ rule }) => rule.key === 'sql-substring-assertion')
+                .flatMap(({ file }) =>
+                    sqlSubstringLinesOf(
+                        file,
+                        readFileSync(path.join(ROOT, file), 'utf8')
+                    ).map(
+                        line =>
+                            `${file}:${line} asserts only part of a rendered SQL string`
+                    )
+                );
             expect([
                 ...describeComparison(comparison),
                 ...issueRefLines,
+                ...sqlLines,
             ]).toEqual([]);
+        },
+        SCAN_TIMEOUT_MS
+    );
+
+    it(
+        'logs every `// sql-absence:` exemption (TESTING.md#TE-53)',
+        () => {
+            const exemptions = liveScan()
+                .paths.filter(
+                    file =>
+                        isTestFile(file) &&
+                        /\.[cm]?[jt]sx?$/.test(file) &&
+                        file !== 'src/__tests__/guards/codeRules.test.ts'
+                )
+                .flatMap(file => {
+                    const text = readFileSync(path.join(ROOT, file), 'utf8');
+                    return text.includes('sql-absence:')
+                        ? sqlAbsenceExemptionsOf(file, text).map(
+                              ({ line, reason }) =>
+                                  `${file}:${line} sql-absence: ${reason}`
+                          )
+                        : [];
+                });
+            // 예외는 눈에 보여야 한다: 목록이 늘면 리뷰어가 출력에서 사유를 읽는다.
+            console.info(
+                `sql-absence exemptions (${exemptions.length}):\n${exemptions.join('\n')}`
+            );
+            expect(exemptions.every(line => line.length > 0)).toBe(true);
         },
         SCAN_TIMEOUT_MS
     );
@@ -781,6 +823,401 @@ describe('code rules: planted predicates', () => {
                     'const a = 1;\n/**\n * a\n * PR #1234\n */\n// x #4321\n'
                 )
             ).toEqual([4, 6]);
+        });
+    });
+
+    describe('sql-substring-assertion', () => {
+        const T = 'src/entities/x/__tests__/planted.test.ts';
+        const head =
+            "import { renderSql } from '@/__tests__/utils/renderSql';\n";
+        const linesOf = (body: string): readonly number[] =>
+            sqlSubstringLinesOf(T, head + body);
+
+        it.each([
+            [
+                'toContain on renderSql().sql',
+                "expect(renderSql(a).sql).toContain('x');",
+            ],
+            [
+                'toMatch on renderSql().sql',
+                'expect(renderSql(a).sql).toMatch(/x/);',
+            ],
+            [
+                'toMatch on a .text result',
+                "expect(renderSql(a).text).toContain('x');",
+            ],
+            ['toBeTruthy', 'expect(renderSql(a).sql).toBeTruthy();'],
+            ['toHaveLength', 'expect(renderSql(a).sql).toHaveLength(5);'],
+            ["not.toBe('')", "expect(renderSql(a).sql).not.toBe('');"],
+            ["not.toEqual('')", "expect(renderSql(a).sql).not.toEqual('');"],
+            ['not.toBeFalsy', 'expect(renderSql(a).sql).not.toBeFalsy();'],
+            [
+                'a type-cast argument',
+                "expect(renderSql(a as never).sql as string).toContain('x');",
+            ],
+            [
+                'stringContaining inside toEqual',
+                "expect(renderSql(a).sql).toEqual(expect.stringContaining('x'));",
+            ],
+            [
+                'a captured query .sql',
+                "expect(captured[0]?.sql).toContain('x');",
+            ],
+            ['toSQL().sql', "expect(q.toSQL().sql).toContain('x');"],
+            [
+                'a string method on the SQL',
+                "expect(renderSql(a).sql.toLowerCase()).toContain('x');",
+            ],
+            [
+                'a replace chain',
+                "expect(renderSql(a).sql.replace(/\\s+/g, ' ').trim()).toMatch(/x/);",
+            ],
+            [
+                'String() of the SQL',
+                "expect(String(renderSql(a).sql)).toContain('x');",
+            ],
+            ['?? fallback', "expect(captured[0]?.sql ?? '').toContain('x');"],
+            [
+                'a variable bound to renderSql',
+                "const r = renderSql(a);\nexpect(r.sql).toContain('x');",
+            ],
+            [
+                'a variable bound to renderSql().sql',
+                "const s = renderSql(a).sql;\nexpect(s).toContain('x');",
+            ],
+            [
+                'an alias of an alias',
+                "const r = renderSql(a);\nconst s = r.sql;\nconst t = s;\nexpect(t).toContain('x');",
+            ],
+            [
+                'a destructured sql',
+                "const { sql } = renderSql(a);\nexpect(sql).toContain('x');",
+            ],
+            [
+                'a renamed destructured sql',
+                'const { sql: q, params } = renderSql(a);\nexpect(q).toMatch(/x/);',
+            ],
+            [
+                'a destructured text',
+                "const { text } = renderSql(a);\nexpect(text).toContain('x');",
+            ],
+            [
+                'a destructured sql with a default',
+                "const { sql = '' } = renderSql(a);\nexpect(sql).toContain('x');",
+            ],
+            [
+                'a local helper wrapping renderSql',
+                "const render = (c: unknown) => renderSql(c);\nexpect(render(a).sql).toContain('x');",
+            ],
+            [
+                'a local helper wrapping sqlToQuery',
+                "function render(c: unknown) { return dialect.sqlToQuery(c); }\nexpect(render(a).sql).toContain('x');",
+            ],
+            [
+                'a helper alias',
+                "const r = renderSql;\nexpect(r(a).sql).toContain('x');",
+            ],
+            [
+                'a local helper that slices SQL',
+                "function whereOnly(s: string) { return s.slice(3); }\nconst w = whereOnly(renderSql(a).sql);\nexpect(w).toContain('x');",
+            ],
+            [
+                'an awaited renderer',
+                "const r = await renderSql(a);\nexpect(r.sql).toContain('x');",
+            ],
+            [
+                'match counted with toHaveLength',
+                'expect(renderSql(a).sql.match(/x/g)).toHaveLength(2);',
+            ],
+            [
+                'a boolean probe .includes()',
+                "expect(renderSql(a).sql.includes('x')).toBe(true);",
+            ],
+            [
+                'a boolean probe regex test',
+                'expect(/x/.test(renderSql(a).sql)).toBe(true);',
+            ],
+            [
+                'a positive probe with toBeTruthy',
+                "expect(renderSql(a).sql.startsWith('x')).toBeTruthy();",
+            ],
+            [
+                'not.toContain without an exemption',
+                "expect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'an exemption on a positive toContain',
+                "// sql-absence: reason here\nexpect(renderSql(a).sql).toContain('x');",
+            ],
+            [
+                'an exemption without a reason',
+                "// sql-absence:\nexpect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'an exemption with a blank reason',
+                "// sql-absence:   \nexpect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'an exemption with a no-op reason',
+                "// sql-absence: -\nexpect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'an exemption two lines up',
+                "// sql-absence: stale\n\nexpect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'a no-op exemption word',
+                "// sql-absence-ish: reason\nexpect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'a joined array literal of SQL',
+                "const all = [renderSql(a).sql, renderSql(b).sql].join(' ');\nexpect(all).toContain('x');",
+            ],
+            [
+                'a joined mapped list of SQL',
+                "const all = xs.map(x => renderSql(x).sql);\nexpect(all.join(' ')).toContain('x');",
+            ],
+            [
+                'a map callback with a block body',
+                "const all = xs.map(x => { return renderSql(x).sql; });\nexpect(all.join('')).toMatch(/x/);",
+            ],
+            [
+                'a template literal around SQL',
+                "const { sql } = renderSql(a);\nexpect(`${sql} limit 1`).toContain('x');",
+            ],
+            [
+                'a + concatenation with SQL',
+                "const { sql } = renderSql(a);\nexpect(sql + ' ' + sql).toContain('x');",
+            ],
+            [
+                'split then toContain',
+                "const parts = renderSql(a).sql.split(' from ');\nexpect(parts).toContain('x');",
+            ],
+            [
+                'an element of a split',
+                "expect(renderSql(a).sql.split(' where ')[1]).toContain('x');",
+            ],
+            [
+                'sql.length with toBeGreaterThan',
+                'expect(renderSql(a).sql.length).toBeGreaterThan(10);',
+            ],
+            [
+                'a counted split',
+                "expect(renderSql(a).sql.split('x').length).toBe(3);",
+            ],
+            [
+                'toSatisfy on SQL',
+                "expect(renderSql(a).sql).toSatisfy(s => s.includes('x'));",
+            ],
+            [
+                'stringContaining inside toMatchObject',
+                "expect(renderSql(a)).toMatchObject({ sql: expect.stringContaining('x') });",
+            ],
+            [
+                'stringContaining inside objectContaining',
+                "expect(captured[0]).toEqual(expect.objectContaining({ sql: expect.stringContaining('x') }));",
+            ],
+            [
+                'a regexp property in toMatchObject',
+                'expect(captured[0]).toMatchObject({ sql: /x/ });',
+            ],
+            [
+                'stringMatching inside an array of statements',
+                'expect(captured.map(q => q.sql)).toEqual([expect.stringMatching(/^select/)]);',
+            ],
+            [
+                'a probe over a list of SQL',
+                "const all = xs.map(x => renderSql(x).sql);\nexpect(all.some(s => s.includes('x'))).toBe(true);",
+            ],
+            [
+                'a regexp probe over a list of SQL',
+                'const all = xs.map(x => renderSql(x).sql);\nexpect(all.every(s => /x/.test(s))).toBe(true);',
+            ],
+            [
+                'a filtered probe counted',
+                "const all = xs.map(x => renderSql(x).sql);\nexpect(all.filter(s => s.includes('x'))).toHaveLength(1);",
+            ],
+            [
+                'an element found by a probe',
+                "const all = xs.map(x => renderSql(x).sql);\nexpect(all.find(s => s.includes('x'))).toBeTruthy();",
+            ],
+            [
+                'toEqual with a regexp',
+                'expect(renderSql(a).sql).toEqual(/select/);',
+            ],
+        ])('flags %s', (_name, body) => {
+            expect(linesOf(body).length).toBeGreaterThan(0);
+            expect(countOf('sql-substring-assertion', T, head + body)).toBe(
+                linesOf(body).length
+            );
+        });
+
+        it.each([
+            [
+                'toBe with the full string',
+                "expect(renderSql(a).sql).toBe('select 1');",
+            ],
+            [
+                'toEqual with the full object',
+                "expect(renderSql(a)).toEqual({ sql: 'select 1', params: [] });",
+            ],
+            [
+                'toStrictEqual',
+                "expect(renderSql(a).sql).toStrictEqual('select 1');",
+            ],
+            [
+                'a full string through an alias',
+                "const { sql } = renderSql(a);\nexpect(sql).toBe('select 1');",
+            ],
+            [
+                'params assertions',
+                'expect(renderSql(a).params).toContain(1);\nexpect(renderSql(a).params).toHaveLength(2);',
+            ],
+            [
+                'not.toBeTruthy (an exactly empty string)',
+                'expect(renderSql(a).sql).not.toBeTruthy();',
+            ],
+            [
+                'toBeFalsy (an exactly empty string)',
+                'expect(renderSql(a).sql).toBeFalsy();',
+            ],
+            [
+                'a positive toBe on an empty string',
+                "expect(renderSql(a).sql).toBe('');",
+            ],
+            [
+                'an html string with toContain',
+                "const html = render(<A />);\nexpect(html).toContain('select');",
+            ],
+            [
+                'a variable named sql that is not rendered',
+                "const sql = readFileSync('x', 'utf8');\nexpect(sql).toContain('x');",
+            ],
+            [
+                'a text property of a non-render object',
+                "const { text } = await res.json();\nexpect(text).toContain('x');",
+            ],
+            [
+                'a rendered object with toHaveProperty',
+                "expect(renderSql(a)).toHaveProperty('sql');",
+            ],
+            [
+                'an array of rendered SQL with toHaveLength',
+                'expect(rows.map(r => renderSql(r).sql)).toHaveLength(2);',
+            ],
+            [
+                'a matcher on a mock',
+                'expect(fn).toHaveBeenCalledWith(renderSql(a).sql);',
+            ],
+            [
+                'an absence check with a reason on the same line',
+                "expect(renderSql(a).sql).not.toContain('x'); // sql-absence: no inlined literal",
+            ],
+            [
+                'an absence check with a reason on the previous line',
+                '// sql-absence: ordering must not appear\nexpect(renderSql(a).sql).not.toMatch(/order by/);',
+            ],
+            [
+                'a multi-line absence check covered by the previous line',
+                '// sql-absence: no limit clause\nexpect(\n    renderSql(a).sql\n).not.toMatch(/limit/);',
+            ],
+            [
+                'an absence probe expecting false with a reason',
+                "// sql-absence: no limit clause\nexpect(renderSql(a).sql.includes('limit')).toBe(false);",
+            ],
+            [
+                'an absence probe via not.toBe(true) with a reason',
+                "// sql-absence: no limit clause\nexpect(renderSql(a).sql.includes('limit')).not.toBe(true);",
+            ],
+            [
+                'a block-comment reason',
+                "/* sql-absence: block form */\nexpect(renderSql(a).sql).not.toContain('x');",
+            ],
+            [
+                'toMatchInlineSnapshot (a full pin)',
+                'expect(renderSql(a).sql).toMatchInlineSnapshot(`"select 1"`);',
+            ],
+            [
+                'a list of full statements',
+                "expect(captured.map(q => q.sql)).toEqual(['select 1', 'select 2']);",
+            ],
+            [
+                'a captured object pinned in full',
+                "expect(captured[0]).toEqual({ sql: 'select 1', params: [] });",
+            ],
+            [
+                'a joined array of non-SQL strings',
+                "const all = [html, text].join(' ');\nexpect(all).toContain('select');",
+            ],
+            [
+                'a non-SQL object with stringContaining',
+                "expect(res).toEqual({ message: expect.stringContaining('select') });",
+            ],
+            [
+                'a pinned list of statements and its count',
+                "const all = xs.map(x => renderSql(x).sql);\nexpect(all).toHaveLength(2);\nexpect(all).toContain('select 1');",
+            ],
+        ])('allows %s', (_name, body) => {
+            expect(linesOf(body)).toEqual([]);
+        });
+
+        it('an exemption covers only the statement under it', () => {
+            const body =
+                "// sql-absence: first only\nexpect(renderSql(a).sql).not.toContain('x');\nexpect(renderSql(a).sql).not.toContain('y');";
+            expect(linesOf(body)).toEqual([4]);
+        });
+
+        it('a trailing comment of the previous statement does not cover the next one', () => {
+            const body =
+                "expect(renderSql(a).sql).not.toContain('x'); // sql-absence: first only\nexpect(renderSql(a).sql).not.toContain('y');";
+            expect(linesOf(body)).toEqual([3]);
+        });
+
+        it('names the line of each violation', () => {
+            expect(
+                linesOf(
+                    "const r = renderSql(a);\nexpect(r.sql).toBe('a');\nexpect(r.sql).toContain('b');\n\nexpect(r.sql).toMatch(/c/);"
+                )
+            ).toEqual([4, 6]);
+        });
+
+        it('counts every violation in a file', () => {
+            expect(
+                countOf(
+                    'sql-substring-assertion',
+                    T,
+                    `${head}const r = renderSql(a);\nexpect(r.sql).toContain('a');\nexpect(r.sql).toContain('b');`
+                )
+            ).toBe(2);
+        });
+
+        it('lists each reasoned exemption with its line and reason', () => {
+            expect(
+                sqlAbsenceExemptionsOf(
+                    T,
+                    "// sql-absence: no limit clause\nexpect(renderSql(a).sql).not.toContain('limit');\n// sql-absence:\nexpect(renderSql(a).sql).not.toContain('x');"
+                )
+            ).toEqual([{ line: 2, reason: 'no limit clause' }]);
+        });
+
+        it('does not apply to production files', () => {
+            expect(
+                countOf(
+                    'sql-substring-assertion',
+                    'src/entities/x/api.ts',
+                    "expect(renderSql(a).sql).toContain('x');"
+                )
+            ).toBe(0);
+        });
+
+        it('ignores a file that never mentions SQL', () => {
+            expect(
+                countOf(
+                    'sql-substring-assertion',
+                    T,
+                    "expect(html).toContain('select');"
+                )
+            ).toBe(0);
         });
     });
 

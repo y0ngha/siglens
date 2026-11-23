@@ -182,8 +182,9 @@ describe('DrizzleVisitorRepository', () => {
         const rendered = new PgDialect().sqlToQuery(
             (where.mock.calls[0] as unknown[])[0] as never
         );
-        expect(rendered.sql).toContain('"landing_path" ~ ');
-        expect(rendered.sql).toContain('"date" >= ');
+        expect(rendered.sql).toBe(
+            '("visitor_days"."date" >= $1 and "visitor_days"."landing_path" ~ $2)'
+        );
         expect(rendered.params).toEqual([
             '2026-10-01',
             '^(/(ko|en|ja|zh))?/guide(/|$)',
@@ -253,7 +254,9 @@ describe('DrizzleVisitorRepository', () => {
         const rendered = new PgDialect().sqlToQuery(
             (where.mock.calls[0] as unknown[])[0] as never
         );
-        expect(rendered.sql).toContain('"visit_days_bucket" is not null');
+        expect(rendered.sql).toBe(
+            '("visitor_days"."date" >= $1 and "visitor_days"."visit_days_bucket" is not null)'
+        );
         expect(rendered.params).toEqual(['2026-10-21']);
     });
 
@@ -272,11 +275,8 @@ describe('DrizzleVisitorRepository', () => {
         const [[query]] = execute.mock.calls as unknown as [[unknown]];
         const rendered = new PgDialect().sqlToQuery(query as never);
         const sqlText = rendered.sql.replace(/\s+/g, ' ');
-        expect(sqlText).toContain(
-            `return_window = 'd7' and "date" between $7::date + $8::int and $9::date + $10::int`
-        );
-        expect(sqlText).toContain(
-            `where "date" between $15::date and $16::date + $17::int and first_visit_bucket is not null`
+        expect(sqlText).toBe(
+            ' select landing_site as site, (count(*) filter (where first_visit_bucket = \'new\' and "date" between $1::date and $2::date))::int as "newVisitors", (count(*) filter (where return_window = \'d1\' and "date" between $3::date + $4::int and $5::date + $6::int))::int as d1, (count(*) filter (where return_window = \'d7\' and "date" between $7::date + $8::int and $9::date + $10::int))::int as d7, (count(*) filter (where return_window = \'d30\' and "date" between $11::date + $12::int and $13::date + $14::int))::int as d30 from "visitor_days" where "date" between $15::date and $16::date + $17::int and first_visit_bucket is not null group by 1 order by 1 '
         );
         expect(rendered.params).toEqual([
             '2026-09-01',

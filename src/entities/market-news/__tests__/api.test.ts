@@ -350,8 +350,9 @@ describe('DrizzleMarketNewsRepository.listAnalyzedIds는', () => {
 
         expect(ids).toEqual(new Set(['m1']));
         const { sql } = renderSql((where.mock.calls[0] as [unknown])[0]);
-        expect(sql).toContain(' is not null');
-        expect(sql).not.toMatch(/ is null/);
+        expect(sql).toBe(
+            '(("market_news"."symbol" = $1 and "market_news"."published_at" >= $2) and "market_news"."analyzed_at" is not null)'
+        );
     });
 });
 

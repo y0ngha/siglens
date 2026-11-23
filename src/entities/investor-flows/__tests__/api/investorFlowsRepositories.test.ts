@@ -85,8 +85,8 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
         const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
         expect(renderSql(where).params).toEqual(['fmp']);
         const [orderBy] = callsOf(ops[0] as never, 'orderBy') as [unknown[]];
-        expect(renderSql(orderBy[0] as never).text).toContain(
-            'ASC NULLS FIRST'
+        expect(renderSql(orderBy[0] as never).text).toBe(
+            '"cusip_symbol_map"."checked_at" ASC NULLS FIRST'
         );
         expect(callsOf(ops[0] as never, 'limit')).toEqual([[100]]);
     });
@@ -125,8 +125,9 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
             [{ setWhere: never }],
         ];
         const { text } = renderSql(config.setWhere);
-        expect(text).toContain('IS DISTINCT FROM excluded.symbol');
-        expect(text).toContain('IS DISTINCT FROM excluded.source');
+        expect(text).toBe(
+            '"cusip_symbol_map"."symbol" IS DISTINCT FROM excluded.symbol OR "cusip_symbol_map"."source" IS DISTINCT FROM excluded.source'
+        );
     });
 
     describe('upsertCusipMap with a CUSIP claimed by more than one symbol', () => {
@@ -195,7 +196,9 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
             );
             const [[where]] = callsOf(ops[1] as never, 'where') as [[never]];
             const { text, params } = renderSql(where);
-            expect(text).toContain('"delisted_at" is null');
+            expect(text).toBe(
+                '("korean_tickers"."symbol" in ($1) and "korean_tickers"."delisted_at" is null and "korean_tickers"."exchange" in ($2, $3, $4))'
+            );
             expect(params).toEqual(['FB', ...INVESTOR_FLOWS_US_EXCHANGES]);
         });
 
@@ -220,8 +223,9 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
         expect(symbols).toEqual(['AAA', 'AAB']);
         const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
         const { text, params } = renderSql(where);
-        expect(text).toContain('NOT EXISTS');
-        expect(text).toContain('cusip_symbol_map');
+        expect(text).toBe(
+            '("korean_tickers"."symbol" > $1 and "korean_tickers"."delisted_at" is null and "korean_tickers"."exchange" in ($2, $3, $4) and "korean_tickers"."symbol" not like $5 and "korean_tickers"."symbol" not like $6 and NOT EXISTS ( SELECT 1 FROM cusip_symbol_map m WHERE m.symbol = "korean_tickers"."symbol" ))'
+        );
         expect(params).toContain('AA');
         expect(params).toEqual(
             expect.arrayContaining(['NASDAQ', 'NYSE', 'AMEX', '%.KS', '%.KQ'])
@@ -266,8 +270,8 @@ describe('DrizzleInvestorFlowsShortRepository', () => {
         const [[config]] = callsOf(ops[0] as never, 'onConflictDoUpdate') as [
             [{ setWhere: never }],
         ];
-        expect(renderSql(config.setWhere).text).toContain(
-            'IS DISTINCT FROM excluded.short_volume'
+        expect(renderSql(config.setWhere).text).toBe(
+            '"finra_short_volume"."short_volume" IS DISTINCT FROM excluded.short_volume OR "finra_short_volume"."total_volume" IS DISTINCT FROM excluded.total_volume'
         );
     });
 
@@ -350,7 +354,7 @@ describe('DrizzleInvestorFlowsShortRepository.listShortVolumeTradeDates', () => 
         expect(callsOf(ops[0] as never, 'from')).toEqual([[finraShortVolume]]);
         const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
         const { text, params } = renderSql(where);
-        expect(text).toContain('"trade_date" >= $1');
+        expect(text).toBe('"finra_short_volume"."trade_date" >= $1');
         expect(params).toEqual(['2026-07-17']);
     });
 });
