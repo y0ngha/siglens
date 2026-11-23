@@ -808,6 +808,7 @@ const US_EXCHANGES: ReadonlySet<string> = new Set(['NYSE', 'NASDAQ' /* ... */]);
 Statements about what the product supports (asset classes, features per asset) that appear in titles, descriptions,
 keywords, FAQ text and OpenGraph copy come from one exported constant or helper, never restated by hand. Add a test
 asserting each consuming file's output covers every member, so adding or removing a capability fails immediately.
+Copy that lists features or describes gated content states each feature's market scope and is checked against the feature-to-market mapping and the gate.
 
 <a id="CS-5"></a>
 

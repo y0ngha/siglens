@@ -241,24 +241,6 @@
                         "answer": "The /backtesting page publishes technical signals and AI scenarios for major tickers, back-tested against historical data. Results are based on past data and do not guarantee future performance.",
                         "question": "Where can I see how the AI analysis held up on past data?"
                     }
-                },
-                "howTo": {
-                    "description": "The flow for reviewing US stocks, KOSPI/KOSDAQ listings and crypto on {v0} through chart, news and the Fear & Greed Index, then reviewing the overall analysis and scenarios. US stocks add earnings, financial statements, the options market and Congressional Trades disclosures; Korean listings add earnings and financial statements.",
-                    "name": "How to review US and Korean stocks and crypto on {v0} (chart, news and the Fear & Greed Index) and read the overall analysis",
-                    "step1Name": "Enter a name or symbol",
-                    "step1Text": "Type the name or symbol of the ticker into the search box. For example Apple, Tesla, AAPL, TSLA; for Korean listings Samsung Electronics or 005930.KS; for crypto BTCUSD or ETHUSD.",
-                    "step2Name": "Review the chart analysis",
-                    "step2Text": "On the ticker page, review the trend and key price zones against {v0} indicators, {v1} candlestick patterns, {v2} chart patterns, {v3} strategies and {v4} support/resistance levels.",
-                    "step3Name": "Reinforce with earnings and news",
-                    "step3Text": "Use the Fundamentals tab for valuation and profitability metrics such as PER, PBR and ROE, and the News tab for earnings releases and news sentiment. Together they fill in the background the chart does not show. For example /AAPL/fundamental and /AAPL/news.",
-                    "step4Name": "Check the options market",
-                    "step4Text": "On the Options tab (e.g. /AAPL/options), read Max Pain, the Put/Call ratio and the open-interest distribution to see where institutions expect the price to go.",
-                    "step5Name": "Check the short-term mood",
-                    "step5Text": "On the Fear & Greed Index tab (e.g. /AAPL/fear-greed), check whether short-term buying is strong or weak via the 0–100 score and its five labels. Even when the chart looks good, an overheated mood is a reason to re-check your read of the trend.",
-                    "step6Name": "Read the overall analysis",
-                    "step6Text": "On the Overall tab (e.g. /AAPL/overall), read the overall analysis that ties chart, earnings, news, options and the Fear & Greed Index together, with bull and bear scenarios, checkpoints and risks.",
-                    "step7Name": "Ask the AI a follow-up",
-                    "step7Text": "When the call is unclear, press the 'Ask SIGLENS AI' button at the bottom right of the ticker page. SIGLENS AI opens in a new tab with a question about that ticker already filled in, and it looks up quotes, chart indicators and news itself to answer questions on reading indicators, comparing scenarios and trading strategy."
                 }
             },
             "methodBand": {
@@ -2038,7 +2020,7 @@
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
             },
             "about": {
-                "description": "SIGLENS is a free service that takes one ticker and has AI analyze its chart, financial statements, news, and options together. It covers US stocks, Korean stocks, and crypto. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
+                "description": "SIGLENS is a free service that takes one ticker and lays out its support, resistance, and the price where the current read breaks down. It covers US stocks, Korean stocks, and crypto, with financial statements for stocks and options for US stocks. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
                 "title": "About SIGLENS",
                 "metaTitle": "About SIGLENS: AI Analysis for US & Korean Stocks and Crypto"
             },
@@ -3558,8 +3540,8 @@
         "about": {
             "hero": {
                 "eyebrow": "About SIGLENS",
-                "title": "Enter one ticker. AI analyzes all of it at once.",
-                "lede": "Charts, financial statements, news, and options usually live in different places. SIGLENS gathers them, runs the numbers, and writes it up as a report you can actually read. US stocks, Korean stocks, and crypto all work."
+                "title": "Enter one ticker. See the price levels worth watching.",
+                "lede": "SIGLENS reads the chart and indicators to work out the current trend, support, resistance, and the price where the read breaks down, then writes it up as a report you can actually read. It covers US stocks, Korean stocks, and crypto. Financial statements are available for stocks, and options for US stocks."
             },
             "example": {
                 "aapl": "Apple",
