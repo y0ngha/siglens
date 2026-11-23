@@ -3161,15 +3161,15 @@
         },
         "ai-about": {
             "btc": {
-                "a1": "Bitcoin is at <b>$97,400</b>, up <up>+4.2%</up> over the week.",
-                "a2": "It's near $98,100, the top of its usual price range (the Bollinger Bands). When momentum is strong, the price can keep riding along that line.",
-                "a3": "The RSI, which shows whether it has risen too far, is <b>68.5</b>, close to the overheated threshold of 70.",
-                "a4": "Reports say spot Bitcoin ETFs (Bitcoin funds traded like stocks) have seen inflows for 5 trading days in a row.",
-                "a5": "The next thing to watch is whether it can break above that range and hold.",
-                "asOf": "Sep 19, 2026 08:40",
+                "a1": "Bitcoin starts with the current price and how it has moved over the past week.",
+                "a2": "Bollinger Bands are its usual price range. Hugging the upper edge often means strong upward momentum.",
+                "a3": "If RSI nears the overheated line, a short breather can follow.",
+                "a4": "News like inflows into spot Bitcoin ETFs (Bitcoin funds traded like stocks) is searched on the web.",
+                "a5": "Whether it holds up beyond that range is the next thing to watch.",
+                "asOf": "latest quote",
                 "q": "How's Bitcoin doing lately?",
-                "subjectWeb": "Bitcoin ETF inflows",
-                "web": "3 web results"
+                "subjectWeb": "Recent Bitcoin news",
+                "web": "Web search"
             },
             "cta": {
                 "button": "Ask",
@@ -3186,8 +3186,8 @@
                 "company": "Company data",
                 "companyBody": "Checks whether the price is high or low relative to earnings (P/E, P/B), how profitable the company is, analyst price targets and the next earnings date.",
                 "companyScope": "US stocks, Korean stocks",
-                "exampleA": "It's trading above its 20-day average price. The RSI, which shows whether it has risen too far, is 54, a normal level.",
-                "exampleAsOf": "As of 09-18 close",
+                "exampleA": "It compares the short-term average price with the current price, and uses the RSI to show whether it has risen too far.",
+                "exampleAsOf": "As-of time",
                 "exampleQ": "How's Samsung Electronics doing lately?",
                 "market": "Market & economy",
                 "marketBody": "Looks at the Fear & Greed Index, major index moves, US rates, inflation and jobs data, and upcoming economic events. Used when you ask about the overall market mood.",
@@ -3237,13 +3237,13 @@
                 "title": "Curious about a stock? Ask now"
             },
             "market": {
-                "a1": "Three things stood out in the US market this week.",
-                "a2": "The Fed held rates steady. Its outlook for cuts this year dropped to one.",
-                "a3": "August consumer price inflation (CPI) came in at <b>2.9%</b>, below the 3.0% forecast, and the Nasdaq rose <up>+1.1%</up> that day.",
-                "a4": "Semiconductors rose <up>+3.4%</up> for the week, the best of 11 sectors.",
-                "a5": "For the week, the S&P 500 rose <up>+0.8%</up> and the Nasdaq <up>+1.6%</up>.",
-                "asOf": "Sep 19, 2026 09:00",
-                "news": "40 news items",
+                "a1": "Only what's worth watching in the US market this week is picked out.",
+                "a2": "The Fed's rate decision and the outlook for future cuts come first.",
+                "a3": "Consumer prices (CPI) below expectations are usually welcome news, and the day's market reaction is checked.",
+                "a4": "Sectors are compared to see which rose or fell the most.",
+                "a5": "It closes with the week's moves in the major indexes.",
+                "asOf": "this week",
+                "news": "News",
                 "q": "Just the important US market news this week",
                 "subjectIndices": "S&P 500, Nasdaq",
                 "subjectNews": "US market"
@@ -3258,22 +3258,22 @@
                 "fearGreedCrypto": "Crypto Fear and Greed Index"
             },
             "nvda": {
-                "a1": "It's on the expensive side relative to its earnings. But earnings are growing fast, so opinions differ.",
-                "a2": "Its P/E, which shows how many times a year's earnings the share price is, is <b>45x</b>. That's above the average for large US tech stocks (about 30x).",
-                "a3": "Revenue is up <up>+56%</up> from a year ago.",
-                "a4": "The average analyst price target is <b>$210</b>, above the current price ($182).",
-                "a5": "The next earnings report is on November 19. Whether earnings meet expectations then is what matters.",
-                "asOf": "Sep 18, 2026 16:00 (US Eastern)",
-                "news": "12 news items",
+                "a1": "Whether the price is high relative to earnings is checked through a few indicators.",
+                "a2": "PER shows how many times a year's earnings the price is. It's compared with similar stocks to see if it runs high or low.",
+                "a3": "Revenue growth against last year gives a sense of the growth pace.",
+                "a4": "Whether the average analyst target sits above or below the current price is a useful reference too.",
+                "a5": "If the next earnings date is close, the result matters more, so that's flagged.",
+                "asOf": "latest quote",
+                "news": "News",
                 "q": "Is NVIDIA expensive right now?"
             },
             "nvdaPro": {
-                "a1": "NVDA options flow is tilted toward calls.",
-                "a2": "Put/call ratio (volume) <b>0.71</b>, below the 5-day average of 0.84.",
-                "a3": "ATM IV <b>41%</b>, down <down>6%p</down> from a month ago.",
-                "a4": "Open interest is highest in the 9/26 $190 calls, and max pain is <b>$182</b>.",
-                "a5": "Some read a low put/call ratio as a sign of froth, so it's hard to read in one direction only.",
-                "asOf": "Sep 18, 2026 16:00 (US Eastern)",
+                "a1": "NVDA options start with whether calls or puts trade more.",
+                "a2": "A low put/call ratio means calls dominate.",
+                "a3": "ATM IV is the move the market expects: higher means bigger moves priced in.",
+                "a4": "Open interest by expiry and strike, plus max pain, comes too.",
+                "a5": "Some read a low ratio as overheating, so it's hard to read one way.",
+                "asOf": "latest quote",
                 "q": "Give me NVDA's put/call ratio, IV and max pain"
             },
             "pain": {
@@ -3294,20 +3294,20 @@
             "replay": {
                 "asOf": "As of {time}",
                 "checking": "Checking {label}",
-                "note": "This is an example conversation. Figures may differ from actual data.",
+                "note": "This is an example conversation. It shows what an answer covers, so it carries no real figures.",
                 "pause": "Pause",
                 "region": "SIGLENS AI example conversation",
                 "resume": "Play",
                 "sources": "Sources",
-                "summary": "Checked {tools} in {seconds}s"
+                "summary": "Checked {tools}"
             },
             "samsung": {
-                "a1": "Samsung Electronics closed at <b>KRW 71,800</b> on September 18, <up>+1.3%</up> from the day before.",
-                "a2": "It's above its 20-day average price (KRW 69,950) but still below its 60-day average (KRW 72,400). Short term it's rising; longer term it hasn't recovered yet.",
-                "a3": "The RSI, which shows whether a stock has risen too far, is <b>54</b>. That's a normal level, neither overheated nor oversold.",
-                "a4": "The MACD, which tracks upward and downward momentum, crossed above its signal line on September 12. That means upward momentum is starting to build.",
-                "a5": "The SIGLENS analysis says the next thing to watch is whether it breaks above <b>KRW 72,400</b>.",
-                "asOf": "Sep 18, 2026 close",
+                "a1": "Samsung Electronics starts with its latest close and the change from the day before.",
+                "a2": "Price above the short-term average reads as a short-term uptrend. Below the long-term average, it's still recovering.",
+                "a3": "RSI shows whether it has risen too far. Neither overheated nor oversold means a normal level.",
+                "a4": "MACD shows the strength of the move. Crossing above its signal line means momentum is starting to build.",
+                "a5": "If the SIGLENS analysis names a price level to watch, it's added here.",
+                "asOf": "latest close",
                 "q": "How's Samsung Electronics doing lately?",
                 "searchSubject": "Samsung Electronics → 005930"
             },
@@ -3559,7 +3559,7 @@
                 "sources": "Based on",
                 "summary": "Analyzed in {count} steps",
                 "asOf": "As of {time}",
-                "note": "This is an example. The numbers are made up for illustration; real analysis lives on each ticker page.",
+                "note": "This is an example. It shows what a report covers, so it carries no real figures. The real analysis lives on each ticker page.",
                 "step": {
                     "bars": "Prices & chart",
                     "barsPending": "Loading prices & chart",
@@ -3579,27 +3579,27 @@
                     "kinds": "{count} types"
                 },
                 "aapl": {
-                    "a1": "<b>Apple (AAPL)</b> keeps trending up above its 50-day moving average.",
-                    "a2": "Up <up>+6.2%</up> over the past month, stronger than the Nasdaq over the same stretch.",
-                    "a3": "RSI, which gauges how overheated a stock is, sits at <b>64</b>. That's just under the overheated line of 70, so a short pause wouldn't be surprising.",
-                    "a4": "The price levels to watch are around <b>$221</b> below and <b>$238</b> above.",
-                    "a5": "Earnings are two weeks out, so moves may get bigger around that date.",
+                    "a1": "<b>Apple (AAPL)</b> starts with the trend: above its moving averages reads as an uptrend, below as weakness.",
+                    "a2": "Its past month against the Nasdaq shows whether it beat the market.",
+                    "a3": "RSI gauges overheating. The closer it gets to the line, the likelier a short pause.",
+                    "a4": "Support and resistance mark where price tends to hold or stall.",
+                    "a5": "As earnings approach, moves can get bigger, so the date is noted.",
                     "asOf": "US close"
                 },
                 "samsung": {
-                    "a1": "<b>Samsung Electronics</b> slipped below its 20-day moving average, and momentum has weakened.",
-                    "a2": "Down <down>-4.1%</down> over five days, on volume about 30% above normal.",
-                    "a3": "The last candle left a long lower wick, a sign that buyers stepped in at lower prices.",
-                    "a4": "The first support to check is around <b>₩70,000</b>.",
-                    "a5": "It's sensitive to chip-industry news right now, so check the news tab too.",
+                    "a1": "<b>Samsung Electronics</b> is read the same way: price against its moving averages shows trend strength.",
+                    "a2": "Volume matters too: heavier than usual means more behind the move.",
+                    "a3": "A long wick on the last candle shows who held the upper hand, buyers or sellers.",
+                    "a4": "The first support and resistance levels to check are laid out as prices.",
+                    "a5": "Related headlines are in the news tab.",
                     "asOf": "Korea close"
                 },
                 "btc": {
-                    "a1": "<b>Bitcoin</b> has moved inside a narrow range for three weeks.",
-                    "a2": "The Bollinger Bands, which track how widely price swings, are the tightest in three months. That often means a bigger move is near.",
-                    "a3": "Up <up>+1.3%</up> in 24 hours, on normal volume.",
-                    "a4": "The key question is whether it breaks above <b>$68,500</b> or below <b>$63,200</b>.",
-                    "a5": "The Fear & Greed Index, which reads overall market mood, is at <b>52</b>: neutral.",
+                    "a1": "<b>Bitcoin</b> is checked for whether price stays in a narrow range or swings widely.",
+                    "a2": "Bollinger Bands show how widely price swings. When they tighten, a bigger move may be near.",
+                    "a3": "The past day's change and whether volume is normal are checked too.",
+                    "a4": "The levels that matter most if price breaks above or below are marked.",
+                    "a5": "The Fear & Greed Index shows overall market mood.",
                     "asOf": "last 24 hours"
                 }
             },

@@ -71,7 +71,8 @@ export function StockChatLanding() {
                         doneIcon={<ReplayDoneIcon />}
                     />
                     <p className="mx-auto mt-2 max-w-3xl text-xs text-secondary-400">
-                        예시 대화예요. 수치는 실제와 다를 수 있어요.
+                        예시 대화예요. 어떤 내용을 답하는지 보여 주는 글이라
+                        실제 수치는 담지 않았어요.
                     </p>
                 </div>
 

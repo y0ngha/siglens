@@ -238,7 +238,7 @@ describe('StockChatLanding', () => {
         render(<StockChatLanding />);
         const how = screen.getByRole('region', { name: '이렇게 답해요' });
         const chips = within(how).getByText('기업 정보').parentElement;
-        expect(chips?.textContent).toBe('시세 기업 정보 기준 2026-09-18');
+        expect(chips?.textContent).toBe('시세 기업 정보 기준 시각');
     });
 
     it('shows the example chat replay, complete on first render', () => {
@@ -247,6 +247,28 @@ describe('StockChatLanding', () => {
             name: '시그렌즈 AI 예시 대화',
         });
         expect(replay).toHaveTextContent('삼성전자 요즘 흐름 어때?');
-        expect(replay).toHaveTextContent('71,800원');
+        expect(replay).toHaveTextContent('삼성전자의 가장 최근 종가');
+    });
+
+    it('shows none of the old made-up example figures', () => {
+        const { container } = render(<StockChatLanding />);
+        const text = container.textContent ?? '';
+        [
+            '71,800',
+            '72,400',
+            '69,950',
+            '45배',
+            '210달러',
+            '182달러',
+            '+56%',
+            '2.9%',
+            '+3.4%',
+            '2026-09-18',
+            '뉴스 12건',
+            '뉴스 40건',
+        ].forEach(literal => {
+            expect(text).not.toContain(literal);
+        });
+        expect(text).toContain('예시 대화예요');
     });
 });
