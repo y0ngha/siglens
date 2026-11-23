@@ -2629,583 +2629,583 @@
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 8,
+        "line": 10,
         "reason": "catalog-backed-data",
         "text": "메가캡/지수"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 10,
+        "line": 12,
         "reason": "catalog-backed-data",
         "text": "애플"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 11,
+        "line": 13,
         "reason": "catalog-backed-data",
         "text": "마이크로소프트"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 12,
+        "line": 14,
         "reason": "catalog-backed-data",
         "text": "엔비디아"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 13,
+        "line": 15,
         "reason": "catalog-backed-data",
         "text": "알파벳(구글)"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 14,
+        "line": 16,
         "reason": "catalog-backed-data",
         "text": "아마존"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 15,
+        "line": 17,
         "reason": "catalog-backed-data",
         "text": "메타"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 16,
+        "line": 18,
         "reason": "catalog-backed-data",
         "text": "테슬라"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 18,
+        "line": 20,
         "reason": "catalog-backed-data",
         "text": "나스닥100 ETF"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 23,
+        "line": 25,
         "reason": "catalog-backed-data",
         "text": "AI 반도체"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 26,
+        "line": 28,
         "reason": "catalog-backed-data",
         "text": "브로드컴"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 27,
+        "line": 29,
         "reason": "catalog-backed-data",
         "text": "암(ARM)"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 28,
+        "line": 30,
         "reason": "catalog-backed-data",
         "text": "슈퍼마이크로"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 29,
+        "line": 31,
         "reason": "catalog-backed-data",
         "text": "아스테라랩스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 30,
+        "line": 32,
         "reason": "catalog-backed-data",
         "text": "사운드하운드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 35,
+        "line": 37,
         "reason": "catalog-backed-data",
         "text": "소프트웨어/클라우드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 37,
+        "line": 39,
         "reason": "catalog-backed-data",
         "text": "팔란티어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 38,
+        "line": 40,
         "reason": "catalog-backed-data",
         "text": "크라우드스트라이크"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 39,
+        "line": 41,
         "reason": "catalog-backed-data",
         "text": "스노우플레이크"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 40,
+        "line": 42,
         "reason": "catalog-backed-data",
         "text": "서비스나우"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 41,
+        "line": 43,
         "reason": "catalog-backed-data",
         "text": "세일즈포스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 42,
+        "line": 44,
         "reason": "catalog-backed-data",
         "text": "데이터독"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 43,
+        "line": 45,
         "reason": "catalog-backed-data",
         "text": "클라우드플레어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 48,
+        "line": 50,
         "reason": "catalog-backed-data",
         "text": "핀테크/크립토"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 50,
+        "line": 52,
         "reason": "catalog-backed-data",
         "text": "코인베이스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 51,
+        "line": 53,
         "reason": "catalog-backed-data",
         "text": "마이크로스트래티지"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 52,
+        "line": 54,
         "reason": "catalog-backed-data",
         "text": "로빈후드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 53,
+        "line": 55,
         "reason": "catalog-backed-data",
         "text": "블록"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 54,
+        "line": 56,
         "reason": "catalog-backed-data",
         "text": "페이팔"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 55,
+        "line": 57,
         "reason": "catalog-backed-data",
         "text": "소파이"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 56,
+        "line": 58,
         "reason": "catalog-backed-data",
         "text": "어펌"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 61,
+        "line": 63,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 63,
+        "line": 65,
         "reason": "catalog-backed-data",
         "text": "나스닥 3배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 64,
+        "line": 66,
         "reason": "catalog-backed-data",
         "text": "나스닥 3배 숏"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 65,
+        "line": 67,
         "reason": "catalog-backed-data",
         "text": "반도체 3배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 66,
+        "line": 68,
         "reason": "catalog-backed-data",
         "text": "테슬라 2배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 67,
+        "line": 69,
         "reason": "catalog-backed-data",
         "text": "엔비디아 2배 롱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 72,
+        "line": 74,
         "reason": "catalog-backed-data",
         "text": "헬스케어/바이오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 74,
+        "line": 76,
         "reason": "catalog-backed-data",
         "text": "일라이릴리"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 75,
+        "line": 77,
         "reason": "catalog-backed-data",
         "text": "노보노디스크"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 76,
+        "line": 78,
         "reason": "catalog-backed-data",
         "text": "유나이티드헬스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 77,
+        "line": 79,
         "reason": "catalog-backed-data",
         "text": "인튜이티브서지컬"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 78,
+        "line": 80,
         "reason": "catalog-backed-data",
         "text": "암젠"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 83,
+        "line": 85,
         "reason": "catalog-backed-data",
         "text": "양자컴퓨팅"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 85,
+        "line": 87,
         "reason": "catalog-backed-data",
         "text": "아이온큐"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 86,
+        "line": 88,
         "reason": "catalog-backed-data",
         "text": "실스큐"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 87,
+        "line": 89,
         "reason": "catalog-backed-data",
         "text": "리게티 컴퓨팅"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 88,
+        "line": 90,
         "reason": "catalog-backed-data",
         "text": "디웨이브 퀀텀"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 89,
+        "line": 91,
         "reason": "catalog-backed-data",
         "text": "퀀텀 컴퓨팅"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 95,
+        "line": 97,
         "reason": "catalog-backed-data",
         "text": "우주항공"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 101,
+        "line": 103,
         "reason": "catalog-backed-data",
         "text": "로켓랩"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 102,
+        "line": 104,
         "reason": "catalog-backed-data",
         "text": "AST 스페이스모바일"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 103,
+        "line": 105,
         "reason": "catalog-backed-data",
         "text": "인튜이티브 머신스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 104,
+        "line": 106,
         "reason": "catalog-backed-data",
         "text": "레드와이어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 105,
+        "line": 107,
         "reason": "catalog-backed-data",
         "text": "플래닛 랩스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 106,
+        "line": 108,
         "reason": "catalog-backed-data",
         "text": "버진 갤럭틱"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 111,
+        "line": 113,
         "reason": "catalog-backed-data",
         "text": "EV/모빌리티"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 114,
+        "line": 116,
         "reason": "catalog-backed-data",
         "text": "테슬라"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 115,
+        "line": 117,
         "reason": "catalog-backed-data",
         "text": "리비안"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 116,
+        "line": 118,
         "reason": "catalog-backed-data",
         "text": "니오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 117,
+        "line": 119,
         "reason": "catalog-backed-data",
         "text": "루시드"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 118,
+        "line": 120,
         "reason": "catalog-backed-data",
         "text": "샤오펑"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 119,
+        "line": 121,
         "reason": "catalog-backed-data",
         "text": "우버"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 120,
+        "line": 122,
         "reason": "catalog-backed-data",
         "text": "리프트"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 125,
+        "line": 127,
         "reason": "catalog-backed-data",
         "text": "에너지/산업재"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 127,
+        "line": 129,
         "reason": "catalog-backed-data",
         "text": "엑슨모빌"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 128,
+        "line": 130,
         "reason": "catalog-backed-data",
         "text": "셰브론"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 129,
+        "line": 131,
         "reason": "catalog-backed-data",
         "text": "옥시덴탈"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 130,
+        "line": 132,
         "reason": "catalog-backed-data",
         "text": "코노코필립스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 131,
+        "line": 133,
         "reason": "catalog-backed-data",
         "text": "캐터필러"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 132,
+        "line": 134,
         "reason": "catalog-backed-data",
         "text": "GE에어로스페이스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 133,
+        "line": 135,
         "reason": "catalog-backed-data",
         "text": "보잉"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 138,
+        "line": 140,
         "reason": "catalog-backed-data",
         "text": "반도체/IT"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 151,
+        "line": 153,
         "reason": "catalog-backed-data",
         "text": "삼성전자"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 152,
+        "line": 154,
         "reason": "catalog-backed-data",
         "text": "SK하이닉스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 153,
+        "line": 155,
         "reason": "catalog-backed-data",
         "text": "삼성SDI"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 158,
+        "line": 160,
         "reason": "catalog-backed-data",
         "text": "자동차/2차전지"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 160,
+        "line": 162,
         "reason": "catalog-backed-data",
         "text": "현대차"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 161,
+        "line": 163,
         "reason": "catalog-backed-data",
         "text": "기아"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 162,
+        "line": 164,
         "reason": "catalog-backed-data",
         "text": "현대모비스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 163,
+        "line": 165,
         "reason": "catalog-backed-data",
         "text": "LG에너지솔루션"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 164,
+        "line": 166,
         "reason": "catalog-backed-data",
         "text": "LG화학"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 169,
+        "line": 171,
         "reason": "catalog-backed-data",
         "text": "바이오/헬스케어"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 171,
+        "line": 173,
         "reason": "catalog-backed-data",
         "text": "삼성바이오로직스"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 172,
+        "line": 174,
         "reason": "catalog-backed-data",
         "text": "셀트리온"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 177,
+        "line": 179,
         "reason": "catalog-backed-data",
         "text": "인터넷/플랫폼"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 179,
+        "line": 181,
         "reason": "catalog-backed-data",
         "text": "네이버"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 180,
+        "line": 182,
         "reason": "catalog-backed-data",
         "text": "카카오"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 185,
+        "line": 187,
         "reason": "catalog-backed-data",
         "text": "금융/지주"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 187,
+        "line": 189,
         "reason": "catalog-backed-data",
         "text": "KB금융"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 188,
+        "line": 190,
         "reason": "catalog-backed-data",
         "text": "신한지주"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 189,
+        "line": 191,
         "reason": "catalog-backed-data",
         "text": "삼성물산"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 194,
+        "line": 196,
         "reason": "catalog-backed-data",
         "text": "코스닥"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 196,
+        "line": 198,
         "reason": "catalog-backed-data",
         "text": "알테오젠"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 197,
+        "line": 199,
         "reason": "catalog-backed-data",
         "text": "에코프로"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 198,
+        "line": 200,
         "reason": "catalog-backed-data",
         "text": "에코프로비엠"
     },
     {
         "file": "src/shared/config/popular-tickers.ts",
-        "line": 199,
+        "line": 201,
         "reason": "catalog-backed-data",
         "text": "리노공업"
     },
