@@ -492,7 +492,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | No `push` in a `map`/`filter`/`reduce`/`flatMap` callback or `useMemo` factory (CP-6) | rule `push-in-functional-callback`, zero tolerance | production code | Return the values from the callback. |
 | No `??=`, `||=`, `&&=` in components and hooks (EF-4) | rule `logical-assignment-in-react`, zero tolerance | production `.tsx` and `use*.ts` | Write the check and the assignment out. |
 | No citation of local-only docs (CM-9) | rule `local-doc-citation`, zero tolerance | comments and strings of code, and `.sh`/`.css`/`.yml` text, under the scan roots; strings in test files are fixtures and skipped | State the fact inline. |
-| No issue/PR number `#123`+ in a comment (CM-11) | `codeRules.test.ts` rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418`, hex colours and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
+| No issue/PR number `#123`+ in a comment (CM-11) | `codeRules.test.ts` rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418` in a React/hydration comment, hex colours with a letter and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
