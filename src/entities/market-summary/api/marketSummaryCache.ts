@@ -8,7 +8,7 @@ import {
     getMarketSummary,
 } from '@y0ngha/siglens-core';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
-import { dashboardCacheTtlSeconds } from '@/shared/api/market/sessionSpecFor';
+import { dashboardCacheTtlSeconds } from '@/shared/api/market/dashboardCacheTtl';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { shouldCacheMarketSummary } from '../lib/shouldCacheMarketSummary';
 
