@@ -42,6 +42,7 @@ readonly DOCKER_HOST_NAME="host.docker.internal"
 #   mail_alert_subscribers                          알림 메일 구독자(비회원 이메일 주소 포함)
 #   mail_alert_topics                               구독자가 고른 받을 항목(구독자 소속)
 #   mail_alert_deliveries                           알림 메일 발송 기록(구독자 소속)
+#   price_alerts                                    가격대 알림(구독자 소속, 종목·가격·종가)
 #   agreements                                      사용자별 약관 동의
 #   inquiries                                       문의(이메일·본문)
 #   chat_conversations, chat_messages               SIGLENS AI 대화 (messages는 conversations 소속)
@@ -70,6 +71,7 @@ EXCLUDED_TABLES=(
     mail_alert_subscribers
     mail_alert_topics
     mail_alert_deliveries
+    price_alerts
     agreements
     inquiries
     chat_conversations

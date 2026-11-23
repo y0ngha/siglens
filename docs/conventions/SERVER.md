@@ -519,6 +519,8 @@ step) and loses what earlier attempts learned.
   running alongside, add their in-flight counts, so "batch-wide limit N" is false unless one shared limiter enforces it.
 - A count-then-insert limit check (per-user cap) races across tabs and requests. Run it in a transaction holding a row
   lock on the owner, and let an item that already exists bypass the cap instead of failing the re-add.
+- Take row locks in one parent→child order on every path; a batch job (cron prune) that locks child rows first
+  deadlocks (40P01) against user paths that lock the parent first.
 
 <a id="CC-11"></a>
 
@@ -541,7 +543,7 @@ deploy script and breaks silently. Encode it as a durable check the dependent st
 marker row), and add an alarm for the gate that never opens so a stalled prerequisite is noticed.
 
 - ❌ "Runs after the ingest cron" in a comment while the schedule says otherwise.
-- ✅ The dependent job refuses to run until the prerequisite's durable marker for that period exists; a staleness alarm covers a marker that stops advancing.
+- ✅ The dependent job refuses to run until the prerequisite's durable marker for that period exists.
 
 <a id="CC-13"></a>
 
@@ -551,8 +553,8 @@ In a job that processes a backlog or chains several steps under one deadline, gi
 of the budget, and track attempts so a permanently failing item rotates out of the front of the queue. Otherwise one
 slow step (a long backfill) or one poison item consumes the whole run and the rest never executes.
 
-- ❌ A 13F backfill consumes the shared deadline, so the filings step is skipped on every run; a failing newest item is retried first forever.
-- ✅ Each step gets a bounded slice (or runs first with a cap), and items record attempts so failures move to the back.
+- ❌ A 13F backfill eats the shared deadline, so the filings step never runs; a failing newest item is retried first forever.
+- ✅ Each step gets a bounded slice, and items record attempts so failures move to the back.
 
 <a id="CC-14"></a>
 
@@ -845,7 +847,7 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 
 #### DB-12 — Row-mutating data methods bind ownership inside the statement
 
-A repository method that links, updates or deletes rows owned by an identity takes only the authenticated `userId` (or states the guest case, `user_id IS NULL`) and puts the owner in the `WHERE`. Any proof the action needs (a verified address, `email_verified`) is derived in the same statement, not taken from an argument the caller could pass wrongly. An unguessable row id is not authorization.
+A repository method that links, updates or deletes rows owned by an identity takes only the authenticated `userId` (or states the guest case, `user_id IS NULL`) and puts the owner in the `WHERE`. Any proof the action needs (a verified address, `email_verified`) is derived in the same statement, not taken from an argument the caller could pass wrongly. An unguessable row id is not authorization. A child table under an owner-scoped parent takes the owner too, not the parent's id.
 
 - ❌ `deleteLink(id, email)` that trusts the caller-supplied email, or `update ... where id = $1` alone.
 - ✅ `update ... where id = $1 and user_id = $2` (and `email_verified` joined in the query).
