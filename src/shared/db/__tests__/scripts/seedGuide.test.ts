@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import { seedGuide } from '@/../db/scripts/seedGuide';
 import { guideEntries, guideEntryContents } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { renderSql } from '@/__tests__/utils/renderSql';
 
 function writeSeed(
     root: string,
@@ -66,11 +67,9 @@ function fakeDb(
     return { db, inserted, conflictSets };
 }
 
-/** drizzle `sql` 템플릿의 리터럴 조각만 이어 붙여 `excluded.xxx` 참조를 확인한다. */
+/** drizzle `sql` 템플릿을 렌더링해 `excluded.xxx` 참조를 확인한다. */
 function sqlText(value: unknown): string {
-    const chunks = (value as { queryChunks: { value?: string[] }[] })
-        .queryChunks;
-    return chunks.flatMap(chunk => chunk.value ?? []).join('');
+    return renderSql(value).sql;
 }
 
 describe('seedGuide', () => {

@@ -583,7 +583,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
 - **Mocked logic.** A query builder whose condition is never inspected, a SQL assertion built from short `toContain`
   fragments, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
   behaviour (the value computation, the branch predicate). Mock only the I/O boundary; render the real condition (SQL
-  text and params, the full clause); run the script on a real or emulated Redis or assert its effects; assert values
+  text and params, the full clause, never a column or keyword that also appears elsewhere in the SQL); run the script on a real or emulated Redis or assert its effects; assert values
   that differ per branch.
 - **Wrong surface.** A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only
   through the data flag, a "renders independently" test that mounts only the inner component, a new tracking call with
