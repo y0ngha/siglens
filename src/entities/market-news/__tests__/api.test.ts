@@ -49,8 +49,6 @@ function makeUpdateDb(): {
     };
 }
 
-/** Build a mock `db` for a select…from…where…orderBy chain returning `rows`. */
-
 /** `listAnalyzedIds`용 — `orderBy` 없이 `where()`를 바로 await하는 형태. */
 function makeFilterSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
@@ -62,6 +60,7 @@ function makeFilterSelectDb(rows: unknown[]): {
     return { db: { select } as unknown as SiglensDatabase, where };
 }
 
+/** Build a mock `db` for a select…from…where…orderBy chain returning `rows`. */
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: ReturnType<typeof vi.fn>;

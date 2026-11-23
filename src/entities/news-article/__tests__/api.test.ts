@@ -81,8 +81,6 @@ function makeUpdateDb(): {
     };
 }
 
-/** Build a mock `db` for a select…where…orderBy chain returning `rows`. */
-
 /**
  * `listAnalyzedIds`용 — 이 쿼리는 `orderBy` 없이 `where()`를 바로 await한다.
  * `where` 인자를 노출해 필터 자체(`is not null`)를 단언할 수 있게 한다.
@@ -97,6 +95,7 @@ function makeFilterSelectDb(rows: unknown[]): {
     return { db: { select } as unknown as SiglensDatabase, where };
 }
 
+/** Build a mock `db` for a select…where…orderBy chain returning `rows`. */
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: Mock;
