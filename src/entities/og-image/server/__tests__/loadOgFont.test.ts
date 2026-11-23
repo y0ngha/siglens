@@ -2,7 +2,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Locale } from '@/shared/i18n/locales';
 import type { OgFontSource } from '../../lib/ogFontSources';
-import { createOgFontLoader } from '../loadOgFont';
+import { createOgFontLoader, OgFontUnavailableError } from '../loadOgFont';
 
 // 실제 HTTP 서버로 다운로드·메모·실패 처리를 본다. 경로별 응답과 요청 횟수를 기록한다.
 function startServer(routes: Record<string, { status: number; body: Buffer }>) {
@@ -99,23 +99,125 @@ describe('createOgFontLoader', () => {
         }
     });
 
-    it('비 200 응답이면 null이고, 실패는 기억하지 않아 다음 호출이 다시 시도한다', async () => {
+    it('문자 폰트가 필수인 로케일은 비 200이면 던지고, 60초 안에는 다시 받지 않는다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        vi.useFakeTimers({ toFake: ['Date'] });
         const server = await startServer({});
         try {
             const load = createOgFontLoader(sources(server.base));
-            await expect(load('zh')).resolves.toBeNull();
-            await expect(load('zh')).resolves.toBeNull();
+            await expect(load('zh')).rejects.toBeInstanceOf(
+                OgFontUnavailableError
+            );
+            vi.advanceTimersByTime(59_000);
+            await expect(load('zh')).rejects.toBeInstanceOf(
+                OgFontUnavailableError
+            );
             expect(server.hits).toEqual(['/missing.woff', '/missing.woff']);
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+            vi.advanceTimersByTime(2_000);
+            await expect(load('zh')).rejects.toBeInstanceOf(
+                OgFontUnavailableError
+            );
+            expect(server.hits).toHaveLength(4);
+            expect(errorSpy).toHaveBeenCalledTimes(2);
         } finally {
+            vi.useRealTimers();
+            errorSpy.mockRestore();
             await server.close();
         }
     });
 
-    it('연결 실패면 null을 반환해 graceful degrade한다', async () => {
+    it('ko는 폰트가 없으면 던지고, en은 null(Latin 폴백)이며, 폰트가 있으면 둘 다 렌더 가능한 항목을 준다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const server = await startServer({});
+        const down = createOgFontLoader(sources(server.base));
+        try {
+            await expect(down('ko')).rejects.toBeInstanceOf(
+                OgFontUnavailableError
+            );
+            await expect(down('en')).resolves.toBeNull();
+        } finally {
+            errorSpy.mockRestore();
+            await server.close();
+        }
+        const ok = await startServer({
+            '/pretendard.otf': { status: 200, body: FONT_BYTES },
+        });
+        try {
+            const load = createOgFontLoader(sources(ok.base));
+            await expect(load('ko')).resolves.toMatchObject({
+                name: 'Pretendard',
+            });
+            await expect(load('en')).resolves.toMatchObject({
+                name: 'Pretendard',
+            });
+        } finally {
+            await ok.close();
+        }
+    });
+
+    it('첫 시도가 실패해도 재시도가 성공하면 폰트를 주고 로그도 실패 기억도 남기지 않는다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const hits: string[] = [];
+        const server = http.createServer((req, res) => {
+            hits.push(req.url ?? '');
+            res.writeHead(hits.length === 1 ? 503 : 200);
+            res.end(FONT_BYTES);
+        });
+        await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
+        const { port } = server.address() as AddressInfo;
+        try {
+            const load = createOgFontLoader(
+                sources(`http://127.0.0.1:${port}`)
+            );
+            await expect(load('ko')).resolves.toMatchObject({
+                name: 'Pretendard',
+            });
+            await expect(load('ko')).resolves.not.toBeNull();
+            expect(hits).toHaveLength(2);
+            expect(errorSpy).not.toHaveBeenCalled();
+        } finally {
+            errorSpy.mockRestore();
+            await new Promise<void>(r => server.close(() => r()));
+        }
+    });
+
+    it('다운로드 실패는 시도당 한 번 URL과 함께 로그한다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const server = await startServer({});
+        try {
+            const load = createOgFontLoader(sources(server.base));
+            await Promise.allSettled([load('zh'), load('zh')]);
+            expect(errorSpy).toHaveBeenCalledTimes(1);
+            expect(errorSpy).toHaveBeenCalledWith(
+                `[og-font] download failed url=${server.base}/missing.woff:`,
+                expect.objectContaining({
+                    message: expect.stringContaining('http 404'),
+                })
+            );
+        } finally {
+            errorSpy.mockRestore();
+            await server.close();
+        }
+    });
+
+    it('연결 실패면 문자 폰트 필수 로케일은 던진다', async () => {
         const server = await startServer({});
         const { base } = server;
         await server.close();
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
         const load = createOgFontLoader(sources(base));
-        await expect(load('ja')).resolves.toBeNull();
+        await expect(load('ja')).rejects.toBeInstanceOf(OgFontUnavailableError);
+        errorSpy.mockRestore();
     });
 });

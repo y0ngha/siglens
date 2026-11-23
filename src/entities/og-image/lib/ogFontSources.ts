@@ -6,9 +6,13 @@ export interface OgFontSource {
     url: string;
 }
 
+/**
+ * jsdelivr `gh/` 경로는 쓰지 않는다 — 이 저장소를 크기 제한으로 거부해 404가 난다.
+ * npm 경로의 정적 WOFF(1.1MB)는 같은 전체 글리프를 OTF(1.5MB)보다 작게 담고 Satori가 읽는다.
+ */
 const PRETENDARD: OgFontSource = {
     name: 'Pretendard',
-    url: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-bold.otf',
+    url: 'https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/woff/Pretendard-Bold.woff',
 };
 
 /**
