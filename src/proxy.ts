@@ -15,6 +15,7 @@ import {
 // 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
 // ticker.ts JSDoc 참조).
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { fromFmpSymbol } from '@/shared/lib/fmpSymbol';
 import { RESERVED_FIRST_SEGMENTS } from '@/shared/config/reservedFirstSegments';
 // 가드 경로 목록은 클라이언트(`NavigationPendingContext`)가 도착지를 예측할 때도 쓴다.
 // 외부 의존이 0인 상수 파일이라 edge runtime에서 안전하다.
@@ -47,6 +48,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const intlMiddleware = createIntlMiddleware(routing);
+
+/**
+ * 종목 경로 첫 세그먼트의 정식 형태 — 대문자화 + FMP 표기 역변환(`brk-b` → `BRK.B`).
+ *
+ * 앱의 정식 심볼은 `BRK.B`이고 `BRK-B`는 FMP 요청 전용 표기다. 두 정규화를 한 함수로
+ * 묶어 `/en/brk-b/news` → `/en/BRK.B/news`가 한 홉에 끝나게 한다. 별칭 맵에 없는
+ * 하이픈 티커(`PBR-A`)는 `fromFmpSymbol`이 그대로 돌려줘 건드리지 않는다.
+ */
+function canonicalSymbolSegment(segment: string): string {
+    return fromFmpSymbol(segment.toUpperCase());
+}
 
 /**
  * `img-src`를 좁히는 이유는 모델 출력에 섞인 이미지 URL로 대화 내용을 빼내는 경로를
@@ -464,7 +476,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
                 !isLocale(stripped.toLowerCase())
             ) &&
             isAdmissibleSymbolShape(stripped)
-                ? pathname.replace(/^\/[^/]+/, '/' + stripped.toUpperCase())
+                ? pathname.replace(
+                      /^\/[^/]+/,
+                      '/' + canonicalSymbolSegment(stripped)
+                  )
                 : pathname;
         return NextResponse.redirect(canonicalUrl, 301);
     }
@@ -575,12 +590,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         firstSegment !== undefined &&
         !isReservedHere &&
         isAdmissibleSymbolShape(firstSegment) &&
-        firstSegment !== firstSegment.toUpperCase()
+        firstSegment !== canonicalSymbolSegment(firstSegment)
     ) {
         const canonicalUrl = new URL(reqUrl);
         canonicalUrl.pathname = localePath(
             locale,
-            pathname.replace(/^\/[^/]+/, '/' + firstSegment.toUpperCase())
+            pathname.replace(
+                /^\/[^/]+/,
+                '/' + canonicalSymbolSegment(firstSegment)
+            )
         );
         return NextResponse.redirect(canonicalUrl, 301);
     }
