@@ -5,6 +5,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { renderSql } from '@/__tests__/utils/renderSql';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import { decryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -193,25 +194,10 @@ describe('DrizzleUserRepository', () => {
 
         await repository.findByEmail('  Foo@Gmail.com ');
 
-        const condition = where.mock.calls
-            .flatMap(args => args)
-            .find(
-                (arg): arg is { queryChunks: unknown[] } =>
-                    typeof arg === 'object' &&
-                    arg !== null &&
-                    'queryChunks' in arg
-            );
-        const boundValues = (condition?.queryChunks ?? [])
-            .filter(
-                (chunk): chunk is { value: unknown } =>
-                    typeof chunk === 'object' &&
-                    chunk !== null &&
-                    'encoder' in chunk &&
-                    'value' in chunk
-            )
-            .map(chunk => chunk.value);
-        expect(boundValues).toContain('foo@gmail.com');
-        expect(boundValues).not.toContain('  Foo@Gmail.com ');
+        expect(where).toHaveBeenCalledTimes(1);
+        const [condition] = where.mock.calls.flat();
+        const { params } = renderSql(condition);
+        expect(params).toEqual(['foo@gmail.com']);
     });
 
     it('returns null when no user is found by email', async () => {
@@ -744,25 +730,6 @@ describe('DrizzleUserRepository', () => {
     });
 
     describe('resetPasswordRevokingSessions', () => {
-        type SqlNode = {
-            name?: string;
-            value?: unknown;
-            queryChunks?: unknown[];
-        };
-        const columnNames = (node: SqlNode): string[] =>
-            node.name
-                ? [node.name]
-                : (node.queryChunks ?? []).flatMap(chunk =>
-                      columnNames(chunk as SqlNode)
-                  );
-
-        const paramValues = (node: SqlNode): unknown[] =>
-            node.queryChunks
-                ? node.queryChunks.flatMap(chunk =>
-                      paramValues(chunk as SqlNode)
-                  )
-                : [node.value];
-
         function makeTransactionDb(updatedRows: unknown[]): {
             db: SiglensDatabase;
             txUpdate: ReturnType<typeof vi.fn>;
@@ -837,9 +804,11 @@ describe('DrizzleUserRepository', () => {
             ]);
             // 아무 조건이나 통과하지 않도록 실제 조건식의 컬럼을 연다.
             expect(deleteConditions).toHaveLength(1);
-            const condition = deleteConditions[0] as SqlNode;
-            expect(columnNames(condition)).toEqual(['user_id']);
-            expect(paramValues(condition)).toContain('user-1');
+            const { sql: conditionSql, params } = renderSql(
+                deleteConditions[0]
+            );
+            expect(conditionSql).toMatch(/"user_id" = \$1$/);
+            expect(params).toEqual(['user-1']);
         });
 
         it('returns false and leaves sessions alone when no user row matches', async () => {

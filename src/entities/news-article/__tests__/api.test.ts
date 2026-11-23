@@ -12,6 +12,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import type { NewsRow } from '@/entities/news-article/api';
 import { orderColumnName } from '@/__tests__/utils/orderColumnName';
+import { renderSql } from '@/__tests__/utils/renderSql';
 
 const baseItem: NewsItem = {
     id: 'abc123',
@@ -81,28 +82,6 @@ function makeUpdateDb(): {
 }
 
 /** Build a mock `db` for a select…where…orderBy chain returning `rows`. */
-/**
- * drizzle `SQL` 객체에서 리터럴 조각만 뽑는다. `JSON.stringify`는 테이블 참조가
- * 순환이라 던지므로 쓸 수 없다. `isNotNull`은 `' is not null'`, `isNull`은
- * `' is null'` 조각을 남기므로 필터 방향을 이걸로 판별한다.
- */
-function sqlChunks(node: unknown, out: string[] = []): string[] {
-    if (Array.isArray(node)) {
-        for (const item of node) sqlChunks(item, out);
-        return out;
-    }
-    if (node && typeof node === 'object') {
-        const obj = node as Record<string, unknown>;
-        if (Array.isArray(obj.queryChunks)) sqlChunks(obj.queryChunks, out);
-        if (
-            Array.isArray(obj.value) &&
-            obj.value.every(v => typeof v === 'string')
-        ) {
-            out.push(...(obj.value as string[]));
-        }
-    }
-    return out;
-}
 
 /**
  * `listAnalyzedIds`용 — 이 쿼리는 `orderBy` 없이 `where()`를 바로 await한다.
@@ -188,10 +167,19 @@ describe('DrizzleNewsRepository', () => {
                 setWhere: unknown;
             };
             expect(conflictArg.set).toHaveProperty('publishedAt');
-            // setWhere는 Drizzle `sql` 태그드 객체(`queryChunks` 보유)여야 한다 — 변경 여부 필터링용.
-            // toBeDefined()만으론 setWhere 미전달과 빈 객체 차이를 잡지 못해 정밀 단언으로 보강.
-            expect(conflictArg.setWhere).toEqual(
-                expect.objectContaining({ queryChunks: expect.any(Array) })
+            // setWhere는 fetch가 소유한 다섯 컬럼 각각을 excluded 값과 IS DISTINCT FROM으로
+            // 비교해야 한다. 한 항이라도 빠지면 그 컬럼만 바뀐 재fetch가 무시된다.
+            const normalized = renderSql(conflictArg.setWhere)
+                .sql.replace(/\s+/g, ' ')
+                .trim();
+            expect(normalized).toBe(
+                [
+                    '"news"."symbol" IS DISTINCT FROM excluded.symbol OR',
+                    '"news"."source" IS DISTINCT FROM excluded.source OR',
+                    '"news"."published_at" IS DISTINCT FROM excluded.published_at OR',
+                    '"news"."title_en" IS DISTINCT FROM excluded.title_en OR',
+                    '"news"."body_en" IS DISTINCT FROM excluded.body_en',
+                ].join(' ')
             );
         });
 
@@ -460,9 +448,9 @@ describe('DrizzleNewsRepository', () => {
             expect(ids).toEqual(new Set(['a', 'b']));
             // drizzle의 `isNotNull`은 ' is not null' 조각을, `isNull`은 ' is null'
             // 조각을 남긴다 — 방향이 뒤집히면 여기서 걸린다.
-            const literals = sqlChunks((where.mock.calls[0] as [unknown])[0]);
-            expect(literals).toContain(' is not null');
-            expect(literals).not.toContain(' is null');
+            const { sql } = renderSql((where.mock.calls[0] as [unknown])[0]);
+            expect(sql).toContain(' is not null');
+            expect(sql).not.toMatch(/ is null/);
         });
 
         it('결과가 없으면 빈 Set을 돌려준다', async () => {
