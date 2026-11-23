@@ -25,7 +25,7 @@ export const ASSET_INFO_STATIC_REVALIDATE_SECONDS = SECONDS_PER_DAY;
  * gen 중 no-store fetch가 `DYNAMIC_SERVER_USAGE`를 throw → resilient가 faithfully rethrow →
  * 라우트가 dynamic으로 떨어진다. 그래서 데이터 호출 자체를 `unstable_cache`로 감싸 정적화한다.
  * resilient의 DSU rethrow는 이 래퍼 밖에 그대로 남아 `unstable_cache` 안에서 throw하지 않는다
- * (인프라 실패는 degrade fallback으로 흡수 — resilient JSDoc의 #545 connection() 제거 배경 참조).
+ * (인프라 실패는 degrade fallback으로 흡수 — resilient JSDoc의 `connection()` 설명 참조).
  *
  * 왜 clean lib `getAssetInfo`가 아니라 `getAssetInfoAction`('use server')을 감싸는가:
  * `getAssetInfoResilient`의 import 체인은 client component(useRecentSearches 등) 그래프에

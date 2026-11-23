@@ -920,7 +920,7 @@ export const earningsReports = pgTable(
  *
  * `id`는 country+dateEt+event의 결정론적 해시(`economicCalendarId`)다. `actual`을
  * 포함하지 않으므로 발표 후 actual이 채워져도 같은 행으로 upsert돼 갱신된다
- * (#610 그리드의 React key `${date}:${event}:${actual}`와는 의도가 다른 안정 키).
+ * (그리드의 React key `${date}:${event}:${actual}`와는 의도가 다른 안정 키).
  *
  * SP-D에서 별도 마이그레이션으로 sentiment/summaryKo/interpretationKo/analyzedAt가
  * 추가된다 — SP-A 테이블에는 미포함.

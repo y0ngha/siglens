@@ -25,8 +25,7 @@ interface FearGreedExtremeZoneRecordProps {
 export type ExtremeZoneDayUnit = 'trading' | 'calendar';
 
 /**
- * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록
- * (siglens-core#256).
+ * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록.
  *
  * 종목 탭과 시장 허브(`app/[locale]/fear-greed`)가 함께 쓴다.
  *

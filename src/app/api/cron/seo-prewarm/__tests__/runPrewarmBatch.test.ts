@@ -1092,7 +1092,7 @@ describe('runPrewarmBatch', () => {
         expect(selectedEver.size).toBe(universeSymbols.length);
     });
 
-    // ── FIX 1(감사, PR #698 리뷰) — legacy in-flight 마커(present, jobId 없음) ──
+    // ── FIX 1 — legacy in-flight 마커(present, jobId 없음) ──
 
     it('legacy 마커(present, jobId 없음)가 있는 유닛은 재제출되지 않는다(seam 미호출) — 회귀 가드', async () => {
         // 픽스 전에는 getInFlightJobId만 확인해 legacy 마커를 "in-flight 아님"으로
