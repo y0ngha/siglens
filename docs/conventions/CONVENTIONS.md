@@ -94,8 +94,6 @@ Extract to a named helper (or a data array rendered with `.map()`) when an expre
 - The same JSX structure twice or more: a data array plus `.map()`.
 - Combining Tailwind classes always goes through `cn()` (see Tailwind CSS Rules), never template literals or `+`.
 
-Why: named helpers can be tested and renamed; anonymous expressions drift independently when copied.
-
 ```typescript
 // ❌ same ternary repeated
 <div className={isActive ? 'bg-primary-600 text-white' : 'bg-secondary-800'} />

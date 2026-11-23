@@ -34,6 +34,11 @@ import {
     MAIL_ALERT_DELIVERY_STATUS_VALUES,
     MAIL_ALERT_TOPIC_KIND_VALUES,
     OAUTH_PROVIDER_VALUES,
+    PRICE_ALERT_APPROACH_VALUES,
+    PRICE_ALERT_BASIS_VALUES,
+    PRICE_ALERT_CONDITION_VALUES,
+    PRICE_ALERT_MARKET_VALUES,
+    PRICE_ALERT_STATUS_VALUES,
     SHAREABLE_KIND_VALUES,
     SIGNAL_SCAN_OUTCOME_VALUES,
     SYMBOL_MAX_LENGTH,
@@ -609,7 +614,7 @@ export const mailAlertSubscribers = pgTable(
     table => [
         check(
             'mail_alert_subscribers_consent_source_check',
-            sql`${table.consentSource} IN ('symbol','fear_greed','signal_hub','settings')`
+            sql`${table.consentSource} IN ('symbol','fear_greed','signal_hub','settings','agent_chat')`
         ),
     ]
 );
@@ -684,6 +689,114 @@ export const mailAlertDeliveries = pgTable(
             table.alertDate
         ),
         index('mail_alert_deliveries_alert_date_idx').on(table.alertDate),
+    ]
+);
+
+/**
+ * 가격대 알림 — 구독자(`mail_alert_subscribers`)가 가진 한 번짜리 알림 한 행. 아침 알림 메일이 완료된
+ * 일봉 종가로 조건을 판정해 처음 충족한 세션에 한 줄을 싣고(`status`가 `fired`로 바뀐다) 끝난다.
+ *
+ * 모델이 쓴 자유 문장은 저장하지 않는다: 종목·조건·가격·기준(분석 구간, 무효화 기준, 말한 가격)만 담는다.
+ * `proposal_id`는 서명된 제안 토큰에서 오며 `(subscriber_id, proposal_id)` 유니크가 더블클릭·재시도를
+ * 멱등하게 만든다. `starts_after_session`은 만든 시점의 마지막 완료 세션으로, 그 뒤 종가만 센다
+ * (만든 날 장중 거래가 거짓 발화를 만들지 않게). 구독자가 지워지면 알림도 함께 사라진다(수신 거부 = 구독자 삭제).
+ * 조건별 모양(구간은 approach·low·high, 단일 가격은 level)은 CHECK가 지킨다.
+ */
+export const priceAlerts = pgTable(
+    'price_alerts',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        subscriberId: uuid('subscriber_id')
+            .notNull()
+            .references(() => mailAlertSubscribers.id, { onDelete: 'cascade' }),
+        proposalId: uuid('proposal_id').notNull(),
+        /** 관심종목과 같은 정규형(대문자). */
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        market: text('market', { enum: PRICE_ALERT_MARKET_VALUES }).notNull(),
+        condition: text('condition', {
+            enum: PRICE_ALERT_CONDITION_VALUES,
+        }).notNull(),
+        /** `enter_zone`에서만 값이 있다: 구간 위에서 내려오는지 아래에서 올라오는지. */
+        approach: text('approach', { enum: PRICE_ALERT_APPROACH_VALUES }),
+        // numeric은 Drizzle에서 문자열이다 — 십진 문자열로 다루고 JS 부동소수로 되돌릴 때만 Number로 바꾼다.
+        zoneLow: numeric('zone_low', { precision: 20, scale: 6 }),
+        zoneHigh: numeric('zone_high', { precision: 20, scale: 6 }),
+        level: numeric('level', { precision: 20, scale: 6 }),
+        basis: text('basis', { enum: PRICE_ALERT_BASIS_VALUES }).notNull(),
+        /** 구간·무효화 기준을 읽어 온 AI 분석의 `analyzedAt`. 가격을 직접 말한 알림은 null. */
+        analysisAt: timestamp('analysis_at', { withTimezone: true }),
+        /** 카드에 보인 가격(만들 때의 시세). */
+        referenceClose: numeric('reference_close', {
+            precision: 20,
+            scale: 6,
+        }).notNull(),
+        /** 만든 시점의 마지막 완료 세션 날짜. 이보다 뒤의 종가만 판정한다. */
+        startsAfterSession: date('starts_after_session').notNull(),
+        /** 한국 날짜. 이 날짜까지는 살아 있다(만료일 당일은 아직 active). */
+        expiresOn: date('expires_on').notNull(),
+        status: text('status', { enum: PRICE_ALERT_STATUS_VALUES })
+            .notNull()
+            .default('active'),
+        firedSession: date('fired_session'),
+        firedClose: numeric('fired_close', { precision: 20, scale: 6 }),
+        firedAt: timestamp('fired_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check('price_alerts_market_check', sql`${table.market} IN ('us','kr')`),
+        check(
+            'price_alerts_condition_check',
+            sql`${table.condition} IN ('enter_zone','close_below','close_above')`
+        ),
+        check(
+            'price_alerts_approach_check',
+            sql`${table.approach} IN ('from_above','from_below')`
+        ),
+        check(
+            'price_alerts_basis_check',
+            sql`${table.basis} IN ('analysis_entry_zone','analysis_invalidation','price_level')`
+        ),
+        check(
+            'price_alerts_status_check',
+            sql`${table.status} IN ('active','fired')`
+        ),
+        check(
+            'price_alerts_shape_check',
+            sql`(${table.condition} = 'enter_zone' AND ${table.approach} IS NOT NULL AND ${table.zoneLow} IS NOT NULL AND ${table.zoneHigh} IS NOT NULL AND ${table.level} IS NULL AND ${table.zoneLow} > 0 AND ${table.zoneLow} <= ${table.zoneHigh}) OR (${table.condition} IN ('close_below','close_above') AND ${table.approach} IS NULL AND ${table.zoneLow} IS NULL AND ${table.zoneHigh} IS NULL AND ${table.level} IS NOT NULL AND ${table.level} > 0)`
+        ),
+        // numeric은 NaN을 저장하고 NaN은 모든 수보다 크게 비교된다 — `> 0` 검사만으로는 걸러지지 않는다.
+        check(
+            'price_alerts_finite_check',
+            sql`${table.zoneLow} <> 'NaN' AND ${table.zoneHigh} <> 'NaN' AND ${table.level} <> 'NaN' AND ${table.referenceClose} <> 'NaN' AND ${table.firedClose} <> 'NaN'`
+        ),
+        check(
+            'price_alerts_reference_close_check',
+            sql`${table.referenceClose} > 0`
+        ),
+        // 한 번 알리면 끝이다: 진행 중이면 알린 흔적이 없고, 알렸으면 세 값이 모두 있다.
+        check(
+            'price_alerts_fired_state_check',
+            sql`(${table.status} = 'active' AND ${table.firedSession} IS NULL AND ${table.firedClose} IS NULL AND ${table.firedAt} IS NULL) OR (${table.status} = 'fired' AND ${table.firedSession} IS NOT NULL AND ${table.firedClose} IS NOT NULL AND ${table.firedAt} IS NOT NULL)`
+        ),
+        // 분석에서 읽은 기준은 분석 시각을 가지고, 진입 구간은 구간 조건, 무효화 기준은 아래로 닫히는 조건과만 짝이다.
+        check(
+            'price_alerts_basis_shape_check',
+            sql`(${table.basis} = 'price_level' AND ${table.analysisAt} IS NULL) OR (${table.basis} = 'analysis_entry_zone' AND ${table.analysisAt} IS NOT NULL AND ${table.condition} = 'enter_zone') OR (${table.basis} = 'analysis_invalidation' AND ${table.analysisAt} IS NOT NULL AND ${table.condition} = 'close_below')`
+        ),
+        uniqueIndex('price_alerts_subscriber_proposal_uidx').on(
+            table.subscriberId,
+            table.proposalId
+        ),
+        index('price_alerts_status_expires_idx').on(
+            table.status,
+            table.expiresOn
+        ),
     ]
 );
 

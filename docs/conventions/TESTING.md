@@ -381,11 +381,10 @@ Pin the fix with inputs that almost match its guard, not only the one the review
 
 Code using `Date.now()` or `new Date()` runs under a mocked clock (`vi.useFakeTimers` / `vi.setSystemTime`). Hardcoded expected TTLs or dates without a fixed clock make flaky tests.
 
-This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event.
+This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event (a concurrency DB test polls `pg_blocking_pids` of the lock holder, never `setTimeout(500)`).
 
-- ❌ Passing a synthetic `now` of `999` to a limiter whose backing cache expires entries on `Date.now()`; a 1 ms TTL elapses in real CI time and a new window opens.
-- ✅ Freeze the clock for the suite (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
-- ❌ A date-keyed cache key matched by a date regex. ✅ Pin the clock; assert the exact key.
+- ❌ A synthetic `now` of `999` passed to a limiter whose cache expires on `Date.now()`; the TTL elapses in real CI time.
+- ✅ Freeze the clock (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
 
 <a id="TE-9"></a>
 
