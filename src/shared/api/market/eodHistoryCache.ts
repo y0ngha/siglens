@@ -3,6 +3,7 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { utcMidnightSeconds } from './barsWindow';
+import { clampBarsRange } from './barRange';
 import {
     type EodHistoryEntry,
     type EodServeContext,
@@ -91,6 +92,8 @@ export async function getEodHistory(
     const memo = deps.memory.get(key);
     let stale: EodHistoryEntry | undefined;
     if (memo !== undefined && !Array.isArray(memo)) {
+        // L1은 이 함수만 쓰고 항상 `clampServed`를 거친 엔트리만 넣는다(아래 `memory.set`).
+        // 그래서 L1 적중은 다시 고치지 않는다 — 다른 쓰기 경로가 생기면 여기서 클램프해야 한다.
         if (isEntryServable(memo, ctx)) return memo.bars;
         stale = memo;
     }
@@ -113,14 +116,41 @@ export async function getEodHistory(
             return servable;
         }
     );
-    if (entry.bars.length > 0 && isEntryServable(entry, ctx)) {
+    const served = clampServed(entry, options);
+    if (served.bars.length > 0 && isEntryServable(served, ctx)) {
         deps.memory.set(
             key,
-            entry,
+            served,
             HISTORY_MEMORY_TTL_CAP_SECONDS * MS_PER_SECOND
         );
     }
-    return entry.bars;
+    return served.bars;
+}
+
+/**
+ * 내보내는 모든 히스토리를 `L ≤ min(O,C) ≤ max(O,C) ≤ H`로 맞춘다(멱등, 유효한 봉은 그대로).
+ *
+ * `YahooMarketProvider`가 새로 받는 봉은 소스에서 이미 고친다. 이 읽기 경로 클램프가 따로 있는
+ * 이유는 두 가지다. (1) 그 수정 전에 Redis에 쓰인 엔트리가 남아 있다 — 증분 갱신은 쓸 때마다
+ * TTL을 갱신하므로 매일 조회되는 종목은 옛 봉이 스스로 사라지지 않는다. (2) 키 접두사를 올려
+ * 비우는 길은 막혀 있다: 접두사가 US/FMP와 공유라 올리면 배포 직후 FMP 호출이 한꺼번에 몰려
+ * 429가 난다(위 키 접두사 주석).
+ *
+ * 증분 경로(`refreshEodHistory`)는 캐시 봉과 새로 받은 봉을 이어 붙이므로 결과에 옛 봉이 섞일
+ * 수 있지만, 이 함수가 그 결과가 반환·L1 저장되기 직전에 한 번 거치므로 되살아날 수 없다.
+ * L1에는 고친 엔트리가 들어가 이후 L1 읽기는 다시 고치지 않는다. 고친 봉 수는 읽기 호출당 한 줄,
+ * 0보다 클 때만 남긴다. Redis 엔트리는 다음 쓰기 때 고친 값으로 바뀐다.
+ */
+function clampServed(
+    entry: EodHistoryEntry,
+    options: GetBarsOptions
+): EodHistoryEntry {
+    const { bars, fixed } = clampBarsRange(entry.bars);
+    if (fixed === 0) return entry;
+    console.warn(
+        `${EOD_HISTORY_LOG_PREFIX} ohlc-normalized symbol=${options.symbol.toUpperCase()} fixed=${fixed} total=${bars.length}`
+    );
+    return { ...entry, bars: [...bars] };
 }
 
 /**
@@ -136,8 +166,12 @@ async function refreshEodHistory(
     getBars: (options: GetBarsOptions) => Promise<Bar[]>,
     options: GetBarsOptions,
     ctx: EodServeContext,
-    stale: EodHistoryEntry | undefined
+    rawStale: EodHistoryEntry | undefined
 ): Promise<EodHistoryEntry> {
+    // 겹침 비교(`overlapStatus`) 전에 낡은 엔트리를 고친다. 수정 전 캐시의 마지막 봉이 옛 값이면
+    // yahoo가 이제 고쳐서 주는 겹침 봉과 달라 'mismatch'로 읽혀 5년치 전체 재조회가 나간다.
+    const stale =
+        rawStale === undefined ? undefined : clampServed(rawStale, options);
     const fromThreshold = utcMidnightSeconds(ctx.fetchFrom);
     const build = (bars: Bar[], fullAt: number): EodHistoryEntry => ({
         asOf: ctx.lastClosed,
