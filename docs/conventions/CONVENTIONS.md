@@ -79,7 +79,7 @@ return result;
 const result = condition ? newValue : value;
 ```
 
-A `let` assigned inside `try` and read after it is the same smell: make the guarded call a `const` (`const x = await load().catch(() => null)`). Two shapes are machine-checked (see "Enforced rules"). Loop state and effect-cleanup flags stay a judgment call.
+A `let` assigned in `try` and read after it is the same smell; both shapes are machine-checked (see "Enforced rules"). Loop state and effect-cleanup flags stay a judgment call.
 
 In tests, do not reassign a `let` mock inside `act()`/callbacks; create a `const` mock and pass it into the helper.
 
@@ -973,7 +973,8 @@ from the real source value, not from the formatter's current output.
 A user-facing label, score or chart title names only what the underlying data proves. A score computed from a
 partial source (filings only, daily candles, an estimate) says so in its name or caption, and an estimated split is
 not labelled with the real-world quantity it approximates. When the data cannot support the stronger term, use the
-weaker one or show the basis next to the value.
+weaker one or show the basis next to the value. Each rendered figure names its own basis (reference value,
+denominator, comparison) in the same card; a basis written once for several tables must hold for every table it covers.
 
 - ❌ "Order flow" computed from daily candles; "buy/sell volume" for a close-location estimate.
 - ✅ "Estimated volume split (from daily candles)"; a flow score captioned with the filings it is built from.
