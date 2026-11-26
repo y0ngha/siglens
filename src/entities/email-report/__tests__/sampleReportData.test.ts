@@ -27,6 +27,7 @@ function buildMessage(locale: 'ko' | 'en' = 'ko') {
             locale,
             t,
             signalLabel,
+            skillLabel: name => name,
             sampleText,
             siteUrl: 'https://siglens.io',
         })

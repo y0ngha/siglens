@@ -65,11 +65,14 @@ vi.mock('drizzle-orm', async importOriginal => {
 });
 
 import { createHash } from 'node:crypto';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type {
     AssembledPromptRecord,
     PriorAnalysis,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { defined } from '@/shared/test-utils/defined';
 import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
@@ -809,6 +812,87 @@ describe('DrizzleAnalysisHistoryRepository.findLatestShareable', () => {
         expect(orderBy).toHaveBeenCalledTimes(1);
         expect(consoleError).toHaveBeenCalledWith(
             '[analysisHistoryRepository] findLatestShareable failed:',
+            expect.any(Error)
+        );
+        consoleError.mockRestore();
+    });
+});
+
+describe('DrizzleAnalysisHistoryRepository.findShareableAt', () => {
+    const input = {
+        symbol: 'AAPL',
+        timeframe: '1Day' as const,
+        tab: 'technical' as const,
+        generatedAt: new Date('2026-11-25T00:00:00.123Z'),
+    };
+
+    function makeDb(rows: Promise<unknown[]>) {
+        const conditions: SQL[] = [];
+        const limit = vi.fn(() => rows);
+        const where = vi.fn((condition: SQL) => {
+            conditions.push(condition);
+            return { limit };
+        });
+        const from = vi.fn(() => ({ where }));
+        const select = vi.fn(() => ({ from }));
+        return {
+            db: { select } as unknown as SiglensDatabase,
+            conditions,
+            limit,
+        };
+    }
+
+    it('맞춤이 아닌 행만, 심볼·주기·탭·생성 시각이 정확히 같은 한 행을 읽는다', async () => {
+        const row = {
+            symbol: 'AAPL',
+            generatedAt: input.generatedAt,
+            tier: 'member',
+            result: { trend: 'bullish' },
+        };
+        const { db, conditions, limit } = makeDb(Promise.resolve([row]));
+
+        const found = await new DrizzleAnalysisHistoryRepository(
+            db
+        ).findShareableAt(input);
+
+        expect(found).toEqual({ status: 'found', row });
+        expect(limit).toHaveBeenCalledWith(1);
+        expect(conditions).toHaveLength(1);
+        const rendered = new PgDialect().sqlToQuery(defined(conditions[0]));
+        expect(rendered.sql).toBe(
+            '("analysis_history"."symbol" = $1 and "analysis_history"."timeframe" = $2 and "analysis_history"."tab" = $3 and "analysis_history"."personalized" = $4 and "analysis_history"."generated_at" = $5)'
+        );
+        expect(rendered.params).toEqual([
+            'AAPL',
+            '1Day',
+            'technical',
+            false,
+            input.generatedAt.toISOString(),
+        ]);
+    });
+
+    it('행이 없으면 absent', async () => {
+        const { db } = makeDb(Promise.resolve([]));
+        expect(
+            await new DrizzleAnalysisHistoryRepository(db).findShareableAt(
+                input
+            )
+        ).toEqual({ status: 'absent' });
+    });
+
+    it('조회가 실패하면 absent가 아니라 failed를 돌려주고 가린 오류를 남긴다', async () => {
+        const { db } = makeDb(Promise.reject(new Error('select failed')));
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const found = await new DrizzleAnalysisHistoryRepository(
+            db
+        ).findShareableAt(input);
+
+        expect(found).toEqual({ status: 'failed' });
+        expect(consoleError).toHaveBeenCalledWith(
+            '[analysisHistoryRepository] findShareableAt failed:',
             expect.any(Error)
         );
         consoleError.mockRestore();

@@ -164,6 +164,24 @@ export interface FindLatestShareableInput {
     notBefore: Date;
 }
 
+/** `findShareableAt` 입력. */
+export interface FindShareableAtInput {
+    symbol: string;
+    timeframe: '1Day';
+    tab: 'technical';
+    /** 읽을 행의 `generated_at`(밀리초까지 정확히 같은 행). */
+    generatedAt: Date;
+}
+
+/**
+ * `findShareableAt` 결과. "행이 없다"(보존 기간 경과 — 영원히 같은 답)와 "읽지 못했다"(DB 오류 — 곧 달라질 수 있는
+ * 답)를 가른다. 호출자가 앞의 것은 오래 캐시하고 뒤의 것은 캐시하지 않는다.
+ */
+export type FindShareableAtResult =
+    | { status: 'found'; row: ShareableAnalysisRow }
+    | { status: 'absent' }
+    | { status: 'failed' };
+
 /** `findLatestShareable`이 심볼마다 돌려주는 행. */
 export interface ShareableAnalysisRow {
     symbol: string;
@@ -491,6 +509,55 @@ export class DrizzleAnalysisHistoryRepository {
             return new Map();
         }
         return found;
+    }
+
+    /**
+     * 지정한 시각에 만들어진 공유 가능한 분석 한 행. 메일의 차트 이미지 URL이 `findLatestShareable`이 고른 분석을
+     * 시각으로 고정해 두므로(`a=<generatedAt>`), 이미지 라우트가 나중에 새 분석이 생겨도 같은 행을 다시 읽는다.
+     *
+     * `findLatestShareable`과 같은 이유로 `personalized = false`만 읽는다. 행이 없으면 `absent`, 읽기에 실패하면(로그를
+     * 남기고) `failed`다 — 둘 다 호출자가 작도 없는 차트로 떨어지지만 캐시 정책이 다르다.
+     */
+    async findShareableAt(
+        input: FindShareableAtInput
+    ): Promise<FindShareableAtResult> {
+        try {
+            const rows = await withRetry(
+                () =>
+                    this.db
+                        .select({
+                            symbol: analysisHistory.symbol,
+                            generatedAt: analysisHistory.generatedAt,
+                            tier: analysisHistory.tier,
+                            result: analysisHistory.result,
+                        })
+                        .from(analysisHistory)
+                        .where(
+                            and(
+                                eq(analysisHistory.symbol, input.symbol),
+                                eq(analysisHistory.timeframe, input.timeframe),
+                                eq(analysisHistory.tab, input.tab),
+                                eq(analysisHistory.personalized, false),
+                                eq(
+                                    analysisHistory.generatedAt,
+                                    input.generatedAt
+                                )
+                            )
+                        )
+                        .limit(1),
+                DB_TRANSIENT_RETRY
+            );
+            const row = rows[0];
+            return row === undefined
+                ? { status: 'absent' }
+                : { status: 'found', row };
+        } catch (err) {
+            console.error(
+                '[analysisHistoryRepository] findShareableAt failed:',
+                redactDbErrorForLog(err)
+            );
+            return { status: 'failed' };
+        }
     }
 
     /**

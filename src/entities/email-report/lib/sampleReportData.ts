@@ -9,8 +9,10 @@ import type {
     ReportEmailSection,
     ReportEmailTranslator,
     SignalLabelResolver,
+    SkillLabelResolver,
     SymbolBriefRow,
 } from '../templates/reportEmailTypes';
+import { buildSampleReportDrawings } from './sampleDrawings';
 import {
     buildSampleBars,
     SAMPLE_CHART_SYMBOLS,
@@ -60,6 +62,8 @@ function briefFromBars(
     };
 }
 
+/** 샘플 수신자의 타임존. */
+const SAMPLE_TIME_ZONE = 'America/New_York';
 const NEWS_PUBLISHED_AT = `${SAMPLE_REPORT_DATE}T06:00:00Z`;
 const SAMPLE_SOURCE = 'Sample Wire';
 const ANALYZED_AT = '2026-10-13T21:00:00Z';
@@ -217,6 +221,7 @@ export interface BuildSampleReportEmailInput {
     locale: Locale;
     t: ReportEmailTranslator;
     signalLabel: SignalLabelResolver;
+    skillLabel: SkillLabelResolver;
     sampleText: SampleTextTranslator;
     /**
      * 뉴스 링크 접두. 외부 기사 URL은 `http(s)`만 링크로 걸리므로 절대 주소가 필요하다 —
@@ -234,6 +239,7 @@ export function buildSampleReportEmailInput({
     locale,
     t,
     signalLabel,
+    skillLabel,
     sampleText,
     siteUrl,
 }: BuildSampleReportEmailInput): BuildReportEmailInput {
@@ -249,6 +255,7 @@ export function buildSampleReportEmailInput({
         report: reports[symbol],
         brief: sampleBrief(symbol),
         chartUrl: sampleChartUrl(symbol),
+        drawings: buildSampleReportDrawings(symbol),
         pageUrl: symbolPage(symbol),
     }));
     const briefRows: SymbolBriefRow[] = SAMPLE_BRIEFS.map(brief => ({
@@ -265,7 +272,10 @@ export function buildSampleReportEmailInput({
         unsubscribePageUrl: samplePage,
         unsubscribeApiUrl: samplePage,
         settingsUrl: localePath(locale, '/email-report'),
+        // 샘플 종목은 미국 주식이다 — 분석 날짜를 미국 동부 달력으로 쓴다.
+        timeZone: SAMPLE_TIME_ZONE,
         t,
         signalLabel,
+        skillLabel,
     };
 }

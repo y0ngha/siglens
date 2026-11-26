@@ -221,5 +221,60 @@ describe.skipIf(!URL)(
                 expect((await query([], at(30))).size).toBe(0);
             });
         });
+
+        describe('findShareableAt', () => {
+            const queryAt = (symbol: string, generatedAt: Date) =>
+                repo.findShareableAt({
+                    symbol,
+                    timeframe: '1Day',
+                    tab: 'technical',
+                    generatedAt,
+                });
+
+            it('생성 시각이 정확히 같은 맞춤이 아닌 행을 돌려준다(최신 행이 아니라)', async () => {
+                await save('AAPL', at(5), false);
+                await save('AAPL', at(2), false);
+                const found = await queryAt('AAPL', at(5));
+                expect(found.status).toBe('found');
+                if (found.status !== 'found') return;
+                expect(found.row.generatedAt.getTime()).toBe(at(5).getTime());
+                expect(found.row.result).toEqual(RESULT);
+            });
+
+            it('맞춤 행과 옛 행(NULL)은 시각이 같아도 돌려주지 않는다', async () => {
+                await save('AAPL', at(3), true);
+                await seedLegacy('MSFT', at(3), 'free');
+                await seedLegacy('TSLA', at(3), null);
+                expect(await queryAt('AAPL', at(3))).toEqual({
+                    status: 'absent',
+                });
+                expect(await queryAt('MSFT', at(3))).toEqual({
+                    status: 'absent',
+                });
+                expect(await queryAt('TSLA', at(3))).toEqual({
+                    status: 'absent',
+                });
+            });
+
+            it('1ms 어긋난 시각, 다른 심볼, 다른 timeframe·tab은 읽지 않는다', async () => {
+                await save('AAPL', at(4), false);
+                await client`INSERT INTO analysis_history
+                    (symbol, timeframe, tab, model_id, tier, personalized, locale, result, generated_at)
+                    VALUES ('MSFT', '1Hour', 'technical', 'm', 'free', false, 'ko', ${RESULT_JSON}::jsonb, ${at(4).toISOString()}::timestamptz),
+                           ('TSLA', '1Day', 'overall', 'm', 'free', false, 'ko', ${RESULT_JSON}::jsonb, ${at(4).toISOString()}::timestamptz)`;
+                expect(
+                    await queryAt('AAPL', new Date(at(4).getTime() + 1))
+                ).toEqual({ status: 'absent' });
+                expect(await queryAt('NVDA', at(4))).toEqual({
+                    status: 'absent',
+                });
+                expect(await queryAt('MSFT', at(4))).toEqual({
+                    status: 'absent',
+                });
+                expect(await queryAt('TSLA', at(4))).toEqual({
+                    status: 'absent',
+                });
+            });
+        });
     }
 );
