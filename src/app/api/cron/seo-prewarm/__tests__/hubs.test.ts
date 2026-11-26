@@ -1299,6 +1299,52 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
         );
     });
 
+    it('이미 캐시에 있지만 스탬프가 바뀐 허브는 태그를 턴다 — ISR HTML이 옛 본문을 들고 있지 않게', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+        calendarUnchanged();
+        mocks.recordHubContentStamp.mockResolvedValue(true);
+
+        await runHubPrewarm();
+
+        for (const config of Object.values(CATEGORY_CONFIG)) {
+            expect(mocks.revalidateTag).toHaveBeenCalledWith(
+                expect.stringContaining(config.slug),
+                'max'
+            );
+        }
+        expect(mocks.revalidateTag).toHaveBeenCalledWith(
+            MACRO_BRIEFING_CACHE_TAG,
+            'max'
+        );
+        // 시장 브리핑 두 개, 거시, 뉴스 카테고리 전부 — 태그를 턴 뒤 SSR miss 표시도 소비한다.
+        const stamped = hubTargets().filter(t => t.selfInvalidating !== true);
+        for (const target of stamped) {
+            expect(mocks.revalidateTag).toHaveBeenCalledWith(target.tag, 'max');
+            expect(mocks.consumeSsrMiss).toHaveBeenCalledWith(target.tag);
+        }
+        expect(
+            stamped.filter(t => t.label.startsWith('market-briefing')).length
+        ).toBe(2);
+    });
+
+    it('스탬프가 그대로면 alreadyFresh 허브의 태그를 털지 않는다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+        calendarUnchanged();
+        mocks.recordHubContentStamp.mockResolvedValue(false);
+
+        await runHubPrewarm();
+
+        expect(mocks.revalidateTag).not.toHaveBeenCalled();
+    });
+
     it('스탬프가 그대로(같은 본문)면 changedUrls는 비어 있다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
         mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
