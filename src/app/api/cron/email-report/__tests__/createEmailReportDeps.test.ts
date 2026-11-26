@@ -150,6 +150,19 @@ describe('createEmailReportDeps', () => {
             expect(mocks.loadBarsData).toHaveBeenCalledTimes(1);
         });
 
+        it('일봉 조회가 실패하면 그 실패를 기억하지 않고 다음 호출이 다시 받는다', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            mocks.loadBarsData.mockRejectedValueOnce(new Error('fmp down'));
+            const deps = createEmailReportDeps('secret', new Date());
+
+            const failed = await deps.loadBrief('AAPL');
+            const retried = await deps.loadBrief('AAPL');
+
+            expect(failed.close).toBeNull();
+            expect(retried.close).not.toBeNull();
+            expect(mocks.loadBarsData).toHaveBeenCalledTimes(2);
+        });
+
         it('기억하는 종목 수에는 상한이 있어 넘치면 가장 오래된 종목부터 다시 받는다', async () => {
             const deps = createEmailReportDeps('secret', new Date());
             const symbols = Array.from(

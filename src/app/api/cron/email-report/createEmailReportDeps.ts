@@ -50,6 +50,11 @@ export function createEmailReportDeps(
         if (cached !== undefined) return cached;
         const pending = loadBarsData(symbol, '1Day');
         dailyBars.set(symbol, pending);
+        // 실패한 조회를 기억해 두면 같은 배치의 다음 회원도 같은 실패를 받는다 — 같은 약속일 때만 지워 다시 받게 한다
+        // (그 사이 상한 때문에 밀려났다 새로 들어온 약속은 건드리지 않는다).
+        pending.catch(() => {
+            if (dailyBars.get(symbol) === pending) dailyBars.delete(symbol);
+        });
         if (dailyBars.size > DAILY_BARS_MEMO_MAX) {
             const oldest = dailyBars.keys().next();
             if (!oldest.done) dailyBars.delete(oldest.value);

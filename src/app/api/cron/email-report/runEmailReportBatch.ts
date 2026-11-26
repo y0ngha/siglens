@@ -252,6 +252,7 @@ export async function runEmailReportBatch(
     };
 
     // 작도는 로케일과 무관하다 — (종목, 날짜)마다 한 번만 읽고, 처음 보는 종목만 한 번에 묶어 조회한다.
+    // 작도 조회가 일시적으로 실패하면 그 결과(작도 없음)를 이 배치 안에서는 다시 시도하지 않는다 — 작도는 부가 표시다.
     const drawingsCache = new Map<string, Promise<SymbolDrawings | null>>();
     const drawingsFor = (symbols: readonly string[], localDate: string) => {
         const keyOf = (symbol: string) => `${symbol}\u0000${localDate}`;
