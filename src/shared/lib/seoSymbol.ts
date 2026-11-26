@@ -256,8 +256,9 @@ export function composeSymbolTitle(args: ComposeSymbolTitleArgs): string {
      * `/en/AAPL`이 `애플(AAPL) Stock Forecast …`로 나가던 결함이다.
      *
      * `keywords`는 대상이 아니다 — ko 전용 데이터로 정했다.
+     *
+     * 이름이 로케일을 타므로 `koreanName`이라는 이름은 더 이상 맞지 않다.
      */
-    // 이름이 로케일을 타므로 `koreanName`이라는 이름은 더 이상 맞지 않다.
     const titleName =
         args.locale === undefined || args.locale === DEFAULT_LOCALE
             ? args.koreanName

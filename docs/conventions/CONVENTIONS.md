@@ -492,6 +492,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | No citation of local-only docs (CM-9) | rule `local-doc-citation`, zero tolerance | comments and strings of code, and `.sh`/`.css`/`.yml` text, under the scan roots; strings in test files are fixtures and skipped | State the fact inline. |
 | No issue/PR number `#123`+ in a comment (CM-11) | `codeRules.test.ts` rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418` in a React/hydration comment, hex colours with a letter and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
 | No partial assertion on rendered SQL (TE-53) | rule `sql-substring-assertion`, zero tolerance | tests: `toContain`/`toMatch`/`toHaveLength`/`toBeTruthy`/`not.toBe('')`/`stringContaining`/`.includes()`/`.length` on `renderSql().sql`, `captured[n].sql`, aliases, joins, splits; absence checks need `// sql-absence: <reason>` (logged), snapshots are full pins; not seen: other-file helpers, `Array.from`/`reduce` lists, array destructuring | `toBe` the full rendered SQL. |
+| No `//` or block comment between a JSDoc and its declaration (CM-4) | rule `jsdoc-detached-by-comment`, zero tolerance | all code; directive comments (`oxlint-disable`, `eslint-disable`, `@ts-expect-error`, `@ts-ignore`, `react-doctor-disable`) are skipped, a JSDoc followed by a non-declaration (file header before `vi.mock`/`import`) is skipped; not seen: a helper or blank line between, declarations without a leading keyword (`foo() {}`, properties) | Move the comment above the `/**` or into the JSDoc. |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
@@ -594,27 +595,9 @@ removed together with its pointer leaves the claim unsourced.
 
 #### CM-4 — A JSDoc block stays directly above its declaration
 
-When inserting a helper, constant or export above existing code, insert it above the `/**` of the existing block,
-never between the JSDoc and its declaration. If the line above your insertion point ends with `*/`, move up. The
-same applies to JSX: when wrapping an element that has a preceding comment block, put the wrapper above the comment.
+Insert a helper, constant or export above the existing `/**`, never between the JSDoc and its declaration; if the line above your insertion point ends with `*/`, move up. JSX: put a wrapper above the element's preceding comment block. When removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left. No comment, not only JSDoc, is split from the code it describes: insert above the comment or give the new code its own comment.
 
-The inverse also holds: when removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left above the next declaration.
-
-The same holds for any comment, not only JSDoc: a new constant, setup block or statement never goes between a
-comment and the code it describes (a header JSDoc and its declaration, a `// matchMedia ...` note and the line it
-explains). Insert above the comment, or give the new code its own comment.
-
-```typescript
-// ❌ the new helper splits the JSDoc from fetchBars
-/** Fetches bars for a symbol. */
-function normalizeSymbol() {}
-function fetchBars() {}
-
-// ✅ inserted above the existing `/**`
-function normalizeSymbol() {}
-/** Fetches bars for a symbol. */
-function fetchBars() {}
-```
+A `//` or `/* */` comment between a JSDoc and its declaration: rule `jsdoc-detached-by-comment`.
 
 <a id="CM-5"></a>
 

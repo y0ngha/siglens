@@ -522,7 +522,7 @@ describe('CachedMarketDataProvider', () => {
              * after it the next request re-checks incrementally (overlap bar only) and the
              * entry is stamped again — so the cost is ≤ 6 tiny calls/day, not one per request.
              */
-            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
+            /** System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29 */
             const delistedOpts: GetBarsOptions = {
                 symbol: 'DELIST',
                 timeframe: '1Day',
@@ -589,7 +589,7 @@ describe('CachedMarketDataProvider', () => {
              * (b) merged result = history bars (up to real last trading day) + today bar,
              *     contiguous (no gap).
              */
-            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29 (Mon)
+            /** System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29 (Mon) */
             const lastRealTradingDayBar = bar(
                 Math.floor(Date.parse('2026-06-26T00:00:00Z') / 1000) // Friday before a holiday week
             );

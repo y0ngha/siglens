@@ -55,9 +55,10 @@ const LONG_BODY = Array.from(
  * Matches DISMISSED_NOTICES_STORAGE_KEY in src/widgets/notice-popup/utils/noticeStorage.ts.
  * Playwright 스펙은 src의 server-only 체인을 import할 수 없어 리터럴을 복제한다.
  * noticeStorage.ts에서 키를 바꾸면 이 값도 함께 갱신할 것 (update both if changed).
+ *
+ * 저장 키에 포맷 버전이 들어간다(src/widgets/notice-popup/utils/noticeStorage.ts).
+ * 값은 `{ v: 1, ids: [...] }` 형태이며, 버전 없는 구 키는 읽기만 지원한다.
  */
-// 저장 키에 포맷 버전이 들어간다(src/widgets/notice-popup/utils/noticeStorage.ts).
-// 값은 `{ v: 1, ids: [...] }` 형태이며, 버전 없는 구 키는 읽기만 지원한다.
 const DISMISSED_KEY = 'siglens_dismissed_notices_v1';
 const LEGACY_DISMISSED_KEY = 'siglens_dismissed_notices';
 
