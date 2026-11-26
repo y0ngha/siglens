@@ -46,6 +46,7 @@ const DART_OK = {
         }),
         shares: extractShareTotals(samsungCardH1Shares.list),
     },
+    transient: false,
 };
 
 /**
@@ -181,6 +182,23 @@ describe('withKrValuation mode', () => {
             NOW,
             'background'
         );
+    });
+});
+
+describe('resolveKrPageValuation 일시적 주식수', () => {
+    it('KRX 갱신 실패로 낡은 주식수를 쓴 DART 값은 transient로 페이지 로더에 전달된다', async () => {
+        deps.loadClose.mockResolvedValue(CLOSE);
+        mocks.getKrValuationInputs.mockResolvedValue({
+            ...DART_OK,
+            transient: true,
+        });
+        const page = await resolveKrPageValuation(
+            asProvider(new FakeProvider()),
+            '029780.KS',
+            deps
+        );
+        expect(page.transient).toBe(true);
+        expect(page.basis?.source).toBe('dart');
     });
 });
 

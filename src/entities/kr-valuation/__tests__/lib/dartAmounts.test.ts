@@ -16,6 +16,10 @@ import hpspAnnualOfs from '../fixtures/hpsp-2025-annual-ofs.json';
 import hpspH1Ofs from '../fixtures/hpsp-2026-h1-ofs.json';
 import hpspShares from '../fixtures/hpsp-2026-h1-stock-totals.json';
 import ingeniaUsd from '../fixtures/ingenia-2026-q3-cfs-usd.json';
+import alteogenH1Shares from '../fixtures/alteogen-2026-h1-stock-totals.json';
+import hanwhaH1Shares from '../fixtures/hanwhasolutions-2026-h1-stock-totals.json';
+import skH1Shares from '../fixtures/sk-2026-h1-stock-totals.json';
+import skHynixQ3Shares from '../fixtures/skhynix-2026-q3-stock-totals.json';
 
 /**
  * 실 DART 응답(2026-11-22 조회)에서 PER·PBR에 쓰는 계정과 잡음 행만 줄인 픽스처다(`__tests__/fixtures`). 열 의미는 이 픽스처로 고정한다:
@@ -250,6 +254,14 @@ describe('extractShareTotals', () => {
             treasury: 9_148_196,
             outstanding: 106_710_695,
             settledOn: '2026-06-30',
+            source: 'dart',
+            preferredIsMixed: false,
+            common: {
+                issued: 115_858_891,
+                treasury: 9_148_196,
+                outstanding: 106_710_695,
+            },
+            preferred: null,
         });
     });
 
@@ -259,6 +271,18 @@ describe('extractShareTotals', () => {
             treasury: 82_086_705,
             outstanding: 6_566_563_106,
             settledOn: '2026-06-30',
+            source: 'dart',
+            preferredIsMixed: false,
+            common: {
+                issued: 5_846_278_608,
+                treasury: 82_086_705,
+                outstanding: 5_764_191_903,
+            },
+            preferred: {
+                issued: 802_371_203,
+                treasury: 0,
+                outstanding: 802_371_203,
+            },
         });
     });
 
@@ -292,5 +316,123 @@ describe('extractShareTotals', () => {
 
     it('줄이 하나도 없으면 null이다', () => {
         expect(extractShareTotals([])).toBeNull();
+    });
+
+    describe('종류별(보통주·우선주) 주식수 — 회사마다 다른 행 구분 값(실응답)', () => {
+        it('`보통주식`·`종류주식`(알테오젠): 종류주식이 우선주 쪽이다', () => {
+            expect(extractShareTotals(alteogenH1Shares.list)).toMatchObject({
+                common: {
+                    issued: 53_586_343,
+                    treasury: 23_708,
+                    outstanding: 53_562_635,
+                },
+                preferred: {
+                    issued: 406_793,
+                    treasury: 0,
+                    outstanding: 406_793,
+                },
+            });
+        });
+
+        it('`의결권있는 주식`·`의결권없는 주식`(SK)', () => {
+            expect(extractShareTotals(skH1Shares.list)).toMatchObject({
+                issued: 73_068_838,
+                common: {
+                    issued: 72_502_703,
+                    treasury: 17_960_815,
+                    outstanding: 54_541_888,
+                },
+                preferred: {
+                    issued: 566_135,
+                    treasury: 1_787,
+                    outstanding: 564_348,
+                },
+            });
+        });
+
+        it('우선주 줄이 `-`이면 preferred는 null이다(SK하이닉스 3분기, 자기 표가 채워진 분기보고서)', () => {
+            expect(extractShareTotals(skHynixQ3Shares.list)).toEqual({
+                issued: 730_492_365,
+                treasury: 19_375_769,
+                outstanding: 711_116_596,
+                settledOn: '2026-09-30',
+                source: 'dart',
+                preferredIsMixed: false,
+                common: {
+                    issued: 730_492_365,
+                    treasury: 19_375_769,
+                    outstanding: 711_116_596,
+                },
+                preferred: null,
+            });
+        });
+
+        it('보통주와 우선주가 따로 상장된 회사의 두 줄을 각각 읽는다(한화솔루션)', () => {
+            expect(extractShareTotals(hanwhaH1Shares.list)).toMatchObject({
+                common: { issued: 171_892_536, treasury: 2_437_481 },
+                preferred: { issued: 2_575_349, treasury: 30_733 },
+            });
+        });
+
+        it.each([
+            ['의결권 있는\n보통주', '의결권 없는\n우선주'],
+            ['의결권 있는 보통주', '의결권 없는 우선주'],
+            ['의결권 있는 주식\n(보통주)', '의결권 없는 주식\n(우선주)'],
+            ['의결권이 있는주식(보통주)', '의결권이 없는주식(우선주)'],
+            ['보통주', '무의결권전환주'],
+            ['보통주식', '종류주'],
+        ])(
+            '행 구분 `%s` / `%s`는 공백·줄바꿈이 달라도 보통주·우선주로 읽는다',
+            (commonLabel, preferredLabel) => {
+                const row = (se: string, issued: string) => ({
+                    se,
+                    istc_totqy: issued,
+                    tesstk_co: '-',
+                    distb_stock_co: issued,
+                    stlm_dt: '2026-06-30',
+                });
+                expect(
+                    extractShareTotals([
+                        row(commonLabel, '9,000,000'),
+                        row(preferredLabel, '400,000'),
+                    ])
+                ).toMatchObject({
+                    issued: 9_400_000,
+                    common: { issued: 9_000_000 },
+                    preferred: { issued: 400_000 },
+                });
+            }
+        );
+
+        it('숫자가 있는 우선주 계열 줄이 둘 이상이면 합치고 preferredIsMixed로 표시한다(합성 표: 우선주 + 종류주식)', () => {
+            const row = (se: string, issued: string) => ({
+                se,
+                istc_totqy: issued,
+                tesstk_co: '-',
+                distb_stock_co: issued,
+                stlm_dt: '2026-06-30',
+            });
+            const mixed = extractShareTotals([
+                row('보통주', '9,000,000'),
+                row('우선주', '400,000'),
+                row('종류주식', '50,000'),
+            ]);
+            expect(mixed?.preferred?.issued).toBe(450_000);
+            expect(mixed?.preferredIsMixed).toBe(true);
+            // 실제 표: 우선주 줄이 하나이거나 비면 섞이지 않았다.
+            expect(
+                extractShareTotals(samsungElectronicsShares.list)
+                    ?.preferredIsMixed
+            ).toBe(false);
+            expect(
+                extractShareTotals(alteogenH1Shares.list)?.preferredIsMixed
+            ).toBe(false);
+        });
+
+        it('합계·비고 줄은 종류로 읽지 않는다', () => {
+            const totals = extractShareTotals(hpspShares.list);
+            expect(totals?.preferred).toBeNull();
+            expect(totals?.common?.issued).toBe(82_300_000);
+        });
     });
 });

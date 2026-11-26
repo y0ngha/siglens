@@ -43,6 +43,7 @@ describe('ValuationCard', () => {
             epsShares: 'issued_incl_treasury',
             bpsShares: 'outstanding_ex_treasury',
             sharesAsOf: '2026-06-30',
+            sharesSource: 'dart',
             priceDate: '2026-11-20',
             note: 'note',
         };
