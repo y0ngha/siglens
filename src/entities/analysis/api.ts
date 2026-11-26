@@ -504,12 +504,17 @@ export async function prewarmOverall(
  * reasoning off·기본 타임프레임·기본 로케일. 데이터 캐시(`staticSymbolCache`)를 거치지 않고 core를 직접
  * 읽는다: 거치면 그 캐시가 들고 있는 빈 엿보기를 그대로 읽는다.
  *
- * 한계: 이 키는 최신 결과를 덮어쓰는 포인터(TTL 24시간)라 `true`가 **방금 포기한 호출의 새 결과**를
- * 뜻하지는 않는다 — 어제의 사전 생성이나 방문자가 만든 이전 결과일 수 있다. 새 결과와 이전 결과를 가르려면
- * 캐시 항목에 생성 시각이 필요한데 그건 core 변경이라 하지 않았다. 호출부는 이 한계를 안고 쓴다
- * (이전 결과가 적중하면 페이지는 빈 화면이 아니라 이전 종합을 자기 캐시 기간 동안 보여 준다).
+ * 이 키는 최신 결과를 덮어쓰는 포인터(TTL 24시간)라 항목이 있다는 사실만으로는 **방금 포기한 호출의 새
+ * 결과**인지 어제의 사전 생성·방문자가 만든 이전 결과인지 가를 수 없다. 그래서 항목의 `analyzedAt`
+ * (core 2.42.0, LLM 호출 뒤에 찍힌다)이 `sinceMs`(포기한 호출의 시작 시각) 이후일 때만 true다.
+ * `analyzedAt`이 없는 옛 항목은 시각을 모르므로 이전 결과로 취급해 false다.
+ *
+ * @param sinceMs - 이 시각(epoch ms) 이후에 생성된 결과만 새 결과로 본다.
  */
-export async function hasPrewarmedOverall(symbol: string): Promise<boolean> {
+export async function hasPrewarmedOverall(
+    symbol: string,
+    sinceMs: number
+): Promise<boolean> {
     const cached = await peekOverallAnalysisCache(
         symbol,
         symbol,
@@ -520,5 +525,7 @@ export async function hasPrewarmedOverall(symbol: string): Promise<boolean> {
         undefined,
         DEFAULT_LOCALE
     );
-    return cached !== null;
+    if (cached === null || cached.analyzedAt === undefined) return false;
+    const analyzedAtMs = Date.parse(cached.analyzedAt);
+    return Number.isFinite(analyzedAtMs) && analyzedAtMs >= sinceMs;
 }
