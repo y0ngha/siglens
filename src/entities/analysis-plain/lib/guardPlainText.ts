@@ -59,8 +59,9 @@ const UNITS = [
  * `buildAllowedNumbers`와 그 호출자 전부에 로케일을 실어 날라야 하는데, 얻는 것은
  * 허용 집합에서 값 몇 개를 빼는 것뿐이다. 이 집합의 목적은 **표기 차이를 환각으로
  * 잘못 잡지 않는 것**이고(아래 주석), 좁힐수록 손실이 커지는 방향이다.
+ *
+ * CONVENTIONS.md#CP-6 예외: 재귀 깊이가 UNITS 길이로 묶이고 조기 break가 있어, 지역 배열 하나에 모으는 편이 단계마다 배열을 다시 만드는 것보다 복사가 없다(O(N)).
  */
-// CONVENTIONS.md#CP-6 예외: 재귀 깊이가 UNITS 길이로 묶이고 조기 break가 있어, 지역 배열 하나에 모으는 편이 단계마다 배열을 다시 만드는 것보다 복사가 없다(O(N)).
 function unitParts(n: number, depth = 0): number[] {
     if (!Number.isFinite(n) || depth > UNITS.length) return [];
     const abs = Math.abs(n);

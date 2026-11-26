@@ -220,9 +220,10 @@ function keysForFiles(graph, files) {
          * 조회 테이블(`shared.assetName`·`shared.skillName`)을 **2세그먼트 전용**
          * 네임스페이스로 분리해 둔 이유가 이것이다 — `widgets.dashboard` 아래
          * 두면 그 슬라이스 전체가 크롬 페이로드에 딸려간다.
+         *
+         * 동적 키를 쓰는 **번역자만** 그 네임스페이스를 넓힌다. 같은 파일의
+         * 다른 번역자는 리터럴만 쓰면 아래에서 키 단위로 수집된다.
          */
-        // 동적 키를 쓰는 **번역자만** 그 네임스페이스를 넓힌다. 같은 파일의
-        // 다른 번역자는 리터럴만 쓰면 아래에서 키 단위로 수집된다.
         const widenedNames = new Set();
         for (const [name, ns] of translatorNamespace) {
             /**

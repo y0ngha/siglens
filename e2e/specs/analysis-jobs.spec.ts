@@ -32,9 +32,11 @@ import { srhCommand } from '../support/srhClient';
  * freeze the clock). This is now identical for a bot UA and a normal UA.
  */
 
-// StaleAnalysisBanner (src/widgets/analysis/StaleAnalysisBanner.tsx) message —
-// role="status". The fixture's analysis date is old, so the chart panel
-// shows this banner (and its own "재분석" button) above the analysis body.
+/**
+ * StaleAnalysisBanner (src/widgets/analysis/StaleAnalysisBanner.tsx) message —
+ * role="status". The fixture's analysis date is old, so the chart panel
+ * shows this banner (and its own "재분석" button) above the analysis body.
+ */
 const STALE_BANNER_TEXT = 'AI 분석 결과가 오래됐어요';
 
 // Standard Googlebot UA — used to prove bot/human parity, not to trigger a

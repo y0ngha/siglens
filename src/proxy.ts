@@ -67,8 +67,9 @@ function canonicalSymbolSegment(segment: string): string {
  * 광고 대상인 한국만 넣었다. `blob:`은 사용자가 첨부한 이미지의 미리보기·전송 직후 말풍선(브라우저가 만든 object
  * URL)이다 — 같은 출처 안에서만 만들어지고 바깥으로 요청을 보내지 않으므로 위 유출 경로와 무관하다. 빠지면 첨부
  * 썸네일이 CSP에 막혀 깨진 이미지로 보인다.
+ *
+ * ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
  */
-// ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
 const AI_CSP =
     "frame-ancestors 'none'; img-src 'self' data: blob: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
 /**

@@ -8,6 +8,7 @@ import {
     CODE_RULES,
     MIN_SCANNED_FILES,
     checkScanFloor,
+    detachedJsdocLinesOf,
     isTestFile,
     issueRefLinesOf,
     scanRepo,
@@ -752,6 +753,179 @@ describe('code rules: planted predicates', () => {
             expect(
                 countOf('local-doc-citation', 'src/a/x.md', 'docs/qa/E2E.md')
             ).toBe(0);
+        });
+    });
+
+    describe('jsdoc-detached-by-comment', () => {
+        const SRC = 'src/a/x.ts';
+        const DOC = '/** Fetches bars. */\n';
+        it.each([
+            ['a line comment', `${DOC}// note\nfunction f() {}`, 1],
+            ['a block comment', `${DOC}/* note */\nexport const a = 1;`, 1],
+            [
+                'a multi-line block comment',
+                `${DOC}/*\n * note\n */\nconst a = 1;`,
+                1,
+            ],
+            [
+                'a line comment after a blank line',
+                `${DOC}\n// note\nclass A {}`,
+                1,
+            ],
+            [
+                'a run of line comments counts once',
+                `${DOC}// a\n// b\ninterface I {}`,
+                1,
+            ],
+            [
+                'a multi-line JSDoc',
+                '/**\n * Fetches.\n */\n// note\nexport async function f() {}',
+                1,
+            ],
+            [
+                'a class member',
+                `class A {\n    ${DOC}    // note\n    private x = 1;\n}`,
+                1,
+            ],
+            [
+                'a non-directive comment before a directive',
+                `${DOC}// note\n// oxlint-disable-next-line x\nfunction f() {}`,
+                1,
+            ],
+            [
+                'two detached JSDocs',
+                `${DOC}// a\nconst a = 1;\n${DOC}// b\nconst b = 1;`,
+                2,
+            ],
+            ['the JSDoc directly above', `${DOC}function f() {}`, 0],
+            [
+                'a line comment above the JSDoc',
+                `// note\n${DOC}function f() {}`,
+                0,
+            ],
+            ['a blank line only', `${DOC}\nfunction f() {}`, 0],
+            [
+                'a plain block comment as the first comment',
+                `/* note */\n// n\nconst a = 1;`,
+                0,
+            ],
+            [
+                'an oxlint directive',
+                `${DOC}// oxlint-disable-next-line x\nfunction f() {}`,
+                0,
+            ],
+            [
+                'an eslint directive',
+                `${DOC}// eslint-disable-next-line x\nfunction f() {}`,
+                0,
+            ],
+            [
+                'a ts-expect-error directive',
+                `${DOC}// @ts-expect-error because\nconst a: number = 'x';`,
+                0,
+            ],
+            ['a ts-ignore directive', `${DOC}// @ts-ignore\nconst a = 1;`, 0],
+            [
+                'a react-doctor directive',
+                `${DOC}// react-doctor-disable-next-line x\nexport function f() {}`,
+                0,
+            ],
+            [
+                'a trailing comment on the closing line',
+                `/** doc */ // note\nfunction f() {}`,
+                0,
+            ],
+            ['a following JSDoc', `${DOC}${DOC}function f() {}`, 0],
+            [
+                'a JSDoc after the comment run',
+                `${DOC}// note\n${DOC}function f() {}`,
+                0,
+            ],
+            [
+                'a file header before a statement',
+                `${DOC}// vi.mock note\nvi.mock('a');`,
+                0,
+            ],
+            [
+                'a file header before an import',
+                `${DOC}// note\nimport a from 'a';`,
+                0,
+            ],
+            [
+                'a JSDoc-shaped string',
+                "const s = '/** x */\\n// note\\nconst a = 1;';",
+                0,
+            ],
+            [
+                'a JSDoc-shaped template',
+                'const s = `/** x */\n// note\nconst a = 1;`;',
+                0,
+            ],
+            ['an empty `/**/` comment', `/**/\n// note\nconst a = 1;`, 0],
+            [
+                'a `/***/` comment with no text',
+                `/***/\n// note\nconst a = 1;`,
+                0,
+            ],
+            [
+                'code between the JSDoc and a later comment',
+                `${DOC}const a = 1;\n// note\nconst b = 2;`,
+                0,
+            ],
+            [
+                'a getter',
+                `class A {\n    ${DOC}    // note\n    get value() { return 1; }\n}`,
+                1,
+            ],
+            [
+                'a setter',
+                `class A {\n    ${DOC}    // note\n    set value(v) {}\n}`,
+                1,
+            ],
+            ['a type alias', `${DOC}// note\ntype A = string;`, 1],
+            [
+                'export default',
+                `${DOC}// note\nexport default function f() {}`,
+                1,
+            ],
+            ['a bare get() call', `${DOC}// note\nget(key);`, 0],
+            ['a bare set() call', `${DOC}// note\nset(key, 1);`, 0],
+            [
+                'a switch default case',
+                `switch (x) {\n    ${DOC}    // note\n    default:\n        break;\n}`,
+                0,
+            ],
+            ['a `type:` property', `${DOC}// note\ntype: 'x',`, 0],
+            [
+                'a class method without a keyword',
+                `class A {\n    ${DOC}    // note\n    run() {}\n}`,
+                0,
+            ],
+            [
+                'an interface property',
+                `interface I {\n    ${DOC}    // note\n    name: string;\n}`,
+                0,
+            ],
+        ])('%s', (_name, text, expected) => {
+            expect(countOf('jsdoc-detached-by-comment', SRC, text)).toBe(
+                expected
+            );
+        });
+
+        it('reports the line of the detaching comment', () => {
+            expect(
+                detachedJsdocLinesOf(SRC, `${DOC}\n\n// note\nconst a = 1;`)
+            ).toEqual([4]);
+        });
+
+        it('applies to test and plain script files too', () => {
+            const text = `${DOC}// note\nfunction f() {}`;
+            expect(
+                countOf('jsdoc-detached-by-comment', 'src/a/x.test.ts', text)
+            ).toBe(1);
+            expect(
+                countOf('jsdoc-detached-by-comment', 'scripts/x.mjs', text)
+            ).toBe(1);
         });
     });
 
