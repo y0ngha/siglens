@@ -4305,7 +4305,6 @@
                 "marketLabelKr": "韩国股市",
                 "marketLabelUs": "美国股市",
                 "partial": "部分{v0}数据未能加载。",
-                "priceUnavailable": "暂无报价",
                 "total": "未能加载{v0}数据。"
             },
             "MarketSummaryPanelSkeleton": {
@@ -4313,6 +4312,9 @@
             },
             "QuoteHeader": {
                 "92387b": "较前日"
+            },
+            "QuotePrice": {
+                "unavailable": "暂无报价"
             },
             "SectorFactsSummary": {
                 "581217": "查看各板块信号",

@@ -327,9 +327,7 @@ describe('QuoteHeader 가격 0', () => {
             const srOnly = document.querySelectorAll('.sr-only');
             expect(srOnly).toHaveLength(1);
             expect(srOnly[0]).toHaveTextContent(
-                koMessage(
-                    'widgets.dashboard.MarketDataErrorNotice.priceUnavailable'
-                )
+                koMessage('widgets.dashboard.QuotePrice.unavailable')
             );
         });
     });

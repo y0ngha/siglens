@@ -22,6 +22,22 @@ export interface LoadMarketSignalsResult {
     degraded: boolean;
 }
 
+/** 요약 로더를 감싸 실패를 빈 번들로 접고, 접었다는 사실을 값으로 돌려준다. */
+async function loadSummarySafely(
+    scope: DashboardScope,
+    label: string
+): Promise<{ summary: MarketSummaryData; failed: boolean }> {
+    try {
+        return { summary: await getMarketSummaryStatic(scope), failed: false };
+    } catch (e) {
+        console.error(
+            `[${label}] getMarketSummaryStatic failed:`,
+            redactDbErrorForLog(e)
+        );
+        return { summary: { indices: [], sectors: [] }, failed: true };
+    }
+}
+
 /**
  * `/market`·`/market/kr`의 두 로더를 한 번에 읽고 **degrade 판정까지 여기서 내린다.**
  *
@@ -41,16 +57,8 @@ export interface LoadMarketSignalsResult {
  */
 const loadMarketSignalsOnce = cache(async (scope: DashboardScope) => {
     const label = `loadMarketSignals:${scope.id}`;
-    let summaryFailed = false;
-    const [summary, sectorData] = await Promise.all([
-        getMarketSummaryStatic(scope).catch(e => {
-            console.error(
-                `[${label}] getMarketSummaryStatic failed:`,
-                redactDbErrorForLog(e)
-            );
-            summaryFailed = true;
-            return { indices: [], sectors: [] };
-        }),
+    const [{ summary, failed: summaryFailed }, sectorData] = await Promise.all([
+        loadSummarySafely(scope, label),
         getSectorSignalsStatic(scope, DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
             console.error(
                 `[${label}] getSectorSignalsStatic failed:`,

@@ -4462,7 +4462,6 @@
                 "marketLabelKr": "한국 증시",
                 "marketLabelUs": "미국 증시",
                 "partial": "{v0} 데이터를 불러오는 중 일부를 가져오지 못했어요.",
-                "priceUnavailable": "시세 없음",
                 "total": "{v0} 데이터를 불러오지 못했어요."
             },
             "MarketSummaryPanelSkeleton": {
@@ -4470,6 +4469,9 @@
             },
             "QuoteHeader": {
                 "92387b": "전일비"
+            },
+            "QuotePrice": {
+                "unavailable": "시세 없음"
             },
             "SectorFactsSummary": {
                 "581217": "섹터별 신호 모아보기",

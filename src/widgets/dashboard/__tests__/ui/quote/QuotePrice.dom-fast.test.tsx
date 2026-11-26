@@ -24,9 +24,7 @@ describe('QuotePrice 가격 0', () => {
             );
             expect(
                 screen.getByText(
-                    koMessage(
-                        'widgets.dashboard.MarketDataErrorNotice.priceUnavailable'
-                    )
+                    koMessage('widgets.dashboard.QuotePrice.unavailable')
                 )
             ).toHaveClass('sr-only');
             expect(screen.queryByText(/₩/)).not.toBeInTheDocument();

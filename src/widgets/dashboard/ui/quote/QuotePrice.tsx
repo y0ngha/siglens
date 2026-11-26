@@ -20,9 +20,7 @@ export function QuotePrice({ price, currencySymbol }: QuotePriceProps) {
         return (
             <p className="font-mono text-sm text-secondary-100 tabular-nums">
                 <span aria-hidden="true">-</span>
-                <span className="sr-only">
-                    {t('MarketDataErrorNotice.priceUnavailable')}
-                </span>
+                <span className="sr-only">{t('QuotePrice.unavailable')}</span>
             </p>
         );
     }
