@@ -104,8 +104,9 @@ export function OverallContent({
             symbol,
             displayName: companyName,
             assetClass,
-            // OverallAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
-            analyzedAt: undefined,
+            // 옛 캐시 항목은 analyzedAt이 없다(undefined). resolveAsOf가 그때 createdAt으로 대체한다.
+            analyzedAt:
+                state.status === 'done' ? state.result.analyzedAt : undefined,
         },
         // 공유 스냅샷에 쉽게보기 산문을 함께 싣는다 — 링크를 받은 사람은
         // SSE 라우트를 타지 않아 평이화를 다시 만들 수 없다.
