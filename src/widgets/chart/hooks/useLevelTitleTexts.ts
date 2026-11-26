@@ -6,7 +6,7 @@
  */
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import type { LevelTitleContext } from '../utils/levelTitle';
+import type { LevelTitleContext } from '@/entities/analysis/lib/chartOverlays/levelTitle';
 
 /** 패턴명(`cardName`)을 뺀 레벨 제목 문맥 — 패턴명은 오버레이마다 다르다. */
 export type LevelTitleTexts = Omit<LevelTitleContext, 'cardName'>;

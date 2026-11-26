@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    formatFibLevelLabel,
-    parseFibLevelLabel,
-} from '../../utils/fibLevelLabel';
+import { formatFibLevelLabel, parseFibLevelLabel } from '../fibLevelLabel';
 
 describe('parseFibLevelLabel', () => {
     it.each([

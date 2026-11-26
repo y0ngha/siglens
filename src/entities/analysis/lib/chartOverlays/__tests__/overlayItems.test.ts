@@ -9,7 +9,7 @@ import {
     patternLabelsByKey,
     patternPaletteByKey,
     type OverlayMenuItem,
-} from '../../utils/overlayItems';
+} from '../overlayItems';
 
 const BAR_TIMES = new Set([1, 2, 3, 4, 5]);
 const LAST_BAR_TIME = 5;

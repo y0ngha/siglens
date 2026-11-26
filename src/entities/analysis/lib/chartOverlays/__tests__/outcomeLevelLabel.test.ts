@@ -3,7 +3,7 @@ import {
     elliottStructureOf,
     formatOutcomeLevelLabel,
     type OutcomeLevelTexts,
-} from '../../utils/outcomeLevelLabel';
+} from '../outcomeLevelLabel';
 
 const texts: OutcomeLevelTexts = {
     invalidation: owner => (owner ? `${owner} 무효화` : '무효화'),

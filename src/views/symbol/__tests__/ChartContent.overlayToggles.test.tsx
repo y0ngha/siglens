@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import type { AnalysisResponse, ChartOverlay } from '@y0ngha/siglens-core';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { ACTION_PRICES_ITEM_KEY } from '@/widgets/chart/utils/overlayItems';
+import { ACTION_PRICES_ITEM_KEY } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
 

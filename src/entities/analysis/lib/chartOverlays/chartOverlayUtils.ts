@@ -11,7 +11,7 @@ import {
     HIGHLIGHT_LINE_WIDTH_MULT,
     REACHED_LEVEL_OPACITY,
     type OverlayColorTable,
-} from '../model/chartOverlayCategories';
+} from './chartOverlayCategories';
 import { LABEL_PRIORITY } from './levelLabelCulling';
 
 const PRICE_PANE_INDEX = 0;

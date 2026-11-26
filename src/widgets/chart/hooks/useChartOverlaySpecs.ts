@@ -8,20 +8,20 @@ import { useMemo } from 'react';
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import { CHART_OVERLAY_COLORS } from '../model/chartOverlayCategories';
+import { CHART_OVERLAY_COLORS } from '@/entities/analysis/lib/chartOverlays/chartOverlayCategories';
 import {
     buildOverlayLineSpecs,
     hasDrawnLevels,
     overlayColorFor,
     type OverlayLineSpec,
-} from '../utils/chartOverlayUtils';
-import { levelTitleFor } from '../utils/levelTitle';
+} from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
+import { levelTitleFor } from '@/entities/analysis/lib/chartOverlays/levelTitle';
 import {
     patternLabelsByKey,
     patternPaletteByKey,
     type OverlayMenuItem,
-} from '../utils/overlayItems';
-import { isReachedTarget } from '../utils/reachedLevel';
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
+import { isReachedTarget } from '@/entities/analysis/lib/chartOverlays/reachedLevel';
 import { useLevelTitleTexts } from './useLevelTitleTexts';
 
 interface UseChartOverlaySpecsParams {
