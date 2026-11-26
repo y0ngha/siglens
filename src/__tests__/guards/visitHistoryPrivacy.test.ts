@@ -1,9 +1,8 @@
+vi.mock('server-only', () => ({}));
+
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
-
 import { SNAPSHOT_MAX_BYTES } from '@/entities/feedback/lib/constants';
 import { parseAiFeedbackInput } from '@/entities/feedback/lib/validation';
 import { GUEST_RETURN_WINDOWS } from '@/entities/visitor/lib/visitHistory';

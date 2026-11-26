@@ -1,9 +1,8 @@
+vi.mock('server-only', () => ({}));
+
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
-
 import { DELIVERY_RETENTION_MS } from '@/app/api/cron/email-report/runEmailReportBatch';
 import { OAUTH_STATE_TTL_SECONDS } from '@/features/auth-oauth/lib/state';
 import { HANDOFF_STATE_TTL_SECONDS } from '@/entities/auth/server/handoffStore';
