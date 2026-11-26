@@ -520,7 +520,8 @@ step) and loses what earlier attempts learned.
 - A count-then-insert limit check (per-user cap) races across tabs and requests. Run it in a transaction holding a row
   lock on the owner, and let an item that already exists bypass the cap instead of failing the re-add.
 - Take row locks in one parent→child order on every path; a batch job (cron prune) that locks child rows first
-  deadlocks (40P01) against user paths that lock the parent first.
+  deadlocks (40P01) against user paths that lock the parent first. An FK insert takes only KEY SHARE on the parent, so
+  lock the parent row explicitly (`FOR NO KEY UPDATE`) before inserting the child.
 
 <a id="CC-11"></a>
 
