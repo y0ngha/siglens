@@ -342,6 +342,7 @@ describe('getFundamentalsTool', () => {
                 epsShares: 'issued_incl_treasury',
                 bpsShares: 'outstanding_ex_treasury',
                 sharesAsOf: '2026-06-30',
+                sharesSource: 'dart',
                 priceDate: '2026-10-23',
                 note: 'P/E = the 2026-10-23 close / …',
             },

@@ -12,7 +12,7 @@ import {
 export interface KrValuationResolution {
     valuation: KrValuation;
     /**
-     * 오류·시한·예산·종가 조회 실패 때문에 DART 값을 못 만들고 제공처 값으로 내려왔다. 다시 읽으면 달라질 수 있으니 호출부는 이 결과를
+     * 오류·시한·예산·종가 조회 실패 때문에 DART 값을 못 만들고 제공처 값으로 내려왔거나, KRX 주식수 갱신이 실패해 낡은 DART 주식수로 계산했다. 다시 읽으면 달라질 수 있으니 호출부는 이 결과를
      * 장기 캐시에 굳히지 않는다(SERVER.md#SA-18).
      */
     transient: boolean;
@@ -49,7 +49,7 @@ export async function resolveKrValuation(
               valuation: providerKrValuation(provider, 'incomplete_report'),
               transient: false,
           }
-        : { valuation: computed, transient: false };
+        : { valuation: computed, transient: load.transient };
 }
 
 /**

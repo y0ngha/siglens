@@ -66,8 +66,9 @@ function describeDartBasis(args: {
     ttmEnd: string | null;
     equityAsOf: string;
     priceDate: string | null;
+    krxSharesAsOf: string | null;
 }): string {
-    const { statements, ttmEnd, equityAsOf, priceDate } = args;
+    const { statements, ttmEnd, equityAsOf, priceDate, krxSharesAsOf } = args;
     const scope =
         statements === 'consolidated'
             ? 'DART consolidated controlling-interest'
@@ -78,7 +79,11 @@ function describeDartBasis(args: {
         ttmEnd === null
             ? 'P/E is unavailable because the trailing-4-quarter net income could not be built from the filings'
             : `P/E = ${close} / trailing-4-quarter ${scope} EPS to ${ttmEnd} (net income per issued share, common and preferred, treasury shares included)`;
-    return `${eps}; P/B = ${close} / ${scope} equity at ${equityAsOf} per outstanding share (common and preferred, treasury shares excluded).`;
+    const sharesNote =
+        krxSharesAsOf === null
+            ? ''
+            : ` Share counts are the DART share table updated to the KRX listed share count of ${krxSharesAsOf}, because the filing's own table was not available for the report period.`;
+    return `${eps}; P/B = ${close} / ${scope} equity at ${equityAsOf} per outstanding share (common and preferred, treasury shares excluded).${sharesNote}`;
 }
 
 /**
@@ -128,12 +133,15 @@ export function computeKrValuation(data: KrValuationData): KrValuation | null {
             epsShares: 'issued_incl_treasury',
             bpsShares: 'outstanding_ex_treasury',
             sharesAsOf: shares?.settledOn ?? null,
+            sharesSource: shares?.source ?? null,
             priceDate,
             note: describeDartBasis({
                 statements,
                 ttmEnd,
                 equityAsOf,
                 priceDate,
+                krxSharesAsOf:
+                    shares?.source === 'dart_krx' ? shares.settledOn : null,
             }),
         },
     };
@@ -184,6 +192,7 @@ export function providerKrValuation(
             epsShares: 'provider_implied',
             bpsShares: 'provider_implied',
             sharesAsOf: null,
+            sharesSource: null,
             priceDate: null,
             note: PROVIDER_NOTE[reason],
         },

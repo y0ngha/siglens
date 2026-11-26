@@ -20,6 +20,10 @@ type KrStatements = 'consolidated' | 'separate';
  * - `provider_implied`: yahoo가 시가총액에서 거꾸로 낸 주식수(DART를 못 쓴 경우).
  */
 type KrEpsShares = 'issued_incl_treasury' | 'provider_implied';
+/**
+ * 주식수의 출처. `dart`는 DART 주식의 총수 표 그대로, `dart_krx`는 그 표가 결산일 이후 바뀐 것을 KRX 상장주식수(`lstgStCnt`)로 갱신한 값이다.
+ */
+export type KrSharesSource = 'dart' | 'dart_krx';
 type KrBpsShares = 'outstanding_ex_treasury' | 'provider_implied';
 
 export interface KrValuationBasis {
@@ -32,8 +36,13 @@ export interface KrValuationBasis {
     equityAsOf: string | null;
     epsShares: KrEpsShares;
     bpsShares: KrBpsShares;
-    /** 주식수를 읽은 보고서의 결산일(`YYYY-MM-DD`). 분기보고서는 주식수 표를 싣지 않아 `equityAsOf`보다 앞설 수 있다. */
+    /**
+     * 주식수를 읽은 기준일(`YYYY-MM-DD`). `dart`면 주식 표의 결산일(표를 싣지 않는 분기보고서는 `equityAsOf`보다 앞설 수 있다),
+     * `dart_krx`면 갱신에 쓴 KRX 기준일이다.
+     */
     sharesAsOf: string | null;
+    /** `provider`면 null(주식수를 DART·KRX에서 읽지 않았다). */
+    sharesSource: KrSharesSource | null;
     /** PER·PBR 분자로 쓴 종가의 날짜. 가격을 못 구했으면 null. */
     priceDate: string | null;
     /** 사람이 읽는 기준 설명 한 문장(영어, 모델에 그대로 전달). */
@@ -93,6 +102,16 @@ export interface StatementFigures {
     equity: number | null;
 }
 
+/** 한 주식 종류(보통주 또는 우선주)의 주식수. */
+export interface ShareKindCounts {
+    /** 발행주식 총수(자기주식 포함). */
+    issued: number;
+    /** 자기주식수. */
+    treasury: number;
+    /** 유통주식수(발행주식 총수 − 자기주식). */
+    outstanding: number;
+}
+
 /** 주식의 총수 현황(합계 = 보통주 + 우선주). */
 export interface ShareTotals {
     /** 발행주식 총수(자기주식 포함). */
@@ -101,6 +120,16 @@ export interface ShareTotals {
     treasury: number;
     /** 유통주식수(발행주식 총수 − 자기주식). */
     outstanding: number;
-    /** 보고서 결산일(`YYYY-MM-DD`). 모르면 null. */
+    /** 기준일(`YYYY-MM-DD`). `dart`는 보고서 결산일(모르면 null), `dart_krx`는 갱신에 쓴 KRX 기준일. */
     settledOn: string | null;
+    source: KrSharesSource;
+    /** 보통주 줄(행 구분이 다른 회사도 `dartSourceTokens`의 라벨로 읽는다). 줄이 비었으면 null. */
+    common: ShareKindCounts | null;
+    /** 우선주 줄(여러 줄이면 합). 우선주가 없거나 줄이 비었으면 null. */
+    preferred: ShareKindCounts | null;
+    /**
+     * 숫자가 있는 우선주 계열 줄이 둘 이상이다(예: 상장 우선주 + 비상장 종류주식). KRX는 상장분만 알려 합과 대응하지 않으므로 우선주는 갱신하지
+     * 않는다.
+     */
+    preferredIsMixed: boolean;
 }
