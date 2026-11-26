@@ -36,6 +36,3 @@ export const DIMMED_OVERLAY_OPACITY = 0.3;
 /** 현재가가 이미 지나간 목표선(`isReachedTarget`)에 곱하는 불투명도 — 지나간 기준선으로 흐리게. */
 export const REACHED_LEVEL_OPACITY = 0.5;
 export const HIGHLIGHT_LINE_WIDTH_MULT = 2;
-
-/** core 패턴 오버레이의 돌파선 레벨 라벨(언어 중립 키) — 화면에서 번역 문구로 바꾼다. */
-export const BREAKOUT_LEVEL_LABEL = 'breakout';
