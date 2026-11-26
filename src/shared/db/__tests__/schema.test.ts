@@ -413,3 +413,42 @@ describe('email_report_consent_and_welcome 마이그레이션', () => {
         );
     });
 });
+
+/**
+ * 분석 이력의 보유 맞춤 표시 — 널 허용 컬럼 하나만 더하고 기본값·인덱스·백필은 없다(옛 행은 `null` = 알 수 없음).
+ * 새 코드는 컬럼 이름으로 INSERT하므로 스키마가 앱 배포보다 먼저 적용돼야 한다.
+ */
+describe('analysis_history_personalized 마이그레이션', () => {
+    const sql = readFileSync(
+        join(process.cwd(), 'drizzle/0066_analysis_history_personalized.sql'),
+        'utf8'
+    );
+
+    it('널 허용 컬럼 하나만 더한다', () => {
+        const statements = sql
+            .split('--> statement-breakpoint')
+            .map(statement => statement.trim());
+        expect(statements).toEqual([
+            'ALTER TABLE "analysis_history" ADD COLUMN "personalized" boolean;',
+        ]);
+    });
+
+    it('0065 뒤에 저널에 등록돼 있다', () => {
+        const journal = JSON.parse(
+            readFileSync(
+                join(process.cwd(), 'drizzle/meta/_journal.json'),
+                'utf8'
+            )
+        ) as { entries: Array<{ tag: string }> };
+        const tags = journal.entries.map(entry => entry.tag);
+        expect(tags.indexOf('0066_analysis_history_personalized')).toBe(
+            tags.indexOf('0065_price_alerts') + 1
+        );
+    });
+
+    it('personalized 컬럼은 널 허용이고 기본값이 없으며 이름이 마이그레이션과 같다', () => {
+        expect(schema.analysisHistory.personalized.name).toBe('personalized');
+        expect(schema.analysisHistory.personalized.notNull).toBe(false);
+        expect(schema.analysisHistory.personalized.hasDefault).toBe(false);
+    });
+});

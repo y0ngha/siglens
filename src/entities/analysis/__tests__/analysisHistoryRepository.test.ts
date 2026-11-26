@@ -148,6 +148,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt,
@@ -170,6 +171,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'technical',
             modelId: 'analysis-worker',
             tier: null,
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             inputFingerprint: null,
@@ -197,6 +199,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             // free tier가 실제로 내려주는 모양 — trend만 살아 있다.
             result: { trend: 'bullish', riskLevel: null },
@@ -226,6 +229,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'overall',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'en',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -249,6 +253,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             tier: 'member',
             locale: 'ko',
             result: readableResult,
@@ -270,6 +275,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -295,6 +301,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -324,6 +331,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 timeframe: '1Day',
                 tab: 'overall',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -402,9 +410,17 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.symbol, 'AAPL');
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.timeframe, '1Day');
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.tab, 'technical');
-        // model_id/locale은 필터하지 않는다 — eq는 정확히 symbol/timeframe/tab
-        // 3번만 호출돼야 한다. 늘어나면 누군가 금지된 필터를 추가한 것이다.
-        expect(eqSpy).toHaveBeenCalledTimes(3);
+        // model_id/locale은 필터하지 않는다. eq는 symbol/timeframe/tab 3번에 맞춤 조건
+        // (`personalized = false`, `tier = 'free'`) 2번을 더한 5번뿐이어야 한다.
+        expect(eqSpy).toHaveBeenCalledTimes(5);
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.modelId,
+            expect.anything()
+        );
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.locale,
+            expect.anything()
+        );
 
         expect(gteSpy).toHaveBeenCalledWith(
             analysisHistory.generatedAt,
@@ -520,8 +536,16 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         });
 
         expect(result).toHaveLength(2);
-        // The query never filters by model_id or locale.
-        expect(eqSpy).toHaveBeenCalledTimes(3);
+        // The query never filters by model_id or locale (3 axis eq + 2 personalisation eq).
+        expect(eqSpy).toHaveBeenCalledTimes(5);
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.modelId,
+            expect.anything()
+        );
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.locale,
+            expect.anything()
+        );
     });
 
     it('skips a row with a missing/invalid trend or riskLevel, keeps valid ones', async () => {
@@ -755,6 +779,36 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
 
         expect(consoleError).toHaveBeenCalledWith(
             '[analysisHistoryRepository] findRecentForPrompt failed:',
+            expect.any(Error)
+        );
+        consoleError.mockRestore();
+    });
+});
+
+describe('DrizzleAnalysisHistoryRepository.findLatestShareable', () => {
+    it('returns an empty map and logs the redacted error when the query fails', async () => {
+        const orderBy = vi.fn(() => Promise.reject(new Error('select failed')));
+        const where = vi.fn(() => ({ orderBy }));
+        const from = vi.fn(() => ({ where }));
+        const selectDistinctOn = vi.fn(() => ({ from }));
+        const repository = new DrizzleAnalysisHistoryRepository({
+            selectDistinctOn,
+        } as unknown as SiglensDatabase);
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const found = await repository.findLatestShareable({
+            symbols: ['AAPL'],
+            timeframe: '1Day',
+            tab: 'technical',
+            notBefore: new Date('2026-10-26T00:00:00.000Z'),
+        });
+
+        expect(found.size).toBe(0);
+        expect(orderBy).toHaveBeenCalledTimes(1);
+        expect(consoleError).toHaveBeenCalledWith(
+            '[analysisHistoryRepository] findLatestShareable failed:',
             expect.any(Error)
         );
         consoleError.mockRestore();
@@ -1042,6 +1096,7 @@ describe('DrizzleAnalysisHistoryRepository.pruneAnalysisHistory', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),

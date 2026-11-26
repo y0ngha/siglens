@@ -1454,6 +1454,16 @@ export const analysisHistory = pgTable(
         locale: contentLocaleEnum('locale').notNull(),
         /** 정규화된 AnalysisResponse. */
         result: jsonb('result').notNull(),
+        /**
+         * 보유 맞춤(포지션 버킷이 프롬프트에 들어간) 분석인지. 맞춤 분석은 "보유자 관점"
+         * 서술과 그에 맞춘 진입·청산 계획을 담아 한 회원의 보유 상태(손익 구간)를 드러내므로,
+         * 다른 사람에게 보이는 읽기는 이 값으로 거른다.
+         * `null`은 이 컬럼이 생기기 전 행(알 수 없음)이다. 읽기마다 규칙이 다르다.
+         * - `findRecentForPrompt`(이전 분석, 에이전트 이력 요약): `false`이거나, `null`이면서 generating
+         *   tier가 `free`인 행만 읽는다(free는 버킷을 만들지 않아 맞춤일 수 없다).
+         * - `findLatestShareable`: `false`인 행만 읽는다. `null`은 tier와 무관하게 쓰지 않는다.
+         */
+        personalized: boolean('personalized'),
         inputFingerprint: varchar('input_fingerprint', { length: 32 }),
         promptVersion: varchar('prompt_version', { length: 32 }),
         promptStableHash: char('prompt_stable_hash', {
