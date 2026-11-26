@@ -3,7 +3,10 @@ import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
-import { shouldCacheMarketSummary } from '../lib/shouldCacheMarketSummary';
+import {
+    hasMissingIndexQuote,
+    shouldCacheMarketSummary,
+} from '../lib/shouldCacheMarketSummary';
 
 function makeSummary(
     indexPrices: number[],
@@ -75,6 +78,20 @@ describe('shouldCacheMarketSummary', () => {
                     makeSummary([], [1])
                 )
             ).toBe(false);
+        });
+    });
+});
+
+describe('hasMissingIndexQuote', () => {
+    describe('지수 행이 0일 때', () => {
+        it('true다', () => {
+            expect(hasMissingIndexQuote(makeSummary([1, 0], [1]))).toBe(true);
+        });
+    });
+
+    describe('섹터 ETF만 0일 때', () => {
+        it('false다(얇은 거래의 일상 결측)', () => {
+            expect(hasMissingIndexQuote(makeSummary([1], [0]))).toBe(false);
         });
     });
 });

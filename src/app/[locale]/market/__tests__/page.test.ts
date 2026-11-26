@@ -454,9 +454,10 @@ describe('Market page', () => {
             ).resolves.toBeDefined();
         });
 
-        it('peekBriefingStatic throwing → 실패를 로그로 남기고 peekSeed null로 흡수한다', async () => {
-            // 본문의 `.catch`가 없으면 MarketContent가 reject하고, 로그가 없으면 두 번째 단언이 실패한다.
-            mockPeekBriefingStatic.mockRejectedValue(new Error('redis down'));
+        it('peekBriefingStatic가 null이면(실제 실패 형태) 오류 로그 없이 브리핑 seed 없이 그린다', async () => {
+            // `cacheNonNull`이 읽기 실패를 삼켜 null로 돌려주므로 호출부 `.catch`는 방어용이다.
+            // 브리핑 실패는 소프트 실패(클라가 직접 받는다)라 로그·알람 대상이 아니다.
+            mockPeekBriefingStatic.mockResolvedValue(null);
             const consoleSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => {});
@@ -464,10 +465,7 @@ describe('Market page', () => {
             await expect(
                 MarketContent({ scope: US_DASHBOARD_SCOPE })
             ).resolves.toBeDefined();
-            expect(consoleSpy).toHaveBeenCalledWith(
-                '[MarketContent] peekBriefingStatic failed:',
-                expect.any(Error)
-            );
+            expect(consoleSpy).not.toHaveBeenCalled();
         });
 
         it('getMarketSummaryStatic throwing → .catch() degraded empty summary, page does not throw', async () => {
