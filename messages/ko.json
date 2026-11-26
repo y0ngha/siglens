@@ -4470,6 +4470,9 @@
             "QuoteHeader": {
                 "92387b": "전일비"
             },
+            "QuotePrice": {
+                "unavailable": "시세 없음"
+            },
             "SectorFactsSummary": {
                 "581217": "섹터별 신호 모아보기",
                 "9550ad": "현재 기술적 신호가 잡힌 종목이 없습니다. 잠시 후 다시 확인해 보세요.",

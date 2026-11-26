@@ -4313,6 +4313,9 @@
             "QuoteHeader": {
                 "92387b": "较前日"
             },
+            "QuotePrice": {
+                "unavailable": "暂无报价"
+            },
             "SectorFactsSummary": {
                 "581217": "查看各板块信号",
                 "9550ad": "目前没有捕捉到技术信号的股票。请稍后再次查看。",
