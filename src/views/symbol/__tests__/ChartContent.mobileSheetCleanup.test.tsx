@@ -242,7 +242,7 @@ describe('ChartContent 모바일 시트 정리', () => {
         shouldThrow.current = true;
         rerender(<Host tick={1} />);
 
-        expect(screen.getByTestId('fallback')).toBeTruthy();
+        expect(screen.getByTestId('fallback')).toBeInTheDocument();
         expect(screen.getByTestId('sheet').textContent).toBe('');
     });
 
