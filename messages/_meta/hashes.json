@@ -3446,6 +3446,7 @@
     "widgets.dashboard.MarketDataErrorNotice.marketLabelKr": "7e4b010dc4ce",
     "widgets.dashboard.MarketDataErrorNotice.marketLabelUs": "ba179737a6f4",
     "widgets.dashboard.MarketDataErrorNotice.partial": "6862a932fc2a",
+    "widgets.dashboard.MarketDataErrorNotice.priceUnavailable": "edd05691ea0f",
     "widgets.dashboard.MarketDataErrorNotice.total": "4c57b2f4dbf4",
     "widgets.dashboard.MarketSummaryPanelSkeleton.dc6348": "dc634846ccd7",
     "widgets.dashboard.QuoteHeader.92387b": "92387b68bbc4",

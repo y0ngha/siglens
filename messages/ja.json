@@ -4305,6 +4305,7 @@
                 "marketLabelKr": "韓国株式市場",
                 "marketLabelUs": "米国株式市場",
                 "partial": "{v0}のデータの一部を読み込めませんでした。",
+                "priceUnavailable": "価格を取得できません",
                 "total": "{v0}のデータを読み込めませんでした。"
             },
             "MarketSummaryPanelSkeleton": {

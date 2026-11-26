@@ -309,3 +309,28 @@ describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
         expect(primary).toHaveAttribute('translate', 'no');
     });
 });
+
+describe('QuoteHeader 가격 0', () => {
+    describe('시세 조회 실패로 가격이 0일 때', () => {
+        it('0원 대신 -를 그리고 등락률 줄을 숨긴다', () => {
+            render(
+                <QuoteHeader
+                    tickerIsReadable
+                    currencySymbol="₩"
+                    data={{ ...BASE, price: 0, changePercent: 0 }}
+                />
+            );
+            expect(screen.getByText('-')).toBeInTheDocument();
+            expect(screen.queryByText(/₩/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/%/)).not.toBeInTheDocument();
+            // 등락률의 방향 sr-only는 없고, 시세 없음 안내 하나만 남는다.
+            const srOnly = document.querySelectorAll('.sr-only');
+            expect(srOnly).toHaveLength(1);
+            expect(srOnly[0]).toHaveTextContent(
+                koMessage(
+                    'widgets.dashboard.MarketDataErrorNotice.priceUnavailable'
+                )
+            );
+        });
+    });
+});

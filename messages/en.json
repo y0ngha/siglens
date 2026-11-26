@@ -4305,6 +4305,7 @@
                 "marketLabelKr": "the Korean stock market",
                 "marketLabelUs": "the U.S. stock market",
                 "partial": "Some {v0} data could not be loaded.",
+                "priceUnavailable": "Price unavailable",
                 "total": "Could not load {v0} data."
             },
             "MarketSummaryPanelSkeleton": {

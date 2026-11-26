@@ -4462,6 +4462,7 @@
                 "marketLabelKr": "한국 증시",
                 "marketLabelUs": "미국 증시",
                 "partial": "{v0} 데이터를 불러오는 중 일부를 가져오지 못했어요.",
+                "priceUnavailable": "시세 없음",
                 "total": "{v0} 데이터를 불러오지 못했어요."
             },
             "MarketSummaryPanelSkeleton": {

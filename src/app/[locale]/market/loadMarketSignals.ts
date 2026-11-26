@@ -6,7 +6,11 @@ import type {
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    flagNoindexDegradedRender,
+    shortenRevalidateForRuntimeDegrade,
+    shortenRevalidateIfFmpFailedAtBuild,
+} from '@/shared/cache/buildDegradedRevalidate';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
@@ -37,12 +41,14 @@ export interface LoadMarketSignalsResult {
  */
 const loadMarketSignalsOnce = cache(async (scope: DashboardScope) => {
     const label = `loadMarketSignals:${scope.id}`;
+    let summaryFailed = false;
     const [summary, sectorData] = await Promise.all([
         getMarketSummaryStatic(scope).catch(e => {
             console.error(
                 `[${label}] getMarketSummaryStatic failed:`,
                 redactDbErrorForLog(e)
             );
+            summaryFailed = true;
             return { indices: [], sectors: [] };
         }),
         getSectorSignalsStatic(scope, DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
@@ -56,7 +62,7 @@ const loadMarketSignalsOnce = cache(async (scope: DashboardScope) => {
     // 빌드 중 FMP가 실패했으면 이 prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
     // yahoo인 KRX scope는 FMP 상태와 무관하므로 건드리지 않는다.
     if (scopeUsesFmp(scope.id)) await shortenRevalidateIfFmpFailedAtBuild();
-    return { summary, sectorData };
+    return { summary, sectorData, summaryFailed };
 });
 
 /**
@@ -68,19 +74,29 @@ export async function loadMarketSignals(
     /** 섹터 신호 폴백의 `computedAt`. 본문은 dateHour를, metadata는 빈 값을 쓴다. */
     computedAtFallback = ''
 ): Promise<LoadMarketSignalsResult> {
-    const { summary, sectorData: loaded } = await loadMarketSignalsOnce(scope);
+    const {
+        summary,
+        sectorData: loaded,
+        summaryFailed,
+    } = await loadMarketSignalsOnce(scope);
     // 섹터 로더가 실패했을 때만 호출부의 폴백 `computedAt`을 적용한다 — 캐시된
     // 결과는 호출부 간에 공유되므로 성공 결과의 `computedAt`은 건드리지 않는다.
     const sectorData =
         'failed' in loaded
             ? { computedAt: computedAtFallback, stocks: loaded.stocks }
             : loaded;
-    return {
-        summary,
-        sectorData,
-        degraded:
-            summary.indices.length === 0 &&
-            summary.sectors.length === 0 &&
-            sectorData.stocks.length === 0,
-    };
+    const degraded =
+        summary.indices.length === 0 &&
+        summary.sectors.length === 0 &&
+        sectorData.stocks.length === 0;
+    // 핀은 `unstable_cache` 안이 아니라 렌더 경로(여기)에서 불러야 효과가 있다.
+    // - 요약 로더가 던졌다: 빈 요약이 ISR에 3600초 굳지 않게 300초로 낮춘다. 섹터 데이터가 남아
+    //   `degraded`가 아니어도 패널이 비므로 낮춘다(안내는 SSR seed의 빈 요약으로 클라가 띄운다).
+    // - yahoo(KRX) 지수 시세 결측은 핀을 걸지 않는다: 그 번들은 `getMarketSummaryStatic`의 1시간
+    //   Data Cache에 남아 300초 뒤 재생성도 같은 번들을 읽으므로, 핀은 동일한 ISR write만 늘린다.
+    //   SSR 사본은 그 1시간 경계에서, 클라이언트 refetch는 그보다 먼저 회복한다.
+    if (summaryFailed) await shortenRevalidateForRuntimeDegrade();
+    // 색인 페이지가 입력원 장애로 `noindex` 껍데기가 됐다면 창이 지난 사본을 stale로 내보내지 않는다.
+    if (degraded) await flagNoindexDegradedRender();
+    return { summary, sectorData, degraded };
 }
