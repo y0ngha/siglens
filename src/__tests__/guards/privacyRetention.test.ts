@@ -15,6 +15,7 @@ import {
 } from '@/entities/auth/lib/authUseCaseConstants';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import { FEEDBACK_RETENTION_DAYS } from '@/entities/feedback/lib/constants';
+import { FEEDBACK_RATE_WINDOW_SECONDS } from '@/entities/feedback/server/rateLimit';
 import {
     MAIL_ALERT_COOKIE_MAX_AGE_SECONDS,
     MAIL_ALERT_DELIVERY_RETENTION_DAYS,
@@ -28,12 +29,18 @@ import {
     API_KEY_AUTH_CACHE_TTL_SECONDS,
     API_KEY_REVOKED_TOMBSTONE_TTL_SECONDS,
 } from '@/shared/config/publicApi';
-import {
-    MS_PER_SECOND,
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-} from '@/shared/config/time';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
+import {
+    UNIT_SECONDS,
+    bulletsOf,
+    extractTokens,
+    findIssues,
+    type Entry,
+    type Place,
+    type Policies,
+    type Unbacked,
+} from '@/__tests__/guards/support/privacyRetention';
 
 /**
  * 개인정보처리방침이 적은 보관 기간·TTL·창(CONVENTIONS.md#CS-14)을 한 곳에서 코드 상수와 묶는다.
@@ -72,8 +79,6 @@ const readPolicy = (locale: Locale): string =>
         'utf8'
     );
 
-type Policies = Readonly<Record<Locale, string>>;
-
 const POLICIES: Policies = {
     ko: readPolicy('ko'),
     en: readPolicy('en'),
@@ -81,124 +86,7 @@ const POLICIES: Policies = {
     zh: readPolicy('zh'),
 };
 
-/** `## n.` 제목부터 다음 `## ` 제목 앞까지의 불릿(`- ` 로 시작하는 줄). */
-function bulletsOf(policy: string, section: number): string[] {
-    const lines = policy.split('\n');
-    const start = lines.findIndex(line => line.startsWith(`## ${section}.`));
-    if (start === -1) return [];
-    const rest = lines.slice(start + 1);
-    const end = rest.findIndex(line => line.startsWith('## '));
-    return (end === -1 ? rest : rest.slice(0, end)).filter(line =>
-        line.startsWith('- ')
-    );
-}
-
-type Unit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
-
-const UNIT_SECONDS: Record<Unit, number> = {
-    second: 1,
-    minute: 60,
-    hour: SECONDS_PER_HOUR,
-    day: SECONDS_PER_DAY,
-    month: SECONDS_PER_DAY * 30,
-    year: SECONDS_PER_DAY * 365,
-};
-
-const UNITS = Object.keys(UNIT_SECONDS) as Unit[];
-
-/** 로케일별 단위 표기(정규식 조각). 숫자와 단위 사이 공백은 en만 필수다. */
-const UNIT_PATTERN: Record<Locale, Record<Unit, string>> = {
-    ko: {
-        second: '초',
-        minute: '분',
-        hour: '시간',
-        day: '일',
-        month: '개월',
-        year: '년',
-    },
-    en: {
-        second: 'seconds?\\b',
-        minute: 'minutes?\\b',
-        hour: 'hours?\\b',
-        day: 'days?\\b',
-        month: 'months?\\b',
-        year: 'years?\\b',
-    },
-    ja: {
-        second: '秒',
-        minute: '分間?',
-        hour: '時間',
-        day: '日(?!の)',
-        month: '[かヶケ]月',
-        year: '年',
-    },
-    zh: {
-        second: '秒',
-        minute: '分钟',
-        hour: '小时',
-        day: '天',
-        month: '个月',
-        year: '年',
-    },
-};
-
-const SEPARATOR: Record<Locale, string> = {
-    ko: '\\s?',
-    en: '\\s',
-    ja: '\\s?',
-    zh: '\\s?',
-};
-
-function phraseRegex(locale: Locale, value: number, unit: Unit): RegExp {
-    return new RegExp(
-        `(?<![\\d.:])${value}${SEPARATOR[locale]}${UNIT_PATTERN[locale][unit]}`
-    );
-}
-
-interface Token {
-    readonly value: number;
-    readonly unit: Unit;
-}
-
-/** 줄에서 "숫자+시간 단위"를 모두 뽑는다. */
-function extractTokens(locale: Locale, line: string): Token[] {
-    return UNITS.flatMap(unit => {
-        const re = new RegExp(
-            `(?<![\\d.:])(\\d+)${SEPARATOR[locale]}${UNIT_PATTERN[locale][unit]}`,
-            'g'
-        );
-        return [...line.matchAll(re)].map(match => ({
-            value: Number(match[1]),
-            unit,
-        }));
-    });
-}
-
-type Section = 2 | 4 | 6 | 7;
-
-interface Place {
-    readonly section: Section;
-    /** 한국어 원문의 해당 절에서 이 문구를 담은 불릿이 정확히 하나여야 한다. */
-    readonly marker: string;
-    /**
-     * 있으면 줄에서 이 문구가 **마지막으로** 나온 곳부터 끝까지만 본다. 한 줄에 여러 흐름의 시간이 섞인
-     * 줄(Upstash 위탁)에서 다른 흐름의 같은 숫자로 통과하지 않게 한다.
-     */
-    readonly scopeAfter?: Readonly<Record<Locale, string>>;
-    /** `scopeAfter` 뒤에서 이 문구가 처음 나오는 곳 앞까지로 끝을 자른다(다음 흐름의 같은 숫자 배제). */
-    readonly scopeUntil?: Readonly<Record<Locale, string>>;
-}
-
-interface Entry {
-    readonly id: string;
-    /** 코드 상수에서 온 초. 값 자체를 이 파일에 적지 않는다. */
-    readonly seconds: number;
-    /** 방침이 쓰는 단위. `seconds`가 이 단위의 정수배여야 한다. */
-    readonly unit: Unit;
-    readonly places: readonly Place[];
-}
-
-/** 상수가 모듈 밖으로 나오지 않는 파일에서 `const NAME = <정수>;`를 읽는다. 못 읽으면 즉시 실패. */
+/** 상수가 모듈 밖으로 나올 수 없는 파일(Next route segment 파일은 정해진 이름만 export한다)에서 `const NAME = <정수>;`를 읽는다. 못 읽으면 즉시 실패. */
 function scanConstant(file: string, name: string): number {
     const source = readFileSync(path.resolve(process.cwd(), file), 'utf8');
     const match = new RegExp(`\\bconst ${name}\\s*=\\s*(\\d+)\\s*;`).exec(
@@ -234,10 +122,6 @@ const FUNNEL_RETENTION_DAYS = scanConstant(
 const SYMBOL_VIEW_RETENTION_DAYS = scanConstant(
     'src/app/api/presence/symbol/route.ts',
     'RETENTION_DAYS'
-);
-const FEEDBACK_RATE_WINDOW_SECONDS = scanConstant(
-    'src/entities/feedback/server/rateLimit.ts',
-    'WINDOW_SECONDS'
 );
 
 const UPSTASH = '- **Upstash';
@@ -333,7 +217,7 @@ const ENTRIES: readonly Entry[] = [
         places: [{ section: 4, marker: '- 피드백(별점' }],
     },
     {
-        id: '피드백·문의 제출 제한 IP 해시(feedback rateLimit WINDOW_SECONDS)',
+        id: '피드백·문의 제출 제한 IP 해시(FEEDBACK_RATE_WINDOW_SECONDS)',
         seconds: FEEDBACK_RATE_WINDOW_SECONDS,
         unit: 'hour',
         places: [
@@ -511,12 +395,6 @@ const ENTRIES: readonly Entry[] = [
     },
 ];
 
-interface Unbacked extends Token {
-    readonly section: 4;
-    readonly marker: string;
-    readonly reason: string;
-}
-
 /**
  * §4에 숫자가 있지만 이 저장소의 코드 상수가 없는 항목. 방침 글을 고치지 않고 사유와 함께 명시한다. 항목마다
  * 한국어 줄에 그 숫자가 실제로 있어야 하고(낡은 허용 방지), 레지스트리가 같은 숫자를 덮으면 중복으로 실패한다.
@@ -551,162 +429,6 @@ const UNBACKED_NUMBERS: readonly Unbacked[] = [
         reason: 'Google 태그가 직접 설정하는 쿠키의 만료라 우리 코드의 상수가 아니다.',
     },
 ];
-
-function koIndex(
-    policies: Policies,
-    section: Section,
-    marker: string
-): number | string {
-    const hits = bulletsOf(policies.ko, section).flatMap((line, index) =>
-        line.includes(marker) ? [index] : []
-    );
-    if (hits.length === 1 && hits[0] !== undefined) return hits[0];
-    return `한국어 §${section}에서 "${marker}"를 담은 불릿이 ${hits.length}개다(정확히 1개여야 한다)`;
-}
-
-function lineAt(
-    policies: Policies,
-    locale: Locale,
-    section: Section,
-    index: number
-): string {
-    return bulletsOf(policies[locale], section)[index] ?? '';
-}
-
-/**
- * 정방향·역방향 위반을 모두 모아 사람이 읽을 문장으로 돌려준다. 빈 배열이면 통과다. 순수 함수라 아래 반증
- * 테스트가 변형한 사본을 같은 검사에 넣는다.
- */
-function findIssues(
-    policies: Policies,
-    entries: readonly Entry[],
-    unbacked: readonly Unbacked[]
-): string[] {
-    const issues: string[] = [];
-    const sections: readonly Section[] = [2, 4, 6, 7];
-
-    for (const section of sections) {
-        const counts = LOCALES.map(
-            locale => bulletsOf(policies[locale], section).length
-        );
-        if (new Set(counts).size !== 1 || counts[0] === 0) {
-            issues.push(
-                `§${section} 불릿 수가 로케일마다 다르다(${LOCALES.map((l, i) => `${l}=${counts[i]}`).join(', ')}). 번역본은 같은 순서·같은 개수여야 한다.`
-            );
-        }
-    }
-
-    /** 절 4에서 줄 인덱스별로 레지스트리가 덮는 (값, 단위). */
-    const covered = new Map<number, Token[]>();
-
-    for (const entry of entries) {
-        const value = entry.seconds / UNIT_SECONDS[entry.unit];
-        if (!Number.isInteger(value) || value <= 0) {
-            issues.push(
-                `${entry.id}: 코드 값 ${entry.seconds}초가 ${entry.unit} 단위의 양의 정수배가 아니다. 단위를 고르거나 방침 표기를 확인한다.`
-            );
-            continue;
-        }
-        for (const place of entry.places) {
-            const index = koIndex(policies, place.section, place.marker);
-            if (typeof index === 'string') {
-                issues.push(`${entry.id}: ${index}`);
-                continue;
-            }
-            if (place.section === 4) {
-                covered.set(index, [
-                    ...(covered.get(index) ?? []),
-                    { value, unit: entry.unit },
-                ]);
-            }
-            for (const locale of LOCALES) {
-                const full = lineAt(policies, locale, place.section, index);
-                const scope = place.scopeAfter?.[locale];
-                const cut = scope === undefined ? 0 : full.lastIndexOf(scope);
-                const until = place.scopeUntil?.[locale];
-                const stop =
-                    cut === -1 || until === undefined
-                        ? -1
-                        : full.indexOf(until, cut + (scope?.length ?? 0));
-                const line =
-                    cut === -1
-                        ? ''
-                        : full.slice(cut, stop === -1 ? undefined : stop);
-                if (cut !== -1 && until !== undefined && stop === -1) {
-                    issues.push(
-                        `${entry.id}: ${locale} §${place.section} "${place.marker}" 줄에서 scopeUntil 문구 "${until}"를 못 찾음. 문장이 바뀌었으면 레지스트리의 끝 문구를 고친다.`
-                    );
-                    continue;
-                }
-                if (!phraseRegex(locale, value, entry.unit).test(line)) {
-                    issues.push(
-                        `${entry.id}: ${locale} §${place.section} "${place.marker}" 줄에 ${value} ${entry.unit}(코드 ${entry.seconds}초)이 없다. 방침 줄: ${line.slice(0, 120) || '(줄/범위를 못 찾음)'}`
-                    );
-                }
-            }
-        }
-    }
-
-    const allowed = new Map<number, Token[]>();
-    for (const item of unbacked) {
-        const index = koIndex(policies, item.section, item.marker);
-        if (typeof index === 'string') {
-            issues.push(`허용 목록 "${item.marker}": ${index}`);
-            continue;
-        }
-        const duplicated = (covered.get(index) ?? []).some(
-            t => t.value === item.value && t.unit === item.unit
-        );
-        if (duplicated) {
-            issues.push(
-                `허용 목록 "${item.marker}" ${item.value} ${item.unit}은 레지스트리가 이미 덮는다. 허용 항목을 지운다.`
-            );
-        }
-        if (item.reason.trim() === '') {
-            issues.push(`허용 목록 "${item.marker}": 사유가 비어 있다.`);
-        }
-        allowed.set(index, [
-            ...(allowed.get(index) ?? []),
-            { value: item.value, unit: item.unit },
-        ]);
-    }
-
-    for (const locale of LOCALES) {
-        bulletsOf(policies[locale], 4).forEach((line, index) => {
-            const known = [
-                ...(covered.get(index) ?? []),
-                ...(allowed.get(index) ?? []),
-            ];
-            for (const token of extractTokens(locale, line)) {
-                if (
-                    !known.some(
-                        k => k.value === token.value && k.unit === token.unit
-                    )
-                ) {
-                    issues.push(
-                        `미등록 보관 숫자: ${locale} §4 "${token.value} ${token.unit}" — ${line.slice(0, 100)} … 코드 상수를 ENTRIES에 묶거나 사유와 함께 UNBACKED_NUMBERS에 올린다.`
-                    );
-                }
-            }
-        });
-    }
-
-    for (const item of unbacked) {
-        const index = koIndex(policies, item.section, item.marker);
-        if (typeof index === 'string') continue;
-        const present = extractTokens(
-            'ko',
-            lineAt(policies, 'ko', item.section, index)
-        ).some(t => t.value === item.value && t.unit === item.unit);
-        if (!present) {
-            issues.push(
-                `허용 목록 "${item.marker}" ${item.value} ${item.unit}이 한국어 줄에 더는 없다(낡은 항목). 허용 항목을 지운다.`
-            );
-        }
-    }
-
-    return issues;
-}
 
 describe(`개인정보처리방침 v${VERSION} 보관 기간 ↔ 코드 상수`, () => {
     it('정방향·역방향 위반이 없다', () => {
@@ -753,8 +475,56 @@ describe(`개인정보처리방침 v${VERSION} 보관 기간 ↔ 코드 상수`,
     });
 });
 
+/** 변형이 실제로 본문을 바꿨는지 확인하고(공회전 방지) 사본을 돌려준다. */
+function tamper(base: string, from: string, to: string): string {
+    const tampered = base.replace(from, to);
+    expect(tampered).not.toBe(base);
+    return tampered;
+}
+
+const minutesOf = (seconds: number): number => seconds / UNIT_SECONDS.minute;
+const hoursOf = (seconds: number): number => seconds / UNIT_SECONDS.hour;
+const ko4Line = (marker: string): string => {
+    const line = bulletsOf(POLICIES.ko, 4).find(l => l.includes(marker));
+    if (line === undefined) throw new Error(`§4에 "${marker}" 줄이 없다`);
+    return line;
+};
+
+/** 코드 값을 다른 숫자와 겹치지 않을 만큼 크게 어긋나게 해, 정방향이 그 숫자를 못 찾아야 한다. */
+const DRIFT_UNITS = 997;
+
 describe('탐지기 반증(공회전 방지)', () => {
-    it('상수 하나가 바뀌면 그 항목의 모든 로케일 줄이 실패한다', () => {
+    it.each(ENTRIES.map(entry => [entry.id, entry] as const))(
+        '%s: 상수가 바뀌면 그 항목의 모든 로케일 줄이 실패한다',
+        (_id, target) => {
+            const mutated = ENTRIES.map(entry =>
+                entry === target
+                    ? {
+                          ...entry,
+                          seconds:
+                              entry.seconds +
+                              DRIFT_UNITS * UNIT_SECONDS[entry.unit],
+                      }
+                    : entry
+            );
+            const issues = findIssues(POLICIES, mutated, UNBACKED_NUMBERS);
+
+            const missedLocales = LOCALES.filter(
+                locale =>
+                    !issues.some(i => i.startsWith(`${target.id}: ${locale} `))
+            );
+
+            expect(missedLocales).toEqual([]);
+        }
+    );
+
+    it('레지스트리의 모든 항목이 반증 대상이다(항목 id가 겹치면 한쪽이 가려진다)', () => {
+        expect(new Set(ENTRIES.map(entry => entry.id)).size).toBe(
+            ENTRIES.length
+        );
+    });
+
+    it('상수 하나가 바뀌면 역방향도 같은 줄의 옛 숫자를 미등록으로 알린다', () => {
         const mutated = ENTRIES.map(entry =>
             entry.id.startsWith('알림 메일 발송 기록 보관')
                 ? { ...entry, seconds: entry.seconds + SECONDS_PER_DAY }
@@ -762,19 +532,17 @@ describe('탐지기 반증(공회전 방지)', () => {
         );
         const issues = findIssues(POLICIES, mutated, UNBACKED_NUMBERS);
 
-        const forward = issues.filter(i =>
-            i.startsWith('알림 메일 발송 기록 보관')
-        );
-
-        expect(forward).toHaveLength(LOCALES.length);
-        // 역방향도 같은 줄의 옛 숫자를 미등록으로 함께 알린다.
         expect(issues.some(i => i.includes('미등록 보관 숫자'))).toBe(true);
     });
 
     it('방침의 숫자를 바꾼 사본은 정방향에서 잡힌다', () => {
         const tampered = {
             ...POLICIES,
-            ko: POLICIES.ko.replace('최대 400일', '최대 401일'),
+            ko: tamper(
+                POLICIES.ko,
+                `최대 ${PRESENCE_RETENTION_DAYS}일`,
+                `최대 ${PRESENCE_RETENTION_DAYS + 1}일`
+            ),
         };
 
         expect(
@@ -783,12 +551,10 @@ describe('탐지기 반증(공회전 방지)', () => {
     });
 
     it('§4에 새 기간을 적고 상수를 묶지 않으면 역방향에서 잡힌다', () => {
+        const line = ko4Line('- 종목 조회수 집계(');
         const tampered = {
             ...POLICIES,
-            ko: POLICIES.ko.replace(
-                '- 종목 조회수 집계(종목 코드별 일 조회 횟수): 수집일로부터 최대 90일',
-                '- 종목 조회수 집계(종목 코드별 일 조회 횟수): 수집일로부터 최대 90일, 백업 7일'
-            ),
+            ko: tamper(POLICIES.ko, line, `${line}, 백업 7일`),
         };
         const issues = findIssues(tampered, ENTRIES, UNBACKED_NUMBERS);
 
@@ -840,45 +606,43 @@ describe('탐지기 반증(공회전 방지)', () => {
     });
 
     it('§6 가입 인증 문장의 숫자만 바꾸면 알림 메일·로그인 문장의 같은 숫자로 통과하지 못한다', () => {
-        const base = POLICIES.ko;
-        const code = base.replace(
-            '포함)가 30분 동안, 인증 메일 요청',
-            '포함)가 31분 동안, 인증 메일 요청'
+        const pendingMinutes = minutesOf(
+            EMAIL_VERIFICATION_PENDING_TTL_SECONDS
         );
-        const window = base.replace(
-            '해시가 최대 24시간 동안 보관된 뒤 자동 삭제됩니다. 로그인과',
-            '해시가 최대 25시간 동안 보관된 뒤 자동 삭제됩니다. 로그인과'
+        const windowHours = hoursOf(LONGEST_VERIFICATION_WINDOW);
+        const code = tamper(
+            POLICIES.ko,
+            `포함)가 ${pendingMinutes}분 동안, 인증 메일 요청`,
+            `포함)가 ${pendingMinutes + 1}분 동안, 인증 메일 요청`
+        );
+        const window = tamper(
+            POLICIES.ko,
+            `해시가 최대 ${windowHours}시간 동안 보관된 뒤 자동 삭제됩니다. 로그인과`,
+            `해시가 최대 ${windowHours + 1}시간 동안 보관된 뒤 자동 삭제됩니다. 로그인과`
         );
 
-        expect(code).not.toBe(base);
-        expect(window).not.toBe(base);
-        expect(
-            findIssues(
-                { ...POLICIES, ko: code },
-                ENTRIES,
-                UNBACKED_NUMBERS
-            ).filter(i => i.includes('ko §6')).length
-        ).toBeGreaterThan(0);
-        expect(
-            findIssues(
-                { ...POLICIES, ko: window },
-                ENTRIES,
-                UNBACKED_NUMBERS
-            ).filter(i => i.includes('ko §6')).length
-        ).toBeGreaterThan(0);
+        for (const ko of [code, window]) {
+            expect(
+                findIssues(
+                    { ...POLICIES, ko },
+                    ENTRIES,
+                    UNBACKED_NUMBERS
+                ).filter(i => i.includes('ko §6')).length
+            ).toBeGreaterThan(0);
+        }
     });
 
     it('scopeUntil 문구가 방침에서 사라지면(문장을 고치면) 실패한다', () => {
         const tampered = {
             ...POLICIES,
-            en: POLICIES.en.replace(
+            en: tamper(
+                POLICIES.en,
                 'For login and password reset request rate limiting',
                 'For login and reset rate limiting'
             ),
         };
         const issues = findIssues(tampered, ENTRIES, UNBACKED_NUMBERS);
 
-        expect(tampered.en).not.toBe(POLICIES.en);
         expect(issues.some(i => i.includes('scopeUntil 문구'))).toBe(true);
     });
 
@@ -914,5 +678,42 @@ describe('탐지기 반증(공회전 방지)', () => {
                 { value: 90, unit: 'day' },
             ])
         );
+    });
+
+    it('ja 제외 규칙: §4의 "1日の無料フル公開案内"는 기간이 아니고 같은 줄의 보관 일수만 센다', () => {
+        const line = bulletsOf(POLICIES.ja, 4).find(l => l.includes('1日の'));
+
+        expect(line).toBeDefined();
+        expect(extractTokens('ja', line ?? '')).toEqual([
+            { value: FUNNEL_RETENTION_DAYS, unit: 'day' },
+        ]);
+    });
+
+    it('ja 제외 규칙: §4의 실제 "最大1日"(서버 카운터)는 기간으로 센다', () => {
+        const line = bulletsOf(POLICIES.ja, 4).find(l => l.includes('最大1日'));
+
+        expect(line).toBeDefined();
+        expect(extractTokens('ja', line ?? '')).toContainEqual({
+            value: 1,
+            unit: 'day',
+        });
+    });
+
+    it('en 단어 경계: §4의 실제 "up to 1 day on the server"는 세고 단위가 이어진 단어(daylong)는 세지 않는다', () => {
+        const line = bulletsOf(POLICIES.en, 4).find(l =>
+            l.includes('up to 1 day on the server')
+        );
+        const joined = (line ?? '').replace('1 day on', '1 daylong on');
+
+        expect(line).toBeDefined();
+        expect(joined).not.toBe(line);
+        expect(extractTokens('en', line ?? '')).toContainEqual({
+            value: 1,
+            unit: 'day',
+        });
+        expect(extractTokens('en', joined)).not.toContainEqual({
+            value: 1,
+            unit: 'day',
+        });
     });
 });
