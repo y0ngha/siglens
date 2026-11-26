@@ -98,8 +98,6 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
-import { flushSync } from 'react-dom';
-import { createRoot } from 'react-dom/client';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
@@ -107,6 +105,7 @@ import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis'
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
@@ -496,42 +495,28 @@ describe('AnalysisPanel', () => {
 
         it('stale 분석이면 첫 동기 커밋에 배너가 이미 있다 — 패널이 그려진 뒤에 끼어들지 않는다(CLS)', () => {
             vi.mocked(isAnalysisStale).mockReturnValue(true);
-            // act()는 effect와 transition 갱신을 모두 비워 주므로 "첫 렌더"를 구분하지 못한다.
-            // act 환경을 끄고 flushSync로 동기 렌더 하나만 돌려, 그 커밋에 이미 있는지 본다.
-            const globals = globalThis as {
-                IS_REACT_ACT_ENVIRONMENT?: boolean;
-            };
-            const prev = globals.IS_REACT_ACT_ENVIRONMENT;
-            globals.IS_REACT_ACT_ENVIRONMENT = false;
-            const container = document.createElement('div');
-            const root = createRoot(container);
-            try {
-                flushSync(() =>
-                    root.render(
-                        <LocaleProvider locale={DEFAULT_LOCALE}>
-                            <NextIntlClientProvider
-                                locale={DEFAULT_LOCALE}
-                                messages={MESSAGE_CATALOGS[DEFAULT_LOCALE]}
-                                timeZone="Asia/Seoul"
-                            >
-                                <AnalysisPanel
-                                    symbol="AAPL"
-                                    analysis={makeAnalysis()}
-                                    keyLevels={EMPTY_KEY_LEVELS}
-                                    timeframe="1Day"
-                                    onReanalyze={vi.fn()}
-                                />
-                            </NextIntlClientProvider>
-                        </LocaleProvider>
-                    )
-                );
-                expect(
-                    container.querySelector('[data-testid="stale-banner"]')
-                ).not.toBeNull();
-            } finally {
-                flushSync(() => root.unmount());
-                globals.IS_REACT_ACT_ENVIRONMENT = prev;
-            }
+            renderWithoutAct(
+                <LocaleProvider locale={DEFAULT_LOCALE}>
+                    <NextIntlClientProvider
+                        locale={DEFAULT_LOCALE}
+                        messages={MESSAGE_CATALOGS[DEFAULT_LOCALE]}
+                        timeZone="Asia/Seoul"
+                    >
+                        <AnalysisPanel
+                            symbol="AAPL"
+                            analysis={makeAnalysis()}
+                            keyLevels={EMPTY_KEY_LEVELS}
+                            timeframe="1Day"
+                            onReanalyze={vi.fn()}
+                        />
+                    </NextIntlClientProvider>
+                </LocaleProvider>,
+                container => {
+                    expect(
+                        container.querySelector('[data-testid="stale-banner"]')
+                    ).not.toBeNull();
+                }
+            );
         });
     });
 

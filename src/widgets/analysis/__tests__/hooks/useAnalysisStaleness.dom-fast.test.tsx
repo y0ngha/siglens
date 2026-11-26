@@ -1,8 +1,7 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { act, renderHook } from '@testing-library/react';
-import { flushSync } from 'react-dom';
-import { createRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { useAnalysisStaleness } from '@/widgets/analysis/hooks/useAnalysisStaleness';
 
@@ -52,20 +51,9 @@ describe('useAnalysisStaleness', () => {
             });
             return <span data-testid="probe">{String(stale)}</span>;
         }
-        // act()는 effect와 transition 갱신을 모두 비워 주므로 "첫 렌더"를 구분하지 못한다.
-        // act 환경을 끄고 flushSync로 동기 렌더 하나만 돌려, 그 커밋에 이미 값이 있는지 본다.
-        const globals = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
-        const prev = globals.IS_REACT_ACT_ENVIRONMENT;
-        globals.IS_REACT_ACT_ENVIRONMENT = false;
-        const container = document.createElement('div');
-        const root = createRoot(container);
-        try {
-            flushSync(() => root.render(<Probe />));
+        renderWithoutAct(<Probe />, container => {
             expect(container.textContent).toBe('true');
-        } finally {
-            flushSync(() => root.unmount());
-            globals.IS_REACT_ACT_ENVIRONMENT = prev;
-        }
+        });
     });
 
     it('analyzedAt이 바뀌면 같은 렌더에서 새로 잡은 시각으로 다시 판정한다', () => {

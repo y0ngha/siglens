@@ -19,21 +19,31 @@ describe('StaleAnalysisBanner', () => {
         expect(onReanalyze).toHaveBeenCalledTimes(1);
     });
 
-    it('좁은 패널(240px)에서 문구가 양보하고 버튼은 줄어들지 않는다(DS-18)', () => {
+    // jsdom은 레이아웃을 재지 못해 클래스만 고정한다. 실제 폭 검증(240px 패널, ko/en/ja/zh에서
+    // scrollWidth <= clientWidth)은 Playwright로 따로 했고 이 PR에는 E2E를 추가하지 않았다.
+    it('재분석 버튼은 줄어들거나 글자 단위로 쪼개지지 않는다(DS-18)', () => {
         render(
             <StaleAnalysisBanner
                 onReanalyze={vi.fn()}
                 reanalyzeCooldownUntil={0}
             />
         );
-        const banner = screen.getByRole('status');
-        const message = screen.getByText(/AI 분석 결과가 오래됐어요/);
-        const button = screen.getByRole('button', { name: /재분석/ });
-        // 버튼이 글자 단위로 쪼개지지 않게 줄바꿈 금지 + 줄어듦 금지, 행은 wrap으로 버튼을 아래로 내린다.
-        expect(banner).toHaveClass('flex-wrap');
-        expect(message).toHaveClass('min-w-0', 'wrap-anywhere');
-        expect(button).toHaveClass('whitespace-nowrap');
-        expect(button.parentElement).toHaveClass('shrink-0');
+        expect(
+            screen.getByRole('button', { name: /재분석/ }).parentElement
+        ).toHaveClass('shrink-0');
+    });
+
+    it('안내 문구는 좁은 폭에서 줄바꿈으로 양보한다(DS-18)', () => {
+        render(
+            <StaleAnalysisBanner
+                onReanalyze={vi.fn()}
+                reanalyzeCooldownUntil={0}
+            />
+        );
+        expect(screen.getByText(/AI 분석 결과가 오래됐어요/)).toHaveClass(
+            'min-w-0',
+            'wrap-anywhere'
+        );
     });
 
     it('버튼에 포인터가 올라가거나 포커스가 가면 onReanalyzeIntent를 부른다', () => {
