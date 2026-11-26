@@ -8,6 +8,7 @@ import {
     CODE_RULES,
     MIN_SCANNED_FILES,
     checkScanFloor,
+    detachedJsdocLinesOf,
     isTestFile,
     issueRefLinesOf,
     scanRepo,
@@ -16,7 +17,6 @@ import {
     sqlSubstringLinesOf,
     type CodeRule,
     type RuleCounts,
-    detachedJsdocLinesOf,
 } from './support/codeRules';
 import {
     BASELINE_PATH,
