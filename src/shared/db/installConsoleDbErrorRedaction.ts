@@ -38,7 +38,10 @@ export function installConsoleDbErrorRedaction(
     for (const method of PATCHED_METHODS) {
         const original: Console[ConsoleMethod] = target[method];
         target[method] = (...args: unknown[]): void => {
-            original.apply(target, args.map(redactDbErrorForLog));
+            original.apply(
+                target,
+                args.map(arg => redactDbErrorForLog(arg))
+            );
         };
     }
 }
