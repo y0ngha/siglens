@@ -43,8 +43,8 @@ export const RECIPIENT_CONCURRENCY = 4;
  */
 export const BATCH_DEADLINE_MS = 45 * 60 * 1000;
 /**
- * 한 회원의 요약 데이터(일봉)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
- * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 요약(일봉) 경로의 동시 조회 최악은 그 곱(20)이다.
+ * 한 회원의 요약 데이터(일봉과 종목 이름 조회)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
+ * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 요약(일봉·이름) 경로의 동시 종목 수 최악은 그 곱(20)이다.
  * 전체 카드의 리포트 로드(`reportFor`)는 같은 회원 안에서 이 청크와 나란히 돌아 이 상한에
  * 포함되지 않는다 — 배치 전체의 업스트림 호출 상한이 아니다.
  */
@@ -128,6 +128,7 @@ function mapChunked<T, R>(
 function noDataBrief(symbol: string): SymbolBrief {
     return {
         symbol,
+        names: null,
         close: null,
         changePercent: null,
         trend: null,

@@ -6,7 +6,8 @@ import {
 } from '@/shared/config/popular-tickers';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
-import { KR_EXCHANGE_SUFFIX_RE, KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { KR_SYMBOL_RE } from '@/shared/config/ticker';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import {
     MARKET_INDICES,
     SECTOR_ETFS,
@@ -531,13 +532,9 @@ export function relatedSymbolsFor(symbol: string): RelatedSymbol[] {
         if (seen.has(candidate.symbol)) continue;
         seen.add(candidate.symbol);
         const koreanName = KOREAN_NAMES.get(candidate.symbol);
-        const displayTicker = candidate.symbol.replace(
-            KR_EXCHANGE_SUFFIX_RE,
-            ''
-        );
         picked.push({
             symbol: candidate.symbol,
-            displayTicker,
+            displayTicker: displayTicker(candidate.symbol),
             reason: candidate.reason,
             label: candidate.label,
             ...(koreanName !== undefined && { koreanName }),

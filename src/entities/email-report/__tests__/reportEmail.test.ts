@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { defined } from '@/shared/test-utils/defined';
 import {
     EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
     EMAIL_REPORT_MAX_SYMBOLS,
@@ -62,6 +63,7 @@ const REPORT: SymbolReport = {
 
 const BRIEF: SymbolBrief = {
     symbol: 'AAPL',
+    names: null,
     close: 180.5,
     changePercent: 1.234,
     trend: 'uptrend',
@@ -565,6 +567,64 @@ describe('buildReportEmail', () => {
             }
             expect(html).toContain('그 외 관심종목');
             expect(html).toContain('상승추세 내 단기 과매도');
+        });
+    });
+
+    describe('종목 표시 이름', () => {
+        const FIRST_SECTION = defined(INPUT.sections[0]);
+        const KR_REPORT = { ...REPORT, symbol: '000660.KS' };
+        const KR_BRIEF = briefOf('000660.KS', {
+            names: { name: 'SK hynix Inc.', koreanName: 'SK하이닉스' },
+        });
+        const krInput = (locale: 'ko' | 'en'): BuildReportEmailInput => ({
+            ...INPUT,
+            locale,
+            sections: [
+                { ...FIRST_SECTION, report: KR_REPORT, brief: KR_BRIEF },
+            ],
+            briefRows: [
+                {
+                    brief: KR_BRIEF,
+                    pageUrl: 'https://siglens.io/000660.KS?utm_source=email',
+                },
+            ],
+        });
+
+        it('ko 본문·평문·표·alt에 한글명을 쓰고 벤더 접미사를 노출하지 않는다', () => {
+            const email = buildReportEmail(krInput('ko'));
+
+            expect(email.html).toContain('SK하이닉스');
+            expect(email.html).toContain('chartAlt(SK하이닉스 (000660))');
+            expect(email.text).toContain('■ SK하이닉스 (000660)');
+            expect(email.text).toContain('- SK하이닉스 (000660) |');
+            expect(email.html).not.toMatch(/>000660\.KS</);
+            expect(email.html).not.toContain('(000660.KS)');
+            expect(email.text).not.toContain('000660.KS |');
+            expect(email.text).not.toContain('■ 000660.KS');
+        });
+
+        it('en 본문·평문은 영문 법인명을 쓴다', () => {
+            const email = buildReportEmail(krInput('en'));
+
+            expect(email.html).toContain('SK hynix Inc.');
+            expect(email.html).not.toContain('SK하이닉스');
+            expect(email.text).toContain('■ SK hynix Inc. (000660)');
+        });
+
+        it('이름이 없으면 접미사를 뗀 코드를 제목으로 쓴다', () => {
+            const email = buildReportEmail({
+                ...krInput('ko'),
+                sections: [
+                    {
+                        ...FIRST_SECTION,
+                        report: KR_REPORT,
+                        brief: briefOf('000660.KS', { names: null }),
+                    },
+                ],
+            });
+
+            expect(email.text).toContain('■ 000660\n');
+            expect(email.html).toContain('>000660</h2>');
         });
     });
 });
