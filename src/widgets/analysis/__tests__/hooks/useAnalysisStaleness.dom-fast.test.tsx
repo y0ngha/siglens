@@ -1,5 +1,8 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { act, renderHook } from '@testing-library/react';
+import { flushSync } from 'react-dom';
+import { createRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { useAnalysisStaleness } from '@/widgets/analysis/hooks/useAnalysisStaleness';
 
@@ -9,12 +12,21 @@ vi.mock('@/entities/analysis/lib/staleThreshold', () => ({
 
 const ANALYZED_AT = '2026-01-01T00:00:00Z';
 
+const NOW_MOUNT = new Date('2026-07-14T15:00:00Z');
+
 describe('useAnalysisStaleness', () => {
     beforeEach(() => {
         vi.mocked(isAnalysisStale).mockClear();
+        // 판정에 넘긴 `now`를 정확히 단언하므로 Date를 고정한다(TE-7).
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(NOW_MOUNT);
     });
 
-    it('mount 이후 캡처한 현재 시각으로 stale을 판정한다', async () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('첫 렌더에서 읽은 현재 시각으로 stale을 판정한다', () => {
         const { result } = renderHook(() =>
             useAnalysisStaleness({
                 analyzedAt: ANALYZED_AT,
@@ -22,16 +34,84 @@ describe('useAnalysisStaleness', () => {
                 enabled: true,
             })
         );
-        await vi.waitFor(() => expect(result.current).toBe(true));
+        expect(result.current).toBe(true);
         expect(isAnalysisStale).toHaveBeenCalledWith(
             ANALYZED_AT,
             '1Day',
-            expect.any(Date),
+            NOW_MOUNT,
             undefined
         );
     });
 
-    it('시장 세션을 판정 함수에 그대로 넘긴다', async () => {
+    it('첫 렌더에서 곧바로 stale을 판정한다 — effect·transition을 기다리지 않는다(배너 CLS 방지)', () => {
+        function Probe() {
+            const stale = useAnalysisStaleness({
+                analyzedAt: ANALYZED_AT,
+                timeframe: '1Day',
+                enabled: true,
+            });
+            return <span data-testid="probe">{String(stale)}</span>;
+        }
+        // act()는 effect와 transition 갱신을 모두 비워 주므로 "첫 렌더"를 구분하지 못한다.
+        // act 환경을 끄고 flushSync로 동기 렌더 하나만 돌려, 그 커밋에 이미 값이 있는지 본다.
+        const globals = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+        const prev = globals.IS_REACT_ACT_ENVIRONMENT;
+        globals.IS_REACT_ACT_ENVIRONMENT = false;
+        const container = document.createElement('div');
+        const root = createRoot(container);
+        try {
+            flushSync(() => root.render(<Probe />));
+            expect(container.textContent).toBe('true');
+        } finally {
+            flushSync(() => root.unmount());
+            globals.IS_REACT_ACT_ENVIRONMENT = prev;
+        }
+    });
+
+    it('analyzedAt이 바뀌면 같은 렌더에서 새로 잡은 시각으로 다시 판정한다', () => {
+        const NEXT_ANALYZED_AT = '2026-01-02T00:00:00Z';
+        const { rerender } = renderHook(
+            ({ analyzedAt }: { analyzedAt: string | undefined }) =>
+                useAnalysisStaleness({
+                    analyzedAt,
+                    timeframe: '1Day',
+                    enabled: true,
+                }),
+            { initialProps: { analyzedAt: ANALYZED_AT as string | undefined } }
+        );
+        expect(isAnalysisStale).toHaveBeenLastCalledWith(
+            ANALYZED_AT,
+            '1Day',
+            NOW_MOUNT,
+            undefined
+        );
+
+        const NOW_NEXT = new Date('2026-07-14T16:30:00Z');
+        vi.setSystemTime(NOW_NEXT);
+        rerender({ analyzedAt: NEXT_ANALYZED_AT });
+
+        expect(isAnalysisStale).toHaveBeenLastCalledWith(
+            NEXT_ANALYZED_AT,
+            '1Day',
+            NOW_NEXT,
+            undefined
+        );
+    });
+
+    it('서버 렌더에서는 현재 시각이 없어 false다(hydration mismatch 방지)', () => {
+        function Probe() {
+            const stale = useAnalysisStaleness({
+                analyzedAt: ANALYZED_AT,
+                timeframe: '1Day',
+                enabled: true,
+            });
+            return <span>{String(stale)}</span>;
+        }
+        expect(renderToString(<Probe />)).toContain('false');
+        expect(isAnalysisStale).not.toHaveBeenCalled();
+    });
+
+    it('시장 세션을 판정 함수에 그대로 넘긴다', () => {
         const { result } = renderHook(() =>
             useAnalysisStaleness({
                 analyzedAt: ANALYZED_AT,
@@ -40,11 +120,11 @@ describe('useAnalysisStaleness', () => {
                 enabled: true,
             })
         );
-        await vi.waitFor(() => expect(result.current).toBe(true));
+        expect(result.current).toBe(true);
         expect(isAnalysisStale).toHaveBeenCalledWith(
             ANALYZED_AT,
             '1Day',
-            expect.any(Date),
+            NOW_MOUNT,
             US_EQUITY_SESSION
         );
     });
