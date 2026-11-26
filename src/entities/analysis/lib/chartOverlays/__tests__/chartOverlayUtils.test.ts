@@ -7,7 +7,7 @@ import {
     isOverlayDrawn,
     overlayColorFor,
     overlayItemKey,
-} from '../../utils/chartOverlayUtils';
+} from '../chartOverlayUtils';
 
 const overlay = (over: Partial<ChartOverlay>): ChartOverlay => ({
     id: 'pattern:double_bottom:1',

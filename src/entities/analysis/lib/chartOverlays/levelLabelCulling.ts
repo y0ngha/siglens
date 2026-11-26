@@ -39,6 +39,7 @@ export function visibleLevelLabels(
         .toSorted((a, b) => b.priority - a.priority || a.index - b.index);
     const placed: number[] = [];
     const visible = new Set<number>();
+    // CONVENTIONS.md#CP-6 예외: 앞서 배치된 라벨이 뒤 라벨의 통과 여부를 정하는 순차 의존이라 reduce로 풀면 매번 복사한다.
     for (const { y, index } of order) {
         if (y === null) {
             visible.add(index);

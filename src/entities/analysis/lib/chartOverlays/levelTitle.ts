@@ -3,7 +3,7 @@
  */
 
 import type { ChartOverlay } from '@y0ngha/siglens-core';
-import { BREAKOUT_LEVEL_LABEL } from '../model/chartOverlayCategories';
+import { BREAKOUT_LEVEL_LABEL } from './chartOverlayUtils';
 import { formatFibLevelLabel, type FibLevelTexts } from './fibLevelLabel';
 import {
     formatOutcomeLevelLabel,

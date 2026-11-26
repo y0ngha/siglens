@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { visibleLevelLabels } from '../../utils/levelLabelCulling';
+import { visibleLevelLabels } from '../levelLabelCulling';
 
 describe('visibleLevelLabels', () => {
     it('서로 떨어진 라벨은 전부 보인다', () => {

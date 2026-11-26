@@ -6,13 +6,15 @@ import type { ChartOverlay, OverlayLabel } from '@y0ngha/siglens-core';
 import { isOverlayAlignedToBars } from '@/entities/analysis/lib/overlayAlignment';
 import {
     ALTERNATE_OVERLAY_OPACITY,
-    BREAKOUT_LEVEL_LABEL,
     DIMMED_OVERLAY_OPACITY,
     HIGHLIGHT_LINE_WIDTH_MULT,
     REACHED_LEVEL_OPACITY,
     type OverlayColorTable,
-} from '../model/chartOverlayCategories';
+} from '@/shared/lib/chartOverlayStyle';
 import { LABEL_PRIORITY } from './levelLabelCulling';
+
+/** core 패턴 오버레이의 돌파선 레벨 라벨(언어 중립 키) — 화면에서 번역 문구로 바꾼다. */
+export const BREAKOUT_LEVEL_LABEL = 'breakout';
 
 const PRICE_PANE_INDEX = 0;
 

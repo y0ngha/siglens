@@ -53,7 +53,7 @@ import { useHasStoredChartPreferences } from '@/widgets/chart/hooks/useHasStored
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
-} from '@/widgets/chart/utils/overlayItems';
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { PANEL_MIN_WIDTH, usePanelResize } from './hooks/usePanelResize';
