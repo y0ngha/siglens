@@ -40,8 +40,8 @@ export interface IndexNowBatchInput {
     /** 이번 배치에서 새로 구운 허브의 공개 URL(절대 URL) — 크론이 태그를 직접 털었다. */
     readonly hubUrls: readonly string[];
     /**
-     * 본문이 **바뀐 것으로 확인된** 허브의 공개 URL — 이미 캐시에 있던 본문이라 크론이
-     * 태그를 털지 않았다(지연이 2배다. `indexNowDelays`).
+     * 본문이 **바뀐 것으로 확인된** 허브의 공개 URL — 이미 캐시에 있던 본문이지만 스탬프가
+     * 바뀌어 크론이 태그를 털었다(`hubs.ts`). 지연은 `hubUrls`와 같은 한 주기다(`indexNowDelays`).
      */
     readonly changedHubUrls?: readonly string[];
     /** sitemap 빌더에 넘기는 시각 — 배치가 쓰는 달력 시각과 같은 값. */
@@ -181,7 +181,7 @@ async function collectQueueEntries(
         },
         {
             urls: changedHubUrls.filter(url => declaredStatic.has(url)),
-            invalidatedByCron: false,
+            invalidatedByCron: true,
         },
         { urls: staticDiff.changedUrls, invalidatedByCron: false },
     ];
