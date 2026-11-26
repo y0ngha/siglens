@@ -1,17 +1,12 @@
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import {
-    LOGIN_RATE_LIMITS,
-    PASSWORD_RESET_RATE_LIMITS,
-} from '@/entities/auth/lib/authUseCaseConstants';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 
 /**
  * 로그인·비밀번호 재설정 요청의 횟수 제한 기록(이메일 주소 해시와 IP 해시 카운터)이 개인정보처리방침
- * (§2 수집, §4 보유, §6 위탁 Upstash, §9 안전성 확보 조치)이 적은 보관 시간과 같은지 본다. 두 한도 표의 가장
- * 긴 창이 바뀌면 이 테스트가 깨져 방침을 함께 고치게 된다. **가장 높은 버전**의 원문을 읽는다.
+ * (§2 수집, §4 보유, §6 위탁 Upstash, §9 안전성 확보 조치)에 고지돼 있는지 본다. 보관 시간(가장 긴 창)은
+ * `privacyRetention.test.ts` 레지스트리가 코드 상수와 묶는다. **가장 높은 버전**의 원문을 읽는다.
  */
 const PRIVACY_DIR = path.resolve(process.cwd(), 'db/seeds/terms/privacy');
 const ORIGINAL_FILE = /^v(\d+)\.md$/;
@@ -46,30 +41,6 @@ function sectionBetween(policy: string, from: number, to: number): string {
 function lineStartingWith(section: string, opening: string): string {
     return section.split('\n').find(line => line.startsWith(opening)) ?? '';
 }
-
-/**
- * §6 Upstash 줄에서 이 흐름의 보관 문장(마지막으로 목적 문구가 나오는 곳부터 끝까지). 목적 목록에도 같은 문구가
- * 있으므로 앞쪽 다른 흐름의 시간으로 통과하지 않게 뒤를 자른다.
- */
-function storageSentence(upstash: string, purpose: string): string {
-    const at = upstash.lastIndexOf(purpose);
-    return at === -1 ? '' : upstash.slice(at);
-}
-
-const LONGEST_WINDOW_HOURS =
-    Math.max(
-        ...[
-            ...Object.values(LOGIN_RATE_LIMITS),
-            ...Object.values(PASSWORD_RESET_RATE_LIMITS),
-        ].map(rule => rule.windowSeconds)
-    ) / SECONDS_PER_HOUR;
-
-const HOURS: Record<Locale, (n: number) => string> = {
-    ko: n => `${n}시간`,
-    en: n => `${n} hours`,
-    ja: n => `${n}時間`,
-    zh: n => `${n}小时`,
-};
 
 interface LocalePhrases {
     readonly sec2Opening: string;
@@ -108,49 +79,37 @@ const PHRASES: Record<Locale, LocalePhrases> = {
     },
 };
 
-describe('로그인·재설정 횟수 제한: 코드의 숫자가 방침의 고지와 같다', () => {
-    it('두 한도 표의 가장 긴 창은 24시간', () => {
-        expect(LONGEST_WINDOW_HOURS).toBe(24);
-    });
-});
-
 describe.each(LOCALES)(
     '개인정보처리방침 로그인·재설정 횟수 제한 문구 (%s)',
     locale => {
         const policy = readPolicy(locale);
         const phrases = PHRASES[locale];
-        const hours = HOURS[locale];
 
-        it('§2 수집: 가장 긴 창 시간을 적는다', () => {
+        it('§2 수집: 횟수 제한 기록 항목이 있다', () => {
             const bullet = lineStartingWith(
                 sectionBetween(policy, 2, 3),
                 phrases.sec2Opening
             );
 
             expect(bullet).not.toBe('');
-            expect(bullet).toContain(hours(LONGEST_WINDOW_HOURS));
         });
 
-        it('§4 보유: 같은 시간이 보유 기간 항목에도 있다', () => {
+        it('§4 보유: 보유 기간 항목이 있다', () => {
             const bullet = lineStartingWith(
                 sectionBetween(policy, 4, 5),
                 phrases.sec4Opening
             );
 
             expect(bullet).not.toBe('');
-            expect(bullet).toContain(hours(LONGEST_WINDOW_HOURS));
         });
 
-        it('§6 위탁: Upstash 항목이 이 흐름의 목적과 같은 시간을 적는다', () => {
+        it('§6 위탁: Upstash 항목이 이 흐름의 목적을 적는다', () => {
             const upstash = lineStartingWith(
                 sectionBetween(policy, 6, 7),
                 '- **Upstash'
             );
 
             expect(upstash).toContain(phrases.upstashPurpose);
-            expect(storageSentence(upstash, phrases.upstashPurpose)).toContain(
-                hours(LONGEST_WINDOW_HOURS)
-            );
         });
 
         it('§9 안전성 확보 조치: 횟수 제한 항목이 있다', () => {
@@ -167,32 +126,6 @@ describe.each(LOCALES)(
 describe('탐지기 반증(공회전 방지)', () => {
     const ko = readPolicy('ko');
 
-    it('가장 긴 창 숫자를 바꾼 사본은 §2 시간 검사를 통과하지 못한다', () => {
-        const tampered = lineStartingWith(
-            sectionBetween(ko, 2, 3),
-            PHRASES.ko.sec2Opening
-        ).replace(
-            HOURS.ko(LONGEST_WINDOW_HOURS),
-            HOURS.ko(LONGEST_WINDOW_HOURS + 1)
-        );
-
-        expect(tampered).not.toBe('');
-        expect(tampered).not.toContain(HOURS.ko(LONGEST_WINDOW_HOURS));
-    });
-
-    it('§4 항목의 시간을 바꾼 사본은 §4 검사를 통과하지 못한다', () => {
-        const tampered = lineStartingWith(
-            sectionBetween(ko, 4, 5),
-            PHRASES.ko.sec4Opening
-        ).replace(
-            HOURS.ko(LONGEST_WINDOW_HOURS),
-            HOURS.ko(LONGEST_WINDOW_HOURS + 1)
-        );
-
-        expect(tampered).not.toBe('');
-        expect(tampered).not.toContain(HOURS.ko(LONGEST_WINDOW_HOURS));
-    });
-
     it('항목을 지운 사본에서는 줄을 찾지 못한다', () => {
         const tampered = sectionBetween(ko, 2, 3).replace(
             PHRASES.ko.sec2Opening,
@@ -200,26 +133,5 @@ describe('탐지기 반증(공회전 방지)', () => {
         );
 
         expect(lineStartingWith(tampered, PHRASES.ko.sec2Opening)).toBe('');
-    });
-
-    it('Upstash 보관 문장의 시간을 바꾼 사본은 §6 검사를 통과하지 못한다', () => {
-        const upstash = lineStartingWith(
-            sectionBetween(ko, 6, 7),
-            '- **Upstash'
-        );
-        const tampered = upstash.replace(
-            storageSentence(upstash, PHRASES.ko.upstashPurpose),
-            storageSentence(upstash, PHRASES.ko.upstashPurpose).replace(
-                HOURS.ko(LONGEST_WINDOW_HOURS),
-                HOURS.ko(LONGEST_WINDOW_HOURS + 1)
-            )
-        );
-
-        expect(storageSentence(upstash, PHRASES.ko.upstashPurpose)).toContain(
-            HOURS.ko(LONGEST_WINDOW_HOURS)
-        );
-        expect(
-            storageSentence(tampered, PHRASES.ko.upstashPurpose)
-        ).not.toContain(HOURS.ko(LONGEST_WINDOW_HOURS));
     });
 });
