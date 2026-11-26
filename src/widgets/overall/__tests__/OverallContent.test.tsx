@@ -5,12 +5,14 @@ import type { MockedFunction } from 'vitest';
  * IntegratedConclusion rename, ReanalyzeButton 노출 + amber 강조 조건)을 확인한다.
  */
 
-// vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
-// 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
-//
-// 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
-// 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
-// initialAnalysis prop → done 서사로 흐르는 전체 경로를 검증한다(아래 참고).
+/**
+ * vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
+ * 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
+ *
+ * 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
+ * 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
+ * initialAnalysis prop → done 서사로 흐르는 전체 경로를 검증한다(아래 참고).
+ */
 const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
     mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
 }));

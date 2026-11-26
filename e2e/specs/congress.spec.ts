@@ -51,7 +51,7 @@ import { E2E_FORCE_CONGRESS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
  *     human — `skipEnqueueIfMiss` is hardcoded `false`, never UA-derived.
  */
 
-// Cached AI summary text (overallSentiment="bullish" → label "매수 우위")
+/** Cached AI summary text (overallSentiment="bullish" → label "매수 우위") */
 const CONGRESS_AI_SUMMARY_KO = '최근 의회 거래는 매수 우세예요.';
 
 // Empty-state copy from CongressTradesEmpty

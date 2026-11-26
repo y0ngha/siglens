@@ -45,11 +45,17 @@ const FILING_CACHE_TTL_SECONDS = 30 * SECONDS_PER_DAY;
  * `SubmissionFiling[]`.
  */
 const FILINGS_LIST_CACHE_KEY_PREFIX = 'sec:filings-list:v1';
-/** 목록용 작은 항목 `{fileName, document, headline}` — 목록 호출은 이 키만 읽어 Redis 대역폭을 아낀다. */
-// v2(2026-11-16): 6-K 주 문서 본문·홍콩 공고·서한 제목, HTML 기호·폭 없는 문자 정리.
+/**
+ * 목록용 작은 항목 `{fileName, document, headline}` — 목록 호출은 이 키만 읽어 Redis 대역폭을 아낀다.
+ *
+ * v2(2026-11-16): 6-K 주 문서 본문·홍콩 공고·서한 제목, HTML 기호·폭 없는 문자 정리.
+ */
 const FILING_META_CACHE_KEY_PREFIX = 'sec:filing-meta:v2';
-/** 읽기용 항목 `FilingDocument` — 전문이 아니라 상한까지 잘라 둔 본문을 싣는다. */
-// v3(2026-11-16): 위 제목 규칙과 정제 본문의 기호(`&middot;`·`&euro;`)·폭 없는 문자 처리.
+/**
+ * 읽기용 항목 `FilingDocument` — 전문이 아니라 상한까지 잘라 둔 본문을 싣는다.
+ *
+ * v3(2026-11-16): 위 제목 규칙과 정제 본문의 기호(`&middot;`·`&euro;`)·폭 없는 문자 처리.
+ */
 const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v3';
 
 /**

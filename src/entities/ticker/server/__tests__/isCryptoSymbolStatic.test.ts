@@ -13,7 +13,7 @@
  * Mirrors mock conventions in `cryptoAssetStore.test.ts`.
  */
 
-// TESTING.md#TE-1: all vi.mock above imports.
+/** TESTING.md#TE-1: all vi.mock above imports. */
 const mockIsCryptoSymbol = vi.fn<(symbol: string) => Promise<boolean>>();
 
 vi.mock('../cryptoAssetStore', () => ({
