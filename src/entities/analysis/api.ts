@@ -120,6 +120,8 @@ async function persistPrewarmAnalysis(input: {
             modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             // 프리웜은 항상 free tier로 생성한다(캐시 키 5축 정합 때문에 올릴 수 없다).
             tier: 'free',
+            // 프리웜은 free tier라 포지션 버킷이 없다.
+            personalized: false,
             // 프리웜은 현재 한국어로만 생성한다(harvest.ts의 `resolveHarvest`가
             // 같은 이유로 스냅샷에 `DEFAULT_LOCALE`을 적는 것과 동일한 근거).
             locale: DEFAULT_LOCALE,
