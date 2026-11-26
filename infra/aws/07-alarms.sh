@@ -28,11 +28,12 @@ LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
 # 피할 수 없는 오탐이었고, 그 노이즈가 진짜 알람을 묻었다.
 #
 #   P1  지금 당장 봐야 하는 것. 사이트가 죽었거나 죽기 직전. ALARM + OK 양방향.
-#   P2  degrade. 오늘 중 보면 되는 것. **ALARM만** — 복구 알림은 보내지 않는다.
+#   P2  degrade. 오늘 중 보면 되는 것. ALARM + OK 양방향(같은 저우선 토픽).
+#       2026-11: 점수 알람 하나로 합쳐 발동이 드물어졌고, 회복 여부를 콘솔로 확인하는 수고가 더 커서 OK도 받는다.
 #
 # 판정 기준: "이 알람을 받고 지금 하던 일을 멈출 것인가?" 아니면 P2다.
 P1="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
-P2="--alarm-actions $ALARM_SNS_LOW"
+P2="--alarm-actions $ALARM_SNS_LOW --ok-actions $ALARM_SNS_LOW"
 
 # 2026-10 무료 티어 통합: 알람 40개·커스텀 메트릭 20여 개가 무료 티어(알람 지표 10개,
 # 커스텀 메트릭 10개)를 크게 넘어 유료였다. 원인별 알람 30개를 **점수 알람 2개**로 합쳤다.
