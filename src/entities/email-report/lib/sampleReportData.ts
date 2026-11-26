@@ -1,5 +1,9 @@
 import { localePath, type Locale } from '@/shared/i18n/locales';
-import type { SymbolBrief, SymbolReport } from '../reportModel';
+import type {
+    ReportSymbolNames,
+    SymbolBrief,
+    SymbolReport,
+} from '../reportModel';
 import type {
     BuildReportEmailInput,
     ReportEmailSection,
@@ -31,6 +35,12 @@ export function sampleChartUrl(symbol: SampleChartSymbol): string {
     return `${SAMPLE_CHART_PATH}/${symbol}`;
 }
 
+/** 샘플 카드 종목의 고정 이름 — 운영 메일과 같은 이름 규칙(`reportSymbolLabel`)을 거쳐 보인다. */
+const SAMPLE_NAMES: Record<SampleChartSymbol, ReportSymbolNames> = {
+    NVDA: { name: 'NVIDIA Corporation' },
+    AAPL: { name: 'Apple Inc.' },
+};
+
 function briefFromBars(
     symbol: SampleChartSymbol,
     signals: SymbolBrief['signals'],
@@ -42,6 +52,7 @@ function briefFromBars(
     }
     return {
         symbol,
+        names: SAMPLE_NAMES[symbol],
         close: last.close,
         changePercent: ((last.close - previous.close) / previous.close) * 100,
         trend,
@@ -89,6 +100,7 @@ function sampleBrief(symbol: SampleChartSymbol): SymbolBrief {
 const SAMPLE_BRIEFS: readonly SymbolBrief[] = [
     {
         symbol: 'MSFT',
+        names: { name: 'Microsoft Corporation' },
         close: 438.15,
         changePercent: 0.82,
         trend: 'uptrend',
@@ -102,6 +114,7 @@ const SAMPLE_BRIEFS: readonly SymbolBrief[] = [
     },
     {
         symbol: 'TSLA',
+        names: { name: 'Tesla, Inc.' },
         close: 251.4,
         changePercent: -0.37,
         trend: 'sideways',
@@ -115,6 +128,7 @@ const SAMPLE_BRIEFS: readonly SymbolBrief[] = [
     },
     {
         symbol: 'AMZN',
+        names: { name: 'Amazon.com, Inc.' },
         close: 186.9,
         changePercent: -1.54,
         trend: 'downtrend',

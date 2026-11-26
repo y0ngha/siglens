@@ -47,10 +47,14 @@ describe('buildSampleReportEmailInput -> buildReportEmail', () => {
 
         expect(html).toContain('<h2 style="font-size:20px;');
         expect(html.match(/<h2 style="font-size:20px;/g)).toHaveLength(2);
-        expect(html).toContain('>NVDA</h2>');
-        expect(html).toContain('>AAPL</h2>');
-        for (const symbol of ['MSFT', 'TSLA', 'AMZN']) {
-            expect(html).toMatch(new RegExp(`>${symbol}</a></td>`));
+        expect(html).toContain('>NVIDIA Corporation <span');
+        expect(html).toContain('>Apple Inc. <span');
+        for (const name of [
+            'Microsoft Corporation',
+            'Tesla, Inc.',
+            'Amazon.com, Inc.',
+        ]) {
+            expect(html).toContain(`>${name}</a>`);
         }
         expect(html).toContain('prose:nvda.plain');
         expect(html).toContain('prose:aapl.technical');

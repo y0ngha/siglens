@@ -6,9 +6,9 @@ import {
     signalHubPath,
 } from '@/entities/signal-history/lib/signalHubs';
 import type { TodaySignalRow } from '@/entities/sector-signal/lib/selectTodaySignals';
-import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { SENTIMENT_LABEL_KEY } from '@/shared/lib/fearGreedLabels';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { formatKoreanDate } from '@/shared/lib/legal';
@@ -40,7 +40,7 @@ function rowLabel(row: TodaySignalRow, locale: Locale): string {
     // 한글 이름은 ko에서만 쓴다 — 다른 로케일에 한글을 섞지 않는다(가이드 라이브 종목과 같은 규칙).
     return row.koreanName !== null && locale === DEFAULT_LOCALE
         ? row.koreanName
-        : row.symbol.replace(KR_EXCHANGE_SUFFIX_RE, '');
+        : displayTicker(row.symbol);
 }
 
 interface HomeTodayMarketProps {

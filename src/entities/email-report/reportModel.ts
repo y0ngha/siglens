@@ -79,9 +79,22 @@ export interface SignalBrief {
     pullback: Exclude<PullbackReading, 'none'> | null;
 }
 
+/** 메일에 이름으로 적는 종목 이름 원본. 사이트의 `AssetInfo`에서 이름 두 필드만 옮긴 것. */
+export interface ReportSymbolNames {
+    /** 영문 법인명. */
+    name: string;
+    /** 한글명. 번역이 아직 없으면 없다. */
+    koreanName?: string;
+}
+
 /** 요약 표 한 행 / 카드의 신호 줄에 필요한 종목 한 칸의 경량 데이터. */
 export interface SymbolBrief {
     symbol: string;
+    /**
+     * 표시 이름 원본(로케일 무관 — 어느 이름을 쓸지는 템플릿이 정한다). 이름 조회에 실패했거나
+     * 없는 종목은 `null`이고 메일은 접미사를 뗀 티커로 떨어진다.
+     */
+    names: ReportSymbolNames | null;
     /** 마지막 일봉 종가. 봉이 없으면 `null`. */
     close: number | null;
     /** 직전 종가 대비 등락률(%). 직전 봉이 없거나 0 이하면 `null`. */

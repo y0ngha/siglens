@@ -2,6 +2,7 @@ import type { Bar } from '@y0ngha/siglens-core';
 import { ImageResponse } from 'next/og';
 import { SITE_NAME } from '@/shared/config/brand';
 import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { OG_BG, OG_FG, OG_MUTED } from '@/shared/lib/og';
 import {
     computeChartGeometry,
@@ -42,7 +43,8 @@ function formatPrice(value: number): string {
 }
 
 /**
- * 메일용 일봉 차트 PNG. 글자는 심볼·숫자·날짜뿐이라 기본(라틴) 글꼴로 충분하다 —
+ * 메일용 일봉 차트 PNG. 글자는 티커(국내 종목은 `.KS`/`.KQ`를 뗀 코드)·숫자·날짜뿐이라 기본(라틴) 글꼴로 충분하다 —
+ * 종목 이름은 이 이미지 위의 카드 제목이 적는다(한글 글꼴을 내려받지 않는다).
  * 로케일 글꼴을 내려받지 않아 첫 요청이 가볍다.
  *
  * 봉이 없으면 `null`. 호출자가 404로 답한다.
@@ -99,7 +101,7 @@ export function buildReportChartImage(
             >
                 <div style={{ display: 'flex', alignItems: 'baseline' }}>
                     <span style={{ fontSize: 52, fontWeight: 700 }}>
-                        {input.symbol}
+                        {displayTicker(input.symbol)}
                     </span>
                     <span style={{ fontSize: 40, marginLeft: 24 }}>
                         {formatPrice(last.close)}

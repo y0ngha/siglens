@@ -51,6 +51,7 @@ function report(symbol: string): SymbolReport {
 function brief(symbol: string): SymbolBrief {
     return {
         symbol,
+        names: null,
         close: 100,
         changePercent: 1.5,
         trend: 'uptrend',

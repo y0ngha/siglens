@@ -3,6 +3,7 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { brandTitle } from '@/shared/lib/brandName';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
 import {
     clampSeoDescription,
@@ -211,10 +212,7 @@ export function buildTitleSubject(ticker: string, koreanName?: string): string {
  * 종목을 특정할 수 있으므로 그대로 둔다.
  */
 function titleTicker(ticker: string): string {
-    const upper = ticker.toUpperCase();
-    return isKrEquitySymbol(upper)
-        ? upper.replace(KR_EXCHANGE_SUFFIX_RE, '')
-        : upper;
+    return displayTicker(ticker.toUpperCase());
 }
 
 /** `composeSymbolTitle` 입력. 모든 탭 빌더가 같은 형태로 제목을 조립하게 한다. */
