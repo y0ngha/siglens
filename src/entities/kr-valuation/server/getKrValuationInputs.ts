@@ -240,7 +240,6 @@ async function loadFirstAvailable(
 
 /** 결산일 시점 KRX 상장주식수 행(우선주 포함). 캐시한다 — 결산일이 정해지면 값이 바뀌지 않는다. */
 async function loadKrxListedItems(
-    ctx: LoadContext,
     prefix: string,
     periodEnd: string,
     timeoutMs: number
@@ -287,7 +286,6 @@ async function refreshSharesFromKrx(
     if (remainingMs <= 0) return { shares: dart, transient: true };
     try {
         const items = await loadKrxListedItems(
-            ctx,
             symbol.toUpperCase().slice(0, 5),
             reportPeriodEnd(year, reportCode),
             Math.min(ctx.options.timeoutMs ?? remainingMs, remainingMs)

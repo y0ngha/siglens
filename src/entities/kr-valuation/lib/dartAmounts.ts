@@ -190,25 +190,31 @@ function shareRowCounts(row: DartRow): ShareKindCounts | null {
     };
 }
 
-/** 한 종류(보통주 또는 우선주)로 분류되는 줄들의 주식수 합. 숫자가 있는 줄이 없으면 null. */
-function kindShareCounts(
+/** 한 종류(보통주 또는 우선주)로 분류되고 숫자가 있는 줄들의 주식수. */
+function kindRowCounts(
     rows: readonly DartRow[],
     labels: readonly string[]
-): ShareKindCounts | null {
+): ShareKindCounts[] {
     return rows
         .filter(isShareRowOf(labels))
-        .flatMap(row => shareRowCounts(row) ?? [])
-        .reduce<ShareKindCounts | null>(
-            (sum, counts) =>
-                sum === null
-                    ? counts
-                    : {
-                          issued: sum.issued + counts.issued,
-                          treasury: sum.treasury + counts.treasury,
-                          outstanding: sum.outstanding + counts.outstanding,
-                      },
-            null
-        );
+        .flatMap(row => shareRowCounts(row) ?? []);
+}
+
+/** 줄별 주식수의 합. 줄이 없으면 null. */
+function sumKindCounts(
+    counts: readonly ShareKindCounts[]
+): ShareKindCounts | null {
+    return counts.reduce<ShareKindCounts | null>(
+        (sum, next) =>
+            sum === null
+                ? next
+                : {
+                      issued: sum.issued + next.issued,
+                      treasury: sum.treasury + next.treasury,
+                      outstanding: sum.outstanding + next.outstanding,
+                  },
+        null
+    );
 }
 
 /**
@@ -239,6 +245,7 @@ export function extractShareTotals(
         : issued - treasury;
     if (outstanding <= 0) return null;
     const settled = rowsToSum[0]?.stlm_dt;
+    const preferredRows = kindRowCounts(rows, DART_SHARE_PREFERRED_ROWS);
     return {
         issued,
         treasury,
@@ -246,11 +253,8 @@ export function extractShareTotals(
         settledOn:
             typeof settled === 'string' && settled !== '' ? settled : null,
         source: 'dart',
-        common: kindShareCounts(rows, DART_SHARE_COMMON_ROWS),
-        preferred: kindShareCounts(rows, DART_SHARE_PREFERRED_ROWS),
-        preferredIsMixed:
-            rows
-                .filter(isShareRowOf(DART_SHARE_PREFERRED_ROWS))
-                .filter(row => shareRowCounts(row) !== null).length > 1,
+        common: sumKindCounts(kindRowCounts(rows, DART_SHARE_COMMON_ROWS)),
+        preferred: sumKindCounts(preferredRows),
+        preferredIsMixed: preferredRows.length > 1,
     };
 }
