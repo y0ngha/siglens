@@ -26,9 +26,12 @@ export interface SymbolBriefSources {
  * 시장 프로필을 풀어 세션에 맞는 캐시 provider(`getCachedMarketDataProvider`)로 받으므로
  * 종목 페이지와 세션 롤 키를 공유해 보통 캐시 적중이다.
  */
-export function createSymbolBriefSources(): SymbolBriefSources {
+export function createSymbolBriefSources(
+    getDailyBars: SymbolBriefSources['getDailyBars'] = symbol =>
+        loadBarsData(symbol, '1Day')
+): SymbolBriefSources {
     return {
-        getDailyBars: symbol => loadBarsData(symbol, '1Day'),
+        getDailyBars,
         getNames: async symbol => {
             const info = await getAssetInfoStatic(symbol);
             return info === null

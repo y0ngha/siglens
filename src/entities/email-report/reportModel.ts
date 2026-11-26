@@ -26,7 +26,10 @@ export interface SymbolReport {
     plain: string | null;
     news: SymbolReportNews[];
     options: SymbolReportOptions | null;
-    /** 분석 스냅샷이 만들어진 시각(ISO). 분석이 없으면 `null`. */
+    /**
+     * 분석이 만들어진 시각(ISO) — 분석 내용 안의 `analyzedAt`이다. 스냅샷 행의 `generatedAt`(하베스트가 행을 다시
+     * 쓴 시각일 수 있다)이 아니다. 분석이 없거나 내용에 시각이 없으면 `null`.
+     */
     analyzedAt: string | null;
 }
 
@@ -106,3 +109,26 @@ export interface SymbolBrief {
 
 /** 신호 요약 한 줄에 라벨로 적는 최대 타입 수. 넘치는 만큼은 "+N". */
 export const SIGNAL_BRIEF_MAX_LABELS = 3;
+
+/**
+ * 차트 아래 범례의 한 칸. 이름은 언어마다 달라 템플릿이 정한다 — 카드(패턴·전략)는 스킬 원래 이름을 싣고
+ * 템플릿이 `shared.skillName` 사전으로 바꾼다. 나머지는 종류 이름이다.
+ */
+export type ReportLegendEntry =
+    | { kind: 'card'; name: string; color: string }
+    | {
+          kind:
+              | 'trendUp'
+              | 'trendDown'
+              | 'fibonacci'
+              | 'divergence'
+              | 'elliott';
+          color: string;
+      };
+
+/** 차트 이미지에 실제로 그려지는 분석 작도 — 어느 분석인지(시각)와 범례. */
+export interface ReportChartDrawings {
+    /** 작도를 가져온 분석이 만들어진 시각(ISO). */
+    analyzedAt: string;
+    legend: ReportLegendEntry[];
+}

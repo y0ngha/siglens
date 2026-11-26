@@ -104,8 +104,10 @@ const INPUT: BuildReportEmailInput = {
     unsubscribePageUrl: 'https://siglens.io/email-report/unsubscribe?u=1',
     unsubscribeApiUrl: 'https://siglens.io/api/email-report/unsubscribe?u=1',
     settingsUrl: 'https://siglens.io/email-report',
+    timeZone: 'Asia/Seoul',
     t,
     signalLabel,
+    skillLabel: name => `skill:${name}`,
 };
 
 describe('buildReportEmail', () => {
@@ -626,5 +628,128 @@ describe('buildReportEmail', () => {
             expect(email.text).toContain('■ 000660\n');
             expect(email.html).toContain('>000660</h2>');
         });
+    });
+});
+
+describe('buildReportEmail — 차트 작도 범례와 근거', () => {
+    const DRAWINGS = {
+        // 서울 달력으로 10월 8일(UTC 10월 7일 21:00)
+        analyzedAt: '2026-10-07T21:00:00Z',
+        legend: [
+            { kind: 'card' as const, name: '상승삼각형', color: '#22d3ee' },
+            { kind: 'trendUp' as const, color: '#26a69a' },
+            { kind: 'fibonacci' as const, color: '#f59e0b' },
+        ],
+    };
+
+    function build(
+        drawings: typeof DRAWINGS | null,
+        report: SymbolReport = REPORT
+    ) {
+        const [section] = INPUT.sections;
+        return buildReportEmail({
+            ...INPUT,
+            sections: [{ ...defined(section), report, drawings }],
+        });
+    }
+
+    it('작도가 있으면 대체 텍스트를 바꾸고 이미지 아래에 범례 칸을 색 견본과 함께 낸다', () => {
+        const { html } = build(DRAWINGS);
+
+        expect(html).toContain('alt="chartAltDrawings(AAPL)"');
+        expect(html).toContain('skill:상승삼각형');
+        expect(html).toContain('legendTrendUp');
+        expect(html).toContain('legendFibonacci');
+        expect(html).toContain('background:#22d3ee');
+        // 범례는 이미지 링크 밖(아래)에 있다.
+        expect(html.indexOf('</a>', html.indexOf('<img'))).toBeLessThan(
+            html.indexOf('skill:상승삼각형')
+        );
+    });
+
+    it('작도가 없으면 범례 없이 예전 대체 텍스트 그대로다', () => {
+        const { html } = build(null);
+
+        expect(html).toContain('alt="chartAlt(AAPL)"');
+        expect(html).not.toContain('legendTrendUp');
+        expect(html).not.toContain('chartAltDrawings');
+    });
+
+    it('범례는 6칸까지 적고 나머지는 "외 N개"로 센다', () => {
+        const legend = Array.from({ length: 8 }, (_, i) => ({
+            kind: 'card' as const,
+            name: `패턴${i}`,
+            color: '#22d3ee',
+        }));
+
+        const { html } = build({ ...DRAWINGS, legend });
+
+        expect(html).toContain('skill:패턴5');
+        expect(html).not.toContain('skill:패턴6');
+        expect(html).toContain('legendMore(2)');
+    });
+
+    it('작도와 분석 글이 같은 날 분석이면 한 문장으로 근거를 쓴다', () => {
+        const { html, text } = build(DRAWINGS);
+
+        expect(html).toContain('analysisBasis(10월 8일)');
+        expect(html).not.toContain('chartDrawingsBasis');
+        expect(html).not.toContain('proseBasis');
+        expect(text).toContain('analysisBasis(10월 8일)');
+    });
+
+    it('분석 날짜가 다르면 작도 근거와 분석 글 근거를 각각 쓴다', () => {
+        const { html } = build(
+            { ...DRAWINGS, analyzedAt: '2026-10-05T01:00:00Z' },
+            REPORT
+        );
+
+        expect(html).toContain('chartAndProseBasis(10월 5일,10월 8일)');
+        expect(html).not.toContain('analysisBasis');
+        expect(html).not.toContain('proseBasis(');
+    });
+
+    it('날짜는 수신자 타임존 달력으로 쓴다(같은 시각이 UTC에서는 하루 앞)', () => {
+        const [section] = INPUT.sections;
+        const { html } = buildReportEmail({
+            ...INPUT,
+            timeZone: 'UTC',
+            sections: [{ ...defined(section), drawings: DRAWINGS }],
+        });
+
+        expect(html).toContain('analysisBasis(10월 7일)');
+        expect(html).not.toContain('analysisBasis(10월 8일)');
+    });
+
+    it('작도만 있고 분석 글이 없으면 작도 근거만 쓴다', () => {
+        const { html } = build(DRAWINGS, {
+            ...REPORT,
+            technical: null,
+            plain: null,
+        });
+
+        expect(html).toContain('chartDrawingsBasis(10월 8일)');
+        expect(html).not.toContain('proseBasis');
+    });
+
+    it('분석 글만 있고 작도가 없으면 분석 글 근거만 쓴다', () => {
+        const { html } = build(null);
+
+        expect(html).toContain('proseBasis(10월 8일)');
+        expect(html).not.toContain('chartDrawingsBasis');
+    });
+
+    it('분석 시각을 모르면(null) 근거 문장을 쓰지 않는다', () => {
+        const { html } = build(null, { ...REPORT, analyzedAt: null });
+
+        expect(html).not.toContain('Basis');
+    });
+
+    it('평문 파트에는 범례 이름과 근거 한 줄이 들어간다', () => {
+        const { text } = build(DRAWINGS);
+
+        expect(text).toContain(
+            'skill:상승삼각형, legendTrendUp 및 legendFibonacci'
+        );
     });
 });
