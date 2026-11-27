@@ -1,0 +1,58 @@
+{
+    "tool": "get_market_overview",
+    "case": "crypto-no-fear-greed-no-briefing",
+    "now": "2026-11-22T03:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "market": "crypto"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-22T03:00:00.000Z",
+            "source": "market dashboard cache (1h)",
+            "market": "crypto",
+            "fearGreed": null,
+            "indices": [
+                {
+                    "symbol": "ZETAUSD",
+                    "price": 112840.5,
+                    "changesPercentage": -2.137,
+                    "lastClose": 122029.27,
+                    "lastCloseDate": "2026-11-21"
+                }
+            ],
+            "sectors": [],
+            "sectorBreadth": null,
+            "bestWorstSpreadPp": null,
+            "sectorSignals": null,
+            "briefing": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-22T03:00:00.000Z",
+            "source": "market dashboard cache (1h)",
+            "market": "crypto",
+            "fearGreed": null,
+            "indices": [
+                {
+                    "symbol": "ZETAUSD",
+                    "price": 112840.5,
+                    "changesPercentage": -2.137,
+                    "lastClose": 122029.27,
+                    "lastCloseDate": "2026-11-21"
+                }
+            ],
+            "sectors": [],
+            "sectorBreadth": null,
+            "bestWorstSpreadPp": null,
+            "sectorSignals": null,
+            "briefing": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

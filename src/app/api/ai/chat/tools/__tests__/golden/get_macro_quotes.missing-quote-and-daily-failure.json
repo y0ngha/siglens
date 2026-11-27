@@ -1,0 +1,136 @@
+{
+    "tool": "get_macro_quotes",
+    "case": "missing-quote-and-daily-failure",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "instruments": ["gold", "dollar_index", "eur_usd", "gold"]
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "Yahoo Finance (futures and FX quotes, delayed)",
+            "quotes": [
+                {
+                    "instrument": "gold",
+                    "found": true,
+                    "name": "Gold Dec 26",
+                    "price": 2712.3,
+                    "changePct": 0.290375,
+                    "unit": "USD per troy ounce",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Gold Dec 26",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 2758.66,
+                            "pct": -1.68067
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 2562.47,
+                            "pct": 5.84705
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 2245.87,
+                            "pct": 20.7682
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 2182.81,
+                            "pct": 24.2572
+                        }
+                    },
+                    "range52w": {
+                        "high": 2809.96,
+                        "highDate": "2026-03-17",
+                        "low": 2148.83,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -3.47564,
+                        "fromLowPct": 26.2224
+                    }
+                },
+                {
+                    "instrument": "dollar_index",
+                    "found": false
+                },
+                {
+                    "instrument": "eur_usd",
+                    "found": false
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "Yahoo Finance (futures and FX quotes, delayed)",
+            "quotes": [
+                {
+                    "instrument": "gold",
+                    "found": true,
+                    "name": "Gold Dec 26",
+                    "price": 2712.3,
+                    "changePct": 0.290375,
+                    "unit": "USD per troy ounce",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Gold Dec 26",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 2758.66,
+                            "pct": -1.68067
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 2562.47,
+                            "pct": 5.84705
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 2245.87,
+                            "pct": 20.7682
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 2182.81,
+                            "pct": 24.2572
+                        }
+                    },
+                    "range52w": {
+                        "high": 2809.96,
+                        "highDate": "2026-03-17",
+                        "low": 2148.83,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -3.47564,
+                        "fromLowPct": 26.2224
+                    }
+                },
+                {
+                    "instrument": "dollar_index",
+                    "found": false
+                },
+                {
+                    "instrument": "eur_usd",
+                    "found": false
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

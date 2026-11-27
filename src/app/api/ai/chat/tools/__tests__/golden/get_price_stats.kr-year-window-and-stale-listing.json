@@ -1,0 +1,123 @@
+{
+    "tool": "get_price_stats",
+    "case": "kr-year-window-and-stale-listing",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbols": ["900110.KS", "900220.KQ"],
+        "year": 2025
+    },
+    "agent": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2025-12-31",
+            "window": {
+                "kind": "year",
+                "year": 2025
+            },
+            "subjects": [
+                {
+                    "subject": "900110.KS",
+                    "window": {
+                        "baseDate": "2024-12-31",
+                        "baseClose": 91896,
+                        "endDate": "2025-12-31",
+                        "endClose": 106891,
+                        "sessions": 261,
+                        "calendarDays": 365
+                    },
+                    "returnPct": 16.32,
+                    "cagrPct": null,
+                    "highestClose": {
+                        "date": "2025-11-06",
+                        "close": 107705
+                    },
+                    "lowestClose": {
+                        "date": "2025-01-28",
+                        "close": 76126
+                    },
+                    "fromHighestClosePct": -0.76,
+                    "maxDrawdown": {
+                        "pct": -19.02,
+                        "peakDate": "2025-06-26",
+                        "peakClose": 100377,
+                        "troughDate": "2025-08-04",
+                        "troughClose": 81285,
+                        "recoveredDate": "2025-10-20"
+                    },
+                    "summary": "900110.KS 2024-12-31 → 2025-12-31 (261 sessions): close 91896 → 106891, +16.32%; highest close 107705 (2025-11-06), -0.76% from it; max drawdown -19.02% from 2025-06-26 to 2025-08-04, recovered 2025-10-20",
+                    "currency": "KRW",
+                    "resolvedName": "Hanbit Precision"
+                },
+                {
+                    "subject": "900220.KQ",
+                    "found": false,
+                    "error": "stale_listing",
+                    "lastTradeDate": "2026-08-13"
+                }
+            ],
+            "notes": [
+                "900110.KS: a session is in progress and is excluded; the last completed close is 2026-11-18. The live price is a quote, not a close of this window."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2025-12-31",
+            "window": {
+                "kind": "year",
+                "year": 2025
+            },
+            "subjects": [
+                {
+                    "subject": "900110.KS",
+                    "window": {
+                        "baseDate": "2024-12-31",
+                        "baseClose": 91896,
+                        "endDate": "2025-12-31",
+                        "endClose": 106891,
+                        "sessions": 261,
+                        "calendarDays": 365
+                    },
+                    "returnPct": 16.32,
+                    "cagrPct": null,
+                    "highestClose": {
+                        "date": "2025-11-06",
+                        "close": 107705
+                    },
+                    "lowestClose": {
+                        "date": "2025-01-28",
+                        "close": 76126
+                    },
+                    "fromHighestClosePct": -0.76,
+                    "maxDrawdown": {
+                        "pct": -19.02,
+                        "peakDate": "2025-06-26",
+                        "peakClose": 100377,
+                        "troughDate": "2025-08-04",
+                        "troughClose": 81285,
+                        "recoveredDate": "2025-10-20"
+                    },
+                    "summary": "900110.KS 2024-12-31 → 2025-12-31 (261 sessions): close 91896 → 106891, +16.32%; highest close 107705 (2025-11-06), -0.76% from it; max drawdown -19.02% from 2025-06-26 to 2025-08-04, recovered 2025-10-20",
+                    "currency": "KRW",
+                    "resolvedName": "Hanbit Precision"
+                },
+                {
+                    "subject": "900220.KQ",
+                    "found": false,
+                    "error": "stale_listing",
+                    "lastTradeDate": "2026-08-13"
+                }
+            ],
+            "notes": [
+                "900110.KS: a session is in progress and is excluded; the last completed close is 2026-11-18. The live price is a quote, not a close of this window."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

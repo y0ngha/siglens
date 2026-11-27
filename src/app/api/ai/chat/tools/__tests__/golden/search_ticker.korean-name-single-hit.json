@@ -1,0 +1,44 @@
+{
+    "tool": "search_ticker",
+    "case": "korean-name-single-hit",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "en",
+    "args": {
+        "query": "한빛정밀"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS ticker search",
+            "results": [
+                {
+                    "symbol": "900110.KS",
+                    "name": "Hanbit Precision",
+                    "koreanName": "한빛정밀",
+                    "exchange": "KSC",
+                    "marketProfile": "kr-equity"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS ticker search",
+            "results": [
+                {
+                    "symbol": "900110.KS",
+                    "name": "Hanbit Precision",
+                    "koreanName": "한빛정밀",
+                    "exchange": "KSC",
+                    "marketProfile": "kr-equity"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

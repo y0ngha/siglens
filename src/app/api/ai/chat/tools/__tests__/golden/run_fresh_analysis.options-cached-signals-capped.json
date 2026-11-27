@@ -1,0 +1,157 @@
+{
+    "tool": "run_fresh_analysis",
+    "case": "options-cached-signals-capped",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "kind": "options"
+    },
+    "agent": {
+        "result": {
+            "found": true,
+            "source": "cached",
+            "tab": "options",
+            "generatedAt": null,
+            "stale": null,
+            "analysis": {
+                "summary": "가까운 만기의 콜 미결제약정이 250달러에 몰려 있고, 내재변동성은 실적 전 수준으로 올라와 있습니다.",
+                "signals": [
+                    {
+                        "kind": "bullish",
+                        "message": "신호 1: 행사가 235 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bearish",
+                        "message": "신호 2: 행사가 240 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "neutral",
+                        "message": "신호 3: 행사가 245 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "volatility",
+                        "message": "신호 4: 행사가 250 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bullish",
+                        "message": "신호 5: 행사가 255 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bearish",
+                        "message": "신호 6: 행사가 260 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "neutral",
+                        "message": "신호 7: 행사가 265 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "volatility",
+                        "message": "신호 8: 행사가 270 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bullish",
+                        "message": "신호 9: 행사가 275 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bearish",
+                        "message": "신호 10: 행사가 280 부근 거래량 변화"
+                    }
+                ],
+                "perExpiration": [
+                    {
+                        "expirationDate": "2026-11-20",
+                        "commentary": "250 콜 미결제약정 집중, 단기 상단 의식",
+                        "tone": "cautious"
+                    },
+                    {
+                        "expirationDate": "2026-11-27",
+                        "commentary": "풋/콜 비율 0.71로 콜 우위",
+                        "tone": "bullish"
+                    },
+                    {
+                        "expirationDate": "2026-12-18",
+                        "commentary": "내재변동성 34%로 평균 대비 높음",
+                        "tone": "neutral"
+                    }
+                ]
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "found": true,
+            "source": "cached",
+            "tab": "options",
+            "generatedAt": null,
+            "stale": null,
+            "analysis": {
+                "summary": "가까운 만기의 콜 미결제약정이 250달러에 몰려 있고, 내재변동성은 실적 전 수준으로 올라와 있습니다.",
+                "signals": [
+                    {
+                        "kind": "bullish",
+                        "message": "신호 1: 행사가 235 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bearish",
+                        "message": "신호 2: 행사가 240 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "neutral",
+                        "message": "신호 3: 행사가 245 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "volatility",
+                        "message": "신호 4: 행사가 250 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bullish",
+                        "message": "신호 5: 행사가 255 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bearish",
+                        "message": "신호 6: 행사가 260 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "neutral",
+                        "message": "신호 7: 행사가 265 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "volatility",
+                        "message": "신호 8: 행사가 270 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bullish",
+                        "message": "신호 9: 행사가 275 부근 거래량 변화"
+                    },
+                    {
+                        "kind": "bearish",
+                        "message": "신호 10: 행사가 280 부근 거래량 변화"
+                    }
+                ],
+                "perExpiration": [
+                    {
+                        "expirationDate": "2026-11-20",
+                        "commentary": "250 콜 미결제약정 집중, 단기 상단 의식",
+                        "tone": "cautious"
+                    },
+                    {
+                        "expirationDate": "2026-11-27",
+                        "commentary": "풋/콜 비율 0.71로 콜 우위",
+                        "tone": "bullish"
+                    },
+                    {
+                        "expirationDate": "2026-12-18",
+                        "commentary": "내재변동성 34%로 평균 대비 높음",
+                        "tone": "neutral"
+                    }
+                ]
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,173 @@
+{
+    "tool": "show_chart",
+    "case": "financials-us-eight-quarters",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "financials",
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "financials",
+            "summary": {
+                "symbol": "GLDNX",
+                "currency": "USD",
+                "quarters": [
+                    {
+                        "period": "2024 Q4",
+                        "revenue": 14232000000,
+                        "netIncome": 3517000000,
+                        "eps": 2.25
+                    },
+                    {
+                        "period": "2025 Q1",
+                        "revenue": 14644000000,
+                        "netIncome": 3616000000,
+                        "eps": 2.32
+                    },
+                    {
+                        "period": "2025 Q2",
+                        "revenue": 15056000000,
+                        "netIncome": 3715000000,
+                        "eps": 2.39
+                    },
+                    {
+                        "period": "2025 Q3",
+                        "revenue": 15468000000,
+                        "netIncome": 3814000000,
+                        "eps": 2.46
+                    },
+                    {
+                        "period": "2025 Q4",
+                        "revenue": 15880000000,
+                        "netIncome": 3913000000,
+                        "eps": 2.53,
+                        "epsActual": 2.6,
+                        "epsEstimated": 2.52
+                    },
+                    {
+                        "period": "2026 Q1",
+                        "revenue": 16292000000,
+                        "netIncome": 4012000000,
+                        "eps": 2.6,
+                        "epsActual": 2.6,
+                        "epsEstimated": 2.52
+                    },
+                    {
+                        "period": "2026 Q2",
+                        "revenue": 16704000000,
+                        "netIncome": 4111000000,
+                        "eps": 2.67,
+                        "epsActual": 2.67,
+                        "epsEstimated": 2.7
+                    },
+                    {
+                        "period": "2026 Q3",
+                        "revenue": 17116000000,
+                        "netIncome": 4210000000,
+                        "eps": 2.74,
+                        "epsActual": 2.74,
+                        "epsEstimated": 2.61
+                    }
+                ]
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "financials",
+                        "symbol": "GLDNX"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "financials",
+                    "asOf": "2026-11-18T22:30:00.000Z",
+                    "symbol": "GLDNX",
+                    "currency": "USD",
+                    "quarters": [
+                        {
+                            "period": "2024 Q4",
+                            "revenue": 14232000000,
+                            "netIncome": 3517000000,
+                            "eps": 2.25,
+                            "epsActual": null,
+                            "epsEstimated": null
+                        },
+                        {
+                            "period": "2025 Q1",
+                            "revenue": 14644000000,
+                            "netIncome": 3616000000,
+                            "eps": 2.32,
+                            "epsActual": null,
+                            "epsEstimated": null
+                        },
+                        {
+                            "period": "2025 Q2",
+                            "revenue": 15056000000,
+                            "netIncome": 3715000000,
+                            "eps": 2.39,
+                            "epsActual": null,
+                            "epsEstimated": null
+                        },
+                        {
+                            "period": "2025 Q3",
+                            "revenue": 15468000000,
+                            "netIncome": 3814000000,
+                            "eps": 2.46,
+                            "epsActual": null,
+                            "epsEstimated": null
+                        },
+                        {
+                            "period": "2025 Q4",
+                            "revenue": 15880000000,
+                            "netIncome": 3913000000,
+                            "eps": 2.53,
+                            "epsActual": 2.6,
+                            "epsEstimated": 2.52
+                        },
+                        {
+                            "period": "2026 Q1",
+                            "revenue": 16292000000,
+                            "netIncome": 4012000000,
+                            "eps": 2.6,
+                            "epsActual": 2.6,
+                            "epsEstimated": 2.52
+                        },
+                        {
+                            "period": "2026 Q2",
+                            "revenue": 16704000000,
+                            "netIncome": 4111000000,
+                            "eps": 2.67,
+                            "epsActual": 2.67,
+                            "epsEstimated": 2.7
+                        },
+                        {
+                            "period": "2026 Q3",
+                            "revenue": 17116000000,
+                            "netIncome": 4210000000,
+                            "eps": 2.74,
+                            "epsActual": 2.74,
+                            "epsEstimated": 2.61
+                        }
+                    ],
+                    "name": "골든로드 시스템즈"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

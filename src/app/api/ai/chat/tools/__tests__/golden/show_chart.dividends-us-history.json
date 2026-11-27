@@ -1,0 +1,74 @@
+{
+    "tool": "show_chart",
+    "case": "dividends-us-history",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "dividends",
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "dividends",
+            "summary": {
+                "symbol": "GLDNX",
+                "currency": "USD",
+                "note": "dividend per share summed by ex-dividend year; the current year is partial",
+                "years": [
+                    {
+                        "year": 2025,
+                        "amount": 0.96,
+                        "partial": false
+                    },
+                    {
+                        "year": 2026,
+                        "amount": 1.04,
+                        "partial": true
+                    }
+                ]
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "dividends",
+                        "symbol": "GLDNX"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "dividends",
+                    "asOf": "2026-11-21T16:00:00.000Z",
+                    "symbol": "GLDNX",
+                    "currency": "USD",
+                    "years": [
+                        {
+                            "year": 2025,
+                            "amount": 0.96,
+                            "partial": false
+                        },
+                        {
+                            "year": 2026,
+                            "amount": 1.04,
+                            "partial": true
+                        }
+                    ],
+                    "name": "골든로드 시스템즈"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

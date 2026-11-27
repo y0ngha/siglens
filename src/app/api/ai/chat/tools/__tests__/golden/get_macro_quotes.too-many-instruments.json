@@ -1,0 +1,36 @@
+{
+    "tool": "get_macro_quotes",
+    "case": "too-many-instruments",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "instruments": [
+            "wti",
+            "brent",
+            "gold",
+            "silver",
+            "copper",
+            "natural_gas",
+            "sp500_futures",
+            "usd_krw",
+            "usd_jpy"
+        ]
+    },
+    "agent": {
+        "result": {
+            "error": "too_many_instruments",
+            "max": 8
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "too_many_instruments",
+            "max": 8
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

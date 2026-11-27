@@ -1,0 +1,30 @@
+{
+    "tool": "search_ticker",
+    "case": "no-match-retry-hint",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "query": "골든로드"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS ticker search",
+            "hint": "No match. Before asking the user, call search_ticker again with the company’s original English name or ticker if you can infer it (e.g. 실SQ → SEALSQ, 엔비디아 → NVIDIA).",
+            "results": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS ticker search",
+            "hint": "No match. Before asking the user, call search_ticker again with the company’s original English name or ticker if you can infer it (e.g. 실SQ → SEALSQ, 엔비디아 → NVIDIA).",
+            "results": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

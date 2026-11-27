@@ -1,0 +1,48 @@
+{
+    "tool": "get_investor_flows",
+    "case": "kr-preferred-collecting-no-data",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "900115.KS"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports",
+            "symbol": "900115.KS",
+            "market": "kr",
+            "available": true,
+            "notProvided": "SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual) right now. If web_search is available, you may use it for this - cite the publisher and date; otherwise say it could not be confirmed. Never estimate.",
+            "krInvestorTrend": null,
+            "shareClassNote": "This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.",
+            "dataStatus": {
+                "dart": "collecting",
+                "note": "The initial DART collection is still running. No reports here means not collected yet, not that there were no filings - say the data is still being collected."
+            },
+            "noData": true,
+            "ownershipShares": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports",
+            "symbol": "900115.KS",
+            "market": "kr",
+            "available": true,
+            "notProvided": "SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual) right now. If web_search is available, you may use it for this - cite the publisher and date; otherwise say it could not be confirmed. Never estimate.",
+            "shareClassNote": "This is a preferred share. DART ownership filings are company-level, so these are the same reports as the common share.",
+            "dataStatus": {
+                "dart": "collecting",
+                "note": "The initial DART collection is still running. No reports here means not collected yet, not that there were no filings - say the data is still being collected."
+            },
+            "noData": true
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

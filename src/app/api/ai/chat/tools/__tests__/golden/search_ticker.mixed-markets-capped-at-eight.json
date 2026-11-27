@@ -1,0 +1,142 @@
+{
+    "tool": "search_ticker",
+    "case": "mixed-markets-capped-at-eight",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "query": "golden"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS ticker search",
+            "results": [
+                {
+                    "symbol": "GLDNX",
+                    "name": "Goldenrod Systems Inc.",
+                    "koreanName": "골든로드 시스템즈",
+                    "exchange": "NASDAQ",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDN.W",
+                    "name": "Goldenrod Systems Warrants",
+                    "koreanName": null,
+                    "exchange": "NASDAQ",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "900110.KS",
+                    "name": "Hanbit Precision",
+                    "koreanName": "한빛정밀",
+                    "exchange": "KSC",
+                    "marketProfile": "kr-equity"
+                },
+                {
+                    "symbol": "ZETAUSD",
+                    "name": "Zeta Coin USD",
+                    "koreanName": "제타코인",
+                    "exchange": "CRYPTO",
+                    "marketProfile": "crypto"
+                },
+                {
+                    "symbol": "GLDAQ",
+                    "name": "Golden Peer 1 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDBQ",
+                    "name": "Golden Peer 2 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDCQ",
+                    "name": "Golden Peer 3 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDDQ",
+                    "name": "Golden Peer 4 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS ticker search",
+            "results": [
+                {
+                    "symbol": "GLDNX",
+                    "name": "Goldenrod Systems Inc.",
+                    "koreanName": "골든로드 시스템즈",
+                    "exchange": "NASDAQ",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDN.W",
+                    "name": "Goldenrod Systems Warrants",
+                    "koreanName": null,
+                    "exchange": "NASDAQ",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "900110.KS",
+                    "name": "Hanbit Precision",
+                    "koreanName": "한빛정밀",
+                    "exchange": "KSC",
+                    "marketProfile": "kr-equity"
+                },
+                {
+                    "symbol": "ZETAUSD",
+                    "name": "Zeta Coin USD",
+                    "koreanName": "제타코인",
+                    "exchange": "CRYPTO",
+                    "marketProfile": "crypto"
+                },
+                {
+                    "symbol": "GLDAQ",
+                    "name": "Golden Peer 1 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDBQ",
+                    "name": "Golden Peer 2 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDCQ",
+                    "name": "Golden Peer 3 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                },
+                {
+                    "symbol": "GLDDQ",
+                    "name": "Golden Peer 4 Corp",
+                    "koreanName": null,
+                    "exchange": "NYSE",
+                    "marketProfile": null
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

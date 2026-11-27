@@ -1,0 +1,29 @@
+{
+    "tool": "get_bars_indicators",
+    "case": "unknown-symbol-not-found",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "NOPEQ",
+        "timeframe": "1Day"
+    },
+    "agent": {
+        "result": {
+            "symbol": "NOPEQ",
+            "timeframe": "1Day",
+            "found": false
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "NOPEQ",
+            "timeframe": "1Day",
+            "found": false
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

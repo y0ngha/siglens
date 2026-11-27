@@ -1,0 +1,119 @@
+{
+    "tool": "get_news",
+    "case": "category-with-digest",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "category": "stock",
+        "limit": 3
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS news",
+            "count": 3,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 2,
+                "bearish": 1,
+                "neutral": 0,
+                "highImpact": 1
+            },
+            "digest": {
+                "driver": "금리 인하 기대가 기술주 매수를 이끌고 있습니다.",
+                "keyEvents": ["반도체 실적 호조", "국채 금리 하락"],
+                "upcomingEvents": ["다음 주 FOMC 의사록"],
+                "overallSentiment": "bullish"
+            },
+            "items": [
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 11.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-21T13:00:00.000Z",
+                    "ageHours": 3,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-0"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 11.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-20T15:43:00.000Z",
+                    "ageHours": 24,
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 11.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-19T18:26:00.000Z",
+                    "ageHours": 46,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-2"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "SIGLENS news",
+            "count": 3,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 2,
+                "bearish": 1,
+                "neutral": 0,
+                "highImpact": 1
+            },
+            "digest": {
+                "driver": "금리 인하 기대가 기술주 매수를 이끌고 있습니다.",
+                "keyEvents": ["반도체 실적 호조", "국채 금리 하락"],
+                "upcomingEvents": ["다음 주 FOMC 의사록"],
+                "overallSentiment": "bullish"
+            },
+            "items": [
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 11.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-21T13:00:00.000Z",
+                    "ageHours": 3,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-0"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 11.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-20T15:43:00.000Z",
+                    "ageHours": 24,
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 11.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-19T18:26:00.000Z",
+                    "ageHours": 46,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-2"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

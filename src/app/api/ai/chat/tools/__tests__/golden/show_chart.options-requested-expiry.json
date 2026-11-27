@@ -1,0 +1,184 @@
+{
+    "tool": "show_chart",
+    "case": "options-requested-expiry",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "options",
+        "symbol": "GLDNX",
+        "expiry": "2026-11-27"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "options",
+            "summary": {
+                "symbol": "GLDNX",
+                "expiry": "2026-11-27",
+                "daysToExpiration": 9,
+                "underlyingPrice": 244.85,
+                "maxPain": 245,
+                "putCallRatio": 0.98,
+                "strikesShown": 19,
+                "topCallOpenInterest": [
+                    {
+                        "strike": 255,
+                        "openInterest": 14015
+                    },
+                    {
+                        "strike": 245,
+                        "openInterest": 10317
+                    },
+                    {
+                        "strike": 250,
+                        "openInterest": 9360
+                    }
+                ],
+                "topPutOpenInterest": [
+                    {
+                        "strike": 245,
+                        "openInterest": 11487
+                    },
+                    {
+                        "strike": 250,
+                        "openInterest": 11282
+                    },
+                    {
+                        "strike": 265,
+                        "openInterest": 10227
+                    }
+                ]
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "options",
+                        "symbol": "GLDNX",
+                        "expiry": "2026-11-27"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "options",
+                    "asOf": "2026-11-18T15:25:00.000Z",
+                    "symbol": "GLDNX",
+                    "expiry": "2026-11-27",
+                    "underlyingPrice": 244.85,
+                    "maxPain": 245,
+                    "putCallRatio": 0.98,
+                    "strikes": [
+                        {
+                            "strike": 200,
+                            "callOI": 3202,
+                            "putOI": 3724
+                        },
+                        {
+                            "strike": 205,
+                            "callOI": 5014,
+                            "putOI": 3982
+                        },
+                        {
+                            "strike": 210,
+                            "callOI": 2559,
+                            "putOI": 6873
+                        },
+                        {
+                            "strike": 215,
+                            "callOI": 7735,
+                            "putOI": 3495
+                        },
+                        {
+                            "strike": 220,
+                            "callOI": 9006,
+                            "putOI": 7905
+                        },
+                        {
+                            "strike": 225,
+                            "callOI": 7716,
+                            "putOI": 5864
+                        },
+                        {
+                            "strike": 230,
+                            "callOI": 4814,
+                            "putOI": 8175
+                        },
+                        {
+                            "strike": 235,
+                            "callOI": 6421,
+                            "putOI": 9321
+                        },
+                        {
+                            "strike": 240,
+                            "callOI": 7625,
+                            "putOI": 9759
+                        },
+                        {
+                            "strike": 245,
+                            "callOI": 10317,
+                            "putOI": 11487
+                        },
+                        {
+                            "strike": 250,
+                            "callOI": 9360,
+                            "putOI": 11282
+                        },
+                        {
+                            "strike": 255,
+                            "callOI": 14015,
+                            "putOI": 7716
+                        },
+                        {
+                            "strike": 260,
+                            "callOI": 5140,
+                            "putOI": 7262
+                        },
+                        {
+                            "strike": 265,
+                            "callOI": 6975,
+                            "putOI": 10227
+                        },
+                        {
+                            "strike": 270,
+                            "callOI": 6952,
+                            "putOI": 3112
+                        },
+                        {
+                            "strike": 275,
+                            "callOI": 6790,
+                            "putOI": 7296
+                        },
+                        {
+                            "strike": 280,
+                            "callOI": 5391,
+                            "putOI": 2892
+                        },
+                        {
+                            "strike": 285,
+                            "callOI": 4155,
+                            "putOI": 4262
+                        },
+                        {
+                            "strike": 290,
+                            "callOI": 3873,
+                            "putOI": 1834
+                        }
+                    ],
+                    "name": "골든로드 시스템즈"
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

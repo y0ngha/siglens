@@ -1,0 +1,110 @@
+{
+    "tool": "get_price_stats",
+    "case": "us-one-year-default-window",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbols": ["GLDNX"]
+    },
+    "agent": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2026-11-17",
+            "window": {
+                "kind": "period",
+                "period": "1y"
+            },
+            "subjects": [
+                {
+                    "subject": "GLDNX",
+                    "window": {
+                        "baseDate": "2025-11-17",
+                        "baseClose": 215.96,
+                        "endDate": "2026-11-17",
+                        "endClose": 246.77,
+                        "sessions": 251,
+                        "calendarDays": 365
+                    },
+                    "returnPct": 14.27,
+                    "cagrPct": null,
+                    "highestClose": {
+                        "date": "2026-09-22",
+                        "close": 268.55
+                    },
+                    "lowestClose": {
+                        "date": "2025-12-26",
+                        "close": 181.12
+                    },
+                    "fromHighestClosePct": -8.11,
+                    "maxDrawdown": {
+                        "pct": -23.14,
+                        "peakDate": "2026-03-24",
+                        "peakClose": 250.68,
+                        "troughDate": "2026-06-25",
+                        "troughClose": 192.68,
+                        "recoveredDate": "2026-09-08"
+                    },
+                    "summary": "GLDNX 2025-11-17 → 2026-11-17 (251 sessions): close 215.96 → 246.77, +14.27%; highest close 268.55 (2026-09-22), -8.11% from it; max drawdown -23.14% from 2026-03-24 to 2026-06-25, recovered 2026-09-08",
+                    "currency": "USD",
+                    "resolvedName": "Goldenrod Systems Inc."
+                }
+            ],
+            "notes": [
+                "GLDNX: a session is in progress and is excluded; the last completed close is 2026-11-17. The live price is a quote, not a close of this window."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2026-11-17",
+            "window": {
+                "kind": "period",
+                "period": "1y"
+            },
+            "subjects": [
+                {
+                    "subject": "GLDNX",
+                    "window": {
+                        "baseDate": "2025-11-17",
+                        "baseClose": 215.96,
+                        "endDate": "2026-11-17",
+                        "endClose": 246.77,
+                        "sessions": 251,
+                        "calendarDays": 365
+                    },
+                    "returnPct": 14.27,
+                    "cagrPct": null,
+                    "highestClose": {
+                        "date": "2026-09-22",
+                        "close": 268.55
+                    },
+                    "lowestClose": {
+                        "date": "2025-12-26",
+                        "close": 181.12
+                    },
+                    "fromHighestClosePct": -8.11,
+                    "maxDrawdown": {
+                        "pct": -23.14,
+                        "peakDate": "2026-03-24",
+                        "peakClose": 250.68,
+                        "troughDate": "2026-06-25",
+                        "troughClose": 192.68,
+                        "recoveredDate": "2026-09-08"
+                    },
+                    "summary": "GLDNX 2025-11-17 → 2026-11-17 (251 sessions): close 215.96 → 246.77, +14.27%; highest close 268.55 (2026-09-22), -8.11% from it; max drawdown -23.14% from 2026-03-24 to 2026-06-25, recovered 2026-09-08",
+                    "currency": "USD",
+                    "resolvedName": "Goldenrod Systems Inc."
+                }
+            ],
+            "notes": [
+                "GLDNX: a session is in progress and is excluded; the last completed close is 2026-11-17. The live price is a quote, not a close of this window."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

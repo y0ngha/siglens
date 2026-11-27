@@ -1,0 +1,582 @@
+{
+    "tool": "get_news",
+    "case": "symbol-twenty-items-with-bodies-truncation",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "limit": 20,
+        "includeBody": true
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS news",
+            "count": 17,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 9,
+                "bearish": 6,
+                "neutral": 2,
+                "highImpact": 4
+            },
+            "digest": null,
+            "priceMoves": {
+                "basis": "daily close-to-close change of completed sessions; a headline belongs to the first session whose close came after it was published",
+                "window": {
+                    "from": "2026-10-19",
+                    "to": "2026-11-17",
+                    "sessions": 22
+                },
+                "medianAbsDailyChangePct": 0.71,
+                "moveDays": [
+                    {
+                        "date": "2026-11-09",
+                        "changePct": 2.13,
+                        "headlines": [
+                            {
+                                "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                                "publishedAt": "2026-11-09T17:56:00.000Z",
+                                "sentiment": "bearish"
+                            },
+                            {
+                                "title": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시",
+                                "publishedAt": "2026-11-08T20:39:00.000Z",
+                                "sentiment": "neutral"
+                            },
+                            {
+                                "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                                "publishedAt": "2026-11-08T00:30:00.000Z",
+                                "sentiment": "bullish"
+                            }
+                        ],
+                        "moreHeadlines": 1
+                    },
+                    {
+                        "date": "2026-11-16",
+                        "changePct": 2.04,
+                        "headlines": [
+                            {
+                                "title": "공급사 납기 경고에 골든로드 주가 하락",
+                                "publishedAt": "2026-11-16T17:56:00.000Z",
+                                "sentiment": "bearish"
+                            },
+                            {
+                                "title": "골든로드, 20억 달러 자사주 매입 발표",
+                                "publishedAt": "2026-11-15T20:39:00.000Z",
+                                "sentiment": "bullish"
+                            },
+                            {
+                                "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                                "publishedAt": "2026-11-15T00:30:00.000Z",
+                                "sentiment": "bearish"
+                            }
+                        ],
+                        "moreHeadlines": 1
+                    },
+                    {
+                        "date": "2026-11-02",
+                        "changePct": 1.78,
+                        "headlines": [
+                            {
+                                "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                                "publishedAt": "2026-11-02T17:56:00.000Z",
+                                "sentiment": "bullish"
+                            },
+                            {
+                                "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                                "publishedAt": "2026-11-01T20:39:00.000Z",
+                                "sentiment": "bullish"
+                            },
+                            {
+                                "title": "공급사 납기 경고에 골든로드 주가 하락",
+                                "publishedAt": "2026-11-01T00:30:00.000Z",
+                                "sentiment": "bearish"
+                            }
+                        ],
+                        "moreHeadlines": 1
+                    }
+                ],
+                "afterLastClose": 1
+            },
+            "items": [
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 11.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 ",
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-18T12:30:00.000Z",
+                    "ageHours": 3,
+                    "session": null,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-0"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 11.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-17T15:13:00.000Z",
+                    "ageHours": 24,
+                    "session": "2026-11-17",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 11.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-16T17:56:00.000Z",
+                    "ageHours": 46,
+                    "session": "2026-11-16",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-2"
+                },
+                {
+                    "title": "골든로드, 20억 달러 자사주 매입 발표",
+                    "summary": "골든로드, 20억 달러 자사주 매입 발표. 회사는 이번 분기 매출이 전년 대비 12.2% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-15T20:39:00.000Z",
+                    "ageHours": 67,
+                    "session": "2026-11-16",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-3"
+                },
+                {
+                    "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                    "summary": "규제 당국, 골든로드 수출 허가 검토 착수. 회사는 이번 분기 매출이 전년 대비 12.6% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 ",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-15T00:30:00.000Z",
+                    "ageHours": 87,
+                    "session": "2026-11-16",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-4"
+                },
+                {
+                    "title": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시",
+                    "summary": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시. 회사는 이번 분기 매출이 전년 대비 13.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "neutral",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-14T03:13:00.000Z",
+                    "ageHours": 108,
+                    "session": "2026-11-16",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-5"
+                },
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 13.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 ",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-13T05:56:00.000Z",
+                    "ageHours": 130,
+                    "session": "2026-11-13",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-6"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 13.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-12T08:39:00.000Z",
+                    "ageHours": 151,
+                    "session": "2026-11-12",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-7"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 14.2% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-11T12:30:00.000Z",
+                    "ageHours": 171,
+                    "session": "2026-11-11",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-8"
+                },
+                {
+                    "title": "골든로드, 20억 달러 자사주 매입 발표",
+                    "summary": "골든로드, 20억 달러 자사주 매입 발표. 회사는 이번 분기 매출이 전년 대비 14.6% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-10T15:13:00.000Z",
+                    "ageHours": 192,
+                    "session": "2026-11-10",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-9"
+                },
+                {
+                    "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                    "summary": "규제 당국, 골든로드 수출 허가 검토 착수. 회사는 이번 분기 매출이 전년 대비 15.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 ",
+                    "sentiment": "bearish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-09T17:56:00.000Z",
+                    "ageHours": 214,
+                    "session": "2026-11-09",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-10"
+                },
+                {
+                    "title": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시",
+                    "summary": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시. 회사는 이번 분기 매출이 전년 대비 15.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "neutral",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-08T20:39:00.000Z",
+                    "ageHours": 235,
+                    "session": "2026-11-09",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-11"
+                },
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 15.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 ",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-08T00:30:00.000Z",
+                    "ageHours": 255,
+                    "session": "2026-11-09",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-12"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 16.2% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-07T03:13:00.000Z",
+                    "ageHours": 276,
+                    "session": "2026-11-09",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-13"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 16.6% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-06T05:56:00.000Z",
+                    "ageHours": 298,
+                    "session": "2026-11-06",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-14"
+                },
+                {
+                    "title": "골든로드, 20억 달러 자사주 매입 발표",
+                    "summary": "골든로드, 20억 달러 자사주 매입 발표. 회사는 이번 분기 매출이 전년 대비 17.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변",
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-05T08:39:00.000Z",
+                    "ageHours": 319,
+                    "session": "2026-11-05",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-15"
+                },
+                {
+                    "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                    "summary": "규제 당국, 골든로드 수출 허가 검토 착수. 회사는 이번 분기 매출이 전년 대비 17.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 ",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-04T12:30:00.000Z",
+                    "ageHours": 339,
+                    "session": "2026-11-04",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-16"
+                }
+            ],
+            "itemsTrimmed": 3
+        },
+        "charts": [],
+        "refreshedSymbols": ["GLDNX"]
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS news",
+            "count": 17,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 9,
+                "bearish": 6,
+                "neutral": 2,
+                "highImpact": 4
+            },
+            "digest": null,
+            "priceMoves": {
+                "basis": "daily close-to-close change of completed sessions; a headline belongs to the first session whose close came after it was published",
+                "window": {
+                    "from": "2026-10-19",
+                    "to": "2026-11-17",
+                    "sessions": 22
+                },
+                "medianAbsDailyChangePct": 0.71,
+                "moveDays": [
+                    {
+                        "date": "2026-11-09",
+                        "changePct": 2.13,
+                        "headlines": [
+                            {
+                                "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                                "publishedAt": "2026-11-09T17:56:00.000Z",
+                                "sentiment": "bearish"
+                            },
+                            {
+                                "title": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시",
+                                "publishedAt": "2026-11-08T20:39:00.000Z",
+                                "sentiment": "neutral"
+                            },
+                            {
+                                "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                                "publishedAt": "2026-11-08T00:30:00.000Z",
+                                "sentiment": "bullish"
+                            }
+                        ],
+                        "moreHeadlines": 1
+                    },
+                    {
+                        "date": "2026-11-16",
+                        "changePct": 2.04,
+                        "headlines": [
+                            {
+                                "title": "공급사 납기 경고에 골든로드 주가 하락",
+                                "publishedAt": "2026-11-16T17:56:00.000Z",
+                                "sentiment": "bearish"
+                            },
+                            {
+                                "title": "골든로드, 20억 달러 자사주 매입 발표",
+                                "publishedAt": "2026-11-15T20:39:00.000Z",
+                                "sentiment": "bullish"
+                            },
+                            {
+                                "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                                "publishedAt": "2026-11-15T00:30:00.000Z",
+                                "sentiment": "bearish"
+                            }
+                        ],
+                        "moreHeadlines": 1
+                    },
+                    {
+                        "date": "2026-11-02",
+                        "changePct": 1.78,
+                        "headlines": [
+                            {
+                                "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                                "publishedAt": "2026-11-02T17:56:00.000Z",
+                                "sentiment": "bullish"
+                            },
+                            {
+                                "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                                "publishedAt": "2026-11-01T20:39:00.000Z",
+                                "sentiment": "bullish"
+                            },
+                            {
+                                "title": "공급사 납기 경고에 골든로드 주가 하락",
+                                "publishedAt": "2026-11-01T00:30:00.000Z",
+                                "sentiment": "bearish"
+                            }
+                        ],
+                        "moreHeadlines": 1
+                    }
+                ],
+                "afterLastClose": 1
+            },
+            "items": [
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 11.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 ",
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-18T12:30:00.000Z",
+                    "ageHours": 3,
+                    "session": null,
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-0"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 11.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-17T15:13:00.000Z",
+                    "ageHours": 24,
+                    "session": "2026-11-17",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 11.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-16T17:56:00.000Z",
+                    "ageHours": 46,
+                    "session": "2026-11-16",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-2"
+                },
+                {
+                    "title": "골든로드, 20억 달러 자사주 매입 발표",
+                    "summary": "골든로드, 20억 달러 자사주 매입 발표. 회사는 이번 분기 매출이 전년 대비 12.2% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-15T20:39:00.000Z",
+                    "ageHours": 67,
+                    "session": "2026-11-16",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-3"
+                },
+                {
+                    "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                    "summary": "규제 당국, 골든로드 수출 허가 검토 착수. 회사는 이번 분기 매출이 전년 대비 12.6% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 ",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-15T00:30:00.000Z",
+                    "ageHours": 87,
+                    "session": "2026-11-16",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-4"
+                },
+                {
+                    "title": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시",
+                    "summary": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시. 회사는 이번 분기 매출이 전년 대비 13.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "neutral",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-14T03:13:00.000Z",
+                    "ageHours": 108,
+                    "session": "2026-11-16",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-5"
+                },
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 13.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 ",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-13T05:56:00.000Z",
+                    "ageHours": 130,
+                    "session": "2026-11-13",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-6"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 13.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-12T08:39:00.000Z",
+                    "ageHours": 151,
+                    "session": "2026-11-12",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-7"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 14.2% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-11T12:30:00.000Z",
+                    "ageHours": 171,
+                    "session": "2026-11-11",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-8"
+                },
+                {
+                    "title": "골든로드, 20억 달러 자사주 매입 발표",
+                    "summary": "골든로드, 20억 달러 자사주 매입 발표. 회사는 이번 분기 매출이 전년 대비 14.6% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-10T15:13:00.000Z",
+                    "ageHours": 192,
+                    "session": "2026-11-10",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-9"
+                },
+                {
+                    "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                    "summary": "규제 당국, 골든로드 수출 허가 검토 착수. 회사는 이번 분기 매출이 전년 대비 15.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 ",
+                    "sentiment": "bearish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-09T17:56:00.000Z",
+                    "ageHours": 214,
+                    "session": "2026-11-09",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-10"
+                },
+                {
+                    "title": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시",
+                    "summary": "골든로드 CEO, 투자자의 날에 AI 로드맵 제시. 회사는 이번 분기 매출이 전년 대비 15.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "neutral",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-08T20:39:00.000Z",
+                    "ageHours": 235,
+                    "session": "2026-11-09",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-11"
+                },
+                {
+                    "title": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회",
+                    "summary": "골든로드, 컨트롤러 수요 증가로 분기 실적 예상치 상회. 회사는 이번 분기 매출이 전년 대비 15.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 ",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-08T00:30:00.000Z",
+                    "ageHours": 255,
+                    "session": "2026-11-09",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-12"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 16.2% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-07T03:13:00.000Z",
+                    "ageHours": 276,
+                    "session": "2026-11-09",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-13"
+                },
+                {
+                    "title": "공급사 납기 경고에 골든로드 주가 하락",
+                    "summary": "공급사 납기 경고에 골든로드 주가 하락. 회사는 이번 분기 매출이 전년 대비 16.6% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-06T05:56:00.000Z",
+                    "ageHours": 298,
+                    "session": "2026-11-06",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-14"
+                },
+                {
+                    "title": "골든로드, 20억 달러 자사주 매입 발표",
+                    "summary": "골든로드, 20억 달러 자사주 매입 발표. 회사는 이번 분기 매출이 전년 대비 17.0% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변",
+                    "sentiment": "bullish",
+                    "priceImpact": "high",
+                    "publishedAt": "2026-11-05T08:39:00.000Z",
+                    "ageHours": 319,
+                    "session": "2026-11-05",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-15"
+                },
+                {
+                    "title": "규제 당국, 골든로드 수출 허가 검토 착수",
+                    "summary": "규제 당국, 골든로드 수출 허가 검토 착수. 회사는 이번 분기 매출이 전년 대비 17.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 ",
+                    "sentiment": "bearish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-04T12:30:00.000Z",
+                    "ageHours": 339,
+                    "session": "2026-11-04",
+                    "source": "Example Wire",
+                    "url": "https://news.example.com/markets/goldenrod-16"
+                }
+            ],
+            "itemsTrimmed": 3
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

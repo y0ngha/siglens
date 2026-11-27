@@ -1,0 +1,657 @@
+{
+    "tool": "get_economy",
+    "case": "range-calendar-only",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "from": "2026-11-23",
+        "to": "2026-12-11"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "country": "us",
+            "source": "economic calendar: 3h cache",
+            "available": true,
+            "calendar": {
+                "coverage": {
+                    "from": "2026-11-23",
+                    "to": "2026-12-11"
+                },
+                "events": [
+                    {
+                        "date": "2026-11-26T06:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": 3.1,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 110
+                    },
+                    {
+                        "date": "2026-11-27T01:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": 3.1,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 129
+                    },
+                    {
+                        "date": "2026-11-27T20:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": 3.1,
+                        "estimate": 2.9,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 148
+                    },
+                    {
+                        "date": "2026-11-28T15:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 167
+                    },
+                    {
+                        "date": "2026-11-29T10:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 186
+                    },
+                    {
+                        "date": "2026-11-30T05:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 205
+                    },
+                    {
+                        "date": "2026-12-01T00:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 224
+                    },
+                    {
+                        "date": "2026-12-01T19:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 243
+                    },
+                    {
+                        "date": "2026-12-02T14:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 262
+                    },
+                    {
+                        "date": "2026-12-03T09:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 281
+                    },
+                    {
+                        "date": "2026-12-04T04:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "K",
+                        "hoursUntil": 300
+                    },
+                    {
+                        "date": "2026-12-04T23:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 319
+                    },
+                    {
+                        "date": "2026-12-05T18:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 338
+                    },
+                    {
+                        "date": "2026-12-06T13:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 357
+                    },
+                    {
+                        "date": "2026-12-07T08:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 376
+                    },
+                    {
+                        "date": "2026-12-08T03:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 395
+                    },
+                    {
+                        "date": "2026-12-08T22:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 414
+                    },
+                    {
+                        "date": "2026-12-09T17:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 433
+                    },
+                    {
+                        "date": "2026-12-10T12:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 452
+                    },
+                    {
+                        "date": "2026-12-11T07:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 471
+                    },
+                    {
+                        "date": "2026-12-12T02:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 490
+                    },
+                    {
+                        "date": "2026-12-12T21:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 509
+                    },
+                    {
+                        "date": "2026-12-13T16:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 528
+                    },
+                    {
+                        "date": "2026-12-14T11:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 547
+                    },
+                    {
+                        "date": "2026-12-15T06:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 566
+                    },
+                    {
+                        "date": "2026-12-16T01:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 585
+                    },
+                    {
+                        "date": "2026-12-16T20:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 604
+                    },
+                    {
+                        "date": "2026-12-17T15:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 623
+                    },
+                    {
+                        "date": "2026-12-18T10:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 642
+                    },
+                    {
+                        "date": "2026-12-19T05:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 661
+                    }
+                ],
+                "omitted": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                }
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "country": "us",
+            "source": "economic calendar: 3h cache",
+            "available": true,
+            "calendar": {
+                "coverage": {
+                    "from": "2026-11-23",
+                    "to": "2026-12-11"
+                },
+                "events": [
+                    {
+                        "date": "2026-11-26T06:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": 3.1,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 110
+                    },
+                    {
+                        "date": "2026-11-27T01:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": 3.1,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 129
+                    },
+                    {
+                        "date": "2026-11-27T20:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": 3.1,
+                        "estimate": 2.9,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 148
+                    },
+                    {
+                        "date": "2026-11-28T15:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 167
+                    },
+                    {
+                        "date": "2026-11-29T10:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 186
+                    },
+                    {
+                        "date": "2026-11-30T05:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 205
+                    },
+                    {
+                        "date": "2026-12-01T00:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 224
+                    },
+                    {
+                        "date": "2026-12-01T19:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 243
+                    },
+                    {
+                        "date": "2026-12-02T14:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 262
+                    },
+                    {
+                        "date": "2026-12-03T09:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 281
+                    },
+                    {
+                        "date": "2026-12-04T04:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "K",
+                        "hoursUntil": 300
+                    },
+                    {
+                        "date": "2026-12-04T23:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 319
+                    },
+                    {
+                        "date": "2026-12-05T18:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 338
+                    },
+                    {
+                        "date": "2026-12-06T13:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 357
+                    },
+                    {
+                        "date": "2026-12-07T08:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 376
+                    },
+                    {
+                        "date": "2026-12-08T03:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 395
+                    },
+                    {
+                        "date": "2026-12-08T22:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 414
+                    },
+                    {
+                        "date": "2026-12-09T17:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 433
+                    },
+                    {
+                        "date": "2026-12-10T12:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "%",
+                        "hoursUntil": 452
+                    },
+                    {
+                        "date": "2026-12-11T07:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 471
+                    },
+                    {
+                        "date": "2026-12-12T02:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 490
+                    },
+                    {
+                        "date": "2026-12-12T21:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 509
+                    },
+                    {
+                        "date": "2026-12-13T16:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 528
+                    },
+                    {
+                        "date": "2026-12-14T11:00:00Z",
+                        "event": "Fed Interest Rate Decision",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 547
+                    },
+                    {
+                        "date": "2026-12-15T06:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 566
+                    },
+                    {
+                        "date": "2026-12-16T01:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.8,
+                        "unit": "K",
+                        "hoursUntil": 585
+                    },
+                    {
+                        "date": "2026-12-16T20:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 2.9,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 604
+                    },
+                    {
+                        "date": "2026-12-17T15:00:00Z",
+                        "event": "Nonfarm Payrolls",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 623
+                    },
+                    {
+                        "date": "2026-12-18T10:00:00Z",
+                        "event": "CPI YoY",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 642
+                    },
+                    {
+                        "date": "2026-12-19T05:00:00Z",
+                        "event": "Initial Jobless Claims",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 661
+                    }
+                ],
+                "omitted": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                }
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,64 @@
+{
+    "tool": "get_quote",
+    "case": "weekend-last-close-quote",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbols": ["GLDNX"]
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "market data provider (60s in-session cache)",
+            "quotes": [
+                {
+                    "symbol": "GLDNX",
+                    "resolvedName": "Goldenrod Systems Inc.",
+                    "found": true,
+                    "price": 241.96,
+                    "changesPercentage": -1.10357,
+                    "currency": "USD",
+                    "marketProfile": "us-equity",
+                    "quoteDelayMinutes": 0,
+                    "asOf": "2026-11-20T21:00:00.000Z",
+                    "freshness": {
+                        "asOf": "2026-11-20T21:00:00.000Z",
+                        "ageMinutes": 1140,
+                        "stale": false,
+                        "maxAgeMinutes": 20160
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-21T16:00:00.000Z",
+            "source": "market data provider (60s in-session cache)",
+            "quotes": [
+                {
+                    "symbol": "GLDNX",
+                    "resolvedName": "Goldenrod Systems Inc.",
+                    "found": true,
+                    "price": 241.96,
+                    "changesPercentage": -1.10357,
+                    "currency": "USD",
+                    "marketProfile": "us-equity",
+                    "quoteDelayMinutes": 0,
+                    "asOf": "2026-11-20T21:00:00.000Z",
+                    "freshness": {
+                        "asOf": "2026-11-20T21:00:00.000Z",
+                        "ageMinutes": 1140,
+                        "stale": false,
+                        "maxAgeMinutes": 20160
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

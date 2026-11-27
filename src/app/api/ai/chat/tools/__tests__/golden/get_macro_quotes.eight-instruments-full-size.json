@@ -1,0 +1,753 @@
+{
+    "tool": "get_macro_quotes",
+    "case": "eight-instruments-full-size",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "instruments": [
+            "wti",
+            "brent",
+            "gold",
+            "silver",
+            "copper",
+            "natural_gas",
+            "sp500_futures",
+            "usd_krw"
+        ]
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "Yahoo Finance (futures and FX quotes, delayed)",
+            "quotes": [
+                {
+                    "instrument": "wti",
+                    "found": true,
+                    "name": "Crude Oil Jan 27",
+                    "price": 71.84,
+                    "changePct": -0.090486,
+                    "unit": "USD per barrel",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Crude Oil Jan 27",
+                        "expiry": "2026-12-21"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 82.315,
+                            "pct": -12.7255
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 76.4608,
+                            "pct": -6.04336
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 67.0139,
+                            "pct": 7.20164
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 65.1323,
+                            "pct": 10.2986
+                        }
+                    },
+                    "range52w": {
+                        "high": 83.8457,
+                        "highDate": "2026-03-17",
+                        "low": 64.1182,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -14.3188,
+                        "fromLowPct": 12.0431
+                    }
+                },
+                {
+                    "instrument": "brent",
+                    "found": true,
+                    "name": "Brent Crude Oil Last Day Financ",
+                    "price": 75.62,
+                    "changePct": -0.09459,
+                    "unit": "USD per barrel",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Brent Crude Oil Last Day Financ",
+                        "expiry": "2026-12-30"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 86.7644,
+                            "pct": -12.8444
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 80.5938,
+                            "pct": -6.17144
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 70.6363,
+                            "pct": 7.05544
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 68.6529,
+                            "pct": 10.1483
+                        }
+                    },
+                    "range52w": {
+                        "high": 88.3779,
+                        "highDate": "2026-03-17",
+                        "low": 67.5841,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -14.4356,
+                        "fromLowPct": 11.8902
+                    }
+                },
+                {
+                    "instrument": "gold",
+                    "found": true,
+                    "name": "Gold Dec 26",
+                    "price": 2712.3,
+                    "changePct": 0.290375,
+                    "unit": "USD per troy ounce",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Gold Dec 26",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 2758.66,
+                            "pct": -1.68067
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 2562.47,
+                            "pct": 5.84705
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 2245.87,
+                            "pct": 20.7682
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 2182.81,
+                            "pct": 24.2572
+                        }
+                    },
+                    "range52w": {
+                        "high": 2809.96,
+                        "highDate": "2026-03-17",
+                        "low": 2148.83,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -3.47564,
+                        "fromLowPct": 26.2224
+                    }
+                },
+                {
+                    "instrument": "silver",
+                    "found": true,
+                    "name": "Silver Dec 26",
+                    "price": 31.245,
+                    "changePct": 0.239983,
+                    "unit": "USD per troy ounce",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Silver Dec 26",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 32.2586,
+                            "pct": -3.14211
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 29.9644,
+                            "pct": 4.27374
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 26.2622,
+                            "pct": 18.9733
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 25.5248,
+                            "pct": 22.4104
+                        }
+                    },
+                    "range52w": {
+                        "high": 32.8585,
+                        "highDate": "2026-03-17",
+                        "low": 25.1274,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -4.91045,
+                        "fromLowPct": 24.3463
+                    }
+                },
+                {
+                    "instrument": "copper",
+                    "found": true,
+                    "name": "Copper Mar 27",
+                    "price": 4.4185,
+                    "changePct": 0.161274,
+                    "unit": "USD per pound",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Copper Mar 27",
+                        "expiry": "2027-03-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 4.6719,
+                            "pct": -5.42392
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 4.3397,
+                            "pct": 1.81579
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 3.8035,
+                            "pct": 16.1693
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 3.6967,
+                            "pct": 19.5255
+                        }
+                    },
+                    "range52w": {
+                        "high": 4.7588,
+                        "highDate": "2026-03-17",
+                        "low": 3.6391,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -7.15096,
+                        "fromLowPct": 21.4174
+                    }
+                },
+                {
+                    "instrument": "natural_gas",
+                    "found": true,
+                    "name": "Natural Gas Jan 27",
+                    "price": 3.512,
+                    "changePct": 0.654207,
+                    "unit": "USD per MMBtu",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Natural Gas Jan 27",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 3.2259,
+                            "pct": 8.86884
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 2.9964,
+                            "pct": 17.2073
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 2.6262,
+                            "pct": 33.7293
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 2.5525,
+                            "pct": 37.5906
+                        }
+                    },
+                    "range52w": {
+                        "high": 3.512,
+                        "highDate": "2026-11-18",
+                        "low": 2.5127,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": 0,
+                        "fromLowPct": 39.77
+                    }
+                },
+                {
+                    "instrument": "sp500_futures",
+                    "found": true,
+                    "name": "E-Mini S&P 500 Dec 26",
+                    "price": 6942.25,
+                    "changePct": 0.262652,
+                    "unit": "index points",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "E-Mini S&P 500 Dec 26",
+                        "expiry": "2026-12-18"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 7119.13,
+                            "pct": -2.48462
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 6612.83,
+                            "pct": 4.98155
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 5795.8,
+                            "pct": 19.7807
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 5633.06,
+                            "pct": 23.2412
+                        }
+                    },
+                    "range52w": {
+                        "high": 7251.52,
+                        "highDate": "2026-03-17",
+                        "low": 5545.36,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -4.2649,
+                        "fromLowPct": 25.1903
+                    }
+                },
+                {
+                    "instrument": "usd_krw",
+                    "found": true,
+                    "name": "USD/KRW",
+                    "price": 1398.42,
+                    "changePct": 0.041378,
+                    "unit": "KRW per USD",
+                    "currency": "KRW",
+                    "contract": null,
+                    "quoteDelayMinutes": 0,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 1495.37,
+                            "pct": -6.48305
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 1550.47,
+                            "pct": -9.80694
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 1347.53,
+                            "pct": 3.77639
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 1336.12,
+                            "pct": 4.66305
+                        }
+                    },
+                    "range52w": {
+                        "high": 1565.43,
+                        "highDate": "2026-02-05",
+                        "low": 1202.47,
+                        "lowDate": "2026-06-18",
+                        "fromHighPct": -10.6684,
+                        "fromLowPct": 16.2959
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "Yahoo Finance (futures and FX quotes, delayed)",
+            "quotes": [
+                {
+                    "instrument": "wti",
+                    "found": true,
+                    "name": "Crude Oil Jan 27",
+                    "price": 71.84,
+                    "changePct": -0.090486,
+                    "unit": "USD per barrel",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Crude Oil Jan 27",
+                        "expiry": "2026-12-21"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 82.315,
+                            "pct": -12.7255
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 76.4608,
+                            "pct": -6.04336
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 67.0139,
+                            "pct": 7.20164
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 65.1323,
+                            "pct": 10.2986
+                        }
+                    },
+                    "range52w": {
+                        "high": 83.8457,
+                        "highDate": "2026-03-17",
+                        "low": 64.1182,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -14.3188,
+                        "fromLowPct": 12.0431
+                    }
+                },
+                {
+                    "instrument": "brent",
+                    "found": true,
+                    "name": "Brent Crude Oil Last Day Financ",
+                    "price": 75.62,
+                    "changePct": -0.09459,
+                    "unit": "USD per barrel",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Brent Crude Oil Last Day Financ",
+                        "expiry": "2026-12-30"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 86.7644,
+                            "pct": -12.8444
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 80.5938,
+                            "pct": -6.17144
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 70.6363,
+                            "pct": 7.05544
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 68.6529,
+                            "pct": 10.1483
+                        }
+                    },
+                    "range52w": {
+                        "high": 88.3779,
+                        "highDate": "2026-03-17",
+                        "low": 67.5841,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -14.4356,
+                        "fromLowPct": 11.8902
+                    }
+                },
+                {
+                    "instrument": "gold",
+                    "found": true,
+                    "name": "Gold Dec 26",
+                    "price": 2712.3,
+                    "changePct": 0.290375,
+                    "unit": "USD per troy ounce",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Gold Dec 26",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 2758.66,
+                            "pct": -1.68067
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 2562.47,
+                            "pct": 5.84705
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 2245.87,
+                            "pct": 20.7682
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 2182.81,
+                            "pct": 24.2572
+                        }
+                    },
+                    "range52w": {
+                        "high": 2809.96,
+                        "highDate": "2026-03-17",
+                        "low": 2148.83,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -3.47564,
+                        "fromLowPct": 26.2224
+                    }
+                },
+                {
+                    "instrument": "silver",
+                    "found": true,
+                    "name": "Silver Dec 26",
+                    "price": 31.245,
+                    "changePct": 0.239983,
+                    "unit": "USD per troy ounce",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Silver Dec 26",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 32.2586,
+                            "pct": -3.14211
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 29.9644,
+                            "pct": 4.27374
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 26.2622,
+                            "pct": 18.9733
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 25.5248,
+                            "pct": 22.4104
+                        }
+                    },
+                    "range52w": {
+                        "high": 32.8585,
+                        "highDate": "2026-03-17",
+                        "low": 25.1274,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -4.91045,
+                        "fromLowPct": 24.3463
+                    }
+                },
+                {
+                    "instrument": "copper",
+                    "found": true,
+                    "name": "Copper Mar 27",
+                    "price": 4.4185,
+                    "changePct": 0.161274,
+                    "unit": "USD per pound",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Copper Mar 27",
+                        "expiry": "2027-03-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 4.6719,
+                            "pct": -5.42392
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 4.3397,
+                            "pct": 1.81579
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 3.8035,
+                            "pct": 16.1693
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 3.6967,
+                            "pct": 19.5255
+                        }
+                    },
+                    "range52w": {
+                        "high": 4.7588,
+                        "highDate": "2026-03-17",
+                        "low": 3.6391,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -7.15096,
+                        "fromLowPct": 21.4174
+                    }
+                },
+                {
+                    "instrument": "natural_gas",
+                    "found": true,
+                    "name": "Natural Gas Jan 27",
+                    "price": 3.512,
+                    "changePct": 0.654207,
+                    "unit": "USD per MMBtu",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "Natural Gas Jan 27",
+                        "expiry": "2026-12-29"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 3.2259,
+                            "pct": 8.86884
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 2.9964,
+                            "pct": 17.2073
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 2.6262,
+                            "pct": 33.7293
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 2.5525,
+                            "pct": 37.5906
+                        }
+                    },
+                    "range52w": {
+                        "high": 3.512,
+                        "highDate": "2026-11-18",
+                        "low": 2.5127,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": 0,
+                        "fromLowPct": 39.77
+                    }
+                },
+                {
+                    "instrument": "sp500_futures",
+                    "found": true,
+                    "name": "E-Mini S&P 500 Dec 26",
+                    "price": 6942.25,
+                    "changePct": 0.262652,
+                    "unit": "index points",
+                    "currency": "USD",
+                    "contract": {
+                        "name": "E-Mini S&P 500 Dec 26",
+                        "expiry": "2026-12-18"
+                    },
+                    "quoteDelayMinutes": 10,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 7119.13,
+                            "pct": -2.48462
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 6612.83,
+                            "pct": 4.98155
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 5795.8,
+                            "pct": 19.7807
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 5633.06,
+                            "pct": 23.2412
+                        }
+                    },
+                    "range52w": {
+                        "high": 7251.52,
+                        "highDate": "2026-03-17",
+                        "low": 5545.36,
+                        "lowDate": "2026-07-27",
+                        "fromHighPct": -4.2649,
+                        "fromLowPct": 25.1903
+                    }
+                },
+                {
+                    "instrument": "usd_krw",
+                    "found": true,
+                    "name": "USD/KRW",
+                    "price": 1398.42,
+                    "changePct": 0.041378,
+                    "unit": "KRW per USD",
+                    "currency": "KRW",
+                    "contract": null,
+                    "quoteDelayMinutes": 0,
+                    "asOf": "2026-11-18T15:20:00.000Z",
+                    "changes": {
+                        "1week": {
+                            "baseDate": "2026-11-11",
+                            "baseClose": 1495.37,
+                            "pct": -6.48305
+                        },
+                        "1month": {
+                            "baseDate": "2026-10-16",
+                            "baseClose": 1550.47,
+                            "pct": -9.80694
+                        },
+                        "3months": {
+                            "baseDate": "2026-08-18",
+                            "baseClose": 1347.53,
+                            "pct": 3.77639
+                        },
+                        "1year": {
+                            "baseDate": "2025-11-18",
+                            "baseClose": 1336.12,
+                            "pct": 4.66305
+                        }
+                    },
+                    "range52w": {
+                        "high": 1565.43,
+                        "highDate": "2026-02-05",
+                        "low": 1202.47,
+                        "lowDate": "2026-06-18",
+                        "fromHighPct": -10.6684,
+                        "fromLowPct": 16.2959
+                    }
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

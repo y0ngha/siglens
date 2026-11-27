@@ -1,0 +1,48 @@
+{
+    "tool": "get_news",
+    "case": "empty-coverage",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "guest",
+    "locale": "ko",
+    "args": {
+        "symbol": "QRTZ"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS news",
+            "count": 0,
+            "coverageLimited": true,
+            "tally": {
+                "bullish": 0,
+                "bearish": 0,
+                "neutral": 0,
+                "highImpact": 0
+            },
+            "digest": null,
+            "priceMoves": null,
+            "items": []
+        },
+        "charts": [],
+        "refreshedSymbols": ["QRTZ"]
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS news",
+            "count": 0,
+            "coverageLimited": true,
+            "tally": {
+                "bullish": 0,
+                "bearish": 0,
+                "neutral": 0,
+                "highImpact": 0
+            },
+            "digest": null,
+            "priceMoves": null,
+            "items": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

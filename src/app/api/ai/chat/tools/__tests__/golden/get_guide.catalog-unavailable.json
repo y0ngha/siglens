@@ -1,0 +1,26 @@
+{
+    "tool": "get_guide",
+    "case": "catalog-unavailable",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "query": "RSI"
+    },
+    "agent": {
+        "result": {
+            "found": false,
+            "reason": "guide_unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "found": false,
+            "reason": "guide_unavailable"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

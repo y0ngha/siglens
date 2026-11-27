@@ -1,0 +1,51 @@
+{
+    "tool": "get_cached_analysis",
+    "case": "free-overall-history-digest",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "free",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "tab": "overall"
+    },
+    "agent": {
+        "result": {
+            "found": true,
+            "source": "history",
+            "tab": "overall",
+            "timeframe": "1Day",
+            "generatedAt": "2026-11-12T22:00:00.000Z",
+            "stale": true,
+            "digest": {
+                "generatedAt": "2026-11-12T22:00:00.000Z",
+                "trend": "bullish",
+                "riskLevel": "medium",
+                "entryPrices": [238.5, 240.2],
+                "stopLoss": 231.75,
+                "takeProfitPrices": [252, 261.4]
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "found": true,
+            "source": "history",
+            "tab": "overall",
+            "timeframe": "1Day",
+            "generatedAt": "2026-11-12T22:00:00.000Z",
+            "stale": true,
+            "digest": {
+                "generatedAt": "2026-11-12T22:00:00.000Z",
+                "trend": "bullish",
+                "riskLevel": "medium",
+                "entryPrices": [238.5, 240.2],
+                "stopLoss": 231.75,
+                "takeProfitPrices": [252, 261.4]
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

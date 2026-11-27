@@ -1,0 +1,424 @@
+{
+    "tool": "get_investor_flows",
+    "case": "kr-dart-with-naver-trend",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "900110.KS"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-10-16",
+            "source": "DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports",
+            "symbol": "900110.KS",
+            "market": "kr",
+            "available": true,
+            "trendNote": "krInvestorTrend is 네이버 금융 (Naver Finance) data: net buying by foreign / institution / individual investors in shares, newest first. Cite the source as 네이버 금융 and the asOf date; the latest session appears only after the close.",
+            "krInvestorTrend": {
+                "asOf": "2026-11-18",
+                "rows": [
+                    {
+                        "date": "2026-11-18",
+                        "foreignNet": 45012,
+                        "institutionNet": 32070,
+                        "individualNet": -39137,
+                        "close": 118658
+                    },
+                    {
+                        "date": "2026-11-17",
+                        "foreignNet": -8681,
+                        "institutionNet": -69649,
+                        "individualNet": 37574,
+                        "close": 118426
+                    },
+                    {
+                        "date": "2026-11-16",
+                        "foreignNet": 67792,
+                        "institutionNet": -26952,
+                        "individualNet": 104393,
+                        "close": 119826
+                    },
+                    {
+                        "date": "2026-11-15",
+                        "foreignNet": 73602,
+                        "institutionNet": 19806,
+                        "individualNet": -62698,
+                        "close": 118116
+                    },
+                    {
+                        "date": "2026-11-14",
+                        "foreignNet": 178522,
+                        "institutionNet": -14390,
+                        "individualNet": -91361,
+                        "close": 121885
+                    },
+                    {
+                        "date": "2026-11-11",
+                        "foreignNet": 35907,
+                        "institutionNet": -55269,
+                        "individualNet": -115188,
+                        "close": 121656
+                    },
+                    {
+                        "date": "2026-11-10",
+                        "foreignNet": -66831,
+                        "institutionNet": 88020,
+                        "individualNet": -98313,
+                        "close": 121894
+                    },
+                    {
+                        "date": "2026-11-09",
+                        "foreignNet": -97752,
+                        "institutionNet": -72682,
+                        "individualNet": null,
+                        "close": 121524
+                    },
+                    {
+                        "date": "2026-11-08",
+                        "foreignNet": -93073,
+                        "institutionNet": 25509,
+                        "individualNet": 93553,
+                        "close": 120727
+                    },
+                    {
+                        "date": "2026-11-07",
+                        "foreignNet": 171489,
+                        "institutionNet": -49871,
+                        "individualNet": 133061,
+                        "close": 120259
+                    }
+                ],
+                "sum5d": {
+                    "foreignNet": 356247,
+                    "institutionNet": -59115,
+                    "individualNet": -51229
+                },
+                "sum20d": {
+                    "foreignNet": 291094,
+                    "institutionNet": -201541,
+                    "individualNet": null
+                },
+                "unit": "shares",
+                "source": "naver"
+            },
+            "noData": false,
+            "composite": {
+                "score": 35,
+                "label": "bullish",
+                "axesUsed": ["insider", "largeHolders"]
+            },
+            "axes": {
+                "institutional": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                },
+                "insider": {
+                    "label": "bullish",
+                    "score": 35,
+                    "sufficiency": "sufficient"
+                },
+                "largeHolders": {
+                    "label": "bullish",
+                    "score": 35,
+                    "sufficiency": "sufficient"
+                },
+                "short": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                },
+                "dilution": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                }
+            },
+            "signals": [
+                {
+                    "id": "kr_insider_net_change",
+                    "axis": "insider",
+                    "direction": "bullish",
+                    "strength": "moderate",
+                    "evidence": {
+                        "netSharesChange": 17998000,
+                        "netChangePct": 0.3,
+                        "reporters": 2,
+                        "reports": 2
+                    }
+                },
+                {
+                    "id": "kr_major_holder_new",
+                    "axis": "largeHolders",
+                    "direction": "bullish",
+                    "strength": "moderate",
+                    "evidence": {
+                        "ratioPct": 5.05,
+                        "priorRatioPct": 0,
+                        "ratioChangePct": 5.05,
+                        "sharesChange": 301500000,
+                        "reports": 1,
+                        "detailedReports": 0
+                    },
+                    "subject": "픽스처자산운용"
+                },
+                {
+                    "id": "kr_trading_plan",
+                    "axis": "insider",
+                    "direction": "neutral",
+                    "strength": "weak",
+                    "evidence": {
+                        "plans": 1,
+                        "windowDays": 90
+                    }
+                }
+            ],
+            "freshness": {
+                "asOf": "2026-10-16",
+                "windowDays": 90,
+                "latestReceiptDate": "2026-10-14"
+            },
+            "majorHolders": {
+                "metrics": {
+                    "reports": 2,
+                    "reporters": 2,
+                    "detailedReports": 1,
+                    "maxAbsRatioChangePct": 5.05,
+                    "latestReceiptDate": "2026-10-14"
+                },
+                "recent": [
+                    {
+                        "receiptDate": "2026-10-14",
+                        "reporter": "픽스처자산운용",
+                        "form": "abbreviated",
+                        "ratioPct": 5.05,
+                        "ratioChangePct": null,
+                        "sharesChange": 301500000,
+                        "reason": "신규 보고"
+                    },
+                    {
+                        "receiptDate": "2026-10-10",
+                        "reporter": "국민연금공단",
+                        "form": "detailed",
+                        "ratioPct": 7.24,
+                        "ratioChangePct": -0.09,
+                        "sharesChange": -5120000,
+                        "reason": "보유주식등의 수 변동"
+                    }
+                ]
+            },
+            "insiders": {
+                "metrics": {
+                    "reports": 2,
+                    "reporters": 2,
+                    "netSharesChange": 17998000,
+                    "netChangePct": 0.3,
+                    "tradingPlans": 1,
+                    "latestReceiptDate": "2026-10-13",
+                    "largestSingleDayFiling": {
+                        "date": "2026-10-13",
+                        "count": 2
+                    }
+                },
+                "recent": [
+                    {
+                        "receiptDate": "2026-10-13",
+                        "reporter": "최임원",
+                        "position": "부사장",
+                        "registered": false,
+                        "majorShareholder": false,
+                        "shares": 8000,
+                        "sharesChange": -2000,
+                        "ratioPct": 0,
+                        "ratioChangePct": 0
+                    },
+                    {
+                        "receiptDate": "2026-10-13",
+                        "reporter": "박주주",
+                        "position": null,
+                        "registered": false,
+                        "majorShareholder": true,
+                        "shares": 650000000,
+                        "sharesChange": 18000000,
+                        "ratioPct": 10.89,
+                        "ratioChangePct": 0.3
+                    }
+                ]
+            },
+            "tradingPlans": [
+                {
+                    "receiptDate": "2026-10-12",
+                    "reporter": "이임원",
+                    "title": "임원ㆍ주요주주특정증권등거래계획보고서"
+                }
+            ],
+            "ownershipShares": null
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-10-16",
+            "source": "DART (Korea Financial Supervisory Service) disclosures: 5%+ major-holder reports (detailed/abbreviated form), executive and major-shareholder ownership reports, trading-plan reports",
+            "symbol": "900110.KS",
+            "market": "kr",
+            "available": true,
+            "notProvided": "SIGLENS tools do not carry Korean investor-type net buying (institutional, foreign, individual) right now. If web_search is available, you may use it for this - cite the publisher and date; otherwise say it could not be confirmed. Never estimate.",
+            "noData": false,
+            "composite": {
+                "score": 35,
+                "label": "bullish",
+                "axesUsed": ["insider", "largeHolders"]
+            },
+            "axes": {
+                "institutional": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                },
+                "insider": {
+                    "label": "bullish",
+                    "score": 35,
+                    "sufficiency": "sufficient"
+                },
+                "largeHolders": {
+                    "label": "bullish",
+                    "score": 35,
+                    "sufficiency": "sufficient"
+                },
+                "short": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                },
+                "dilution": {
+                    "label": "insufficient",
+                    "score": null,
+                    "sufficiency": "insufficient"
+                }
+            },
+            "signals": [
+                {
+                    "id": "kr_insider_net_change",
+                    "axis": "insider",
+                    "direction": "bullish",
+                    "strength": "moderate",
+                    "evidence": {
+                        "netSharesChange": 17998000,
+                        "netChangePct": 0.3,
+                        "reporters": 2,
+                        "reports": 2
+                    }
+                },
+                {
+                    "id": "kr_major_holder_new",
+                    "axis": "largeHolders",
+                    "direction": "bullish",
+                    "strength": "moderate",
+                    "evidence": {
+                        "ratioPct": 5.05,
+                        "priorRatioPct": 0,
+                        "ratioChangePct": 5.05,
+                        "sharesChange": 301500000,
+                        "reports": 1,
+                        "detailedReports": 0
+                    },
+                    "subject": "픽스처자산운용"
+                },
+                {
+                    "id": "kr_trading_plan",
+                    "axis": "insider",
+                    "direction": "neutral",
+                    "strength": "weak",
+                    "evidence": {
+                        "plans": 1,
+                        "windowDays": 90
+                    }
+                }
+            ],
+            "freshness": {
+                "asOf": "2026-10-16",
+                "windowDays": 90,
+                "latestReceiptDate": "2026-10-14"
+            },
+            "majorHolders": {
+                "metrics": {
+                    "reports": 2,
+                    "reporters": 2,
+                    "detailedReports": 1,
+                    "maxAbsRatioChangePct": 5.05,
+                    "latestReceiptDate": "2026-10-14"
+                },
+                "recent": [
+                    {
+                        "receiptDate": "2026-10-14",
+                        "reporter": "픽스처자산운용",
+                        "form": "abbreviated",
+                        "ratioPct": 5.05,
+                        "ratioChangePct": null,
+                        "sharesChange": 301500000,
+                        "reason": "신규 보고"
+                    },
+                    {
+                        "receiptDate": "2026-10-10",
+                        "reporter": "국민연금공단",
+                        "form": "detailed",
+                        "ratioPct": 7.24,
+                        "ratioChangePct": -0.09,
+                        "sharesChange": -5120000,
+                        "reason": "보유주식등의 수 변동"
+                    }
+                ]
+            },
+            "insiders": {
+                "metrics": {
+                    "reports": 2,
+                    "reporters": 2,
+                    "netSharesChange": 17998000,
+                    "netChangePct": 0.3,
+                    "tradingPlans": 1,
+                    "latestReceiptDate": "2026-10-13",
+                    "largestSingleDayFiling": {
+                        "date": "2026-10-13",
+                        "count": 2
+                    }
+                },
+                "recent": [
+                    {
+                        "receiptDate": "2026-10-13",
+                        "reporter": "최임원",
+                        "position": "부사장",
+                        "registered": false,
+                        "majorShareholder": false,
+                        "shares": 8000,
+                        "sharesChange": -2000,
+                        "ratioPct": 0,
+                        "ratioChangePct": 0
+                    },
+                    {
+                        "receiptDate": "2026-10-13",
+                        "reporter": "박주주",
+                        "position": null,
+                        "registered": false,
+                        "majorShareholder": true,
+                        "shares": 650000000,
+                        "sharesChange": 18000000,
+                        "ratioPct": 10.89,
+                        "ratioChangePct": 0.3
+                    }
+                ]
+            },
+            "tradingPlans": [
+                {
+                    "receiptDate": "2026-10-12",
+                    "reporter": "이임원",
+                    "title": "임원ㆍ주요주주특정증권등거래계획보고서"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

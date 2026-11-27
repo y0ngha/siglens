@@ -1,0 +1,28 @@
+{
+    "tool": "get_analyst_views",
+    "case": "crypto-not-a-stock",
+    "now": "2026-11-22T03:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "ZETAUSD"
+    },
+    "agent": {
+        "result": {
+            "symbol": "ZETAUSD",
+            "available": false,
+            "reason": "not_a_stock"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "ZETAUSD",
+            "available": false,
+            "reason": "not_a_stock"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

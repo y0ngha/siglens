@@ -1,0 +1,30 @@
+{
+    "tool": "get_my_watchlist",
+    "case": "empty-list",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 0,
+            "items": [],
+            "priceAlerts": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 0,
+            "items": [],
+            "priceAlerts": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

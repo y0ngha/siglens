@@ -1,0 +1,394 @@
+{
+    "tool": "get_company_filings",
+    "case": "list-ten-recent",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SEC EDGAR",
+            "symbol": "GLDNX",
+            "available": true,
+            "filings": [
+                {
+                    "accession": "0001193125-26-461016",
+                    "form": "8-K",
+                    "filedAt": "2026-11-12",
+                    "items": [
+                        {
+                            "code": "2.02",
+                            "label": "Results of Operations and Financial Condition"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports Third Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526461016/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-457903",
+                    "form": "8-K",
+                    "filedAt": "2026-11-01",
+                    "items": [
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526457903/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-454790",
+                    "form": "8-K",
+                    "filedAt": "2026-10-21",
+                    "items": [
+                        {
+                            "code": "5.02",
+                            "label": "Departure of Directors or Certain Officers"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports First Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526454790/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-451677",
+                    "form": "8-K/A",
+                    "filedAt": "2026-10-10",
+                    "items": [
+                        {
+                            "code": "8.01",
+                            "label": "Other Events"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526451677/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-448564",
+                    "form": "8-K",
+                    "filedAt": "2026-09-29",
+                    "items": [
+                        {
+                            "code": "7.01",
+                            "label": "Regulation FD Disclosure"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports Third Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526448564/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-445451",
+                    "form": "8-K",
+                    "filedAt": "2026-09-18",
+                    "items": [
+                        {
+                            "code": "2.02",
+                            "label": "Results of Operations and Financial Condition"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526445451/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-442338",
+                    "form": "8-K",
+                    "filedAt": "2026-09-07",
+                    "items": [
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports First Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526442338/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-439225",
+                    "form": "8-K",
+                    "filedAt": "2026-08-27",
+                    "items": [
+                        {
+                            "code": "5.02",
+                            "label": "Departure of Directors or Certain Officers"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526439225/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-436112",
+                    "form": "8-K",
+                    "filedAt": "2026-08-16",
+                    "items": [
+                        {
+                            "code": "8.01",
+                            "label": "Other Events"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports Third Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526436112/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-432999",
+                    "form": "8-K",
+                    "filedAt": "2026-08-05",
+                    "items": [
+                        {
+                            "code": "7.01",
+                            "label": "Regulation FD Disclosure"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526432999/gldnx-8k.htm"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SEC EDGAR",
+            "symbol": "GLDNX",
+            "available": true,
+            "filings": [
+                {
+                    "accession": "0001193125-26-461016",
+                    "form": "8-K",
+                    "filedAt": "2026-11-12",
+                    "items": [
+                        {
+                            "code": "2.02",
+                            "label": "Results of Operations and Financial Condition"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports Third Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526461016/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-457903",
+                    "form": "8-K",
+                    "filedAt": "2026-11-01",
+                    "items": [
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526457903/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-454790",
+                    "form": "8-K",
+                    "filedAt": "2026-10-21",
+                    "items": [
+                        {
+                            "code": "5.02",
+                            "label": "Departure of Directors or Certain Officers"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports First Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526454790/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-451677",
+                    "form": "8-K/A",
+                    "filedAt": "2026-10-10",
+                    "items": [
+                        {
+                            "code": "8.01",
+                            "label": "Other Events"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526451677/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-448564",
+                    "form": "8-K",
+                    "filedAt": "2026-09-29",
+                    "items": [
+                        {
+                            "code": "7.01",
+                            "label": "Regulation FD Disclosure"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports Third Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526448564/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-445451",
+                    "form": "8-K",
+                    "filedAt": "2026-09-18",
+                    "items": [
+                        {
+                            "code": "2.02",
+                            "label": "Results of Operations and Financial Condition"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526445451/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-442338",
+                    "form": "8-K",
+                    "filedAt": "2026-09-07",
+                    "items": [
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports First Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526442338/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-439225",
+                    "form": "8-K",
+                    "filedAt": "2026-08-27",
+                    "items": [
+                        {
+                            "code": "5.02",
+                            "label": "Departure of Directors or Certain Officers"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526439225/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-436112",
+                    "form": "8-K",
+                    "filedAt": "2026-08-16",
+                    "items": [
+                        {
+                            "code": "8.01",
+                            "label": "Other Events"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": "Goldenrod Systems Reports Third Quarter Results",
+                    "hasPressRelease": true,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526436112/gldnx-8k.htm"
+                },
+                {
+                    "accession": "0001193125-26-432999",
+                    "form": "8-K",
+                    "filedAt": "2026-08-05",
+                    "items": [
+                        {
+                            "code": "7.01",
+                            "label": "Regulation FD Disclosure"
+                        },
+                        {
+                            "code": "9.01",
+                            "label": "Financial Statements and Exhibits"
+                        }
+                    ],
+                    "headline": null,
+                    "hasPressRelease": false,
+                    "url": "https://www.sec.gov/Archives/edgar/data/1990001/000119312526432999/gldnx-8k.htm"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

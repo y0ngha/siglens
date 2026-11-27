@@ -1,0 +1,28 @@
+{
+    "tool": "get_company_filings",
+    "case": "no-sec-filer",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "900110.KS"
+    },
+    "agent": {
+        "result": {
+            "symbol": "900110.KS",
+            "available": false,
+            "reason": "no_sec_filer"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "900110.KS",
+            "available": false,
+            "reason": "no_sec_filer"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

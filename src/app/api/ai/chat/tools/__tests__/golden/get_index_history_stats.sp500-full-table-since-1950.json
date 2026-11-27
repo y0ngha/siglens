@@ -1,0 +1,1282 @@
+{
+    "tool": "get_index_history_stats",
+    "case": "sp500-full-table-since-1950",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "index": "sp500"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SIGLENS index history (month-end closes)",
+            "index": "sp500",
+            "available": true,
+            "firstMonth": "1950-01",
+            "lastMonth": "2026-10",
+            "firstFullYear": 1951,
+            "lastFullYear": 2025,
+            "annual": [
+                {
+                    "year": 1951,
+                    "returnPct": 8.2,
+                    "maxDrawdownPct": -5.04
+                },
+                {
+                    "year": 1952,
+                    "returnPct": 17.89,
+                    "maxDrawdownPct": -1.4
+                },
+                {
+                    "year": 1953,
+                    "returnPct": 10.82,
+                    "maxDrawdownPct": -4.53
+                },
+                {
+                    "year": 1954,
+                    "returnPct": 1.27,
+                    "maxDrawdownPct": -6.57
+                },
+                {
+                    "year": 1955,
+                    "returnPct": 0.28,
+                    "maxDrawdownPct": -5.98
+                },
+                {
+                    "year": 1956,
+                    "returnPct": 12.39,
+                    "maxDrawdownPct": -5.05
+                },
+                {
+                    "year": 1957,
+                    "returnPct": 19.98,
+                    "maxDrawdownPct": -2.68
+                },
+                {
+                    "year": 1958,
+                    "returnPct": 6.86,
+                    "maxDrawdownPct": -3.92
+                },
+                {
+                    "year": 1959,
+                    "returnPct": -2.12,
+                    "maxDrawdownPct": -5.78
+                },
+                {
+                    "year": 1960,
+                    "returnPct": -1.63,
+                    "maxDrawdownPct": -5.74
+                },
+                {
+                    "year": 1961,
+                    "returnPct": 20.59,
+                    "maxDrawdownPct": -4.25
+                },
+                {
+                    "year": 1962,
+                    "returnPct": 11.81,
+                    "maxDrawdownPct": -3.92
+                },
+                {
+                    "year": 1963,
+                    "returnPct": 5.98,
+                    "maxDrawdownPct": -3.76
+                },
+                {
+                    "year": 1964,
+                    "returnPct": 1.28,
+                    "maxDrawdownPct": -5.22
+                },
+                {
+                    "year": 1965,
+                    "returnPct": 7.01,
+                    "maxDrawdownPct": -5.21
+                },
+                {
+                    "year": 1966,
+                    "returnPct": 15.86,
+                    "maxDrawdownPct": -3.17
+                },
+                {
+                    "year": 1967,
+                    "returnPct": 10.76,
+                    "maxDrawdownPct": -4.1
+                },
+                {
+                    "year": 1968,
+                    "returnPct": 4.52,
+                    "maxDrawdownPct": -5.32
+                },
+                {
+                    "year": 1969,
+                    "returnPct": -3.69,
+                    "maxDrawdownPct": -6.85
+                },
+                {
+                    "year": 1970,
+                    "returnPct": 13.13,
+                    "maxDrawdownPct": -4.33
+                },
+                {
+                    "year": 1971,
+                    "returnPct": 19.32,
+                    "maxDrawdownPct": -2.84
+                },
+                {
+                    "year": 1972,
+                    "returnPct": 9.34,
+                    "maxDrawdownPct": -4.4
+                },
+                {
+                    "year": 1973,
+                    "returnPct": -0.49,
+                    "maxDrawdownPct": -5.86
+                },
+                {
+                    "year": 1974,
+                    "returnPct": -0.87,
+                    "maxDrawdownPct": -5.61
+                },
+                {
+                    "year": 1975,
+                    "returnPct": 16.85,
+                    "maxDrawdownPct": -4.4
+                },
+                {
+                    "year": 1976,
+                    "returnPct": 16.11,
+                    "maxDrawdownPct": -2.57
+                },
+                {
+                    "year": 1977,
+                    "returnPct": 0.18,
+                    "maxDrawdownPct": -3.89
+                },
+                {
+                    "year": 1978,
+                    "returnPct": 5.41,
+                    "maxDrawdownPct": -4.22
+                },
+                {
+                    "year": 1979,
+                    "returnPct": 1.13,
+                    "maxDrawdownPct": -6.84
+                },
+                {
+                    "year": 1980,
+                    "returnPct": 17.66,
+                    "maxDrawdownPct": -1.9
+                },
+                {
+                    "year": 1981,
+                    "returnPct": 14.43,
+                    "maxDrawdownPct": -3.19
+                },
+                {
+                    "year": 1982,
+                    "returnPct": 4.27,
+                    "maxDrawdownPct": -3.63
+                },
+                {
+                    "year": 1983,
+                    "returnPct": -1.94,
+                    "maxDrawdownPct": -6.15
+                },
+                {
+                    "year": 1984,
+                    "returnPct": 11.89,
+                    "maxDrawdownPct": -4.99
+                },
+                {
+                    "year": 1985,
+                    "returnPct": 16.82,
+                    "maxDrawdownPct": -4.64
+                },
+                {
+                    "year": 1986,
+                    "returnPct": 9.56,
+                    "maxDrawdownPct": -3.88
+                },
+                {
+                    "year": 1987,
+                    "returnPct": -3.96,
+                    "maxDrawdownPct": -4.96
+                },
+                {
+                    "year": 1988,
+                    "returnPct": 4.61,
+                    "maxDrawdownPct": -6.55
+                },
+                {
+                    "year": 1989,
+                    "returnPct": 12.91,
+                    "maxDrawdownPct": -3.55
+                },
+                {
+                    "year": 1990,
+                    "returnPct": 16.12,
+                    "maxDrawdownPct": -4.62
+                },
+                {
+                    "year": 1991,
+                    "returnPct": 3.87,
+                    "maxDrawdownPct": -5.08
+                },
+                {
+                    "year": 1992,
+                    "returnPct": 4.28,
+                    "maxDrawdownPct": -6.52
+                },
+                {
+                    "year": 1993,
+                    "returnPct": 3.17,
+                    "maxDrawdownPct": -5.48
+                },
+                {
+                    "year": 1994,
+                    "returnPct": 15.41,
+                    "maxDrawdownPct": -4.63
+                },
+                {
+                    "year": 1995,
+                    "returnPct": 14.44,
+                    "maxDrawdownPct": -3.37
+                },
+                {
+                    "year": 1996,
+                    "returnPct": -0.07,
+                    "maxDrawdownPct": -4.28
+                },
+                {
+                    "year": 1997,
+                    "returnPct": -1.88,
+                    "maxDrawdownPct": -6.09
+                },
+                {
+                    "year": 1998,
+                    "returnPct": 9.59,
+                    "maxDrawdownPct": -6.21
+                },
+                {
+                    "year": 1999,
+                    "returnPct": 20.8,
+                    "maxDrawdownPct": -2.68
+                },
+                {
+                    "year": 2000,
+                    "returnPct": 12.68,
+                    "maxDrawdownPct": -3.01
+                },
+                {
+                    "year": 2001,
+                    "returnPct": 1.52,
+                    "maxDrawdownPct": -4.14
+                },
+                {
+                    "year": 2002,
+                    "returnPct": -0.81,
+                    "maxDrawdownPct": -6.25
+                },
+                {
+                    "year": 2003,
+                    "returnPct": 5.97,
+                    "maxDrawdownPct": -4.28
+                },
+                {
+                    "year": 2004,
+                    "returnPct": 21.3,
+                    "maxDrawdownPct": -2.07
+                },
+                {
+                    "year": 2005,
+                    "returnPct": 4.74,
+                    "maxDrawdownPct": -3.48
+                },
+                {
+                    "year": 2006,
+                    "returnPct": 5.51,
+                    "maxDrawdownPct": -2.93
+                },
+                {
+                    "year": 2007,
+                    "returnPct": -1.19,
+                    "maxDrawdownPct": -6.51
+                },
+                {
+                    "year": 2008,
+                    "returnPct": 19.12,
+                    "maxDrawdownPct": -4.15
+                },
+                {
+                    "year": 2009,
+                    "returnPct": 12.62,
+                    "maxDrawdownPct": -4.37
+                },
+                {
+                    "year": 2010,
+                    "returnPct": 4.22,
+                    "maxDrawdownPct": -3.61
+                },
+                {
+                    "year": 2011,
+                    "returnPct": -1.24,
+                    "maxDrawdownPct": -4.3
+                },
+                {
+                    "year": 2012,
+                    "returnPct": 6.79,
+                    "maxDrawdownPct": -3.82
+                },
+                {
+                    "year": 2013,
+                    "returnPct": 15.3,
+                    "maxDrawdownPct": -3.89
+                },
+                {
+                    "year": 2014,
+                    "returnPct": 16.86,
+                    "maxDrawdownPct": -4.16
+                },
+                {
+                    "year": 2015,
+                    "returnPct": 1.58,
+                    "maxDrawdownPct": -4.85
+                },
+                {
+                    "year": 2016,
+                    "returnPct": -1.86,
+                    "maxDrawdownPct": -4.43
+                },
+                {
+                    "year": 2017,
+                    "returnPct": 13,
+                    "maxDrawdownPct": -4.33
+                },
+                {
+                    "year": 2018,
+                    "returnPct": 17.1,
+                    "maxDrawdownPct": -5.36
+                },
+                {
+                    "year": 2019,
+                    "returnPct": 4.46,
+                    "maxDrawdownPct": -4.27
+                },
+                {
+                    "year": 2020,
+                    "returnPct": 4.32,
+                    "maxDrawdownPct": -5.86
+                },
+                {
+                    "year": 2021,
+                    "returnPct": -2.48,
+                    "maxDrawdownPct": -5.47
+                },
+                {
+                    "year": 2022,
+                    "returnPct": 15.46,
+                    "maxDrawdownPct": -2.43
+                },
+                {
+                    "year": 2023,
+                    "returnPct": 19,
+                    "maxDrawdownPct": -3.58
+                },
+                {
+                    "year": 2024,
+                    "returnPct": 4.21,
+                    "maxDrawdownPct": -3.9
+                },
+                {
+                    "year": 2025,
+                    "returnPct": -0.04,
+                    "maxDrawdownPct": -3.65
+                }
+            ],
+            "annualSummary": {
+                "samples": 75,
+                "positive": 60,
+                "avgPct": 7.98,
+                "medianPct": 6.79,
+                "positivePct": 80
+            },
+            "monthly": [
+                {
+                    "month": 1,
+                    "samples": 76,
+                    "positive": 32,
+                    "avgPct": -0.71,
+                    "medianPct": -0.62,
+                    "positivePct": 42.11
+                },
+                {
+                    "month": 2,
+                    "samples": 77,
+                    "positive": 56,
+                    "avgPct": 1.57,
+                    "medianPct": 1.97,
+                    "positivePct": 72.73
+                },
+                {
+                    "month": 3,
+                    "samples": 77,
+                    "positive": 46,
+                    "avgPct": 0.53,
+                    "medianPct": 0.98,
+                    "positivePct": 59.74
+                },
+                {
+                    "month": 4,
+                    "samples": 77,
+                    "positive": 41,
+                    "avgPct": 0.39,
+                    "medianPct": 0.23,
+                    "positivePct": 53.25
+                },
+                {
+                    "month": 5,
+                    "samples": 77,
+                    "positive": 48,
+                    "avgPct": 0.91,
+                    "medianPct": 0.8,
+                    "positivePct": 62.34
+                },
+                {
+                    "month": 6,
+                    "samples": 77,
+                    "positive": 40,
+                    "avgPct": 0.04,
+                    "medianPct": 0.08,
+                    "positivePct": 51.95
+                },
+                {
+                    "month": 7,
+                    "samples": 77,
+                    "positive": 52,
+                    "avgPct": 1.44,
+                    "medianPct": 0.88,
+                    "positivePct": 67.53
+                },
+                {
+                    "month": 8,
+                    "samples": 77,
+                    "positive": 44,
+                    "avgPct": 0.13,
+                    "medianPct": 0.55,
+                    "positivePct": 57.14
+                },
+                {
+                    "month": 9,
+                    "samples": 77,
+                    "positive": 47,
+                    "avgPct": 0.82,
+                    "medianPct": 0.67,
+                    "positivePct": 61.04
+                },
+                {
+                    "month": 10,
+                    "samples": 77,
+                    "positive": 42,
+                    "avgPct": 0.69,
+                    "medianPct": 0.54,
+                    "positivePct": 54.55
+                },
+                {
+                    "month": 11,
+                    "samples": 76,
+                    "positive": 39,
+                    "avgPct": 0.32,
+                    "medianPct": 0.21,
+                    "positivePct": 51.32
+                },
+                {
+                    "month": 12,
+                    "samples": 76,
+                    "positive": 55,
+                    "avgPct": 1.71,
+                    "medianPct": 1.69,
+                    "positivePct": 72.37
+                }
+            ],
+            "presidentialCycle": [
+                {
+                    "position": "post_election",
+                    "years": [
+                        1953, 1957, 1961, 1965, 1969, 1973, 1977, 1981, 1985,
+                        1989, 1993, 1997, 2001, 2005, 2009, 2013, 2017, 2021,
+                        2025
+                    ],
+                    "samples": 19,
+                    "positive": 14,
+                    "avgPct": 7.61,
+                    "medianPct": 7.01,
+                    "positivePct": 73.68
+                },
+                {
+                    "position": "midterm",
+                    "years": [
+                        1954, 1958, 1962, 1966, 1970, 1974, 1978, 1982, 1986,
+                        1990, 1994, 1998, 2002, 2006, 2010, 2014, 2018, 2022
+                    ],
+                    "samples": 18,
+                    "positive": 16,
+                    "avgPct": 9.26,
+                    "medianPct": 9.57,
+                    "positivePct": 88.89
+                },
+                {
+                    "position": "pre_election",
+                    "years": [
+                        1951, 1955, 1959, 1963, 1967, 1971, 1975, 1979, 1983,
+                        1987, 1991, 1995, 1999, 2003, 2007, 2011, 2015, 2019,
+                        2023
+                    ],
+                    "samples": 19,
+                    "positive": 14,
+                    "avgPct": 6.43,
+                    "medianPct": 4.46,
+                    "positivePct": 73.68
+                },
+                {
+                    "position": "election",
+                    "years": [
+                        1952, 1956, 1960, 1964, 1968, 1972, 1976, 1980, 1984,
+                        1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020,
+                        2024
+                    ],
+                    "samples": 19,
+                    "positive": 16,
+                    "avgPct": 8.68,
+                    "medianPct": 6.79,
+                    "positivePct": 84.21
+                }
+            ],
+            "midtermForward12m": {
+                "rows": [
+                    {
+                        "year": 1950,
+                        "returnPct": 8.09
+                    },
+                    {
+                        "year": 1954,
+                        "returnPct": 4.27
+                    },
+                    {
+                        "year": 1958,
+                        "returnPct": 2.43
+                    },
+                    {
+                        "year": 1962,
+                        "returnPct": 5.42
+                    },
+                    {
+                        "year": 1966,
+                        "returnPct": 10.64
+                    },
+                    {
+                        "year": 1970,
+                        "returnPct": 21.43
+                    },
+                    {
+                        "year": 1974,
+                        "returnPct": 6.33
+                    },
+                    {
+                        "year": 1978,
+                        "returnPct": 7.21
+                    },
+                    {
+                        "year": 1982,
+                        "returnPct": -0.39
+                    },
+                    {
+                        "year": 1986,
+                        "returnPct": 2.9
+                    },
+                    {
+                        "year": 1990,
+                        "returnPct": 14.02
+                    },
+                    {
+                        "year": 1994,
+                        "returnPct": 20.75
+                    },
+                    {
+                        "year": 1998,
+                        "returnPct": 19.45
+                    },
+                    {
+                        "year": 2002,
+                        "returnPct": 10.22
+                    },
+                    {
+                        "year": 2006,
+                        "returnPct": -2.59
+                    },
+                    {
+                        "year": 2010,
+                        "returnPct": -2.75
+                    },
+                    {
+                        "year": 2014,
+                        "returnPct": 4.45
+                    },
+                    {
+                        "year": 2018,
+                        "returnPct": 14.25
+                    },
+                    {
+                        "year": 2022,
+                        "returnPct": 22.82
+                    }
+                ],
+                "summary": {
+                    "samples": 19,
+                    "positive": 16,
+                    "avgPct": 8.89,
+                    "medianPct": 7.21,
+                    "positivePct": 84.21
+                }
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SIGLENS index history (month-end closes)",
+            "index": "sp500",
+            "available": true,
+            "firstMonth": "1950-01",
+            "lastMonth": "2026-10",
+            "firstFullYear": 1951,
+            "lastFullYear": 2025,
+            "annual": [
+                {
+                    "year": 1951,
+                    "returnPct": 8.2,
+                    "maxDrawdownPct": -5.04
+                },
+                {
+                    "year": 1952,
+                    "returnPct": 17.89,
+                    "maxDrawdownPct": -1.4
+                },
+                {
+                    "year": 1953,
+                    "returnPct": 10.82,
+                    "maxDrawdownPct": -4.53
+                },
+                {
+                    "year": 1954,
+                    "returnPct": 1.27,
+                    "maxDrawdownPct": -6.57
+                },
+                {
+                    "year": 1955,
+                    "returnPct": 0.28,
+                    "maxDrawdownPct": -5.98
+                },
+                {
+                    "year": 1956,
+                    "returnPct": 12.39,
+                    "maxDrawdownPct": -5.05
+                },
+                {
+                    "year": 1957,
+                    "returnPct": 19.98,
+                    "maxDrawdownPct": -2.68
+                },
+                {
+                    "year": 1958,
+                    "returnPct": 6.86,
+                    "maxDrawdownPct": -3.92
+                },
+                {
+                    "year": 1959,
+                    "returnPct": -2.12,
+                    "maxDrawdownPct": -5.78
+                },
+                {
+                    "year": 1960,
+                    "returnPct": -1.63,
+                    "maxDrawdownPct": -5.74
+                },
+                {
+                    "year": 1961,
+                    "returnPct": 20.59,
+                    "maxDrawdownPct": -4.25
+                },
+                {
+                    "year": 1962,
+                    "returnPct": 11.81,
+                    "maxDrawdownPct": -3.92
+                },
+                {
+                    "year": 1963,
+                    "returnPct": 5.98,
+                    "maxDrawdownPct": -3.76
+                },
+                {
+                    "year": 1964,
+                    "returnPct": 1.28,
+                    "maxDrawdownPct": -5.22
+                },
+                {
+                    "year": 1965,
+                    "returnPct": 7.01,
+                    "maxDrawdownPct": -5.21
+                },
+                {
+                    "year": 1966,
+                    "returnPct": 15.86,
+                    "maxDrawdownPct": -3.17
+                },
+                {
+                    "year": 1967,
+                    "returnPct": 10.76,
+                    "maxDrawdownPct": -4.1
+                },
+                {
+                    "year": 1968,
+                    "returnPct": 4.52,
+                    "maxDrawdownPct": -5.32
+                },
+                {
+                    "year": 1969,
+                    "returnPct": -3.69,
+                    "maxDrawdownPct": -6.85
+                },
+                {
+                    "year": 1970,
+                    "returnPct": 13.13,
+                    "maxDrawdownPct": -4.33
+                },
+                {
+                    "year": 1971,
+                    "returnPct": 19.32,
+                    "maxDrawdownPct": -2.84
+                },
+                {
+                    "year": 1972,
+                    "returnPct": 9.34,
+                    "maxDrawdownPct": -4.4
+                },
+                {
+                    "year": 1973,
+                    "returnPct": -0.49,
+                    "maxDrawdownPct": -5.86
+                },
+                {
+                    "year": 1974,
+                    "returnPct": -0.87,
+                    "maxDrawdownPct": -5.61
+                },
+                {
+                    "year": 1975,
+                    "returnPct": 16.85,
+                    "maxDrawdownPct": -4.4
+                },
+                {
+                    "year": 1976,
+                    "returnPct": 16.11,
+                    "maxDrawdownPct": -2.57
+                },
+                {
+                    "year": 1977,
+                    "returnPct": 0.18,
+                    "maxDrawdownPct": -3.89
+                },
+                {
+                    "year": 1978,
+                    "returnPct": 5.41,
+                    "maxDrawdownPct": -4.22
+                },
+                {
+                    "year": 1979,
+                    "returnPct": 1.13,
+                    "maxDrawdownPct": -6.84
+                },
+                {
+                    "year": 1980,
+                    "returnPct": 17.66,
+                    "maxDrawdownPct": -1.9
+                },
+                {
+                    "year": 1981,
+                    "returnPct": 14.43,
+                    "maxDrawdownPct": -3.19
+                },
+                {
+                    "year": 1982,
+                    "returnPct": 4.27,
+                    "maxDrawdownPct": -3.63
+                },
+                {
+                    "year": 1983,
+                    "returnPct": -1.94,
+                    "maxDrawdownPct": -6.15
+                },
+                {
+                    "year": 1984,
+                    "returnPct": 11.89,
+                    "maxDrawdownPct": -4.99
+                },
+                {
+                    "year": 1985,
+                    "returnPct": 16.82,
+                    "maxDrawdownPct": -4.64
+                },
+                {
+                    "year": 1986,
+                    "returnPct": 9.56,
+                    "maxDrawdownPct": -3.88
+                },
+                {
+                    "year": 1987,
+                    "returnPct": -3.96,
+                    "maxDrawdownPct": -4.96
+                },
+                {
+                    "year": 1988,
+                    "returnPct": 4.61,
+                    "maxDrawdownPct": -6.55
+                },
+                {
+                    "year": 1989,
+                    "returnPct": 12.91,
+                    "maxDrawdownPct": -3.55
+                },
+                {
+                    "year": 1990,
+                    "returnPct": 16.12,
+                    "maxDrawdownPct": -4.62
+                },
+                {
+                    "year": 1991,
+                    "returnPct": 3.87,
+                    "maxDrawdownPct": -5.08
+                },
+                {
+                    "year": 1992,
+                    "returnPct": 4.28,
+                    "maxDrawdownPct": -6.52
+                },
+                {
+                    "year": 1993,
+                    "returnPct": 3.17,
+                    "maxDrawdownPct": -5.48
+                },
+                {
+                    "year": 1994,
+                    "returnPct": 15.41,
+                    "maxDrawdownPct": -4.63
+                },
+                {
+                    "year": 1995,
+                    "returnPct": 14.44,
+                    "maxDrawdownPct": -3.37
+                },
+                {
+                    "year": 1996,
+                    "returnPct": -0.07,
+                    "maxDrawdownPct": -4.28
+                },
+                {
+                    "year": 1997,
+                    "returnPct": -1.88,
+                    "maxDrawdownPct": -6.09
+                },
+                {
+                    "year": 1998,
+                    "returnPct": 9.59,
+                    "maxDrawdownPct": -6.21
+                },
+                {
+                    "year": 1999,
+                    "returnPct": 20.8,
+                    "maxDrawdownPct": -2.68
+                },
+                {
+                    "year": 2000,
+                    "returnPct": 12.68,
+                    "maxDrawdownPct": -3.01
+                },
+                {
+                    "year": 2001,
+                    "returnPct": 1.52,
+                    "maxDrawdownPct": -4.14
+                },
+                {
+                    "year": 2002,
+                    "returnPct": -0.81,
+                    "maxDrawdownPct": -6.25
+                },
+                {
+                    "year": 2003,
+                    "returnPct": 5.97,
+                    "maxDrawdownPct": -4.28
+                },
+                {
+                    "year": 2004,
+                    "returnPct": 21.3,
+                    "maxDrawdownPct": -2.07
+                },
+                {
+                    "year": 2005,
+                    "returnPct": 4.74,
+                    "maxDrawdownPct": -3.48
+                },
+                {
+                    "year": 2006,
+                    "returnPct": 5.51,
+                    "maxDrawdownPct": -2.93
+                },
+                {
+                    "year": 2007,
+                    "returnPct": -1.19,
+                    "maxDrawdownPct": -6.51
+                },
+                {
+                    "year": 2008,
+                    "returnPct": 19.12,
+                    "maxDrawdownPct": -4.15
+                },
+                {
+                    "year": 2009,
+                    "returnPct": 12.62,
+                    "maxDrawdownPct": -4.37
+                },
+                {
+                    "year": 2010,
+                    "returnPct": 4.22,
+                    "maxDrawdownPct": -3.61
+                },
+                {
+                    "year": 2011,
+                    "returnPct": -1.24,
+                    "maxDrawdownPct": -4.3
+                },
+                {
+                    "year": 2012,
+                    "returnPct": 6.79,
+                    "maxDrawdownPct": -3.82
+                },
+                {
+                    "year": 2013,
+                    "returnPct": 15.3,
+                    "maxDrawdownPct": -3.89
+                },
+                {
+                    "year": 2014,
+                    "returnPct": 16.86,
+                    "maxDrawdownPct": -4.16
+                },
+                {
+                    "year": 2015,
+                    "returnPct": 1.58,
+                    "maxDrawdownPct": -4.85
+                },
+                {
+                    "year": 2016,
+                    "returnPct": -1.86,
+                    "maxDrawdownPct": -4.43
+                },
+                {
+                    "year": 2017,
+                    "returnPct": 13,
+                    "maxDrawdownPct": -4.33
+                },
+                {
+                    "year": 2018,
+                    "returnPct": 17.1,
+                    "maxDrawdownPct": -5.36
+                },
+                {
+                    "year": 2019,
+                    "returnPct": 4.46,
+                    "maxDrawdownPct": -4.27
+                },
+                {
+                    "year": 2020,
+                    "returnPct": 4.32,
+                    "maxDrawdownPct": -5.86
+                },
+                {
+                    "year": 2021,
+                    "returnPct": -2.48,
+                    "maxDrawdownPct": -5.47
+                },
+                {
+                    "year": 2022,
+                    "returnPct": 15.46,
+                    "maxDrawdownPct": -2.43
+                },
+                {
+                    "year": 2023,
+                    "returnPct": 19,
+                    "maxDrawdownPct": -3.58
+                },
+                {
+                    "year": 2024,
+                    "returnPct": 4.21,
+                    "maxDrawdownPct": -3.9
+                },
+                {
+                    "year": 2025,
+                    "returnPct": -0.04,
+                    "maxDrawdownPct": -3.65
+                }
+            ],
+            "annualSummary": {
+                "samples": 75,
+                "positive": 60,
+                "avgPct": 7.98,
+                "medianPct": 6.79,
+                "positivePct": 80
+            },
+            "monthly": [
+                {
+                    "month": 1,
+                    "samples": 76,
+                    "positive": 32,
+                    "avgPct": -0.71,
+                    "medianPct": -0.62,
+                    "positivePct": 42.11
+                },
+                {
+                    "month": 2,
+                    "samples": 77,
+                    "positive": 56,
+                    "avgPct": 1.57,
+                    "medianPct": 1.97,
+                    "positivePct": 72.73
+                },
+                {
+                    "month": 3,
+                    "samples": 77,
+                    "positive": 46,
+                    "avgPct": 0.53,
+                    "medianPct": 0.98,
+                    "positivePct": 59.74
+                },
+                {
+                    "month": 4,
+                    "samples": 77,
+                    "positive": 41,
+                    "avgPct": 0.39,
+                    "medianPct": 0.23,
+                    "positivePct": 53.25
+                },
+                {
+                    "month": 5,
+                    "samples": 77,
+                    "positive": 48,
+                    "avgPct": 0.91,
+                    "medianPct": 0.8,
+                    "positivePct": 62.34
+                },
+                {
+                    "month": 6,
+                    "samples": 77,
+                    "positive": 40,
+                    "avgPct": 0.04,
+                    "medianPct": 0.08,
+                    "positivePct": 51.95
+                },
+                {
+                    "month": 7,
+                    "samples": 77,
+                    "positive": 52,
+                    "avgPct": 1.44,
+                    "medianPct": 0.88,
+                    "positivePct": 67.53
+                },
+                {
+                    "month": 8,
+                    "samples": 77,
+                    "positive": 44,
+                    "avgPct": 0.13,
+                    "medianPct": 0.55,
+                    "positivePct": 57.14
+                },
+                {
+                    "month": 9,
+                    "samples": 77,
+                    "positive": 47,
+                    "avgPct": 0.82,
+                    "medianPct": 0.67,
+                    "positivePct": 61.04
+                },
+                {
+                    "month": 10,
+                    "samples": 77,
+                    "positive": 42,
+                    "avgPct": 0.69,
+                    "medianPct": 0.54,
+                    "positivePct": 54.55
+                },
+                {
+                    "month": 11,
+                    "samples": 76,
+                    "positive": 39,
+                    "avgPct": 0.32,
+                    "medianPct": 0.21,
+                    "positivePct": 51.32
+                },
+                {
+                    "month": 12,
+                    "samples": 76,
+                    "positive": 55,
+                    "avgPct": 1.71,
+                    "medianPct": 1.69,
+                    "positivePct": 72.37
+                }
+            ],
+            "presidentialCycle": [
+                {
+                    "position": "post_election",
+                    "years": [
+                        1953, 1957, 1961, 1965, 1969, 1973, 1977, 1981, 1985,
+                        1989, 1993, 1997, 2001, 2005, 2009, 2013, 2017, 2021,
+                        2025
+                    ],
+                    "samples": 19,
+                    "positive": 14,
+                    "avgPct": 7.61,
+                    "medianPct": 7.01,
+                    "positivePct": 73.68
+                },
+                {
+                    "position": "midterm",
+                    "years": [
+                        1954, 1958, 1962, 1966, 1970, 1974, 1978, 1982, 1986,
+                        1990, 1994, 1998, 2002, 2006, 2010, 2014, 2018, 2022
+                    ],
+                    "samples": 18,
+                    "positive": 16,
+                    "avgPct": 9.26,
+                    "medianPct": 9.57,
+                    "positivePct": 88.89
+                },
+                {
+                    "position": "pre_election",
+                    "years": [
+                        1951, 1955, 1959, 1963, 1967, 1971, 1975, 1979, 1983,
+                        1987, 1991, 1995, 1999, 2003, 2007, 2011, 2015, 2019,
+                        2023
+                    ],
+                    "samples": 19,
+                    "positive": 14,
+                    "avgPct": 6.43,
+                    "medianPct": 4.46,
+                    "positivePct": 73.68
+                },
+                {
+                    "position": "election",
+                    "years": [
+                        1952, 1956, 1960, 1964, 1968, 1972, 1976, 1980, 1984,
+                        1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020,
+                        2024
+                    ],
+                    "samples": 19,
+                    "positive": 16,
+                    "avgPct": 8.68,
+                    "medianPct": 6.79,
+                    "positivePct": 84.21
+                }
+            ],
+            "midtermForward12m": {
+                "rows": [
+                    {
+                        "year": 1950,
+                        "returnPct": 8.09
+                    },
+                    {
+                        "year": 1954,
+                        "returnPct": 4.27
+                    },
+                    {
+                        "year": 1958,
+                        "returnPct": 2.43
+                    },
+                    {
+                        "year": 1962,
+                        "returnPct": 5.42
+                    },
+                    {
+                        "year": 1966,
+                        "returnPct": 10.64
+                    },
+                    {
+                        "year": 1970,
+                        "returnPct": 21.43
+                    },
+                    {
+                        "year": 1974,
+                        "returnPct": 6.33
+                    },
+                    {
+                        "year": 1978,
+                        "returnPct": 7.21
+                    },
+                    {
+                        "year": 1982,
+                        "returnPct": -0.39
+                    },
+                    {
+                        "year": 1986,
+                        "returnPct": 2.9
+                    },
+                    {
+                        "year": 1990,
+                        "returnPct": 14.02
+                    },
+                    {
+                        "year": 1994,
+                        "returnPct": 20.75
+                    },
+                    {
+                        "year": 1998,
+                        "returnPct": 19.45
+                    },
+                    {
+                        "year": 2002,
+                        "returnPct": 10.22
+                    },
+                    {
+                        "year": 2006,
+                        "returnPct": -2.59
+                    },
+                    {
+                        "year": 2010,
+                        "returnPct": -2.75
+                    },
+                    {
+                        "year": 2014,
+                        "returnPct": 4.45
+                    },
+                    {
+                        "year": 2018,
+                        "returnPct": 14.25
+                    },
+                    {
+                        "year": 2022,
+                        "returnPct": 22.82
+                    }
+                ],
+                "summary": {
+                    "samples": 19,
+                    "positive": 16,
+                    "avgPct": 8.89,
+                    "medianPct": 7.21,
+                    "positivePct": 84.21
+                }
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

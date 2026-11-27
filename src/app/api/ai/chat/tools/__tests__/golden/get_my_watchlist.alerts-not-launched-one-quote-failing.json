@@ -1,0 +1,62 @@
+{
+    "tool": "get_my_watchlist",
+    "case": "alerts-not-launched-one-quote-failing",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 2,
+            "items": [
+                {
+                    "symbol": "900110.KS",
+                    "name": "한빛정밀",
+                    "addedAt": "2026-10-19",
+                    "currency": "KRW",
+                    "price": null,
+                    "dayChangePct": null
+                },
+                {
+                    "symbol": "GLDNX",
+                    "name": "Goldenrod Systems Inc.",
+                    "addedAt": "2026-10-02",
+                    "currency": "USD",
+                    "price": 244.85,
+                    "dayChangePct": -0.77805
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 2,
+            "items": [
+                {
+                    "symbol": "900110.KS",
+                    "name": "한빛정밀",
+                    "addedAt": "2026-10-19",
+                    "currency": "KRW",
+                    "price": null,
+                    "dayChangePct": null
+                },
+                {
+                    "symbol": "GLDNX",
+                    "name": "Goldenrod Systems Inc.",
+                    "addedAt": "2026-10-02",
+                    "currency": "USD",
+                    "price": 244.85,
+                    "dayChangePct": -0.77805
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

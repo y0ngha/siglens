@@ -1,0 +1,1046 @@
+{
+    "tool": "get_my_watchlist",
+    "case": "fifty-members-ten-alerts-full-size",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {},
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 50,
+            "stalePriceCount": 9,
+            "items": [
+                {
+                    "symbol": "910149.KS",
+                    "name": "바스켓종목50 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-20",
+                    "currency": "KRW",
+                    "price": 13490,
+                    "dayChangePct": 0.98817
+                },
+                {
+                    "symbol": "910148.KS",
+                    "name": "바스켓종목49 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-19",
+                    "currency": "KRW",
+                    "price": 12721,
+                    "dayChangePct": 0.36292,
+                    "priceFreshness": {
+                        "asOf": "2026-09-02T06:30:00.000Z",
+                        "ageMinutes": 112050,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910147.KS",
+                    "name": "바스켓종목48 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-18",
+                    "currency": "KRW",
+                    "price": 12484,
+                    "dayChangePct": 0.44251
+                },
+                {
+                    "symbol": "910146.KS",
+                    "name": "바스켓종목47 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-17",
+                    "currency": "KRW",
+                    "price": 11327,
+                    "dayChangePct": 1.50551
+                },
+                {
+                    "symbol": "910145.KS",
+                    "name": "바스켓종목46 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-16",
+                    "currency": "KRW",
+                    "price": 11695,
+                    "dayChangePct": 0.2314
+                },
+                {
+                    "symbol": "910144.KS",
+                    "name": "바스켓종목45 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-15",
+                    "currency": "KRW",
+                    "price": 13309,
+                    "dayChangePct": -1.07039
+                },
+                {
+                    "symbol": "910143.KS",
+                    "name": "바스켓종목44 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-14",
+                    "currency": "KRW",
+                    "price": 13459,
+                    "dayChangePct": -0.11874
+                },
+                {
+                    "symbol": "910142.KS",
+                    "name": "바스켓종목43 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-13",
+                    "currency": "KRW",
+                    "price": 10339,
+                    "dayChangePct": 1.51203,
+                    "priceFreshness": {
+                        "asOf": "2026-09-08T06:30:00.000Z",
+                        "ageMinutes": 103410,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910141.KS",
+                    "name": "바스켓종목42 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-12",
+                    "currency": "KRW",
+                    "price": 10746,
+                    "dayChangePct": 0.29867
+                },
+                {
+                    "symbol": "910140.KS",
+                    "name": "바스켓종목41 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-11",
+                    "currency": "KRW",
+                    "price": 10988,
+                    "dayChangePct": -1.16928
+                },
+                {
+                    "symbol": "910139.KS",
+                    "name": "바스켓종목40 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-10",
+                    "currency": "KRW",
+                    "price": 11222,
+                    "dayChangePct": 0.04458
+                },
+                {
+                    "symbol": "910138.KS",
+                    "name": "바스켓종목39 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-09",
+                    "currency": "KRW",
+                    "price": 11130,
+                    "dayChangePct": -0.54508
+                },
+                {
+                    "symbol": "910137.KS",
+                    "name": "바스켓종목38 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-08",
+                    "currency": "KRW",
+                    "price": 11892,
+                    "dayChangePct": -0.36028
+                },
+                {
+                    "symbol": "910136.KS",
+                    "name": "바스켓종목37 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-07",
+                    "currency": "KRW",
+                    "price": 10308,
+                    "dayChangePct": 0.08739,
+                    "priceFreshness": {
+                        "asOf": "2026-09-14T06:30:00.000Z",
+                        "ageMinutes": 94770,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910135.KS",
+                    "name": "바스켓종목36 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-06",
+                    "currency": "KRW",
+                    "price": 10395,
+                    "dayChangePct": 0.91253
+                },
+                {
+                    "symbol": "910134.KS",
+                    "name": "바스켓종목35 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-05",
+                    "currency": "KRW",
+                    "price": 9235,
+                    "dayChangePct": 1.49467
+                },
+                {
+                    "symbol": "910133.KS",
+                    "name": "바스켓종목34 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-04",
+                    "currency": "KRW",
+                    "price": 9916,
+                    "dayChangePct": -0.41177
+                },
+                {
+                    "symbol": "910132.KS",
+                    "name": "바스켓종목33 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-03",
+                    "currency": "KRW",
+                    "price": 11021,
+                    "dayChangePct": 0.12719
+                },
+                {
+                    "symbol": "910131.KS",
+                    "name": "바스켓종목32 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-02",
+                    "currency": "KRW",
+                    "price": 10642,
+                    "dayChangePct": -0.66275
+                },
+                {
+                    "symbol": "910130.KS",
+                    "name": "바스켓종목31 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-01",
+                    "currency": "KRW",
+                    "price": 8730,
+                    "dayChangePct": -0.23997,
+                    "priceFreshness": {
+                        "asOf": "2026-09-18T06:30:00.000Z",
+                        "ageMinutes": 89010,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910129.KS",
+                    "name": "바스켓종목30 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-30",
+                    "currency": "KRW",
+                    "price": 10156,
+                    "dayChangePct": 1.40789
+                },
+                {
+                    "symbol": "910128.KS",
+                    "name": "바스켓종목29 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-29",
+                    "currency": "KRW",
+                    "price": 9215,
+                    "dayChangePct": 2.36614
+                },
+                {
+                    "symbol": "910127.KS",
+                    "name": "바스켓종목28 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-28",
+                    "currency": "KRW",
+                    "price": 8265,
+                    "dayChangePct": 0.71899
+                },
+                {
+                    "symbol": "910126.KS",
+                    "name": "바스켓종목27 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-27",
+                    "currency": "KRW",
+                    "price": 9199,
+                    "dayChangePct": 0.48061
+                },
+                {
+                    "symbol": "910125.KS",
+                    "name": "바스켓종목26 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-26",
+                    "currency": "KRW",
+                    "price": 10183,
+                    "dayChangePct": -1.50885
+                },
+                {
+                    "symbol": "910124.KS",
+                    "name": "바스켓종목25 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-25",
+                    "currency": "KRW",
+                    "price": 8470,
+                    "dayChangePct": 1.27945,
+                    "priceFreshness": {
+                        "asOf": "2026-09-23T06:30:00.000Z",
+                        "ageMinutes": 81810,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910123.KS",
+                    "name": "바스켓종목24 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-24",
+                    "currency": "KRW",
+                    "price": 8516,
+                    "dayChangePct": 0.80492
+                },
+                {
+                    "symbol": "910122.KS",
+                    "name": "바스켓종목23 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-23",
+                    "currency": "KRW",
+                    "price": 8266,
+                    "dayChangePct": 1.91099
+                },
+                {
+                    "symbol": "910121.KS",
+                    "name": "바스켓종목22 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-22",
+                    "currency": "KRW",
+                    "price": 8139,
+                    "dayChangePct": 1.08048
+                },
+                {
+                    "symbol": "910120.KS",
+                    "name": "바스켓종목21 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-21",
+                    "currency": "KRW",
+                    "price": 7997,
+                    "dayChangePct": 2.48622
+                },
+                {
+                    "symbol": "910119.KS",
+                    "name": "바스켓종목20 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-20",
+                    "currency": "KRW",
+                    "price": 8228,
+                    "dayChangePct": -1.0582
+                },
+                {
+                    "symbol": "910118.KS",
+                    "name": "바스켓종목19 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-19",
+                    "currency": "KRW",
+                    "price": 7554,
+                    "dayChangePct": 0.35871
+                },
+                {
+                    "symbol": "910117.KS",
+                    "name": "바스켓종목18 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-18",
+                    "currency": "KRW",
+                    "price": 8409,
+                    "dayChangePct": 0.83943
+                },
+                {
+                    "symbol": "910116.KS",
+                    "name": "바스켓종목17 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-17",
+                    "currency": "KRW",
+                    "price": 7075,
+                    "dayChangePct": 1.01371
+                },
+                {
+                    "symbol": "910115.KS",
+                    "name": "바스켓종목16 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-16",
+                    "currency": "KRW",
+                    "price": 6609,
+                    "dayChangePct": -2.76593
+                },
+                {
+                    "symbol": "910114.KS",
+                    "name": "바스켓종목15 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-15",
+                    "currency": "KRW",
+                    "price": 7296,
+                    "dayChangePct": -0.10953
+                },
+                {
+                    "symbol": "910113.KS",
+                    "name": "바스켓종목14 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-14",
+                    "currency": "KRW",
+                    "price": 7552,
+                    "dayChangePct": 0.57265
+                },
+                {
+                    "symbol": "910112.KS",
+                    "name": "바스켓종목13 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-13",
+                    "currency": "KRW",
+                    "price": 7355,
+                    "dayChangePct": 0.10889
+                },
+                {
+                    "symbol": "910111.KS",
+                    "name": "바스켓종목12 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-12",
+                    "currency": "KRW",
+                    "price": 7350,
+                    "dayChangePct": -1.05008
+                },
+                {
+                    "symbol": "910110.KS",
+                    "name": "바스켓종목11 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-11",
+                    "currency": "KRW",
+                    "price": 6896,
+                    "dayChangePct": 0.14522
+                },
+                {
+                    "symbol": "910109.KS",
+                    "name": "바스켓종목10 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-10",
+                    "currency": "KRW",
+                    "price": 5923,
+                    "dayChangePct": 0.83418
+                },
+                {
+                    "symbol": "910108.KS",
+                    "name": "바스켓종목9 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-09",
+                    "currency": "KRW",
+                    "price": 5720,
+                    "dayChangePct": -0.3137
+                },
+                {
+                    "symbol": "910107.KS",
+                    "name": "바스켓종목8 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-08",
+                    "currency": "KRW",
+                    "price": 6413,
+                    "dayChangePct": -1.0034
+                },
+                {
+                    "symbol": "910106.KS",
+                    "name": "바스켓종목7 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-07",
+                    "currency": "KRW",
+                    "price": 6414,
+                    "dayChangePct": 0.29711
+                },
+                {
+                    "symbol": "910105.KS",
+                    "name": "바스켓종목6 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-06",
+                    "currency": "KRW",
+                    "price": 6136,
+                    "dayChangePct": -1.06417
+                },
+                {
+                    "symbol": "910104.KS",
+                    "name": "바스켓종목5 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-05",
+                    "currency": "KRW",
+                    "price": 5622,
+                    "dayChangePct": 0.69855
+                },
+                {
+                    "symbol": "910103.KS",
+                    "name": "바스켓종목4 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-04",
+                    "currency": "KRW",
+                    "price": 5390,
+                    "dayChangePct": -2.03562
+                },
+                {
+                    "symbol": "910102.KS",
+                    "name": "바스켓종목3 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-03",
+                    "currency": "KRW",
+                    "price": 5084,
+                    "dayChangePct": -0.58662
+                },
+                {
+                    "symbol": "910101.KS",
+                    "name": "바스켓종목2 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-02",
+                    "currency": "KRW",
+                    "price": 4923,
+                    "dayChangePct": -1.71691
+                },
+                {
+                    "symbol": "910100.KS",
+                    "name": "바스켓종목1 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-01",
+                    "currency": "KRW",
+                    "price": 5562,
+                    "dayChangePct": 0.12601
+                }
+            ],
+            "priceAlerts": [
+                {
+                    "symbol": "910100.KS",
+                    "condition": "close_below",
+                    "level": 2950,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-10"
+                },
+                {
+                    "symbol": "910101.KS",
+                    "condition": "enter_zone",
+                    "low": 3080,
+                    "high": 3230,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-11"
+                },
+                {
+                    "symbol": "910102.KS",
+                    "condition": "close_below",
+                    "level": 3130,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-12"
+                },
+                {
+                    "symbol": "910103.KS",
+                    "condition": "enter_zone",
+                    "low": 3240,
+                    "high": 3390,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-13"
+                },
+                {
+                    "symbol": "910104.KS",
+                    "condition": "close_below",
+                    "level": 3310,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-14"
+                },
+                {
+                    "symbol": "910105.KS",
+                    "condition": "enter_zone",
+                    "low": 3400,
+                    "high": 3550,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-15"
+                },
+                {
+                    "symbol": "910106.KS",
+                    "condition": "close_below",
+                    "level": 3490,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-16"
+                },
+                {
+                    "symbol": "910107.KS",
+                    "condition": "enter_zone",
+                    "low": 3560,
+                    "high": 3710,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-17"
+                },
+                {
+                    "symbol": "910108.KS",
+                    "condition": "close_below",
+                    "level": 3670,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-18"
+                },
+                {
+                    "symbol": "910109.KS",
+                    "condition": "enter_zone",
+                    "low": 3720,
+                    "high": 3870,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-19"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "source": "SIGLENS watchlist",
+            "count": 50,
+            "stalePriceCount": 9,
+            "items": [
+                {
+                    "symbol": "910149.KS",
+                    "name": "바스켓종목50 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-20",
+                    "currency": "KRW",
+                    "price": 13490,
+                    "dayChangePct": 0.98817
+                },
+                {
+                    "symbol": "910148.KS",
+                    "name": "바스켓종목49 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-19",
+                    "currency": "KRW",
+                    "price": 12721,
+                    "dayChangePct": 0.36292,
+                    "priceFreshness": {
+                        "asOf": "2026-09-02T06:30:00.000Z",
+                        "ageMinutes": 112050,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910147.KS",
+                    "name": "바스켓종목48 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-18",
+                    "currency": "KRW",
+                    "price": 12484,
+                    "dayChangePct": 0.44251
+                },
+                {
+                    "symbol": "910146.KS",
+                    "name": "바스켓종목47 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-17",
+                    "currency": "KRW",
+                    "price": 11327,
+                    "dayChangePct": 1.50551
+                },
+                {
+                    "symbol": "910145.KS",
+                    "name": "바스켓종목46 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-16",
+                    "currency": "KRW",
+                    "price": 11695,
+                    "dayChangePct": 0.2314
+                },
+                {
+                    "symbol": "910144.KS",
+                    "name": "바스켓종목45 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-15",
+                    "currency": "KRW",
+                    "price": 13309,
+                    "dayChangePct": -1.07039
+                },
+                {
+                    "symbol": "910143.KS",
+                    "name": "바스켓종목44 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-14",
+                    "currency": "KRW",
+                    "price": 13459,
+                    "dayChangePct": -0.11874
+                },
+                {
+                    "symbol": "910142.KS",
+                    "name": "바스켓종목43 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-13",
+                    "currency": "KRW",
+                    "price": 10339,
+                    "dayChangePct": 1.51203,
+                    "priceFreshness": {
+                        "asOf": "2026-09-08T06:30:00.000Z",
+                        "ageMinutes": 103410,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910141.KS",
+                    "name": "바스켓종목42 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-12",
+                    "currency": "KRW",
+                    "price": 10746,
+                    "dayChangePct": 0.29867
+                },
+                {
+                    "symbol": "910140.KS",
+                    "name": "바스켓종목41 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-11",
+                    "currency": "KRW",
+                    "price": 10988,
+                    "dayChangePct": -1.16928
+                },
+                {
+                    "symbol": "910139.KS",
+                    "name": "바스켓종목40 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-10",
+                    "currency": "KRW",
+                    "price": 11222,
+                    "dayChangePct": 0.04458
+                },
+                {
+                    "symbol": "910138.KS",
+                    "name": "바스켓종목39 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-09",
+                    "currency": "KRW",
+                    "price": 11130,
+                    "dayChangePct": -0.54508
+                },
+                {
+                    "symbol": "910137.KS",
+                    "name": "바스켓종목38 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-08",
+                    "currency": "KRW",
+                    "price": 11892,
+                    "dayChangePct": -0.36028
+                },
+                {
+                    "symbol": "910136.KS",
+                    "name": "바스켓종목37 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-07",
+                    "currency": "KRW",
+                    "price": 10308,
+                    "dayChangePct": 0.08739,
+                    "priceFreshness": {
+                        "asOf": "2026-09-14T06:30:00.000Z",
+                        "ageMinutes": 94770,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910135.KS",
+                    "name": "바스켓종목36 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-06",
+                    "currency": "KRW",
+                    "price": 10395,
+                    "dayChangePct": 0.91253
+                },
+                {
+                    "symbol": "910134.KS",
+                    "name": "바스켓종목35 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-05",
+                    "currency": "KRW",
+                    "price": 9235,
+                    "dayChangePct": 1.49467
+                },
+                {
+                    "symbol": "910133.KS",
+                    "name": "바스켓종목34 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-04",
+                    "currency": "KRW",
+                    "price": 9916,
+                    "dayChangePct": -0.41177
+                },
+                {
+                    "symbol": "910132.KS",
+                    "name": "바스켓종목33 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-03",
+                    "currency": "KRW",
+                    "price": 11021,
+                    "dayChangePct": 0.12719
+                },
+                {
+                    "symbol": "910131.KS",
+                    "name": "바스켓종목32 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-02",
+                    "currency": "KRW",
+                    "price": 10642,
+                    "dayChangePct": -0.66275
+                },
+                {
+                    "symbol": "910130.KS",
+                    "name": "바스켓종목31 — a holding company with a very long registered display…",
+                    "addedAt": "2026-10-01",
+                    "currency": "KRW",
+                    "price": 8730,
+                    "dayChangePct": -0.23997,
+                    "priceFreshness": {
+                        "asOf": "2026-09-18T06:30:00.000Z",
+                        "ageMinutes": 89010,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910129.KS",
+                    "name": "바스켓종목30 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-30",
+                    "currency": "KRW",
+                    "price": 10156,
+                    "dayChangePct": 1.40789
+                },
+                {
+                    "symbol": "910128.KS",
+                    "name": "바스켓종목29 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-29",
+                    "currency": "KRW",
+                    "price": 9215,
+                    "dayChangePct": 2.36614
+                },
+                {
+                    "symbol": "910127.KS",
+                    "name": "바스켓종목28 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-28",
+                    "currency": "KRW",
+                    "price": 8265,
+                    "dayChangePct": 0.71899
+                },
+                {
+                    "symbol": "910126.KS",
+                    "name": "바스켓종목27 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-27",
+                    "currency": "KRW",
+                    "price": 9199,
+                    "dayChangePct": 0.48061
+                },
+                {
+                    "symbol": "910125.KS",
+                    "name": "바스켓종목26 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-26",
+                    "currency": "KRW",
+                    "price": 10183,
+                    "dayChangePct": -1.50885
+                },
+                {
+                    "symbol": "910124.KS",
+                    "name": "바스켓종목25 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-25",
+                    "currency": "KRW",
+                    "price": 8470,
+                    "dayChangePct": 1.27945,
+                    "priceFreshness": {
+                        "asOf": "2026-09-23T06:30:00.000Z",
+                        "ageMinutes": 81810,
+                        "stale": true,
+                        "maxAgeMinutes": 20160
+                    }
+                },
+                {
+                    "symbol": "910123.KS",
+                    "name": "바스켓종목24 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-24",
+                    "currency": "KRW",
+                    "price": 8516,
+                    "dayChangePct": 0.80492
+                },
+                {
+                    "symbol": "910122.KS",
+                    "name": "바스켓종목23 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-23",
+                    "currency": "KRW",
+                    "price": 8266,
+                    "dayChangePct": 1.91099
+                },
+                {
+                    "symbol": "910121.KS",
+                    "name": "바스켓종목22 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-22",
+                    "currency": "KRW",
+                    "price": 8139,
+                    "dayChangePct": 1.08048
+                },
+                {
+                    "symbol": "910120.KS",
+                    "name": "바스켓종목21 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-21",
+                    "currency": "KRW",
+                    "price": 7997,
+                    "dayChangePct": 2.48622
+                },
+                {
+                    "symbol": "910119.KS",
+                    "name": "바스켓종목20 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-20",
+                    "currency": "KRW",
+                    "price": 8228,
+                    "dayChangePct": -1.0582
+                },
+                {
+                    "symbol": "910118.KS",
+                    "name": "바스켓종목19 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-19",
+                    "currency": "KRW",
+                    "price": 7554,
+                    "dayChangePct": 0.35871
+                },
+                {
+                    "symbol": "910117.KS",
+                    "name": "바스켓종목18 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-18",
+                    "currency": "KRW",
+                    "price": 8409,
+                    "dayChangePct": 0.83943
+                },
+                {
+                    "symbol": "910116.KS",
+                    "name": "바스켓종목17 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-17",
+                    "currency": "KRW",
+                    "price": 7075,
+                    "dayChangePct": 1.01371
+                },
+                {
+                    "symbol": "910115.KS",
+                    "name": "바스켓종목16 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-16",
+                    "currency": "KRW",
+                    "price": 6609,
+                    "dayChangePct": -2.76593
+                },
+                {
+                    "symbol": "910114.KS",
+                    "name": "바스켓종목15 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-15",
+                    "currency": "KRW",
+                    "price": 7296,
+                    "dayChangePct": -0.10953
+                },
+                {
+                    "symbol": "910113.KS",
+                    "name": "바스켓종목14 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-14",
+                    "currency": "KRW",
+                    "price": 7552,
+                    "dayChangePct": 0.57265
+                },
+                {
+                    "symbol": "910112.KS",
+                    "name": "바스켓종목13 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-13",
+                    "currency": "KRW",
+                    "price": 7355,
+                    "dayChangePct": 0.10889
+                },
+                {
+                    "symbol": "910111.KS",
+                    "name": "바스켓종목12 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-12",
+                    "currency": "KRW",
+                    "price": 7350,
+                    "dayChangePct": -1.05008
+                },
+                {
+                    "symbol": "910110.KS",
+                    "name": "바스켓종목11 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-11",
+                    "currency": "KRW",
+                    "price": 6896,
+                    "dayChangePct": 0.14522
+                },
+                {
+                    "symbol": "910109.KS",
+                    "name": "바스켓종목10 — a holding company with a very long registered display…",
+                    "addedAt": "2026-09-10",
+                    "currency": "KRW",
+                    "price": 5923,
+                    "dayChangePct": 0.83418
+                },
+                {
+                    "symbol": "910108.KS",
+                    "name": "바스켓종목9 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-09",
+                    "currency": "KRW",
+                    "price": 5720,
+                    "dayChangePct": -0.3137
+                },
+                {
+                    "symbol": "910107.KS",
+                    "name": "바스켓종목8 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-08",
+                    "currency": "KRW",
+                    "price": 6413,
+                    "dayChangePct": -1.0034
+                },
+                {
+                    "symbol": "910106.KS",
+                    "name": "바스켓종목7 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-07",
+                    "currency": "KRW",
+                    "price": 6414,
+                    "dayChangePct": 0.29711
+                },
+                {
+                    "symbol": "910105.KS",
+                    "name": "바스켓종목6 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-06",
+                    "currency": "KRW",
+                    "price": 6136,
+                    "dayChangePct": -1.06417
+                },
+                {
+                    "symbol": "910104.KS",
+                    "name": "바스켓종목5 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-05",
+                    "currency": "KRW",
+                    "price": 5622,
+                    "dayChangePct": 0.69855
+                },
+                {
+                    "symbol": "910103.KS",
+                    "name": "바스켓종목4 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-04",
+                    "currency": "KRW",
+                    "price": 5390,
+                    "dayChangePct": -2.03562
+                },
+                {
+                    "symbol": "910102.KS",
+                    "name": "바스켓종목3 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-03",
+                    "currency": "KRW",
+                    "price": 5084,
+                    "dayChangePct": -0.58662
+                },
+                {
+                    "symbol": "910101.KS",
+                    "name": "바스켓종목2 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-02",
+                    "currency": "KRW",
+                    "price": 4923,
+                    "dayChangePct": -1.71691
+                },
+                {
+                    "symbol": "910100.KS",
+                    "name": "바스켓종목1 — a holding company with a very long registered display …",
+                    "addedAt": "2026-09-01",
+                    "currency": "KRW",
+                    "price": 5562,
+                    "dayChangePct": 0.12601
+                }
+            ],
+            "priceAlerts": [
+                {
+                    "symbol": "910100.KS",
+                    "condition": "close_below",
+                    "level": 2950,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-10"
+                },
+                {
+                    "symbol": "910101.KS",
+                    "condition": "enter_zone",
+                    "low": 3080,
+                    "high": 3230,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-11"
+                },
+                {
+                    "symbol": "910102.KS",
+                    "condition": "close_below",
+                    "level": 3130,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-12"
+                },
+                {
+                    "symbol": "910103.KS",
+                    "condition": "enter_zone",
+                    "low": 3240,
+                    "high": 3390,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-13"
+                },
+                {
+                    "symbol": "910104.KS",
+                    "condition": "close_below",
+                    "level": 3310,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-14"
+                },
+                {
+                    "symbol": "910105.KS",
+                    "condition": "enter_zone",
+                    "low": 3400,
+                    "high": 3550,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-15"
+                },
+                {
+                    "symbol": "910106.KS",
+                    "condition": "close_below",
+                    "level": 3490,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-16"
+                },
+                {
+                    "symbol": "910107.KS",
+                    "condition": "enter_zone",
+                    "low": 3560,
+                    "high": 3710,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-17"
+                },
+                {
+                    "symbol": "910108.KS",
+                    "condition": "close_below",
+                    "level": 3670,
+                    "basis": "price_level",
+                    "expiresOn": "2026-12-18"
+                },
+                {
+                    "symbol": "910109.KS",
+                    "condition": "enter_zone",
+                    "low": 3720,
+                    "high": 3870,
+                    "basis": "analysis_entry_zone",
+                    "expiresOn": "2026-12-19"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,364 @@
+{
+    "tool": "get_economy",
+    "case": "kr-cards-and-db-calendar-fallback",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "country": "kr"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "country": "kr",
+            "source": "Korean indicators: rebuilt from calendar release history (DB, day cache); economic calendar: 3h cache",
+            "available": true,
+            "note": "indicators[].latest.date is the KST calendar date of the release; calendar event dates are UTC instants",
+            "indicators": [
+                {
+                    "name": "Interest Rate Decision",
+                    "label": "한국 기준금리",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 2.5
+                    },
+                    "change": 0,
+                    "changeUnit": "pp",
+                    "direction": "unchanged"
+                },
+                {
+                    "name": "3-Year KTB Auction",
+                    "label": "국고채 3년 낙찰금리",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 2.79
+                    },
+                    "change": -0.02,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "10-Year KTB Auction",
+                    "label": "국고채 10년 낙찰금리",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.08
+                    },
+                    "change": -0.04,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Inflation Rate YoY",
+                    "label": "소비자물가 상승률",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.37
+                    },
+                    "change": -0.06,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Producer Price Index YoY",
+                    "label": "생산자물가 상승률",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.66
+                    },
+                    "change": -0.08,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "GDP Growth Rate YoY",
+                    "label": "GDP 성장률(전년비)",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.95
+                    },
+                    "change": -0.1,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Industrial Production YoY",
+                    "label": "산업생산(전년비)",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 4.24
+                    },
+                    "change": -0.12,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Exports YoY",
+                    "label": "수출(전년비)",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 4.529999999999999
+                    },
+                    "change": -0.14,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Consumer Confidence",
+                    "label": "소비자심리지수",
+                    "unit": "pt",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 4.82
+                    },
+                    "change": -0.16,
+                    "changeUnit": "level",
+                    "direction": "down"
+                },
+                {
+                    "name": "Unemployment Rate",
+                    "label": "실업률",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 5.109999999999999
+                    },
+                    "change": -0.18,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                }
+            ],
+            "calendar": {
+                "coverage": {
+                    "from": "2026-11-18",
+                    "to": "2026-12-01"
+                },
+                "events": [
+                    {
+                        "date": "2026-11-19T02:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 0
+                    },
+                    {
+                        "date": "2026-11-19T21:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 19
+                    },
+                    {
+                        "date": "2026-11-20T16:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 38
+                    }
+                ],
+                "omitted": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "fallback": "ingested Korean calendar (calendar read failed)"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-19T02:00:00.000Z",
+            "country": "kr",
+            "source": "Korean indicators: rebuilt from calendar release history (DB, day cache); economic calendar: 3h cache",
+            "available": true,
+            "note": "indicators[].latest.date is the KST calendar date of the release; calendar event dates are UTC instants",
+            "indicators": [
+                {
+                    "name": "Interest Rate Decision",
+                    "label": "한국 기준금리",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 2.5
+                    },
+                    "change": 0,
+                    "changeUnit": "pp",
+                    "direction": "unchanged"
+                },
+                {
+                    "name": "3-Year KTB Auction",
+                    "label": "국고채 3년 낙찰금리",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 2.79
+                    },
+                    "change": -0.02,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "10-Year KTB Auction",
+                    "label": "국고채 10년 낙찰금리",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.08
+                    },
+                    "change": -0.04,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Inflation Rate YoY",
+                    "label": "소비자물가 상승률",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.37
+                    },
+                    "change": -0.06,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Producer Price Index YoY",
+                    "label": "생산자물가 상승률",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.66
+                    },
+                    "change": -0.08,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "GDP Growth Rate YoY",
+                    "label": "GDP 성장률(전년비)",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 3.95
+                    },
+                    "change": -0.1,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Industrial Production YoY",
+                    "label": "산업생산(전년비)",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 4.24
+                    },
+                    "change": -0.12,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Exports YoY",
+                    "label": "수출(전년비)",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 4.529999999999999
+                    },
+                    "change": -0.14,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                },
+                {
+                    "name": "Consumer Confidence",
+                    "label": "소비자심리지수",
+                    "unit": "pt",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 4.82
+                    },
+                    "change": -0.16,
+                    "changeUnit": "level",
+                    "direction": "down"
+                },
+                {
+                    "name": "Unemployment Rate",
+                    "label": "실업률",
+                    "unit": "%",
+                    "latest": {
+                        "date": "2026-10-13",
+                        "value": 5.109999999999999
+                    },
+                    "change": -0.18,
+                    "changeUnit": "pp",
+                    "direction": "down"
+                }
+            ],
+            "calendar": {
+                "coverage": {
+                    "from": "2026-11-18",
+                    "to": "2026-12-01"
+                },
+                "events": [
+                    {
+                        "date": "2026-11-19T02:00:00Z",
+                        "event": "Retail Sales MoM",
+                        "impact": "Medium",
+                        "actual": null,
+                        "estimate": 3.1,
+                        "previous": 2.9,
+                        "unit": "%",
+                        "hoursUntil": 0
+                    },
+                    {
+                        "date": "2026-11-19T21:00:00Z",
+                        "event": "Baker Hughes Oil Rig Count",
+                        "impact": "Low",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 2.9,
+                        "unit": "K",
+                        "hoursUntil": 19
+                    },
+                    {
+                        "date": "2026-11-20T16:00:00Z",
+                        "event": "ISM Manufacturing PMI",
+                        "impact": "High",
+                        "actual": null,
+                        "estimate": 3,
+                        "previous": 3,
+                        "unit": "%",
+                        "hoursUntil": 38
+                    }
+                ],
+                "omitted": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "fallback": "ingested Korean calendar (calendar read failed)"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

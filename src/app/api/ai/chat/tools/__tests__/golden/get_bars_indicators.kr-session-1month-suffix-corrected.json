@@ -1,0 +1,1009 @@
+{
+    "tool": "get_bars_indicators",
+    "case": "kr-session-1month-suffix-corrected",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ja",
+    "args": {
+        "symbol": "900110.KQ",
+        "timeframe": "1Month",
+        "bars": 6
+    },
+    "agent": {
+        "result": {
+            "symbolCorrectedFrom": "900110.KQ",
+            "asOf": "2026-11-19",
+            "lastBarInProgress": true,
+            "lastCompletedClose": null,
+            "source": "SIGLENS bars + indicators",
+            "symbol": "900110.KS",
+            "resolvedName": "Hanbit Precision",
+            "timeframe": "1Month",
+            "currency": "KRW",
+            "trend": "uptrend",
+            "signals": [
+                {
+                    "type": "macd_bullish_cross",
+                    "direction": "bullish",
+                    "phase": "confirmed"
+                },
+                {
+                    "type": "bollinger_percentb_overbought",
+                    "direction": "bearish",
+                    "phase": "confirmed"
+                },
+                {
+                    "type": "cci_bullish_cross",
+                    "direction": "bullish",
+                    "phase": "confirmed"
+                }
+            ],
+            "confluence": null,
+            "pullback": null,
+            "higherTimeframe": null,
+            "derived": {
+                "lastClose": 120523,
+                "changePct": {
+                    "1bar": -2.17765,
+                    "5bars": 5.97758,
+                    "20bars": 46.7466,
+                    "60bars": 114.691,
+                    "252bars": null
+                },
+                "calendarChange": null,
+                "range": {
+                    "high": 126228,
+                    "highDate": "2026-11-01",
+                    "low": 48844,
+                    "lowDate": "2022-02-01",
+                    "fromHighPct": -4.5196,
+                    "fromLowPct": 146.751,
+                    "highClose": 123206,
+                    "highCloseDate": "2026-10-01",
+                    "fromHighClosePct": -2.17765,
+                    "lowClose": 49223,
+                    "lowCloseDate": "2022-01-01",
+                    "fromLowClosePct": 144.851,
+                    "bars": 61
+                },
+                "ranges": {
+                    "20bars": {
+                        "high": 126228,
+                        "highDate": "2026-11-01",
+                        "low": 80980,
+                        "lowDate": "2025-04-01",
+                        "fromHighPct": -4.5196,
+                        "fromLowPct": 48.8306,
+                        "highClose": 123206,
+                        "highCloseDate": "2026-10-01",
+                        "fromHighClosePct": -2.17765,
+                        "lowClose": 83006,
+                        "lowCloseDate": "2025-07-01",
+                        "fromLowClosePct": 45.1979
+                    },
+                    "60bars": {
+                        "high": 126228,
+                        "highDate": "2026-11-01",
+                        "low": 48844,
+                        "lowDate": "2022-02-01",
+                        "fromHighPct": -4.5196,
+                        "fromLowPct": 146.751,
+                        "highClose": 123206,
+                        "highCloseDate": "2026-10-01",
+                        "fromHighClosePct": -2.17765,
+                        "lowClose": 49223,
+                        "lowCloseDate": "2022-01-01",
+                        "fromLowClosePct": 144.851
+                    }
+                },
+                "volumeVsAvg20": null,
+                "atrPct": 9.75452,
+                "priceVsMa": {
+                    "ma50Pct": 41.6683,
+                    "ma5Pct": 10.8027,
+                    "ma20Pct": 19.0596,
+                    "ma60Pct": 49.8666,
+                    "ma120Pct": null,
+                    "ma200Pct": null,
+                    "ema9Pct": 10.4694,
+                    "ema20Pct": 18.5855,
+                    "ema21Pct": 19.2649,
+                    "ema60Pct": 49.3522
+                },
+                "maStack": "bullish",
+                "maCross50_200": null,
+                "closeStreak": null
+            },
+            "latest": {
+                "rsi": 59.318,
+                "rsiZone": "neutral",
+                "oscillatorZones": {
+                    "rsi": "neutral",
+                    "stochastic": "overbought",
+                    "williamsR": "overbought",
+                    "cci": "overbought",
+                    "mfi": "neutral"
+                },
+                "oscillatorSummary": "0 of 5 oscillators oversold; 3 overbought (stochastic %K 80.9, Williams %R -14.51, CCI 188.41); neutral: RSI 59.32, MFI 79.37",
+                "macd": {
+                    "macd": 8557.83,
+                    "signal": 7495.91,
+                    "histogram": 1061.92
+                },
+                "bollinger": {
+                    "upper": 122889,
+                    "middle": 101229,
+                    "lower": 79569
+                },
+                "atr": 11756.4,
+                "ma": {
+                    "5": 108773,
+                    "20": 101229,
+                    "60": 80420.2,
+                    "120": null,
+                    "200": null
+                },
+                "ema": {
+                    "9": 109101,
+                    "20": 101634,
+                    "21": 101055,
+                    "60": 80697.1
+                },
+                "dmi": {
+                    "adx": 18.2241,
+                    "diPlus": 29.0302,
+                    "diMinus": 15.6675
+                },
+                "stochastic": {
+                    "percentK": 80.9048,
+                    "percentD": 69.3015
+                },
+                "cci": 188.407,
+                "mfi": 79.3654,
+                "williamsR": -14.5099,
+                "vwap": 121930,
+                "ichimoku": {
+                    "tenkan": 109213,
+                    "kijun": 100395,
+                    "senkouA": 73337.8,
+                    "senkouB": null
+                },
+                "supertrend": {
+                    "value": 86189.6,
+                    "trend": "up"
+                },
+                "parabolicSar": {
+                    "sar": 95827,
+                    "trend": "up"
+                },
+                "squeezeMomentum": {
+                    "momentum": 12257.9,
+                    "sqzOn": true
+                },
+                "rsi2": null
+            },
+            "candlePatterns": [
+                {
+                    "date": "2026-07-01",
+                    "pattern": "bearish_engulfing"
+                },
+                {
+                    "date": "2026-10-01",
+                    "pattern": "bullish_marubozu"
+                }
+            ],
+            "fearGreed": null,
+            "notes": [
+                "This result is on timeframe 1Month: calendarChange, closeStreak, maCross50_200, pullback, fearGreed and lastCompletedClose are not computed for it (null or absent). When the question needs one of them, call get_bars_indicators with timeframe 1Day and say the figure is on daily bars; if you cannot, say it is not available on this timeframe. Never fill one from these bars, from your own count or from memory. When the question does not need them, do not mention them."
+            ],
+            "barsReturned": 6,
+            "barsTrimmed": 0,
+            "bars": [
+                {
+                    "t": "2026-06-01",
+                    "o": 108481,
+                    "h": 116385,
+                    "l": 107673,
+                    "c": 113725,
+                    "v": 44980427
+                },
+                {
+                    "t": "2026-07-01",
+                    "o": 114174,
+                    "h": 114823,
+                    "l": 93842,
+                    "c": 94812,
+                    "v": 45050327
+                },
+                {
+                    "t": "2026-08-01",
+                    "o": 94885,
+                    "h": 104828,
+                    "l": 93402,
+                    "c": 103500,
+                    "v": 40218586
+                },
+                {
+                    "t": "2026-09-01",
+                    "o": 103797,
+                    "h": 106157,
+                    "l": 99062,
+                    "c": 101822,
+                    "v": 34840854
+                },
+                {
+                    "t": "2026-10-01",
+                    "o": 101980,
+                    "h": 123714,
+                    "l": 101827,
+                    "c": 123206,
+                    "v": 42405412
+                },
+                {
+                    "t": "2026-11-01",
+                    "o": 124950,
+                    "h": 126228,
+                    "l": 119039,
+                    "c": 120523,
+                    "v": 24708365
+                }
+            ]
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "get_bars_indicators",
+                    "args": {
+                        "symbol": "900110.KQ",
+                        "timeframe": "1Month",
+                        "bars": 6
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "symbol": "900110.KS",
+                    "timeframe": "1Month",
+                    "marketProfile": "kr-equity",
+                    "bars": [
+                        {
+                            "time": 1635724800,
+                            "open": 58087,
+                            "high": 58323,
+                            "low": 55419,
+                            "close": 56138,
+                            "volume": 32165057
+                        },
+                        {
+                            "time": 1638316800,
+                            "open": 56248,
+                            "high": 61242,
+                            "low": 55888,
+                            "close": 59159,
+                            "volume": 47870085
+                        },
+                        {
+                            "time": 1640995200,
+                            "open": 58497,
+                            "high": 58970,
+                            "low": 48882,
+                            "close": 49223,
+                            "volume": 40568503
+                        },
+                        {
+                            "time": 1643673600,
+                            "open": 49156,
+                            "high": 54510,
+                            "low": 48844,
+                            "close": 53728,
+                            "volume": 37658133
+                        },
+                        {
+                            "time": 1646092800,
+                            "open": 53842,
+                            "high": 54731,
+                            "low": 50300,
+                            "close": 52514,
+                            "volume": 48967260
+                        },
+                        {
+                            "time": 1648771200,
+                            "open": 52545,
+                            "high": 63337,
+                            "low": 51673,
+                            "close": 62964,
+                            "volume": 44177634
+                        },
+                        {
+                            "time": 1651363200,
+                            "open": 62899,
+                            "high": 64595,
+                            "low": 59695,
+                            "close": 60510,
+                            "volume": 44914968
+                        },
+                        {
+                            "time": 1654041600,
+                            "open": 60325,
+                            "high": 65276,
+                            "low": 60062,
+                            "close": 64451,
+                            "volume": 46394508
+                        },
+                        {
+                            "time": 1656633600,
+                            "open": 64497,
+                            "high": 64690,
+                            "low": 54171,
+                            "close": 54382,
+                            "volume": 47635916
+                        },
+                        {
+                            "time": 1659312000,
+                            "open": 53733,
+                            "high": 58753,
+                            "low": 53002,
+                            "close": 58484,
+                            "volume": 46921887
+                        },
+                        {
+                            "time": 1661990400,
+                            "open": 58547,
+                            "high": 58717,
+                            "low": 54362,
+                            "close": 56094,
+                            "volume": 47736816
+                        },
+                        {
+                            "time": 1664582400,
+                            "open": 57127,
+                            "high": 68787,
+                            "low": 55878,
+                            "close": 68666,
+                            "volume": 44195990
+                        },
+                        {
+                            "time": 1667260800,
+                            "open": 68735,
+                            "high": 69390,
+                            "low": 64562,
+                            "close": 64771,
+                            "volume": 44952504
+                        },
+                        {
+                            "time": 1669852800,
+                            "open": 64743,
+                            "high": 70504,
+                            "low": 64204,
+                            "close": 69222,
+                            "volume": 45938893
+                        },
+                        {
+                            "time": 1672531200,
+                            "open": 68756,
+                            "high": 69007,
+                            "low": 56899,
+                            "close": 57608,
+                            "volume": 45188499
+                        },
+                        {
+                            "time": 1675209600,
+                            "open": 57462,
+                            "high": 63044,
+                            "low": 57185,
+                            "close": 62284,
+                            "volume": 38255576
+                        },
+                        {
+                            "time": 1677628800,
+                            "open": 62509,
+                            "high": 63339,
+                            "low": 58445,
+                            "close": 60842,
+                            "volume": 50947494
+                        },
+                        {
+                            "time": 1680307200,
+                            "open": 61472,
+                            "high": 73614,
+                            "low": 60446,
+                            "close": 73401,
+                            "volume": 42616257
+                        },
+                        {
+                            "time": 1682899200,
+                            "open": 73102,
+                            "high": 74700,
+                            "low": 69250,
+                            "close": 69729,
+                            "volume": 47973141
+                        },
+                        {
+                            "time": 1685577600,
+                            "open": 69552,
+                            "high": 75331,
+                            "low": 69097,
+                            "close": 74920,
+                            "volume": 48148459
+                        },
+                        {
+                            "time": 1688169600,
+                            "open": 73251,
+                            "high": 74214,
+                            "low": 62166,
+                            "close": 62776,
+                            "volume": 44220770
+                        },
+                        {
+                            "time": 1690848000,
+                            "open": 62651,
+                            "high": 68066,
+                            "low": 61453,
+                            "close": 66962,
+                            "volume": 47559083
+                        },
+                        {
+                            "time": 1693526400,
+                            "open": 66902,
+                            "high": 67835,
+                            "low": 63077,
+                            "close": 64489,
+                            "volume": 44609627
+                        },
+                        {
+                            "time": 1696118400,
+                            "open": 65222,
+                            "high": 80518,
+                            "low": 64843,
+                            "close": 80131,
+                            "volume": 42695985
+                        },
+                        {
+                            "time": 1698796800,
+                            "open": 80346,
+                            "high": 80494,
+                            "low": 74650,
+                            "close": 76245,
+                            "volume": 45690621
+                        },
+                        {
+                            "time": 1701388800,
+                            "open": 75994,
+                            "high": 81390,
+                            "low": 75015,
+                            "close": 80012,
+                            "volume": 42476067
+                        },
+                        {
+                            "time": 1704067200,
+                            "open": 79939,
+                            "high": 80371,
+                            "low": 65710,
+                            "close": 65834,
+                            "volume": 46028996
+                        },
+                        {
+                            "time": 1706745600,
+                            "open": 65633,
+                            "high": 73377,
+                            "low": 65547,
+                            "close": 71526,
+                            "volume": 45249736
+                        },
+                        {
+                            "time": 1709251200,
+                            "open": 71635,
+                            "high": 73045,
+                            "low": 68226,
+                            "close": 69017,
+                            "volume": 43130952
+                        },
+                        {
+                            "time": 1711929600,
+                            "open": 69068,
+                            "high": 86115,
+                            "low": 68735,
+                            "close": 85744,
+                            "volume": 48395565
+                        },
+                        {
+                            "time": 1714521600,
+                            "open": 85701,
+                            "high": 86276,
+                            "low": 79956,
+                            "close": 81058,
+                            "volume": 48287579
+                        },
+                        {
+                            "time": 1717200000,
+                            "open": 81159,
+                            "high": 87401,
+                            "low": 80719,
+                            "close": 85103,
+                            "volume": 44145631
+                        },
+                        {
+                            "time": 1719792000,
+                            "open": 86266,
+                            "high": 86784,
+                            "low": 70545,
+                            "close": 70917,
+                            "volume": 50209162
+                        },
+                        {
+                            "time": 1722470400,
+                            "open": 70739,
+                            "high": 79036,
+                            "low": 70446,
+                            "close": 78584,
+                            "volume": 49711686
+                        },
+                        {
+                            "time": 1725148800,
+                            "open": 78400,
+                            "high": 78885,
+                            "low": 73141,
+                            "close": 75061,
+                            "volume": 43889109
+                        },
+                        {
+                            "time": 1727740800,
+                            "open": 74990,
+                            "high": 92645,
+                            "low": 74561,
+                            "close": 91457,
+                            "volume": 49293184
+                        },
+                        {
+                            "time": 1730419200,
+                            "open": 91455,
+                            "high": 93723,
+                            "low": 86102,
+                            "close": 86932,
+                            "volume": 41535304
+                        },
+                        {
+                            "time": 1733011200,
+                            "open": 87491,
+                            "high": 93829,
+                            "low": 86668,
+                            "close": 91896,
+                            "volume": 45348890
+                        },
+                        {
+                            "time": 1735689600,
+                            "open": 92168,
+                            "high": 92711,
+                            "low": 75719,
+                            "close": 77353,
+                            "volume": 48183404
+                        },
+                        {
+                            "time": 1738368000,
+                            "open": 75902,
+                            "high": 84555,
+                            "low": 75536,
+                            "close": 84451,
+                            "volume": 41685856
+                        },
+                        {
+                            "time": 1740787200,
+                            "open": 84469,
+                            "high": 84704,
+                            "low": 78648,
+                            "close": 82130,
+                            "volume": 42338854
+                        },
+                        {
+                            "time": 1743465600,
+                            "open": 81854,
+                            "high": 99450,
+                            "low": 80980,
+                            "close": 97942,
+                            "volume": 48219459
+                        },
+                        {
+                            "time": 1746057600,
+                            "open": 97575,
+                            "high": 100474,
+                            "low": 92768,
+                            "close": 93429,
+                            "volume": 47591936
+                        },
+                        {
+                            "time": 1748736000,
+                            "open": 92648,
+                            "high": 100735,
+                            "low": 92125,
+                            "close": 97922,
+                            "volume": 46849677
+                        },
+                        {
+                            "time": 1751328000,
+                            "open": 97574,
+                            "high": 98945,
+                            "low": 82423,
+                            "close": 83006,
+                            "volume": 48331750
+                        },
+                        {
+                            "time": 1754006400,
+                            "open": 83111,
+                            "high": 90670,
+                            "low": 81256,
+                            "close": 89971,
+                            "volume": 45781142
+                        },
+                        {
+                            "time": 1756684800,
+                            "open": 89139,
+                            "high": 91032,
+                            "low": 85229,
+                            "close": 87790,
+                            "volume": 47170670
+                        },
+                        {
+                            "time": 1759276800,
+                            "open": 88129,
+                            "high": 106891,
+                            "low": 86910,
+                            "close": 106709,
+                            "volume": 47606991
+                        },
+                        {
+                            "time": 1761955200,
+                            "open": 107263,
+                            "high": 108543,
+                            "low": 100186,
+                            "close": 101203,
+                            "volume": 39955651
+                        },
+                        {
+                            "time": 1764547200,
+                            "open": 101818,
+                            "high": 107864,
+                            "low": 99614,
+                            "close": 106891,
+                            "volume": 48908684
+                        },
+                        {
+                            "time": 1767225600,
+                            "open": 106604,
+                            "high": 106895,
+                            "low": 86970,
+                            "close": 87519,
+                            "volume": 41506542
+                        },
+                        {
+                            "time": 1769904000,
+                            "open": 89274,
+                            "high": 98025,
+                            "low": 87021,
+                            "close": 97281,
+                            "volume": 35254631
+                        },
+                        {
+                            "time": 1772323200,
+                            "open": 97207,
+                            "high": 98168,
+                            "low": 92197,
+                            "close": 93826,
+                            "volume": 46672966
+                        },
+                        {
+                            "time": 1775001600,
+                            "open": 93860,
+                            "high": 115480,
+                            "low": 93713,
+                            "close": 115201,
+                            "volume": 47688339
+                        },
+                        {
+                            "time": 1777593600,
+                            "open": 114669,
+                            "high": 115951,
+                            "low": 107932,
+                            "close": 108304,
+                            "volume": 41270653
+                        },
+                        {
+                            "time": 1780272000,
+                            "open": 108481,
+                            "high": 116385,
+                            "low": 107673,
+                            "close": 113725,
+                            "volume": 44980427
+                        },
+                        {
+                            "time": 1782864000,
+                            "open": 114174,
+                            "high": 114823,
+                            "low": 93842,
+                            "close": 94812,
+                            "volume": 45050327
+                        },
+                        {
+                            "time": 1785542400,
+                            "open": 94885,
+                            "high": 104828,
+                            "low": 93402,
+                            "close": 103500,
+                            "volume": 40218586
+                        },
+                        {
+                            "time": 1788220800,
+                            "open": 103797,
+                            "high": 106157,
+                            "low": 99062,
+                            "close": 101822,
+                            "volume": 34840854
+                        },
+                        {
+                            "time": 1790812800,
+                            "open": 101980,
+                            "high": 123714,
+                            "low": 101827,
+                            "close": 123206,
+                            "volume": 42405412
+                        },
+                        {
+                            "time": 1793491200,
+                            "open": 124950,
+                            "high": 126228,
+                            "low": 119039,
+                            "close": 120523,
+                            "volume": 24708365
+                        }
+                    ],
+                    "overlays": [],
+                    "overlayColors": {},
+                    "overlayLabels": {},
+                    "analyzedAt": null
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbolCorrectedFrom": "900110.KQ",
+            "asOf": "2026-11-19",
+            "lastBarInProgress": true,
+            "lastCompletedClose": null,
+            "source": "SIGLENS bars + indicators",
+            "symbol": "900110.KS",
+            "resolvedName": "Hanbit Precision",
+            "timeframe": "1Month",
+            "currency": "KRW",
+            "trend": "uptrend",
+            "signals": [
+                {
+                    "type": "macd_bullish_cross",
+                    "direction": "bullish",
+                    "phase": "confirmed"
+                },
+                {
+                    "type": "bollinger_percentb_overbought",
+                    "direction": "bearish",
+                    "phase": "confirmed"
+                },
+                {
+                    "type": "cci_bullish_cross",
+                    "direction": "bullish",
+                    "phase": "confirmed"
+                }
+            ],
+            "confluence": null,
+            "pullback": null,
+            "higherTimeframe": null,
+            "derived": {
+                "lastClose": 120523,
+                "changePct": {
+                    "1bar": -2.17765,
+                    "5bars": 5.97758,
+                    "20bars": 46.7466,
+                    "60bars": 114.691,
+                    "252bars": null
+                },
+                "calendarChange": null,
+                "range": {
+                    "high": 126228,
+                    "highDate": "2026-11-01",
+                    "low": 48844,
+                    "lowDate": "2022-02-01",
+                    "fromHighPct": -4.5196,
+                    "fromLowPct": 146.751,
+                    "highClose": 123206,
+                    "highCloseDate": "2026-10-01",
+                    "fromHighClosePct": -2.17765,
+                    "lowClose": 49223,
+                    "lowCloseDate": "2022-01-01",
+                    "fromLowClosePct": 144.851,
+                    "bars": 61
+                },
+                "ranges": {
+                    "20bars": {
+                        "high": 126228,
+                        "highDate": "2026-11-01",
+                        "low": 80980,
+                        "lowDate": "2025-04-01",
+                        "fromHighPct": -4.5196,
+                        "fromLowPct": 48.8306,
+                        "highClose": 123206,
+                        "highCloseDate": "2026-10-01",
+                        "fromHighClosePct": -2.17765,
+                        "lowClose": 83006,
+                        "lowCloseDate": "2025-07-01",
+                        "fromLowClosePct": 45.1979
+                    },
+                    "60bars": {
+                        "high": 126228,
+                        "highDate": "2026-11-01",
+                        "low": 48844,
+                        "lowDate": "2022-02-01",
+                        "fromHighPct": -4.5196,
+                        "fromLowPct": 146.751,
+                        "highClose": 123206,
+                        "highCloseDate": "2026-10-01",
+                        "fromHighClosePct": -2.17765,
+                        "lowClose": 49223,
+                        "lowCloseDate": "2022-01-01",
+                        "fromLowClosePct": 144.851
+                    }
+                },
+                "volumeVsAvg20": null,
+                "atrPct": 9.75452,
+                "priceVsMa": {
+                    "ma50Pct": 41.6683,
+                    "ma5Pct": 10.8027,
+                    "ma20Pct": 19.0596,
+                    "ma60Pct": 49.8666,
+                    "ma120Pct": null,
+                    "ma200Pct": null,
+                    "ema9Pct": 10.4694,
+                    "ema20Pct": 18.5855,
+                    "ema21Pct": 19.2649,
+                    "ema60Pct": 49.3522
+                },
+                "maStack": "bullish",
+                "maCross50_200": null,
+                "closeStreak": null
+            },
+            "latest": {
+                "rsi": 59.318,
+                "rsiZone": "neutral",
+                "oscillatorZones": {
+                    "rsi": "neutral",
+                    "stochastic": "overbought",
+                    "williamsR": "overbought",
+                    "cci": "overbought",
+                    "mfi": "neutral"
+                },
+                "oscillatorSummary": "0 of 5 oscillators oversold; 3 overbought (stochastic %K 80.9, Williams %R -14.51, CCI 188.41); neutral: RSI 59.32, MFI 79.37",
+                "macd": {
+                    "macd": 8557.83,
+                    "signal": 7495.91,
+                    "histogram": 1061.92
+                },
+                "bollinger": {
+                    "upper": 122889,
+                    "middle": 101229,
+                    "lower": 79569
+                },
+                "atr": 11756.4,
+                "ma": {
+                    "5": 108773,
+                    "20": 101229,
+                    "60": 80420.2,
+                    "120": null,
+                    "200": null
+                },
+                "ema": {
+                    "9": 109101,
+                    "20": 101634,
+                    "21": 101055,
+                    "60": 80697.1
+                },
+                "dmi": {
+                    "adx": 18.2241,
+                    "diPlus": 29.0302,
+                    "diMinus": 15.6675
+                },
+                "stochastic": {
+                    "percentK": 80.9048,
+                    "percentD": 69.3015
+                },
+                "cci": 188.407,
+                "mfi": 79.3654,
+                "williamsR": -14.5099,
+                "vwap": 121930,
+                "ichimoku": {
+                    "tenkan": 109213,
+                    "kijun": 100395,
+                    "senkouA": 73337.8,
+                    "senkouB": null
+                },
+                "supertrend": {
+                    "value": 86189.6,
+                    "trend": "up"
+                },
+                "parabolicSar": {
+                    "sar": 95827,
+                    "trend": "up"
+                },
+                "squeezeMomentum": {
+                    "momentum": 12257.9,
+                    "sqzOn": true
+                },
+                "rsi2": null
+            },
+            "candlePatterns": [
+                {
+                    "date": "2026-07-01",
+                    "pattern": "bearish_engulfing"
+                },
+                {
+                    "date": "2026-10-01",
+                    "pattern": "bullish_marubozu"
+                }
+            ],
+            "fearGreed": null,
+            "notes": [
+                "This result is on timeframe 1Month: calendarChange, closeStreak, maCross50_200, pullback, fearGreed and lastCompletedClose are not computed for it (null or absent). When the question needs one of them, call get_bars_indicators with timeframe 1Day and say the figure is on daily bars; if you cannot, say it is not available on this timeframe. Never fill one from these bars, from your own count or from memory. When the question does not need them, do not mention them."
+            ],
+            "barsReturned": 6,
+            "barsTrimmed": 0,
+            "bars": [
+                {
+                    "t": "2026-06-01",
+                    "o": 108481,
+                    "h": 116385,
+                    "l": 107673,
+                    "c": 113725,
+                    "v": 44980427
+                },
+                {
+                    "t": "2026-07-01",
+                    "o": 114174,
+                    "h": 114823,
+                    "l": 93842,
+                    "c": 94812,
+                    "v": 45050327
+                },
+                {
+                    "t": "2026-08-01",
+                    "o": 94885,
+                    "h": 104828,
+                    "l": 93402,
+                    "c": 103500,
+                    "v": 40218586
+                },
+                {
+                    "t": "2026-09-01",
+                    "o": 103797,
+                    "h": 106157,
+                    "l": 99062,
+                    "c": 101822,
+                    "v": 34840854
+                },
+                {
+                    "t": "2026-10-01",
+                    "o": 101980,
+                    "h": 123714,
+                    "l": 101827,
+                    "c": 123206,
+                    "v": 42405412
+                },
+                {
+                    "t": "2026-11-01",
+                    "o": 124950,
+                    "h": 126228,
+                    "l": 119039,
+                    "c": 120523,
+                    "v": 24708365
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

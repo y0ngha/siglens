@@ -1,0 +1,28 @@
+{
+    "tool": "get_x_posts",
+    "case": "no-known-account",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "VLMR"
+    },
+    "agent": {
+        "result": {
+            "symbol": "VLMR",
+            "available": false,
+            "reason": "no_known_account"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "VLMR",
+            "available": false,
+            "reason": "no_known_account"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

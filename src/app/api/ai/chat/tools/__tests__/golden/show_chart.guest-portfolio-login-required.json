@@ -1,0 +1,25 @@
+{
+    "tool": "show_chart",
+    "case": "guest-portfolio-login-required",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "guest",
+    "locale": "ko",
+    "args": {
+        "kind": "portfolio"
+    },
+    "agent": {
+        "result": {
+            "error": "login_required"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "tool": "run_fresh_analysis",
+    "case": "e2e-fake-mode-held-placeholder",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "kind": "technical"
+    },
+    "agent": {
+        "result": {
+            "status": "done",
+            "result": {
+                "e2e": true,
+                "symbol": "GLDNX",
+                "kind": "technical"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "status": "done",
+            "result": {
+                "e2e": true,
+                "symbol": "GLDNX",
+                "kind": "technical"
+            }
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

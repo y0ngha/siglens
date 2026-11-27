@@ -1,0 +1,122 @@
+{
+    "tool": "get_price_stats",
+    "case": "crypto-range-and-unknown-symbol",
+    "now": "2026-11-22T03:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbols": ["ZETAUSD", "NOPEQ"],
+        "from": "2026-01-01",
+        "to": "2026-06-30"
+    },
+    "agent": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2026-06-30",
+            "window": {
+                "kind": "range",
+                "from": "2026-01-01",
+                "to": "2026-06-30"
+            },
+            "subjects": [
+                {
+                    "subject": "ZETAUSD",
+                    "window": {
+                        "baseDate": "2026-01-01",
+                        "baseClose": 89449.16,
+                        "endDate": "2026-06-30",
+                        "endClose": 109189.85,
+                        "sessions": 180,
+                        "calendarDays": 180
+                    },
+                    "returnPct": 22.07,
+                    "cagrPct": null,
+                    "highestClose": {
+                        "date": "2026-06-30",
+                        "close": 109189.85
+                    },
+                    "lowestClose": {
+                        "date": "2026-03-31",
+                        "close": 77130.29
+                    },
+                    "fromHighestClosePct": 0,
+                    "maxDrawdown": {
+                        "pct": -15.31,
+                        "peakDate": "2026-01-06",
+                        "peakClose": 91076.23,
+                        "troughDate": "2026-03-31",
+                        "troughClose": 77130.29,
+                        "recoveredDate": "2026-04-28"
+                    },
+                    "summary": "ZETAUSD 2026-01-01 → 2026-06-30 (180 sessions): close 89449.16 → 109189.85, +22.07%; highest close 109189.85 (2026-06-30), 0% from it; max drawdown -15.31% from 2026-01-06 to 2026-03-31, recovered 2026-04-28",
+                    "currency": "USD",
+                    "resolvedName": "Zeta Coin USD"
+                },
+                {
+                    "subject": "NOPEQ",
+                    "found": false
+                }
+            ],
+            "notes": [
+                "ZETAUSD: trades around the clock; the close dated D is the price at the end of that UTC date (00:00 UTC the next day), not an exchange close."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "source": "SIGLENS daily closes (price only, split-adjusted, dividends excluded)",
+            "asOf": "2026-06-30",
+            "window": {
+                "kind": "range",
+                "from": "2026-01-01",
+                "to": "2026-06-30"
+            },
+            "subjects": [
+                {
+                    "subject": "ZETAUSD",
+                    "window": {
+                        "baseDate": "2026-01-01",
+                        "baseClose": 89449.16,
+                        "endDate": "2026-06-30",
+                        "endClose": 109189.85,
+                        "sessions": 180,
+                        "calendarDays": 180
+                    },
+                    "returnPct": 22.07,
+                    "cagrPct": null,
+                    "highestClose": {
+                        "date": "2026-06-30",
+                        "close": 109189.85
+                    },
+                    "lowestClose": {
+                        "date": "2026-03-31",
+                        "close": 77130.29
+                    },
+                    "fromHighestClosePct": 0,
+                    "maxDrawdown": {
+                        "pct": -15.31,
+                        "peakDate": "2026-01-06",
+                        "peakClose": 91076.23,
+                        "troughDate": "2026-03-31",
+                        "troughClose": 77130.29,
+                        "recoveredDate": "2026-04-28"
+                    },
+                    "summary": "ZETAUSD 2026-01-01 → 2026-06-30 (180 sessions): close 89449.16 → 109189.85, +22.07%; highest close 109189.85 (2026-06-30), 0% from it; max drawdown -15.31% from 2026-01-06 to 2026-03-31, recovered 2026-04-28",
+                    "currency": "USD",
+                    "resolvedName": "Zeta Coin USD"
+                },
+                {
+                    "subject": "NOPEQ",
+                    "found": false
+                }
+            ],
+            "notes": [
+                "ZETAUSD: trades around the clock; the close dated D is the price at the end of that UTC date (00:00 UTC the next day), not an exchange close."
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

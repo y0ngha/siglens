@@ -1,0 +1,129 @@
+{
+    "tool": "show_chart",
+    "case": "heatmap-kr-theme",
+    "now": "2026-11-19T02:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "kind": "heatmap",
+        "market": "kr",
+        "theme": "kr_battery"
+    },
+    "agent": {
+        "result": {
+            "rendered": true,
+            "kind": "heatmap",
+            "summary": {
+                "theme": "kr_battery",
+                "label": "국내 2차전지",
+                "scope": "theme members",
+                "unit": "change % over 1, 5 and 20 completed sessions",
+                "members": [
+                    {
+                        "symbol": "247540.KQ",
+                        "name": "테마종목3",
+                        "changePct1d": 1.26,
+                        "changePct5d": 4.43,
+                        "changePct20d": 0.77
+                    },
+                    {
+                        "symbol": "086520.KQ",
+                        "name": "테마종목4",
+                        "changePct1d": 1.09,
+                        "changePct5d": 6.78,
+                        "changePct20d": 20.55
+                    },
+                    {
+                        "symbol": "373220.KS",
+                        "name": "테마종목1",
+                        "changePct1d": 0.95,
+                        "changePct5d": -1.13,
+                        "changePct20d": 0.53
+                    },
+                    {
+                        "symbol": "006400.KS",
+                        "name": "테마종목2",
+                        "changePct1d": -0.67,
+                        "changePct5d": -4.23,
+                        "changePct20d": -8.56
+                    },
+                    {
+                        "symbol": "003670.KS",
+                        "name": "테마종목5",
+                        "changePct1d": -1.14,
+                        "changePct5d": -1.4,
+                        "changePct20d": 8.96
+                    }
+                ],
+                "averageDayChangePct": 0.3,
+                "missing": []
+            }
+        },
+        "charts": [
+            {
+                "call": {
+                    "name": "show_chart",
+                    "args": {
+                        "kind": "heatmap",
+                        "market": "kr",
+                        "theme": "kr_battery"
+                    }
+                },
+                "block": {
+                    "version": 1,
+                    "kind": "heatmap",
+                    "asOf": "2026-11-19T02:00:00.000Z",
+                    "scope": "theme",
+                    "theme": "kr_battery",
+                    "label": "국내 2차전지",
+                    "members": [
+                        {
+                            "symbol": "247540.KQ",
+                            "name": "테마종목3",
+                            "changePct1d": 1.26,
+                            "changePct5d": 4.43,
+                            "changePct20d": 0.77
+                        },
+                        {
+                            "symbol": "086520.KQ",
+                            "name": "테마종목4",
+                            "changePct1d": 1.09,
+                            "changePct5d": 6.78,
+                            "changePct20d": 20.55
+                        },
+                        {
+                            "symbol": "373220.KS",
+                            "name": "테마종목1",
+                            "changePct1d": 0.95,
+                            "changePct5d": -1.13,
+                            "changePct20d": 0.53
+                        },
+                        {
+                            "symbol": "006400.KS",
+                            "name": "테마종목2",
+                            "changePct1d": -0.67,
+                            "changePct5d": -4.23,
+                            "changePct20d": -8.56
+                        },
+                        {
+                            "symbol": "003670.KS",
+                            "name": "테마종목5",
+                            "changePct1d": -1.14,
+                            "changePct5d": -1.4,
+                            "changePct20d": 8.96
+                        }
+                    ]
+                }
+            }
+        ],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "no_data",
+            "reason": "chart_not_supported"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

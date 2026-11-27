@@ -1,0 +1,290 @@
+{
+    "tool": "get_theme_snapshot",
+    "case": "us-quantum-session-open",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "theme": "quantum"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS theme basket (daily closes)",
+            "available": true,
+            "theme": {
+                "id": "quantum",
+                "nameKo": "양자컴퓨팅",
+                "nameEn": "Quantum computing",
+                "market": "us"
+            },
+            "members": [
+                {
+                    "symbol": "QUBT",
+                    "name": "Theme Member 4 Corp",
+                    "lastClose": 128.07,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": 0.44,
+                        "5d": 6.71,
+                        "20d": 18.88
+                    },
+                    "fromHigh52wPct": 0
+                },
+                {
+                    "symbol": "IONQ",
+                    "name": "Theme Member 1 Corp",
+                    "lastClose": 22.71,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -0.09,
+                        "5d": -2.66,
+                        "20d": 0.98
+                    },
+                    "fromHigh52wPct": -13.12
+                },
+                {
+                    "symbol": "ARQQ",
+                    "name": "Theme Member 5 Corp",
+                    "lastClose": 202.87,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -0.72,
+                        "5d": -0.51,
+                        "20d": 9.88
+                    },
+                    "fromHigh52wPct": -1.07
+                },
+                {
+                    "symbol": "LAES",
+                    "name": "Theme Member 6 Corp",
+                    "lastClose": 268.44,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -0.88,
+                        "5d": -5.02,
+                        "20d": -10.76
+                    },
+                    "fromHigh52wPct": -11.64
+                },
+                {
+                    "symbol": "QBTS",
+                    "name": "Theme Member 3 Corp",
+                    "lastClose": 67.46,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -1.29,
+                        "5d": 2.01,
+                        "20d": -0.63
+                    },
+                    "fromHigh52wPct": -15.01
+                },
+                {
+                    "symbol": "RGTI",
+                    "name": "Theme Member 2 Corp",
+                    "lastClose": 38.51,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -1.86,
+                        "5d": -3.73,
+                        "20d": -9.28
+                    },
+                    "fromHigh52wPct": -20.38
+                }
+            ],
+            "summary": {
+                "1d": {
+                    "members": 6,
+                    "avgPct": -0.73,
+                    "medianPct": -0.8,
+                    "up": 1,
+                    "down": 5,
+                    "flat": 0,
+                    "best": {
+                        "symbol": "QUBT",
+                        "pct": 0.44
+                    },
+                    "worst": {
+                        "symbol": "RGTI",
+                        "pct": -1.86
+                    }
+                },
+                "5d": {
+                    "members": 6,
+                    "avgPct": -0.53,
+                    "medianPct": -1.58,
+                    "up": 2,
+                    "down": 4,
+                    "flat": 0,
+                    "best": {
+                        "symbol": "QUBT",
+                        "pct": 6.71
+                    },
+                    "worst": {
+                        "symbol": "LAES",
+                        "pct": -5.02
+                    }
+                },
+                "20d": {
+                    "members": 6,
+                    "avgPct": 1.51,
+                    "medianPct": 0.18,
+                    "up": 3,
+                    "down": 3,
+                    "flat": 0,
+                    "best": {
+                        "symbol": "QUBT",
+                        "pct": 18.88
+                    },
+                    "worst": {
+                        "symbol": "LAES",
+                        "pct": -10.76
+                    }
+                }
+            },
+            "missing": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T15:30:00.000Z",
+            "source": "SIGLENS theme basket (daily closes)",
+            "available": true,
+            "theme": {
+                "id": "quantum",
+                "nameKo": "양자컴퓨팅",
+                "nameEn": "Quantum computing",
+                "market": "us"
+            },
+            "members": [
+                {
+                    "symbol": "QUBT",
+                    "name": "Theme Member 4 Corp",
+                    "lastClose": 128.07,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": 0.44,
+                        "5d": 6.71,
+                        "20d": 18.88
+                    },
+                    "fromHigh52wPct": 0
+                },
+                {
+                    "symbol": "IONQ",
+                    "name": "Theme Member 1 Corp",
+                    "lastClose": 22.71,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -0.09,
+                        "5d": -2.66,
+                        "20d": 0.98
+                    },
+                    "fromHigh52wPct": -13.12
+                },
+                {
+                    "symbol": "ARQQ",
+                    "name": "Theme Member 5 Corp",
+                    "lastClose": 202.87,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -0.72,
+                        "5d": -0.51,
+                        "20d": 9.88
+                    },
+                    "fromHigh52wPct": -1.07
+                },
+                {
+                    "symbol": "LAES",
+                    "name": "Theme Member 6 Corp",
+                    "lastClose": 268.44,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -0.88,
+                        "5d": -5.02,
+                        "20d": -10.76
+                    },
+                    "fromHigh52wPct": -11.64
+                },
+                {
+                    "symbol": "QBTS",
+                    "name": "Theme Member 3 Corp",
+                    "lastClose": 67.46,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -1.29,
+                        "5d": 2.01,
+                        "20d": -0.63
+                    },
+                    "fromHigh52wPct": -15.01
+                },
+                {
+                    "symbol": "RGTI",
+                    "name": "Theme Member 2 Corp",
+                    "lastClose": 38.51,
+                    "lastDate": "2026-11-17",
+                    "changePct": {
+                        "1d": -1.86,
+                        "5d": -3.73,
+                        "20d": -9.28
+                    },
+                    "fromHigh52wPct": -20.38
+                }
+            ],
+            "summary": {
+                "1d": {
+                    "members": 6,
+                    "avgPct": -0.73,
+                    "medianPct": -0.8,
+                    "up": 1,
+                    "down": 5,
+                    "flat": 0,
+                    "best": {
+                        "symbol": "QUBT",
+                        "pct": 0.44
+                    },
+                    "worst": {
+                        "symbol": "RGTI",
+                        "pct": -1.86
+                    }
+                },
+                "5d": {
+                    "members": 6,
+                    "avgPct": -0.53,
+                    "medianPct": -1.58,
+                    "up": 2,
+                    "down": 4,
+                    "flat": 0,
+                    "best": {
+                        "symbol": "QUBT",
+                        "pct": 6.71
+                    },
+                    "worst": {
+                        "symbol": "LAES",
+                        "pct": -5.02
+                    }
+                },
+                "20d": {
+                    "members": 6,
+                    "avgPct": 1.51,
+                    "medianPct": 0.18,
+                    "up": 3,
+                    "down": 3,
+                    "flat": 0,
+                    "best": {
+                        "symbol": "QUBT",
+                        "pct": 18.88
+                    },
+                    "worst": {
+                        "symbol": "LAES",
+                        "pct": -10.76
+                    }
+                }
+            },
+            "missing": []
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

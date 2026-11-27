@@ -1,0 +1,166 @@
+{
+    "tool": "get_news",
+    "case": "symbol-since-date-query-filter",
+    "now": "2026-11-18T22:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "since": "2026-11-12",
+        "query": "target"
+    },
+    "agent": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SIGLENS news",
+            "count": 2,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 2,
+                "bearish": 0,
+                "neutral": 0,
+                "highImpact": 0
+            },
+            "digest": null,
+            "priceMoves": {
+                "basis": "daily close-to-close change of completed sessions; a headline belongs to the first session whose close came after it was published",
+                "window": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-18",
+                    "sessions": 5
+                },
+                "medianAbsDailyChangePct": 0.78,
+                "moveDays": [
+                    {
+                        "date": "2026-11-16",
+                        "changePct": 2.04,
+                        "headlines": [],
+                        "moreHeadlines": 0
+                    },
+                    {
+                        "date": "2026-11-13",
+                        "changePct": -1,
+                        "headlines": [],
+                        "moreHeadlines": 0
+                    },
+                    {
+                        "date": "2026-11-18",
+                        "changePct": -0.78,
+                        "headlines": [
+                            {
+                                "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                                "publishedAt": "2026-11-17T22:13:00.000Z",
+                                "sentiment": "bullish"
+                            }
+                        ],
+                        "moreHeadlines": 0
+                    }
+                ],
+                "afterLastClose": 0
+            },
+            "items": [
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 11.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-17T22:13:00.000Z",
+                    "ageHours": 24,
+                    "session": "2026-11-18",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 13.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-12T15:39:00.000Z",
+                    "ageHours": 151,
+                    "session": "2026-11-12",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-7"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": ["GLDNX"]
+    },
+    "publicApi": {
+        "result": {
+            "asOf": "2026-11-18T22:30:00.000Z",
+            "source": "SIGLENS news",
+            "count": 2,
+            "coverageLimited": false,
+            "tally": {
+                "bullish": 2,
+                "bearish": 0,
+                "neutral": 0,
+                "highImpact": 0
+            },
+            "digest": null,
+            "priceMoves": {
+                "basis": "daily close-to-close change of completed sessions; a headline belongs to the first session whose close came after it was published",
+                "window": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-18",
+                    "sessions": 5
+                },
+                "medianAbsDailyChangePct": 0.78,
+                "moveDays": [
+                    {
+                        "date": "2026-11-16",
+                        "changePct": 2.04,
+                        "headlines": [],
+                        "moreHeadlines": 0
+                    },
+                    {
+                        "date": "2026-11-13",
+                        "changePct": -1,
+                        "headlines": [],
+                        "moreHeadlines": 0
+                    },
+                    {
+                        "date": "2026-11-18",
+                        "changePct": -0.78,
+                        "headlines": [
+                            {
+                                "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                                "publishedAt": "2026-11-17T22:13:00.000Z",
+                                "sentiment": "bullish"
+                            }
+                        ],
+                        "moreHeadlines": 0
+                    }
+                ],
+                "afterLastClose": 0
+            },
+            "items": [
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 11.4% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-17T22:13:00.000Z",
+                    "ageHours": 24,
+                    "session": "2026-11-18",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-1"
+                },
+                {
+                    "title": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향",
+                    "summary": "애널리스트, 팹 증설 근거로 골든로드 목표가 상향. 회사는 이번 분기 매출이 전년 대비 13.8% 늘었다고 밝혔고, 다음 분기 가이던스도 시장 기대를 웃돌았다. 다만 공급망 부담과 환율 변동이 마진에 영향을 줄 수 있다는 지적도 나왔다.",
+                    "sentiment": "bullish",
+                    "priceImpact": "medium",
+                    "publishedAt": "2026-11-12T15:39:00.000Z",
+                    "ageHours": 151,
+                    "session": "2026-11-12",
+                    "source": "Market Daily",
+                    "url": "https://news.example.com/markets/goldenrod-7"
+                }
+            ]
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

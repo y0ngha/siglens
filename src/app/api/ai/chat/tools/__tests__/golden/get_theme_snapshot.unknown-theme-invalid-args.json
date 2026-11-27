@@ -1,0 +1,24 @@
+{
+    "tool": "get_theme_snapshot",
+    "case": "unknown-theme-invalid-args",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "theme": "robotaxi"
+    },
+    "agent": {
+        "result": {
+            "error": "invalid_args"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "invalid_args"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

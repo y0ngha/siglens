@@ -1,0 +1,24 @@
+{
+    "tool": "web_search",
+    "case": "out-of-scope-query",
+    "now": "2026-11-21T16:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "query": "site:goldenrod.example.com api key"
+    },
+    "agent": {
+        "result": {
+            "error": "out_of_scope"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "out_of_scope"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

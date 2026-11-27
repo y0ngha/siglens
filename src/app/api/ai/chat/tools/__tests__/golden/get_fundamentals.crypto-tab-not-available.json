@@ -1,0 +1,28 @@
+{
+    "tool": "get_fundamentals",
+    "case": "crypto-tab-not-available",
+    "now": "2026-11-22T03:00:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "ZETAUSD"
+    },
+    "agent": {
+        "result": {
+            "symbol": "ZETAUSD",
+            "available": false,
+            "reason": "tab_not_available"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "symbol": "ZETAUSD",
+            "available": false,
+            "reason": "tab_not_available"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}

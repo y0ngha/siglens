@@ -1,0 +1,25 @@
+{
+    "tool": "get_company_filings",
+    "case": "unknown-accession",
+    "now": "2026-11-18T15:30:00.000Z",
+    "caller": "member",
+    "locale": "ko",
+    "args": {
+        "symbol": "GLDNX",
+        "accession": "not-an-accession"
+    },
+    "agent": {
+        "result": {
+            "error": "unknown_filing"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    },
+    "publicApi": {
+        "result": {
+            "error": "unknown_filing"
+        },
+        "charts": [],
+        "refreshedSymbols": []
+    }
+}
