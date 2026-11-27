@@ -45,6 +45,11 @@ import { recordSignalHistory } from '../recordSignalHistory';
 
 const NOW = new Date('2026-11-13T21:20:00.000Z');
 const SESSION = '2026-11-13';
+/**
+ * 두 종목의 330봉으로 core 신호 판정 전체를 실제로 돌린다. 단독 실행은 1초 안팎(`--reporter=verbose`로 잰다)이지만
+ * 병렬 워커가 붙은 CI 러너에선 기본 5초를 넘을 수 있다. 계산 경로 자체가 검증 대상이라 봉 수는 줄이지 않는다.
+ */
+const HEAVY_COMPUTE_TIMEOUT_MS = 30_000;
 
 /** 오르내림이 있는 종가 — RSI·MACD·볼린저 신호가 실제로 켜졌다 꺼지게 한다. */
 function wavyBars(count: number): Bar[] {
@@ -72,46 +77,56 @@ function wavyBars(count: number): Bar[] {
 }
 
 describe('recordSignalHistory — 실제 판정·계획으로 처음부터 끝까지', () => {
-    it('봉에서 신호를 판정해 종목마다 한 번에 쓰고, 세션을 완료로 찍는다', async () => {
-        vi.spyOn(console, 'log').mockImplementation(() => {});
-        const bars = wavyBars(330);
-        const provider: MarketDataProvider = {
-            getBars: vi.fn(async () => bars),
-            getQuote: vi.fn(async () => null),
-        };
+    it(
+        '봉에서 신호를 판정해 종목마다 한 번에 쓰고, 세션을 완료로 찍는다',
+        { timeout: HEAVY_COMPUTE_TIMEOUT_MS },
+        async () => {
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            const bars = wavyBars(330);
+            const provider: MarketDataProvider = {
+                getBars: vi.fn(async () => bars),
+                getQuote: vi.fn(async () => null),
+            };
 
-        const result = await recordSignalHistory({} as SiglensDatabase, {
-            now: NOW,
-            markers: null,
-            invalidate: () => {},
-            providerFor: () => ({ provider, upstreamCalls: () => 0 }),
-        });
+            const result = await recordSignalHistory({} as SiglensDatabase, {
+                now: NOW,
+                markers: null,
+                invalidate: () => {},
+                providerFor: () => ({ provider, upstreamCalls: () => 0 }),
+            });
 
-        expect(result).toMatchObject({
-            status: 'done',
-            us: { status: 'ran', summary: { recorded: 2, completed: true } },
-        });
-        const writes = store.writes as SymbolScanWrite[];
-        expect(writes.map(w => w.symbol).toSorted()).toEqual(['AAA', 'BBB']);
-        expect(writes.every(w => w.session === SESSION)).toBe(true);
-        const inserts = writes.flatMap(w => w.inserts);
-        expect(inserts.length).toBeGreaterThan(10);
-        expect(
-            inserts.every(
-                row =>
-                    row.lastSeenSession >= row.sessionDate &&
-                    row.lastSeenSession <= SESSION &&
-                    row.computedAt === NOW.toISOString()
-            )
-        ).toBe(true);
-        expect(store.sessions).toEqual([
-            expect.objectContaining({
-                market: 'us',
-                sessionDate: SESSION,
-                universeSize: 2,
-                recorded: 2,
-                completedAt: expect.any(String),
-            }),
-        ]);
-    });
+            expect(result).toMatchObject({
+                status: 'done',
+                us: {
+                    status: 'ran',
+                    summary: { recorded: 2, completed: true },
+                },
+            });
+            const writes = store.writes as SymbolScanWrite[];
+            expect(writes.map(w => w.symbol).toSorted()).toEqual([
+                'AAA',
+                'BBB',
+            ]);
+            expect(writes.every(w => w.session === SESSION)).toBe(true);
+            const inserts = writes.flatMap(w => w.inserts);
+            expect(inserts.length).toBeGreaterThan(10);
+            expect(
+                inserts.every(
+                    row =>
+                        row.lastSeenSession >= row.sessionDate &&
+                        row.lastSeenSession <= SESSION &&
+                        row.computedAt === NOW.toISOString()
+                )
+            ).toBe(true);
+            expect(store.sessions).toEqual([
+                expect.objectContaining({
+                    market: 'us',
+                    sessionDate: SESSION,
+                    universeSize: 2,
+                    recorded: 2,
+                    completedAt: expect.any(String),
+                }),
+            ]);
+        }
+    );
 });

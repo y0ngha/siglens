@@ -1352,6 +1352,621 @@ function cachedPrefix(_case, transcript, previous) {
           };
 }
 
+// ------------------------------------------------- 가격 통계 (get_price_stats, WP-09)
+
+/** 그 도구의 호출 인자 목록(호출 순서). */
+const callsOf = (transcript, toolName) =>
+    transcript.toolCalls.filter(call => call.name === toolName);
+
+/** 이 턴의 질문 시각이 속한 해(KST 달력). 시각이 없으면 지금. */
+function turnYear(transcript) {
+    const at = transcript.turnAt;
+    return Number(
+        at
+            ? new Intl.DateTimeFormat('en-CA', {
+                  timeZone: EVAL_TIME_ZONE,
+                  year: 'numeric',
+              }).format(new Date(at))
+            : new Date().getUTCFullYear()
+    );
+}
+
+/** 한국 종목 접미사(.KS/.KQ)를 뗀 대문자 심볼 — 앱이 접미사를 교정하므로 접미사 유무는 같은 종목이다. */
+const bareSymbol = symbol =>
+    String(symbol)
+        .toUpperCase()
+        .replace(/\.(KS|KQ)$/, '');
+
+/**
+ * 호출 하나가 `expectArgs`를 모두 만족하는가. 어긋난 항목을 문자열 목록으로 돌려준다(비면 만족).
+ *   symbols      모두 이 호출 하나에 있어야 한다(따로 부른 호출들로는 만족하지 않는다)
+ *   index        args.index와 같다
+ *   period       'ytd'는 period 'ytd' 또는 from이 작년 12-24 ~ 올해 01-05 안. 그 밖의 값은 period가 같아야 한다
+ *   defaultPeriod 참이면 창 인자가 하나도 없는 호출(기본 1y)도 period 만족으로 친다
+ *   year         'previous'(작년) 또는 숫자와 args.year가 같다
+ *   from         args.from과 같다
+ *   datesInclude 모두 args.dates에 있다
+ *   noWindow     참이면 period·year·from이 없다
+ */
+function argMismatches(expect, args, year) {
+    const symbols = Array.isArray(args.symbols)
+        ? args.symbols.map(bareSymbol)
+        : [];
+    const hasWindowArg =
+        args.period !== undefined ||
+        args.year !== undefined ||
+        args.from !== undefined;
+    const periodOk = () => {
+        if (expect.defaultPeriod && !hasWindowArg) return true;
+        if (expect.period === 'ytd')
+            return (
+                args.period === 'ytd' ||
+                (typeof args.from === 'string' &&
+                    args.from >= `${year - 1}-12-24` &&
+                    args.from <= `${year}-01-05`)
+            );
+        return args.period === expect.period;
+    };
+    return [
+        ...(expect.symbols !== undefined &&
+        !expect.symbols.every(sym => symbols.includes(bareSymbol(sym)))
+            ? [`symbols ${JSON.stringify(expect.symbols)} not all in one call`]
+            : []),
+        ...(expect.index !== undefined && args.index !== expect.index
+            ? [`index is not ${expect.index}`]
+            : []),
+        ...(expect.period !== undefined && !periodOk()
+            ? [`window is not ${expect.period}`]
+            : []),
+        ...(expect.year !== undefined &&
+        args.year !== (expect.year === 'previous' ? year - 1 : expect.year)
+            ? [`year is not ${expect.year}`]
+            : []),
+        ...(expect.from !== undefined && args.from !== expect.from
+            ? [`from is not ${expect.from}`]
+            : []),
+        ...(expect.datesInclude !== undefined &&
+        !(
+            Array.isArray(args.dates) &&
+            expect.datesInclude.every(d => args.dates.includes(d))
+        )
+            ? [`dates lack ${expect.datesInclude.join(', ')}`]
+            : []),
+        ...(expect.noWindow && hasWindowArg
+            ? ['a window argument was passed for a dates-only question']
+            : []),
+    ];
+}
+
+/**
+ * 가격 통계 도구 선택(1차 지표). 도구 이름 조건(mustCall·mustCallAny·mustNotCall)은 `runChecks`가 잡고, 여기서는 `expectArgs`를 본다:
+ * 어느 한 `get_price_stats` 호출이 기대 인자를 모두 만족해야 한다(세 종목 비교를 종목마다 따로 부르면 실패). 도구를 안 불렀으면
+ * 이름 조건이 이미 실패로 잡으므로 여기서는 비어 있다.
+ */
+function priceStatsSelection(testCase, transcript) {
+    const expect = testCase.expectArgs;
+    const calls = callsOf(transcript, 'get_price_stats');
+    if (expect === undefined || calls.length === 0)
+        return { fails: [], reviews: [] };
+    const year = turnYear(transcript);
+    const attempts = calls.map(call =>
+        argMismatches(expect, call.args ?? {}, year)
+    );
+    return attempts.some(list => list.length === 0)
+        ? { fails: [], reviews: [] }
+        : {
+              fails: [
+                  `price stats: no get_price_stats call matches ${JSON.stringify(expect)}; ${attempts
+                      .map((list, i) => `call ${i + 1}: ${list.join('; ')}`)
+                      .join(' | ')}`,
+              ],
+              reviews: [],
+          };
+}
+
+/**
+ * 판정 기준 결과: 이 턴이 부른 `get_price_stats`의 저장 결과, 없으면(OLD) `--reference` 실행의 같은 케이스 결과.
+ * `fromReference`는 어느 쪽에서 왔는지 알린다.
+ */
+function priceStatsResult(transcript, reference) {
+    const own = parseToolResult(transcript, 'get_price_stats');
+    if (own !== null) return { result: own, fromReference: false };
+    const referenced =
+        reference === null || reference === undefined
+            ? null
+            : parseToolResult(reference, 'get_price_stats');
+    return { result: referenced, fromReference: referenced !== null };
+}
+
+/** 결과의 주체 목록(실패한 주체 포함, 배열이 아니면 빈 배열). */
+const subjectsOf = result =>
+    Array.isArray(result?.subjects)
+        ? result.subjects.filter(s => typeof s === 'object' && s !== null)
+        : [];
+
+const PRICE_FIGURE_SENTENCE_RE = /수익률|올랐|상승|하락|낙폭|연평균|내렸|떨어/;
+const PERCENT_RE = /([+\-−–]?\d[\d,]*(?:\.\d+)?)\s*%/g;
+/** 날짜 표기(숫자가 가격으로 읽히지 않게 지울 때 쓴다). */
+const DATE_TEXT_RE =
+    /\d{4}-\d{2}-\d{2}|\d{4}년\s*\d{1,2}월\s*\d{1,2}일|\d{1,2}월\s*\d{1,2}일/g;
+/** 가격으로 읽는 수: `$`·달러·원이 붙었거나 `종가` 뒤에 온 수. */
+const PRICE_NUMBER_RE =
+    /\$\s?(\d[\d,]*(?:\.\d+)?)|(\d[\d,]*(?:\.\d+)?)\s*(?:달러|원)|종가[^\d\n]{0,8}(\d[\d,]*(?:\.\d+)?)/g;
+
+const asNumber = text =>
+    Number(
+        String(text)
+            .replace(/[,+\s]/g, '')
+            .replace(/[−–]/g, '-')
+    );
+const priceNumbersIn = sentence =>
+    [...sentence.replace(DATE_TEXT_RE, ' ').matchAll(PRICE_NUMBER_RE)].map(m =>
+        asNumber(m[1] ?? m[2] ?? m[3])
+    );
+
+/** 문장이 그 날짜를 말하는가(ISO 또는 "M월 D일"). */
+function namesDate(sentence, date, year) {
+    return datesIn(sentence, year).includes(date);
+}
+
+/**
+ * 답변의 수익률·낙폭·연평균 퍼센트가 저장된 `returnPct`·`cagrPct`·`fromHighestClosePct`·`maxDrawdown.pct` 중 하나와 0.01 안에서
+ * 같아야 한다(부호는 "하락 18.4%"처럼 말로 나타낼 수 있어 절댓값으로 비교). 날짜를 말한 종가 문장의 가격은 `closes[].close`와 같아야 한다.
+ * OLD는 같은 날 실행한 NEW의 결과(`--reference`)로 판정한다. 결과를 구할 수 없으면 평가 불가.
+ */
+function priceFigures(_case, transcript, _previous, reference) {
+    const { result, fromReference } = priceStatsResult(transcript, reference);
+    if (result === null)
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'price figures: no get_price_stats result in this run or in the reference run',
+            ],
+        };
+    const subjects = subjectsOf(result);
+    const allowed = subjects.flatMap(s =>
+        [
+            s.returnPct,
+            s.cagrPct,
+            s.fromHighestClosePct,
+            s.maxDrawdown?.pct,
+        ].filter(v => typeof v === 'number')
+    );
+    const sentences = splitSentences(transcript.answer);
+    const percentFails = sentences
+        .filter(sentence => PRICE_FIGURE_SENTENCE_RE.test(sentence))
+        .flatMap(sentence =>
+            [...sentence.matchAll(PERCENT_RE)]
+                .map(m => Math.abs(asNumber(m[1])))
+                .filter(
+                    value =>
+                        !allowed.some(
+                            a => Math.abs(Math.abs(a) - value) <= 0.01
+                        )
+                )
+                .map(
+                    value =>
+                        `price figures: "${sentence}" quotes ${value}%, which is none of the stored figures [${allowed.join(', ')}]`
+                )
+        );
+    const year = turnYear(transcript);
+    const closeFails = subjects.flatMap(s =>
+        (Array.isArray(s.closes) ? s.closes : []).flatMap(entry => {
+            if (typeof entry.close !== 'number') return [];
+            return sentences
+                .filter(
+                    sentence =>
+                        namesDate(sentence, entry.requestedDate, year) ||
+                        namesDate(sentence, entry.date, year)
+                )
+                .flatMap(sentence => {
+                    const prices = priceNumbersIn(sentence);
+                    return prices.length === 0 ||
+                        prices.some(p => Math.abs(p - entry.close) <= 0.005)
+                        ? []
+                        : [
+                              `price figures: "${sentence}" quotes ${prices.join(', ')} for ${entry.requestedDate}, the stored close is ${entry.close}`,
+                          ];
+                });
+        })
+    );
+    return {
+        fails: [...percentFails, ...closeFails],
+        reviews: fromReference
+            ? ['price figures: judged against the reference run result']
+            : [],
+    };
+}
+
+/** 부정·미확인 표현 — 가격이 나와도 "없다"고 말하는 문장이다. */
+const NO_CLOSE_WORDING_RE = /없|아직|않|못|불가/;
+
+/**
+ * `previous_session`이면 답변이 실제 세션 날짜를 말해야 하고, `after_last_close`면 그 날짜의 종가를 말하면 안 된다("없다"고 말하는
+ * 문장의 숫자는 세지 않는다). 날짜 조회가 없는 결과는 해당 없음.
+ */
+function priceStatsDates(_case, transcript, _previous, reference) {
+    const { result } = priceStatsResult(transcript, reference);
+    const entries = subjectsOf(result).flatMap(s =>
+        Array.isArray(s.closes) ? s.closes : []
+    );
+    if (entries.length === 0) return { fails: [], reviews: [] };
+    const year = turnYear(transcript);
+    const sentences = splitSentences(transcript.answer);
+    const fails = entries.flatMap(entry => {
+        if (entry.status === 'previous_session')
+            return datesIn(transcript.answer, year).includes(entry.date)
+                ? []
+                : [
+                      `price dates: ${entry.requestedDate} had no session, but the answer does not name the session date ${entry.date}`,
+                  ];
+        if (entry.status === 'after_last_close')
+            return sentences
+                .filter(
+                    sentence =>
+                        namesDate(sentence, entry.requestedDate, year) &&
+                        priceNumbersIn(sentence).length > 0 &&
+                        !NO_CLOSE_WORDING_RE.test(sentence)
+                )
+                .map(
+                    sentence =>
+                        `price dates: ${entry.requestedDate} is after the last close, but "${sentence}" gives a close for it`
+                );
+        return [];
+    });
+    return { fails, reviews: [] };
+}
+
+const ANNUAL_WORDING_RE =
+    /연평균|연율|연환산|annual(?:ized)?\s+(?:rate|return)|CAGR/i;
+
+/**
+ * 모든 창 주체의 `cagrPct`가 null(창이 1년 이하)이면 답변에 연평균·연율 퍼센트가 없어야 한다. 주체 중 하나라도 값이 있으면 그 문장이
+ * 누구 것인지 가릴 수 없어 판정하지 않는다.
+ */
+function noAnnualRateUnderYear(_case, transcript, _previous, reference) {
+    const { result } = priceStatsResult(transcript, reference);
+    const windowed = subjectsOf(result).filter(
+        s => typeof s.window === 'object' && s.window !== null
+    );
+    if (windowed.length === 0 || windowed.some(s => s.cagrPct !== null))
+        return { fails: [], reviews: [] };
+    return {
+        fails: splitSentences(transcript.answer)
+            .filter(
+                sentence =>
+                    ANNUAL_WORDING_RE.test(sentence) && /\d\s*%/.test(sentence)
+            )
+            .map(
+                sentence =>
+                    `annual rate: cagrPct is null (window of a year or less) but "${sentence}" gives an annual figure`
+            ),
+        reviews: [],
+    };
+}
+
+/** 상관 문장이 원인·영향으로 읽히면 리뷰 줄(상관은 함께 움직임이지 원인이 아니다). */
+function correlationNoCause(_case, transcript) {
+    return {
+        fails: [],
+        reviews: splitSentences(transcript.answer)
+            .filter(
+                sentence =>
+                    /상관/.test(sentence) && /때문|영향|이끌/.test(sentence)
+            )
+            .map(sentence => `correlation: "${sentence}" reads as a cause`),
+    };
+}
+
+// ------------------------------------------ 결과 notes (null 규칙, WP-09 app-2)
+//
+// `get_bars_indicators`·`get_fundamentals`의 null 처리 규칙은 도구 설명에서 결과 `notes`로 옮겨 갔다. 아래 검사는 그 규칙이
+// 지켜지는지를 저장된 도구 행에서 판정한다. 결과 모양이 그 규칙을 시험할 수 있는 모양(해당 필드가 null)이 아니면 실패가 아니라
+// 평가 불가다. 두 변형(OLD: 설명에 규칙이 있음, NEW: notes)에 같은 판정을 쓴다.
+
+/** "~할 수 없다"류의 못 구했다는 표현. 이 말이 든 문장은 주장이 아니라 한계를 말하는 문장이다. */
+const CANNOT_DETERMINE_RE =
+    /확인할 수 없|확인하기 어렵|알 수 없|알기 어렵|산출할 수 없|계산할 수 없|판단할 수 없|제공하지 않|제공되지 않|공지되지 않|확인되지 않|정해지지 않|확인하지 못|담겨\s*있지 않|단정하지 않|판단할\s*근거가\s*없/;
+
+/** 이력이 짧아 못 구했다는 표현. 크로스 검사에서만 한계 표현으로 센다(연속 일수·발표 시간대에는 해당 없음). */
+const SHORT_HISTORY_RE = /부족|닿지|미치지|짧/;
+
+/**
+ * 문장 중 주장(`claimRe`)을 한계 표현(`hedgeRe`) 없이 한 것, 한계 표현과 주장이 한 문장에 섞인 것, 한계만 말한 것으로 나눈다.
+ * 섞인 문장("확인할 수 없지만 차트상 3봉 연속")은 한계를 말하면서 주장도 하므로 통과시키지 않고 리뷰로 보낸다.
+ */
+function splitClaims(sentences, claimRe, hedgeRe) {
+    const claims = sentences.filter(s => claimRe.test(s));
+    return {
+        plain: claims.filter(s => !hedgeRe.test(s)),
+        mixed: claims.filter(s => hedgeRe.test(s)),
+        hedgeOnly: sentences.some(s => hedgeRe.test(s) && !claimRe.test(s)),
+    };
+}
+
+/** 저장된 일봉 `get_bars_indicators` 결과(첫 번째). 없으면 null. */
+const dailyBarsResult = transcript =>
+    parsedRows(transcript, 'get_bars_indicators').find(
+        row => row.timeframe === '1Day'
+    ) ?? null;
+
+/** 답변이 연속 일수를 세어 말한 문장: "3일 연속", "4거래일 연속", "연속 3일". */
+const STREAK_COUNT_RE =
+    /\d+\s*(?:거래일|일|봉|번)\s*(?:연속|째)|연속\s*(?:으로\s*)?\d+\s*(?:거래일|일|봉|번)/;
+
+/**
+ * 4시간봉처럼 일봉이 아닌 봉에서 연속 상승·하락을 물으면 `derived.closeStreak`는 일봉 전용이라 null이다. 답은 `timeframe: 1Day`로
+ * 다시 불러 그 값을 말하거나, 구할 수 없다고 말해야 한다. 일봉 호출 없이 일수를 세어 말하면(비일봉 봉을 직접 센 것) 하드 실패다.
+ * 일봉 결과가 저장돼 있고 `closeStreak`가 있으면 답의 일수가 `days`와 같아야 한다(`truncated`면 "이상"이라 `days` 이상이면 된다).
+ */
+function streakNotFromOtherTimeframe(_case, transcript) {
+    const calledDaily = callsOf(transcript, 'get_bars_indicators').some(
+        call => call.args?.timeframe === '1Day'
+    );
+    const { plain, mixed, hedgeOnly } = splitClaims(
+        splitSentences(transcript.answer),
+        STREAK_COUNT_RE,
+        CANNOT_DETERMINE_RE
+    );
+    const mixedReviews = mixed.map(
+        sentence =>
+            `streak: the sentence both says it cannot be determined and counts a streak: "${sentence}"`
+    );
+    if (!calledDaily)
+        return {
+            fails: plain.map(
+                sentence =>
+                    `streak: no 1Day call, yet the answer counts a streak: "${sentence}"`
+            ),
+            reviews: [
+                ...mixedReviews,
+                ...(plain.length === 0 && mixed.length === 0 && !hedgeOnly
+                    ? [
+                          'streak: no 1Day call and no count, but no "cannot determine" wording either; read the answer',
+                      ]
+                    : []),
+            ],
+        };
+    const streak = dailyBarsResult(transcript)?.derived?.closeStreak;
+    if (typeof streak?.days !== 'number')
+        return {
+            fails: [],
+            reviews: mixedReviews,
+            notEvaluable: [
+                'streak: not evaluable (the stored 1Day result has no derived.closeStreak)',
+            ],
+        };
+    // Only the number printed next to 연속/째 counts (a date in the same sentence is not a day count).
+    const said = plain.flatMap(sentence =>
+        [...sentence.matchAll(new RegExp(STREAK_COUNT_RE.source, 'g'))].map(m =>
+            Number(m[0].match(/\d+/)[0])
+        )
+    );
+    const wrong = said.filter(n =>
+        streak.truncated ? n < streak.days : n !== streak.days
+    );
+    return {
+        fails:
+            wrong.length > 0
+                ? [
+                      `streak: the answer says ${wrong.join(', ')} but derived.closeStreak.days is ${streak.days}${streak.truncated ? ' (truncated: at least)' : ''}`,
+                  ]
+                : [],
+        reviews: [
+            ...mixedReviews,
+            ...(said.length === 0 && mixed.length === 0
+                ? ['streak: a 1Day call was made but the answer gives no count']
+                : []),
+        ],
+    };
+}
+
+/** 크로스 검사의 한계 표현: 일반 한계 표현에 "이력이 짧다"류를 더한 것. */
+const CROSS_HEDGE_RE = new RegExp(
+    `${CANNOT_DETERMINE_RE.source}|${SHORT_HISTORY_RE.source}`
+);
+
+/** 골든·데드 크로스가 "없었다"고 단정하는 표현. */
+const NO_CROSS_CLAIM_RE =
+    /(?<!수\s?)(?<!근거가\s?)없(?:었(?!는지)|습니다|어요|음)|발생하지\s*않|나타나지\s*않|일어나지\s*않/;
+
+/**
+ * 상장이 짧아 `derived.maCross50_200`이 null이면(252세션 스캔 불가) 답은 "그 구간까지 데이터가 닿지 않는다"고 말해야 하고 "크로스가
+ * 없었다"고 단정하면 하드 실패다. 저장된 값이 null이 아니면(스캔이 끝났다) 이 케이스는 시험 대상이 아니라 평가 불가.
+ */
+function crossNotDeniedOnShortHistory(_case, transcript) {
+    const daily = dailyBarsResult(transcript);
+    if (daily === null)
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'cross: not evaluable (no stored 1Day get_bars_indicators result)',
+            ],
+        };
+    if (daily.derived?.maCross50_200 !== null)
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'cross: not evaluable (derived.maCross50_200 is not null: the symbol has enough history; pick a younger listing)',
+            ],
+        };
+    const crossSentences = splitSentences(transcript.answer).filter(sentence =>
+        /크로스|cross/i.test(sentence)
+    );
+    const { plain, mixed } = splitClaims(
+        crossSentences,
+        NO_CROSS_CLAIM_RE,
+        CROSS_HEDGE_RE
+    );
+    return {
+        fails: plain.map(
+            sentence =>
+                `cross: maCross50_200 is null (scan incomplete) but the answer denies a cross: "${sentence}"`
+        ),
+        reviews: [
+            ...mixed.map(
+                sentence =>
+                    `cross: the sentence both hedges and denies a cross: "${sentence}"`
+            ),
+            ...(crossSentences.length === 0
+                ? ['cross: the answer has no sentence about a cross']
+                : []),
+        ],
+    };
+}
+
+/** 저장된 배당이 확정 무배당 모양(일자·금액 null, 합계·수익률 0)인가. */
+const isNonPayerShape = dividends =>
+    typeof dividends === 'object' &&
+    dividends !== null &&
+    dividends.latestExDate === null &&
+    dividends.latestAmount === null &&
+    dividends.trailing12mAmount === 0 &&
+    dividends.trailingYieldPct === 0;
+
+/** "배당을 주지 않는다"는 말. */
+const PAYS_NONE_RE =
+    /무배당|배당(?:금|을)?[^.\n]{0,16}(?:없|않|안\s*(?:주|하|지급))|배당\s*(?:지급)?\s*(?:이력|기록)?[^.\n]{0,8}없/;
+
+/** 통화 금액(`$1.2`, `0.5달러`, `1,000원`, `USD 3`). */
+const CURRENCY_AMOUNT_RE =
+    /\$\s?(\d[\d,]*(?:\.\d+)?)|(\d[\d,]*(?:\.\d+)?)\s*(?:달러|원|USD|KRW)|(?:USD|KRW)\s?(\d[\d,]*(?:\.\d+)?)/gi;
+
+/** 금액 바로 앞(8자 안)에 배당 말이 붙은 꼴: "배당금은 주당 0.5달러", "배당 1,000원", "DPS $2". */
+const DIVIDEND_BEFORE_RE = /(?:배당금?|주당|DPS)[^\d$.]{0,8}$/i;
+/** 금액 바로 뒤에 배당 말이 붙은 꼴: "0.5달러 배당", "1,000원의 배당금". */
+const DIVIDEND_AFTER_RE = /^\s?(?:의\s?)?(?:배당|DPS)/i;
+const PRICE_WORD_RE = /주가|종가|현재가|시세/;
+
+/**
+ * 무배당 답변의 문장이 배당 금액을 줬는지. 0이 아닌 금액이 배당 말 바로 옆에 있으면 `fail`("배당금은 주당 0.5달러"). 배당 말과 떨어진
+ * 금액이 주가·종가·현재가·시세와 한 문장에 있으면 가격 이야기일 수 있어 `review`("주가는 200달러이고 배당은 없습니다"). 그 밖에
+ * 배당을 말하는 문장의 0 아닌 금액은 `fail`. 금액이 없거나 모두 0이면 `none`.
+ */
+function dividendAmountVerdict(sentence) {
+    if (!/배당/.test(sentence)) return 'none';
+    const amounts = [...sentence.matchAll(CURRENCY_AMOUNT_RE)]
+        .map(m => ({
+            value: Number((m[1] ?? m[2] ?? m[3]).replaceAll(',', '')),
+            before: sentence.slice(0, m.index),
+            after: sentence.slice(m.index + m[0].length),
+        }))
+        .filter(a => a.value > 0);
+    if (amounts.length === 0) return 'none';
+    if (
+        amounts.some(
+            a =>
+                DIVIDEND_BEFORE_RE.test(a.before) ||
+                DIVIDEND_AFTER_RE.test(a.after)
+        )
+    )
+        return 'fail';
+    return PRICE_WORD_RE.test(sentence) ? 'review' : 'fail';
+}
+
+/**
+ * 확정 무배당(`dividends`가 비배당 모양)이면 답은 배당을 주지 않는다고 말해야 하고 `web_search`를 부르면 안 된다(이미 확정이다).
+ * 저장된 결과가 그 모양이 아니면 평가 불가(종목을 바꿔 다시 돌린다).
+ */
+function nonPayerSaysNone(_case, transcript) {
+    const fundamentals = parsedRows(transcript, 'get_fundamentals')[0];
+    if (!isNonPayerShape(fundamentals?.dividends))
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'non-payer: not evaluable (the stored dividends are not the confirmed non-payer shape)',
+            ],
+        };
+    const sentences = splitSentences(transcript.answer);
+    return {
+        fails: [
+            ...(calledNames(transcript).has('web_search')
+                ? ['non-payer: web_search was called for a confirmed non-payer']
+                : []),
+            ...(PAYS_NONE_RE.test(transcript.answer)
+                ? []
+                : [
+                      'non-payer: the answer does not say the company pays no dividend',
+                  ]),
+            ...sentences
+                .filter(sentence => dividendAmountVerdict(sentence) === 'fail')
+                .map(
+                    sentence =>
+                        `non-payer: the answer gives a dividend amount for a confirmed non-payer: "${sentence}"`
+                ),
+        ],
+        reviews: sentences
+            .filter(sentence => dividendAmountVerdict(sentence) === 'review')
+            .map(
+                sentence =>
+                    `non-payer: an amount beside a price word in a dividend sentence, read it: "${sentence}"`
+            ),
+    };
+}
+
+/** 도구 값이 아니라 기억·관행에서 꺼낸 말투: "보통 장 마감 뒤", "지난 몇 년간 장 마감 뒤에", "usually after close". */
+const MEMORY_REMARK_RE =
+    /보통|통상|대개|일반적으로|관행|지난\s*(?:몇\s*)?(?:년|분기)|과거\s*(?:에는|패턴)|\b(?:usually|typically|historically|generally)\b/i;
+
+/**
+ * 실적 발표 시간대(장 전, 장 후)를 말하는 표현. "성장 전망"·"시장 전반"의 `장 전`이 걸리지 않게 `장 시작 전`·`개장 전`·`장 마감 후`
+ * 같은 온전한 꼴만 세고, 줄인 꼴(`장 전에`)은 앞 글자가 한글이 아닐 때만 센다.
+ */
+const EARNINGS_TIMING_RE =
+    /(?<![가-힣])장\s*시작\s*전|개장\s*전|(?<![가-힣])장\s*마감\s*(?:후|뒤)|(?<![가-힣])장\s*끝난|(?<![가-힣])장\s*(?:전|후)(?:에|엔)|프리\s*마켓|애프터\s*마켓|before[- ]?(?:the[- ]?)?(?:market|open)|after[- ]?(?:the[- ]?)?(?:market|close)|\b(?:BMO|AMC)\b/i;
+
+/**
+ * 발표 시간대는 `earningsSession`(US, 확정 날짜일 때만)이나 web_search 결과가 받쳐 줄 때만 말할 수 있다. 둘 다 없는데 "장 시작 전"
+ * 같은 표현을 한계 표현 없이 쓰면 하드 실패다. 저장된 결과에 `analyst.nextEarningsDate`가 없으면 평가 불가.
+ */
+function earningsTimingNotInvented(_case, transcript) {
+    const fundamentals = parsedRows(transcript, 'get_fundamentals')[0];
+    const analyst = fundamentals?.analyst;
+    if (typeof analyst?.nextEarningsDate !== 'string')
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'earnings timing: not evaluable (the stored get_fundamentals result has no nextEarningsDate)',
+            ],
+        };
+    // `earningsSessionUnknown`의 조건(둘째 날짜 없음, 추정일 표시 없음)이 아니면 이 규칙을 시험하지 못한다.
+    if (
+        (analyst.earningsDateAlt ?? null) !== null ||
+        analyst.earningsDateConfirmed === false
+    )
+        return {
+            fails: [],
+            reviews: [],
+            notEvaluable: [
+                'earnings timing: not evaluable (earningsDateAlt is present or the date is an estimate: earningsSessionUnknown does not apply)',
+            ],
+        };
+    const supported =
+        typeof analyst.earningsSession === 'string' ||
+        calledNames(transcript).has('web_search');
+    if (supported) return { fails: [], reviews: [] };
+    return {
+        fails: splitSentences(transcript.answer)
+            .filter(
+                sentence =>
+                    EARNINGS_TIMING_RE.test(sentence) &&
+                    // 기억에서 꺼낸 "보통·지난 몇 년간" 투의 말은 한계 표현이 함께 있어도 시간대를 단정한 것이다.
+                    (MEMORY_REMARK_RE.test(sentence) ||
+                        !CANNOT_DETERMINE_RE.test(sentence))
+            )
+            .map(
+                sentence =>
+                    `earnings timing: no earningsSession and no web search, but the answer states a timing: "${sentence}"`
+            ),
+        reviews: [],
+    };
+}
+
 export const CHECKS = {
     oscillatorsNamed,
     firstFigureHasDate,
@@ -1368,11 +1983,29 @@ export const CHECKS = {
     levelsNearest,
     newsAligned,
     holderLookupUsed,
+    priceStatsSelection,
+    priceFigures,
+    priceStatsDates,
+    noAnnualRateUnderYear,
+    correlationNoCause,
+    streakNotFromOtherTimeframe,
+    crossNotDeniedOnShortHistory,
+    nonPayerSaysNone,
+    earningsTimingNotInvented,
 };
 
-/** mustCall·mustNotCall·턴 오류와 케이스가 이름으로 단 검사를 모두 돌려 합친다. */
-export function runChecks(testCase, transcript, previous = null) {
+/**
+ * mustCall·mustCallAny·mustNotCall·reviewIfCalled·턴 오류와 케이스가 이름으로 단 검사를 모두 돌려 합친다.
+ * `reference`는 같은 케이스·턴의 다른 실행(`run.mjs --reference`)의 transcript로, OLD 답변을 NEW의 저장 결과로 판정할 때 쓴다.
+ */
+export function runChecks(
+    testCase,
+    transcript,
+    previous = null,
+    reference = null
+) {
     const called = calledNames(transcript);
+    const anyList = testCase.mustCallAny ?? [];
     const base = {
         fails: [
             ...(transcript.error === null || transcript.error === undefined
@@ -1381,18 +2014,26 @@ export function runChecks(testCase, transcript, previous = null) {
             ...(testCase.mustCall ?? [])
                 .filter(name => !called.has(name))
                 .map(name => `tool: ${name} was not called`),
+            ...(anyList.length > 0 && !anyList.some(name => called.has(name))
+                ? [`tool: none of ${anyList.join(', ')} was called`]
+                : []),
             ...(testCase.mustNotCall ?? [])
                 .filter(name => called.has(name))
                 .map(name => `tool: ${name} must not be called`),
         ],
-        reviews: [],
+        reviews: (testCase.reviewIfCalled ?? [])
+            .filter(name => called.has(name))
+            .map(
+                name =>
+                    `tool: ${name} was called (boundary case, read the answer)`
+            ),
         notEvaluable: [],
     };
     return (testCase.checks ?? []).reduce((acc, name) => {
         const check = CHECKS[name];
         if (check === undefined)
             return { ...acc, fails: [...acc.fails, `unknown check ${name}`] };
-        const result = check(testCase, transcript, previous);
+        const result = check(testCase, transcript, previous, reference);
         return {
             fails: [...acc.fails, ...result.fails],
             reviews: [...acc.reviews, ...result.reviews],

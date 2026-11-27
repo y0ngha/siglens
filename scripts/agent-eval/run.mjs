@@ -14,6 +14,8 @@
 //   --cache             conv(4턴) 케이스까지 돌려 접두사 캐시 검사를 켠다. 없으면 conv는 건너뛴다.
 //   --out <file>        transcript JSON 저장 경로(필수 — 레포 밖 스크래치 경로를 쓴다).
 //   --compare a b       두 결과 JSON을 견줘 표로 출력한다(서버·DB 불필요).
+//   --reference <file>  같은 케이스·턴의 다른 실행 결과 JSON. 도구를 안 불러 저장 결과가 없는 OLD 답변을 NEW의 저장된
+//                       `get_price_stats` 결과로 판정한다(둘 다 같은 날 실행, 종가가 그대로여야 한다).
 //   --no-web-search     web_search가 없는 서버라고 강제로 알린다. 주지 않으면 dev-server.sh가 쓴 상태 파일(AGENT_EVAL_STATE_FILE,
 //                       기본 scripts/agent-eval/.server-state.json)에서 읽고, 그것도 없으면 턴 결과로 추정한다.
 //                       web_search를 내놓지 않은 서버에서 holder 케이스는 실패가 아니라 "평가 불가"로 보고된다.
@@ -117,6 +119,10 @@ const databaseUrl = process.env.DATABASE_URL ?? databaseUrlFromE2eEnv();
 const outPath = option('out');
 const label = option('label') ?? 'run';
 const only = option('only')?.split(',');
+const referencePath = option('reference');
+const referenceRun = referencePath
+    ? JSON.parse(readFileSync(referencePath, 'utf8'))
+    : null;
 const { selected, errors: selectionErrors } = selectCases(
     CASES,
     only,
@@ -268,7 +274,11 @@ async function runCase(page, testCase) {
             const checked = runChecks(
                 { ...turn, id: `${testCase.id}-t${index + 1}` },
                 transcript,
-                acc.transcripts.at(-1) ?? null
+                acc.transcripts.at(-1) ?? null,
+                // conv는 턴 번호로, 단일 턴 케이스는 첫 턴으로 같은 케이스의 기준 실행 transcript를 찾는다.
+                referenceRun?.results?.find(r => r.id === testCase.id)?.turns?.[
+                    index
+                ] ?? null
             );
             return {
                 conversationId,

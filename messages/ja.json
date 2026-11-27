@@ -6209,6 +6209,7 @@
                 "toolOptions": "オプション",
                 "toolOther": "データ照会",
                 "toolPortfolio": "マイポートフォリオ",
+                "toolPriceStats": "期間別の騰落率と最大下落幅",
                 "toolQuote": "株価",
                 "toolSearchTicker": "銘柄検索",
                 "toolSwingHistory": "過去の下落と上昇局面",

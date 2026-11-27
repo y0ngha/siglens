@@ -5,8 +5,49 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({ getAssetInfo }));
 
 import {
     resolveAssetInfoOrNull,
+    resolveAssetLookup,
     resolvedInstrumentFields,
 } from '@/app/api/ai/chat/tools/resolveAssetInfo';
+
+describe('resolveAssetLookup', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('a found asset is returned with lookupFailed false', async () => {
+        const asset = { symbol: 'AAPL', name: 'Apple' };
+        getAssetInfo.mockResolvedValue(asset);
+        await expect(
+            resolveAssetLookup('AAPL', 'get_price_stats')
+        ).resolves.toEqual({ asset, lookupFailed: false });
+    });
+
+    it('a lookup that succeeded with null is a definite unknown symbol (lookupFailed false)', async () => {
+        getAssetInfo.mockResolvedValue(null);
+        await expect(
+            resolveAssetLookup('TYPO', 'get_price_stats')
+        ).resolves.toEqual({ asset: null, lookupFailed: false });
+    });
+
+    it('a lookup that threw is null with lookupFailed true, logging only the error name', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const error = new Error('bound param leaked');
+        error.name = 'DrizzleQueryError';
+        getAssetInfo.mockRejectedValue(error);
+        await expect(
+            resolveAssetLookup('AAPL', 'get_price_stats')
+        ).resolves.toEqual({ asset: null, lookupFailed: true });
+        expect(warn).toHaveBeenCalledWith(
+            '[AgentTool]',
+            'get_price_stats',
+            'getAssetInfo failed, degrading',
+            { errorName: 'DrizzleQueryError' }
+        );
+    });
+});
 
 describe('resolveAssetInfoOrNull', () => {
     beforeEach(() => {

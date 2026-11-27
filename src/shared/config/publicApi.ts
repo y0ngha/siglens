@@ -124,11 +124,13 @@ export const PUBLIC_API_RESULT_CAPS = {
     indexHistory: 24_000,
     // `get_swing_history`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
     swingHistory: 24_000,
+    // `get_price_stats`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
+    priceStats: 24_000,
     // `get_analyst_views`는 공개 API에서 제외된 도구라 쓰이지 않는다 — 타입이 요구하는 칸이라 임의 값(24,000)을 둔다.
     analystViews: 24_000,
     // `get_news`는 이 상한이 아니라 자체 예산(에이전트와 같은 8,000자)으로 요약·항목을 줄인다 — 같은 값을 둬 실행기가 다시 자르지 않게 한다.
     news: 8_000,
-    // `get_fundamentals`는 공개 API에서 `standard`와 같은 값이다 — 에이전트 쪽 자체 상한(5,000)이 공개 응답을 줄이지 않게 한다.
+    // `get_fundamentals`는 공개 API에서 `standard`와 같은 값이다 — 에이전트 쪽 자체 상한(6,500)이 공개 응답을 줄이지 않게 한다.
     fundamentals: 16_000,
     cachedAnalysis: 32_000,
     cachedAnalysisBudget: 32_000,

@@ -439,6 +439,8 @@ Never fan out an unbounded `Promise.all`/`Promise.allSettled` over provider call
 limits differ (FMP depends on the plan, `yahoo-finance2` is unofficial, LLM providers depend on the API tier), and
 two chunked pipelines started together double the effective concurrency. Use `Promise.allSettled` inside a chunk
 when one failure must not discard its siblings.
+When job durations vary under a caller deadline, chunk-and-await (or round-robin slot pinning) lets a fast job wait
+behind a slow one while capacity sits idle; use a first-free-slot FIFO semaphore with a wait deadline instead.
 
 ```typescript
 // ❌ every symbol at once
@@ -715,6 +717,10 @@ versioning table above).
 A memo or cache that refreshes periodically returns the previous (even expired) value when the refresh fails, and
 keeps its expiry so the next call retries. Returning an empty value turns a transient failure into wrong answers
 (entries briefly classified as unknown).
+
+A negative memo stores "not found" only for a definite negative answer, so every error path that would collapse to null
+or an empty series (a throwing lookup, a failed cache read) stays distinguishable (tagged result, rethrow) up to the memo
+decision.
 
 <a id="DC-8"></a>
 

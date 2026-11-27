@@ -606,6 +606,15 @@ A new global stylesheet rule (for example a `:has()` selector) has no runtime te
 - ❌ A `:has()` rule added to `globals.css` and a page card rewritten inline, with no test touching either.
 - ✅ A test reads `globals.css`, normalizes whitespace and asserts the exact rule; the card lives in a feature component with its own render test.
 
+<a id="TE-68"></a>
+
+#### TE-68 — A test with known heavy cost declares a named timeout constant
+
+A test whose cost is bounded but above the 5s default (full core computation over a bar series, process spawns, a whole-repo scan) passes locally and times out on a loaded CI runner. Declare `const HEAVY_COMPUTE_TIMEOUT_MS = 30_000;` (or a matching `SPAWN_TEST_TIMEOUT_MS`) next to the test with a one-line WHY, and pass it as the `{ timeout }` options argument in second position (Vitest rejects options after the callback). A describe-level timeout is not overridden by `--testTimeout`, so scale it explicitly for a slower mode such as coverage.
+
+- ❌ `it('detects signals over 500 bars', () => { ... })` running the full detector on the default timeout, or `{ timeout: 30000 }` with no explanation.
+- ✅ `it('detects signals over 500 bars', { timeout: HEAVY_COMPUTE_TIMEOUT_MS }, () => { ... })`.
+
 ## Real-database tests
 
 <a id="TE-55"></a>

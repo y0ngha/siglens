@@ -19,6 +19,7 @@ import {
     COMPANY_FILINGS_RESULT_MAX_CHARS,
     INDEX_HISTORY_RESULT_MAX_CHARS,
     SWING_HISTORY_RESULT_MAX_CHARS,
+    PRICE_STATS_RESULT_MAX_CHARS,
     ANALYST_VIEWS_RESULT_MAX_CHARS,
     BARS_ANNOTATE_HEADROOM_CHARS,
     BARS_RESULT_MAX_CHARS,
@@ -50,6 +51,7 @@ import { getCompanyFilingsTool } from './getCompanyFilings';
 import { getXPostsTool } from './getXPosts';
 import { getThemeSnapshotTool } from './getThemeSnapshot';
 import { getIndexHistoryStatsTool } from './getIndexHistoryStats';
+import { getPriceStatsTool } from './getPriceStats';
 import { getSwingHistoryTool } from './getSwingHistory';
 import { showChartTool } from './showChart';
 import { safeErrorFields } from './logToolDegrade';
@@ -147,6 +149,8 @@ export interface ToolResultCaps {
     indexHistory: number;
     /** `get_swing_history` (decline and rally summaries, size bands and up to 20 episodes each). */
     swingHistory: number;
+    /** `get_price_stats` (up to 3 subjects × 5 date lookups, every note, 3 correlation pairs). */
+    priceStats: number;
     /** `get_analyst_views` (up to 15 actions plus four estimate periods). */
     analystViews: number;
     /** `get_fundamentals` (every section filled plus the earnings tally). */
@@ -172,6 +176,7 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     xPosts: X_POSTS_RESULT_MAX_CHARS,
     indexHistory: INDEX_HISTORY_RESULT_MAX_CHARS,
     swingHistory: SWING_HISTORY_RESULT_MAX_CHARS,
+    priceStats: PRICE_STATS_RESULT_MAX_CHARS,
     analystViews: ANALYST_VIEWS_RESULT_MAX_CHARS,
     fundamentals: FUNDAMENTALS_RESULT_MAX_CHARS,
     news: NEWS_RESULT_MAX_CHARS,
@@ -241,6 +246,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_theme_snapshot: getThemeSnapshotTool,
     get_index_history_stats: getIndexHistoryStatsTool,
     get_swing_history: getSwingHistoryTool,
+    get_price_stats: getPriceStatsTool,
     show_chart: showChartTool,
 };
 
@@ -267,6 +273,8 @@ export function availableToolNames(): Set<string> {
     if (e2eFake) names.delete('get_index_history_stats');
     // 긴 일봉 이력도 같다(엔티티가 E2E fake 모드에서 던진다).
     if (e2eFake) names.delete('get_swing_history');
+    // 가격 통계도 같다 — 종가 이력을 같은 엔티티 경로로 읽고, fake 공급자의 봉은 3개뿐이다.
+    if (e2eFake) names.delete('get_price_stats');
     return names;
 }
 
@@ -380,6 +388,7 @@ export function createToolExecutor(
         if (name === 'get_x_posts') return resultCaps.xPosts;
         if (name === 'get_index_history_stats') return resultCaps.indexHistory;
         if (name === 'get_swing_history') return resultCaps.swingHistory;
+        if (name === 'get_price_stats') return resultCaps.priceStats;
         if (name === 'get_analyst_views') return resultCaps.analystViews;
         if (name === 'get_news') return resultCaps.news;
         if (name === 'get_fundamentals') return resultCaps.fundamentals;

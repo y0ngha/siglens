@@ -4,6 +4,7 @@ import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
     barPeriodStartSeconds,
+    BARS_RESULT_NOTES,
     calculateIndicators,
     classifyOscillatorZones,
     fearGreedInputs,
@@ -107,6 +108,16 @@ import { chartBlockFrom } from './chartBlock';
  * cap minus `BARS_ANNOTATE_HEADROOM_CHARS` (100) = 6,900, leaving ~745 (~570
  * with the longest tally). Each listed cross adds ~35 chars, so ~16 crosses are
  * what the worst case absorbs before `fitBarsToBudget` starts trimming bars.
+ *
+ * Result `notes` (core `BARS_RESULT_NOTES`) appear only where a field is null.
+ * Measured at the default 30 bars on production-shaped series (2026-11-21):
+ * 1Day with every field present 5,938 (no `notes` key); 1Day with 451 bars
+ * (`maCrossShortHistory`, 260 chars) 6,230; 4Hour with `dailyOnlyFields`
+ * (~470 chars, the longest note) 6,197; 1Week 5,463. The three 1Day notes
+ * (245 + 260 + 235) only meet on a series so short that the rest of the
+ * payload is mostly absent. The notes sit inside `fitBarsToBudget`'s builder,
+ * so a long request trims bars rather than the note.
+ *
  * Re-measure by serializing that test's result when a top-level or `derived`
  * field is added.
  */
@@ -987,6 +998,41 @@ function computeDerived(
     };
 }
 
+/**
+ * `notes` for the result: why a field is null HERE and what the model must do
+ * about it (`PUBLIC_API.md`, `runAgentTurn` action ⑩; the texts are core's
+ * `BARS_RESULT_NOTES`, attached verbatim). The descriptions no longer carry
+ * these null rules, so a missing note means the model never sees the rule.
+ *
+ * - Any timeframe but `1Day`: the daily-only fields are not computed, one note
+ *   naming the requested timeframe (weekly and monthly included). The three
+ *   notes below are never added next to it: on those timeframes the null is
+ *   expected, not a finding about the data.
+ * - `1Day`: one note per null field (`closeStreak`, `maCross50_200` when the
+ *   252-session scan is incomplete, `fearGreed`). The two scan and ranking
+ *   notes do not name a cause: a short history and a failed computation print
+ *   the same text, because the executor cannot tell them apart.
+ *
+ * Empty when nothing applies; the caller then omits the key (no empty array).
+ */
+function barsResultNotes(
+    timeframe: AgentBarsTimeframe,
+    derived: DerivedView,
+    fearGreed: SymbolFearGreedView | null
+): string[] {
+    if (timeframe !== '1Day')
+        return [BARS_RESULT_NOTES.dailyOnlyFields(timeframe)];
+    return [
+        ...(derived.closeStreak === null
+            ? [BARS_RESULT_NOTES.closeStreakUnavailable]
+            : []),
+        ...(derived.maCross50_200 === null
+            ? [BARS_RESULT_NOTES.maCrossShortHistory]
+            : []),
+        ...(fearGreed === null ? [BARS_RESULT_NOTES.fearGreedUnavailable] : []),
+    ];
+}
+
 /** One Flow/Trend group of {@link SymbolFearGreedView}. `label` is the name the symbol fear & greed page shows, in the reader's locale. */
 interface FearGreedGroupView {
     name: FearGreedGroupName;
@@ -1400,6 +1446,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
             ? (longDailyBars.findLast(hasUsablePrices)?.time ?? latestBar.time)
             : latestBar.time;
     const asOf = isoTimestamp(asOfTime, timeframe);
+    const notes = barsResultNotes(timeframe, derived, fearGreed);
 
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({
@@ -1419,6 +1466,8 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
             latest,
             candlePatterns,
             fearGreed,
+            // Inside the builder so the fit counts it; absent (never `[]`) when no note applies.
+            ...(notes.length > 0 && { notes }),
             barsReturned: barsForOutput.length,
             barsTrimmed,
             bars: barsForOutput,
