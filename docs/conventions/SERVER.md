@@ -495,6 +495,9 @@ For a unit chaining several capped steps (ingest + analysis + sequential transla
 is the sum of each step's worst case, written next to the caps. A budget claimed from the typical case silently
 exceeds the platform timeout.
 
+A step documented as "DB only" gains no external call: compute a derivation in the step that already resolved its
+inputs, and update that step's comments, budget and lease in the same change.
+
 <a id="CC-8"></a>
 
 #### CC-8 — Bound a drain loop with a sufficiency condition
@@ -532,6 +535,8 @@ is surfaced as a separate state. Give each failure mode an exit (retry cap, dead
 
 - Count per the unit the policy names: a "N days of failure" counter increments once per day, not once per run.
 - A blanket outage (provider down, auth failure) is not a per-symbol fault; do not charge it against each item's failure budget.
+- One counter per failure kind, each with its own cap and give-up reason, in one map typed `satisfies Record<FailureKind, ...>` (shared with the fake); one counter against several caps lets one kind spend another's budget.
+- A per-row failure backs off before its capped give-up; a version-keyed job records the version it failed at, and a transient "missing" result is seen on separate days before it is terminal.
 - ❌ Gate holds until `pending = 0`, while an item that always errors never leaves `pending`; a per-run counter trips the threshold in one busy day.
 - ✅ Failing items move to a terminal state after a cap, the day counter is keyed by date, and an outage trips a run-level breaker instead.
 
@@ -843,6 +848,17 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
 - ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.
+
+<a id="DB-10"></a>
+
+#### DB-10 — A result that may depend on one user's input carries a marker every writer sets
+
+A stored result that may be conditioned on one user's input (holdings) records that in a required column
+(`personalized`). Every reader that reuses the row for others (statistics, prior-result context, public pages) filters
+on it; find the readers by grepping the repository, and treat a legacy `NULL` as unknown, not as false.
+
+- ❌ An outcome capture and a prior-analysis read take every row, so one member's holdings-based plan feeds other users.
+- ✅ The capture takes `= false`; the prior read takes `false`, or `NULL` only where the tier rules holdings out (`free`).
 
 <a id="DB-11"></a>
 
