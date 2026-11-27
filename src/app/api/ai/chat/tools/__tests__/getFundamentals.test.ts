@@ -1,6 +1,6 @@
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TOOL_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import { FUNDAMENTALS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const {
     isTabAllowed,
@@ -118,6 +118,7 @@ import {
     earningsDateCertainty,
     earningsDateNoteFor,
     getFundamentalsTool,
+    withEarningsReactionTally,
 } from '@/app/api/ai/chat/tools/getFundamentals';
 import {
     FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
@@ -661,7 +662,7 @@ describe('getFundamentalsTool', () => {
             expect(JSON.stringify(r)).toContain('annualReported');
             expect(JSON.stringify(r)).toContain('"basis"');
             expect(JSON.stringify(r).length).toBeLessThan(
-                TOOL_RESULT_MAX_CHARS
+                FUNDAMENTALS_RESULT_MAX_CHARS - 500
             );
         });
 
@@ -1332,6 +1333,21 @@ describe('getFundamentalsTool', () => {
                 { date: '2026-07-30', movePct: -2 },
                 { date: '2026-04-30', movePct: 5 },
             ]);
+            // Counts by hand: one rise (+5), one fall (-2), median size (2 + 5) / 2 = 3.5.
+            expect(
+                (r as unknown as { earningsReactionTally: unknown })
+                    .earningsReactionTally
+            ).toEqual({
+                measured: 2,
+                up: 1,
+                down: 1,
+                flat: 0,
+                largestRise: { date: '2026-04-30', movePct: 5 },
+                largestFall: { date: '2026-07-30', movePct: -2 },
+                medianAbsMovePct: 3.5,
+                summary:
+                    '2 reports measured: 1 up, 1 down; largest rise +5% (2026-04-30), largest fall -2% (2026-07-30); median move size 3.5%',
+            });
             expect(order).toEqual(['refresh', 'read']);
             expect(listReportedEarningsDates).toHaveBeenCalledWith(
                 'MSI',
@@ -1407,6 +1423,7 @@ describe('getFundamentalsTool', () => {
             };
             expect(r.available).toBe(true);
             expect(r.earningsReactions).toBeNull();
+            expect(r).toHaveProperty('earningsReactionTally', null);
         });
 
         it('a failed refresh still reads the reported dates already in the DB', async () => {
@@ -1434,7 +1451,7 @@ describe('getFundamentalsTool', () => {
         });
     });
 
-    it('with 5 quarters and 8 reactions the result still fits the shared tool budget', async () => {
+    it('with 5 quarters and 8 mixed-sign reactions the result fits the fundamentals cap with a margin', async () => {
         getProvider.mockReturnValue(fakeProvider());
         loadIndexMemberships.mockResolvedValue({
             sp500: true,
@@ -1471,7 +1488,8 @@ describe('getFundamentalsTool', () => {
                 open: 1,
                 high: 1,
                 low: 1,
-                close: 100 + i * 1.2345,
+                // A wave, not a ramp: reactions of both signs with long 4-decimal moves (the longest tally form).
+                close: 100 + 37.1234 * Math.sin(i * 0.7123),
                 volume: 1,
             })),
             indicators: {},
@@ -1546,7 +1564,17 @@ describe('getFundamentalsTool', () => {
         expect(r.recentQuarters.every(q => q.sec !== null)).toBe(true);
         expect(r.recentQuarters).toHaveLength(5);
         expect(r.earningsReactions).toHaveLength(8);
-        expect(JSON.stringify(r).length).toBeLessThan(TOOL_RESULT_MAX_CHARS);
+        const tally = (
+            r as unknown as {
+                earningsReactionTally: { up: number; down: number };
+            }
+        ).earningsReactionTally;
+        expect(tally.up).toBeGreaterThan(0);
+        expect(tally.down).toBeGreaterThan(0);
+        // The own cap, with room to spare: the tally pushed this worst case past the 4,000 default.
+        expect(JSON.stringify(r).length).toBeLessThan(
+            FUNDAMENTALS_RESULT_MAX_CHARS - 500
+        );
         expect(JSON.stringify(r)).toContain('earningsSession');
     });
 
@@ -1586,6 +1614,49 @@ describe('펀더멘털 나이 표기', () => {
         expect(r.cachedSectionsMaxAgeHours).toBe(
             FMP_FUNDAMENTAL_CACHE_TTL_SECONDS / SECONDS_PER_HOUR
         );
+    });
+});
+
+describe('withEarningsReactionTally', () => {
+    it('inserts the tally right after earningsReactions and keeps every other key in place', () => {
+        const out = withEarningsReactionTally({
+            symbol: 'X',
+            earningsReactions: [{ date: '2026-07-30', movePct: 0 }],
+            indexMemberships: null,
+        });
+        expect(Object.keys(out)).toEqual([
+            'symbol',
+            'earningsReactions',
+            'earningsReactionTally',
+            'indexMemberships',
+        ]);
+        // A flat (0) move is counted as measured, not as a rise or fall.
+        expect(out.earningsReactionTally).toMatchObject({
+            measured: 1,
+            up: 0,
+            down: 0,
+            flat: 1,
+            largestRise: null,
+            largestFall: null,
+        });
+    });
+
+    it('adds a null tally at the end when the result has no earningsReactions key', () => {
+        const input = { symbol: 'X', available: false };
+        const out = withEarningsReactionTally(input);
+        expect(Object.keys(out)).toEqual([
+            'symbol',
+            'available',
+            'earningsReactionTally',
+        ]);
+        expect(out.earningsReactionTally).toBeNull();
+    });
+
+    it('is null exactly when earningsReactions is null', () => {
+        expect(
+            withEarningsReactionTally({ earningsReactions: null })
+                .earningsReactionTally
+        ).toBeNull();
     });
 });
 

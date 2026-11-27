@@ -128,6 +128,7 @@ import {
     buildFearGreedYearRangeLine,
 } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
 import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+import { chartReferenceLevels } from '@/app/api/ai/chat/tools/levelCandidates';
 import { pctVs } from '@/app/api/ai/chat/tools/percent';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
@@ -2852,6 +2853,57 @@ describe('getBarsIndicatorsTool', () => {
                     rt
                 )
             ).toEqual({ symbol: 'AAPL', timeframe: '1Week', found: false });
+        });
+    });
+
+    describe('get_cached_analysis 사다리의 차트 기준과 같은 값을 낸다', () => {
+        it('52주 고저·20일 고저는 derived.range/ranges, 20/50/200일 평균은 latest.ma와 일치한다', async () => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            // 300 bars with a wave, so the 252-bar window drops the first 48 and the extremes sit mid-series.
+            const bars = Array.from({ length: 300 }, (_, i) => ({
+                time: 1_700_000_000 + i * 86_400,
+                open: 100,
+                // a spike inside the first 48 bars, which the 252-bar window leaves out
+                high: i === 10 ? 500 : 110 + (i % 37) + i / 100,
+                low: 90 - (i % 23) - i / 100,
+                close: 100 + (i % 11),
+                volume: 100,
+            }));
+            // Unrounded last values: both paths must print them through the same significant-digit rounding.
+            const series = {
+                ...indicators,
+                ma: {
+                    20: [101.123456789],
+                    50: [102.987654321],
+                    200: [99.5555555],
+                },
+            };
+            getCachedBars.mockResolvedValue({ bars, indicators: series });
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: {
+                    range: { high: number; low: number };
+                    ranges: Record<string, { high: number; low: number }>;
+                };
+                latest: { ma: Record<string, number> };
+            };
+            const chart = chartReferenceLevels(bars, series as never);
+            expect(chart.high52w).toBe(r.derived.range.high);
+            expect(chart.low52w).toBe(r.derived.range.low);
+            expect(chart.high20).toBe(r.derived.ranges['20bars']?.high);
+            expect(chart.low20).toBe(r.derived.ranges['20bars']?.low);
+            expect(chart.sma20).toBe(r.latest.ma['20']);
+            expect(chart.sma50).toBe(r.latest.ma['50']);
+            expect(chart.sma200).toBe(r.latest.ma['200']);
+            // The unrounded input really was rounded (otherwise this test proves nothing about the path).
+            expect(chart.sma50).toBe(102.988);
+            // And the 252-bar window mattered: the full series' highest high is older than the window.
+            expect(chart.high52w).toBeLessThan(500);
         });
     });
 });

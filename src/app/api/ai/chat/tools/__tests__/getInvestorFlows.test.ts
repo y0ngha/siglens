@@ -33,6 +33,10 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/investor-flows/server/getInvestorFlowsScorecard', () => ({
     getInvestorFlowsScorecard: loadScorecard,
 }));
+const { lookupHolder } = vi.hoisted(() => ({ lookupHolder: vi.fn() }));
+vi.mock('@/entities/investor-flows/server/getHolderLookup', () => ({
+    getHolderLookup: lookupHolder,
+}));
 
 import { getInvestorFlowsTool } from '@/app/api/ai/chat/tools/getInvestorFlows';
 import { INVESTOR_FLOWS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
@@ -67,7 +71,11 @@ import {
     makeThresholdList,
     makeTransaction,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
-import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
+import {
+    HOLDER_LOOKUP_NOTE,
+    HOLDER_QUERY_MAX_CHARS,
+    type InvestorFlowsPipelineReadiness,
+} from '@/entities/investor-flows/model';
 import {
     EMPTY_COLLECTING_SNAPSHOT,
     resolveCollectingArms,
@@ -379,6 +387,11 @@ describe('getInvestorFlowsTool', () => {
                 period: '2026-06-30',
                 putCallValueRatio: 1.47,
                 priorPutCallValueRatio: 0.75,
+                // The side is read from the printed ratio, by underlying notional.
+                reading: {
+                    side: 'more_puts',
+                    text: '1.47 puts per call by underlying notional (13F): more put exposure than call exposure',
+                },
             });
         });
 
@@ -704,6 +717,33 @@ describe('getInvestorFlowsTool', () => {
             );
         });
 
+        it('이름 지정 조회(holderLookup, 일치 3건·제출자 이름 5개)가 실려도 최악 입력의 전체 출력이 상한 안에 들어간다', async () => {
+            const name = 'N'.repeat(26);
+            lookupHolder.mockResolvedValue({
+                query: 'q'.repeat(80),
+                period: '2026-06-30',
+                status: 'found',
+                matches: Array.from({ length: 3 }, (_, i) => ({
+                    filerName: name,
+                    shares: 1_234_567_890_123 + i,
+                    valueUsd: 987_654_321_098_765 + i,
+                    prevShares: 1_234_567_890_000 + i,
+                    rankByShares: 1_000 + i,
+                })),
+                matchedFilers: Array.from({ length: 5 }, () => name),
+                note: HOLDER_LOOKUP_NOTE,
+            });
+            arrange(heavySnapshot(), true, {}, { squeeze: true });
+            const result = await getInvestorFlowsTool(
+                { symbol: 'AAPL', holder: 'q'.repeat(80) },
+                ctx,
+                rt
+            );
+            expect(JSON.stringify(result).length).toBeLessThanOrEqual(
+                INVESTOR_FLOWS_RESULT_MAX_CHARS
+            );
+        });
+
         it('수집 중 경로(dataStatus+안내 문구 포함)도 같은 600자 여유를 지킨다 — 비어 있는 갈래가 늘어난 만큼 본문이 줄어도 안내가 예산을 먹지 않는다', async () => {
             const heavy = heavySnapshot();
             arrange(
@@ -1000,6 +1040,30 @@ describe('getInvestorFlowsTool', () => {
             expect(result).not.toHaveProperty('trendNote');
         });
 
+        it('한국 종목에 holder를 주면 조회 결과(not_us_stock)를 그대로 싣는다', async () => {
+            const view = {
+                query: 'BlackRock',
+                period: null,
+                status: 'not_us_stock',
+                matches: [],
+                matchedFilers: [],
+                note: HOLDER_LOOKUP_NOTE,
+            };
+            lookupHolder.mockResolvedValue(view);
+            arrangeKr(makeKrSnapshot());
+            const result = await getInvestorFlowsTool(
+                { symbol: '005930.KS', holder: 'BlackRock' },
+                ctx,
+                rt
+            );
+            expect(lookupHolder).toHaveBeenCalledWith(
+                '005930.KS',
+                'BlackRock',
+                null
+            );
+            expect(result).toMatchObject({ holderLookup: view });
+        });
+
         it('한국 종목은 Yahoo 보유 비율을 읽지 않고 ownershipShares는 null이다(DART 공시로 답한다)', async () => {
             arrangeKr(makeKrSnapshot());
             const result = await getInvestorFlowsTool(
@@ -1205,5 +1269,128 @@ describe('getInvestorFlowsTool', () => {
                 INVESTOR_FLOWS_RESULT_MAX_CHARS - 600
             );
         });
+    });
+});
+
+describe('getInvestorFlowsTool holder 조회', () => {
+    const FOUND = {
+        query: 'Vanguard Group',
+        period: '2026-06-30',
+        status: 'found' as const,
+        matches: [
+            {
+                filerName: 'VANGUARD GROUP INC',
+                shares: 1_000,
+                valueUsd: 50_000,
+                prevShares: 900,
+                rankByShares: 1,
+            },
+        ],
+        matchedFilers: ['VANGUARD GROUP INC'],
+        note: HOLDER_LOOKUP_NOTE,
+    };
+
+    beforeEach(() => {
+        ownership.get.mockReset();
+        ownership.get.mockResolvedValue(OWNERSHIP);
+        vi.clearAllMocks();
+        isTabAllowed.mockResolvedValue(true);
+        lookupHolder.mockResolvedValue(FOUND);
+        arrange(makeSnapshot());
+    });
+
+    it('holder가 없으면 조회하지 않고 holderLookup 키도 없다', async () => {
+        const result = await getInvestorFlowsTool({ symbol: 'AAPL' }, ctx, rt);
+        expect(lookupHolder).not.toHaveBeenCalled();
+        expect(result).not.toHaveProperty('holderLookup');
+    });
+
+    it('holder 문자열은 앞뒤 공백을 떼고 그대로 조회에 넘기며, 결과에 holderLookup을 싣는다', async () => {
+        const result = await getInvestorFlowsTool(
+            { symbol: 'aapl', holder: '  Vanguard Group ' },
+            ctx,
+            rt
+        );
+        // the third argument is the quarter of the holder list in the same result (makeSnapshot: 2026-06-30)
+        expect(lookupHolder).toHaveBeenCalledWith(
+            'AAPL',
+            'Vanguard Group',
+            '2026-06-30'
+        );
+        expect(result).toMatchObject({ holderLookup: FOUND });
+        // the rest of the flows picture is still there
+        expect(result).toMatchObject({ available: true, noData: false });
+    });
+
+    it('80자를 넘는 holder는 80자로 자른다', async () => {
+        await getInvestorFlowsTool(
+            { symbol: 'AAPL', holder: 'a'.repeat(HOLDER_QUERY_MAX_CHARS + 1) },
+            ctx,
+            rt
+        );
+        expect(lookupHolder).toHaveBeenCalledWith(
+            'AAPL',
+            'a'.repeat(HOLDER_QUERY_MAX_CHARS),
+            '2026-06-30'
+        );
+    });
+
+    it.each([[42], [null], [{ name: 'x' }], ['   '], ['']])(
+        '문자열이 아니거나 빈 holder(%j)는 조회하지 않는다',
+        async holder => {
+            const result = await getInvestorFlowsTool(
+                { symbol: 'AAPL', holder },
+                ctx,
+                rt
+            );
+            expect(lookupHolder).not.toHaveBeenCalled();
+            expect(result).not.toHaveProperty('holderLookup');
+        }
+    );
+
+    it('조회가 실패해도 나머지 수급 결과는 나가고 holderLookup만 빠진다', async () => {
+        lookupHolder.mockRejectedValue(new Error('db down'));
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const result = await getInvestorFlowsTool(
+            { symbol: 'AAPL', holder: 'Vanguard' },
+            ctx,
+            rt
+        );
+        expect(result).not.toHaveProperty('holderLookup');
+        expect(result).toMatchObject({ available: true, noData: false });
+    });
+
+    it('목록에 쓴 분기가 없으면(이전 분기 기준 없음) 분기를 비워 넘겨 조회가 스스로 고르게 한다', async () => {
+        const snapshot = makeSnapshot({
+            institutional: {
+                quarters: [],
+                topHolders: [],
+                topHoldersPeriod: null,
+            },
+        });
+        arrange(snapshot);
+        await getInvestorFlowsTool(
+            { symbol: 'AAPL', holder: 'Vanguard' },
+            ctx,
+            rt
+        );
+        expect(lookupHolder).toHaveBeenCalledWith('AAPL', 'Vanguard', null);
+    });
+
+    it('수급 데이터가 없는 종목(noData)에도 holderLookup을 싣는다', async () => {
+        loadScorecard.mockResolvedValue({
+            snapshot: null,
+            scorecard: null,
+            degraded: false,
+            finraEnabled: true,
+            regShoEnabled: true,
+            readiness: READY,
+        });
+        const result = await getInvestorFlowsTool(
+            { symbol: 'AAPL', holder: 'Vanguard Group' },
+            ctx,
+            rt
+        );
+        expect(result).toMatchObject({ noData: true, holderLookup: FOUND });
     });
 });
