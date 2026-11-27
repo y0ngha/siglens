@@ -38,6 +38,7 @@ describe('us-equity market profile descriptor', () => {
             '1Hour',
             '4Hour',
             '1Day',
+            '1Week',
         ]);
     });
 

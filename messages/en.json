@@ -1001,7 +1001,7 @@
                 "emailReport": "Get updates on your holdings and watchlist by email, only if you want them",
                 "heading": "Member benefits",
                 "models": "{count, plural, one {Choose from # more AI model} other {Choose from # more AI models}}",
-                "timeframes": "Charts and AI analysis on shorter timeframes, from {from} to {to}"
+                "timeframes": "Charts and AI analysis across timeframes, from {from} to {to}"
             }
         },
         "contact-form": {
@@ -3910,7 +3910,8 @@
                 "supportNote": "On the downside, whether support around {v0} holds is the key.",
                 "targetZone": "- Reference target zone: {v0}",
                 "trendSummary": "The current move reads as {v1} within a {v0} trend, with {v2} volatility.",
-                "upside": "- Upside: {v0} → {v1}"
+                "upside": "- Upside: {v0} → {v1}",
+                "contextHeading": "Larger timeframe and market:"
             },
             "panel": {
                 "analyzing": "Analyzing…",
@@ -4194,7 +4195,25 @@
                 "caveat": "Summarizes the move up to analysis time. Not a forecast.",
                 "planVoidDescription": "At the time of analysis, the closing price was already below this price.",
                 "trendHeadline": "<prefix>Current trend:</prefix> <value>{v0}</value>",
-                "analyzedAt": "Analysis time"
+                "analyzedAt": "Analysis time",
+                "kindDaily": "daily",
+                "kindWeekly": "weekly",
+                "kindMonthly": "monthly",
+                "htfTrend": "The {v0} trend is {v1}.",
+                "htfAligned": "The {v0} trend is {v1}, moving the same way as this chart.",
+                "htfOpposed": "The {v0} trend is {v1}, moving against this chart.",
+                "htfMixed": "The {v0} trend is {v1}, and it does not clearly line up with this chart.",
+                "htfUnknown": "The {v0} trend cannot be determined yet.",
+                "progressDaily": "When this was analyzed, the last daily bar was still forming, so the reading above can change.",
+                "progressWeekly": "When this was analyzed, the last weekly bar was still forming, so the reading above can change.",
+                "progressMonthly": "When this was analyzed, the last monthly bar was still forming, so the reading above can change.",
+                "marketTrend": "The trend of the benchmark {v0} is {v1}.",
+                "marketUnknown": "The trend of the benchmark {v0} cannot be determined yet.",
+                "marketChange": "Over the last {v0} sessions, {v1} changed {v2} and the benchmark changed {v3}.",
+                "marketBasis": "The benchmark figures are as of {v0}.",
+                "trendWordBullish": "bullish",
+                "trendWordBearish": "bearish",
+                "trendWordNeutral": "flat"
             },
             "planState": {
                 "aboveZone": "Above the entry zone",

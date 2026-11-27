@@ -27,6 +27,7 @@ import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import {
     getDescriptor,
     marketProfileOf,
@@ -183,7 +184,8 @@ export default async function SymbolPage({ params }: Props) {
         DEFAULT_TIMEFRAME,
         assetInfo.fmpSymbol,
         DEEPSEEK_V4_1_FLASH_MODEL,
-        locale
+        locale,
+        benchmarkFor(marketProfile, ticker)?.symbol
     ).catch((error: unknown) => {
         console.error(
             '[SymbolPage] peekAnalysisStatic failed:',

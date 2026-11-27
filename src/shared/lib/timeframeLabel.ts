@@ -19,6 +19,7 @@ const UNIT: Record<string, { unit: string; value: number }> = {
     '1Hour': { unit: 'hour', value: 1 },
     '4Hour': { unit: 'hour', value: 4 },
     '1Day': { unit: 'day', value: 1 },
+    '1Week': { unit: 'week', value: 1 },
 };
 
 const CACHE = new Map<string, string>();

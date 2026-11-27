@@ -114,6 +114,7 @@ function renderOverall() {
             companyName="Apple Inc."
             hasEnrichedNews={true}
             hasOptions={true}
+            marketProfile="us-equity"
         />,
         {
             wrapper: createQueryClientWrapper().wrapper,

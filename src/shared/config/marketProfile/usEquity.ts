@@ -45,7 +45,15 @@ export const US_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
         'position',
     ],
     defaultTimeframe: '1Day',
-    allowedTimeframes: ['5Min', '15Min', '30Min', '1Hour', '4Hour', '1Day'],
+    allowedTimeframes: [
+        '5Min',
+        '15Min',
+        '30Min',
+        '1Hour',
+        '4Hour',
+        '1Day',
+        '1Week',
+    ],
     seo: {
         aboutNodeType: 'Corporation',
     },

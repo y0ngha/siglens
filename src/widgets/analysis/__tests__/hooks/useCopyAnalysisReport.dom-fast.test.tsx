@@ -51,6 +51,65 @@ describe('useCopyAnalysisReport', () => {
         await vi.waitFor(() => expect(result.current.copyState).toBe('copied'));
     });
 
+    it('결과에 상위 시간대·시장 읽기가 있으면 복사본에 같은 두 줄을 싣는다', async () => {
+        const { result } = renderHook(
+            () =>
+                useCopyAnalysisReport({
+                    symbol: 'aapl',
+                    krxTickTable: 'share',
+                    analysis: {
+                        ...ANALYSIS,
+                        higherTimeframe: {
+                            kind: 'weekly',
+                            trend: 'bullish',
+                            slopeAtr: 1.62,
+                            rsi14: 61.2,
+                            closeVsMa50Pct: 12.4,
+                            lastBarInProgress: false,
+                            bars: 246,
+                            alignment: 'aligned',
+                        },
+                        marketBackdrop: {
+                            label: 'S&P 500 (SPY)',
+                            trend: 'bullish',
+                            closeVsMa200Pct: 6.2,
+                            endDate: '2026-11-20',
+                            relative: [
+                                {
+                                    sessions: 20,
+                                    symbolPct: 4.1,
+                                    benchmarkPct: 1.3,
+                                },
+                                {
+                                    sessions: 60,
+                                    symbolPct: 9.8,
+                                    benchmarkPct: 5,
+                                },
+                            ],
+                        },
+                    },
+                    keyLevels: KEY_LEVELS,
+                    disabled: false,
+                }),
+            { wrapper: IntlTestProvider }
+        );
+
+        await act(async () => {
+            result.current.copyReport();
+        });
+
+        expect(writeText).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '- 주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.'
+            )
+        );
+        expect(writeText).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '- 최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.'
+            )
+        );
+    });
+
     it('비활성화되면 복사하지 않는다', async () => {
         const { result } = setup(true);
         await act(async () => {

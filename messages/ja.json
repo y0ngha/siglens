@@ -1001,7 +1001,7 @@
                 "emailReport": "ご希望の場合のみ、保有銘柄とウォッチリストの情報をメールで受け取れる",
                 "heading": "会員特典",
                 "models": "さらに{count}個のAIモデルを選んで使える",
-                "timeframes": "{from}から{to}まで、より短い時間軸のチャートとAI分析"
+                "timeframes": "{from}から{to}まで、複数の時間軸のチャートとAI分析"
             }
         },
         "contact-form": {
@@ -3910,7 +3910,8 @@
                 "supportNote": "下方では{v0}付近のサポートを維持できるかが鍵です。",
                 "targetZone": "- 目標参考ゾーン: {v0}",
                 "trendSummary": "現在の流れは{v0}の中で{v1}と解釈され、ボラティリティは{v2}水準です。",
-                "upside": "- 上方: {v0} → {v1}"
+                "upside": "- 上方: {v0} → {v1}",
+                "contextHeading": "上位の時間軸と市場："
             },
             "panel": {
                 "analyzing": "分析中…",
@@ -4194,7 +4195,25 @@
                 "caveat": "分析時点までの流れをまとめたもので、予測ではありません。",
                 "planVoidDescription": "分析時点の終値はすでにこの価格を下回っていました。",
                 "trendHeadline": "<prefix>現在のトレンド：</prefix><value>{v0}</value>",
-                "analyzedAt": "分析日時"
+                "analyzedAt": "分析日時",
+                "kindDaily": "日足",
+                "kindWeekly": "週足",
+                "kindMonthly": "月足",
+                "htfTrend": "{v0}のトレンドは{v1}です。",
+                "htfAligned": "{v0}のトレンドは{v1}で、このチャートと同じ方向です。",
+                "htfOpposed": "{v0}のトレンドは{v1}で、このチャートと反対方向です。",
+                "htfMixed": "{v0}のトレンドは{v1}で、このチャートとははっきり重なっていません。",
+                "htfUnknown": "{v0}のトレンドはまだ判断できません。",
+                "progressDaily": "分析時点では最後の日足がまだ形成中だったため、上の判定は変わることがあります。",
+                "progressWeekly": "分析時点では最後の週足がまだ形成中だったため、上の判定は変わることがあります。",
+                "progressMonthly": "分析時点では最後の月足がまだ形成中だったため、上の判定は変わることがあります。",
+                "marketTrend": "比較指数{v0}のトレンドは{v1}です。",
+                "marketUnknown": "比較指数{v0}のトレンドはまだ判断できません。",
+                "marketChange": "直近{v0}営業日の変化は、{v1}が{v2}、指数が{v3}です。",
+                "marketBasis": "比較指数は{v0}時点の値です。",
+                "trendWordBullish": "強気",
+                "trendWordBearish": "弱気",
+                "trendWordNeutral": "もみ合い"
             },
             "planState": {
                 "aboveZone": "エントリー価格帯より上",

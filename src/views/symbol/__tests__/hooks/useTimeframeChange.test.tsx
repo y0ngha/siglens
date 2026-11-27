@@ -5,12 +5,13 @@ import { renderToString } from 'react-dom/server';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 vi.mock('@/shared/config/market', () => ({
     DEFAULT_TIMEFRAME: '1Day',
     isValidTimeframe: (v: unknown) =>
-        ['1Day', '1Week', '1Month'].includes(v as string),
+        ['1Day', '1Week', '4Hour'].includes(v as string),
 }));
 
 vi.mock('@/entities/bars/actions/getBarsAction', () => ({
@@ -20,6 +21,9 @@ vi.mock('@/entities/bars/actions/getBarsAction', () => ({
 vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => undefined),
 }));
+
+const US = getDescriptor('us-equity').allowedTimeframes;
+const KR = getDescriptor('kr-equity').allowedTimeframes;
 
 const queryClients: QueryClient[] = [];
 
@@ -70,7 +74,7 @@ describe('useTimeframeChange', () => {
 
     it('defaults to DEFAULT_TIMEFRAME when search param is absent', () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -82,7 +86,7 @@ describe('useTimeframeChange', () => {
         setUrl('tf=1Week');
 
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -92,11 +96,38 @@ describe('useTimeframeChange', () => {
         expect(result.current.isTimeframeSwitching).toBe(false);
     });
 
+    describe('시장 프로필이 허용하지 않는 ?tf= 딥링크', () => {
+        it('한국 종목의 ?tf=4Hour는 빈 차트 대신 기본 프레임으로 떨어진다', () => {
+            setUrl('tf=4Hour');
+
+            const { result } = renderHook(
+                () => useTimeframeChange('005930.KS', false, true, KR),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.timeframe).toBe('1Day');
+            expect(result.current.displayTimeframe).toBe('1Day');
+        });
+
+        it('미국 종목의 ?tf=4Hour는 그대로 둔다', async () => {
+            setUrl('tf=4Hour');
+
+            const { result } = renderHook(
+                () => useTimeframeChange('AAPL', false, true, US),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.timeframe).toBe('4Hour');
+            });
+        });
+    });
+
     it('falls back to DEFAULT_TIMEFRAME for invalid search param', () => {
         setUrl('tf=invalid');
 
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -105,7 +136,7 @@ describe('useTimeframeChange', () => {
 
     it('starts with timeframeChangeCount of 0', () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -114,7 +145,7 @@ describe('useTimeframeChange', () => {
 
     it('skips change when next timeframe equals current', () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -133,7 +164,7 @@ describe('useTimeframeChange', () => {
         setUrl('tf=1Week');
         const seen: Timeframe[] = [];
         function Probe() {
-            seen.push(useTimeframeChange('AAPL', false, true).timeframe);
+            seen.push(useTimeframeChange('AAPL', false, true, US).timeframe);
             return null;
         }
         renderToString(
@@ -149,7 +180,7 @@ describe('useTimeframeChange', () => {
         // wasteful and race-droppable from this mount-time effect.
 
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', true, true),
+            () => useTimeframeChange('AAPL', true, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -162,7 +193,7 @@ describe('useTimeframeChange', () => {
         setUrl('tf=1Week');
 
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, false),
+            () => useTimeframeChange('AAPL', false, false, US),
             { wrapper: makeWrapper() }
         );
 
@@ -172,7 +203,7 @@ describe('useTimeframeChange', () => {
 
     it('does not navigate, prefetch, or change timeframe before tier hydration', () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, false),
+            () => useTimeframeChange('AAPL', false, false, US),
             { wrapper: makeWrapper() }
         );
 
@@ -187,7 +218,7 @@ describe('useTimeframeChange', () => {
 
     it('is a no-op when a hydrated free user requests a non-default timeframe', () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', true, true),
+            () => useTimeframeChange('AAPL', true, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -205,7 +236,7 @@ describe('useTimeframeChange', () => {
 
         const { result, rerender } = renderHook(
             ({ isTierHydrated }: { isTierHydrated: boolean }) =>
-                useTimeframeChange('AAPL', false, isTierHydrated),
+                useTimeframeChange('AAPL', false, isTierHydrated, US),
             {
                 wrapper: makeWrapper(),
                 initialProps: { isTierHydrated: false },
@@ -241,7 +272,12 @@ describe('useTimeframeChange', () => {
             const renders: Snapshot[] = [];
             const hook = renderHook(
                 ({ hydrated }: { hydrated: boolean }) => {
-                    const state = useTimeframeChange('AAPL', false, hydrated);
+                    const state = useTimeframeChange(
+                        'AAPL',
+                        false,
+                        hydrated,
+                        US
+                    );
                     renders.push({
                         timeframe: state.timeframe,
                         displayTimeframe: state.displayTimeframe,
@@ -293,14 +329,14 @@ describe('useTimeframeChange', () => {
             const { result, renders } = renderRecording(true);
             renders.length = 0;
 
-            popTo('tf=1Month');
+            popTo('tf=4Hour');
 
             await waitFor(() => {
-                expect(result.current.timeframe).toBe('1Month');
+                expect(result.current.timeframe).toBe('4Hour');
             });
             expect(renders).toContainEqual({
                 timeframe: '1Day',
-                displayTimeframe: '1Month',
+                displayTimeframe: '4Hour',
                 isTimeframeSwitching: true,
             });
         });
@@ -308,7 +344,7 @@ describe('useTimeframeChange', () => {
 
     it('prefetches bars and navigates when a member picks a new timeframe', async () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -338,7 +374,7 @@ describe('useTimeframeChange', () => {
         } as ReturnType<typeof useAssetInfo>);
 
         const { result } = renderHook(
-            () => useTimeframeChange('BTC', false, true),
+            () => useTimeframeChange('BTC', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -357,7 +393,7 @@ describe('useTimeframeChange', () => {
 
     it('applies a user pick without a URL notification and counts it once', async () => {
         const { result } = renderHook(
-            () => useTimeframeChange('AAPL', false, true),
+            () => useTimeframeChange('AAPL', false, true, US),
             { wrapper: makeWrapper() }
         );
 
@@ -384,7 +420,7 @@ describe('useTimeframeChange', () => {
          */
         it('사용자 선택 뒤 popstate가 오면 URL의 timeframe을 따른다', async () => {
             const { result } = renderHook(
-                () => useTimeframeChange('AAPL', false, true),
+                () => useTimeframeChange('AAPL', false, true, US),
                 { wrapper: makeWrapper() }
             );
 
@@ -395,17 +431,17 @@ describe('useTimeframeChange', () => {
                 expect(result.current.timeframe).toBe('1Week');
             });
 
-            popTo('tf=1Month');
+            popTo('tf=4Hour');
 
             await waitFor(() => {
-                expect(result.current.timeframe).toBe('1Month');
+                expect(result.current.timeframe).toBe('4Hour');
             });
-            expect(result.current.displayTimeframe).toBe('1Month');
+            expect(result.current.displayTimeframe).toBe('4Hour');
         });
 
         it('popstate로 tf가 없는 항목에 오면 기본 timeframe으로 돌아간다', async () => {
             const { result } = renderHook(
-                () => useTimeframeChange('AAPL', false, true),
+                () => useTimeframeChange('AAPL', false, true, US),
                 { wrapper: makeWrapper() }
             );
 
@@ -425,13 +461,13 @@ describe('useTimeframeChange', () => {
 
         it('popstate 뒤에 다시 고르면 그 선택이 URL보다 우선한다', async () => {
             const { result } = renderHook(
-                () => useTimeframeChange('AAPL', false, true),
+                () => useTimeframeChange('AAPL', false, true, US),
                 { wrapper: makeWrapper() }
             );
 
-            popTo('tf=1Month');
+            popTo('tf=4Hour');
             await waitFor(() => {
-                expect(result.current.timeframe).toBe('1Month');
+                expect(result.current.timeframe).toBe('4Hour');
             });
 
             act(() => {
@@ -455,7 +491,7 @@ describe('useTimeframeChange', () => {
 
         const { result, rerender } = renderHook(
             ({ isFreeTier }: { isFreeTier: boolean }) =>
-                useTimeframeChange('AAPL', isFreeTier, true),
+                useTimeframeChange('AAPL', isFreeTier, true, US),
             {
                 wrapper: makeWrapper(),
                 initialProps: { isFreeTier: false },
@@ -467,13 +503,13 @@ describe('useTimeframeChange', () => {
         });
 
         act(() => {
-            result.current.handleTimeframeChange('1Month' as Timeframe);
+            result.current.handleTimeframeChange('4Hour' as Timeframe);
         });
         await waitFor(() => {
-            expect(result.current.timeframe).toBe('1Month');
+            expect(result.current.timeframe).toBe('4Hour');
         });
 
-        // 로그아웃 등으로 free tier로 강등 — 선택(1Month)이 남아 있어도 DEFAULT로 강제된다.
+        // 로그아웃 등으로 free tier로 강등 — 선택(4Hour)이 남아 있어도 DEFAULT로 강제된다.
         rerender({ isFreeTier: true });
 
         await waitFor(() => {

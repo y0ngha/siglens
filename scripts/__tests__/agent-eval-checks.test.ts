@@ -41,7 +41,11 @@ interface Transcript {
     turnAt: string | null;
     turnContext: string | null;
     webSearchAvailable?: boolean | null;
-    steps: { promptTokens: number; cachedTokens: number }[];
+    steps: {
+        promptTokens: number;
+        cachedTokens: number;
+        cacheWriteTokens?: number;
+    }[];
 }
 
 const transcript = (overrides: Partial<Transcript> = {}): Transcript => ({
@@ -886,6 +890,16 @@ describe('cachedPrefix', () => {
         expect(run(threshold - 1).fails).toHaveLength(1);
     });
 
+    it('직전 단계의 캐시 쓰기분도 전체 입력에 넣는다', () => {
+        const withWrite = transcript({
+            steps: [
+                { promptTokens: 300, cachedTokens: 0, cacheWriteTokens: 9_000 },
+            ],
+        });
+        expect(run(threshold, withWrite).fails).toEqual([]);
+        expect(run(threshold - 1, withWrite).fails).toHaveLength(1);
+    });
+
     it('첫 턴(직전 없음)은 검사하지 않는다', () => {
         expect(run(0, null).fails).toEqual([]);
     });
@@ -1060,8 +1074,8 @@ describe('실행기 보조 함수', () => {
             turnContext: `${NOTE}\n(2026-11-20T14:09:00.000Z)`,
             webSearchAvailable: null,
             steps: [
-                { promptTokens: 100, cachedTokens: 40 },
-                { promptTokens: 50, cachedTokens: 140 },
+                { promptTokens: 100, cachedTokens: 40, cacheWriteTokens: 0 },
+                { promptTokens: 50, cachedTokens: 140, cacheWriteTokens: 0 },
             ],
         });
     });

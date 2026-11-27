@@ -18,7 +18,8 @@
  *
  * - `promptTokens` — 표준 가격(1x)의 비캐시 입력.
  * - `cachedTokens` — 캐시 **읽기**. Anthropic은 약 0.1x로 과금한다.
- * - `cacheWriteTokens` — 캐시 **쓰기**(약 1.25x). Claude만 따로 보고하고 나머지는 항상 0이다.
+ * - `cacheWriteTokens` — 캐시 **쓰기**(약 1.25x). Claude와 OpenAI Responses만 따로 보고하고
+ *   나머지는 항상 0이다.
  *   쓰기 할증이 표준 가격 버킷을 부풀리지 않도록 `promptTokens`와 분리했다.
  */
 export interface NormalizedUsage {
@@ -86,27 +87,36 @@ export function extractGeminiUsage(
 /**
  * OpenAI **Responses API** usage (`openai.ts`가 `client.responses.create`를 부른다).
  *
- * Responses API는 `input_tokens` / `input_tokens_details.cached_tokens` / `output_tokens`를
- * 보고한다 — Chat Completions 이름(`prompt_tokens` / `completion_tokens`)이 아니다.
+ * Responses API는 `input_tokens` / `input_tokens_details.cached_tokens` /
+ * `input_tokens_details.cache_write_tokens` / `output_tokens`를 보고한다 — Chat Completions 이름(`prompt_tokens` / `completion_tokens`)이 아니다.
  * 후자를 쓰면 조용히 전부 0이 추출된다.
  */
 export interface OpenAIUsageLike {
     input_tokens?: number;
-    input_tokens_details?: { cached_tokens?: number };
+    input_tokens_details?: {
+        cached_tokens?: number;
+        cache_write_tokens?: number;
+    };
     output_tokens?: number;
 }
 
-/** OpenAI Responses usage를 정규화한다. 캐시 읽기분은 표준 가격 버킷에서 뺀다. */
+/**
+ * OpenAI Responses usage를 정규화한다. `input_tokens`는 캐시 읽기·쓰기를 모두 포함하므로 둘 다
+ * 표준 가격 버킷에서 빼서 세 버킷의 합이 `input_tokens`가 되게 한다(core `extractOpenAIUsage`와 같은 식).
+ */
 export function extractOpenAIUsage(
     usage: OpenAIUsageLike | undefined | null
 ): NormalizedUsage {
     if (!usage) return { ...ZERO_USAGE };
     const cached = usage.input_tokens_details?.cached_tokens ?? 0;
+    const cacheWrite = usage.input_tokens_details?.cache_write_tokens ?? 0;
     return {
-        promptTokens: Math.max(0, (usage.input_tokens ?? 0) - cached),
+        promptTokens: Math.max(
+            0,
+            (usage.input_tokens ?? 0) - cached - cacheWrite
+        ),
         cachedTokens: cached,
-        // OpenAI는 캐시 쓰기 지표를 따로 보고하지 않는다.
-        cacheWriteTokens: 0,
+        cacheWriteTokens: cacheWrite,
         outputTokens: usage.output_tokens ?? 0,
     };
 }
