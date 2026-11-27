@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['varianceRatio']
 confidence_weight: 0.5
 usage_roles: [regime]
+computed_card: variance_ratio
 gating:
   tier: gated
   signal_kind: state

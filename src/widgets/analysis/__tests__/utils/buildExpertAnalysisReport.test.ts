@@ -2,6 +2,7 @@ import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import { buildExpertAnalysisReport } from '@/widgets/analysis/utils/buildExpertAnalysisReport';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { readingContextFor } from './readingContext';
 
 import koMessages from '@/../messages/ko.json';
 
@@ -22,6 +23,8 @@ const tReport = (key: string, values?: Record<string, string | number>) => {
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
+    CycleReading,
+    IndicatorReading,
     PlanState,
 } from '@y0ngha/siglens-core';
 
@@ -30,6 +33,7 @@ import type {
 let t: EnumLabelTranslator;
 /** 기본은 원본 이름 그대로 — 표시명 치환 자체는 별도 케이스가 검증한다. */
 const skillLabel = (name: string): string => name;
+const readingContext = readingContextFor('ko');
 beforeAll(async () => {
     t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
 });
@@ -161,6 +165,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('[AAPL] 기술적 분석 리포트');
@@ -211,6 +216,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         // 200,000–500,000원은 500원, 50,000–200,000원은 100원 단위.
@@ -240,6 +246,7 @@ describe('buildExpertAnalysisReport', () => {
                 t,
                 contextLines: [],
                 skillLabel,
+                readingContext,
             });
 
         expect(build('etp')).toContain('40,125');
@@ -265,6 +272,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain(
@@ -289,6 +297,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('보수적 관리가 더 적절합니다');
@@ -312,6 +321,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('지지 확인 이후의 분할 접근 여부를 검토');
@@ -334,6 +344,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
     const base = {
@@ -394,6 +405,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).not.toContain(
@@ -412,6 +424,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('목표 참고 구간:');
@@ -444,6 +457,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).not.toContain('should be filtered');
@@ -466,6 +480,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('하방:');
@@ -502,6 +517,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('[TSLA] 기술적 분석 리포트');
@@ -539,6 +555,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('[NVDA] 기술적 분석 리포트');
@@ -577,6 +594,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('무효화 기준: 199.40');
@@ -604,6 +622,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('진입 참고 구간: 205.80');
@@ -635,6 +654,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('R:R 1:0.8');
@@ -665,6 +685,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
 
         expect(result).toContain('R:R 1:3');
@@ -696,6 +717,7 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel: name => labels[name] ?? name,
+            readingContext,
         });
 
         expect(result).toContain('- Ascending Triangle');
@@ -716,6 +738,7 @@ describe('buildExpertAnalysisReport', () => {
                 '최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.',
             ],
             skillLabel,
+            readingContext,
         });
         expect(withLines).toContain(
             '상위 시간대와 시장:\n- 주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.\n- 최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.'
@@ -736,7 +759,118 @@ describe('buildExpertAnalysisReport', () => {
             t,
             contextLines: [],
             skillLabel,
+            readingContext,
         });
         expect(without).not.toContain('상위 시간대와 시장:');
+    });
+
+    describe('core가 코드로 만든 카드', () => {
+        const rsiReading: IndicatorReading = {
+            kind: 'rsi',
+            basis: 'event',
+            state: 'rsi_oversold',
+            values: { rsi: 28.4 },
+            signals: [{ type: 'rsi_oversold', phase: 'confirmed', barsAgo: 0 }],
+        };
+        const cycle: CycleReading = {
+            kind: 'macd_cycle',
+            stage: 4,
+            previousStage: 3,
+            barsInStage: 12,
+            progression: 'forward',
+            stageChanges: 2,
+            values: { upper: -1.2, middle: -2.5, lower: -1.3 },
+            slopes: { ema9: 'falling', ema21: 'falling', ema60: 'flat' },
+        };
+        const withCards = (): AnalysisResponse => ({
+            ...baseAnalysis,
+            indicatorResults: [
+                {
+                    indicatorName: 'RSI Signal Guide',
+                    signals: [
+                        {
+                            type: 'skill',
+                            trend: 'bullish',
+                            description:
+                                'RSI is oversold at 28.4 (English canonical line).',
+                            reading: rsiReading,
+                        },
+                    ],
+                },
+            ],
+            strategyResults: [
+                {
+                    id: 'strategy-cycle',
+                    strategyName: 'MACD 대순환 분석',
+                    trend: 'bearish',
+                    summary: 'MACD cycle: stage 4 (English canonical line).',
+                    confidenceWeight: 0.55,
+                    cycle,
+                },
+            ],
+        });
+
+        it('지표 카드는 영어 정본 대신 읽기를 독자 언어로 푼다', () => {
+            const result = buildExpertAnalysisReport({
+                tReport,
+                symbol: 'aapl',
+                analysis: withCards(),
+                keyLevels: baseKeyLevels,
+                t,
+                contextLines: [],
+                skillLabel,
+                readingContext,
+            });
+
+            expect(result).toContain('RSI 과매도 (현재 RSI 28.4)');
+            expect(result).not.toContain('English canonical line');
+        });
+
+        it('대순환 카드는 줄마다 하위 항목으로 싣는다', () => {
+            const result = buildExpertAnalysisReport({
+                tReport,
+                symbol: 'aapl',
+                analysis: withCards(),
+                keyLevels: baseKeyLevels,
+                t,
+                contextLines: [],
+                skillLabel,
+                readingContext,
+            });
+
+            expect(result).toContain(
+                '- MACD 대순환 분석\n  - MACD 대순환 4단계 (안정 하락기)\n  - MACD 차이값: EMA9-EMA21 -1.2, EMA9-EMA60 -2.5, EMA21-EMA60 -1.3\n  - 3단계에서 순서대로 넘어왔어요'
+            );
+        });
+
+        it('읽기가 없는 카드는 description을 그대로 쓴다', () => {
+            const analysis = withCards();
+            const result = buildExpertAnalysisReport({
+                tReport,
+                symbol: 'aapl',
+                analysis: {
+                    ...analysis,
+                    indicatorResults: [
+                        {
+                            indicatorName: 'RSI Signal Guide',
+                            signals: [
+                                {
+                                    type: 'skill',
+                                    trend: 'bullish',
+                                    description: '옛 캐시 설명',
+                                },
+                            ],
+                        },
+                    ],
+                },
+                keyLevels: baseKeyLevels,
+                t,
+                contextLines: [],
+                skillLabel,
+                readingContext,
+            });
+
+            expect(result).toContain('옛 캐시 설명');
+        });
     });
 });

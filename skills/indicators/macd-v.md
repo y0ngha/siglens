@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['macdV']
 confidence_weight: 0.4
 usage_roles: [confirmation]
+computed_card: macd_v
 gating:
   tier: gated
   signal_kind: state

@@ -5,6 +5,7 @@ type: strategy
 category: neutral
 indicators: ['ma']
 confidence_weight: 0.55
+computed_card: ma_cycle
 gating:
   tier: gated
   signal_kind: event

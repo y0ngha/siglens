@@ -3916,6 +3916,194 @@
                     "t7": "A finished analysis is kept for a while, so reopening it shows the result right away."
                 }
             },
+            "reading": {
+                "adx": {
+                    "between": "The trend strength is in between, neither clear nor absent (ADX {adx}, +DI {diPlus}, -DI {diMinus})",
+                    "trending": "The trend is strong (ADX {adx}, +DI {diPlus}, -DI {diMinus})",
+                    "weak": "There is no clear trend and its strength is weak (ADX {adx}, +DI {diPlus}, -DI {diMinus})"
+                },
+                "atr": {
+                    "falling": "The average price range (ATR) is narrowing (ATR {atr}, {atrPercent}% of price)",
+                    "flat": "The average price range (ATR) is holding at a similar level (ATR {atr}, {atrPercent}% of price)",
+                    "rising": "The average price range (ATR) is widening (ATR {atr}, {atrPercent}% of price)"
+                },
+                "bollinger": {
+                    "above_band_pctb": "The price is near or above the upper Bollinger Band (%B {pctB}, close {close}, upper {upper}, lower {lower})",
+                    "below_band_pctb": "The price is near or below the lower Bollinger Band (%B {pctB}, close {close}, upper {upper}, lower {lower})"
+                },
+                "bollinger_percent_b": {
+                    "event": "{signals} (current %B {pctB})"
+                },
+                "buy_sell_volume": {
+                    "buy_dominant": "Buy-side volume dominates the last bar (buy share {buyRatio}%)",
+                    "sell_dominant": "Sell-side volume dominates the last bar (buy share {buyRatio}%)"
+                },
+                "cci": {
+                    "event": "{signals} (current CCI {cci})"
+                },
+                "chandelier": {
+                    "flipped_long": "The Chandelier Exit direction flipped to the upside (Chandelier Exit line {stop})",
+                    "flipped_short": "The Chandelier Exit direction flipped to the downside (Chandelier Exit line {stop})"
+                },
+                "cmf": {
+                    "event": "{signals} (current CMF {cmf})"
+                },
+                "connors_rsi": {
+                    "overbought": "Connors RSI is in the overbought zone (Connors RSI {crsi})",
+                    "oversold": "Connors RSI is in the oversold zone (Connors RSI {crsi})"
+                },
+                "cycle": {
+                    "changes": "The stage changed {count, plural, one {# time} other {# times}} in the last {lookback} bars",
+                    "duration": {
+                        "bars": "This stage has lasted {bars, plural, one {# bar} other {# bars}}",
+                        "sinceStart": "This stage has held for all of the last {lookback} bars"
+                    },
+                    "ma_cycle": {
+                        "headline": "Moving average cycle, stage {stage} ({stageName})",
+                        "order": "Order from highest: {order} (MA5 {ma5}, MA20 {ma20}, MA60 {ma60})",
+                        "slopes": "Line direction: MA5 {ma5}, MA20 {ma20}, MA60 {ma60}"
+                    },
+                    "macd_cycle": {
+                        "headline": "MACD cycle, stage {stage} ({stageName})",
+                        "slopes": "Line direction: EMA9 {ema9}, EMA21 {ema21}, EMA60 {ema60}",
+                        "values": "MACD differences: EMA9-EMA21 {upper}, EMA9-EMA60 {middle}, EMA21-EMA60 {lower}"
+                    },
+                    "previous": {
+                        "forward": "Moved forward from stage {previousStage}",
+                        "none": "There was no earlier stage in the last {lookback} bars",
+                        "other": "The previous stage was stage {previousStage}",
+                        "reverse": "Moved back from stage {previousStage}"
+                    },
+                    "slope": {
+                        "falling": "falling",
+                        "flat": "flat",
+                        "rising": "rising",
+                        "unknown": "unknown"
+                    },
+                    "stageName": {
+                        "stage1": "stable uptrend",
+                        "stage2": "early downward shift",
+                        "stage3": "late downward shift",
+                        "stage4": "stable downtrend",
+                        "stage5": "early upward shift",
+                        "stage6": "late upward shift"
+                    }
+                },
+                "dmi": {
+                    "event": "{signals} (current +DI {diPlus}, -DI {diMinus}, ADX {adx})"
+                },
+                "donchian": {
+                    "beyond_lower": "The close is below the lower band of the Donchian Channel (close {close}, upper {upper}, lower {lower})",
+                    "beyond_upper": "The close is above the upper band of the Donchian Channel (close {close}, upper {upper}, lower {lower})",
+                    "near_lower": "The close is near the lower band of the Donchian Channel (close {close}, upper {upper}, lower {lower})",
+                    "near_upper": "The close is near the upper band of the Donchian Channel (close {close}, upper {upper}, lower {lower})"
+                },
+                "elder_impulse": {
+                    "color": {
+                        "blue": "blue",
+                        "green": "green",
+                        "red": "red"
+                    },
+                    "current": "Elder Impulse is {color}",
+                    "flipped": "Elder Impulse changed from {from} to {color}"
+                },
+                "elder_ray": {
+                    "bear_power_rising": "Bear Power is rising from below zero (Bull Power {bullPower}, Bear Power {bearPower})",
+                    "both": "Bear Power is rising from below zero while Bull Power is falling from above zero (Bull Power {bullPower}, Bear Power {bearPower})",
+                    "bull_power_falling": "Bull Power is falling from above zero (Bull Power {bullPower}, Bear Power {bearPower})"
+                },
+                "ema": {
+                    "bearish_stack": "The exponential moving averages are stacked bearishly, with shorter lines below longer ones (EMA9 {ema9}, EMA20 {ema20}, EMA21 {ema21}, EMA60 {ema60})",
+                    "bullish_stack": "The exponential moving averages are stacked bullishly, with shorter lines above longer ones (EMA9 {ema9}, EMA20 {ema20}, EMA21 {ema21}, EMA60 {ema60})",
+                    "mixed": "The exponential moving averages are not lined up in one direction (EMA9 {ema9}, EMA20 {ema20}, EMA21 {ema21}, EMA60 {ema60})"
+                },
+                "ewma": {
+                    "high_volatility": "Recent volatility by the EWMA measure is higher than usual (σ {sigma})",
+                    "low_volatility": "Recent volatility by the EWMA measure is lower than usual (σ {sigma})"
+                },
+                "force_index": {
+                    "turned_negative": "Force Index turned from positive to negative (Force Index {forceIndex})",
+                    "turned_positive": "Force Index turned from negative to positive (Force Index {forceIndex})"
+                },
+                "hurst": {
+                    "mean_reverting": "The Hurst exponent points to a mean-reverting tendency (H {hurst})",
+                    "trending": "The Hurst exponent points to a persistent, trending tendency (H {hurst})"
+                },
+                "ichimoku": {
+                    "event": "{signals} (conversion line {tenkan}, base line {kijun}, leading span A {senkouA}, leading span B {senkouB})"
+                },
+                "keltner": {
+                    "beyond_lower": "The close is below the lower band of the Keltner Channel (close {close}, upper {upper}, lower {lower})",
+                    "beyond_upper": "The close is above the upper band of the Keltner Channel (close {close}, upper {upper}, lower {lower})",
+                    "near_lower": "The close is near the lower band of the Keltner Channel (close {close}, upper {upper}, lower {lower})",
+                    "near_upper": "The close is near the upper band of the Keltner Channel (close {close}, upper {upper}, lower {lower})"
+                },
+                "ma": {
+                    "bearish_stack": "The moving averages are stacked bearishly, with shorter lines below longer ones (close {close}, MA5 {ma5}, MA20 {ma20}, MA60 {ma60})",
+                    "bullish_stack": "The moving averages are stacked bullishly, with shorter lines above longer ones (close {close}, MA5 {ma5}, MA20 {ma20}, MA60 {ma60})",
+                    "mixed": "The moving averages are not lined up in one direction (close {close}, MA5 {ma5}, MA20 {ma20}, MA60 {ma60})"
+                },
+                "macd": {
+                    "event": "{signals} (MACD {macd}, signal line {signal}, histogram {histogram})"
+                },
+                "macd_v": {
+                    "high_negative": "MACD-V is in a high negative range (MACD-V {macdV})",
+                    "high_positive": "MACD-V is in a high positive range (MACD-V {macdV})"
+                },
+                "mfi": {
+                    "event": "{signals} (current MFI {mfi})"
+                },
+                "obv": {
+                    "falling": "The volume flow (OBV) is falling (OBV {obv})",
+                    "flat": "The volume flow (OBV) is not leaning either way (OBV {obv})",
+                    "rising": "The volume flow (OBV) is rising (OBV {obv})"
+                },
+                "parabolic_sar": {
+                    "event": "{signals} (current Parabolic SAR {sar})"
+                },
+                "regression": {
+                    "strong_fit_down": "The regression line slopes down and fits the price well (R² {r2})",
+                    "strong_fit_up": "The regression line slopes up and fits the price well (R² {r2})"
+                },
+                "rsi": {
+                    "event": "{signals} (current RSI {rsi})"
+                },
+                "squeeze_momentum": {
+                    "event": "{signals} (momentum {momentum})"
+                },
+                "stoch_rsi": {
+                    "overbought": "Stochastic RSI is in the overbought zone (K {k}, D {d})",
+                    "oversold": "Stochastic RSI is in the oversold zone (K {k}, D {d})"
+                },
+                "stochastic": {
+                    "overbought": "Stochastic is in the overbought zone (%K {percentK}, %D {percentD})",
+                    "oversold": "Stochastic is in the oversold zone (%K {percentK}, %D {percentD})"
+                },
+                "supertrend": {
+                    "event": "{signals} (Supertrend line {supertrend})"
+                },
+                "variance_ratio": {
+                    "mean_reverting": "The variance ratio points to a mean-reverting tendency (VR {varianceRatio})",
+                    "trending": "The variance ratio points to a persistent, trending tendency (VR {varianceRatio})"
+                },
+                "volume_profile": {
+                    "above_value_area": "The price is above the zone where most trading took place (close {close}, zone {val} to {vah}, most-traded price {poc})",
+                    "below_value_area": "The price is below the zone where most trading took place (close {close}, zone {val} to {vah}, most-traded price {poc})",
+                    "inside_value_area": "The price is inside the zone where most trading took place (close {close}, zone {val} to {vah}, most-traded price {poc})"
+                },
+                "vwap": {
+                    "above": "The close is at least one average price range (ATR) above VWAP (close {close}, VWAP {vwap}, ATR {atr})",
+                    "below": "The close is at least one average price range (ATR) below VWAP (close {close}, VWAP {vwap}, ATR {atr})"
+                },
+                "williams_r": {
+                    "overbought": "Williams %R is in the overbought zone (%R {williamsR})",
+                    "oversold": "Williams %R is in the oversold zone (%R {williamsR})"
+                },
+                "yang_zhang": {
+                    "high_volatility": "Recent volatility by the Yang-Zhang measure is higher than usual (σ {sigma})",
+                    "low_volatility": "Recent volatility by the Yang-Zhang measure is lower than usual (σ {sigma})"
+                }
+            },
             "sectionLabel": {
                 "currentPosition": "Current position",
                 "entryStrategy": "Entry strategy",

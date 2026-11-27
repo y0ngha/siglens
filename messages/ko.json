@@ -4125,6 +4125,194 @@
                     "t7": "한 번 분석한 결과는 한동안 저장해 두어서, 다시 열면 바로 볼 수 있어요."
                 }
             },
+            "reading": {
+                "adx": {
+                    "between": "추세의 힘이 뚜렷하지도 약하지도 않은 중간 구간이에요 (ADX {adx}, +DI {diPlus}, -DI {diMinus})",
+                    "trending": "추세의 힘이 뚜렷한 구간이에요 (ADX {adx}, +DI {diPlus}, -DI {diMinus})",
+                    "weak": "뚜렷한 추세 없이 힘이 약한 구간이에요 (ADX {adx}, +DI {diPlus}, -DI {diMinus})"
+                },
+                "atr": {
+                    "falling": "가격 변동 폭(ATR)이 줄어들고 있어요 (ATR {atr}, 가격의 {atrPercent}%)",
+                    "flat": "가격 변동 폭(ATR)이 비슷한 수준을 유지하고 있어요 (ATR {atr}, 가격의 {atrPercent}%)",
+                    "rising": "가격 변동 폭(ATR)이 커지고 있어요 (ATR {atr}, 가격의 {atrPercent}%)"
+                },
+                "bollinger": {
+                    "above_band_pctb": "가격이 볼린저 밴드 상단 근처이거나 상단 위에 있어요 (%B {pctB}, 종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "below_band_pctb": "가격이 볼린저 밴드 하단 근처이거나 하단 아래에 있어요 (%B {pctB}, 종가 {close}, 상단 {upper}, 하단 {lower})"
+                },
+                "bollinger_percent_b": {
+                    "event": "{signals} (현재 %B {pctB})"
+                },
+                "buy_sell_volume": {
+                    "buy_dominant": "마지막 봉에서 매수 쪽 거래량 비중이 높아요 (매수 비중 {buyRatio}%)",
+                    "sell_dominant": "마지막 봉에서 매도 쪽 거래량 비중이 높아요 (매수 비중 {buyRatio}%)"
+                },
+                "cci": {
+                    "event": "{signals} (현재 CCI {cci})"
+                },
+                "chandelier": {
+                    "flipped_long": "Chandelier Exit 방향이 상승 쪽으로 바뀌었어요 (Chandelier Exit 선 {stop})",
+                    "flipped_short": "Chandelier Exit 방향이 하락 쪽으로 바뀌었어요 (Chandelier Exit 선 {stop})"
+                },
+                "cmf": {
+                    "event": "{signals} (현재 CMF {cmf})"
+                },
+                "connors_rsi": {
+                    "overbought": "Connors RSI 지표가 과매수 구간에 있어요 (Connors RSI {crsi})",
+                    "oversold": "Connors RSI 지표가 과매도 구간에 있어요 (Connors RSI {crsi})"
+                },
+                "cycle": {
+                    "changes": "최근 {lookback}봉 동안 단계가 {count}번 바뀌었어요",
+                    "duration": {
+                        "bars": "이 단계가 {bars}봉째 이어지고 있어요",
+                        "sinceStart": "최근 {lookback}봉 내내 이 단계가 이어지고 있어요"
+                    },
+                    "ma_cycle": {
+                        "headline": "이동평균선 대순환 {stage}단계 ({stageName})",
+                        "order": "높은 순서: {order} (MA5 {ma5}, MA20 {ma20}, MA60 {ma60})",
+                        "slopes": "선의 방향: MA5 {ma5}, MA20 {ma20}, MA60 {ma60}"
+                    },
+                    "macd_cycle": {
+                        "headline": "MACD 대순환 {stage}단계 ({stageName})",
+                        "slopes": "선의 방향: EMA9 {ema9}, EMA21 {ema21}, EMA60 {ema60}",
+                        "values": "MACD 차이값: EMA9-EMA21 {upper}, EMA9-EMA60 {middle}, EMA21-EMA60 {lower}"
+                    },
+                    "previous": {
+                        "forward": "{previousStage}단계에서 순서대로 넘어왔어요",
+                        "none": "최근 {lookback}봉 안에서는 이전 단계가 없었어요",
+                        "other": "직전 단계는 {previousStage}단계였어요",
+                        "reverse": "{previousStage}단계에서 거꾸로 되돌아왔어요"
+                    },
+                    "slope": {
+                        "falling": "하락",
+                        "flat": "횡보",
+                        "rising": "상승",
+                        "unknown": "알 수 없음"
+                    },
+                    "stageName": {
+                        "stage1": "안정 상승기",
+                        "stage2": "하락 전환 초기",
+                        "stage3": "하락 전환 후기",
+                        "stage4": "안정 하락기",
+                        "stage5": "상승 전환 초기",
+                        "stage6": "상승 전환 후기"
+                    }
+                },
+                "dmi": {
+                    "event": "{signals} (현재 +DI {diPlus}, -DI {diMinus}, ADX {adx})"
+                },
+                "donchian": {
+                    "beyond_lower": "종가가 돈치안 채널 하단 밖에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "beyond_upper": "종가가 돈치안 채널 상단 밖에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "near_lower": "종가가 돈치안 채널 하단 가까이에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "near_upper": "종가가 돈치안 채널 상단 가까이에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})"
+                },
+                "elder_impulse": {
+                    "color": {
+                        "blue": "파랑",
+                        "green": "초록",
+                        "red": "빨강"
+                    },
+                    "current": "엘더 임펄스가 {color}이에요",
+                    "flipped": "엘더 임펄스가 {from}에서 {color}으로 바뀌었어요"
+                },
+                "elder_ray": {
+                    "bear_power_rising": "Bear Power가 0 아래에서 올라오고 있어요 (Bull Power {bullPower}, Bear Power {bearPower})",
+                    "both": "Bear Power는 0 아래에서 올라오고 Bull Power는 0 위에서 내려오고 있어요 (Bull Power {bullPower}, Bear Power {bearPower})",
+                    "bull_power_falling": "Bull Power가 0 위에서 내려오고 있어요 (Bull Power {bullPower}, Bear Power {bearPower})"
+                },
+                "ema": {
+                    "bearish_stack": "지수이동평균선이 짧은 선일수록 아래에 놓인 역배열이에요 (EMA9 {ema9}, EMA20 {ema20}, EMA21 {ema21}, EMA60 {ema60})",
+                    "bullish_stack": "지수이동평균선이 짧은 선일수록 위에 놓인 정배열이에요 (EMA9 {ema9}, EMA20 {ema20}, EMA21 {ema21}, EMA60 {ema60})",
+                    "mixed": "지수이동평균선이 한 방향으로 정렬돼 있지 않아요 (EMA9 {ema9}, EMA20 {ema20}, EMA21 {ema21}, EMA60 {ema60})"
+                },
+                "ewma": {
+                    "high_volatility": "EWMA 기준 최근 변동성이 평소보다 높아요 (σ {sigma})",
+                    "low_volatility": "EWMA 기준 최근 변동성이 평소보다 낮아요 (σ {sigma})"
+                },
+                "force_index": {
+                    "turned_negative": "Force Index가 양수에서 음수로 바뀌었어요 (Force Index {forceIndex})",
+                    "turned_positive": "Force Index가 음수에서 양수로 바뀌었어요 (Force Index {forceIndex})"
+                },
+                "hurst": {
+                    "mean_reverting": "허스트 지수가 평균으로 되돌아오는 성향을 보여요 (H {hurst})",
+                    "trending": "허스트 지수가 추세가 이어지는 성향을 보여요 (H {hurst})"
+                },
+                "ichimoku": {
+                    "event": "{signals} (전환선 {tenkan}, 기준선 {kijun}, 선행스팬 A {senkouA}, 선행스팬 B {senkouB})"
+                },
+                "keltner": {
+                    "beyond_lower": "종가가 켈트너 채널 하단 밖에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "beyond_upper": "종가가 켈트너 채널 상단 밖에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "near_lower": "종가가 켈트너 채널 하단 가까이에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})",
+                    "near_upper": "종가가 켈트너 채널 상단 가까이에 있어요 (종가 {close}, 상단 {upper}, 하단 {lower})"
+                },
+                "ma": {
+                    "bearish_stack": "이동평균선이 짧은 선일수록 아래에 놓인 역배열이에요 (종가 {close}, MA5 {ma5}, MA20 {ma20}, MA60 {ma60})",
+                    "bullish_stack": "이동평균선이 짧은 선일수록 위에 놓인 정배열이에요 (종가 {close}, MA5 {ma5}, MA20 {ma20}, MA60 {ma60})",
+                    "mixed": "이동평균선이 한 방향으로 정렬돼 있지 않아요 (종가 {close}, MA5 {ma5}, MA20 {ma20}, MA60 {ma60})"
+                },
+                "macd": {
+                    "event": "{signals} (MACD {macd}, 시그널선 {signal}, 히스토그램 {histogram})"
+                },
+                "macd_v": {
+                    "high_negative": "MACD-V가 큰 음수 구간에 있어요 (MACD-V {macdV})",
+                    "high_positive": "MACD-V가 큰 양수 구간에 있어요 (MACD-V {macdV})"
+                },
+                "mfi": {
+                    "event": "{signals} (현재 MFI {mfi})"
+                },
+                "obv": {
+                    "falling": "거래량 흐름(OBV)이 내리는 쪽이에요 (OBV {obv})",
+                    "flat": "거래량 흐름(OBV)이 한쪽으로 기울지 않았어요 (OBV {obv})",
+                    "rising": "거래량 흐름(OBV)이 오르는 쪽이에요 (OBV {obv})"
+                },
+                "parabolic_sar": {
+                    "event": "{signals} (현재 Parabolic SAR {sar})"
+                },
+                "regression": {
+                    "strong_fit_down": "회귀선이 우하향이고 가격이 선에 잘 맞아요 (R² {r2})",
+                    "strong_fit_up": "회귀선이 우상향이고 가격이 선에 잘 맞아요 (R² {r2})"
+                },
+                "rsi": {
+                    "event": "{signals} (현재 RSI {rsi})"
+                },
+                "squeeze_momentum": {
+                    "event": "{signals} (모멘텀 {momentum})"
+                },
+                "stoch_rsi": {
+                    "overbought": "스토캐스틱 RSI 지표가 과매수 구간에 있어요 (K {k}, D {d})",
+                    "oversold": "스토캐스틱 RSI 지표가 과매도 구간에 있어요 (K {k}, D {d})"
+                },
+                "stochastic": {
+                    "overbought": "스토캐스틱 지표가 과매수 구간에 있어요 (%K {percentK}, %D {percentD})",
+                    "oversold": "스토캐스틱 지표가 과매도 구간에 있어요 (%K {percentK}, %D {percentD})"
+                },
+                "supertrend": {
+                    "event": "{signals} (Supertrend 선 {supertrend})"
+                },
+                "variance_ratio": {
+                    "mean_reverting": "분산비율이 평균으로 되돌아오는 성향을 보여요 (VR {varianceRatio})",
+                    "trending": "분산비율이 추세가 이어지는 성향을 보여요 (VR {varianceRatio})"
+                },
+                "volume_profile": {
+                    "above_value_area": "가격이 거래가 가장 활발했던 가격대 위에 있어요 (종가 {close}, 구간 {val} ~ {vah}, 거래 최다 가격 {poc})",
+                    "below_value_area": "가격이 거래가 가장 활발했던 가격대 아래에 있어요 (종가 {close}, 구간 {val} ~ {vah}, 거래 최다 가격 {poc})",
+                    "inside_value_area": "가격이 거래가 가장 활발했던 가격대 안에 있어요 (종가 {close}, 구간 {val} ~ {vah}, 거래 최다 가격 {poc})"
+                },
+                "vwap": {
+                    "above": "종가가 VWAP보다 평균 변동 폭(ATR) 이상 위에 있어요 (종가 {close}, VWAP {vwap}, ATR {atr})",
+                    "below": "종가가 VWAP보다 평균 변동 폭(ATR) 이상 아래에 있어요 (종가 {close}, VWAP {vwap}, ATR {atr})"
+                },
+                "williams_r": {
+                    "overbought": "Williams %R 지표가 과매수 구간에 있어요 (%R {williamsR})",
+                    "oversold": "Williams %R 지표가 과매도 구간에 있어요 (%R {williamsR})"
+                },
+                "yang_zhang": {
+                    "high_volatility": "Yang-Zhang 기준 최근 변동성이 평소보다 높아요 (σ {sigma})",
+                    "low_volatility": "Yang-Zhang 기준 최근 변동성이 평소보다 낮아요 (σ {sigma})"
+                }
+            },
             "sectionLabel": {
                 "currentPosition": "현재 위치",
                 "entryStrategy": "진입 전략",

@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['squeezeMomentum']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, measurement]
+computed_card: squeeze_momentum
 gating:
   tier: gated
   signal_kind: event

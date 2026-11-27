@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['connorsRsi']
 confidence_weight: 0.4
 usage_roles: [signal, confirmation]
+computed_card: connors_rsi
 gating:
   tier: gated
   signal_kind: state

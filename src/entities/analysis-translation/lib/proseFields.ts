@@ -105,8 +105,16 @@ export function extractProse(value: unknown, prefix = ''): ProseEntry[] {
     }
     if (typeof value !== 'object' || value === null) return [];
 
+    // core가 코드로 만든 카드(`AnalysisSignal.reading`, `StrategyResult.cycle`)는 `description`·
+    // `summary`가 에이전트·API용 영어 정본이고, 화면은 구조화된 읽기를 로케일 카탈로그로 푼다.
+    // 영어 정본을 번역에 보내면 쓰지 않을 문장에 LLM 호출만 쓰고, 번역이 돌려준 문장이 정본 줄을
+    // 덮어써 에이전트·API 소비자가 읽는 줄이 로케일마다 달라진다.
+    const isComputedCard = 'reading' in value || 'cycle' in value;
     return Object.entries(value).flatMap(([key, child]) => {
         const path = joinPath(prefix, key);
+        if (isComputedCard && (key === 'description' || key === 'summary')) {
+            return [];
+        }
         if (!isProseKey(key)) return extractProse(child, path);
         // 산문 키 아래로는 다시 내려가지 않는다 — `summary: { ko: ... }`를
         // 재귀로 훑으면 `summary.ko`가 산문 키가 아니라 통째로 누락된다.

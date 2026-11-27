@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['elderImpulse']
 confidence_weight: 0.45
 usage_roles: [confirmation, regime]
+computed_card: elder_impulse
 gating:
   tier: gated
   signal_kind: state
