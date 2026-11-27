@@ -24,6 +24,25 @@ const done = [
 ];
 
 describe('ToolActivity', () => {
+    it('labels get_price_stats in plain Korean, not the generic fallback', () => {
+        wrap(
+            <ToolActivity
+                tools={[
+                    {
+                        id: 'p',
+                        name: 'get_price_stats',
+                        args: { symbols: ['AAPL'] },
+                        status: 'ok' as const,
+                        ms: 1000,
+                    },
+                ]}
+            />
+        );
+        const summary = screen.getByRole('button', { expanded: false });
+        expect(summary).toHaveTextContent('기간별 수익률과 낙폭');
+        expect(summary).not.toHaveTextContent('데이터 조회');
+    });
+
     it('renders nothing without tools', () => {
         const { container } = wrap(<ToolActivity tools={[]} />);
         expect(container).toBeEmptyDOMElement();

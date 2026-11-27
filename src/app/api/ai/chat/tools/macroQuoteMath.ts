@@ -1,6 +1,6 @@
+import { minusCalendarMonths } from '@y0ngha/siglens-core';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import type { YahooDailyClose } from '@/shared/api/yahoo/yahooMacroSource';
-import { minusCalendarMonths } from './calendarChange';
 import { pctVs } from './percent';
 
 /** 일봉 기준 변화율 한 칸. `baseDate`는 기준이 된 거래일이다. */
@@ -34,7 +34,7 @@ const YEAR_DAYS = 365;
 
 /**
  * 기준일 산식: 시세 날짜에서 7일 / 1·3·12달력월을 뺀 날짜. 달 단위는 `minusCalendarMonths`(말일 보정)를
- * 재사용한다 — `calendarChange.ts`의 `calendarChange`는 봉의 마지막 종가를 기준으로 삼지만 여기서는
+ * 재사용한다(core 함수) — `calendarChange.ts`의 `calendarChangeView`는 봉의 마지막 종가를 기준으로 삼지만 여기서는
  * 실시간 시세 가격을 기준으로 삼고 입력도 `Bar`가 아니라 일봉 행이라 그 함수는 쓰지 않는다.
  */
 const BASE_DATE_FOR: Record<MacroChangeKey, (quoteDate: string) => string> = {

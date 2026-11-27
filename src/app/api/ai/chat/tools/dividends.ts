@@ -43,10 +43,10 @@ export interface DividendsView {
  * 지급·배당락되는 종목은 두 값이 다를 수 있다.
  *
  * - `fiscalYear`: 사업연도(최신 공시된 연도, 보통 작년).
- * - `dpsCommon`: **보통주** 1주당 연간 현금배당금(원). 보통주 현금배당이 없으면 null.
+ * - `dpsCommon`: **보통주** 1주당 연간 현금배당금(원). 0 = 보고서가 보통주 현금배당 없음으로 적은 해, null = 확인하지 못함(`krAnnualDividend.ts`).
  * - `dartYieldPct`: 보고서가 적은 현금배당수익률(%) — 분모는 배당 기준일 전후 주가이며 현재가가 아니다.
  * - `yieldOnLastClosePct`: `dpsCommon ÷ 현재가 × 100`(소수 둘째 자리). 현재가 기준이라 네이버·FnGuide 값과 맞먹는다.
- *   현재가나 DPS가 없으면 null. 우선주 종목에는 이 필드 자체가 붙지 않는다.
+ *   DPS가 0이면 현재가와 무관하게 0, 현재가나 DPS(null)가 없으면 null. 우선주 종목에는 이 필드 자체가 붙지 않는다.
  */
 export interface KrAnnualReportedDividend {
     fiscalYear: number;
@@ -69,7 +69,9 @@ function round(value: number, scale: number): number {
     return Math.round(value * scale) / scale;
 }
 
+/** 금액이 0이면 가격과 무관하게 0%다(무배당은 가격을 몰라도 알 수 있다). */
 function yieldPct(amount: number, price: number | null): number | null {
+    if (amount === 0) return 0;
     return price === null
         ? null
         : round((amount / price) * 100, PCT_ROUND_SCALE);

@@ -22,7 +22,6 @@ import {
     buildCompareBlock,
     COMPARE_POINTS_MAX,
     compareSeriesFrom,
-    compareStartSeconds,
 } from '@/app/api/ai/chat/tools/visualBlocks/compare';
 import type { VisualBuildEnv } from '@/app/api/ai/chat/tools/visualBlocks/types';
 
@@ -47,6 +46,16 @@ const bars = (n: number, close: (i: number) => number, from = START): Bar[] =>
         volume: 1,
     }));
 
+/** 날짜(UTC 자정)와 종가만 있는 일봉. */
+const dayBar = (date: string, close: number): Bar => ({
+    time: Date.parse(`${date}T00:00:00Z`) / 1000,
+    open: 1,
+    high: 1,
+    low: 1,
+    close,
+    volume: 1,
+});
+
 const asset = (marketProfile?: MarketProfileId) => ({
     symbol: 'X',
     name: 'X Inc',
@@ -61,60 +70,59 @@ beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
-describe('compareStartSeconds', () => {
-    it('달력 기준으로 기간만큼 거슬러 올라간 UTC 자정', () => {
-        expect(compareStartSeconds('1M', NOW)).toBe(
-            Date.UTC(2026, 9, 19) / 1000
-        );
-        expect(compareStartSeconds('3M', NOW)).toBe(
-            Date.UTC(2026, 7, 19) / 1000
-        );
-        expect(compareStartSeconds('6M', NOW)).toBe(
-            Date.UTC(2026, 4, 19) / 1000
-        );
-        expect(compareStartSeconds('1Y', NOW)).toBe(
-            Date.UTC(2025, 10, 19) / 1000
-        );
-    });
-
-    it('말일이 짧은 달로 거슬러 가면 넘치지 않고 그 달 말일로 눌린다', () => {
-        expect(
-            compareStartSeconds('1M', new Date('2026-03-31T10:00:00Z'))
-        ).toBe(Date.UTC(2026, 1, 28) / 1000);
-        expect(
-            compareStartSeconds('1M', new Date('2028-03-31T10:00:00Z'))
-        ).toBe(Date.UTC(2028, 1, 29) / 1000);
-        expect(
-            compareStartSeconds('6M', new Date('2026-08-31T10:00:00Z'))
-        ).toBe(Date.UTC(2026, 1, 28) / 1000);
-    });
-});
-
 describe('compareSeriesFrom', () => {
-    it('기간 시작 이후 첫 봉 종가를 기준(0%)으로 수익률을 잡는다', () => {
+    it('기간 시작일 직전 세션 종가를 기준(0%)으로 수익률을 잡고 점도 그 봉에서 시작한다', () => {
+        // 마지막 봉 2026-05-21 − 1개월 = 04-21. 04-20(월)·04-21(화) 봉 가운데 시작일 당일 봉이 기준이다.
         const series = compareSeriesFrom(
             'NVDA',
             [
-                {
-                    time: START - DAY,
-                    open: 1,
-                    high: 1,
-                    low: 1,
-                    close: 50,
-                    volume: 1,
-                },
-                ...bars(3, i => [100, 110, 90][i] ?? 0),
+                dayBar('2026-04-20', 50),
+                dayBar('2026-04-21', 100),
+                dayBar('2026-05-20', 110),
+                dayBar('2026-05-21', 90),
             ],
-            START
+            1
         );
         expect(series).toEqual({
             symbol: 'NVDA',
             points: [
-                [START, 0],
-                [START + DAY, 10],
-                [START + 2 * DAY, -10],
+                [Date.UTC(2026, 3, 21) / 1000, 0],
+                [Date.UTC(2026, 4, 20) / 1000, 10],
+                [Date.UTC(2026, 4, 21) / 1000, -10],
             ],
         });
+    });
+
+    it('시작일에 봉이 없으면(주말) 그 직전 세션이 기준이다 — 시작일 이후 첫 봉이 아니다', () => {
+        // 마지막 봉 2026-05-18(월) − 1개월 = 04-18(토). 직전 세션은 04-17(금).
+        const series = compareSeriesFrom(
+            'X',
+            [
+                dayBar('2026-04-16', 80),
+                dayBar('2026-04-17', 100),
+                dayBar('2026-04-20', 120),
+                dayBar('2026-05-18', 150),
+            ],
+            1
+        );
+        expect(series?.points).toEqual([
+            [Date.UTC(2026, 3, 17) / 1000, 0],
+            [Date.UTC(2026, 3, 20) / 1000, 20],
+            [Date.UTC(2026, 4, 18) / 1000, 50],
+        ]);
+    });
+
+    it('이력이 시작일까지 거슬러 가지 않으면 첫 봉이 기준이다', () => {
+        const series = compareSeriesFrom(
+            'X',
+            bars(3, i => 100 + i * 10),
+            6
+        );
+        expect(series?.points).toEqual([
+            [START, 0],
+            [START + DAY, 10],
+            [START + 2 * DAY, 20],
+        ]);
     });
 
     it('종가가 유효하지 않은 봉은 건너뛰고, 쓸 봉이 없으면 null', () => {
@@ -122,29 +130,30 @@ describe('compareSeriesFrom', () => {
             compareSeriesFrom(
                 'X',
                 bars(2, i => [0, 100][i] ?? 0),
-                START
+                6
             )?.points
         ).toEqual([[START + DAY, 0]]);
         expect(
             compareSeriesFrom(
                 'X',
-                bars(2, () => 100, START - 9 * DAY),
-                START
+                bars(2, () => 0),
+                6
             )
         ).toBeNull();
-        expect(compareSeriesFrom('X', [], START)).toBeNull();
+        expect(compareSeriesFrom('X', [], 6)).toBeNull();
     });
 
     it(`점은 종목당 ${COMPARE_POINTS_MAX}개로 솎되 처음과 끝은 남긴다`, () => {
         const series = compareSeriesFrom(
             'X',
             bars(1000, i => 100 + i),
-            START
+            12
         );
         if (series === null) throw new Error('series expected');
         expect(series.points).toHaveLength(COMPARE_POINTS_MAX);
-        expect(series.points[0]?.[0]).toBe(START);
+        // 마지막 봉(START + 999일) − 12개월 이전 세션부터다 — 첫 점은 그 봉이고 끝 점은 마지막 봉이다.
         expect(series.points.at(-1)?.[0]).toBe(START + 999 * DAY);
+        expect(series.points[0]?.[1]).toBe(0);
     });
 });
 
@@ -171,6 +180,66 @@ describe('buildCompareBlock', () => {
                 { symbol: 'AMD', returnPct: -5 },
             ],
             missing: [],
+        });
+    });
+
+    it('요약의 from은 기준 세션 날짜이고 note가 기준 규칙을 말한다', async () => {
+        // 마지막 봉 2026-05-18 − 1개월 = 04-18(토) → 기준은 04-17(금).
+        barsOf.mockResolvedValue({
+            bars: [
+                dayBar('2026-04-16', 80),
+                dayBar('2026-04-17', 100),
+                dayBar('2026-05-18', 150),
+            ],
+        });
+        const out = await buildCompareBlock(['NVDA', 'AMD'], '1M', env);
+        if ('error' in out) throw new Error(out.reason);
+        expect(out.summary).toMatchObject({
+            note: expect.stringContaining('last session on or before'),
+            series: [
+                {
+                    symbol: 'NVDA',
+                    from: '2026-04-17',
+                    to: '2026-05-18',
+                    returnPct: 50,
+                },
+                {
+                    symbol: 'AMD',
+                    from: '2026-04-17',
+                    to: '2026-05-18',
+                    returnPct: 50,
+                },
+            ],
+        });
+    });
+
+    it('정규장 중에는 형성 중인 마지막 봉을 빼고 마감된 세션까지만 그린다', async () => {
+        // 2026-11-19 11:00 ET(장중): 11-19 봉은 형성 중이라 끝점은 11-18 종가다.
+        const open = { ...env, now: new Date('2026-11-19T16:00:00Z') };
+        barsOf.mockResolvedValue({
+            bars: [
+                dayBar('2026-10-16', 100),
+                dayBar('2026-11-18', 120),
+                dayBar('2026-11-19', 999),
+            ],
+        });
+        const out = await buildCompareBlock(['NVDA', 'AMD'], '1M', open);
+        if ('error' in out) throw new Error(out.reason);
+        expect(out.summary).toMatchObject({
+            series: [
+                {
+                    symbol: 'NVDA',
+                    from: '2026-10-16',
+                    to: '2026-11-18',
+                    returnPct: 20,
+                },
+                {
+                    symbol: 'AMD',
+                    from: '2026-10-16',
+                    to: '2026-11-18',
+                    returnPct: 20,
+                },
+            ],
         });
     });
 

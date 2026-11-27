@@ -62,6 +62,10 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  * `get_swing_history`(2026-11): **공개 API에서 제외**한다. 한국 종목 일봉 이력이 Yahoo Finance 비공식 엔드포인트를
  *   거치고, 미국 종목은 캐시 미스마다 FMP 일봉 구간 6개를 읽는다. SiglensAI 에이전트에서만 쓴다.
  *
+ * `get_price_stats`(2026-11): **공개 API에서 제외**한다. 한국 종목·KOSPI·KOSDAQ 일봉 이력이 Yahoo Finance 비공식 엔드포인트를
+ *   거치고, 미국 종목은 5년 캐시에 닿지 않는 기간(`max`·10년 등)이면 캐시 미스마다 FMP 일봉 구간 6개를 읽는다(미국 지수는 항상).
+ *   종가 이력 위의 계산 결과라 제3자 API 계약으로 고정하기도 이르다. SiglensAI 에이전트에서만 쓴다.
+ *
  * `show_chart`(2026-11): **공개 API에서 제외**한다. 답변 아래 그림을 그리는 표시 전용 도구라 결과(`{rendered, kind, summary}`)가
  *   제3자 API 계약에 쓸모가 없고, 그림 데이터는 `emitChart`로만 나가는데 API 실행기에는 그 길이 없다(데이터는 각
  *   데이터 도구가 이미 준다). SiglensAI 에이전트에서만 쓴다.
@@ -89,6 +93,7 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'get_theme_snapshot',
     'get_index_history_stats',
     'get_swing_history',
+    'get_price_stats',
     'show_chart',
 ]);
 

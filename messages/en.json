@@ -6181,6 +6181,7 @@
                 "toolOptions": "Options",
                 "toolOther": "Data lookup",
                 "toolPortfolio": "My portfolio",
+                "toolPriceStats": "Period returns and drawdowns",
                 "toolQuote": "Quote",
                 "toolSearchTicker": "Symbol search",
                 "toolSwingHistory": "Past declines and rallies",

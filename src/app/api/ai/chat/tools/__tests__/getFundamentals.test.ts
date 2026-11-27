@@ -1,3 +1,4 @@
+import { FUNDAMENTALS_RESULT_NOTES } from '@y0ngha/siglens-core';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FUNDAMENTALS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
@@ -661,9 +662,8 @@ describe('getFundamentalsTool', () => {
             expect(r.earningsReactions).toHaveLength(8);
             expect(JSON.stringify(r)).toContain('annualReported');
             expect(JSON.stringify(r)).toContain('"basis"');
-            expect(JSON.stringify(r).length).toBeLessThan(
-                FUNDAMENTALS_RESULT_MAX_CHARS - 500
-            );
+            // Pinned to the measured worst case (4,053 with the `peUntrusted` note), not to `cap - n`: a cap change must not loosen it.
+            expect(JSON.stringify(r).length).toBeLessThan(4_150);
         });
 
         it('미국 종목은 상장주식수 조회도 DART 기준도 새 필드도 없다', async () => {
@@ -1572,9 +1572,8 @@ describe('getFundamentalsTool', () => {
         expect(tally.up).toBeGreaterThan(0);
         expect(tally.down).toBeGreaterThan(0);
         // The own cap, with room to spare: the tally pushed this worst case past the 4,000 default.
-        expect(JSON.stringify(r).length).toBeLessThan(
-            FUNDAMENTALS_RESULT_MAX_CHARS - 500
-        );
+        // Pinned to the measured worst case (4,026), not to `cap - n`: a cap change must not loosen it.
+        expect(JSON.stringify(r).length).toBeLessThan(4_100);
         expect(JSON.stringify(r)).toContain('earningsSession');
     });
 
@@ -2527,5 +2526,599 @@ describe('getFundamentalsTool - Yahoo 애널리스트 보강', () => {
             expect(a.earningsDateNote).toBe(earningsDateNoteFor(null));
             expect(a).not.toHaveProperty('earningsDateAlt');
         });
+    });
+});
+
+/**
+ * `notes`: core's `FUNDAMENTALS_RESULT_NOTES` attached verbatim, only where the field is null
+ * (`PUBLIC_API.md`, `runAgentTurn` action ⑩). Expected arrays are built from the same exported
+ * texts, so a reworded note never breaks a test but a wrong condition does.
+ */
+describe('getFundamentalsTool notes (FUNDAMENTALS_RESULT_NOTES)', () => {
+    const N = FUNDAMENTALS_RESULT_NOTES;
+    const FMP_DATE = '2099-01-10';
+    const ALT_DATE = '2099-01-20';
+    const US_SESSION = {
+        kind: 'scheduled' as const,
+        timeZone: 'America/New_York',
+        openMinute: 570,
+        closeMinute: 960,
+        weekendDays: [0, 6],
+    };
+    const KR_SESSION = {
+        ...US_SESSION,
+        timeZone: 'Asia/Seoul',
+        openMinute: 540,
+        closeMinute: 930,
+    };
+    const PAYER = {
+        kind: 'fmp' as const,
+        rows: [{ exDate: '2026-08-10', amount: 1, payDate: '2026-08-13' }],
+    };
+    const MEMBERSHIPS = {
+        sp500: true,
+        nasdaq100: false,
+        dowJones: false,
+        asOf: '2026-10-24',
+        source: 'wikipedia' as const,
+    };
+    /** A latest ex-date with both trailing fields null (a Yahoo summary with no rate): `dividendsTrailingUnknown`. */
+    const TRAILING_UNKNOWN = {
+        kind: 'yahoo' as const,
+        data: {
+            history: null,
+            summary: {
+                dividendRate: null,
+                trailingAnnualDividendRate: null,
+                dividendYield: null,
+                trailingAnnualDividendYield: null,
+                exDividendDate: '2020-05-01',
+                lastDividendValue: 0.5,
+                lastDividendDate: null,
+            },
+        },
+    };
+    const incomeRow = (date: string, period: string) => ({
+        fiscalYear: '2026',
+        period,
+        date,
+        reportedCurrency: 'USD',
+        revenue: 2_440_000_000,
+        grossProfit: null,
+        operatingIncome: null,
+        netIncome: null,
+        ebitda: null,
+        eps: 5.7,
+        epsDiluted: 5.58,
+        grossMargin: null,
+        operatingMargin: null,
+        netMargin: null,
+    });
+    const secQuarter = (over: Record<string, unknown> = {}) => ({
+        periodEnd: '2026-06-30',
+        form: '10-Q' as const,
+        accn: '0000051434-26-000123',
+        filed: '2026-08-05',
+        epsDiluted: 0.5,
+        revenue: 6_004_000_000,
+        revenueYoYPct: -2.25,
+        ...over,
+    });
+    const yahooViews = (earnings: Record<string, unknown> | null) => ({
+        asOf: '2026-11-15T12:00:00.000Z',
+        symbol: 'AAPL',
+        targets: {
+            yahoo: null,
+            fmp: null,
+            gapPct: null,
+            sourcesDisagree: false,
+        },
+        ratings: null,
+        actions: { available: true, rows: [], tally: {} },
+        earnings,
+        degraded: [],
+    });
+    const run = async (symbol = 'AAPL') =>
+        (await getFundamentalsTool({ symbol }, ctx, rt)) as {
+            notes?: string[];
+        };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        isTabAllowed.mockResolvedValue(true);
+        resolveMarketProfile.mockResolvedValue('us-equity');
+        getNextEarningsSchedule.mockResolvedValue(null);
+        getQuote.mockResolvedValue({ price: 200, changesPercentage: 1 });
+        assetInfo.mockResolvedValue(null);
+        getIncomeStatements.mockResolvedValue([]);
+        getCachedBars.mockResolvedValue({ bars: [], indicators: {} });
+        listReportedEarningsDates.mockResolvedValue([]);
+        findListedShares.mockResolvedValue(null);
+        // A result with nothing null: a payer, a membership list, a P/E, no earnings date, no quarters.
+        fetchDividendSource.mockResolvedValue(PAYER);
+        loadIndexMemberships.mockResolvedValue(MEMBERSHIPS);
+        fetchKrAnnualDividend.mockResolvedValue(null);
+        loadSecQuarters.mockResolvedValue(null);
+        getAnalystViews.mockResolvedValue(null);
+        sessionSpecFor.mockReturnValue(US_SESSION);
+        getProvider.mockReturnValue(fakeProvider());
+    });
+
+    it('a result with nothing null has no notes key at all (never an empty array)', async () => {
+        const r = await run();
+        expect(r).not.toHaveProperty('notes');
+    });
+
+    describe('earningsSessionUnknown', () => {
+        const schedule = (dateConfirmed: boolean | null) => ({
+            symbol: 'AAPL',
+            earningsDate: FMP_DATE,
+            dateConfirmed,
+        });
+
+        it('a next date with no session and no second-source date is attached', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            expect((await run()).notes).toEqual([N.earningsSessionUnknown]);
+        });
+
+        it('not attached without a next earnings date', async () => {
+            expect((await run()).notes ?? []).not.toContain(
+                N.earningsSessionUnknown
+            );
+        });
+
+        it('not attached when the session is given (a confirmed Yahoo date)', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            getAnalystViews.mockResolvedValue(
+                yahooViews({
+                    date: FMP_DATE,
+                    isEstimate: false,
+                    session: 'after_market',
+                    callAt: `${FMP_DATE}T22:00:00.000Z`,
+                })
+            );
+            const r = await run();
+            expect(JSON.stringify(r)).toContain('"earningsSession"');
+            expect(r).not.toHaveProperty('notes');
+        });
+
+        it('not attached when earningsDateAlt is present (the description date-conflict rule applies)', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(null));
+            getAnalystViews.mockResolvedValue(
+                yahooViews({
+                    date: ALT_DATE,
+                    isEstimate: true,
+                    session: null,
+                    callAt: null,
+                })
+            );
+            const r = await run();
+            expect(JSON.stringify(r)).toContain('"earningsDateAlt"');
+            expect(r).not.toHaveProperty('notes');
+        });
+
+        it('not attached when the date is marked as an estimate (earningsDateConfirmed false)', async () => {
+            getNextEarningsSchedule.mockResolvedValue(schedule(true));
+            getAnalystViews.mockResolvedValue(
+                yahooViews({
+                    date: FMP_DATE,
+                    isEstimate: true,
+                    session: null,
+                    callAt: null,
+                })
+            );
+            const r = await run();
+            expect(JSON.stringify(r)).toContain(
+                '"earningsDateConfirmed":false'
+            );
+            expect(r).not.toHaveProperty('notes');
+        });
+    });
+
+    describe('secFieldMissing', () => {
+        const withQuarter = async (sec: Record<string, unknown> | null) => {
+            getIncomeStatements.mockResolvedValue([
+                incomeRow('2026-06-30', 'Q2'),
+            ]);
+            loadSecQuarters.mockResolvedValue(sec === null ? null : [sec]);
+            return run();
+        };
+
+        it.each([
+            ['epsDiluted (a fiscal Q4 from the 10-K)', { epsDiluted: null }],
+            ['revenue', { revenue: null }],
+            ['revenueYoYPct', { revenueYoYPct: null }],
+        ])('a null %s inside sec is attached', async (_name, over) => {
+            const r = await withQuarter(secQuarter(over));
+            expect(r.notes).toEqual([N.secFieldMissing]);
+        });
+
+        it('not attached when every sec figure is present', async () => {
+            expect(await withQuarter(secQuarter())).not.toHaveProperty('notes');
+        });
+
+        it('not attached when the rows carry no sec block at all', async () => {
+            expect(await withQuarter(null)).not.toHaveProperty('notes');
+        });
+
+        it('attached once however many rows are affected', async () => {
+            getIncomeStatements.mockResolvedValue([
+                incomeRow('2026-06-30', 'Q2'),
+                incomeRow('2026-03-31', 'Q1'),
+            ]);
+            loadSecQuarters.mockResolvedValue([
+                secQuarter({ epsDiluted: null }),
+                secQuarter({ periodEnd: '2026-03-31', revenue: null }),
+            ]);
+            expect((await run()).notes).toEqual([N.secFieldMissing]);
+        });
+    });
+
+    describe('dividends', () => {
+        it('dividendsNonPayer: the confirmed non-payer shape (no rows, zero trailing amount and yield)', async () => {
+            fetchDividendSource.mockResolvedValue({ kind: 'fmp', rows: [] });
+            expect((await run()).notes).toEqual([N.dividendsNonPayer]);
+        });
+
+        it('a non-payer without a price still gets dividendsNonPayer (a zero dividend is 0% at any price)', async () => {
+            getQuote.mockResolvedValue(null);
+            fetchDividendSource.mockResolvedValue({ kind: 'fmp', rows: [] });
+            expect((await run()).notes).toEqual([N.dividendsNonPayer]);
+        });
+
+        it('dividendsUnknown: dividends null (source failed), ETFs included', async () => {
+            fetchDividendSource.mockResolvedValue(null);
+            expect((await run('SPY')).notes).toEqual([N.dividendsUnknown]);
+        });
+
+        it('a payer with trailing figures gets neither', async () => {
+            expect(await run()).not.toHaveProperty('notes');
+        });
+
+        const summary = (over: Record<string, unknown>) => ({
+            kind: 'yahoo' as const,
+            data: {
+                history: null,
+                summary: {
+                    dividendRate: null,
+                    trailingAnnualDividendRate: null,
+                    dividendYield: null,
+                    trailingAnnualDividendYield: null,
+                    exDividendDate: '2020-05-01',
+                    lastDividendValue: 0.5,
+                    lastDividendDate: null,
+                    ...over,
+                },
+            },
+        });
+
+        it('dividendsTrailingUnknown: a latest ex-date with BOTH trailing fields null', async () => {
+            fetchDividendSource.mockResolvedValue(summary({}));
+            expect((await run()).notes).toEqual([N.dividendsTrailingUnknown]);
+        });
+
+        it('dividendsTrailingUnknown is not attached when only the yield is null (no price): the amount is real', async () => {
+            getQuote.mockResolvedValue(null);
+            fetchDividendSource.mockResolvedValue(
+                summary({ trailingAnnualDividendRate: 2 })
+            );
+            const r = await run();
+            expect(r.notes ?? []).not.toContain(N.dividendsTrailingUnknown);
+            expect(r.notes ?? []).not.toContain(N.dividendsUnknown);
+        });
+    });
+
+    describe('Korean annual dividend', () => {
+        beforeEach(() => {
+            resolveMarketProfile.mockResolvedValue('kr-equity');
+            sessionSpecFor.mockReturnValue(KR_SESSION);
+            getQuote.mockResolvedValue({
+                price: 70_000,
+                changesPercentage: 0,
+                timestamp: Math.floor(Date.now() / 1000),
+            });
+            fetchDividendSource.mockResolvedValue({
+                kind: 'yahoo',
+                data: {
+                    history: [{ exDate: '2025-12-29', amount: 3000 }],
+                    summary: null,
+                },
+            });
+        });
+
+        it('a DPS and a computable yield: no note (and no index note: the list is always null for Korean stocks)', async () => {
+            fetchKrAnnualDividend.mockResolvedValue({
+                fiscalYear: 2025,
+                dpsCommon: 6000,
+                dartYieldPct: 4.1,
+            });
+            expect(await run('005930.KS')).not.toHaveProperty('notes');
+        });
+
+        it('dpsCommon 0 (the report says no common dividend) is a known value: no note', async () => {
+            fetchKrAnnualDividend.mockResolvedValue({
+                fiscalYear: 2025,
+                dpsCommon: 0,
+                dartYieldPct: null,
+            });
+            expect(await run('005930.KS')).not.toHaveProperty('notes');
+        });
+
+        it('dpsCommon 0 with no price: yield 0, so no krYieldOnLastCloseNull', async () => {
+            getQuote.mockResolvedValue(null);
+            fetchKrAnnualDividend.mockResolvedValue({
+                fiscalYear: 2025,
+                dpsCommon: 0,
+                dartYieldPct: null,
+            });
+            expect(await run('005930.KS')).not.toHaveProperty('notes');
+        });
+
+        it('krDpsUnknown: dpsCommon null, and ONLY that note (never both pieces of advice)', async () => {
+            fetchKrAnnualDividend.mockResolvedValue({
+                fiscalYear: 2025,
+                dpsCommon: null,
+                dartYieldPct: null,
+            });
+            expect((await run('005930.KS')).notes).toEqual([N.krDpsUnknown]);
+        });
+
+        it('krYieldOnLastCloseNull: a DPS but no price to divide by', async () => {
+            getQuote.mockResolvedValue(null);
+            fetchKrAnnualDividend.mockResolvedValue({
+                fiscalYear: 2025,
+                dpsCommon: 6000,
+                dartYieldPct: 4.1,
+            });
+            expect((await run('005930.KS')).notes).toEqual([
+                N.krYieldOnLastCloseNull,
+            ]);
+        });
+    });
+
+    describe('indexMembershipUnknown', () => {
+        it('a US stock whose list could not be read', async () => {
+            loadIndexMemberships.mockResolvedValue(null);
+            expect((await run()).notes).toEqual([N.indexMembershipUnknown]);
+        });
+
+        it('not attached for a Korean stock (null is its normal state)', async () => {
+            resolveMarketProfile.mockResolvedValue('kr-equity');
+            sessionSpecFor.mockReturnValue(KR_SESSION);
+            getQuote.mockResolvedValue({
+                price: 70_000,
+                changesPercentage: 0,
+                timestamp: Math.floor(Date.now() / 1000),
+            });
+            fetchDividendSource.mockResolvedValue({
+                kind: 'yahoo',
+                data: {
+                    history: [{ exDate: '2025-12-29', amount: 3000 }],
+                    summary: null,
+                },
+            });
+            loadIndexMemberships.mockResolvedValue(null);
+            expect(await run('005930.KS')).not.toHaveProperty('notes');
+        });
+    });
+
+    describe('peUntrusted', () => {
+        it('no valuation block at all', async () => {
+            getProvider.mockReturnValue(
+                fakeProvider({
+                    getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
+                })
+            );
+            expect((await run()).notes).toEqual([N.peUntrusted]);
+        });
+
+        it('a valuation block whose pe is null', async () => {
+            getProvider.mockReturnValue(
+                fakeProvider({
+                    getKeyMetricsTtm: vi.fn().mockResolvedValue({
+                        peRatioTTM: null,
+                        priceToSalesRatioTTM: 8,
+                        pbRatioTTM: 40,
+                        pegRatioTTM: 2,
+                        enterpriseValueOverEBITDATTM: 22,
+                        epsTTM: 6.1,
+                    }),
+                })
+            );
+            expect((await run()).notes).toEqual([N.peUntrusted]);
+        });
+
+        it('a present P/E gets none (the default provider fixture)', async () => {
+            expect(await run()).not.toHaveProperty('notes');
+        });
+    });
+
+    it('several conditions at once: every note in the contract order, none twice', async () => {
+        getNextEarningsSchedule.mockResolvedValue({
+            symbol: 'AAPL',
+            earningsDate: FMP_DATE,
+            dateConfirmed: null,
+        });
+        getIncomeStatements.mockResolvedValue([incomeRow('2026-06-30', 'Q2')]);
+        loadSecQuarters.mockResolvedValue([secQuarter({ epsDiluted: null })]);
+        fetchDividendSource.mockResolvedValue(null);
+        loadIndexMemberships.mockResolvedValue(null);
+        getProvider.mockReturnValue(
+            fakeProvider({ getKeyMetricsTtm: vi.fn().mockResolvedValue(null) })
+        );
+        const { notes } = await run();
+        expect(notes).toEqual([
+            N.earningsSessionUnknown,
+            N.secFieldMissing,
+            N.dividendsUnknown,
+            N.indexMembershipUnknown,
+            N.peUntrusted,
+        ]);
+        expect(new Set(notes).size).toBe(notes?.length);
+    });
+
+    /**
+     * Worst-case size. Notes only appear where a field is null, and a null field is smaller than
+     * the filled one it replaces, but the notes land on the heaviest result the tool makes. The
+     * fixture is the fully loaded one (8 quarters with `sec` blocks, 8 reactions with long
+     * 4-decimal moves, the Yahoo extras); `heavy` returns the serialized length and the notes.
+     * The registry cut would collapse an over-cap result into the front-cut `{ truncated,
+     * preview }` blob, so the length must stay under the tool's own cap.
+     */
+    const heavy = async (over: {
+        sec: Record<string, unknown>;
+        earningsDate: boolean;
+        dividends: unknown;
+        membershipsKnown: boolean;
+        peKnown: boolean;
+    }) => {
+        getIncomeStatements.mockResolvedValue(
+            Array.from({ length: 8 }, (_, i) => ({
+                ...incomeRow(`2026-0${(i % 9) + 1}-28`, `Q${(i % 4) + 1}`),
+                filingDate: '2026-10-01',
+                revenue: 123_456_789_012,
+                eps: 12.3456,
+                epsDiluted: 12.3456,
+            }))
+        );
+        loadSecQuarters.mockResolvedValue(
+            Array.from({ length: 8 }, (_, i) =>
+                secQuarter({
+                    periodEnd: `2026-0${(i % 9) + 1}-28`,
+                    accn: '0001234567-26-000123',
+                    epsDiluted: 12.3456,
+                    revenue: 123_456_789_012,
+                    revenueYoYPct: -12.34,
+                    ...over.sec,
+                })
+            )
+        );
+        const days = Array.from({ length: 400 }, (_, i) =>
+            new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10)
+        );
+        getCachedBars.mockResolvedValue({
+            bars: days.map((d, i) => ({
+                time: Date.parse(`${d}T00:00:00Z`) / 1000,
+                open: 1,
+                high: 1,
+                low: 1,
+                close: 100 + 37.1234 * Math.sin(i * 0.7123),
+                volume: 1,
+            })),
+            indicators: {},
+        });
+        listReportedEarningsDates.mockResolvedValue(
+            days.filter((_, i) => i % 40 === 20)
+        );
+        getNextEarningsSchedule.mockResolvedValue({
+            symbol: 'AAPL',
+            earningsDate: FMP_DATE,
+            dateConfirmed: null,
+        });
+        getAnalystViews.mockResolvedValue({
+            ...yahooViews(
+                over.earningsDate
+                    ? null
+                    : {
+                          date: FMP_DATE,
+                          isEstimate: false,
+                          session: 'during_market',
+                          callAt: `${FMP_DATE}T22:00:00.000Z`,
+                      }
+            ),
+            targets: {
+                yahoo: {
+                    mean: 276.56,
+                    median: 280,
+                    low: 150,
+                    high: 400,
+                    analysts: 53,
+                },
+                fmp: null,
+                gapPct: 12.94,
+                sourcesDisagree: true,
+            },
+            ratings: {
+                strongBuy: 10,
+                buy: 37,
+                hold: 14,
+                sell: 0,
+                strongSell: 0,
+                analysts: 61,
+                source: 'yahoo',
+            },
+        });
+        fetchDividendSource.mockResolvedValue(over.dividends);
+        loadIndexMemberships.mockResolvedValue(
+            over.membershipsKnown ? MEMBERSHIPS : null
+        );
+        getProvider.mockReturnValue(
+            over.peKnown
+                ? fakeProvider()
+                : fakeProvider({
+                      getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
+                  })
+        );
+        const r = (await run()) as {
+            notes?: string[];
+            recentQuarters: unknown[];
+            earningsReactions: unknown[];
+        };
+        expect(r.recentQuarters).toHaveLength(5);
+        expect(r.earningsReactions).toHaveLength(8);
+        return { notes: r.notes ?? [], size: JSON.stringify(r).length };
+    };
+
+    it('the two notes a US filer carries most often (no confirmed session, a fiscal Q4 row without EPS) on the fully loaded result keep the cap margin', async () => {
+        const { notes, size } = await heavy({
+            sec: { epsDiluted: null },
+            earningsDate: true,
+            dividends: PAYER,
+            membershipsKnown: true,
+            peKnown: true,
+        });
+        expect(notes).toEqual([N.earningsSessionUnknown, N.secFieldMissing]);
+        // Measured 4,755.
+        expect(size).toBeLessThan(4_850);
+    });
+
+    it('the true largest result: every block present, a latest ex-date with no trailing figures, no P/E, no memberships, plus both common notes', async () => {
+        const { notes, size } = await heavy({
+            sec: { epsDiluted: null },
+            earningsDate: true,
+            dividends: TRAILING_UNKNOWN,
+            membershipsKnown: false,
+            peKnown: false,
+        });
+        expect(notes).toEqual([
+            N.earningsSessionUnknown,
+            N.secFieldMissing,
+            N.dividendsTrailingUnknown,
+            N.indexMembershipUnknown,
+            N.peUntrusted,
+        ]);
+        // Measured 5,399: the largest result the tool can make. The cap keeps >1,000 above it.
+        expect(size).toBeLessThan(5_500);
+        expect(size).toBeLessThan(FUNDAMENTALS_RESULT_MAX_CHARS - 1_000);
+    });
+
+    it('every US note at once still ends under the result cap (no truncated envelope)', async () => {
+        const { notes, size } = await heavy({
+            sec: { epsDiluted: null },
+            earningsDate: true,
+            dividends: null,
+            membershipsKnown: false,
+            peKnown: false,
+        });
+        expect(notes).toEqual([
+            N.earningsSessionUnknown,
+            N.secFieldMissing,
+            N.dividendsUnknown,
+            N.indexMembershipUnknown,
+            N.peUntrusted,
+        ]);
+        // Measured 5,166.
+        expect(size).toBeLessThan(5_300);
+        expect(size).toBeLessThan(FUNDAMENTALS_RESULT_MAX_CHARS);
     });
 });
