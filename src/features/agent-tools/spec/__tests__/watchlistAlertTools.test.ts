@@ -14,6 +14,11 @@ import {
 const byName = (name: string) =>
     WATCHLIST_ALERT_TOOLS.find(tool => tool.name === name);
 
+const renderRow = (
+    row: (typeof WATCHLIST_ALERT_ROUTING_ROWS)[number],
+    available: ReadonlySet<string>
+): string => (typeof row.text === 'string' ? row.text : row.text(available));
+
 describe('get_my_watchlist 명세', () => {
     const tool = byName(GET_MY_WATCHLIST_TOOL);
 
@@ -28,7 +33,9 @@ describe('get_my_watchlist 명세', () => {
     });
 
     it('보유 종목과 가르고, 게스트는 login_required로 안내하라고 적는다', () => {
-        expect(tool?.description).toContain('get_my_portfolio');
+        expect(tool?.description).toContain(
+            'These are not holdings: for what they own use the portfolio tool'
+        );
         expect(tool?.description).toContain('login_required');
         expect(tool?.description).toContain(
             'Never rank the list as buy or sell ideas'
@@ -82,7 +89,9 @@ describe('propose_price_alert 명세', () => {
     it('개인 투자 조언 문구가 없다', () => {
         for (const text of [
             tool?.description ?? '',
-            ...WATCHLIST_ALERT_ROUTING_ROWS.map(r => String(r.text)),
+            ...WATCHLIST_ALERT_ROUTING_ROWS.map(row =>
+                renderRow(row, new Set(['get_my_portfolio']))
+            ),
         ]) {
             expect(text).not.toMatch(
                 /\b(buy now|sell now|you should (buy|sell))\b/i
@@ -106,6 +115,45 @@ describe('라우팅 줄과 규칙 줄', () => {
             [GET_MY_WATCHLIST_TOOL],
             [PROPOSE_PRICE_ALERT_TOOL],
         ]);
+    });
+
+    it('각 줄은 화살표가 하나이고, requires에 없는 도구 이름을 쓰지 않는다', () => {
+        const toolName = /\b(?:get|run|show|search|web|propose)_[a-z_]+\b/g;
+        for (const available of [
+            new Set<string>(),
+            new Set(['get_my_portfolio']),
+        ]) {
+            for (const row of WATCHLIST_ALERT_ROUTING_ROWS) {
+                const text = renderRow(row, available);
+                expect(text.match(/→/g)).toHaveLength(1);
+                expect(
+                    [...new Set(text.match(toolName))].filter(
+                        name => !row.requires.includes(name)
+                    )
+                ).toEqual([]);
+            }
+        }
+    });
+
+    it('도구 설명도 자기 이름 말고는 도구 이름을 쓰지 않는다(설명은 가용 목록과 무관한 고정 문자열이다)', () => {
+        const toolName = /\b(?:get|run|show|search|web|propose)_[a-z_]+\b/g;
+        for (const tool of WATCHLIST_ALERT_TOOLS) {
+            expect(
+                [...new Set(tool.description.match(toolName))].filter(
+                    name => name !== tool.name
+                )
+            ).toEqual([]);
+        }
+    });
+
+    it('관심종목 줄은 보유 종목 줄이 있을 때만 보유 종목 질문을 그 줄로 넘긴다', () => {
+        const [watchlist] = WATCHLIST_ALERT_ROUTING_ROWS;
+        const pointer =
+            'Questions about their own holdings or profit/loss are not watchlist questions.';
+        expect(renderRow(watchlist, new Set(['get_my_portfolio']))).toContain(
+            pointer
+        );
+        expect(renderRow(watchlist, new Set())).not.toContain(pointer);
     });
 
     it('규칙 줄은 제안 도구가 있을 때만 있고, 만들었다고 쓰지 말라고 한다', () => {

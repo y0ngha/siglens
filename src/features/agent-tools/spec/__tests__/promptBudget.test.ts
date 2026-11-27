@@ -68,9 +68,17 @@ import { AGENT_TOOL_SPECS, buildAgentSystemPrompt } from './toolSetHarness';
  *   24 alone 71,091); longest description `get_bars_indicators` 6,818. System
  *   prompt budget 59,000 -> 59,500, tool specs budget 71,500 -> 74,500; the
  *   description limit is unchanged.
+ * - 2026-11-28 (WP-23 a5, toolset 2026-11-28.2): `get_cached_analysis` and
+ *   `run_fresh_analysis` each describe the `baseRate` fields of a pattern entry
+ *   (eventShare, placeboShare, n, verdict, pooled) — both, because either tool
+ *   can be available without the other; the watchlist row drops its second
+ *   arrow and the alert row stops naming the analysis tools; the watchlist and
+ *   alert descriptions stop naming other tools. Measured: ko guest 59,063 ->
+ *   59,114, en guest 59,572 -> 59,623; tool specs 74,462 -> 75,339 chars of JSON, so the tool specs budget goes 74,500 -> 75,500; longest
+ *   description `get_bars_indicators` 6,818 (unchanged).
  */
 const SYSTEM_PROMPT_CHAR_BUDGET = 59_500;
-const TOOL_SPECS_JSON_CHAR_BUDGET = 74_500;
+const TOOL_SPECS_JSON_CHAR_BUDGET = 75_500;
 const TOOL_DESCRIPTION_MAX_CHARS = 7_000;
 const FLOOR_SLACK = 2_000;
 
@@ -129,13 +137,6 @@ describe('tool names in the rendered system prompt', () => {
         'get_quote: - Never write internal tool names',
         'get_news: - Never write internal tool names',
         'run_fresh_analysis: - Never write internal tool names',
-        // The watchlist row (siglens, before WP-23) points holdings questions at
-        // get_my_portfolio and requires only get_my_watchlist; the alert row names
-        // the analysis tools and requires only propose_price_alert. Kept byte for
-        // byte in the move; gating them is a tool-text change of its own.
-        'get_my_portfolio: - The user asks about their watchlist',
-        'get_cached_analysis: - The user asks to be alerted',
-        'run_fresh_analysis: - The user asks to be alerted',
     ];
 
     it.each([...specNames])(

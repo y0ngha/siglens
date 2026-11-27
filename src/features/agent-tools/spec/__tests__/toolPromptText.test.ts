@@ -138,19 +138,8 @@ describe('buildAgentSystemPrompt', () => {
             prompt.indexOf('### Which tools to call'),
             prompt.indexOf('### Rules')
         );
-        // 예외 하나: 관심종목 줄(siglens, WP-23 전부터)은 보유 종목 질문을 get_my_portfolio로 돌리는 두 번째 화살표를
-        // 갖는다. 옮기면서 바이트를 지켰고, 줄을 나누는 것은 따로 할 도구 문구 변경이다.
-        const twoArrowRows = ['- The user asks about their watchlist'];
-        for (const line of table
-            .split('\n')
-            .filter(l => l.startsWith('- '))
-            .filter(l => !twoArrowRows.some(start => l.startsWith(start))))
+        for (const line of table.split('\n').filter(l => l.startsWith('- ')))
             expect(line.match(/→/g)?.length ?? 0).toBeLessThanOrEqual(1);
-        expect(
-            table
-                .split('\n')
-                .filter(l => twoArrowRows.some(start => l.startsWith(start)))
-        ).toHaveLength(twoArrowRows.length);
     });
 
     it('전망 질문 행은 두 툴 중 하나만 가용해도 남은 툴로 안내한다', () => {
