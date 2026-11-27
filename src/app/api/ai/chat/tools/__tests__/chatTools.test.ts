@@ -898,6 +898,7 @@ describe('결과 상한 옵션(resultCaps)', () => {
         analystViews: 9_000,
         news: 9_000,
         fundamentals: 9_000,
+        webSearch: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };
@@ -960,6 +961,21 @@ describe('결과 상한 옵션(resultCaps)', () => {
             makeCtx()
         );
         expect(result).toEqual(big(15_000));
+    });
+
+    it('web_search는 standard가 아니라 webSearch 상한을 쓴다', async () => {
+        // 상위 두 결과의 발췌까지 실린 결과가 standard(4,000자) 상한에 잘리면 두 번째 발췌가 미리보기로 무너진다.
+        const { webSearchTool } =
+            await import('@/app/api/ai/chat/tools/webSearch');
+        vi.mocked(webSearchTool).mockResolvedValue(big(8_500));
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'k');
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, webSearch: 9_000 } }
+        );
+        expect(await exec('web_search', { query: 'a' }, makeCtx())).toEqual(
+            big(8_500)
+        );
     });
 
     it('get_economy는 aggregate가 아니라 economy 상한을 쓴다', async () => {
