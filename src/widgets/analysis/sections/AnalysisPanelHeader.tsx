@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * 패널 머리 — 제목·진행 점·추세 배지(왼쪽)와 개인화 배지·분석 시각·리포트 복사·리스크
+ * 패널 머리 — 제목·진행 점·추세 배지(왼쪽)와 개인화 배지·분석 시각·리포트 복사·변동성
  * 등급(오른쪽), 복사 실패 안내.
  */
 import { useTranslations } from 'next-intl';
@@ -20,7 +20,10 @@ const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     high: 'text-ui-danger-text',
 };
 
-/** RiskLevel → `shared.enumLabel.riskLevel` 카탈로그 키. */
+/**
+ * RiskLevel → `shared.enumLabel.riskLevel` 카탈로그 키. 값은 위험이 아니라 가격이 보통 얼마나
+ * 움직이는지(변동성 등급)라서 화면 라벨은 "변동성"이다.
+ */
 const RISK_LEVEL_KEY: Record<RiskLevel, string> = {
     low: 'riskLevel.low',
     medium: 'riskLevel.medium',
@@ -45,7 +48,7 @@ interface AnalysisPanelHeaderProps {
     /** 분석 진행 중(마무리 애니메이션 포함) — 복사 버튼 비활성. */
     isBusy: boolean;
     onCopyReport: () => void;
-    /** false면 리스크 등급을 숨긴다(`partial_detail` 잠금). */
+    /** false면 변동성 등급을 숨긴다(`partial_detail` 잠금). */
     showRiskLevel: boolean;
 }
 
@@ -101,7 +104,7 @@ export function AnalysisPanelHeader({
                     )}
                     {showRiskLevel && (
                         <div className="flex items-center gap-1.5 text-xs whitespace-nowrap text-secondary-400">
-                            <span>{t('AnalysisPanel.720097')}</span>
+                            <span>{t('AnalysisPanel.volatilityLabel')}</span>
                             <span
                                 className={cn(
                                     'font-semibold',

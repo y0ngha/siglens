@@ -60,8 +60,9 @@ export function MailAlertEmailStep({
                 }
                 onSubmit();
             }}
-            className="space-y-3"
+            className="relative space-y-3"
         >
+            {/* 폼이 위치 기준(relative)이라 봇 함정은 어느 조상의 배치와도 무관하게 폼 왼쪽 바깥에 놓인다. */}
             <div
                 aria-hidden="true"
                 className="absolute -left-[9999px] size-px overflow-hidden"

@@ -15,7 +15,7 @@ import {
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import type { KeyedEmailDispatcher } from '@/shared/email/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import {
     createSymbolReportSources,
@@ -32,10 +32,14 @@ import type { EmailReportBatchDeps } from './runEmailReportBatch';
 /** 한 배치가 기억해 두는 일봉 종목 수의 상한. 한 통은 최대 20종목이라 동시에 처리 중인 회원 몇 명분을 담는다. */
 export const DAILY_BARS_MEMO_MAX = 100;
 
-/** 운영 의존성. `now`는 종목 스냅샷의 신선도 판정 기준이다. */
+/**
+ * 운영 의존성. `now`는 종목 스냅샷의 신선도 판정 기준이다. `dispatcher`는 호출자가 넘긴다 — 같은 요청에서
+ * 도는 알림 메일 패스와 한 인스턴스를 공유해 두 패스의 발송 속도를 함께 묶는다.
+ */
 export function createEmailReportDeps(
     secret: string,
-    now: Date
+    now: Date,
+    dispatcher: KeyedEmailDispatcher
 ): EmailReportBatchDeps {
     const { db } = getDatabaseClient();
     const portfolio = new DrizzlePortfolioRepository(db);
@@ -81,7 +85,7 @@ export function createEmailReportDeps(
         getTranslator: getReportEmailTranslator,
         getSignalLabel: getReportSignalLabelResolver,
         getSkillLabel: getReportSkillLabelResolver,
-        dispatcher: createEmailDispatcher(),
+        dispatcher,
         secret,
         siteUrl: SITE_URL,
     };

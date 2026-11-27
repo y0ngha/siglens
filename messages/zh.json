@@ -822,6 +822,28 @@
                 "ignore": "若非本人操作，请忽略此邮件。",
                 "intro": "请输入下方验证码以完成提醒邮件订阅。",
                 "subject": "[{v0}] 提醒邮件验证码"
+            },
+            "email": {
+                "change": "涨跌幅 {v0}",
+                "fearGreedRow": "{v0}恐惧与贪婪指数进入了{v1}。截至{v2}收盘为{v3}分。",
+                "heading": "新出现的变化",
+                "intro": "仅汇总收盘后新出现的变化。",
+                "manage": "提醒邮件设置",
+                "marketCrypto": "加密货币",
+                "marketKr": "韩国",
+                "marketUs": "美国",
+                "moreRows": "另有{v0}只个股",
+                "reason": "您申请了{v0}提醒邮件，因此收到这封邮件。仅在有新消息的日子发送。",
+                "sectionFearGreed": "恐惧与贪婪指数",
+                "sectionHub": "新出现的{v0}个股",
+                "sectionMine": "您关注的股票出现的新信号",
+                "sessionKr": "韩国市场 截至{v0}收盘",
+                "sessionUs": "美国市场 截至{v0}收盘",
+                "subject": "[{v0}] {v1}新出现的变化 {v2}项",
+                "unsubscribe": "退订",
+                "viewFearGreed": "查看恐惧与贪婪指数",
+                "zoneExtremeFear": "极度恐惧",
+                "zoneExtremeGreed": "极度贪婪"
             }
         }
     },
@@ -1404,8 +1426,8 @@
             "allStopped": "已停止接收所有提醒邮件，并已删除订阅信息和发送记录。",
             "button": "通过邮件接收",
             "cancel": "取消",
-            "cardFearGreed": "指数进入极度恐惧或极度贪婪的当天早晨，我们会通过邮件通知您",
-            "cardFearGreedMarket": "{market}恐惧与贪婪指数进入极度恐惧或极度贪婪的当天早晨，我们会通过邮件通知您",
+            "cardFearGreed": "指数进入极度恐惧或极度贪婪时，我们会在分数确定后的韩国时间早晨通过邮件通知您",
+            "cardFearGreedMarket": "{market}恐惧与贪婪指数进入极度恐惧或极度贪婪时，我们会在分数确定后的韩国时间早晨通过邮件通知您",
             "cardSignalHub": "每天早晨通过邮件接收新出现的{hubName}个股",
             "changeEmail": "更换邮箱",
             "close": "关闭",
@@ -1421,7 +1443,7 @@
             "errTooMany": "错误次数过多，请重新获取验证码。",
             "errUnavailable": "目前无法订阅，请稍后再试。",
             "errWrongCode": "验证码不正确。",
-            "fearGreedRule": "当分数跌破{fear}分进入极度恐惧，或升至{greed}分以上进入极度贪婪的当天通知您。离开该区间后{gap}个交易日内再次进入的，不会重复通知。",
+            "fearGreedRule": "当分数跌破{fear}分进入极度恐惧，或升至{greed}分以上进入极度贪婪时通知您。离开该区间后{gap}个交易日内再次进入的，不会重复通知。",
             "includePortfolio": "同时接收持仓和自选股的新信号",
             "known": "正在向{email}发送。",
             "loading": "加载中",
@@ -1447,7 +1469,7 @@
             "stopAllYes": "是，全部停止",
             "stopped": "已停止接收。",
             "subscribed": "已在订阅。",
-            "successGuest": "已订阅。有新消息的日子，我们会在早晨发送到{email}。",
+            "successGuest": "已订阅。有新消息时，我们会在韩国时间早晨发送到{email}。",
             "successSignup": "成为会员后，可一次性接收自选股的全部提醒。",
             "titleFearGreed": "{market}恐惧与贪婪指数进入极端区间时，我们会通过邮件通知您",
             "titleSignalHub": "我们会通过邮件通知您新出现的{hubName}个股",
@@ -1758,16 +1780,6 @@
                 "count": "件",
                 "percentagePoint": "个百分点",
                 "thousandPeople": "千人"
-            },
-            "entryRecommendation": {
-                "avoid": "暂缓入场",
-                "enter": "现在入场",
-                "wait": "观望"
-            },
-            "entryStance": {
-                "avoid": "相比激进操作，此区间应优先考虑保守管理和仓位控制。",
-                "enter": "确认关键支撑位后，可以考虑分批建仓。",
-                "wait": "在趋势重新确认之前，观望更为合适。"
             },
             "fearGreed": {
                 "extremeFear": "极度恐惧",
@@ -3753,7 +3765,6 @@
         "analysis": {
             "AnalysisPanel": {
                 "251228": "关键价格水平",
-                "720097": "风险",
                 "034be7": "交易策略",
                 "06c8ed": "图表",
                 "0b5eb6": "趋势线",
@@ -3785,13 +3796,13 @@
                 "e5c85b": "已复制",
                 "e815ab": "复制失败",
                 "ecb4cc": "注册",
-                "edb872": "入场建议",
                 "f0256c": "注册即可获得应用所有分析方法的详细分析。",
                 "f0cdeb": "AI 分析",
                 "fb0cf0": "关键价格",
                 "bcc718": "在图表中查看",
                 "f66b28": "在图表中查看{v0}",
-                "currentTrend": "当前趋势：{v0}"
+                "currentTrend": "当前趋势：{v0}",
+                "volatilityLabel": "波动率"
             },
             "AnalysisProgress": {
                 "784c44": "AI 分析进行中"
@@ -3835,11 +3846,18 @@
                 "levelConvergence": "，{v0}项依据收敛",
                 "levelsResistance": "- 阻力：{v0}",
                 "levelsSupport": "- 支撑：{v0}",
+                "planAboveZone": "现价高于入场区间。",
+                "planBelowZone": "现价低于入场区间。",
+                "planInZone": "现价位于入场区间内。",
+                "planNoSetupNoRoomAbove": "入场区间上方没有足够远的目标价，因此暂无可依据的价位。",
+                "planNoSetupNoStop": "无法确定止损位，因此暂无可依据的价位。",
+                "planNoSetupNoZone": "没有入场区间，因此暂无可依据的价位。",
+                "planNoSetupStopped": "现价已低于止损位，因此暂无可依据的价位。",
                 "reportTitle": "[{v0}] 技术分析报告",
                 "resistanceNote": "上方需要重点确认{v0}附近的阻力。",
                 "responseStance": "应对视角：",
                 "riskHigh": "需要优先考虑波动率扩大的可能性。",
-                "riskLabel": "风险：",
+                "riskLabel": "波动率：",
                 "riskLow": "要维持当前解读，需要确认关键支撑与阻力。",
                 "riskMedium": "关键价位是否被跌破，会让解读迅速改变。",
                 "scenarioHeading": "情景：",
@@ -3849,7 +3867,7 @@
                 "stanceNeutral": "从应对角度看，在方向重新确认之前，以确认为先的做法更合适。",
                 "supportNote": "下方的关键在于{v0}附近的支撑能否守住。",
                 "targetZone": "- 参考目标区间：{v0}",
-                "trendSummary": "当前走势在{v0}中被解读为{v1}，风险为{v2}水平。",
+                "trendSummary": "当前走势在{v0}中被解读为{v1}，波动率为{v2}水平。",
                 "upside": "- 上行：{v0} → {v1}"
             },
             "panel": {
@@ -4135,6 +4153,18 @@
                 "planVoidDescription": "分析时的收盘价已低于该价格。",
                 "trendHeadline": "<prefix>当前趋势：</prefix><value>{v0}</value>",
                 "analyzedAt": "分析时间"
+            },
+            "planState": {
+                "aboveZone": "高于入场区间",
+                "belowZone": "低于入场区间",
+                "inZone": "在入场区间内",
+                "label": "计划状态",
+                "noSetup": "暂无可依据的价位",
+                "reasonNoRoomAbove": "入场区间上方没有足够远的目标价",
+                "reasonNoStop": "无法确定止损位",
+                "reasonNoZone": "没有入场区间",
+                "reasonStopped": "现价已低于止损位",
+                "stopAtr": "止损按波动幅度(ATR)而非价位设定"
             }
         },
         "backtesting": {

@@ -25,6 +25,7 @@ import type {
     ClusteredKeyLevels,
     CycleReading,
     IndicatorReading,
+    PlanState,
 } from '@y0ngha/siglens-core';
 
 // t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
@@ -113,6 +114,13 @@ describe('buildExpertAnalysisReport', () => {
             riskReward:
                 '저항 돌파 전까지는 손익비가 급격히 좋아지는 구간은 아닙니다.',
             entryRecommendation: 'wait',
+            planState: {
+                position: 'above_zone',
+                distanceAtr: 1.2,
+                atr: 2,
+                stopDistanceAtr: 1.1,
+                stopBasis: 'model',
+            },
             entryPrices: [205.8, 202.1],
             stopLoss: 199.4,
             takeProfitPrices: [212.5, 218.3],
@@ -160,7 +168,7 @@ describe('buildExpertAnalysisReport', () => {
         });
 
         expect(result).toContain('[AAPL] 기술적 분석 리포트');
-        expect(result).toContain('리스크는 보통 수준입니다.');
+        expect(result).toContain('변동성은 보통 수준입니다.');
         expect(result).toContain('212.50');
         expect(result).toContain('205.80');
         expect(result).toContain('207.25');
@@ -169,9 +177,8 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('Breakout');
         expect(result).toContain('시나리오:');
         expect(result).toContain('대응 관점:');
-        expect(result).toContain(
-            '추세를 다시 확인할 때까지는 지켜보는 편이 낫습니다.'
-        );
+        expect(result).toContain('현재가가 진입 구간보다 위에 있습니다.');
+        expect(result).toContain('변동성:');
     });
 
     it('한국 종목은 가격을 호가 단위 정수로 싣는다(소수점 없음)', () => {
@@ -314,54 +321,90 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('지지 확인 이후의 분할 접근 여부를 검토');
     });
 
-    it('entryRecommendation "enter" produces enter stance', () => {
-        const enterAnalysis: AnalysisResponse = {
+    const withPlanState = (planState: PlanState): AnalysisResponse => ({
+        ...baseAnalysis,
+        actionRecommendation: {
+            ...baseAnalysis.actionRecommendation!,
+            planState,
+        },
+    });
+
+    const stanceFor = (planState: PlanState): string =>
+        buildExpertAnalysisReport({
+            tReport,
+            symbol: 'aapl',
+            analysis: withPlanState(planState),
+            keyLevels: baseKeyLevels,
+            t,
+            skillLabel,
+            readingContext,
+        });
+
+    const base = {
+        atr: 2,
+        stopDistanceAtr: 1.1,
+        stopBasis: 'model',
+    } as const;
+
+    it.each([
+        ['in_zone', '현재가가 진입 구간 안에 있습니다.'],
+        ['above_zone', '현재가가 진입 구간보다 위에 있습니다.'],
+        ['below_zone', '현재가가 진입 구간보다 아래에 있습니다.'],
+    ] as const)(
+        'planState %s writes its own stance sentence',
+        (position, sentence) => {
+            expect(
+                stanceFor({ ...base, position, distanceAtr: 0.5 })
+            ).toContain(sentence);
+        }
+    );
+
+    it.each([
+        ['no_zone', '진입 구간이 없어 근거 있는 자리가 없습니다.'],
+        ['no_stop', '손절 기준을 정할 수 없어 근거 있는 자리가 없습니다.'],
+        [
+            'stopped',
+            '현재가가 손절 기준 아래에 있어 근거 있는 자리가 없습니다.',
+        ],
+        [
+            'no_room_above',
+            '진입 구간 위로 여유 있는 목표가가 없어 근거 있는 자리가 없습니다.',
+        ],
+    ] as const)(
+        'no_setup reason %s writes its own sentence',
+        (reason, sentence) => {
+            expect(
+                stanceFor({ ...base, position: 'no_setup', reason })
+            ).toContain(sentence);
+        }
+    );
+
+    it('a stored verdict without planState no longer writes a verdict stance', () => {
+        const oldResult: AnalysisResponse = {
             ...baseAnalysis,
+            trend: 'bearish',
             actionRecommendation: {
                 ...baseAnalysis.actionRecommendation!,
                 entryRecommendation: 'enter',
+                planState: undefined,
             },
         };
 
         const result = buildExpertAnalysisReport({
             tReport,
             symbol: 'aapl',
-            analysis: enterAnalysis,
+            analysis: oldResult,
             keyLevels: baseKeyLevels,
             t,
             skillLabel,
             readingContext,
         });
 
-        expect(result).toContain(
+        expect(result).not.toContain(
             '핵심 지지선을 확인한 뒤 나눠서 진입하는 방안을 검토해 볼 수 있습니다.'
         );
-    });
-
-    it('entryRecommendation "avoid" produces avoid stance', () => {
-        const avoidAnalysis: AnalysisResponse = {
-            ...baseAnalysis,
-            actionRecommendation: {
-                ...baseAnalysis.actionRecommendation!,
-                entryRecommendation: 'avoid',
-                entryPrices: [],
-                stopLoss: undefined,
-            },
-        };
-
-        const result = buildExpertAnalysisReport({
-            tReport,
-            symbol: 'aapl',
-            analysis: avoidAnalysis,
-            keyLevels: baseKeyLevels,
-            t,
-            skillLabel,
-            readingContext,
-        });
-
-        expect(result).toContain(
-            '무리하게 대응하기보다 비중을 점검하며 보수적으로 관리할 구간입니다.'
-        );
+        expect(result).not.toContain('현재가가 진입 구간');
+        expect(result).toContain('저항 확인 전까지 보수적 관리');
     });
 
     it('includes target reference prices when takeProfitPrices are present', () => {
@@ -570,7 +613,7 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('진입 참고 구간: 205.80');
         expect(result).not.toContain('0.00, 205.80');
     });
-    it('core가 레벨을 보정했으면 리스크 블록에 보정된 손익비를 싣는다', () => {
+    it('core가 레벨을 보정했으면 변동성 블록에 보정된 손익비를 싣는다', () => {
         // 원본 riskReward는 core가 거부한 손절·목표 기준이라, 같은 리포트의
         // 핵심 레벨 블록(보정값)과 모순된다.
         const analysis: AnalysisResponse = {

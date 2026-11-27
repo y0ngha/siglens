@@ -20,11 +20,19 @@ vi.mock('@/app/api/cron/email-report/createEmailReportDeps', () => ({
 vi.mock('@/app/api/cron/email-report/runEmailReportBatch', () => ({
     runEmailReportBatch: vi.fn(),
 }));
+vi.mock('@/shared/email/dispatcher', () => ({
+    createEmailDispatcher: vi.fn(() => ({ sendEmail: vi.fn() })),
+}));
+vi.mock('@/app/api/cron/mail-alert/scheduleMailAlertPass', () => ({
+    scheduleMailAlertPass: vi.fn(),
+}));
 
 import { PATCH } from '@/app/api/cron/email-report/route';
 import { createEmailReportDeps } from '@/app/api/cron/email-report/createEmailReportDeps';
 import { runEmailReportBatch } from '@/app/api/cron/email-report/runEmailReportBatch';
+import { scheduleMailAlertPass } from '@/app/api/cron/mail-alert/scheduleMailAlertPass';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
+import { ThrottledEmailDispatcher } from '@/shared/email/ThrottledEmailDispatcher';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 
 const request = () =>
@@ -59,6 +67,7 @@ describe('PATCH /api/cron/email-report', () => {
 
         expect(res.status).toBe(202);
         expect(afterTasks).toHaveLength(0);
+        expect(scheduleMailAlertPass).not.toHaveBeenCalled();
     });
 
     it('202를 먼저 돌려주고 같은 시각으로 배치를 돌린다', async () => {
@@ -69,7 +78,42 @@ describe('PATCH /api/cron/email-report', () => {
         await afterTasks[0]!();
         const [deps, now] = vi.mocked(runEmailReportBatch).mock.calls[0]!;
         expect(deps).toEqual({ marker: 'deps' });
-        expect(createEmailReportDeps).toHaveBeenCalledWith('s'.repeat(40), now);
+        expect(createEmailReportDeps).toHaveBeenCalledWith(
+            's'.repeat(40),
+            now,
+            expect.any(ThrottledEmailDispatcher)
+        );
+    });
+
+    it('메일 리포트와 알림 메일 두 패스가 같은 시각·같은 발송기로 시작한다', async () => {
+        await PATCH(request());
+
+        const alertCall = vi.mocked(scheduleMailAlertPass).mock.lastCall?.[0];
+        await afterTasks[0]?.();
+        const reportNow = vi.mocked(runEmailReportBatch).mock.lastCall?.[1];
+        const reportDispatcher = vi
+            .mocked(createEmailReportDeps)
+            .mock.calls.find(([secret]) => secret === 's'.repeat(40))?.[2];
+        expect(scheduleMailAlertPass).toHaveBeenCalledTimes(1);
+        expect(alertCall?.now).toBe(reportNow);
+        expect(alertCall?.dispatcher).toBe(reportDispatcher);
+    });
+
+    it('알림 패스 예약이 던져도 202를 돌려주고 메일 리포트 패스는 그대로 돈다', async () => {
+        vi.mocked(scheduleMailAlertPass).mockImplementation(() => {
+            throw new Error('not in a request scope');
+        });
+
+        const res = await PATCH(request());
+
+        expect(res.status).toBe(202);
+        expect(afterTasks).toHaveLength(1);
+        await afterTasks[0]?.();
+        expect(runEmailReportBatch).toHaveBeenCalledTimes(1);
+        expect(console.error).toHaveBeenCalledWith(
+            '[mail-alert] could not schedule pass:',
+            expect.anything()
+        );
     });
 
     it('배치가 던져도 after 작업은 삼킨다', async () => {

@@ -1,13 +1,15 @@
 /**
  * 분석 결과 → 복사용 전문가 리포트 텍스트 빌더. 섹션(해석·핵심 레벨·근거·시나리오·
- * 대응·리스크)별 헬퍼가 문자열을 만들고 진입점이 이어 붙인다.
+ * 대응·변동성)별 헬퍼가 문자열을 만들고 진입점이 이어 붙인다.
  */
 import type {
     AnalysisResponse,
     ClusteredKeyLevel,
     ClusteredKeyLevels,
-    EntryRecommendation,
     KrxTickTable,
+    NoSetupReason,
+    PlanPosition,
+    PlanState,
     PriceScenario,
     RiskLevel,
     Trend,
@@ -77,18 +79,36 @@ const RISK_LABEL_KEY: Record<RiskLevel, string> = {
     high: 'riskLevel.high',
 };
 
-/** RiskLevel → `widgets.analysis.expertReport` 리스크 문장 키. */
+/** RiskLevel → `widgets.analysis.expertReport` 변동성 문장 키. */
 const RISK_NOTE_KEY: Record<RiskLevel, string> = {
     high: 'riskHigh',
     medium: 'riskMedium',
     low: 'riskLow',
 };
 
-const ENTRY_STANCE_KEY: Record<EntryRecommendation, string> = {
-    enter: 'entryStance.enter',
-    wait: 'entryStance.wait',
-    avoid: 'entryStance.avoid',
+/**
+ * core `planState`를 `widgets.analysis.expertReport` 문장 키로 옮긴다. `no_setup`은 사유마다
+ * 문장 하나다(조각을 이어 붙이지 않는다, I18-14).
+ */
+const PLAN_POSITION_KEY: Record<Exclude<PlanPosition, 'no_setup'>, string> = {
+    in_zone: 'planInZone',
+    above_zone: 'planAboveZone',
+    below_zone: 'planBelowZone',
 };
+
+const PLAN_NO_SETUP_KEY: Record<NoSetupReason, string> = {
+    no_zone: 'planNoSetupNoZone',
+    no_stop: 'planNoSetupNoStop',
+    stopped: 'planNoSetupStopped',
+    no_room_above: 'planNoSetupNoRoomAbove',
+};
+
+function planStateStanceKey(planState: PlanState): string {
+    if (planState.position !== 'no_setup') {
+        return PLAN_POSITION_KEY[planState.position];
+    }
+    return PLAN_NO_SETUP_KEY[planState.reason];
+}
 
 function normalizeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
@@ -322,15 +342,16 @@ function buildResponseStance(
     analysis: AnalysisResponse,
     keyLevels: ClusteredKeyLevels,
     effectiveLevels: EffectiveActionLevels,
-    t: EnumLabelTranslator,
     tReport: ReportTranslator,
     formatPrice: ReportPriceFormatter
 ): string {
     const { actionRecommendation } = analysis;
 
-    if (actionRecommendation?.entryRecommendation !== undefined) {
-        const base = t(
-            ENTRY_STANCE_KEY[actionRecommendation.entryRecommendation]
+    // 판정(`entryRecommendation`)이 아니라 계획 상태로 쓴다. `planState`가 없는 옛 결과는
+    // 아래 추세 기반 문장으로 내려가, 이전 판정 문구가 되살아나지 않는다.
+    if (actionRecommendation?.planState !== undefined) {
+        const base = tReport(
+            planStateStanceKey(actionRecommendation.planState)
         );
         const entryAnchor = effectiveLevels.entryPrices?.length
             ? tReport('entryAnchor', {
@@ -362,7 +383,7 @@ function buildResponseStance(
     return tReport('stanceNeutral');
 }
 
-/** 리스크 블록 — 리스크 등급 문장 뒤에 실효 손익비를 붙인다. */
+/** 변동성 블록 — 변동성 등급 문장 뒤에 실효 손익비를 붙인다. */
 function buildRiskNote(
     analysis: AnalysisResponse,
     tReport: ReportTranslator
@@ -443,7 +464,7 @@ export function buildExpertAnalysisReport({
         buildEvidenceBlock(analysis, tReport, skillLabel, readingContext),
         buildScenarioBlock(analysis, tReport, formatPrice),
         `${tReport('responseStance')}
-${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport, formatPrice)}`,
+${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, tReport, formatPrice)}`,
         `${tReport('riskLabel')}
 ${buildRiskNote(analysis, tReport)}`,
         tReport('source', { v0: symbol }),

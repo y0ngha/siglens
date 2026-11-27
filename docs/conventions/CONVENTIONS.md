@@ -546,9 +546,10 @@ geometry, time conversions, numbers) matches reality when written and after ever
   loader lists which callers moved and which keep their own path. A JSDoc describes only its own unit (a reducer's doc
   claims no rendering, a view's doc no state-transition rules). A count or policy value another constant or file owns
   (`TABS.length`, a TTL) is pointed at, not restated.
-- **Re-read on every change.** When a function's processing order, workload, input, data source, location, caching or
-  name changes, or it is split, moved, replaced or deleted (a comment naming a test or guard that was replaced
-  promises protection that is gone), grep the old name, its concept and paraphrases repo-wide (`src/`,
+- **Re-read on every change.** When a function's processing order, workload, input, data source, location, caching,
+  name or user-facing label (a relabelled concept) changes, or it is split, moved, replaced or deleted (a comment
+  naming a test or guard that was replaced promises protection that is gone), grep the old name, its concept and
+  paraphrases repo-wide (`src/`,
   `e2e/`, `docs/`; CS-8) and update in the same change the comments, JSDoc, test names, sibling test comments ("in
   the same module"), class- or module-level summaries and sibling files, route and public docs, and the header doc of
   every touched file, including the one that holds the change. This covers a reversed layout contract, a setup, config
@@ -869,7 +870,7 @@ store found during the revision that was never disclosed (user-supplied keys, ba
 numbers (attempt caps, TTLs, windows) published there are pinned by a guard reading code constants (durations:
 `privacyRetention.test.ts`; caps: `*Privacy.test.ts`), not test literals.
 
-- Copy never promises a delivery or effect some users skip (gate it on the real state or word it conditionally), names
+- Copy never promises a delivery or effect some users skip, or a delivery timing the schedule never meets (gate it on the real state or word it conditionally; pin the real lag with a test), names
   a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it
   (a filing proves "filed", not "in progress"). A timing promise ("right away") is checked against the path's real
   latency (a cron cadence is not instant) in every locale's copy. A heading or label that groups items holds for every item under it (a non-holding comparison is not listed under "holding strategies").

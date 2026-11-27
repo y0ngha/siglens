@@ -1,31 +1,17 @@
 'use client';
 
 /**
- * 매매 전략 섹션 — 진입 판단 배지, 포지션·진입·청산·손익비 문단, 보정 레벨, 계획 점검.
+ * 매매 전략 섹션 — 계획 상태 배지, 포지션·진입·청산·손익비 문단, 보정 레벨, 계획 점검.
  */
 import { useTranslations } from 'next-intl';
-import type {
-    ActionRecommendation,
-    EntryRecommendation,
-} from '@y0ngha/siglens-core';
+import type { ActionRecommendation } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PlanCheckBlock } from '../PlanCheckBlock';
+import { PlanStateBadge } from '../ui/PlanStateBadge';
 import { ReconciledLevelsBlock } from '../ui/ReconciledLevelsBlock';
-
-const ENTRY_RECOMMENDATION_LABEL: Record<EntryRecommendation, string> = {
-    enter: 'entryRecommendation.enter',
-    wait: 'entryRecommendation.wait',
-    avoid: 'entryRecommendation.avoid',
-};
-
-const ENTRY_RECOMMENDATION_COLOR: Record<EntryRecommendation, string> = {
-    enter: 'bg-chart-bullish/10 text-ui-success-text border border-chart-bullish/30',
-    wait: 'bg-ui-warning/10 text-ui-warning-text border border-ui-warning/30',
-    avoid: 'bg-chart-bearish/10 text-ui-danger-text border border-chart-bearish/30',
-};
 
 type ActionRecommendationTextKey =
     | 'positionAnalysis'
@@ -64,26 +50,9 @@ export function ActionRecommendationSection({
 }: ActionRecommendationSectionProps) {
     const t = useTranslations('widgets.analysis');
     const tSection = useTranslations('widgets.analysis.sectionLabel');
-    const tLabel = useTranslations('shared.enumLabel');
     return (
         <div className="flex flex-col gap-2 rounded-lg bg-secondary-700/30 p-3">
-            {rec.entryRecommendation !== undefined && (
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-secondary-500">
-                        {t('AnalysisPanel.edb872')}
-                    </span>
-                    <span
-                        className={cn(
-                            'rounded px-2 py-0.5 text-xs font-semibold',
-                            ENTRY_RECOMMENDATION_COLOR[rec.entryRecommendation]
-                        )}
-                    >
-                        {tLabel(
-                            ENTRY_RECOMMENDATION_LABEL[rec.entryRecommendation]
-                        )}
-                    </span>
-                </div>
-            )}
+            <PlanStateBadge planState={rec.planState} />
             <div className="flex items-center justify-between">
                 <span className={LABEL_KO}>{t('AnalysisPanel.034be7')}</span>
                 {onToggleChart !== undefined && (

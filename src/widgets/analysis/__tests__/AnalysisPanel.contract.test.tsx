@@ -190,6 +190,13 @@ function makeFullAnalysis(): AnalysisResponse {
             exit: '235 도달 시 분할 청산을 권장합니다.',
             riskReward: '손익비 약 1:2.5 구간입니다.',
             entryRecommendation: 'wait',
+            planState: {
+                position: 'above_zone',
+                distanceAtr: 1.2,
+                atr: 2,
+                stopDistanceAtr: 1.1,
+                stopBasis: 'model',
+            },
             entryPrices: [200, 205],
             stopLoss: 192,
             takeProfitPrices: [225, 235],
@@ -272,9 +279,9 @@ describe('AnalysisPanel — core output contract', () => {
         expect(screen.getByText('전략')).toBeInTheDocument();
         expect(screen.getByText('브레이크아웃 전략')).toBeInTheDocument();
 
-        // 매매 전략(ActionRecommendation) + 진입 의견 라벨.
+        // 매매 전략(ActionRecommendation) + 계획 상태 배지.
         expect(screen.getByText('매매 전략')).toBeInTheDocument();
-        expect(screen.getByText('관망')).toBeInTheDocument();
+        expect(screen.getByText('진입 구간보다 위')).toBeInTheDocument();
     });
 
     it('expands a detected pattern accordion to reveal its key prices', () => {

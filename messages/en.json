@@ -822,6 +822,28 @@
                 "ignore": "If you did not request this, please ignore this email.",
                 "intro": "Enter the code below to finish signing up for alert emails.",
                 "subject": "[{v0}] Alert email verification code"
+            },
+            "email": {
+                "change": "Change {v0}",
+                "fearGreedRow": "The {v0} Fear & Greed Index entered {v1}. It is {v3} points as of the {v2} close.",
+                "heading": "New changes",
+                "intro": "Only the changes newly detected after the market closes.",
+                "manage": "Alert email settings",
+                "marketCrypto": "Crypto",
+                "marketKr": "Korean",
+                "marketUs": "US",
+                "moreRows": "and {v0} more",
+                "reason": "You are receiving this email because you signed up for {v0} alert emails. We only send it on days with something new.",
+                "sectionFearGreed": "Fear & Greed Index",
+                "sectionHub": "Newly detected {v0} stocks",
+                "sectionMine": "New signals on your stocks",
+                "sessionKr": "Korean market, as of the {v0} close",
+                "sessionUs": "US market, as of the {v0} close",
+                "subject": "[{v0}] {v1}: {v2, plural, one {# new change} other {# new changes}}",
+                "unsubscribe": "Unsubscribe",
+                "viewFearGreed": "View the Fear & Greed Index",
+                "zoneExtremeFear": "Extreme Fear",
+                "zoneExtremeGreed": "Extreme Greed"
             }
         }
     },
@@ -1404,8 +1426,8 @@
             "allStopped": "You will no longer receive alert emails. We deleted your sign-up details and delivery history.",
             "button": "Get by email",
             "cancel": "Cancel",
-            "cardFearGreed": "Get an email in the morning when the index enters Extreme Fear or Extreme Greed",
-            "cardFearGreedMarket": "Get an email in the morning when the {market} Fear & Greed Index enters Extreme Fear or Extreme Greed",
+            "cardFearGreed": "When the index enters Extreme Fear or Extreme Greed, get an email in the morning (Korea time) after the score is final",
+            "cardFearGreedMarket": "When the {market} Fear & Greed Index enters Extreme Fear or Extreme Greed, get an email in the morning (Korea time) after the score is final",
             "cardSignalHub": "Get newly detected {hubName} stocks by email in the morning",
             "changeEmail": "Change email",
             "close": "Close",
@@ -1421,7 +1443,7 @@
             "errTooMany": "Too many wrong attempts. Please request a new code.",
             "errUnavailable": "We cannot take requests right now. Please try again shortly.",
             "errWrongCode": "That code does not match.",
-            "fearGreedRule": "We notify you on the day the score falls below {fear} and enters Extreme Fear, or rises to {greed} or above and enters Extreme Greed. If the index leaves the zone and re-enters within {gap} trading days, we do not notify you again.",
+            "fearGreedRule": "We notify you when the score falls below {fear} and enters Extreme Fear, or rises to {greed} or above and enters Extreme Greed. If the index leaves the zone and re-enters within {gap} trading days, we do not notify you again.",
             "includePortfolio": "Also receive new signals for my holdings and watchlist",
             "known": "You are receiving alerts at {email}.",
             "loading": "Loading",
@@ -1447,7 +1469,7 @@
             "stopAllYes": "Yes, stop all",
             "stopped": "You have stopped receiving this.",
             "subscribed": "You are already receiving this.",
-            "successGuest": "You are subscribed. On days with something new, we will email {email} in the morning.",
+            "successGuest": "You are subscribed. When there is something new, we will email {email} in the morning (Korea time).",
             "successSignup": "Members can receive alerts for their whole watchlist at once.",
             "titleFearGreed": "We'll email you when the {market} Fear & Greed Index enters an extreme zone",
             "titleSignalHub": "We'll email you the newly detected {hubName} stocks",
@@ -1758,16 +1780,6 @@
                 "count": " claims",
                 "percentagePoint": "pp",
                 "thousandPeople": "K"
-            },
-            "entryRecommendation": {
-                "avoid": "Hold off",
-                "enter": "Enter now",
-                "wait": "Wait"
-            },
-            "entryStance": {
-                "avoid": "Conservative risk management and position sizing take priority over aggressive moves in this zone.",
-                "enter": "A phased entry may be worth considering once key support is confirmed.",
-                "wait": "A wait-and-see stance is more appropriate until the trend is reconfirmed."
             },
             "fearGreed": {
                 "extremeFear": "Extreme Fear",
@@ -3753,7 +3765,6 @@
         "analysis": {
             "AnalysisPanel": {
                 "251228": "Key Price Levels",
-                "720097": "Risk",
                 "034be7": "Trading Strategy",
                 "06c8ed": "Chart",
                 "0b5eb6": "Trendline",
@@ -3785,13 +3796,13 @@
                 "e5c85b": "Copied",
                 "e815ab": "Copy Failed",
                 "ecb4cc": "Sign Up",
-                "edb872": "Entry Opinion",
                 "f0256c": "Sign up to receive detailed analysis with all analysis techniques applied.",
                 "f0cdeb": "AI Analysis",
                 "fb0cf0": "Key Prices",
                 "bcc718": "View on Chart",
                 "f66b28": "View {v0} on chart",
-                "currentTrend": "Current trend: {v0}"
+                "currentTrend": "Current trend: {v0}",
+                "volatilityLabel": "Volatility"
             },
             "AnalysisProgress": {
                 "784c44": "AI Analysis in Progress"
@@ -3835,11 +3846,18 @@
                 "levelConvergence": ", {v0} converging reasons",
                 "levelsResistance": "- Resistance: {v0}",
                 "levelsSupport": "- Support: {v0}",
+                "planAboveZone": "The current price is above the entry zone.",
+                "planBelowZone": "The current price is below the entry zone.",
+                "planInZone": "The current price is inside the entry zone.",
+                "planNoSetupNoRoomAbove": "No target sits far enough above the entry zone, so there is no level to plan from.",
+                "planNoSetupNoStop": "A stop loss level cannot be set, so there is no level to plan from.",
+                "planNoSetupNoZone": "There is no entry zone, so there is no level to plan from.",
+                "planNoSetupStopped": "The current price is below the stop loss level, so there is no level to plan from.",
                 "reportTitle": "[{v0}] Technical analysis report",
                 "resistanceNote": "On the upside, confirming resistance around {v0} matters.",
                 "responseStance": "How to respond:",
                 "riskHigh": "Keep the possibility of widening volatility front of mind.",
-                "riskLabel": "Risk:",
+                "riskLabel": "Volatility:",
                 "riskLow": "For the current reading to hold, key support and resistance need to confirm.",
                 "riskMedium": "The reading can change quickly depending on whether key levels break.",
                 "scenarioHeading": "Scenarios:",
@@ -3849,7 +3867,7 @@
                 "stanceNeutral": "In terms of response, a confirmation-first approach fits until direction is re-established.",
                 "supportNote": "On the downside, whether support around {v0} holds is the key.",
                 "targetZone": "- Reference target zone: {v0}",
-                "trendSummary": "The current move reads as {v1} within a {v0} trend, with {v2} risk.",
+                "trendSummary": "The current move reads as {v1} within a {v0} trend, with {v2} volatility.",
                 "upside": "- Upside: {v0} → {v1}"
             },
             "panel": {
@@ -4135,6 +4153,18 @@
                 "planVoidDescription": "At the time of analysis, the closing price was already below this price.",
                 "trendHeadline": "<prefix>Current trend:</prefix> <value>{v0}</value>",
                 "analyzedAt": "Analysis time"
+            },
+            "planState": {
+                "aboveZone": "Above the entry zone",
+                "belowZone": "Below the entry zone",
+                "inZone": "Inside the entry zone",
+                "label": "Plan status",
+                "noSetup": "No level to plan from",
+                "reasonNoRoomAbove": "No target sits far enough above the entry zone",
+                "reasonNoStop": "A stop loss level cannot be set",
+                "reasonNoZone": "There is no entry zone",
+                "reasonStopped": "The current price is below the stop loss level",
+                "stopAtr": "The stop loss is based on price range (ATR), not on a price level"
             }
         },
         "backtesting": {
