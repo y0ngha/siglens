@@ -844,6 +844,19 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
 - ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.
 
+<a id="DB-11"></a>
+
+#### DB-11 — Exactly-once sends: terminal writes never overwrite a success, and streams cross-check each other
+
+A send that must happen once per recipient keeps its outcome in a durable record, and:
+
+- The final status write is conditional (`WHERE status <> 'sent'`); a late failure path never overwrites `sent`.
+- With an idempotency-keyed provider, an "already accepted" rejection on a retry is a success, and "in flight" means retry later without spending an attempt. Neither is a send failure.
+- When two jobs can mail the same person (e.g. a welcome and a regular report), each checks the other's sent and in-flight records before claiming, so a retry or a duplicate cron invocation cannot send both.
+
+- ❌ `UPDATE ... SET status = 'failed'` after the provider rejected a retry with "already accepted"; the delivered mail is recorded as failed and re-sent.
+- ✅ Map the rejection to success, guard the write with `status <> 'sent'`, and exclude recipients the other stream already sent to or has in flight.
+
 <a id="DB-12"></a>
 
 #### DB-12 — Row-mutating data methods bind ownership inside the statement

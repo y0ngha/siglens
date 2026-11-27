@@ -326,10 +326,14 @@ const ENTRIES: readonly Entry[] = [
         places: [{ section: 4, marker: '- 알림 메일 발송 기록' }],
     },
     {
-        id: '메일 리포트 발송 기록 보관(DELIVERY_RETENTION_MS)',
+        id: '메일 리포트·가입 첫 리포트 발송 기록 보관(DELIVERY_RETENTION_MS)',
         seconds: DELIVERY_RETENTION_MS / MS_PER_SECOND,
         unit: 'day',
-        places: [{ section: 4, marker: '- 메일 리포트 발송 기록' }],
+        // 첫 리포트 기록도 같은 상수로 지운다(`runEmailReportBatch`의 `welcomes.pruneOlderThan(cutoff)`).
+        places: [
+            { section: 4, marker: '- 메일 리포트 발송 기록' },
+            { section: 4, marker: '- 가입 후 첫 리포트 발송 기록' },
+        ],
     },
     {
         id: '인증 세션·로그인 힌트 쿠키 수명(DEFAULT_SESSION_TTL_SECONDS)',
