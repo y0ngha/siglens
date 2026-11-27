@@ -33,7 +33,9 @@ describe('get_my_watchlist 명세', () => {
     });
 
     it('보유 종목과 가르고, 게스트는 login_required로 안내하라고 적는다', () => {
-        expect(tool?.description).toContain('get_my_portfolio');
+        expect(tool?.description).toContain(
+            'These are not holdings: for what they own use the portfolio tool'
+        );
         expect(tool?.description).toContain('login_required');
         expect(tool?.description).toContain(
             'Never rank the list as buy or sell ideas'
@@ -130,6 +132,17 @@ describe('라우팅 줄과 규칙 줄', () => {
                     )
                 ).toEqual([]);
             }
+        }
+    });
+
+    it('도구 설명도 자기 이름 말고는 도구 이름을 쓰지 않는다(설명은 가용 목록과 무관한 고정 문자열이다)', () => {
+        const toolName = /\b(?:get|run|show|search|web|propose)_[a-z_]+\b/g;
+        for (const tool of WATCHLIST_ALERT_TOOLS) {
+            expect(
+                [...new Set(tool.description.match(toolName))].filter(
+                    name => name !== tool.name
+                )
+            ).toEqual([]);
         }
     });
 

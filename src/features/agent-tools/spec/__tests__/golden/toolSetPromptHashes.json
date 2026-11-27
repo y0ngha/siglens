@@ -111,115 +111,115 @@
         },
         "ko|guest|nopf|siglens:all": {
             "prompt": "e75186ccf5999a3f18bae92cb0bd8effce621609346a62818641df46a30c68b5",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ko|guest|nopf|siglens:minus:search_ticker": {
             "prompt": "f7c7a4dcaff95da044ece4bc88f6ff56155a96ebe03eff3f4bc328ff2feb8b27",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ko|guest|nopf|siglens:minus:get_quote": {
             "prompt": "4da605e5ea1741571336354f8152eb30a2298522f62ec9644dce0a1f47c9636f",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ko|guest|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "6594c07a7de20ca46d0cbb76d43d3fa4e9eef3118129e6dd89848a7b5830bacd",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ko|guest|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "fb99f15cbeadb21a4fd83d01cba5eeb4347654f411cb836eeb3699d6c5f30708",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ko|guest|nopf|siglens:minus:get_news": {
             "prompt": "3b962ac2f6d0b59088f0d30dc3b7a6b0b0fa31f9f8529c6d5a499bdf6e3d0a3e",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ko|guest|nopf|siglens:minus:get_options_summary": {
             "prompt": "11dea339a5ad97550f5406b02ef9882a9691779ddbf999765c22c4f18fcec62d",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ko|guest|nopf|siglens:minus:get_fundamentals": {
             "prompt": "842994a21ec7526c070adb417f95727e79848572a3c6dbf8482ea16e1897dcd6",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ko|guest|nopf|siglens:minus:get_analyst_views": {
             "prompt": "0a6f10c6b34fc0e6038b18abc9f5c698011196e613c2e466702dd4414d9433a2",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ko|guest|nopf|siglens:minus:get_company_filings": {
             "prompt": "56a3827f8b5a821de45ea2b60b65740fb8025b31983afe9e598a49a9ef058d84",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ko|guest|nopf|siglens:minus:get_market_overview": {
             "prompt": "fd61f6e47c693c5021261643b38dae229ce34c6f1b55a8c6f769a4bfce0ed246",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ko|guest|nopf|siglens:minus:get_economy": {
             "prompt": "09fb86fe7e080e8f1816900f2c136e1ea7305698e0d0ecbcf02d1357c7c49fb0",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ko|guest|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "052508488c70cf9b54808a276d9c0c9daf1acf2911eafea28568b49ad0cdbac5",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ko|guest|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "7c62ba4e08684b58f848fc411986721895088ee07f9e678ac74643a69b98b2aa",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ko|guest|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "bbe5977e44dfe6098f535eb752b81429fda082facd6859191618cce7c974346e",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ko|guest|nopf|siglens:minus:get_swing_history": {
             "prompt": "401b5b40b33daa5cd0b1784296508958ddfbd093197b750ba6d56d99cb842679",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ko|guest|nopf|siglens:minus:get_price_stats": {
             "prompt": "a21470ef48c23436ef0dcfb3578caf789aab13f6ca5ec96933b78aa68b3aa2b1",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ko|guest|nopf|siglens:minus:get_congress_trades": {
             "prompt": "9804b7dae0b5d5f37c3b7918a639a1ad626f7eba57d4c9a88646a2a6244c6d64",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ko|guest|nopf|siglens:minus:get_investor_flows": {
             "prompt": "a98e7e897684ca3bcee694d2df786e9d1d04c0ad80d5e78ad22e48d515a7d273",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ko|guest|nopf|siglens:minus:get_guide": {
             "prompt": "d32a86e17730681c5fde1d6788f215679c243334fa955650b70e64cfbef2a1c7",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ko|guest|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "f4909fba55d47fca498c4dd5e1639bdced050a7a93379a5b0ec849ae86a70178",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ko|guest|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "b3b4d7bc4765817fa80ed8b7ca8a6255a1ab359a8e444e2a01150a4c067dac2e",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ko|guest|nopf|siglens:minus:get_x_posts": {
             "prompt": "69acf2eb9768394c37feeb5a27ac4b40f53328752e1124f07e0a84d7eb238a74",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|guest|nopf|siglens:minus:show_chart": {
             "prompt": "7f120d3e4eba94cd96e4545975ba91df064b5840cbf9d0d0cc2c5f51f68ac81d",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ko|guest|nopf|siglens:minus:web_search": {
             "prompt": "a78941dd4737105b3d1d8d88ead7a8e74c86a14370172c4ab9cc001bc0e22f3f",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|guest|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "6f33b9a60cdc374b60c91a4a052311873bec9066062b3eb7c4208a28d3fcc804",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ko|guest|nopf|siglens:minus:propose_price_alert": {
             "prompt": "b123f8cdb1ac9ef1be660c54ca72a987f3e4b2366bc067b055bab5ff4076a3a1",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ko|guest|nopf|siglens:e2eFake": {
             "prompt": "7f31f7d3600733ff230e474e03dbaa5ea2fe0436b92ba0aa7b4942afd2ac961d",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ko|guest|nopf|siglens:publicApi": {
             "prompt": "8c68c8ea208dd4595ba0d7404a11bff6086d55f2b73660e1555898add6713978",
@@ -227,11 +227,11 @@
         },
         "ko|guest|nopf|siglens:noWebSearch": {
             "prompt": "a78941dd4737105b3d1d8d88ead7a8e74c86a14370172c4ab9cc001bc0e22f3f",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|guest|nopf|siglens:noXPosts": {
             "prompt": "69acf2eb9768394c37feeb5a27ac4b40f53328752e1124f07e0a84d7eb238a74",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|guest|pf|all": {
             "prompt": "04a73c418580aa6bd6cb491c1e355ffac1d61818b10b322adc8a64402eeab6ea",
@@ -343,115 +343,115 @@
         },
         "ko|guest|pf|siglens:all": {
             "prompt": "e75186ccf5999a3f18bae92cb0bd8effce621609346a62818641df46a30c68b5",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ko|guest|pf|siglens:minus:search_ticker": {
             "prompt": "f7c7a4dcaff95da044ece4bc88f6ff56155a96ebe03eff3f4bc328ff2feb8b27",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ko|guest|pf|siglens:minus:get_quote": {
             "prompt": "4da605e5ea1741571336354f8152eb30a2298522f62ec9644dce0a1f47c9636f",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ko|guest|pf|siglens:minus:get_bars_indicators": {
             "prompt": "6594c07a7de20ca46d0cbb76d43d3fa4e9eef3118129e6dd89848a7b5830bacd",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ko|guest|pf|siglens:minus:get_cached_analysis": {
             "prompt": "fb99f15cbeadb21a4fd83d01cba5eeb4347654f411cb836eeb3699d6c5f30708",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ko|guest|pf|siglens:minus:get_news": {
             "prompt": "3b962ac2f6d0b59088f0d30dc3b7a6b0b0fa31f9f8529c6d5a499bdf6e3d0a3e",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ko|guest|pf|siglens:minus:get_options_summary": {
             "prompt": "11dea339a5ad97550f5406b02ef9882a9691779ddbf999765c22c4f18fcec62d",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ko|guest|pf|siglens:minus:get_fundamentals": {
             "prompt": "842994a21ec7526c070adb417f95727e79848572a3c6dbf8482ea16e1897dcd6",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ko|guest|pf|siglens:minus:get_analyst_views": {
             "prompt": "0a6f10c6b34fc0e6038b18abc9f5c698011196e613c2e466702dd4414d9433a2",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ko|guest|pf|siglens:minus:get_company_filings": {
             "prompt": "56a3827f8b5a821de45ea2b60b65740fb8025b31983afe9e598a49a9ef058d84",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ko|guest|pf|siglens:minus:get_market_overview": {
             "prompt": "fd61f6e47c693c5021261643b38dae229ce34c6f1b55a8c6f769a4bfce0ed246",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ko|guest|pf|siglens:minus:get_economy": {
             "prompt": "09fb86fe7e080e8f1816900f2c136e1ea7305698e0d0ecbcf02d1357c7c49fb0",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ko|guest|pf|siglens:minus:get_macro_quotes": {
             "prompt": "052508488c70cf9b54808a276d9c0c9daf1acf2911eafea28568b49ad0cdbac5",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ko|guest|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "7c62ba4e08684b58f848fc411986721895088ee07f9e678ac74643a69b98b2aa",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ko|guest|pf|siglens:minus:get_index_history_stats": {
             "prompt": "bbe5977e44dfe6098f535eb752b81429fda082facd6859191618cce7c974346e",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ko|guest|pf|siglens:minus:get_swing_history": {
             "prompt": "401b5b40b33daa5cd0b1784296508958ddfbd093197b750ba6d56d99cb842679",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ko|guest|pf|siglens:minus:get_price_stats": {
             "prompt": "a21470ef48c23436ef0dcfb3578caf789aab13f6ca5ec96933b78aa68b3aa2b1",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ko|guest|pf|siglens:minus:get_congress_trades": {
             "prompt": "9804b7dae0b5d5f37c3b7918a639a1ad626f7eba57d4c9a88646a2a6244c6d64",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ko|guest|pf|siglens:minus:get_investor_flows": {
             "prompt": "a98e7e897684ca3bcee694d2df786e9d1d04c0ad80d5e78ad22e48d515a7d273",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ko|guest|pf|siglens:minus:get_guide": {
             "prompt": "d32a86e17730681c5fde1d6788f215679c243334fa955650b70e64cfbef2a1c7",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ko|guest|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "f4909fba55d47fca498c4dd5e1639bdced050a7a93379a5b0ec849ae86a70178",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ko|guest|pf|siglens:minus:get_my_portfolio": {
             "prompt": "b3b4d7bc4765817fa80ed8b7ca8a6255a1ab359a8e444e2a01150a4c067dac2e",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ko|guest|pf|siglens:minus:get_x_posts": {
             "prompt": "69acf2eb9768394c37feeb5a27ac4b40f53328752e1124f07e0a84d7eb238a74",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|guest|pf|siglens:minus:show_chart": {
             "prompt": "7f120d3e4eba94cd96e4545975ba91df064b5840cbf9d0d0cc2c5f51f68ac81d",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ko|guest|pf|siglens:minus:web_search": {
             "prompt": "a78941dd4737105b3d1d8d88ead7a8e74c86a14370172c4ab9cc001bc0e22f3f",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|guest|pf|siglens:minus:get_my_watchlist": {
             "prompt": "6f33b9a60cdc374b60c91a4a052311873bec9066062b3eb7c4208a28d3fcc804",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ko|guest|pf|siglens:minus:propose_price_alert": {
             "prompt": "b123f8cdb1ac9ef1be660c54ca72a987f3e4b2366bc067b055bab5ff4076a3a1",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ko|guest|pf|siglens:e2eFake": {
             "prompt": "7f31f7d3600733ff230e474e03dbaa5ea2fe0436b92ba0aa7b4942afd2ac961d",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ko|guest|pf|siglens:publicApi": {
             "prompt": "8c68c8ea208dd4595ba0d7404a11bff6086d55f2b73660e1555898add6713978",
@@ -459,11 +459,11 @@
         },
         "ko|guest|pf|siglens:noWebSearch": {
             "prompt": "a78941dd4737105b3d1d8d88ead7a8e74c86a14370172c4ab9cc001bc0e22f3f",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|guest|pf|siglens:noXPosts": {
             "prompt": "69acf2eb9768394c37feeb5a27ac4b40f53328752e1124f07e0a84d7eb238a74",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|member|nopf|all": {
             "prompt": "e03f38a9362148eeaf6309932719eaa4471d1141082cba5c9d44ce5dde2f7f97",
@@ -575,115 +575,115 @@
         },
         "ko|member|nopf|siglens:all": {
             "prompt": "58b7c457e720e85dfdfa4905639e3262687bd7c1d09439cced034fe05aa70f05",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ko|member|nopf|siglens:minus:search_ticker": {
             "prompt": "911e8ac47ef0b746ecaecd352d8d4a23ceb75d14007f7214906b9a915ca68194",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ko|member|nopf|siglens:minus:get_quote": {
             "prompt": "fee19ff2f55e460268177a9bded26ce51dd45726575f2cf55e1257b49be21815",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ko|member|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "5145a78dc223fed825d9f8dcd47e0672aa514a317ae6fe38bdb6e9aa8b8bf6d8",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ko|member|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "a2f6e75ba352b108c4bae40285a75c38bfe21cb3cb448250cf70933abccd9eb5",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ko|member|nopf|siglens:minus:get_news": {
             "prompt": "814c0e98ba271e4840e7c1b635801d6f671c23110c8d1f7e490ac5d9d5323f9b",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ko|member|nopf|siglens:minus:get_options_summary": {
             "prompt": "6dd53839a81c2b4a7fa8ecb058435e647844d8db34e62f7b624859e734145c34",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ko|member|nopf|siglens:minus:get_fundamentals": {
             "prompt": "1115355fffc7d511f249d65795e26956251ba7ef459bb61a026199bbb40f2d2c",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ko|member|nopf|siglens:minus:get_analyst_views": {
             "prompt": "52cc048d69d696f67e974ee195a3a5003cc755f7880cc40f0036f78c07b60e66",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ko|member|nopf|siglens:minus:get_company_filings": {
             "prompt": "c7481a6d6ba1ef50335bc9716329eba02774b6218e42cde8f0e72ae35b3e4073",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ko|member|nopf|siglens:minus:get_market_overview": {
             "prompt": "030026ecec341b84ea4293eebcf0a09e57f50924885a78e5f9b4f556d5a701ad",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ko|member|nopf|siglens:minus:get_economy": {
             "prompt": "051410e7347c458af468e842bfe80b74a0ac4f8d6be07eaf96cd93f9c6d2ef76",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ko|member|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "f8a26b0ee0d9af15051f27e1cc4d97969beebd1aaab7d8207f12a9bebbfccfa9",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ko|member|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "53052d15ef87853a2573bf28cf412f802b15e045528f926212fead64c74038ec",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ko|member|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "14d0cdedfd105223d873bdf648ca8ab07beb7fcab32377efe24fabc2deffceeb",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ko|member|nopf|siglens:minus:get_swing_history": {
             "prompt": "50f00e16f593e0b8364c3f0865cfb40a15613fdbf8b3c958cb7bcc27d00e3303",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ko|member|nopf|siglens:minus:get_price_stats": {
             "prompt": "4252c77f951ddf657081f7b44c158b680df95d4a796b92e25431cde818de2298",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ko|member|nopf|siglens:minus:get_congress_trades": {
             "prompt": "aee8f9807ff1fb5e6fcd1277b99f217b1254a4970b3f24fe8813ef825bb315bc",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ko|member|nopf|siglens:minus:get_investor_flows": {
             "prompt": "b11ab4c604f4d071ca1ddbe72d6cb8b46e539d413fedd4828ec7a8ee6f4905c8",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ko|member|nopf|siglens:minus:get_guide": {
             "prompt": "28a5b7e7552aa09d3f4423f757d5af0521a84a5af0f276935226a8319e014e44",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ko|member|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "cd79c5999f396d2aa1efd20a968fd9872344720a10751367ad85297b2e02a0ac",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ko|member|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "00c51fee0e9ea3333f5fcb5dfb70964665d1a71ca21f4cfe61c66f57aa764492",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ko|member|nopf|siglens:minus:get_x_posts": {
             "prompt": "97848fae04ddfb80e449978d7d68443fde51a06842c746323539004624483003",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|member|nopf|siglens:minus:show_chart": {
             "prompt": "44a70dc4b1a7e70a3104ac7247ac0a176da0d9d5f1c928b568ffe8923c857551",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ko|member|nopf|siglens:minus:web_search": {
             "prompt": "0b12f32a15b747a7f9a2d0ff9106882eab0ed39470c84a1f904bc5126d815290",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|member|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "697f538b79b495a7a9226a8eddf9493e53b20f87859167abc6a3f59ee306dec1",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ko|member|nopf|siglens:minus:propose_price_alert": {
             "prompt": "c650bf19b3ab19269b0b1c8c03cbba9c599f4cffb2c6f08f0acbe6f6aaceb71e",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ko|member|nopf|siglens:e2eFake": {
             "prompt": "3f9d22faa22f824cdf7206e447bed47eedfc23230251ce5891f2dfbea8cf1446",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ko|member|nopf|siglens:publicApi": {
             "prompt": "5e5990212de992f9b9d693c23be8a744f06b70393d2297bdc551801d64bd8645",
@@ -691,11 +691,11 @@
         },
         "ko|member|nopf|siglens:noWebSearch": {
             "prompt": "0b12f32a15b747a7f9a2d0ff9106882eab0ed39470c84a1f904bc5126d815290",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|member|nopf|siglens:noXPosts": {
             "prompt": "97848fae04ddfb80e449978d7d68443fde51a06842c746323539004624483003",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|member|pf|all": {
             "prompt": "10c335d2508db0a49cb582f12224ff7717f1c612a7c9707544f49a1acfbf4849",
@@ -807,115 +807,115 @@
         },
         "ko|member|pf|siglens:all": {
             "prompt": "5fb16da0eea6bbe6ee93e89b3f6e22ac2445cdec12d49fd7f29919c0016d11eb",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ko|member|pf|siglens:minus:search_ticker": {
             "prompt": "b9695ddc164aec1c99262764aa3714b48c346675139cebbc9ec6760bc23c379f",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ko|member|pf|siglens:minus:get_quote": {
             "prompt": "57e67bfded11b93863fd6e9748a8ccb365c2a0aea211b9a446e45ec627c820a4",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ko|member|pf|siglens:minus:get_bars_indicators": {
             "prompt": "4df11982e49db933e8de3e3813156c36b4468d56353856452e109953a76d015e",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ko|member|pf|siglens:minus:get_cached_analysis": {
             "prompt": "8c62c13bb8f7bb8b5c8a6ae3e5f0efcce6f28350aa252ffd23978de50bf30ba7",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ko|member|pf|siglens:minus:get_news": {
             "prompt": "f69f77cc3b69eea2ff370db7332d743f7a66faf3bc8c4e38514c5fe45923bc30",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ko|member|pf|siglens:minus:get_options_summary": {
             "prompt": "5788cba58a1bd5828d7ae43a9bd8b601d53ba0d73413e95848fa1b9f7276d4e3",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ko|member|pf|siglens:minus:get_fundamentals": {
             "prompt": "e67391053ab4f2a0e8ec5989a915d6d07084ed6d20eebd523a94e664d436637d",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ko|member|pf|siglens:minus:get_analyst_views": {
             "prompt": "2e8140001a8c29456a5567abf58632964441cffa6bbf4462295bbde5af8495b6",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ko|member|pf|siglens:minus:get_company_filings": {
             "prompt": "b15214c0ad655cdf819f365def6cee14a9b36bbe52df6b61d32f3e8feb7d9cdb",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ko|member|pf|siglens:minus:get_market_overview": {
             "prompt": "38cf2f4cc4c2b37bb3ebdcd3894ba4d593870c4873013f4192328e342277ffd2",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ko|member|pf|siglens:minus:get_economy": {
             "prompt": "0690f7a2dfc703b2b1055307b0809c48375029f700769f87c87ca3fcd5c74541",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ko|member|pf|siglens:minus:get_macro_quotes": {
             "prompt": "e3f57112319f8ddf1bdd59c63fbf85443236b951de56e67e5a2782dddecb4572",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ko|member|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "6d01ee0239ff9cb13789f2e31377ffc019a1dfef5162e249f3593c1de7749f62",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ko|member|pf|siglens:minus:get_index_history_stats": {
             "prompt": "76c391638715ea2e454393c6cf164ec56ca496d391a29df481286214f8a44fd8",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ko|member|pf|siglens:minus:get_swing_history": {
             "prompt": "5b117e91647ebd4b1e5272030a852397b811ff0480013cfd36781864c5c689b3",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ko|member|pf|siglens:minus:get_price_stats": {
             "prompt": "9989b38795af66bc43df46d7ecb7a70abbc760e43e00952209d94772f9ff5610",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ko|member|pf|siglens:minus:get_congress_trades": {
             "prompt": "dbd17e03260e57ac17759f6ee5fe8d7177b3dffdde3965e9fca93fa56f247237",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ko|member|pf|siglens:minus:get_investor_flows": {
             "prompt": "8db954dea77085041bdbe3e08aa2c4e81ce15c7f34376cc3559ad3cfd7b7a592",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ko|member|pf|siglens:minus:get_guide": {
             "prompt": "8d6ff483c59d156130e5a3bedb7597316a78d19cc8f3bd172541fef78b10a607",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ko|member|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "ccb96ebe51ab243d302c99bf217efaecc8ffdd68e23440de82344e3ef257075c",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ko|member|pf|siglens:minus:get_my_portfolio": {
             "prompt": "7e200b49de1df3f1aa3c12f8ddac22a0d8756637674f19bb07f62e96f3723976",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ko|member|pf|siglens:minus:get_x_posts": {
             "prompt": "7ded97cd92d98fed30b367cda161c3d5bf115b5f165ca36a5f2c7f02f779a684",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ko|member|pf|siglens:minus:show_chart": {
             "prompt": "46e81aaa8905c935157d7a70d0ad3c500f5140b4c735ff50251bbb50cf8e0abb",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ko|member|pf|siglens:minus:web_search": {
             "prompt": "9ff77a4875640e620ef0e5010904a58b1efd029293ba10072aa52a1e214ca2f3",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|member|pf|siglens:minus:get_my_watchlist": {
             "prompt": "a3cfda68406a2607cf5d65b32920a17d7adbc712a511fcd82c9bd76e3cc009f1",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ko|member|pf|siglens:minus:propose_price_alert": {
             "prompt": "2050d5f8a217abb82c5527a0fbb68b30d4f86056567809f19f3dc01498449681",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ko|member|pf|siglens:e2eFake": {
             "prompt": "c5ec1864494054b3b116201550ac767be9a4a51088982e3f64be826fd0eb378c",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ko|member|pf|siglens:publicApi": {
             "prompt": "c96a7be4c1000e05f04b14715e14bd08e5733644ee3f75b485c6f04d98feb593",
@@ -923,11 +923,11 @@
         },
         "ko|member|pf|siglens:noWebSearch": {
             "prompt": "9ff77a4875640e620ef0e5010904a58b1efd029293ba10072aa52a1e214ca2f3",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ko|member|pf|siglens:noXPosts": {
             "prompt": "7ded97cd92d98fed30b367cda161c3d5bf115b5f165ca36a5f2c7f02f779a684",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|guest|nopf|all": {
             "prompt": "48d62a3e8301a8676892bb4f0065f1a5c42005cd29810c73abeffe899f988b7f",
@@ -1039,115 +1039,115 @@
         },
         "en|guest|nopf|siglens:all": {
             "prompt": "6bb7132e6145d5260cd1f43d6bcd5ae9acb7e5038aa87fe7ba686c50d7aeaa49",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "en|guest|nopf|siglens:minus:search_ticker": {
             "prompt": "670f254403e55f5add31eca7095533cd3d5f45439161e1fc762cd97242fab687",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "en|guest|nopf|siglens:minus:get_quote": {
             "prompt": "526cfbde27667427d628d6f1e3af4f5f0ae36ddbbbbb1dd9544537248d58eb6b",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "en|guest|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "4175ea168636b1932c2e937927abb89ea7ab07ca65b28ab4202d91a5b702c14b",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "en|guest|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "7f27bdc0e7a47d94b7813c6a1dc730dbbd90d12a196590546a53544d96eddf7d",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "en|guest|nopf|siglens:minus:get_news": {
             "prompt": "8aabcb657dff1c8dddf4419e84df7dcecb3151ae65177e6c619c75278db0cce5",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "en|guest|nopf|siglens:minus:get_options_summary": {
             "prompt": "06cec3fd7cf5464e0fb99eb5048d31f6a686e40dd8a4c923046e6b6160c76bf4",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "en|guest|nopf|siglens:minus:get_fundamentals": {
             "prompt": "2066cf91ee88832531d2ee99fc418de37e9bb725a5a45051a9d0ceb2be404a39",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "en|guest|nopf|siglens:minus:get_analyst_views": {
             "prompt": "6e46c77e05b1a7681d53c11e476cd8214e7aca6af91c240d1ed648aed6cb04d9",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "en|guest|nopf|siglens:minus:get_company_filings": {
             "prompt": "e25484b506ef96d9a26fb6f1914bdb3a7d0e79158fc9ee2788700e2e47792583",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "en|guest|nopf|siglens:minus:get_market_overview": {
             "prompt": "438e1818d32667b0ee12ce571a9b89c5f5ee14231806492e621cd57f3db7d477",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "en|guest|nopf|siglens:minus:get_economy": {
             "prompt": "7e6c6899404466e459a52651e8d7bd4df10d0e6d2108a21a26af5a36e0f44c03",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "en|guest|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "6e4b04e0c41ac5e3ddcaf6451f71da049c027da574ecee9368c23717aefbd069",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "en|guest|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "f6f1dbaa3a5b3e5694491552410c6cd07327aa83503f4310a48cecab5031920d",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "en|guest|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "3166efd5e8e0a6b2226bd6b957da178efc706b1bfd12f134df781d0a107faffb",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "en|guest|nopf|siglens:minus:get_swing_history": {
             "prompt": "559b1769b91f5df59e2945e8d8df37d65bbf44700f2748be3ba64738ac444c06",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "en|guest|nopf|siglens:minus:get_price_stats": {
             "prompt": "28b573bd96b556fc4c4973750c3d2ac26f4d115b69fadbe9b9a8555da6758227",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "en|guest|nopf|siglens:minus:get_congress_trades": {
             "prompt": "7d06d096e4dcd0ba6bbfb4d3b23d7799fd1bdbade675badf0dc0f8f6718dbf15",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "en|guest|nopf|siglens:minus:get_investor_flows": {
             "prompt": "236e1d9eabbe9e80bca6ad4b6b7617f09552a972b69c34145dff71fb97d8f9b1",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "en|guest|nopf|siglens:minus:get_guide": {
             "prompt": "dc1af28a851611406034ba57821500b7a5cad7e067d3be2f97c7aa4f50a5a156",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "en|guest|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "f98665d5509483fb31b733e1f6253fe60b39fa307216f3de9cb3ea14c736380d",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "en|guest|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "a744f174243553aaff2406bd2a2b32054e5729ab31e33c4b2468ce91d26c015c",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "en|guest|nopf|siglens:minus:get_x_posts": {
             "prompt": "0adef8a9091a9033ce739b1f6c33fe73fae26b36c3435cc715d58359843ce538",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|guest|nopf|siglens:minus:show_chart": {
             "prompt": "7a1b57d04a5aaed832827fe1c9a35cad9304408cf01566accb1f327739c55d05",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "en|guest|nopf|siglens:minus:web_search": {
             "prompt": "ca3d7dedd0f89e84a05c7d9bbcce82e24b59213addad2649c222b2f34daf71b5",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|guest|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "f34ca8ec28df65e54dfad6040fea42506b4b05dcacb476a8068e45ed10ef0dd6",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "en|guest|nopf|siglens:minus:propose_price_alert": {
             "prompt": "3599fe0a29ddee83e0f2850cc5805f33c42c3da46195bd2c9b18f5e7f19fef81",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "en|guest|nopf|siglens:e2eFake": {
             "prompt": "d0c318ea9c20fa576f048759d405888c5518224410318818005987ba14d13d92",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "en|guest|nopf|siglens:publicApi": {
             "prompt": "5de2e56edd81eb82e9634b78ea9f6f750f1a7226ec3485c0d2867bead676494f",
@@ -1155,11 +1155,11 @@
         },
         "en|guest|nopf|siglens:noWebSearch": {
             "prompt": "ca3d7dedd0f89e84a05c7d9bbcce82e24b59213addad2649c222b2f34daf71b5",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|guest|nopf|siglens:noXPosts": {
             "prompt": "0adef8a9091a9033ce739b1f6c33fe73fae26b36c3435cc715d58359843ce538",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|guest|pf|all": {
             "prompt": "48d62a3e8301a8676892bb4f0065f1a5c42005cd29810c73abeffe899f988b7f",
@@ -1271,115 +1271,115 @@
         },
         "en|guest|pf|siglens:all": {
             "prompt": "6bb7132e6145d5260cd1f43d6bcd5ae9acb7e5038aa87fe7ba686c50d7aeaa49",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "en|guest|pf|siglens:minus:search_ticker": {
             "prompt": "670f254403e55f5add31eca7095533cd3d5f45439161e1fc762cd97242fab687",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "en|guest|pf|siglens:minus:get_quote": {
             "prompt": "526cfbde27667427d628d6f1e3af4f5f0ae36ddbbbbb1dd9544537248d58eb6b",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "en|guest|pf|siglens:minus:get_bars_indicators": {
             "prompt": "4175ea168636b1932c2e937927abb89ea7ab07ca65b28ab4202d91a5b702c14b",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "en|guest|pf|siglens:minus:get_cached_analysis": {
             "prompt": "7f27bdc0e7a47d94b7813c6a1dc730dbbd90d12a196590546a53544d96eddf7d",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "en|guest|pf|siglens:minus:get_news": {
             "prompt": "8aabcb657dff1c8dddf4419e84df7dcecb3151ae65177e6c619c75278db0cce5",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "en|guest|pf|siglens:minus:get_options_summary": {
             "prompt": "06cec3fd7cf5464e0fb99eb5048d31f6a686e40dd8a4c923046e6b6160c76bf4",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "en|guest|pf|siglens:minus:get_fundamentals": {
             "prompt": "2066cf91ee88832531d2ee99fc418de37e9bb725a5a45051a9d0ceb2be404a39",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "en|guest|pf|siglens:minus:get_analyst_views": {
             "prompt": "6e46c77e05b1a7681d53c11e476cd8214e7aca6af91c240d1ed648aed6cb04d9",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "en|guest|pf|siglens:minus:get_company_filings": {
             "prompt": "e25484b506ef96d9a26fb6f1914bdb3a7d0e79158fc9ee2788700e2e47792583",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "en|guest|pf|siglens:minus:get_market_overview": {
             "prompt": "438e1818d32667b0ee12ce571a9b89c5f5ee14231806492e621cd57f3db7d477",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "en|guest|pf|siglens:minus:get_economy": {
             "prompt": "7e6c6899404466e459a52651e8d7bd4df10d0e6d2108a21a26af5a36e0f44c03",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "en|guest|pf|siglens:minus:get_macro_quotes": {
             "prompt": "6e4b04e0c41ac5e3ddcaf6451f71da049c027da574ecee9368c23717aefbd069",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "en|guest|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "f6f1dbaa3a5b3e5694491552410c6cd07327aa83503f4310a48cecab5031920d",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "en|guest|pf|siglens:minus:get_index_history_stats": {
             "prompt": "3166efd5e8e0a6b2226bd6b957da178efc706b1bfd12f134df781d0a107faffb",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "en|guest|pf|siglens:minus:get_swing_history": {
             "prompt": "559b1769b91f5df59e2945e8d8df37d65bbf44700f2748be3ba64738ac444c06",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "en|guest|pf|siglens:minus:get_price_stats": {
             "prompt": "28b573bd96b556fc4c4973750c3d2ac26f4d115b69fadbe9b9a8555da6758227",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "en|guest|pf|siglens:minus:get_congress_trades": {
             "prompt": "7d06d096e4dcd0ba6bbfb4d3b23d7799fd1bdbade675badf0dc0f8f6718dbf15",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "en|guest|pf|siglens:minus:get_investor_flows": {
             "prompt": "236e1d9eabbe9e80bca6ad4b6b7617f09552a972b69c34145dff71fb97d8f9b1",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "en|guest|pf|siglens:minus:get_guide": {
             "prompt": "dc1af28a851611406034ba57821500b7a5cad7e067d3be2f97c7aa4f50a5a156",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "en|guest|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "f98665d5509483fb31b733e1f6253fe60b39fa307216f3de9cb3ea14c736380d",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "en|guest|pf|siglens:minus:get_my_portfolio": {
             "prompt": "a744f174243553aaff2406bd2a2b32054e5729ab31e33c4b2468ce91d26c015c",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "en|guest|pf|siglens:minus:get_x_posts": {
             "prompt": "0adef8a9091a9033ce739b1f6c33fe73fae26b36c3435cc715d58359843ce538",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|guest|pf|siglens:minus:show_chart": {
             "prompt": "7a1b57d04a5aaed832827fe1c9a35cad9304408cf01566accb1f327739c55d05",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "en|guest|pf|siglens:minus:web_search": {
             "prompt": "ca3d7dedd0f89e84a05c7d9bbcce82e24b59213addad2649c222b2f34daf71b5",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|guest|pf|siglens:minus:get_my_watchlist": {
             "prompt": "f34ca8ec28df65e54dfad6040fea42506b4b05dcacb476a8068e45ed10ef0dd6",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "en|guest|pf|siglens:minus:propose_price_alert": {
             "prompt": "3599fe0a29ddee83e0f2850cc5805f33c42c3da46195bd2c9b18f5e7f19fef81",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "en|guest|pf|siglens:e2eFake": {
             "prompt": "d0c318ea9c20fa576f048759d405888c5518224410318818005987ba14d13d92",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "en|guest|pf|siglens:publicApi": {
             "prompt": "5de2e56edd81eb82e9634b78ea9f6f750f1a7226ec3485c0d2867bead676494f",
@@ -1387,11 +1387,11 @@
         },
         "en|guest|pf|siglens:noWebSearch": {
             "prompt": "ca3d7dedd0f89e84a05c7d9bbcce82e24b59213addad2649c222b2f34daf71b5",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|guest|pf|siglens:noXPosts": {
             "prompt": "0adef8a9091a9033ce739b1f6c33fe73fae26b36c3435cc715d58359843ce538",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|member|nopf|all": {
             "prompt": "c5dd3343514ab41f99e2257e7a8ff1fbd7b048ea83db95d092767d9733e201e9",
@@ -1503,115 +1503,115 @@
         },
         "en|member|nopf|siglens:all": {
             "prompt": "86ca17b362cb904d3fe745ef199649b2fd421dde5628b117d887d6f7cb4fd6b1",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "en|member|nopf|siglens:minus:search_ticker": {
             "prompt": "73616f37a662a96c36517bcdf015a518d2716baf676d872c54d083b478ce473f",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "en|member|nopf|siglens:minus:get_quote": {
             "prompt": "a7f428b77a745b6a773ba1a83eba2e9224fb432e396fb1957103b9839c2e9f7a",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "en|member|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "1b364c7cc43e1d185749a5f15c4353f032473e199980cb4198f7566664f15337",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "en|member|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "4fa424d98a41209311da9a0973d7477d732a5aac97c70c8f7caf7f9ac39179e4",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "en|member|nopf|siglens:minus:get_news": {
             "prompt": "140671ccba90613be5b8721f2b7498a0db232ba14e7b9f533d8f1b4eee772959",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "en|member|nopf|siglens:minus:get_options_summary": {
             "prompt": "565ec14fb83793dd31b5cce48b24bdd01c9a4100a221b7b0dbcb764e84b06afc",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "en|member|nopf|siglens:minus:get_fundamentals": {
             "prompt": "5f8bf61c72e5e82726547f06de897fc6d90d1af4c30bc4cf20bdbdacc6cb0154",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "en|member|nopf|siglens:minus:get_analyst_views": {
             "prompt": "e18c83851b3b2aea88bfa2b92de65534370882b9d3c520a8ada654546f3dab5f",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "en|member|nopf|siglens:minus:get_company_filings": {
             "prompt": "708c8c294e750853aad91a5cbe4e285b5d9bb250b392df587b1d5ddbdc2348d8",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "en|member|nopf|siglens:minus:get_market_overview": {
             "prompt": "0711f133305ea3db5a57a25e53791fb2cf0388f97494d7c2c0a85fe38fe29052",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "en|member|nopf|siglens:minus:get_economy": {
             "prompt": "9659ca67bbb996b460934c3805eb6b35c912aabf013e0e7fe9195a124ec158f8",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "en|member|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "e2ea7a4a586c1c916a9c882ac5e91375d1da53f4478d30665f7b2bb98a8cb153",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "en|member|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "30bb854ffc4252505cd32e9311dbf88f100dc35d8cc096dc32b16ed56fe2a6b7",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "en|member|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "c2ee9e2960bd5ee2ac6cf547ab5f535d22107975df6f62f9bad9d20a54f99f4a",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "en|member|nopf|siglens:minus:get_swing_history": {
             "prompt": "bfdfc9bf32e582912c0ec3e0fdf5e9923c721b9fcc3170a6491dfe5702f4caa7",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "en|member|nopf|siglens:minus:get_price_stats": {
             "prompt": "f43c4896f66cc39346f6e6f1e864644bcd2c1e828fe07debe35b04d1c5709e6d",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "en|member|nopf|siglens:minus:get_congress_trades": {
             "prompt": "0e55706ba96c88bcf37d328d62c0592f8aaa0970f0fad6d38ab3ba5b296804b5",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "en|member|nopf|siglens:minus:get_investor_flows": {
             "prompt": "5ef6ce2cf5d5c3e61c0fafb1bb1745ecb44cfb69b71b282a5ef163147970d530",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "en|member|nopf|siglens:minus:get_guide": {
             "prompt": "fca77a84dacfdd7326721546bf5e8f6a759680653fcca34d02d23d4951872246",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "en|member|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "dd67cdf14c512c97e9103be0e8f8c30cf9f9261c7e564d30b4477c55757aafa2",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "en|member|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "e5fa34ab5d5280bb7948bb72de4bf3fd4659fd9d3a811c59fe1e7fbcb3b3b812",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "en|member|nopf|siglens:minus:get_x_posts": {
             "prompt": "a5b723e936cc9ebb122469ddc4cf51fb1fd4c22971dfe65ab137ffd76ca64cea",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|member|nopf|siglens:minus:show_chart": {
             "prompt": "ff1675f29a0677f07db0af82d1fcb72ed25de56adf85449428adb7a0cfd8cac8",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "en|member|nopf|siglens:minus:web_search": {
             "prompt": "ecb578ee9131f3044ef9fbb77a64c7adbf6f52abacfe7bdfeb6071e217465af6",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|member|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "29fd180c940879d04c15c5b2ec660ae5de3ff54a21bf940c0ca5a6e1a6fdda4f",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "en|member|nopf|siglens:minus:propose_price_alert": {
             "prompt": "9caf4c90a7d2e491ad5daa3010c02318c82d4b0335875186cbdcc74e92f6654e",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "en|member|nopf|siglens:e2eFake": {
             "prompt": "43b4c7697b3850f494fe68f59bf94db9c0fd404f8624fe6aaa4d755baca38215",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "en|member|nopf|siglens:publicApi": {
             "prompt": "3a35c57d8f397e63ba463fa15658effd30d791914258f9b3aac17f52e7938345",
@@ -1619,11 +1619,11 @@
         },
         "en|member|nopf|siglens:noWebSearch": {
             "prompt": "ecb578ee9131f3044ef9fbb77a64c7adbf6f52abacfe7bdfeb6071e217465af6",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|member|nopf|siglens:noXPosts": {
             "prompt": "a5b723e936cc9ebb122469ddc4cf51fb1fd4c22971dfe65ab137ffd76ca64cea",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|member|pf|all": {
             "prompt": "0328b00b112cdce6df8c17e2eaee1a94960a8ad68f17f8bb396994384d09bb57",
@@ -1735,115 +1735,115 @@
         },
         "en|member|pf|siglens:all": {
             "prompt": "d3928d863eba59f74a15d95af2dcabddb7dc0f8fe5e7a3ecd08ea48f62bdbc69",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "en|member|pf|siglens:minus:search_ticker": {
             "prompt": "80ed21f1935ec0a6fc92a4f5dc685e119e45e385dc3b5ed3ccb4922e18522578",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "en|member|pf|siglens:minus:get_quote": {
             "prompt": "209ab4a8475788934478278f2f19a639a5adfab710aad53b0f5251670f6dcc43",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "en|member|pf|siglens:minus:get_bars_indicators": {
             "prompt": "cf426b801ff085edbe8b4c312daf40bbc03799f2de5eee2fb8771b03fa92bf50",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "en|member|pf|siglens:minus:get_cached_analysis": {
             "prompt": "d03cb4bd5056aa1f2522c955e4aa127804a50c7b6bdc2b1f61a2a6d2f5787792",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "en|member|pf|siglens:minus:get_news": {
             "prompt": "488c2cbaf02efb1b015a76f27864065ba02d3adfa391d1c4ff2610a026d49413",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "en|member|pf|siglens:minus:get_options_summary": {
             "prompt": "bbfb6aa40e3b04f978251174366f1b2436e99d8f52619b54a875e80a5f71a112",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "en|member|pf|siglens:minus:get_fundamentals": {
             "prompt": "2c69f5e0552140ad1e12431c2e2394788ea5fbc93f9495de826e1b295cf868bc",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "en|member|pf|siglens:minus:get_analyst_views": {
             "prompt": "9c3b99ec8a417080154fc102356ee1f76d6f22899ca03eb9507ec6734dd966f4",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "en|member|pf|siglens:minus:get_company_filings": {
             "prompt": "9e5e1a8cf8708a58d87325bc43192c814d059e4e268352bb23d84e10219218b1",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "en|member|pf|siglens:minus:get_market_overview": {
             "prompt": "b2b2fba23a8009b09459a62caf756dcdc8e526f95824ccf813e80bdec0be9205",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "en|member|pf|siglens:minus:get_economy": {
             "prompt": "ff357d979cbe815ac240d50dbb7b3e129fec16a9d1b49be59f17c4a4c47f4510",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "en|member|pf|siglens:minus:get_macro_quotes": {
             "prompt": "cc83ccf8c4ee2323628a6db28462ca327b2ee96a15937f79503b845806c17ce3",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "en|member|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "ddd3fa1ef262f4004a77dfe9f4d4e5487e4f3647b0ce62c0690ba4cb6acec76d",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "en|member|pf|siglens:minus:get_index_history_stats": {
             "prompt": "9baa2bf51789e907717da190824914b555f814a846732055e12d44a103f37fed",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "en|member|pf|siglens:minus:get_swing_history": {
             "prompt": "4ad83e3d1fe916eb676dbe7f3a14bf613e707cd9da0df00d067a05787c1b1609",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "en|member|pf|siglens:minus:get_price_stats": {
             "prompt": "a9ca817b60ccee71b5413f75552b881c492553990232183ecfd4ce13e0101a72",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "en|member|pf|siglens:minus:get_congress_trades": {
             "prompt": "fb354d17ec364ea09b5c7294242a4082fe0d6ec9b1834959a5366802d3206edb",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "en|member|pf|siglens:minus:get_investor_flows": {
             "prompt": "b22923e103f3db2d2b5489d8f72185056b2aa296c03f94117ea2243b221a855e",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "en|member|pf|siglens:minus:get_guide": {
             "prompt": "78260fadfa3d98669079e00f3cbefb9f539cea4f1967dbce27e05c18a623d84c",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "en|member|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "2a74d109b63a9340f4169e5ff7bd000dfcf69a3d8e32953d437ab29e80d4448e",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "en|member|pf|siglens:minus:get_my_portfolio": {
             "prompt": "c39c2a44989049a2eb55ff134d69cf111db17c50209d2666bc9eccf71d31bbf0",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "en|member|pf|siglens:minus:get_x_posts": {
             "prompt": "3f5f33a0cbb4c27e786f6031fbe95d8bbdec0fb768e6ecc0f6cda2946abddbda",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "en|member|pf|siglens:minus:show_chart": {
             "prompt": "06fde499bc5662ea80cb2dec99bb40c2ba9bc79ba7c91127050e2675765ba3e2",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "en|member|pf|siglens:minus:web_search": {
             "prompt": "84215d91e9239200b29956aa12ba2cfe2e375c637d2635cab0eae4d2fe51478f",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|member|pf|siglens:minus:get_my_watchlist": {
             "prompt": "bb7cea8b2b3ce43d896c0d3f27f1af7eee5c055c06aa2cf4075ec36299a0450c",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "en|member|pf|siglens:minus:propose_price_alert": {
             "prompt": "0a33e1be669828ad5d65cc40b5bad2d9f7312cac415d9f399592203c59b4b10a",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "en|member|pf|siglens:e2eFake": {
             "prompt": "54045fbd4d78e4877375b48afe89886698a5401c707fbdfa8b9773fddebad8e0",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "en|member|pf|siglens:publicApi": {
             "prompt": "d178f634dc48369a062db82dba8278eb6601528d20b92bc195bd957bde86b78d",
@@ -1851,11 +1851,11 @@
         },
         "en|member|pf|siglens:noWebSearch": {
             "prompt": "84215d91e9239200b29956aa12ba2cfe2e375c637d2635cab0eae4d2fe51478f",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "en|member|pf|siglens:noXPosts": {
             "prompt": "3f5f33a0cbb4c27e786f6031fbe95d8bbdec0fb768e6ecc0f6cda2946abddbda",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|guest|nopf|all": {
             "prompt": "f455bde0a66bbc1b088b77c1fe71ec546d8864d0f219ddad25275b0f69e94462",
@@ -1967,115 +1967,115 @@
         },
         "ja|guest|nopf|siglens:all": {
             "prompt": "973e7a015709c434bef339d5014c5ec4119eb586841b6668410b5497ea4a80d2",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ja|guest|nopf|siglens:minus:search_ticker": {
             "prompt": "7037fd380821ec84ed3ad2dffc1582b3485d4108595814a757241c099c31af3b",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ja|guest|nopf|siglens:minus:get_quote": {
             "prompt": "d8512fc0daf828c143d9782ed6b73785fc68b8f57b7ac84f7993786be6aa46fa",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ja|guest|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "01a5eca571297747bda488790909ae5780179500f6d1c478f1155e6683eaa433",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ja|guest|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "9828a2f1a079e8e7b896f5819116dcca1d8a990b523404c567ea43d0956a3f5c",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ja|guest|nopf|siglens:minus:get_news": {
             "prompt": "287310b4b6f317bdaa1355ca7428288fe6b434ada590aed9b05439a20d539b41",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ja|guest|nopf|siglens:minus:get_options_summary": {
             "prompt": "5a0fb52ebe59641ec2b6b3e1d0720aa495426ea69a23ed133847c2d930566244",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ja|guest|nopf|siglens:minus:get_fundamentals": {
             "prompt": "81d1296d51b0a82453d38596ce959b03616c3bca7fd5b3b743cbdadf08482272",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ja|guest|nopf|siglens:minus:get_analyst_views": {
             "prompt": "8175041a5f657835f434507e5bf94f6f480645cb3c0e5d4fce241ab602991303",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ja|guest|nopf|siglens:minus:get_company_filings": {
             "prompt": "31e9da00d39083df554acf5f162a974fa68eff30f6d923a65be10cd356487772",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ja|guest|nopf|siglens:minus:get_market_overview": {
             "prompt": "3b4be5bced97203ed2a4bef2df58522ff521cf90c49873ece9e20d12c9e907a5",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ja|guest|nopf|siglens:minus:get_economy": {
             "prompt": "7127537b336cd91faaeff2fcc7743ac2a514a5f652d6031e6c8f82153cf431fe",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ja|guest|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "51a0ac04b6629444b8f279a765491bbb31d1fb37fa23b775c6d88d8a96844d91",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ja|guest|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "45a78af6e0237ac0922432704b6bb921fc276a0237076323e35c3606cc688385",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ja|guest|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "cd87bd5af694b9f1f12b2fffb7cba83356aab052ebc82aafb60f809c4bc0eb69",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ja|guest|nopf|siglens:minus:get_swing_history": {
             "prompt": "4fefd92354037a9d1e87257ff50cce5ece0ebde6bb5bdbd972df0b196a96ce4f",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ja|guest|nopf|siglens:minus:get_price_stats": {
             "prompt": "4cd05f1cab191e8b4becc2854f558f65506e4b2083bebb6941018e81192765d4",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ja|guest|nopf|siglens:minus:get_congress_trades": {
             "prompt": "e4ccdd4ed54c0eec380e8320fbec6c1ba14e8d5fb2772c8fd39a7d916a95c21b",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ja|guest|nopf|siglens:minus:get_investor_flows": {
             "prompt": "e056fccdf59d6bfe7936d192628a7f0acd24585bb54c2b551f41da802a32c126",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ja|guest|nopf|siglens:minus:get_guide": {
             "prompt": "bab19ac911c97bc68e7d8d3bd9ce443ec1f789b39abbc41a38d1cc7713ea3863",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ja|guest|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "85ca4fa44fc3cce5f9173a49fd92f63652c5be7e53600b2126aa308c41b0effe",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ja|guest|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "b6381ec93d360b4672cdde28e3f1f0683924500adff4366381806ba006616b5a",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ja|guest|nopf|siglens:minus:get_x_posts": {
             "prompt": "de8d81424c84d1a74d4d74ce8816e3042a031983de3137a2efaf1ec819b3f956",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|guest|nopf|siglens:minus:show_chart": {
             "prompt": "3ccb5452f764e695f30accbe9d28e29b8ca847eaad473041a3aab32c8c605224",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ja|guest|nopf|siglens:minus:web_search": {
             "prompt": "c6539b1ba4a6addaaa88938b169001f6a6e09865f0f5db298dd506a3d2cd26a9",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|guest|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "06b73203efbad6df33ea0df410c82faa7c7658f8906c10cfa05a634589f13d7b",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ja|guest|nopf|siglens:minus:propose_price_alert": {
             "prompt": "e27d337ae0bbe6ba92bf65e64d1e5eb7227ba8618db290e112998426033a71f7",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ja|guest|nopf|siglens:e2eFake": {
             "prompt": "c4182ca56639fd0c4044e8bd7540eba1a1749fb96923e53d3bf2443f59244a68",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ja|guest|nopf|siglens:publicApi": {
             "prompt": "4edd8067319d39fa3364c1dcd90424c548c8f5977851e9af7c3141d35ba250f7",
@@ -2083,11 +2083,11 @@
         },
         "ja|guest|nopf|siglens:noWebSearch": {
             "prompt": "c6539b1ba4a6addaaa88938b169001f6a6e09865f0f5db298dd506a3d2cd26a9",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|guest|nopf|siglens:noXPosts": {
             "prompt": "de8d81424c84d1a74d4d74ce8816e3042a031983de3137a2efaf1ec819b3f956",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|guest|pf|all": {
             "prompt": "f455bde0a66bbc1b088b77c1fe71ec546d8864d0f219ddad25275b0f69e94462",
@@ -2199,115 +2199,115 @@
         },
         "ja|guest|pf|siglens:all": {
             "prompt": "973e7a015709c434bef339d5014c5ec4119eb586841b6668410b5497ea4a80d2",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ja|guest|pf|siglens:minus:search_ticker": {
             "prompt": "7037fd380821ec84ed3ad2dffc1582b3485d4108595814a757241c099c31af3b",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ja|guest|pf|siglens:minus:get_quote": {
             "prompt": "d8512fc0daf828c143d9782ed6b73785fc68b8f57b7ac84f7993786be6aa46fa",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ja|guest|pf|siglens:minus:get_bars_indicators": {
             "prompt": "01a5eca571297747bda488790909ae5780179500f6d1c478f1155e6683eaa433",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ja|guest|pf|siglens:minus:get_cached_analysis": {
             "prompt": "9828a2f1a079e8e7b896f5819116dcca1d8a990b523404c567ea43d0956a3f5c",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ja|guest|pf|siglens:minus:get_news": {
             "prompt": "287310b4b6f317bdaa1355ca7428288fe6b434ada590aed9b05439a20d539b41",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ja|guest|pf|siglens:minus:get_options_summary": {
             "prompt": "5a0fb52ebe59641ec2b6b3e1d0720aa495426ea69a23ed133847c2d930566244",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ja|guest|pf|siglens:minus:get_fundamentals": {
             "prompt": "81d1296d51b0a82453d38596ce959b03616c3bca7fd5b3b743cbdadf08482272",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ja|guest|pf|siglens:minus:get_analyst_views": {
             "prompt": "8175041a5f657835f434507e5bf94f6f480645cb3c0e5d4fce241ab602991303",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ja|guest|pf|siglens:minus:get_company_filings": {
             "prompt": "31e9da00d39083df554acf5f162a974fa68eff30f6d923a65be10cd356487772",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ja|guest|pf|siglens:minus:get_market_overview": {
             "prompt": "3b4be5bced97203ed2a4bef2df58522ff521cf90c49873ece9e20d12c9e907a5",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ja|guest|pf|siglens:minus:get_economy": {
             "prompt": "7127537b336cd91faaeff2fcc7743ac2a514a5f652d6031e6c8f82153cf431fe",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ja|guest|pf|siglens:minus:get_macro_quotes": {
             "prompt": "51a0ac04b6629444b8f279a765491bbb31d1fb37fa23b775c6d88d8a96844d91",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ja|guest|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "45a78af6e0237ac0922432704b6bb921fc276a0237076323e35c3606cc688385",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ja|guest|pf|siglens:minus:get_index_history_stats": {
             "prompt": "cd87bd5af694b9f1f12b2fffb7cba83356aab052ebc82aafb60f809c4bc0eb69",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ja|guest|pf|siglens:minus:get_swing_history": {
             "prompt": "4fefd92354037a9d1e87257ff50cce5ece0ebde6bb5bdbd972df0b196a96ce4f",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ja|guest|pf|siglens:minus:get_price_stats": {
             "prompt": "4cd05f1cab191e8b4becc2854f558f65506e4b2083bebb6941018e81192765d4",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ja|guest|pf|siglens:minus:get_congress_trades": {
             "prompt": "e4ccdd4ed54c0eec380e8320fbec6c1ba14e8d5fb2772c8fd39a7d916a95c21b",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ja|guest|pf|siglens:minus:get_investor_flows": {
             "prompt": "e056fccdf59d6bfe7936d192628a7f0acd24585bb54c2b551f41da802a32c126",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ja|guest|pf|siglens:minus:get_guide": {
             "prompt": "bab19ac911c97bc68e7d8d3bd9ce443ec1f789b39abbc41a38d1cc7713ea3863",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ja|guest|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "85ca4fa44fc3cce5f9173a49fd92f63652c5be7e53600b2126aa308c41b0effe",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ja|guest|pf|siglens:minus:get_my_portfolio": {
             "prompt": "b6381ec93d360b4672cdde28e3f1f0683924500adff4366381806ba006616b5a",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ja|guest|pf|siglens:minus:get_x_posts": {
             "prompt": "de8d81424c84d1a74d4d74ce8816e3042a031983de3137a2efaf1ec819b3f956",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|guest|pf|siglens:minus:show_chart": {
             "prompt": "3ccb5452f764e695f30accbe9d28e29b8ca847eaad473041a3aab32c8c605224",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ja|guest|pf|siglens:minus:web_search": {
             "prompt": "c6539b1ba4a6addaaa88938b169001f6a6e09865f0f5db298dd506a3d2cd26a9",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|guest|pf|siglens:minus:get_my_watchlist": {
             "prompt": "06b73203efbad6df33ea0df410c82faa7c7658f8906c10cfa05a634589f13d7b",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ja|guest|pf|siglens:minus:propose_price_alert": {
             "prompt": "e27d337ae0bbe6ba92bf65e64d1e5eb7227ba8618db290e112998426033a71f7",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ja|guest|pf|siglens:e2eFake": {
             "prompt": "c4182ca56639fd0c4044e8bd7540eba1a1749fb96923e53d3bf2443f59244a68",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ja|guest|pf|siglens:publicApi": {
             "prompt": "4edd8067319d39fa3364c1dcd90424c548c8f5977851e9af7c3141d35ba250f7",
@@ -2315,11 +2315,11 @@
         },
         "ja|guest|pf|siglens:noWebSearch": {
             "prompt": "c6539b1ba4a6addaaa88938b169001f6a6e09865f0f5db298dd506a3d2cd26a9",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|guest|pf|siglens:noXPosts": {
             "prompt": "de8d81424c84d1a74d4d74ce8816e3042a031983de3137a2efaf1ec819b3f956",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|member|nopf|all": {
             "prompt": "1e460f8b22f89e80c9e8cdba9c72d34fc6c5c9673665086d712d8c41c070739c",
@@ -2431,115 +2431,115 @@
         },
         "ja|member|nopf|siglens:all": {
             "prompt": "2a87118c90929543eb097df474768a3671f9fb56bdf828066979c9c8ed0eeb51",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ja|member|nopf|siglens:minus:search_ticker": {
             "prompt": "8ca0746be91b7154f83193db013df0d2812643e5cb5adedc98e28b206ae0909f",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ja|member|nopf|siglens:minus:get_quote": {
             "prompt": "e61d64020c2c2bff4cad56b80fd78699221a45f6425f3899520106411832562a",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ja|member|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "1f376355393c78c6f526599da6117e104a02bcf53ae9bd16b7516864ab6bd9a2",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ja|member|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "c22b8a598bc38339f9c5bd9cf70c8ff8f10afa182b97804d7d0053ac32f72bde",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ja|member|nopf|siglens:minus:get_news": {
             "prompt": "b3dac0952d7258e4459c1e02f3019b156a6408b918584f776e1a5b407b8439fd",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ja|member|nopf|siglens:minus:get_options_summary": {
             "prompt": "87eb91d514f07d469b996aae9d12b3fc28a74f6747be11a5ba0cfe2ee91c54ba",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ja|member|nopf|siglens:minus:get_fundamentals": {
             "prompt": "e1ba90e8f2bcdb5fa7679de1922e960c3f620129e29d41782a3c083b4106c977",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ja|member|nopf|siglens:minus:get_analyst_views": {
             "prompt": "c3f98099af9299fee6dfcd50a1f4bc13ab4e5ab69d11166f1e701ae1a9a60558",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ja|member|nopf|siglens:minus:get_company_filings": {
             "prompt": "4ece54320fa5a5371b26117259892245d5cdaa73bfc37e31ac4d49fe5bba3870",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ja|member|nopf|siglens:minus:get_market_overview": {
             "prompt": "d2aecce7e2d5900019ffb8b51bcfe1bcab860adbfa89f71f00a150f4f6b30b48",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ja|member|nopf|siglens:minus:get_economy": {
             "prompt": "8ff0811eda41ecd1fec65bf99561d8a9ae153da7e0eff686d0a64e3f03a518cc",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ja|member|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "eea5a473f810dcb8d2af07726e5ed23e2db2e69c6c7308ef1171732a9092fd2a",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ja|member|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "c75c2c18adf4dba652827c8179992b73463a9c862337aa009b57700e2808a661",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ja|member|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "21534bfe3b29f088b4a30f22da989878b50c47d0f05d3fcaa7216efb48e06474",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ja|member|nopf|siglens:minus:get_swing_history": {
             "prompt": "35d70925bb422cd98ba1230829ce1b9552a948ff5191792fb55f2912880555e3",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ja|member|nopf|siglens:minus:get_price_stats": {
             "prompt": "1e5c1bf015defbf924e2f6c57a4465d571ebf1f649b2805d0e035baff2f1e57d",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ja|member|nopf|siglens:minus:get_congress_trades": {
             "prompt": "b9f9125bdcb40e968eefa66e281fd3a1cace18f0e6661ee682a56837a6d64716",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ja|member|nopf|siglens:minus:get_investor_flows": {
             "prompt": "971dcd535f7d5429117157cd3954db0ab3a57c2d7c4719f963182b711d27ec82",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ja|member|nopf|siglens:minus:get_guide": {
             "prompt": "4ef44adeb727c622b1a9d82f05b37d9e03308c21de33ba18b53975f4d6257835",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ja|member|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "6295f34b4550a2616908aef44bd82abafcd8f13d54f935cdd8ac675b4bd41e02",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ja|member|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "713246b1520e4840919fe26d8a07af7c9a614d94910bd6fcda3a734074404644",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ja|member|nopf|siglens:minus:get_x_posts": {
             "prompt": "2e7c598cb17a81bfea2a263616d935c1c7e8fcfd2e282e8792cdefa6e753289a",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|member|nopf|siglens:minus:show_chart": {
             "prompt": "3a8c6464cc8695a911f707e21344ab785f9c2dd19bc80cbbb59f7594c5bf4acc",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ja|member|nopf|siglens:minus:web_search": {
             "prompt": "628ec97911e69f8421663875feca019ea9eb8ec7b1c0635393b26c5002a2a1b5",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|member|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "7fb4ef476b878edbcd301e287214e7489ec2d601e2c5f669e783c48bcba36f26",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ja|member|nopf|siglens:minus:propose_price_alert": {
             "prompt": "7fd7d2553795a26fbc15f5247e349a01dfd93c85e4884684bcbae24d336f59b1",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ja|member|nopf|siglens:e2eFake": {
             "prompt": "debeeca078f818eb8f502e1242d506aae7ea5167cf5f2c0dd6d29a0c3f5781bc",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ja|member|nopf|siglens:publicApi": {
             "prompt": "e621ecba524d3d852be98a9e45cac48d85466b7cab0742b599017cba3b605813",
@@ -2547,11 +2547,11 @@
         },
         "ja|member|nopf|siglens:noWebSearch": {
             "prompt": "628ec97911e69f8421663875feca019ea9eb8ec7b1c0635393b26c5002a2a1b5",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|member|nopf|siglens:noXPosts": {
             "prompt": "2e7c598cb17a81bfea2a263616d935c1c7e8fcfd2e282e8792cdefa6e753289a",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|member|pf|all": {
             "prompt": "d72f0a9308b78b239ace407665d9793e1b1a8cb9f6c1b1bda57533b7166fa937",
@@ -2663,115 +2663,115 @@
         },
         "ja|member|pf|siglens:all": {
             "prompt": "3a1790acbbb54ff060ae0cc45b4a0c45d031e3332da1d70638b25630ced66bbb",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "ja|member|pf|siglens:minus:search_ticker": {
             "prompt": "a97fb28714417c49e3fa77e0ab0737b8ec53e4c48a262fcde19352533b6f958b",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "ja|member|pf|siglens:minus:get_quote": {
             "prompt": "4bd8e882da4fc17a61e0d2f05e91eb5eb9efe00a3fc4b9c0abd0f1d99531c1a4",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "ja|member|pf|siglens:minus:get_bars_indicators": {
             "prompt": "062cb3998311fc80b8bb028687b9a24a5f11b870f5698e67e88f42ea890e0ac0",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "ja|member|pf|siglens:minus:get_cached_analysis": {
             "prompt": "2cd86b61984a3451906159c88f38e1819caba66063c606d39d7b9fda7d20e26f",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "ja|member|pf|siglens:minus:get_news": {
             "prompt": "f69a3b621ec873a11ed097122b934646e8fd534db9fcf7356165d92066e8114a",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "ja|member|pf|siglens:minus:get_options_summary": {
             "prompt": "2564dcad21e812bc399a35f52d805c2bba0e99be7c0c869e126be2290b8bec60",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "ja|member|pf|siglens:minus:get_fundamentals": {
             "prompt": "c52e4fc2e640eda7a9f1cdd9cb96c0e17c82fa07a14ada45a2bb647cf1221858",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "ja|member|pf|siglens:minus:get_analyst_views": {
             "prompt": "9c112e5685164c25ee0c27c87a007a9907de5182d7510d95008d4f17f4bee059",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "ja|member|pf|siglens:minus:get_company_filings": {
             "prompt": "a9b3f550d7dc13c7728c24b5319719b4f74d869a255b87af0278fe2a0c7e8323",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "ja|member|pf|siglens:minus:get_market_overview": {
             "prompt": "771ea8dbbd75dc4dbde5ec9216783bf08cc94117bf69460ade14dc8ae1ab6dc0",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "ja|member|pf|siglens:minus:get_economy": {
             "prompt": "fe659d0a3451806a0b0ffbb59df51589bfa8e43ef4d9e0603f473033c636551d",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "ja|member|pf|siglens:minus:get_macro_quotes": {
             "prompt": "e9986b1ba539f4548d7214f8191a3d1feb386984bdba8ac5c5cccf99991c2800",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "ja|member|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "c8ed151c69810e52974427f712dd84ea5c5e7c110f622bca780040aac1a8e5fc",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "ja|member|pf|siglens:minus:get_index_history_stats": {
             "prompt": "f4e0f7f3d0e9bf594eb55fa644d8fb4fd2d548114e7ac178c598fb1f8fc4b62d",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "ja|member|pf|siglens:minus:get_swing_history": {
             "prompt": "627a5234de98a4cdad5872c56c034db5df58307afec36a80263868b064bf9d3f",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "ja|member|pf|siglens:minus:get_price_stats": {
             "prompt": "73543e652921c26c768b1dc1adf7d3d9c6682a3f35b8eb48cdd088c673dea2c0",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "ja|member|pf|siglens:minus:get_congress_trades": {
             "prompt": "e0fdb3d3ed8c57947f3e9c77ea7dc431fc33470ae063f0d89bd8c7edb4725992",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "ja|member|pf|siglens:minus:get_investor_flows": {
             "prompt": "845e88e72634a33e59460cda441744e84f33a410f5c9a710af2564e5eda6c720",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "ja|member|pf|siglens:minus:get_guide": {
             "prompt": "57a38574052282da22649a81a62d68466b2819594b0e646cc18cc1cd7ba33071",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "ja|member|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "5c25777fdad8798469e4ae999cc29eb1fe8acb270014a61bb96cd98ed2a404df",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "ja|member|pf|siglens:minus:get_my_portfolio": {
             "prompt": "41e4a280abc94ee137750823b00e965359b95b587dd7996138445e3f6050f7c6",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "ja|member|pf|siglens:minus:get_x_posts": {
             "prompt": "fe6884fbf415eefa3da18f866a9620176d9193b6f01f7e4ace09168a30d3c0d5",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "ja|member|pf|siglens:minus:show_chart": {
             "prompt": "4945c3fe513c186304a6ce3825c50b63c33868e4a3be9baac9cd297b01379565",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "ja|member|pf|siglens:minus:web_search": {
             "prompt": "58e3d1616fb091dab6583d87cb9b17423cae24561275a4fcc78a8f7add9b1a3d",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|member|pf|siglens:minus:get_my_watchlist": {
             "prompt": "cb180a67ee74794838e6daa1dfb8cac4584a19d36e7df8a73ccc6f65df867d89",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "ja|member|pf|siglens:minus:propose_price_alert": {
             "prompt": "3a116e4e0965cab8339f4008dd5879dfb801daa223b94a6cee63680b88471fca",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "ja|member|pf|siglens:e2eFake": {
             "prompt": "2cdb883decf345ff7980c26306305d3c5a5b857f4454c8f3d0d91cbf9fcdf794",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "ja|member|pf|siglens:publicApi": {
             "prompt": "088d4f5fc682e9e22c497d12489443f22ecb8336c74dcf1047ac9e329e551837",
@@ -2779,11 +2779,11 @@
         },
         "ja|member|pf|siglens:noWebSearch": {
             "prompt": "58e3d1616fb091dab6583d87cb9b17423cae24561275a4fcc78a8f7add9b1a3d",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "ja|member|pf|siglens:noXPosts": {
             "prompt": "fe6884fbf415eefa3da18f866a9620176d9193b6f01f7e4ace09168a30d3c0d5",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|guest|nopf|all": {
             "prompt": "224c47ecd8d8dbe174081bc2aa0878a599f3e31d858639bd3527cd05a56e17ed",
@@ -2895,115 +2895,115 @@
         },
         "zh|guest|nopf|siglens:all": {
             "prompt": "e48a51177f97a969354e4482a6839041134589b4f2ce578ad77fab273f448780",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "zh|guest|nopf|siglens:minus:search_ticker": {
             "prompt": "b29a8284267213d3f1057cd8c0857f6196b415dc7be86df7b8018c5585edd8a0",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "zh|guest|nopf|siglens:minus:get_quote": {
             "prompt": "30a1104985045e0bc970ca1affa5592e701b9e92035cfc452fb9cbd8bba2fa1c",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "zh|guest|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "5c27dbb8bf81504f1a6cb3212b055fe670f121cec3711dc0d83b7a5f641bd978",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "zh|guest|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "9f8061d3304296a5faa112219eaf88f76c4740b0b0810dbb943dd2520f7795cf",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "zh|guest|nopf|siglens:minus:get_news": {
             "prompt": "faea4a7042f50c4113f72914696b743facb1e5fff5f1224efc64b15288644e8c",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "zh|guest|nopf|siglens:minus:get_options_summary": {
             "prompt": "2f055f81575821029efd5fe275a7022d1ad29365a328f4a090580789f6528b79",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "zh|guest|nopf|siglens:minus:get_fundamentals": {
             "prompt": "8e60a832c1bf95ef0c895250903457c27c6e09e2cb56f70f15089f8130824959",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "zh|guest|nopf|siglens:minus:get_analyst_views": {
             "prompt": "fc91d3cfde07986900455487cc28c796fba90bc087269949a68ebede334bd0c6",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "zh|guest|nopf|siglens:minus:get_company_filings": {
             "prompt": "2010b69ef5cb8d5ccf5f9cd91f70a4f9c4191d4cf9d3c61a9c6ee5f3963cd510",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "zh|guest|nopf|siglens:minus:get_market_overview": {
             "prompt": "c9a87d187e7fff1464e7a6c2042c4d944de8ac06371676d9ef38f66055a79e33",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "zh|guest|nopf|siglens:minus:get_economy": {
             "prompt": "ffb6c4e3531ec0313f2fb492a585ffc491647d5bad58c4c91892f18b238f8d55",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "zh|guest|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "405209b8d7bf1060a4b6613b348f35f715d86fc2e1c3d943cb5db48857b55543",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "zh|guest|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "626a6fbe29cf6cccaa50a935de990afceabdd6b407670e510833f9e0bf737d47",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "zh|guest|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "758b5368340601e1b2fc9153e467837af3a357bc8e53337af2a20d05b10fa38c",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "zh|guest|nopf|siglens:minus:get_swing_history": {
             "prompt": "91a3de4d723b800dd6920d79730a98f9e969e7dc307830db12476bd92b3d48b1",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "zh|guest|nopf|siglens:minus:get_price_stats": {
             "prompt": "8591007ff665112d9ff76e5a998b04e3212b8736ce69faa9f0795656e2fb020d",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "zh|guest|nopf|siglens:minus:get_congress_trades": {
             "prompt": "aa816e409b5a60ed5c5b6b5027e0b40dcec995e217987a5dfe4dd7238a2174bf",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "zh|guest|nopf|siglens:minus:get_investor_flows": {
             "prompt": "6985b0b91bdf3d241ff6b8a024d1f76f62b7f9e43dcd097fbca770b4ec34c06b",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "zh|guest|nopf|siglens:minus:get_guide": {
             "prompt": "5f0ded24adafa5e3a12cf17c0654ed82e7f233d101936944541d5177ecd8d6e8",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "zh|guest|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "756cd671db3fbc6b7e197e6fb2e03b6a94471331f5ea1c63ba82da60b6e251e4",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "zh|guest|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "e18f0ab3bff6a822713c1f7af653d41a516e24bfbf2c1c7bfb0ce026b81ada74",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "zh|guest|nopf|siglens:minus:get_x_posts": {
             "prompt": "3f507e46ce5b07da4912b12953723606d39bc7400b8ffd359a5b43a75b03f285",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|guest|nopf|siglens:minus:show_chart": {
             "prompt": "f7f3a65a56b274747e20027684d663a1c963eb7d522a825f436c1e19d14bed66",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "zh|guest|nopf|siglens:minus:web_search": {
             "prompt": "5a37a9750f14d125c660d04a894fdc35f1b45f78bfd1a986c07f608533174d0e",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|guest|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "2eca9a89bd7200e45926e9df669740dd54c430cbaba48bdf19a37bef2207957c",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "zh|guest|nopf|siglens:minus:propose_price_alert": {
             "prompt": "943a5a6fcc18a6f3120d7d1fc688a5b55444b2a4a8073ebaaef53e6d61589963",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "zh|guest|nopf|siglens:e2eFake": {
             "prompt": "b4109813a484602884446fd5a106bb0f8af55ddfa78205f782e282d0aa8a41ed",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "zh|guest|nopf|siglens:publicApi": {
             "prompt": "b59c34662320227b11dd276b8b432ef3a1ec1408bacdce7959910286b480f3f0",
@@ -3011,11 +3011,11 @@
         },
         "zh|guest|nopf|siglens:noWebSearch": {
             "prompt": "5a37a9750f14d125c660d04a894fdc35f1b45f78bfd1a986c07f608533174d0e",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|guest|nopf|siglens:noXPosts": {
             "prompt": "3f507e46ce5b07da4912b12953723606d39bc7400b8ffd359a5b43a75b03f285",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|guest|pf|all": {
             "prompt": "224c47ecd8d8dbe174081bc2aa0878a599f3e31d858639bd3527cd05a56e17ed",
@@ -3127,115 +3127,115 @@
         },
         "zh|guest|pf|siglens:all": {
             "prompt": "e48a51177f97a969354e4482a6839041134589b4f2ce578ad77fab273f448780",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "zh|guest|pf|siglens:minus:search_ticker": {
             "prompt": "b29a8284267213d3f1057cd8c0857f6196b415dc7be86df7b8018c5585edd8a0",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "zh|guest|pf|siglens:minus:get_quote": {
             "prompt": "30a1104985045e0bc970ca1affa5592e701b9e92035cfc452fb9cbd8bba2fa1c",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "zh|guest|pf|siglens:minus:get_bars_indicators": {
             "prompt": "5c27dbb8bf81504f1a6cb3212b055fe670f121cec3711dc0d83b7a5f641bd978",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "zh|guest|pf|siglens:minus:get_cached_analysis": {
             "prompt": "9f8061d3304296a5faa112219eaf88f76c4740b0b0810dbb943dd2520f7795cf",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "zh|guest|pf|siglens:minus:get_news": {
             "prompt": "faea4a7042f50c4113f72914696b743facb1e5fff5f1224efc64b15288644e8c",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "zh|guest|pf|siglens:minus:get_options_summary": {
             "prompt": "2f055f81575821029efd5fe275a7022d1ad29365a328f4a090580789f6528b79",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "zh|guest|pf|siglens:minus:get_fundamentals": {
             "prompt": "8e60a832c1bf95ef0c895250903457c27c6e09e2cb56f70f15089f8130824959",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "zh|guest|pf|siglens:minus:get_analyst_views": {
             "prompt": "fc91d3cfde07986900455487cc28c796fba90bc087269949a68ebede334bd0c6",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "zh|guest|pf|siglens:minus:get_company_filings": {
             "prompt": "2010b69ef5cb8d5ccf5f9cd91f70a4f9c4191d4cf9d3c61a9c6ee5f3963cd510",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "zh|guest|pf|siglens:minus:get_market_overview": {
             "prompt": "c9a87d187e7fff1464e7a6c2042c4d944de8ac06371676d9ef38f66055a79e33",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "zh|guest|pf|siglens:minus:get_economy": {
             "prompt": "ffb6c4e3531ec0313f2fb492a585ffc491647d5bad58c4c91892f18b238f8d55",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "zh|guest|pf|siglens:minus:get_macro_quotes": {
             "prompt": "405209b8d7bf1060a4b6613b348f35f715d86fc2e1c3d943cb5db48857b55543",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "zh|guest|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "626a6fbe29cf6cccaa50a935de990afceabdd6b407670e510833f9e0bf737d47",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "zh|guest|pf|siglens:minus:get_index_history_stats": {
             "prompt": "758b5368340601e1b2fc9153e467837af3a357bc8e53337af2a20d05b10fa38c",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "zh|guest|pf|siglens:minus:get_swing_history": {
             "prompt": "91a3de4d723b800dd6920d79730a98f9e969e7dc307830db12476bd92b3d48b1",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "zh|guest|pf|siglens:minus:get_price_stats": {
             "prompt": "8591007ff665112d9ff76e5a998b04e3212b8736ce69faa9f0795656e2fb020d",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "zh|guest|pf|siglens:minus:get_congress_trades": {
             "prompt": "aa816e409b5a60ed5c5b6b5027e0b40dcec995e217987a5dfe4dd7238a2174bf",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "zh|guest|pf|siglens:minus:get_investor_flows": {
             "prompt": "6985b0b91bdf3d241ff6b8a024d1f76f62b7f9e43dcd097fbca770b4ec34c06b",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "zh|guest|pf|siglens:minus:get_guide": {
             "prompt": "5f0ded24adafa5e3a12cf17c0654ed82e7f233d101936944541d5177ecd8d6e8",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "zh|guest|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "756cd671db3fbc6b7e197e6fb2e03b6a94471331f5ea1c63ba82da60b6e251e4",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "zh|guest|pf|siglens:minus:get_my_portfolio": {
             "prompt": "e18f0ab3bff6a822713c1f7af653d41a516e24bfbf2c1c7bfb0ce026b81ada74",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "zh|guest|pf|siglens:minus:get_x_posts": {
             "prompt": "3f507e46ce5b07da4912b12953723606d39bc7400b8ffd359a5b43a75b03f285",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|guest|pf|siglens:minus:show_chart": {
             "prompt": "f7f3a65a56b274747e20027684d663a1c963eb7d522a825f436c1e19d14bed66",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "zh|guest|pf|siglens:minus:web_search": {
             "prompt": "5a37a9750f14d125c660d04a894fdc35f1b45f78bfd1a986c07f608533174d0e",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|guest|pf|siglens:minus:get_my_watchlist": {
             "prompt": "2eca9a89bd7200e45926e9df669740dd54c430cbaba48bdf19a37bef2207957c",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "zh|guest|pf|siglens:minus:propose_price_alert": {
             "prompt": "943a5a6fcc18a6f3120d7d1fc688a5b55444b2a4a8073ebaaef53e6d61589963",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "zh|guest|pf|siglens:e2eFake": {
             "prompt": "b4109813a484602884446fd5a106bb0f8af55ddfa78205f782e282d0aa8a41ed",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "zh|guest|pf|siglens:publicApi": {
             "prompt": "b59c34662320227b11dd276b8b432ef3a1ec1408bacdce7959910286b480f3f0",
@@ -3243,11 +3243,11 @@
         },
         "zh|guest|pf|siglens:noWebSearch": {
             "prompt": "5a37a9750f14d125c660d04a894fdc35f1b45f78bfd1a986c07f608533174d0e",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|guest|pf|siglens:noXPosts": {
             "prompt": "3f507e46ce5b07da4912b12953723606d39bc7400b8ffd359a5b43a75b03f285",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|member|nopf|all": {
             "prompt": "215d54b6952007e664e6b1d239136e198f2b913542b4a4c0105c0dd38b66c476",
@@ -3359,115 +3359,115 @@
         },
         "zh|member|nopf|siglens:all": {
             "prompt": "f84bb8d792ba704aa7ec6519d3a362117162ae965c09f007e2ff6dff5a3a668e",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "zh|member|nopf|siglens:minus:search_ticker": {
             "prompt": "3c3d8af64a87b135cc540ae18f716ef4bf35dc0a4f5ec7c2881a983e1991d54b",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "zh|member|nopf|siglens:minus:get_quote": {
             "prompt": "7ebbbea9298b2d0d788abcc132e1d2012ccfffac46b6b9577300fbcfcf766201",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "zh|member|nopf|siglens:minus:get_bars_indicators": {
             "prompt": "b8e2eebb921d611d64888caaaa42acfd1db0b15a0cae019050df1e8677ef5f5c",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "zh|member|nopf|siglens:minus:get_cached_analysis": {
             "prompt": "475ac492784f969cd68a70b4a27806967660e9fec1cc2ff326fcd32afe1838e2",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "zh|member|nopf|siglens:minus:get_news": {
             "prompt": "87fe791d759fa97558be5e2ac3085edea8f01020b8961171c5402cc5ac00e37b",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "zh|member|nopf|siglens:minus:get_options_summary": {
             "prompt": "b8efc70ab3f46ea9e41da1b55c7bb01976ef98e61a4175253b0e56e9c0d499b9",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "zh|member|nopf|siglens:minus:get_fundamentals": {
             "prompt": "d58b0454fbc30b85297e9938f3756c875411a493d089ea936cf9ec5a9795d0a8",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "zh|member|nopf|siglens:minus:get_analyst_views": {
             "prompt": "f9590ada7f1cbb7fd1899708156a3cf032d264387dd978d46f6f3432937bf402",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "zh|member|nopf|siglens:minus:get_company_filings": {
             "prompt": "af9246509f83cc3f8d15ca831765d776fe6b106813a4a59fbcf67fe546eee607",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "zh|member|nopf|siglens:minus:get_market_overview": {
             "prompt": "a0072161679fc9ea0370ea42f58058c4c7ed07d58f780ba857ebd835436e70d5",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "zh|member|nopf|siglens:minus:get_economy": {
             "prompt": "be2cd19ed0735bee07861ead83def98cbb350767acbc29a51ff5608a665846e3",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "zh|member|nopf|siglens:minus:get_macro_quotes": {
             "prompt": "e3aff945579d3e500ed55bb4a2485855b3127c9a1adfccfe43216babce9edfb5",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "zh|member|nopf|siglens:minus:get_theme_snapshot": {
             "prompt": "ec0c3e5675ac107b59fdc3496c14fe47812eb267c1cae4b31838e2904b7339e8",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "zh|member|nopf|siglens:minus:get_index_history_stats": {
             "prompt": "a75dc14b4aa6971512afcac924fb9e85f86176a4e47ae30f22f42bc4ba036f08",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "zh|member|nopf|siglens:minus:get_swing_history": {
             "prompt": "ab591735499c85e23d427326c8be2b22424a1a5dcac54720b8a91f86ec95192a",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "zh|member|nopf|siglens:minus:get_price_stats": {
             "prompt": "6365f462826352d66f462d63fafe0c70c3e1c9edd2b62a5183dcf36431da0e4a",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "zh|member|nopf|siglens:minus:get_congress_trades": {
             "prompt": "14a064279f0bcc554d534732e1b8f0b1bcffc5eaa424f6a1fa97921d02990d9a",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "zh|member|nopf|siglens:minus:get_investor_flows": {
             "prompt": "ae5c1913b759ee619f27a113ed1af382fd3ab057c0be5ba0a139c4fe0ed120aa",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "zh|member|nopf|siglens:minus:get_guide": {
             "prompt": "3eb8124617b013544c6be640b5ee19a70e3287f926eb2a3833427003989ebd08",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "zh|member|nopf|siglens:minus:run_fresh_analysis": {
             "prompt": "e5458896e9264fba177323ef3222180d6abf169004527cb719f6d06737a438ad",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "zh|member|nopf|siglens:minus:get_my_portfolio": {
             "prompt": "661c3d49a5676c35d5dc539dad660d889ca11a50e113eb33e6ac49c78154d14c",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "zh|member|nopf|siglens:minus:get_x_posts": {
             "prompt": "2e049f9473c6b3a6ea7f834b87e889fc434c923ffbc2e6ea670423bef66b64eb",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|member|nopf|siglens:minus:show_chart": {
             "prompt": "abf92e0f7859f2693695421b1e71ec023050c958af6df22457d3fb1e60cdc41a",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "zh|member|nopf|siglens:minus:web_search": {
             "prompt": "4ee36bb35a9dcdd45972e722a42711b9fb6cffec6a8b986f2cbf37551e0f565a",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|member|nopf|siglens:minus:get_my_watchlist": {
             "prompt": "52e067c232c850c49d79959051d0289cd410b6a72dc1e3dcfd4b82651869289f",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "zh|member|nopf|siglens:minus:propose_price_alert": {
             "prompt": "0cfd1b0a19e065f5df8ba3bc8b567fb9bdcc382748ee0dc57f49f11ca2ff7810",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "zh|member|nopf|siglens:e2eFake": {
             "prompt": "83576b50bf0d0ea08790f61dad6e2714d167ebfd8621e55b8dcfe555340d815e",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "zh|member|nopf|siglens:publicApi": {
             "prompt": "5c77e8cf2370b8bdfa97884db72dab24d20a2c8db9db221d455bcbf7e3f823b5",
@@ -3475,11 +3475,11 @@
         },
         "zh|member|nopf|siglens:noWebSearch": {
             "prompt": "4ee36bb35a9dcdd45972e722a42711b9fb6cffec6a8b986f2cbf37551e0f565a",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|member|nopf|siglens:noXPosts": {
             "prompt": "2e049f9473c6b3a6ea7f834b87e889fc434c923ffbc2e6ea670423bef66b64eb",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|member|pf|all": {
             "prompt": "408477b7e070191a5e6b66b61ebb1a886f6096cfc6a3254989060516f3c30906",
@@ -3591,115 +3591,115 @@
         },
         "zh|member|pf|siglens:all": {
             "prompt": "9c13e495e78d47000dba01dc09b9dd106639ef6f0b671aaa5b824d88f7c13ddc",
-            "specs": "6e7f7d9946169c1c9b8140ade033ba60553799ada07223fdbf5b63733a387a07"
+            "specs": "c2052910b909a2f7d5b9b98e0733bf7717f148da2b74f0820084f7ca7c14e909"
         },
         "zh|member|pf|siglens:minus:search_ticker": {
             "prompt": "a9251b1a86790d4546b82c7ddfc46b2fee971b5079eba63aaf8d78112f2258b1",
-            "specs": "8f9197af28939a31cb904c3b4ee442cdbf51ea6cc959f8e8be5e590ce0cf995c"
+            "specs": "33e019864f5855eb7f03445e64655dd5d05259db1706db33fed3bf59d82fab67"
         },
         "zh|member|pf|siglens:minus:get_quote": {
             "prompt": "9831be9e7f295341385cda2f1d49c899a20b80ea49d272bd22fdce1ae259e07a",
-            "specs": "b11e08f56fcb44622fa630548b4c87384ef72b0713ebbe620819c13f0f86e9ec"
+            "specs": "493f97fd6d7a9495e198a053274b957153c03c2318f47a374b81492e732245e1"
         },
         "zh|member|pf|siglens:minus:get_bars_indicators": {
             "prompt": "d5ecff6ee19e0cff29c79805d587aa97de5d996480e5516413f61f23835b1e97",
-            "specs": "35127d56a5a14eadbd218bb38d6074af99e820e23fbb73e25a27fd10a56c30ae"
+            "specs": "be1ae3dd0ed1a64653bcd7782765e4468a3d2f24afb7a142840d87afcc54e11d"
         },
         "zh|member|pf|siglens:minus:get_cached_analysis": {
             "prompt": "bfdda4b8a0e911a93eceb76640452d5a210ab9ac40318e9f3c0454e0a3a78413",
-            "specs": "3a0d23d7035aa0bc8d37e51d98b6927ee68ce10e3de6adaabf850164271427e9"
+            "specs": "641932a1c5f6dbc796141d23fbb3f8ffb7a89cd447d482ea2c33b930b2de5384"
         },
         "zh|member|pf|siglens:minus:get_news": {
             "prompt": "a15e2da18749d3ebed2e583afb6cac5b894a25839e4a626eb953488215b772cd",
-            "specs": "d5de127fc4ea5f1042232b3489b15170e54983ca671130f1c61230d0b927ccdc"
+            "specs": "822b2f1e67bab65b9652f88f81b80b434f19319241d40d4b8d602bed849cd82e"
         },
         "zh|member|pf|siglens:minus:get_options_summary": {
             "prompt": "ef6b5bf70ca4d5dbe48494001d7ffb3e1a207974defbf28ef999e09c99ebda2a",
-            "specs": "7adc4fee921060122c707f20189ad533296ec9357180efddde97173cf3592b38"
+            "specs": "21351a5aa62b633a3aa2cabd3cf2196c7892e4ca0a711913b42f42a4056a2a30"
         },
         "zh|member|pf|siglens:minus:get_fundamentals": {
             "prompt": "3c01e7862cae1aaee2524382109ee40916bb0bcdabb0aacebb13bfb0ad969753",
-            "specs": "57f3d98bd890b51b78255a20a8c87e06106c5dd16f6162a6b7533e29886fc3d2"
+            "specs": "938fc785be7ab56b552303497965f10edc0ab1e6e7e36dc55b1895a8d568570c"
         },
         "zh|member|pf|siglens:minus:get_analyst_views": {
             "prompt": "f6da601ddbb551973db15a5fb422698e8ca97d906e613cef10dd734ffe89c5f2",
-            "specs": "8f7566534b077cb6820fcc1a21800bec6a41fcbfc182b78a8da05d53be35ed53"
+            "specs": "d841ff2c7cb80f9c5a62ac2068e0c97a9598e66f56a205c251c932a9305bdeaf"
         },
         "zh|member|pf|siglens:minus:get_company_filings": {
             "prompt": "359ebbff0790a47c42b1f597789bd992873047a93079bede79b3ded62bc2499d",
-            "specs": "eef99f2ddfbf71d777a9dea9e057eb47e9591fb7dc283daa1bdd795f08a75f58"
+            "specs": "c0460d46fad220edbfe99e16c172f13ae9111ffadb4f6f911033e3cb429d3f60"
         },
         "zh|member|pf|siglens:minus:get_market_overview": {
             "prompt": "da7627bce409bc08f60530028ee12a13e2f3ca6ca5bce4ef8773b94f9d66334d",
-            "specs": "de945cd704bc40702e4e8e58ab75b9edf50e3a4893d1ae43370551eff1fe63eb"
+            "specs": "da43cd828ce534c43d447a1eadbc143445ea41e105d03cbe75be7dced8519058"
         },
         "zh|member|pf|siglens:minus:get_economy": {
             "prompt": "9eadea7d7dae12873b5e952b96adf84e4a088df870d2d95aecf03c9bc598e766",
-            "specs": "c821405e277abbb0a32132c5e1046b2a634844d181bc583f53896d67a56b8c18"
+            "specs": "c8397302d1e0d03051438e251c740b9ead5d08e6fb4036c5b7a35921114b65cd"
         },
         "zh|member|pf|siglens:minus:get_macro_quotes": {
             "prompt": "317a770eafad9aab9848d4dbf014751adb21be92ae259190a938536c934027aa",
-            "specs": "7ca05e083c6bc4dd756d8ef8a080707cbda03ba77b8c0f27d20f0b87f783be4a"
+            "specs": "c6cd261fe1f421f76ae786c5472a435b09d4f62adf89df12670ef1682f3e2035"
         },
         "zh|member|pf|siglens:minus:get_theme_snapshot": {
             "prompt": "2e8569f8a9f80f4a68dd4bda1fed9873039cd74d19758280f73f7a72b80acfa3",
-            "specs": "7c6d5bd843b08f29edb33fe19e5cf7cb7013ff0393a653a67138c5f5160250a3"
+            "specs": "2ab96553dd7577acd993365359879c0770c1de495dbb6f52e1046500d9bdb16a"
         },
         "zh|member|pf|siglens:minus:get_index_history_stats": {
             "prompt": "4416f6c07e618112bb355b6f1cd70fc979811fe5d024f5cc03447eacf90be55f",
-            "specs": "950238f339e60fe4d82fc3a4746586e91fe023b30817ef1653c7673b55767016"
+            "specs": "142f5b177d74ea14a696ca64ba3617466b7be967717140df842020a06daf6d18"
         },
         "zh|member|pf|siglens:minus:get_swing_history": {
             "prompt": "3060a1bcb7cf789721cecefd3a2ae43cb31da7c4a32bcdfbe8a0e11e6db2673b",
-            "specs": "050e1a2d0f583f5f29fbc8dbe66fb17b3017a3ec4a5efc0f8451cf3a4c18b55e"
+            "specs": "6223b5302c9e2c1e7659e43c9fa8f110d59de21c46b670de77089f41a7c7a36f"
         },
         "zh|member|pf|siglens:minus:get_price_stats": {
             "prompt": "894432959f17c6a044d6e15a6bd7522be9502b4220399b27f0b6f91c18bdecc6",
-            "specs": "0d1ea795440181e966993df716a7552bf038031daff3c129f4a519acd10a8e6b"
+            "specs": "012dd144aca9e000dcea059c9ff46a2e02e1677b5e30512b3342192d20ef6f1e"
         },
         "zh|member|pf|siglens:minus:get_congress_trades": {
             "prompt": "689c6b87e825294dc24152d6f8a2220b0c1b4ffc6998c50fbeaf1ee39b812dc8",
-            "specs": "777364385b3a773e3862237c588e75160ccea0731f60313148be7bb639d7531e"
+            "specs": "04cc448d9ff7418f0ebc07bdda97fea3eca271a54df957b05067c1d0fdba0882"
         },
         "zh|member|pf|siglens:minus:get_investor_flows": {
             "prompt": "295621ae90fb3ea1cce1e712db9d9d19f444329b6331f29d4071f598f39be377",
-            "specs": "fc6c3dd01d42c5b655f182e3ca7d9a0b016fc7024c1dd138bbdd4e5cfc427e52"
+            "specs": "967e90eb1f385ab5b8a44cf991b710aa2c3e17b8c0307e8aba2f47c961f9111d"
         },
         "zh|member|pf|siglens:minus:get_guide": {
             "prompt": "a8e21bbf64679c30b1941c8d1d06a9190d443348bd075e3e25d61323e313674a",
-            "specs": "9ae45f5d8bf81c15ff4bfb2ba407e9cca9c92e05b35da927d1414501f427657c"
+            "specs": "0be50b286dc273566df7fdb107fdcc3c0b8f3e4bc367af1c52a7ee74b81a4080"
         },
         "zh|member|pf|siglens:minus:run_fresh_analysis": {
             "prompt": "aac3eab93f06610267b2bf632a1566d23471242a54260e68bab34d379cac038d",
-            "specs": "45afa3bef819482b706894dfa67bac45f588c2381bc8df4e096fa806d9837d9d"
+            "specs": "26474fe0a29fea32d48b883b38bc7a0981f4b5c5aa5d3bddce54bd7404c0462f"
         },
         "zh|member|pf|siglens:minus:get_my_portfolio": {
             "prompt": "a9da12825238fa4c8d681c27b9b2fd1d708583ba2db95d8a37ab83722cd227db",
-            "specs": "4b5b1b8c40f9f089c180e18f0a01f8277edfa6514baa5238c793bd72ef289d4f"
+            "specs": "b4b63aaa6b74a5e11587e0145d1dd110f404c7ab703726c96790204e68229356"
         },
         "zh|member|pf|siglens:minus:get_x_posts": {
             "prompt": "0c80fd91c0931ce1cd2b2b17097e8b89da1a31d9b20ad3e29e2831e069a88b62",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         },
         "zh|member|pf|siglens:minus:show_chart": {
             "prompt": "d010c23de810c1c68f7bd761b629a894401d67f4555383b0cf91fb61a3ce08ac",
-            "specs": "5c236e37545a28120481d2ce7cc5a56e6d0dd17a2c64c0f775a96e95b05ff873"
+            "specs": "f033264bf16b2446f6e27ef200cc2d4528a38cc0d2944fdd9eda6874dbde68e4"
         },
         "zh|member|pf|siglens:minus:web_search": {
             "prompt": "1cb34748b5fcc6c2ae3adf305c116a9695a6caca7b8fcbf778609f8f3a618700",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|member|pf|siglens:minus:get_my_watchlist": {
             "prompt": "2f1ad3e60360053e728b469aa8efacd97289d24a1aa1496d4664347227f754ed",
-            "specs": "2c05d01b428ac3878f9ee2f7361001d7fdd2323b14bc50424d993b1f38102df6"
+            "specs": "c19de86ea7b0b5a409b37a9cd61bb6d7052f974ee98442cd069aa3c15bf3e4ae"
         },
         "zh|member|pf|siglens:minus:propose_price_alert": {
             "prompt": "d04fbd825d8e8eff969b146a469b70669e554a8ad97db27081a07e5bf30610d5",
-            "specs": "d1547b38f551ae5afd5a40f12942c00847f92d0ad7e6dedf6514e9b1b2d14458"
+            "specs": "153323177f5a6e3be8a046ed1a6bebc2ed22e00c46fd093366b08b66953f009e"
         },
         "zh|member|pf|siglens:e2eFake": {
             "prompt": "0fccdad5c7eaf47b437c37be9d6f6225e3c20e5ddcdffcefe899ef631da6c099",
-            "specs": "547b11e97b717bd7c52e9a3c3a30dc892ae9e7b0a6eae27db1f5b8c94ca55b74"
+            "specs": "689c6ecf47ba1cb62e223651849998c6773459f0c70d1ed925afa4fdbd45d4d2"
         },
         "zh|member|pf|siglens:publicApi": {
             "prompt": "126605ac92c25ac0e6b6d0d69e1936cd6509d06b3c836a75c38dcb2df7b9a33e",
@@ -3707,11 +3707,11 @@
         },
         "zh|member|pf|siglens:noWebSearch": {
             "prompt": "1cb34748b5fcc6c2ae3adf305c116a9695a6caca7b8fcbf778609f8f3a618700",
-            "specs": "4428281e551f2124d9312e6150f37b71ce288a5d3d731ce04c64202d0e6b72b3"
+            "specs": "9d6530c85e20849f8a6b1615ca8b92971f7eb375dfc34131c3a55ab9b4b218ad"
         },
         "zh|member|pf|siglens:noXPosts": {
             "prompt": "0c80fd91c0931ce1cd2b2b17097e8b89da1a31d9b20ad3e29e2831e069a88b62",
-            "specs": "981247bc26ace04491bdb1ba9974c978795c809290560a5ecffd874186c1f6e2"
+            "specs": "bb1132f526b1754aefff8ad61710de772f031e76496ec9d1848d01e7e9bb7843"
         }
     },
     "turnContext": {

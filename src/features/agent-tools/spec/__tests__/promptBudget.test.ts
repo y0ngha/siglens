@@ -72,9 +72,9 @@ import { AGENT_TOOL_SPECS, buildAgentSystemPrompt } from './toolSetHarness';
  *   `run_fresh_analysis` each describe the `baseRate` fields of a pattern entry
  *   (eventShare, placeboShare, n, verdict, pooled) — both, because either tool
  *   can be available without the other; the watchlist row drops its second
- *   arrow and the alert row stops naming the analysis tools. Measured: ko guest
- *   59,063 -> 59,114, en guest 59,572 -> 59,623; tool specs 74,462 -> 75,254
- *   chars of JSON, so the tool specs budget goes 74,500 -> 75,500; longest
+ *   arrow and the alert row stops naming the analysis tools; the watchlist and
+ *   alert descriptions stop naming other tools. Measured: ko guest 59,063 ->
+ *   59,114, en guest 59,572 -> 59,623; tool specs 74,462 -> 75,339 chars of JSON, so the tool specs budget goes 74,500 -> 75,500; longest
  *   description `get_bars_indicators` 6,818 (unchanged).
  */
 const SYSTEM_PROMPT_CHAR_BUDGET = 59_500;
