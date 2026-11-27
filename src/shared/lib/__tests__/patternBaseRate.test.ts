@@ -1,4 +1,6 @@
 import {
+    CANDLE_BASE_RATES,
+    PATTERN_BASE_RATES,
     PRICE_LEVEL_BASE_RATE,
     measuredBaseRateFor,
     type MeasuredBaseRate,
@@ -6,6 +8,7 @@ import {
 import {
     baseRateScopeYears,
     formatShareAsPercent,
+    isPooledBaseRate,
     isTargetReferenceOnly,
     resolvePatternBaseRate,
 } from '@/shared/lib/patternBaseRate';
@@ -15,6 +18,31 @@ const ROW: MeasuredBaseRate = {
     subject: 'chart_pattern',
     key: 'double_bottom',
 };
+
+describe('isPooledBaseRate', () => {
+    it('marks exactly the shipped rows core substituted with the all-pattern or all-candle row', () => {
+        const rows = [
+            ...Object.values(PATTERN_BASE_RATES),
+            ...Object.values(CANDLE_BASE_RATES),
+        ].flatMap(rate => (rate === undefined ? [] : [rate]));
+        const pooled = rows.filter(isPooledBaseRate);
+        expect(pooled.length).toBeGreaterThan(0);
+        expect(pooled.every(rate => rate.key === 'pooled')).toBe(true);
+        expect(
+            rows.filter(rate => !isPooledBaseRate(rate)).length
+        ).toBeGreaterThan(0);
+        expect(PATTERN_BASE_RATES.bull_flag).toBeDefined();
+        expect(isPooledBaseRate(PATTERN_BASE_RATES.bull_flag ?? ROW)).toBe(
+            true
+        );
+    });
+
+    it('does not call a pattern-own row pooled just because its verdict is insufficient_sample', () => {
+        expect(
+            isPooledBaseRate({ ...ROW, verdict: 'insufficient_sample' })
+        ).toBe(false);
+    });
+});
 
 describe('resolvePatternBaseRate', () => {
     it('keeps the row core attached to the card', () => {

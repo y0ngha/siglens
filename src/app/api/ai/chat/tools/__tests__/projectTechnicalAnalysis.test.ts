@@ -158,6 +158,23 @@ describe('projectTechnicalAnalysis', () => {
         }
     );
 
+    it('patterns: an own-key row with an insufficient_sample verdict is not pooled (same rule as the card)', () => {
+        const own = PATTERN_BASE_RATES.head_and_shoulders;
+        expect(own).toBeDefined();
+        const r = projectTechnicalAnalysis({
+            ...BASE,
+            patternSummaries: [
+                {
+                    ...pattern('head_and_shoulders', 0.8),
+                    baseRate: { ...own, verdict: 'insufficient_sample' },
+                },
+            ],
+            strategyResults: [],
+            candlePatterns: [],
+        } as never);
+        expect(r.patterns[0]?.baseRate?.pooled).toBe(false);
+    });
+
     it('patterns: a stored card without baseRate gets the same table row the panel shows', () => {
         const r = projectTechnicalAnalysis(
             {

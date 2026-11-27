@@ -15,6 +15,25 @@ import { patternIdForSkill } from '@/shared/lib/guideLinkLookup';
 const PERCENT = 100;
 
 /**
+ * 전체 합산 행(패턴 전체, 캔들 전체)의 `MeasuredBaseRate.key`. core가 상수로 내보내지 않아
+ * 카드, 에이전트 투영, 백테스트 기록표가 여기서 읽는다.
+ */
+export const POOLED_BASE_RATE_KEY = 'pooled';
+
+/**
+ * 이 행이 그 패턴 자기 측정이 아니라 전체 합산 행인가 — 카드("전체 패턴 기준"), 에이전트
+ * (`pooled`), 백테스트 기록표가 같은 판정을 쓴다.
+ *
+ * `key`만 본다: core는 표본이 `BASE_RATE_MIN_N` 미만인 패턴의 항목을 합산 행으로 바꿔
+ * 넣으며(`key: 'pooled'`, `verdict: 'insufficient_sample'`), 그때 숫자가 실제로 합산값이다.
+ * `insufficient_sample` 판정만으로 합산이라 하면, 자기 `key`를 단 행에 판정만 그 값인 경우
+ * 그 패턴 자기 숫자를 "전체 패턴 기준"이라고 잘못 적게 된다.
+ */
+export function isPooledBaseRate(rate: MeasuredBaseRate): boolean {
+    return rate.key === POOLED_BASE_RATE_KEY;
+}
+
+/**
  * 표를 찾을 패턴 id. core가 카드에 붙일 때와 같게 스킬 카탈로그의 정본 id(스킬 이름으로
  * 찾는다)를 쓴다. 카드의 `patternName`은 모델이 쓴 문자열이라 믿지 않고, 카탈로그에 스킬이
  * 없을 때만 그 값이 정본 `ChartPatternId`와 정확히 같은 경우에 한해 쓴다. 둘 다 아니면 빈

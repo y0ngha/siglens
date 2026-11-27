@@ -10,7 +10,10 @@ import type {
     Timeframe,
     Trend,
 } from '@y0ngha/siglens-core';
-import { resolvePatternBaseRate } from '@/shared/lib/patternBaseRate';
+import {
+    isPooledBaseRate,
+    resolvePatternBaseRate,
+} from '@/shared/lib/patternBaseRate';
 import { fitProse, type ProseSpec } from './fitProse';
 
 /**
@@ -40,9 +43,6 @@ interface ProjectedBaseRate {
     pooled: boolean;
 }
 
-/** `MeasuredBaseRate.key` of the all-pattern row core substitutes for a small-sample pattern. */
-const POOLED_BASE_RATE_KEY = 'pooled';
-
 /** One capped entry of `ProjectedTechnicalAnalysis['patterns']`, in detection order. */
 interface ProjectedPatternSummary {
     name: string;
@@ -61,7 +61,7 @@ function projectBaseRate(
         placeboShare: rate.placeboShare,
         n: rate.n,
         verdict: rate.verdict,
-        pooled: rate.key === POOLED_BASE_RATE_KEY,
+        pooled: isPooledBaseRate(rate),
     };
 }
 

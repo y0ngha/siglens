@@ -738,6 +738,21 @@ describe('AnalysisPanel', () => {
             ).toBeInTheDocument();
         });
 
+        it('keeps the pooled note off a pattern-own row even when its verdict is insufficient_sample', () => {
+            // 숫자가 그 패턴 자기 측정이면 "전체 패턴 기준"은 거짓이다(에이전트 `pooled`와 같은 규칙).
+            openPattern(
+                makePattern({
+                    baseRate: { ...ROW, verdict: 'insufficient_sample' },
+                })
+            );
+            expect(screen.queryByText(/표본이 적어/)).not.toBeInTheDocument();
+            expect(
+                screen.getByText(
+                    '같은 거리의 다른 날 가격과 비교해 측정된 우위는 없어요.'
+                )
+            ).toBeInTheDocument();
+        });
+
         it('says plainly there is no measured edge for a no_edge row', () => {
             openPattern(makePattern({ baseRate: ROW }));
             expect(

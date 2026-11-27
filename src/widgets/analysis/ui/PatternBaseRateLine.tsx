@@ -7,7 +7,7 @@
  * 문헌에서 온 신뢰도 배지를 대신한다. 숫자는 core가 카드에 붙인 측정값 그대로이고,
  * 예측이나 권유가 아니라 "그 비율이었다"는 사실만 적는다. 측정은 일봉 기준이라 다른
  * 시간 단위(`rate`가 `null`)는 측정 안 됨으로 적는다. 표본이 적어 전체 패턴 행으로
- * 대신한 카드(`key === 'pooled'`이거나 `insufficient_sample`)는 그 사실을 한 줄 더 밝힌다.
+ * 대신한 카드(`isPooledBaseRate`, `key === 'pooled'`)는 그 사실을 한 줄 더 밝힌다.
  * 마지막 줄은 판정을 평이하게 말한다: 위약을 못 이기면(`no_edge`, `insufficient_sample`)
  * 측정된 우위가 없다고, 이기면(`beats_placebo`) 이겼지만 약속은 아니라고 적는다.
  */
@@ -16,6 +16,7 @@ import type { MeasuredBaseRate } from '@y0ngha/siglens-core';
 import {
     baseRateScopeYears,
     formatShareAsPercent,
+    isPooledBaseRate,
 } from '@/shared/lib/patternBaseRate';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
@@ -35,9 +36,9 @@ export function PatternBaseRateLine({ rate }: PatternBaseRateLineProps) {
     }
 
     const { from, to } = baseRateScopeYears(rate);
-    // 표본이 모자라 전체 패턴 행으로 대신한 카드는 그 사실을 먼저 밝힌다.
-    const isPooled =
-        rate.key === 'pooled' || rate.verdict === 'insufficient_sample';
+    // 판정이 아니라 키로 가른다: 숫자가 실제 합산값일 때만 "전체 패턴 기준"이 참이다
+    // (에이전트, 기록표와 같은 규칙, `isPooledBaseRate`).
+    const isPooled = isPooledBaseRate(rate);
 
     return (
         <div className="flex flex-col gap-0.5">

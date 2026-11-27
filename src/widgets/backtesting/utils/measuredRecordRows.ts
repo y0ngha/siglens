@@ -4,6 +4,7 @@
  * 정렬하지 않는다 — 비율순 정렬은 잘 나온 행을 위로 올리는 선택이 된다.
  */
 import { PATTERN_ID_BY_SKILL_NAME } from '@/shared/config/guideLinks.generated';
+import { isPooledBaseRate } from '@/shared/lib/patternBaseRate';
 import {
     PATTERN_BASE_RATES,
     PATTERN_POOLED_BASE_RATE,
@@ -12,9 +13,6 @@ import {
     priceLevelFamilyBaseRateFor,
     type MeasuredBaseRate,
 } from '@y0ngha/siglens-core';
-
-/** 표본이 모자란 행이 대신 지니는 합산 행의 키(core의 `MeasuredBaseRate.key`). */
-const POOLED_KEY = 'pooled';
 
 const SKILL_NAME_BY_PATTERN_ID: Readonly<Record<string, string>> =
     Object.fromEntries(
@@ -57,11 +55,11 @@ export function patternRecord(): PatternRecord {
         rate === undefined ? [] : [{ id, rate }]
     );
     const pooledIds = entries
-        .filter(({ rate }) => rate.key === POOLED_KEY)
+        .filter(({ rate }) => isPooledBaseRate(rate))
         .map(({ id }) => id);
     return {
         own: entries
-            .filter(({ rate }) => rate.key !== POOLED_KEY)
+            .filter(({ rate }) => !isPooledBaseRate(rate))
             .map(({ id, rate }) => ({ id, rate })),
         pooledIds,
         pooled: PATTERN_POOLED_BASE_RATE,
