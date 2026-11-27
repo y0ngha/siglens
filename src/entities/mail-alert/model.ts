@@ -1,4 +1,8 @@
-import type { ExtremeFearGreedZone, SignalType } from '@y0ngha/siglens-core';
+import type {
+    ExtremeFearGreedZone,
+    SignalType,
+    Trend,
+} from '@y0ngha/siglens-core';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import type {
     PriceAlertConditionRecord,
@@ -46,10 +50,61 @@ export type MailAlertItem =
           readonly zone: ExtremeFearGreedZone;
           readonly date: string;
           readonly score: number;
+      }
+    | MailAlertChangeItem;
+
+/**
+ * 종목의 달라진 점 하나(코어가 두 종가 사이를 읽은 결과를 메일이 말하는 모양으로 옮긴 것). 가격은 그 분석이 만든
+ * 값 그대로이고, `analyzedAt`은 그 값을 낸 시그렌즈 AI 분석의 시각(ISO)이다 — 줄마다 근거 날짜를 적는다(CS-18).
+ * 추세는 두 종가의 판정만 말한다(분석이 보여 준 추세와 무관한 계산값).
+ */
+export type MailAlertChange =
+    | {
+          readonly kind: 'trend';
+          readonly from: Trend;
+          readonly to: Trend;
+      }
+    | {
+          readonly kind: 'level';
+          readonly side: 'support' | 'resistance';
+          /** `down`: 종가가 선의 아래쪽(지지선은 이하)으로, `up`: 위쪽(저항선은 이상)으로 옮겨 갔다. */
+          readonly direction: 'down' | 'up';
+          readonly price: number;
+          readonly close: number;
+          readonly analyzedAt: string;
+      }
+    | {
+          readonly kind: 'plan_zone';
+          readonly position: 'in_zone' | 'above_zone' | 'below_zone';
+          readonly low: number;
+          readonly high: number;
+          readonly close: number;
+          readonly analyzedAt: string;
+      }
+    | {
+          readonly kind: 'plan_stopped';
+          readonly stop: number;
+          readonly close: number;
+          readonly analyzedAt: string;
       };
+
+/** "담은 종목에서 달라진 점"의 한 줄: 추세, 지지·저항선, 진입 구간·무효화 기준의 변화. */
+export interface MailAlertChangeItem {
+    readonly kind: 'change';
+    readonly section: 'mine';
+    readonly market: SignalHistoryMarket;
+    readonly symbol: string;
+    readonly name: string | null;
+    /** 그 종가의 세션 날짜(`YYYY-MM-DD`). */
+    readonly sessionDate: string;
+    readonly change: MailAlertChange;
+}
 
 /** 메일에 실리는 신호 줄. */
 export type MailAlertSignalItem = Extract<MailAlertItem, { kind: 'signal' }>;
+
+/** "담은 종목" 섹션의 줄: 새 신호 아니면 달라진 점. */
+export type MailAlertMineItem = MailAlertSignalItem | MailAlertChangeItem;
 
 /** 메일에 실리는 공포·탐욕 극단 구간 진입 줄. */
 export type MailAlertFearGreedItem = Extract<
@@ -133,6 +188,10 @@ export interface MailAlertManageView {
     readonly topics: readonly MailAlertTopic[];
     /** 회원일 때만 스위치가 의미 있다. */
     readonly includePortfolio: boolean | null;
+    /** 살아 있는 가격대 알림(진행 중, 만료 세션을 판정하는 실행 전까지). 공개 전이면 비어 있다. */
+    readonly priceAlerts: readonly PriceAlertView[];
+    /** 알린 지 얼마 안 된 가격대 알림(보존 기간 안, 최근 순). */
+    readonly firedPriceAlerts: readonly PriceAlertView[];
 }
 
 /** 가격대 알림이 읽는 가격의 출처. DB `price_alerts.basis`의 허용 값과 같다. */
@@ -158,9 +217,39 @@ export interface PriceAlertView {
     readonly analysisAt: Date | null;
     readonly referenceClose: number;
     readonly createdAt: Date;
-    /** 한국 날짜. 이 날까지 유지된다. */
+    /** 만료 세션: 그 시장에서 마지막으로 종가를 판정하는 세션의 날짜(한국 날짜가 아니다). */
     readonly expiresOn: string;
     readonly status: PriceAlertRecord['status'];
     readonly firedSession: string | null;
     readonly firedClose: number | null;
+    /** 알림 메일을 선점한 시각(DB 시계). 알리지 않은 알림은 null. */
+    readonly firedAt: Date | null;
+}
+
+/** 분할 등으로 가격 기준이 달라져 끝낸 가격대 알림을 알리는 줄. */
+export interface MailAlertVoidedPriceAlertItem {
+    readonly kind: 'price_alert_voided';
+    readonly alertId: string;
+    readonly symbol: string;
+}
+
+/** 메일에 실리는 가격대 알림 줄. 조건을 충족한 첫 종가와 그 세션을 함께 든다. */
+export interface MailAlertPriceAlertItem {
+    readonly kind: 'price_alert';
+    readonly alertId: string;
+    readonly symbol: string;
+    readonly market: PriceAlertRecord['market'];
+    readonly condition: PriceAlertCondition;
+    readonly basis: PriceAlertBasis;
+    readonly analysisAt: Date | null;
+    readonly referenceClose: number;
+    readonly createdAt: Date;
+    /** 조건을 처음 충족한 종가의 세션(`YYYY-MM-DD`)과 그 종가. */
+    readonly firedSession: string;
+    readonly firedClose: number;
+    /**
+     * 구간 알림에서 그 종가가 구간의 어디에 있는지(코어 판정 그대로). 구간 안이면 `inside`, 구간을 건너뛰어
+     * 아래·위에서 마감했으면 `below`·`above`. 구간이 아닌 알림은 `null`.
+     */
+    readonly zonePosition: 'inside' | 'below' | 'above' | null;
 }

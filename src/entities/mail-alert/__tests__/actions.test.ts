@@ -4,6 +4,16 @@ import {
 } from '@/shared/test-utils/plantedDbError';
 
 const launched = vi.hoisted(() => ({ value: true }));
+const priceLaunched = vi.hoisted(() => ({ value: true }));
+vi.mock(
+    '@/entities/mail-alert/lib/priceAlertConstants',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/mail-alert/lib/priceAlertConstants')
+        >()),
+        isPriceAlertLaunched: () => priceLaunched.value,
+    })
+);
 vi.mock(
     '@/entities/mail-alert/lib/mailAlertConstants',
     async importOriginal => ({
@@ -24,9 +34,11 @@ vi.mock('@/entities/mail-alert/server/mailAlertFlows', () => ({
     removeMailAlertTopicFlow: vi.fn(),
     unsubscribeMailAlertFlow: vi.fn(),
     setMailAlertIncludePortfolioFlow: vi.fn(),
+    cancelPriceAlertFlow: vi.fn(),
 }));
 
 import { addMailAlertTopicAction } from '@/entities/mail-alert/actions/addMailAlertTopicAction';
+import { cancelPriceAlertAction } from '@/entities/mail-alert/actions/cancelPriceAlertAction';
 import { confirmMailAlertAction } from '@/entities/mail-alert/actions/confirmMailAlertAction';
 import { getMailAlertStateAction } from '@/entities/mail-alert/actions/getMailAlertStateAction';
 import { removeMailAlertTopicAction } from '@/entities/mail-alert/actions/removeMailAlertTopicAction';
@@ -105,6 +117,7 @@ const ACTIONS = [
 beforeEach(() => {
     vi.clearAllMocks();
     launched.value = true;
+    priceLaunched.value = true;
     vi.mocked(createMailAlertDeps).mockResolvedValue(DEPS);
 });
 
@@ -275,5 +288,80 @@ describe('입력 전달', () => {
             DEPS,
             false
         );
+    });
+});
+
+describe('cancelPriceAlertAction', () => {
+    const ALERT_ID = '3f0c8e3e-6b9a-4e4d-9d3a-1a2b3c4d5e6f';
+    const UNAVAILABLE = { status: 'unavailable' };
+
+    it('가격대 알림 공개 전이면 의존성도 만들지 않고 unavailable이다', async () => {
+        priceLaunched.value = false;
+
+        await expect(cancelPriceAlertAction(ALERT_ID)).resolves.toEqual(
+            UNAVAILABLE
+        );
+        expect(createMailAlertDeps).not.toHaveBeenCalled();
+        expect(flows.cancelPriceAlertFlow).not.toHaveBeenCalled();
+    });
+
+    it('알림 id와 설정 링크를 흐름에 넘기고 모양이 틀린 링크는 버린다', async () => {
+        vi.mocked(flows.cancelPriceAlertFlow).mockResolvedValue({
+            status: 'ok',
+        });
+
+        await cancelPriceAlertAction(ALERT_ID, { s: 'id', sig: 'x' });
+        await cancelPriceAlertAction(ALERT_ID, { s: 1 } as never);
+
+        expect(flows.cancelPriceAlertFlow).toHaveBeenCalledWith(
+            DEPS,
+            ALERT_ID,
+            { s: 'id', sig: 'x' }
+        );
+        expect(flows.cancelPriceAlertFlow).toHaveBeenCalledWith(
+            DEPS,
+            ALERT_ID,
+            undefined
+        );
+    });
+
+    it('테이블이 없는 환경(42P01)은 조용히 unavailable이다', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.mocked(flows.cancelPriceAlertFlow).mockRejectedValue({
+            cause: { code: '42P01' },
+        });
+
+        await expect(cancelPriceAlertAction(ALERT_ID)).resolves.toEqual(
+            UNAVAILABLE
+        );
+        expect(error).not.toHaveBeenCalled();
+        error.mockRestore();
+    });
+
+    it('그 밖의 오류는 질의 값을 가려 한 줄 남기고 unavailable로 답한다', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.mocked(flows.cancelPriceAlertFlow).mockRejectedValue(
+            plantedDbError()
+        );
+
+        await expect(cancelPriceAlertAction(ALERT_ID)).resolves.toEqual(
+            UNAVAILABLE
+        );
+        expectLogWithoutPlantedSecrets(error);
+        expect(error).toHaveBeenCalledWith(
+            expect.stringContaining('[cancelPriceAlertAction]'),
+            expect.anything()
+        );
+        error.mockRestore();
+    });
+
+    it('의존성을 만들다 던져도 던지지 않는다', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.mocked(createMailAlertDeps).mockRejectedValue(new Error('db'));
+
+        await expect(cancelPriceAlertAction(ALERT_ID)).resolves.toEqual(
+            UNAVAILABLE
+        );
+        error.mockRestore();
     });
 });

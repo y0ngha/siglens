@@ -5,7 +5,14 @@ import {
     type Bar,
     type FearGreedReading,
 } from '@y0ngha/siglens-core';
-import { MAIL_ALERT_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
+import { MAIL_ALERT_CHANGE_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
+import {
+    MS_PER_DAY,
+    MS_PER_HOUR,
+    MS_PER_MINUTE,
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+} from '@/shared/config/time';
 import {
     checkSignalReadiness,
     COMPUTE_CONCURRENCY,
@@ -17,10 +24,10 @@ import {
     type ExpectedSessions,
 } from '../collectAlertSources';
 
-const SECONDS_PER_DAY = 86_400;
-
 function isoOf(index: number): string {
-    return new Date(Date.UTC(2026, 0, 1) + index * SECONDS_PER_DAY * 1000)
+    return new Date(
+        Date.UTC(2026, 0, 1) + index * SECONDS_PER_DAY * MS_PER_SECOND
+    )
         .toISOString()
         .slice(0, 10);
 }
@@ -28,7 +35,7 @@ function isoOf(index: number): string {
 /** 평평한 일봉 `count`개 — 날짜는 2026-01-01부터 하루씩. */
 function flatBars(count: number, close = 100): Bar[] {
     return Array.from({ length: count }, (_, i) => ({
-        time: Date.UTC(2026, 0, 1) / 1000 + i * SECONDS_PER_DAY,
+        time: Date.UTC(2026, 0, 1) / MS_PER_SECOND + i * SECONDS_PER_DAY,
         open: close,
         high: close,
         low: close,
@@ -126,7 +133,10 @@ describe('공포탐욕 진입일과 발송일의 간격', () => {
             .map(
                 i =>
                     new Date(
-                        base + i * 86_400_000 + 22 * 3_600_000 + 5 * 60_000
+                        base +
+                            i * MS_PER_DAY +
+                            22 * MS_PER_HOUR +
+                            5 * MS_PER_MINUTE
                     )
             )
             .find(now => expectedSessions(now).fearGreed[market] === entryDate);
@@ -351,13 +361,13 @@ describe('loadComputedSources', () => {
 
     it('마지막 봉이 기대 세션이면 코어가 판정한 새 신호를 알림 유형만 돌려준다', async () => {
         const bars = breakoutBars(300);
-        const lastDate = new Date((bars.at(-1)?.time ?? 0) * 1000)
+        const lastDate = new Date((bars.at(-1)?.time ?? 0) * MS_PER_SECOND)
             .toISOString()
             .slice(0, 10);
 
         const result = await loadComputedSources(
             deps({ loadDailyBars: vi.fn().mockResolvedValue(bars) }),
-            [{ symbol: 'PLTR', sessionDate: lastDate }]
+            [{ symbol: 'PLTR', market: 'us', sessionDate: lastDate }]
         );
 
         expect(result.noFreshBar).toBe(0);
@@ -371,7 +381,9 @@ describe('loadComputedSources', () => {
         expect(computed?.changePercent).toBeCloseTo(30, 5);
         // 같은 봉에서 코어가 내는 새 신호 중 알림 유형만 남는다(허브 밖 유형은 걸러진다).
         expect(computed?.signalTypes).toEqual(
-            rawTypes.filter(type => MAIL_ALERT_SIGNAL_TYPES.includes(type))
+            rawTypes.filter(type =>
+                MAIL_ALERT_CHANGE_SIGNAL_TYPES.some(allowed => allowed === type)
+            )
         );
         expect(computed?.signalTypes.length).toBeGreaterThan(0);
         expect(rawTypes.length).toBeGreaterThan(
@@ -381,13 +393,13 @@ describe('loadComputedSources', () => {
 
     it('신호가 없는 날도 판정은 했으므로 빈 목록으로 돌려준다', async () => {
         const bars = flatBars(300);
-        const lastDate = new Date((bars.at(-1)?.time ?? 0) * 1000)
+        const lastDate = new Date((bars.at(-1)?.time ?? 0) * MS_PER_SECOND)
             .toISOString()
             .slice(0, 10);
 
         const result = await loadComputedSources(
             deps({ loadDailyBars: vi.fn().mockResolvedValue(bars) }),
-            [{ symbol: 'FLAT', sessionDate: lastDate }]
+            [{ symbol: 'FLAT', market: 'us', sessionDate: lastDate }]
         );
 
         expect(result.computed.get('FLAT')?.signalTypes).toEqual([]);
@@ -398,7 +410,7 @@ describe('loadComputedSources', () => {
             deps({
                 loadDailyBars: vi.fn().mockResolvedValue(breakoutBars(300)),
             }),
-            [{ symbol: 'STALE', sessionDate: '2099-01-01' }]
+            [{ symbol: 'STALE', market: 'us', sessionDate: '2099-01-01' }]
         );
 
         expect(result.computed.size).toBe(0);
@@ -408,13 +420,13 @@ describe('loadComputedSources', () => {
 
     it('기대 세션보다 뒤의 봉은 잘라 내고 그 세션의 마지막 봉으로 판정한다', async () => {
         const bars = breakoutBars(300);
-        const session = new Date((bars.at(-2)?.time ?? 0) * 1000)
+        const session = new Date((bars.at(-2)?.time ?? 0) * MS_PER_SECOND)
             .toISOString()
             .slice(0, 10);
 
         const result = await loadComputedSources(
             deps({ loadDailyBars: vi.fn().mockResolvedValue(bars) }),
-            [{ symbol: 'LATE', sessionDate: session }]
+            [{ symbol: 'LATE', market: 'us', sessionDate: session }]
         );
 
         // 돌파 봉은 잘려 나가 신호가 없다.
@@ -424,7 +436,7 @@ describe('loadComputedSources', () => {
 
     it('봉이 비었으면 신선한 봉이 없는 것으로 센다', async () => {
         const result = await loadComputedSources(deps(), [
-            { symbol: 'EMPTY', sessionDate: '2026-11-24' },
+            { symbol: 'EMPTY', market: 'us', sessionDate: '2026-11-24' },
         ]);
 
         expect(result.noFreshBar).toBe(1);
@@ -438,11 +450,12 @@ describe('loadComputedSources', () => {
         const session = isoOf(299);
 
         const result = await loadComputedSources(deps({ loadDailyBars }), [
-            { symbol: 'BAD', sessionDate: session },
-            { symbol: 'GOOD', sessionDate: session },
+            { symbol: 'BAD', market: 'us', sessionDate: session },
+            { symbol: 'GOOD', market: 'us', sessionDate: session },
         ]);
 
         expect(result.computeErrors).toBe(1);
+        expect(result.barLoadErrors).toBe(1);
         expect(result.computed.has('GOOD')).toBe(true);
         expect(result.computed.has('BAD')).toBe(false);
         expect(result.computedSymbols).toBe(2);
@@ -462,6 +475,7 @@ describe('loadComputedSources', () => {
             { length: COMPUTE_CONCURRENCY * 3 },
             (_, i) => ({
                 symbol: `S${i}`,
+                market: 'us' as const,
                 sessionDate: '2026-11-24',
             })
         );
@@ -469,5 +483,243 @@ describe('loadComputedSources', () => {
         await loadComputedSources(deps({ loadDailyBars }), targets);
 
         expect(state.peak).toBe(COMPUTE_CONCURRENCY);
+    });
+});
+
+describe('loadComputedSources: 달라진 점', () => {
+    const T0 = 1_700_000_000;
+    /** 60봉 횡보 뒤 계단식 상승. 64봉에서 어제(109)와 오늘(112) 사이에 추세 판정이 중립에서 강세로 바뀐다. */
+    const CLOSES = [
+        ...Array.from({ length: 60 }, (_, i) => 100 + (i % 2 ? 0.5 : -0.5)),
+        ...Array.from({ length: 25 }, (_, i) => 100 + (i + 1) * 3),
+    ];
+    const mkBars = (closes: readonly number[]): Bar[] =>
+        closes.map((close, i) => ({
+            time: T0 + i * SECONDS_PER_DAY,
+            open: close,
+            high: close + 1,
+            low: close - 1,
+            close,
+            volume: 1000,
+        }));
+    const BARS = mkBars(CLOSES.slice(0, 64));
+    const ANALYZED_AT = new Date(
+        (BARS[60]?.time ?? 0) * MS_PER_SECOND
+    ).toISOString();
+    const GENERATED_AT = new Date(ANALYZED_AT);
+
+    /** `analysis_history.result` 모양: 지지선 110(어제 109 → 오늘 112로 위로 건넘), 진입 구간 111~113. */
+    function storedResult(scale = 1): unknown {
+        return {
+            keyLevels: {
+                support: [{ price: 110 * scale }],
+                resistance: [{ price: 140 * scale }],
+            },
+            actionRecommendation: {
+                entryPrices: [111 * scale, 113 * scale],
+                stopLoss: 100 * scale,
+                takeProfitPrices: [140 * scale],
+            },
+        };
+    }
+
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    function run(
+        references?: Parameters<typeof loadComputedSources>[2],
+        bars: readonly Bar[] = BARS
+    ) {
+        return loadComputedSources(
+            deps({ loadDailyBars: vi.fn().mockResolvedValue(bars) }),
+            [
+                {
+                    symbol: 'AAPL',
+                    market: 'us',
+                    sessionDate: new Date(
+                        (bars.at(-1)?.time ?? 0) * MS_PER_SECOND
+                    )
+                        .toISOString()
+                        .slice(0, 10),
+                },
+            ],
+            references
+        );
+    }
+
+    it('분석이 없어도 어제와 오늘 종가 사이의 추세 변화를 읽는다', async () => {
+        const result = await run();
+
+        expect(result.readings.get('AAPL')).toEqual({
+            trend: [{ kind: 'trend', from: 'neutral', to: 'bullish' }],
+            byTier: new Map(),
+        });
+        expect(result.referencesUsed).toBe(0);
+    });
+
+    it('추세가 그대로인 날은 달라진 점이 없다', async () => {
+        const result = await run(undefined, mkBars(CLOSES.slice(0, 60)));
+
+        expect(result.readings.get('AAPL')?.trend).toEqual([]);
+    });
+
+    it('가격대를 보는 등급은 그 분석의 가격 판정과 진입 구간 변화를 가격대 순으로 받는다', async () => {
+        const result = await run({
+            rows: new Map([
+                ['AAPL', { generatedAt: GENERATED_AT, result: storedResult() }],
+            ]),
+            tiers: ['member'],
+        });
+
+        expect(result.referencesUsed).toBe(1);
+        const lines = result.readings.get('AAPL')?.byTier.get('member');
+        expect(lines?.map(line => line.kind)).toEqual(['plan_zone', 'level']);
+        expect(lines?.[0]).toMatchObject({
+            kind: 'plan_zone',
+            position: 'in_zone',
+            low: 111,
+            high: 113,
+            close: 112,
+            analyzedAt: ANALYZED_AT,
+        });
+        expect(lines?.[1]).toMatchObject({
+            kind: 'level',
+            side: 'support',
+            direction: 'up',
+            price: 110,
+            close: 112,
+        });
+        // 줄에는 추세가 섞이지 않는다(추세는 모두에게 같은 줄이라 따로 둔다).
+        expect(lines?.some(line => line.kind === 'trend')).toBe(false);
+    });
+
+    it('가격대를 보지 못하는 등급(free)은 분석이 있어도 가격대·구간 줄이 없다', async () => {
+        const result = await run({
+            rows: new Map([
+                ['AAPL', { generatedAt: GENERATED_AT, result: storedResult() }],
+            ]),
+            tiers: ['free'],
+        });
+
+        expect(result.readings.get('AAPL')?.byTier.size).toBe(0);
+        expect(result.referencesUsed).toBe(0);
+    });
+
+    it('읽을 수 없는 분석이나 분석이 없는 종목은 가격대 줄이 없다', async () => {
+        const unreadable = await run({
+            rows: new Map([
+                ['AAPL', { generatedAt: GENERATED_AT, result: 'broken' }],
+            ]),
+            tiers: ['member'],
+        });
+        const missing = await run({ rows: new Map(), tiers: ['member'] });
+
+        expect(unreadable.readings.get('AAPL')?.byTier.size).toBe(0);
+        expect(missing.readings.get('AAPL')?.byTier.size).toBe(0);
+    });
+
+    it('분할로 가격 척도가 달라진 분석(가격대가 지금 봉의 3배)은 쓰지 않는다', async () => {
+        const result = await run({
+            rows: new Map([
+                [
+                    'AAPL',
+                    {
+                        generatedAt: GENERATED_AT,
+                        result: storedResult(3),
+                    },
+                ],
+            ]),
+            tiers: ['member'],
+        });
+
+        expect(result.readings.get('AAPL')?.byTier.size).toBe(0);
+        expect(result.referencesUsed).toBe(0);
+        // 추세는 분석과 무관하게 읽는다.
+        expect(result.readings.get('AAPL')?.trend).toHaveLength(1);
+    });
+
+    it('척도는 분석 시각에 이미 마감돼 있던 봉과 견준다(장 시작 전 분석이 아직 열리지 않은 그날 봉에 붙지 않는다)', async () => {
+        // UTC 자정 일봉. 2026-11-18(수) 봉만 종가가 두 배다. 그날 03:00Z(한국 낮, 미국 개장 전) 분석의 마지막 마감
+        // 세션은 11-17이므로 기준 종가는 100이다. 분석 시각 이전 봉(11-18, 종가 200)으로 견주면 중앙값이 가드 밖이다.
+        const start = Date.parse('2026-09-01T00:00:00Z');
+        const days = Math.round(
+            (Date.parse('2026-11-19T00:00:00Z') - start) / MS_PER_DAY
+        );
+        const bars: Bar[] = Array.from({ length: days + 1 }, (_, i) => {
+            const time = (start + i * MS_PER_DAY) / MS_PER_SECOND;
+            const close =
+                new Date(time * MS_PER_SECOND).toISOString().slice(0, 10) >=
+                '2026-11-18'
+                    ? 200
+                    : 100;
+            return {
+                time,
+                open: close,
+                high: close + 1,
+                low: close - 1,
+                close,
+                volume: 1000,
+            };
+        });
+        const reference = {
+            generatedAt: new Date('2026-11-18T03:00:00Z'),
+            result: storedResult(),
+        };
+
+        const result = await run(
+            { rows: new Map([['AAPL', reference]]), tiers: ['member'] },
+            bars
+        );
+
+        expect(result.computed.has('AAPL')).toBe(true);
+        expect(result.referencesUsed).toBe(1);
+        expect(result.readings.get('AAPL')?.byTier.has('member')).toBe(true);
+    });
+
+    it('분석 시점의 봉을 찾지 못하면(봉보다 이른 분석) 쓰지 않는다', async () => {
+        const result = await run({
+            rows: new Map([
+                [
+                    'AAPL',
+                    {
+                        generatedAt: new Date('2000-01-01T00:00:00Z'),
+                        result: storedResult(),
+                    },
+                ],
+            ]),
+            tiers: ['member'],
+        });
+
+        expect(result.readings.get('AAPL')?.byTier.size).toBe(0);
+    });
+
+    it('한 번의 일봉 읽기로 신호와 변화를 함께 읽고, 신호는 MACD 교차를 뺀 유형만이다', async () => {
+        const loadDailyBars = vi.fn().mockResolvedValue(breakoutBars(300));
+        const lastDate = new Date(
+            (breakoutBars(300).at(-1)?.time ?? 0) * MS_PER_SECOND
+        )
+            .toISOString()
+            .slice(0, 10);
+
+        const result = await loadComputedSources(deps({ loadDailyBars }), [
+            { symbol: 'PLTR', market: 'us', sessionDate: lastDate },
+        ]);
+
+        expect(loadDailyBars).toHaveBeenCalledTimes(1);
+        expect(result.computed.get('PLTR')?.signalTypes).not.toContain(
+            'macd_bullish_cross'
+        );
+        expect(result.readings.has('PLTR')).toBe(true);
+    });
+
+    it('신선한 봉이 없으면 달라진 점도 읽지 않는다', async () => {
+        const result = await loadComputedSources(
+            deps({ loadDailyBars: vi.fn().mockResolvedValue(BARS) }),
+            [{ symbol: 'AAPL', market: 'us', sessionDate: '2099-01-01' }]
+        );
+
+        expect(result.readings.size).toBe(0);
+        expect(result.noFreshBar).toBe(1);
     });
 });

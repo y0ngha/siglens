@@ -32,6 +32,8 @@ import type {
     CancelPriceAlertOutcome,
     CreatePriceAlertInput,
     CreatePriceAlertOutcome,
+    FiredPriceAlert,
+    MailAlertClaim,
     PriceAlertConditionRecord,
     PriceAlertRecord,
     PriceAlertRepository,
@@ -42,6 +44,7 @@ import type {
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { PRICE_ALERT_FIRED_RETENTION_DAYS } from './lib/priceAlertConstants';
+import { priceAlertAsOf, type PriceAlertAsOf } from './lib/priceAlertExpiry';
 
 /** 구독자 행의 select 컬럼 — 조회·갱신 반환이 같은 `MailAlertSubscriberRecord` 모양을 쓴다. */
 const subscriberColumns = {
@@ -87,21 +90,21 @@ function verifiedAddressOf(userId: string) {
     return sql`(select ${users.email} from ${users} where ${users.id} = ${userId} and ${users.emailVerified})`;
 }
 
-/** 알림 날짜(KST)의 기준이 되는 DB 시각. 발송기는 한국 날짜로 `alertDate`를 정하므로 같은 시간대로 맞춘다. */
-const KST_TODAY = sql`(now() at time zone 'Asia/Seoul')::date`;
-
 /**
- * 살아 있는 알림: 진행 중이고 만료일(당일 포함)이 `asOf` 전이 아니다. 지워지기 전의 만료 행은 세지 않는다.
- * `asOf`는 호출자가 쓰는 알림 날짜(`YYYY-MM-DD`) — 없으면 DB의 한국 오늘이다.
+ * 살아 있는 알림: 진행 중이고 만료 세션(`expires_on`, 마지막으로 종가를 판정하는 세션)이 그 시장의 기대 세션
+ * 이상이다(`priceAlertExpiry.ts`의 한 정의). 지워지기 전의 만료 행은 세지 않는다. `asOf`를 주지 않으면 지금
+ * 시각의 기대 세션이다.
  */
-function liveAlertCondition(asOf: SQL | string = KST_TODAY): SQL {
-    return sql`${priceAlerts.status} = 'active' and ${priceAlerts.expiresOn} >= ${asOf}`;
+function liveAlertCondition(
+    asOf: PriceAlertAsOf = priceAlertAsOf(new Date())
+): SQL {
+    return sql`${priceAlerts.status} = 'active' and ((${priceAlerts.market} = 'us' and ${priceAlerts.expiresOn} >= ${asOf.us}) or (${priceAlerts.market} = 'kr' and ${priceAlerts.expiresOn} >= ${asOf.kr}))`;
 }
 
 /** 구독자에게 살아 있는 가격대 알림이 하나라도 있는지 — 받을 것이 있다는 증거다(항목·보유 스위치와 같은 급). */
 function hasLivePriceAlert(
     subscriberId: SQL | typeof mailAlertSubscribers.id,
-    asOf?: string
+    asOf?: PriceAlertAsOf
 ): SQL {
     return sql`exists (select 1 from ${priceAlerts} where ${priceAlerts.subscriberId} = ${subscriberId} and ${liveAlertCondition(asOf)})`;
 }
@@ -443,10 +446,10 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
     /**
      * 발송 대상 — 항목이 있거나 보유·관심종목 함께 받기가 켜졌거나 살아 있는 가격대 알림이 있는 구독자.
      * 가격대 알림만 가진 구독자도 빠지면 알림이 영영 판정되지 않는다. 항목은 한 쿼리로 모은다.
-     * `alertDate`(발송기가 쓰는 한국 날짜)를 주면 만료 판정이 `listActiveForDelivery`와 같은 시계를 쓴다.
+     * `asOf`(발송기의 시장별 기대 세션)를 주면 만료 판정이 `listActiveForDelivery`와 같은 정의를 쓴다.
      */
     async findAllForDelivery(
-        alertDate?: string
+        asOf?: PriceAlertAsOf
     ): Promise<MailAlertDeliveryTarget[]> {
         const rows = await withRetry(
             () =>
@@ -471,7 +474,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                     )
                     .groupBy(mailAlertSubscribers.id)
                     .having(
-                        sql`${mailAlertSubscribers.includePortfolio} or count(${mailAlertTopics.kind}) > 0 or ${hasLivePriceAlert(mailAlertSubscribers.id, alertDate)}`
+                        sql`${mailAlertSubscribers.includePortfolio} or count(${mailAlertTopics.kind}) > 0 or ${hasLivePriceAlert(mailAlertSubscribers.id, asOf)}`
                     )
                     .orderBy(
                         mailAlertSubscribers.createdAt,
@@ -531,57 +534,186 @@ async function deleteIfNothingToReceive(
 export class DrizzleMailAlertDeliveryRepository implements MailAlertDeliveryRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /**
+     * 선점과 알림 표시가 한 트랜잭션이다(DB-6): 선점이 이기면 `firedAlerts`가 `fired`가 되고, 지면(겹친 실행·앞
+     * 슬롯) 아무것도 바뀌지 않는다. UPDATE는 `status = 'active'`와 `subscriber_id`를 문장에 담는다 — 이미 알린
+     * 알림은 두 번째로 알리지 않고(알림 하나는 메일 한 통에만 실린다), 다른 구독자의 알림 id는 가리키지 못한다
+     * (DB-12). 알린 시각은 DB 시계(`now()`)다. 실제로 `fired`로 바뀐 알림 id만 돌려준다 — 판정과 선점 사이에
+     * 지워진(또는 이미 알린) 알림은 빠지고, 호출자는 그 알림을 메일에 싣지 않는다. 끝낸 알림(`v:<id>` 항목)의
+     * 삭제는 여기서 하지 않는다 — 메일이 나간 뒤 `finish`가 한다.
+     */
     async claim(
         subscriberId: string,
         alertDate: string,
-        itemKeys: readonly string[] = []
-    ): Promise<string | null> {
-        const [row] = await withRetry(
+        itemKeys: readonly string[] = [],
+        firedAlerts: readonly FiredPriceAlert[] = []
+    ): Promise<MailAlertClaim | null> {
+        return withRetry(
             () =>
-                this.db
-                    .insert(mailAlertDeliveries)
-                    .values({
-                        subscriberId,
-                        alertDate,
-                        status: 'pending',
-                        itemKeys: [...itemKeys],
-                    })
-                    .onConflictDoNothing({
-                        target: [
-                            mailAlertDeliveries.subscriberId,
-                            mailAlertDeliveries.alertDate,
-                        ],
-                    })
-                    .returning({ id: mailAlertDeliveries.id }),
+                this.db.transaction(async tx => {
+                    // 잠금 순서는 모든 경로가 구독자 → 알림이다(`cancel`·`removeTopic`·정리). 선점이 먼저 발송 기록을
+                    // 넣고 알림 행을 하나씩 잡으면, 구독자를 잠근 채 알림 행을 지우는 쪽과 서로의 행을 기다려
+                    // 교착한다. 구독자 행을 먼저 잠그면 그 쪽이 끝날 때까지 기다리기만 한다.
+                    await tx
+                        .select({ id: mailAlertSubscribers.id })
+                        .from(mailAlertSubscribers)
+                        .where(eq(mailAlertSubscribers.id, subscriberId))
+                        .for('no key update');
+                    const [row] = await tx
+                        .insert(mailAlertDeliveries)
+                        .values({
+                            subscriberId,
+                            alertDate,
+                            status: 'pending',
+                            itemKeys: [...itemKeys],
+                        })
+                        .onConflictDoNothing({
+                            target: [
+                                mailAlertDeliveries.subscriberId,
+                                mailAlertDeliveries.alertDate,
+                            ],
+                        })
+                        .returning({ id: mailAlertDeliveries.id });
+                    if (row === undefined) return null;
+                    const firedAlertIds = await firedAlerts.reduce(
+                        (previous, fired) =>
+                            previous.then(async ids => {
+                                const updated = await tx
+                                    .update(priceAlerts)
+                                    .set({
+                                        status: 'fired',
+                                        firedSession: fired.session,
+                                        firedClose: toNumeric(fired.close),
+                                        firedAt: sql`now()`,
+                                        updatedAt: sql`now()`,
+                                    })
+                                    .where(
+                                        and(
+                                            eq(priceAlerts.id, fired.id),
+                                            eq(
+                                                priceAlerts.subscriberId,
+                                                subscriberId
+                                            ),
+                                            eq(priceAlerts.status, 'active')
+                                        )
+                                    )
+                                    .returning({ id: priceAlerts.id });
+                                return [
+                                    ...ids,
+                                    ...updated.map(alert => alert.id),
+                                ];
+                            }),
+                        Promise.resolve<string[]>([])
+                    );
+                    return { id: row.id, firedAlertIds };
+                }),
             DB_TRANSIENT_RETRY
         );
-        return row?.id ?? null;
     }
 
+    /**
+     * 발송 결과를 기록하면서 이 메일이 말한 알림의 상태를 같은 트랜잭션에서 정리한다. 대상은 이 기록의 항목
+     * 키(`p:<알림 id>`·`v:<알림 id>`)에 든 알림 중 이 기록의 구독자 것뿐이다(DB-12). 선점의 잠금 순서(구독자 →
+     * 알림)를 따른다.
+     *
+     * - `mailNotSent`(제공자가 발송을 확정적으로 거절했거나 보내기 전에 실패해 메일이 나가지 않았다): 이 메일이
+     *   알린 `fired` 알림(`p:`)을 다시 `active`로 돌리고, 끝낸 알림(`v:`)은 지우지 않는다 — 다음 실행이 다시
+     *   판정해 다시 알린다.
+     * - 그 밖에는(받아 줬거나, 보내다 던져 나갔는지 알 수 없다): 메일이 끝냈다고 말한 알림(`v:`)을 지운다.
+     */
     async finish(
         id: string,
         outcome: MailAlertDeliveryOutcome,
         itemKeys: readonly string[],
-        error: string | null
+        error: string | null,
+        mailNotSent = false
     ): Promise<void> {
+        const keyedIds = (prefix: string) =>
+            itemKeys.flatMap(key =>
+                key.startsWith(prefix) ? [key.slice(prefix.length)] : []
+            );
+        const rearmIds = mailNotSent ? keyedIds('p:') : [];
+        const voidIds = mailNotSent ? [] : keyedIds('v:');
         await withRetry(
             () =>
-                this.db
-                    .update(mailAlertDeliveries)
-                    .set({
-                        status: outcome,
-                        itemKeys: [...itemKeys],
-                        error,
-                        updatedAt: sql`now()`,
-                    })
-                    // 끝난 기록이 이미 `sent`면 덮지 않는다(DB-11) — 늦게 도착한 실패 경로가 나간 메일을
-                    // 실패로 바꾸면 그 항목이 다음 날 억제되지 않는다.
-                    .where(
-                        and(
-                            eq(mailAlertDeliveries.id, id),
-                            ne(mailAlertDeliveries.status, 'sent')
+                this.db.transaction(async tx => {
+                    const [delivery] =
+                        rearmIds.length + voidIds.length > 0
+                            ? await tx
+                                  .select({
+                                      subscriberId:
+                                          mailAlertDeliveries.subscriberId,
+                                  })
+                                  .from(mailAlertDeliveries)
+                                  .where(eq(mailAlertDeliveries.id, id))
+                            : [];
+                    if (delivery !== undefined) {
+                        await tx
+                            .select({ id: mailAlertSubscribers.id })
+                            .from(mailAlertSubscribers)
+                            .where(
+                                eq(
+                                    mailAlertSubscribers.id,
+                                    delivery.subscriberId
+                                )
+                            )
+                            .for('no key update');
+                    }
+                    const written = await tx
+                        .update(mailAlertDeliveries)
+                        .set({
+                            status: outcome,
+                            itemKeys: [...itemKeys],
+                            error,
+                            updatedAt: sql`now()`,
+                        })
+                        // 끝난 기록이 이미 `sent`면 덮지 않는다(DB-11) — 늦게 도착한 실패 경로가 나간 메일을
+                        // 실패로 바꾸면 그 항목이 다음 날 억제되지 않는다. 덮지 않았으면 알림 정리도 하지
+                        // 않는다: 메일은 이미 나갔으므로 `fired` 알림을 되살리면 같은 알림이 두 번 간다.
+                        .where(
+                            and(
+                                eq(mailAlertDeliveries.id, id),
+                                ne(mailAlertDeliveries.status, 'sent')
+                            )
                         )
-                    ),
+                        .returning({ id: mailAlertDeliveries.id });
+                    if (delivery === undefined || written.length === 0) return;
+                    if (voidIds.length > 0) {
+                        await tx
+                            .delete(priceAlerts)
+                            .where(
+                                and(
+                                    inArray(priceAlerts.id, voidIds),
+                                    eq(
+                                        priceAlerts.subscriberId,
+                                        delivery.subscriberId
+                                    ),
+                                    eq(priceAlerts.status, 'active')
+                                )
+                            );
+                    }
+                    if (rearmIds.length > 0) {
+                        await tx
+                            .update(priceAlerts)
+                            .set({
+                                status: 'active',
+                                firedSession: null,
+                                firedClose: null,
+                                firedAt: null,
+                                updatedAt: sql`now()`,
+                            })
+                            .where(
+                                and(
+                                    inArray(priceAlerts.id, rearmIds),
+                                    eq(
+                                        priceAlerts.subscriberId,
+                                        delivery.subscriberId
+                                    ),
+                                    eq(priceAlerts.status, 'fired')
+                                )
+                            );
+                    }
+                }),
             DB_TRANSIENT_RETRY
         );
     }
@@ -876,6 +1008,35 @@ export class DrizzlePriceAlertRepository implements PriceAlertRepository {
         );
     }
 
+    /** 잠금 순서는 `cancel`과 같다: 구독자 행을 먼저 잠근 뒤 받을 것을 센다. */
+    async removeSubscriberIfNothingToReceive(
+        subscriberId: string
+    ): Promise<boolean> {
+        const owner = { kind: 'link', subscriberId } as const;
+        return withRetry(
+            () =>
+                this.db.transaction(async tx => {
+                    const [locked] = await tx
+                        .select({
+                            id: mailAlertSubscribers.id,
+                            includePortfolio:
+                                mailAlertSubscribers.includePortfolio,
+                        })
+                        .from(mailAlertSubscribers)
+                        .where(ownerCondition(owner))
+                        .for('no key update');
+                    if (locked === undefined) return false;
+                    return deleteIfNothingToReceive(
+                        tx,
+                        owner,
+                        locked.id,
+                        locked.includePortfolio
+                    );
+                }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
     async listForSubscriber(
         owner: MailAlertOwner
     ): Promise<PriceAlertRecord[]> {
@@ -940,21 +1101,16 @@ export class DrizzlePriceAlertRepository implements PriceAlertRepository {
         return row?.n ?? 0;
     }
 
-    /** 만료일 당일(`expires_on = alertDate`)은 아직 판정 대상이다. */
+    /** 만료 세션을 판정하는 실행(`expires_on = asOf[market]`)까지는 판정 대상이다. */
     async listActiveForDelivery(
-        alertDate: string
+        asOf: PriceAlertAsOf
     ): Promise<Map<string, PriceAlertRecord[]>> {
         const rows = await withRetry(
             () =>
                 this.db
                     .select(priceAlertColumns)
                     .from(priceAlerts)
-                    .where(
-                        and(
-                            eq(priceAlerts.status, 'active'),
-                            gte(priceAlerts.expiresOn, alertDate)
-                        )
-                    )
+                    .where(liveAlertCondition(asOf))
                     .orderBy(asc(priceAlerts.createdAt), asc(priceAlerts.id)),
             DB_TRANSIENT_RETRY
         );
@@ -968,9 +1124,9 @@ export class DrizzlePriceAlertRepository implements PriceAlertRepository {
     }
 
     /**
-     * 만료일이 `alertDate` 전인 진행 중 알림과, 알린 지 `PRICE_ALERT_FIRED_RETENTION_DAYS`일을 넘긴
+     * 만료 세션이 그 시장의 기대 세션(`asOf`) 전인 진행 중 알림 — 만료 세션을 판정하는 실행이 지난 알림 — 과, 알린 지 `PRICE_ALERT_FIRED_RETENTION_DAYS`일을 넘긴
      * 알림을 지운다. 알린 날은 `fired_at`의 한국 날짜로 센다(DB 시간대와 무관). 그 알림이 사라져 받을 것이
-     * 없어진 구독자(항목 0개, 보유 스위치 꺼짐, `alertDate` 기준 살아 있는 알림 0개)도 같은 트랜잭션에서
+     * 없어진 구독자(항목 0개, 보유 스위치 꺼짐, `asOf` 기준 살아 있는 알림 0개)도 같은 트랜잭션에서
      * 지운다 — 이번 정리로 알림을 잃은 구독자만 본다(막 확인을 마치고 첫 항목을 담기 전의 구독자를 건드리지
      * 않는다).
      *
@@ -980,9 +1136,10 @@ export class DrizzlePriceAlertRepository implements PriceAlertRepository {
      * 잠근 뒤의 구독자 판정은 동시에 들어온 알림 만들기와 엇갈리지 않는다.
      */
     async pruneExpiredAndFired(
-        alertDate: string
+        alertDate: string,
+        asOf: PriceAlertAsOf
     ): Promise<PruneExpiredPriceAlertsResult> {
-        const prunable = sql`((${priceAlerts.status} = 'active' and ${priceAlerts.expiresOn} < ${alertDate}::date) or (${priceAlerts.status} = 'fired' and (${priceAlerts.firedAt} at time zone 'Asia/Seoul')::date < ${alertDate}::date - ${PRICE_ALERT_FIRED_RETENTION_DAYS}::int))`;
+        const prunable = sql`((${priceAlerts.status} = 'active' and ((${priceAlerts.market} = 'us' and ${priceAlerts.expiresOn} < ${asOf.us}::date) or (${priceAlerts.market} = 'kr' and ${priceAlerts.expiresOn} < ${asOf.kr}::date))) or (${priceAlerts.status} = 'fired' and (${priceAlerts.firedAt} at time zone 'Asia/Seoul')::date < ${alertDate}::date - ${PRICE_ALERT_FIRED_RETENTION_DAYS}::int))`;
         return withRetry(
             () =>
                 this.db.transaction(async tx => {
@@ -1023,7 +1180,7 @@ export class DrizzlePriceAlertRepository implements PriceAlertRepository {
                                     false
                                 ),
                                 sql`not exists (select 1 from ${mailAlertTopics} where ${mailAlertTopics.subscriberId} = ${mailAlertSubscribers.id})`,
-                                sql`not ${hasLivePriceAlert(mailAlertSubscribers.id, alertDate)}`
+                                sql`not ${hasLivePriceAlert(mailAlertSubscribers.id, asOf)}`
                             )
                         )
                         .returning({ id: mailAlertSubscribers.id });

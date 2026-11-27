@@ -4,6 +4,8 @@ import type { EmailTokenStore } from '@/entities/email-token/types';
 import type {
     MailAlertOwner,
     MailAlertSubscriberRepository,
+    PriceAlertRecord,
+    PriceAlertRepository,
     UserRepository,
 } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
@@ -13,6 +15,7 @@ import {
     MAIL_ALERT_MAX_TOPICS,
     MAIL_ALERT_RATE_LIMITS,
 } from '../lib/mailAlertConstants';
+import { isPriceAlertLive, priceAlertAsOf } from '../lib/priceAlertExpiry';
 import { maskEmail } from '../lib/maskEmail';
 import { parseTopicInput, rowToTopic, topicToRow } from '../lib/topics';
 import type {
@@ -25,6 +28,7 @@ import type {
     MailAlertRequestCodeState,
     MailAlertState,
     MailAlertTopic,
+    PriceAlertView,
 } from '../model';
 import {
     confirmMailAlertCode,
@@ -32,6 +36,10 @@ import {
     type MailAlertCodeDeps,
     type MailAlertRateLimiter,
 } from './mailAlertCode';
+
+/** 알림 id(`price_alerts.id`)의 모양. 아닌 값은 저장소까지 가지 않는다. */
+const UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** 게스트 브라우저의 서명된 쿠키. `read`는 서명이 맞는 구독자 id만 돌려준다. */
 export interface MailAlertGuestCookie {
@@ -57,6 +65,13 @@ export interface MailAlertFlowDeps {
         | 'deleteByOwner'
         | 'linkVerifiedMember'
     >;
+    /** 설정 화면의 가격대 알림 목록과 지우기. 소유자 조건은 저장소가 문장 안에서 붙인다(DB-12). */
+    readonly priceAlerts: Pick<
+        PriceAlertRepository,
+        'listForSubscriber' | 'cancel'
+    >;
+    /** 가격대 알림 공개 스위치(`isPriceAlertLaunched()`). 꺼져 있으면 목록은 비고 지우기는 `unavailable`이다. */
+    readonly priceAlertsEnabled: boolean;
     readonly users: Pick<UserRepository, 'findByEmail'>;
     readonly currentUser: () => Promise<AuthUserRecord | null>;
     readonly guestCookie: MailAlertGuestCookie;
@@ -478,6 +493,53 @@ export async function setMailAlertIncludePortfolioFlow(
         : { status: 'ok' };
 }
 
+/** 저장 행 → 화면 모양. 제안 id·구독자 id 같은 화면이 몰라도 되는 값은 싣지 않는다. */
+function toPriceAlertView(record: PriceAlertRecord): PriceAlertView {
+    return {
+        id: record.id,
+        symbol: record.symbol,
+        market: record.market,
+        condition: record.condition,
+        basis: record.basis,
+        analysisAt: record.analysisAt,
+        referenceClose: record.referenceClose,
+        createdAt: record.createdAt,
+        expiresOn: record.expiresOn,
+        status: record.status,
+        firedSession: record.firedSession,
+        firedClose: record.firedClose,
+        firedAt: record.firedAt,
+    };
+}
+
+/**
+ * 가격대 알림 하나를 지운다. 소유자는 항목 제거와 같은 규칙(링크 서명 → 세션 회원 → 쿠키)으로 정하고, 알림 id가
+ * 그 소유자의 것이 아니면 저장소가 아무 행도 가리키지 못해 `not_found`다. 알림이 마지막 받을 것이었으면
+ * 구독자도 지워진다(`subscriber_removed`).
+ */
+export async function cancelPriceAlertFlow(
+    deps: MailAlertFlowDeps,
+    alertId: unknown,
+    link: MailAlertLinkAuth | undefined
+): Promise<MailAlertChangeResult> {
+    if (!isEnabled(deps) || !deps.priceAlertsEnabled) {
+        return { status: 'unavailable' };
+    }
+    if (typeof alertId !== 'string' || !UUID_PATTERN.test(alertId)) {
+        return { status: 'invalid' };
+    }
+    const caller = await resolveCaller(deps, link);
+    const owner = await ownerOf(deps, caller);
+    if (owner === null) return { status: 'not_found' };
+    const result = await deps.priceAlerts.cancel(owner, alertId);
+    if (!result.deleted) return { status: 'not_found' };
+    if (result.subscriberDeleted) {
+        await forgetStaleCookie(deps, caller);
+        return { status: 'subscriber_removed' };
+    }
+    return { status: 'ok' };
+}
+
 export type MailAlertManageLoad =
     | { readonly status: 'ready'; readonly view: MailAlertManageView }
     | { readonly status: 'empty' }
@@ -510,6 +572,12 @@ export async function loadMailAlertManage(
             : { status: 'unidentified' };
     }
     const rows = await deps.subscribers.listTopics(owner);
+    const alerts = deps.priceAlertsEnabled
+        ? (await deps.priceAlerts.listForSubscriber(owner)).map(
+              toPriceAlertView
+          )
+        : [];
+    const asOf = priceAlertAsOf(new Date());
     return {
         status: 'ready',
         view: {
@@ -517,6 +585,18 @@ export async function loadMailAlertManage(
             topics: rows.flatMap(topicRow => rowToTopic(topicRow) ?? []),
             includePortfolio:
                 caller.kind === 'member' ? row.includePortfolio : null,
+            // 만료 세션을 판정하는 실행이 지났지만 아직 정리되지 않은 진행 중 알림은 더는 판정되지 않으니 보이지 않는다.
+            priceAlerts: alerts.filter(
+                alert =>
+                    alert.status === 'active' && isPriceAlertLive(alert, asOf)
+            ),
+            firedPriceAlerts: alerts
+                .filter(alert => alert.status === 'fired')
+                .toSorted(
+                    (a, b) =>
+                        (b.firedAt?.getTime() ?? 0) -
+                        (a.firedAt?.getTime() ?? 0)
+                ),
         },
     };
 }

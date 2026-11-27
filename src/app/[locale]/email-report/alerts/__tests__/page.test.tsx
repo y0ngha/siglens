@@ -37,9 +37,12 @@ const params = (locale: string) => Promise.resolve({ locale });
 const search = (value: { s?: string; sig?: string } = {}) =>
     Promise.resolve(value);
 
-async function renderPage(query: { s?: string; sig?: string } = {}) {
+async function renderPage(
+    query: { s?: string; sig?: string } = {},
+    locale = 'ko'
+) {
     const tree = await MailAlertsPage({
-        params: params('ko'),
+        params: params(locale),
         searchParams: search(query),
     });
     return renderWithIntl((await resolveAsyncServerTree(tree)) as ReactElement);
@@ -98,6 +101,8 @@ describe('알림 메일 설정 페이지', () => {
                     { kind: 'fear_greed', market: 'kr' },
                 ],
                 includePortfolio: true,
+                priceAlerts: [],
+                firedPriceAlerts: [],
             },
         });
 
@@ -109,10 +114,243 @@ describe('알림 메일 설정 페이지', () => {
             includePortfolio: true,
             link: { s: 'sub-1', sig: 'abc' },
             topics: [
-                { label: 'AAPL 새 신호' },
+                { label: 'AAPL 추세 변화와 주요 신호' },
                 { label: '새로 잡힌 골든크로스 종목' },
                 { label: '한국 공포 탐욕 지수 극단 구간 진입' },
             ],
+        });
+    });
+
+    describe('가격대 알림', () => {
+        const base = {
+            id: 'alert-1',
+            symbol: 'AAPL',
+            market: 'us',
+            condition: { kind: 'close_below', level: 180 },
+            basis: 'price_level',
+            analysisAt: null,
+            referenceClose: 190.5,
+            createdAt: new Date('2026-11-20T03:00:00Z'),
+            expiresOn: '2026-12-20',
+            status: 'active',
+            firedSession: null,
+            firedClose: null,
+            firedAt: null,
+        } as const;
+
+        function show(
+            priceAlerts: readonly unknown[],
+            firedPriceAlerts: readonly unknown[] = []
+        ) {
+            loadView.mockResolvedValue({
+                status: 'ready',
+                view: {
+                    maskedEmail: 'g***@example.com',
+                    topics: [],
+                    includePortfolio: null,
+                    priceAlerts,
+                    firedPriceAlerts,
+                },
+            });
+        }
+
+        it('조건 문장과 설명 줄(기준, 만든 날·그때 가격, 유지 기간)을 서버에서 번역해 넘긴다', async () => {
+            show([
+                base,
+                {
+                    ...base,
+                    id: 'alert-2',
+                    condition: { kind: 'close_above', level: 200 },
+                    basis: 'analysis_invalidation',
+                    analysisAt: new Date('2026-11-19T16:30:00Z'),
+                },
+                {
+                    ...base,
+                    id: 'alert-3',
+                    symbol: '005930.KS',
+                    market: 'kr',
+                    condition: {
+                        kind: 'enter_zone',
+                        low: 70000,
+                        high: 71500,
+                        approach: 'from_above',
+                    },
+                    basis: 'analysis_entry_zone',
+                    analysisAt: new Date('2026-11-19T16:30:00Z'),
+                    referenceClose: 72500,
+                },
+            ]);
+
+            await renderPage();
+
+            expect(manageProps.value).toMatchObject({
+                priceAlerts: [
+                    {
+                        id: 'alert-1',
+                        label: 'AAPL 종가가 US$180.00 이하로 내려가면 메일로 알려 드려요.',
+                        lines: [
+                            { key: 'basis', text: '대화에서 정한 가격이에요.' },
+                            {
+                                key: 'created',
+                                text: '만든 날 11월 20일, 그때 가격 US$190.50',
+                            },
+                            {
+                                key: 'expires',
+                                text: '12월 20일 종가까지 확인하고, 한 번 알리면 끝나요.',
+                            },
+                        ],
+                    },
+                    {
+                        id: 'alert-2',
+                        label: 'AAPL 종가가 US$200.00 이상으로 올라가면 메일로 알려 드려요.',
+                        lines: [
+                            {
+                                key: 'basis',
+                                text: '11월 20일 AI 분석의 무효화 기준이에요.',
+                            },
+                            {
+                                key: 'created',
+                                text: expect.stringContaining(
+                                    '만든 날 11월 20일'
+                                ),
+                            },
+                            {
+                                key: 'expires',
+                                text: expect.stringContaining(
+                                    '12월 20일 종가까지'
+                                ),
+                            },
+                        ],
+                    },
+                    {
+                        id: 'alert-3',
+                        label: '005930 종가가 ₩70,000~₩71,500 구간에 들어오거나 지나치면 메일로 알려 드려요.',
+                        lines: [
+                            {
+                                key: 'basis',
+                                text: '11월 20일 AI 분석의 진입 구간이에요.',
+                            },
+                            {
+                                key: 'created',
+                                text: '만든 날 11월 20일, 그때 가격 ₩72,500',
+                            },
+                            {
+                                key: 'expires',
+                                text: expect.stringContaining(
+                                    '12월 20일 종가까지'
+                                ),
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it('분석 기준인데 분석 시각이 없으면 날짜를 지어내지 않고 기준 줄을 뺀다', async () => {
+            show([{ ...base, basis: 'analysis_entry_zone', analysisAt: null }]);
+
+            await renderPage();
+
+            const props = manageProps.value as {
+                priceAlerts: { lines: { key: string; text: string }[] }[];
+            };
+            expect(props.priceAlerts[0]?.lines).toHaveLength(2);
+            expect(props.priceAlerts[0]?.lines[0]).toMatchObject({
+                key: 'created',
+                text: expect.stringContaining('만든 날'),
+            });
+        });
+
+        it('알린 알림은 조건을 충족한 종가 세션과 종가만 말한다(메일이 나갔다고 쓰지 않는다)', async () => {
+            show(
+                [],
+                [
+                    {
+                        ...base,
+                        id: 'fired-1',
+                        symbol: 'NVDA',
+                        status: 'fired',
+                        firedSession: '2026-11-20',
+                        firedClose: 120,
+                        firedAt: new Date('2026-11-20T22:05:00Z'),
+                    },
+                ]
+            );
+
+            await renderPage();
+
+            expect(manageProps.value).toMatchObject({
+                priceAlerts: [],
+                firedPriceAlerts: [
+                    {
+                        id: 'fired-1',
+                        text: 'NVDA 종가가 11월 20일에 조건을 충족해 알림이 끝났어요. (종가 US$120.00)',
+                    },
+                ],
+            });
+        });
+
+        it('알린 알림 문장과 항목 이름도 한국 종목의 거래소 접미사를 떼어 쓴다', async () => {
+            loadView.mockResolvedValue({
+                status: 'ready',
+                view: {
+                    maskedEmail: 'g***@example.com',
+                    topics: [{ kind: 'symbol', symbol: '005930.KS' }],
+                    includePortfolio: null,
+                    priceAlerts: [],
+                    firedPriceAlerts: [
+                        {
+                            ...base,
+                            symbol: '005930.KS',
+                            market: 'kr',
+                            status: 'fired',
+                            firedSession: '2026-11-20',
+                            firedClose: 70000,
+                            firedAt: new Date('2026-11-20T22:05:00Z'),
+                        },
+                    ],
+                },
+            });
+
+            await renderPage();
+
+            const props = manageProps.value as {
+                topics: { label: string }[];
+                firedPriceAlerts: { text: string }[];
+            };
+            expect(props.topics[0]?.label).toBe('005930 추세 변화와 주요 신호');
+            expect(props.firedPriceAlerts[0]?.text).toContain('005930 종가가');
+            expect(props.firedPriceAlerts[0]?.text).not.toContain('보냈');
+            expect(props.firedPriceAlerts[0]?.text).not.toContain('.KS');
+        });
+
+        it('알린 시각이나 종가가 없는 알린 알림은 문장을 만들지 않는다', async () => {
+            show(
+                [],
+                [{ ...base, status: 'fired', firedSession: '2026-11-20' }]
+            );
+
+            await renderPage();
+
+            expect(manageProps.value).toMatchObject({ firedPriceAlerts: [] });
+        });
+
+        it('가격과 날짜 서식은 경로의 로케일을 따른다', async () => {
+            show([base]);
+
+            await renderPage({}, 'en');
+
+            const props = manageProps.value as {
+                priceAlerts: {
+                    label: string;
+                    lines: { key: string; text: string }[];
+                }[];
+            };
+            expect(props.priceAlerts[0]?.label).toContain('$180.00');
+            expect(props.priceAlerts[0]?.lines[1]?.text).toContain('$190.50');
+            expect(props.priceAlerts[0]?.lines[1]?.text).toContain(
+                'November 20'
+            );
         });
     });
 

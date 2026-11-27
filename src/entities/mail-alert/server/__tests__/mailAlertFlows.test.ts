@@ -6,6 +6,7 @@ import type {
 import { MAIL_ALERT_MAX_TOPICS } from '@/entities/mail-alert/lib/mailAlertConstants';
 import {
     addMailAlertTopicFlow,
+    cancelPriceAlertFlow,
     confirmMailAlertFlow,
     getMailAlertState,
     loadMailAlertManage,
@@ -20,6 +21,7 @@ import type {
     MailAlertOwner,
     MailAlertSubscriberRecord,
     MailAlertTopicRecord,
+    PriceAlertRecord,
     UpsertVerifiedMailAlertSubscriberInput,
 } from '@/shared/db/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
@@ -51,7 +53,7 @@ class FakeSubscribers {
 
     constructor(private readonly accounts: readonly AuthUserRecord[]) {}
 
-    private rowOf(owner: MailAlertOwner): MailAlertSubscriberRecord | null {
+    rowOf(owner: MailAlertOwner): MailAlertSubscriberRecord | null {
         return (
             [...this.rows.values()].find(row => {
                 switch (owner.kind) {
@@ -195,6 +197,74 @@ class FakeSubscribers {
     }
 }
 
+/**
+ * 가격대 알림 저장소의 소유자 규칙을 흉내 낸 메모리 구현: 알림은 소유자가 가리키는 구독자 행의 것만 보이고
+ * 지워진다. 마지막 받을 것이 사라지면(항목 0, 스위치 꺼짐, 살아 있는 알림 0) 구독자도 지운다.
+ */
+class FakePriceAlerts {
+    readonly alerts: PriceAlertRecord[] = [];
+
+    constructor(private readonly subscribers: FakeSubscribers) {}
+
+    add(alert: PriceAlertRecord): void {
+        this.alerts.push(alert);
+    }
+
+    async listForSubscriber(owner: MailAlertOwner) {
+        const row = this.subscribers.rowOf(owner);
+        return row === null
+            ? []
+            : this.alerts.filter(alert => alert.subscriberId === row.id);
+    }
+
+    async cancel(owner: MailAlertOwner, id: string) {
+        const row = this.subscribers.rowOf(owner);
+        const index = this.alerts.findIndex(
+            alert => alert.id === id && alert.subscriberId === row?.id
+        );
+        if (row === null || index < 0) {
+            return { deleted: false, subscriberDeleted: false };
+        }
+        this.alerts.splice(index, 1);
+        const hasTopics =
+            (this.subscribers.topics.get(row.id) ?? []).length > 0;
+        const hasAlerts = this.alerts.some(
+            alert => alert.subscriberId === row.id && alert.status === 'active'
+        );
+        const subscriberDeleted =
+            !hasTopics && !hasAlerts && !row.includePortfolio;
+        if (subscriberDeleted) this.subscribers.rows.delete(row.id);
+        return { deleted: true, subscriberDeleted };
+    }
+}
+
+const ALERT_ID = '3f0c8e3e-6b9a-4e4d-9d3a-1a2b3c4d5e6f';
+
+function priceAlert(
+    subscriberId: string,
+    overrides: Partial<PriceAlertRecord> = {}
+): PriceAlertRecord {
+    return {
+        id: ALERT_ID,
+        subscriberId,
+        proposalId: 'proposal-1',
+        symbol: 'AAPL',
+        market: 'us',
+        condition: { kind: 'close_below', level: 180 },
+        basis: 'price_level',
+        analysisAt: null,
+        referenceClose: 190,
+        startsAfterSession: '2026-11-20',
+        expiresOn: '2026-12-20',
+        status: 'active',
+        firedSession: null,
+        firedClose: null,
+        firedAt: null,
+        createdAt: new Date('2026-11-20T03:00:00Z'),
+        ...overrides,
+    };
+}
+
 function memoryTokens(): EmailTokenStore {
     const entries = new Map<string, EmailTokenValue>();
     const keyOf = (purpose: EmailTokenPurpose, email: string) =>
@@ -220,6 +290,7 @@ function memoryTokens(): EmailTokenStore {
 interface Setup {
     readonly deps: MailAlertFlowDeps;
     readonly subscribers: FakeSubscribers;
+    readonly priceAlerts: FakePriceAlerts;
     readonly cookie: {
         readonly value: { current: string | null };
         readonly write: ReturnType<typeof vi.fn>;
@@ -234,6 +305,7 @@ interface SetupOptions {
     readonly cookieId?: string | null;
     readonly launched?: boolean;
     readonly signingReady?: boolean;
+    readonly priceAlertsEnabled?: boolean;
     readonly rateLimit?: MailAlertFlowDeps['rateLimit'];
 }
 
@@ -242,6 +314,7 @@ function setup(options: SetupOptions = {}): Setup {
     const subscribers = new FakeSubscribers(
         options.accounts ?? (account === null ? [] : [account])
     );
+    const priceAlerts = new FakePriceAlerts(subscribers);
     const cookieValue = { current: options.cookieId ?? null };
     const write = vi.fn(async (id: string) => {
         cookieValue.current = id;
@@ -254,6 +327,8 @@ function setup(options: SetupOptions = {}): Setup {
         launched: options.launched ?? true,
         signingReady: options.signingReady ?? true,
         subscribers,
+        priceAlerts,
+        priceAlertsEnabled: options.priceAlertsEnabled ?? true,
         users: {
             findByEmail: async email =>
                 (options.accounts ?? (account === null ? [] : [account])).find(
@@ -283,6 +358,7 @@ function setup(options: SetupOptions = {}): Setup {
     return {
         deps,
         subscribers,
+        priceAlerts,
         cookie: { value: cookieValue, write, clear },
         sendEmail,
     };
@@ -345,6 +421,9 @@ describe('공개 전·준비 안 됨', () => {
         await expect(loadMailAlertManage(deps, undefined)).resolves.toEqual({
             status: 'unavailable',
         });
+        await expect(
+            cancelPriceAlertFlow(deps, ALERT_ID, undefined)
+        ).resolves.toEqual({ status: 'unavailable' });
     });
 });
 
@@ -1220,6 +1299,8 @@ describe('loadMailAlertManage', () => {
                 maskedEmail: 'm***@example.com',
                 topics: [SYMBOL, HUB],
                 includePortfolio: true,
+                priceAlerts: [],
+                firedPriceAlerts: [],
             },
         });
     });
@@ -1253,6 +1334,8 @@ describe('loadMailAlertManage', () => {
                 maskedEmail: 'g***@example.com',
                 topics: [{ kind: 'fear_greed', market: 'kr' }],
                 includePortfolio: null,
+                priceAlerts: [],
+                firedPriceAlerts: [],
             },
         });
     });
@@ -1304,7 +1387,272 @@ describe('loadMailAlertManage', () => {
                 maskedEmail: 'm***@example.com',
                 topics: [SYMBOL],
                 includePortfolio: null,
+                priceAlerts: [],
+                firedPriceAlerts: [],
             },
         });
+    });
+
+    describe('가격대 알림', () => {
+        const FIRED_AT = new Date('2026-11-22T22:05:00Z');
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-11-23T01:00:00Z'));
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        async function memberWithAlerts(
+            ...alerts: Array<(subscriberId: string) => PriceAlertRecord>
+        ) {
+            const context = setup({ account: user() });
+            await addMailAlertTopicFlow(context.deps, SYMBOL, {
+                includePortfolio: false,
+            });
+            const [row] = [...context.subscribers.rows.values()];
+            alerts.forEach(make =>
+                context.priceAlerts.add(make(row?.id ?? ''))
+            );
+            return context;
+        }
+
+        it('살아 있는 알림과 알린 알림을 나눠 담고, 알린 알림은 최근에 알린 순이다', async () => {
+            const context = await memberWithAlerts(
+                id => priceAlert(id, { id: 'active-1' }),
+                id =>
+                    priceAlert(id, {
+                        id: 'fired-old',
+                        status: 'fired',
+                        firedSession: '2026-11-20',
+                        firedClose: 170,
+                        firedAt: new Date('2026-11-21T22:05:00Z'),
+                    }),
+                id =>
+                    priceAlert(id, {
+                        id: 'fired-new',
+                        status: 'fired',
+                        firedSession: '2026-11-22',
+                        firedClose: 171,
+                        firedAt: FIRED_AT,
+                    })
+            );
+
+            const load = await loadMailAlertManage(context.deps, undefined);
+
+            expect(load.status).toBe('ready');
+            if (load.status !== 'ready') return;
+            expect(load.view.priceAlerts.map(alert => alert.id)).toEqual([
+                'active-1',
+            ]);
+            expect(load.view.firedPriceAlerts.map(alert => alert.id)).toEqual([
+                'fired-new',
+                'fired-old',
+            ]);
+        });
+
+        it('만료 세션을 판정하는 실행이 지났지만 아직 정리되지 않은 진행 중 알림은 보이지 않고, 마지막 마감 세션이 만료 세션인 알림은 보인다', async () => {
+            const context = await memberWithAlerts(
+                id =>
+                    priceAlert(id, { id: 'expired', expiresOn: '2026-11-19' }),
+                id => priceAlert(id, { id: 'on-day', expiresOn: '2026-11-20' })
+            );
+
+            const load = await loadMailAlertManage(context.deps, undefined);
+
+            expect(
+                load.status === 'ready'
+                    ? load.view.priceAlerts.map(alert => alert.id)
+                    : null
+            ).toEqual(['on-day']);
+        });
+
+        it('화면 모양에는 제안 id와 구독자 id를 싣지 않는다', async () => {
+            const context = await memberWithAlerts(id => priceAlert(id));
+
+            const load = await loadMailAlertManage(context.deps, undefined);
+
+            const [alert] =
+                load.status === 'ready' ? load.view.priceAlerts : [];
+            expect(alert).toBeDefined();
+            expect(Object.keys(alert ?? {})).not.toContain('proposalId');
+            expect(Object.keys(alert ?? {})).not.toContain('subscriberId');
+        });
+
+        it('공개 전에는 저장소를 읽지 않고 목록이 비어 있다', async () => {
+            const context = await memberWithAlerts(id => priceAlert(id));
+            const spy = vi.spyOn(context.priceAlerts, 'listForSubscriber');
+            const closed = { ...context.deps, priceAlertsEnabled: false };
+
+            const load = await loadMailAlertManage(closed, undefined);
+
+            expect(spy).not.toHaveBeenCalled();
+            expect(
+                load.status === 'ready'
+                    ? [load.view.priceAlerts, load.view.firedPriceAlerts]
+                    : null
+            ).toEqual([[], []]);
+        });
+
+        it('서명 링크의 비회원은 그 링크가 가리키는 구독자의 알림만 본다', async () => {
+            const context = setup();
+            const mine = await context.subscribers.upsertVerified({
+                email: 'guest@example.com',
+                locale: 'ko',
+                consentSource: 'agent_chat',
+            });
+            const other = await context.subscribers.upsertVerified({
+                email: 'other@example.com',
+                locale: 'ko',
+                consentSource: 'agent_chat',
+            });
+            context.priceAlerts.add(priceAlert(mine.id, { id: 'mine' }));
+            context.priceAlerts.add(priceAlert(other.id, { id: 'theirs' }));
+
+            const load = await loadMailAlertManage(context.deps, {
+                s: mine.id,
+                sig: 'valid-signature',
+            });
+
+            expect(
+                load.status === 'ready'
+                    ? load.view.priceAlerts.map(alert => alert.id)
+                    : null
+            ).toEqual(['mine']);
+        });
+    });
+});
+
+describe('cancelPriceAlertFlow', () => {
+    async function memberContext() {
+        const context = setup({ account: user() });
+        await addMailAlertTopicFlow(context.deps, SYMBOL, {
+            includePortfolio: false,
+        });
+        const [row] = [...context.subscribers.rows.values()];
+        context.priceAlerts.add(priceAlert(row?.id ?? ''));
+        return { context, subscriberId: row?.id ?? '' };
+    }
+
+    it('공개 전이거나 알림이 닫혀 있으면 unavailable이다', async () => {
+        const { context } = await memberContext();
+
+        await expect(
+            cancelPriceAlertFlow(
+                { ...context.deps, priceAlertsEnabled: false },
+                ALERT_ID,
+                undefined
+            )
+        ).resolves.toEqual({ status: 'unavailable' });
+        await expect(
+            cancelPriceAlertFlow(
+                { ...context.deps, launched: false },
+                ALERT_ID,
+                undefined
+            )
+        ).resolves.toEqual({ status: 'unavailable' });
+        expect(context.priceAlerts.alerts).toHaveLength(1);
+    });
+
+    it.each([undefined, null, 42, {}, 'not-a-uuid', ''])(
+        '알림 id가 UUID 문자열이 아니면(%j) 저장소까지 가지 않고 invalid다',
+        async value => {
+            const { context } = await memberContext();
+            const spy = vi.spyOn(context.priceAlerts, 'cancel');
+
+            await expect(
+                cancelPriceAlertFlow(context.deps, value, undefined)
+            ).resolves.toEqual({ status: 'invalid' });
+
+            expect(spy).not.toHaveBeenCalled();
+        }
+    );
+
+    it('세션 회원은 자기 알림을 지우고, 항목이 남아 있으면 구독자는 그대로다', async () => {
+        const { context } = await memberContext();
+
+        await expect(
+            cancelPriceAlertFlow(context.deps, ALERT_ID, undefined)
+        ).resolves.toEqual({ status: 'ok' });
+
+        expect(context.priceAlerts.alerts).toEqual([]);
+        expect(context.subscribers.rows.size).toBe(1);
+    });
+
+    it('쿠키의 비회원도 자기 알림을 지우고, 받을 것이 없어지면 구독자 삭제로 알리며 쿠키를 지운다', async () => {
+        const context = setup();
+        const { id } = await context.subscribers.upsertVerified({
+            email: 'guest@example.com',
+            locale: 'ko',
+            consentSource: 'agent_chat',
+        });
+        context.priceAlerts.add(priceAlert(id));
+        context.cookie.value.current = id;
+
+        await expect(
+            cancelPriceAlertFlow(context.deps, ALERT_ID, undefined)
+        ).resolves.toEqual({ status: 'subscriber_removed' });
+
+        expect(context.subscribers.rows.has(id)).toBe(false);
+        expect(context.cookie.clear).toHaveBeenCalled();
+    });
+
+    it('서명이 맞는 링크는 그 구독자의 알림을 지운다', async () => {
+        const { context, subscriberId } = await memberContext();
+        const anonymous = { ...context.deps, currentUser: async () => null };
+
+        await expect(
+            cancelPriceAlertFlow(anonymous, ALERT_ID, {
+                s: subscriberId,
+                sig: 'valid-signature',
+            })
+        ).resolves.toEqual({ status: 'ok' });
+
+        expect(context.priceAlerts.alerts).toEqual([]);
+    });
+
+    it('링크가 있는데 서명이 틀리면 거절한다(세션 회원의 알림으로 대신 움직이지 않는다)', async () => {
+        const { context, subscriberId } = await memberContext();
+
+        await expect(
+            cancelPriceAlertFlow(context.deps, ALERT_ID, {
+                s: subscriberId,
+                sig: 'forged',
+            })
+        ).resolves.toEqual({ status: 'not_found' });
+
+        expect(context.priceAlerts.alerts).toHaveLength(1);
+    });
+
+    it('알아볼 수 없는 호출은 not_found이고 아무것도 지우지 않는다', async () => {
+        const { context } = await memberContext();
+        const anonymous = { ...context.deps, currentUser: async () => null };
+
+        await expect(
+            cancelPriceAlertFlow(anonymous, ALERT_ID, undefined)
+        ).resolves.toEqual({ status: 'not_found' });
+
+        expect(context.priceAlerts.alerts).toHaveLength(1);
+    });
+
+    it('다른 구독자의 알림 id는 not_found이고 그 알림은 남는다(소유자는 저장소 문장이 정한다)', async () => {
+        const { context } = await memberContext();
+        const other = await context.subscribers.upsertVerified({
+            email: 'other@example.com',
+            locale: 'ko',
+            consentSource: 'agent_chat',
+        });
+        const otherAlertId = '11111111-2222-4333-8444-555555555555';
+        context.priceAlerts.add(priceAlert(other.id, { id: otherAlertId }));
+
+        await expect(
+            cancelPriceAlertFlow(context.deps, otherAlertId, undefined)
+        ).resolves.toEqual({ status: 'not_found' });
+
+        expect(context.priceAlerts.alerts.map(alert => alert.id)).toContain(
+            otherAlertId
+        );
     });
 });

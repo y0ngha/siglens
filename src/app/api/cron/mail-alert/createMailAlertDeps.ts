@@ -2,6 +2,7 @@ import 'server-only';
 import {
     DrizzleMailAlertSubscriberRepository,
     DrizzleMailAlertDeliveryRepository,
+    DrizzlePriceAlertRepository,
 } from '@/entities/mail-alert/api';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import {
@@ -9,6 +10,7 @@ import {
     getMailAlertEmailTranslator,
 } from '@/entities/mail-alert/server/mailAlertEmailI18n';
 import { getReportSignalLabelResolver } from '@/entities/email-report/server';
+import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { getCachedMarketFearGreed } from '@/entities/market-fear-greed/api/marketFearGreedCache';
 import { getCachedMarketFearGreedCrypto } from '@/entities/market-fear-greed/api/marketFearGreedCryptoCache';
@@ -19,11 +21,13 @@ import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { getDatabaseClient } from '@/shared/db/client';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
 import type { KeyedEmailDispatcher } from '@/shared/email/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import type { MailAlertFearGreedMarket } from '@/entities/mail-alert/model';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { createSymbolBriefSources } from '../email-report/loadSymbolBrief';
+import type { StoredChangeReference } from './collectAlertSources';
 import type { MailAlertBatchDeps } from './runMailAlertBatch';
 
 function alertMarketOf(profile: MarketProfileId): SignalHistoryMarket | null {
@@ -56,7 +60,9 @@ async function loadFearGreedHistory(market: MailAlertFearGreedMarket) {
 
 /**
  * 운영 의존성. 신호는 `signal_events`와 같은 저장소를, 공포 탐욕은 허브 페이지가 읽는 같은 판독 캐시를,
- * 스캐너 범위 밖 종목의 일봉은 종목 페이지·메일 리포트와 같은 `loadBarsData(symbol, '1Day')`(봉 캐시)를 쓴다.
+ * 담은 모든 종목의 일봉(스캐너 대상 포함)은 종목 페이지·메일 리포트와 같은 `loadBarsData(symbol, '1Day')`(봉 캐시)를
+ * 쓴다. 가격대·진입 구간 줄의 근거는 메일 리포트의 작도와 같은 읽기(`findLatestShareable`: 맞춤이 아닌 일봉
+ * 기술적 분석)이고, 구독자의 등급은 분석 화면과 같은 `resolveTierOnly`로 읽는다.
  * 발송기는 호출자가 넘긴다 — 메일 리포트 패스와 같은 인스턴스를 공유해 두 패스의 발송 속도를 함께 묶는다.
  */
 export function createMailAlertBatchDeps(
@@ -66,18 +72,40 @@ export function createMailAlertBatchDeps(
     const { db } = getDatabaseClient();
     const portfolio = new DrizzlePortfolioRepository(db);
     const watchlist = new DrizzleWatchlistRepository(db);
+    const history = new DrizzleAnalysisHistoryRepository(db);
     return {
         launched: isMailAlertLaunched(),
         secret,
         siteUrl: SITE_URL,
         subscribers: new DrizzleMailAlertSubscriberRepository(db),
         deliveries: new DrizzleMailAlertDeliveryRepository(db),
+        priceAlerts: new DrizzlePriceAlertRepository(db),
         sources: {
             signalHistory: new DrizzleSignalHistoryRepository(db),
             loadFearGreedHistory,
             loadDailyBars: async symbol =>
                 (await loadBarsData(symbol, '1Day')).bars,
+            loadChangeReferences: async (symbols, notBefore) => {
+                const rows = await history.findLatestShareable({
+                    symbols,
+                    timeframe: '1Day',
+                    tab: 'technical',
+                    notBefore,
+                });
+                return new Map(
+                    [...rows].map(
+                        ([symbol, row]): [string, StoredChangeReference] => [
+                            symbol,
+                            {
+                                generatedAt: row.generatedAt,
+                                result: row.result,
+                            },
+                        ]
+                    )
+                );
+            },
         },
+        resolveTier: resolveTierOnly,
         getSymbolNames,
         findHoldings: userId => portfolio.findByUser(userId),
         findWatchlist: userId => watchlist.findByUser(userId),
