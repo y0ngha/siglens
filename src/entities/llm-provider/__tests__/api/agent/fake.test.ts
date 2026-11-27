@@ -179,7 +179,6 @@ describe('fakeAgentProvider', () => {
             buildAgentTurnContext({
                 locale: 'ko',
                 now: new Date('2026-10-06T14:00:00Z'),
-                etSessionStatus: 'open',
             }),
             userText
         );

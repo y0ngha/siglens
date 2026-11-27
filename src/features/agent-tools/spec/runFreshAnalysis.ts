@@ -32,6 +32,7 @@ export const RUN_FRESH_ANALYSIS_SPEC: AgentToolDefinition = {
     name: 'run_fresh_analysis',
     description: `Run a NEW SIGLENS AI analysis now (30–250 seconds). Call only after get_cached_analysis returned found:false or stale:true, at most ${AGENT_TURN_CAPS.maxFreshAnalysis} per turn. The result is the same structure as get_cached_analysis. Each \`patterns\` entry has \`baseRate\` (null when not measured): eventShare is the share of past daily cases whose target came before invalidation within 60 bars, placeboShare the same for a target at the same distance on other dates, n the sample size; only verdict beats_placebo means it beat that placebo, and pooled true means the numbers are for all chart patterns combined, not this pattern.`,
     costClass: 'expensive',
+    dailyQuota: 'freshAnalysis',
     inputSchema: {
         type: 'object',
         properties: {
