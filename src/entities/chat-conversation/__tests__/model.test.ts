@@ -114,6 +114,50 @@ describe('toAgentHistory', () => {
         ]);
     });
 
+    it('turnAt은 user 행에만 ISO 문자열로 싣고, 없으면 키를 만들지 않는다', () => {
+        const base = {
+            toolCalls: null,
+            toolCallId: null,
+            toolName: null,
+            status: 'complete',
+        } as const;
+        const at = new Date('2026-11-20T14:09:00.000Z');
+        const rows = [
+            { ...base, role: 'user', content: 'q1', turnAt: at },
+            { ...base, role: 'assistant', content: 'a1', turnAt: at },
+            { ...base, role: 'user', content: 'q2', turnAt: null },
+            { ...base, role: 'user', content: 'q3' },
+        ] as const;
+        expect(toAgentHistory(rows as never)).toEqual([
+            { role: 'user', content: 'q1', turnAt: '2026-11-20T14:09:00.000Z' },
+            { role: 'assistant', content: 'a1' },
+            { role: 'user', content: 'q2' },
+            { role: 'user', content: 'q3' },
+        ]);
+    });
+
+    it.each([
+        // core가 돌려주는 문자열 → DB가 돌려주는 Date → 이력 문자열이 같은 문자열이어야 한다.
+        '2026-11-20T14:09:00.000Z',
+        '2026-11-20T14:09:00.007Z',
+        '2026-11-20T14:09:00.120Z',
+        '2026-12-31T23:59:59.999Z',
+    ])('turnAt 왕복은 밀리초까지 같다: %s', coreString => {
+        const dbValue = new Date(coreString);
+        const [row] = toAgentHistory([
+            {
+                role: 'user',
+                content: 'q',
+                toolCalls: null,
+                toolCallId: null,
+                toolName: null,
+                status: 'complete',
+                turnAt: dbValue,
+            },
+        ]);
+        expect(row?.turnAt).toBe(coreString);
+    });
+
     it('aborted 행은 유지한다(부분 응답도 유효한 컨텍스트)', () => {
         const rows = [
             {
@@ -149,6 +193,18 @@ describe('toMessageView', () => {
         status: 'complete',
         createdAt: new Date('2026-10-01T00:00:00.000Z'),
         ...overrides,
+    });
+
+    it('turnAt은 어느 행에서도 클라이언트 뷰로 내보내지 않는다', () => {
+        const view = toMessageView(
+            record({
+                role: 'user',
+                content: 'q',
+                turnAt: new Date('2026-11-20T14:09:00.000Z'),
+            })
+        );
+        expect('turnAt' in view).toBe(false);
+        expect(JSON.stringify(view)).not.toContain('2026-11-20T14:09');
     });
 
     it('tool 행의 차트 블록은 모양이 맞을 때만 싣는다', () => {

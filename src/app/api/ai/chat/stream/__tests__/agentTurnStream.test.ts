@@ -1,17 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { runTurn, appendMessages, executorOptions } = vi.hoisted(() => ({
-    runTurn: vi.fn(),
-    appendMessages: vi.fn(),
-    executorOptions: {
-        onChart: undefined as
-            | ((
-                  call: { name: string; args: Record<string, unknown> },
-                  p: Promise<unknown>
-              ) => void)
-            | undefined,
-    },
-}));
+const { runTurn, appendMessages, setTurnAt, executorOptions } = vi.hoisted(
+    () => ({
+        runTurn: vi.fn(),
+        appendMessages: vi.fn(),
+        setTurnAt: vi.fn(),
+        executorOptions: {
+            onChart: undefined as
+                | ((
+                      call: { name: string; args: Record<string, unknown> },
+                      p: Promise<unknown>
+                  ) => void)
+                | undefined,
+        },
+    })
+);
 
 vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
@@ -42,6 +45,7 @@ import {
     appendOrNotFound,
     type AgentTurnStreamParams,
 } from '@/app/api/ai/chat/stream/_lib/agentTurnStream';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import type { ReadyTurn } from '@/app/api/ai/chat/stream/_lib/prepareTurn';
 import type { TurnSlot } from '@/app/api/ai/chat/stream/_lib/turnSlots';
 
@@ -71,12 +75,15 @@ const CHART_BLOCK = {
 };
 
 const memberTurn = (): ReadyTurn => ({
-    repo: { appendMessages } as unknown as NonNullable<ReadyTurn['repo']>,
+    repo: { appendMessages, setTurnAt } as unknown as NonNullable<
+        ReadyTurn['repo']
+    >,
     conversationId: 'c1',
     userMessage: 'q',
     userImages: [],
     userMessageId: 'u1',
     userMessageSeq: 1,
+    turnAtRowId: 'u1',
     history: [],
     portfolioSymbols: [],
 });
@@ -167,6 +174,97 @@ describe('agentTurnStream', () => {
         expect(text).toContain('event: done');
         expect(text).toContain('"assistantMessageId":"a0"');
         expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('KRX 세션 스펙을 runAgentTurn에 넘긴다', async () => {
+        await readAll(start().stream);
+        expect(runTurn).toHaveBeenCalledWith(
+            expect.objectContaining({ krSession: KR_EQUITY_SESSION }),
+            expect.anything()
+        );
+    });
+
+    describe('턴 시각 저장', () => {
+        const AT = '2026-11-20T14:09:00.000Z';
+        const savedFor = (id: string) =>
+            setTurnAt.mock.calls.filter(call => call[1] === id);
+
+        beforeEach(() => {
+            setTurnAt.mockResolvedValue(undefined);
+        });
+
+        it('성공: 대화 id·user 행 id와 돌려받은 시각으로 한 번 저장한다', async () => {
+            runTurn.mockResolvedValue({ ...OK_TURN, turnAt: AT });
+            await readAll(start().stream);
+            expect(savedFor('u1')).toEqual([['c1', 'u1', AT]]);
+        });
+
+        it('중단(aborted) 결과에도 저장한다', async () => {
+            runTurn.mockResolvedValue({
+                ok: false,
+                error: 'aborted',
+                turnAt: AT,
+            });
+            const { stream } = start();
+            const text = await readAll(stream);
+            expect(savedFor('u1')).toEqual([['c1', 'u1', AT]]);
+            expect(text).toContain('"code":"aborted"');
+        });
+
+        it('regenerate: 다시 쓰는 마지막 user 행 id에 덮어쓴다', async () => {
+            runTurn.mockResolvedValue({ ...OK_TURN, turnAt: AT });
+            await readAll(
+                start({
+                    turn: {
+                        ...memberTurn(),
+                        userMessageId: null,
+                        userMessageSeq: null,
+                        turnAtRowId: 'last-user-row',
+                    },
+                }).stream
+            );
+            expect(savedFor('last-user-row')).toEqual([
+                ['c1', 'last-user-row', AT],
+            ]);
+            expect(savedFor('u1')).toEqual([]);
+        });
+
+        it('게스트(저장 행 없음)는 저장하지 않는다', async () => {
+            runTurn.mockResolvedValue({ ...OK_TURN, turnAt: AT });
+            await readAll(
+                start({
+                    turn: {
+                        ...memberTurn(),
+                        repo: null,
+                        conversationId: null,
+                        turnAtRowId: null,
+                    },
+                    guest: true,
+                }).stream
+            );
+            expect(setTurnAt).not.toHaveBeenCalled();
+        });
+
+        it('게이트 거절처럼 시각이 없는 결과는 저장하지 않는다', async () => {
+            runTurn.mockResolvedValue({ ok: false, error: 'turn_limit' });
+            await readAll(start().stream);
+            expect(setTurnAt).not.toHaveBeenCalled();
+        });
+
+        it('저장이 거절돼도 턴은 성공하고 경고만 남긴다', async () => {
+            runTurn.mockResolvedValue({ ...OK_TURN, turnAt: AT });
+            setTurnAt.mockRejectedValue(new Error('db down'));
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const { stream, release } = start();
+            const text = await readAll(stream);
+            expect(text).toContain('event: done');
+            expect(text).not.toContain('event: error');
+            expect(warn).toHaveBeenCalledWith(
+                '[agent] turn time save failed:',
+                expect.any(Error)
+            );
+            expect(release).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('이번 턴 이미지는 base64로 runAgentTurn의 userImages에 실리고, 없으면 키가 없다', async () => {

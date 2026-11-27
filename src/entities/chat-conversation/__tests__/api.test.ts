@@ -6,9 +6,11 @@ import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/
 import { CONVERSATION_LIST_LIMIT } from '@/entities/chat-conversation/model';
 import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { defined } from '@/shared/test-utils/defined';
 
 const VALID_ID = '11111111-1111-1111-1111-111111111111';
 const VALID_USER = '22222222-2222-2222-2222-222222222222';
+const OTHER_ID = '33333333-3333-3333-3333-333333333333';
 
 /**
  * A postgres-js connection-shaped transient error — matches `isTransientDbError`'s
@@ -128,7 +130,7 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         expect(captured).toHaveLength(2);
         const insertSql = captured[0]!.sql.toLowerCase();
         expect(insertSql).toBe(
-            'insert into "chat_messages" ("id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "chart", "status", "created_at") values (default, $1, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $2) + $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, default), (default, $13, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $14) + $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, default) returning "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "chart", "status", "created_at"'
+            'insert into "chat_messages" ("id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "chart", "status", "created_at") values (default, $1, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $2) + $3, $4, $5, $6, $7, $8, $9, $10, default, $11, $12, default), (default, $13, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $14) + $15, $16, $17, $18, $19, $20, $21, $22, default, $23, $24, default) returning "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "chart", "status", "created_at"'
         );
         // 두 행 각각 "+ n" 표현식이 한 번씩 나온다(파라미터로 1, 2가 순서대로 들어감).
         expect(captured[0]!.params).toContain(1);
@@ -348,6 +350,55 @@ describe('DrizzleChatConversationRepository — invalid UUID guard', () => {
         expect(history).toContain('"tool_name"');
         expect(history).not.toContain('"chart"');
         expect(view).toContain('"chart"');
+    });
+
+    it('listMessages: 모든 턴의 이력 읽기가 turn_at도 읽는다(다음 턴 캐시 접두사에 필요)', async () => {
+        const { db, captured } = await realDbWithCapture();
+        await new DrizzleChatConversationRepository(db).listMessages(VALID_ID);
+        const [query] = captured;
+        expect(defined(query, 'listMessages query').sql).toBe(
+            'select "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "status", "created_at" from "chat_messages" where "chat_messages"."conversation_id" = $1 order by "chat_messages"."seq"'
+        );
+    });
+
+    it('setTurnAt: 그 대화의 그 행 하나만 turn_at으로 갱신하고 밀리초를 그대로 싣는다', async () => {
+        const { db, captured } = await realDbWithCapture();
+        await new DrizzleChatConversationRepository(db).setTurnAt(
+            VALID_ID,
+            OTHER_ID,
+            '2026-11-20T14:09:00.000Z'
+        );
+        expect(captured).toHaveLength(1);
+        const query = defined(captured[0], 'setTurnAt query');
+        // id와 conversation_id를 함께 거는 WHERE까지 전문으로 고정한다.
+        expect(query.sql).toBe(
+            'update "chat_messages" set "turn_at" = $1 where ("chat_messages"."id" = $2 and "chat_messages"."conversation_id" = $3)'
+        );
+        // 드라이버가 받는 값은 같은 시각의 ISO 문자열이다(`.000Z`까지 보존).
+        expect(query.params).toEqual([
+            '2026-11-20T14:09:00.000Z',
+            OTHER_ID,
+            VALID_ID,
+        ]);
+    });
+
+    it('setTurnAt: UUID가 아니거나 시각이 깨졌으면 쿼리 없이 no-op', async () => {
+        const db = chain([]);
+        const repo = new DrizzleChatConversationRepository(
+            db as unknown as SiglensDatabase
+        );
+        await repo.setTurnAt(
+            'not-a-uuid',
+            OTHER_ID,
+            '2026-11-20T14:09:00.000Z'
+        );
+        await repo.setTurnAt(
+            VALID_ID,
+            'not-a-uuid',
+            '2026-11-20T14:09:00.000Z'
+        );
+        await repo.setTurnAt(VALID_ID, OTHER_ID, 'garbage');
+        expect(db.update).not.toHaveBeenCalled();
     });
 
     it('appendMessages: UUID가 아니면 쿼리 없이 []', async () => {
