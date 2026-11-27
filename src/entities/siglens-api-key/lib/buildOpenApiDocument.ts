@@ -624,11 +624,11 @@ function buildComponents(): OpenApiObject {
 
 function buildInfoDescription(baseUrl: string): string {
     return [
-        'Read SigLens market data and AI analysis over HTTP: the same tools the ai.siglens.io agent uses.',
+        'Read SIGLENS market data and AI analysis over HTTP: the same tools the ai.siglens.io agent uses.',
         '',
         `- Base URL: \`${baseUrl}${PUBLIC_API_BASE_PATH}\`.`,
         `- Authentication: \`Authorization: Bearer ${API_KEY_PREFIX}...\`. Create a key at siglens.io/account.`,
-        '- AI analysis uses your own LLM key (BYOK). SigLens never spends its own LLM key on API calls, and a cached analysis costs nothing.',
+        '- AI analysis uses your own LLM key (BYOK). SIGLENS never spends its own LLM key on API calls, and a cached analysis costs nothing.',
         `- Rate limits are per account, shared by all your keys: ${renderLimits(PUBLIC_API_RATE_LIMITS.data)} for tools; generating a new analysis has its own limit of ${renderLimits(PUBLIC_API_RATE_LIMITS.ai)}.`,
         `- Responses are \`{ "data": ..., "meta": ... }\` on success and \`{ "error": { "code", "message" } }\` on failure. A request body is limited to ${PUBLIC_API_MAX_BODY_CHARS.toLocaleString('en-US')} characters.`,
         `- Send \`${LOCALE_HEADER_DOC_NAME}: ${LOCALES.join('|')}\` to choose the language of localized text.`,
@@ -651,7 +651,7 @@ export function buildOpenApiDocument({
     return {
         openapi: OPENAPI_VERSION,
         info: {
-            title: 'SigLens API',
+            title: 'SIGLENS API',
             version: OPENAPI_API_VERSION,
             summary:
                 'Stock, crypto and macro data and AI analysis, with AI on your own key.',
@@ -660,7 +660,7 @@ export function buildOpenApiDocument({
         servers: [
             {
                 url: `${baseUrl}${PUBLIC_API_BASE_PATH}`,
-                description: 'SigLens',
+                description: 'SIGLENS',
             },
         ],
         externalDocs: {

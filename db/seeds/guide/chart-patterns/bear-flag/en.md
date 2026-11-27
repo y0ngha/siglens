@@ -24,7 +24,7 @@ It reads as a brief bounce, a breather after a sharp fall. A weak rise on fading
 
 The pattern completes only when the close finishes below the flag's lower line. Volume returning to pole levels at that point gives the signal more weight. The shape counts as better when the pole falls 10% or more, the flag retraces less than 38.2% of the pole, and the whole flag lasts a short 1 to 2 weeks.
 
-In the combined tabulation of bull and bear flags by Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in his books, 46% reached their target. A target is the price reached if the move extends by the length of the pole: a reference value based on how often past patterns went that far, not a promise. The invalidation level is the price at which the pattern is considered broken.
+In the combined tabulation of bull and bear flags by Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 46% reached their target. A target is the price reached if the move extends by the length of the pole: a reference value based on how often past patterns went that far, not a promise. The invalidation level is the price at which the pattern is considered broken.
 
 ## How it differs from a bull flag
 
@@ -34,7 +34,7 @@ In a bear flag, the flag is not a profit-taking rest but a brief retracement aft
 
 ## How SIGLENS detects it
 
-SIGLENS looks for clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) and uses the plunge from a swing high to the next swing low as the pole. When a narrow channel that drifts up or sideways follows, it treats the shape as a bear flag.
+SIGLENS looks for clear highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) and uses the plunge from a swing high to the next swing low as the pole. When a narrow channel that drifts up or sideways follows, it treats the shape as a bear flag.
 
 - Pole: it must fall at least 3 times ATR within 20 bars and also exceed a set share of price (for example, 3% on daily bars).
 - Flag length: 5 to 20 bars after the pole bottom.

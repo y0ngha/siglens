@@ -24,11 +24,11 @@ Selling pressure fades slowly and buying pressure builds slowly, so control chan
 
 The pattern completes only when a close finishes above the higher of the two rims. Rising volume at that point makes it more reliable.
 
-Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, placed the rounding bottom 7th of 39 bullish patterns in his performance ranking (a ranking by how far price went after the breakout). He also found that the trend leading into this pattern was upward 67% of the time. In other words, it does not only appear at the end of a decline; more often it shows up as a pause within an advance.
+Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, placed the rounding bottom 7th of 39 bullish patterns in his performance ranking (a ranking by how far price went after the breakout). He also found that the trend leading into this pattern was upward 67% of the time. In other words, it does not only appear at the end of a decline; more often it shows up as a pause within an advance.
 
 ## How SIGLENS detects it
 
-SIGLENS takes two clearly turned highs (swing highs: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the saucer. It fits a U-shaped curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding bottom. The conditions:
+SIGLENS takes two clear highs (swing highs: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the saucer. It fits a U-shaped curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding bottom. The conditions:
 
 - The two rims must be at least 30 bars apart.
 - The rim prices must be within 5% of each other and no more than 25% of the saucer's depth apart. A looser match would also catch W-shaped bottoms, so the limit stays at 5%.

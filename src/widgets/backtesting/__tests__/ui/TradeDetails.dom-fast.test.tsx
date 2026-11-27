@@ -76,7 +76,7 @@ describe('TradeDetails', () => {
         expect(screen.getByText('보유 중 재분석 4회')).toBeInTheDocument();
         expect(
             screen.getByText(
-                '프롬프트 prompts/NVDA/2025-03-11_entry.json · 응답 responses/NVDA/2025-03-11_entry.json'
+                '프롬프트 prompts/NVDA/2025-03-11_entry.json, 응답 responses/NVDA/2025-03-11_entry.json'
             )
         ).toBeInTheDocument();
     });

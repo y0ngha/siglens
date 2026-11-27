@@ -14,7 +14,7 @@ faq:
 
 ## How it's calculated
 
-Stochastic RSI was introduced by Tushar Chande and Stanley Kroll in 1994. Instead of price, it applies the [stochastic](/guide/indicators/stochastic) formula to RSI values. It shows, on a scale from 0 to 1, where the current RSI sits within the range of recent RSI values. Think of it as RSI with the stochastic formula applied on top. RSI measures the force behind price moves (momentum), so Stochastic RSI shows where that force sits within its recent range.
+Stochastic RSI was introduced by Tushar Chande and Stanley Kroll in 1994. Instead of price, it applies the [stochastic](/guide/indicators/stochastic) formula to RSI values. It shows, on a scale from 0 to 1, where the current RSI sits within the range of recent RSI values. RSI measures the force behind price moves (momentum), so Stochastic RSI shows where that force sits within its recent range.
 
 The stochastic uses a 0 to 100 scale, but Stochastic RSI is usually shown on a 0 to 1 scale. So 0.8 here corresponds to 80 on the stochastic, and 0.2 to 20.
 
@@ -39,12 +39,12 @@ SIGLENS checks whether RSI has reached the top or bottom of its own recent range
 It does not judge on its own, and checks with these combinations.
 
 - It reads the trend direction first with [MACD](/guide/indicators/macd) or ADX (a measure of trend strength), and uses Stochastic RSI only for timing.
-- Look for short-term turning points at price zones that overlap with [VWAP](/guide/indicators/vwap) and the volume profile.
-- Give more weight to a bounce signal that appears near the lower Bollinger Band.
+- It looks for short-term turning points at price zones that overlap with [VWAP](/guide/indicators/vwap) and the volume profile.
+- It gives more weight to a bounce signal that appears near the lower Bollinger Band.
 
 ## Watch out for
 
 - It is very sensitive, so in low-volatility or sideways markets it gives many false signals. Do not use it as a standalone signal.
-- It is a further-processed version of RSI, so even though it is designed to lead, it can sometimes look late relative to price. What it tells you is not where price sits but where RSI sits within its own recent range. 0.8 means "RSI is high for lately," not "price is at the top."
+- It is a further-processed version of RSI, so even though it is designed to lead, it can sometimes look late relative to price. What it tells you is not where price sits but where RSI sits within its own recent range. 0.8 means "RSI has been on the high side lately," not "price is at the top."
 - It suits timing once the trend has been decided. Check direction first with moving averages, MACD or ADX.
 - In a trending market it can stay above 0.8 or below 0.2 for a long time, so expecting it to return to the middle soon goes wrong.

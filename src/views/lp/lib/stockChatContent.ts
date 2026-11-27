@@ -29,17 +29,17 @@ export const HOW: readonly HowStep[] = [
     {
         Icon: QuoteIcon,
         title: '시세 직접 조회',
-        body: '답하기 전에 최신 시세와 차트를 직접 찾아봅니다.',
+        body: '답하기 전에 최신 시세와 차트를 직접 찾아봐요.',
     },
     {
         Icon: LayersIcon,
         title: '지표는 규칙으로 계산',
-        body: 'RSI, 이동평균 같은 지표는 AI가 짐작하지 않고 정해진 규칙으로 계산합니다.',
+        body: 'RSI, 이동평균 같은 지표는 AI가 짐작하지 않고 정해진 규칙으로 계산해요.',
     },
     {
         Icon: SparkIcon,
         title: '답변마다 출처와 기준 시각',
-        body: '어떤 데이터를 언제 기준으로 봤는지 답변과 함께 보여 줍니다.',
+        body: '어떤 데이터를 언제 기준으로 봤는지 답변과 함께 보여 줘요.',
     },
 ];
 

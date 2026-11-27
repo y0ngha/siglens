@@ -417,7 +417,7 @@ describe('PositionBuilding', () => {
             fireEvent.mouseEnter(floors[2]); // band index 2 → [140,160)
             const tooltip = screen.getByTestId('floor-tooltip');
             expect(
-                within(tooltip).getByText('₩140–₩160, 거주율 30%')
+                within(tooltip).getByText('₩140~₩160, 거주율 30%')
             ).toBeInTheDocument();
         });
     });
@@ -526,11 +526,11 @@ describe('PositionBuilding', () => {
         // 문구("거주율 N% (최근 52주 거래량 기준)")를 테스트에서 재계산하지 않고
         // 이 배열 하나로 못박아 소스와 동일하게 유지한다.
         const EXPECTED = [
-            '$100–$120, 거주율 10% (최근 52주 거래량 기준)',
-            '$120–$140, 거주율 20% (최근 52주 거래량 기준)',
-            '$140–$160, 거주율 30% (최근 52주 거래량 기준)',
-            '$160–$180, 거주율 25% (최근 52주 거래량 기준)',
-            '$180–$200, 거주율 15% (최근 52주 거래량 기준)',
+            '$100~$120, 거주율 10% (최근 52주 거래량 기준)',
+            '$120~$140, 거주율 20% (최근 52주 거래량 기준)',
+            '$140~$160, 거주율 30% (최근 52주 거래량 기준)',
+            '$160~$180, 거주율 25% (최근 52주 거래량 기준)',
+            '$180~$200, 거주율 15% (최근 52주 거래량 기준)',
         ];
 
         it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label/role/onClick) and no tooltip infra renders — DOM unchanged', () => {
@@ -614,7 +614,7 @@ describe('PositionBuilding', () => {
             expect(tooltip.hasAttribute('role')).toBe(false);
             expect(tooltip.getAttribute('aria-hidden')).toBe('true');
             expect(
-                within(tooltip).getByText('$140–$160, 거주율 30%')
+                within(tooltip).getByText('$140~$160, 거주율 30%')
             ).toBeInTheDocument();
             expect(
                 within(tooltip).getByText('최근 52주 거래량 기준')
@@ -646,7 +646,7 @@ describe('PositionBuilding', () => {
             fireEvent.click(floors[3]); // band index 3 → [160,180), 25%
             expect(
                 within(screen.getByTestId('floor-tooltip')).getByText(
-                    '$160–$180, 거주율 25%'
+                    '$160~$180, 거주율 25%'
                 )
             ).toBeInTheDocument();
 
@@ -688,7 +688,7 @@ describe('PositionBuilding', () => {
             fireEvent.click(floors[3]); // band index 3 → [160,180), 25%
             expect(
                 within(screen.getByTestId('floor-tooltip')).getByText(
-                    '$160–$180, 거주율 25%'
+                    '$160~$180, 거주율 25%'
                 )
             ).toBeInTheDocument();
 

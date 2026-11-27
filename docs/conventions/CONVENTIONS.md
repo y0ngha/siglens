@@ -886,7 +886,8 @@ numbers (attempt caps, TTLs, windows) published there are pinned by a guard read
   (an older column may keep the raw path) and against rows written before the change; when old rows contradict it, ship
   an idempotent backfill in the same change.
 - Parallel locale texts use the same enumeration and punctuation; user-facing examples use plain language, not
-  internal code values.
+  internal code values. Catalogs, guides and the newest terms carry no em dash, middle dot or `・`, and an en dash only
+  in number ranges (`userCopyPunctuation.test.ts`).
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.

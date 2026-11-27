@@ -236,7 +236,7 @@ describe('FearGreedFactsSummary', () => {
             />
         );
 
-        expect(getByText(/장기 강세 흐름/)).toBeInTheDocument();
+        expect(getByText(/오랫동안 강세 흐름/)).toBeInTheDocument();
     });
 
     it('computeFearGreedIndex가 null이면(데이터 부족) 아무것도 렌더하지 않는다', () => {

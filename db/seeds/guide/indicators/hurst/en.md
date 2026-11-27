@@ -16,7 +16,7 @@ faq:
 
 ## How it's calculated
 
-In one line: it measures how fast the range of price movement widens as you look over longer periods. If it widens faster than it would under random movement, the market leans toward trend; if slower, toward pullback.
+It measures how fast the range of price movement widens as you look over longer periods. If it widens faster than it would under random movement, the market leans toward trend; if slower, toward pullback.
 
 The calculation is R/S (rescaled range) analysis. Returns are split into segments of length n. For each segment, take the running sum of deviations from the mean, and divide how widely it swings (R) by the standard deviation (S). Vary n and fit a straight line, on a log scale, to how fast this value grows. The slope of that line is H.
 

@@ -50,7 +50,9 @@ describe('AnalystActions', () => {
     it('renders heading', () => {
         render(<AnalystActions items={EVENTS.map(fromGradesEvent)} />);
         expect(
-            screen.getByRole('heading', { name: '애널리스트 등급·목표가 변경' })
+            screen.getByRole('heading', {
+                name: '애널리스트 등급과 목표가 변경',
+            })
         ).toBeInTheDocument();
     });
 

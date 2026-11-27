@@ -9,7 +9,7 @@ faq:
   - q: Is CCI above +100 overbought?
     a: It can be overbought, or it can be the start of a strong trend. If CCI stays above +100 for several bars, it points more to an uptrend in progress, so it isn't treated as an immediate sell signal.
   - q: How is CCI different from RSI?
-    a: RSI is confined between 0 and 100, but CCI has no upper or lower limit and can reach values like +200 or -300. It shows the degree of deviation from the average as it is.
+    a: RSI is confined between 0 and 100, but CCI has no upper or lower limit and can reach values like +200 or -300. It shows the full size of the deviation from the average.
   - q: What period works best for CCI?
     a: The standard is 20. Shortening it to 10 to 14 makes it faster but adds noise signals, and lengthening it to 25 to 50 makes it smoother but later.
 ---

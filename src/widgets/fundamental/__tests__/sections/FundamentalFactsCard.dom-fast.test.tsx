@@ -85,7 +85,7 @@ describe('FundamentalFactsCard', () => {
         );
 
         expect(
-            screen.getByRole('heading', { name: 'SEALSQ 재무·수급 요약' })
+            screen.getByRole('heading', { name: 'SEALSQ 재무와 수급 요약' })
         ).toBeInTheDocument();
         expect(screen.getAllByRole('listitem')).toHaveLength(ALL_FACTS.length);
         expect(screen.getByText(/약 11\.2년치 규모입니다/)).toBeInTheDocument();
@@ -198,7 +198,7 @@ describe('FundamentalFactsCard', () => {
         );
         expect(
             screen.getByText(
-                '최근 임원·주요주주 지분 변동 보고는 4건(보고자 2명)이고, 순변동은 -1,200주입니다.'
+                '최근 임원과 주요주주의 지분 변동 보고는 4건(보고자 2명)이고, 순변동은 -1,200주입니다.'
             )
         ).toBeInTheDocument();
         expect(

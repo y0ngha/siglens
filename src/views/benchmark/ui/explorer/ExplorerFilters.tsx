@@ -15,6 +15,7 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { NativeSelect } from '@/shared/ui/NativeSelect';
 import { useBenchmarkEnumText } from '../../hooks/useBenchmarkEnumText';
+import { benchmarkPoolName } from '../../lib/benchmarkPoolName';
 import {
     isBenchmarkFilterActive,
     pickBenchmarkFilterValue,
@@ -162,7 +163,10 @@ export function ExplorerFilters({
                     'pool',
                     pickBenchmarkFilterValue(raw, options.pools)
                 ),
-            options: options.pools.map(pool => ({ value: pool, text: pool })),
+            options: options.pools.map(pool => ({
+                value: pool,
+                text: benchmarkPoolName(pool, enumText.pool),
+            })),
         },
         {
             key: 'target',

@@ -421,7 +421,7 @@ describe('CongressTradesTable', () => {
             );
             expect(container.querySelectorAll('tbody tr')).toHaveLength(50);
             expect(
-                screen.getByText('최근 50건만 표시합니다 · 전체 60건')
+                screen.getByText('최근 50건만 표시합니다(전체 60건)')
             ).toBeInTheDocument();
             expect(container.querySelector('caption')?.textContent).toBe(
                 '의회 거래 공시 목록 (최근 50건만 표시, 전체 60건)'

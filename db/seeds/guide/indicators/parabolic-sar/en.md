@@ -1,7 +1,7 @@
 ---
 title: "Parabolic SAR"
 aliases: [Parabolic SAR, PSAR, Stop and Reverse, SAR]
-summary: "Dots above or below price show trend direction, reversal points and a trailing stop level in one view."
+summary: "Dots above or below price show trend direction, reversal points and a trailing stop level."
 seoTitle: "Parabolic SAR: How to Read the Dot Flip"
 seoDescription: Why Parabolic SAR dots flip between above and below price, how to read its reversal signals, and when it misleads you in ranging markets, with a synthetic chart.
 demoCaption: "Synthetic, illustrative bars. The dots sit below the bars during the uptrend and above them after the trend turns."
@@ -29,7 +29,7 @@ The dot moves a little closer each bar toward the extreme point, the furthest pr
 
 SIGLENS looks for the bar where the dot has just jumped to the other side of price, and checks whether that reversal came in a trending market.
 
-- Setting: Wilder's standard values as they are: AF start 0.02, increment 0.02, max 0.20.
+- Setting: Wilder's standard AF start 0.02, increment 0.02 and max 0.20.
 - Reversal signal: a dot moving from below price to above is a bearish reversal, and from above to below a bullish reversal. It is marked when that flip happened within the last 3 bars.
 - Direction and strength: the dot's position gives the trend direction, and the gap between dot and price gives its strength. A gap narrowing faster than usual is read as a turn getting close.
 - Trend check: reversals that occur when [ADX](/guide/indicators/adx), which measures trend strength, is above 25 get more weight; reversals in sideways stretches where ADX is below 20 get less.
@@ -39,5 +39,5 @@ SIGLENS looks for the bar where the dot has just jumped to the other side of pri
 - In sideways or choppy markets the dots keep flipping, and repeated losses are easy to run into. It helps to read it alongside a trend-strength indicator such as ADX.
 - It follows price, so it cannot warn of a reversal in advance; it confirms one after it has started.
 - The standard values are for daily charts. On shorter timeframes some raise the AF start, and on longer ones some lower it. For volatile stocks, some check [ATR](/guide/indicators/atr) and lower the start to 0.01 to reduce false reversals.
-- The first few bars after a reversal are the riskiest. AF is back at 0.02 and the dot is close to price, so even a small pullback can flip it again. So some check whether the new trend holds for 2–3 bars and whether volume or momentum (the force behind price moves) supports it.
+- The first few bars after a reversal are the riskiest. AF is back at 0.02 and the dot is close to price, so even a small pullback can flip it again. So some check whether the new trend holds for two or three bars and whether volume or momentum (the force behind price moves) supports it.
 - If a bar opens with a gap, the dot can flip right away even though the trend is unchanged.

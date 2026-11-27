@@ -36,7 +36,7 @@ Order blocks and fair value gaps are read as price zones where a reaction may oc
 
 ## How SIGLENS detects it
 
-SIGLENS finds these patterns automatically with fixed rules and shows them as candidate key price zones on the chart.
+SIGLENS finds these patterns with fixed rules and shows them as candidate key price zones on the chart.
 
 - Swing highs and lows: the highest or lowest bar within 5 bars on each side.
 - BOS and CHoCH: a structure break is recorded when a close finishes above the latest swing high or below the latest swing low. If it goes the same direction as the previous break, it is a BOS; if the opposite direction, a CHoCH.
@@ -53,7 +53,7 @@ When SIGLENS checked SPY (S&P 500 ETF) data, none of order blocks, fair value ga
 
 - SMC was originally a method where a person reads the chart. Zones found automatically are a list of candidates, not confirmed signals.
 - A swing high or low is confirmed only after 5 more bars pass to its right. So highs and lows within the most recent 5 bars are not marked yet.
-- If price returns to the original trend within 1–3 bars after a CHoCH, it is more likely a false signal.
+- If price returns to the original trend within 1 to 3 bars after a CHoCH, it is more likely a false signal.
 - If price reached an order block and pushed straight through with no real reaction, the zone is no longer treated as valid.
 - SMC does not measure trend strength, so a structure break in a sideways market means little. Check whether there is a trend at all with an indicator that measures trend strength, such as [ADX](/guide/indicators/adx).
 - The premium and discount range is set mechanically, so right after a trend change or in a sideways market it can differ from the range a person would draw by hand.

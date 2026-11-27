@@ -16,13 +16,13 @@ faq:
 
 ## How it's calculated
 
-MFI was created by Gene Quong and Avrum Soudack. It uses price and volume together to show the force behind moves (momentum) within a 0 to 100 range. An indicator that swings within a fixed range like this is called an oscillator. It multiplies the typical price (the average of high, low and close) by volume to get money flow, then compares the sum of money flow on bars where the typical price rose against the sum on bars where it fell, over 14 bars. The result runs from 0 to 100.
+MFI was created by Gene Quong and Avrum Soudack. It uses price and volume together to show the force behind moves (momentum) within a 0 to 100 range. An indicator that swings within a fixed range like this is called an oscillator. It multiplies the typical price (the average of high, low and close) by volume to get money flow, then compares the sum of money flow on bars where the typical price rose against the sum on bars where it fell, over 14 bars.
 
 Think of it as the volume version of [RSI](/guide/indicators/rsi). Moves backed by heavy volume count for more, so it is sensitive to large amounts of money moving.
 
 ## What it tells you
 
-- Above 80 is read as overbought (buying heavily one-sided, so a pullback may come) and a short-term pullback is watched for; below 20 is read as oversold (selling one-sided) and a short-term bounce is watched for. Readings above 90 or below 10 are rare and carry more weight.
+- Above 80 is read as overbought (buying has become lopsided, so a pullback may come) and a short-term pullback is watched for; below 20 is read as oversold (selling has become lopsided) and a short-term bounce is watched for. Readings above 90 or below 10 are rare and carry more weight.
 - If price makes lower lows while MFI makes higher lows, that is a divergence (price and indicator moving in different directions): selling pressure is easing even as price falls. Because volume is built in, some give it more weight than RSI divergence. The opposite shape means buying pressure is weakening.
 - If MFI drops below 20, recovers, falls again but holds above the earlier low, then breaks above the high in between, that is a bullish failure swing. The mirror image above 80 is a bearish failure swing.
 - A cross above 50 suggests money inflow is stronger, and a cross below suggests outflow is stronger.

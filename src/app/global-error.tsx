@@ -63,7 +63,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                         서비스를 불러오지 못했어요
                     </h1>
                     <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                        페이지를 불러오지 못했습니다. 다시 시도해 주세요.
+                        잠시 후 다시 시도해 주세요.
                         <span className="mt-1 block">
                             We couldn’t load this page. Please try again.
                         </span>

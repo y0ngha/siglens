@@ -29,11 +29,11 @@ The pattern completes when the close leaves the triangle in the direction of the
 - It lasts a short 1 to 2 weeks.
 - Volume has fallen by more than 60% from the pole.
 
-A pennant is often said to sit in the middle of the whole move: the pole is the first half, and after the pennant price travels about the pole's length once more. But in the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, the pennant came at the midpoint only about 30% of the time. Expecting another pole-length move after a pennant was more often wrong than right.
+A pennant is often said to sit in the middle of the whole move: the pole is the first half, and after the pennant price travels about the pole's length once more. But in the tabulation of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, the pennant came at the midpoint only about 30% of the time. Expecting another pole-length move after a pennant was more often wrong than right.
 
 ## How SIGLENS detects it
 
-SIGLENS takes two clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the start and end of the pole. If the two lines of the pause that follows converge, it is a pennant; if they run parallel, it is a flag. The conditions:
+SIGLENS takes two clear highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the start and end of the pole. If the two lines of the pause that follows converge, it is a pennant; if they run parallel, it is a flag. The conditions:
 
 - Pole: a move of at least 3 times ATR within 20 bars, and also more than a set share of price (3% on daily bars).
 - Pause: 5 to 20 bars after the pole's end. It must not retrace more than half the pole, and no bar may go beyond the pole's end by more than 0.5 times ATR.

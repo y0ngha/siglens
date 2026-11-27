@@ -95,7 +95,7 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */
 export const PUBLIC_API_FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
-const FRESH_ANALYSIS_DESCRIPTION = `Get an AI analysis for a symbol (kind: technical, overall, news or options) in the same structure as get_cached_analysis. A shared cached analysis is returned at no cost (meta.source "cache"). Otherwise a NEW analysis is generated (usually about a minute, at most ${FRESH_ANALYSIS_DEADLINE_SECONDS} seconds) with YOUR registered LLM key — BYOK only, SigLens never spends its own LLM key — and counts against the stricter "ai" rate limit. Any listed model can be generated, but only with a registered key for that model's provider.`;
+const FRESH_ANALYSIS_DESCRIPTION = `Get an AI analysis for a symbol (kind: technical, overall, news or options) in the same structure as get_cached_analysis. A shared cached analysis is returned at no cost (meta.source "cache"). Otherwise a NEW analysis is generated (usually about a minute, at most ${FRESH_ANALYSIS_DEADLINE_SECONDS} seconds) with YOUR registered LLM key (BYOK only: SIGLENS never spends its own LLM key) and counts against the stricter "ai" rate limit. Any listed model can be generated, but only with a registered key for that model's provider.`;
 
 /**
  * 에이전트 스펙(`inputSchema`: symbol·kind·timeframe)에 API 전용 `model`을 더한다. 생략하면 계정의 "API 기본 모델"이다.
@@ -113,7 +113,7 @@ function withApiModelArgument(spec: AgentToolSpec): AgentToolSpec {
                 model: {
                     type: 'string',
                     enum: API_KNOWN_MODELS,
-                    description: `Model to use. Optional: defaults to the API default model set at siglens.io/account, and the request fails with model_required when neither is set. Every model listed here is generated with your own provider key (SigLens's own LLM key is never used), so register the key of that model's provider at siglens.io/account.`,
+                    description: `Model to use. Optional: defaults to the API default model set at siglens.io/account, and the request fails with model_required when neither is set. Every model listed here is generated with your own provider key (SIGLENS's own LLM key is never used), so register the key of that model's provider at siglens.io/account.`,
                 },
             },
         },

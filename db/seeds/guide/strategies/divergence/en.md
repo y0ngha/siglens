@@ -37,7 +37,7 @@ A divergence is a warning, though, not a signal of when to buy or sell. In a str
 
 ## How SIGLENS detects it
 
-SIGLENS automatically finds regular RSI divergences within the last 20 bars and draws them on the chart. It picks two noticeable lows (or highs) and compares the direction of price and RSI.
+SIGLENS finds regular RSI divergences within the last 20 bars and draws them on the chart. It picks two noticeable lows (or highs) and compares the direction of price and RSI.
 
 - A low is a bar whose low is below the 2 bars on each side; a high is a bar whose high is above the 2 bars on each side.
 - Bullish: comparing the two most recent lows, price's low is lower and RSI's low is higher.

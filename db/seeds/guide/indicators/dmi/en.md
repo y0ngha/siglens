@@ -28,7 +28,7 @@ DMI (Directional Movement Index) was created by J. Welles Wilder in 1978 and rea
 
 Crossovers are read like this.
 
-- +DI crosses above -DI: an early sign of a turn to the upside. Trust goes up a lot if ADX is above 20 then.
+- +DI crosses above -DI: an early sign of a turn to the upside. It is more reliable if ADX is above 20 at the time.
 - -DI crosses above +DI: an early sign of a turn to the downside. Likewise, confirm it with ADX above 20.
 - Be careful with crossovers when ADX is below 20, because many are false.
 

@@ -22,11 +22,11 @@ The highs stall at a horizontal line at nearly the same price, and the lows find
 
 Buyers and sellers are in balance. Textbooks treat it as a rest in the prior trend: a box after an advance breaks upward and a box after a decline breaks downward, so the trend continues. A break in the opposite direction is read as a trend reversal.
 
-The actual numbers lean upward. In the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, 63% of boxes after an advance and 59% of boxes after a decline broke upward. So even boxes after a decline turned up more often than they continued down. Downward breaks also performed worse afterward. A breakout counts as more reliable when volume shrinks inside the box and rises on the break.
+The actual numbers lean upward. In the tabulation of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 63% of boxes after an advance and 59% of boxes after a decline broke upward. So even boxes after a decline turned up more often than they continued down. Downward breaks also performed worse afterward. A breakout counts as more reliable when volume shrinks inside the box and rises on the break.
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) into upper and lower boundaries, then checks that both lines are flat and touched several times. The conditions:
+SIGLENS connects clear highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) into upper and lower boundaries, then checks that both lines are flat and touched several times. The conditions:
 
 - Both lines must be flat. Over the whole pattern each line must move less than the smaller of 0.75 times ATR and 1.5% of price (looser than the 1% used for other patterns).
 - Both lines must be touched at least 3 times. A swing within 0.35 times ATR of a line counts as a touch. With only two touches per side, the shape cannot be told apart from a double or triple top or bottom.
