@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import { isVisualBlock } from '@/entities/chat-conversation/lib/chartBlock';
-import type { ChatBlock } from '@/entities/chat-conversation/types';
+import type { ChatDrawableBlock } from '@/entities/chat-conversation/types';
 import { ChatChartSlot } from '@/widgets/agent-chat/model/chatChartSlot';
 import { ChatChartPlaceholder } from '@/widgets/chart/ChatChartPlaceholder';
 import { ChatVisualPlaceholder } from '@/widgets/chart/visual/ChatVisualPlaceholder';
@@ -28,7 +28,7 @@ const ChatVisualBlock = dynamic(
 );
 
 /** 블록 종류로 그릴 청크를 고른다 — `kind`가 없는 블록은 옛 캔들 차트다. */
-function ChatBlockChart({ block }: { readonly block: ChatBlock }) {
+function ChatBlockChart({ block }: { readonly block: ChatDrawableBlock }) {
     return isVisualBlock(block) ? (
         <ChatVisualBlock block={block} />
     ) : (

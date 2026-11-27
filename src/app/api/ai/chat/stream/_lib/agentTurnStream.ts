@@ -15,6 +15,7 @@ import {
     type AgentProviderState,
 } from '@/entities/llm-provider/api/agent/router';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     AgentTurnError,
@@ -186,6 +187,8 @@ export function agentTurnStream({
                               }
                             : {}),
                         availableTools: availableToolNames(),
+                        // core의 기본 도구 모음에 관심종목·가격대 알림 도구를 덧붙인 모음 — 이 턴 실행기만 쓴다.
+                        toolSet: AGENT_TOOL_SET,
                         portfolioSymbols,
                         // Untrusted; core validates and falls back to the locale's zone.
                         timeZone,

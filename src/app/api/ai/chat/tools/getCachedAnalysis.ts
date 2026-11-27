@@ -33,7 +33,7 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
-import { isGuestSubject } from '../guestSubject';
+import { isGuestSubject } from '@/shared/lib/guestSubject';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
@@ -613,23 +613,29 @@ interface TechnicalPeek {
     loadChartAnalysis: () => Promise<ChartAnalysisSource>;
 }
 
+/** technical redis peek의 적중: 호출자 티어로 거른 분석과, 그 키를 만든 reasoning·보유 버킷·벤치마크. */
+export interface TechnicalCacheHit {
+    cached: NonNullable<Awaited<ReturnType<typeof peekAnalysisCache>>>;
+    reasoning: boolean;
+    positionBucket: Awaited<ReturnType<typeof positionBucketFor>>;
+    /** 캐시 키의 `:bm=`. 같은 분석의 차트 작도를 읽을 때 같은 값을 넘긴다. */
+    benchmarkSymbol: string | undefined;
+}
+
 /**
- * technical redis peek(회원은 reasoning off/on 중 늦은 쪽) → 적중이면 예산 맞춘 payload, 아니면 `null`.
- * technical 탭과 overall 대체(`freshTechnicalInsteadOfOverall`)가 함께 쓴다.
- *
- * `extra`는 fit **전에** envelope에 합친다 — `fitProse`가 envelope 전체 길이로 맞추므로, fit 뒤에 필드를 붙이면
- * 레지스트리 상한을 넘어 결과 전체가 앞부분 미리보기로 무너질 수 있다.
+ * technical redis peek(회원은 reasoning off/on 중 늦은 쪽) — 호출자 티어로 거른 분석을 돌려주고 없으면 `null`.
+ * `get_cached_analysis`(technical·overall 대체)와 `propose_price_alert`가 **같은 peek**을 쓴다: 가격대 알림이 읽는
+ * 진입 구간·무효화 기준은 이 도구가 사용자에게 보여 주는 분석과 같은 항목이어야 하고, 잠긴 필드는 둘 다 같이
+ * 비어 있어야 한다(`actionRecommendation`이 `null`).
  */
-async function peekTechnicalResult(
+export async function peekTechnicalCacheHit(
     symbol: string,
     timeframe: Timeframe,
     fmpSymbol: string | undefined,
     ctx: CallerCtx,
-    runtime: Parameters<ToolExecutor>[2],
-    extra: Record<string, unknown> = {}
-): Promise<TechnicalPeek | null> {
+    runtime: Pick<Parameters<ToolExecutor>[2], 'analysisModel'>
+): Promise<TechnicalCacheHit | null> {
     const memberCaller = isMemberCaller(ctx);
-    const tab = 'technical';
     // A guest holds nothing, and its subject is not a user id the holdings
     // table could even compare against (uuid column).
     const [positionBucket, marketProfile] = await Promise.all([
@@ -659,6 +665,39 @@ async function peekTechnicalResult(
     const { hit: cached, reasoning } = memberCaller
         ? await peekMemberLatest(peekTechnical, c => c.result.analyzedAt)
         : { hit: await peekTechnical(false), reasoning: false };
+    return cached
+        ? { cached, reasoning, positionBucket, benchmarkSymbol }
+        : null;
+}
+
+/**
+ * technical redis peek → 적중이면 예산 맞춘 payload, 아니면 `null`.
+ * technical 탭과 overall 대체(`freshTechnicalInsteadOfOverall`)가 함께 쓴다.
+ *
+ * `extra`는 fit **전에** envelope에 합친다 — `fitProse`가 envelope 전체 길이로 맞추므로, fit 뒤에 필드를 붙이면
+ * 레지스트리 상한을 넘어 결과 전체가 앞부분 미리보기로 무너질 수 있다.
+ */
+async function peekTechnicalResult(
+    symbol: string,
+    timeframe: Timeframe,
+    fmpSymbol: string | undefined,
+    ctx: CallerCtx,
+    runtime: Parameters<ToolExecutor>[2],
+    extra: Record<string, unknown> = {}
+): Promise<TechnicalPeek | null> {
+    const memberCaller = isMemberCaller(ctx);
+    const tab = 'technical';
+    const hit = await peekTechnicalCacheHit(
+        symbol,
+        timeframe,
+        fmpSymbol,
+        ctx,
+        runtime
+    );
+    const cached = hit?.cached;
+    const reasoning = hit?.reasoning ?? false;
+    const positionBucket = hit?.positionBucket;
+    const benchmarkSymbol = hit?.benchmarkSymbol;
     if (cached) {
         const a = cached.result;
         const generatedAt = a.analyzedAt ? new Date(a.analyzedAt) : new Date();

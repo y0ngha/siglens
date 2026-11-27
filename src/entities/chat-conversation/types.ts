@@ -4,6 +4,7 @@ import type {
     Bar,
     ChartOverlay,
 } from '@y0ngha/siglens-core';
+import type { PriceAlertProposal } from '@/entities/mail-alert/model';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 /** 차트 블록의 봉 주기 — 공급자 주기(`1Day`, `1Hour` …) 또는 일봉을 접은 `1Week`·`1Month`. */
@@ -200,9 +201,33 @@ export type ChatVisualBlock =
 export type ChatVisualBlockKind = ChatVisualBlock['kind'];
 
 /**
- * 저장·SSE·화면이 다루는 블록 단위. 캔들 차트 블록은 `kind`가 없고(옛 행 포함) 시각화 블록만 `kind`가 있다.
+ * 답변 아래 카드로 그리는 가격대 알림 제안(`propose_price_alert`). 차트가 아니라 **행동 카드**다 — 사용자가 카드의
+ * 버튼을 눌러야만 알림이 만들어지고, 도구는 아무것도 쓰지 않는다. 같은 경로(SSE `chart` 프레임, tool 행의 `chart`
+ * jsonb)로 저장·전송되어 대화를 다시 열어도 카드가 남는다(상태는 열 때 서버에서 다시 읽는다).
  */
-export type ChatBlock = ChatChartBlock | ChatVisualBlock;
+export interface ChatPriceAlertProposalBlock {
+    /** 블록 모양 버전 — 저장된 행을 읽는 쪽이 모르는 버전은 그리지 않는다. */
+    version: 1;
+    kind: 'price_alert_proposal';
+    /** 카드가 그리는 값. 서명된 `token`의 본문과 같다(서버가 같은 값을 두 번 만든다). */
+    proposal: PriceAlertProposal;
+    /** 만들기 버튼이 서버 액션에 넘기는 서명된 제안. */
+    token: string;
+    /** 카드 제목용 회사 이름 — 답변 언어 기준. 못 찾았으면 `null`이고 제목은 심볼이다. */
+    name: string | null;
+}
+
+/** 차트가 아닌 행동 블록. 그림 슬롯으로 가지 않고 답변 아래 카드로만 그린다. */
+export type ChatActionBlock = ChatPriceAlertProposalBlock;
+
+/** 차트 슬롯이 그리는 블록(캔들 차트 또는 시각화). 행동 블록은 여기에 들지 않는다. */
+export type ChatDrawableBlock = ChatChartBlock | ChatVisualBlock;
+
+/**
+ * 저장·SSE·화면이 다루는 블록 단위. 캔들 차트 블록은 `kind`가 없고(옛 행 포함) 시각화 블록과 행동 블록만 `kind`가
+ * 있다 — `kind`가 있다고 시각화는 아니다(`isVisualBlock`은 `kind` 목록으로 가른다).
+ */
+export type ChatBlock = ChatDrawableBlock | ChatActionBlock;
 
 /** 시각화 블록 하나를 직렬화했을 때의 상한(바이트) — 행 크기가 커지지 않게 빌더가 지킨다. */
 export const CHAT_VISUAL_BLOCK_MAX_BYTES = 50_000;

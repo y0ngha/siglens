@@ -1,11 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import type { MailAlertTopic } from '@/entities/mail-alert/model';
+import { confirmMailAlertAction } from '@/entities/mail-alert/actions/confirmMailAlertAction';
+import type {
+    MailAlertConfirmState,
+    MailAlertTopic,
+} from '@/entities/mail-alert/model';
 import { useMailAlertCodeFlow } from '../hooks/useMailAlertCodeFlow';
+import { topicFormFields } from '../lib/topicFields';
 import { MailAlertCodeStep } from './MailAlertCodeStep';
 import { MailAlertEmailStep } from './MailAlertEmailStep';
 import { MailAlertSuccess } from './MailAlertSuccess';
+
+const IDLE_CONFIRM: MailAlertConfirmState = { status: 'idle' };
 
 interface MailAlertGuestFormProps {
     readonly topic: MailAlertTopic;
@@ -22,7 +29,7 @@ export function MailAlertGuestForm({
     topic,
     accountEmail,
 }: MailAlertGuestFormProps) {
-    const flow = useMailAlertCodeFlow();
+    const flow = useMailAlertCodeFlow(confirmMailAlertAction, IDLE_CONFIRM);
     const [isEditingEmail, setIsEditingEmail] = useState(false);
 
     if (flow.confirmState.status === 'subscribed') {
@@ -36,11 +43,16 @@ export function MailAlertGuestForm({
     if (flow.requestState.status === 'code_sent' && !isEditingEmail) {
         return (
             <MailAlertCodeStep
-                topic={topic}
+                hiddenFields={topicFormFields(topic)}
                 email={flow.requestState.email}
                 confirmAction={flow.confirmAction}
                 isConfirming={flow.isConfirming}
                 confirmState={flow.confirmState}
+                confirmError={
+                    flow.confirmState.status === 'idle'
+                        ? null
+                        : flow.confirmState.status
+                }
                 resendAction={flow.resendAction}
                 resendState={flow.resendState}
                 isResending={flow.isResending}

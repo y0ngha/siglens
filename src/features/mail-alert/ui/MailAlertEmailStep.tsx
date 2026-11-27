@@ -21,6 +21,8 @@ interface MailAlertEmailStepProps {
     readonly honeypotField: string;
     /** 제출할 때마다(결과가 오기 전에) 불린다 — 코드 단계에서 돌아온 화면을 닫는다. */
     readonly onSubmit: () => void;
+    /** 고지 옆 방침 링크의 절대 주소(`MailAlertNotice`). 방침 페이지가 없는 호스트에서만 준다. */
+    readonly privacyHref?: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export function MailAlertEmailStep({
     emailLocked,
     honeypotField,
     onSubmit,
+    privacyHref,
 }: MailAlertEmailStepProps) {
     const t = useTranslations('features.mail-alert');
     const errorText = useMailAlertErrorText();
@@ -89,7 +92,7 @@ export function MailAlertEmailStep({
                 readOnly={emailLocked}
                 error={errorStatus === null ? null : errorText(errorStatus)}
             />
-            <MailAlertNotice />
+            <MailAlertNotice privacyHref={privacyHref} />
             <button
                 type="submit"
                 aria-disabled={isPending}

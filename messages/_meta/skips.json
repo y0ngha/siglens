@@ -1218,6 +1218,36 @@
         "text": "이더리움"
     },
     {
+        "file": "src/features/agent-tools/spec/watchlistAlertTools.ts",
+        "line": 21,
+        "reason": "ai-prompt",
+        "text": "`The signed-in user's own SIGLENS watchlist (관심종목, 관심 목록, 담아 둔 종목): the symbols "
+    },
+    {
+        "file": "src/features/agent-tools/spec/watchlistAlertTools.ts",
+        "line": 33,
+        "reason": "ai-prompt",
+        "text": "`Prepare a one-time email alert for a price level of one US or Korean stock or E"
+    },
+    {
+        "file": "src/features/agent-tools/spec/watchlistAlertTools.ts",
+        "line": 52,
+        "reason": "ai-prompt",
+        "text": "Which level to watch: the entry zone or the 무효화 기준 of SIGLENS's latest daily tec"
+    },
+    {
+        "file": "src/features/agent-tools/spec/watchlistAlertTools.ts",
+        "line": 75,
+        "reason": "ai-prompt",
+        "text": "The user asks about their watchlist (관심종목, 담아 둔 종목) as a whole → get_my_watchlis"
+    },
+    {
+        "file": "src/features/agent-tools/spec/watchlistAlertTools.ts",
+        "line": 79,
+        "reason": "ai-prompt",
+        "text": "The user asks to be alerted when a price, a zone or the 무효화 기준 is reached or cro"
+    },
+    {
         "file": "src/features/pwa-install/lib/installPrompt.ts",
         "line": 51,
         "reason": "developer-diagnostic",

@@ -55,6 +55,16 @@ describe('queryConfig staleTime constants', () => {
         );
     });
 
+    it('priceAlertProposalState query key는 제안마다 갈리고 서명된 토큰을 담지 않는다', () => {
+        expect(QUERY_KEYS.priceAlertProposalState('p1')).toEqual([
+            'price-alert-proposal-state',
+            'p1',
+        ]);
+        expect(QUERY_KEYS.priceAlertProposalState('p2')).not.toEqual(
+            QUERY_KEYS.priceAlertProposalState('p1')
+        );
+    });
+
     it('currentUser query key는 안정적이다', () => {
         expect(QUERY_KEYS.currentUser()).toEqual(['current-user']);
     });

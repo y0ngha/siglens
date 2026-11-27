@@ -132,6 +132,12 @@ export const QUERY_KEYS = {
      */
     mailAlertState: (kind: string, key: string) =>
         ['mail-alert-state', kind, key] as const,
+    /**
+     * 시그렌즈 AI 답변 아래 가격대 알림 카드가 마운트될 때 읽는 제안 하나의 상태(만들 수 있음·이미 만들었음 …). 세션·쿠키마다
+     * 답이 다르므로 카드가 사라지면 버린다(`gcTime: 0`).
+     */
+    priceAlertProposalState: (proposalId: string) =>
+        ['price-alert-proposal-state', proposalId] as const,
     // exact same key they always have — only a member's explicit `true` value
     // produces a distinct key (member-reasoning-toggle spec Part A: "changing
     // the toggle re-submits analysis" relies on this key change).

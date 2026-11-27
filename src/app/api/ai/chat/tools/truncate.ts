@@ -215,6 +215,14 @@ export const ANALYST_VIEWS_RESULT_MAX_CHARS = 5_500;
 export const WEB_SEARCH_RESULT_MAX_CHARS = 13_000;
 
 /**
+ * `get_my_watchlist` 결과 상한. `getMyWatchlist.test.ts`가 재는 최악 모양은 종목 상한(`WATCHLIST_MAX_MEMBER` = 50)을 9자 코드,
+ * 이름 상한(`WATCHLIST_TOOL_NAME_MAX_CHARS` = 64자, 더 긴 이름은 잘린다), 네 자리 가격으로 채우고 낡은 시세 상세 5건과 살아 있는
+ * 알림 10건을 붙인 결과로 10,731자다. 11,400자는 그 위에 약 670자를 남긴다(그 테스트가 상한 근처에 있음과 넘지 않음을 함께
+ * 확인한다). 기본 상한(4,000자)에서는 50종목 목록이 앞부분 미리보기로 무너져 종목과 시세가 사라진다.
+ */
+export const WATCHLIST_RESULT_MAX_CHARS = 11_400;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK

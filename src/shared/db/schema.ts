@@ -725,7 +725,7 @@ export const priceAlerts = pgTable(
         basis: text('basis', { enum: PRICE_ALERT_BASIS_VALUES }).notNull(),
         /** 구간·무효화 기준을 읽어 온 AI 분석의 `analyzedAt`. 가격을 직접 말한 알림은 null. */
         analysisAt: timestamp('analysis_at', { withTimezone: true }),
-        /** 카드에 보인 가격(만들 때의 시세). */
+        /** 기준 세션(`startsAfterSession`)의 종가. 발송기의 분할 판정이 지금 읽은 일봉의 같은 세션 종가와 견준다. */
         referenceClose: numeric('reference_close', {
             precision: 20,
             scale: 6,

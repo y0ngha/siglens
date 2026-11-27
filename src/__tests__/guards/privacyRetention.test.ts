@@ -21,6 +21,14 @@ import {
     MAIL_ALERT_DELIVERY_RETENTION_DAYS,
     MAIL_ALERT_RATE_LIMITS,
 } from '@/entities/mail-alert/lib/mailAlertConstants';
+import {
+    PRICE_ALERT_FIRED_RETENTION_DAYS,
+    PRICE_ALERT_RATE_LIMIT,
+} from '@/entities/mail-alert/lib/priceAlertConstants';
+import {
+    PROMPT_DYNAMIC_RETENTION_DAYS,
+    RESULT_RETENTION_DAYS,
+} from '@/entities/analysis/analysisHistoryRepository';
 import { windowId } from '@/entities/siglens-api-key/lib/rateLimitWindow';
 import { AI_SSO_PROBED_MAX_AGE_SECONDS } from '@/shared/config/cookieNames';
 import { GUEST_ID_MAX_AGE_SECONDS } from '@/shared/config/guestCookie';
@@ -152,6 +160,12 @@ const ALERT_LEAD: Record<Locale, string> = {
     ja: 'アラートメールの申し込みには',
     zh: '提醒邮件订阅会使用',
 };
+const PRICE_ALERT_LEAD: Record<Locale, string> = {
+    ko: '가격대 알림을 만들 때는',
+    en: 'When a price alert is created',
+    ja: '価格アラートを作成する際は',
+    zh: '创建价格提醒时',
+};
 const SIGNUP_LEAD: Record<Locale, string> = {
     ko: '회원가입 이메일 인증에는',
     en: 'For member sign-up email verification',
@@ -276,7 +290,7 @@ const ENTRIES: readonly Entry[] = [
                 section: 6,
                 marker: UPSTASH,
                 scopeAfter: ALERT_LEAD,
-                scopeUntil: SIGNUP_LEAD,
+                scopeUntil: PRICE_ALERT_LEAD,
             },
         ],
     },
@@ -310,9 +324,41 @@ const ENTRIES: readonly Entry[] = [
                 section: 6,
                 marker: UPSTASH,
                 scopeAfter: ALERT_LEAD,
+                scopeUntil: PRICE_ALERT_LEAD,
+            },
+        ],
+    },
+    {
+        id: '가격대 알림 만들기 횟수 제한 기록(PRICE_ALERT_RATE_LIMIT)',
+        seconds: PRICE_ALERT_RATE_LIMIT.createPerIp.windowSeconds,
+        unit: 'hour',
+        places: [
+            { section: 2, marker: MAIL_ALERT_LINE },
+            {
+                section: 6,
+                marker: UPSTASH,
+                scopeAfter: PRICE_ALERT_LEAD,
                 scopeUntil: SIGNUP_LEAD,
             },
         ],
+    },
+    {
+        id: '알린 가격대 알림 보관(PRICE_ALERT_FIRED_RETENTION_DAYS)',
+        seconds: PRICE_ALERT_FIRED_RETENTION_DAYS * SECONDS_PER_DAY,
+        unit: 'day',
+        places: [{ section: 4, marker: '- 가격대 알림:' }],
+    },
+    {
+        id: '보유 구간이 반영된 분석 결과 보관(RESULT_RETENTION_DAYS)',
+        seconds: RESULT_RETENTION_DAYS * SECONDS_PER_DAY,
+        unit: 'day',
+        places: [{ section: 4, marker: '- 보유 구간이 반영된 AI 분석' }],
+    },
+    {
+        id: '보유 구간이 적힌 분석 요청 내용 보관(PROMPT_DYNAMIC_RETENTION_DAYS)',
+        seconds: PROMPT_DYNAMIC_RETENTION_DAYS * SECONDS_PER_DAY,
+        unit: 'day',
+        places: [{ section: 4, marker: '- 보유 구간이 반영된 AI 분석' }],
     },
     {
         id: '알림 메일 쿠키 수명(MAIL_ALERT_COOKIE_MAX_AGE_SECONDS)',

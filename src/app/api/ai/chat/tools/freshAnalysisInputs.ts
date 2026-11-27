@@ -14,7 +14,7 @@ import type { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketPr
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDatabaseClient } from '@/shared/db/client';
-import { isGuestSubject } from '../guestSubject';
+import { isGuestSubject } from '@/shared/lib/guestSubject';
 
 type MarketProfile = Awaited<ReturnType<typeof resolveMarketProfile>>;
 type Tier = Parameters<typeof resolveHoldingPositionBucket>[0]['tier'];

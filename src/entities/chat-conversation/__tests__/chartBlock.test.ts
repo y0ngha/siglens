@@ -5,15 +5,19 @@ import {
     AGENT_CHART_PERIODS,
 } from '@y0ngha/siglens-core';
 import {
+    CHAT_ACTION_BLOCK_KINDS,
     CHAT_CHART_MARKET_PROFILES,
     CHAT_CHART_TIMEFRAMES,
     CHAT_COMPARE_PERIODS,
     CHAT_VISUAL_BLOCK_KINDS,
+    isActionBlock,
     isChatBlock,
     isChatChartBlock,
+    isChatPriceAlertProposalBlock,
     isChatVisualBlock,
     isVisualBlock,
 } from '@/entities/chat-conversation/lib/chartBlock';
+import { PRICE_ALERT_TOKEN_MAX_LENGTH } from '@/entities/mail-alert/lib/priceAlertProposal';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 
 const block = {
@@ -289,5 +293,111 @@ describe('isChatBlock', () => {
         ['배열', []],
     ])('필드가 틀리면 받지 않는다: %s', (_label, value) => {
         expect(isChatBlock(value)).toBe(false);
+    });
+});
+
+/** 가격대 알림 제안 카드(`propose_price_alert`) — 차트가 아닌 행동 블록. */
+const PROPOSAL_BLOCK = {
+    version: 1,
+    kind: 'price_alert_proposal',
+    token: 'body.signature',
+    name: '애플',
+    proposal: {
+        proposalId: '5b1f7c1e-3d41-4a6a-9a5c-0a3b6f7d9e10',
+        subject: 'subject-hash',
+        symbol: 'AAPL',
+        market: 'us',
+        condition: { kind: 'close_below', level: 180 },
+        basis: 'price_level',
+        analysisAt: null,
+        referenceClose: 190,
+        quoteAt: null,
+        startsAfterSession: '2026-11-24',
+        expiresOn: '2026-12-24',
+        exp: 1_795_000_000,
+    },
+};
+
+describe('가격대 알림 제안 블록', () => {
+    it('행동 목록과 시각화 목록은 겹치지 않는다', () => {
+        for (const kind of CHAT_ACTION_BLOCK_KINDS) {
+            expect([...CHAT_VISUAL_BLOCK_KINDS]).not.toContain(kind);
+        }
+    });
+
+    it('제안 카드는 그릴 수 있는 블록이다', () => {
+        expect(isChatPriceAlertProposalBlock(PROPOSAL_BLOCK)).toBe(true);
+        expect(isChatBlock(PROPOSAL_BLOCK)).toBe(true);
+    });
+
+    it('제안 카드는 시각화 블록이 아니다 — `kind`가 있어도 차트 슬롯으로 가지 않는다', () => {
+        expect(isVisualBlock(PROPOSAL_BLOCK as never)).toBe(false);
+        expect(isActionBlock(PROPOSAL_BLOCK as never)).toBe(true);
+        expect(isChatVisualBlock(PROPOSAL_BLOCK)).toBe(false);
+    });
+
+    it('캔들·시각화 블록은 행동 블록이 아니다', () => {
+        expect(isActionBlock(block as never)).toBe(false);
+        for (const value of Object.values(VISUAL)) {
+            expect(isActionBlock(value as never)).toBe(false);
+            expect(isVisualBlock(value as never)).toBe(true);
+        }
+    });
+
+    it('이름은 문자열 또는 null만 받는다', () => {
+        expect(isChatBlock({ ...PROPOSAL_BLOCK, name: null })).toBe(true);
+        expect(isChatBlock({ ...PROPOSAL_BLOCK, name: 1 })).toBe(false);
+        expect(isChatBlock({ ...PROPOSAL_BLOCK, name: undefined })).toBe(false);
+    });
+
+    it.each([
+        ['다른 버전', { ...PROPOSAL_BLOCK, version: 2 }],
+        ['버전 없음', { ...PROPOSAL_BLOCK, version: undefined }],
+        ['토큰 없음', { ...PROPOSAL_BLOCK, token: undefined }],
+        ['빈 토큰', { ...PROPOSAL_BLOCK, token: '' }],
+        [
+            '상한을 넘는 토큰',
+            {
+                ...PROPOSAL_BLOCK,
+                token: 'a'.repeat(PRICE_ALERT_TOKEN_MAX_LENGTH + 1),
+            },
+        ],
+        ['제안 없음', { ...PROPOSAL_BLOCK, proposal: undefined }],
+        [
+            '0 이하 가격',
+            {
+                ...PROPOSAL_BLOCK,
+                proposal: { ...PROPOSAL_BLOCK.proposal, referenceClose: 0 },
+            },
+        ],
+        [
+            '실제 없는 날짜',
+            {
+                ...PROPOSAL_BLOCK,
+                proposal: {
+                    ...PROPOSAL_BLOCK.proposal,
+                    expiresOn: '2026-13-45',
+                },
+            },
+        ],
+        [
+            '모르는 조건',
+            {
+                ...PROPOSAL_BLOCK,
+                proposal: {
+                    ...PROPOSAL_BLOCK.proposal,
+                    condition: { kind: 'close_at', level: 1 },
+                },
+            },
+        ],
+    ])('%s은 그리지 않는다', (_label, value) => {
+        expect(isChatBlock(value)).toBe(false);
+        expect(isChatPriceAlertProposalBlock(value)).toBe(false);
+    });
+
+    it('모르는 kind는 여전히 그리지 않는다', () => {
+        expect(isChatBlock({ ...PROPOSAL_BLOCK, kind: 'order_ticket' })).toBe(
+            false
+        );
     });
 });

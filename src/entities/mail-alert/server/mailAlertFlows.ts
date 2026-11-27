@@ -103,20 +103,20 @@ export type MailAlertManageDeps = Omit<MailAlertFlowDeps, 'guestCookie'> & {
  * 때만 세션 회원(이메일 인증됨) → 게스트 쿠키 순이다. 인증 전 회원은 아무것도 가져오지 못하고 코드로 주소를
  * 확인해야 하므로 따로 구분한다.
  */
-type Caller =
+export type Caller =
     | { readonly kind: 'link'; readonly subscriberId: string }
     | { readonly kind: 'member'; readonly user: AuthUserRecord }
     | { readonly kind: 'unverified'; readonly user: AuthUserRecord }
     | { readonly kind: 'guest'; readonly subscriberId: string }
     | { readonly kind: 'anonymous' };
 
-function isEnabled(
+export function isEnabled(
     deps: Pick<MailAlertFlowDeps, 'launched' | 'signingReady'>
 ): boolean {
     return deps.launched && deps.signingReady;
 }
 
-async function resolveCaller(
+export async function resolveCaller(
     deps: MailAlertManageDeps,
     link: MailAlertLinkAuth | undefined
 ): Promise<Caller> {
@@ -145,7 +145,7 @@ async function resolveCaller(
  * 회원이 소유자일 때 비회원 때 신청한 같은 주소의 행을 먼저 이 회원에게 연결한다(`findForMember`가
  * 인증된 본인 주소로만 가져온다). 항목·제거·삭제가 모두 연결된 행을 가리켜야 하기 때문이다.
  */
-async function ownerOf(
+export async function ownerOf(
     deps: MailAlertManageDeps,
     caller: Caller
 ): Promise<MailAlertOwner | null> {
@@ -163,7 +163,7 @@ async function ownerOf(
 }
 
 /** 쿠키가 가리키던 행이 없어졌다(수신 거부로 지워졌거나 회원에게 연결됐다). 쿠키만 비운다. */
-async function forgetStaleCookie(
+export async function forgetStaleCookie(
     deps: MailAlertFlowDeps,
     caller: Caller
 ): Promise<void> {
@@ -185,7 +185,7 @@ function consentSourceOf(topic: MailAlertTopic): MailAlertConsentSource {
  * 두 요청이 같은 회원을 동시에 연결하면 `user_id` 유니크(23505)에 한쪽이 걸릴 수 있다. 다시 시도하면
  * 상대가 커밋한 행이 보여 주소로 같은 행을 찾으므로(이미 연결됨) 한 번만 재시도한다.
  */
-async function upsertVerifiedOnce(
+export async function upsertVerifiedOnce(
     deps: MailAlertFlowDeps,
     email: string,
     consentSource: MailAlertConsentSource
@@ -215,7 +215,7 @@ function hasTopic(
  * 인증 전이면 `upsertVerified`가 연결하지 못하고, 그러면 탈퇴 때 행이 남는다(방침 §4는 탈퇴 시 즉시 파기를
  * 약속한다). 주소 일치는 여기서도 저장소가 문장 안에서 다시 확인한다. 이미 연결된 행이면 아무 일도 없다.
  */
-async function linkSessionMember(
+export async function linkSessionMember(
     deps: MailAlertFlowDeps,
     verifiedEmail: string,
     subscriberId: string

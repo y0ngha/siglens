@@ -3,24 +3,31 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { EMAIL_VERIFICATION_CODE_LENGTH } from '@/entities/auth/lib/authUseCaseConstants';
-import type {
-    MailAlertConfirmState,
-    MailAlertRequestCodeState,
-    MailAlertTopic,
-} from '@/entities/mail-alert/model';
+import type { MailAlertRequestCodeState } from '@/entities/mail-alert/model';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
-import { useMailAlertErrorText } from '../hooks/useMailAlertErrorText';
-import { topicFormFields } from '../lib/topicFields';
+import {
+    useMailAlertErrorText,
+    type MailAlertErrorStatus,
+} from '../hooks/useMailAlertErrorText';
 import { MailAlertField } from './MailAlertField';
 
 interface MailAlertCodeStepProps {
-    readonly topic: MailAlertTopic;
+    /**
+     * 코드 확인 요청에 숨은 입력으로 함께 가는 값 — 이 화면이 무엇을 확정하는지(알림 항목의 `kind`와 그 필드,
+     * 또는 가격대 알림 제안의 `token`)를 서버 액션에 알린다.
+     */
+    readonly hiddenFields: readonly (readonly [name: string, value: string])[];
     /** 코드를 보낸 주소(정규화된 값) — 코드 확인 요청에 숨은 입력으로 함께 간다. */
     readonly email: string;
     readonly confirmAction: (formData: FormData) => void;
     readonly isConfirming: boolean;
-    readonly confirmState: MailAlertConfirmState;
+    /**
+     * 코드 확인의 마지막 결과. 같은 오류가 거듭 와도 매번 새 객체라 오류 칸으로 포커스를 다시 옮기는 신호가 된다.
+     */
+    readonly confirmState: { readonly status: string };
+    /** `confirmState`에서 풀어 낸 오류. 아직 오류가 없으면 `null`. */
+    readonly confirmError: MailAlertErrorStatus | null;
     /** "코드 다시 받기" 제출이 쓰는 폼 액션(코드 받기 서버 액션을 감싼 것). */
     readonly resendAction: (formData: FormData) => void;
     /** 다시 받기의 결과 — 실패는 이 단계 안에서 알린다. */
@@ -36,11 +43,12 @@ interface MailAlertCodeStepProps {
  * 중에는 `aria-disabled`로 막아 포커스를 잃지 않는다(AX-3).
  */
 export function MailAlertCodeStep({
-    topic,
+    hiddenFields,
     email,
     confirmAction,
     isConfirming,
     confirmState,
+    confirmError,
     resendAction,
     resendState,
     isResending,
@@ -50,10 +58,7 @@ export function MailAlertCodeStep({
     const t = useTranslations('features.mail-alert');
     const errorText = useMailAlertErrorText();
     const codeRef = useRef<HTMLInputElement>(null);
-    const errorStatus =
-        confirmState.status === 'idle' || confirmState.status === 'subscribed'
-            ? null
-            : confirmState.status;
+    const errorStatus = confirmError;
     const resendBlocked = resendRemainingSeconds > 0 || isResending;
     const resendErrorStatus =
         resendState.status === 'invalid_email' ||
@@ -78,7 +83,7 @@ export function MailAlertCodeStep({
             className="space-y-3"
         >
             <input type="hidden" name="email" value={email} />
-            {topicFormFields(topic).map(([name, value]) => (
+            {hiddenFields.map(([name, value]) => (
                 <input key={name} type="hidden" name={name} value={value} />
             ))}
             <p className="text-sm text-secondary-300">

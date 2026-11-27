@@ -23,7 +23,7 @@ import {
     createGuestIpBackstopCounter,
     GUEST_IP_TURNS_PER_DAY,
 } from '../counters';
-import { guestSubject } from '../guestSubject';
+import { guestSubject } from '@/shared/lib/guestSubject';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { acquireTurnLock } from '../turnLock';
 import { agentTurnStream } from './_lib/agentTurnStream';

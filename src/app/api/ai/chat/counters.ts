@@ -10,7 +10,7 @@ import {
 /**
  * Many guests can share one NAT/CGNAT address, so this cannot be as tight as
  * a per-guest limit — it exists only to stop clearing `siglens_guest`
- * (`guestSubject.ts`) from buying unlimited free turns from the same
+ * (`shared/lib/guestSubject.ts`) from buying unlimited free turns from the same
  * network. ~10 guests' worth of the free tier's daily turn allowance
  * (`10 * agentLimit('free', 'turnsPerDay')` — kept a literal rather than
  * computed from core so importing this module can't run core at load time

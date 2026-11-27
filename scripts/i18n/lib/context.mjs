@@ -178,6 +178,18 @@ const BRAND_NATIVE_NAME_DECLARATOR = 'SITE_NAME_KO';
 const KO_GRAMMAR_RE =
     /src\/shared\/lib\/(koParticle|formatKoreanDateTime)\.ts$/;
 
+/**
+ * **에이전트 도구의 모델용 명세·라우팅 문구.**
+ *
+ * `src/features/agent-tools/spec/`의 설명·라우팅 줄·규칙 줄은 화면 문구가 아니라 모델이 읽는 지시문이다. 영어로 쓰고, 사용자가
+ * 실제로 치는 한국어 표현(`알려줘`, `관심종목`, `무효화 기준`)만 모델이 질문을 도구에 잇도록 괄호 안에 예시로 든다 — 번역하면
+ * 그 단서가 사라진다. `build*Prompt()`와 같은 이유(`ai-prompt`)로 면제한다.
+ *
+ * **좁게 유지할 것**: 이 디렉터리 하나만이다. 화면에 나가는 문구가 이 아래로 들어오면 그대로 묻히므로, 이 디렉터리에는 UI를
+ * 두지 않는다.
+ */
+const AGENT_TOOL_SPEC_DIR_RE = /^src\/features\/agent-tools\/spec\//;
+
 const E2E_STUB_RE =
     /src\/shared\/api\/e2eAnalysisStub\.ts$|src\/entities\/llm-provider\/api\/FakeChatProvider\.ts$|src\/entities\/ticker\/server\/searchTickerQuery\.ts$/;
 
@@ -304,6 +316,9 @@ export function classify({ candidate, filePath, code }) {
                 /^build[A-Za-z]*Prompt$/.test(p.id?.name ?? '')
         )
     ) {
+        return { applicable: false, reason: 'ai-prompt' };
+    }
+    if (AGENT_TOOL_SPEC_DIR_RE.test(filePath)) {
         return { applicable: false, reason: 'ai-prompt' };
     }
     if (E2E_STUB_RE.test(filePath)) {

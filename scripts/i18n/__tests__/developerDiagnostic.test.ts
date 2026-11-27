@@ -170,3 +170,28 @@ describe('brand-native-name 분류', () => {
         ).not.toContain('brand-native-name');
     });
 });
+
+/**
+ * 에이전트 도구 명세 디렉터리는 모델이 읽는 지시문이라 면제되지만, 그 디렉터리 하나만이다 — 같은 한국어가 다른 곳에 있으면
+ * 여전히 걸린다.
+ */
+describe('agent-tool-spec 분류', () => {
+    const code = "export const NOTE = '관심종목을 물으면 이 도구를 부른다';";
+
+    it('도구 명세 디렉터리의 한국어 예시는 ai-prompt로 면제된다', () => {
+        expect(
+            reasonsFor(
+                code,
+                'src/features/agent-tools/spec/watchlistAlertTools.ts'
+            )
+        ).toContain('ai-prompt');
+    });
+
+    it.each([
+        'src/features/agent-tools/ui/Panel.tsx',
+        'src/features/watchlist/spec/note.ts',
+        'src/shared/lib/note.ts',
+    ])('%s의 한국어는 면제되지 않는다', filePath => {
+        expect(reasonsFor(code, filePath)).not.toContain('ai-prompt');
+    });
+});
