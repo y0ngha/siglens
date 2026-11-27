@@ -31,7 +31,6 @@ describe('buildAgentSystemPrompt', () => {
         locale: 'ko',
         tools: AGENT_TOOL_SPECS,
         now: NOW,
-        etSessionStatus: 'open',
     });
 
     const promptFor = (locale: 'ko' | 'en' | 'ja' | 'zh') =>
@@ -39,7 +38,6 @@ describe('buildAgentSystemPrompt', () => {
             locale,
             tools: AGENT_TOOL_SPECS,
             now: NOW,
-            etSessionStatus: 'open',
         });
 
     it('한국어 전망 질문 트리거를 분석 라우팅 행에 싣는다', () => {
@@ -108,7 +106,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_options_summary'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(noOptions).not.toContain('pinning or gravitation');
     });
@@ -130,7 +127,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_options_summary'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(noSearch).not.toContain('get_options_summary');
         // 표의 각 행은 한 줄 — 여러 규칙을 한 불릿에 이어 붙이지 않는다.
@@ -154,7 +150,6 @@ describe('buildAgentSystemPrompt', () => {
                 locale: 'ko',
                 tools: AGENT_TOOL_SPECS.filter(t => t.name !== drop),
                 now: NOW,
-                etSessionStatus: 'open',
             }).match(outlook)?.[1];
         expect(only('get_cached_analysis')).toBe(
             'get_bars_indicators (timeframe 1Day unless the user names another)'
@@ -172,7 +167,6 @@ describe('buildAgentSystemPrompt', () => {
                     ].includes(t.name)
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(neither).not.toMatch(outlook);
         expect(neither).not.toContain('get_bars_indicators');
@@ -186,7 +180,6 @@ describe('buildAgentSystemPrompt', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS.filter(s => s.name !== 'get_guide'),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(withoutGuide).not.toContain('→ get_guide');
     });
@@ -254,7 +247,6 @@ describe('buildAgentSystemPrompt', () => {
                 locale: 'ko',
                 tools: AGENT_TOOL_SPECS.filter(t => t.name !== 'show_chart'),
                 now: NOW,
-                etSessionStatus: 'open',
             });
             expect(without).not.toContain('→ show_chart');
         });
@@ -266,7 +258,6 @@ describe('buildAgentSystemPrompt', () => {
                     t => t.name !== 'get_my_portfolio'
                 ),
                 now: NOW,
-                etSessionStatus: 'open',
             });
             expect(guest).toContain('→ show_chart');
             expect(guest).not.toContain('portfolio weights, ');
@@ -279,7 +270,6 @@ describe('buildAgentSystemPrompt', () => {
                     t => t.name !== 'get_theme_snapshot'
                 ),
                 now: NOW,
-                etSessionStatus: 'open',
             });
             expect(noTheme).toContain('→ show_chart');
             expect(noTheme).not.toContain(
@@ -295,7 +285,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_investor_flows'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
 
         it('routes investor-flows questions to the tool with the weighting and as-of rules', () => {
@@ -461,7 +450,6 @@ describe('buildAgentSystemPrompt', () => {
                 locale: 'ko',
                 tools: AGENT_TOOL_SPECS.filter(t => t.name !== 'web_search'),
                 now: NOW,
-                etSessionStatus: 'open',
             });
             const row =
                 noSearch
@@ -500,7 +488,6 @@ describe('buildAgentSystemPrompt', () => {
                     t => t.name !== 'get_cached_analysis'
                 ),
                 now: NOW,
-                etSessionStatus: 'open',
             });
             expect(noAnalysis).toContain('→ get_investor_flows.');
             expect(noAnalysis).not.toContain('alongside the outlook tools');
@@ -512,7 +499,6 @@ describe('buildAgentSystemPrompt', () => {
                     locale: 'ko',
                     tools,
                     now: NOW,
-                    etSessionStatus: 'open',
                     guest: true,
                 });
             expect(guestOf(AGENT_TOOL_SPECS)).toContain(
@@ -548,7 +534,6 @@ describe('buildAgentSystemPrompt', () => {
                 locale: 'ko',
                 tools: AGENT_TOOL_SPECS,
                 now: NOW,
-                etSessionStatus: 'open',
                 guest: true,
             });
             expect(guest).toContain(
@@ -563,7 +548,6 @@ describe('buildAgentSystemPrompt', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS,
             now: NOW,
-            etSessionStatus: 'open',
             guest: true,
         });
         expect(guest).toContain(
@@ -574,7 +558,6 @@ describe('buildAgentSystemPrompt', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS.filter(t => !NEW_TOOLS.includes(t.name)),
             now: NOW,
-            etSessionStatus: 'open',
         });
         for (const name of NEW_TOOLS)
             expect(withoutNewTools).not.toContain(name);
@@ -626,7 +609,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_bars_indicators'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(withoutBars).not.toContain('Horizon:');
         expect(withoutBars).not.toContain('Confluence rules:');
@@ -637,7 +619,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_cached_analysis'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(withoutCachedAnalysis).not.toContain('Analysis vs now:');
     });
@@ -666,7 +647,6 @@ describe('buildAgentSystemPrompt', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS.filter(t => t.name !== 'web_search'),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(noSearch).not.toContain('Carve-out to the row above');
         expect(noSearch).toContain(
@@ -680,7 +660,6 @@ describe('buildAgentSystemPrompt', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS.filter(t => t.name !== 'web_search'),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(noSearch).not.toContain('web_search');
         expect(noSearch).toContain('SIGLENS news has nothing on it yet');
@@ -710,7 +689,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_bars_indicators'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(noBars).toContain(
             'Which sectors, stocks or coins are worth looking at now'
@@ -723,7 +701,6 @@ describe('buildAgentSystemPrompt', () => {
                 t => t.name !== 'get_market_overview'
             ),
             now: NOW,
-            etSessionStatus: 'open',
         });
         expect(noOverview).not.toContain(
             'Which sectors, stocks or coins are worth looking at now'
@@ -1063,7 +1040,6 @@ describe('buildAgentSystemPrompt wording rules', () => {
         locale: 'ko',
         tools: AGENT_TOOL_SPECS,
         now: NOW,
-        etSessionStatus: 'open',
     });
 
     it('anchors the RSI zone to latest.rsiZone', () => {
@@ -1082,7 +1058,6 @@ describe('buildAgentSystemPrompt — 테마·지수 통계 라우팅', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS.filter(t => !without.includes(t.name)),
             now: NOW,
-            etSessionStatus: 'open',
             guest: false,
         });
     const rowOf = (prompt: string, needle: string): string =>
@@ -1178,7 +1153,6 @@ describe('buildAgentSystemPrompt — 추정치 추이 라우팅', () => {
             locale: 'ko',
             tools: AGENT_TOOL_SPECS,
             now: NOW,
-            etSessionStatus: 'open',
             guest: false,
         });
         const row =

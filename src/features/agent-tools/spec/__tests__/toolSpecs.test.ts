@@ -9,6 +9,7 @@ import {
     AGENT_THEMES,
     AGENT_TURN_CAPS,
     computePriceStats,
+    PRICE_STATS_CAGR_ABOVE_DAYS,
     PRICE_STATS_NOTE_TEMPLATES,
     SWING_EPISODES_LISTED_MAX,
     SWING_LOOKBACK_YEARS,
@@ -37,7 +38,6 @@ import {
     AGENT_MACRO_INSTRUMENTS,
     AGENT_MACRO_QUOTES_MAX,
 } from '@/features/agent-tools/lib/macroInstruments';
-import { PRICE_STATS_CAGR_ABOVE_DAYS } from '@/features/agent-tools/spec/getPriceStats';
 import {
     SWING_THRESHOLD_GUIDE,
     SWING_TRIGGER_EXAMPLES,

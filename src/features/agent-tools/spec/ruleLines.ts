@@ -1,16 +1,5 @@
+import { PULLBACK_MEASURED_RATE_MEANING } from '@y0ngha/siglens-core';
 import { watchlistAlertRuleLines } from './watchlistAlertTools';
-
-/**
- * 눌림 판독의 66-75%가 무엇인지(빠른 청산의 적중률이지 승률·보유 성과가 아니다). core의 분석 프롬프트가 쓰는
- * 문장(`PULLBACK_MEASURED_RATE_MEANING`, core에서 `@internal`이라 공개 API 밖)을 바이트 그대로 옮겼다.
- *
- * 드리프트 감시: 이 문장을 그대로 싣는 core 공개 출력이 없다(분석 프롬프트 빌더 `buildAnalysisPrompt`는 내보내지
- * 않고, 공개된 `PULLBACK_BASE_RATES`는 다른 문장이다). 그래서 지금은 `toolSetParity.test.ts`가 core 내장 모음의
- * 같은 규칙 줄과 바이트를 대조하는 것이 유일한 감시다. core 다음 메이저(core-3)가 내장 모음을 지우면서 이 상수를
- * 공개로 내보내면, 여기서 그 수출을 import하고 이 사본을 지운다.
- */
-const PULLBACK_MEASURED_RATE_MEANING =
-    '66-75% is the share of short trades exited at the first close above MA5 (or after about 10 days) that ended in profit';
 
 /**
  * 도구별 규칙 줄. core 프레임의 도구와 무관한 앞 줄과 뒤 줄 사이에 이 순서로 들어간다. 도구가 없어 `false`가 된

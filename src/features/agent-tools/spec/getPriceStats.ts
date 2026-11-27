@@ -4,18 +4,10 @@ import {
     AGENT_PRICE_STATS_MAX_DATES,
     AGENT_PRICE_STATS_MAX_SUBJECTS,
     AGENT_PRICE_STATS_PERIODS,
+    PRICE_STATS_CAGR_ABOVE_DAYS,
+    PRICE_STATS_YEAR,
     type AgentToolDefinition,
 } from '@y0ngha/siglens-core';
-
-/**
- * 연평균 수익률을 내는 최소 구간(달력 일수, 윤년 하나). 계산은 core `computePriceStats`가 하고 이 값은 그 계산의
- * 내부 상수(`PRICE_STATS_CAGR_ABOVE_DAYS`, core 공개 API 밖)다. 설명이 같은 숫자를 말해야 해서 여기 적고,
- * `toolSetParity.test.ts`가 core 내장 모음의 렌더와 바이트를 대조해 둘이 어긋나면 실패한다.
- */
-export const PRICE_STATS_CAGR_ABOVE_DAYS = 366;
-
-/** `year`로 받는 달력 연도: 가장 이른 지수 이력부터 먼 상한까지. */
-const PRICE_STATS_YEAR = { min: 1971, max: 2100 } as const;
 
 /**
  * `get_price_stats` 도구 명세: 모델이 읽는 설명과 인자 스키마.
