@@ -180,30 +180,50 @@ function isMockCalls(node: AstNode | null): boolean {
 }
 
 /**
- * 순회: 모든 노드를 깊이 우선으로 돌려준다.
+ * 순회: 모든 노드를 깊이 우선으로 돌려준다(뿌리부터, 마지막 자식 쪽을 먼저).
+ *
+ * 마지막으로 훑은 파일 뿌리(`File` 노드)의 결과 하나만 기억한다. 한 파일의 AST를 스캔 루프와 파일 단위
+ * 규칙(문서 인용·SQL 단언·교차 검증)이 각자 다시 훑던 것을 한 번으로 줄인다. 파일은 하나씩 스캔하므로
+ * 한 칸이면 충분하고, 노드마다 기억하는 `WeakMap`은 GC 부담이 순회 절약보다 크다. 하위 트리는 기억하지
+ * 않는다. 돌려준 배열은 공유되므로 고치지 않는다.
  *
  * CONVENTIONS.md#CP-6 예외: 6천여 파일의 AST를 한 번씩 훑는 O(N) 핫 루프다. 노드마다 새 배열을
- * 만드는 재귀 flatMap은 이 가드의 실행 시간을 몇 배로 늘려 pre-commit에 둘 수 없게 만든다.
+ * 만드는 재귀 flatMap이나 `Object.entries`의 키·값 쌍은 이 가드의 실행 시간을 몇 배로 늘려
+ * pre-commit에 둘 수 없게 만든다.
  */
-function* walk(root: AstNode): Generator<AstNode> {
+const lastFileWalk: { root: AstNode | null; nodes: readonly AstNode[] } = {
+    root: null,
+    nodes: [],
+};
+
+function walk(root: AstNode): readonly AstNode[] {
+    if (lastFileWalk.root === root) return lastFileWalk.nodes;
+    const out: AstNode[] = [];
     const stack: AstNode[] = [root];
     while (stack.length > 0) {
         const node = stack.pop();
         if (node === undefined) break;
-        yield node;
-        for (const [key, value] of Object.entries(node)) {
+        out.push(node);
+        for (const key of Object.keys(node)) {
             if (key === 'loc' || key === 'extra' || key === 'comments') {
                 continue;
             }
+            const value = node[key];
+            if (typeof value !== 'object' || value === null) continue;
             if (Array.isArray(value)) {
-                value.forEach(item => {
+                for (const item of value) {
                     if (isNode(item)) stack.push(item);
-                });
+                }
             } else if (isNode(value)) {
                 stack.push(value);
             }
         }
     }
+    if (root.type === 'File') {
+        lastFileWalk.root = root;
+        lastFileWalk.nodes = out;
+    }
+    return out;
 }
 
 function assignsTo(node: AstNode, name: string): boolean {
@@ -322,7 +342,7 @@ function countLetThenIf(node: AstNode): number {
 function tryBlockAssigns(tryNode: AstNode, name: string): boolean {
     const block = child(tryNode, 'block');
     if (block === null) return false;
-    return [...walk(block)].some(inner => assignsTo(inner, name));
+    return walk(block).some(inner => assignsTo(inner, name));
 }
 
 function countLetThenTry(node: AstNode): number {
@@ -684,7 +704,8 @@ const LOGICAL_ASSIGNMENT = new Set(['??=', '||=', '&&=']);
 const LOCAL_DOC = /(?<![\w./-])docs\/(?!(?:product|conventions)\b)\w/g;
 
 function countLocalDocs(text: string): number {
-    return [...text.matchAll(LOCAL_DOC)].length;
+    // 정규식은 `docs/`를 그대로 담으므로 그 글자가 없으면 볼 것도 없다(문자열 노드 수천 개의 matchAll을 건너뛴다).
+    return text.includes('docs/') ? [...text.matchAll(LOCAL_DOC)].length : 0;
 }
 
 function stringValueOf(node: AstNode): string | null {
@@ -708,13 +729,17 @@ function stringValueOf(node: AstNode): string | null {
  */
 function countLocalDocCitations(ctx: FileContext): number {
     if (ctx.ast === null) return countLocalDocs(ctx.text);
-    const comments = ctx.commentRanges.map(c => countLocalDocs(c.value));
+    const comments = ctx.commentRanges.reduce(
+        (sum, comment) => sum + countLocalDocs(comment.value),
+        0
+    );
     const literals = isTestFile(ctx.path)
-        ? []
-        : [...walk(ctx.ast)]
-              .map(stringValueOf)
-              .map(value => (value === null ? 0 : countLocalDocs(value)));
-    return [...comments, ...literals].reduce((sum, n) => sum + n, 0);
+        ? 0
+        : walk(ctx.ast).reduce((sum, node) => {
+              const value = stringValueOf(node);
+              return value === null ? sum : sum + countLocalDocs(value);
+          }, 0);
+    return comments + literals;
 }
 
 /** 사유(`--`)를 달아 억제 주석을 허용하는 파일. 늘리려면 이 목록을 고치는 PR에서 사유를 설명한다. */
@@ -996,15 +1021,24 @@ function isStringLiteralOf(node: AstNode | null, value: string): boolean {
 
 /** 이 파일의 SQL 렌더·SQL 텍스트 식을 알아보는 판정기. */
 function createSqlTextModel(ast: AstNode) {
-    const nodes = [...walk(ast)];
+    const nodes = walk(ast);
     const renderFns = new Set(['renderSql']);
     const renderedNames = new Set<string>();
     const sqlNames = new Set<string>();
     const sqlListNames = new Set<string>();
     const localFunctions = new Set<string>();
 
+    // 도우미 본문은 추적 패스마다 다시 보므로 본문의 노드 목록을 이 모델 안에서만 기억한다.
+    const bodyNodes = new Map<AstNode, readonly AstNode[]>();
+    const nodesOfBody = (root: AstNode): readonly AstNode[] => {
+        const cached = bodyNodes.get(root);
+        if (cached !== undefined) return cached;
+        const listed = walk(root);
+        bodyNodes.set(root, listed);
+        return listed;
+    };
     const callsRender = (root: AstNode): boolean =>
-        [...walk(root)].some(
+        nodesOfBody(root).some(
             inner =>
                 (inner.type === 'CallExpression' &&
                     renderFns.has(nameOf(child(inner, 'callee')) ?? '')) ||
@@ -1033,7 +1067,7 @@ function createSqlTextModel(ast: AstNode) {
         const body = fn === null ? null : child(fn, 'body');
         if (body === null) return [];
         return body.type === 'BlockStatement'
-            ? [...walk(body)].flatMap(inner => {
+            ? walk(body).flatMap(inner => {
                   const argument =
                       inner.type === 'ReturnStatement'
                           ? child(inner, 'argument')
@@ -1259,7 +1293,7 @@ function parseExpectChain(call: AstNode) {
 }
 
 function hasStringContaining(node: AstNode): boolean {
-    return [...walk(node)].some(inner => {
+    return walk(node).some(inner => {
         if (inner.type !== 'CallExpression') return false;
         const callee = child(inner, 'callee');
         return (
@@ -1306,7 +1340,7 @@ function isSqlProbe(expr: AstNode | null, model: SqlModel): boolean {
             method === 'filter') &&
         model.isSqlList(child(callee, 'object')) &&
         children(node, 'arguments').some(argument =>
-            [...walk(argument)].some(
+            walk(argument).some(
                 inner => inner !== node && isSqlProbe(inner, model)
             )
         )
@@ -1317,7 +1351,7 @@ type SqlJudgement = 'ok' | 'partial' | 'absence';
 
 /** `{ sql: expect.stringContaining(..) }`·`{ sql: /re/ }`처럼 객체 속성으로 숨긴 부분 확인인가. */
 function hasPartialSqlProperty(node: AstNode, rendered: boolean): boolean {
-    return [...walk(node)].some(inner => {
+    return walk(node).some(inner => {
         if (inner.type !== 'ObjectProperty') return false;
         const key = nameOf(child(inner, 'key'));
         const value = child(inner, 'value');
@@ -1401,13 +1435,13 @@ export function findSqlSubstringAssertions(
 ): readonly SqlSubstringFinding[] {
     if (ctx.ast === null || !/sql|toSQL/i.test(ctx.text)) return [];
     const model = createSqlTextModel(ctx.ast);
-    const statements = [...walk(ctx.ast)].filter(
+    const statements = walk(ctx.ast).filter(
         node =>
             node.type === 'ExpressionStatement' ||
             node.type === 'ReturnStatement'
     );
     const reasons = absenceReasons(ctx);
-    const findings = [...walk(ctx.ast)]
+    const findings = walk(ctx.ast)
         .filter(node => node.type === 'CallExpression')
         .flatMap(call => {
             const chain = parseExpectChain(call);
@@ -1633,7 +1667,7 @@ function tryParse(source: SourceFile): Parsed | string {
 
 /** 주석과 문자열·템플릿 고정 부분을 같은 길이 공백으로 바꾼다(정규식 교차 검증용). */
 function blankNonCode(text: string, parsed: Parsed): string {
-    const strings = [...walk(parsed.ast)]
+    const strings = walk(parsed.ast)
         .filter(
             node =>
                 node.type === 'StringLiteral' || node.type === 'TemplateElement'
@@ -1643,15 +1677,23 @@ function blankNonCode(text: string, parsed: Parsed): string {
                 ? [{ start: node.start, end: node.end }]
                 : []
         );
-    return [...parsed.commentRanges, ...strings]
-        .toSorted((a, b) => b.start - a.start)
-        .reduce(
-            (out, { start, end }) =>
-                out.slice(0, start) +
-                out.slice(start, end).replace(/[^\n]/g, ' ') +
-                out.slice(end),
-            text
-        );
+    // 범위마다 `앞 + 공백 + 뒤`로 새 문자열을 만들면 복사량이 파일 길이 x 범위 수가 된다(주석·문자열이
+    // 수백 개인 테스트 파일에서 스캔 비용을 지배한다). 지울 위치를 표시한 뒤 한 번에 이어 붙인다.
+    const blank = new Uint8Array(text.length);
+    [...parsed.commentRanges, ...strings].forEach(({ start, end }) =>
+        blank.fill(1, start, end)
+    );
+    const pieces: string[] = [];
+    // CONVENTIONS.md#CP-6 예외: 파일 길이만큼 한 번 훑는 O(N) 루프다(같은 표시가 이어진 구간 단위로 자른다).
+    for (let from = 0; from < text.length;) {
+        const mark = blank[from];
+        let to = from + 1;
+        while (to < text.length && blank[to] === mark) to += 1;
+        const piece = text.slice(from, to);
+        pieces.push(mark === 1 ? piece.replace(/[^\n]/g, ' ') : piece);
+        from = to;
+    }
+    return pieces.join('');
 }
 
 const MOCK_INDEX_TEXT = /\.mock\.calls(?:\[|\.at\()/g;
@@ -1689,13 +1731,17 @@ function scanOne(
     if (typeof parsed === 'string') {
         return { counts: new Map(), problems: [`${source.path}: ${parsed}`] };
     }
+    // 노드마다 `countAt`이 없는 규칙까지 도는 비용을 덜려고 방문자를 가진 규칙만 미리 고른다.
+    const visitors = rules.flatMap(({ key, countAt }) =>
+        countAt === undefined ? [] : [{ key, countAt }]
+    );
     // CONVENTIONS.md#CP-6 예외: 규칙 수 x 노드 수의 O(N) 합산이라 Map에 누적한다.
     const counts = new Map<string, number>();
     for (const node of walk(parsed.ast)) {
-        for (const rule of rules) {
-            const found = rule.countAt?.(node) ?? 0;
+        for (const { key, countAt } of visitors) {
+            const found = countAt(node);
             if (found > 0) {
-                counts.set(rule.key, (counts.get(rule.key) ?? 0) + found);
+                counts.set(key, (counts.get(key) ?? 0) + found);
             }
         }
     }
