@@ -159,6 +159,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -208,6 +209,7 @@ describe('buildExpertAnalysisReport', () => {
                 poc: { price: 56_663, reason: 'POC' },
             },
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -236,6 +238,7 @@ describe('buildExpertAnalysisReport', () => {
                 analysis: baseAnalysis,
                 keyLevels: { resistance: [], support: [level] },
                 t,
+                contextLines: [],
                 skillLabel,
             });
 
@@ -260,6 +263,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: analysisWithLongRiskReward,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -283,6 +287,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: bearishAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -305,6 +310,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: bullishNoAction,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -326,6 +332,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: withPlanState(planState),
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -385,6 +392,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: oldResult,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -402,6 +410,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -433,6 +442,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: analysisWithEmptyIndicator,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -454,6 +464,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: onlyBearish,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -489,6 +500,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: sparseAnalysis,
             keyLevels: sparseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -525,6 +537,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: partialAnalysis,
             keyLevels: partialKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -562,6 +575,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -588,6 +602,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -618,6 +633,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -647,6 +663,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
         });
 
@@ -677,6 +694,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel: name => labels[name] ?? name,
         });
 
@@ -684,5 +702,41 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).not.toContain('- 상승 삼각형');
         expect(result).not.toContain('패턴과 이름이 같은 전략 요약');
         expect(result).toContain('- Breakout');
+    });
+
+    it('상위 시간대·시장 줄은 제목 아래 항목으로 싣고, 없으면 제목도 없다', () => {
+        const withLines = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'aapl',
+            analysis: baseAnalysis,
+            keyLevels: baseKeyLevels,
+            t,
+            contextLines: [
+                '주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.',
+                '최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.',
+            ],
+            skillLabel,
+        });
+        expect(withLines).toContain(
+            '상위 시간대와 시장:\n- 주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.\n- 최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.'
+        );
+        // 해석 블록 뒤, 주요 가격 구간 앞에 놓인다.
+        expect(withLines.indexOf('상위 시간대와 시장:')).toBeGreaterThan(
+            withLines.indexOf('현재 흐름은')
+        );
+        expect(withLines.indexOf('상위 시간대와 시장:')).toBeLessThan(
+            withLines.indexOf('주요 가격 구간:')
+        );
+
+        const without = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'aapl',
+            analysis: baseAnalysis,
+            keyLevels: baseKeyLevels,
+            t,
+            contextLines: [],
+            skillLabel,
+        });
+        expect(without).not.toContain('상위 시간대와 시장:');
     });
 });

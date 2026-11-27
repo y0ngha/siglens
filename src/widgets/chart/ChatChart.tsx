@@ -13,11 +13,11 @@ import { useChatChartOverlayItems } from './hooks/useChatChartOverlayItems';
 import { StockChart } from './StockChart';
 
 /**
- * `StockChart`의 시간축 서식용 주기. 일봉을 접은 주봉·월봉은 시각이 날짜 단위라 일봉 서식으로 그린다. 나머지 차트 주기는
- * 모두 core `Timeframe`이다(`AgentBarsTimeframe`은 `Timeframe`에 주봉·월봉을 더한 집합).
+ * `StockChart`의 시간축 서식용 주기. 월봉은 core `Timeframe`에 없고(`AgentBarsTimeframe`은 `Timeframe`에 월봉을 더한
+ * 집합), 시각이 날짜 단위라 일봉 서식으로 그린다. 주봉도 `Timeframe`이며 날짜 서식을 쓰므로 그대로 넘긴다.
  */
 function displayTimeframe(timeframe: ChatChartTimeframe): Timeframe {
-    return timeframe === '1Week' || timeframe === '1Month' ? '1Day' : timeframe;
+    return timeframe === '1Month' ? '1Day' : timeframe;
 }
 
 interface ChatChartProps {

@@ -46,7 +46,7 @@ export const KR_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
     defaultTimeframe: '1Day',
     // '4Hour'는 yahoo chart interval enum에 없다(1m/2m/5m/15m/30m/60m/90m/1h/1d/...).
     // 2026-08-16 005930.KS 실측: 5m/15m/30m/1h 정상, 4h는 InvalidOptionsError.
-    allowedTimeframes: ['5Min', '15Min', '30Min', '1Hour', '1Day'],
+    allowedTimeframes: ['5Min', '15Min', '30Min', '1Hour', '1Day', '1Week'],
     seo: {
         aboutNodeType: 'Corporation',
     },

@@ -16,7 +16,7 @@ describe('crypto market profile descriptor', () => {
     });
 
     it('excludes intraday timeframes unsupported by FMP crypto endpoints', () => {
-        expect(d.allowedTimeframes).toEqual(['5Min', '1Hour', '1Day']);
+        expect(d.allowedTimeframes).toEqual(['5Min', '1Hour', '1Day', '1Week']);
         expect(d.allowedTimeframes).not.toContain('15Min');
         expect(d.allowedTimeframes).not.toContain('4Hour');
     });

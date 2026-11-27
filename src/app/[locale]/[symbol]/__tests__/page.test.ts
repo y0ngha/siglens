@@ -656,7 +656,9 @@ describe('Symbol page', () => {
                 'free',
                 undefined,
                 undefined,
-                'ko'
+                'ko',
+                // writer의 비교 지수와 같은 심볼 — core 캐시 키(`:bm=`).
+                { benchmarkSymbol: 'SPY' }
             );
             expect(props.initialAnalysis).toMatchObject(cached.result);
         });
@@ -727,7 +729,9 @@ describe('Symbol page', () => {
                 'free',
                 undefined,
                 undefined,
-                'ko'
+                'ko',
+                // writer의 비교 지수와 같은 심볼 — core 캐시 키(`:bm=`).
+                { benchmarkSymbol: 'SPY' }
             );
         });
 

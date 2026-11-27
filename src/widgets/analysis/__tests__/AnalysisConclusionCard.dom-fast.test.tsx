@@ -6,6 +6,7 @@ import type {
     ClusteredKeyLevels,
     PlanCheck,
 } from '@y0ngha/siglens-core';
+import { defined } from '@/shared/test-utils/defined';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { AnalysisConclusionCard } from '@/widgets/analysis/sections/AnalysisConclusionCard';
 
@@ -677,5 +678,237 @@ describe('AnalysisConclusionCard', () => {
             expect(classLists[2]).toEqual(classLists[0]);
             expect(classLists[0].headline).toContain('h-7');
         });
+    });
+});
+
+describe('AnalysisConclusionCard 상위 시간대·시장 배경 줄', () => {
+    function withContext(extra: Partial<AnalysisResponse>): AnalysisResponse {
+        return { ...analysisOf('bullish'), ...extra };
+    }
+    const HTF = {
+        kind: 'weekly',
+        trend: 'bullish',
+        slopeAtr: 1.62,
+        rsi14: 61.2,
+        closeVsMa50Pct: 12.4,
+        lastBarInProgress: true,
+        bars: 246,
+        alignment: 'aligned',
+    } as const;
+    const BACKDROP = {
+        label: 'S&P 500 (SPY)',
+        trend: 'bullish',
+        closeVsMa200Pct: 6.2,
+        endDate: '2026-11-20',
+        relative: [
+            { sessions: 20, symbolPct: 4.1, benchmarkPct: 1.3 },
+            { sessions: 60, symbolPct: 9.8, benchmarkPct: 5.0 },
+        ],
+    } as const;
+
+    function contextBlock(): HTMLElement | null {
+        return document.querySelector<HTMLElement>('[data-conclusion-context]');
+    }
+
+    it('주봉 읽기와 시장 배경을 문장 줄로 보여 준다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({
+                    higherTimeframe: HTF,
+                    marketBackdrop: BACKDROP,
+                })}
+            />
+        );
+
+        const block = contextBlock();
+        expect(block).not.toBeNull();
+        expect(
+            within(defined(block, 'context block')).getByText(
+                '주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(defined(block, 'context block')).getByText(
+                '분석 시점에 마지막 주봉이 아직 진행 중이어서 위 판독은 바뀔 수 있어요.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(defined(block, 'context block')).getByText(
+                '비교 지수 S&P 500 (SPY)의 추세는 강세 흐름이에요.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(defined(block, 'context block')).getByText(
+                '최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('진행 중이 아니면 진행 중 문장이 없고, 정렬이 갈리면 그대로 말한다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({
+                    higherTimeframe: {
+                        ...HTF,
+                        lastBarInProgress: false,
+                        trend: 'bearish',
+                        alignment: 'opposed',
+                    },
+                })}
+            />
+        );
+
+        expect(
+            screen.getByText(
+                '주봉 추세는 약세 흐름이고, 이 차트와 반대 방향이에요.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText(/아직 진행 중이어서/)
+        ).not.toBeInTheDocument();
+    });
+
+    it('판단하지 못한 추세는 "아직 판단할 수 없어요"로 말하고 보합으로 읽지 않는다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({
+                    higherTimeframe: {
+                        ...HTF,
+                        trend: null,
+                        alignment: null,
+                        lastBarInProgress: false,
+                    },
+                    marketBackdrop: { ...BACKDROP, trend: null },
+                })}
+            />
+        );
+
+        expect(
+            screen.getByText('주봉 추세는 아직 판단할 수 없어요.')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                '비교 지수 S&P 500 (SPY)의 추세는 아직 판단할 수 없어요.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(defined(contextBlock(), 'context block')).queryByText(/보합/)
+        ).toBeNull();
+    });
+
+    it('비교 지수 기준일이 분석 봉의 날짜와 다르면 기준일을 밝힌다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({
+                    marketBackdrop: BACKDROP,
+                    // 2026-11-19 00:00 UTC 봉, 지수는 11-20까지.
+                    dataAsOf: { barTime: 1_795_046_400, close: 100 },
+                })}
+            />
+        );
+        expect(
+            screen.getByText('비교 지수는 11월 20일 기준이에요.')
+        ).toBeInTheDocument();
+    });
+
+    it('기준일이 분석 봉의 날짜와 같으면 따로 말하지 않는다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({
+                    marketBackdrop: BACKDROP,
+                    // 2026-11-20 00:00 UTC.
+                    dataAsOf: { barTime: 1_795_132_800, close: 100 },
+                })}
+            />
+        );
+        expect(screen.queryByText(/기준이에요/)).not.toBeInTheDocument();
+    });
+
+    it('분석 봉의 날짜를 모르면(dataAsOf 없음) 기준일을 밝힌다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({ marketBackdrop: BACKDROP })}
+            />
+        );
+        expect(
+            screen.getByText('비교 지수는 11월 20일 기준이에요.')
+        ).toBeInTheDocument();
+    });
+
+    it('한국 종목 변화 줄은 거래소 접미사를 뗀 코드를 찍는다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                symbol="005930.KS"
+                analysis={withContext({ marketBackdrop: BACKDROP })}
+            />
+        );
+        expect(
+            screen.getByText(
+                '최근 20거래일 변화는 005930 +4.1%, 지수 +1.3%예요.'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('크립토처럼 시장 배경이 없으면 주봉 줄만 있다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                symbol="BTC-USD"
+                analysis={withContext({ higherTimeframe: HTF })}
+            />
+        );
+        expect(screen.queryByText(/비교 지수/)).not.toBeInTheDocument();
+        expect(contextBlock()).not.toBeNull();
+    });
+
+    it('옛 결과(두 필드 없음)는 아무것도 더하지 않는다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={analysisOf('bullish')}
+            />
+        );
+        expect(contextBlock()).toBeNull();
+    });
+
+    it('로딩 중에는 그리지 않는다', () => {
+        render(
+            <AnalysisConclusionCard
+                {...BASE}
+                status="pending"
+                analysis={withContext({ higherTimeframe: HTF })}
+            />
+        );
+        expect(contextBlock()).toBeNull();
+    });
+
+    it('영어 카탈로그에서도 같은 값이 읽힌다', () => {
+        renderWithIntl(
+            <AnalysisConclusionCard
+                {...BASE}
+                analysis={withContext({
+                    higherTimeframe: HTF,
+                    marketBackdrop: BACKDROP,
+                })}
+            />,
+            { locale: 'en' }
+        );
+        expect(
+            screen.getByText(
+                'The weekly trend is bullish, moving the same way as this chart.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                'Over the last 20 sessions, AAPL changed +4.1% and the benchmark changed +1.3%.'
+            )
+        ).toBeInTheDocument();
     });
 });

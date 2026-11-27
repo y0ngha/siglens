@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 import { TIMEFRAMES } from '@/shared/config/market';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -19,6 +20,73 @@ describe('TimeframeSelector', () => {
 
         const buttons = screen.getAllByRole('button');
         expect(buttons).toHaveLength(TIMEFRAMES.length);
+    });
+
+    describe('시장 프로필별 버튼 목록', () => {
+        const labelsFor = (
+            profile: Parameters<typeof getDescriptor>[0]
+        ): (string | null)[] => {
+            render(
+                <TimeframeSelector
+                    value="1Day"
+                    onChange={vi.fn()}
+                    timeframes={getDescriptor(profile).allowedTimeframes}
+                />
+            );
+            return screen.getAllByRole('button').map(b => b.textContent);
+        };
+
+        it('미국 주식은 7개 프레임을 모두 보여 준다(4시간·1주 포함)', () => {
+            expect(labelsFor('us-equity')).toEqual([
+                '5분',
+                '15분',
+                '30분',
+                '1시간',
+                '4시간',
+                '1일',
+                '1주',
+            ]);
+        });
+
+        it('한국 주식은 4시간 없이 6개다(yahoo에 4시간이 없어 빈 차트가 된다)', () => {
+            const labels = labelsFor('kr-equity');
+            expect(labels).toEqual([
+                '5분',
+                '15분',
+                '30분',
+                '1시간',
+                '1일',
+                '1주',
+            ]);
+            expect(labels).not.toContain('4시간');
+        });
+
+        it('크립토는 프로필이 허용하는 4개만 보여 준다', () => {
+            expect(labelsFor('crypto')).toEqual(['5분', '1시간', '1일', '1주']);
+        });
+
+        it('free 등급은 1주도 잠긴다(1일만 열려 있다)', () => {
+            render(
+                <TimeframeSelector
+                    value="1Day"
+                    onChange={vi.fn()}
+                    isFreeTier
+                    timeframes={getDescriptor('us-equity').allowedTimeframes}
+                />
+            );
+            expect(screen.getByRole('button', { name: '1주' })).toHaveAttribute(
+                'aria-disabled',
+                'true'
+            );
+        });
+
+        it('timeframes를 생략하면 전체 TIMEFRAMES를 그린다', () => {
+            render(<TimeframeSelector value="1Day" onChange={vi.fn()} />);
+            expect(screen.getAllByRole('button')).toHaveLength(
+                TIMEFRAMES.length
+            );
+            expect(TIMEFRAMES).toContain('1Week');
+        });
     });
 
     it('renders Korean labels for timeframes', () => {

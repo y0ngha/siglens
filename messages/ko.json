@@ -971,7 +971,7 @@
                 "emailReport": "원할 때만 보유종목과 관심종목 소식을 메일로 받기",
                 "heading": "회원 혜택",
                 "models": "AI 모델 {count}개를 더 골라 쓰기",
-                "timeframes": "{from}부터 {to}까지 더 짧은 주기의 차트와 AI 분석"
+                "timeframes": "{from}부터 {to}까지 여러 주기의 차트와 AI 분석"
             },
             "SignupForm": {
                 "403732": "6자리 코드",
@@ -3997,24 +3997,43 @@
             "conclusion": {
                 "analyzedAt": "분석 시각",
                 "caveat": "분석 시점까지의 흐름을 정리한 내용이며, 예측이 아니에요.",
+                "htfAligned": "{v0} 추세는 {v1} 흐름이고, 이 차트와 같은 방향이에요.",
+                "htfMixed": "{v0} 추세는 {v1} 흐름이고, 이 차트와 방향이 뚜렷하게 겹치지 않아요.",
+                "htfOpposed": "{v0} 추세는 {v1} 흐름이고, 이 차트와 반대 방향이에요.",
+                "htfTrend": "{v0} 추세는 {v1} 흐름이에요.",
+                "htfUnknown": "{v0} 추세는 아직 판단할 수 없어요.",
                 "invalidation": "무효화 기준",
                 "invalidationHelp": "이 분석이 전제한 흐름이 깨졌다고 보는 가격이에요.",
                 "invalidationHelpLabel": "무효화 기준 설명",
+                "kindDaily": "일봉",
+                "kindMonthly": "월봉",
+                "kindWeekly": "주봉",
                 "locked": "회원 전용",
+                "marketBasis": "비교 지수는 {v0} 기준이에요.",
+                "marketChange": "최근 {v0}거래일 변화는 {v1} {v2}, 지수 {v3}예요.",
+                "marketTrend": "비교 지수 {v0}의 추세는 {v1} 흐름이에요.",
+                "marketUnknown": "비교 지수 {v0}의 추세는 아직 판단할 수 없어요.",
                 "none": "없음",
                 "planVoid": "이탈",
                 "planVoidDescription": "분석 시점의 종가가 이미 이 가격 아래였어요.",
+                "progressDaily": "분석 시점에 마지막 일봉이 아직 진행 중이어서 위 판독은 바뀔 수 있어요.",
+                "progressMonthly": "분석 시점에 마지막 월봉이 아직 진행 중이어서 위 판독은 바뀔 수 있어요.",
+                "progressWeekly": "분석 시점에 마지막 주봉이 아직 진행 중이어서 위 판독은 바뀔 수 있어요.",
                 "resistance": "저항선",
                 "support": "지지선",
                 "title": "한눈에 보기",
                 "trendHeadline": "<prefix>현재 추세</prefix> <value>{v0}</value>",
-                "trendUnknown": "추세 정보 없음"
+                "trendUnknown": "추세 정보 없음",
+                "trendWordBearish": "약세",
+                "trendWordBullish": "강세",
+                "trendWordNeutral": "보합"
             },
             "duration": {
                 "minutesSeconds": "{v0}분 {v1}초",
                 "seconds": "{v0}초"
             },
             "expertReport": {
+                "contextHeading": "상위 시간대와 시장:",
                 "downside": "- 하방: {v0} → {v1}",
                 "entryAnchor": "관심 구간은 {v0}입니다.",
                 "entryZone": "- 진입 참고 구간: {v0}",

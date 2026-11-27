@@ -40,6 +40,11 @@ interface BuildExpertAnalysisReportInput {
     /** `widgets.analysis.expertReport` 번역자. */
     tReport: ReportTranslator;
     /**
+     * 상위 시간대·시장 배경 문장 줄(`useAnalysisContextLines`). 필수다 — 빠지면 화면에는 있는 줄이 복사본에서
+     * 조용히 사라진다. 옛 결과(필드 없음)는 빈 배열을 넘긴다.
+     */
+    contextLines: readonly string[];
+    /**
      * 스킬 원본 이름 → 로케일 표시명(`useSkillLabel`). 필수다 — 빠지면 `/en`
      * 복사본에 한국어 front-matter 이름이 섞인다(패널은 이미 표시명을 쓴다).
      */
@@ -375,6 +380,7 @@ export function buildExpertAnalysisReport({
     keyLevels,
     t,
     tReport,
+    contextLines,
     skillLabel,
 }: BuildExpertAnalysisReportInput): string {
     // keyLevels(ClusteredKeyLevels)는 부분 객체로 전달될 수 있으므로 support/
@@ -412,6 +418,10 @@ export function buildExpertAnalysisReport({
             t,
             tReport,
             formatPrice
+        ),
+        headedBlock(
+            tReport('contextHeading'),
+            contextLines.map(line => `- ${line}`)
         ),
         buildKeyLevelsBlock(
             safeKeyLevels,

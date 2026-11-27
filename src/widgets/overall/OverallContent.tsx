@@ -11,7 +11,11 @@ import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultRea
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
-import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import type {
+    AssetClass,
+    MarketProfileId,
+} from '@/shared/config/marketProfile/types';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
@@ -47,6 +51,11 @@ interface OverallContentProps {
      * 있으면 호출부가 빼먹어도 조용히 "옵션 있음"으로 흡수되므로 필수로 둔다.
      */
     hasOptions: boolean;
+    /**
+     * 시장 프로필 — `?tf=`가 이 프로필이 허용하지 않는 프레임(한국 종목의 4시간 등)이면 기본 프레임으로
+     * 떨어뜨린다. 기본값이 있으면 호출부가 빼먹어도 조용히 미국 주식으로 흡수되므로 필수로 둔다.
+     */
+    marketProfile: MarketProfileId;
 }
 
 /**
@@ -61,6 +70,7 @@ export function OverallContent({
     hasEnrichedNews,
     assetClass = 'equity',
     hasOptions,
+    marketProfile,
 }: OverallContentProps) {
     // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
     // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
@@ -81,7 +91,8 @@ export function OverallContent({
     const timeframe = useTimeframeFromUrl(
         symbol,
         isTierHydrated && tier === 'free',
-        isTierHydrated
+        isTierHydrated,
+        getDescriptor(marketProfile).allowedTimeframes
     );
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();

@@ -236,18 +236,24 @@ describe('get_chart_data (공개 API 전용 도구)', () => {
         ]);
     });
 
-    // get_chart_data returns the cached provider series as is, so it offers the
-    // provider timeframes only; 1Week/1Month are bars get_bars_indicators builds
-    // from daily history and exist on that tool alone.
-    it('timeframe 열거값은 get_bars_indicators의 제공자 타임프레임과 같고, 주봉·월봉은 없다', () => {
+    // get_chart_data offers every chart timeframe: the provider timeframes plus 1Week
+    // (core builds weekly bars from daily history inside fetchBarsWithIndicators). 1Month
+    // is a bar get_bars_indicators builds for the agent and exists on that tool alone.
+    it('timeframe 열거값은 get_bars_indicators의 제공자 타임프레임에 1Week를 더한 것이고, 월봉은 없다', () => {
         const core = AGENT_TOOL_SPECS.find(
             s => s.name === 'get_bars_indicators'
         )!;
-        const aggregated = ['1Week', '1Month'];
         const coreEnum = core.inputSchema.properties.timeframe.enum ?? [];
-        expect(coreEnum).toEqual(expect.arrayContaining(aggregated));
-        expect(spec.inputSchema.properties.timeframe.enum).toEqual(
-            coreEnum.filter(t => !aggregated.includes(t))
+        expect(coreEnum).toEqual(expect.arrayContaining(['1Week', '1Month']));
+        const providerTimeframes = coreEnum.filter(
+            t => t !== '1Week' && t !== '1Month'
+        );
+        expect(spec.inputSchema.properties.timeframe.enum).toEqual([
+            ...providerTimeframes,
+            '1Week',
+        ]);
+        expect(spec.inputSchema.properties.timeframe.enum).not.toContain(
+            '1Month'
         );
     });
 
@@ -284,6 +290,12 @@ describe('get_chart_data (공개 API 전용 도구)', () => {
             expect(note).toContain(size.toLocaleString('en-US'));
         expect(note).toContain(`${MEASURED.shortBars} bars`);
         expect(note).toContain(`${MEASURED.longBars} bars`);
+    });
+
+    it('설명이 1Week 봉의 의미(월요일 UTC 시작, 진행 중인 주)를 말한다', () => {
+        expect(spec.description).toContain('Monday 00:00 UTC');
+        expect(spec.description).toContain('unfinished week');
+        expect(spec.description).toContain('aggregates from daily bars');
     });
 
     it('설명이 smc 구간 앞 항목의 규칙(null 인덱스, startsBeforeWindow)을 말한다', () => {

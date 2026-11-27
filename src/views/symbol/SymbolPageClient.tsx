@@ -24,7 +24,11 @@ import type {
     KrxTickTable,
     TierInfoDepth,
 } from '@y0ngha/siglens-core';
-import { marketProfileOf } from '@/shared/config/marketProfile/registry';
+import {
+    DEFAULT_MARKET_PROFILE,
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
 import { Suspense, useMemo, type ReactNode } from 'react';
@@ -152,9 +156,20 @@ export function SymbolPageClient({
         mobileSheetContent,
         setMobileSheetContent,
     } = useMobileSheet();
-    // isFreeTier는 useTimeframeChange의 인자로 필요해 훅 선언 순서 예외
-    // (REACT.md#HK-1)로 그 호출 직전에 둔다. 그 외 훅은 모두 이 파생 변수보다
-    // 앞선다.
+    const assetInfo = useAssetInfo(symbol);
+    // 서버가 넘긴 프로필이 우선이고, 없으면 자산 정보로 해석한다(미도착이면 undefined).
+    // 프리·애프터마켓 한 줄은 미국 주식에만 붙는다 — 프로필을 확정할 수 없으면 붙이지
+    // 않는다(서버 액션도 같은 판정을 다시 하지만 호출 자체를 아낀다).
+    //
+    // isFreeTier와 allowedTimeframes는 useTimeframeChange의 인자로 필요해 훅 선언 순서
+    // 예외(REACT.md#HK-1)로 그 호출 직전에 둔다. 그 외 훅은 모두 이 파생 변수들보다
+    // 앞선다. 프로필을 아직 모르면 미국 주식 프로필로 본다 — 셀렉터와 `?tf=` 게이트가
+    // 같은 목록을 쓴다.
+    const resolvedProfile =
+        marketProfile ?? (assetInfo ? marketProfileOf(assetInfo) : undefined);
+    const allowedTimeframes = getDescriptor(
+        resolvedProfile ?? DEFAULT_MARKET_PROFILE
+    ).allowedTimeframes;
     const isFreeTier = isTierHydrated && tier === 'free';
     const {
         timeframe,
@@ -162,18 +177,17 @@ export function SymbolPageClient({
         isTimeframeSwitching,
         timeframeChangeCount,
         handleTimeframeChange,
-    } = useTimeframeChange(symbol, isFreeTier, isTierHydrated);
-    const assetInfo = useAssetInfo(symbol);
+    } = useTimeframeChange(
+        symbol,
+        isFreeTier,
+        isTierHydrated,
+        allowedTimeframes
+    );
     const locale = useResolvedLocale();
     const isHydrated = useHydrated();
     const isMobileViewport = useIsMobileViewport();
     // seed가 없으면 서버·하이드레이션 렌더에서 차트를 그리지 않는다(`hasBarsSeed` JSDoc).
     const canRenderChart = hasBarsSeed || isHydrated;
-    // 서버가 넘긴 프로필이 우선이고, 없으면 자산 정보로 해석한다(미도착이면 undefined).
-    // 프리·애프터마켓 한 줄은 미국 주식에만 붙는다 — 프로필을 확정할 수 없으면 붙이지
-    // 않는다(서버 액션도 같은 판정을 다시 하지만 호출 자체를 아낀다).
-    const resolvedProfile =
-        marketProfile ?? (assetInfo ? marketProfileOf(assetInfo) : undefined);
     // 차트 탭의 "AI에게 물어보기" 링크는 떠 있는 버튼 대신 AI 패널 맨 위에 흐른다(`globals.css`가
     // 이 링크가 있으면 `AskAiFab`을 숨긴다). 질문의 종목명은 레이아웃의 `AskAiFab`과 같은 식
     // (`pickAssetName`)이라 같은 `href`가 된다. `ChartContent`가 `analysisContent` 메모의 의존성으로
@@ -212,6 +226,7 @@ export function SymbolPageClient({
                     onTimeframeChange={handleTimeframeChange}
                     isFreeTier={isFreeTier}
                     isTierHydrated={isTierHydrated}
+                    timeframes={allowedTimeframes}
                     onLockedTimeframeClick={openTimeframeNudge}
                     onOpenAnalysisSheet={() => setSheetSnap(SNAP_FULL)}
                 />

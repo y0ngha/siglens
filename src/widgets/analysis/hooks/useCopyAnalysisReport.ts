@@ -11,6 +11,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
+import { useAnalysisContextLines } from './useAnalysisContextLines';
 import { buildExpertAnalysisReport } from '../utils/buildExpertAnalysisReport';
 import type { CopyReportState } from '../model/types';
 
@@ -44,6 +45,7 @@ export function useCopyAnalysisReport({
     const tLabel = useTranslations('shared.enumLabel');
     const tReport = useTranslations('widgets.analysis.expertReport');
     const skillLabel = useSkillLabel();
+    const contextLines = useAnalysisContextLines(analysis, symbol);
     const { copied, failed, copy } = useCopyToClipboard();
     const copyState: CopyReportState = copied
         ? 'copied'
@@ -56,6 +58,7 @@ export function useCopyAnalysisReport({
         void copy(() =>
             buildExpertAnalysisReport({
                 tReport,
+                contextLines: contextLines.map(line => line.text),
                 symbol,
                 krxTickTable,
                 analysis,

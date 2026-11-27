@@ -34,6 +34,9 @@ export const PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS = SECONDS_PER_QUARTER_DAY;
  * 않으므로 키에서 제외한다 — 포함하면 같은 데이터가 fmpSymbol 유무로 중복 저장된다.
  * 시그니처 정렬을 위해 인자로는 받아 그대로 전달한다.
  *
+ * `benchmarkSymbol`은 writer가 `runAnalysis`에 넘긴 `benchmark.symbol`이다(`benchmarkFor`). core가 이를 캐시 키
+ * (`:bm=`)에 접으므로 어긋나면 항상 미스이고, 종목의 시장이 바뀌면 다른 항목이라 `unstable_cache` 키에도 넣는다.
+ *
  * 아래 세 값은 항상 상수라 `unstable_cache` 키에 넣지 않는다. 이 peek은 익명/봇
  * 방문자가 보는 초기 셸이고, 그 writer(익명·free 방문자의 SSE 분석 요청)가 쓰는 키에
  * 맞춰야 HIT하기 때문이다. 회원이 받은 결과가 익명 peek에 섞이면 캐시 오염이다
@@ -53,7 +56,8 @@ export function peekAnalysisStatic(
     timeframe: Timeframe,
     fmpSymbol: string | undefined,
     modelId: ModelId,
-    locale: AnalysisLocale
+    locale: AnalysisLocale,
+    benchmarkSymbol: string | undefined
 ): Promise<FilteredAnalysisResult | null> {
     const upper = ticker.toUpperCase();
     return unstable_cache(
@@ -67,9 +71,18 @@ export function peekAnalysisStatic(
                 'free',
                 undefined,
                 undefined,
-                locale
+                locale,
+                { benchmarkSymbol }
             ),
-        ['peek-analysis-static', upper, timeframe, modelId, 'free', locale],
+        [
+            'peek-analysis-static',
+            upper,
+            timeframe,
+            modelId,
+            'free',
+            locale,
+            benchmarkSymbol ?? 'none',
+        ],
         {
             revalidate: PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS,
             tags: [`symbol:${upper}`],

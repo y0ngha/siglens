@@ -14,6 +14,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
@@ -470,6 +471,7 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                     assetClass: descriptor.assetClass,
                     currency: descriptor.priceFormat.currency,
                     krxTickTable,
+                    benchmark: benchmarkFor(profile, symbol),
                     tierContext: { userId: ctx.userId, tier: ctx.tier },
                     reasoning: false,
                     locale: ctx.locale,
@@ -512,6 +514,10 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                                         tier: ctx.tier,
                                         positionBucket,
                                         locale: ctx.locale,
+                                        benchmarkSymbol: benchmarkFor(
+                                            profile,
+                                            symbol
+                                        )?.symbol,
                                     },
                                     analysis
                                 ),

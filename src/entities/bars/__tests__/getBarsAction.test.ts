@@ -238,12 +238,34 @@ describe('getBarsAction 함수는', () => {
             expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
         });
 
-        // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (1Week 허용 단언으로 바꾼다).
-        it('core가 등급에 열어 둔 1Week라도 화면이 내지 않는 주기는 거부한다', async () => {
-            // 등급과 무관하게 막힌다(tier 해석 전에 거른다).
+        it('member는 주봉(1Week)도 그대로 위임한다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+            mockGetCurrentUser.mockResolvedValueOnce({
+                id: 'member-1',
+            } as never);
+            mockResolveTierOnly.mockResolvedValueOnce('member');
+
+            await getBarsAction('AAPL', '1Week');
+
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockMarketProvider,
+                'AAPL',
+                '1Week',
+                undefined
+            );
+        });
+
+        it('free는 서버 액션으로 직접 요청한 주봉(1Week)을 거부한다', async () => {
+            await expect(getBarsAction('AAPL', '1Week')).rejects.toThrow(
+                'Timeframe 1Week is not available for free tier.'
+            );
+            expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
+        });
+
+        it('siglens TIMEFRAMES 밖의 값(2Week)은 등급 오류가 아니라 Invalid timeframe으로 거부한다', async () => {
             await expect(
-                getBarsAction('AAPL', '1Week' as never)
-            ).rejects.toThrow('Invalid timeframe: 1Week');
+                getBarsAction('AAPL', '2Week' as never)
+            ).rejects.toThrow('Invalid timeframe: 2Week');
             expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
         });
 

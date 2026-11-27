@@ -18,7 +18,7 @@ describe('SignupBenefits', () => {
             .getAllByRole('listitem')
             .map(item => item.textContent);
 
-        expect(items[0]).toContain('5분부터 4시간까지');
+        expect(items[0]).toContain('5분부터 1주까지');
         expect(items[1]).toContain("'상세 분석'을");
         expect(items[2]).toContain('AI 모델 5개');
         expect(items[3]).toContain('보유종목과 관심종목');
@@ -57,7 +57,7 @@ describe('SignupBenefits', () => {
         const items = screen
             .getAllByRole('listitem')
             .map(item => item.textContent ?? '');
-        expect(items[0]).toMatch(/from 5 min to 4 hr/);
+        expect(items[0]).toMatch(/from 5 min to 1 wk/);
         expect(items[1]).toContain("'Detailed analysis'");
         expect(items[2]).toContain('Choose from 5 more AI models');
     });

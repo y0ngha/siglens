@@ -29,6 +29,8 @@ interface CoreCall {
     keyUsedForLlm: string | null;
     /** core `runAnalysis`가 받은 이 회사의 실적 발표일. */
     earningsDates: readonly string[] | undefined;
+    /** core `runAnalysis`가 받은 비교 지수. */
+    benchmark: { symbol: string } | undefined;
 }
 const serverKeys = vi.hoisted(() => ({ getServerPrimaryKey: vi.fn() }));
 const core = vi.hoisted(() => ({
@@ -75,6 +77,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
                 providerFallback?: unknown;
                 signal?: AbortSignal;
                 earningsDates?: readonly string[];
+                benchmark?: { symbol: string };
             }
         ) => {
             if (options.signal !== undefined) core.signals.push(options.signal);
@@ -95,6 +98,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
                 userApiKey: options.userApiKey,
                 keyUsedForLlm: null,
                 earningsDates: options.earningsDates,
+                benchmark: options.benchmark,
             };
             core.calls.push(record);
             const keyMissing =
@@ -657,6 +661,15 @@ describe('캐시 미스', () => {
                 core.calls.every(c => c.earningsDates?.[0] === '2026-07-30')
             ).toBe(true);
             expect(core.calls.length).toBeGreaterThan(0);
+        });
+
+        it('시장 프로필이 고른 비교 지수를 core 기술 분석에 넘긴다(공개 API 실행도 같은 core 캐시 키)', async () => {
+            await run({ model: BYOK_MODEL });
+
+            expect(core.calls.length).toBeGreaterThan(0);
+            expect(core.calls.every(c => c.benchmark?.symbol === 'SPY')).toBe(
+                true
+            );
         });
 
         it('서버 키 env가 전부 있어도 어떤 core 호출도 그 값을 쓰지 않는다', async () => {

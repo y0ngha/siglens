@@ -55,11 +55,20 @@ vi.mock('@/widgets/chart/ChartSkeleton', () => ({
 vi.mock('@/widgets/chart/TimeframeSelector', () => ({
     TimeframeSelector: ({
         value,
+        timeframes,
         onChange: _onChange,
     }: {
         value: string;
+        timeframes?: readonly string[];
         onChange: (v: string) => void;
-    }) => <div data-testid="timeframe-selector">{value}</div>,
+    }) => (
+        <div
+            data-testid="timeframe-selector"
+            data-timeframes={timeframes?.join(',')}
+        >
+            {value}
+        </div>
+    ),
 }));
 
 vi.mock('@/shared/hooks/useHydrated', () => ({
@@ -178,6 +187,57 @@ describe('SymbolPageClient', () => {
         expect(screen.getByTestId('timeframe-selector').textContent).toBe(
             '1Day'
         );
+    });
+
+    describe('셀렉터에 넘기는 프레임은 종목의 시장 프로필 allowedTimeframes다', () => {
+        const framesOf = (): string[] =>
+            (
+                screen
+                    .getByTestId('timeframe-selector')
+                    .getAttribute('data-timeframes') ?? ''
+            ).split(',');
+
+        it('us-equity(프로필 생략 포함): 7개, 4Hour와 1Week 포함', () => {
+            render(<SymbolPageClient {...defaultProps} />);
+            expect(framesOf()).toEqual([
+                '5Min',
+                '15Min',
+                '30Min',
+                '1Hour',
+                '4Hour',
+                '1Day',
+                '1Week',
+            ]);
+        });
+
+        it('kr-equity: 4Hour 없이 6개(yahoo에 4시간이 없다)', () => {
+            render(
+                <SymbolPageClient
+                    {...defaultProps}
+                    symbol="005930.KS"
+                    marketProfile="kr-equity"
+                />
+            );
+            expect(framesOf()).toEqual([
+                '5Min',
+                '15Min',
+                '30Min',
+                '1Hour',
+                '1Day',
+                '1Week',
+            ]);
+        });
+
+        it('crypto: 5Min, 1Hour, 1Day, 1Week 4개', () => {
+            render(
+                <SymbolPageClient
+                    {...defaultProps}
+                    symbol="BTCUSD"
+                    marketProfile="crypto"
+                />
+            );
+            expect(framesOf()).toEqual(['5Min', '1Hour', '1Day', '1Week']);
+        });
     });
 
     it('renders ChartContent inside the error boundary', () => {

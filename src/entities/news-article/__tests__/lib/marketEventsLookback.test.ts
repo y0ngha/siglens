@@ -136,6 +136,23 @@ describe('marketEventsLookback', () => {
     });
 
     /**
+     * 1Week도 core `ANALYSIS_CACHE_TTL['1Week']`가 하루라 1Day와 같은 세션 경계를 쓴다 —
+     * 버킷이 아니라 직전 세션 경계이므로 상한이 1Day와 정확히 같아야 한다.
+     */
+    describe('1Week — 1Day와 같은 세션 경계', () => {
+        it.each([
+            ['US', US_EQUITY_SESSION, '2026-09-09T15:00:00Z'],
+            ['US 마감 직후', US_EQUITY_SESSION, '2026-09-09T20:30:00Z'],
+            ['KR', KR_EQUITY_SESSION, '2026-09-09T07:00:00Z'],
+            ['crypto', CRYPTO_SESSION, '2026-09-09T15:00:00Z'],
+        ])('%s: 상한이 1Day와 같다', (_label, session, now) => {
+            expect(toIso('1Week', session, now)).toBe(
+                toIso('1Day', session, now)
+            );
+        });
+    });
+
+    /**
      * 회귀(2026-10 확인): 상한이 `now`이던 때는 창 안에서 새 고영향 기사가
      * 들어올 때마다 이벤트 집합(= core 캐시 키)이 바뀌어 같은 창 안에서 분석을
      * 다시 생성했다.
@@ -172,6 +189,7 @@ describe('marketEventsLookback', () => {
             ['1Hour', 5],
             ['4Hour', 14],
             ['1Day', 60],
+            ['1Week', 180],
         ];
         for (const [timeframe, days] of expected) {
             expect(spanDays(timeframe)).toBeGreaterThanOrEqual(days);
@@ -213,6 +231,7 @@ describe('marketEventsLookback', () => {
             '1Hour',
             '4Hour',
             '1Day',
+            '1Week',
         ];
         const spans = order.map(spanDays);
 
