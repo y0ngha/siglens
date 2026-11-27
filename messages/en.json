@@ -75,7 +75,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI technical-analysis backtesting dataset",
-                "variableMeasured": "Win rate, return and maximum drawdown by ticker of trades that follow a daily AI analysis"
+                "variableMeasured": "Win rate, return and maximum drawdown by ticker of trades that follow a daily AI analysis, compared with holding strategies"
             }
         },
         "economy": {
@@ -2052,7 +2052,7 @@
             "accountDeleteFullTitle": "{v0}: delete account",
             "accountDeleteTitle": "Delete account",
             "backtesting": {
-                "description": "A two-year backtest of daily AI analysis on 10 US large caps including NVDA, AAPL and TSLA. Win rate, return and drawdown from following the entry zones, targets and stop losses, by ticker. Past results do not guarantee future performance.",
+                "description": "A backtest of daily AI analysis applied on every trading day to US large caps and index ETFs. Results from following the entry zones, targets and stop losses are listed by ticker and compared with holding and with entering on random dates. Past results do not guarantee future performance.",
                 "title": "AI Stock Analysis Backtest: 10 US Large Caps, 2 Years"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
@@ -2815,7 +2815,7 @@
             },
             "backtesting": {
                 "body": "The backtest page runs the SIGLENS AI analysis on every trading day of the past two years and computes what would have happened if you had followed the entry zones, targets and stop losses it showed. Each position is split in half and closed at the first and final targets, or at the stop loss.",
-                "caveat": "Commissions and slippage are not included, and because the tickers were picked later, survivorship bias may remain. The trade count and period are shown with the results, and past results do not guarantee future performance.",
+                "caveat": "Commissions and slippage are not included, and because the tickers were picked later, survivorship bias may remain. Results are compared with two holding strategies, holding throughout and holding only for the AI strategy's share of time, and also with entering on random dates. The trade count and period are listed too. Past results do not guarantee future performance.",
                 "link": "View Backtesting Results",
                 "title": "Backtesting"
             },
@@ -3955,29 +3955,44 @@
             },
             "hero": {
                 "title": "If you had followed the AI analysis for {v0, plural, one {# year} other {# years}}",
-                "lead": "We ran the SIGLENS AI technical analysis every trading day and followed the entry zones, targets and stop losses it showed. The universe is {v0} US large caps and index ETFs.",
+                "lead": "We ran the SIGLENS AI technical analysis every trading day and followed the entry zones, targets and stop losses it showed. The universe is {v0, number} US large caps and index ETFs.",
                 "disclaimer": "These are results on past data and do not guarantee future performance.",
-                "portfolioLabel": "Portfolio return ({v0} tickers, equal weight)",
-                "maxDrawdownLabel": "Max drawdown (closed trades)",
+                "portfolioLabel": "Portfolio return ({v0, number} tickers, equal weight)",
+                "portfolioSub": "Holding the same {v0, number} tickers the whole time: {v1}. Holding only for the AI strategy's share of time in the market ({v2}): {v3}",
+                "maxDrawdownLabel": "Max drawdown (valued daily)",
+                "maxDrawdownSub": "Closed trades only: {v0}. Holding throughout: {v1}",
                 "winRateLabel": "Win rate",
-                "winRateSub": "{v0} of {v1}",
+                "winRateSub": "{v0, number} of {v1, number}. The original first target was hit before the stop loss {v2} of the time ({v3, number} trades); the same distances placed on random days: {v4} ({v5, number} runs)",
                 "tradesLabel": "Trades",
-                "tradesValue": "{v0}",
+                "tradesValue": "{v0, number}",
                 "meanReturnLabel": "Mean return per trade",
+                "meanReturnSub": "Compared with the average of holding the same ticker for the same number of days from any start day in the period, the difference per trade averaged {v0} (95% range {v1} to {v2})",
                 "meanHoldingLabel": "Mean holding period",
                 "tradingDays": "{v0} trading days"
             },
             "comparison": {
-                "heading": "Results by ticker",
-                "note": "Each ticker gets the same amount and trades as the AI analysis says. The drawdown counts closed trades only, so a real account would show a deeper drawdown.",
+                "heading": "Compared with holding",
+                "note": "Compared with holding each ticker from start to end over the same period, and with holding it only for the share of time the AI strategy was in the market and keeping the rest in cash. Every drawdown is valued on daily closes.",
                 "colTicker": "Ticker",
                 "colTrades": "Trades",
                 "colWinRate": "Win rate",
                 "colStrategy": "AI strategy",
-                "colStrategyMdd": "Max drawdown",
+                "colStrategyMdd": "Max drawdown (daily)",
                 "colExposure": "Time in market",
-                "rowPortfolio": "{v0}-ticker portfolio",
-                "tableRegion": "Results by ticker table"
+                "colBuyHold": "Hold throughout",
+                "colMatchedHold": "Hold, matched time",
+                "colBuyHoldMdd": "Hold max drawdown",
+                "rowPortfolio": "{v0, number}-ticker portfolio",
+                "tableRegion": "Holding comparison table"
+            },
+            "timing": {
+                "heading": "Effect of entry timing",
+                "excess": "Subtracting from each trade the average return of holding the same ticker for the same number of days from any start day in the period, the average difference per trade was {v0} (95% range {v1} to {v2}, {v3, number} trades).",
+                "verdictHigher": "The 95% range is above 0, so the AI's trade returns were higher than holding for the same number of days.",
+                "verdictLower": "The 95% range is below 0, so the AI's trade returns were lower than holding for the same number of days.",
+                "verdictNone": "The 95% range includes 0, so there was no clear difference between the AI's trade returns and holding for the same number of days.",
+                "randomReturn": "Placing the same holding periods on random dates and running it {v0, number} times, the middle 90% of portfolio returns ran from {v1} to {v2}. The share of runs above the AI strategy was {v3}.",
+                "randomDrawdown": "In the same test, the share of runs with a smaller max drawdown than the AI strategy ({v0}) was {v1}. The random-date test has no rule that exits right at the stop loss, so this difference also reflects that rule."
             },
             "strategy": {
                 "heading": "Strategy",

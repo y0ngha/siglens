@@ -1,4 +1,4 @@
-import type { BacktestRunData, BacktestTrade } from '@y0ngha/siglens-core';
+import type { BacktestTrade } from '@y0ngha/siglens-core';
 import {
     EXIT_PATH_ORDER,
     exitPathOf,
@@ -7,6 +7,7 @@ import type {
     BacktestStats,
     ExitPathStat,
     TickerStats,
+    VerifiedBacktestRunData,
 } from '@/entities/backtest-case/model';
 
 /** 4단계 판정(`summary.json`)과 같은 반올림 — 소수 둘째 자리. */
@@ -91,8 +92,11 @@ function exitPathStats(trades: readonly BacktestTrade[]): ExitPathStat[] {
  * 백테스트 화면 통계. 정의는 생성기의 4단계 판정과 같다 — 승률은 청산된 매매 중
  * `returnPct > 0` 비율, 포트폴리오는 종목 수만큼 같은 금액으로 나눈 계좌들의 날짜별 평균.
  * 날짜 축은 청산일의 합집합이다. 곡선이 청산일에만 바뀌므로 일봉 축과 같은 값이 나온다.
+ * 보유·투자 비중 맞춤·임의 날짜 기준선은 계산하지 않고 `data`에서 넘긴다.
  */
-export function deriveBacktestStats(data: BacktestRunData): BacktestStats {
+export function deriveBacktestStats(
+    data: VerifiedBacktestRunData
+): BacktestStats {
     const closed = data.trades.filter(isClosed);
     const returns = closed.map(t => t.returnPct);
     const winningTrades = returns.filter(r => r > 0).length;
@@ -125,6 +129,11 @@ export function deriveBacktestStats(data: BacktestRunData): BacktestStats {
                     b.tradingDays
                 )
             ),
+            // 기준선은 생성기가 시세로 계산한 값이다 — 여기서 다시 계산하지 않고 그대로 넘긴다.
+            buyHoldPct: b.buyHoldPct,
+            buyHoldMaxDrawdownPct: b.buyHoldMaxDrawdownPct,
+            exposureMatchedHoldPct: b.exposureMatchedHoldPct,
+            markToMarketMaxDrawdownPct: b.markToMarketMaxDrawdownPct,
         };
     });
     const portfolio = dates.map((_, i) => mean(curves.map(c => c[i])));
@@ -139,8 +148,8 @@ export function deriveBacktestStats(data: BacktestRunData): BacktestStats {
         meanHoldingDays: round2(mean(closed.map(t => t.holdingDays))),
         portfolioReturnPct: round2(((portfolio.at(-1) ?? 1) - 1) * 100),
         portfolioMaxDrawdownPct: round2(maxDrawdownPct(portfolio)),
-        meanExposurePct: round2(mean(perTicker.map(p => p.exposurePct))),
         perTicker,
+        benchmarks: data.benchmarks,
         exitPaths: exitPathStats(data.trades),
         trendRecognition: data.trendRecognition,
         periodStart: data.run.periodStart,
