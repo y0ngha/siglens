@@ -114,16 +114,17 @@ function acquireSlot(): Promise<void> {
         return Promise.resolve();
     }
     return new Promise<void>((resolve, reject) => {
+        // 마감 콜백은 데드라인 뒤에야 돌아 그때는 `waiter`가 이미 있다.
+        const timer = setTimeout(() => {
+            limiter.queue = limiter.queue.filter(w => w !== waiter);
+            reject(new FullHistoryBusyError());
+        }, FULL_HISTORY_WAIT_DEADLINE_MS);
         const waiter: Waiter = {
             grant: () => {
                 clearTimeout(timer);
                 resolve();
             },
         };
-        const timer = setTimeout(() => {
-            limiter.queue = limiter.queue.filter(w => w !== waiter);
-            reject(new FullHistoryBusyError());
-        }, FULL_HISTORY_WAIT_DEADLINE_MS);
         limiter.queue = [...limiter.queue, waiter];
     });
 }

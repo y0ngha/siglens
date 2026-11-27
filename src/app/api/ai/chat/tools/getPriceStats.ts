@@ -26,7 +26,10 @@ import type { AssetInfo } from '@/shared/lib/types';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { staleKrListingDate } from './freshness';
 import { logToolDegrade } from './logToolDegrade';
-import { parsePriceStatsArgs } from './priceStatsArgs';
+import {
+    parsePriceStatsArgs,
+    type PriceStatsInvalidArgs,
+} from './priceStatsArgs';
 import {
     resolveAssetLookup,
     resolvedInstrumentFields,
@@ -93,6 +96,29 @@ async function resolveSymbol(symbol: string, now: Date): Promise<Subject> {
         unknownSymbol: asset === null && !lookupFailed,
         index: null,
     };
+}
+
+/** `year`·`from`이 이 주체의 거래소 현지 날짜로 아직 오지 않았으면 그 인자를 가리키는 `invalid_args`, 아니면 `null`이다. */
+function futureWindowError(
+    window: PriceStatsRequest['window'],
+    subject: Subject
+): PriceStatsInvalidArgs | null {
+    if (
+        window.kind === 'year' &&
+        window.year > Number(subject.today.slice(0, 4))
+    )
+        return {
+            error: 'invalid_args',
+            argument: 'year',
+            reason: `year ${window.year} is after the current year for ${subject.label} (market date ${subject.today})`,
+        };
+    if (window.kind === 'range' && window.from > subject.today)
+        return {
+            error: 'invalid_args',
+            argument: 'from',
+            reason: `from ${window.from} is after the market date for ${subject.label} (${subject.today})`,
+        };
+    return null;
 }
 
 function resolveIndex(index: AgentHistoryIndex, now: Date): Subject {
@@ -226,25 +252,10 @@ export const getPriceStatsTool: ToolExecutor = async args => {
         ...(parsed.index === null ? [] : [resolveIndex(parsed.index, now)]),
     ];
     // 연도와 `from`은 어느 한 주체의 거래소 현지 달력으로라도 아직 오지 않았으면 거절한다(자르지 않는다).
-    const future = subjects.find(
-        subject =>
-            (request.window.kind === 'year' &&
-                request.window.year > Number(subject.today.slice(0, 4))) ||
-            (request.window.kind === 'range' &&
-                request.window.from > subject.today)
-    );
-    if (future !== undefined && request.window.kind === 'year')
-        return {
-            error: 'invalid_args',
-            argument: 'year',
-            reason: `year ${request.window.year} is after the current year for ${future.label} (market date ${future.today})`,
-        };
-    if (future !== undefined && request.window.kind === 'range')
-        return {
-            error: 'invalid_args',
-            argument: 'from',
-            reason: `from ${request.window.from} is after the market date for ${future.label} (${future.today})`,
-        };
+    const futureError = subjects
+        .map(subject => futureWindowError(request.window, subject))
+        .find(error => error !== null);
+    if (futureError !== undefined) return futureError;
 
     // 동시 로드는 주체 수(`AGENT_PRICE_STATS_MAX_SUBJECTS` = 3)까지다. 전체 이력 로드의 프로세스 전역 상한
     // (`FULL_HISTORY_CONCURRENCY`)이 FMP 동시 요청을 따로 묶는다(SERVER.md#CC-1·CC-10).
