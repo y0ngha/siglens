@@ -1256,7 +1256,7 @@
         "version": 1,
         "tradesSha256": "3b1a38ff44882aed223b8c98ef6d6770b0baf8c4c0193caf4bdbb227c982f7ee",
         "barsFingerprint": "4b8d0f13f34282105e901c961b841de787ae9ed82eb5b49c0ce19f095df8ad98",
-        "coreSha": "fe2a8084dfcdf677dc3e02ac6dce469f5cbc5efe",
+        "coreSha": "65eaed8ac51fc6466db6bc5f89e8d65a7294d2c3",
         "holdPortfolio": {
             "returnPct": 44.2921,
             "maxDrawdownPct": -29.9994
@@ -1271,6 +1271,7 @@
             "basis": "same_length_drift",
             "n": 690,
             "meanPct": -0.0602,
+            "baselineMeanPct": 0.4457,
             "ci95": {
                 "low": -0.4009,
                 "high": 0.3021

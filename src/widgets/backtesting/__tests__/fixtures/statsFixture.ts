@@ -24,6 +24,7 @@ export const BENCHMARKS: BacktestBenchmarks = {
         basis: 'same_length_drift',
         n: 690,
         meanPct: -0.0602,
+        baselineMeanPct: 0.4457,
         ci95: { low: -0.4009, high: 0.3021 },
         clusters: 'week',
     },

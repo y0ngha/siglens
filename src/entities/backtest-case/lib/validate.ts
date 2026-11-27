@@ -281,6 +281,7 @@ function validateBenchmarks(value: unknown): void {
     requireOneOf(excess, 'clusters', ['week'], excessPath);
     requireCount(excess, 'n', excessPath);
     requireNumber(excess, 'meanPct', excessPath);
+    requireNumber(excess, 'baselineMeanPct', excessPath);
     const ci = requireRecord(excess, 'ci95', excessPath);
     requireNumber(ci, 'low', `${excessPath}.ci95`);
     requireNumber(ci, 'high', `${excessPath}.ci95`);

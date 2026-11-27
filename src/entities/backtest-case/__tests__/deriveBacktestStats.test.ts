@@ -83,6 +83,7 @@ const BENCHMARKS: BacktestBenchmarks = {
         basis: 'same_length_drift',
         n: 3,
         meanPct: 0.125,
+        baselineMeanPct: 0.875,
         ci95: { low: -1.5, high: 1.75 },
         clusters: 'week',
     },

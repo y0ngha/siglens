@@ -66,6 +66,7 @@ const validBenchmarks = (trades: readonly unknown[]) => ({
         basis: 'same_length_drift',
         n: 1,
         meanPct: -0.06,
+        baselineMeanPct: 3.06,
         ci95: { low: -0.4, high: 0.3 },
         clusters: 'week',
     },
@@ -321,6 +322,16 @@ describe('validateBacktestRunData', () => {
                 },
             }),
             'benchmarks.perTradeExcess.basis',
+        ],
+        [
+            'a missing per-trade baseline mean',
+            withBenchmarks({
+                perTradeExcess: {
+                    ...validBenchmarks([validTrade]).perTradeExcess,
+                    baselineMeanPct: undefined,
+                },
+            }),
+            'benchmarks.perTradeExcess.baselineMeanPct must be a finite number',
         ],
         [
             'a confidence range with low above high',
