@@ -92,6 +92,26 @@ describe('extractOpenAIUsage', () => {
         });
     });
 
+    it('캐시 쓰기분을 따로 담고 세 입력 버킷의 합이 input_tokens가 된다', () => {
+        const usage = extractOpenAIUsage({
+            input_tokens: 1000,
+            input_tokens_details: {
+                cached_tokens: 300,
+                cache_write_tokens: 200,
+            },
+            output_tokens: 45,
+        });
+        expect(usage).toEqual({
+            promptTokens: 500,
+            cachedTokens: 300,
+            cacheWriteTokens: 200,
+            outputTokens: 45,
+        });
+        expect(
+            usage.promptTokens + usage.cachedTokens + usage.cacheWriteTokens
+        ).toBe(1000);
+    });
+
     it('details가 없으면 cached는 0이다', () => {
         expect(extractOpenAIUsage({ input_tokens: 50 })).toEqual({
             ...ZERO,

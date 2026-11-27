@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
 usage_roles: [signal, confirmation, regime]
+computed_card: dmi
 gating:
   tier: gated
   signal_kind: event

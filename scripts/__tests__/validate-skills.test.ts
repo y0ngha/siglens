@@ -1,7 +1,14 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import matter from 'gray-matter';
+import { COMPUTED_CARD_KINDS } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseSkillFile, validateSkillData } from '../validate-skills';
 
@@ -543,5 +550,122 @@ describe('strategy skills that draw chart overlays', () => {
             )
         );
         expect(data.overlay_kind).toBe(kind);
+    });
+});
+
+describe('validateSkillData — computed_card', () => {
+    const guide = { type: 'indicator_guide', gating: { tier: 'always_on' } };
+    const strategy = { type: 'strategy', gating: { tier: 'always_on' } };
+    const required = { requireOnIndicatorGuide: true };
+
+    it('accepts every core kind on its own skill type', () => {
+        const indicatorKinds = COMPUTED_CARD_KINDS.filter(
+            kind => kind !== 'ma_cycle' && kind !== 'macd_cycle'
+        );
+        expect(indicatorKinds).toHaveLength(36);
+        indicatorKinds.forEach(kind => {
+            expect(
+                validateSkillData({ ...guide, computed_card: kind })
+            ).toEqual([]);
+        });
+        ['ma_cycle', 'macd_cycle'].forEach(kind => {
+            expect(
+                validateSkillData({ ...strategy, computed_card: kind })
+            ).toEqual([]);
+        });
+    });
+
+    it('rejects a value core does not list — core would silently build no card', () => {
+        expect(
+            validateSkillData({ ...guide, computed_card: 'rsi_v2' })
+        ).toEqual([expect.stringContaining('`computed_card` must be one of')]);
+        expect(validateSkillData({ ...guide, computed_card: 7 })).toEqual([
+            expect.stringContaining('`computed_card` must be one of'),
+        ]);
+    });
+
+    it('rejects the tag on a type that has no card', () => {
+        expect(
+            validateSkillData({
+                type: 'pattern',
+                gating: { tier: 'always_on' },
+                computed_card: 'rsi',
+            })
+        ).toEqual([
+            '`computed_card` is only allowed on type: indicator_guide or strategy',
+        ]);
+    });
+
+    it('keeps cycle kinds on strategies and indicator kinds on indicator guides', () => {
+        expect(
+            validateSkillData({ ...strategy, computed_card: 'rsi' })
+        ).toEqual([expect.stringContaining('is an indicator card kind')]);
+        expect(
+            validateSkillData({ ...guide, computed_card: 'macd_cycle' })
+        ).toEqual([expect.stringContaining('is a cycle card kind')]);
+    });
+
+    it('requires a tag on a non-reference indicator guide only when asked to', () => {
+        expect(validateSkillData(guide, required)).toEqual([
+            expect.stringContaining('`computed_card` is required'),
+        ]);
+        expect(validateSkillData(guide)).toEqual([]);
+        expect(validateSkillData(strategy, required)).toEqual([]);
+        expect(
+            validateSkillData({ ...guide, computed_card: 'rsi' }, required)
+        ).toEqual([]);
+    });
+
+    it('reports the tag error next to a missing gating block', () => {
+        expect(
+            validateSkillData({ type: 'strategy', computed_card: 'x' })
+        ).toEqual([
+            expect.stringContaining('`computed_card` must be one of'),
+            expect.stringContaining('missing `gating` block'),
+        ]);
+    });
+});
+
+// 카드는 태그가 있는 스킬만 만들어진다 — 파일에서 태그가 빠지면 패널의 해당 지표 카드가
+// 에러 없이 사라진다. 참조 문서(`_core/`, SMC 전체 가이드)는 카드가 없는 게 맞다.
+describe('skills/ computed_card tags', () => {
+    const skillFiles = (dir: string): string[] =>
+        readdirSync(join(process.cwd(), 'skills', dir))
+            .filter(name => name.endsWith('.md'))
+            .map(name => join(process.cwd(), 'skills', dir, name));
+
+    it('tags every indicator guide except the SMC full guide, one kind each', () => {
+        const kinds = skillFiles('indicators')
+            .map(file => matter(readFileSync(file, 'utf-8')).data)
+            .filter(data => data.smc_full_guide !== true)
+            .map(data => data.computed_card);
+        expect(kinds).toHaveLength(36);
+        expect(new Set(kinds).size).toBe(36);
+        expect(kinds.every(kind => COMPUTED_CARD_KINDS.includes(kind))).toBe(
+            true
+        );
+    });
+
+    it.each([
+        ['ma-cycle', 'ma_cycle'],
+        ['macd-cycle', 'macd_cycle'],
+    ])('skills/strategies/%s.md declares computed_card: %s', (file, kind) => {
+        const { data } = matter(
+            readFileSync(
+                join(process.cwd(), 'skills/strategies', `${file}.md`),
+                'utf-8'
+            )
+        );
+        expect(data.computed_card).toBe(kind);
+    });
+
+    it('lets the CLI path pass every real skill file', async () => {
+        const files = [
+            ...skillFiles('indicators'),
+            ...skillFiles('strategies'),
+            ...skillFiles('_core'),
+        ];
+        const errors = files.flatMap(file => parseSkillFile(file).errors);
+        expect(errors).toEqual([]);
     });
 });

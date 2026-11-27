@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['bollingerDerived']
 confidence_weight: 0.55
 usage_roles: [signal, confirmation, measurement]
+computed_card: bollinger_percent_b
 gating:
   tier: gated
   signal_kind: event

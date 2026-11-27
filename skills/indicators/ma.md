@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['ma']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
+computed_card: ma
 gating:
   tier: always_on
 token_cost: 504

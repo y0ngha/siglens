@@ -3926,6 +3926,194 @@
                     "t7": "分析结果会保存一段时间，下次打开可以立即查看。"
                 }
             },
+            "reading": {
+                "adx": {
+                    "between": "趋势力度处于中间水平（ADX {adx}，+DI {diPlus}，-DI {diMinus}）",
+                    "trending": "趋势力度明显（ADX {adx}，+DI {diPlus}，-DI {diMinus}）",
+                    "weak": "没有明确趋势，力度较弱（ADX {adx}，+DI {diPlus}，-DI {diMinus}）"
+                },
+                "atr": {
+                    "falling": "价格波动幅度（ATR）正在收窄（ATR {atr}，占价格的{atrPercent}%）",
+                    "flat": "价格波动幅度（ATR）保持在相近水平（ATR {atr}，占价格的{atrPercent}%）",
+                    "rising": "价格波动幅度（ATR）正在扩大（ATR {atr}，占价格的{atrPercent}%）"
+                },
+                "bollinger": {
+                    "above_band_pctb": "价格处于布林带上轨附近或上方（%B {pctB}，收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "below_band_pctb": "价格处于布林带下轨附近或下方（%B {pctB}，收盘价 {close}，上轨 {upper}，下轨 {lower}）"
+                },
+                "bollinger_percent_b": {
+                    "event": "{signals}（当前%B {pctB}）"
+                },
+                "buy_sell_volume": {
+                    "buy_dominant": "最近一根K线中买方成交量占比较高（买方占比 {buyRatio}%）",
+                    "sell_dominant": "最近一根K线中卖方成交量占比较高（买方占比 {buyRatio}%）"
+                },
+                "cci": {
+                    "event": "{signals}（当前CCI {cci}）"
+                },
+                "chandelier": {
+                    "flipped_long": "Chandelier Exit方向转为向上（Chandelier Exit线 {stop}）",
+                    "flipped_short": "Chandelier Exit方向转为向下（Chandelier Exit线 {stop}）"
+                },
+                "cmf": {
+                    "event": "{signals}（当前CMF {cmf}）"
+                },
+                "connors_rsi": {
+                    "overbought": "Connors RSI指标处于超买区间（Connors RSI {crsi}）",
+                    "oversold": "Connors RSI指标处于超卖区间（Connors RSI {crsi}）"
+                },
+                "cycle": {
+                    "changes": "最近{lookback}根K线内阶段变化了{count}次",
+                    "duration": {
+                        "bars": "该阶段已持续{bars}根K线",
+                        "sinceStart": "最近{lookback}根K线一直处于该阶段"
+                    },
+                    "ma_cycle": {
+                        "headline": "移动平均线周期第{stage}阶段（{stageName}）",
+                        "order": "由高到低：{order}（MA5 {ma5}，MA20 {ma20}，MA60 {ma60}）",
+                        "slopes": "线的方向：MA5 {ma5}，MA20 {ma20}，MA60 {ma60}"
+                    },
+                    "macd_cycle": {
+                        "headline": "MACD周期第{stage}阶段（{stageName}）",
+                        "slopes": "线的方向：EMA9 {ema9}，EMA21 {ema21}，EMA60 {ema60}",
+                        "values": "MACD差值：EMA9-EMA21 {upper}，EMA9-EMA60 {middle}，EMA21-EMA60 {lower}"
+                    },
+                    "previous": {
+                        "forward": "从第{previousStage}阶段顺向转入",
+                        "none": "最近{lookback}根K线内没有更早的阶段",
+                        "other": "前一阶段是第{previousStage}阶段",
+                        "reverse": "从第{previousStage}阶段逆向退回"
+                    },
+                    "slope": {
+                        "falling": "下降",
+                        "flat": "持平",
+                        "rising": "上升",
+                        "unknown": "未知"
+                    },
+                    "stageName": {
+                        "stage1": "稳定上升期",
+                        "stage2": "转向下降初期",
+                        "stage3": "转向下降后期",
+                        "stage4": "稳定下降期",
+                        "stage5": "转向上升初期",
+                        "stage6": "转向上升后期"
+                    }
+                },
+                "dmi": {
+                    "event": "{signals}（当前+DI {diPlus}，-DI {diMinus}，ADX {adx}）"
+                },
+                "donchian": {
+                    "beyond_lower": "收盘价位于唐奇安通道下轨之外（收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "beyond_upper": "收盘价位于唐奇安通道上轨之外（收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "near_lower": "收盘价靠近唐奇安通道下轨（收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "near_upper": "收盘价靠近唐奇安通道上轨（收盘价 {close}，上轨 {upper}，下轨 {lower}）"
+                },
+                "elder_impulse": {
+                    "color": {
+                        "blue": "蓝色",
+                        "green": "绿色",
+                        "red": "红色"
+                    },
+                    "current": "艾尔德冲动指标为{color}",
+                    "flipped": "艾尔德冲动指标由{from}转为{color}"
+                },
+                "elder_ray": {
+                    "bear_power_rising": "Bear Power从零轴下方回升（Bull Power {bullPower}，Bear Power {bearPower}）",
+                    "both": "Bear Power从零轴下方回升，Bull Power从零轴上方回落（Bull Power {bullPower}，Bear Power {bearPower}）",
+                    "bull_power_falling": "Bull Power从零轴上方回落（Bull Power {bullPower}，Bear Power {bearPower}）"
+                },
+                "ema": {
+                    "bearish_stack": "指数移动平均线呈空头排列，周期越短的线越靠下（EMA9 {ema9}，EMA20 {ema20}，EMA21 {ema21}，EMA60 {ema60}）",
+                    "bullish_stack": "指数移动平均线呈多头排列，周期越短的线越靠上（EMA9 {ema9}，EMA20 {ema20}，EMA21 {ema21}，EMA60 {ema60}）",
+                    "mixed": "指数移动平均线没有朝同一方向排列（EMA9 {ema9}，EMA20 {ema20}，EMA21 {ema21}，EMA60 {ema60}）"
+                },
+                "ewma": {
+                    "high_volatility": "按EWMA方法衡量，近期波动率高于平时（σ {sigma}）",
+                    "low_volatility": "按EWMA方法衡量，近期波动率低于平时（σ {sigma}）"
+                },
+                "force_index": {
+                    "turned_negative": "Force Index由正转负（Force Index {forceIndex}）",
+                    "turned_positive": "Force Index由负转正（Force Index {forceIndex}）"
+                },
+                "hurst": {
+                    "mean_reverting": "赫斯特指数显示回归均值的倾向（H {hurst}）",
+                    "trending": "赫斯特指数显示趋势延续的倾向（H {hurst}）"
+                },
+                "ichimoku": {
+                    "event": "{signals}（转换线 {tenkan}，基准线 {kijun}，先行带A {senkouA}，先行带B {senkouB}）"
+                },
+                "keltner": {
+                    "beyond_lower": "收盘价位于肯特纳通道下轨之外（收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "beyond_upper": "收盘价位于肯特纳通道上轨之外（收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "near_lower": "收盘价靠近肯特纳通道下轨（收盘价 {close}，上轨 {upper}，下轨 {lower}）",
+                    "near_upper": "收盘价靠近肯特纳通道上轨（收盘价 {close}，上轨 {upper}，下轨 {lower}）"
+                },
+                "ma": {
+                    "bearish_stack": "移动平均线呈空头排列，周期越短的线越靠下（收盘价 {close}，MA5 {ma5}，MA20 {ma20}，MA60 {ma60}）",
+                    "bullish_stack": "移动平均线呈多头排列，周期越短的线越靠上（收盘价 {close}，MA5 {ma5}，MA20 {ma20}，MA60 {ma60}）",
+                    "mixed": "移动平均线没有朝同一方向排列（收盘价 {close}，MA5 {ma5}，MA20 {ma20}，MA60 {ma60}）"
+                },
+                "macd": {
+                    "event": "{signals}（MACD {macd}，信号线 {signal}，柱状图 {histogram}）"
+                },
+                "macd_v": {
+                    "high_negative": "MACD-V处于较低的负值区间（MACD-V {macdV}）",
+                    "high_positive": "MACD-V处于较高的正值区间（MACD-V {macdV}）"
+                },
+                "mfi": {
+                    "event": "{signals}（当前MFI {mfi}）"
+                },
+                "obv": {
+                    "falling": "成交量走势（OBV）在下降（OBV {obv}）",
+                    "flat": "成交量走势（OBV）没有明显倾向（OBV {obv}）",
+                    "rising": "成交量走势（OBV）在上升（OBV {obv}）"
+                },
+                "parabolic_sar": {
+                    "event": "{signals}（当前Parabolic SAR {sar}）"
+                },
+                "regression": {
+                    "strong_fit_down": "回归线向下倾斜，与价格拟合良好（R² {r2}）",
+                    "strong_fit_up": "回归线向上倾斜，与价格拟合良好（R² {r2}）"
+                },
+                "rsi": {
+                    "event": "{signals}（当前RSI {rsi}）"
+                },
+                "squeeze_momentum": {
+                    "event": "{signals}（动量 {momentum}）"
+                },
+                "stoch_rsi": {
+                    "overbought": "随机RSI指标处于超买区间（K {k}，D {d}）",
+                    "oversold": "随机RSI指标处于超卖区间（K {k}，D {d}）"
+                },
+                "stochastic": {
+                    "overbought": "随机指标处于超买区间（%K {percentK}，%D {percentD}）",
+                    "oversold": "随机指标处于超卖区间（%K {percentK}，%D {percentD}）"
+                },
+                "supertrend": {
+                    "event": "{signals}（Supertrend线 {supertrend}）"
+                },
+                "variance_ratio": {
+                    "mean_reverting": "方差比率显示回归均值的倾向（VR {varianceRatio}）",
+                    "trending": "方差比率显示趋势延续的倾向（VR {varianceRatio}）"
+                },
+                "volume_profile": {
+                    "above_value_area": "价格位于成交最活跃价格区间之上（收盘价 {close}，区间 {val} ~ {vah}，成交最多的价格 {poc}）",
+                    "below_value_area": "价格位于成交最活跃价格区间之下（收盘价 {close}，区间 {val} ~ {vah}，成交最多的价格 {poc}）",
+                    "inside_value_area": "价格位于成交最活跃价格区间之内（收盘价 {close}，区间 {val} ~ {vah}，成交最多的价格 {poc}）"
+                },
+                "vwap": {
+                    "above": "收盘价高于VWAP至少一个平均波动幅度（ATR）（收盘价 {close}，VWAP {vwap}，ATR {atr}）",
+                    "below": "收盘价低于VWAP至少一个平均波动幅度（ATR）（收盘价 {close}，VWAP {vwap}，ATR {atr}）"
+                },
+                "williams_r": {
+                    "overbought": "Williams %R指标处于超买区间（%R {williamsR}）",
+                    "oversold": "Williams %R指标处于超卖区间（%R {williamsR}）"
+                },
+                "yang_zhang": {
+                    "high_volatility": "按Yang-Zhang方法衡量，近期波动率高于平时（σ {sigma}）",
+                    "low_volatility": "按Yang-Zhang方法衡量，近期波动率低于平时（σ {sigma}）"
+                }
+            },
             "sectionLabel": {
                 "currentPosition": "当前位置",
                 "entryStrategy": "入场策略",

@@ -3926,6 +3926,194 @@
                     "t7": "一度分析した結果はしばらく保存されるため、次に開いたときはすぐに確認できます。"
                 }
             },
+            "reading": {
+                "adx": {
+                    "between": "トレンドの強さが中間にある局面です（ADX {adx}、+DI {diPlus}、-DI {diMinus}）",
+                    "trending": "トレンドの勢いがはっきりしている局面です（ADX {adx}、+DI {diPlus}、-DI {diMinus}）",
+                    "weak": "はっきりしたトレンドがなく勢いが弱い局面です（ADX {adx}、+DI {diPlus}、-DI {diMinus}）"
+                },
+                "atr": {
+                    "falling": "値動きの幅（ATR）が狭まっています（ATR {atr}、価格の{atrPercent}%）",
+                    "flat": "値動きの幅（ATR）は同じ水準を保っています（ATR {atr}、価格の{atrPercent}%）",
+                    "rising": "値動きの幅（ATR）が広がっています（ATR {atr}、価格の{atrPercent}%）"
+                },
+                "bollinger": {
+                    "above_band_pctb": "価格はボリンジャーバンドの上限付近か、上限より上にあります（%B {pctB}、終値 {close}、上限 {upper}、下限 {lower}）",
+                    "below_band_pctb": "価格はボリンジャーバンドの下限付近か、下限より下にあります（%B {pctB}、終値 {close}、上限 {upper}、下限 {lower}）"
+                },
+                "bollinger_percent_b": {
+                    "event": "{signals}（現在の%B {pctB}）"
+                },
+                "buy_sell_volume": {
+                    "buy_dominant": "直近の足では買い側の出来高の割合が高いです（買いの割合 {buyRatio}%）",
+                    "sell_dominant": "直近の足では売り側の出来高の割合が高いです（買いの割合 {buyRatio}%）"
+                },
+                "cci": {
+                    "event": "{signals}（現在のCCI {cci}）"
+                },
+                "chandelier": {
+                    "flipped_long": "Chandelier Exitの向きが上昇側に切り替わりました（Chandelier Exitライン {stop}）",
+                    "flipped_short": "Chandelier Exitの向きが下降側に切り替わりました（Chandelier Exitライン {stop}）"
+                },
+                "cmf": {
+                    "event": "{signals}（現在のCMF {cmf}）"
+                },
+                "connors_rsi": {
+                    "overbought": "Connors RSIは買われすぎの水準にあります（Connors RSI {crsi}）",
+                    "oversold": "Connors RSIは売られすぎの水準にあります（Connors RSI {crsi}）"
+                },
+                "cycle": {
+                    "changes": "直近{lookback}本の足で段階が{count}回変わりました",
+                    "duration": {
+                        "bars": "この段階が{bars}本続いています",
+                        "sinceStart": "直近{lookback}本の足ではずっとこの段階が続いています"
+                    },
+                    "ma_cycle": {
+                        "headline": "移動平均線サイクル {stage}段階（{stageName}）",
+                        "order": "高い順: {order}（MA5 {ma5}、MA20 {ma20}、MA60 {ma60}）",
+                        "slopes": "線の向き: MA5 {ma5}、MA20 {ma20}、MA60 {ma60}"
+                    },
+                    "macd_cycle": {
+                        "headline": "MACDサイクル {stage}段階（{stageName}）",
+                        "slopes": "線の向き: EMA9 {ema9}、EMA21 {ema21}、EMA60 {ema60}",
+                        "values": "MACDの差: EMA9-EMA21 {upper}、EMA9-EMA60 {middle}、EMA21-EMA60 {lower}"
+                    },
+                    "previous": {
+                        "forward": "{previousStage}段階から順方向に移ってきました",
+                        "none": "直近{lookback}本の足には以前の段階がありません",
+                        "other": "直前の段階は{previousStage}段階でした",
+                        "reverse": "{previousStage}段階から逆方向に戻ってきました"
+                    },
+                    "slope": {
+                        "falling": "下降",
+                        "flat": "横ばい",
+                        "rising": "上昇",
+                        "unknown": "不明"
+                    },
+                    "stageName": {
+                        "stage1": "安定した上昇期",
+                        "stage2": "下降への移行初期",
+                        "stage3": "下降への移行後期",
+                        "stage4": "安定した下降期",
+                        "stage5": "上昇への移行初期",
+                        "stage6": "上昇への移行後期"
+                    }
+                },
+                "dmi": {
+                    "event": "{signals}（現在の+DI {diPlus}、-DI {diMinus}、ADX {adx}）"
+                },
+                "donchian": {
+                    "beyond_lower": "終値がドンチャンチャネルの下限の外側にあります（終値 {close}、上限 {upper}、下限 {lower}）",
+                    "beyond_upper": "終値がドンチャンチャネルの上限の外側にあります（終値 {close}、上限 {upper}、下限 {lower}）",
+                    "near_lower": "終値がドンチャンチャネルの下限の近くにあります（終値 {close}、上限 {upper}、下限 {lower}）",
+                    "near_upper": "終値がドンチャンチャネルの上限の近くにあります（終値 {close}、上限 {upper}、下限 {lower}）"
+                },
+                "elder_impulse": {
+                    "color": {
+                        "blue": "青",
+                        "green": "緑",
+                        "red": "赤"
+                    },
+                    "current": "エルダーインパルスは{color}です",
+                    "flipped": "エルダーインパルスが{from}から{color}に変わりました"
+                },
+                "elder_ray": {
+                    "bear_power_rising": "Bear Powerが0より下から上向いています（Bull Power {bullPower}、Bear Power {bearPower}）",
+                    "both": "Bear Powerは0より下から上向き、Bull Powerは0より上から下向いています（Bull Power {bullPower}、Bear Power {bearPower}）",
+                    "bull_power_falling": "Bull Powerが0より上から下向いています（Bull Power {bullPower}、Bear Power {bearPower}）"
+                },
+                "ema": {
+                    "bearish_stack": "指数移動平均線は短い線ほど下に並んでいます（EMA9 {ema9}、EMA20 {ema20}、EMA21 {ema21}、EMA60 {ema60}）",
+                    "bullish_stack": "指数移動平均線は短い線ほど上に並んでいます（EMA9 {ema9}、EMA20 {ema20}、EMA21 {ema21}、EMA60 {ema60}）",
+                    "mixed": "指数移動平均線が一方向に並んでいません（EMA9 {ema9}、EMA20 {ema20}、EMA21 {ema21}、EMA60 {ema60}）"
+                },
+                "ewma": {
+                    "high_volatility": "EWMA基準の最近のボラティリティは普段より高いです（σ {sigma}）",
+                    "low_volatility": "EWMA基準の最近のボラティリティは普段より低いです（σ {sigma}）"
+                },
+                "force_index": {
+                    "turned_negative": "Force Indexがプラスからマイナスに変わりました（Force Index {forceIndex}）",
+                    "turned_positive": "Force Indexがマイナスからプラスに変わりました（Force Index {forceIndex}）"
+                },
+                "hurst": {
+                    "mean_reverting": "ハースト指数は平均に回帰しやすい傾向を示しています（H {hurst}）",
+                    "trending": "ハースト指数はトレンドが続きやすい傾向を示しています（H {hurst}）"
+                },
+                "ichimoku": {
+                    "event": "{signals}（転換線 {tenkan}、基準線 {kijun}、先行スパンA {senkouA}、先行スパンB {senkouB}）"
+                },
+                "keltner": {
+                    "beyond_lower": "終値がケルトナーチャネルの下限の外側にあります（終値 {close}、上限 {upper}、下限 {lower}）",
+                    "beyond_upper": "終値がケルトナーチャネルの上限の外側にあります（終値 {close}、上限 {upper}、下限 {lower}）",
+                    "near_lower": "終値がケルトナーチャネルの下限の近くにあります（終値 {close}、上限 {upper}、下限 {lower}）",
+                    "near_upper": "終値がケルトナーチャネルの上限の近くにあります（終値 {close}、上限 {upper}、下限 {lower}）"
+                },
+                "ma": {
+                    "bearish_stack": "移動平均線は短い線ほど下に並んでいます（終値 {close}、MA5 {ma5}、MA20 {ma20}、MA60 {ma60}）",
+                    "bullish_stack": "移動平均線は短い線ほど上に並んでいます（終値 {close}、MA5 {ma5}、MA20 {ma20}、MA60 {ma60}）",
+                    "mixed": "移動平均線が一方向に並んでいません（終値 {close}、MA5 {ma5}、MA20 {ma20}、MA60 {ma60}）"
+                },
+                "macd": {
+                    "event": "{signals}（MACD {macd}、シグナル線 {signal}、ヒストグラム {histogram}）"
+                },
+                "macd_v": {
+                    "high_negative": "MACD-Vが大きなマイナス圏にあります（MACD-V {macdV}）",
+                    "high_positive": "MACD-Vが大きなプラス圏にあります（MACD-V {macdV}）"
+                },
+                "mfi": {
+                    "event": "{signals}（現在のMFI {mfi}）"
+                },
+                "obv": {
+                    "falling": "出来高の流れ（OBV）が下向きです（OBV {obv}）",
+                    "flat": "出来高の流れ（OBV）はどちらにも傾いていません（OBV {obv}）",
+                    "rising": "出来高の流れ（OBV）が上向きです（OBV {obv}）"
+                },
+                "parabolic_sar": {
+                    "event": "{signals}（現在のParabolic SAR {sar}）"
+                },
+                "regression": {
+                    "strong_fit_down": "回帰線は右下がりで、価格によくフィットしています（R² {r2}）",
+                    "strong_fit_up": "回帰線は右上がりで、価格によくフィットしています（R² {r2}）"
+                },
+                "rsi": {
+                    "event": "{signals}（現在のRSI {rsi}）"
+                },
+                "squeeze_momentum": {
+                    "event": "{signals}（モメンタム {momentum}）"
+                },
+                "stoch_rsi": {
+                    "overbought": "ストキャスティクスRSIは買われすぎの水準にあります（K {k}、D {d}）",
+                    "oversold": "ストキャスティクスRSIは売られすぎの水準にあります（K {k}、D {d}）"
+                },
+                "stochastic": {
+                    "overbought": "ストキャスティクスは買われすぎの水準にあります（%K {percentK}、%D {percentD}）",
+                    "oversold": "ストキャスティクスは売られすぎの水準にあります（%K {percentK}、%D {percentD}）"
+                },
+                "supertrend": {
+                    "event": "{signals}（Supertrendライン {supertrend}）"
+                },
+                "variance_ratio": {
+                    "mean_reverting": "分散比率は平均に回帰しやすい傾向を示しています（VR {varianceRatio}）",
+                    "trending": "分散比率はトレンドが続きやすい傾向を示しています（VR {varianceRatio}）"
+                },
+                "volume_profile": {
+                    "above_value_area": "価格は取引が最も活発だった価格帯の上にあります（終値 {close}、価格帯 {val} ～ {vah}、最多取引価格 {poc}）",
+                    "below_value_area": "価格は取引が最も活発だった価格帯の下にあります（終値 {close}、価格帯 {val} ～ {vah}、最多取引価格 {poc}）",
+                    "inside_value_area": "価格は取引が最も活発だった価格帯の中にあります（終値 {close}、価格帯 {val} ～ {vah}、最多取引価格 {poc}）"
+                },
+                "vwap": {
+                    "above": "終値がVWAPより平均的な値動きの幅（ATR）以上、上にあります（終値 {close}、VWAP {vwap}、ATR {atr}）",
+                    "below": "終値がVWAPより平均的な値動きの幅（ATR）以上、下にあります（終値 {close}、VWAP {vwap}、ATR {atr}）"
+                },
+                "williams_r": {
+                    "overbought": "Williams %Rは買われすぎの水準にあります（%R {williamsR}）",
+                    "oversold": "Williams %Rは売られすぎの水準にあります（%R {williamsR}）"
+                },
+                "yang_zhang": {
+                    "high_volatility": "Yang-Zhang基準の最近のボラティリティは普段より高いです（σ {sigma}）",
+                    "low_volatility": "Yang-Zhang基準の最近のボラティリティは普段より低いです（σ {sigma}）"
+                }
+            },
             "sectionLabel": {
                 "currentPosition": "現在の位置",
                 "entryStrategy": "エントリー戦略",

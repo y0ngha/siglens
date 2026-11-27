@@ -5,6 +5,7 @@ type: strategy
 category: neutral
 indicators: ['macd', 'ema']
 confidence_weight: 0.55
+computed_card: macd_cycle
 gating:
   tier: gated
   signal_kind: event
