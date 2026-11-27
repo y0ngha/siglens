@@ -1,0 +1,5 @@
+# 포맷만 바꾼 커밋. `git blame`이 건너뛰게 한다.
+# 로컬: git config blame.ignoreRevsFile .git-blame-ignore-revs (GitHub는 자동 적용)
+
+# style: import 정렬을 포매터에 맡긴다 (#1488)
+6bcbeb33ea162f14807f17dd52f8f1ece23bdbfa
