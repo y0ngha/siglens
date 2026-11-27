@@ -205,6 +205,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
@@ -226,6 +227,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
@@ -260,6 +262,7 @@ describe('OverallContent 공유 등록의 분석 기준 시각', () => {
             <OverallContent
                 symbol="AAPL"
                 companyName="Apple"
+                marketProfile="us-equity"
                 hasEnrichedNews={true}
                 hasOptions={true}
             />
@@ -274,6 +277,7 @@ describe('OverallContent 공유 등록의 분석 기준 시각', () => {
             <OverallContent
                 symbol="AAPL"
                 companyName="Apple"
+                marketProfile="us-equity"
                 hasEnrichedNews={true}
                 hasOptions={true}
             />
@@ -292,6 +296,7 @@ describe('OverallContent 공유 등록의 분석 기준 시각', () => {
             <OverallContent
                 symbol="AAPL"
                 companyName="Apple"
+                marketProfile="us-equity"
                 hasEnrichedNews={true}
                 hasOptions={true}
             />
@@ -318,6 +323,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -337,6 +343,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
@@ -354,6 +361,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -373,6 +381,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(screen.getByText(/커스텀 에러/)).toBeInTheDocument();
@@ -390,6 +399,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(screen.getByText(/차트 축 실패/)).toBeInTheDocument();
@@ -425,6 +435,7 @@ describe('OverallContent non-done branches', () => {
                     companyName="Apple Inc."
                     hasEnrichedNews={true}
                     hasOptions={true}
+                    marketProfile="us-equity"
                 />,
                 { locale }
             );
@@ -454,6 +465,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -474,6 +486,7 @@ describe('OverallContent non-done branches', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         fireEvent.click(screen.getByText('다시 시도'));
@@ -494,6 +507,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         // 헤딩 텍스트 순서를 DOM 순서로 비교
@@ -518,6 +532,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -536,6 +551,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -554,6 +570,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -574,6 +591,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         const btn = screen.getByRole('button', { name: /재분석/ });
@@ -593,6 +611,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         const btn = screen.getByRole('button', { name: /재분석/ });
@@ -609,6 +628,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
@@ -625,6 +645,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
 
@@ -643,6 +664,7 @@ describe('OverallContent done branch', () => {
                     companyName="Apple Inc."
                     hasEnrichedNews={true}
                     hasOptions={true}
+                    marketProfile="us-equity"
                 />
             );
         const feedbackUp = () =>
@@ -684,6 +706,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
 
@@ -703,6 +726,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
 
@@ -720,6 +744,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
 
@@ -740,6 +765,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={false}
+                marketProfile="us-equity"
             />
         );
 
@@ -763,6 +789,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -780,6 +807,7 @@ describe('OverallContent done branch', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -830,6 +858,7 @@ describe('OverallContent SSR seed', () => {
                 initialAnalysis={SEED_RESULT}
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />,
             { wrapper: createQueryClientWrapper().wrapper }
         );
@@ -845,6 +874,7 @@ describe('OverallContent SSR seed', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />,
             {
                 wrapper: createQueryClientWrapper().wrapper,
@@ -899,6 +929,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('AAPL', true);
@@ -915,6 +946,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 companyName="Pacific"
                 hasEnrichedNews={false}
                 hasOptions={false}
+                marketProfile="us-equity"
             />
         );
         expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('PCLOF', false);
@@ -927,6 +959,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
@@ -947,6 +980,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         const btn = screen.getByRole('button', { name: /AI 종합 분석 받기/ });
@@ -966,6 +1000,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
@@ -987,6 +1022,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         // role="alert" + 안내 문구로 사용자에게 회복 메시지 노출.
@@ -1022,6 +1058,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                     companyName="Apple Inc."
                     hasEnrichedNews={false}
                     hasOptions={true}
+                    marketProfile="us-equity"
                 />
             );
             fireEvent.click(screen.getByRole('button', { name: /다시 시도/ }));
@@ -1066,6 +1103,7 @@ describe('OverallContent — pollError는 idle CTA만 막는다', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
     }
@@ -1148,6 +1186,7 @@ describe('OverallContent — idle CTA 부제', () => {
                 companyName="삼성전자"
                 hasEnrichedNews={true}
                 hasOptions={false}
+                marketProfile="us-equity"
             />
         );
 
@@ -1165,6 +1204,7 @@ describe('OverallContent — idle CTA 부제', () => {
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
 
@@ -1207,6 +1247,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 hasEnrichedNews={false}
                 assetClass="crypto"
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
@@ -1239,6 +1280,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 hasEnrichedNews={true}
                 assetClass="crypto"
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(screen.queryByRole('heading', { name: /옵션 시장/ })).toBeNull();
@@ -1265,6 +1307,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 hasEnrichedNews={true}
                 assetClass="crypto"
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -1291,6 +1334,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 hasEnrichedNews={true}
                 assetClass="crypto"
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -1320,6 +1364,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 hasEnrichedNews={true}
                 assetClass="crypto"
                 hasOptions={true}
+                marketProfile="us-equity"
             />
         );
         expect(

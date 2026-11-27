@@ -51,6 +51,7 @@ import { useSmcZones } from './hooks/useSmcZones';
 import type { IndicatorHookParams } from './model/chartHookParams';
 import { ChartHeaderBar } from './ui/ChartHeaderBar';
 import { ExtendedHoursLegendBadge } from './ui/ExtendedHoursLegendBadge';
+import { withChartOnlyMaPeriods } from './utils/chartMaPeriods';
 import { createExtendedGapController } from './utils/extendedGapChart';
 import { buildIndicatorBindings } from './utils/indicatorBindings';
 import {
@@ -63,6 +64,7 @@ import { buildPaneLabels } from './utils/paneLabelUtils';
 
 const EMPTY_CHART_OVERLAYS: ChartOverlay[] = [];
 const EMPTY_OVERLAY_ITEMS: readonly OverlayMenuItem[] = [];
+const EMPTY_REFERENCE_ONLY_KEYS: ReadonlySet<string> = new Set();
 const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
 const NOOP_SET_VISIBLE = (): void => {};
 const EMPTY_OVERLAY_COLORS: Record<string, string> = {};
@@ -118,6 +120,11 @@ interface StockChartProps {
     overlayColors?: Record<string, string>;
     /** "차트 작도" 메뉴에 띄울 on/off 항목(매매 가격선 포함). */
     overlayItems?: readonly OverlayMenuItem[];
+    /**
+     * 목표선을 "참고 거리"로 흐리게 그릴 패턴 카드의 `sourceRef` — 위약 대비 우위가 확인되지 않은
+     * 카드. 비어 있으면(기본) 모든 목표선을 그대로 그린다.
+     */
+    referenceOnlyOverlayKeys?: ReadonlySet<string>;
     /** 꺼진 항목 key(`overlayItemKey`·`ACTION_PRICES_ITEM_KEY`). */
     hiddenOverlayKeys?: ReadonlySet<string>;
     /** AI 패널 카드·"차트 작도" 메뉴 항목 hover·focus로 강조할 항목 key. */
@@ -160,6 +167,7 @@ export function StockChart({
     chartOverlays = EMPTY_CHART_OVERLAYS,
     overlayColors = EMPTY_OVERLAY_COLORS,
     overlayItems = EMPTY_OVERLAY_ITEMS,
+    referenceOnlyOverlayKeys = EMPTY_REFERENCE_ONLY_KEYS,
     hiddenOverlayKeys = EMPTY_HIDDEN_KEYS,
     highlightedOverlayKey = null,
     onSetOverlayVisible = NOOP_SET_VISIBLE,
@@ -227,10 +235,17 @@ export function StockChart({
     );
     useExtendedSessionBand(seriesRef, extendedRanges);
 
+    // 50일선처럼 core가 내지 않는 차트 전용 MA 기간을 봉으로 채운다. 오버레이 훅과 범례가
+    // 같은 객체를 읽어야 선과 범례 값이 어긋나지 않는다.
+    const chartIndicators = useMemo(
+        () => withChartOnlyMaPeriods(indicators, bars),
+        [indicators, bars]
+    );
+
     const indicatorParams: IndicatorHookParams = {
         chartRef: indicatorChartRef,
         bars,
-        indicators,
+        indicators: chartIndicators,
         lineWidth: DEFAULT_LINE_WIDTH,
     };
     // 일목균형표 선행 구름은 마지막 **그려진** 봉(정규장 + 시간외) 오른쪽에서 시작해야 한다.
@@ -262,6 +277,7 @@ export function StockChart({
         bars,
         rsiPaneIndex: visible.rsi ? paneIndices.rsi : null,
         extendLevelsRight: levelRightExtend,
+        referenceOnlyKeys: referenceOnlyOverlayKeys,
     });
 
     useChartOverlays({
@@ -275,7 +291,7 @@ export function StockChart({
     const overlayLegendItems = useOverlayLegend({
         chartRef,
         bars,
-        indicators,
+        indicators: chartIndicators,
         labelConfigs,
     });
 

@@ -113,13 +113,13 @@ describe('/backtesting numbers equal data.json', () => {
         );
     });
 
-    it('hero mean-return card carries the difference from holding the same days', async () => {
+    it('hero mean-return card carries the same-days baseline and the difference from it', async () => {
         const { doc } = await renderPage();
         const card = cardOf(doc, '거래당 평균 수익률');
         const excess = bench.perTradeExcess;
         expect(textOf(card)).toContain(signed(summary.overall.meanRet, 2));
         expect(textOf(card)).toContain(
-            `같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 ${signed(excess.meanPct, 2)} (95% 범위 ${signed(excess.ci95.low, 2)}~${signed(excess.ci95.high, 2)})`
+            `같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균(${signed(excess.baselineMeanPct, 2)})과 비교하면 거래당 평균 차이는 ${signed(excess.meanPct, 2)} (95% 범위 ${signed(excess.ci95.low, 2)}~${signed(excess.ci95.high, 2)})`
         );
     });
 
@@ -226,8 +226,8 @@ describe('/backtesting numbers equal data.json', () => {
             .replaceAll('95% 범위', '')
             .replaceAll('가운데 90%', '');
         const tokens = text.match(/[+-]?\d[\d,]*(?:\.\d+)?%/g) ?? [];
-        // 비교 표 77(11행 x 7열) + 히어로 14 + 진입 시점 8. 섹션을 못 찾아 빈 문자열을 검사하는 경우를 거른다.
-        expect(tokens).toHaveLength(99);
+        // 비교 표 77(11행 x 7열) + 히어로 15 + 진입 시점 8. 섹션을 못 찾아 빈 문자열을 검사하는 경우를 거른다.
+        expect(tokens).toHaveLength(100);
         const unknown = tokens.filter(
             token => !allowed.has(token.replace(/^[+-]/, '').replace('%', ''))
         );

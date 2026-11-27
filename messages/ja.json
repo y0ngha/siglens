@@ -127,9 +127,18 @@
                     "subtitle": "受け取っているアラートメールを確認し、受け取りをやめられます。",
                     "title": "アラートメール設定"
                 },
+                "priceAlertAbove": "{symbol}の終値が {level} 以上になったらメールでお知らせします。",
+                "priceAlertBasisEntry": "{date}のAI分析のエントリー帯の価格です。",
+                "priceAlertBasisInvalidation": "{date}のAI分析の無効化の基準の価格です。",
+                "priceAlertBasisPrice": "チャットで指定した価格です。",
+                "priceAlertBelow": "{symbol}の終値が {level} 以下になったらメールでお知らせします。",
+                "priceAlertCreated": "作成日 {date}、そのときの価格 {price}",
+                "priceAlertEnterZone": "{symbol}の終値が {low}〜{high} の価格帯に入るか、通り過ぎたらメールでお知らせします。",
+                "priceAlertExpires": "{date}の終値まで確認し、一度お知らせしたら終了します。",
+                "priceAlertFired": "{symbol}の終値が{closeDate}に条件を満たしたため、アラートは終了しました。(終値 {close})",
                 "topicFearGreed": "{market}の恐怖強欲指数が極端なゾーンに入ったとき",
                 "topicSignal": "新しく検出された{hubName}の銘柄",
-                "topicSymbol": "{symbol}の新しいシグナル",
+                "topicSymbol": "{symbol}のトレンドの変化と主要なシグナル",
                 "unavailable": "現在は設定を読み込めません。しばらくしてからもう一度お試しください。",
                 "unidentifiedBody": "アラートメール下部の設定リンクから開くか、ログインするとアラートメールを管理できます。",
                 "unidentifiedTitle": "メール内のリンクから開いてください"
@@ -825,6 +834,20 @@
             },
             "email": {
                 "change": "騰落率 {v0}",
+                "changeBasisResistance": "基準: {v0}のAI分析のレジスタンスライン",
+                "changeBasisSupport": "基準: {v0}のAI分析のサポートライン",
+                "changePlanAbove": "{v0}に、エントリー帯 {v1}〜{v2} を上回って引けました。(終値 {v3})",
+                "changePlanBelow": "{v0}に、エントリー帯 {v1}〜{v2} を下回って引けました。(終値 {v3})",
+                "changePlanInZone": "{v0}に、エントリー帯 {v1}〜{v2} の中で引けました。(終値 {v3})",
+                "changePlanStopped": "{v0}に、無効化の基準 {v1} 以下で引けました。(終値 {v2})",
+                "changeResistanceDown": "{v0}に、レジスタンスライン {v1} を下回って引けました。(終値 {v2})",
+                "changeResistanceUp": "{v0}に、レジスタンスライン {v1} 以上で引けました。(終値 {v2})",
+                "changeSupportDown": "{v0}に、サポートライン {v1} 以下で引けました。(終値 {v2})",
+                "changeSupportUp": "{v0}に、サポートライン {v1} を上回って引けました。(終値 {v2})",
+                "changeTrendBasis": "基準: 終値と{v0}日指数移動平均線の傾き",
+                "changeTrendToBearish": "{v0}に、トレンド判定が{v1}から{v2}に変わりました。",
+                "changeTrendToBullish": "{v0}に、トレンド判定が{v1}から{v2}に変わりました。",
+                "changeTrendToNeutral": "{v0}に、トレンド判定が{v1}から{v2}に変わりました。",
                 "fearGreedRow": "{v0}の恐怖強欲指数が{v1}に入りました。{v2}の終値時点で{v3}点です。",
                 "heading": "新しく検出された変化",
                 "intro": "取引終了後に新しく検出された変化だけをまとめました。",
@@ -833,13 +856,28 @@
                 "marketKr": "韓国",
                 "marketUs": "米国",
                 "moreRows": "ほか{v0}銘柄",
+                "priceAlertBasisEntry": "基準: {v0}のAI分析のエントリー帯",
+                "priceAlertBasisInvalidation": "基準: {v0}のAI分析の無効化の基準",
+                "priceAlertBasisPrice": "基準: チャットで指定した価格",
+                "priceAlertCloseAbove": "{v0}の{v1}の終値がアラート価格 {v3} 以上になりました。(終値 {v2})",
+                "priceAlertCloseBelow": "{v0}の{v1}の終値がアラート価格 {v3} 以下になりました。(終値 {v2})",
+                "priceAlertCreated": "アラートを作成した日 {v0}、そのときの価格 {v1}",
+                "priceAlertOneShot": "価格アラートは、一度お知らせすると終了します。",
+                "priceAlertVoided": "{v0}の価格基準が大きく変わったため(例: 株式分割)、価格アラートを終了しました。必要な場合は新しく作成してください。",
+                "priceAlertZoneInside": "{v0}の{v1}の終値がアラート価格帯 {v3}〜{v4} の中に入りました。(終値 {v2})",
+                "priceAlertZonePassedDown": "{v0}の{v1}の終値がアラート価格帯 {v3}〜{v4} を下回りました。(終値 {v2})",
+                "priceAlertZonePassedUp": "{v0}の{v1}の終値がアラート価格帯 {v3}〜{v4} を上回りました。(終値 {v2})",
                 "reason": "{v0}のアラートメールにお申し込みいただいたため、お送りしています。新しいお知らせがある日だけお送りします。",
                 "sectionFearGreed": "恐怖強欲指数",
                 "sectionHub": "新しく検出された{v0}の銘柄",
-                "sectionMine": "登録した銘柄の新しいシグナル",
+                "sectionMine": "登録した銘柄の変化",
+                "sectionPriceAlert": "価格アラート",
                 "sessionKr": "韓国市場 {v0}の終値時点",
                 "sessionUs": "米国市場 {v0}の終値時点",
                 "subject": "[{v0}] {v1} 新しく検出された変化 {v2}件",
+                "trendBearish": "弱気",
+                "trendBullish": "強気",
+                "trendNeutral": "もみ合い",
                 "unsubscribe": "配信停止",
                 "viewFearGreed": "恐怖強欲指数を見る",
                 "zoneExtremeFear": "極度の恐怖",
@@ -963,7 +1001,7 @@
                 "emailReport": "ご希望の場合のみ、保有銘柄とウォッチリストの情報をメールで受け取れる",
                 "heading": "会員特典",
                 "models": "さらに{count}個のAIモデルを選んで使える",
-                "timeframes": "{from}から{to}まで、より短い時間軸のチャートとAI分析"
+                "timeframes": "{from}から{to}まで、複数の時間軸のチャートとAI分析"
             }
         },
         "contact-form": {
@@ -1434,6 +1472,7 @@
             "codeLabel": "認証コード",
             "codePrompt": "{email}に送った{length}桁のコードを入力してください",
             "confirm": "確認して受け取る",
+            "deletePriceAlert": "削除",
             "emailLabel": "メールアドレス",
             "errExpired": "コードの有効期限が切れました。もう一度受け取ってください。",
             "errInvalid": "リクエストを処理できませんでした。再読み込みしてからもう一度お試しください。",
@@ -1444,7 +1483,7 @@
             "errUnavailable": "現在は申し込めません。しばらくしてからもう一度お試しください。",
             "errWrongCode": "認証コードが正しくありません。",
             "fearGreedRule": "スコアが{fear}点を下回って極度の恐怖に入ったとき、または{greed}点以上に上がって極度の強欲に入ったときにお知らせします。ゾーンを出てから{gap}営業日以内に再び入った場合は、新たにはお知らせしません。",
-            "includePortfolio": "登録した保有銘柄とウォッチリストの新しいシグナルも受け取る",
+            "includePortfolio": "登録した保有銘柄とウォッチリストの変化も受け取る",
             "known": "{email}で受け取っています。",
             "loading": "読み込み中です",
             "manage": "アラートメール設定",
@@ -1455,8 +1494,11 @@
             "noTopics": "受け取っている項目はありません。",
             "notice": "このアドレスはアラートメールの送信にのみ使います。受信を停止するとすぐに削除します。",
             "otherEmail": "別のアドレスで受け取る",
+            "priceAlertsFiredHeading": "最近お知らせした価格アラート",
+            "priceAlertsHeading": "価格アラート",
             "privacyLink": "プライバシーポリシーを見る",
             "receive": "受け取る",
+            "removePriceAlert": "価格アラートを削除: {label}",
             "removeTopic": "{label}の受け取りをやめる",
             "resend": "コードを再送する",
             "resendWait": "コードを再送する（{seconds}秒）",
@@ -1473,7 +1515,7 @@
             "successSignup": "会員になると、登録したウォッチリスト全体をまとめて受け取れます。",
             "titleFearGreed": "{market}の恐怖強欲指数が極端なゾーンに入ったらメールでお知らせします",
             "titleSignalHub": "新しく検出された{hubName}の銘柄をメールでお知らせします",
-            "titleSymbol": "{name}に新しいシグナルが出たらメールでお知らせします"
+            "titleSymbol": "{name}のトレンド判定が変わったり主要なシグナルが新しく出たりしたらメールでお知らせします"
         }
     },
     "shared": {
@@ -3790,7 +3832,6 @@
                 "c68843": "クリップボードへのコピーに失敗しました。ブラウザの権限を確認してください。",
                 "c80f22": "{v0}個の分析手法を検出、",
                 "cfbeac": "チャート価格線表示",
-                "d39704": "収束した指標が多いほど、その価格帯のサポートとレジスタンスの信頼度が高いと\n                    考えられます。",
                 "d930e0": "レジスタンスライン",
                 "db5809": "リアルタイムの価格変動と異なる点があれば、ここで\n                            調整されます。",
                 "e5c85b": "コピーされました",
@@ -3831,6 +3872,17 @@
                 "analyzing": "AIが精密分析中です… 広告収益は、より良いAIモデルの導入とサーバー維持費に大切に使われます。",
                 "done": "分析結果はお役に立ちましたか？下部のアフィリエイトリンクのご利用は、SIGLENSの運営を続ける大きな支えになります。"
             },
+            "baseRate": {
+                "levelLine": "価格帯に触れた後に守られた割合は{held}%でした。同じ距離の別の日の価格は{placebo}%でした（{symbols}銘柄の{from}〜{to}年の日足で、{n, number}回触れた場合）。",
+                "levelNotMeasured": "日足以外のチャートはまだ測定していません。",
+                "patternLine": "この形の後に目標価格が無効化価格より先に届いた割合 {event}%（同じ距離の別の日の価格は{placebo}%、{n, number}件）",
+                "patternNotMeasured": "日足以外のチャートはまだ測定していません。",
+                "patternTooltip": "同じ銘柄で別の日に同じ距離へ目標を置いた場合と比べた値です。{symbols}銘柄の{from}〜{to}年の日足で測定しており、今後の結果を示すものではありません。",
+                "pooledNote": "件数が少ないため全パターンの値です。",
+                "targetLegend": "チャートで薄く描いた参考距離の線は、同じ距離の別の日の価格より届きやすいとは確認されていない目標です。",
+                "verdictBeats": "同じ距離の別の日の価格より届きやすい結果でしたが、今後を保証するものではありません。",
+                "verdictNoEdge": "同じ距離の別の日の価格と比べて、測定上の優位はありませんでした。"
+            },
             "duration": {
                 "minutesSeconds": "{v0}分{v1}秒",
                 "seconds": "{v0}秒"
@@ -3850,6 +3902,7 @@
                 "planBelowZone": "現在値はエントリー価格帯より下にあります。",
                 "planInZone": "現在値はエントリー価格帯の中にあります。",
                 "planNoSetupNoRoomAbove": "エントリー価格帯の上に余裕のある目標価格がないため、計画の基準にできる水準がありません。",
+                "planJustAboveZone": "現在値はエントリー価格帯のすぐ上にあります。価格帯の上端からの距離は{v0} ATR未満です。",
                 "planNoSetupNoStop": "損切りの基準を決められないため、計画の基準にできる水準がありません。",
                 "planNoSetupNoZone": "エントリー価格帯がないため、計画の基準にできる水準がありません。",
                 "planNoSetupStopped": "現在値が損切りの基準を下回っているため、計画の基準にできる水準がありません。",
@@ -3868,15 +3921,16 @@
                 "supportNote": "下方では{v0}付近のサポートを維持できるかが鍵です。",
                 "targetZone": "- 目標参考ゾーン: {v0}",
                 "trendSummary": "現在の流れは{v0}の中で{v1}と解釈され、ボラティリティは{v2}水準です。",
-                "upside": "- 上方: {v0} → {v1}"
+                "upside": "- 上方: {v0} → {v1}",
+                "contextHeading": "上位の時間軸と市場："
             },
             "panel": {
                 "analyzing": "分析中…",
                 "confidenceHigh": "信頼度 高",
-                "confidenceHighTip1": "信頼度の高いパターンです。",
-                "confidenceHighTip2": "AIがこのパターンを明確に検出したという意味です。",
+                "confidenceHighTip1": "この戦略にあらかじめ付けたスコアが高いという意味です。",
+                "confidenceHighTip2": "AIが明確に検出したという意味でも、実際によく当たるという意味でもありません。",
                 "confidenceMedium": "信頼度 中",
-                "confidenceMediumTip1": "信頼度が中程度のパターンです。",
+                "confidenceMediumTip1": "この戦略にあらかじめ付けたスコアが中程度という意味です。",
                 "confidenceMediumTip2": "単独で見るより、他の指標と合わせて参考にするのがおすすめです。",
                 "meter": {
                     "exhaustedBody": "非会員がエントリー、損切り、目標価格を確認できるのは1日{count, plural, other {#銘柄}}までです。毎日午前0時（日本時間）に再び開放されます。登録すれば、今すぐすべての銘柄で確認できます。",
@@ -4152,12 +4206,31 @@
                 "caveat": "分析時点までの流れをまとめたもので、予測ではありません。",
                 "planVoidDescription": "分析時点の終値はすでにこの価格を下回っていました。",
                 "trendHeadline": "<prefix>現在のトレンド：</prefix><value>{v0}</value>",
-                "analyzedAt": "分析日時"
+                "analyzedAt": "分析日時",
+                "kindDaily": "日足",
+                "kindWeekly": "週足",
+                "kindMonthly": "月足",
+                "htfTrend": "{v0}のトレンドは{v1}です。",
+                "htfAligned": "{v0}のトレンドは{v1}で、このチャートと同じ方向です。",
+                "htfOpposed": "{v0}のトレンドは{v1}で、このチャートと反対方向です。",
+                "htfMixed": "{v0}のトレンドは{v1}で、このチャートとははっきり重なっていません。",
+                "htfUnknown": "{v0}のトレンドはまだ判断できません。",
+                "progressDaily": "分析時点では最後の日足がまだ形成中だったため、上の判定は変わることがあります。",
+                "progressWeekly": "分析時点では最後の週足がまだ形成中だったため、上の判定は変わることがあります。",
+                "progressMonthly": "分析時点では最後の月足がまだ形成中だったため、上の判定は変わることがあります。",
+                "marketTrend": "比較指数{v0}のトレンドは{v1}です。",
+                "marketUnknown": "比較指数{v0}のトレンドはまだ判断できません。",
+                "marketChange": "直近{v0}営業日の変化は、{v1}が{v2}、指数が{v3}です。",
+                "marketBasis": "比較指数は{v0}時点の値です。",
+                "trendWordBullish": "強気",
+                "trendWordBearish": "弱気",
+                "trendWordNeutral": "もみ合い"
             },
             "planState": {
                 "aboveZone": "エントリー価格帯より上",
                 "belowZone": "エントリー価格帯より下",
                 "inZone": "エントリー価格帯の中",
+                "justAboveZone": "エントリー価格帯のすぐ上",
                 "label": "計画の状態",
                 "noSetup": "計画の基準にできる水準なし",
                 "reasonNoRoomAbove": "エントリー価格帯の上に余裕のある目標価格がありません",
@@ -4165,6 +4238,9 @@
                 "reasonNoZone": "エントリー価格帯がありません",
                 "reasonStopped": "現在値が損切りの基準を下回っています",
                 "stopAtr": "損切りは価格帯ではなく値幅(ATR)が基準です"
+            },
+            "RecordEntryLink": {
+                "entry": "分析の記録と測定方法"
             }
         },
         "backtesting": {
@@ -4184,7 +4260,7 @@
                 "tradesLabel": "取引数",
                 "tradesValue": "{v0, number}件",
                 "meanReturnLabel": "1取引あたりの平均収益率",
-                "meanReturnSub": "同じ銘柄を期間中のどの日から始めても同じ日数だけ持った場合の平均と比べると、1取引あたりの差は平均{v0}（95%範囲 {v1}～{v2}）",
+                "meanReturnSub": "同じ銘柄を期間中のどの日から始めても同じ日数だけ持った場合の平均（{v3}）と比べると、1取引あたりの差は平均{v0}（95%範囲 {v1}～{v2}）",
                 "meanHoldingLabel": "平均保有期間",
                 "tradingDays": "{v0}営業日"
             },
@@ -4295,6 +4371,48 @@
                     "bearish": "下落トレンド",
                     "neutral": "中立"
                 }
+            },
+            "record": {
+                "candleRow": "{event}%({n, number}件)、同じ銘柄の別の日は{placebo}%",
+                "candleVerdictBeats": "同じ銘柄の別の日より当たる割合が高かったものの、今後を保証するものではありません。",
+                "candleVerdictNoEdge": "同じ銘柄の別の日と比べて、測定された優位性はありません。",
+                "candlesAll": "方向のあるローソク足パターン全体",
+                "candlesDefinition": "ローソク足が現れたあと{bars}営業日の間に、そのローソク足が示す方向へ価格が動いた割合です。",
+                "candlesHeading": "ローソク足パターン",
+                "candlesName": "ローソク足",
+                "candlesRegion": "ローソク足パターンの測定記録",
+                "caution": "過去に測った値であり、今後の結果を示すものではありません。",
+                "colResult": "測定結果",
+                "colVerdict": "判定",
+                "heading": "分析の記録と測定方法",
+                "insufficient": "件数が少ないため、割合は載せていません。",
+                "intro": "分析に出てくるパターン、ローソク足、価格帯が過去にどうなったかを測った記録です。各表には割合を一つ載せています。パターンは目標価格に届いた割合、価格帯は触れたあとに守られた割合、ローソク足はその後{bars}営業日の間にそのローソク足が示す方向へ動いた割合で、いずれも同じ銘柄の別の日と並べています。値動きの大きさは載せていません。",
+                "levelFamily": {
+                    "avwap": "アンカードVWAP",
+                    "band": "バンドの上限と下限",
+                    "fib": "フィボナッチ",
+                    "ichimoku": "一目均衡表",
+                    "ma": "移動平均線",
+                    "pivot": "ピボット",
+                    "round": "キリの良い価格",
+                    "supertrend": "スーパートレンド",
+                    "swing": "直近の高値と安値",
+                    "vp": "出来高プロファイル",
+                    "vwap": "VWAP"
+                },
+                "levelsAll": "すべての価格帯の合算",
+                "levelsDefinition": "価格が価格帯に触れたあと、その価格帯を守った割合です。価格帯は種類ごとに測りました。",
+                "levelsHeading": "価格帯",
+                "levelsName": "価格帯の種類",
+                "levelsRegion": "価格帯の種類別の測定記録",
+                "patternsDefinition": "パターンが現れたあと、無効化価格より先に目標価格に届いた割合です。",
+                "patternsHeading": "チャートパターン",
+                "patternsName": "パターン",
+                "patternsRegion": "チャートパターン別の測定記録",
+                "pooledPatterns": "全パターンの合算",
+                "pooledPatternsNote": "件数の少ないパターン({names})の基準にも、この値を使っています。",
+                "row": "{event}%({n, number}件)、同じ距離の別の日は{placebo}%",
+                "scope": "{symbols}銘柄の日足で、{from}から{to}まで測りました。"
             }
         },
         "benchmark-summary": {
@@ -4351,7 +4469,9 @@
                 "6e96f3": "トライアングル",
                 "2751c7": "ダイアゴナル",
                 "a8aa4c": "複合修正",
-                "reachedLevel": "{v0} 到達"
+                "reachedLevel": "{v0} 到達",
+                "referenceDistance": "参考距離",
+                "referenceDistanceOf": "{v0} 参考距離"
             },
             "TimeframeSelector": {
                 "a4632e": "会員専用の時間枠です。",

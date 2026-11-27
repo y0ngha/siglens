@@ -72,23 +72,41 @@ describe('parseStreamBody', () => {
         });
     });
 
-    // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (1Week 통과 단언으로 바꾼다).
     it.each(['technical', 'overall'])(
-        '%s 요청의 timeframe이 화면이 내는 목록 밖(1Week·미지정)이면 400이다',
+        '%s 요청의 주봉(1Week) timeframe은 그대로 통과한다',
         async type => {
-            await expectBadRequest(
+            const outcome = await parseStreamBody(
                 post(
                     JSON.stringify({
                         type,
                         params: { symbol: 'AAPL', timeframe: '1Week' },
                     })
-                ),
-                'invalid timeframe'
+                )
             );
-            await expectBadRequest(
-                post(JSON.stringify({ type, params: { symbol: 'AAPL' } })),
-                'invalid timeframe'
-            );
+            expect(outcome.ok).toBe(true);
+            if (!outcome.ok) return;
+            expect(outcome.body.params).toEqual({
+                symbol: 'AAPL',
+                timeframe: '1Week',
+            });
+        }
+    );
+
+    it.each(['technical', 'overall'])(
+        '%s 요청의 timeframe이 빠졌거나 목록 밖(2Week)이거나 문자열이 아니면 400 invalid timeframe이다',
+        async type => {
+            const bodies: unknown[] = [
+                { symbol: 'AAPL' },
+                { symbol: 'AAPL', timeframe: '2Week' },
+                { symbol: 'AAPL', timeframe: 7 },
+                { symbol: 'AAPL', timeframe: null },
+            ];
+            for (const params of bodies) {
+                await expectBadRequest(
+                    post(JSON.stringify({ type, params })),
+                    'invalid timeframe'
+                );
+            }
         }
     );
 

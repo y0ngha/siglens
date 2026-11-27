@@ -51,6 +51,10 @@ export function useLevelTitleTexts(): LevelTitleTexts {
                     owner === undefined
                         ? t('StockChart.2fbea4')
                         : t('StockChart.3322f9', { v0: owner }),
+                referenceTarget: owner =>
+                    owner === undefined
+                        ? t('StockChart.referenceDistance')
+                        : t('StockChart.referenceDistanceOf', { v0: owner }),
                 wave5Cap: owner =>
                     owner === undefined
                         ? t('StockChart.b3fa71')

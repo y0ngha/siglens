@@ -99,11 +99,34 @@ export function parseTopicInput(
 }
 
 /**
- * 최근에 이미 보낸 항목인지 가르는 키. 신호는 (시장, 종목, 유형), 공포·탐욕은 (시장, 구간)이다 —
- * 날짜는 넣지 않는다. 같은 항목이 며칠 뒤 다시 열려도 같은 키라서 7일 창 안에서는 걸러진다.
+ * 최근에 이미 보낸 항목인지 가르는 키. 날짜는 넣지 않는다 — 같은 항목이 며칠 뒤 다시 열려도 같은 키라서 7일 창
+ * 안에서는 걸러진다.
+ *
+ * - 신호: (시장, 종목, 유형). 공포·탐욕: (시장, 구간).
+ * - 추세: (시장, 종목) — 종목당 7일에 한 줄이다. 같은 종목의 추세 판정은 사흘 안에 옛 값으로 돌아오는 일이 잦아
+ *   (2017~2026 65종목 재생 측정에서 41.8%) 바뀐 방향마다 따로 알리면 같은 종목이 거의 매주 올라온다.
+ * - 가격대: (시장, 종목, 분석 시각, 선의 종류, 가격). 진입 구간과 무효화 기준: (시장, 종목, 분석 시각, 구간 위치) — 같은
+ *   분석의 같은 선·구간은 다시 알리지 않고, 새 분석이 나오면 새 키다.
  */
 export function suppressionKey(item: MailAlertItem): string {
-    return item.kind === 'signal'
-        ? `s:${item.market}:${item.symbol}:${item.signalType}`
-        : `f:${item.market}:${item.zone}`;
+    switch (item.kind) {
+        case 'signal':
+            return `s:${item.market}:${item.symbol}:${item.signalType}`;
+        case 'fear_greed':
+            return `f:${item.market}:${item.zone}`;
+        case 'change': {
+            const { change } = item;
+            const prefix = `${item.market}:${item.symbol}`;
+            switch (change.kind) {
+                case 'trend':
+                    return `t:${prefix}`;
+                case 'level':
+                    return `l:${prefix}:${change.analyzedAt}:${change.side}:${change.price}`;
+                case 'plan_zone':
+                    return `pp:${prefix}:${change.analyzedAt}:${change.position}`;
+                case 'plan_stopped':
+                    return `pp:${prefix}:${change.analyzedAt}:stopped`;
+            }
+        }
+    }
 }

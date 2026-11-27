@@ -1297,7 +1297,7 @@
     },
     {
         "file": "src/shared/api/market/sessionSpecFor.ts",
-        "line": 99,
+        "line": 138,
         "reason": "developer-diagnostic",
         "text": "`[KR_EQUITY_SESSION] ${date}는 KR_MARKET_HOLIDAYS 관측 지평선(${KR_CALENDAR_HORIZON}) "
     },

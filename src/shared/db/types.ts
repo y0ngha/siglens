@@ -578,10 +578,12 @@ export interface MailAlertSubscriberRepository {
      */
     deleteForAccount(userId: string): Promise<number>;
     /**
-     * Subscribers with at least one topic, the portfolio switch on, or a live price alert. `alertDate`
-     * (the sender's KST date) sets the expiry clock; omitted, the DB's KST today.
+     * Subscribers with at least one topic, the portfolio switch on, or a live price alert. `asOf` (the
+     * sender's per-market expected sessions) sets the expiry clock; omitted, the sessions of the call time.
      */
-    findAllForDelivery(alertDate?: string): Promise<MailAlertDeliveryTarget[]>;
+    findAllForDelivery(
+        asOf?: PriceAlertAsOfRecord
+    ): Promise<MailAlertDeliveryTarget[]>;
 }
 
 /** Final state of a claimed mail-alert delivery. */
@@ -602,6 +604,15 @@ export type PriceAlertConditionRecord =
     | { kind: 'close_below'; level: number }
     | { kind: 'close_above'; level: number };
 
+/**
+ * The last closed session per market as of one sender run. A price alert's expiry is the last session
+ * whose close is evaluated; it is live while that session is not before the market's value here.
+ */
+export interface PriceAlertAsOfRecord {
+    us: string;
+    kr: string;
+}
+
 /** A persisted price alert. */
 export interface PriceAlertRecord {
     id: string;
@@ -615,9 +626,13 @@ export interface PriceAlertRecord {
     analysisAt: Date | null;
     /** The price shown on the card when the alert was proposed. */
     referenceClose: number;
-    /** KST `YYYY-MM-DD` of the last closed session at creation: only later closes count. */
+    /** Market-local `YYYY-MM-DD` of the last closed session at creation: only later closes count. */
     startsAfterSession: string;
-    /** KST `YYYY-MM-DD`; the alert is still live on this date. */
+    /**
+     * Expiry session (`YYYY-MM-DD`): the last session of the alert's market whose close is checked. Not a
+     * KST date. The alert is live while this is on or after the market's expected session
+     * (`priceAlertAsOf`), so the run that evaluates the expiry session still sees it.
+     */
     expiresOn: string;
     status: PriceAlertStatusValue;
     firedSession: string | null;
@@ -637,6 +652,7 @@ export interface CreatePriceAlertInput {
     analysisAt: Date | null;
     referenceClose: number;
     startsAfterSession: string;
+    /** Expiry session, same contract as `PriceAlertRecord.expiresOn` (not a KST date). */
     expiresOn: string;
 }
 
@@ -663,6 +679,14 @@ export interface PruneExpiredPriceAlertsResult {
     alertsDeleted: number;
     /** Subscribers that lost an alert in this run and were left with nothing to receive. */
     subscribersDeleted: number;
+}
+
+/** A price alert a mail announces: the session whose close met it and that close. */
+export interface FiredPriceAlert {
+    id: string;
+    /** `YYYY-MM-DD` of the session whose close met the condition. */
+    session: string;
+    close: number;
 }
 
 /**
@@ -694,20 +718,34 @@ export interface PriceAlertRepository {
         owner: MailAlertOwner,
         proposalId: string
     ): Promise<PriceAlertRecord | null>;
-    /** Live alerts: `status = 'active'` and not past its KST expiry date. */
+    /**
+     * Live alerts: `status = 'active'` and the expiry session is on or after the market's expected session
+     * (`priceAlertAsOf`), the same rule as `listActiveForDelivery`.
+     */
     countActive(owner: MailAlertOwner): Promise<number>;
-    /** Active alerts with `expires_on >= alertDate`, grouped by subscriber, oldest first. */
+    /**
+     * Active alerts whose expiry session is not before the market's expected session (the run that
+     * evaluates the expiry session still lists it), grouped by subscriber, oldest first.
+     */
     listActiveForDelivery(
-        alertDate: string
+        asOf: PriceAlertAsOfRecord
     ): Promise<Map<string, PriceAlertRecord[]>>;
     /**
-     * Deletes active alerts with `expires_on < alertDate` and fired alerts fired more than
+     * Deletes active alerts whose expiry session is before the market's expected session in `asOf` (the
+     * run that evaluates the expiry session has passed) and fired alerts fired more than
      * `PRICE_ALERT_FIRED_RETENTION_DAYS` KST days before `alertDate`, then the subscribers that lost an
      * alert here and have nothing left to receive (same rule as `removeTopic`).
      */
     pruneExpiredAndFired(
-        alertDate: string
+        alertDate: string,
+        asOf: PriceAlertAsOfRecord
     ): Promise<PruneExpiredPriceAlertsResult>;
+    /**
+     * Cron-only, after a mail ended some of a subscriber's alerts: deletes the subscriber when
+     * nothing is left to receive (no topics, portfolio switch off, no live alert), like `cancel`.
+     * Returns whether the subscriber was deleted.
+     */
+    removeSubscriberIfNothingToReceive(subscriberId: string): Promise<boolean>;
 }
 
 /**
@@ -715,22 +753,45 @@ export interface PriceAlertRepository {
  * these methods are keyed by ids the sender just read or claimed itself and are never reachable from a
  * user request, so they take no {@link MailAlertOwner}.
  */
+/** A won mail-alert claim. */
+export interface MailAlertClaim {
+    /** The delivery row id. */
+    readonly id: string;
+    /**
+     * The `firedAlerts` this claim actually marked `fired`. An alert deleted (or already fired) between the
+     * read and the claim is missing here, and the mail must not announce it.
+     */
+    readonly firedAlertIds: readonly string[];
+}
+
 export interface MailAlertDeliveryRepository {
     /**
-     * Claims the (subscriber, alertDate) slot; returns the row id, or `null` when already claimed.
+     * Claims the (subscriber, alertDate) slot; returns the row id and the alerts it fired, or `null`
+     * when already claimed.
      * `itemKeys` are stored with the `pending` row, so a crash after the send still leaves them to
-     * suppress repeats on later dates.
+     * suppress repeats on later dates. `firedAlerts` are the subscriber's price alerts this mail
+     * announces: they are marked `fired` in the same transaction as the claim, so an alert fires in
+     * exactly one mail (the one whose claim won) and a lost claim fires nothing.
      */
     claim(
         subscriberId: string,
         alertDate: string,
-        itemKeys?: readonly string[]
-    ): Promise<string | null>;
+        itemKeys?: readonly string[],
+        firedAlerts?: readonly FiredPriceAlert[]
+    ): Promise<MailAlertClaim | null>;
+    /**
+     * Records the outcome and settles the price alerts the mail spoke of, in one transaction, for this
+     * delivery's subscriber only. `mailNotSent` means no mail went out (a definite provider rejection, or a
+     * failure before sending): the alerts it fired (`p:<id>` item keys) go back to `active` and the ones
+     * it announced as ended (`v:<id>`) are kept, so the next run notifies again. Otherwise (accepted, or
+     * a send that threw and may have gone out) the ended alerts are deleted.
+     */
     finish(
         id: string,
         outcome: MailAlertDeliveryOutcome,
         itemKeys: readonly string[],
-        error: string | null
+        error: string | null,
+        mailNotSent?: boolean
     ): Promise<void>;
     /** Item keys of `sent` and `pending` deliveries with `alert_date >= sinceAlertDate`, per subscriber. */
     recentItemKeys(sinceAlertDate: string): Promise<Map<string, Set<string>>>;

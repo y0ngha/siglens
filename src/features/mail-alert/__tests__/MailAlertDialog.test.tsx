@@ -41,7 +41,8 @@ import { MailAlertDialog } from '@/features/mail-alert/ui/MailAlertDialog';
 import { createQueryWrapper } from './support';
 
 const SYMBOL: MailAlertTopic = { kind: 'symbol', symbol: 'AAPL' };
-const TITLE = 'AAPL에 새 신호가 잡히면 메일로 알려 드려요';
+const TITLE =
+    'AAPL의 추세 판정이 바뀌거나 주요 신호가 새로 잡히면 메일로 알려 드려요';
 
 function open(
     state: MailAlertState,
@@ -372,7 +373,7 @@ describe('MailAlertDialog 코드 없이 받는 경우', () => {
         ).toBeInTheDocument();
         await user.click(
             screen.getByRole('checkbox', {
-                name: '담아 둔 보유 종목과 관심종목의 새 신호도 함께 받기',
+                name: '담아 둔 보유 종목과 관심종목에서 달라진 점도 함께 받기',
             })
         );
         await user.click(screen.getByRole('button', { name: '받기' }));

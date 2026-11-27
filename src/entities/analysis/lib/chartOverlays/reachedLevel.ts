@@ -83,3 +83,24 @@ export function isReachedTarget(
         ? lastClose > level.price
         : lastClose < level.price;
 }
+
+/**
+ * 위약 대비 우위가 확인되지 않은 패턴의 측정 목표선인가.
+ *
+ * 패턴 카드의 `baseRate`가 `beats_placebo`가 아니면(지금은 전부) 그 목표는 "닿을 가격"이
+ * 아니라 측정된 거리일 뿐이다. 그래서 선은 지우지 않고 흐리게 그려 "참고 거리"로 읽히게
+ * 한다(카드 본문이 같은 거리를 인용한다). 오버레이와 카드는 `sourceRef`로 이어지고, 판정
+ * 자체(`isTargetReferenceOnly`)는 카드와 같은 함수를 쓰므로 호출부가 그 결과를 키 집합으로
+ * 내려 준다. 엘리어트·피보나치의 `target` 선은 패턴 카드가 아니므로 대상이 아니다.
+ */
+export function isReferenceTarget(
+    level: { label: string },
+    overlay: Pick<ChartOverlay, 'kind' | 'sourceRef'>,
+    referenceOnlyKeys: ReadonlySet<string>
+): boolean {
+    return (
+        overlay.kind === 'pattern' &&
+        level.label === OVERLAY_LEVEL_LABELS.target &&
+        referenceOnlyKeys.has(overlay.sourceRef)
+    );
+}

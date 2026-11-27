@@ -732,7 +732,10 @@ export const priceAlerts = pgTable(
         }).notNull(),
         /** 만든 시점의 마지막 완료 세션 날짜. 이보다 뒤의 종가만 판정한다. */
         startsAfterSession: date('starts_after_session').notNull(),
-        /** 한국 날짜. 이 날짜까지는 살아 있다(만료일 당일은 아직 active). */
+        /**
+         * 만료 세션: 그 시장에서 마지막으로 종가를 판정하는 세션의 날짜(한국 날짜가 아니다). 그 세션을 판정하는 실행까지
+         * 살아 있다 — 시장별 기대 세션(`priceAlertAsOf`) 이상이면 active로 본다.
+         */
         expiresOn: date('expires_on').notNull(),
         status: text('status', { enum: PRICE_ALERT_STATUS_VALUES })
             .notNull()
@@ -1430,6 +1433,7 @@ export const analysisPromptBlobs = pgTable('analysis_prompt_blobs', {
  *
  * 보존 기간을 일부러 나눴다: `result`는 90일 보관한다 — `'1Day'`
  * prior-analysis 윈도우가 21 거래일 ≈ 역법일 30일이라 여유가 필요하다.
+ * 주봉(`'1Week'`) 이전 분석은 이 90일 상한 때문에 약 12~13주치만 남는다(`PRIOR_ANALYSIS_LIMIT` 7건 이상).
  * `prompt_dynamic`은 7일 후 비운다 — 디버깅·오프라인 평가용이라 최신성만
  * 중요하다. prior-analysis 기능은 `result`만 읽으므로 프롬프트 컬럼을
  * 비워도 그 기능에는 영향이 없다.

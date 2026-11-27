@@ -1,6 +1,10 @@
 import type { ChartOverlay } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { isReachedTarget, targetDirectionOf } from '../reachedLevel';
+import {
+    isReachedTarget,
+    isReferenceTarget,
+    targetDirectionOf,
+} from '../reachedLevel';
 
 const seg = (
     from: number,
@@ -96,6 +100,60 @@ describe('isReachedTarget', () => {
                 { label: 'invalidation', price: 189_200 },
                 impulseAbc,
                 100_000
+            )
+        ).toBe(false);
+    });
+});
+
+describe('isReferenceTarget', () => {
+    const patternOverlay: ChartOverlay = {
+        ...base,
+        id: 'pattern:double_top:1',
+        kind: 'pattern',
+        skill: 'double_top',
+        sourceRef: 'double_top_0',
+    };
+    const referenceOnly = new Set(['double_top_0']);
+
+    it('is true for the target of a pattern card that does not beat its placebo', () => {
+        expect(
+            isReferenceTarget(
+                { label: 'target' },
+                patternOverlay,
+                referenceOnly
+            )
+        ).toBe(true);
+    });
+
+    it('is false once the card beats its placebo (its key is not in the set)', () => {
+        expect(
+            isReferenceTarget({ label: 'target' }, patternOverlay, new Set())
+        ).toBe(false);
+    });
+
+    it('is false for the pattern invalidation and breakout lines', () => {
+        expect(
+            isReferenceTarget(
+                { label: 'invalidation' },
+                patternOverlay,
+                referenceOnly
+            )
+        ).toBe(false);
+        expect(
+            isReferenceTarget(
+                { label: 'breakout' },
+                patternOverlay,
+                referenceOnly
+            )
+        ).toBe(false);
+    });
+
+    it('is false for a non-pattern overlay even when its sourceRef is in the set', () => {
+        expect(
+            isReferenceTarget(
+                { label: 'target' },
+                { ...patternOverlay, kind: 'elliott' },
+                referenceOnly
             )
         ).toBe(false);
     });

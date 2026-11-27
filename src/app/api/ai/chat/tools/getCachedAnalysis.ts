@@ -30,6 +30,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isGuestSubject } from '../guestSubject';
@@ -223,6 +224,22 @@ async function positionBucketFor(
         marketDataProvider: getCachedMarketDataProvider(session),
         logTag: '[AgentTool] get_cached_analysis position bucket resolution failed, degrading to no-bucket:',
     });
+}
+
+/** `resolveMarketProfile`, logged once and degraded to `undefined` on ANY failure (the peek then reads as a miss). */
+async function resolveMarketProfileOrUndefined(
+    symbol: string
+): Promise<Awaited<ReturnType<typeof resolveMarketProfile>> | undefined> {
+    try {
+        return await resolveMarketProfile(symbol);
+    } catch (error) {
+        logToolDegrade(
+            'get_cached_analysis',
+            'market profile resolution for the peek key',
+            error
+        );
+        return undefined;
+    }
 }
 
 /** `sessionSpecFor(await resolveMarketProfile(symbol))`, degrading to `undefined` on ANY failure — extracted so the caller can bind it with `const`, not a mutated `let`. */
@@ -615,9 +632,17 @@ async function peekTechnicalResult(
     const tab = 'technical';
     // A guest holds nothing, and its subject is not a user id the holdings
     // table could even compare against (uuid column).
-    const positionBucket = isGuestSubject(ctx.userId)
-        ? undefined
-        : await positionBucketFor(ctx.userId, ctx.tier, symbol, fmpSymbol);
+    const [positionBucket, marketProfile] = await Promise.all([
+        isGuestSubject(ctx.userId)
+            ? undefined
+            : positionBucketFor(ctx.userId, ctx.tier, symbol, fmpSymbol),
+        resolveMarketProfileOrUndefined(symbol),
+    ]);
+    // Without the profile the benchmark (hence the `:bm=` cache key) is unknown: any peek would read the wrong key,
+    // so this is a miss, not a throw. The caller then reports "not found" and may run a fresh analysis.
+    if (marketProfile === undefined) return null;
+    // The writer (`runAnalysis`) folds `benchmark.symbol` into the cache key (`:bm=`): the peek must pass the same one.
+    const benchmarkSymbol = benchmarkFor(marketProfile, symbol)?.symbol;
     const peekTechnical = (reasoning: boolean) =>
         peekAnalysisCache(
             symbol,
@@ -628,7 +653,8 @@ async function peekTechnicalResult(
             ctx.tier,
             TIER_CONFIG,
             positionBucket,
-            ctx.locale
+            ctx.locale,
+            { benchmarkSymbol }
         );
     const { hit: cached, reasoning } = memberCaller
         ? await peekMemberLatest(peekTechnical, c => c.result.analyzedAt)
@@ -664,7 +690,7 @@ async function peekTechnicalResult(
             stale: isStale,
             personalized: positionBucket !== undefined,
             ...(memberCaller ? { reasoning } : {}),
-            analysis: projectTechnicalAnalysis(a),
+            analysis: projectTechnicalAnalysis(a, timeframe),
             ...(sinceAnalysis ? { sinceAnalysis } : {}),
         });
         return {
@@ -679,6 +705,7 @@ async function peekTechnicalResult(
                         tier: ctx.tier,
                         positionBucket,
                         locale: ctx.locale,
+                        benchmarkSymbol,
                     },
                     a
                 ),

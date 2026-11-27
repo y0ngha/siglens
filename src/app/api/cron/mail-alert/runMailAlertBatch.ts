@@ -1,6 +1,8 @@
 import 'server-only';
+import type { Tier } from '@y0ngha/siglens-core';
 import { isMissingTableError } from '@/entities/mail-alert/lib/dbErrorKind';
 import {
+    MAIL_ALERT_CHANGE_REFERENCE_MAX_AGE_DAYS,
     MAIL_ALERT_DELIVERY_RETENTION_DAYS,
     MAIL_ALERT_FEAR_GREED_MARKETS,
     MAIL_ALERT_SUPPRESS_DAYS,
@@ -17,12 +19,14 @@ import {
     type MailAlertSlot,
 } from '@/entities/mail-alert/lib/mailAlertSlot';
 import {
+    keepFiredPriceAlerts,
     planMailAlertItems,
     type MailAlertEpisodeRow,
     type MailAlertPlan,
 } from '@/entities/mail-alert/lib/planMailAlertItems';
 import { rowToTopic } from '@/entities/mail-alert/lib/topics';
 import type {
+    MailAlertChange,
     MailAlertFearGreedMarket,
     MailAlertTopic,
 } from '@/entities/mail-alert/model';
@@ -41,6 +45,7 @@ import type {
     MailAlertDeliveryRepository,
     MailAlertDeliveryTarget,
     MailAlertSubscriberRepository,
+    PriceAlertRepository,
 } from '@/shared/db/types';
 import type {
     KeyedEmailDispatcher,
@@ -50,12 +55,19 @@ import type { Locale } from '@/shared/i18n/locales';
 import { kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 import { mapChunked } from '@/shared/lib/mapChunked';
 import {
+    evaluatePriceAlerts,
+    type PriceAlertEvaluation,
+} from './evaluatePriceAlerts';
+import {
     checkSignalReadiness,
     expectedSessions,
     loadComputedSources,
     loadEpisodes,
     loadFearGreedSources,
     type AlertSourceDeps,
+    type ChangeReferenceInput,
+    type ExpectedSessions,
+    type SymbolReading,
 } from './collectAlertSources';
 
 /**
@@ -83,6 +95,17 @@ export interface MailAlertBatchDeps {
         'findAllForDelivery'
     >;
     readonly deliveries: MailAlertDeliveryRepository;
+    /**
+     * 가격대 알림: 진행 중인 알림 읽기, 만료·보존 기간이 지난 알림 정리, 끝낸 알림 때문에 받을 것이 없어진
+     * 구독자 정리(끝낸 알림의 삭제 자체는 보낸 뒤 `deliveries.finish`가, 메일이 나가지 않았다고 확정되지 않은 경우에만
+     * 한다).
+     */
+    readonly priceAlerts: Pick<
+        PriceAlertRepository,
+        | 'listActiveForDelivery'
+        | 'pruneExpiredAndFired'
+        | 'removeSubscriberIfNothingToReceive'
+    >;
     readonly sources: AlertSourceDeps;
     /**
      * 메일에 싣는 종목의 표시 이름(영문 법인명과 한글명). 메일 리포트와 같은 원천(종목 페이지의 24시간 데이터
@@ -91,6 +114,11 @@ export interface MailAlertBatchDeps {
     readonly getSymbolNames: (
         symbol: string
     ) => Promise<ReportSymbolNames | null>;
+    /**
+     * 연결된 회원의 등급. 가격대·진입 구간 줄은 그 등급이 보는 분석 깊이로만 읽는다(비회원은 `free`). 없으면 모든
+     * 구독자를 `free`로 본다 — 가격대 줄 없이 추세·신호만 나간다. 던지면 그 구독자는 `free`다.
+     */
+    readonly resolveTier?: (userId: string) => Promise<Tier>;
     readonly findHoldings: (
         userId: string
     ) => Promise<ReadonlyArray<{ symbol: string }>>;
@@ -129,7 +157,9 @@ export interface MailAlertBatchCounts {
     deferredByDeadline: number;
     /** 최근에 이미 보냈다는 이유로 뺀 항목 수. */
     suppressedItems: number;
+    /** 일봉으로 판정을 시도한 종목 수(스캐너 대상 포함 — 추세를 읽으려고 모두 읽는다). */
     computedSymbols: number;
+    /** 마지막 일봉이 기대 세션이 아니어서 달라진 점도 신호도 읽지 못한 종목 수. */
     noFreshBar: number;
     /** 일봉 판정이나 종목 → 시장 판정이 실패한 종목 수. */
     computeErrors: number;
@@ -141,6 +171,27 @@ export interface MailAlertBatchCounts {
      */
     deferredSymbolsNotReady: number;
     pruned: number;
+    /** 이번 실행이 판정한 진행 중 가격대 알림 수. */
+    priceAlertsActive: number;
+    /** 메일 선점과 함께 `fired`로 바꾼 가격대 알림 수. */
+    priceAlertsFired: number;
+    /** 분할·재상장으로 가격 척도가 달라져 메일로 알리고 지운 가격대 알림 수. */
+    priceAlertsVoided: number;
+    /** 일봉을 읽지 못해 이번에 판정하지 못한 종목 수(알림은 다음 실행이 다시 본다). */
+    priceAlertBarErrors: number;
+    /** 만료·보존 기간 경과로 정리한 가격대 알림 수와, 그로 받을 것이 없어져 함께 지운 구독자 수. */
+    priceAlertsPruned: number;
+    priceAlertSubscribersPruned: number;
+    /** 달라진 점(추세, 가격대, 진입 구간)을 하나 이상 읽은 종목 수(반복 방지 전). */
+    changeSymbols: number;
+    /** 선점한 메일에 실린 달라진 점 줄 수. */
+    changeLines: number;
+    /** 일봉을 받다 실패한 종목 수(판정이 던진 것은 `computeErrors`에만 센다). */
+    changeBarErrors: number;
+    /** 이번 실행이 일봉 읽기를 시작한 종목 수(실행 안에서 종목당 한 번). 봉 캐시가 비면 외부 공급자 부하가 된다. */
+    barLoads: number;
+    /** 가격대·진입 구간 줄을 읽는 데 쓴 (종목, 등급) 분석 수. */
+    changeReferences: number;
 }
 
 export type MailAlertBatchResult =
@@ -158,6 +209,19 @@ interface PreparedSubscriber {
     readonly topics: readonly MailAlertTopic[];
     readonly portfolioSymbols: readonly string[];
 }
+
+/**
+ * 메일을 만들고 보낸 결과. `mailNotSent`는 메일이 나가지 않았다고 확정된 경우다: 보내기 전에 실패했거나(메일을
+ * 만들다 던짐) 제공자가 확정적으로 거절했다. 보내다 던진 경우는 나갔는지 알 수 없어 `false`다.
+ */
+type SendResult =
+    | { readonly kind: 'accepted'; readonly mailNotSent: false }
+    | { readonly kind: 'rejected'; readonly mailNotSent: true }
+    | {
+          readonly kind: 'threw';
+          readonly error: unknown;
+          readonly mailNotSent: boolean;
+      };
 
 /**
  * 멱등 키 발송 결과를 `sent`로 기록할지. `already_accepted`는 같은 키(같은 구독자, 같은 날)의 첫 요청을 제공자가
@@ -281,10 +345,12 @@ function watchedOf(subscriber: PreparedSubscriber): string[] {
     ];
 }
 
-/** 메일에 실릴 종목(담은 종목 섹션과 신호별 섹션). */
+/** 메일에 실릴 종목(가격대 알림, 담은 종목 섹션, 신호별 섹션). */
 function plannedSymbols(plan: MailAlertPlan): string[] {
     return [
         ...new Set([
+            ...plan.sections.priceAlerts.map(item => item.symbol),
+            ...plan.sections.voidedPriceAlerts.map(item => item.symbol),
             ...plan.sections.mine.map(item => item.symbol),
             ...plan.sections.hubs.flatMap(section =>
                 section.items.map(item => item.symbol)
@@ -342,6 +408,142 @@ function fearGreedMarketsOf(
     return MAIL_ALERT_FEAR_GREED_MARKETS.filter(market => wanted.has(market));
 }
 
+/**
+ * 종목당 일봉을 실행 안에서 한 번만 읽는다. 담은 모든 종목의 달라진 점 판정과 가격대 알림 판정이 같은 종목을
+ * 함께 보는 일이 흔해서, 약속(Promise)을 캐시해 두 소비자가 한 번의 읽기를 나눈다. 실패도 함께 나눈다 — 각
+ * 소비자가 자기 방식으로 센다. 실제로 읽기를 시작한 횟수(종목 수)는 `onLoad`로 센다 — 봉 캐시가 비어 외부
+ * 공급자를 부르는 부하가 이 수에서 나온다.
+ */
+function createDailyBarsCache(
+    load: AlertSourceDeps['loadDailyBars'],
+    onLoad: () => void
+): AlertSourceDeps['loadDailyBars'] {
+    const cache = new Map<string, ReturnType<typeof load>>();
+    return symbol => {
+        const cached = cache.get(symbol);
+        if (cached !== undefined) return cached;
+        onLoad();
+        const pending = load(symbol);
+        cache.set(symbol, pending);
+        return pending;
+    };
+}
+
+/**
+ * 진행 중인 가격대 알림을 일봉 종가로 판정해 구독자별 충족 목록을 돌려준다. 알림을 읽지 못하면(테이블이 없는
+ * 경우는 호출자가 다룬다) 이번 실행은 알림 없이 진행한다 — 알림은 상태 없이 다시 판정되므로 잃는 것이 없다.
+ */
+async function loadPriceAlertFires(
+    deps: MailAlertBatchDeps,
+    loadDailyBars: AlertSourceDeps['loadDailyBars'],
+    expected: ExpectedSessions,
+    counts: MailAlertBatchCounts
+): Promise<Pick<PriceAlertEvaluation, 'fires' | 'voids' | 'notReady'>> {
+    try {
+        const alerts = await deps.priceAlerts.listActiveForDelivery(
+            expected.signals
+        );
+        const evaluation = await evaluatePriceAlerts(
+            { loadDailyBars },
+            alerts,
+            expected
+        );
+        counts.priceAlertsActive = evaluation.active;
+        counts.priceAlertBarErrors = evaluation.barErrors;
+        return {
+            fires: evaluation.fires,
+            voids: evaluation.voids,
+            notReady: evaluation.notReady,
+        };
+    } catch (error) {
+        if (isMissingTableError(error)) throw error;
+        console.error(
+            '[mail-alert] price alert evaluation failed',
+            redactDbErrorForLog(error)
+        );
+        return { fires: new Map(), voids: new Map(), notReady: new Map() };
+    }
+}
+
+/**
+ * 구독자별 등급. 연결된 회원만 읽고(비회원은 `free`) 등급을 읽지 못하면 `free`로 둔다 — 가격대 줄을 덜 받는 쪽이
+ * 안전한 쪽이다. 회원 한 명을 한 번만 읽는다.
+ */
+async function resolveSubscriberTiers(
+    deps: MailAlertBatchDeps,
+    subscribers: readonly PreparedSubscriber[]
+): Promise<Map<string, Tier>> {
+    const resolveTier = deps.resolveTier;
+    if (resolveTier === undefined) return new Map();
+    const entries = await mapChunked(
+        subscribers,
+        MAIL_ALERT_LOOKUP_CONCURRENCY,
+        async ({ target }): Promise<[string, Tier]> => {
+            if (target.userId === null) return [target.id, 'free'];
+            try {
+                return [target.id, await resolveTier(target.userId)];
+            } catch (error) {
+                console.error(
+                    `[mail-alert] tier lookup failed for ${target.id}`,
+                    redactDbErrorForLog(error)
+                );
+                return [target.id, 'free'];
+            }
+        }
+    );
+    return new Map(entries);
+}
+
+/**
+ * 가격대·진입 구간 줄의 근거가 되는 저장된 분석. 가격대를 볼 수 있는 등급(`free` 밖)의 구독자가 있을 때만 읽는다 —
+ * 비회원만 있는 실행은 조회하지 않는다. 읽지 못하면 그 줄 없이 진행한다(추세·신호는 분석과 무관하다).
+ */
+async function loadChangeReferences(
+    deps: MailAlertBatchDeps,
+    symbols: readonly string[],
+    tiers: readonly Tier[],
+    alertDate: string
+): Promise<ChangeReferenceInput> {
+    const depthTiers = tiers.filter(tier => tier !== 'free');
+    const load = deps.sources.loadChangeReferences;
+    if (load === undefined || depthTiers.length === 0 || symbols.length === 0) {
+        return { rows: new Map(), tiers: [] };
+    }
+    try {
+        const notBefore = new Date(
+            `${kstDateKeyDaysBefore(alertDate, MAIL_ALERT_CHANGE_REFERENCE_MAX_AGE_DAYS)}T00:00:00+09:00`
+        );
+        return { rows: await load(symbols, notBefore), tiers: depthTiers };
+    } catch (error) {
+        console.error(
+            '[mail-alert] change reference read failed',
+            redactDbErrorForLog(error)
+        );
+        return { rows: new Map(), tiers: [] };
+    }
+}
+
+/** 등급별 "종목 → 달라진 점" 지도. 등급마다 한 번만 만든다(가격대 줄 + 추세 순). */
+function createChangesByTier(
+    readings: ReadonlyMap<string, SymbolReading>
+): (tier: Tier) => ReadonlyMap<string, readonly MailAlertChange[]> {
+    const cache = new Map<Tier, Map<string, readonly MailAlertChange[]>>();
+    return tier => {
+        const cached = cache.get(tier);
+        if (cached !== undefined) return cached;
+        const built = new Map(
+            [...readings].map(
+                ([symbol, reading]): [string, readonly MailAlertChange[]] => [
+                    symbol,
+                    [...(reading.byTier.get(tier) ?? []), ...reading.trend],
+                ]
+            )
+        );
+        cache.set(tier, built);
+        return built;
+    };
+}
+
 /** 번역자·라벨·고지는 구독자 로케일마다 한 번만 만든다. */
 function createLocaleCache<T>(
     load: (locale: Locale) => Promise<T>
@@ -377,9 +579,14 @@ function createLocaleCache<T>(
  * - **담은 종목의 준비**: 첫 슬롯에서 담은 종목 중 하나라도 판정하지 못했으면(마지막 봉이 기대 세션이 아니거나
  *   일봉·시장 조회가 실패) 그 구독자는 선점하지 않고 최종 슬롯에 맡긴다 — 봉 캐시가 아직 덜 찬 아침에 그 종목이
  *   빠진 메일을 먼저 보내면 그날은 다시 보낼 수 없다. 최종 슬롯은 판정된 종목만으로 보내고 빠진 종목을 로그로 남긴다.
- * - **담은 종목은 봉으로 판정한다**: 구독자가 담은 종목(주제의 종목, 보유·관심종목)의 새 신호는 스캐너 대상
- *   여부와 상관없이 그 종목의 일봉을 코어 `detectNewConfirmedSignals`로 판정한다. 신호 기록(`signal_events`)은
- *   신호별 섹션만 읽는다. 마지막 봉이 기대 세션이 아니면 그 종목은 싣지 않는다(`noFreshBar`).
+ * - **담은 종목은 봉으로 판정한다**: 구독자가 담은 종목(주제의 종목, 보유·관심종목)의 새 신호와 달라진 점은
+ *   스캐너 대상 여부와 상관없이 그 종목의 일봉을 코어 `technicalChangesBetween`으로 읽는다. 신호 기록
+ *   (`signal_events`)은 신호별 섹션만 읽는다. 마지막 봉이 기대 세션이 아니면 그 종목은 싣지 않는다(`noFreshBar`).
+ * - **가격대 알림**: 준비 게이트를 통과한 뒤 진행 중인 알림을 일봉 종가로 판정한다(상태 없이 매번 다시 — 놓친
+ *   날은 발송이 늦을 뿐이다). 판정 구간의 끝 봉을 읽지 못한 알림의 종목은 담은 종목과 같이 첫 슬롯에서 그 구독자를
+ *   미룬다. 충족한 알림은 메일의 맨 앞 섹션에 실리고, 선점과 같은 트랜잭션에서 `fired`가 돼
+ *   한 번만 알린다. 분할로 가격 척도가 달라진 알림(`PRICE_ALERT_SCALE_GUARD`)은 메일이 알리고, 보낸 뒤 `finish`가
+ *   메일이 나가지 않았다고 확정되지 않은 경우에만 지운다.
  * - LLM을 부르지 않는다. 판정은 `signal_events`와 코어 함수(`detectNewConfirmedSignals`,
  *   `findExtremeZoneEntryOn`)가 한다.
  */
@@ -431,16 +638,27 @@ async function runInWindow(
         portfolioErrors: 0,
         deferredSymbolsNotReady: 0,
         pruned: 0,
+        priceAlertsActive: 0,
+        priceAlertsFired: 0,
+        priceAlertsVoided: 0,
+        priceAlertBarErrors: 0,
+        priceAlertsPruned: 0,
+        priceAlertSubscribersPruned: 0,
+        changeSymbols: 0,
+        changeLines: 0,
+        changeBarErrors: 0,
+        barLoads: 0,
+        changeReferences: 0,
     };
 
-    const targets = await deps.subscribers.findAllForDelivery(alertDate);
+    const expected = expectedSessions(now);
+    const targets = await deps.subscribers.findAllForDelivery(expected.signals);
     counts.subscribers = targets.length;
     const topicSubscribers = targets.map(target => ({
         target,
         topics: topicsOf(target),
     }));
 
-    const expected = expectedSessions(now);
     const signalReady = await checkSignalReadiness(deps.sources, expected);
     const fearGreed = await loadFearGreedSources(
         deps.sources,
@@ -489,6 +707,19 @@ async function runInWindow(
         kr: krEpisodes,
     };
 
+    const loadDailyBars = createDailyBarsCache(
+        deps.sources.loadDailyBars,
+        () => {
+            counts.barLoads += 1;
+        }
+    );
+    const priceAlertEvaluation = await loadPriceAlertFires(
+        deps,
+        loadDailyBars,
+        expected,
+        counts
+    );
+
     const lookupFailed = new Set<string>();
     const marketOf = await resolveMarkets(
         deps,
@@ -500,11 +731,19 @@ async function runInWindow(
     const computedTargets = [...marketOf].flatMap(([symbol, market]) =>
         market === null
             ? []
-            : [{ symbol, sessionDate: expected.signals[market] }]
+            : [{ symbol, market, sessionDate: expected.signals[market] }]
+    );
+    const tierOf = await resolveSubscriberTiers(deps, subscribers);
+    const references = await loadChangeReferences(
+        deps,
+        computedTargets.map(target => target.symbol),
+        [...new Set(tierOf.values())],
+        alertDate
     );
     const computedSources = await loadComputedSources(
-        deps.sources,
-        computedTargets
+        { ...deps.sources, loadDailyBars },
+        computedTargets,
+        references
     );
     counts.computedSymbols = computedSources.computedSymbols;
     counts.noFreshBar = computedSources.noFreshBar;
@@ -513,14 +752,29 @@ async function runInWindow(
         ...computedSources.notReadySymbols,
         ...lookupFailed,
     ]);
-    if (slot === 'final' && symbolsNotReady.size > 0) {
+    // 가격대 알림의 종목은 구독자별로 미룬다(`processOne`). 로그에는 함께 남긴다.
+    const allSymbolsNotReady = new Set([
+        ...symbolsNotReady,
+        ...[...priceAlertEvaluation.notReady.values()].flatMap(symbols => [
+            ...symbols,
+        ]),
+    ]);
+    if (slot === 'final' && allSymbolsNotReady.size > 0) {
         // 종목 코드만 남긴다(구독자 식별자, 주소 없음). 오류 내용은 종목별 로그가 가려서 이미 남겼다(SA-26).
         console.warn(
             '[mail-alert] symbols not ready at final slot:',
-            JSON.stringify([...symbolsNotReady].toSorted())
+            JSON.stringify([...allSymbolsNotReady].toSorted())
         );
     }
     const namesFor = createSymbolNamesCache(deps);
+    counts.changeBarErrors = computedSources.barLoadErrors;
+    counts.changeReferences = computedSources.referencesUsed;
+    counts.changeSymbols = [...computedSources.readings.values()].filter(
+        reading =>
+            reading.trend.length > 0 ||
+            [...reading.byTier.values()].some(lines => lines.length > 0)
+    ).length;
+    const changesFor = createChangesByTier(computedSources.readings);
 
     const recent = await deps.deliveries.recentItemKeys(
         kstDateKeyDaysBefore(alertDate, MAIL_ALERT_SUPPRESS_DAYS)
@@ -537,34 +791,152 @@ async function runInWindow(
             episodes,
             episodeSessions: expected.signals,
             computed: computedSources.computed,
+            changes: changesFor(tierOf.get(subscriber.target.id) ?? 'free'),
             fearGreed: fearGreed.entries,
             suppressed: recent.get(subscriber.target.id) ?? new Set<string>(),
+            priceAlerts:
+                priceAlertEvaluation.fires.get(subscriber.target.id) ?? [],
+            voidedPriceAlerts:
+                priceAlertEvaluation.voids.get(subscriber.target.id) ?? [],
         });
+    }
+
+    async function sendPhase(
+        buildMessage: () => Promise<
+            Parameters<KeyedEmailDispatcher['sendKeyedEmail']>[0]
+        >
+    ): Promise<SendResult> {
+        const built = await buildMessage().then(
+            message => ({ ok: true as const, message }),
+            (error: unknown) => ({ ok: false as const, error })
+        );
+        if (!built.ok) {
+            return { kind: 'threw', error: built.error, mailNotSent: true };
+        }
+        // 발송기가 동기로 던져도 거절된 약속과 같이 "보내다 던짐"으로 다룬다(finish가 반드시 돈다).
+        return Promise.resolve()
+            .then(() => deps.dispatcher.sendKeyedEmail(built.message))
+            .then(
+                (outcome): SendResult =>
+                    countsAsSent(outcome)
+                        ? { kind: 'accepted', mailNotSent: false }
+                        : { kind: 'rejected', mailNotSent: true },
+                (error: unknown): SendResult => ({
+                    kind: 'threw',
+                    error,
+                    mailNotSent: false,
+                })
+            );
+    }
+
+    /**
+     * 발송 결과를 기록하고 센다. 기록을 남겼으면 `true`. 받아 준 메일·거절의 기록이 던지면 실패로 세고 실패 기록을
+     * 한 번 더 시도한다(그 기록도 못 남기면 로그만 남긴다).
+     */
+    async function settleDelivery(
+        subscriberId: string,
+        claimId: string,
+        recordedKeys: readonly string[],
+        sent: SendResult
+    ): Promise<boolean> {
+        const recordFailure = async (error: unknown): Promise<boolean> => {
+            counts.failed += 1;
+            console.error(
+                `[mail-alert] delivery failed for ${subscriberId}`,
+                redactDbErrorForLog(error)
+            );
+            return deps.deliveries
+                .finish(
+                    claimId,
+                    'failed',
+                    recordedKeys,
+                    errorText(error),
+                    sent.mailNotSent
+                )
+                .then(
+                    () => true,
+                    (finishError: unknown) => {
+                        console.error(
+                            '[mail-alert] could not record failure',
+                            redactDbErrorForLog(finishError)
+                        );
+                        return false;
+                    }
+                );
+        };
+        if (sent.kind === 'threw') return recordFailure(sent.error);
+        const accepted = sent.kind === 'accepted';
+        try {
+            await deps.deliveries.finish(
+                claimId,
+                accepted ? 'sent' : 'failed',
+                recordedKeys,
+                accepted ? null : 'dispatcher rejected',
+                sent.mailNotSent
+            );
+        } catch (error) {
+            return recordFailure(error);
+        }
+        if (accepted) counts.sent += 1;
+        else counts.failed += 1;
+        return true;
     }
 
     async function deliver(
         subscriber: PreparedSubscriber,
-        plan: MailAlertPlan
+        planned: MailAlertPlan
     ): Promise<void> {
         const { target } = subscriber;
         // 싣지 못한 후보(줄 수 상한)의 키도 함께 남긴다 — 같은 세션이 이어지는 날 넘친 줄이 다시 올라오지 않는다.
-        const recordedKeys = [...plan.itemKeys, ...plan.overflowKeys];
-        const claimId = await deps.deliveries.claim(
+        const keysOf = (plan: MailAlertPlan) => [
+            ...plan.itemKeys,
+            ...plan.overflowKeys,
+        ];
+        // 알림은 선점과 같은 트랜잭션에서 `fired`가 된다 — 선점이 이긴 메일 한 통에만 실린다. 메일이 나가지
+        // 않았다고 확정되면(제공자의 확정적 거절, 보내기 전의 실패) `finish`가 그 알림을 되살리고 끝낸 알림도 남겨
+        // 다음 실행이 다시 알린다. 보내다 던져 나갔는지 알 수 없는 경우만 fired인 채로 둔다(중복 대신 한 건의
+        // 손실, 하루 한 통 규칙과 같은 대가).
+        const claim = await deps.deliveries.claim(
             target.id,
             alertDate,
-            recordedKeys
+            keysOf(planned),
+            planned.sections.priceAlerts.map(alert => ({
+                id: alert.alertId,
+                session: alert.firedSession,
+                close: alert.firedClose,
+            }))
         );
-        if (claimId === null) {
+        if (claim === null) {
             counts.alreadyClaimed += 1;
             return;
         }
-        try {
+        const claimId = claim.id;
+        // 판정과 선점 사이에 지워진(또는 이미 알린) 알림은 선점이 `fired`로 바꾸지 못했다 — 메일에 싣지 않는다.
+        const plan = keepFiredPriceAlerts(planned, claim.firedAlertIds);
+        const recordedKeys = keysOf(plan);
+        if (plan.itemKeys.length === 0) {
+            // 실을 것이 그 알림뿐이었다. 빈 메일은 보내지 않고, 선점 행은 보내지 않은 기록으로 닫는다.
+            counts.quiet += 1;
+            await deps.deliveries.finish(
+                claimId,
+                'failed',
+                recordedKeys,
+                'nothing left to send',
+                true
+            );
+            return;
+        }
+        counts.priceAlertsFired += plan.sections.priceAlerts.length;
+        counts.changeLines += plan.sections.mine.filter(
+            item => item.kind === 'change'
+        ).length;
+        const buildMessage = async () => {
             const [t, signalLabel, disclaimer] = await Promise.all([
                 translatorFor(target.locale),
                 signalLabelFor(target.locale),
                 disclaimerFor(target.locale),
             ]);
-            const message = buildMailAlertEmail({
+            return buildMailAlertEmail({
                 to: target.email,
                 locale: target.locale,
                 alertDate,
@@ -594,38 +966,48 @@ async function runInWindow(
                 signalLabel,
                 symbolNames: await namesFor(plannedSymbols(plan)),
             });
-            const accepted = countsAsSent(
-                await deps.dispatcher.sendKeyedEmail(message)
+        };
+        const sent = await sendPhase(buildMessage);
+        const settled = await settleDelivery(
+            target.id,
+            claimId,
+            recordedKeys,
+            sent
+        );
+        // 끝낸 알림은 `finish`가 메일이 나간 뒤에만 지운다(나가지 않았으면 남아 다음 실행이 다시 알린다).
+        if (
+            settled &&
+            !sent.mailNotSent &&
+            plan.sections.voidedPriceAlerts.length > 0
+        ) {
+            counts.priceAlertsVoided += plan.sections.voidedPriceAlerts.length;
+            plan.sections.voidedPriceAlerts.forEach(alert =>
+                console.warn(
+                    `[price-alert] voided by price-scale change: ${alert.alertId}`
+                )
             );
-            await deps.deliveries.finish(
-                claimId,
-                accepted ? 'sent' : 'failed',
-                recordedKeys,
-                accepted ? null : 'dispatcher rejected'
-            );
-            if (accepted) counts.sent += 1;
-            else counts.failed += 1;
-        } catch (error) {
-            counts.failed += 1;
-            console.error(
-                `[mail-alert] delivery failed for ${target.id}`,
-                redactDbErrorForLog(error)
-            );
-            await deps.deliveries
-                .finish(claimId, 'failed', recordedKeys, errorText(error))
-                .catch(finishError =>
-                    console.error(
-                        '[mail-alert] could not record failure',
-                        redactDbErrorForLog(finishError)
-                    )
+            // 끝낸 알림이 마지막 받을 것이었으면 구독자도 지운다 — 삭제 뒤에만 한다(보낸 뒤라 발송 기록이 함께
+            // 사라져도 된다).
+            try {
+                await deps.priceAlerts.removeSubscriberIfNothingToReceive(
+                    target.id
                 );
+            } catch (error) {
+                console.error(
+                    `[mail-alert] could not clean up subscriber ${target.id}`,
+                    redactDbErrorForLog(error)
+                );
+            }
         }
     }
 
     async function processOne(subscriber: PreparedSubscriber): Promise<void> {
         if (
             slot === 'first' &&
-            watchedOf(subscriber).some(symbol => symbolsNotReady.has(symbol))
+            (watchedOf(subscriber).some(symbol =>
+                symbolsNotReady.has(symbol)
+            ) ||
+                priceAlertEvaluation.notReady.has(subscriber.target.id))
         ) {
             counts.deferredSymbolsNotReady += 1;
             return;
@@ -668,6 +1050,19 @@ async function runInWindow(
         )
     );
 
+    try {
+        const prunedAlerts = await deps.priceAlerts.pruneExpiredAndFired(
+            alertDate,
+            expected.signals
+        );
+        counts.priceAlertsPruned = prunedAlerts.alertsDeleted;
+        counts.priceAlertSubscribersPruned = prunedAlerts.subscribersDeleted;
+    } catch (error) {
+        console.error(
+            '[mail-alert] price alert prune failed',
+            redactDbErrorForLog(error)
+        );
+    }
     try {
         counts.pruned = await deps.deliveries.pruneBefore(
             kstDateKeyDaysBefore(alertDate, MAIL_ALERT_DELIVERY_RETENTION_DAYS)

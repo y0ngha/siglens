@@ -63,10 +63,13 @@ const block = (timeframe: ChatChartTimeframe): ChatChartBlock => ({
     analyzedAt: null,
 });
 
-const renderChart = (timeframe: ChatChartTimeframe = '1Day') =>
+const renderChart = (
+    timeframe: ChatChartTimeframe = '1Day',
+    extra: Partial<ChatChartBlock> = {}
+) =>
     render(
         <NextIntlClientProvider locale="ko" messages={ko}>
-            <ChatChart block={block(timeframe)} />
+            <ChatChart block={{ ...block(timeframe), ...extra }} />
         </NextIntlClientProvider>
     );
 
@@ -97,6 +100,16 @@ describe('ChatChart', () => {
         ]);
     });
 
+    it('블록의 참고 거리 패턴 id를 StockChart에 넘겨 목표선을 흐리게 한다', () => {
+        renderChart('1Day', { referenceOnlyOverlayKeys: ['p1'] });
+        expect(latestProps().referenceOnlyOverlayKeys).toEqual(new Set(['p1']));
+    });
+
+    it('옛 블록(필드 없음)은 흐리게 하는 패턴이 없다', () => {
+        renderChart();
+        expect(latestProps().referenceOnlyOverlayKeys).toEqual(new Set());
+    });
+
     it('작도는 모두 켜진 채로 시작한다', () => {
         renderChart();
         expect(latestProps().hiddenOverlayKeys).toEqual(new Set());
@@ -125,8 +138,13 @@ describe('ChatChart', () => {
         });
     });
 
-    it('주봉·월봉은 일봉 시간축 서식으로 그린다', () => {
+    it('주봉은 시간축 주기를 바꾸지 않고 그대로 넘긴다', () => {
         renderChart('1Week');
+        expect(latestProps().timeframe).toBe('1Week');
+    });
+
+    it('월봉은 core Timeframe에 없어 일봉 서식으로 그린다', () => {
+        renderChart('1Month');
         expect(latestProps().timeframe).toBe('1Day');
     });
 

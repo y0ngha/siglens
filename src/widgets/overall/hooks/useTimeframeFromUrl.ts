@@ -4,13 +4,14 @@ import { useEffect } from 'react';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useUrlSearchParam } from '@/shared/hooks/useUrlSearchParam';
 import type { Timeframe } from '@y0ngha/siglens-core';
-import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { requestedTimeframeOf } from '@/shared/config/marketProfile/requestedTimeframe';
 import { canonicalTimeframeUrl } from '../utils/canonicalTimeframeUrl';
 
 /**
  * URL의 `tf` 쿼리에서 timeframe을 읽어 검증한다. 서버가 아닌 **client**에서 읽어야
  * `[symbol]` 라우트가 ISR(정적 렌더) 가능하게 유지된다(서버 searchParams 읽기는 동적 렌더 강제).
- * 유효하지 않거나 없으면 `DEFAULT_TIMEFRAME`.
+ * 유효하지 않거나 없거나 시장 프로필이 허용하지 않으면 `DEFAULT_TIMEFRAME`.
  *
  * `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽는다 — 전자는 종합 탭 위젯 전체를
  * CSR bailout시켜 서버 HTML에 Suspense fallback만 남겼다. 서버·하이드레이션 렌더는
@@ -21,13 +22,13 @@ import { canonicalTimeframeUrl } from '../utils/canonicalTimeframeUrl';
 export function useTimeframeFromUrl(
     symbol: string,
     isFreeTier: boolean,
-    isTierHydrated: boolean
+    isTierHydrated: boolean,
+    /** 종목의 시장 프로필이 허용하는 프레임. 밖의 `tf`는 `DEFAULT_TIMEFRAME`. */
+    allowedTimeframes: readonly Timeframe[]
 ): Timeframe {
     const toLocalePath = useLocalePath();
     const tfParam = useUrlSearchParam('tf');
-    const requestedTimeframe = isValidTimeframe(tfParam)
-        ? tfParam
-        : DEFAULT_TIMEFRAME;
+    const requestedTimeframe = requestedTimeframeOf(tfParam, allowedTimeframes);
     const timeframe =
         (!isTierHydrated || isFreeTier) &&
         requestedTimeframe !== DEFAULT_TIMEFRAME

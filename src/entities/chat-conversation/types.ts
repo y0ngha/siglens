@@ -36,6 +36,12 @@ export interface ChatChartBlock {
     overlayLabels: Record<string, string>;
     /** 작도를 만든 분석의 생성 시각(ISO). 봉 지표 도구는 `null`. */
     analyzedAt: string | null;
+    /**
+     * 목표선을 "참고 거리"로 흐리게 그릴 패턴 카드의 `sourceRef` — 위약 대비 우위가 확인되지 않은 카드. 분석 카드가
+     * 쓰는 판정(`isTargetReferenceOnly`)을 서버가 블록을 만들 때 내려 담는다(차트는 분석 카드를 볼 수 없어서).
+     * 이 필드가 생기기 전에 저장된 블록과 봉 지표 블록은 없고(`undefined`), 그때는 흐리게 하지 않고 그대로 그린다.
+     */
+    referenceOnlyOverlayKeys?: string[];
 }
 
 /** 비교 차트의 기간 — core `AGENT_CHART_PERIODS`와 같은 목록(테스트가 맞는지 확인한다). */

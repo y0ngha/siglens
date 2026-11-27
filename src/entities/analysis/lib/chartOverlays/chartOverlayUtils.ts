@@ -69,17 +69,28 @@ export interface OverlayLineSpecOptions {
     /**
      * core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로.
      * `reached`는 `isReachedLevel`이 참인 선 — 문구에 "도달"을 붙이는 데 쓴다.
+     * `reference`는 `isReferenceLevel`이 참인 선 — "목표" 대신 "참고 거리"로 부르는 데 쓴다.
      */
     levelLabelFor?: (
         label: string,
         overlay: ChartOverlay,
-        reached: boolean
+        reached: boolean,
+        reference: boolean
     ) => string;
     /**
      * 현재가가 이미 지나간 목표선인가(`isReachedTarget`). 참이면 선을
      * `REACHED_LEVEL_OPACITY`만큼 흐리게, 라벨 우선순위를 낮게 그린다. 없으면 모두 거짓.
      */
     isReachedLevel?: (
+        level: ChartOverlay['levels'][number],
+        overlay: ChartOverlay
+    ) => boolean;
+    /**
+     * 위약 대비 우위가 확인되지 않은 패턴 목표선인가(`isReferenceTarget`). 참이면 지나간 목표와
+     * 같은 불투명도·라벨 우선순위로 흐리게 그린다 — "닿을 가격"이 아니라 측정된 거리라는
+     * 뜻이라 새 색을 들이지 않고 이미 대비를 잰 도달선 스타일을 재사용한다. 없으면 모두 거짓.
+     */
+    isReferenceLevel?: (
         level: ChartOverlay['levels'][number],
         overlay: ChartOverlay
     ) => boolean;
@@ -233,6 +244,8 @@ export function buildOverlayLineSpecs(
         const levelSpecs = overlay.levels.flatMap((l): OverlayLineSpec[] => {
             if (l.fromTime >= opts.lastBarTime) return [];
             const reached = opts.isReachedLevel?.(l, overlay) ?? false;
+            const reference = opts.isReferenceLevel?.(l, overlay) ?? false;
+            const faded = reached || reference;
             return [
                 {
                     paneIndex: PRICE_PANE_INDEX,
@@ -242,17 +255,20 @@ export function buildOverlayLineSpecs(
                     ],
                     color: opts.colorFor(overlay, 'level'),
                     dashed: true,
-                    opacity: reached
-                        ? opacity * REACHED_LEVEL_OPACITY
-                        : opacity,
+                    opacity: faded ? opacity * REACHED_LEVEL_OPACITY : opacity,
                     lineWidthMult,
                     title: opts.levelLabelFor
-                        ? opts.levelLabelFor(l.label, overlay, reached)
+                        ? opts.levelLabelFor(
+                              l.label,
+                              overlay,
+                              reached,
+                              reference
+                          )
                         : l.label,
                     labelPriority: levelLabelPriority(
                         l.label,
                         highlighted,
-                        reached
+                        faded
                     ),
                     markers: [],
                     extendRight: opts.extendLevelsRight,

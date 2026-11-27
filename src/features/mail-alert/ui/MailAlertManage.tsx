@@ -18,6 +18,11 @@ import {
     type MailAlertErrorStatus,
 } from '../hooks/useMailAlertErrorText';
 import { useMailAlertManage } from '../hooks/useMailAlertManage';
+import {
+    MailAlertPriceAlerts,
+    type MailAlertManageFiredAlert,
+    type MailAlertManagePriceAlert,
+} from './MailAlertPriceAlerts';
 
 /**
  * 변경 결과에서 사용자에게 알릴 오류만 꺼낸다. 이미 없는 항목(`not_found`)은 그만 받겠다는 목적이 이뤄진
@@ -43,17 +48,23 @@ export interface MailAlertManageTopic {
 interface MailAlertManageProps {
     readonly maskedEmail: string;
     readonly topics: readonly MailAlertManageTopic[];
+    /** 진행 중인 가격대 알림. 공개 전이거나 없으면 빈 배열이다. */
+    readonly priceAlerts: readonly MailAlertManagePriceAlert[];
+    /** 최근에 알린 가격대 알림. */
+    readonly firedPriceAlerts: readonly MailAlertManageFiredAlert[];
     readonly includePortfolio: boolean | null;
     readonly link?: MailAlertLinkAuth;
 }
 
 /**
- * `/email-report/alerts`의 본문: 받는 주소, 항목별 "그만 받기", 보유·관심종목 스위치(회원), 모두 그만 받기
+ * `/email-report/alerts`의 본문: 받는 주소, 항목별 "그만 받기", 가격대 알림(지우기), 보유·관심종목 스위치(회원), 모두 그만 받기
  * (한 번 더 묻는다). 모두 그만 받으면 서버가 신청 정보와 발송 기록을 지운 뒤 완료 문구만 남는다.
  */
 export function MailAlertManage({
     maskedEmail,
     topics,
+    priceAlerts,
+    firedPriceAlerts,
     includePortfolio,
     link,
 }: MailAlertManageProps) {
@@ -80,8 +91,16 @@ export function MailAlertManage({
             </p>
         );
     }
+    const removedAlerts = new Set(manage.removedAlertIds);
+    const visibleAlerts = priceAlerts.filter(
+        alert => !removedAlerts.has(alert.id)
+    );
+    const visibleFired = firedPriceAlerts.filter(
+        alert => !removedAlerts.has(alert.id)
+    );
     const failureStatus = [
         manage.remove,
+        manage.cancelAlert,
         manage.unsubscribeAll,
         manage.setPortfolio,
     ]
@@ -94,7 +113,12 @@ export function MailAlertManage({
                 {t('known', { email: maskedEmail })}
             </p>
             {manage.visibleTopics.length === 0 ? (
-                <p className="text-sm text-secondary-400">{t('noTopics')}</p>
+                visibleAlerts.length === 0 &&
+                visibleFired.length === 0 && (
+                    <p className="text-sm text-secondary-400">
+                        {t('noTopics')}
+                    </p>
+                )
             ) : (
                 <ul className="divide-y divide-secondary-700">
                     {manage.visibleTopics.map(topic => {
@@ -131,6 +155,16 @@ export function MailAlertManage({
                     })}
                 </ul>
             )}
+            <MailAlertPriceAlerts
+                alerts={visibleAlerts}
+                fired={visibleFired}
+                pendingId={
+                    manage.cancelAlert.isPending
+                        ? (manage.cancelAlert.variables ?? null)
+                        : null
+                }
+                onCancel={alertId => manage.cancelAlert.mutate(alertId)}
+            />
             {includePortfolio !== null && (
                 <label className="flex items-start gap-2 text-sm text-secondary-300">
                     <input

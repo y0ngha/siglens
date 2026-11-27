@@ -893,7 +893,7 @@ describe.skipIf(!URL)(
                 const claimed = await deliveries.claim(id, '2026-11-24');
 
                 await deliveries.finish(
-                    claimed as string,
+                    claimed?.id as string,
                     'failed',
                     ['s:us:NVDA:golden_cross'],
                     'boom'
@@ -906,7 +906,7 @@ describe.skipIf(!URL)(
                         error: string | null;
                     }[]
                 >`SELECT status, item_keys, error FROM mail_alert_deliveries
-              WHERE id = ${claimed as string}`;
+              WHERE id = ${claimed?.id as string}`;
                 expect(row).toEqual({
                     status: 'failed',
                     item_keys: ['s:us:NVDA:golden_cross'],
@@ -916,10 +916,8 @@ describe.skipIf(!URL)(
 
             it('finish는 이미 sent인 기록을 늦은 실패로 덮지 않는다(DB-11)', async () => {
                 const { id } = await subscribe();
-                const claimed = (await deliveries.claim(
-                    id,
-                    '2026-11-25'
-                )) as string;
+                const claimed = (await deliveries.claim(id, '2026-11-25'))
+                    ?.id as string;
 
                 await deliveries.finish(claimed, 'sent', ['k'], null);
                 await deliveries.finish(claimed, 'failed', ['k'], 'late');
@@ -942,7 +940,7 @@ describe.skipIf(!URL)(
                 ) => {
                     const claimed = await deliveries.claim(subscriberId, date);
                     await deliveries.finish(
-                        claimed as string,
+                        claimed?.id as string,
                         outcome,
                         keys,
                         null

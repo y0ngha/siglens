@@ -13,9 +13,13 @@ import { getRedisReaderWriter } from '@/shared/cache/redisClient';
 import { getDatabaseClient } from '@/shared/db/client';
 import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
-import { DrizzleMailAlertSubscriberRepository } from '../api';
+import {
+    DrizzleMailAlertSubscriberRepository,
+    DrizzlePriceAlertRepository,
+} from '../api';
 import { isSubscriberId } from '../lib/mailAlertCookie';
 import { isMailAlertLaunched } from '../lib/mailAlertConstants';
+import { isPriceAlertLaunched } from '../lib/priceAlertConstants';
 import { buildMailAlertCodeEmail } from '../templates/mailAlertCodeEmail';
 import { createMailAlertGuestCookie } from './mailAlertGuestCookie';
 import type { MailAlertFlowDeps } from './mailAlertFlows';
@@ -39,6 +43,8 @@ export async function createMailAlertDeps(): Promise<MailAlertFlowDeps> {
         launched: isMailAlertLaunched(),
         signingReady: secret !== null,
         subscribers: new DrizzleMailAlertSubscriberRepository(db),
+        priceAlerts: new DrizzlePriceAlertRepository(db),
+        priceAlertsEnabled: isPriceAlertLaunched(),
         users: createUserEmailLookup(db),
         currentUser: getCurrentUser,
         guestCookie: createMailAlertGuestCookie(secret ?? ''),

@@ -65,7 +65,11 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-import { buildPlanCheck, TIER_CONFIG } from '@y0ngha/siglens-core';
+import {
+    buildPlanCheck,
+    measuredBaseRateFor,
+    TIER_CONFIG,
+} from '@y0ngha/siglens-core';
 import {
     getCachedAnalysisTool,
     withLevelLadder,
@@ -227,11 +231,25 @@ describe('getCachedAnalysisTool', () => {
                 candlePatterns: { name: string }[];
             };
         };
+        // The stored card predates `baseRate`: it gets the same daily table row the panel
+        // shows (default timeframe 1Day), not a stored value it never had.
+        const rate = measuredBaseRateFor(
+            'chart_pattern',
+            'head_and_shoulders',
+            '1Day'
+        );
+        expect(rate).not.toBeNull();
         expect(r.analysis.patterns).toEqual([
             {
                 name: 'head_and_shoulders',
                 trend: 'bearish',
-                confidence: 0.9,
+                baseRate: {
+                    eventShare: rate?.eventShare,
+                    placeboShare: rate?.placeboShare,
+                    n: rate?.n,
+                    verdict: rate?.verdict,
+                    pooled: false,
+                },
                 summary: '헤드앤숄더 패턴이 감지되었습니다.',
             },
         ]);
@@ -354,7 +372,8 @@ describe('getCachedAnalysisTool', () => {
             ctx.tier,
             TIER_CONFIG,
             expect.any(String),
-            ctx.locale
+            ctx.locale,
+            { benchmarkSymbol: 'SPY' }
         );
     });
 
@@ -396,6 +415,51 @@ describe('getCachedAnalysisTool', () => {
                 '[AgentTool]',
                 'get_cached_analysis',
                 'quote lookup failed, degrading',
+                { errorName: 'Error', code: undefined }
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
+    });
+
+    it.each([
+        ['us-equity', 'AAPL', 'SPY'],
+        ['kr-equity', '005930.KS', 'KS11'],
+        ['kr-equity', '247540.KQ', 'KQ11'],
+        ['crypto', 'BTC-USD', undefined],
+    ] as const)(
+        'technical peek은 writer와 같은 benchmark 심볼을 넘긴다(%s %s → %s, core 캐시 키 :bm=)',
+        async (marketProfile, symbol, benchmarkSymbol) => {
+            profile.mockResolvedValue(marketProfile);
+            peekAnalysis.mockResolvedValue(null);
+
+            await getCachedAnalysisTool({ symbol, tab: 'technical' }, ctx, rt);
+
+            const call = peekAnalysis.mock.calls.find(c => c[0] === symbol);
+            expect(call?.[9]).toEqual({ benchmarkSymbol });
+        }
+    );
+
+    it('시장 프로필 조회가 던지면 peek을 하지 않고 한 번 로그한 뒤 미스로 접는다(던지지 않는다)', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            profile.mockRejectedValue(new Error('db down'));
+            peekAnalysis.mockResolvedValue(technicalCachedResult);
+
+            const r = (await getCachedAnalysisTool(
+                { symbol: 'AAPL', tab: 'technical' },
+                ctx,
+                rt
+            )) as { found: boolean };
+
+            expect(r.found).toBe(false);
+            expect(peekAnalysis).not.toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[AgentTool]',
+                'get_cached_analysis',
+                'market profile resolution for the peek key failed, degrading',
                 { errorName: 'Error', code: undefined }
             );
         } finally {
@@ -1077,7 +1141,7 @@ describe('getCachedAnalysisTool', () => {
             expect(r.sinceAnalysis).not.toHaveProperty('nearestSupport');
             expect(r.sinceAnalysis).not.toHaveProperty('nearestResistance');
             // entryPrices=[95,105] → entry mid 100; entryZoneTop=105.
-            // priceNow=120 > 105*1.01 → exceedsEntryZone; stopLoss=90 < priceNow → not belowStopLoss.
+            // priceNow=120 > 105 (the zone top, exact edge) → exceedsEntryZone; stopLoss=90 < priceNow → not belowStopLoss.
             // riskRewardAtCurrent = (nearest target above 120=130 - 120) / (120 - 90) = 10/30.
             const expected = buildPlanCheck(
                 {
@@ -2097,7 +2161,8 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
             guestCtx.tier,
             TIER_CONFIG,
             undefined,
-            guestCtx.locale
+            guestCtx.locale,
+            { benchmarkSymbol: 'SPY' }
         );
     });
 
@@ -2179,7 +2244,8 @@ describe('getCachedAnalysisTool — 차트 블록', () => {
                 }),
             }),
             bucket,
-            ctx.locale
+            ctx.locale,
+            { benchmarkSymbol: 'SPY' }
         );
     });
 

@@ -94,11 +94,17 @@ import type {
     ActionRecommendation,
     AnalysisResponse,
     ClusteredKeyLevels,
+    MeasuredBaseRate,
     PatternResult,
     StrategyResult,
+    Timeframe,
 } from '@y0ngha/siglens-core';
 
-import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import {
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
+    measuredBaseRateFor,
+} from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
@@ -627,7 +633,25 @@ describe('AnalysisPanel', () => {
         expect(screen.queryByText('이중 바닥')).not.toBeInTheDocument();
     });
 
-    it('hides the confidence badge on skill items when confidence is locked (free tier)', () => {
+    it('never shows the literature confidence badge on pattern cards, locked or not', () => {
+        const analysis = makeAnalysis({
+            patternSummaries: [makePattern({ confidenceWeight: 0.9 })],
+        });
+        const { unmount } = render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={analysis}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={[]}
+            />
+        );
+
+        expect(screen.getByText('상승 삼각형')).toBeInTheDocument();
+        expect(screen.queryByText('높은 신뢰도')).not.toBeInTheDocument();
+        expect(screen.queryByText('중간 신뢰도')).not.toBeInTheDocument();
+        unmount();
+
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -639,30 +663,180 @@ describe('AnalysisPanel', () => {
                 lockedInfoDepth={['partial_detail', 'confidence']}
             />
         );
-
-        // The pattern itself is visible to free...
         expect(screen.getByText('상승 삼각형')).toBeInTheDocument();
-        // ...but its masked confidenceWeight (0) must not render as a badge,
-        // which would otherwise mislead as '중간 신뢰도'.
         expect(screen.queryByText('중간 신뢰도')).not.toBeInTheDocument();
-        expect(screen.queryByText('높은 신뢰도')).not.toBeInTheDocument();
     });
 
-    it('shows the confidence badge on skill items for members (confidence unlocked)', () => {
-        render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={makeAnalysis({
-                    patternSummaries: [makePattern({ confidenceWeight: 0.9 })],
-                })}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-                lockedInfoDepth={[]}
-            />
-        );
+    describe('pattern card base rate line', () => {
+        const ROW: MeasuredBaseRate = {
+            subject: 'chart_pattern',
+            key: 'double_bottom',
+            n: 612,
+            eventShare: 0.2031,
+            placeboShare: 0.2142,
+            difference: { mean: -0.0111, low: -0.0561, high: 0.0351 },
+            verdict: 'no_edge',
+            scope: {
+                timeframe: '1Day',
+                symbols: 65,
+                from: '2018-12-28',
+                to: '2026-08-27',
+            },
+        };
 
-        expect(screen.getByText('상승 삼각형')).toBeInTheDocument();
-        expect(screen.getByText('높은 신뢰도')).toBeInTheDocument();
+        const openPattern = (
+            pattern: PatternResult,
+            timeframe: Timeframe = '1Day',
+            overlaySourceRefs?: ReadonlySet<string>
+        ) => {
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis({ patternSummaries: [pattern] })}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe={timeframe}
+                    overlaySourceRefs={overlaySourceRefs}
+                />
+            );
+            fireEvent.click(screen.getByText('상승 삼각형'));
+        };
+
+        it('writes the measured shares and the case count next to the same-distance placebo', () => {
+            openPattern(makePattern({ baseRate: ROW }));
+            expect(
+                screen.getByText(
+                    '이 모양 뒤 목표 가격이 무효화 가격보다 먼저 닿은 비율 20.3% (같은 거리의 다른 날 가격은 21.4%, 612건)'
+                )
+            ).toBeInTheDocument();
+            expect(screen.queryByText(/표본이 적어/)).not.toBeInTheDocument();
+        });
+
+        it('says so when the row is the pooled one for a small family', () => {
+            openPattern(makePattern({ baseRate: { ...ROW, key: 'pooled' } }));
+            expect(
+                screen.getByText('표본이 적어 전체 패턴 기준이에요.')
+            ).toBeInTheDocument();
+        });
+
+        it('fills a card stored before the field existed from the shipped table', () => {
+            const expected = measuredBaseRateFor(
+                'chart_pattern',
+                'ascending-triangle',
+                '1Day'
+            );
+            openPattern(makePattern({ baseRate: undefined }));
+            expect(expected).not.toBeNull();
+            expect(
+                screen.getByText(
+                    /이 모양 뒤 목표 가격이 무효화 가격보다 먼저 닿은 비율/
+                )
+            ).toBeInTheDocument();
+            expect(
+                screen.getByText(
+                    new RegExp(`${expected?.n.toLocaleString('en-US')}건`)
+                )
+            ).toBeInTheDocument();
+        });
+
+        it('keeps the pooled note off a pattern-own row even when its verdict is insufficient_sample', () => {
+            // 숫자가 그 패턴 자기 측정이면 "전체 패턴 기준"은 거짓이다(에이전트 `pooled`와 같은 규칙).
+            openPattern(
+                makePattern({
+                    baseRate: { ...ROW, verdict: 'insufficient_sample' },
+                })
+            );
+            expect(screen.queryByText(/표본이 적어/)).not.toBeInTheDocument();
+            expect(
+                screen.getByText(
+                    '같은 거리의 다른 날 가격과 비교해 측정된 우위는 없어요.'
+                )
+            ).toBeInTheDocument();
+        });
+
+        it('says plainly there is no measured edge for a no_edge row', () => {
+            openPattern(makePattern({ baseRate: ROW }));
+            expect(
+                screen.getByText(
+                    '같은 거리의 다른 날 가격과 비교해 측정된 우위는 없어요.'
+                )
+            ).toBeInTheDocument();
+        });
+
+        it('says the same and that the sample is small for an insufficient_sample row', () => {
+            openPattern(
+                makePattern({
+                    baseRate: {
+                        ...ROW,
+                        key: 'pooled',
+                        verdict: 'insufficient_sample',
+                    },
+                })
+            );
+            expect(
+                screen.getByText('표본이 적어 전체 패턴 기준이에요.')
+            ).toBeInTheDocument();
+            expect(
+                screen.getByText(
+                    '같은 거리의 다른 날 가격과 비교해 측정된 우위는 없어요.'
+                )
+            ).toBeInTheDocument();
+        });
+
+        it('says it beat the comparison but promises nothing for a beats_placebo row', () => {
+            openPattern(
+                makePattern({ baseRate: { ...ROW, verdict: 'beats_placebo' } })
+            );
+            expect(
+                screen.getByText(
+                    '같은 거리의 다른 날 가격보다 더 자주 닿았지만, 앞으로를 보장하지는 않아요.'
+                )
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByText(/측정된 우위는 없어요/)
+            ).not.toBeInTheDocument();
+        });
+
+        it('says it was not measured when core attached null (non-daily bars)', () => {
+            openPattern(makePattern({ baseRate: null }), '1Hour');
+            expect(
+                screen.getByText(
+                    '일봉이 아닌 차트에서는 아직 측정하지 못했어요.'
+                )
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByText(/이 모양 뒤 목표 가격이/)
+            ).not.toBeInTheDocument();
+        });
+
+        it('explains the faded reference-distance line once, only when such a line is drawn', () => {
+            openPattern(
+                makePattern({ id: 'p1', baseRate: ROW }),
+                '1Day',
+                new Set(['p1'])
+            );
+            expect(screen.getAllByText(/참고 거리 선은/)).toHaveLength(1);
+        });
+
+        it('does not explain a reference-distance line when none is drawn for the card', () => {
+            openPattern(makePattern({ id: 'p1', baseRate: ROW }));
+            expect(
+                screen.queryByText(/참고 거리 선은/)
+            ).not.toBeInTheDocument();
+        });
+
+        it('does not explain it when the card beats its placebo', () => {
+            openPattern(
+                makePattern({
+                    id: 'p1',
+                    baseRate: { ...ROW, verdict: 'beats_placebo' },
+                }),
+                '1Day',
+                new Set(['p1'])
+            );
+            expect(
+                screen.queryByText(/참고 거리 선은/)
+            ).not.toBeInTheDocument();
+        });
     });
 
     it('hides the confidence badge on strategy items when confidence is locked (free tier)', () => {

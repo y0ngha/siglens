@@ -170,6 +170,7 @@ import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { DilutionRiskBadge } from '@/views/symbol/DilutionRiskBadge';
 import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
+import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
@@ -332,6 +333,23 @@ describe('SymbolPage — FactLayer SSR integration', () => {
                 expect(await headingBadgeOf('x')).toBeUndefined();
                 expect(mockGetRecentDilutionEvent).not.toHaveBeenCalled();
             }
+        );
+    });
+
+    it('분석 peek은 writer와 같은 비교 지수 심볼을 넘긴다(core 캐시 키 :bm=)', async () => {
+        mockBarsStatic.mockResolvedValue(ONE_BAR);
+
+        await SymbolPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(peekAnalysisStatic).toHaveBeenCalledWith(
+            'AAPL',
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            'ko',
+            'SPY'
         );
     });
 

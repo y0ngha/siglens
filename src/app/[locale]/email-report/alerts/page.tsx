@@ -72,7 +72,11 @@ export default async function MailAlertsPage({
                     aria-label={t('page.title')}
                     className={cn(SURFACE_CARD, 'p-6')}
                 >
-                    <MailAlertsBody load={load} link={link} />
+                    <MailAlertsBody
+                        load={load}
+                        link={link}
+                        locale={resolveLocale(rawLocale)}
+                    />
                 </section>
             </div>
         </main>

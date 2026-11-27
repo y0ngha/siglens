@@ -6,7 +6,15 @@ import { timeframeLabel } from '@/shared/lib/timeframeLabel';
  * 한글-잔존 검사가 못 본다 — 여기서 직접 본다.
  */
 describe('timeframeLabel', () => {
-    const ALL = ['5Min', '15Min', '30Min', '1Hour', '4Hour', '1Day'] as const;
+    const ALL = [
+        '5Min',
+        '15Min',
+        '30Min',
+        '1Hour',
+        '4Hour',
+        '1Day',
+        '1Week',
+    ] as const;
 
     it('ko 출력이 예전 하드코딩 테이블과 같다', () => {
         // 두 곳에 복제돼 있던 `{'5Min': '5분', …}`을 대체한 것이므로,
@@ -18,6 +26,7 @@ describe('timeframeLabel', () => {
             '1시간',
             '4시간',
             '1일',
+            '1주',
         ]);
     });
 
@@ -35,8 +44,16 @@ describe('timeframeLabel', () => {
         expect(new Set(perLocale).size).toBe(4);
     });
 
+    it('1Week는 로케일별 주 단위 라벨이다', () => {
+        expect(
+            (['ko', 'en', 'ja', 'zh'] as const).map(l =>
+                timeframeLabel('1Week', l)
+            )
+        ).toEqual(['1주', '1 wk', '1 週間', '1周']);
+    });
+
     it('모르는 타임프레임은 원문을 돌려준다', () => {
         // 빈 문자열이면 화면에서 버튼이 사라진다 — 원문이 낫다.
-        expect(timeframeLabel('1Week', 'ko')).toBe('1Week');
+        expect(timeframeLabel('1Month', 'ko')).toBe('1Month');
     });
 });

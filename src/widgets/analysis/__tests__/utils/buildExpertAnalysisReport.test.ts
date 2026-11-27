@@ -163,6 +163,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -213,6 +214,7 @@ describe('buildExpertAnalysisReport', () => {
                 poc: { price: 56_663, reason: 'POC' },
             },
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -242,6 +244,7 @@ describe('buildExpertAnalysisReport', () => {
                 analysis: baseAnalysis,
                 keyLevels: { resistance: [], support: [level] },
                 t,
+                contextLines: [],
                 skillLabel,
                 readingContext,
             });
@@ -267,6 +270,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: analysisWithLongRiskReward,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -291,6 +295,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: bearishAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -314,6 +319,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: bullishNoAction,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -336,6 +342,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: withPlanState(planState),
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -358,6 +365,24 @@ describe('buildExpertAnalysisReport', () => {
             ).toContain(sentence);
         }
     );
+
+    it('above_zone within 0.5 ATR writes the just-above sentence with its basis, like the badge', () => {
+        const report = stanceFor({
+            ...base,
+            position: 'above_zone',
+            distanceAtr: 0.49,
+        });
+        expect(report).toContain(
+            '현재가가 진입 구간 바로 위에 있습니다. 구간 상단과의 거리가 0.5 ATR 미만입니다.'
+        );
+        expect(report).not.toContain('구간보다 위에 있습니다');
+    });
+
+    it('above_zone with unknown distance keeps the generic sentence', () => {
+        expect(
+            stanceFor({ ...base, position: 'above_zone', distanceAtr: null })
+        ).toContain('현재가가 진입 구간보다 위에 있습니다.');
+    });
 
     it.each([
         ['no_zone', '진입 구간이 없어 근거 있는 자리가 없습니다.'],
@@ -396,6 +421,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: oldResult,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -414,6 +440,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -446,6 +473,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: analysisWithEmptyIndicator,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -468,6 +496,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: onlyBearish,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -504,6 +533,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: sparseAnalysis,
             keyLevels: sparseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -541,6 +571,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis: partialAnalysis,
             keyLevels: partialKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -579,6 +610,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -606,6 +638,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -637,6 +670,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -667,6 +701,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel,
             readingContext,
         });
@@ -698,6 +733,7 @@ describe('buildExpertAnalysisReport', () => {
             analysis,
             keyLevels: baseKeyLevels,
             t,
+            contextLines: [],
             skillLabel: name => labels[name] ?? name,
             readingContext,
         });
@@ -706,6 +742,44 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).not.toContain('- 상승 삼각형');
         expect(result).not.toContain('패턴과 이름이 같은 전략 요약');
         expect(result).toContain('- Breakout');
+    });
+
+    it('상위 시간대·시장 줄은 제목 아래 항목으로 싣고, 없으면 제목도 없다', () => {
+        const withLines = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'aapl',
+            analysis: baseAnalysis,
+            keyLevels: baseKeyLevels,
+            t,
+            contextLines: [
+                '주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.',
+                '최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.',
+            ],
+            skillLabel,
+            readingContext,
+        });
+        expect(withLines).toContain(
+            '상위 시간대와 시장:\n- 주봉 추세는 강세 흐름이고, 이 차트와 같은 방향이에요.\n- 최근 20거래일 변화는 AAPL +4.1%, 지수 +1.3%예요.'
+        );
+        // 해석 블록 뒤, 주요 가격 구간 앞에 놓인다.
+        expect(withLines.indexOf('상위 시간대와 시장:')).toBeGreaterThan(
+            withLines.indexOf('현재 흐름은')
+        );
+        expect(withLines.indexOf('상위 시간대와 시장:')).toBeLessThan(
+            withLines.indexOf('주요 가격 구간:')
+        );
+
+        const without = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'aapl',
+            analysis: baseAnalysis,
+            keyLevels: baseKeyLevels,
+            t,
+            contextLines: [],
+            skillLabel,
+            readingContext,
+        });
+        expect(without).not.toContain('상위 시간대와 시장:');
     });
 
     describe('core가 코드로 만든 카드', () => {
@@ -761,6 +835,7 @@ describe('buildExpertAnalysisReport', () => {
                 analysis: withCards(),
                 keyLevels: baseKeyLevels,
                 t,
+                contextLines: [],
                 skillLabel,
                 readingContext,
             });
@@ -776,6 +851,7 @@ describe('buildExpertAnalysisReport', () => {
                 analysis: withCards(),
                 keyLevels: baseKeyLevels,
                 t,
+                contextLines: [],
                 skillLabel,
                 readingContext,
             });
@@ -807,6 +883,7 @@ describe('buildExpertAnalysisReport', () => {
                 },
                 keyLevels: baseKeyLevels,
                 t,
+                contextLines: [],
                 skillLabel,
                 readingContext,
             });

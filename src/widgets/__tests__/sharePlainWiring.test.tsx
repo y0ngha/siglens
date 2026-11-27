@@ -513,6 +513,7 @@ describe('공유 등록 plain 배선', () => {
                     companyName="Apple Inc."
                     hasEnrichedNews={true}
                     hasOptions={true}
+                    marketProfile="us-equity"
                 />
             );
 
@@ -532,6 +533,7 @@ describe('공유 등록 plain 배선', () => {
                     companyName="Apple Inc."
                     hasEnrichedNews={true}
                     hasOptions={true}
+                    marketProfile="us-equity"
                 />
             );
 

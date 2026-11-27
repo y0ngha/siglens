@@ -18,6 +18,12 @@ interface TimeframeSelectorProps {
     isFreeTier?: boolean;
     isTierHydrated?: boolean;
     /**
+     * 버튼으로 보여줄 타임프레임 — 종목의 시장 프로필 `allowedTimeframes`를 넘긴다(한국 종목에는
+     * 4시간, 크립토에는 15·30분·4시간처럼 제공처가 못 주는 프레임이 없어야 빈 차트가 안 나온다).
+     * 생략하면 전체(`TIMEFRAMES`).
+     */
+    timeframes?: readonly Timeframe[];
+    /**
      * 잠긴 프레임을 눌렀을 때 부른다(가입 안내 모달을 여는 쪽). 터치 기기에는 `title` 툴팁이
      * 뜨지 않아 왜 바뀌지 않는지 알릴 수단이 이것뿐이다. 선택 값인 이유: 모달을 가진 provider 밖에서도
      * 셀렉터를 쓸 수 있게 — 없으면 퍼널 이벤트만 남는다.
@@ -30,6 +36,7 @@ export function TimeframeSelector({
     onChange,
     isFreeTier = false,
     isTierHydrated = true,
+    timeframes = TIMEFRAMES,
     onLockedClick,
 }: TimeframeSelectorProps) {
     const t = useTranslations('widgets.chart');
@@ -38,7 +45,7 @@ export function TimeframeSelector({
     const isPending = !isTierHydrated;
     return (
         <div className="flex w-full items-center gap-1 sm:w-auto">
-            {TIMEFRAMES.map(timeframe => {
+            {timeframes.map(timeframe => {
                 // 무료 등급의 잠긴 프레임. `disabled`가 아니라 `aria-disabled`다 — 네이티브
                 // disabled는 클릭 이벤트를 삼켜 "잠긴 프레임을 눌렀다"(가입 퍼널
                 // `gate_clicked{timeframe}`)를 셀 수 없다. 보조기술에는 여전히 비활성으로

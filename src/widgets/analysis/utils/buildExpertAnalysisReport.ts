@@ -23,6 +23,7 @@ import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { selectPanelSkillResults } from './panelSkillResults';
+import { NEAR_ZONE_ATR, isJustAboveZone } from './planZoneProximity';
 import {
     renderCycleReading,
     renderIndicatorReading,
@@ -44,6 +45,11 @@ interface BuildExpertAnalysisReportInput {
     t: EnumLabelTranslator;
     /** `widgets.analysis.expertReport` 번역자. */
     tReport: ReportTranslator;
+    /**
+     * 상위 시간대·시장 배경 문장 줄(`useAnalysisContextLines`). 필수다 — 빠지면 화면에는 있는 줄이 복사본에서
+     * 조용히 사라진다. 옛 결과(필드 없음)는 빈 배열을 넘긴다.
+     */
+    contextLines: readonly string[];
     /**
      * 스킬 원본 이름 → 로케일 표시명(`useSkillLabel`). 필수다 — 빠지면 `/en`
      * 복사본에 한국어 front-matter 이름이 섞인다(패널은 이미 표시명을 쓴다).
@@ -104,6 +110,8 @@ const PLAN_NO_SETUP_KEY: Record<NoSetupReason, string> = {
 };
 
 function planStateStanceKey(planState: PlanState): string {
+    // 배지와 같은 판정(`isJustAboveZone`) — 화면이 "바로 위"면 복사본도 같은 말을 한다.
+    if (isJustAboveZone(planState)) return 'planJustAboveZone';
     if (planState.position !== 'no_setup') {
         return PLAN_POSITION_KEY[planState.position];
     }
@@ -350,8 +358,10 @@ function buildResponseStance(
     // 판정(`entryRecommendation`)이 아니라 계획 상태로 쓴다. `planState`가 없는 옛 결과는
     // 아래 추세 기반 문장으로 내려가, 이전 판정 문구가 되살아나지 않는다.
     if (actionRecommendation?.planState !== undefined) {
+        // `v0`는 "바로 위" 문장만 쓴다(근거로 문턱을 밝힌다) — 다른 문장은 무시한다.
         const base = tReport(
-            planStateStanceKey(actionRecommendation.planState)
+            planStateStanceKey(actionRecommendation.planState),
+            { v0: NEAR_ZONE_ATR }
         );
         const entryAnchor = effectiveLevels.entryPrices?.length
             ? tReport('entryAnchor', {
@@ -416,6 +426,7 @@ export function buildExpertAnalysisReport({
     keyLevels,
     t,
     tReport,
+    contextLines,
     skillLabel,
     readingContext,
 }: BuildExpertAnalysisReportInput): string {
@@ -454,6 +465,10 @@ export function buildExpertAnalysisReport({
             t,
             tReport,
             formatPrice
+        ),
+        headedBlock(
+            tReport('contextHeading'),
+            contextLines.map(line => `- ${line}`)
         ),
         buildKeyLevelsBlock(
             safeKeyLevels,

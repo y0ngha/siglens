@@ -127,9 +127,18 @@
                     "subtitle": "See the alert emails you receive and stop any of them.",
                     "title": "Alert email settings"
                 },
+                "priceAlertAbove": "We will email you when the {symbol} close is at or above {level}.",
+                "priceAlertBasisEntry": "The level comes from the entry zone in the {date} AI analysis.",
+                "priceAlertBasisInvalidation": "The level comes from the invalidation level in the {date} AI analysis.",
+                "priceAlertBasisPrice": "The price was named in the chat.",
+                "priceAlertBelow": "We will email you when the {symbol} close is at or below {level}.",
+                "priceAlertCreated": "Created on {date}, when the price was {price}",
+                "priceAlertEnterZone": "We will email you when the {symbol} close enters or passes through {low} to {high}.",
+                "priceAlertExpires": "We check closes through {date} and the alert ends after one notice.",
+                "priceAlertFired": "The {symbol} close met the condition on {closeDate}, so the alert has ended. (Closing price {close})",
                 "topicFearGreed": "{market} Fear & Greed Index entering an extreme zone",
                 "topicSignal": "Newly detected {hubName} stocks",
-                "topicSymbol": "New signals for {symbol}",
+                "topicSymbol": "Trend changes and key signals for {symbol}",
                 "unavailable": "We cannot load your settings right now. Please try again shortly.",
                 "unidentifiedBody": "Use the settings link at the bottom of an alert email, or log in to manage your alert emails.",
                 "unidentifiedTitle": "Please open this from the link in your email"
@@ -825,6 +834,20 @@
             },
             "email": {
                 "change": "Change {v0}",
+                "changeBasisResistance": "Based on: the resistance in the {v0} AI analysis",
+                "changeBasisSupport": "Based on: the support in the {v0} AI analysis",
+                "changePlanAbove": "On {v0}, it closed above the entry zone, {v1} to {v2}. (Closing price {v3})",
+                "changePlanBelow": "On {v0}, it closed below the entry zone, {v1} to {v2}. (Closing price {v3})",
+                "changePlanInZone": "On {v0}, it closed inside the entry zone, {v1} to {v2}. (Closing price {v3})",
+                "changePlanStopped": "On {v0}, it closed at or below the invalidation level, {v1}. (Closing price {v2})",
+                "changeResistanceDown": "On {v0}, it closed below the resistance at {v1}. (Closing price {v2})",
+                "changeResistanceUp": "On {v0}, it closed at or above the resistance at {v1}. (Closing price {v2})",
+                "changeSupportDown": "On {v0}, it closed at or below the support at {v1}. (Closing price {v2})",
+                "changeSupportUp": "On {v0}, it closed above the support at {v1}. (Closing price {v2})",
+                "changeTrendBasis": "Based on: the close and the slope of the {v0}-day exponential moving average",
+                "changeTrendToBearish": "On {v0}, the trend reading changed from {v1} to {v2}.",
+                "changeTrendToBullish": "On {v0}, the trend reading changed from {v1} to {v2}.",
+                "changeTrendToNeutral": "On {v0}, the trend reading changed from {v1} to {v2}.",
                 "fearGreedRow": "The {v0} Fear & Greed Index entered {v1}. It is {v3} points as of the {v2} close.",
                 "heading": "New changes",
                 "intro": "Only the changes newly detected after the market closes.",
@@ -833,13 +856,28 @@
                 "marketKr": "Korean",
                 "marketUs": "US",
                 "moreRows": "and {v0} more",
+                "priceAlertBasisEntry": "Based on: the entry zone in the {v0} AI analysis",
+                "priceAlertBasisInvalidation": "Based on: the invalidation level in the {v0} AI analysis",
+                "priceAlertBasisPrice": "Based on: the price you named in the chat",
+                "priceAlertCloseAbove": "The {v1} close for {v0} was at or above your alert price, {v3}. (Closing price {v2})",
+                "priceAlertCloseBelow": "The {v1} close for {v0} was at or below your alert price, {v3}. (Closing price {v2})",
+                "priceAlertCreated": "Alert created on {v0}, when the price was {v1}",
+                "priceAlertOneShot": "Each price alert ends after it notifies you once.",
+                "priceAlertVoided": "The price basis for {v0} changed sharply (for example, a stock split), so the price alert ended. Create a new one if you still need it.",
+                "priceAlertZoneInside": "The {v1} close for {v0} entered your alert zone, {v3} to {v4}. (Closing price {v2})",
+                "priceAlertZonePassedDown": "The {v1} close for {v0} fell below your alert zone, {v3} to {v4}. (Closing price {v2})",
+                "priceAlertZonePassedUp": "The {v1} close for {v0} rose above your alert zone, {v3} to {v4}. (Closing price {v2})",
                 "reason": "You are receiving this email because you signed up for {v0} alert emails. We only send it on days with something new.",
                 "sectionFearGreed": "Fear & Greed Index",
                 "sectionHub": "Newly detected {v0} stocks",
-                "sectionMine": "New signals on your stocks",
+                "sectionMine": "What changed on your stocks",
+                "sectionPriceAlert": "Price alerts",
                 "sessionKr": "Korean market, as of the {v0} close",
                 "sessionUs": "US market, as of the {v0} close",
                 "subject": "[{v0}] {v1}: {v2, plural, one {# new change} other {# new changes}}",
+                "trendBearish": "bearish",
+                "trendBullish": "bullish",
+                "trendNeutral": "flat",
                 "unsubscribe": "Unsubscribe",
                 "viewFearGreed": "View the Fear & Greed Index",
                 "zoneExtremeFear": "Extreme Fear",
@@ -963,7 +1001,7 @@
                 "emailReport": "Get updates on your holdings and watchlist by email, only if you want them",
                 "heading": "Member benefits",
                 "models": "{count, plural, one {Choose from # more AI model} other {Choose from # more AI models}}",
-                "timeframes": "Charts and AI analysis on shorter timeframes, from {from} to {to}"
+                "timeframes": "Charts and AI analysis across timeframes, from {from} to {to}"
             }
         },
         "contact-form": {
@@ -1434,6 +1472,7 @@
             "codeLabel": "Verification code",
             "codePrompt": "Enter the {length}-digit code we sent to {email}",
             "confirm": "Confirm and subscribe",
+            "deletePriceAlert": "Delete",
             "emailLabel": "Email",
             "errExpired": "The code has expired. Please request a new one.",
             "errInvalid": "We could not process the request. Refresh and try again.",
@@ -1444,7 +1483,7 @@
             "errUnavailable": "We cannot take requests right now. Please try again shortly.",
             "errWrongCode": "That code does not match.",
             "fearGreedRule": "We notify you when the score falls below {fear} and enters Extreme Fear, or rises to {greed} or above and enters Extreme Greed. If the index leaves the zone and re-enters within {gap} trading days, we do not notify you again.",
-            "includePortfolio": "Also receive new signals for my holdings and watchlist",
+            "includePortfolio": "Also get changes on my holdings and watchlist",
             "known": "You are receiving alerts at {email}.",
             "loading": "Loading",
             "manage": "Alert email settings",
@@ -1455,8 +1494,11 @@
             "noTopics": "You have no items selected.",
             "notice": "We only use this address to send alert emails. If you unsubscribe, we delete it right away.",
             "otherEmail": "Use a different address",
+            "priceAlertsFiredHeading": "Recently sent price alerts",
+            "priceAlertsHeading": "Price alerts",
             "privacyLink": "View the privacy policy",
             "receive": "Subscribe",
+            "removePriceAlert": "Delete price alert: {label}",
             "removeTopic": "Stop receiving: {label}",
             "resend": "Send the code again",
             "resendWait": "Send the code again ({seconds}s)",
@@ -1473,7 +1515,7 @@
             "successSignup": "Members can receive alerts for their whole watchlist at once.",
             "titleFearGreed": "We'll email you when the {market} Fear & Greed Index enters an extreme zone",
             "titleSignalHub": "We'll email you the newly detected {hubName} stocks",
-            "titleSymbol": "We'll email you when a new signal appears for {name}"
+            "titleSymbol": "We'll email you when the trend reading changes or a key signal appears for {name}"
         }
     },
     "shared": {
@@ -3790,7 +3832,6 @@
                 "c68843": "Failed to copy to clipboard. Please check browser permissions.",
                 "c80f22": "{v0} analysis techniques detected, ",
                 "cfbeac": "Show Chart Price Lines",
-                "d39704": "The more indicators converge, the higher the reliability of Support and Resistance at that price level.\n                    ",
                 "d930e0": "Resistance",
                 "db5809": "If there are discrepancies with real-time price movements, they are adjusted here.\n                            ",
                 "e5c85b": "Copied",
@@ -3831,6 +3872,17 @@
                 "analyzing": "The AI is running a detailed analysis… Ad revenue funds better AI models and server costs.",
                 "done": "Was this analysis useful? Using the affiliate links below helps keep SIGLENS running."
             },
+            "baseRate": {
+                "levelLine": "After price touched a level, it held {held}% of the time. A price at the same distance on another date held {placebo}% ({symbols} symbols, daily bars {from} to {to}, {n, number} touches).",
+                "levelNotMeasured": "Not measured yet on charts other than daily.",
+                "patternLine": "How often the target price came before the invalidation price after this shape: {event}% (a price at the same distance on other dates: {placebo}%, {n, number} cases)",
+                "patternNotMeasured": "Not measured yet on charts other than daily.",
+                "patternTooltip": "Compared with placing a target at the same distance on other dates for the same stock. Measured on daily bars of {symbols} symbols from {from} to {to}. It does not say what happens next.",
+                "pooledNote": "Too few cases, so this uses all patterns together.",
+                "targetLegend": "Faded lines labeled reference distance are targets that were not shown to be reached more often than a price at the same distance on another date.",
+                "verdictBeats": "It beat a price at the same distance on other dates, but that is not a promise for what comes next.",
+                "verdictNoEdge": "No edge over a price at the same distance on other dates was measured."
+            },
             "duration": {
                 "minutesSeconds": "{v0}m {v1}s",
                 "seconds": "{v0}s"
@@ -3850,6 +3902,7 @@
                 "planBelowZone": "The current price is below the entry zone.",
                 "planInZone": "The current price is inside the entry zone.",
                 "planNoSetupNoRoomAbove": "No target sits far enough above the entry zone, so there is no level to plan from.",
+                "planJustAboveZone": "The current price is just above the entry zone, less than {v0} ATR above its top.",
                 "planNoSetupNoStop": "A stop loss level cannot be set, so there is no level to plan from.",
                 "planNoSetupNoZone": "There is no entry zone, so there is no level to plan from.",
                 "planNoSetupStopped": "The current price is below the stop loss level, so there is no level to plan from.",
@@ -3868,15 +3921,16 @@
                 "supportNote": "On the downside, whether support around {v0} holds is the key.",
                 "targetZone": "- Reference target zone: {v0}",
                 "trendSummary": "The current move reads as {v1} within a {v0} trend, with {v2} volatility.",
-                "upside": "- Upside: {v0} → {v1}"
+                "upside": "- Upside: {v0} → {v1}",
+                "contextHeading": "Larger timeframe and market:"
             },
             "panel": {
                 "analyzing": "Analyzing…",
                 "confidenceHigh": "High confidence",
-                "confidenceHighTip1": "This is a high-confidence pattern.",
-                "confidenceHighTip2": "It means the AI detected the pattern clearly.",
+                "confidenceHighTip1": "This strategy has a high preset score.",
+                "confidenceHighTip2": "It does not mean the AI detected it clearly, or that it works well in practice.",
                 "confidenceMedium": "Medium confidence",
-                "confidenceMediumTip1": "This is a medium-confidence pattern.",
+                "confidenceMediumTip1": "This strategy has a medium preset score.",
                 "confidenceMediumTip2": "Read it alongside other indicators rather than on its own.",
                 "meter": {
                     "exhaustedBody": "Without an account, you can see entry, stop loss and target prices for {count, plural, one {# symbol} other {# symbols}} a day. It resets at midnight Korea time (KST), or sign up to see every symbol right now.",
@@ -4152,12 +4206,31 @@
                 "caveat": "Summarizes the move up to analysis time. Not a forecast.",
                 "planVoidDescription": "At the time of analysis, the closing price was already below this price.",
                 "trendHeadline": "<prefix>Current trend:</prefix> <value>{v0}</value>",
-                "analyzedAt": "Analysis time"
+                "analyzedAt": "Analysis time",
+                "kindDaily": "daily",
+                "kindWeekly": "weekly",
+                "kindMonthly": "monthly",
+                "htfTrend": "The {v0} trend is {v1}.",
+                "htfAligned": "The {v0} trend is {v1}, moving the same way as this chart.",
+                "htfOpposed": "The {v0} trend is {v1}, moving against this chart.",
+                "htfMixed": "The {v0} trend is {v1}, and it does not clearly line up with this chart.",
+                "htfUnknown": "The {v0} trend cannot be determined yet.",
+                "progressDaily": "When this was analyzed, the last daily bar was still forming, so the reading above can change.",
+                "progressWeekly": "When this was analyzed, the last weekly bar was still forming, so the reading above can change.",
+                "progressMonthly": "When this was analyzed, the last monthly bar was still forming, so the reading above can change.",
+                "marketTrend": "The trend of the benchmark {v0} is {v1}.",
+                "marketUnknown": "The trend of the benchmark {v0} cannot be determined yet.",
+                "marketChange": "Over the last {v0} sessions, {v1} changed {v2} and the benchmark changed {v3}.",
+                "marketBasis": "The benchmark figures are as of {v0}.",
+                "trendWordBullish": "bullish",
+                "trendWordBearish": "bearish",
+                "trendWordNeutral": "flat"
             },
             "planState": {
                 "aboveZone": "Above the entry zone",
                 "belowZone": "Below the entry zone",
                 "inZone": "Inside the entry zone",
+                "justAboveZone": "Just above the entry zone",
                 "label": "Plan status",
                 "noSetup": "No level to plan from",
                 "reasonNoRoomAbove": "No target sits far enough above the entry zone",
@@ -4165,6 +4238,9 @@
                 "reasonNoZone": "There is no entry zone",
                 "reasonStopped": "The current price is below the stop loss level",
                 "stopAtr": "The stop loss is based on price range (ATR), not on a price level"
+            },
+            "RecordEntryLink": {
+                "entry": "Analysis record and how we measure"
             }
         },
         "backtesting": {
@@ -4184,7 +4260,7 @@
                 "tradesLabel": "Trades",
                 "tradesValue": "{v0, number}",
                 "meanReturnLabel": "Mean return per trade",
-                "meanReturnSub": "Compared with the average of holding the same ticker for the same number of days from any start day in the period, the difference per trade averaged {v0} (95% range {v1} to {v2})",
+                "meanReturnSub": "Compared with the average of holding the same ticker for the same number of days from any start day in the period ({v3}), the difference per trade averaged {v0} (95% range {v1} to {v2})",
                 "meanHoldingLabel": "Mean holding period",
                 "tradingDays": "{v0} trading days"
             },
@@ -4295,6 +4371,48 @@
                     "bearish": "Bearish",
                     "neutral": "Neutral"
                 }
+            },
+            "record": {
+                "candleRow": "{event}% ({n, number} cases), {placebo}% on other days of the same stock",
+                "candleVerdictBeats": "It matched more often than on other days of the same stock, but this does not guarantee what happens next.",
+                "candleVerdictNoEdge": "No measured edge over other days of the same stock.",
+                "candlesAll": "All directional candlestick patterns",
+                "candlesDefinition": "The share of cases where, over the {bars} trading days after the candle appeared, the price moved in the direction the candle points to.",
+                "candlesHeading": "Candlestick patterns",
+                "candlesName": "Candle",
+                "candlesRegion": "Measured record of candlestick patterns",
+                "caution": "These are values measured in the past and do not tell you what happens next.",
+                "colResult": "Measured result",
+                "colVerdict": "Verdict",
+                "heading": "Analysis record and how we measure",
+                "insufficient": "Too few cases, so no rate is shown.",
+                "intro": "This is a record of what happened in the past after the patterns, candles and price levels shown in the analysis. Each table reports one share of cases: for patterns, how often the target price was reached; for price levels, how often the level held after a touch; for candles, how often the price moved in the candle's direction over the next {bars} trading days. Each is set against other days of the same stock. No price moves are reported.",
+                "levelFamily": {
+                    "avwap": "Anchored VWAP",
+                    "band": "Band upper and lower",
+                    "fib": "Fibonacci",
+                    "ichimoku": "Ichimoku",
+                    "ma": "Moving averages",
+                    "pivot": "Pivot points",
+                    "round": "Round numbers",
+                    "supertrend": "Supertrend",
+                    "swing": "Recent highs and lows",
+                    "vp": "Volume profile",
+                    "vwap": "VWAP"
+                },
+                "levelsAll": "All price levels combined",
+                "levelsDefinition": "The share of cases where price held a level after touching it. Levels are measured by type.",
+                "levelsHeading": "Price levels",
+                "levelsName": "Level type",
+                "levelsRegion": "Measured record by price level type",
+                "patternsDefinition": "The share of cases where the target price was reached before the invalidation price after the pattern appeared.",
+                "patternsHeading": "Chart patterns",
+                "patternsName": "Pattern",
+                "patternsRegion": "Measured record by chart pattern",
+                "pooledPatterns": "All patterns combined",
+                "pooledPatternsNote": "This figure also stands in for patterns with few cases ({names}).",
+                "row": "{event}% ({n, number} cases), {placebo}% on other days at the same distance",
+                "scope": "Measured on daily bars of {symbols} stocks, from {from} to {to}."
             }
         },
         "benchmark-summary": {
@@ -4351,7 +4469,9 @@
                 "6e96f3": "Triangle",
                 "2751c7": "Diagonal",
                 "a8aa4c": "Combination",
-                "reachedLevel": "{v0} reached"
+                "reachedLevel": "{v0} reached",
+                "referenceDistance": "Reference distance",
+                "referenceDistanceOf": "{v0} reference distance"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",

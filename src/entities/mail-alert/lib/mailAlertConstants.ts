@@ -1,4 +1,4 @@
-import type { SignalType } from '@y0ngha/siglens-core';
+import type { ConfirmedSignalType, SignalType } from '@y0ngha/siglens-core';
 import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import type { MailAlertFearGreedMarket } from '../model';
@@ -51,6 +51,29 @@ export const MAIL_ALERT_RESEND_COOLDOWN_SECONDS = 60;
 export const MAIL_ALERT_SIGNAL_TYPES: readonly SignalType[] = SIGNAL_HUBS.map(
     hub => hub.signalType
 );
+
+/**
+ * "담은 종목에서 달라진 점"에 싣는 신호 유형. 허브 유형에서 MACD 교차 둘을 뺀 여섯 개다 — 2017~2026 65종목
+ * 일봉 재생 측정에서 MACD 교차가 신호 줄의 절반을 넘게 차지해(하루에 한 줄 이상 나올 확률을 크게 올렸다)
+ * "달라진 점"이라는 이름에 비해 잦았다. 신호별 종목 페이지(허브)와 그 구독 메일은 여덟 유형 그대로다.
+ */
+export const MAIL_ALERT_CHANGE_SIGNAL_TYPES: readonly ConfirmedSignalType[] = [
+    'golden_cross',
+    'death_cross',
+    'new_52w_high',
+    'new_52w_low',
+    'rsi_oversold',
+    'rsi_overbought',
+];
+
+/** 한 종목이 한 통에 싣는 달라진 점 줄 수 상한(가격 판정, 가격대, 추세, 신호 순으로 채운다). */
+export const MAIL_ALERT_MAX_CHANGES_PER_SYMBOL = 3;
+
+/**
+ * 가격대·진입 구간을 읽어 올 AI 분석의 최대 나이(일). 더 오래된 분석의 가격대는 지금 기준으로 읽히므로 쓰지
+ * 않는다. 줄마다 그 분석의 날짜를 함께 적는다.
+ */
+export const MAIL_ALERT_CHANGE_REFERENCE_MAX_AGE_DAYS = 30;
 
 /** 구독할 수 있는 공포·탐욕 시장. */
 export const MAIL_ALERT_FEAR_GREED_MARKETS: readonly MailAlertFearGreedMarket[] =

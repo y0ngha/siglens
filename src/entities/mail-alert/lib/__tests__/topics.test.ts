@@ -147,4 +147,108 @@ describe('suppressionKey', () => {
             })
         ).toBe('f:kr:EXTREME_FEAR');
     });
+    describe('달라진 점 키', () => {
+        const base = {
+            kind: 'change' as const,
+            section: 'mine' as const,
+            market: 'us' as const,
+            symbol: 'NVDA',
+            name: null,
+            sessionDate: '2026-11-24',
+        };
+        const analyzedAt = '2026-11-20T01:00:00.000Z';
+
+        it('추세 키는 시장과 종목뿐이다(바뀐 방향과 날짜는 넣지 않는다)', () => {
+            const up = suppressionKey({
+                ...base,
+                change: { kind: 'trend', from: 'neutral', to: 'bullish' },
+            });
+            const down = suppressionKey({
+                ...base,
+                sessionDate: '2026-11-26',
+                change: { kind: 'trend', from: 'bullish', to: 'bearish' },
+            });
+
+            expect(up).toBe('t:us:NVDA');
+            expect(down).toBe(up);
+        });
+
+        it('지지·저항선 키는 분석 시각, 선의 종류, 가격이다(종가와 방향은 넣지 않는다)', () => {
+            const key = suppressionKey({
+                ...base,
+                change: {
+                    kind: 'level',
+                    side: 'support',
+                    direction: 'down',
+                    price: 180.5,
+                    close: 178,
+                    analyzedAt,
+                },
+            });
+
+            expect(key).toBe(`l:us:NVDA:${analyzedAt}:support:180.5`);
+        });
+
+        it('진입 구간과 무효화 기준 키는 분석 시각과 위치다', () => {
+            expect(
+                suppressionKey({
+                    ...base,
+                    change: {
+                        kind: 'plan_zone',
+                        position: 'above_zone',
+                        low: 1,
+                        high: 2,
+                        close: 3,
+                        analyzedAt,
+                    },
+                })
+            ).toBe(`pp:us:NVDA:${analyzedAt}:above_zone`);
+            expect(
+                suppressionKey({
+                    ...base,
+                    change: {
+                        kind: 'plan_stopped',
+                        stop: 1,
+                        close: 0.5,
+                        analyzedAt,
+                    },
+                })
+            ).toBe(`pp:us:NVDA:${analyzedAt}:stopped`);
+        });
+
+        it('종류마다 키 접두사가 달라 서로 겹치지 않는다', () => {
+            const keys = [
+                suppressionKey({
+                    ...base,
+                    change: { kind: 'trend', from: 'neutral', to: 'bullish' },
+                }),
+                suppressionKey({
+                    ...base,
+                    change: {
+                        kind: 'level',
+                        side: 'resistance',
+                        direction: 'up',
+                        price: 1,
+                        close: 2,
+                        analyzedAt,
+                    },
+                }),
+                suppressionKey({
+                    ...base,
+                    change: {
+                        kind: 'plan_stopped',
+                        stop: 1,
+                        close: 0.5,
+                        analyzedAt,
+                    },
+                }),
+                'f:us:EXTREME_FEAR',
+                's:us:NVDA:golden_cross',
+            ];
+
+            expect(new Set(keys.map(key => key.split(':')[0])).size).toBe(
+                keys.length
+            );
+        });
+    });
 });

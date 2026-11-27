@@ -47,6 +47,10 @@ export type AnalysisHistoryTab = 'technical' | 'overall';
  * 역법일 30일이고 core가 주말·공휴일 때문에 그 폭을 더 넓히므로(`analysisHistoryQuery`
  * 참고), 90일로 넉넉히 여유를 둔다. `schema.ts`의 `analysisHistory` JSDoc과
  * 동일한 근거 — 수정 시 두 곳을 함께 맞춘다.
+ *
+ * `'1Week'` prior-analysis 윈도우는 이 상한이 정한다 — 90일이면 주봉 이전 분석은 약 12~13주치만
+ * 남는다(주봉 분석은 하루 한 번 이하로 만들어져 `PRIOR_ANALYSIS_LIMIT` 7건은 채우고도 남는다).
+ * 더 긴 주봉 이력이 필요해지면 이 값을 늘려야 한다.
  */
 export const RESULT_RETENTION_DAYS = 90;
 
