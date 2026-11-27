@@ -29,16 +29,15 @@ vi.mock('@/shared/hooks/useFocusTrap', () => ({
     useFocusTrap: vi.fn(),
 }));
 
-import { koMessage } from '@/shared/test-utils/koMessage';
-import React, { act } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { usePathname } from 'next/navigation';
-
+import React, { act } from 'react';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
+import { localePath } from '@/shared/i18n/locales';
+import { koMessage } from '@/shared/test-utils/koMessage';
 import { HeaderMobileMenu } from '../HeaderMobileMenu';
 import { NAV_TREE } from '../utils/headerNavTree';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
-import { localePath } from '@/shared/i18n/locales';
 
 /** 같은 라벨(`미국`)이 버티컬마다 반복되므로 href 집합으로 확인한다. */
 function hrefsOf(label: string): string[] {

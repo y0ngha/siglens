@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildTwitterMetadata, X_HANDLE } from '../twitterMetadata';
 import { X_URL } from '../seo';
+import { buildTwitterMetadata, X_HANDLE } from '../twitterMetadata';
 
 describe('buildTwitterMetadata', () => {
     it('twitter:site를 서비스 계정으로 싣고 기본 카드는 summary_large_image다', () => {

@@ -1,6 +1,7 @@
 import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import { getOptionsWarmWindow } from '../lib/optionsWarmWindow';
 import {
@@ -17,7 +18,6 @@ import {
     readLastGoodCapturedAtBatch,
     type RedisClient,
 } from './optionsLastGoodStore';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 옵션 워밍 전용 회전 커서. seo-prewarm의 `rotation-cursor`와 **다른 키**다 — 저쪽은

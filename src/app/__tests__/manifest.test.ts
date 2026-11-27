@@ -1,7 +1,7 @@
 import manifest from '@/app/manifest';
+import { LOCALE_HREFLANG, LOCALES } from '@/shared/i18n/locales';
 import { buildManifest } from '@/shared/lib/buildManifest';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { LOCALE_HREFLANG, LOCALES } from '@/shared/i18n/locales';
 
 const NS = 'shared.seo.manifest';
 

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import {
     DEFAULT_LOCALE,
     localePath,
     LOCALE_HREFLANG,
     type Locale,
 } from '@/shared/i18n/locales';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { brandName } from '@/shared/lib/brandName';
 
 /** 브레드크럼 한 마디 — 화면 표시와 BreadcrumbList 구조화데이터가 공유한다. */

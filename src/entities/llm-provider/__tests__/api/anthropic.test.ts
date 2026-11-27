@@ -23,12 +23,12 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
+import type Anthropic from '@anthropic-ai/sdk';
 import {
     callAnthropicChat,
     withHistoryCacheBreakpoint,
 } from '@/entities/llm-provider/api/anthropic';
 import { ProviderCallTimeoutError } from '@/entities/llm-provider/api/callDeadline';
-import type Anthropic from '@anthropic-ai/sdk';
 
 const BASE_OPTIONS = {
     apiKey: 'server-key',

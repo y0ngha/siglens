@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
 import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
-import { _resetRegisterServiceWorkerForTests } from '@/features/pwa-install/lib/registerServiceWorker';
 import { PWA_BANNER_DISMISSED_STORAGE_KEY } from '@/features/pwa-install/lib/bannerDismissal';
+import { _resetRegisterServiceWorkerForTests } from '@/features/pwa-install/lib/registerServiceWorker';
 import { VISIT_HISTORY_STORAGE_KEY } from '@/features/visitor-ping/lib/visitHistoryStorage';
 
 /** 재방문일: 첫 방문일이 한참 전이라 어느 날 실행해도 `first < today`다. */

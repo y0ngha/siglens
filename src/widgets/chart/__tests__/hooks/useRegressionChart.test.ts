@@ -2,8 +2,8 @@
 import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useRegressionChart } from '../../hooks/useRegressionChart';
-import { buildSeriesData } from '../../utils/seriesDataUtils';
 import { regressionBarColor } from '../../utils/histogramColorUtils';
+import { buildSeriesData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();

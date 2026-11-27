@@ -1,6 +1,6 @@
+import { runDartFilingsIngest } from '@/entities/investor-flows/server/ingestDartFilings';
 import { DART_CRON_LEASE_NAME, handleLeasedCron } from '../leasedCron';
 import { createDartFilingsDeps } from './createDeps';
-import { runDartFilingsIngest } from '@/entities/investor-flows/server/ingestDartFilings';
 
 /**
  * 시간 예산(SERVER.md#CC-7): 마감 18분 + 진행 중 회사 하나 최악 ≈ 4.1분(호출 2건 × 시도 2회 × (요청 30초 + 할당량 가드의

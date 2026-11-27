@@ -4,9 +4,9 @@ import {
     type Bar,
 } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { buildSymbolChanges } from '@/entities/chat-conversation/lib/buildSymbolChanges';
 import { CHAT_CHANGE_SIGNAL_TYPES } from '@/entities/chat-conversation/lib/chatChangeSignalTypes';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 // 2026-01-03 시작이라 index 59가 화요일(2026-03-03), 휴장일 아님.

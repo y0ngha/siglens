@@ -1,6 +1,5 @@
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { resolveLocale, type Locale } from '@/shared/i18n/locales';

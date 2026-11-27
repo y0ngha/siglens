@@ -1,11 +1,11 @@
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+import { type SeoTranslator } from '@/shared/lib/seo';
 import {
     clampSeoDescription,
     clampSeoTitle,
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
 } from '@/shared/lib/seoClamp';
-import { type SeoTranslator } from '@/shared/lib/seo';
 
 /**
  * 레이아웃 template이 뒤에 붙이는 사이트 접미사의 폭. **예산에서 먼저 뺀다.**

@@ -1,5 +1,5 @@
 import 'server-only';
-import { cache } from 'react';
+import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import {
     and,
     desc,
@@ -12,7 +12,7 @@ import {
     sql,
     type SQL,
 } from 'drizzle-orm';
-import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
+import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
 import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
@@ -24,8 +24,8 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { dropSolicitations } from '../lib/dropSolicitations';
 import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
-import { toMarketNewsRow } from '../lib/toMarketNewsRow';
 import type { MarketNewsCardItem } from '../lib/toCardItem';
+import { toMarketNewsRow } from '../lib/toMarketNewsRow';
 import type { MarketNewsRow } from '../model';
 
 /** 센티널 버킷의 조회 창(`cutoff` 이후 발행) 조건. 목록·카드 읽기가 공유한다. */

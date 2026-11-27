@@ -34,14 +34,13 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
+import type { ParsedBody } from '@/app/api/ai/chat/stream/_lib/parseBody';
 import {
     guestTurn,
     isConversationGone,
     prepareMemberTurn,
 } from '@/app/api/ai/chat/stream/_lib/prepareTurn';
-import type { ParsedBody } from '@/app/api/ai/chat/stream/_lib/parseBody';
+import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 
 const ROW = (seq: number, role: 'user' | 'assistant', content: string) => ({
     id: `m${seq}`,

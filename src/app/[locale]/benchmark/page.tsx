@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { aiOgImageUrl, aiUrl } from '@/app/ai/[locale]/_lib/aiSeo';
 import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { LOCALE_OG, resolveLocale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { localePageRobots } from '@/shared/lib/seoAlternates';
 import { ORGANIZATION_JSON_LD_ID, SITE_URL } from '@/shared/lib/seo';
+import { localePageRobots } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { BenchmarkPage } from '@/views/benchmark/BenchmarkPage';
@@ -15,7 +16,6 @@ import {
     buildBenchmarkDatasetJsonLd,
     getBenchmarkSeoCopy,
 } from '@/views/benchmark/lib/benchmarkSeo';
-import { aiOgImageUrl, aiUrl } from '@/app/ai/[locale]/_lib/aiSeo';
 
 // 결과 데이터는 배포 때 고정된다(릴리스 JSON이 번들에 들어간다) — 배포 자체가 갱신이라
 // 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).

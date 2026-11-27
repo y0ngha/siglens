@@ -1,8 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import type { Ref } from 'react';
-import { useTranslations } from 'next-intl';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { cn } from '@/shared/lib/cn';
 import type { HeaderUserMenuUser } from '../../types';

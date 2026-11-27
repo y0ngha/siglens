@@ -1,7 +1,7 @@
 'use client';
 
-import { SNAP_FULL, SNAP_PEEK, type SnapPoint } from '../constants/mobileSheet';
 import { type RefObject, useEffect, useRef, useState } from 'react';
+import { SNAP_FULL, SNAP_PEEK, type SnapPoint } from '../constants/mobileSheet';
 
 interface UseMobileAnalysisSheetOptions {
     activeSnap: SnapPoint;

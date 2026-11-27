@@ -7,9 +7,8 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import type { MockedFunction, Mock } from 'vitest';
-
-import { withRetry } from '@/shared/lib/withRetry';
 import { sleep } from '@/shared/lib/sleep';
+import { withRetry } from '@/shared/lib/withRetry';
 
 const sleepMock = sleep as MockedFunction<typeof sleep>;
 

@@ -1,11 +1,11 @@
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import {
     type FearGreedFactorKey,
     type FearGreedLabel,
     type FearGreedWarning,
 } from '@y0ngha/siglens-core';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 
 /**
  * sampleSize 부족 시 헤더 칩에 붙는 라벨 **키** — `shared.lib.fearGreed` 네임스페이스.

@@ -1,13 +1,13 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
-import { useMarketBriefing } from '@/widgets/dashboard/hooks/useMarketBriefing';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
-import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { useMarketBriefing } from '@/widgets/dashboard/hooks/useMarketBriefing';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

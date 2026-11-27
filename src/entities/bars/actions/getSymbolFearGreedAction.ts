@@ -1,9 +1,9 @@
 'use server';
 
-import { loadBarsData } from '../server/loadBarsData';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { clientSymbolFearGreed } from '../lib/symbolFearGreed';
 import type { SymbolFearGreedSeries } from '../model';
-import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { loadBarsData } from '../server/loadBarsData';
 
 /**
  * 종목 공포·탐욕 점수와 최근 history — **서버에서 5년 일봉으로 계산**해 돌려준다.

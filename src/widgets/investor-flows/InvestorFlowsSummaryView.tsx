@@ -1,17 +1,17 @@
-/**
- * 수급 AI 해석 결과 화면 — 한 줄 요약·축별 해석·핵심 신호·위험.
- */
-import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsAnalysisResponse,
     InvestorFlowsMarket,
 } from '@y0ngha/siglens-core';
+/**
+ * 수급 AI 해석 결과 화면 — 한 줄 요약·축별 해석·핵심 신호·위험.
+ */
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { axisTitleKey } from './utils/axisKeys';
 
 interface BulletBlockProps {

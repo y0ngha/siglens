@@ -1,4 +1,4 @@
-import { createExpiredSessionCookie } from './sessionCookie';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { OAuthAccountRecord } from '@/shared/db/types';
 import type {
     DeleteAccountDependencies,
@@ -7,7 +7,7 @@ import type {
     DeleteAccountOptions,
     DeleteAccountResult,
 } from './authUseCaseTypes';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { createExpiredSessionCookie } from './sessionCookie';
 
 type RevocableOAuthAccount = Omit<OAuthAccountRecord, 'accessToken'> & {
     accessToken: string;

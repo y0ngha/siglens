@@ -1,16 +1,16 @@
 import { cache } from 'react';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
-import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
-import { PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub/utils/previewHeadlines';
 import { cacheNonEmpty } from '@/shared/cache/cacheNonEmpty';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
-import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import type { Locale } from '@/shared/i18n/locales';
+import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
+import { PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub/utils/previewHeadlines';
 
 /**
  * 허브 카드에 띄울 상위 헤드라인(로케일별 제목). `/news`·`/news/us` 두 허브가 쓰므로 `_lib`에 둔다.

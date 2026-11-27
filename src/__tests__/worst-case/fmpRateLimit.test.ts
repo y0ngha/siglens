@@ -20,8 +20,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
     readFmpConfig: vi.fn(() => ({ apiKey: 'test-key' })),
 }));
 
-import { fmpGet, FMP_STABLE_BASE } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
+import { fmpGet, FMP_STABLE_BASE } from '@/shared/api/fmp/httpClient';
 
 describe('FMP API error responses', () => {
     beforeEach(() => {

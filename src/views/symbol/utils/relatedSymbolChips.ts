@@ -1,9 +1,9 @@
+import { pickAssetName } from '@/entities/ticker/lib/ticker';
 /**
  * "관련 종목" 칩 스트립의 순수 판정 — 칩 이름 고르기와 캡션별 묶음. 이름 조회(I/O)는
  * `relatedSymbolNames.ts`가 맡는다.
  */
 import type { RelatedSymbol } from '@/shared/config/relatedSymbols';
-import { pickAssetName } from '@/entities/ticker/lib/ticker';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 /** 캡션(메시지 키) 하나와 그 아래 칩들. */

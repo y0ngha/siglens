@@ -40,7 +40,6 @@ vi.mock('next/link', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import ResetPasswordPage from '@/app/[locale]/reset-password/page';
 
 describe('ResetPasswordPage render', () => {

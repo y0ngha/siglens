@@ -12,16 +12,16 @@ vi.mock('@/entities/market-fear-greed/api/fetchDailyCloses', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     getCachedMarketFearGreed,
     MARKET_FEAR_GREED_CONFIG_FINGERPRINT,
 } from '@/entities/market-fear-greed/api/marketFearGreedCache';
+import { MARKET_FEAR_GREED_SYMBOLS } from '@/entities/market-fear-greed/lib/marketFearGreedSymbols';
 // 모킹하지 않은 실제 함수라, 여기서 import한 것과 buildMarketFearGreedView 내부가
 // 계산하는 `to`는 같은 함수다.
 import { lastPublishedSessionDate } from '@/entities/market-fear-greed/lib/marketFearGreedWindows';
-import { MARKET_FEAR_GREED_SYMBOLS } from '@/entities/market-fear-greed/lib/marketFearGreedSymbols';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const mockGetOrSetCache = vi.mocked(getOrSetCache);

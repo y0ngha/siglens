@@ -1,12 +1,12 @@
 import 'server-only';
-import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { logToolDegrade } from '@/app/api/ai/chat/tools/logToolDegrade';
+import { krSymbolToStockCode } from '@/entities/investor-flows/lib/dartSymbol';
 import {
     fetchNaverInvestorTrend,
     type NaverInvestorTrendRow,
 } from '@/shared/api/naver/naverInvestorTrend';
-import { krSymbolToStockCode } from '@/entities/investor-flows/lib/dartSymbol';
-import { logToolDegrade } from '@/app/api/ai/chat/tools/logToolDegrade';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /** 최신 거래일이 장 마감 뒤에야 올라오고 값이 하루 단위라 짧게만 캐시한다(30분). */
 const KR_TREND_TTL_SECONDS = 30 * SECONDS_PER_MINUTE;

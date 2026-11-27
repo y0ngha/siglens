@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
-import { useMarketFactorRow } from '@/widgets/market-fear-greed/hooks/useMarketFactorRow';
 import koMessages from '@/../messages/ko.json';
+import { useMarketFactorRow } from '@/widgets/market-fear-greed/hooks/useMarketFactorRow';
 
 const FG = koMessages.shared.lib.fearGreedFactor;
 

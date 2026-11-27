@@ -51,11 +51,11 @@ vi.mock('@/shared/ui/LocaleLink', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import type { TermsRecord } from '@/entities/terms/api';
 import {
     PRIVACY_EYEBROW,
     PrivacyContent,
 } from '@/app/[locale]/privacy/_components/PrivacyContent';
+import type { TermsRecord } from '@/entities/terms/api';
 
 const record = (overrides: Partial<TermsRecord> = {}): TermsRecord => ({
     id: 'id-1',

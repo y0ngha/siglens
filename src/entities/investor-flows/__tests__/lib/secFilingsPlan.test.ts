@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { addDays } from '../../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_FORM144_RETENTION_DAYS,
     INVESTOR_FLOWS_OFFERING_RETENTION_DAYS,
     INVESTOR_FLOWS_SEC_FILINGS_MAX_ATTEMPTS,
 } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
 import type { IndexTarget } from '../../lib/offeringIndex';
 import {
     INDEX_FORMS,

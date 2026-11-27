@@ -1,15 +1,15 @@
+import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 /**
  * 동종 업체 표 — 심볼·회사명·시가총액. 링크 여부 판정은 `utils/peerRows`가 한다.
  */
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
-import { formatCompactCurrency } from '@/shared/lib/priceFormat';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { buildPeerRows } from '@/widgets/fundamental/utils/peerRows';
 
 const HEADING_ID = 'peers-heading';

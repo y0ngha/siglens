@@ -1,5 +1,5 @@
-import type { EmailTokenStore } from '@/entities/email-token/types';
 import type { AgreementRepository } from '@/entities/agreement/api';
+import type { EmailTokenStore } from '@/entities/email-token/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
 import type {
     AuthSessionRecord,

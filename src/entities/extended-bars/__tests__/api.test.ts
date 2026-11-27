@@ -5,6 +5,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedExtendedBarsProvider: vi.fn(),
 }));
 
+import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
 import {
     describe,
     it,
@@ -14,7 +15,6 @@ import {
     afterEach,
     type Mock,
 } from 'vitest';
-import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
 import { loadExtendedBars } from '@/entities/extended-bars/api';
 import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { getCachedExtendedBarsProvider } from '@/shared/api/market/getCachedMarketDataProvider';

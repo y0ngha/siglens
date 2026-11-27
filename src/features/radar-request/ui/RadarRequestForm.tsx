@@ -1,17 +1,17 @@
 'use client';
 
-import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import type {
     RadarRequestError,
     RadarRequestField,
 } from '@/entities/inquiry/lib/types';
-import { ContactEmailField } from '@/features/contact-form/ui/ContactEmailField';
 import { resolveEmailDefault } from '@/features/contact-form/lib/contactFormUtils';
+import { ContactEmailField } from '@/features/contact-form/ui/ContactEmailField';
 import { HoneypotField } from '@/features/contact-form/ui/HoneypotField';
-import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 import { RADAR_REQUEST_SYMBOL_MAX_LENGTH } from '@/shared/config/radar';
+import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { SuccessNotice } from '@/shared/ui/SuccessNotice';

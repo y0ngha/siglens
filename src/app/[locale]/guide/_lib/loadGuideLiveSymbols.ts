@@ -1,7 +1,6 @@
 import 'server-only';
-
-import { unstable_cache } from 'next/cache';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+import { unstable_cache } from 'next/cache';
 import { GUIDE_CACHE_TAG } from '@/entities/guide/api';
 import type { GuideEntry } from '@/entities/guide/types';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
@@ -25,6 +24,7 @@ import {
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     resolveLiveTargets,
     selectLiveSymbols,
@@ -35,7 +35,6 @@ import {
     type SnapshotPatternHit,
     withDisplayNames,
 } from '@/views/guide/lib/liveSymbols';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 데이터원 하나의 결과. 실패하면 `value`는 대신 넣은 빈 값이고 `failed`가 참이다. */
 interface Settled<T> {

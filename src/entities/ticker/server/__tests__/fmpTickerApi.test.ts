@@ -1,3 +1,5 @@
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
+import type { FmpSearchResult } from '../../model';
 import {
     findExactUsMatch,
     filterUsExchanges,
@@ -5,8 +7,6 @@ import {
     searchBySymbol,
     toTickerSearchResult,
 } from '../fmpTickerApi';
-import type { FmpSearchResult } from '../../model';
-import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 const mockFetch = vi.fn();
 

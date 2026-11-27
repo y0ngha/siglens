@@ -4,18 +4,18 @@ import type {
     ThresholdListStatus,
 } from '@y0ngha/siglens-core';
 import { computePreviousSettlementChange } from '../shortInterestChange';
-import type {
-    SummaryShort,
-    SummaryFailsToDeliver,
-    SummaryThresholdList,
-    SummarySqueezeRisk,
-} from './types';
 import {
     SUMMARY_RATIO_DIGITS,
     SUMMARY_CHANGE_PCT_DIGITS,
     round,
     latestBy,
 } from './format';
+import type {
+    SummaryShort,
+    SummaryFailsToDeliver,
+    SummaryThresholdList,
+    SummarySqueezeRisk,
+} from './types';
 
 /** 숏스퀴즈 점수의 상위 구성요소 수 — core가 신호 근거에 싣는 수(`SQUEEZE_SIGNAL_EVIDENCE_COMPONENTS`)와 같다. */
 export const SUMMARY_MAX_SQUEEZE_COMPONENTS = 3;

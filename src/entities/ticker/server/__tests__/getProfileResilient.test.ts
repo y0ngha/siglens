@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 // getProfileResilient wraps staticSymbolCache(getProfile); mock the cache to
 // drive the three outcomes (profile / null / throw) without FMP or Redis.

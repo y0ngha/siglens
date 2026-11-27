@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { grepFiles } from '@/shared/test-utils/grepSource';
 import { blankComments } from '@/__tests__/guards/support/sourceScan';
+import { grepFiles } from '@/shared/test-utils/grepSource';
 
 /**
  * `animate-spin`을 쓰는 곳은 같은 className 문자열 안에

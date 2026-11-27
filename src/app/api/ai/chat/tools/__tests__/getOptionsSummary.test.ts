@@ -20,7 +20,6 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 });
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getOptionsSummaryTool } from '@/app/api/ai/chat/tools/getOptionsSummary';
 
 const ctx = {

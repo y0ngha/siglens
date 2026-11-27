@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { EconomyKrMacroFacts } from '../EconomyKrMacroFacts';
 import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import {
     KR_ECONOMY_INDICATORS,
     KR_INDICATOR_EVENT,
 } from '@/shared/config/economyIndicatorsKr';
+import { EconomyKrMacroFacts } from '../EconomyKrMacroFacts';
 
 /**
  * 픽스처는 실제 레지스트리에서 `meta`를 집어 온다 — 손으로 만든 meta를 쓰면

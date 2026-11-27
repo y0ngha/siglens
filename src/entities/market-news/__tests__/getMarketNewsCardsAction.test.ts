@@ -31,9 +31,9 @@ vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
 
 // 2. Static imports — grouped after all vi.mock() calls
 import { describe, it, expect, vi } from 'vitest';
-import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
 import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
 
 // Mock the repository so we don't touch the real DB
 const mockListByCategory = vi.fn(async () => [

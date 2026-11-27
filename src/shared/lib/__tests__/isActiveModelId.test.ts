@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
 import { isActiveModelId } from '@/shared/lib/isActiveModelId';
 
 describe('isActiveModelId', () => {

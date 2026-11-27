@@ -1,21 +1,18 @@
-import { normalizeEmail } from '@/shared/lib/auth/validation';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { EmailAuthUserRecord } from '@/shared/db/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-import { createAuthSession } from './sessionCookie';
-import {
-    LOGIN_RATE_LIMITS,
-    RATE_LIMITED_MESSAGE,
-    LOGIN_TIMING_DUMMY_HASH,
-} from './authUseCaseConstants';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 import {
     loginEmailIpKey,
     loginEmailKey,
     loginIpDayKey,
     loginIpKey,
 } from './authRateLimitKeys';
-import { passesRateLimits } from './passesRateLimits';
-import { hashEmailToken } from './tokenUtils';
+import {
+    LOGIN_RATE_LIMITS,
+    RATE_LIMITED_MESSAGE,
+    LOGIN_TIMING_DUMMY_HASH,
+} from './authUseCaseConstants';
 import type {
     LoginUserDependencies,
     LoginUserError,
@@ -23,6 +20,9 @@ import type {
     LoginUserOptions,
     LoginUserResult,
 } from './authUseCaseTypes';
+import { passesRateLimits } from './passesRateLimits';
+import { createAuthSession } from './sessionCookie';
+import { hashEmailToken } from './tokenUtils';
 
 const INVALID_CREDENTIALS_MESSAGE = '이메일 또는 비밀번호가 올바르지 않습니다.';
 const TOO_MANY_LOGIN_ATTEMPTS_MESSAGE =

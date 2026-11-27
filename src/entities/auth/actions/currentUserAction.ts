@@ -14,9 +14,9 @@ import {
     clearMainSessionHint,
     setMainSessionHint,
 } from '../lib/mainSessionHintCookie';
-import { getCurrentUser } from '../server/getCurrentUser';
 import { createExpiredSessionCookie } from '../lib/sessionCookie';
 import { isSecureCookieEnv } from '../lib/sessionCookieOptions';
+import { getCurrentUser } from '../server/getCurrentUser';
 
 /**
  * 헤더·게이트가 `useCurrentUser`로 부르는 현재 사용자 조회 액션. 조회가 실패하면 던지지 않고

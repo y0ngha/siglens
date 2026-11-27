@@ -9,7 +9,6 @@ import {
     type PatternResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-
 import { patternIdForSkill } from '@/shared/lib/guideLinkLookup';
 
 const PERCENT = 100;

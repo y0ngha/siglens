@@ -45,11 +45,11 @@ vi.mock('next/cache', () => ({
 }));
 
 import { DrizzleTermsRepository, getActiveTerms } from '@/entities/terms/api';
+import type { TermsRecord } from '@/entities/terms/api';
 import { RELEASE_ID } from '@/shared/config/release';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
-import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
-import type { TermsRecord } from '@/entities/terms/api';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 interface InsertedRow {
     id: string;

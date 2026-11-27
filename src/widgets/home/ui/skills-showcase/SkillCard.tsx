@@ -1,18 +1,18 @@
 'use client';
 
-import React from 'react';
 import { useTranslations } from 'next-intl';
-import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
-import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { SURFACE_LIFT_TRANSITION } from '@/shared/lib/cardStyles';
-import { useSkillLabel } from '@/shared/i18n/skillLabel';
+import React from 'react';
 import { useSkillDescription } from '@/shared/i18n/skillDescription';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
+import { SURFACE_LIFT_TRANSITION } from '@/shared/lib/cardStyles';
+import { cn } from '@/shared/lib/cn';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 import { useIsClamped } from '../../hooks/useIsClamped';
 import { SKILL_TYPE_META } from '../../utils/skillTypeMeta';
+import type { HomeSkillItem } from '../../utils/toSkillShowcaseItems';
 
 interface SkillCardProps {
     readonly skill: HomeSkillItem;

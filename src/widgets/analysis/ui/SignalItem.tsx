@@ -1,10 +1,10 @@
 'use client';
 
+import type { AnalysisSignal, AnalysisSignalType } from '@y0ngha/siglens-core';
 /**
  * 보조지표 신호 한 줄 — 지표명, 추세·강도 배지, 설명, 가이드 링크.
  */
 import { useTranslations } from 'next-intl';
-import type { AnalysisSignal, AnalysisSignalType } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { GuideHintLink } from '../GuideHintLink';

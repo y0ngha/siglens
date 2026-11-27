@@ -1,10 +1,6 @@
-import { constants } from 'node:http2';
 import { NextResponse } from 'next/server';
+import { constants } from 'node:http2';
 import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
-import {
-    SITEMAP_CACHE_CONTROL,
-    SITEMAP_UNAVAILABLE_BODY,
-} from '@/app/api/sitemap/_shared/constants';
 import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
 import {
     buildRssItem,
@@ -12,12 +8,16 @@ import {
 } from '@/app/api/rss/_lib/buildRssItem';
 import { loadDeclaredUrls } from '@/app/api/rss/_lib/loadDeclaredUrls';
 import { rssSources } from '@/app/api/rss/sources';
+import {
+    SITEMAP_CACHE_CONTROL,
+    SITEMAP_UNAVAILABLE_BODY,
+} from '@/app/api/sitemap/_shared/constants';
 import { buildRssXml } from '@/entities/rss-feed/lib/buildRssXml';
 import type { RssItem } from '@/entities/rss-feed/model';
 import { RSS_FEED_URL } from '@/shared/config/rssFeed';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandIntroName, SITE_URL } from '@/shared/lib/seo';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 

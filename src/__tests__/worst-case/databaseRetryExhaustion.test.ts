@@ -2,12 +2,12 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { withRetry } from '@/shared/lib/withRetry';
+import postgres from 'postgres';
 import {
     isTransientDbError,
     DB_TRANSIENT_RETRY,
 } from '@/shared/db/isTransientDbError';
-import postgres from 'postgres';
+import { withRetry } from '@/shared/lib/withRetry';
 
 function createPostgresError(
     code: string,

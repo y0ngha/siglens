@@ -1,10 +1,5 @@
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
-import { generateUrlSafeToken, hashEmailToken } from './tokenUtils';
-import {
-    PASSWORD_RESET_RATE_LIMITS,
-    PASSWORD_RESET_TOKEN_BYTE_LENGTH,
-    PASSWORD_RESET_TTL_SECONDS,
-} from './authUseCaseConstants';
 import {
     passwordResetCooldownKey,
     passwordResetEmailDayKey,
@@ -12,14 +7,19 @@ import {
     passwordResetIpDayKey,
     passwordResetIpHourKey,
 } from './authRateLimitKeys';
-import { passesRateLimits } from './passesRateLimits';
+import {
+    PASSWORD_RESET_RATE_LIMITS,
+    PASSWORD_RESET_TOKEN_BYTE_LENGTH,
+    PASSWORD_RESET_TTL_SECONDS,
+} from './authUseCaseConstants';
 import type {
     RequestPasswordResetDependencies,
     RequestPasswordResetInput,
     RequestPasswordResetOptions,
     RequestPasswordResetResult,
 } from './authUseCaseTypes';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { passesRateLimits } from './passesRateLimits';
+import { generateUrlSafeToken, hashEmailToken } from './tokenUtils';
 
 const PURPOSE = 'password_reset' as const;
 

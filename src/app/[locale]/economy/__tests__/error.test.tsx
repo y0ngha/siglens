@@ -1,6 +1,6 @@
+import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import EconomyError from '../error';
 
 describe('EconomyError (/economy route error boundary)', () => {

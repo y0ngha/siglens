@@ -1,8 +1,8 @@
+import type { InstitutionalHolderChange } from '@y0ngha/siglens-core';
 /**
  * 보유 기관의 변화 문구 — 변화 주식 수와 변화율.
  */
 import { useTranslations } from 'next-intl';
-import type { InstitutionalHolderChange } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import {
     formatSignedCompact,

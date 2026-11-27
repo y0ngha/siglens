@@ -6,9 +6,9 @@
  * 배선을 고정한다 — 섹션을 mock하는 `FinancialsStatements.test.tsx`는 rows 개수만 본다.
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi } from 'vitest';
 import { FinancialsStatements } from '../FinancialsStatements';
 
 // useFinancialsPeriod → financialsPeriodUtils → actions.ts('use server')는 DB에

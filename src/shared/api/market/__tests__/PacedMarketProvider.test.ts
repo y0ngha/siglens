@@ -1,9 +1,9 @@
 import type { Bar, MarketQuote } from '@y0ngha/siglens-core';
-import { PacedMarketProvider } from '@/shared/api/market/PacedMarketProvider';
 import type {
     QuoteSnapshot,
     SiglensMarketProvider,
 } from '@/shared/api/market/marketProvider.types';
+import { PacedMarketProvider } from '@/shared/api/market/PacedMarketProvider';
 import type { StartSpacer } from '@/shared/lib/startSpacer';
 
 const BAR: Bar = {

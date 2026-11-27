@@ -1,12 +1,12 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { usePwaInstall } from '../hooks/usePwaInstall';
-import { IosInstallModal } from './IosInstallModal';
-import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import { SURFACE_FLOATING } from '@/shared/lib/surfaceStyles';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
+import { usePwaInstall } from '../hooks/usePwaInstall';
+import { IosInstallModal } from './IosInstallModal';
 
 interface PwaBannerProps {
     /** 배너가 뜨는 가장자리. 기본은 하단, 하단 입력창이 있는 화면은 `top`. */

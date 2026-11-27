@@ -5,9 +5,8 @@ vi.mock('next/navigation', async importOriginal => ({
     useSelectedLayoutSegment: () => mockSegment.current,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RelatedSymbolLink } from '../RelatedSymbolLink';
 
 function hrefFor(segment: string | null, symbol = 'NVDA'): string | null {

@@ -1,13 +1,13 @@
-import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
-import type { AmendmentFiling } from '../lib/amendmentPlan';
-import type { FilingRecord, Sec13fIndexEntry } from '../model';
+import type { AggregateMode } from '../api/aggregateSql';
 import type { ApplyFilingInput } from '../api/apply13fFiling';
 import type {
     DirtyBatch,
     FilingFailureInput,
     PendingFiling,
 } from '../api/investorFlows13fRepository';
-import type { AggregateMode } from '../api/aggregateSql';
+import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
+import type { AmendmentFiling } from '../lib/amendmentPlan';
+import type { FilingRecord, Sec13fIndexEntry } from '../model';
 
 /** 13F 수집이 SEC에서 읽는 네 가지 — daily form index, 제출 index.json, 문서 본문(텍스트·스트림). */
 export interface Sec13fSource {

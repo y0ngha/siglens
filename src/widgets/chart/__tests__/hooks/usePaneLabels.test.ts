@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import { labelHalo } from '@/widgets/chart/utils/labelHalo';
 import { THEME_ATTRIBUTE } from '@/shared/lib/theme';
-import type { PaneLabelConfig } from '../../types';
+import { labelHalo } from '@/widgets/chart/utils/labelHalo';
 import { usePaneLabels } from '../../hooks/usePaneLabels';
+import type { PaneLabelConfig } from '../../types';
 
 vi.mock('lightweight-charts', () => ({}));
 

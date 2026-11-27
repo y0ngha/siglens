@@ -152,25 +152,25 @@ vi.mock('next/navigation', () => ({
 }));
 
 import {
-    generateMetadata,
-    default as SymbolPage,
-    revalidate,
-} from '@/app/[locale]/[symbol]/page';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,
     isRegularSessionOpen,
 } from '@y0ngha/siglens-core';
-import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
-import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
-import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
-import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
-import { loadBarsData } from '@/entities/bars/server/loadBarsData';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { isValidElement, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
+import { isValidElement, type ReactNode } from 'react';
 import type { MockedFunction } from 'vitest';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import {
+    generateMetadata,
+    default as SymbolPage,
+    revalidate,
+} from '@/app/[locale]/[symbol]/page';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

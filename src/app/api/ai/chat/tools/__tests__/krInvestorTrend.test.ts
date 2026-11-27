@@ -10,7 +10,6 @@ vi.mock('@/shared/api/naver/naverInvestorTrend', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     buildKrInvestorTrend,
     KR_TREND_FAILURE_TTL_SECONDS,
@@ -19,8 +18,8 @@ import {
     loadKrInvestorTrend,
     loadKrInvestorTrendRows,
 } from '@/app/api/ai/chat/tools/krInvestorTrend';
-import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 import type { NaverInvestorTrendRow } from '@/shared/api/naver/naverInvestorTrend';
+import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 
 /** Newest first: day 0 is the newest, foreign = n, institution = 10n, individual = 100n. */
 const rows = (n: number, individualGap?: number): NaverInvestorTrendRow[] =>

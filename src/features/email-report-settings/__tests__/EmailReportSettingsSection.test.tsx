@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
 import { useEmailReportSettings } from '@/entities/email-report/hooks/useEmailReportSettings';
 import type { EmailReportSettingsView } from '@/entities/email-report/model';
+import { EmailReportSettingsSection } from '@/features/email-report-settings/ui/EmailReportSettingsSection';
 import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 
 vi.mock('@/entities/email-report/hooks/useEmailReportSettings');

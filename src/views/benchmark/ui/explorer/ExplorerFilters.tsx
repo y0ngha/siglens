@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 문항 탐색기의 필터 카드 — 항목별 셀렉트, 표시 개수, 초기화 버튼.
  */
 import { useId, useRef, type Ref } from 'react';
-import { useTranslations } from 'next-intl';
 import {
     BENCHMARK_FILTER_ALL,
     BENCHMARK_LABELS,
@@ -15,13 +15,13 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { NativeSelect } from '@/shared/ui/NativeSelect';
 import { useBenchmarkEnumText } from '../../hooks/useBenchmarkEnumText';
-import { benchmarkPoolName } from '../../lib/benchmarkPoolName';
 import {
     isBenchmarkFilterActive,
     pickBenchmarkFilterValue,
     type BenchmarkFilterOptions,
     type BenchmarkFilterState,
 } from '../../lib/benchmarkFilter';
+import { benchmarkPoolName } from '../../lib/benchmarkPoolName';
 
 const RESET_BUTTON =
     'inline-flex min-h-10 items-center rounded-lg border border-border-control px-3 text-sm text-secondary-100 hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';

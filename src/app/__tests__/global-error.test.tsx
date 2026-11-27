@@ -1,6 +1,6 @@
+import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import GlobalError from '../global-error';
 
 describe('GlobalError (root-layout error boundary)', () => {

@@ -6,15 +6,14 @@ vi.mock('next-intl/server', () => ({
 }));
 
 import { render, screen, within } from '@testing-library/react';
-import type { ReactElement } from 'react';
 import { createTranslator } from 'next-intl';
+import type { ReactElement } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import type { BenchmarkRelease } from '@/entities/benchmark/types';
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import ko from '../../../../messages/ko.json';
-
 import { AiAboutPage } from '../AiAboutPage';
 import { getAboutFaq } from '../lib/aboutContent';
 

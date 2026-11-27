@@ -1,11 +1,10 @@
 vi.mock('@/widgets/economy/hooks/useMacroBriefing');
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
-
-import { MacroBriefing } from '@/widgets/economy/sections/MacroBriefing';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useMacroBriefing } from '@/widgets/economy/hooks/useMacroBriefing';
+import { MacroBriefing } from '@/widgets/economy/sections/MacroBriefing';
 
 const mockUseBriefing = vi.mocked(useMacroBriefing);
 

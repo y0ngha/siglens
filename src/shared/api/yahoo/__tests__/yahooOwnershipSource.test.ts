@@ -23,7 +23,6 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getYahooOwnershipShares } from '../yahooOwnershipSource';
 
 beforeEach(() => {

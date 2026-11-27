@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
 import { AI_INDEXABLE_PATHS } from '@/shared/config/aiHost';
+import { BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
 import { BENCHMARK_RELEASE } from '../release';
 
 describe('benchmark publication gate', () => {

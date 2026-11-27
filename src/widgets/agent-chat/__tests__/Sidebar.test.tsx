@@ -22,9 +22,8 @@ vi.mock(
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ko from '../../../../messages/ko.json';
-
 import { Sidebar } from '@/widgets/agent-chat/Sidebar';
+import ko from '../../../../messages/ko.json';
 
 const router = { push: vi.fn() };
 

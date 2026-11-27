@@ -16,15 +16,15 @@ vi.mock('next-intl/server', () => ({
 }));
 
 import { screen, within } from '@testing-library/react';
-import { createTranslator } from 'next-intl';
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
+import { createTranslator } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
+import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
+import { buildApiToolReferences } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
 import {
     ECONOMY_CALENDAR_DEFAULT_DAYS,
     ECONOMY_CALENDAR_MAX_RANGE_DAYS,
 } from '@/shared/config/economyCalendar';
-import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
-import { buildApiToolReferences } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
@@ -37,9 +37,8 @@ import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
 import ko from '../../../../messages/ko.json';
-
-import { DEVELOPER_SECTION_IDS } from '../lib/developersContent';
 import { DevelopersPage } from '../DevelopersPage';
+import { DEVELOPER_SECTION_IDS } from '../lib/developersContent';
 
 const catalogs = { ko, en } as const;
 

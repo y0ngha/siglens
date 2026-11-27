@@ -25,9 +25,8 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
     ),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-
+import React from 'react';
 import { FearGreedGauge } from '../FearGreedGauge';
 
 describe('FearGreedGauge', () => {

@@ -1,7 +1,7 @@
 import { FEAR_GREED_LABEL_CUTOFFS } from '@y0ngha/siglens-core';
+import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { type SeoTranslator } from '@/shared/lib/seo';
 import { clampSeoDescription } from '@/shared/lib/seoClamp';
-import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 
 /**
  * 시장별 공포·탐욕 지수 페이지 카피 — 메타데이터·본문·FAQ의 단일 소스.

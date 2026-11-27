@@ -1,5 +1,5 @@
-import { getTranslations } from 'next-intl/server';
 import type { SignalType } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
 import { formatDate } from '@/entities/email-report/templates/emailFormat';
 import type {
     MailAlertLinkAuth,

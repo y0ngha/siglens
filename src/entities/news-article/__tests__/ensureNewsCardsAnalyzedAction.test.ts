@@ -63,30 +63,30 @@ vi.mock('@/entities/news-article/api', () => ({
     }),
 }));
 
-import type { MockedFunction, MockedClass, Mock } from 'vitest';
-import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
-import {
-    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
-    VISITOR_NEWS_CARD_LIMIT,
-} from '../lib/newsAnalysisConstants';
-import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
-import { getNewsClient } from '../server/getNewsClient';
-import { isE2E } from '@/shared/api/e2eEnv';
 import type {
     NewsItem,
     NewsCardAnalysis,
     RunNewsCardAnalysisResult,
 } from '@y0ngha/siglens-core';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
+import { isE2E } from '@/shared/api/e2eEnv';
+import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
+import { NewsIngestWriteError } from '../lib/ingestNewsForSymbol';
+import {
+    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
+    VISITOR_NEWS_CARD_LIMIT,
+} from '../lib/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
+import { getNewsClient } from '../server/getNewsClient';
+import { withNewsCardAnalysisLock } from '../server/newsCardAnalysisLock';
 import {
     tryClaimNewsRefresh,
     shortenNewsRefreshClaim,
     markFetched,
 } from '../server/newsRefreshFlag';
-import { withNewsCardAnalysisLock } from '../server/newsCardAnalysisLock';
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
-import { NewsIngestWriteError } from '../lib/ingestNewsForSymbol';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository

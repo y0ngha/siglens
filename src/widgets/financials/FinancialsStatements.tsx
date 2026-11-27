@@ -4,12 +4,12 @@
  * 재무제표 클라이언트 래퍼 — 기간 토글과 네 재무제표 섹션을 잇는다.
  */
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
-import { PeriodToggle } from './PeriodToggle';
 import { useFinancialsPeriod } from './hooks/useFinancialsPeriod';
-import { IncomeStatementSection } from './sections/IncomeStatementSection';
+import { PeriodToggle } from './PeriodToggle';
 import { BalanceSheetSection } from './sections/BalanceSheetSection';
 import { CashFlowSection } from './sections/CashFlowSection';
 import { GrowthAnalysisSection } from './sections/GrowthAnalysisSection';
+import { IncomeStatementSection } from './sections/IncomeStatementSection';
 import { PeriodStatus } from './ui/period-status/PeriodStatus';
 import { deriveStatementCurrency } from './utils/statementCurrency';
 

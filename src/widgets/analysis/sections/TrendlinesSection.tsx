@@ -1,10 +1,10 @@
 'use client';
 
+import type { KrxTickTable, Trendline } from '@y0ngha/siglens-core';
 /**
  * 추세선 섹션 — 추세선이 없으면 그리지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { KrxTickTable, Trendline } from '@y0ngha/siglens-core';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { TrendlineItem } from '../ui/TrendlineItem';
 

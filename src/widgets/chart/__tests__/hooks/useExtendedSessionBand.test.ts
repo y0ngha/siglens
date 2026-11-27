@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
-import { useExtendedSessionBand } from '../../hooks/useExtendedSessionBand';
 import type { ExtendedSessionRange } from '@/shared/api/market/extendedBarsSession';
+import { useExtendedSessionBand } from '../../hooks/useExtendedSessionBand';
 
 const ranges = (...starts: number[]): ExtendedSessionRange[] =>
     starts.map(t => ({ session: 'pre', startTime: t, endTime: t + 60 }));

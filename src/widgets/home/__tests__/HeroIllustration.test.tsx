@@ -14,12 +14,11 @@ vi.mock('next/image', () => ({
     ),
 }));
 
+import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { render, screen } from '@testing-library/react';
 import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
 import koMessages from '../../../../messages/ko.json';
-
 import { HeroIllustration } from '../HeroIllustration';
 
 describe('HeroIllustration', () => {

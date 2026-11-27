@@ -1,6 +1,6 @@
+import type { Chamber } from '@y0ngha/siglens-core';
 /** Disclosure link cell of a trades-table row, with the senate PTR id hint. */
 import { useTranslations } from 'next-intl';
-import type { Chamber } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { SenateDisclosureTooltip } from '../../congressTooltips';
 import {

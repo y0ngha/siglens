@@ -56,9 +56,8 @@ vi.mock('@/shared/db/client', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
 
-import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
-
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
+import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
 
 /** `after()`가 받아 둔 콜백들. `flushAfter()`가 순서대로 실행한다. */
 const scheduled: Array<() => Promise<void>> = [];

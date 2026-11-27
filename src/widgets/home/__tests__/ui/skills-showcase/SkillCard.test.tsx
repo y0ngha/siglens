@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { HomeSkillItem } from '../../../utils/toSkillShowcaseItems';
-
 import { SkillCard } from '../../../ui/skills-showcase/SkillCard';
+import type { HomeSkillItem } from '../../../utils/toSkillShowcaseItems';
 
 // useIsClamped(useEffect + ResizeObserver)가 SkillCard에서 호출되므로
 // 파일 전역으로 ResizeObserver를 stub해 ReferenceError를 방지한다.

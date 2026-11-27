@@ -1,7 +1,7 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetFinancialsQuarterAction = vi.fn();
 

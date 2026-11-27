@@ -105,13 +105,13 @@ vi.mock('@/widgets/overall/OverallFactualFallback', () => ({
 
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { default as OverallPage } from '@/app/[locale]/[symbol]/overall/page';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
 import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
-import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockStatic = vi.mocked(staticSymbolCache);
 

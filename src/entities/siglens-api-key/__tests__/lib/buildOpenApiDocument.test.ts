@@ -1,10 +1,10 @@
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
+import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import {
     buildOpenApiDocument,
     OPENAPI_VERSION,
     type OpenApiDocument,
 } from '@/entities/siglens-api-key/lib/buildOpenApiDocument';
-import { API_ERROR_DOCS } from '@/entities/siglens-api-key/lib/apiErrorCatalog';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     LOCALE_HEADER_DOC_NAME,

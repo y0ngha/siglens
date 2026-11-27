@@ -36,10 +36,9 @@ vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
     ),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
 import { defined } from '@/shared/test-utils/defined';
-
 import {
     CategoryCardGridBody,
     type CategoryCard,

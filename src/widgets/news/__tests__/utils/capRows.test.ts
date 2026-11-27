@@ -1,10 +1,10 @@
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 /**
  * Unit tests for `capRows` — the client-side row cap that keeps the polling
  * result in sync with the server section's serialization limit.
  */
 import { capRows } from '@/widgets/news/utils/capRows';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 
 function makeItems(count: number): NewsDisplayItem[] {
     return Array.from(

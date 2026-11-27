@@ -1,7 +1,7 @@
+import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import type { ReactNode } from 'react';
-import { render, screen } from '@testing-library/react';
 import { FundamentalDegraded } from '../FundamentalDegraded';
 
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({

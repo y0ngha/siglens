@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
+import { useCallback, useRef } from 'react';
 import { applyRightOffsetPixels } from '../utils/rightOffset';
 
 interface ChartRightOffset {

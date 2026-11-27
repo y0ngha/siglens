@@ -1,3 +1,4 @@
+import type { Locale } from '@/shared/i18n/locales';
 import {
     METHODOLOGY_UPDATED_AT,
     methodologyDescription,
@@ -11,7 +12,6 @@ import {
     ORGANIZATION_JSON_LD_ID,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import type { Locale } from '@/shared/i18n/locales';
 import { METHODOLOGY_PAGE_URL } from './methodologyUrls';
 
 /**

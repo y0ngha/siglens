@@ -1,7 +1,7 @@
 import 'server-only';
 import YahooFinance from 'yahoo-finance2';
-import { MS_PER_SECOND } from '@/shared/config/time';
 import { assertOnline, OFFLINE_BUILD_SERVICE } from '@/shared/api/offlineBuild';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 /**
  * yahoo 요청 하나의 상한(ms).

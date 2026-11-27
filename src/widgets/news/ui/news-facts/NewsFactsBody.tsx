@@ -2,10 +2,10 @@
  * 사실 요약의 본문 문단들 — 기사 수, 최신 게시 시각, 분석 수, 감성 분포, 헤드라인, 면책 문구.
  */
 import { useTranslations } from 'next-intl';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     countAnalyzed,
     getHeadlineItems,

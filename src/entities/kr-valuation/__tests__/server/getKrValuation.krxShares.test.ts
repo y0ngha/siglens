@@ -28,8 +28,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveKrValuation } from '../../server/getKrValuation';
 import alteogenAnnual from '../fixtures/alteogen-2025-annual-cfs.json';
 import alteogenH1Shares from '../fixtures/alteogen-2026-h1-stock-totals.json';
-import alteogenKrxRows from '../fixtures/alteogen-krx-stock-price-v2-rows.json';
 import alteogenQ3Cfs from '../fixtures/alteogen-2026-q3-cfs.json';
+import alteogenKrxRows from '../fixtures/alteogen-krx-stock-price-v2-rows.json';
 import samsungCardQ3Shares from '../fixtures/samsungcard-2026-q3-stock-totals.json';
 
 /**

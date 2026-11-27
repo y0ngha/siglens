@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ko from '../../../../../messages/ko.json';
 import { CompareLineChart } from '@/widgets/chart/visual/CompareLineChart';
+import ko from '../../../../../messages/ko.json';
 import { COMPARE } from './fixtures';
 
 const m = vi.hoisted(() => {

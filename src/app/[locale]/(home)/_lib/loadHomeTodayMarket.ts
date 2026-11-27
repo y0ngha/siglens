@@ -1,8 +1,11 @@
 import 'server-only';
-
 import type { FearGreedReading } from '@y0ngha/siglens-core';
 import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
+import {
+    selectTodaySignals,
+    type TodaySignalRow,
+} from '@/entities/sector-signal/lib/selectTodaySignals';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import {
     shortenRevalidateForRuntimeDegrade,
@@ -14,10 +17,6 @@ import {
     US_DASHBOARD_SCOPE,
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
-import {
-    selectTodaySignals,
-    type TodaySignalRow,
-} from '@/entities/sector-signal/lib/selectTodaySignals';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 시장마다 홈에 보일 신호 종목 수. 한 화면에 시장 둘이 나란히 들어가는 양이다. */

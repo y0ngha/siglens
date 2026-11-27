@@ -1,12 +1,12 @@
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import { DrizzleCryptoAssetRepository } from '../cryptoAssetApi';
-import { fmpCryptoMembership } from './fmpCryptoMembership';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
 } from '@/shared/db/types';
 import type { TickerSearchResult } from '@/shared/lib/types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { DrizzleCryptoAssetRepository } from '../cryptoAssetApi';
+import { fmpCryptoMembership } from './fmpCryptoMembership';
 
 // Fetch extra candidates (CRYPTO_SEARCH_LIMIT) so app-side relevance re-ranking has enough
 // to work with; the DB pre-sort only orders them, the final ranking is done in searchRelevance.

@@ -6,8 +6,8 @@
  * 라이브 위젯까지 원문을 두 벌 마운트한다(스크린리더 중복). 둘 다 화면만 봐서는 안 보인다.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
+import { beforeEach, describe, expect, it } from 'vitest';
 import messages from '../../../../messages/ko.json';
 import { PlainAnalysisSwitch } from '../PlainAnalysisSwitch';
 

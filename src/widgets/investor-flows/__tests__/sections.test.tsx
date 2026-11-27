@@ -1,22 +1,22 @@
-// @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ScorecardCard } from '../sections/ScorecardCard';
-import { InstitutionalSection } from '../sections/InstitutionalSection';
-import { ShortSection } from '../sections/ShortSection';
-import { ShortInterestBlock } from '../sections/ShortInterestBlock';
-import { buildShortInterestView } from '../utils/short';
-import { InsiderSection } from '../sections/InsiderSection';
-import { LargeHoldersSection } from '../sections/LargeHoldersSection';
-import { AsOfNotice } from '../sections/AsOfNotice';
-import { InvestorFlowsContent } from '../InvestorFlowsContent';
-import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+// @vitest-environment jsdom
+import { describe, expect, it, vi } from 'vitest';
 import type {
     CollectingArms,
     InvestorFlowsPipelineReadiness,
 } from '@/entities/investor-flows/model';
+import { InvestorFlowsContent } from '../InvestorFlowsContent';
+import { InvestorFlowsEmpty } from '../InvestorFlowsEmpty';
+import { AsOfNotice } from '../sections/AsOfNotice';
+import { InsiderSection } from '../sections/InsiderSection';
+import { InstitutionalSection } from '../sections/InstitutionalSection';
+import { LargeHoldersSection } from '../sections/LargeHoldersSection';
+import { ScorecardCard } from '../sections/ScorecardCard';
+import { ShortInterestBlock } from '../sections/ShortInterestBlock';
+import { ShortSection } from '../sections/ShortSection';
+import { buildShortInterestView } from '../utils/short';
 import {
     evaluate,
     makeEmptySnapshot,

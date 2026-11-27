@@ -9,8 +9,8 @@ import {
     INDEXNOW_TIMEOUT_MS,
 } from '@/shared/config/indexNow';
 import { MS_PER_SECOND } from '@/shared/config/time';
-import { SITE_HOST, SITE_URL } from '@/shared/lib/seo';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { SITE_HOST, SITE_URL } from '@/shared/lib/seo';
 
 /**
  * 한 번의 제출이 **어떻게 끝났는가**. 호출부(`indexNowQueue`)가 대기열 멤버를 지울지,

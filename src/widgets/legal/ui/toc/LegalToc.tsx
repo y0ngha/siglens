@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { TocItem } from '@/shared/lib/legal-toc';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface LegalTocProps {
     /** 본문 h2에서 뽑은 항목. `id`는 본문 제목의 slug와 같다. */

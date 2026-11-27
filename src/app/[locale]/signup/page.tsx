@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { SignupBenefits } from '@/features/auth-signup/ui/SignupBenefits';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { SignupBenefits } from '@/features/auth-signup/ui/SignupBenefits';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { AuthCrossLink } from '@/shared/ui/auth/AuthCrossLink';
 import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';

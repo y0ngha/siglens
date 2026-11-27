@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { RouteMessages } from './RouteMessages';
 import { resolveLocale } from './locales';
+import { RouteMessages } from './RouteMessages';
 
 interface RouteLayoutProps {
     readonly children: ReactNode;

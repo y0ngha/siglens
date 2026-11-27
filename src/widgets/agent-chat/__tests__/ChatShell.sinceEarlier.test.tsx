@@ -43,9 +43,8 @@ import {
 import type { ChatSymbolChanges } from '@/entities/chat-conversation/types';
 import { defined } from '@/shared/test-utils/defined';
 import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
-import ko from '../../../../messages/ko.json';
-
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
+import ko from '../../../../messages/ko.json';
 
 interface MockMessage {
     id: string;

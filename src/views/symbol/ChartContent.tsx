@@ -1,25 +1,12 @@
 'use client';
 
-import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
-import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
-import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
-import { cn } from '@/shared/lib/cn';
-import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
-import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
-import { AnalysisConclusionCard } from '@/widgets/analysis/sections/AnalysisConclusionCard';
-import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
-import { useChartSync } from '@/widgets/chart/hooks/useChartSync';
-import { computePositionStatus } from '@/widgets/portfolio-position/utils/positionStatus';
-import { PositionStatusSummary } from '@/widgets/portfolio-position/ui/PositionStatusSummary';
 import {
     type AnalysisResponse,
     type KrxTickTable,
     type TierInfoDepth,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { DATA_ATTRIBUTION } from '@/shared/config/marketProfile/dataAttribution';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import React, {
@@ -30,50 +17,63 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { PEEK_RESERVE_CSS } from './constants/mobileSheet';
-import { useOverlayItemVisibility } from './hooks/useOverlayItemVisibility';
-import { useAnalysis } from './hooks/useAnalysis';
-import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
-import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
-import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
+import {
+    ACTION_PRICES_ITEM_KEY,
+    buildOverlayMenuItems,
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
+import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
+import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { useBars } from '@/entities/bars/hooks/useBars';
+import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { useExtendedBars } from '@/entities/extended-bars/hooks/useExtendedBars';
-import { usePersistentState } from '@/shared/hooks/usePersistentState';
-import { STORAGE_KEYS } from '@/widgets/chart/constants';
+import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
+import { deriveChartStatus } from '@/features/share/lib/deriveChartStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import {
     NO_EXTENDED_BARS,
     isExtendedBarTimeframe,
     mergeExtendedBars,
 } from '@/shared/api/market/extendedBarsSession';
-import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { shouldRefetchBarsSeed } from './utils/shouldRefetchBarsSeed';
+import { DATA_ATTRIBUTION } from '@/shared/config/marketProfile/dataAttribution';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
-import { useHasStoredChartPreferences } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
-import {
-    ACTION_PRICES_ITEM_KEY,
-    buildOverlayMenuItems,
-} from '@/entities/analysis/lib/chartOverlays/overlayItems';
-import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
-import { PANEL_MIN_WIDTH, usePanelResize } from './hooks/usePanelResize';
-import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
-import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
+import { cn } from '@/shared/lib/cn';
 import {
     isTargetReferenceOnly,
     resolvePatternBaseRate,
 } from '@/shared/lib/patternBaseRate';
 import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
+import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
+import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
+import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
+import { AnalysisConclusionCard } from '@/widgets/analysis/sections/AnalysisConclusionCard';
+import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
+import { STORAGE_KEYS } from '@/widgets/chart/constants';
+import { useChartSync } from '@/widgets/chart/hooks/useChartSync';
+import { useHasStoredChartPreferences } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
+import { PositionStatusSummary } from '@/widgets/portfolio-position/ui/PositionStatusSummary';
+import { computePositionStatus } from '@/widgets/portfolio-position/utils/positionStatus';
+import { PEEK_RESERVE_CSS } from './constants/mobileSheet';
+import { useAnalysis } from './hooks/useAnalysis';
+import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
+import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
+import { useOverlayItemVisibility } from './hooks/useOverlayItemVisibility';
+import { PANEL_MIN_WIDTH, usePanelResize } from './hooks/usePanelResize';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
-import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
-import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
-import { deriveChartStatus } from '@/features/share/lib/deriveChartStatus';
-import { useTranslations } from 'next-intl';
+import { shouldRefetchBarsSeed } from './utils/shouldRefetchBarsSeed';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),

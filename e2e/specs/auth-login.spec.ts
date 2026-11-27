@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { AUTH_USER_EMAIL, AUTH_USER_PASSWORD } from '../support/authUser';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Anonymous Tier 2 spec — runs on the no-storageState chromium project (NOT the

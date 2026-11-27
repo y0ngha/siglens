@@ -1,8 +1,8 @@
+import type { InstitutionalHolderChangeKind } from '@y0ngha/siglens-core';
 /**
  * 보유 기관의 변동 상태 배지(신규·증가·감소·청산·유지) — 색 + 기호 + 글자.
  */
 import { useTranslations } from 'next-intl';
-import type { InstitutionalHolderChangeKind } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { STATUS_CLASS, STATUS_MARK } from '../../utils/holderStatus';
 

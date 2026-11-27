@@ -1,27 +1,27 @@
-import { cache } from 'react';
-import { unstable_cache } from 'next/cache';
 import type { BarsData, FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import {
     requestSessionWindow,
     type SessionWindow,
 } from '@/shared/api/market/requestSessionWindow';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { SESSION_KEYED_CACHE_REVALIDATE_SECONDS } from '@/shared/config/time';
 import {
     shortenRevalidateForIncompleteSession,
     shortenRevalidateForRuntimeDegrade,
 } from '@/shared/cache/buildDegradedRevalidate';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { SESSION_KEYED_CACHE_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import {
     isStorableCoverage,
     sessionCoverage,
     type SessionCoverage,
 } from '@/shared/lib/sessionCoverage';
-import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import { runWithRenderBudget } from '@/shared/lib/renderBudget';
-import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
-import { loadBarsData } from './loadBarsData';
 import { lastBarSessionDate, toSessionBarsData } from '../lib/sessionBars';
 import { symbolFearGreedSnapshot } from '../lib/symbolFearGreed';
+import { loadBarsData } from './loadBarsData';
 
 /**
  * # 세션 키 정적 캐시 — `[symbol]` 탭의 revalidate clamp 해소

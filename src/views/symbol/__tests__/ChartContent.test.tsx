@@ -1,15 +1,15 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { ChartContent } from '@/views/symbol/ChartContent';
 import { useBars } from '@/entities/bars/hooks/useBars';
-import { __resetStoredChartPreferencesCacheForTests } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
 import {
     HUMAN_INTERACTION_STORAGE_KEY,
     __resetHumanInteractionForTests,
     markHumanInteracted,
 } from '@/shared/lib/humanInteractionStore';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { ChartContent } from '@/views/symbol/ChartContent';
+import { __resetStoredChartPreferencesCacheForTests } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.

@@ -1,13 +1,13 @@
-import type { AssetInfo } from '@/shared/lib/types';
 import { KR_SYMBOL_RE } from '@/shared/config/ticker';
+import type { AssetInfo } from '@/shared/lib/types';
+import { CRYPTO_DESCRIPTOR } from './crypto';
+import { KR_EQUITY_DESCRIPTOR } from './krEquity';
 import type {
     MarketProfileDescriptor,
     MarketProfileId,
     PriceFormatConfig,
 } from './types';
 import { US_EQUITY_DESCRIPTOR } from './usEquity';
-import { CRYPTO_DESCRIPTOR } from './crypto';
-import { KR_EQUITY_DESCRIPTOR } from './krEquity';
 
 export const DEFAULT_MARKET_PROFILE: MarketProfileId = 'us-equity';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildShortInterestChartModel } from '../../utils/shortInterestChart';
 import type { ShortInterestRow } from '../../utils/short';
+import { buildShortInterestChartModel } from '../../utils/shortInterestChart';
 
 function row(
     settlementDate: string,

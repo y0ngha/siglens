@@ -1,10 +1,10 @@
-import { act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
-import { publishAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { act } from '@testing-library/react';
 import { ModelFallbackNoticeHost } from '@/features/symbol-model/ui/ModelFallbackNoticeHost';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { publishAnalysisModelFallback } from '@/shared/lib/sse/analysisModelFallback';
+import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 const mocks = vi.hoisted(() => ({
     showToast: vi.fn(),

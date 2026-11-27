@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
     enterSymbolTabMetadata,
@@ -15,9 +14,9 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { type SymbolRouteParams } from '@/shared/config/market';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
@@ -28,7 +27,6 @@ import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-
 import { FlowsTabBody } from './_components/FlowsTabBody';
 
 /**

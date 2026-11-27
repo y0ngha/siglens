@@ -7,8 +7,8 @@ import {
     buildUnsubscribePageUrl,
     chartSignatureValue,
 } from '@/entities/email-report/lib/reportLinks';
-import { defined } from '@/shared/test-utils/defined';
 import { verifyReportValue } from '@/entities/email-report/lib/reportSignature';
+import { defined } from '@/shared/test-utils/defined';
 
 const SITE = 'https://siglens.io';
 const SECRET = 'links-secret-links-secret-links-secret';

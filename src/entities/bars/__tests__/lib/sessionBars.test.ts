@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import {
     anchorBarIndexOf,
     EMPTY_INDICATOR_RESULT,
     US_EQUITY_SESSION,
     type BarsData,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     closedAnchorIndexOf,
     lastBarSessionDate,

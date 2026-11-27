@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { formatRetryAt } from '@/shared/lib/formatRetryAt';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import koMessages from '../../../../messages/ko.json';
 
 describe('useStreamErrorMessages', () => {

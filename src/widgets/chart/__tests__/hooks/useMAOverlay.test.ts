@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useMAOverlay } from '../../hooks/useMAOverlay';
 import { STORAGE_KEYS } from '../../constants';
+import { useMAOverlay } from '../../hooks/useMAOverlay';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();

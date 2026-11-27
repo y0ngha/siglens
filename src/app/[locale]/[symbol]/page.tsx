@@ -6,7 +6,6 @@ import {
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-
 import { loadDilutionHeadingBadge } from '@/app/[locale]/[symbol]/dilutionHeadingBadge';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
@@ -15,15 +14,15 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
-import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
+import { getQuantizedBarsStatic } from '@/entities/bars/server/barsStaticCache';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasTechnicalProse } from '@/entities/seo-snapshot/lib/technicalContent';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { countSkillFiles } from '@/entities/skill/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { resolveKrxTickTableForDisplay } from '@/entities/ticker/server/resolveKrxTickTable';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { resolveKrxTickTableForDisplay } from '@/entities/ticker/server/resolveKrxTickTable';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
@@ -33,6 +32,7 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { RouteMessages } from '@/shared/i18n/RouteMessages';
 import { buildBreadcrumbJsonLd } from '@/shared/lib/seo';
 import {
@@ -43,18 +43,16 @@ import { chartSkillTotal } from '@/shared/lib/skillStats';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
-import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
-
 import { hasTechnicalFacts, seedChartBars } from './_lib/chartBarsSeed';
 import {
     enterSymbolTabMetadata,
     enterSymbolTabPage,
     type SymbolTabParams,
 } from './_lib/symbolTabEntry';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** ISR 상한. 사용자 신선도는 클라 refetch(`useBars` 30s)가 보장하므로 상한만 길게 둔다. */
 export const revalidate = 21600; // 6h

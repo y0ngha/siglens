@@ -14,7 +14,6 @@ vi.mock('../AdBanner', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import { AnalysisProgress } from '../AnalysisProgress';
 
 // 진행 문구의 수는 상수가 아니라 호출부(종목 페이지)가 `countSkillFiles`에서 계산해 넘긴다.

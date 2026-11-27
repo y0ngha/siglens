@@ -1,5 +1,9 @@
 import { useTranslations } from 'next-intl';
 import { Suspense, use, type ComponentType } from 'react';
+import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { brandAiName } from '@/shared/lib/brandName';
+import { cn } from '@/shared/lib/cn';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 import {
     ArrowUpRightIcon,
@@ -9,12 +13,8 @@ import {
     QuoteIcon,
     SparkIcon,
 } from '@/shared/ui/StrokeIcons';
-import { SiglensMark } from './SiglensMark';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { brandAiName } from '@/shared/lib/brandName';
-import { BENCHMARK_PATH, BENCHMARK_PUBLISHED } from '@/shared/config/benchmark';
-import { cn } from '@/shared/lib/cn';
 import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
+import { SiglensMark } from './SiglensMark';
 
 /** Member suggestions still being generated; resolves to null when there are none. */
 export type PendingSuggestions = Promise<readonly string[] | null>;

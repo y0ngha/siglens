@@ -4,18 +4,16 @@ import {
     type InvestorFlowsSnapshotInput,
 } from '../../lib/investorFlowsSnapshot';
 import {
-    buildFailsToDeliver,
-    buildThresholdList,
-    buildShortInterest,
-    buildShortVolume,
-    SNAPSHOT_MAX_FTD_POINTS,
-} from '../../lib/snapshot/short';
-import {
     buildOfferings,
     buildProposedSales,
     SNAPSHOT_MAX_OFFERINGS,
     SNAPSHOT_MAX_PROPOSED_SALES,
 } from '../../lib/snapshot/filings';
+import {
+    buildInsiderStats,
+    buildInsiderTransactions,
+    mapInsiderTransactionType,
+} from '../../lib/snapshot/insider';
 import {
     buildOptionQuarters,
     buildInstitutionalQuarters,
@@ -25,14 +23,16 @@ import {
     type AggregateRecord,
 } from '../../lib/snapshot/institutional';
 import {
-    buildInsiderStats,
-    buildInsiderTransactions,
-    mapInsiderTransactionType,
-} from '../../lib/snapshot/insider';
-import {
     buildLargeHolders,
     inferLargeHolderForm,
 } from '../../lib/snapshot/largeHolders';
+import {
+    buildFailsToDeliver,
+    buildThresholdList,
+    buildShortInterest,
+    buildShortVolume,
+    SNAPSHOT_MAX_FTD_POINTS,
+} from '../../lib/snapshot/short';
 import type {
     OfferingRecord,
     OptionAggregateRecord,

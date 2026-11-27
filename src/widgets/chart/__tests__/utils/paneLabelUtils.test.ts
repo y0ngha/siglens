@@ -1,5 +1,3 @@
-import { buildPaneLabels } from '@/widgets/chart/utils/paneLabelUtils';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     CCI_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,
@@ -15,8 +13,10 @@ import {
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_SMOOTHING,
 } from '@y0ngha/siglens-core';
-import type { PaneIndices } from '@/widgets/chart/types';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import type { PaneIndices } from '@/widgets/chart/types';
+import { buildPaneLabels } from '@/widgets/chart/utils/paneLabelUtils';
 
 // PaneIndices는 모든 IndicatorKey를 가진 Record다. buildPaneLabels가 읽는 건 pane 키뿐이므로,
 // 나머지 overlay·candle-paint 키를 INACTIVE로 채운 base에 해당 pane 키만 덮어쓴다.

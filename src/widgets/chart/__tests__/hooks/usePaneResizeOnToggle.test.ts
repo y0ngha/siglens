@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import { usePaneResizeOnToggle } from '../../hooks/usePaneResizeOnToggle';
+import type { PaneIndices } from '../../types';
 import {
     restoreVisibleView,
     snapshotVisibleView,
 } from '../../utils/visibleViewSnapshot';
-import type { PaneIndices } from '../../types';
 
 vi.mock('../../utils/visibleViewSnapshot', () => ({
     snapshotVisibleView: vi.fn(() => ({

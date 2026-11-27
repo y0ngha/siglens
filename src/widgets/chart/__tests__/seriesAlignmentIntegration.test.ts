@@ -1,3 +1,4 @@
+import { calculateIndicators, type Bar } from '@y0ngha/siglens-core';
 /**
  * 시리즈 정렬 **통합** 테스트 — `seriesDataUtils`를 mock하지 않는다.
  *
@@ -13,15 +14,14 @@
  * 그 커플링을 실물로 고정하는 게 목적이다.
  */
 import { describe, it, expect } from 'vitest';
-import { calculateIndicators, type Bar } from '@y0ngha/siglens-core';
-import {
-    buildSeriesData,
-    buildSeriesDataFromValues,
-} from '@/widgets/chart/utils/seriesDataUtils';
 // 재구현하지 말 것. 이 파일의 목적이 "seed 접기와 tail 정렬의 커플링을 실물로 고정"하는
 // 것인데, 접기 규칙을 복사해 두면 `barsStaticCache` 쪽을 되돌려도 초록으로 남는다
 // (2026-08 감사가 지적). 진짜 함수를 가져온다.
 import { keepLastNonNull } from '@/entities/bars/lib/seedBars';
+import {
+    buildSeriesData,
+    buildSeriesDataFromValues,
+} from '@/widgets/chart/utils/seriesDataUtils';
 
 /** 지표 워밍업(RSI 14, MACD 26+9)을 넘기기에 충분한 결정적 봉 시리즈. */
 function makeBars(n: number): Bar[] {

@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { AUTH_USER_EMAIL } from '../support/authUser';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Proof that the authed storageState pipeline works end to end.

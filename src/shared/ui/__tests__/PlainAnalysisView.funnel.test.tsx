@@ -20,9 +20,8 @@ vi.mock('next/link', () => ({
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import messages from '../../../../messages/ko.json';
-
 import { PlainAnalysisView } from '@/shared/ui/PlainAnalysisView';
+import messages from '../../../../messages/ko.json';
 
 describe('PlainAnalysisView 퍼널 이벤트', () => {
     beforeEach(() => {

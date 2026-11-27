@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import type { AxisScore } from '@y0ngha/siglens-core';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
 import { AxisScoreCard } from '@/widgets/financials/AxisScoreCard';
-import type { AxisScore } from '@y0ngha/siglens-core';
 
 const SAMPLE_AXIS: AxisScore = {
     score: 72,

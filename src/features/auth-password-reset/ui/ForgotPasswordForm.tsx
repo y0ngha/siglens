@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { TextField } from '@/shared/ui/TextField';
+import { useState } from 'react';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { SuccessNotice } from '@/shared/ui/SuccessNotice';
+import { TextField } from '@/shared/ui/TextField';
 import { useForgotPasswordForm } from '../hooks/useForgotPasswordForm';
 import { forgotPasswordErrorKey } from '../lib/forgotPasswordErrorKey';
 

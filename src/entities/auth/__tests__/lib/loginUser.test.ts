@@ -1,15 +1,15 @@
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { loginUser } from '@/entities/auth/lib/loginUser';
 import { getRounds } from 'bcryptjs';
 import {
     LOGIN_RATE_LIMITS,
     LOGIN_TIMING_DUMMY_HASH,
 } from '@/entities/auth/lib/authUseCaseConstants';
-import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
-import { createFakeFixedWindowLimiter } from '@/shared/test-utils/fakeFixedWindowLimiter';
 import type { LoginUserDependencies } from '@/entities/auth/lib/authUseCaseTypes';
+import { loginUser } from '@/entities/auth/lib/loginUser';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import type { AuthSessionRecord, EmailAuthUserRecord } from '@/shared/db/types';
+import { createFakeFixedWindowLimiter } from '@/shared/test-utils/fakeFixedWindowLimiter';
 
 const IP_HASH = 'iphash';
 const EMAIL_HASH = hashEmailToken('user@example.com');

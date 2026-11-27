@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import type { FundamentalFact } from '@/entities/fundamental-facts/model';
 import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
-import { formatFactSignedPercent } from '@/widgets/fundamental/utils/factsFormat';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { formatFactSignedPercent } from '@/widgets/fundamental/utils/factsFormat';
 import { FundamentalFactsCard } from '../../sections/FundamentalFactsCard';
 
 const ALL_FACTS: FundamentalFact[] = [

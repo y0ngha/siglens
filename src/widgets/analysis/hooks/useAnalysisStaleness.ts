@@ -1,10 +1,10 @@
 'use client';
 
+import type { MarketSessionSpec, Timeframe } from '@y0ngha/siglens-core';
 /**
  * 분석 결과가 오래됐는지(stale 배너 노출 여부) 판정하는 훅.
  */
 import { useCallback, useState, useSyncExternalStore } from 'react';
-import type { MarketSessionSpec, Timeframe } from '@y0ngha/siglens-core';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 
 /** 판정 기준 시각을 담는 작은 외부 저장소 — `useSyncExternalStore`가 구독한다. */

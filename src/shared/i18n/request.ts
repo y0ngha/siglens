@@ -1,7 +1,7 @@
-import { getRequestConfig } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
-import { routing } from './routing';
+import { getRequestConfig } from 'next-intl/server';
 import { loadMessages } from './loadMessages';
+import { routing } from './routing';
 
 /**
  * 요청별 next-intl 설정.

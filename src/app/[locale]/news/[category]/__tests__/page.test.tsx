@@ -55,13 +55,13 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
 }));
 
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import CategoryNewsPage, { generateMetadata } from '../page';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { describe, it, expect, vi } from 'vitest';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import CategoryNewsPage, { generateMetadata } from '../page';
 
 describe('/news/[category] generateMetadata는', () => {
     it('유효하지 않은 slug이면 notFound()를 던진다 — 404 응답에 홈 상속 메타가 얹히지 않는다', async () => {

@@ -4,8 +4,8 @@ import {
     parseReplayLine,
     type ReplayScenario,
 } from '@/shared/lib/replay/replayScript';
-import { completeFrame, type Frame } from '@/widgets/replay/utils/replayPlayer';
 import { ReplayProgress } from '@/widgets/replay/ui/body/ReplayProgress';
+import { completeFrame, type Frame } from '@/widgets/replay/utils/replayPlayer';
 
 const SCENARIO: ReplayScenario = {
     id: 'a',

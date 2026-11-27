@@ -22,14 +22,14 @@
  */
 
 import { useTranslations } from 'next-intl';
-import { TooltipParagraphs } from '@/shared/ui/TooltipParagraphs';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/shared/lib/options/marketHoursDisplay';
-import { useHydrated } from '@/shared/hooks/useHydrated';
+import { TooltipParagraphs } from '@/shared/ui/TooltipParagraphs';
 
 interface KstWindowInfo {
     hours: string;

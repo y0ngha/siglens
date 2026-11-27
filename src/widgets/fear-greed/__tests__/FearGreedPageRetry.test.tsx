@@ -1,8 +1,8 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ErrorBoundary } from 'react-error-boundary';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 

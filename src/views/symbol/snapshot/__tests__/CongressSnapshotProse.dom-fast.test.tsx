@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { CongressTrendResponse } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
 import { CongressSnapshotProse } from '../renderers/CongressSnapshotProse';
 
 // 스냅샷 저장소 content는 harvest.ts가 core prewarmCongress(→submitCongressTrend)의

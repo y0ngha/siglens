@@ -1,9 +1,9 @@
-import type { Mock } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import koMessages from '../../../../../messages/ko.json';
+import type { Mock } from 'vitest';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import koMessages from '../../../../../messages/ko.json';
 import { useInvestorFlowsAnalysis } from '../../hooks/useInvestorFlowsAnalysis';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({

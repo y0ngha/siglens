@@ -1,9 +1,9 @@
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 /**
  * 섹터 신호 패널의 본문 — 조회 상태에 맞춰 로딩·실패·빈 섹터·다섯 소절 중 하나를 그린다.
  */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { StockWithConflict } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import type { SectorSignalsStatus } from './hooks/useSectorSignals';
 import { SignalSubsection } from './SignalSubsection';

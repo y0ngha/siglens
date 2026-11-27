@@ -9,12 +9,12 @@ import type {
     IncomeStatementRow,
     StatementPeriod,
 } from '@y0ngha/siglens-core';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import {
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
-import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 const PERCENT = 100;
 

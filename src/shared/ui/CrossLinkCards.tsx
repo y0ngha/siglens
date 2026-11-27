@@ -1,6 +1,5 @@
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useId } from 'react';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     type MarketProfileId,
@@ -9,12 +8,13 @@ import {
 } from '@/shared/config/marketProfile/types';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import {
     INDEXABLE_SYMBOL_TABS,
     type SymbolSeoTab,
 } from '@/shared/lib/seoSymbol';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /** All cross-linked page types in the symbol sub-navigation. */
 const ALL_PAGES = [

@@ -1,11 +1,11 @@
+import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 펀더멘털 AI 분석 결과 뷰 — 공유 패널(`kindPanelRegistry`)과 종목 탭이 함께 쓴다.
  */
 import { useTranslations } from 'next-intl';
-import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { CategoryAssessmentList } from './CategoryAssessmentList';
 import { RiskFactorList } from './RiskFactorList';
 import { SentimentBadge } from './SentimentBadge';

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { HoldingForm } from '@/features/portfolio-management/ui/HoldingForm';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
+import { HoldingForm } from '@/features/portfolio-management/ui/HoldingForm';
 
 // TickerAutocomplete pulls in useTickerSearch (react-query + a server action) which
 // is unrelated to what this suite verifies (symbol selection wiring). Stub it with a

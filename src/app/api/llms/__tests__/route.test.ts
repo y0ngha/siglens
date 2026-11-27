@@ -3,8 +3,6 @@ vi.mock('@/entities/benchmark/release', async importOriginal => ({
     getPublishedBenchmarkRelease: vi.fn(),
 }));
 
-import nextConfig from '../../../../../next.config';
-import { GET } from '@/app/api/llms/route';
 import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import {
     LLMS_TXT_CACHE_CONTROL,
@@ -12,10 +10,12 @@ import {
 } from '@/app/api/llms/_lib/constants';
 import { llmsInputs } from '@/app/api/llms/_lib/llmsInputs';
 import { renderLlmsTxt } from '@/app/api/llms/_lib/renderLlmsTxt';
-import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
+import { GET } from '@/app/api/llms/route';
 import release from '@/entities/benchmark/data/release-2026-10.json';
 import { assertBenchmarkRelease } from '@/entities/benchmark/lib/assertBenchmarkRelease';
+import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
 import { LLMS_TXT_PATH } from '@/shared/config/llmsTxt';
+import nextConfig from '../../../../../next.config';
 
 const REAL_RELEASE = assertBenchmarkRelease(release);
 

@@ -1,18 +1,18 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import type { PriceAlertProposal } from '../model';
+import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import {
     DrizzleMailAlertSubscriberRepository,
     DrizzlePriceAlertRepository,
 } from '../api';
 import { PRICE_ALERT_MAX_ACTIVE } from '../lib/priceAlertConstants';
+import type { PriceAlertProposal } from '../model';
 import {
     createPriceAlertFlow,
     getPriceAlertProposalState,

@@ -5,11 +5,11 @@ import {
     type AgentToolSpec,
 } from '@y0ngha/siglens-core';
 import { availableToolNames } from '@/app/api/ai/chat/tools/chatTools';
+import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import {
     GET_MY_WATCHLIST_TOOL,
     PROPOSE_PRICE_ALERT_TOOL,
 } from '@/features/agent-tools/spec/watchlistAlertTools';
-import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
 

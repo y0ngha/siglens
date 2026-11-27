@@ -3,10 +3,9 @@ vi.mock('@/shared/api/economy/getEconomyProvider', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { ECONOMY_CONFIG_FINGERPRINT } from '@/entities/economy/api/economySnapshotCache';
-import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
+import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
 describe('ECONOMY_CONFIG_FINGERPRINT', () => {
     it('changes when rate-type units enter the snapshot shape, so a unit-less cached snapshot is not reused after deploy', () => {

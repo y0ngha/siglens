@@ -1,7 +1,7 @@
-import { test, expect } from '../support/fixtures';
 import type { Page } from '@playwright/test';
-import { seedReturnVisit } from '../support/pwaBanner';
 import { FIRST_INPUT_FLAG } from '@/features/pwa-install/lib/firstInputProbe';
+import { test, expect } from '../support/fixtures';
+import { seedReturnVisit } from '../support/pwaBanner';
 
 /**
  * 홈을 열고, 하이드레이션이 끝났음을 **상호작용으로 증명**한 뒤, 그 입력이 앱에 닿았음을 확인한다.

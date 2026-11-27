@@ -36,7 +36,6 @@ import type {
     ScanCursor,
     SignalHistoryMarket,
 } from '@/entities/signal-history/types';
-
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
     recordSignalHistory,

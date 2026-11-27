@@ -16,8 +16,8 @@ import {
     DrizzleFunnelEventRepository,
     METER_CONVERSION_WINDOW_DAYS,
 } from '@/entities/funnel/api';
-import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
 import { DrizzleVisitorRepository } from '@/entities/visitor/api';
+import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
     buildGateTable,

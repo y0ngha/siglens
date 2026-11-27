@@ -1,9 +1,8 @@
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
     enterSymbolTabMetadata,
@@ -12,19 +11,19 @@ import {
 } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
+import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
+import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
+import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import {
     flagNoindexDegradedRender,
     shortenRevalidateForRuntimeDegrade,
 } from '@/shared/cache/buildDegradedRevalidate';
-import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
-import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
-import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { SymbolRouteParams } from '@/shared/config/market';
 import {
     marketProfileOf,
@@ -43,7 +42,6 @@ import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary
 import { FundamentalAiSummaryError } from '@/widgets/fundamental/FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from '@/widgets/fundamental/FundamentalAiSummarySkeleton';
 import { FundamentalFactsCard } from '@/widgets/fundamental/sections/FundamentalFactsCard';
-
 import {
     FinancialHealthSection,
     FutureDirectionSection,

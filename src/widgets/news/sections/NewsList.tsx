@@ -1,13 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 종목 뉴스 목록 섹션 — 폴링 훅의 결과를 로딩·빈 상태·목록(+더보기)으로 나눠 조립한다.
  * 카드와 스켈레톤은 `ui/news-list/`, 카드 표시 값은 `utils/newsCardView`에 있다.
  */
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { useNewsPollingWithInvalidation } from '../hooks/useNewsPollingWithInvalidation';
 import { NewsCard } from '../ui/news-list/NewsCard';
 import { NewsListEmpty } from '../ui/news-list/NewsListEmpty';

@@ -2,11 +2,8 @@ vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-import nextConfig from '../../../../../../next.config';
-import { config } from '@/proxy';
-import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import { testInputs } from '@/app/api/llms/_lib/__tests__/llmsTestInputs';
+import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import type {
     LlmsDocument,
     LlmsHost,
@@ -23,8 +20,10 @@ import {
 import { buildPrewarmUniverse } from '@/entities/seo-snapshot/lib/applicability';
 import { buildGuideSitemapEntries } from '@/entities/sitemap-entry/lib/buildGuideSitemapEntries';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { config } from '@/proxy';
 import { AI_INDEXABLE_PATHS } from '@/shared/config/aiHost';
 import { LLMS_TXT_PATH } from '@/shared/config/llmsTxt';
+import nextConfig from '../../../../../../next.config';
 
 /**
  * llms.txt의 모든 링크가 실제로 풀리는지 라우트 표에 대조하는 가드. 링크는 `target`의 종류로만 만들어지므로

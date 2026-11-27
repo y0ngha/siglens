@@ -9,9 +9,8 @@ vi.mock('../krxListedInfoClient', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { KrxListedItem } from '../krxListedInfoClient';
 import { fetchKrTickerRows } from '../fetchKrTickerRows';
+import type { KrxListedItem } from '../krxListedInfoClient';
 
 function item(
     shortCode: string,

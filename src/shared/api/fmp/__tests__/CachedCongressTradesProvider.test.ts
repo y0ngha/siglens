@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CachedCongressTradesProvider } from '@/shared/api/fmp/CachedCongressTradesProvider';
 import type {
     CongressTradesProvider,
     RawCongressTrade,
 } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CachedCongressTradesProvider } from '@/shared/api/fmp/CachedCongressTradesProvider';
 import { CONGRESS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 
 // In-memory fake Redis mirroring the pattern in CachedFinancialStatementsProvider.test.ts.

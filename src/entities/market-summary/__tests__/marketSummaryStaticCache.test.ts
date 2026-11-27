@@ -25,20 +25,19 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
 
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
-import {
-    getMarketSummaryStatic,
-    marketSummaryCacheTag,
-} from '../api/marketSummaryStaticCache';
-import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import {
+    getMarketSummaryStatic,
+    marketSummaryCacheTag,
+} from '../api/marketSummaryStaticCache';
 
 const mockGetCachedMarketSummary = vi.mocked(getCachedMarketSummary);
 

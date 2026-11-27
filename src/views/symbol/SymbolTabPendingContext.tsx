@@ -5,8 +5,8 @@
  * 클라이언트 경계. 탭 레일(`SymbolTabs`)과 골격도 같은 판정(`usePendingSymbolTab`)을 읽는다.
  */
 import type { ReactNode } from 'react';
-import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { usePendingHref } from '@/shared/model/NavigationPendingContext';
 import { PendingSlot } from '@/shared/ui/PendingSlot';
 

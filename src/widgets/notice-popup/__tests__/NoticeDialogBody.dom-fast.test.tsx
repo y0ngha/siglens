@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 import type { NoticeDialogBodyProps } from '../ui/dialog/NoticeDialogBody';
 import { NoticeDialogBody } from '../ui/dialog/NoticeDialogBody';
-import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 type BodyNotice = NoticeDialogBodyProps['notice'];
 

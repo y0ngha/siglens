@@ -1,8 +1,8 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
-import type { ReactNode } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
+import type { ReactNode } from 'react';
+// @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest';
 
 const EMPTY_SNAPSHOT: FinancialsSnapshot = {
     income: [],

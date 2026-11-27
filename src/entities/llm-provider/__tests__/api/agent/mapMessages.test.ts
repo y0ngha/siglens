@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { AgentMessage } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { toOpenAiChatMessages } from '@/entities/llm-provider/api/agent/mapMessages';
 
 const call = { id: 'c1', name: 'get_quote', args: { symbols: ['AAPL'] } };

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { chromium } from '@playwright/test';
+import * as installedCore from '@y0ngha/siglens-core';
 // SiglensAI 에이전트 회귀 평가 실행기 (로컬 전용, 실제 provider — CI에서 돌지 않는다).
 //
 // 실제 스택을 HTTP로 통째로 몬다: 프롬프트·도구 명세·실행기·저장·어댑터가 한 번에 검증된다.
@@ -33,10 +35,8 @@
 // 브라우저가 Origin을 알아서 붙이고 *.localhost를 해석한다. 헤드리스 UA는 봇으로 403이라 데스크톱 UA를 쓴다.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { chromium } from '@playwright/test';
-import * as installedCore from '@y0ngha/siglens-core';
-import { tsImport } from 'tsx/esm/api';
 import postgres from 'postgres';
+import { tsImport } from 'tsx/esm/api';
 import { CASES } from './cases.mjs';
 import {
     EVAL_TIME_ZONE,

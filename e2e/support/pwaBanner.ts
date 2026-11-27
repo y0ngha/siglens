@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test';
+import { VISIT_HISTORY_STORAGE_KEY } from '@/features/visitor-ping/lib/visitHistoryStorage';
 // 이 레포의 spec은 모두 외부 요청 차단 가드가 붙은 `fixtures`의 `test`를 쓴다.
 // 여기서는 `test.info()`만 필요하지만 출처를 하나로 맞춘다.
 import { test } from './fixtures';
-import { VISIT_HISTORY_STORAGE_KEY } from '@/features/visitor-ping/lib/visitHistoryStorage';
 
 /**
  * 배너가 실제로 뜨는 프로젝트 — `playwright.config.ts`의 모바일 디바이스 두 개.

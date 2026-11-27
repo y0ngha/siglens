@@ -39,7 +39,6 @@ vi.mock('@/entities/auth/lib/mainSessionHintCookie', async importOriginal => {
 vi.mock('next/navigation', () => ({ redirect: m.redirect }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { maybeHandoffRedirect } from '@/app/ai/[locale]/_lib/handoffRedirect';
 
 describe('maybeHandoffRedirect', () => {

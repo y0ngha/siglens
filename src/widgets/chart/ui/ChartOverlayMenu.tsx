@@ -4,16 +4,20 @@
  * "차트 작도" 메뉴 — 작도 항목별 표시 토글과 레벨 연장 설정 UI.
  */
 
+import type { OverlayKind } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import { useEffect, useId, useRef } from 'react';
-import type { OverlayKind } from '@y0ngha/siglens-core';
+import type {
+    OverlayMenuGroupKind,
+    OverlayMenuItem,
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
-import type { ToggleSetting } from '../types';
 import type { ChartMenuControl } from '../hooks/useExclusiveChartMenu';
+import type { ToggleSetting } from '../types';
 import {
     CheckBox,
     type CheckState,
@@ -26,10 +30,6 @@ import {
     CHART_POPOVER_TRIGGER,
 } from './chartPopoverStyles';
 import { MenuTriggerText } from './MenuTriggerText';
-import type {
-    OverlayMenuGroupKind,
-    OverlayMenuItem,
-} from '@/entities/analysis/lib/chartOverlays/overlayItems';
 
 interface ChartOverlayMenuProps {
     /** 헤더 띠 메뉴 셋이 공유하는 열림 제어(한 번에 하나만 열린다). */

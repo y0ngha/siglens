@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 펼친 문항에서 대상 하나의 기록 — 회차별 답변 원문, 추출값, 중립 심사.
  */
 import { useId } from 'react';
-import { useTranslations } from 'next-intl';
 import type {
     BenchmarkItemDetail,
     BenchmarkTarget,

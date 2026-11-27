@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { BacktestRunInfo } from '@y0ngha/siglens-core';
 import type { BacktestStats } from '@/entities/backtest-case/model';
-
 import { BacktestStrategy } from '../../BacktestStrategy';
 
 const RUN: BacktestRunInfo = {

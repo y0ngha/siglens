@@ -1,8 +1,8 @@
 'use client';
 
-import { useAnalysisView } from '@/shared/model/analysisView';
-import { cn } from '@/shared/lib/cn';
 import type { AnalysisFeedbackContext } from '@/entities/feedback/types';
+import { cn } from '@/shared/lib/cn';
+import { useAnalysisView } from '@/shared/model/analysisView';
 import { AiFeedbackButtons } from './AiFeedbackButtons';
 
 interface AnalysisFeedbackProps {

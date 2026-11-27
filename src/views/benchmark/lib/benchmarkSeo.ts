@@ -5,12 +5,12 @@ import { getTranslations } from 'next-intl/server';
 import { buildBenchmarkHeadline } from '@/entities/benchmark/lib/benchmarkHeadline';
 import type { BenchmarkRelease } from '@/entities/benchmark/types';
 import type { AiSeoCopy } from '@/shared/config/aiHost';
+import { BENCHMARK_DATA_LICENSE_URL } from '@/shared/config/benchmark';
 import { SITE_NAME } from '@/shared/config/brand';
 import { LOCALE_HREFLANG, type Locale } from '@/shared/i18n/locales';
+import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
 import { brandAiName } from '@/shared/lib/brandName';
 import { clampSeoDescription } from '@/shared/lib/seoClamp';
-import { formatBenchmarkDate } from '@/shared/lib/benchmarkFormat';
-import { BENCHMARK_DATA_LICENSE_URL } from '@/shared/config/benchmark';
 
 /** 두 호스트 라우트의 메타데이터·JSON-LD가 쓰는 문구. */
 export interface BenchmarkSeoCopy extends AiSeoCopy {

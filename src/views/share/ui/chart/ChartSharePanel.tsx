@@ -7,8 +7,8 @@
 
 import dynamic from 'next/dynamic';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
-import type { SharePanelProps } from '../../types';
 import { toShareKeyLevels } from '../../lib/shareKeyLevels';
+import type { SharePanelProps } from '../../types';
 
 /*
  * Both widgets load per kind (`next/dynamic`) so non-chart share pages never

@@ -1,14 +1,14 @@
+import type { UseQueryResult } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import type { UseQueryResult } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import { ChartContent } from '@/views/symbol/ChartContent';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
 } from '@/shared/lib/anonAnalysisCount';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { ChartContent } from '@/views/symbol/ChartContent';
 
 // Regression test for the anonymous-nudge missed-fire on cache-HIT + cold
 // currentUser (member-reasoning-toggle spec Part B code review finding #1).

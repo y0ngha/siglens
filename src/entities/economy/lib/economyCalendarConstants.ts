@@ -1,6 +1,5 @@
-import type { CalendarCountry } from '../model';
-
 import { SECONDS_PER_DAY, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import type { CalendarCountry } from '../model';
 
 /** revalidateTag 대상 — 캘린더 ISR 캐시만 무효화한다(스냅샷 캐시와 분리). */
 const ECONOMY_CALENDAR_CACHE_TAG = 'economy:calendar';

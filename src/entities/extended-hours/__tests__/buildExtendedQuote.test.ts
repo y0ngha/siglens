@@ -4,10 +4,10 @@ import {
     type ReferenceQuote,
 } from '@/entities/extended-hours/lib/buildExtendedQuote';
 import { extendedSessionAt } from '@/entities/extended-hours/lib/extendedSession';
-import { parseAftermarketTrade } from '@/shared/api/fmp/FmpMarketProvider';
-import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
 import aftermarketTradeFixture from '@/shared/api/fmp/__tests__/fixtures/aftermarketTrade.aapl.json';
 import quoteFixture from '@/shared/api/fmp/__tests__/fixtures/quote.aapl.preMarket.json';
+import { parseAftermarketTrade } from '@/shared/api/fmp/FmpMarketProvider';
+import type { ExtendedHoursTrade } from '@/shared/api/market/marketProvider.types';
 
 /** 라이브 프로브(2026-10-15 07:07 ET)와 같은 시각 — 프리마켓. */
 const PRE_NOW = new Date('2026-10-15T11:07:16Z');

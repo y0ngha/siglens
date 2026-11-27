@@ -30,24 +30,32 @@ vi.mock('@/entities/investor-flows/server/getHolderLookup', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getInvestorFlowsTool } from '@/app/api/ai/chat/tools/getInvestorFlows';
 import { INVESTOR_FLOWS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 import {
-    SUMMARY_MAX_INSIDER_TRANSACTIONS,
-    SUMMARY_MAX_LARGE_HOLDERS,
-    SUMMARY_MAX_PROPOSED_SALES,
-} from '@/entities/investor-flows/lib/summary/insider';
-import { SUMMARY_MAX_OFFERINGS } from '@/entities/investor-flows/lib/summary/dilution';
-import { SUMMARY_MAX_SIGNALS } from '@/entities/investor-flows/lib/summary/signals';
-import { SUMMARY_MAX_TOP_HOLDERS } from '@/entities/investor-flows/lib/summary/institutional';
-import { type InvestorFlowsSummary } from '@/entities/investor-flows/lib/summary/types';
+    EMPTY_COLLECTING_SNAPSHOT,
+    resolveCollectingArms,
+} from '@/entities/investor-flows/lib/investorFlowsReadiness';
 import {
     KR_SUMMARY_MAX_INSIDERS,
     KR_SUMMARY_MAX_MAJOR_HOLDERS,
     KR_SUMMARY_MAX_TRADING_PLANS,
     type KrInvestorFlowsSummary,
 } from '@/entities/investor-flows/lib/summarizeKrInvestorFlows';
+import { SUMMARY_MAX_OFFERINGS } from '@/entities/investor-flows/lib/summary/dilution';
+import {
+    SUMMARY_MAX_INSIDER_TRANSACTIONS,
+    SUMMARY_MAX_LARGE_HOLDERS,
+    SUMMARY_MAX_PROPOSED_SALES,
+} from '@/entities/investor-flows/lib/summary/insider';
+import { SUMMARY_MAX_TOP_HOLDERS } from '@/entities/investor-flows/lib/summary/institutional';
+import { SUMMARY_MAX_SIGNALS } from '@/entities/investor-flows/lib/summary/signals';
+import { type InvestorFlowsSummary } from '@/entities/investor-flows/lib/summary/types';
+import {
+    HOLDER_LOOKUP_NOTE,
+    HOLDER_QUERY_MAX_CHARS,
+    type InvestorFlowsPipelineReadiness,
+} from '@/entities/investor-flows/model';
 import {
     evaluate,
     makeExpandedSnapshot,
@@ -64,15 +72,6 @@ import {
     makeThresholdList,
     makeTransaction,
 } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
-import {
-    HOLDER_LOOKUP_NOTE,
-    HOLDER_QUERY_MAX_CHARS,
-    type InvestorFlowsPipelineReadiness,
-} from '@/entities/investor-flows/model';
-import {
-    EMPTY_COLLECTING_SNAPSHOT,
-    resolveCollectingArms,
-} from '@/entities/investor-flows/lib/investorFlowsReadiness';
 
 /** 실측(2026-11-16 NVDA) 모양의 보유 비율 — 크기 예산 테스트에도 실린다. */
 const OWNERSHIP = {

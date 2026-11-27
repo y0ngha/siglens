@@ -1,9 +1,9 @@
 import type { PointerEvent } from 'react';
+import type { OverlayCardControls } from '@/widgets/analysis/model/types';
 import {
     overlayHoverHandlers,
     toOverlayCardControls,
 } from '@/widgets/analysis/utils/overlayCardControls';
-import type { OverlayCardControls } from '@/widgets/analysis/model/types';
 
 const pointer = (pointerType: string) => ({ pointerType }) as PointerEvent;
 

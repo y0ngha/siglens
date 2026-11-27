@@ -1,8 +1,8 @@
+import type { InsiderMetrics } from '@y0ngha/siglens-core';
 /**
  * 내부자 요약 카드 — 순매수/순매도·매수·매도 3장과 클러스터 매수 배지.
  */
 import { useTranslations } from 'next-intl';
-import type { InsiderMetrics } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';

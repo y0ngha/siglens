@@ -1,8 +1,8 @@
+import type { KrMajorHolderReportForm } from '@y0ngha/siglens-core';
 /**
  * 대량보유 보고 구분 배지(일반·약식).
  */
 import { useTranslations } from 'next-intl';
-import type { KrMajorHolderReportForm } from '@y0ngha/siglens-core';
 
 /** 보고 구분은 서식 차이일 뿐 보유 목적을 말하지 않는다. */
 export function FormBadge({

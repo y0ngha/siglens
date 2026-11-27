@@ -1,29 +1,27 @@
 import 'server-only';
-import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
-
+import { cache } from 'react';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { getDatabaseClient } from '@/shared/db/client';
-import { localizeContent } from '@/shared/db/localizeContent';
 import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,
 } from '@/shared/db/contentTranslationFields';
-import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
+import { localizeContent } from '@/shared/db/localizeContent';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-
-import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
-import { economicCalendarId } from '../lib/economicCalendarId';
-import type {
-    EconomicCalendarEventWithAnalysis,
-    CalendarCountry,
-} from '../model';
 import { pastWindowStart, futureWindowEnd } from '../lib/calendarWindow';
+import { economicCalendarId } from '../lib/economicCalendarId';
 import {
     CALENDAR_COUNTRY,
     economyCalendarCacheTag,
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
 } from '../lib/economyCalendarConstants';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type {
+    EconomicCalendarEventWithAnalysis,
+    CalendarCountry,
+} from '../model';
+import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 
 type CalendarReader = (
     anchorEt: string

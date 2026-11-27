@@ -1,9 +1,9 @@
 import 'server-only';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import type { Locale } from '@/shared/i18n/locales';
 import { createRedisSlot } from '@/shared/cache/createRedisSlot';
 import { readHubSsrSeed, writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import type { Locale } from '@/shared/i18n/locales';
 import type { NewsFeedCategoryId } from '../lib/categoryConfig';
 
 /**

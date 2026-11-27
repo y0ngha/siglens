@@ -13,13 +13,12 @@ vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: m.snapshot,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type {
     OptionsChain,
     OptionsContract,
     OptionsSnapshot,
 } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildOptionsBlock,
     OPTIONS_STRIKES_MAX,

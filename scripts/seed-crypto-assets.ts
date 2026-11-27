@@ -1,12 +1,12 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
-import { cryptoAssets } from '../src/shared/db/schema';
-import { fetchCryptoAssetList } from '../src/entities/ticker/cryptoAssetApi';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import {
     guardRemoteWrite,
     requireDatabaseUrl,
 } from '../db/scripts/lib/dbTarget';
+import { fetchCryptoAssetList } from '../src/entities/ticker/cryptoAssetApi';
+import { cryptoAssets } from '../src/shared/db/schema';
 
 const databaseUrl = requireDatabaseUrl();
 

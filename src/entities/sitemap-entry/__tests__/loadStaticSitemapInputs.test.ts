@@ -34,10 +34,10 @@ vi.mock('@/entities/terms/api', () => ({
     },
 }));
 
-import { loadStaticSitemapInputs } from '../server';
 import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { maxLastModified } from '../lib/maxLastModified';
+import { loadStaticSitemapInputs } from '../server';
 
 const CRYPTO_AT = new Date('2026-05-23T11:00:00.000Z');
 const TOS_AT = new Date('2026-09-14T00:00:00.000Z');

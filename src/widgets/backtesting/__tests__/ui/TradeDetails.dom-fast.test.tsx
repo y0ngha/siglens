@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import type { BacktestTrade } from '@y0ngha/siglens-core';
-
 import { TradeDetails } from '../../ui/trade-row/TradeDetails';
 
 const TRADE: BacktestTrade = {

@@ -1,7 +1,7 @@
 import { apiOk, withApiErrorBoundary } from '../apiResponse';
 import { requireApiKey } from '../authenticate';
-import { enforceRateLimit } from '../rateLimitHeaders';
 import { publicApiToolSpecs } from '../publicApiTools';
+import { enforceRateLimit } from '../rateLimitHeaders';
 
 export const dynamic = 'force-dynamic';
 

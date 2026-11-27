@@ -8,6 +8,7 @@ import {
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { isValidTimeframe } from '@/shared/config/market';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { buildGateError, resolveTierAndByok } from '@/shared/lib/byokGate';
@@ -16,7 +17,6 @@ import {
     executeOverallAnalysis,
     type SubmitOverallAnalysisActionOptions,
 } from '../server/overallAnalysisRunner';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** core의 종합 분석 결과에 siglens 쪽 게이트 거부를 더한 최종 반환 타입. */
 export type RunOverallAnalysisActionResult =

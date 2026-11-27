@@ -8,7 +8,18 @@ vi.mock('@/shared/api/yahoo/yahooMacroSource', () => ({
     getYahooMacroDailyCloses: getCloses,
 }));
 
+import {
+    AGENT_MACRO_INSTRUMENTS,
+    AGENT_MACRO_QUOTES_MAX,
+} from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getMacroQuotesTool } from '@/app/api/ai/chat/tools/getMacroQuotes';
+import { MACRO_QUOTES_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import type {
+    YahooDailyClose,
+    YahooMacroDaily,
+    YahooMacroQuote,
+} from '@/shared/api/yahoo/yahooMacroSource';
 import {
     arrayAt,
     keysAt,
@@ -16,18 +27,6 @@ import {
     readAt,
     stringAt,
 } from '@/shared/test-utils/readAt';
-import {
-    AGENT_MACRO_INSTRUMENTS,
-    AGENT_MACRO_QUOTES_MAX,
-} from '@y0ngha/siglens-core';
-import { MACRO_QUOTES_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
-import type {
-    YahooDailyClose,
-    YahooMacroDaily,
-    YahooMacroQuote,
-} from '@/shared/api/yahoo/yahooMacroSource';
-
-import { getMacroQuotesTool } from '@/app/api/ai/chat/tools/getMacroQuotes';
 
 const ctx = {
     userId: 'u',

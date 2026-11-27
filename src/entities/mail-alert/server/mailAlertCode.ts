@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { createHash } from 'node:crypto';
 import {
     EMAIL_VERIFICATION_CODE_LENGTH,

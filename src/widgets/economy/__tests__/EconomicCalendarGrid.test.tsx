@@ -1,12 +1,12 @@
-import userEvent from '@testing-library/user-event';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { renderToString } from 'react-dom/server';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
+import { renderToString } from 'react-dom/server';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
     IntlTestProvider,
     withLocale,
 } from '@/shared/test-utils/intlRenderWrapper';
-import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
 vi.mock('@/entities/economy/actions/ensureEconomicCalendarAction', () => ({

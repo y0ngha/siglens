@@ -1,9 +1,9 @@
+import path from 'node:path';
 import {
     __resetSkillCountsForTests,
     countSkillFiles,
     FileSkillsLoader,
 } from '@/entities/skill/api';
-import path from 'node:path';
 
 const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
     mockReaddir: vi.fn(),

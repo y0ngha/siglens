@@ -28,13 +28,13 @@ import {
     INVESTOR_FLOWS_STATE_DART_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_DART_LIST_CURSOR,
 } from '../../lib/investorFlowsPolicy';
-import { runDartFilingsIngest } from '../../server/ingestDartFilings';
-import type { IngestDartFilingsDeps } from '../../server/ingestDartFilingsTypes';
 import type {
     DartInsiderReportRow,
     DartMajorHoldingRow,
     DartTradingPlanRow,
 } from '../../model';
+import { runDartFilingsIngest } from '../../server/ingestDartFilings';
+import type { IngestDartFilingsDeps } from '../../server/ingestDartFilingsTypes';
 import {
     EXECUTIVE_STOCK_LIST,
     MAJOR_STOCK_LIST,

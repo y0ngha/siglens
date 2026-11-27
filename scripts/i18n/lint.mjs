@@ -14,14 +14,14 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
+import { classify } from './lib/context.mjs';
 import {
     candidateFiles,
     collectCandidates,
     parseFile,
     readSource,
 } from './lib/scan.mjs';
-import { classify } from './lib/context.mjs';
-import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
 
 const ROOT = resolve(process.argv[1], '../../..');
 const UPDATE = process.argv.includes('--update');

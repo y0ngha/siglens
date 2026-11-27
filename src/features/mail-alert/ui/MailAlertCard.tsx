@@ -1,9 +1,9 @@
 'use client';
 
+import type { SignalType } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import type { SignalType } from '@y0ngha/siglens-core';
 import type {
     MailAlertFearGreedMarket,
     MailAlertTopic,

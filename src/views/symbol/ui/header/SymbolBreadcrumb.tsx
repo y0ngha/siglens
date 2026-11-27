@@ -1,9 +1,9 @@
 'use client';
 
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { cn } from '@/shared/lib/cn';
-import { brandName } from '@/shared/lib/brandName';
 import type { Locale } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
+import { cn } from '@/shared/lib/cn';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { HeaderDisplayName } from '../../utils/headerDisplayName';
 
 interface SymbolBreadcrumbProps {

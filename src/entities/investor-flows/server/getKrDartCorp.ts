@@ -3,6 +3,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { DrizzleInvestorFlowsDartRepository } from '../api/investorFlowsDartRepository';
 import { krSymbolToStockCode } from '../lib/dartSymbol';
@@ -12,7 +13,6 @@ import {
 } from '../lib/investorFlowsTag';
 import type { DartCorpRecord } from '../model';
 import { resolveFakeDartCorp } from './fakeKrDart';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 async function loadFromDatabase(
     symbol: string

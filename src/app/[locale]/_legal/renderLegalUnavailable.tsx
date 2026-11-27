@@ -1,4 +1,3 @@
-import { LegalUnavailable } from '@/widgets/legal/LegalUnavailable';
 import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import {
     PRIVACY_PATH,
@@ -7,6 +6,7 @@ import {
     termsTitle,
 } from '@/shared/lib/legal';
 import type { SeoTranslator } from '@/shared/lib/seo';
+import { LegalUnavailable } from '@/widgets/legal/LegalUnavailable';
 import type { LegalPolicy } from './legalPolicy';
 
 /**

@@ -3,11 +3,11 @@
  */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SUBSECTION_IDS } from '../../utils/sectorSignalStocks';
 import {
     PLACEHOLDER_CARD_COUNT,
     SIGNAL_CARD_GRID_CLASS,
 } from '../../utils/signalCardGrid';
-import { SUBSECTION_IDS } from '../../utils/sectorSignalStocks';
 
 const SECTION_SLOTS = SUBSECTION_IDS;
 const CARD_SLOTS = Array.from(

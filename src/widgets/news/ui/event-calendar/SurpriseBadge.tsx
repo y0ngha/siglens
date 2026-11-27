@@ -4,8 +4,8 @@
  * 실적 서프라이즈 배지 — 종류 라벨과 부호 퍼센트를 한 알약에 담는다.
  */
 import { useTranslations } from 'next-intl';
-import { cn } from '@/shared/lib/cn';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { cn } from '@/shared/lib/cn';
 import { formatSurprisePercent } from '../../utils/earningsFormat';
 import {
     SURPRISE_BADGE_CLASS,

@@ -1,19 +1,19 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ComponentType } from 'react';
-import { useMobileSheet } from '@/views/symbol/hooks/useMobileSheet';
-import { SNAP_FULL, SNAP_PEEK } from '@/views/symbol/constants/mobileSheet';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
-import { useHydrated } from '@/shared/hooks/useHydrated';
-import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+import type { ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { aiAskUrl } from '@/shared/config/aiHost';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import type { AssetInfo } from '@/shared/lib/types';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { SNAP_FULL, SNAP_PEEK } from '@/views/symbol/constants/mobileSheet';
+import { useMobileSheet } from '@/views/symbol/hooks/useMobileSheet';
+import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 
 // Mock MobileAnalysisSheet so the dynamic() factory's import resolves cheaply.
 vi.mock('@/views/symbol/MobileAnalysisSheet', () => ({

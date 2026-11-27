@@ -1,10 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it } from 'vitest';
-import ko from '../../../../../messages/ko.json';
+import type { ChatHeatmapBlock } from '@/entities/chat-conversation/types';
 import { HeatmapBlockView } from '@/widgets/chart/visual/HeatmapBlockView';
 import { PortfolioBlockView } from '@/widgets/chart/visual/PortfolioBlockView';
-import type { ChatHeatmapBlock } from '@/entities/chat-conversation/types';
+import ko from '../../../../../messages/ko.json';
 import { HEATMAP_SECTORS, HEATMAP_THEME, PORTFOLIO } from './fixtures';
 
 function wrap(node: React.ReactNode) {

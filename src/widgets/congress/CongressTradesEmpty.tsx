@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
  * Empty-state card for the `CongressTradesTable` when there are no trades.

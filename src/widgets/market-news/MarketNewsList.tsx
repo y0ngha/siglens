@@ -7,14 +7,14 @@ import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConf
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { useMarketNewsPagination } from './hooks/useMarketNewsPagination';
-import { capMarketNewsRows } from './utils/capMarketNewsRows';
-import { getMarketNewsLookbackDays } from './utils/marketNewsLookback';
 import { MarketNewsCard } from './MarketNewsCard';
 import { MarketNewsListEmpty } from './ui/list/MarketNewsListEmpty';
 import { MarketNewsListHeader } from './ui/list/MarketNewsListHeader';
 import { MarketNewsListLoadingState } from './ui/list/MarketNewsListLoadingState';
 import { MarketNewsLoadMoreButton } from './ui/list/MarketNewsLoadMoreButton';
 import { MarketNewsPollNotice } from './ui/list/MarketNewsPollNotice';
+import { capMarketNewsRows } from './utils/capMarketNewsRows';
+import { getMarketNewsLookbackDays } from './utils/marketNewsLookback';
 
 export interface MarketNewsListProps {
     category: NewsFeedCategoryId;

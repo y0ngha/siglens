@@ -4,13 +4,13 @@
  * 선형 회귀 보조 pane 시리즈를 그리는 훅.
  */
 
-import type { RefObject } from 'react';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { HistogramSeries } from 'lightweight-charts';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { buildSeriesData } from '../utils/seriesDataUtils';
+import type { RefObject } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { regressionBarColor } from '../utils/histogramColorUtils';
+import { buildSeriesData } from '../utils/seriesDataUtils';
 
 interface UseRegressionChartParams {
     chartRef: RefObject<IChartApi | null>;

@@ -2,26 +2,25 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
-import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-import type { IChartApi } from 'lightweight-charts';
 import type { Bar } from '@y0ngha/siglens-core';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
+import type { IChartApi } from 'lightweight-charts';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     mergeExtendedBars,
     type ExtendedBarTimeframe,
 } from '@/shared/api/market/extendedBarsSession';
-import { buildSeriesDataFromValues } from '@/widgets/chart/utils/seriesDataUtils';
+import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
 import {
     createExtendedGapController,
     hideSegmentsAcrossGaps,
 } from '@/widgets/chart/utils/extendedGapChart';
-import regular5Min from '../../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.5min.json';
+import { buildSeriesDataFromValues } from '@/widgets/chart/utils/seriesDataUtils';
+import extended1Hour from '../../../../shared/api/fmp/__tests__/fixtures/extendedBars.aapl.1hour.json';
 import extended5Min from '../../../../shared/api/fmp/__tests__/fixtures/extendedBars.aapl.5min.json';
 import regular1Hour from '../../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.1hour.json';
-import extended1Hour from '../../../../shared/api/fmp/__tests__/fixtures/extendedBars.aapl.1hour.json';
+import regular5Min from '../../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.5min.json';
 
 const mockFmpGet = vi.mocked(fmpGet);
 const provider = new FmpMarketProvider();

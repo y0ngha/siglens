@@ -1,8 +1,8 @@
 import type { Tier } from '@y0ngha/siglens-core';
-import { getCurrentUser } from './getCurrentUser';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveTierOnly } from '@/shared/lib/byokGate';
 import { isCacheScopeDynamicUsage } from '@/shared/lib/isCacheScopeDynamicUsage';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getCurrentUser } from './getCurrentUser';
 
 /**
  * 호출자의 tier를 해석한다. `getCurrentUser`처럼 세션·DB I/O를 하므로 `lib/`(순수 함수 전용,

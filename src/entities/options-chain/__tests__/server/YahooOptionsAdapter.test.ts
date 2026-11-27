@@ -37,11 +37,11 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-import type { MockInstance, Mock } from 'vitest';
 import {
     mapExpirationsToSlots,
     sanitizeOptionsChain,
 } from '@y0ngha/siglens-core';
+import type { MockInstance, Mock } from 'vitest';
 import { YahooOptionsAdapter } from '../../server/YahooOptionsAdapter';
 
 /** A minimal but complete CallOrPut fixture matching the live API shape. */

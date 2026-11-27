@@ -1,32 +1,18 @@
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
+import {
+    INVESTOR_FLOWS_INSIDER_LOOKBACK_DAYS,
+    INVESTOR_FLOWS_LARGE_HOLDER_FETCH_LIMIT,
+} from '@/shared/api/fmp/CachedInvestorFlowsFmpProvider';
 import { isFmpTransientError } from '@/shared/api/fmp/fmpRetry';
 import type {
     InvestorFlowsFmpProvider,
     RawSharesFloat,
 } from '@/shared/api/fmp/investorFlowsProvider.types';
-import {
-    INVESTOR_FLOWS_INSIDER_LOOKBACK_DAYS,
-    INVESTOR_FLOWS_LARGE_HOLDER_FETCH_LIMIT,
-} from '@/shared/api/fmp/CachedInvestorFlowsFmpProvider';
-import type { InvestorFlowsDataProvider } from '@y0ngha/siglens-core';
-import type {
-    InvestorFlowsDegradedPart,
-    InvestorFlowsSnapshotWithStatus,
-    FtdPointRecord,
-    OfferingRecord,
-    OptionAggregateRecord,
-    ProposedSaleRecord,
-    ThresholdListingRecord,
-    ThresholdStatusSummary,
-} from '../model';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { addDays, isPeriodComplete } from '../lib/investorFlowsDates';
+import { INVESTOR_FLOWS_REG_SHO_RETENTION_DAYS } from '../lib/investorFlowsPolicy';
 import { assembleInvestorFlowsSnapshot } from '../lib/investorFlowsSnapshot';
-import {
-    FTD_LOOKBACK_DAYS,
-    SNAPSHOT_MAX_SHORT_INTEREST_POINTS,
-    SNAPSHOT_MAX_SHORT_VOLUME_POINTS,
-    type ShortInterestRecord,
-    type ShortVolumeRecord,
-} from '../lib/snapshot/short';
+import { summarizeThresholdListings } from '../lib/regShoParsers';
 import {
     OFFERING_LOOKBACK_DAYS,
     PROPOSED_SALE_LOOKBACK_DAYS,
@@ -40,10 +26,24 @@ import {
     type AggregateRecord,
     type HolderRecord,
 } from '../lib/snapshot/institutional';
-import { addDays, isPeriodComplete } from '../lib/investorFlowsDates';
+import {
+    FTD_LOOKBACK_DAYS,
+    SNAPSHOT_MAX_SHORT_INTEREST_POINTS,
+    SNAPSHOT_MAX_SHORT_VOLUME_POINTS,
+    type ShortInterestRecord,
+    type ShortVolumeRecord,
+} from '../lib/snapshot/short';
+import type {
+    InvestorFlowsDegradedPart,
+    InvestorFlowsSnapshotWithStatus,
+    FtdPointRecord,
+    OfferingRecord,
+    OptionAggregateRecord,
+    ProposedSaleRecord,
+    ThresholdListingRecord,
+    ThresholdStatusSummary,
+} from '../model';
 import { resolveHoldersPeriod } from './resolveHoldersPeriod';
-import { INVESTOR_FLOWS_REG_SHO_RETENTION_DAYS } from '../lib/investorFlowsPolicy';
-import { summarizeThresholdListings } from '../lib/regShoParsers';
 
 export interface InvestorFlowsSnapshotReads {
     findCusipsBySymbol(symbol: string): Promise<string[]>;

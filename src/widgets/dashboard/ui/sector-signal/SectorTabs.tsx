@@ -1,11 +1,11 @@
 'use client';
 
+import type { SectorEtf } from '@y0ngha/siglens-core';
 /**
  * 섹터 선택 탭 — 섹터명은 심볼로 카탈로그를 찾아 로케일화한다.
  */
 import { useTranslations } from 'next-intl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
-import type { SectorEtf } from '@y0ngha/siglens-core';
 import { TabsUnderline } from '@/shared/ui/tabs/TabsUnderline';
 
 interface SectorTabsProps {

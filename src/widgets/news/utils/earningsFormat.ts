@@ -1,3 +1,9 @@
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import {
+    cachedDateTimeFormat,
+    cachedNumberFormat,
+} from '@/shared/lib/intlFormatCache';
 /**
  * 실적 캘린더의 숫자·날짜 표기 — 통화는 심볼에서 유도하고 날짜·퍼센트는 로케일에 맞춘다.
  */
@@ -5,12 +11,6 @@ import {
     currencyFractionDigits,
     formatCompactAmount,
 } from '@/shared/lib/priceFormat';
-import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
-import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import {
-    cachedDateTimeFormat,
-    cachedNumberFormat,
-} from '@/shared/lib/intlFormatCache';
 
 /**
  * 통화는 심볼에서 유도한다 — 국내 종목은 원화다. 판정은 `currencyForSymbol` 한 곳에 위임한다.

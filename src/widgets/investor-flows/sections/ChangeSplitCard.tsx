@@ -4,8 +4,8 @@
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip, type FlowTerm } from '../investorFlowsTooltips';
 import { formatInteger } from '../utils/flowFormat';
 import {

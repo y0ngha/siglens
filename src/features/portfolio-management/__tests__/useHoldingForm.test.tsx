@@ -1,12 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
-import {
-    useHoldingForm,
-    type UseHoldingFormOptions,
-} from '@/features/portfolio-management/hooks/useHoldingForm';
 import type {
     PortfolioHoldingView,
     SavePortfolioResult,
 } from '@/entities/portfolio/model';
+import {
+    useHoldingForm,
+    type UseHoldingFormOptions,
+} from '@/features/portfolio-management/hooks/useHoldingForm';
 
 const HOLDING: PortfolioHoldingView = {
     symbol: 'AAPL',

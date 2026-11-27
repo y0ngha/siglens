@@ -1,20 +1,19 @@
 import 'server-only';
-
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
+import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { readGuestId } from '@/shared/api/guestId';
 import { getDatabaseClient } from '@/shared/db/client';
-import { guestSubject } from '@/shared/lib/guestSubject';
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
-import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { guestSubject } from '@/shared/lib/guestSubject';
 import { DrizzlePriceAlertRepository } from '../api';
 import { createMailAlertDeps } from './createMailAlertDeps';
-import { readPriceAlertReference } from './priceAlertReference';
+import type { PriceAlertFlowDeps } from './priceAlertFlows';
 import {
     priceAlertSubject,
     verifyPriceAlertProposal,
 } from './priceAlertProposalToken';
-import type { PriceAlertFlowDeps } from './priceAlertFlows';
+import { readPriceAlertReference } from './priceAlertReference';
 
 /**
  * 가격대 알림 액션이 쓰는 실제 의존성: 알림 메일 흐름의 의존성에 알림 저장소와 제안 토큰 검증을 더한다.

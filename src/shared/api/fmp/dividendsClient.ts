@@ -1,7 +1,7 @@
 import 'server-only';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { toFiniteNumber } from '@/shared/api/fmp/toFiniteNumber';
 import { sym } from '@/shared/api/fmp/symKey';
+import { toFiniteNumber } from '@/shared/api/fmp/toFiniteNumber';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
 

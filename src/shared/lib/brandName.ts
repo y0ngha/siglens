@@ -1,5 +1,5 @@
-import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 /**
  * 문장 속 브랜드 표기. ko는 한글 표기, 다른 로케일은 영문 표기.

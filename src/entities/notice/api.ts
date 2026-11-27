@@ -1,11 +1,11 @@
 import { and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
-import { notices } from '@/shared/db/schema';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { localizeContent } from '@/shared/db/localizeContent';
 import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,
 } from '@/shared/db/contentTranslationFields';
+import { localizeContent } from '@/shared/db/localizeContent';
+import { notices } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import type { NoticeRecord } from './model/types';
 

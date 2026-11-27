@@ -1,3 +1,4 @@
+import { barCenterX } from '../../utils/strikeChartGeometry';
 import {
     COLOR_LABEL,
     CHART_WIDTH,
@@ -9,7 +10,6 @@ import {
     SVG_HEIGHT,
     X_AXIS_LABEL_OFFSET_PX,
 } from '../../utils/strikeChartLayout';
-import { barCenterX } from '../../utils/strikeChartGeometry';
 
 interface StrikeAxisLabelsProps {
     /** Strike values in row order; its length fixes the slot layout. */

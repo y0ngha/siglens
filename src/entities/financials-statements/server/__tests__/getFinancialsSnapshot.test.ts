@@ -53,13 +53,13 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: mockStaticSymbolCache,
 }));
 
+import { normalizeFinancialsSnapshot } from '@y0ngha/siglens-core';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import {
     ANNUAL_LIMIT,
     QUARTER_LIMIT,
 } from '@/entities/financials-statements/lib/financialsSnapshot';
-import { normalizeFinancialsSnapshot } from '@y0ngha/siglens-core';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 
 describe('getFinancialsSnapshot (server — single source)', () => {
     beforeEach(() => {

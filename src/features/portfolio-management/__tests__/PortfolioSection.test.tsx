@@ -1,11 +1,11 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PortfolioSection } from '@/features/portfolio-management/ui/PortfolioSection';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type {
     PortfolioHoldingView,
     SavePortfolioResult,
 } from '@/entities/portfolio/model';
+import { PortfolioSection } from '@/features/portfolio-management/ui/PortfolioSection';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,

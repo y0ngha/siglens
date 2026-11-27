@@ -2,11 +2,11 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { MS_PER_DAY } from '@/shared/config/time';
 import {
     FmpNewsClient,
     SOURCE_UNKNOWN_FALLBACK,
 } from '../../server/fmpNewsClient';
-import { MS_PER_DAY } from '@/shared/config/time';
 
 const mockFetch = vi.fn();
 

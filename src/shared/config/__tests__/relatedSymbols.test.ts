@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
+import {
+    MARKET_INDICES,
+    SECTOR_ETFS,
+    SECTOR_STOCKS,
+} from '@/shared/config/dashboard-tickers';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import {
+    CURATED_KOREAN_NAMES,
+    POPULAR_TICKERS,
+} from '@/shared/config/popular-tickers';
 import {
     RELATED_SYMBOL_COUNT,
     RING_GROUP_LABEL_KEY,
@@ -9,17 +20,6 @@ import {
     SYMBOL_LINK_RINGS,
     themePeersOf,
 } from '@/shared/config/relatedSymbols';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import {
-    CURATED_KOREAN_NAMES,
-    POPULAR_TICKERS,
-} from '@/shared/config/popular-tickers';
-import {
-    MARKET_INDICES,
-    SECTOR_ETFS,
-    SECTOR_STOCKS,
-} from '@/shared/config/dashboard-tickers';
-import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { KR_SYMBOL_RE } from '@/shared/config/ticker';
 
 const UNIVERSE: readonly string[] = [...POPULAR_TICKERS, ...POPULAR_CRYPTOS];

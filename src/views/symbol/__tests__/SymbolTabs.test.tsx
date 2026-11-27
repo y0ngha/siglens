@@ -62,14 +62,13 @@ vi.mock('@/views/symbol/SymbolTabPendingContext', () => ({
     usePendingSymbolTab: vi.fn(() => null),
 }));
 
-import koMessages from '@/../messages/ko.json';
-
 import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
+import koMessages from '@/../messages/ko.json';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import type { AssetInfo } from '@/shared/lib/types';
 import { usePendingSymbolTab } from '@/views/symbol/SymbolTabPendingContext';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
-import type { AssetInfo } from '@/shared/lib/types';
 
 const EQUITY_ASSET: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc.' };
 

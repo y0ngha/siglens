@@ -2,18 +2,18 @@ vi.mock('@/entities/ticker/actions/getAssetInfoAction', () => ({
     getAssetInfoAction: vi.fn(),
 }));
 
-import { renderHook, waitFor } from '@testing-library/react';
 import {
     QueryClient,
     QueryClientProvider,
     dehydrate,
     hydrate,
 } from '@tanstack/react-query';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
+import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { getAssetInfoAction } from '@/entities/ticker/actions/getAssetInfoAction';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { AssetInfo } from '@/shared/lib/types';
 
 const MOCK_ASSET_INFO: AssetInfo = {

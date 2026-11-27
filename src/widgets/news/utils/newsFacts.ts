@@ -2,8 +2,8 @@
  * 뉴스 사실 요약의 집계 — 최신 게시 시각, 감성 개수, 분석 완료 수, 헤드라인 목록을 순수하게 계산한다.
  */
 import type { Locale } from '@/shared/i18n/locales';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 
 /** 요약에 싣는 헤드라인 최대 개수. */
 export const MAX_HEADLINES = 5;

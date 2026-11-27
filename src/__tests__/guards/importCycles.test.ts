@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import {
     buildImportGraph,

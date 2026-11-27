@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { LineStyle } from 'lightweight-charts';
 import type { SeriesAttachedParameter, Time } from 'lightweight-charts';
+import { describe, expect, it, vi } from 'vitest';
 import {
     createRightExtendPrimitive,
     rightExtendSegment,

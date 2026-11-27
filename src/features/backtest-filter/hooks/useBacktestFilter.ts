@@ -2,11 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 import {
     usePickUntilPopstate,
     useUrlSearchParam,
 } from '@/shared/hooks/useUrlSearchParam';
+import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 import {
     BACKTEST_ALL_TAB,
     TICKER_QUERY_PARAM,

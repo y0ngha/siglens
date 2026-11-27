@@ -3,8 +3,8 @@
  */
 
 import { getFieldError } from '@/features/contact-form/lib/contactFormUtils';
-import type { ContactFormError } from '@/shared/lib/types';
 import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
+import type { ContactFormError } from '@/shared/lib/types';
 
 describe('contactFormUtils — getFieldError matching field branch', () => {
     it('returns error message when field matches', () => {

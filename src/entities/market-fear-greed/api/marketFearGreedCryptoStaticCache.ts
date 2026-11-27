@@ -1,12 +1,12 @@
 import 'server-only';
-import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import type { MarketFearGreedCryptoHubView } from '../model';
 import {
     getCachedMarketFearGreedCrypto,
     MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT,
 } from './marketFearGreedCryptoCache';
-import type { MarketFearGreedCryptoHubView } from '../model';
 
 /**
  * ISR-safe 암호화폐 시장 공포·탐욕 판독값. 미국·한국판과 같은 3중 래핑이고 이유도 같다.

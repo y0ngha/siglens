@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { expectAskAiDestination } from '../support/askAi';
+import { test, expect } from '../support/fixtures';
 import { seedReturnVisit } from '../support/pwaBanner';
 
 /**

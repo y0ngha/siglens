@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
 import {
     buildFearGreedMetaFactsFromBars,
     lastScoredDateFromBars,
     scoredHistoryFromBars,
 } from '../utils/fearGreedFromBars';
-import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
 
 /**
  * 설명(`generateMetadata`)과 `dateModified`(페이지 본문)는 같은 함수로 점수 시계열을 읽는다 —

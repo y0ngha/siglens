@@ -2,9 +2,9 @@ vi.mock('@/entities/economy/actions/ensureIndicatorTranslatedAction', () => ({
     ensureIndicatorTranslatedAction: vi.fn(),
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
 import { useIndicatorTranslationTrigger } from '../useIndicatorTranslationTrigger';
 

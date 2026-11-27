@@ -1,9 +1,9 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { getRedisClient } from './redisClient';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 허브 본문이 **처음 나타난 시각**을 보관한다 — RSS `pubDate`의 근거다.

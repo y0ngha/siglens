@@ -15,7 +15,6 @@ vi.mock('@/entities/news-article/api', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';

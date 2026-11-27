@@ -85,18 +85,17 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-import type { MockedClass, Mock } from 'vitest';
-
-import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { MockedClass, Mock } from 'vitest';
+import { DrizzleAgreementRepository } from '@/entities/agreement/api';
+import { DrizzleUserRepository } from '@/entities/auth/api';
+import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/server/pendingOAuthSignupStore';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
-import { DrizzleUserRepository } from '@/entities/auth/api';
-import { DrizzleAgreementRepository } from '@/entities/agreement/api';
-import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
+import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
 import { getDatabaseClient } from '@/shared/db/client';
-import { cookies } from 'next/headers';
-import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
 
 const mockRecordOptIn = recordSignupEmailReportOptIn as unknown as Mock;
 const mockRedirect = redirect as unknown as Mock;

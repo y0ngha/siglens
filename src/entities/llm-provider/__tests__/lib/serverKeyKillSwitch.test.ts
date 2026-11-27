@@ -1,11 +1,11 @@
 import type { LlmProvider, ModelId } from '@y0ngha/siglens-core';
-import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 import {
     isServerKeyModelDisabled,
     parseDisabledServerKeyProviders,
     pickServableModel,
     selectDisabledServerKeyModels,
 } from '@/entities/llm-provider/lib/serverKeyKillSwitch';
+import { DEFAULT_ANALYSIS_MODEL } from '@/shared/config/analysisDefaultModel';
 
 const HAIKU = 'claude-haiku-5-5' as ModelId;
 const SONNET = 'claude-sonnet-5-5' as ModelId;

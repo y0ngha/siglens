@@ -2,12 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
-import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import {
     EXTENDED_QUOTE_REFETCH_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
 import { MS_PER_MINUTE } from '@/shared/config/time';
+import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { SKIP_VERSION_SKEW_RELOAD_META } from '@/shared/lib/reloadOnVersionSkew';
 import { getExtendedHoursQuoteAction } from '../actions/getExtendedHoursQuoteAction';
 import { extendedSessionAt } from '../lib/extendedSession';

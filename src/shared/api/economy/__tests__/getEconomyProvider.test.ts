@@ -1,9 +1,8 @@
 vi.mock('@/shared/api/e2eEnv');
 
 import { vi, describe, it, expect, beforeEach, beforeAll } from 'vitest';
-import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
-
 import { isE2E } from '@/shared/api/e2eEnv';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 const mockIsE2E = vi.mocked(isE2E);
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { InvestorFlowsSignal } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { isMeasuredNoChange } from '../../../utils/axis-evidence/measuredNoChange';
 
 function signal(direction: InvestorFlowsSignal['direction']) {

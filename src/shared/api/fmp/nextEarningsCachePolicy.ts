@@ -1,10 +1,10 @@
+import type { EarningsReport } from '@y0ngha/siglens-core';
 import {
     ISO_DATE_LENGTH,
     MS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_QUARTER_DAY,
 } from '@/shared/config/time';
-import type { EarningsReport } from '@y0ngha/siglens-core';
 
 /*
  * `getEarningsReport`(다음 실적 일정 1건) Redis 캐시의 신선도·TTL 규칙 — 이 파일 전체의 정책.

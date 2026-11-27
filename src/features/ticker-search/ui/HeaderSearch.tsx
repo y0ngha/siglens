@@ -1,9 +1,9 @@
 'use client';
 
+import { HEADER_SEARCH_INPUT_ID } from '@/shared/model/SearchOverlayTriggerContext';
+import { useSearchOverlayTrigger } from '../model/SearchOverlayContext';
 import { SearchTriggerButton } from './SearchTriggerButton';
 import { TickerAutocomplete } from './TickerAutocomplete';
-import { useSearchOverlayTrigger } from '../model/SearchOverlayContext';
-import { HEADER_SEARCH_INPUT_ID } from '@/shared/model/SearchOverlayTriggerContext';
 
 /**
  * 헤더의 검색 표면. 브레이크포인트에 따라 두 얼굴을 갖는다.

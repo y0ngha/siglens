@@ -2,12 +2,12 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { REASONING_FEATURE_LABEL_KEY } from '../model/reasoningFeature';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     getReasoningSwitchMode,
     type ReasoningSwitchMode,
 } from '../lib/reasoningSwitchMode';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { REASONING_FEATURE_LABEL_KEY } from '../model/reasoningFeature';
 
 /**
  * 트랙 공통 클래스.

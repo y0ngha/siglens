@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useLockedCardCopy } from '@/widgets/analysis/hooks/useLockedCardCopy';
 import koMessages from '../../../../../messages/ko.json';
 

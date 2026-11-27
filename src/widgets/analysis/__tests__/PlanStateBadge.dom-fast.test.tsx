@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { PlanState } from '@y0ngha/siglens-core';
-import { PlanStateBadge } from '@/widgets/analysis/ui/PlanStateBadge';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { PlanStateBadge } from '@/widgets/analysis/ui/PlanStateBadge';
 
 const BASE = { atr: 2, stopDistanceAtr: 1.1, stopBasis: 'model' } as const;
 

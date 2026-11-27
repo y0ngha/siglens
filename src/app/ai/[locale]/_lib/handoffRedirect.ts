@@ -1,8 +1,8 @@
 import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { isBot } from '@/shared/api/isBot';
 import { shouldStartHandoff } from '@/entities/auth/lib/mainSessionHintCookie';
+import { isBot } from '@/shared/api/isBot';
 import {
     AI_SSO_PROBED_COOKIE_NAME,
     AUTH_SESSION_COOKIE_NAME,

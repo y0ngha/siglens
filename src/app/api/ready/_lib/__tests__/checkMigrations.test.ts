@@ -1,8 +1,8 @@
 vi.mock('@/shared/db/client', () => ({ tryGetDatabaseClient: vi.fn() }));
 
-import path from 'node:path';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PING_TIMEOUT_MS } from '@/app/api/ready/_lib/checkDependencies';
 import { NON_OK_CACHE_MS } from '@/app/api/ready/_lib/checkMigrations';

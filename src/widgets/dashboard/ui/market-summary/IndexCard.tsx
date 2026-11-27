@@ -1,13 +1,13 @@
+import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { useAssetLabel } from '@/shared/i18n/assetLabel';
+import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 /**
  * 지수·섹터 시세 카드 한 장.
  */
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { useTranslations } from 'next-intl';
-import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
-import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import { QuoteHeader } from '../quote/QuoteHeader';
 
 type IndexCardData = MarketIndexData | MarketSectorData;

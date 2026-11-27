@@ -5,6 +5,10 @@ vi.mock('next/cache', () => ({
 
 import { unstable_cache } from 'next/cache';
 import {
+    __resetFmpBuildBreakerForTests,
+    tripFmpBuildBreaker,
+} from '@/shared/api/offlineBuild';
+import {
     BUILD_DEGRADED_REVALIDATE_SECONDS,
     INCOMPLETE_SESSION_REVALIDATE_SECONDS,
     RUNTIME_DEGRADED_REVALIDATE_SECONDS,
@@ -16,10 +20,6 @@ import {
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
-import {
-    __resetFmpBuildBreakerForTests,
-    tripFmpBuildBreaker,
-} from '@/shared/api/offlineBuild';
 
 // 래퍼는 모듈 로드 시점에 한 번 만들어진다 — 어떤 `clearAllMocks`보다 먼저 호출 기록을 캡처한다.
 const WRAPPER_OPTIONS = vi

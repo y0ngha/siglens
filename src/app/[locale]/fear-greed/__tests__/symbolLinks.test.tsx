@@ -14,18 +14,17 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: mockShortenDb,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
-
-import { FearGreedRouteBody } from '@/app/[locale]/fear-greed/FearGreedRouteBody';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadFearGreedSymbolLinks } from '@/app/[locale]/fear-greed/fearGreedRoute';
+import { FearGreedRouteBody } from '@/app/[locale]/fear-greed/FearGreedRouteBody';
 import type {
     MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 
 const EMPTY_VIEW: MarketFearGreedHubView<MarketFearGreedViewSnapshot> = {
     snapshot: null,

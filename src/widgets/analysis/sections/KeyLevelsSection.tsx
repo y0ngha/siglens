@@ -1,5 +1,12 @@
 'use client';
 
+import {
+    PRICE_LEVEL_BASE_RATE,
+    type ClusteredKeyLevel,
+    type ClusteredKeyLevels,
+    type KrxTickTable,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 /**
  * 주요 레벨 섹션 — 저항·지지 2열과 PoC. 세 값이 모두 없으면 그리지 않는다.
  *
@@ -11,13 +18,6 @@
  * 비워 보내므로, 이 섹션은 별도 잠금 게이트 없이 빈 입력으로 숨겨진다.
  */
 import { useTranslations } from 'next-intl';
-import {
-    PRICE_LEVEL_BASE_RATE,
-    type ClusteredKeyLevel,
-    type ClusteredKeyLevels,
-    type KrxTickTable,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';
 import { cn } from '@/shared/lib/cn';

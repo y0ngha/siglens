@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import {
     CANDIDATE_LOG_LIMIT,
     formatCandidates,
@@ -9,6 +8,7 @@ import {
     planKrTickerReconcile,
     type KrTickerListingRow,
 } from '@/entities/ticker/lib/krTickerReconcile';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 
 /** 절대 하한을 넘기는 더미 심볼 집합 — 가드를 통과시키고 싶을 때 쓴다. */
 function padSymbols(count: number, prefix = 'PAD'): string[] {

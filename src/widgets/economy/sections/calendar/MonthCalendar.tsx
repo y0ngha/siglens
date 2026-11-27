@@ -1,11 +1,11 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 한 달 월 그리드 표 — 캡션·요일 헤더와 주별 칸(이벤트 있는 날은 선택 버튼, 없는 날은 숫자).
  * 지난 주는 펼치기 전까지 `hidden`이고, 달 전체가 지난 주뿐이면 제목·요일 줄까지 숨긴다.
  */
 import { useTranslations } from 'next-intl';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import type { MonthView } from '../../model/calendarTypes';
 import { monthLabel, weekdayLabels } from '../../utils/calendarLabels';

@@ -2,7 +2,6 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { Resolver } from 'node:dns/promises';
 import { isIP } from 'node:net';
-import { withTimeout } from '@/shared/lib/withTimeout';
 import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import {
     __resetMemoryLruForTests,
@@ -15,6 +14,7 @@ import {
     MS_PER_HOUR,
 } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { withTimeout } from '@/shared/lib/withTimeout';
 
 export interface VerifiableCrawler {
     readonly id: string;

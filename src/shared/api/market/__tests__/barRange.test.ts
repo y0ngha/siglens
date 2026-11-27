@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Bar } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { clampBarsRange, withConsistentRange } from '../barRange';
 
 const bar = (o: number, h: number, l: number, c: number): Bar => ({

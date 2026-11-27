@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { expect } from 'vitest';
-import { Breadcrumb, type BreadcrumbCrumb } from '@/shared/ui/Breadcrumb';
 import { SITE_NAME } from '@/shared/config/brand';
-import { findAllElementsByType } from './findElementByType';
+import { Breadcrumb, type BreadcrumbCrumb } from '@/shared/ui/Breadcrumb';
 import { collectJsonLdData } from './collectJsonLdData';
+import { findAllElementsByType } from './findElementByType';
 
 interface ListItemNode {
     name: string;

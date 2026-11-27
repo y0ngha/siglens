@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { useAnalysisView } from '@/shared/model/analysisView';

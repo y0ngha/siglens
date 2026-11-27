@@ -1,9 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
-
-import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
+import { describe, it, expect } from 'vitest';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
 
 const POINT = (date: string, value: number) => ({ date, value });
 

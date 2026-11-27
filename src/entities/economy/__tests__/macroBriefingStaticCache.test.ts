@@ -15,22 +15,20 @@ vi.mock('@y0ngha/siglens-core', async () => {
     return { ...actual, peekMacroBriefingCacheEntry: vi.fn() };
 });
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { unstable_cache } from 'next/cache';
 import { peekMacroBriefingCacheEntry } from '@y0ngha/siglens-core';
-
 import type {
     EconomySnapshot,
     MacroBriefingCacheEntry,
     MacroBriefingResponse,
 } from '@y0ngha/siglens-core';
-
-import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
-import { markSsrMiss } from '@/shared/cache/ssrMissMarker';
+import { unstable_cache } from 'next/cache';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
     MACRO_BRIEFING_SEED_SURFACE,
     peekMacroBriefingStatic,
 } from '@/entities/economy/api/macroBriefingStaticCache';
+import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import { markSsrMiss } from '@/shared/cache/ssrMissMarker';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockUnstableCache = vi.mocked(unstable_cache);

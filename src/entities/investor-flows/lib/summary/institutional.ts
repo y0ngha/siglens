@@ -5,12 +5,6 @@ import {
     type InvestorFlowsScorecard,
     type PutCallReading,
 } from '@y0ngha/siglens-core';
-import type {
-    NetFlow,
-    SummaryQuarter,
-    SummaryHolder,
-    SummaryPutCall,
-} from './types';
 import {
     SUMMARY_NAME_MAX_CHARS,
     SUMMARY_RATIO_DIGITS,
@@ -18,6 +12,12 @@ import {
     clipSummaryText,
     pctChange,
 } from './format';
+import type {
+    NetFlow,
+    SummaryQuarter,
+    SummaryHolder,
+    SummaryPutCall,
+} from './types';
 
 /**
  * 에이전트 도구(`get_investor_flows`) 결과의 상한. 도구 결과 한도는 8,500자(`INVESTOR_FLOWS_RESULT_MAX_CHARS`)이고,

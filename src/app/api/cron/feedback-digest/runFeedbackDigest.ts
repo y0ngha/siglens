@@ -1,10 +1,10 @@
 import { buildFeedbackDigest } from '@/entities/feedback/lib/buildFeedbackDigest';
 import { FEEDBACK_RETENTION_MS } from '@/entities/feedback/lib/constants';
-import { renderFeedbackDigest } from '@/entities/feedback/templates/operator-mail/renderFeedbackDigest';
 import type { FeedbackRepository } from '@/entities/feedback/lib/types';
+import { renderFeedbackDigest } from '@/entities/feedback/templates/operator-mail/renderFeedbackDigest';
 import { MS_PER_DAY } from '@/shared/config/time';
-import type { EmailMessage } from '@/shared/email/types';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { EmailMessage } from '@/shared/email/types';
 
 export interface FeedbackDigestDeps {
     repository: Pick<

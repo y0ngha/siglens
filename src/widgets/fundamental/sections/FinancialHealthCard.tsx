@@ -1,17 +1,17 @@
-/**
- * 재무 건전성 카드 — 지표 값 계산은 `utils/`, 한 줄 렌더는 `ui/financial-health/`가 맡는다.
- */
-import { useTranslations } from 'next-intl';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type {
     FundamentalRatiosInput,
     FundamentalFinancialScoresInput,
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
+/**
+ * 재무 건전성 카드 — 지표 값 계산은 `utils/`, 한 줄 렌더는 `ui/financial-health/`가 맡는다.
+ */
+import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { HealthMetric } from '@/widgets/fundamental/ui/financial-health/HealthMetric';
 import {
     altmanBadge,

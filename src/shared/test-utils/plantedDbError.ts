@@ -1,5 +1,4 @@
 import { inspect } from 'node:util';
-
 import { expect, type MockInstance } from 'vitest';
 
 /**

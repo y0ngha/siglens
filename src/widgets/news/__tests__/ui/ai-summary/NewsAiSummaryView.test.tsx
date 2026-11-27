@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { NewsAiSummaryView } from '@/widgets/news/ui/ai-summary/NewsAiSummaryView';
 import { SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
+import { NewsAiSummaryView } from '@/widgets/news/ui/ai-summary/NewsAiSummaryView';
 
 const BASE: NewsAnalysisResponse = {
     overallSentiment: 'neutral',

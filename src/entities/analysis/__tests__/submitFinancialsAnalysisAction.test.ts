@@ -39,15 +39,15 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-import type { MockedFunction } from 'vitest';
-import { headers } from 'next/headers';
 import {
     runFinancialsAnalysis,
     type ModelId,
     type RunFinancialsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
+import { headers } from 'next/headers';
+import type { MockedFunction } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { runFinancialsAnalysisAction } from '../actions/runFinancialsAnalysisAction';

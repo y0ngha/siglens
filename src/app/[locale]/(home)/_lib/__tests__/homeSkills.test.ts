@@ -8,8 +8,8 @@ vi.mock('@/entities/skill/api', () => ({
     loadShowcaseSkills: mocks.loadShowcaseSkills,
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Skill } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EMPTY_SKILL_COUNTS,
     loadShowcase,

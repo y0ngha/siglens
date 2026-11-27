@@ -27,17 +27,17 @@ const toast = vi.hoisted(() => ({ showToast: vi.fn(), dismiss: vi.fn() }));
 vi.mock('@/shared/ui/ToastProvider', () => ({ useToast: () => toast }));
 
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
-import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import { addWatchlistItemAction } from '@/entities/watchlist/actions/addWatchlistItemAction';
+import { getWatchlistAction } from '@/entities/watchlist/actions/getWatchlistAction';
 import { removeWatchlistItemAction } from '@/entities/watchlist/actions/removeWatchlistItemAction';
-import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
+import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
 import {
     WATCHLIST_MAX_LOCAL,
     WATCHLIST_MAX_MEMBER,
 } from '@/shared/config/watchlist';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import { LOCAL_STORAGE_WATCHLIST_KEY } from '@/shared/lib/storageKeys';
-import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
 const mockGet = vi.mocked(getWatchlistAction);
 const mockAdd = vi.mocked(addWatchlistItemAction);

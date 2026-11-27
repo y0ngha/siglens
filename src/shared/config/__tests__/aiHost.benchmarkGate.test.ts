@@ -5,7 +5,6 @@ vi.mock('../benchmark', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { AI_INDEXABLE_PATHS } from '../aiHost';
 import { BENCHMARK_PATH } from '../benchmark';
 

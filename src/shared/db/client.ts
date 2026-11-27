@@ -6,11 +6,11 @@ import {
     warnOfflineBuildOnce,
     OFFLINE_BUILD_SERVICE,
 } from '@/shared/api/offlineBuild';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
 import { noStoreQueryLogger } from './noStoreQueryLogger';
 import * as schema from './schema';
 import type { DatabaseClient, DatabaseConfig } from './types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 클라이언트 캐시의 `globalThis` 키.

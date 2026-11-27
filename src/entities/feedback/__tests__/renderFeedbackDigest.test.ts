@@ -1,6 +1,6 @@
 import { buildFeedbackDigest } from '../lib/buildFeedbackDigest';
-import { renderFeedbackDigest } from '../templates/operator-mail/renderFeedbackDigest';
 import type { FeedbackDigestRow } from '../lib/types';
+import { renderFeedbackDigest } from '../templates/operator-mail/renderFeedbackDigest';
 
 function row(partial: Partial<FeedbackDigestRow>): FeedbackDigestRow {
     return {

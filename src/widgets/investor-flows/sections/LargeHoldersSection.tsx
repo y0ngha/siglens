@@ -1,19 +1,19 @@
-/**
- * 5% 이상 대량보유(13D·13G) 공시 섹션.
- */
-import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsWindow,
     LargeHolderFiling,
 } from '@y0ngha/siglens-core';
+/**
+ * 5% 이상 대량보유(13D·13G) 공시 섹션.
+ */
+import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
+import { LargeHolderCard } from '../ui/large-holders/LargeHolderCard';
 import { formatInteger } from '../utils/flowFormat';
 import { buildLargeHolderRows, largeHolderKey } from '../utils/largeHolders';
-import { LargeHolderCard } from '../ui/large-holders/LargeHolderCard';
 
 const HEADING_ID = 'flows-large-holders-heading';
 

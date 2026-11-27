@@ -1,6 +1,7 @@
 'use client';
 
-import { useLocalePath } from '@/shared/i18n/useLocalePath';
+import { useQueryClient } from '@tanstack/react-query';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import {
     useDeferredValue,
     useEffect,
@@ -8,17 +9,16 @@ import {
     useState,
     useTransition,
 } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import type { Timeframe } from '@y0ngha/siglens-core';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { requestedTimeframeOf } from '@/shared/config/marketProfile/requestedTimeframe';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import {
     usePickUntilPopstate,
     useUrlSearchParam,
 } from '@/shared/hooks/useUrlSearchParam';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 
 const TIMEFRAME_QUERY_PARAM = 'tf';
 

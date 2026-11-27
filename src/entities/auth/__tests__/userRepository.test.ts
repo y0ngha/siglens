@@ -6,10 +6,10 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { renderSql } from '@/__tests__/utils/renderSql';
+import { DrizzleUserRepository } from '@/entities/auth/api';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import { decryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleUserRepository } from '@/entities/auth/api';
 const VALID_KEY_HEX = 'a'.repeat(64);
 
 const userRecord = {

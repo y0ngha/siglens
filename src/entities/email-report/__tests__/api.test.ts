@@ -5,24 +5,24 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 import { is, SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import {
-    emailReportDeliveries,
-    emailReportSubscriptions,
-    emailReportWelcomes,
-} from '@/shared/db/schema';
 import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
-import { WELCOME_WINDOW_MS } from '@/entities/email-report/lib/emailReportConstants';
-import { defined } from '@/shared/test-utils/defined';
 import {
     DrizzleEmailReportDeliveryRepository,
     DrizzleEmailReportExclusionRepository,
     DrizzleEmailReportSubscriptionRepository,
     DrizzleEmailReportWelcomeRepository,
 } from '@/entities/email-report/api';
+import { WELCOME_WINDOW_MS } from '@/entities/email-report/lib/emailReportConstants';
+import {
+    emailReportDeliveries,
+    emailReportSubscriptions,
+    emailReportWelcomes,
+} from '@/shared/db/schema';
 import type {
     SiglensDatabase,
     UpsertEmailReportSubscriptionInput,
 } from '@/shared/db/types';
+import { defined } from '@/shared/test-utils/defined';
 
 const subscriptionRow = {
     userId: 'user-1',

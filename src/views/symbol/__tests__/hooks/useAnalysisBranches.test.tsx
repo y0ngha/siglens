@@ -4,22 +4,21 @@
  * and timeframe change flows.
  */
 
-import koMessages from '../../../../../messages/ko.json';
-import type { Mock } from 'vitest';
-import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import type {
     RunAnalysisResult,
     AnalysisResponse,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-
+import type { ReactNode } from 'react';
+import type { Mock } from 'vitest';
 import { getReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
+import koMessages from '../../../../../messages/ko.json';
 
 type RunAnalysisActionResult =
     | (RunAnalysisResult & { personalized?: boolean })

@@ -1,8 +1,8 @@
+import type { SqueezeRiskScore } from '@y0ngha/siglens-core';
 /**
  * 숏스퀴즈 점수의 출처 안내 한 줄 — 쓰인 출처와(있다면) 가격 기준일.
  */
 import { useTranslations } from 'next-intl';
-import type { SqueezeRiskScore } from '@y0ngha/siglens-core';
 import { squeezeSources, type SqueezeSource } from '../../utils/squeeze';
 
 /** 숏스퀴즈 점수의 출처 안내. */

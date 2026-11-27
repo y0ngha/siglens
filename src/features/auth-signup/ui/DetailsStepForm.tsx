@@ -3,12 +3,12 @@
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { EmailReportSignupOptIn } from '@/features/email-report-settings/ui/EmailReportSignupOptIn';
-import { ErrorAlert } from '@/shared/ui/ErrorAlert';
-import { TextField } from '@/shared/ui/TextField';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { TextField } from '@/shared/ui/TextField';
 import type { DetailsStepModel } from '../hooks/useSignupFlow';
 import { SIGNUP_FIELD_ID } from '../lib/signupPhase';
 import { EmailEditButton } from './EmailEditButton';

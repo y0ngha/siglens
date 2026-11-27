@@ -1,6 +1,5 @@
 'use server';
 
-import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import {
     peekBriefingCache,
     runBriefing,
@@ -9,25 +8,26 @@ import {
     type MarketSummaryData,
     type RunBriefingResult,
 } from '@y0ngha/siglens-core';
-import { logActionError } from '@/shared/lib/logActionError';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
-import { getCachedMarketSummary } from '../api/marketSummaryCache';
-import { marketBriefingContextOf } from '../lib/marketBriefingContext';
-import {
-    releaseMarketBriefingSlot,
-    tryAcquireMarketBriefingSlot,
-} from '../api/marketBriefingCooldown';
-import {
-    readLatestMarketBriefing,
-    writeLatestMarketBriefing,
-} from '../api/latestMarketBriefing';
-import { marketBriefingSeedSurface } from '../api/briefingStaticCache';
 import { readHubSsrSeed, writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 import {
     dashboardScopeOf,
     isPageDashboardScopeId,
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
+import { logActionError } from '@/shared/lib/logActionError';
+import type { MarketBriefingActionResult } from '@/shared/lib/types';
+import { marketBriefingSeedSurface } from '../api/briefingStaticCache';
+import {
+    readLatestMarketBriefing,
+    writeLatestMarketBriefing,
+} from '../api/latestMarketBriefing';
+import {
+    releaseMarketBriefingSlot,
+    tryAcquireMarketBriefingSlot,
+} from '../api/marketBriefingCooldown';
+import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import { marketBriefingContextOf } from '../lib/marketBriefingContext';
 
 /**
  * runBriefing을 부르고, 실제로 생성됐으면(`done`) 그 본문을 기록한다.

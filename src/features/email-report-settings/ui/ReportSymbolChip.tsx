@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
 import {

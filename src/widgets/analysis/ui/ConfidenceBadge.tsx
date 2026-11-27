@@ -1,10 +1,10 @@
 'use client';
 
+import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 /**
  * 스킬 결과의 신뢰도(high/medium) 배지와 설명 툴팁.
  */
 import { useTranslations } from 'next-intl';
-import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 

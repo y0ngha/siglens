@@ -1,8 +1,8 @@
+import type { InvestorFlowsComposite } from '@y0ngha/siglens-core';
 /**
  * 점수표 맨 위의 종합 점수 — 점수·방향 배지·산입 축 수, 점수가 없으면 부족 안내.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsComposite } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatSignedDecimal } from '../../utils/flowFormat';
 import { LabelBadge } from './LabelBadge';

@@ -1,6 +1,6 @@
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
-import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { shouldAttemptReanalyze } from '../../generationQuota';
 import { runOverallDispatch } from '../overallDispatch';
 import { releaseCooldownQuietly } from '../releaseCooldown';

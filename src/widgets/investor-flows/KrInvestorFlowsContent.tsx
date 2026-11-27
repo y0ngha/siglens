@@ -1,11 +1,11 @@
-/**
- * 한국 종목 수급 탭 본문 조립.
- */
-import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsScorecard,
     InvestorFlowsSnapshot,
 } from '@y0ngha/siglens-core';
+/**
+ * 한국 종목 수급 탭 본문 조립.
+ */
+import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsPipelineReadiness,
     KrDisclosureCompany,

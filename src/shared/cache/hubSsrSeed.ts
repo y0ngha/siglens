@@ -1,7 +1,7 @@
 import 'server-only';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import { getRedisClient } from './redisClient';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getRedisClient } from './redisClient';
 
 /**
  * 프리웜이 만든 값을 **키가 흔들리지 않는 자리**에 보관하는 작은 read/write 쌍.

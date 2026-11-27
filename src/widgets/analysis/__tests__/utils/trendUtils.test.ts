@@ -1,6 +1,6 @@
-import { resolveTrendDisplay } from '@/widgets/analysis/utils/trendUtils';
 import type { Trend } from '@y0ngha/siglens-core';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { resolveTrendDisplay } from '@/widgets/analysis/utils/trendUtils';
 
 // 카탈로그 키를 그대로 돌려주는 더미 번역자 — `t(key)` 호출 여부와 어떤 키로
 // 호출됐는지를 함께 검증한다.

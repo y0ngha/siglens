@@ -7,8 +7,8 @@ import {
     DEFAULT_AUTH_COOKIE_SAME_SITE,
 } from '@/entities/auth/lib/sessionCookie';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
-import type { SessionRepository } from '@/shared/db/types';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import type { SessionRepository } from '@/shared/db/types';
 
 describe('createSessionCookie', () => {
     it('builds an active cookie with all defaults', () => {

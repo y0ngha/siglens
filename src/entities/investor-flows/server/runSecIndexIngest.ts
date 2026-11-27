@@ -1,3 +1,4 @@
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { INVESTOR_FLOWS_STATE_SEC_FILINGS_CURSOR } from '../lib/investorFlowsPolicy';
 import { deriveFilingsStatus } from '../lib/investorFlowsReadiness';
@@ -6,7 +7,6 @@ import type {
     IngestSecFilingsDeps,
     IngestSecFilingsResult,
 } from './ingestSecFilingsTypes';
-import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 공시(Form 144·증자) 백로그가 있을 때 공시 단계에 떼어 두는 실행 마감의 몫. 13F는 나머지(≈70%)까지만 쓴다 — 13F 백필(수천 건)이

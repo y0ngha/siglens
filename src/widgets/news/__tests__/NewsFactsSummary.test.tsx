@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from '@testing-library/react';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
-import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
+import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 
 function makeNewsItem(
     id: string,

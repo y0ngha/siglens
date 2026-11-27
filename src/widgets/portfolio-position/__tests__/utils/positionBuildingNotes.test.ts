@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import koMessages from '@/../messages/ko.json';
 import {
     buildAriaLabel,

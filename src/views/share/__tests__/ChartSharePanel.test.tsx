@@ -7,8 +7,8 @@
 
 import { render, screen, waitFor } from '@testing-library/react';
 import type { Bar, KeyLevels } from '@y0ngha/siglens-core';
-import { ChartSharePanel } from '@/views/share/ui/chart/ChartSharePanel';
 import { toShareKeyLevels } from '@/views/share/lib/shareKeyLevels';
+import { ChartSharePanel } from '@/views/share/ui/chart/ChartSharePanel';
 
 const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
 const mockShareCandlestickChart = vi.fn(

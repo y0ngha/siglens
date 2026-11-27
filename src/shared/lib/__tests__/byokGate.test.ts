@@ -33,6 +33,7 @@ vi.mock('@/entities/api-key/api', async () => {
     };
 });
 
+import type { ModelId } from '@y0ngha/siglens-core';
 import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key/api';
 import koMessages from '../../../../messages/ko.json';
 import {
@@ -43,7 +44,6 @@ import {
     buildGateError,
     isKnownModelId,
 } from '../byokGate';
-import type { ModelId } from '@y0ngha/siglens-core';
 
 const FREE_MODEL = 'gemini-3.6-flash' as ModelId;
 const PREMIUM_MODEL = 'claude-opus-5' as ModelId;

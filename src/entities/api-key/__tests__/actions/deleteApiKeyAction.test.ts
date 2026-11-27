@@ -34,14 +34,13 @@ vi.mock('@/entities/api-key/api', () => ({
     }),
 }));
 
-import type { MockedFunction } from 'vitest';
-
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import type { MockedFunction } from 'vitest';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
-import { makeFormData } from '@/shared/test-utils/makeFormData';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import type { ApiKeyActionState } from '@/shared/lib/types';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

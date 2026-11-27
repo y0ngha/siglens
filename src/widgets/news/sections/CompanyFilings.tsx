@@ -8,8 +8,8 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { CompanyFiling } from '@/entities/company-filings/model';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { ShowMoreButton } from '../ui/ShowMoreButton';
 import { FilingRow } from '../ui/company-filings/FilingRow';
+import { ShowMoreButton } from '../ui/ShowMoreButton';
 
 const PAGE_SIZE = 5;
 

@@ -1,6 +1,6 @@
-import { kindLabelKey } from '../lib/kindLabel';
 import type { ShareableKind } from '@/shared/db/constants';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
+import { kindLabelKey } from '../lib/kindLabel';
 
 /**
  * 예전에는 이 함수가 한국어 문자열을 돌려줬고 테스트도 그 문자열을 고정했다 —

@@ -1,14 +1,14 @@
-import path from 'path';
 import { readFileSync } from 'fs';
 import { glob } from 'glob';
 import matter from 'gray-matter';
+import path from 'path';
 import { z } from 'zod';
-import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
 import { readDatabaseConfig } from '@/shared/db/config';
-import { guardRemoteWrite } from './lib/dbTarget';
+import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
+import { guardRemoteWrite } from './lib/dbTarget';
 
 const FrontmatterSchema = z.object({
     kind: z.enum(TERMS_KIND_VALUES),

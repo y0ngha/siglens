@@ -1,13 +1,12 @@
 import { cache } from 'react';
-
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import type { Locale } from '@/shared/i18n/locales';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * 뉴스 목록 정적 캐시의 revalidate(뉴스·종합 탭 공유). `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

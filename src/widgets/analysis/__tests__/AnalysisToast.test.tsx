@@ -4,7 +4,6 @@ vi.mock('@/shared/config/time', () => ({
 }));
 
 import { render, screen, act } from '@testing-library/react';
-
 import { AnalysisToast } from '../AnalysisToast';
 
 describe('AnalysisToast', () => {

@@ -4,12 +4,12 @@
  * 보조 pane 좌상단에 지표 이름 라벨 DOM을 배치하고 갱신하는 훅.
  */
 
+import type { IChartApi } from 'lightweight-charts';
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
-import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import { labelHalo } from '../utils/labelHalo';
 import type { PaneLabelConfig, PaneSubLabel } from '../types';
+import { labelHalo } from '../utils/labelHalo';
 
 interface UsePaneLabelsParams {
     chartRef: RefObject<IChartApi | null>;

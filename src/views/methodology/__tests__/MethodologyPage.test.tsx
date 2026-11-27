@@ -6,8 +6,6 @@ vi.mock('next-intl/server', () => ({
 }));
 
 import { screen, within } from '@testing-library/react';
-import { createTranslator } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
 import {
     computeFearGreedIndex,
     CRYPTO_FEAR_GREED_FACTOR_KEYS,
@@ -17,22 +15,23 @@ import {
     type Bar,
     type BuySellVolumeResult,
 } from '@y0ngha/siglens-core';
-import { defined } from '@/shared/test-utils/defined';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { createTranslator } from 'next-intl';
+import { describe, expect, it, vi } from 'vitest';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { CRYPTO_DESCRIPTOR } from '@/shared/config/marketProfile/crypto';
 import { KR_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/krEquity';
 import { US_EQUITY_DESCRIPTOR } from '@/shared/config/marketProfile/usEquity';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_OPERATOR, METHODOLOGY_UPDATED_AT } from '@/shared/lib/legal';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { defined } from '@/shared/test-utils/defined';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import ko from '../../../../messages/ko.json';
-
-import { MethodologyPage } from '../MethodologyPage';
 import { METHODOLOGY_CHANGELOG } from '../lib/methodologyChangelog';
 import { METHODOLOGY_SECTION_IDS as SECTION_IDS } from '../lib/methodologySections';
+import { MethodologyPage } from '../MethodologyPage';
 
 const m = ko.views.methodology;
 

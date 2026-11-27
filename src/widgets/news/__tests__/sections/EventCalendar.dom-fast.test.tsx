@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import type { EarningsCardItem } from '@/widgets/news/utils/withNextEarnings';
-import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
+import type { EarningsCardItem } from '@/widgets/news/utils/withNextEarnings';
 
 const SURPRISE_ITEM: EarningsCardItem = {
     symbol: 'AAPL',

@@ -1,11 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import { beforeAll } from 'vitest';
 import ko from '../../../../../messages/ko.json';
+import type { MethodologyTranslator } from '../../types';
 import {
     METHODOLOGY_SECTION_IDS,
     methodologySectionTitles,
 } from '../methodologySections';
-import type { MethodologyTranslator } from '../../types';
 
 let t: MethodologyTranslator;
 beforeAll(async () => {

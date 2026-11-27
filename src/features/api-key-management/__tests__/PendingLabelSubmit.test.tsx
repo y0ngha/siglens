@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useFormStatus } from 'react-dom';
-
 import { PendingLabelSubmit } from '@/features/api-key-management/ui/PendingLabelSubmit';
 
 vi.mock('react-dom', async importOriginal => ({

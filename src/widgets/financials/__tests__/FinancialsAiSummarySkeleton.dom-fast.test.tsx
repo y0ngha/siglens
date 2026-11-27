@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-
 import { FinancialsAiSummarySkeleton } from '../FinancialsAiSummarySkeleton';
 
 describe('FinancialsAiSummarySkeleton', () => {

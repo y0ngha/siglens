@@ -78,17 +78,17 @@ vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { notFound } from 'next/navigation';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/congress/page';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 import { getCongressTradesResilient } from '@/entities/congress-trades/server/getCongressTradesResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
-import type { MockedFunction } from 'vitest';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로
 // 캐스팅하기 위함(CONVENTIONS.md#TS-1). 부분 객체는 as unknown as <Result>로 통과시킨다.

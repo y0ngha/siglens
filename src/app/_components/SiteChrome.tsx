@@ -1,20 +1,20 @@
-import type { ReactNode } from 'react';
 import { NextIntlClientProvider, type AbstractIntlMessages } from 'next-intl';
+import type { ReactNode } from 'react';
 import { ReactQueryProvider } from '@/app/providers';
-import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
-import { Footer } from '@/widgets/layout/Footer';
 import { AnalysisRateLimitModalHost } from '@/features/analysis-rate-limit/ui/AnalysisRateLimitModalHost';
 import { EmailReportNudgeHost } from '@/features/email-report-nudge/ui/EmailReportNudgeHost';
-import { VocPromptHost } from '@/features/voc-prompt/ui/VocPromptHost';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { FunnelSignupPing } from '@/features/visitor-ping/ui/FunnelSignupPing';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
+import { VocPromptHost } from '@/features/voc-prompt/ui/VocPromptHost';
 import { WatchlistMergeHost } from '@/features/watchlist/ui/WatchlistMergeHost';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import type { Locale } from '@/shared/i18n/locales';
 import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
 import { ToastProvider } from '@/shared/ui/ToastProvider';
+import { Footer } from '@/widgets/layout/Footer';
+import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { AuthSessionHeaderClient } from './AuthSessionHeaderClient';
 import { RoutePendingSlot } from './RoutePendingSlot';
 

@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-
 import {
     removeMatchMedia,
     stubPrefersColorScheme,
 } from '@/shared/test-utils/matchMedia';
-
 import {
     DEFAULT_THEME,
     THEME_ATTRIBUTE,

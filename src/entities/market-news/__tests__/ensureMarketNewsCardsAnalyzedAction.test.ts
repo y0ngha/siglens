@@ -65,13 +65,13 @@ vi.mock('../api/getMarketNewsClient', () => ({
     })),
 }));
 
+import * as core from '@y0ngha/siglens-core';
 // 2. Static imports — grouped after all vi.mock() calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ensureMarketNewsCardsAnalyzedAction } from '../actions/ensureMarketNewsCardsAnalyzedAction';
+import * as getMarketNewsClientModule from '../api/getMarketNewsClient';
 import * as flags from '../api/marketNewsRefreshFlags';
 import * as api from '../api/marketNewsRepository';
-import * as getMarketNewsClientModule from '../api/getMarketNewsClient';
-import * as core from '@y0ngha/siglens-core';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 
 // 3. Item fixtures for majority-failure test

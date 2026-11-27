@@ -9,13 +9,13 @@ vi.mock('@/features/watchlist/hooks/useOpenTickerSearch', () => ({
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useWatchlist } from '@/features/watchlist/hooks/useWatchlist';
+import { HOME_WATCHLIST_EMPTY_HEIGHT } from '@/features/watchlist/lib/watchlistStyles';
 import { HomeWatchlistCard } from '@/features/watchlist/ui/HomeWatchlistCard';
 import {
     HOME_POPULAR_ANCHOR_ID,
     HOME_WATCHLIST_DESKTOP_COUNT,
     HOME_WATCHLIST_MOBILE_COUNT,
 } from '@/shared/config/watchlist';
-import { HOME_WATCHLIST_EMPTY_HEIGHT } from '@/features/watchlist/lib/watchlistStyles';
 import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
 
 type Watchlist = ReturnType<typeof useWatchlist>;

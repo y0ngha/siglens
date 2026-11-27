@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useRef, type RefObject } from 'react';
+import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import {
     createChart,
     LineSeries,
     type IChartApi,
     type ISeriesApi,
 } from 'lightweight-charts';
-import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
+import { useEffect, useRef, type RefObject } from 'react';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { FEAR_GREED_CHART_HEIGHT } from '../constants';
 import { monthTickFormatter } from '../utils/monthTickFormatter';
 import { toLineData } from '../utils/toLineData';

@@ -1,7 +1,6 @@
 vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { INDEXNOW_KEY } from '@/shared/config/indexNow';
 import { config } from '../../proxy';
 

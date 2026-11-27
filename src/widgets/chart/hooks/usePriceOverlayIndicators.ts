@@ -1,11 +1,11 @@
 'use client';
 
+import { EMA_DEFAULT_PERIODS } from '@y0ngha/siglens-core';
 /**
  * 가격 패인 위에 겹쳐 그리는 지표(이평·밴드·채널·추세 추종·일목·매물대)를 모두 연결하고,
  * 그 상태를 지표 메뉴 binding과 범례 라벨 설정으로 내보내는 훅.
  */
 import { useMemo } from 'react';
-import { EMA_DEFAULT_PERIODS } from '@y0ngha/siglens-core';
 import { CHART_MA_PERIODS } from '../constants';
 import type { IndicatorHookParams } from '../model/chartHookParams';
 import type { IndicatorBinding } from '../model/indicatorRegistry';

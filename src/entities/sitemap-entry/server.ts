@@ -1,20 +1,18 @@
 import 'server-only';
-
 import { unstable_cache } from 'next/cache';
-
+import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
-import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot/model';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-
 import { DrizzleRemovalSitemapCandidateSource } from './api';
 import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';
@@ -38,7 +36,6 @@ import {
     type RemovalSitemapEntry,
     type RemovalSitemapKind,
 } from './model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const REMOVAL_SITEMAP_CACHE_KEY_PREFIX = 'temporary-removal-sitemap:v1';
 

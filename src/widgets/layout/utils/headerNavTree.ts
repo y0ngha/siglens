@@ -1,3 +1,7 @@
+import {
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+} from '@/entities/market-news/lib/categoryConfig';
 /**
  * 헤더·모바일 드로어가 그리는 내비 트리(`NAV_TREE`)와 그 노드 타입.
  */
@@ -7,10 +11,6 @@ import {
     type NavRegionLink,
     type NavVertical,
 } from '@/shared/config/assetClassNav';
-import {
-    CATEGORY_CONFIG,
-    categoriesInRegion,
-} from '@/entities/market-news/lib/categoryConfig';
 
 /** 지역 안에서 한 번에 갈 수 있는 최종 목적지. */
 interface NavLeafLink {

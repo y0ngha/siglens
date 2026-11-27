@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
-import { loadLpRealAnalyses } from './_lib/loadLpRealAnalyses';
 import { StockAnalysisLanding } from '@/views/lp/StockAnalysisLanding';
+import { loadLpRealAnalyses } from './_lib/loadLpRealAnalyses';
 
 /** Ad-only page: never indexed, no canonical, alternates or JSON-LD. */
 export const metadata: Metadata = {

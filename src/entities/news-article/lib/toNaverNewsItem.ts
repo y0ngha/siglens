@@ -1,11 +1,11 @@
 import type { NewsItem } from '@y0ngha/siglens-core';
-import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
-import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
 import {
     stripNaverMarkup,
     toIsoPublishedAt,
     type NaverNewsItem,
 } from '@/shared/api/naver/naverSearch';
+import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
+import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
 
 /**
  * 기사 `source` 필드에 그대로 들어가는 출처 이름이다. 로케일별로 갈리면 같은 기사가

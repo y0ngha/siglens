@@ -7,10 +7,10 @@
  * fetchMarketNewsDigest(category, signal)은 단일 프로미스를 반환한다.
  */
 
-import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
-import type { MockedFunction } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { MockedFunction } from 'vitest';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import { fetchMarketNewsDigest } from '@/widgets/market-news/utils/fetchMarketNewsDigest';
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({

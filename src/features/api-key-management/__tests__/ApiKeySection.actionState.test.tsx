@@ -1,3 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
     createRef,
     startTransition,
@@ -5,13 +8,9 @@ import {
     useState,
     type RefObject,
 } from 'react';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
-import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
+import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
+import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import type { LlmProvider } from '@/shared/config/llmProviders';
 import type { ApiKeyActionState } from '@/shared/lib/types';
 

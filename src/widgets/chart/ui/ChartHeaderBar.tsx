@@ -7,10 +7,10 @@
  * 중에 캔들을 가렸고 가격 눈금·범례와 자리를 다퉜다. 메뉴 셋은 한 번에 하나만 열린다.
  */
 import type { ReactNode } from 'react';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { useExclusiveChartMenu } from '../hooks/useExclusiveChartMenu';
 import type { IndicatorBinding } from '../model/indicatorRegistry';
 import type { ToggleSetting } from '../types';
-import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { ChartOverlayMenu } from './ChartOverlayMenu';
 import { ChartSettingsMenu } from './ChartSettingsMenu';
 import { IndicatorMenu } from './IndicatorMenu';

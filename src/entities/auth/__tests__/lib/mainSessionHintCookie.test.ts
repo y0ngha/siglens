@@ -12,9 +12,6 @@ vi.mock('@/shared/config/aiHost', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { MAIN_SESSION_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import {
     clearMainSessionHint,
     createExpiredMainSessionHintCookie,
@@ -24,6 +21,8 @@ import {
     setMainSessionHint,
     shouldStartHandoff,
 } from '@/entities/auth/lib/mainSessionHintCookie';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { MAIN_SESSION_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 describe('resolveMainSessionHintDomain', () => {
     it.each([

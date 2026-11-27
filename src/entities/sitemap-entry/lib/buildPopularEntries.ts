@@ -1,12 +1,10 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { SITE_URL } from '@/shared/lib/seo';
-
 import type { SitemapEntry } from '../model';
 import { floorToHour } from './floorToHour';
 import { latestOf } from './latestOf';

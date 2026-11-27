@@ -2,8 +2,8 @@ import {
     PRICE_ALERT_TOKEN_MAX_LENGTH,
     parsePriceAlertProposal,
 } from '@/entities/mail-alert/lib/priceAlertProposal';
-import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type {
     ChatActionBlock,
     ChatBlock,

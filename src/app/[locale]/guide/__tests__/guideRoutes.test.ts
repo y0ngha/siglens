@@ -27,30 +27,30 @@ vi.mock('@/views/guide/GuideUnavailablePage', () => ({
 }));
 
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
-import { loadGuideCatalog } from '@/entities/guide/api';
-import type { GuideCatalog } from '@/entities/guide/types';
-import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
-import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { CATALOG, guideEntry, RSI } from '@/__tests__/fixtures/guideFixtures';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { SITE_URL } from '@/shared/lib/seo';
-import { HOWTO_COUNT_DISPLAY_MIN } from '@/views/guide/lib/guideCopy';
-import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
-import GuideHubRoute, {
-    generateMetadata as hubMetadata,
-    revalidate as hubRevalidate,
-} from '@/app/[locale]/guide/page';
-import GuideCategoryRoute, {
-    generateMetadata as categoryMetadata,
-    generateStaticParams as categoryStaticParams,
-    revalidate as categoryRevalidate,
-} from '@/app/[locale]/guide/[category]/page';
 import GuideEntryRoute, {
     generateMetadata as entryMetadata,
     generateStaticParams as entryStaticParams,
     revalidate as entryRevalidate,
 } from '@/app/[locale]/guide/[category]/[slug]/page';
+import GuideCategoryRoute, {
+    generateMetadata as categoryMetadata,
+    generateStaticParams as categoryStaticParams,
+    revalidate as categoryRevalidate,
+} from '@/app/[locale]/guide/[category]/page';
+import GuideHubRoute, {
+    generateMetadata as hubMetadata,
+    revalidate as hubRevalidate,
+} from '@/app/[locale]/guide/page';
+import { loadGuideCatalog } from '@/entities/guide/api';
+import type { GuideCatalog } from '@/entities/guide/types';
+import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { SITE_URL } from '@/shared/lib/seo';
+import { GuideUnavailablePage } from '@/views/guide/GuideUnavailablePage';
+import { HOWTO_COUNT_DISPLAY_MIN } from '@/views/guide/lib/guideCopy';
 import ko from '../../../../../messages/ko.json';
-import { CATALOG, guideEntry, RSI } from '@/__tests__/fixtures/guideFixtures';
+import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
 
 const mockLoad = vi.mocked(loadGuideCatalog);
 

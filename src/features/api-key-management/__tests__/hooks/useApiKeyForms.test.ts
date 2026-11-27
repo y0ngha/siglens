@@ -1,10 +1,9 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
 // @vitest-environment jsdom
 import { startTransition } from 'react';
-import { act, renderHook, waitFor } from '@testing-library/react';
-
-import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
-import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
+import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
+import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
 
 const mockInvalidateQueries = vi.fn();
 

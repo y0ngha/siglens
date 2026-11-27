@@ -1,23 +1,23 @@
-/**
- * 공매도 섹션.
- */
-import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsScorecard,
     InvestorFlowsSnapshot,
 } from '@y0ngha/siglens-core';
-import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { FlowTooltip } from '../investorFlowsTooltips';
+/**
+ * 공매도 섹션.
+ */
+import { useTranslations } from 'next-intl';
 import type { CollectingArms } from '@/entities/investor-flows/model';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { FlowTooltip } from '../investorFlowsTooltips';
+import { PriceFreeSqueezeNote } from '../ui/short/PriceFreeSqueezeNote';
 import {
     buildShortInterestView,
     buildShortVolumeSeries,
     hasShortData,
     shortVolumeMarker,
 } from '../utils/short';
-import { PriceFreeSqueezeNote } from '../ui/short/PriceFreeSqueezeNote';
 import { CollectingNotice } from './CollectingNotice';
 import { FailsToDeliverBlock } from './FailsToDeliverBlock';
 import { ShortInterestBlock } from './ShortInterestBlock';

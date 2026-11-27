@@ -1,11 +1,11 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
 import type { UpsertEmailReportSubscriptionInput } from '@/shared/db/types';
+import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import { DrizzleEmailReportSubscriptionRepository } from '../api';
 
 vi.mock('server-only', () => ({}));

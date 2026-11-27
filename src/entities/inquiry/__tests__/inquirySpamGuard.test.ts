@@ -11,11 +11,11 @@ vi.mock('@y0ngha/siglens-core', async orig => ({
     hashUsageIp: vi.fn(() => 'ipHashX'),
 }));
 
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 import {
     isHoneypotFilled,
     isInquiryRateLimited,
 } from '../server/inquirySpamGuard';
-import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 describe('isHoneypotFilled', () => {
     it('봇 함정 입력에 값이 있으면 true', () => {

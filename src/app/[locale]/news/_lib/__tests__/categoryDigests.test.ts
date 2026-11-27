@@ -4,7 +4,6 @@ vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { fetchCategoryDigestLines } from '@/app/[locale]/news/_lib/categoryDigests';
 
 describe('fetchCategoryDigestLines', () => {

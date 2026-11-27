@@ -1,20 +1,19 @@
 import 'server-only';
-
 import type { NewsItem } from '@y0ngha/siglens-core';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import {
     getFmpUserFacingKey,
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import type { DrizzleNewsRepository } from '../api';
 import { getNewsClient } from '../server/getNewsClient';
 import { markFetched } from '../server/newsRefreshFlag';
 import { NEWS_LOOKBACK_MS } from './newsLookback';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 적재 한 번의 결과. `fresh`(이번에 FMP에서 받은 기사)와 `upsertSettled`(기사별 upsert

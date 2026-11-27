@@ -1,5 +1,4 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
@@ -8,6 +7,7 @@ import {
     DEVELOPERS_UPDATED_AT,
 } from '@/shared/config/publicApi';
 import type { TermsKind } from '@/shared/db/constants';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     ABOUT_PATH,
     ABOUT_UPDATED_AT,
@@ -18,14 +18,12 @@ import {
 } from '@/shared/lib/legal';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
-import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-
 import type { SitemapEntry } from '../model';
 import { buildNewsSitemapEntries } from './buildNewsSitemapEntries';
 import { buildRegionEntries } from './buildRegionEntries';
 import { sitemapAlternates } from './sitemapAlternates';
-import { staticSitemapEntry } from './staticSitemapEntry';
 import { startOfUtcDay } from './startOfUtcDay';
+import { staticSitemapEntry } from './staticSitemapEntry';
 
 /** `buildStaticEntries`에 주입하는 콘텐츠 갱신 시각들. 전부 선택이다. */
 export interface BuildStaticEntriesOptions {

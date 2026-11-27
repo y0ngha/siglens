@@ -1,18 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
     aggregateOpenInterest,
     summarizeChainForLlm,
     type OptionsExpirationMetrics,
     type StrikeOpenInterest,
 } from '@y0ngha/siglens-core';
-import { pickActiveChain } from '@/entities/options-chain/lib/pickActiveChain';
+import { useMemo } from 'react';
 import {
     type ClientOptionsChain,
     type ClientOptionsSnapshot,
     toCoreOptionsChain,
 } from '@/entities/options-chain/lib/clientOptionsSnapshot';
+import { pickActiveChain } from '@/entities/options-chain/lib/pickActiveChain';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 /** View models derived once per `(snapshot, expiration)` for the options tab. */

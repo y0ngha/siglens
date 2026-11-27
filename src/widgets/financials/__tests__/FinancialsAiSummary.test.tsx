@@ -31,7 +31,6 @@ vi.mock('../FinancialsAiSummarySkeleton', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import {
     ShareableAnalysisProvider,
     useShareable,

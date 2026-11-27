@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/_lib/robotsRules';
+import { test, expect } from '../support/fixtures';
 
 /**
  * SEO infrastructure smoke (`/`) — Tier 4 cross-cutting outcome.

@@ -4,15 +4,15 @@
  * 프리·애프터마켓 구간 음영 밴드를 시리즈에 붙이는 훅.
  */
 
-import { type RefObject, useEffect } from 'react';
 import type {
     ISeriesApi,
     ISeriesPrimitive,
     SeriesType,
     Time,
 } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { type RefObject, useEffect } from 'react';
 import type { ExtendedSessionRange } from '@/shared/api/market/extendedBarsSession';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { createExtendedSessionPrimitive } from '../utils/extendedSessionPrimitive';
 
 /**

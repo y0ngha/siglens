@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import {
     CHART_COLORS_LIGHT,
     CHART_COLORS_RAW_DARK,

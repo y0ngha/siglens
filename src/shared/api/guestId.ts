@@ -1,12 +1,12 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     guestIdCookieOptions,
     signGuestId,
     verifyGuestCookie,
 } from '@/shared/config/guestCookie';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**

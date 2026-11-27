@@ -36,7 +36,6 @@ vi.mock('@/features/backtest-filter/hooks/useBacktestFilter', () => ({
 }));
 
 import { render, screen, waitFor } from '@testing-library/react';
-
 import { BacktestTabs } from '../../BacktestTabs';
 import {
     cardAttrs,

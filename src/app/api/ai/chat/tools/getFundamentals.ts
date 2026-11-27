@@ -6,42 +6,40 @@ import {
     type EarningsReactionTally,
     type MarketSessionSpec,
 } from '@y0ngha/siglens-core';
-import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
-import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
-import type { EarningsSession } from '@/entities/analyst-views/model';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     resolveNextEarnings,
     type ResolvedNextEarnings,
 } from '@/entities/analyst-views/lib/resolveNextEarnings';
-import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
-import {
-    gradeCountsOnly,
-    readGradesSource,
-} from '@/shared/api/fmp/gradesConsensusSource';
-import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
+import type { EarningsSession } from '@/entities/analyst-views/model';
+import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 import {
     lastBarIsForming,
     lastCompletedDailyClose,
     type CompletedDailyClose,
 } from '@/entities/bars/lib/quantizeBars';
 import {
-    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
-    SECONDS_PER_HOUR,
-    MS_PER_DAY,
-    MS_PER_SECOND,
-} from '@/shared/config/time';
-
+    roundNumber,
+    roundNumbersDeep,
+} from '@/entities/bars/lib/roundIndicators';
+import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
+import {
+    getNextEarningsSchedule,
+    listReportedEarningsDates,
+} from '@/entities/earnings-report/api';
+import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
 import {
     findKrListedShares,
     isTabAllowedForSymbol,
 } from '@/entities/ticker/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
+import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
-    roundNumber,
-    roundNumbersDeep,
-} from '@/entities/bars/lib/roundIndicators';
+    gradeCountsOnly,
+    readGradesSource,
+} from '@/shared/api/fmp/gradesConsensusSource';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -50,13 +48,20 @@ import {
     isKrEquitySymbol,
 } from '@/shared/config/marketProfile/registry';
 import {
-    getNextEarningsSchedule,
-    listReportedEarningsDates,
-} from '@/entities/earnings-report/api';
+    FMP_FUNDAMENTAL_CACHE_TTL_SECONDS,
+    SECONDS_PER_HOUR,
+    MS_PER_DAY,
+    MS_PER_SECOND,
+} from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import {
+    buildDividends,
+    fetchDividendSource,
+    withAnnualReported,
+    type DividendsView,
+} from './dividends';
 import {
     earningsReactions,
     QUARTERS_FETCH_COUNT,
@@ -64,19 +69,13 @@ import {
     type EarningsReactionView,
     type SecQuarterView,
 } from './earningsHistory';
-import {
-    buildDividends,
-    fetchDividendSource,
-    withAnnualReported,
-    type DividendsView,
-} from './dividends';
+import { staleKrListingDate } from './freshness';
 import { loadIndexMemberships, type IndexMemberships } from './indexMembership';
 import { fetchKrAnnualDividend } from './krAnnualDividend';
 import { krListedBasis } from './krListedBasis';
 import { loadSecQuarters } from './loadSecQuarters';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
-import { staleKrListingDate } from './freshness';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 function settledOrNull<T>(r: PromiseSettledResult<T>): T | null {

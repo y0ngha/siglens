@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { ITimeScaleApi, Time } from 'lightweight-charts';
+import { describe, expect, it, vi } from 'vitest';
 import {
     restoreVisibleView,
     snapshotVisibleView,

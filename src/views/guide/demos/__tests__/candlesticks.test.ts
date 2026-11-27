@@ -4,12 +4,12 @@ import {
     type CandlePatternEntry,
 } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { candle, trendBars } from '@/views/guide/demos/generators';
 import {
     build,
     CANDLESTICK_DEMOS,
     DEMO_LEAD_PAD,
 } from '@/views/guide/demos/candlesticks';
+import { candle, trendBars } from '@/views/guide/demos/generators';
 
 const DETECTION_WINDOW = 15;
 

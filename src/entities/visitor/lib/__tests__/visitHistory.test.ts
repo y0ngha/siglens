@@ -6,6 +6,7 @@ import {
     RETURN_WINDOWS,
     VISIT_DAYS_BUCKETS,
 } from '../../types';
+import type { VisitSignals } from '../../types';
 import {
     GUEST_RETURN_WINDOWS,
     VISIT_DAYS_CAP,
@@ -16,7 +17,6 @@ import {
     visitSignalsOf,
     type VisitHistory,
 } from '../visitHistory';
-import type { VisitSignals } from '../../types';
 
 const BASE = Date.UTC(2026, 0, 1);
 

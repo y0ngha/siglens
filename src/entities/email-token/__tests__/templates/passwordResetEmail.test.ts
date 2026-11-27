@@ -1,8 +1,8 @@
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import {
     buildPasswordResetEmail,
     DEFAULT_SITE_URL,
 } from '../../templates/passwordResetEmail';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 /**
  * 메일 본문은 이제 카탈로그에서 온다 — 예전엔 템플릿 안에 한국어 리터럴이라

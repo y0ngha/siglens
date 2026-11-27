@@ -15,7 +15,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     isCalendarRecentlyFetched,
     markCalendarFetched,
@@ -24,6 +23,7 @@ import {
     CALENDAR_REFRESH_FLAG_KEY,
     CALENDAR_REFRESH_FLAG_TTL_SECONDS,
 } from '@/entities/economy/lib/economyCalendarConstants';
+import { getRedisClient } from '@/shared/cache/redisClient';
 
 /**
  * 인제스션 스로틀 플래그. **키가 국가별로 갈려야 한다** — 전역 키 하나면

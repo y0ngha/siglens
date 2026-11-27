@@ -1,6 +1,6 @@
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { KOREAN_SEARCH_ALIASES } from '@/shared/config/korean-search-aliases';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { koreanSearchKey, spellLatinLetters } from './koreanSearchKey';
 

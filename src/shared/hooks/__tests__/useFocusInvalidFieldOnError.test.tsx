@@ -1,7 +1,7 @@
-import { useRef } from 'react';
 import { render, screen } from '@testing-library/react';
-import type { ContactFormError } from '@/shared/lib/types';
+import { useRef } from 'react';
 import { useFocusInvalidFieldOnError } from '@/shared/hooks/useFocusInvalidFieldOnError';
+import type { ContactFormError } from '@/shared/lib/types';
 
 interface HarnessProps {
     error: ContactFormError | null;

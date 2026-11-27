@@ -112,20 +112,20 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import FlowsPage, {
     generateMetadata,
     generateStaticParams,
     revalidate,
 } from '@/app/[locale]/[symbol]/flows/page';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
+import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
 
 const ASSET = {
     assetInfo: {

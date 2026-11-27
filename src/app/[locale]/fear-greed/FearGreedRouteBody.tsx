@@ -1,18 +1,15 @@
-import { useTranslations } from 'next-intl';
 import {
     CRYPTO_FEAR_GREED_FACTOR_KEYS,
     MARKET_FEAR_GREED_FACTOR_KEYS,
 } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { hasPublishableHistory } from '@/entities/market-fear-greed/lib/publishableHistory';
 import type {
     MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
-import { FearGreedExtremeZoneRecord } from '@/views/symbol/fearGreed/FearGreedExtremeZoneRecord';
-import { buildExtremeZoneRecord } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
-import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
@@ -30,14 +27,17 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { FearGreedExtremeZoneRecord } from '@/views/symbol/fearGreed/FearGreedExtremeZoneRecord';
+import { buildExtremeZoneRecord } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
+import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import { FearGreedHistorySection } from './_components/FearGreedHistorySection';
-import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
-import type { FearGreedSymbolLink } from './fearGreedRoute';
 import {
     composeMarketFearGreedReading,
     pickFactorExtremes,
 } from './_lib/marketFearGreedAnswer';
 import { buildMarketFearGreedDatasetJsonLd } from './_lib/marketFearGreedJsonLd';
+import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
+import type { FearGreedSymbolLink } from './fearGreedRoute';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { KrEconomicIndicatorGrid } from '../KrEconomicIndicatorGrid';
 import type { KrIndicatorCard } from '@/entities/economy/lib/krIndicatorCards';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
+import { KrEconomicIndicatorGrid } from '../KrEconomicIndicatorGrid';
 
 function meta(event: string) {
     const found = KR_ECONOMY_INDICATORS.find(m => m.event === event);

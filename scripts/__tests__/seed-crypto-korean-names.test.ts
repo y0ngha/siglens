@@ -1,3 +1,4 @@
+import type { InlinedResponse } from '@google/genai';
 /**
  * Unit tests for the seed-crypto-korean-names translate→upsert mapping.
  *
@@ -8,7 +9,6 @@
  * Gemini; env vars are validated inside run(), not at module load.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { InlinedResponse } from '@google/genai';
 import {
     extractKoreanName,
     buildUpsertValues,

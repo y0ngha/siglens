@@ -1,6 +1,6 @@
+import { freezeClock } from '../support/clock';
 import { test, expect } from '../support/fixtures';
 import { settlePwaBanner } from '../support/pwaBanner';
-import { freezeClock } from '../support/clock';
 
 /**
  * `@webkit`-tagged symbol-tabs spec — Task 4 of the E2E Tier 1 plan.

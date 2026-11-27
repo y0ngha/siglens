@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     type Bar,
     type MarketDataProvider,
 } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockIsE2E, fakeRawProvider, ctorCalls } = vi.hoisted(() => ({
     ctorCalls: [] as unknown[][],

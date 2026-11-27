@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    BAND_COUNT,
-    computePosition,
-    type PositionModel,
-} from '@/widgets/portfolio-position/utils/positionGeometry';
-import {
     CENTER_X,
     computeFloorFaces,
     computeMarkerLayout,
@@ -16,6 +11,11 @@ import {
     ROOF_BACK_Y,
     ROOF_FRONT_Y,
 } from '@/widgets/portfolio-position/utils/buildingGeometry';
+import {
+    BAND_COUNT,
+    computePosition,
+    type PositionModel,
+} from '@/widgets/portfolio-position/utils/positionGeometry';
 
 function model(avg: number, current: number): PositionModel {
     const m = computePosition({ low52w: 100, high52w: 200, current, avg });

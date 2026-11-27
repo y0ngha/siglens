@@ -1,13 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { PopularTickers } from '@/widgets/home/PopularTickers';
-import { HERO_QUICK_LINKS } from '@/widgets/home/utils/heroQuickLinks';
-import { toSkillShowcaseItems } from '@/widgets/home/utils/toSkillShowcaseItems';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
 import { HomeWatchlistCard } from '@/features/watchlist/ui/HomeWatchlistCard';
-import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
-import { loadGuideCategoryCopy } from '@/views/guide/lib/guideCopy';
 import { RSS_ALTERNATE_TYPES } from '@/shared/config/rssFeed';
 import { DEFAULT_LOCALE, resolveLocale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
@@ -25,16 +20,21 @@ import {
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildHomeFaq } from './_lib/homeJsonLd';
+import { loadGuideCategoryCopy } from '@/views/guide/lib/guideCopy';
+import { resolveMeterDailySymbols } from '@/widgets/analysis/utils/meterDailySymbols';
+import { PopularTickers } from '@/widgets/home/PopularTickers';
+import { HERO_QUICK_LINKS } from '@/widgets/home/utils/heroQuickLinks';
+import { toSkillShowcaseItems } from '@/widgets/home/utils/toSkillShowcaseItems';
 import { HomeHero } from './_components/HomeHero';
 import { HomeMethodBand } from './_components/HomeMethodBand';
 import { HomeRadarCta } from './_components/HomeRadarCta';
 import { HomeSkillsDisclosure } from './_components/HomeSkillsDisclosure';
 import { HomeTodayMarket } from './_components/HomeTodayMarket';
+import { buildHomeFaq } from './_lib/homeJsonLd';
 import { buildHomeJsonLdNodes } from './_lib/homeJsonLdNodes';
+import { loadShowcase, loadSkillCounts } from './_lib/homeSkills';
 import { loadHomeTodayMarket } from './_lib/loadHomeTodayMarket';
 import { toTodayMarketView } from './_lib/todayMarketView';
-import { loadShowcase, loadSkillCounts } from './_lib/homeSkills';
 
 interface HomeRouteProps {
     readonly params: Promise<{ locale: string }>;

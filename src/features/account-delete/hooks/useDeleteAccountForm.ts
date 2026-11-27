@@ -1,12 +1,12 @@
 'use client';
 
+import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 /**
  * 탈퇴 폼의 Server Action 연결과, 탈퇴 직전 회원 전용 React Query 캐시 정리.
  */
 import { useActionState } from 'react';
-import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { deleteAccountAction } from '../actions/deleteAccountAction';
 
 const INITIAL_STATE: DeleteAccountFormState = { error: null };

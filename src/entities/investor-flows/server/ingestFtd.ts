@@ -1,5 +1,14 @@
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { unzipSingle } from '@/shared/lib/unzipSingle';
+import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
+import {
+    extractFtdFileLinks,
+    ftdTrailerMatches,
+    parseFtdFile,
+    resolveFtdRows,
+    type FtdUniverse,
+} from '../lib/ftdParser';
 import { addDays } from '../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_FTD_BACKFILL_FILES,
@@ -9,13 +18,6 @@ import {
     INVESTOR_FLOWS_REVALIDATE_CAP,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../lib/investorFlowsPolicy';
-import {
-    extractFtdFileLinks,
-    ftdTrailerMatches,
-    parseFtdFile,
-    resolveFtdRows,
-    type FtdUniverse,
-} from '../lib/ftdParser';
 import { buildSymbolAliasResolver } from '../lib/symbolAliasResolver';
 import type {
     FtdFileLink,
@@ -23,8 +25,6 @@ import type {
     FtdRow,
     ParsedFtdFile,
 } from '../model';
-import type { InvestorFlowsUniverse } from '../api/investorFlowsUniverseRepository';
-import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 압축을 푼 FTD 텍스트 상한(바이트). 실측(2026-09b): zip 1.5MB → txt 4.2MB. 크게 여유를 둔다 — 넘으면 형식이 바뀐 것이다.

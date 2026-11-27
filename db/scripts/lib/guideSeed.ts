@@ -1,16 +1,17 @@
-import path from 'path';
+import type { SignalType } from '@y0ngha/siglens-core';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { slug as githubSlug } from 'github-slugger';
 import { glob } from 'glob';
 import matter from 'gray-matter';
+import path from 'path';
 import { z } from 'zod';
+import { findAdvicePhrases } from '@/entities/analysis-plain/lib/guardPlainText';
 import {
     GUIDE_CATEGORIES,
     type GuideCategory,
     type GuideFaqItem,
 } from '@/entities/guide/types';
-import { findAdvicePhrases } from '@/entities/analysis-plain/lib/guardPlainText';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
 import { isSignalType } from '@/shared/config/signalTypes';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
@@ -19,7 +20,6 @@ import {
     scanMarkdownLines,
 } from '@/shared/lib/markdownHeadings';
 import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
-import type { SignalType } from '@y0ngha/siglens-core';
 
 /**
  * `db/seeds/guide/{category}/{slug}/{locale}.md`를 읽어 검증하는 **순수 파서/검증기**.

@@ -32,12 +32,11 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
     },
 }));
 
-import { defined } from '@/shared/test-utils/defined';
 import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
-
 import { TWICE_WEEKLY_MAX_GAP_MS } from '@/entities/seo-snapshot/lib/freshness';
-import { MS_PER_DAY } from '@/shared/config/time';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
+import { MS_PER_DAY } from '@/shared/config/time';
+import { defined } from '@/shared/test-utils/defined';
 import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
 
 const getSectorSignalsStatic = vi.fn();

@@ -1,8 +1,8 @@
+import { act, renderHook } from '@testing-library/react';
 // @vitest-environment jsdom
 import { createElement } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import { act, renderHook } from '@testing-library/react';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
 function Probe({ onRender }: { onRender: (value: boolean) => void }) {

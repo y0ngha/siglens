@@ -10,8 +10,8 @@ vi.mock('@/entities/email-report/api', () => ({
 }));
 
 import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
-import { logActionError } from '@/shared/lib/logActionError';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { logActionError } from '@/shared/lib/logActionError';
 
 const mockUpsert = vi.fn();
 

@@ -68,12 +68,12 @@ vi.mock(
     })
 );
 
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 // 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 import { peekMarketNewsDigestStatic } from '../api/marketNewsDigestStaticCache';
+import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 
 const DIGEST_RESULT: NewsAnalysisResponse = {
     currentDriverKo: '흐름',

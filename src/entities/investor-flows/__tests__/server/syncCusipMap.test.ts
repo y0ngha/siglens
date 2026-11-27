@@ -7,19 +7,19 @@ import type {
 } from '../../api/investorFlowsUniverseRepository';
 import { resolveCusipMapConflicts } from '../../lib/cusipMapConflicts';
 import {
+    CUSIP_MAP_FMP_CALLS_PER_MINUTE,
+    CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS,
+    MAX_SYMBOLS_PER_RUN,
+    PROFILE_CONCURRENCY,
+} from '../../lib/cusipMapPlan';
+import { parseFinraRebackfillProgress } from '../../lib/finraRebackfill';
+import {
     INVESTOR_FLOWS_CUSIP_FAILURE_THRESHOLD,
     INVESTOR_FLOWS_CUSIP_RECHECK_BATCH,
     INVESTOR_FLOWS_STATE_FINRA_REBACKFILL,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
     INVESTOR_FLOWS_UNIVERSE_MIN_MAPPED,
 } from '../../lib/investorFlowsPolicy';
-import { parseFinraRebackfillProgress } from '../../lib/finraRebackfill';
-import {
-    CUSIP_MAP_FMP_CALLS_PER_MINUTE,
-    CUSIP_MAP_TRANSIENT_OUTAGE_CHUNKS,
-    MAX_SYMBOLS_PER_RUN,
-    PROFILE_CONCURRENCY,
-} from '../../lib/cusipMapPlan';
 import { runCusipMapSync } from '../../server/syncCusipMap';
 import type { SyncCusipMapDeps } from '../../server/syncCusipMapTypes';
 

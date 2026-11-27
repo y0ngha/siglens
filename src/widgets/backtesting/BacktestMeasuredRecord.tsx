@@ -1,9 +1,10 @@
-import { useFormatter, useTranslations } from 'next-intl';
 import {
     CANDLE_OUTCOME_BARS,
     CANDLE_POOLED_BASE_RATE,
     type MeasuredBaseRate,
 } from '@y0ngha/siglens-core';
+import { useFormatter, useTranslations } from 'next-intl';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { BACKTEST_RECORD_ID } from '@/shared/lib/backtestRecordPath';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -11,7 +12,6 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
-import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import {
     MeasuredRecordTable,
     type MeasuredRecordTableRow,

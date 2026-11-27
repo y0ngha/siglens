@@ -1,10 +1,10 @@
-import { useTranslations } from 'next-intl';
 import type {
     OverallScenario,
     OverallScenarioName,
 } from '@y0ngha/siglens-core';
-import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { SectionCard } from '../ui/section/SectionCard';
 
 /** OverallScenarioName → `shared.enumLabel.overallScenario` 카탈로그 키. */

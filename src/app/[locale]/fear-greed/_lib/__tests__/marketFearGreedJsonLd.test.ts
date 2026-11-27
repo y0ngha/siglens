@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { FEAR_GREED_DATA_MARKETS } from '@/shared/config/fearGreedData';
-import { SITE_URL } from '@/shared/lib/seo';
 import {
     hubView,
     scoredHistory,
 } from '@/__tests__/utils/marketFearGreedHubView';
+import { FEAR_GREED_DATA_MARKETS } from '@/shared/config/fearGreedData';
+import { SITE_URL } from '@/shared/lib/seo';
 import { buildMarketFearGreedDatasetJsonLd } from '../marketFearGreedJsonLd';
 
 const BASE = {

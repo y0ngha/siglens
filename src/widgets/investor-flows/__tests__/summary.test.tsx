@@ -1,9 +1,9 @@
+import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import { InvestorFlowsSummary } from '../InvestorFlowsSummary';
-import { InvestorFlowsSummaryView } from '../InvestorFlowsSummaryView';
 import { InvestorFlowsSummarySkeleton } from '../InvestorFlowsSummarySkeleton';
+import { InvestorFlowsSummaryView } from '../InvestorFlowsSummaryView';
 import { SUMMARY_RESERVED_HEIGHT } from '../utils/summaryReservedHeight';
 
 const { mockHook } = vi.hoisted(() => ({ mockHook: vi.fn() }));

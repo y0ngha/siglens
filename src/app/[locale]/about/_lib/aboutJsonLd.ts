@@ -1,3 +1,4 @@
+import type { Locale } from '@/shared/i18n/locales';
 import {
     ABOUT_UPDATED_AT,
     aboutDescription,
@@ -13,7 +14,6 @@ import {
     ORGANIZATION_JSON_LD_ID,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import type { Locale } from '@/shared/i18n/locales';
 import { ABOUT_PAGE_URL } from './aboutUrls';
 
 /**

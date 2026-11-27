@@ -33,13 +33,13 @@ vi.mock('@/entities/skill/api', () => ({
     }),
 }));
 
+import { isValidElement, type ReactNode } from 'react';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     generateMetadata,
     default as MethodologyRoute,
     revalidate,
 } from '@/app/[locale]/methodology/page';
-import { isValidElement, type ReactNode } from 'react';
-import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     METHODOLOGY_PATH,
     METHODOLOGY_UPDATED_AT,

@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-
 import { useSkillsShowcase } from '../../hooks/useSkillsShowcase';
 
 describe('useSkillsShowcase', () => {

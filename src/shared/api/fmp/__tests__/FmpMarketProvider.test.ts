@@ -3,10 +3,9 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MS_PER_SECOND } from '@/shared/config/time';
-
-import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 const mockFmpGet = fmpGet as unknown as ReturnType<typeof vi.fn>;
 

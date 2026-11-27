@@ -1,21 +1,21 @@
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 import {
-    generateUrlSafeToken,
-    hashEmailToken,
-    safeCompareTokenHashes,
-} from './tokenUtils';
-import {
     EMAIL_VERIFICATION_RATE_LIMITS,
     RATE_LIMITED_MESSAGE,
     EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS,
 } from './authUseCaseConstants';
-import { emailVerificationAttemptsKey } from './emailVerificationKeys';
 import type {
     VerifyEmailDependencies,
     VerifyEmailError,
     VerifyEmailInput,
     VerifyEmailResult,
 } from './authUseCaseTypes';
+import { emailVerificationAttemptsKey } from './emailVerificationKeys';
+import {
+    generateUrlSafeToken,
+    hashEmailToken,
+    safeCompareTokenHashes,
+} from './tokenUtils';
 
 const PURPOSE = 'email_verification' as const;
 const BINDING_TOKEN_BYTES = 32;

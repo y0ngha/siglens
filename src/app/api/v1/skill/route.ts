@@ -1,4 +1,5 @@
 import { buildSkillMarkdown } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { SITE_URL } from '@/shared/lib/seo';
 import {
     apiError,
@@ -7,7 +8,6 @@ import {
     withApiErrorBoundary,
 } from '../apiResponse';
 import { publicApiToolSpecs } from '../publicApiTools';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 

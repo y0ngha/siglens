@@ -1,7 +1,7 @@
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 /** Google OAuth 2.0 / OpenID Connect 어댑터 — 인가 URL을 만들고 code를 프로필로 바꾼다. */
 import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type { OAuthProviderAdapter, OAuthProfileResult } from './types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';

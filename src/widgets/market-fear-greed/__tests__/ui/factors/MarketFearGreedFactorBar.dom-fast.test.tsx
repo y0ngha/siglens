@@ -1,9 +1,8 @@
 import { render } from '@testing-library/react';
 import type { MarketFearGreedFactor } from '@y0ngha/siglens-core';
-import { MarketFearGreedFactorBar } from '@/widgets/market-fear-greed/ui/factors/MarketFearGreedFactorBar';
-
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import koMessages from '@/../messages/ko.json';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { MarketFearGreedFactorBar } from '@/widgets/market-fear-greed/ui/factors/MarketFearGreedFactorBar';
 
 /** ko 카탈로그의 팩터 라벨·설명 — 소스 상수를 대체한다. */
 const FG = koMessages.shared.lib.fearGreedFactor as unknown as {

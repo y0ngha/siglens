@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import type { Skill } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
 import { toSkillShowcaseItems } from '@/widgets/home/utils/toSkillShowcaseItems';
 
 /** 실제 `FileSkillsLoader` 출력과 같은 모양 — 특히 `content`가 있어야 의미가 있다. */

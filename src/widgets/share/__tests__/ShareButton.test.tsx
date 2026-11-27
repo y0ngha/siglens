@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 /**
  * ShareButton 통합 테스트 — 실제 `useShareFlow`를 돌리고 I/O 경계만 목으로 둔다.
  *
@@ -7,7 +8,6 @@
  * - `canShareNatively`는 기본 false(데스크톱 경로)라 성공하면 ShareSheet가 열린다.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { ShareButton } from '../ui/ShareButton';
 

@@ -1,7 +1,7 @@
 import type { AnalysisResponse, Bar } from '@y0ngha/siglens-core';
+import { MAX_CHART_BARS } from '@/entities/shared-analysis/types';
 import { buildShareSnapshotInput } from '@/features/share/lib/buildShareSnapshotInput';
 import type { ShareableRegistration } from '@/features/share/model/ShareableAnalysisContext';
-import { MAX_CHART_BARS } from '@/entities/shared-analysis/types';
 
 function bar(time: number): Bar {
     return { time, open: 1, high: 2, low: 0.5, close: 1.5, volume: 10 };

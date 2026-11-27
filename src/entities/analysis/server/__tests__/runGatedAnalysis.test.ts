@@ -20,10 +20,10 @@ vi.mock('@/shared/lib/byokGate', () => ({
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import { runGatedAnalysis } from '@/entities/analysis/server/runGatedAnalysis';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import { runGatedAnalysis } from '@/entities/analysis/server/runGatedAnalysis';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

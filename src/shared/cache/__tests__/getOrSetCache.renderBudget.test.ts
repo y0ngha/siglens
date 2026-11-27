@@ -4,7 +4,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     isRenderBudgetActive,

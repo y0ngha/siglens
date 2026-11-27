@@ -7,7 +7,6 @@ vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { loadYahooProvider } from '../lazyYahooProvider';
 
 const constructed = vi.fn();

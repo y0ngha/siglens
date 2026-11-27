@@ -1,8 +1,8 @@
-import { MARKET_COMPARISON_LABEL_KEY } from '@/widgets/market-fear-greed/utils/marketComparisonLabelKey';
-import koMessages from '@/../messages/ko.json';
 import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';
+import koMessages from '@/../messages/ko.json';
 import zhMessages from '@/../messages/zh.json';
+import { MARKET_COMPARISON_LABEL_KEY } from '@/widgets/market-fear-greed/utils/marketComparisonLabelKey';
 
 describe('MARKET_COMPARISON_LABEL_KEY', () => {
     it('maps each lookback to its period message key', () => {

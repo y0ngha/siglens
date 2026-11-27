@@ -15,17 +15,16 @@ vi.mock('@/shared/lib/chartColors', () => ({
     }),
 }));
 
-import { describe, it, expect, vi } from 'vitest';
-
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { ComponentProps } from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import { useExclusiveChartMenu } from '../../hooks/useExclusiveChartMenu';
-import { IndicatorMenu } from '../../ui/IndicatorMenu';
-import { CHART_POPOVER_PANEL } from '../../ui/chartPopoverStyles';
 import {
     INDICATOR_META,
     type IndicatorBinding,
 } from '../../model/indicatorRegistry';
+import { CHART_POPOVER_PANEL } from '../../ui/chartPopoverStyles';
+import { IndicatorMenu } from '../../ui/IndicatorMenu';
 
 /** 트리거를 눌러 팝오버를 연다 — 닫힌 동안에는 패널이 DOM에 없다. */
 function openPanel(): void {

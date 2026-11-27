@@ -1,10 +1,10 @@
 import type { MetadataRoute } from 'next';
-import { brandName } from '@/shared/lib/brandName';
 import {
     LOCALE_HREFLANG,
     localePath,
     type Locale,
 } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
 
 /** 매니페스트 카탈로그 번역자(`shared.seo.manifest`, `app.ai.manifest`). */
 export type ManifestTranslator = (

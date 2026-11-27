@@ -4,10 +4,10 @@
  * 애널리스트 의견 한 행 — 액션 배지, 회사, 이전→새 등급, 목표가 변화(있을 때), 공시일.
  */
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { formatUsdCurrency } from '@/shared/lib/priceFormat';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { AnalystActionItem } from '../../utils/analystActionItems';
 import {
     ACTION_CLASS,

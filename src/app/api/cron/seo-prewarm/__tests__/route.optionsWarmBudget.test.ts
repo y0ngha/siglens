@@ -70,11 +70,11 @@ vi.mock('@/entities/options-chain/server/optionsLastGoodStore', () => ({
     readLastGoodCapturedAtBatch: vi.fn(),
 }));
 
-import { PATCH } from '@/app/api/cron/seo-prewarm/route';
 import {
     acquirePrewarmLock,
     releasePrewarmLock,
 } from '@/app/api/cron/seo-prewarm/lock';
+import { PATCH } from '@/app/api/cron/seo-prewarm/route';
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
 import { refreshLastGoodSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { readLastGoodCapturedAtBatch } from '@/entities/options-chain/server/optionsLastGoodStore';

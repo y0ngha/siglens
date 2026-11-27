@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useNoticePopup } from '@/widgets/notice-popup/hooks/useNoticePopup';
-import { stubNoticesFetch } from './noticesFetchStub';
 import type { NoticeRecord } from '@/entities/notice/model/types';
+import { useNoticePopup } from '@/widgets/notice-popup/hooks/useNoticePopup';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
+import { stubNoticesFetch } from './noticesFetchStub';
 
 let mockedAction: ReturnType<typeof stubNoticesFetch>;
 

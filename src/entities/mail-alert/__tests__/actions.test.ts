@@ -32,11 +32,6 @@ vi.mock('@/entities/mail-alert/server/mailAlertFlows', () => ({
     cancelPriceAlertFlow: vi.fn(),
 }));
 
-import {
-    expectLogWithoutPlantedSecrets,
-    plantedDbError,
-} from '@/shared/test-utils/plantedDbError';
-
 import { addMailAlertTopicAction } from '@/entities/mail-alert/actions/addMailAlertTopicAction';
 import { cancelPriceAlertAction } from '@/entities/mail-alert/actions/cancelPriceAlertAction';
 import { confirmMailAlertAction } from '@/entities/mail-alert/actions/confirmMailAlertAction';
@@ -48,6 +43,10 @@ import { unsubscribeMailAlertAction } from '@/entities/mail-alert/actions/unsubs
 import { MAIL_ALERT_HONEYPOT_FIELD } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { createMailAlertDeps } from '@/entities/mail-alert/server/createMailAlertDeps';
 import * as flows from '@/entities/mail-alert/server/mailAlertFlows';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const DEPS = { marker: 'deps' } as unknown as Awaited<
     ReturnType<typeof createMailAlertDeps>

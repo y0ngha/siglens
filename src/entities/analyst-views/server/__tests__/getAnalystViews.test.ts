@@ -10,7 +10,6 @@ vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 
 const YAHOO = {

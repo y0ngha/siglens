@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
 import { scoreToLabel, type FearGreedLabel } from '@y0ngha/siglens-core';
+import type { CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 /**

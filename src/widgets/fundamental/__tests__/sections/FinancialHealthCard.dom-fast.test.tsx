@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { FinancialHealthCard } from '@/widgets/fundamental/sections/FinancialHealthCard';
 import type {
     FundamentalRatiosInput,
     FundamentalFinancialScoresInput,
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { FinancialHealthCard } from '@/widgets/fundamental/sections/FinancialHealthCard';
 
 const SAMPLE_RATIOS = {
     debtRatioTTM: 0.3,

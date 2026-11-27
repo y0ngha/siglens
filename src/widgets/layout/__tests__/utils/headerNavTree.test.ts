@@ -1,9 +1,9 @@
-import { NAV_TREE } from '@/widgets/layout/utils/headerNavTree';
-import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
 import {
     CATEGORY_CONFIG,
     categoriesInRegion,
 } from '@/entities/market-news/lib/categoryConfig';
+import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
+import { NAV_TREE } from '@/widgets/layout/utils/headerNavTree';
 
 describe('NAV_TREE', () => {
     it('mirrors the vertical/region skeleton exactly', () => {

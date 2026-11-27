@@ -5,25 +5,25 @@
  * the client-only staleness evaluation, and drills derived view models down.
  */
 
+import { isEtRegularSessionOpen, type SlotMapping } from '@y0ngha/siglens-core';
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import type { ClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
+import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { ExpirationSelector } from './ExpirationSelector';
+import { useOptionsChainMetrics } from './hooks/useOptionsChainMetrics';
+import { OpenInterestChart } from './OpenInterestChart';
 import { OptionsAiAnalysis } from './OptionsAiAnalysis';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisStaleNotice } from './OptionsAiAnalysisStaleNotice';
 import { OptionsChainTable } from './OptionsChainTable';
-import { OpenInterestChart } from './OpenInterestChart';
-import { StrikeVolumeChart } from './StrikeVolumeChart';
 import { OptionsMetricsRow } from './OptionsMetricsRow';
 import { OptionsStaleDataBanner } from './OptionsStaleDataBanner';
-import { useOptionsChainMetrics } from './hooks/useOptionsChainMetrics';
-import { isEtRegularSessionOpen, type SlotMapping } from '@y0ngha/siglens-core';
-import type { ClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
-import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
-import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { StrikeVolumeChart } from './StrikeVolumeChart';
 
 interface OptionsPageClientProps {
     symbol: string;

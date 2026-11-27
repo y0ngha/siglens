@@ -1,6 +1,6 @@
-import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
-import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type { VerifyEmailDependencies } from '@/entities/auth/lib/authUseCaseTypes';
+import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
+import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
 
 function createMockEmailTokens(
     overrides: Partial<VerifyEmailDependencies['emailTokens']> = {}

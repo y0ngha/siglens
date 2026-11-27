@@ -61,9 +61,9 @@ vi.mock('@/shared/lib/auth/validation', () => ({
     normalizeEmail: vi.fn((e: string) => e.toLowerCase().trim()),
 }));
 
-import { loginAction } from '@/features/auth-login/actions/loginAction';
-import { loginUser } from '@/entities/auth/lib/loginUser';
 import { cookies } from 'next/headers';
+import { loginUser } from '@/entities/auth/lib/loginUser';
+import { loginAction } from '@/features/auth-login/actions/loginAction';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 
 const mockLoginUser = loginUser as ReturnType<typeof vi.fn>;

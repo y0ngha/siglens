@@ -23,18 +23,18 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { revalidateTag } from 'next/cache';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
 import {
     isCalendarRecentlyFetched,
     markCalendarFetched,
 } from '@/entities/economy/api/calendarRefreshFlag';
-import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
-import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
-import { CALENDAR_INGESTION_WINDOW_DAYS } from '@/entities/economy/lib/economyCalendarConstants';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { CALENDAR_INGESTION_WINDOW_DAYS } from '@/entities/economy/lib/economyCalendarConstants';
+import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 
 const EVENT: EconomicCalendarEvent = {

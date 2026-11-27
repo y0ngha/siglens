@@ -10,13 +10,13 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ),
 }));
 
-import { describe, expect, it, vi } from 'vitest';
 import {
     calculateIndicators,
     computeFearGreedIndex,
     type Bar,
     type BarsData,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it, vi } from 'vitest';
 import {
     CLIENT_FEAR_GREED_HISTORY_POINTS,
     clientSymbolFearGreed,

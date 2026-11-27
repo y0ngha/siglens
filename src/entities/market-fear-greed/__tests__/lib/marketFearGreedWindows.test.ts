@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { MARKET_FEAR_GREED_KR_LOOKBACK_DAYS } from '../../lib/marketFearGreedKrSymbols';
 import { MARKET_FEAR_GREED_LOOKBACK_DAYS } from '../../lib/marketFearGreedSymbols';
 import {
@@ -8,7 +9,6 @@ import {
     lastPublishedSessionDate,
     lookbackStartDate,
 } from '../../lib/marketFearGreedWindows';
-import { MS_PER_DAY } from '@/shared/config/time';
 
 describe('lookbackStartDate', () => {
     it(`고정 시각 기준 MARKET_FEAR_GREED_LOOKBACK_DAYS(${MARKET_FEAR_GREED_LOOKBACK_DAYS})일 전 ISO 날짜를 반환한다`, () => {

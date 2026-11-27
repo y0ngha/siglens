@@ -4,10 +4,9 @@
  */
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@/shared/i18n/locales';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { formatMoney } from '@/widgets/fundamental/utils/moneyFormat';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     estimateChangeDirection,
     revisionShare,
@@ -15,6 +14,7 @@ import {
     type EstimatePeriodCode,
     type VisibleEstimatePeriod,
 } from '@/widgets/fundamental/utils/estimateTrend';
+import { formatMoney } from '@/widgets/fundamental/utils/moneyFormat';
 
 interface EstimateTrendSectionProps {
     /** 보여 줄 기간(`visibleEstimatePeriods`로 거른 것). 비어 있지 않다 — 호출부가 비면 섹션을 그리지 않는다. */

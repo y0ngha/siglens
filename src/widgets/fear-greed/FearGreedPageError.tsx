@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';

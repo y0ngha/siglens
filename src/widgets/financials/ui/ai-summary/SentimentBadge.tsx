@@ -1,8 +1,8 @@
+import type { FinancialsSentiment } from '@y0ngha/siglens-core';
 /**
  * AI 요약의 감성 배지 — 전체 결론 헤더와 축별 행이 크기만 달리 공유한다.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {
     SENTIMENT_CLASS,

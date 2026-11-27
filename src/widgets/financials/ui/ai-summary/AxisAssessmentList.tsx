@@ -1,8 +1,8 @@
+import type { FinancialsAxisAssessment } from '@y0ngha/siglens-core';
 /**
  * AI 요약의 축별 평가 목록 — 축 제목, 감성 배지, 근거 문장.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialsAxisAssessment } from '@y0ngha/siglens-core';
 import { axisLabelKey } from '../../utils/axisLabels';
 import { SentimentBadge } from './SentimentBadge';
 

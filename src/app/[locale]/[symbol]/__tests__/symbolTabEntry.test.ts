@@ -16,7 +16,6 @@ vi.mock('next-intl/server', async importOriginal => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     enterSymbolTabMetadata,
     enterSymbolTabPage,

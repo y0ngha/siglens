@@ -1,9 +1,10 @@
 import 'server-only';
-import { cache } from 'react';
 import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
-import { getRedisClient } from '@/shared/cache/redisClient';
+import { cache } from 'react';
 import { getOrSetCache, setCacheValue } from '@/shared/cache/getOrSetCache';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {
     getOptionsCacheLifeProfile,
@@ -18,7 +19,6 @@ import {
     type RedisClient,
     writeLastGoodSnapshot,
 } from './optionsLastGoodStore';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const adapter = getOptionsProvider();
 

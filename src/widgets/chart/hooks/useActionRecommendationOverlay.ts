@@ -4,9 +4,10 @@
  * AI 매매 추천(진입·청산·손절) 가격선을 차트에 그리는 훅.
  */
 
-import { useTranslations } from 'next-intl';
-import type { RefObject } from 'react';
-import { useEffect, useRef } from 'react';
+import type {
+    ReconciledActionLineData,
+    ValidatedActionPrices,
+} from '@y0ngha/siglens-core';
 import type {
     IPriceLine,
     ISeriesApi,
@@ -14,10 +15,9 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
-import type {
-    ReconciledActionLineData,
-    ValidatedActionPrices,
-} from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import type { RefObject } from 'react';
+import { useEffect, useRef } from 'react';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 

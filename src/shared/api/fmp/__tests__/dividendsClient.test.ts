@@ -6,7 +6,6 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet }));
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     getFmpDividendHistory,
     normalizeDividendRows,

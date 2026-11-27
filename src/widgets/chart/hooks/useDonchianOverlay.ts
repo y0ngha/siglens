@@ -4,9 +4,7 @@
  * 돈치안 채널 오버레이 시리즈 생성·갱신과 표시 토글 훅.
  */
 
-import type { RefObject } from 'react';
-import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
-import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import {
     AreaSeries,
@@ -14,8 +12,10 @@ import {
     LineStyle,
     LineType,
 } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from '../constants';
 import { buildSeriesData } from '../utils/seriesDataUtils';
 import { useBandOccluder } from './useBandOccluder';

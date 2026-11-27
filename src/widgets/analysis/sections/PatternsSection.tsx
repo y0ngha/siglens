@@ -1,14 +1,14 @@
 'use client';
 
-/**
- * 패턴 섹션 — 감지된 패턴 카드 목록. 없으면 "감지된 패턴 없음" 문구를 보인다.
- */
-import { useTranslations } from 'next-intl';
 import type {
     KrxTickTable,
     PatternResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
+/**
+ * 패턴 섹션 — 감지된 패턴 카드 목록. 없으면 "감지된 패턴 없음" 문구를 보인다.
+ */
+import { useTranslations } from 'next-intl';
 import {
     isTargetReferenceOnly,
     resolvePatternBaseRate,

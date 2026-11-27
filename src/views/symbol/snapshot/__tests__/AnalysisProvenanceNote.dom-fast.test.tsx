@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { SITE_OPERATOR } from '@/shared/lib/legal';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { SITE_OPERATOR } from '@/shared/lib/legal';
 import ko from '../../../../../messages/ko.json';
 import { AnalysisProvenanceNote } from '../AnalysisProvenanceNote';
 

@@ -3,16 +3,15 @@ vi.mock('server-only', () => ({}));
 const { load } = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock('@/entities/x-posts/server/getXPosts', () => ({ getXPosts: load }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     AGENT_X_POST_TEXT_MAX_CHARS,
     AGENT_X_POSTS_MAX,
 } from '@y0ngha/siglens-core';
-import type { XPostItem, XPostsAccount } from '@/entities/x-posts/model';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getXPostsTool } from '@/app/api/ai/chat/tools/getXPosts';
-import { guestSubject } from '@/shared/lib/guestSubject';
 import { X_POSTS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import type { XPostItem, XPostsAccount } from '@/entities/x-posts/model';
+import { guestSubject } from '@/shared/lib/guestSubject';
 
 const ctx = {
     userId: 'u',

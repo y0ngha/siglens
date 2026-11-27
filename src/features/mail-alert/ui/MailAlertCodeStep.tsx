@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { EMAIL_VERIFICATION_CODE_LENGTH } from '@/entities/auth/lib/authUseCaseConstants';
 import type { MailAlertRequestCodeState } from '@/entities/mail-alert/model';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';

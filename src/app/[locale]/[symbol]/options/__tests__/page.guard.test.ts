@@ -82,6 +82,7 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
     }),
 }));
 
+import { notFound } from 'next/navigation';
 import {
     describe,
     expect,
@@ -90,13 +91,12 @@ import {
     vi,
     type MockedFunction,
 } from 'vitest';
-import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
-import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { notFound } from 'next/navigation';
 import OptionsPage, {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/options/page';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 
 const mockIsTabAllowed = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol

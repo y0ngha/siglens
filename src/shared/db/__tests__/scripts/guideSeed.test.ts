@@ -1,3 +1,5 @@
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import path from 'path';
 import {
     bodyCharCount,
@@ -8,8 +10,6 @@ import {
     type ParsedGuideFile,
 } from '@/../db/scripts/lib/guideSeed';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
 
 function ko(
     slug: string,

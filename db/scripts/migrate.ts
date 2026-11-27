@@ -1,13 +1,13 @@
-import postgres from 'postgres';
 import { readFileSync } from 'fs';
 import path from 'path';
+import postgres from 'postgres';
+import { hashMigrationSql } from '../../src/shared/db/migrations/migrationJournal';
 import {
     assertRemoteWriteAllowed,
     describeTarget,
     formatTarget,
     requireDatabaseUrl,
 } from './lib/dbTarget';
-import { hashMigrationSql } from '../../src/shared/db/migrations/migrationJournal';
 
 const databaseUrl = requireDatabaseUrl();
 

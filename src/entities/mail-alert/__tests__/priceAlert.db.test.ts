@@ -1,15 +1,15 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
 import type {
     CreatePriceAlertInput,
     PriceAlertConditionRecord,
 } from '@/shared/db/types';
+import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import {
     DrizzleMailAlertSubscriberRepository,
     DrizzlePriceAlertRepository,

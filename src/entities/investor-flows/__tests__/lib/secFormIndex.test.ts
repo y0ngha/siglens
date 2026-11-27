@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseSecFormIndex } from '../../lib/secFormIndex';
 import { FORM_144_FORMS, OFFERING_FORMS } from '../../lib/offeringIndex';
+import { parseSecFormIndex } from '../../lib/secFormIndex';
 import { FORM_INDEX_EXPANSION_EXCERPT } from '../fixtures/investorFlowsExpansionSamples';
 
 describe('parseSecFormIndex', () => {

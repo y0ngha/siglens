@@ -1,8 +1,6 @@
 import { render } from '@testing-library/react';
 import type { BacktestTrade } from '@y0ngha/siglens-core';
-
 import { toTradeRows } from '@/entities/backtest-case/lib/tradeRows';
-
 import { BacktestTradeRow } from '../../BacktestTradeRow';
 
 const rowOf = (trade: BacktestTrade) => toTradeRows([trade])[0];

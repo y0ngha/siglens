@@ -1,11 +1,11 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import {
     runFinancialsAnalysis,
     type SubmitFinancialsAnalysisOptions,
     type RunFinancialsAnalysisResult,
 } from '@y0ngha/siglens-core';
+import { cookies } from 'next/headers';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';

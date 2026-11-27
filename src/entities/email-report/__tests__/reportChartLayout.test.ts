@@ -1,11 +1,11 @@
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
-import { defined } from '@/shared/test-utils/defined';
+import { REPORT_CHART_BARS } from '@/entities/email-report/lib/chartGeometry';
 import {
     layoutReportChart,
     REPORT_CHART_GUTTER_WIDTH,
     REPORT_CHART_WIDTH,
 } from '@/entities/email-report/lib/reportChartLayout';
-import { REPORT_CHART_BARS } from '@/entities/email-report/lib/chartGeometry';
+import { defined } from '@/shared/test-utils/defined';
 
 const DAY = 86_400;
 const T0 = 1_790_000_000;

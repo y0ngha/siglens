@@ -1,21 +1,20 @@
 import type { GradesEvent } from '@y0ngha/siglens-core';
-
-import { getDatabaseClient } from '@/shared/db/client';
 import { EARNINGS_REPORT_FMP_LIMIT } from '@/entities/earnings-report/api';
+import { isEarningsReportStale } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import {
     isEarningsKnownEmpty,
     markEarningsEmpty,
 } from '@/entities/earnings-report/server/earningsEmptyMarker';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
-import { isEarningsReportStale } from '@/entities/earnings-report/lib/isEarningsReportStale';
-import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
     getFmpUserFacingKey,
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { getDatabaseClient } from '@/shared/db/client';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
 /**
  * 애널리스트 등급 이벤트(뉴스 탭 애널리스트 의견 섹션). CachedFundamentalProvider가

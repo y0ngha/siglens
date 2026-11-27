@@ -21,11 +21,10 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-
-import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 
 describe('sectorSignalsProviderFor', () => {
     beforeEach(() => {

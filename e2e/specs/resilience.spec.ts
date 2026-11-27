@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Widget resilience (`/AAPL/options`) — error boundary → retry → recovery.

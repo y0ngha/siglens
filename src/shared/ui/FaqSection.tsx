@@ -1,7 +1,7 @@
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { FaqItem } from '@/shared/lib/seo';
 import { splitSitePaths } from '@/shared/lib/splitSitePaths';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';

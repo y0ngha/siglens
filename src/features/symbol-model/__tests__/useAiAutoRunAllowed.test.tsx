@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
 import { act, renderHook } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import type { Locale } from '@/shared/i18n/locales';
-import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { __resetHumanInteractionForTests } from '@/shared/lib/humanInteractionStore';
 
 const { mockUseSymbolModel } = vi.hoisted(() => ({

@@ -1,6 +1,6 @@
 import 'server-only';
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import {
     isApiPath,
     localePath,

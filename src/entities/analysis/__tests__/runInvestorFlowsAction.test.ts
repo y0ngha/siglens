@@ -38,19 +38,19 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-import type { MockedFunction } from 'vitest';
-import { cookies } from 'next/headers';
 import {
     runInvestorFlowsAnalysis,
     type ModelId,
     type RunInvestorFlowsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { isE2E } from '@/shared/api/e2eEnv';
-import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
+import { cookies } from 'next/headers';
+import type { MockedFunction } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { investorFlowsCachedProvider } from '@/entities/investor-flows/server/getInvestorFlowsCachedProvider';
-import { resolveTierAndByok } from '@/shared/lib/byokGate';
+import { getInvestorFlowsEvaluationOptions } from '@/entities/investor-flows/server/getInvestorFlowsEvaluationOptions';
 import { E2E_FORCE_INVESTOR_FLOWS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
+import { isE2E } from '@/shared/api/e2eEnv';
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { runInvestorFlowsAction } from '../actions/runInvestorFlowsAction';
 

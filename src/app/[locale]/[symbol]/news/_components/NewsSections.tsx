@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-
 import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import {
     getEarningsReportComparison,
@@ -10,30 +9,30 @@ import { loadEarningsHintBounded } from '@/entities/analyst-views/server/loadEar
 import type { CompanyFiling } from '@/entities/company-filings/model';
 import { listCompanyFilings } from '@/entities/company-filings/server/getCompanyFilings';
 import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
+import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     shortenRevalidateForPendingEnrichment,
     shortenRevalidateForRuntimeDegrade,
 } from '@/shared/cache/buildDegradedRevalidate';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
+import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { CompanyFilings } from '@/widgets/news/sections/CompanyFilings';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { withNextEarnings } from '@/widgets/news/utils/withNextEarnings';
 import {
     fromAnalystAction,
     fromGradesEvent,
     type AnalystActionItem,
 } from '@/widgets/news/utils/analystActionItems';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { withNextEarnings } from '@/widgets/news/utils/withNextEarnings';
 
 /**
  * 뉴스 탭 섹션 정적 캐시(`news:earnings`·`news:grades`·`news:analyst-history`)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

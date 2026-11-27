@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-
+import type { ReactNode } from 'react';
 import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';
 import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
@@ -15,7 +14,6 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
-
 import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 
 interface SymbolLayoutProps {

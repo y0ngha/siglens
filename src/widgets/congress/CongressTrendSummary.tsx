@@ -2,20 +2,20 @@
 
 /** Client entry of the congress AI trend summary: wires settings, run permission and share registration to the state views. */
 import { useTranslations } from 'next-intl';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
-import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
-import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
-import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
-import { useCongressTrend } from './hooks/useCongressTrend';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { CongressTrendSummaryEmpty } from './CongressTrendSummaryEmpty';
 import { CongressTrendSummaryError } from './CongressTrendSummaryError';
 import { CongressTrendSummarySkeleton } from './CongressTrendSummarySkeleton';
 import { CongressTrendSummaryView } from './CongressTrendSummaryView';
-import { CongressTrendSummaryEmpty } from './CongressTrendSummaryEmpty';
-import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { useCongressTrend } from './hooks/useCongressTrend';
 
 interface CongressTrendSummaryProps {
     symbol: string;

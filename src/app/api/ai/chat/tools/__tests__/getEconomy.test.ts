@@ -32,10 +32,9 @@ vi.mock('@/entities/economy/api/getCalendarFromDb', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getEconomyTool } from '@/app/api/ai/chat/tools/getEconomy';
-import { ECONOMY_CALENDAR_DEFAULT_DAYS } from '@/shared/config/economyCalendar';
 import { ECONOMY_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import { ECONOMY_CALENDAR_DEFAULT_DAYS } from '@/shared/config/economyCalendar';
 
 const ctx = {
     userId: 'u',

@@ -1,5 +1,5 @@
-import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import { testInputs } from '@/app/api/llms/_lib/__tests__/llmsTestInputs';
+import { buildLlmsDocument } from '@/app/api/llms/_lib/buildLlmsDocument';
 import type { LlmsHost } from '@/app/api/llms/_lib/model';
 import { renderLlmsTxt } from '@/app/api/llms/_lib/renderLlmsTxt';
 

@@ -1,15 +1,15 @@
-import type { MockInstance } from 'vitest';
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
-import {
-    MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS,
-    useMobileAnalysisSheet,
-} from '@/views/symbol/hooks/useMobileAnalysisSheet';
+import type { MockInstance } from 'vitest';
 import {
     SNAP_FULL,
     SNAP_HALF,
     SNAP_PEEK,
 } from '@/views/symbol/constants/mobileSheet';
+import {
+    MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS,
+    useMobileAnalysisSheet,
+} from '@/views/symbol/hooks/useMobileAnalysisSheet';
 
 describe('useMobileAnalysisSheet', () => {
     let requestAnimationFrameSpy: MockInstance<

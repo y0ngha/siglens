@@ -25,7 +25,6 @@ vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadPageGradesConsensus } from '@/shared/api/fmp/loadPageGradesConsensus';
 
 const COUNTS = { strongBuy: 40, buy: 70, hold: 32, sell: 2, strongSell: 1 };

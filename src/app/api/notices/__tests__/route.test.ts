@@ -3,11 +3,10 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { GET } from '../route';
 import { __resetActiveNoticesMemoForTests } from '@/entities/notice/server/activeNoticesMemo';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { GET } from '../route';
 
 const mockedTryGet = vi.mocked(tryGetDatabaseClient);
 

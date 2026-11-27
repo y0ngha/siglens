@@ -1,7 +1,7 @@
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     applicableTabsFor,
     isPrewarmTab,

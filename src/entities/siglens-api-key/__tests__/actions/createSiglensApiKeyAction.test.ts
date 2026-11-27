@@ -21,8 +21,8 @@ vi.mock('@/entities/siglens-api-key/api', () => ({
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { createSiglensApiKeyAction } from '@/entities/siglens-api-key/actions/createSiglensApiKeyAction';
-import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import type { CreateSiglensApiKeyState } from '@/entities/siglens-api-key/model';
+import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import {
     API_KEY_MAX_ACTIVE_PER_USER,
     API_KEY_NAME_MAX_LENGTH,

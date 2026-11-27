@@ -1,8 +1,8 @@
+import { ECONOMY_INDICATOR_CATEGORIES } from '../economyIndicators';
 import {
     KR_ECONOMY_INDICATORS,
     normalizeKrEventName,
 } from '../economyIndicatorsKr';
-import { ECONOMY_INDICATOR_CATEGORIES } from '../economyIndicators';
 
 describe('normalizeKrEventName', () => {
     it('strips the trailing period parenthesis FMP appends', () => {

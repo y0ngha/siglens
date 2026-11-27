@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { ancestorClientPaths, routeClientPaths } from './clientNamespaces';
 import { loadMessages, pickMessages } from './loadMessages';
+import type { Locale } from './locales';
 import { MergedIntlProvider } from './MergedIntlProvider';
 import { omitMessages } from './messageDiff';
-import type { Locale } from './locales';
 
 interface RouteMessagesProps {
     /**

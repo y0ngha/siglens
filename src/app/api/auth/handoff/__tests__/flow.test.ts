@@ -43,9 +43,8 @@ vi.mock('@/shared/config/aiHost', () => ({
 }));
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { NextRequest } from 'next/server';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET as consume } from '@/app/api/auth/handoff/consume/route';
 import { GET as issue } from '@/app/api/auth/handoff/route';
 import { GET as start } from '@/app/api/auth/handoff/start/route';

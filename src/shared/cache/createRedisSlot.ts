@@ -1,6 +1,6 @@
 import 'server-only';
-import { getRedisClient } from './redisClient';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getRedisClient } from './redisClient';
 
 /** 파라미터로 키를 정하는 생성 슬롯 핸들. */
 export interface RedisSlotHandle<A> {

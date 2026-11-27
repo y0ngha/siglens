@@ -8,7 +8,6 @@ vi.mock('@/entities/llm-provider/api/gemini', () => ({
 
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
-
 import {
     translateCompanyDescription,
     translateCompanyNames,

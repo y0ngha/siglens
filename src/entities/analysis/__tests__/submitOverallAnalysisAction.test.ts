@@ -138,9 +138,6 @@ vi.mock('@/shared/api/market/sessionSpecFor', async importOriginal => {
     };
 });
 
-import type { MockedFunction, MockedClass, Mock } from 'vitest';
-
-import { runOverallAnalysisAction } from '../actions/runOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,
     runOverallAnalysis,
@@ -156,18 +153,20 @@ import {
     type FinancialsScorecard,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { runOverallAnalysisAction } from '../actions/runOverallAnalysisAction';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 

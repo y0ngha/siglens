@@ -1,8 +1,8 @@
 import { type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Spinner } from '@/shared/ui/Spinner';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;

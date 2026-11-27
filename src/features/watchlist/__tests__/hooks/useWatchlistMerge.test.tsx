@@ -21,16 +21,16 @@ const toast = vi.hoisted(() => ({ showToast: vi.fn(), dismiss: vi.fn() }));
 vi.mock('@/shared/ui/ToastProvider', () => ({ useToast: () => toast }));
 
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useWatchlistMerge } from '@/features/watchlist/hooks/useWatchlistMerge';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import { mergeWatchlistAction } from '@/entities/watchlist/actions/mergeWatchlistAction';
-import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
+import { useWatchlistMerge } from '@/features/watchlist/hooks/useWatchlistMerge';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { WATCHLIST_MAX_MEMBER } from '@/shared/config/watchlist';
+import { trackFunnelEvent } from '@/shared/lib/funnel/trackFunnelEvent';
 import {
     LOCAL_STORAGE_WATCHLIST_KEY,
     SESSION_STORAGE_WATCHLIST_MERGED_KEY,
 } from '@/shared/lib/storageKeys';
-import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
 const mockMerge = vi.mocked(mergeWatchlistAction);
 const mockTrack = vi.mocked(trackFunnelEvent);

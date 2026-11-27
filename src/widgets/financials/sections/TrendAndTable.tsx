@@ -1,11 +1,11 @@
+import type { StatementCurrency } from '../utils/statementCurrency';
+import type { StatementTableRowData } from '../utils/statementTableTypes';
+import type { TrendSeries } from '../utils/trendChartTypes';
 /**
  * 손익계산서·재무상태표·현금흐름표가 공유하는 본문 — 추세 차트 아래에 값 표를 둔다.
  */
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { StatementTable } from './StatementTable';
-import type { StatementCurrency } from '../utils/statementCurrency';
-import type { StatementTableRowData } from '../utils/statementTableTypes';
-import type { TrendSeries } from '../utils/trendChartTypes';
 
 interface TrendAndTableProps {
     caption: string;

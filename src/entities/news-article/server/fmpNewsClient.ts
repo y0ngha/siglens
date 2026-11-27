@@ -1,10 +1,10 @@
 import type { NewsItem } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { normalizeFmpPublishedDate } from '@/shared/api/fmp/normalizeFmpPublishedDate';
 import type { RawFmpNews } from '@/shared/api/fmp/types';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
 import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
-import { normalizeFmpPublishedDate } from '@/shared/api/fmp/normalizeFmpPublishedDate';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * 날짜 정규화 실패 경고를 프로세스당 한 번으로 줄이는 플래그. 잘못된 FMP 배치는 한

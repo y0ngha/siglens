@@ -5,12 +5,6 @@ import {
     xmlChildText,
     type XmlChunkSource,
 } from '@/shared/lib/streamXmlElements';
-import {
-    DART_REGISTERED_TOKEN,
-    DART_REPORT_TYPE_ABBREVIATED,
-    DART_REPORT_TYPE_DETAILED,
-    DART_UNREGISTERED_TOKENS,
-} from './dartSourceTokens';
 import type {
     DartCorpCodeRow,
     DartDisclosureListRow,
@@ -19,6 +13,12 @@ import type {
     DartReportForm,
     DartTradingPlanRow,
 } from '../model';
+import {
+    DART_REGISTERED_TOKEN,
+    DART_REPORT_TYPE_ABBREVIATED,
+    DART_REPORT_TYPE_DETAILED,
+    DART_UNREGISTERED_TOKENS,
+} from './dartSourceTokens';
 
 /**
  * OpenDART 응답 파서(순수). 형식의 주인은 금융감독원 OpenDART(개발가이드 2019001 공시검색·2019018 고유번호·2019021

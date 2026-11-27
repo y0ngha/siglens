@@ -13,9 +13,9 @@ import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
-import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
-import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
 import { LOCAL_STORAGE_WATCHLIST_COACH_SEEN_KEY } from '@/shared/lib/storageKeys';
+import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
+import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
 
 const mockSessionShown = vi.mocked(hasNudgeShownThisSession);
 const mockMarkSession = vi.mocked(markNudgeShownThisSession);

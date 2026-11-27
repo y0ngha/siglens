@@ -1,4 +1,5 @@
 import 'server-only';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
@@ -7,7 +8,6 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';

@@ -9,8 +9,8 @@ import {
 } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 import { hashApiKey } from '@/entities/siglens-api-key/server/apiKeyToken';
 import { getDatabaseClient } from '@/shared/db/client';
-import { logActionError } from '@/shared/lib/logActionError';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { logActionError } from '@/shared/lib/logActionError';
 
 /**
  * `Authorization: Bearer slk_...`을 인증한다. 세션 쿠키는 보지 않는다(쿠키 인증과 섞지 않는다).

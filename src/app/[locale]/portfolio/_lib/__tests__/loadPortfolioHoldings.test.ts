@@ -8,11 +8,11 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-import { loadPortfolioHoldings } from '../loadPortfolioHoldings';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+import { loadPortfolioHoldings } from '../loadPortfolioHoldings';
 
 const mockFindByUser = vi.fn();
 

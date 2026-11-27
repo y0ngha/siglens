@@ -1,6 +1,6 @@
+import { SITE_URL } from '@/shared/lib/seo';
 import { sitemapAlternates } from '../lib/sitemapAlternates';
 import { toUrlSetXml } from '../lib/xml';
-import { SITE_URL } from '@/shared/lib/seo';
 
 describe('sitemapAlternates', () => {
     it('준비 로케일이 하나면 undefined — sitemap XML이 지금과 동일하게 유지된다', () => {

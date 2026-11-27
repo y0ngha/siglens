@@ -11,10 +11,10 @@ import {
     useState,
     type ReactNode,
 } from 'react';
+import { predictGuardedLanding } from '@/shared/config/authGuardPaths';
+import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
 import { splitLocalePath } from '@/shared/i18n/locales';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
-import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
-import { predictGuardedLanding } from '@/shared/config/authGuardPaths';
 import { readAuthHintCookie } from '@/shared/lib/auth/readAuthHintCookie';
 
 /**

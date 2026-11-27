@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compareCodeUnits as scriptCompare } from '../i18n/lib/compareCodeUnits.mjs';
 import { compareCodeUnits as srcCompare } from '../../src/shared/lib/compareCodeUnits';
+import { compareCodeUnits as scriptCompare } from '../i18n/lib/compareCodeUnits.mjs';
 
 /**
  * `scripts/i18n/lib/compareCodeUnits.mjs`는 `src/shared/lib/compareCodeUnits.ts`의 사본이다.

@@ -5,13 +5,13 @@ import {
     type MarketDataProvider,
     type SignalType,
 } from '@y0ngha/siglens-core';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { SIGNAL_SCAN_RELABEL_CUTOVER } from '@/entities/signal-history/lib/signalScanConstants';
 import type {
     OpenEpisode,
     ScanCursor,
     SymbolScanWrite,
 } from '@/entities/signal-history/types';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
 import {
     scanSymbol,

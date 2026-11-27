@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import ko from '../../../../../messages/ko.json';
 import { ConversationRow } from '@/widgets/agent-chat/sidebar/ConversationRow';
+import ko from '../../../../../messages/ko.json';
 
 const labels = ko.widgets['agent-chat'].Sidebar;
 

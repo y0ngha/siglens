@@ -1,6 +1,6 @@
 import 'server-only';
-import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { quantizeBarsDataToLastClosed } from '@/entities/bars/lib/quantizeBars';
+import { loadBarsData } from '@/entities/bars/server/loadBarsData';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';

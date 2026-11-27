@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import type {
     FundamentalProfile,
     FundamentalPeerInput,
@@ -11,25 +10,25 @@ import type {
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
-
-import { getDatabaseClient } from '@/shared/db/client';
-import type { ProfileDescriptionTranslationRepository } from '@/shared/db/types';
-import { localizeContentRow } from '@/shared/db/localizeContent';
-import {
-    CONTENT_FIELD,
-    TRANSLATABLE_ENTITY,
-} from '@/shared/db/contentTranslationFields';
-import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cache } from 'react';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker/api';
-import { translateCompanyDescription } from '@/entities/ticker/server/koreanTranslator';
 import { tryReadTranslatorConfig } from '@/entities/ticker/server/config';
 import {
     hasDescriptionTranslationFailed,
     markDescriptionTranslationFailed,
 } from '@/entities/ticker/server/descriptionTranslationFailure';
-import { createSingleFlight } from '@/shared/lib/singleFlight';
+import { translateCompanyDescription } from '@/entities/ticker/server/koreanTranslator';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
+import { getDatabaseClient } from '@/shared/db/client';
+import {
+    CONTENT_FIELD,
+    TRANSLATABLE_ENTITY,
+} from '@/shared/db/contentTranslationFields';
+import { localizeContentRow } from '@/shared/db/localizeContent';
+import type { ProfileDescriptionTranslationRepository } from '@/shared/db/types';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { createSingleFlight } from '@/shared/lib/singleFlight';
 
 // 펀더멘털 탭 섹션 로더 — provider 위임과 회사 설명 번역(`getProfileDescription`)만 둔다. Redis 캐싱
 // (`fundamental:*` 키)·per/psr enrich는 `getFundamentalDataProvider`가 돌려주는 CachedFundamentalProvider가

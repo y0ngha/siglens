@@ -1,12 +1,12 @@
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import koMessages from '@/../messages/ko.json';
 import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';
+import koMessages from '@/../messages/ko.json';
 import zhMessages from '@/../messages/zh.json';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
-import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 import { useSymbolTabLabels } from '@/views/symbol/hooks/useSymbolTabLabels';
+import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 const CATALOGS = {
     ko: koMessages,

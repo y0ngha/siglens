@@ -1,13 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { symbolLabel } from '@/shared/lib/symbolLabel';
-import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type {
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
 } from '@/entities/portfolio/model';
+import { symbolLabel } from '@/shared/lib/symbolLabel';
+import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useHoldingRowFocus } from '../hooks/useHoldingRowFocus';
 import { ACTION_BUTTON, DANGER_BUTTON, ROW_CHROME } from '../lib/holdingStyles';
 import { HoldingForm } from './HoldingForm';

@@ -1,8 +1,8 @@
+import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 /**
  * 기준 시점의 FINRA 줄 — 공매도 잔고 결제일과 일별 비중의 마지막 거래일.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsFreshness } from '@y0ngha/siglens-core';
 import type { CollectingArms } from '@/entities/investor-flows/model';
 import { AsOfRow } from './AsOfRow';
 

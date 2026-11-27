@@ -1,30 +1,30 @@
 'use client';
 
+import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 /**
  * Open-interest-by-strike chart. Orchestrates the view model, the pointer
  * hook and the shared strike-chart pieces; drawing details live in `ui/`.
  */
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { useStrikeBarChart } from './hooks/useStrikeBarChart';
-import { STRIKE_CHART_ELEMENT_IDS } from './utils/chartElementIds';
-import { formatCompactCount } from './utils/formatCompactCount';
-import { buildOpenInterestChartModel } from './utils/openInterestChartModel';
-import { OpenInterestTooltip } from './utils/openInterestTooltips';
-import { BAR_OPACITY, SVG_HEIGHT, SVG_WIDTH } from './utils/strikeChartLayout';
 import { OpenInterestLegend } from './ui/oi-chart/OpenInterestLegend';
 import { OpenInterestTooltipBody } from './ui/oi-chart/OpenInterestTooltipBody';
 import { ChartEmptyCard } from './ui/strike-chart/ChartEmptyCard';
 import { StrikeAxisLabels } from './ui/strike-chart/StrikeAxisLabels';
 import { StrikeBars } from './ui/strike-chart/StrikeBars';
-import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
-import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
 import { StrikeChartScale } from './ui/strike-chart/StrikeChartScale';
 import { StrikeGuideLines } from './ui/strike-chart/StrikeGuideLines';
+import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
+import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
+import { STRIKE_CHART_ELEMENT_IDS } from './utils/chartElementIds';
+import { formatCompactCount } from './utils/formatCompactCount';
+import { buildOpenInterestChartModel } from './utils/openInterestChartModel';
+import { OpenInterestTooltip } from './utils/openInterestTooltips';
+import { BAR_OPACITY, SVG_HEIGHT, SVG_WIDTH } from './utils/strikeChartLayout';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */

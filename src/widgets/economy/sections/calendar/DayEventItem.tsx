@@ -1,10 +1,10 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 상세 패널의 이벤트 한 줄 — 시각·이름·값 줄·중요도 배지와 (분석이 있으면) 심리 배지·요약·해석.
  */
 import { useTranslations } from 'next-intl';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
 import {
     resolveCalendarInterpretation,
     resolveCalendarSummary,

@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CachedFinancialStatementsProvider } from '@/shared/api/fmp/CachedFinancialStatementsProvider';
-import { decodeCacheValue } from '@/shared/cache/cacheValueCodec';
 import type {
     FinancialStatementsProvider,
     IncomeStatementRow,
 } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CachedFinancialStatementsProvider } from '@/shared/api/fmp/CachedFinancialStatementsProvider';
+import { decodeCacheValue } from '@/shared/cache/cacheValueCodec';
 import { FMP_STATEMENTS_CACHE_TTL_SECONDS } from '@/shared/config/time';
 
 // In-memory fake Redis mirroring the pattern in CachedFundamentalProvider.test.ts.

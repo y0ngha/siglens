@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** `widgets.financials.section` 키 — fundamental·financials 두 위젯의 빈 섹션이 같은 문구를 쓴다. */
 const EMPTY_MESSAGE_KEY = 'emptySection';

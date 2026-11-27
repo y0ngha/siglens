@@ -4,10 +4,10 @@ import type {
     FundamentalValuationMetrics,
 } from '@y0ngha/siglens-core';
 import type { FundamentalProviderWithRawPeers } from '@/shared/api/fmp/fundamentalProvider.types';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type { KrPrice, KrValuation } from '../model';
 import {
     resolveKrValuation,

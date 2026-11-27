@@ -1,12 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ModelSelector } from '@/widgets/analysis/ModelSelector';
-import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
     ModelId,
 } from '@y0ngha/siglens-core';
+import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
+import { ModelSelector } from '@/widgets/analysis/ModelSelector';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

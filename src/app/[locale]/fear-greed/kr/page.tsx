@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
 import { enterLocale } from '@/shared/lib/enterLocale';
-import { FearGreedRouteBody } from '../FearGreedRouteBody';
 import {
     fearGreedMetadata,
     loadFearGreedSymbolLinks,
     loadFearGreedView,
     type FearGreedRouteSource,
 } from '../fearGreedRoute';
+import { FearGreedRouteBody } from '../FearGreedRouteBody';
 
 // 1h — 미국 라우트와 동일. `getMarketFearGreedKrStatic`이 이미 1h로 판독값을 캐싱하므로
 // 이 값은 페이지 셸의 백그라운드 재생성 주기만 정한다(추가 staleness 없음).

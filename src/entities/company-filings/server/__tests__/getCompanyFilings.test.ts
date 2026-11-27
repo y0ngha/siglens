@@ -70,12 +70,11 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
     },
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     AGENT_FILING_TEXT_MAX_CHARS,
     AGENT_FILINGS_LIST_MAX,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     FILING_META_LOAD_MAX,
     FILING_PUBLICATION_WINDOW_MS,

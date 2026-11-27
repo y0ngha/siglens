@@ -4,12 +4,12 @@
  * 선 pane 스펙(LinePaneSpec)에 따라 선형 보조 pane 시리즈를 그리는 공용 훅.
  */
 
-import type { RefObject } from 'react';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { LineSeries, LineStyle } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import type { LinePaneSpec } from '../model/linePaneSpecs';
 import { buildSeriesDataFromValues } from '../utils/seriesDataUtils';

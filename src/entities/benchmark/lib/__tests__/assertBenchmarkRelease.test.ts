@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { assertBenchmarkRelease } from '../assertBenchmarkRelease';
-import type { BenchmarkLabel, BenchmarkRelease } from '../../types';
 import { BENCHMARK_FIXTURE } from '../../__tests__/fixtures/benchmarkFixture';
+import type { BenchmarkLabel, BenchmarkRelease } from '../../types';
+import { assertBenchmarkRelease } from '../assertBenchmarkRelease';
 
 type Mutable<T> = T extends readonly (infer U)[]
     ? Mutable<U>[]

@@ -1,14 +1,7 @@
-import { Suspense, type ReactElement } from 'react';
-import { getTranslations } from 'next-intl/server';
 import { HydrationBoundary } from '@tanstack/react-query';
+import { getTranslations } from 'next-intl/server';
+import { Suspense, type ReactElement } from 'react';
 import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
-import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
-import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
-import { SectorFactsSummary } from '@/widgets/dashboard/SectorFactsSummary';
-import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
-import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
-import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
-import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
 import {
     SIGNAL_HUBS,
     signalHubPath,
@@ -19,6 +12,7 @@ import {
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { brandTitle } from '@/shared/lib/brandName';
 import {
@@ -31,11 +25,17 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
+import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
+import { SectorFactsSummary } from '@/widgets/dashboard/SectorFactsSummary';
+import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
+import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
+import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
+import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
 import { buildMarketItemListJsonLd } from './_lib/marketItemListJsonLd';
 import { buildMarketDehydratedSeed } from './_lib/marketSeed';
 import { marketCopyFor } from './copy';
 import { loadMarketSignals } from './loadMarketSignals';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/market`·`/market/kr` 본문 끝의 "신호별 종목" 링크 묶음 — 신호 페이지(`/market/signals/*`)로 가는

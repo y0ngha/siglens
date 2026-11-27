@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { brandAiName, brandName, brandTitle } from '@/shared/lib/brandName';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
+import { brandAiName, brandName, brandTitle } from '@/shared/lib/brandName';
 
 describe('brandName', () => {
     it('ko는 한글 표기를 돌려준다', () => {

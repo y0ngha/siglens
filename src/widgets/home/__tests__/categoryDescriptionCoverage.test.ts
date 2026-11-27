@@ -1,3 +1,4 @@
+import koMessages from '@/../messages/ko.json';
 /**
  * 홈 카드 18개가 **전부** 한 줄 설명을 갖는지 고정한다.
  *
@@ -11,7 +12,6 @@ import {
     TICKER_CATEGORY_DESCRIPTION_KEY,
     TICKER_CATEGORY_LABEL_KEY,
 } from '@/shared/config/tickerCategoryLabel';
-import koMessages from '@/../messages/ko.json';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const ALL_LABELS = [

@@ -4,8 +4,8 @@ import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFina
 import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
 import { runInvestorFlowsAction } from '@/entities/analysis/actions/runInvestorFlowsAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
-import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';

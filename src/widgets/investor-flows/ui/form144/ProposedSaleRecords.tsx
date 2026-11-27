@@ -1,19 +1,19 @@
+import type { ProposedSale } from '@y0ngha/siglens-core';
 /**
  * 매도 예정 신고(Form 144) 목록 본문 — 좁은 화면은 카드, 넓은 화면은 표.
  */
 import { useTranslations } from 'next-intl';
-import type { ProposedSale } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { formatCompact, formatUsdCompact } from '../../utils/flowFormat';
-import { proposedSaleKey } from '../../utils/secFilings';
-import { FilingLink } from '../filings/FilingLink';
 import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
 } from '@/shared/ui/ResponsiveRecordList';
+import { formatCompact, formatUsdCompact } from '../../utils/flowFormat';
+import { proposedSaleKey } from '../../utils/secFilings';
+import { FilingLink } from '../filings/FilingLink';
 import { PlanBadge } from './PlanBadge';
 
 /** 예정일을 모르는 신고는 대시로 둔다. */

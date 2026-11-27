@@ -20,7 +20,6 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalystEarningsHint } from '@/entities/analyst-views/model';
-
 import {
     EARNINGS_HINT_BUDGET_MS,
     loadEarningsHintBounded,

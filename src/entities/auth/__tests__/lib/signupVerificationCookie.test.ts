@@ -1,8 +1,8 @@
+import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from '@/entities/auth/lib/authUseCaseConstants';
 import {
     createExpiredSignupVerificationCookie,
     createSignupVerificationCookie,
 } from '@/entities/auth/lib/signupVerificationCookie';
-import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from '@/entities/auth/lib/authUseCaseConstants';
 import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 describe('signupVerificationCookie', () => {

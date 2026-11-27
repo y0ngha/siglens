@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it } from 'vitest';
-import ko from '../../../../../messages/ko.json';
 import type {
     ChatBlock,
     ChatChartBlock,
@@ -9,6 +8,7 @@ import type {
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { AssistantMessage } from '@/widgets/agent-chat/message/AssistantMessage';
 import { ChatChartSlot } from '@/widgets/agent-chat/model/chatChartSlot';
+import ko from '../../../../../messages/ko.json';
 
 const block: ChatChartBlock = {
     version: 1,

@@ -1,5 +1,7 @@
-import { INVESTOR_FLOWS_SEC_FILINGS_MAX_ATTEMPTS } from '../lib/investorFlowsPolicy';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { FilingFailureTarget } from '../api/investorFlowsFilingsRepository';
 import { parseForm144Xml } from '../lib/form144Parser';
+import { INVESTOR_FLOWS_SEC_FILINGS_MAX_ATTEMPTS } from '../lib/investorFlowsPolicy';
 import { classify424B5 } from '../lib/offeringClassifier';
 import {
     FORM_144_DOCUMENT,
@@ -7,9 +9,7 @@ import {
     representativeSymbol,
     type DocumentPlan,
 } from '../lib/secFilingsPlan';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Form144Row, OfferingFilingRow } from '../model';
-import type { FilingFailureTarget } from '../api/investorFlowsFilingsRepository';
 import type { IngestSecFilingsDeps, RunState } from './ingestSecFilingsTypes';
 
 /** 동시에 받는 문서 수. SEC 게이트가 속도를 정하므로 네트워크·DB 겹치기용 최소값이다. */

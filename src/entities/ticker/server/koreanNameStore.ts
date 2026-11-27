@@ -1,5 +1,6 @@
-import { tryGetDatabaseClient } from '@/shared/db/client';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { tryGetDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { KoreanTickerRepository } from '@/shared/db/types';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { DrizzleKoreanTickerRepository } from '../api';
@@ -15,7 +16,6 @@ import {
     type SearchableKoreanEntry,
     type TickerDisplayName,
 } from '../lib/koreanNameSearch';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 function tryGetRepository(): KoreanTickerRepository | null {
     const client = tryGetDatabaseClient();

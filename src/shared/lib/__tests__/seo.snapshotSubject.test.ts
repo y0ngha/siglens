@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildTitleSubject } from '../seoSymbol';
-import { buildSnapshotMetaDescription } from '../seoSnapshotDescription';
 import { SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH } from '../seoClamp';
+import { buildSnapshotMetaDescription } from '../seoSnapshotDescription';
+import { buildTitleSubject } from '../seoSymbol';
 
 const LABEL = '주가 분석';
 

@@ -3,16 +3,15 @@ import type {
     EconomicIndicatorSeries,
     TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
-
 import type {
     CountryCalendars,
     EconomyProvider,
 } from '@/shared/api/economy/EconomyProvider';
-import { MS_PER_DAY } from '@/shared/config/time';
 import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
 } from '@/shared/config/economyIndicators';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /** 지표 시리즈 시드 — 결정적 fixture 생성의 입력 형태. */

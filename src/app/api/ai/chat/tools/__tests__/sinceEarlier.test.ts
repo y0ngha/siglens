@@ -13,14 +13,13 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     changeReferenceOf,
     technicalChangesBetween,
     US_EQUITY_SESSION,
     type ChangeReference,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildSinceEarlier,
     loadSinceEarlier,
@@ -30,8 +29,8 @@ import {
     type SinceEarlier,
     type SinceEarlierChange,
 } from '@/app/api/ai/chat/tools/sinceEarlier';
-import type { ConversationAnalysis } from '@/entities/chat-conversation/server/conversationAnalyses';
 import { CHAT_CHANGE_SIGNAL_TYPES } from '@/entities/chat-conversation/lib/chatChangeSignalTypes';
+import type { ConversationAnalysis } from '@/entities/chat-conversation/server/conversationAnalyses';
 import {
     analyzedAfterClose,
     earlierProjection,

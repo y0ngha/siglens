@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
-import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
 import { FearGreedComparisonTile } from '@/widgets/fear-greed/ui/gauges/FearGreedComparisonTile';
 import type { ComparisonTile } from '@/widgets/fear-greed/utils/comparisonTiles';
 

@@ -12,9 +12,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     };
 });
 
-import { describe, expect, it, vi } from 'vitest';
-
 import { splitAgentFollowUps } from '@y0ngha/siglens-core';
+import { describe, expect, it, vi } from 'vitest';
 import {
     createFollowUpTextFilter,
     followUpLine,

@@ -1,5 +1,4 @@
 import 'server-only';
-
 import type { Metadata } from 'next';
 import type { SignalHub } from '@/entities/signal-history/lib/signalHubs';
 import type { Locale } from '@/shared/i18n/locales';

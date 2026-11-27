@@ -14,9 +14,9 @@ vi.mock('@/features/watchlist/ui/WatchlistPreviewPanel', () => ({
     ),
 }));
 
+import { fireEvent, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fireEvent, render, screen } from '@testing-library/react';
 import { WatchlistQuickSheet } from '@/features/watchlist/ui/WatchlistQuickSheet';
 
 describe('WatchlistQuickSheet', () => {

@@ -1,10 +1,10 @@
+import type { ConversationTurn } from '@y0ngha/siglens-core';
 import {
     findSpecByApiModelId,
     resolveMaxOutputTokens,
     toProviderTurns,
     toSdkTransportOptions,
 } from '@/entities/llm-provider/lib/utils';
-import type { ConversationTurn } from '@y0ngha/siglens-core';
 
 describe('findSpecByApiModelId', () => {
     it('유효한 apiModelId로 일치하는 ModelSpec을 반환한다', () => {

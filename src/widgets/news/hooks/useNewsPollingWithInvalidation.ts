@@ -1,22 +1,22 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 /**
  * 카드 폴링에 집계 분석 캐시 무효화를 붙인 훅 — 폴링이 끝났을 때 새로 보강된 카드가 있으면 `newsAnalysis`를 갱신한다.
  */
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import {
-    useNewsCardPolling,
-    type OnPollingComplete,
-    type UseNewsCardPollingReturn,
-} from './useNewsCardPolling';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { capRows } from '../utils/capRows';
 import {
     collectEnrichedCardIds,
     hasNewEnrichedCard,
 } from '../utils/enrichedCardIds';
+import {
+    useNewsCardPolling,
+    type OnPollingComplete,
+    type UseNewsCardPollingReturn,
+} from './useNewsCardPolling';
 
 /**
  * 폴링 결과를 그대로 돌려주되, 폴링이 끝난 (상한 적용) 목록에 마운트 시점 기준선에 없던 보강 카드

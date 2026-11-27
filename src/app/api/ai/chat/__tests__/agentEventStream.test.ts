@@ -3,11 +3,11 @@ import {
     AgentTurnError,
     agentEventStream,
 } from '@/app/api/ai/chat/agentEventStream';
-import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
 import {
     __activeStreamCount,
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
+import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,

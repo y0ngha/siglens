@@ -1,11 +1,11 @@
 'use client';
 
+import type { Trend } from '@y0ngha/siglens-core';
 /**
  * 패턴·전략 카드가 공유하는 아코디언 껍데기 — 제목·추세 배지·펼침 버튼, 작도 토글,
  * 카드가 정한 배지(전략의 신뢰도 배지 등)로 된 헤더와 펼쳤을 때만 마운트되는 본문.
  */
 import { useState, type ReactNode } from 'react';
-import type { Trend } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';

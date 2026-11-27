@@ -1,7 +1,6 @@
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-
+import { Suspense } from 'react';
 import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
@@ -15,8 +14,8 @@ import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescr
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { earningsMarketToday } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { SymbolRouteParams } from '@/shared/config/market';
@@ -32,14 +31,13 @@ import {
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
-
 import {
     AnalystActionsSection,
     CompanyFilingsSection,

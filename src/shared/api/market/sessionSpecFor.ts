@@ -3,12 +3,12 @@ import {
     CRYPTO_SESSION,
     type MarketSessionSpec,
 } from '@y0ngha/siglens-core';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
     type MarketProfileId,
     type SessionModel,
 } from '@/shared/config/marketProfile/types';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 const KR_MARKET_OPEN_MINUTE = 9 * 60; // 09:00 KST
 const KR_MARKET_CLOSE_MINUTE = 15 * 60 + 30; // 15:30 KST

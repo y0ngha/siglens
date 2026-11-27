@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
-import GlobalError from '../global-error';
 import { renderWithoutIntl } from '@/shared/test-utils/renderWithoutIntl';
+import GlobalError from '../global-error';
 
 /**
  * `global-error.tsx`는 루트 레이아웃을 대체하므로 `NextIntlClientProvider`가

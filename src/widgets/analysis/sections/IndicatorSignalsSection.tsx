@@ -1,10 +1,10 @@
 'use client';
 
+import type { IndicatorGuideResult } from '@y0ngha/siglens-core';
 /**
  * 보조지표 신호 섹션 — 지표별 신호를 한 줄씩 나열한다. 표시할 지표가 없으면 그리지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { IndicatorGuideResult } from '@y0ngha/siglens-core';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';

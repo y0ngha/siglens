@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Redis } from '@upstash/redis';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
     COMPRESSED_VALUE_PREFIX,
     decodeCacheValue,

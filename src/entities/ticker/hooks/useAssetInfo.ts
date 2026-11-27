@@ -2,13 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getAssetInfoAction } from '@/entities/ticker/actions/getAssetInfoAction';
+import { ASSET_INFO_SEED_UPDATED_AT } from '@/shared/config/assetInfoSeed';
 import {
     ASSET_INFO_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
-import { ASSET_INFO_SEED_UPDATED_AT } from '@/shared/config/assetInfoSeed';
-import type { AssetInfo } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import type { AssetInfo } from '@/shared/lib/types';
 
 /**
  * Returns:

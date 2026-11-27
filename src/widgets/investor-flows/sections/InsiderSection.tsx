@@ -1,7 +1,3 @@
-/**
- * 내부자 거래 섹션 — 순매수 요약, 거래 목록(Form 4), 매도 예정 신고(Form 144).
- */
-import { useTranslations } from 'next-intl';
 import type {
     InsiderMetrics,
     InsiderTransaction,
@@ -9,10 +5,14 @@ import type {
     InvestorFlowsWindow,
     ProposedSale,
 } from '@y0ngha/siglens-core';
+/**
+ * 내부자 거래 섹션 — 순매수 요약, 거래 목록(Form 4), 매도 예정 신고(Form 144).
+ */
+import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
 import { formatInteger } from '../utils/flowFormat';
 import { buildInsiderTable } from '../utils/insider';

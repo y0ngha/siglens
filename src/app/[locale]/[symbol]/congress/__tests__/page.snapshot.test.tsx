@@ -81,15 +81,15 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CongressPage from '@/app/[locale]/[symbol]/congress/page';
-import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
-import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
+import CongressPage from '@/app/[locale]/[symbol]/congress/page';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
+import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetProfileResilient = vi.mocked(getProfileResilient);

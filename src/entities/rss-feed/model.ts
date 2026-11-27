@@ -1,8 +1,8 @@
-import { regionHrefOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
+import { regionHrefOf, type NavRegionId } from '@/shared/config/assetClassNav';
 
 /** RSS 항목 한 건. 라우트(`sources.ts`)가 만들고 `buildRssXml`이 직렬화한다. */
 export interface RssItem {

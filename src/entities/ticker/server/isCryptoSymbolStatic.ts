@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache';
-import { isCryptoSymbol } from './cryptoAssetStore';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { isCryptoSymbol } from './cryptoAssetStore';
 
 /**
  * 크립토 판별 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

@@ -5,20 +5,20 @@
  * in `utils/expirationTabs`, chip markup in `ui/expiration`.
  */
 
+import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef } from 'react';
 import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
-import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { ExpirationChip } from './ui/expiration/ExpirationChip';
 import {
     buildExpirationTabs,
     findActiveTabIndex,
     findActiveTabValue,
 } from './utils/expirationTabs';
-import { ExpirationChip } from './ui/expiration/ExpirationChip';
-import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
-import type { OptionsExpirationSelector } from '@/shared/lib/types';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface ExpirationSelectorProps {
     /** Slot mappings filtered to non-null entries (`OptionsPageClient` filters before passing). */

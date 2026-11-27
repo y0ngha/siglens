@@ -1,17 +1,17 @@
 'use server';
 
-import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
-import { DrizzleUserRepository } from '@/entities/auth/api';
-import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
-import { createSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
-import { createEmailTokenStore } from '@/entities/email-token/api';
-import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
-import { getDatabaseClient } from '@/shared/db/client';
-import { normalizeEmail } from '@/shared/lib/auth/validation';
-import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
+import { cookies } from 'next/headers';
+import { DrizzleUserRepository } from '@/entities/auth/api';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
+import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { getDatabaseClient } from '@/shared/db/client';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 
 /**
  * 가입 2단계: 받은 인증 코드를 확인하고, 이미 가입된 주소인지 확인한다.

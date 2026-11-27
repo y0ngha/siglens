@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import {
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';

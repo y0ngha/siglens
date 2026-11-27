@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { aiAskUrl } from '@/shared/config/aiHost';
 import type { GuideEntrySummary } from '@/entities/guide/types';
+import { aiAskUrl } from '@/shared/config/aiHost';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import ko from '../../../../../messages/ko.json';
 import { GuideBrowser } from '../GuideBrowser';
 import { GUIDE_CARD_ALIAS_LIMIT } from '../GuideCard';

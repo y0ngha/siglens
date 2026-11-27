@@ -4,8 +4,6 @@ import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
-import { getCachedSectorSignals } from '../api/sectorSignalsCache';
-import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     isDashboardTimeframe,
@@ -15,6 +13,8 @@ import {
     isPageDashboardScopeId,
 } from '@/shared/config/dashboardScope';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getCachedSectorSignals } from '../api/sectorSignalsCache';
+import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 
 /**
  * 대시보드 섹터 신호 Server Action. 입력이 잘못됐거나 조회가 실패하면 빈 결과를 돌려준다.

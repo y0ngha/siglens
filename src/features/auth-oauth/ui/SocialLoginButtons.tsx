@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { buildSocialLoginHref } from '../lib/socialLoginHref';
 import { GoogleIcon } from './GoogleIcon';
 

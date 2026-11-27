@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { isCuratedSymbol } from '../lib/isCuratedSymbol';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { isCuratedSymbol } from '../lib/isCuratedSymbol';
 
 describe('isCuratedSymbol', () => {
     it('인기 종목은 대소문자와 무관하게 큐레이션이다', () => {

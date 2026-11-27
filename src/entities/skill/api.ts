@@ -1,7 +1,7 @@
+import type { Skill, SkillCounts } from '@y0ngha/siglens-core';
 import type { Dirent } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, sep } from 'node:path';
-import type { Skill, SkillCounts } from '@y0ngha/siglens-core';
 import { isRecord } from '@/shared/lib/isRecord';
 import { countSkills } from './lib/countSkills';
 import { dedupeByName } from './lib/dedupeByName';

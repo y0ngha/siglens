@@ -12,10 +12,9 @@ import type {
     ChatSymbolChanges,
     ChatSymbolChangesResult,
 } from '@/entities/chat-conversation/types';
+import { SinceEarlierCard } from '@/widgets/agent-chat/message/SinceEarlierCard';
 import en from '../../../../../messages/en.json';
 import ko from '../../../../../messages/ko.json';
-
-import { SinceEarlierCard } from '@/widgets/agent-chat/message/SinceEarlierCard';
 
 const CONVERSATION_ID = '11111111-1111-1111-1111-111111111111';
 

@@ -1,11 +1,9 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
+import { unstable_cache } from 'next/cache';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-
-import { DrizzleIndicatorTranslationRepository } from './indicatorTranslationRepository';
 import {
     INDICATOR_NAME_KO,
     indicatorLabelKoFromMaps,
@@ -15,7 +13,7 @@ import {
     INDICATOR_TRANSLATION_CACHE_TAG,
     INDICATOR_TRANSLATION_REVALIDATE_SECONDS,
 } from '../lib/indicatorTranslationConstants';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { DrizzleIndicatorTranslationRepository } from './indicatorTranslationRepository';
 
 /**
  * 모듈 레벨 `unstable_cache` — ISR cold-gen 안전: DB 쿼리는 drizzle 로거(`noStoreQueryLogger`)의

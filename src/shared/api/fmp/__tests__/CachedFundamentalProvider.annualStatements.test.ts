@@ -1,14 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CachedFundamentalProvider } from '@/shared/api/fmp/CachedFundamentalProvider';
-import { CachedFinancialStatementsProvider } from '@/shared/api/fmp/CachedFinancialStatementsProvider';
-import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
-import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
-import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
 import type {
     CashFlowRow,
     FinancialStatementsProvider,
     IncomeGrowthRow,
 } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CachedFinancialStatementsProvider } from '@/shared/api/fmp/CachedFinancialStatementsProvider';
+import { CachedFundamentalProvider } from '@/shared/api/fmp/CachedFundamentalProvider';
+import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
+import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
+import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 
 // 펀더멘털 탭의 현금흐름·성장률이 재무제표 캐시와 FMP 응답·Redis 키를 함께 쓰는지 검증한다.
 // 실제 두 데코레이터를 엮고, 바깥 경계(inner FMP 클라이언트·Redis)만 가짜로 둔다.

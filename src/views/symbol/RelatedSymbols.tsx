@@ -1,10 +1,10 @@
+import { getLocale, getTranslations } from 'next-intl/server';
+import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { getLocale, getTranslations } from 'next-intl/server';
-import { RelatedSymbolLink } from '@/views/symbol/RelatedSymbolLink';
-import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { resolveLocale } from '@/shared/i18n/locales';
+import { RelatedSymbolLink } from '@/views/symbol/RelatedSymbolLink';
 import { resolveChipNames } from './relatedSymbolNames';
 import { groupRelatedByLabel } from './utils/relatedSymbolChips';
 

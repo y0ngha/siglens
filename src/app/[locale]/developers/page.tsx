@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { buildDevelopersMetadata } from '@/app/[locale]/developers/_lib/developersMetadata';
+import { buildDevelopersJsonLd } from '@/app/[locale]/developers/_lib/developersSeo';
+import { DEVELOPERS_PAGE_URL } from '@/app/[locale]/developers/_lib/developersUrls';
 import { publicApiToolSpecs } from '@/app/api/v1/publicApiTools';
 import { buildApiToolReferences } from '@/entities/siglens-api-key/lib/buildApiToolReferences';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
@@ -10,9 +13,6 @@ import { formatKoreanDate } from '@/shared/lib/legal';
 import { buildBreadcrumbJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DevelopersPage } from '@/views/developers/DevelopersPage';
-import { buildDevelopersJsonLd } from '@/app/[locale]/developers/_lib/developersSeo';
-import { DEVELOPERS_PAGE_URL } from '@/app/[locale]/developers/_lib/developersUrls';
-import { buildDevelopersMetadata } from '@/app/[locale]/developers/_lib/developersMetadata';
 
 // `/about`·`/methodology`와 같은 근거 — 본문이 메시지 카탈로그와 코드 상수(한도·오류 코드·도구 스펙)라
 // 배포 자체가 갱신이므로 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다.

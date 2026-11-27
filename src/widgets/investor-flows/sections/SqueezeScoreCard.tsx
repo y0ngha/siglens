@@ -1,20 +1,20 @@
-/**
- * 숏스퀴즈 점수 카드(공매도 섹션 맨 위).
- */
-import { useTranslations } from 'next-intl';
 import type {
     SqueezeRiskComponentId,
     SqueezeRiskScore,
 } from '@y0ngha/siglens-core';
+/**
+ * 숏스퀴즈 점수 카드(공매도 섹션 맨 위).
+ */
+import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { formatInteger } from '../utils/flowFormat';
 import { ComponentRow } from '../ui/squeeze/ComponentRow';
 import { LevelBadge } from '../ui/squeeze/LevelBadge';
 import { SqueezeSourceNote } from '../ui/squeeze/SqueezeSourceNote';
+import { formatInteger } from '../utils/flowFormat';
 
 const HEADING_ID = 'flows-squeeze-heading';
 

@@ -1,8 +1,8 @@
 import type { ComponentPropsWithoutRef } from 'react';
-import type { Components } from 'react-markdown';
 import { lazy, Suspense } from 'react';
-import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
+import type { Components } from 'react-markdown';
 import { cn } from '@/shared/lib/cn';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 
 /**
  * 마크다운 렌더러는 지연 로드한다(`MarkdownRenderer` JSDoc). 렌더러가 오기 전에는 같은

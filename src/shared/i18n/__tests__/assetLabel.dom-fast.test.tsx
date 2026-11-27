@@ -1,13 +1,13 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import enMessages from '../../../../messages/en.json';
-import koMessages from '../../../../messages/ko.json';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import enMessages from '../../../../messages/en.json';
+import koMessages from '../../../../messages/ko.json';
 
 const FALLBACK = '__FALLBACK__';
 

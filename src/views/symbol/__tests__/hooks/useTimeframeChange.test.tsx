@@ -1,12 +1,12 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import { createElement, type ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
-import type { Timeframe } from '@y0ngha/siglens-core';
-import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
 
 vi.mock('@/shared/config/market', () => ({
     DEFAULT_TIMEFRAME: '1Day',

@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { AiNavLink } from '../AiNavLink';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
-import { localePath } from '@/shared/i18n/locales';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import { localePath } from '@/shared/i18n/locales';
+import { AiNavLink } from '../AiNavLink';
 
 describe('AiNavLink', () => {
     it('ko href는 AI_SITE_URL + localePath(ko, "/")', () => {

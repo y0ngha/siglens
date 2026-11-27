@@ -1,10 +1,10 @@
-// @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 import koMessages from '../../../../messages/ko.json';
 import { FlowTooltip, type FlowTerm } from '../investorFlowsTooltips';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 /** `Record<FlowTerm, true>`라 용어가 늘면 여기서 컴파일 오류가 나 카탈로그 검사에 빠지지 않는다. */
 const TERMS: Record<FlowTerm, true> = {

@@ -48,13 +48,13 @@ vi.mock('@/shared/i18n/useAppPathname', () => ({
 import { act, renderHook } from '@testing-library/react';
 import { useEmailReportNudge } from '@/features/email-report-nudge/hooks/useEmailReportNudge';
 import {
-    readMemberNudgeRecord,
-    writeMemberNudgeRecord,
-} from '@/features/email-report-nudge/lib/memberNudgeStorage';
-import {
     EMPTY_MEMBER_NUDGE_RECORD,
     SYMBOL_NUDGE_MIN_ANALYSES,
 } from '@/features/email-report-nudge/lib/memberNudgePolicy';
+import {
+    readMemberNudgeRecord,
+    writeMemberNudgeRecord,
+} from '@/features/email-report-nudge/lib/memberNudgeStorage';
 import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,

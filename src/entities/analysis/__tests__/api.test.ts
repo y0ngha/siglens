@@ -192,11 +192,6 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
     };
 });
 
-import type { MockedClass, Mock } from 'vitest';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 import {
     runAnalysis,
     runFundamentalAnalysis,
@@ -216,22 +211,26 @@ import {
     type FinancialsSnapshot,
     type FinancialsScorecard,
 } from '@y0ngha/siglens-core';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
-import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import type { MockedClass, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     getNextEarningsReport,
     listEarningsDates,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
+import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {
     prewarmTechnical,

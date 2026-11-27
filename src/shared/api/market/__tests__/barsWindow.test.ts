@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Bar } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { isoDateDaysAgo, sliceFrom, utcMidnightSeconds } from '../barsWindow';
 
 const bar = (time: number): Bar => ({

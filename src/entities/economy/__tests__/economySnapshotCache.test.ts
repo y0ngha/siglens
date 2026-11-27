@@ -2,18 +2,18 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/shared/cache/getOrSetCache');
 vi.mock('@/shared/api/economy/getEconomyProvider');
 
+import type { EconomySnapshot } from '@y0ngha/siglens-core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
-import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 import {
     shouldCacheEconomySnapshot,
     isEmptyEconomySnapshot,
     MIN_INDICATORS_FOR_CACHE,
 } from '@/entities/economy/lib/economyCompleteness';
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
-import type { EconomySnapshot } from '@y0ngha/siglens-core';
+import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
 const mockGetOrSetCache = vi.mocked(getOrSetCache);
 const mockGetEconomyProvider = vi.mocked(getEconomyProvider);

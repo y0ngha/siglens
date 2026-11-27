@@ -1,6 +1,6 @@
-import { isLawFirmSolicitation } from '@/shared/lib/news/isLawFirmSolicitation';
 import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
 import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
+import { isLawFirmSolicitation } from '@/shared/lib/news/isLawFirmSolicitation';
 import type { MarketNewsItem } from './marketNewsClientPort';
 
 /** FMP `/stable/news/{general,stock,crypto,forex}-latest` 한 건의 형상. */

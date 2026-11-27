@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { SearchIcon } from '@/shared/ui/StrokeIcons';
 import { useRecentSearches } from '../hooks/useRecentSearches';

@@ -1,6 +1,6 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import {
     afterAll,
@@ -11,9 +11,9 @@ import {
     it,
     vi,
 } from 'vitest';
-import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
-import * as schema from '@/shared/db/schema';
 import { MS_PER_DAY } from '@/shared/config/time';
+import * as schema from '@/shared/db/schema';
+import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import { DrizzleAnalysisHistoryRepository } from '../analysisHistoryRepository';
 
 vi.mock('server-only', () => ({}));

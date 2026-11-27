@@ -23,17 +23,16 @@ vi.mock('@/features/ticker-search/hooks/useRecentSearches', () => ({
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LocaleProvider } from '@/shared/i18n/LocaleContext';
-import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
-import {
-    assignLocation,
-    replaceLocation,
-} from '@/shared/lib/crossHostNavigate';
-
 import {
     SearchOverlayProvider,
     useSearchOverlayTrigger,
 } from '@/features/ticker-search/model/SearchOverlayContext';
+import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import {
+    assignLocation,
+    replaceLocation,
+} from '@/shared/lib/crossHostNavigate';
+import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
 
 const replaceMock = vi.fn();
 const pushMock = vi.fn();

@@ -2,6 +2,15 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
+import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import {
+    mergeExtendedBars,
+    type ExtendedBarTimeframe,
+} from '@/shared/api/market/extendedBarsSession';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 /**
  * 시간외 봉이 있어도 지표가 **정규장 봉 시각**에 찍히는지 — `seriesDataUtils`를 mock하지 않는
  * 통합 테스트. 실제 AAPL 응답(5분봉·1시간봉)을 어댑터에 통과시킨 정규장 봉·확장 봉을 쓴다.
@@ -12,29 +21,19 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
  * 거래량 시리즈에 **시각으로** 얹는 것이다. 이 파일이 그 불변식을 실물로 고정한다.
  */
 import { TRANSPARENT_COLOR } from '@/widgets/chart/constants';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
-import {
-    mergeExtendedBars,
-    type ExtendedBarTimeframe,
-} from '@/shared/api/market/extendedBarsSession';
-import {
-    buildSeriesData,
-    buildSeriesDataFromValues,
-} from '@/widgets/chart/utils/seriesDataUtils';
+import { buildCandlestickData } from '@/widgets/chart/utils/candlestickDataUtils';
 import {
     buildCandlestickDataWithExtended,
     buildTotalVolumeData,
 } from '@/widgets/chart/utils/extendedBarsDisplay';
-import { buildCandlestickData } from '@/widgets/chart/utils/candlestickDataUtils';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
-import regular5Min from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.5min.json';
+import {
+    buildSeriesData,
+    buildSeriesDataFromValues,
+} from '@/widgets/chart/utils/seriesDataUtils';
+import extended1Hour from '../../../shared/api/fmp/__tests__/fixtures/extendedBars.aapl.1hour.json';
 import extended5Min from '../../../shared/api/fmp/__tests__/fixtures/extendedBars.aapl.5min.json';
 import regular1Hour from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.1hour.json';
-import extended1Hour from '../../../shared/api/fmp/__tests__/fixtures/extendedBars.aapl.1hour.json';
+import regular5Min from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.5min.json';
 
 const mockFmpGet = vi.mocked(fmpGet);
 const provider = new FmpMarketProvider();

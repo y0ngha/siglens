@@ -5,13 +5,13 @@ vi.mock('@/entities/extended-hours/hooks/useExtendedHoursQuote', () => ({
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { useExtendedHoursQuote } from '@/entities/extended-hours/hooks/useExtendedHoursQuote';
-import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import {
     AFTER_DOWN,
     PRE_FLAT,
     PRE_UP,
 } from '@/widgets/extended-hours/__tests__/fixtures/extendedHoursQuotes';
+import { ExtendedHoursQuoteLine } from '@/widgets/extended-hours/ui/ExtendedHoursQuoteLine';
 
 const mockedHook = vi.mocked(useExtendedHoursQuote);
 

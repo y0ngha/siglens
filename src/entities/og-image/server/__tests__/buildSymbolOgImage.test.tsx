@@ -1,6 +1,6 @@
+import { OG_IMAGE_CACHE_CONTROL } from '@/shared/lib/og';
 // @vitest-environment node
 import { buildSymbolOgImage } from '../buildSymbolOgImage';
-import { OG_IMAGE_CACHE_CONTROL } from '@/shared/lib/og';
 
 const { mockImageResponse, mockLoadOgFont } = vi.hoisted(() => ({
     mockImageResponse: vi.fn(),

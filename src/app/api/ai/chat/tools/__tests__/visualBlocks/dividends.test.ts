@@ -9,13 +9,12 @@ vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     buildDividendsBlock,
     DIVIDEND_YEARS_MAX,
     dividendYearsFrom,
 } from '@/app/api/ai/chat/tools/visualBlocks/dividends';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 const env = {
     locale: 'ko' as const,

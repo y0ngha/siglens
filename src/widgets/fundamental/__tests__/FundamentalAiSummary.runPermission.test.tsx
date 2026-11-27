@@ -25,17 +25,17 @@ vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-import { useEffect } from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Mock } from 'vitest';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
-import { FundamentalAiSummary } from '../FundamentalAiSummary';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { useEffect } from 'react';
+import type { Mock } from 'vitest';
 import {
     ShareableAnalysisProvider,
     useShareable,
 } from '@/features/share/model/ShareableAnalysisContext';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { FundamentalAiSummary } from '../FundamentalAiSummary';
 
 const mockStream = runAnalysisStream as Mock;
 

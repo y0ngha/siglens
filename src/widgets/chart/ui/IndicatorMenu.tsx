@@ -10,13 +10,13 @@ import { useId, useRef } from 'react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
-import { cn } from '@/shared/lib/cn';
 import { getPeriodColor } from '@/shared/lib/chartColors';
+import { cn } from '@/shared/lib/cn';
+import type { ChartMenuControl } from '../hooks/useExclusiveChartMenu';
 import {
     groupBindingsByCategory,
     type IndicatorBinding,
 } from '../model/indicatorRegistry';
-import type { ChartMenuControl } from '../hooks/useExclusiveChartMenu';
 import { ChartPopoverPanel } from './ChartPopoverPanel';
 import {
     CHART_MENU_TRIGGER_LAYOUT,

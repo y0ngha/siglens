@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { GUIDE_PATH } from '@/shared/lib/guidePaths';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 
 /**

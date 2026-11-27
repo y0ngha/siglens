@@ -1,6 +1,6 @@
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import { PRICE_ALERT_BASIS_VALUES } from '@/shared/db/constants';
+import { isPlainRecord } from '@/shared/lib/isPlainRecord';
 import type {
     PriceAlertBasis,
     PriceAlertCondition,

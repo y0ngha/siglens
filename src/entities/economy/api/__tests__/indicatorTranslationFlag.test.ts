@@ -15,7 +15,6 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     isIndicatorTranslationPending,
     markIndicatorTranslationPending,
@@ -24,6 +23,7 @@ import {
     INDICATOR_TRANSLATION_FLAG_PREFIX,
     INDICATOR_TRANSLATION_FLAG_TTL_SECONDS,
 } from '@/entities/economy/lib/indicatorTranslationConstants';
+import { getRedisClient } from '@/shared/cache/redisClient';
 
 describe('indicatorTranslationFlag', () => {
     beforeEach(() => {

@@ -4,12 +4,12 @@
  * MACD(선·시그널·히스토그램) 보조 pane 시리즈를 그리는 훅.
  */
 
-import type { RefObject } from 'react';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { HistogramSeries, LineSeries } from 'lightweight-charts';
+import type { RefObject } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { buildSeriesData } from '../utils/seriesDataUtils';
 

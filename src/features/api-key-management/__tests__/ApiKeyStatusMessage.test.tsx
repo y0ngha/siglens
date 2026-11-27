@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-
 import { ApiKeyStatusMessage } from '@/features/api-key-management/ui/ApiKeyStatusMessage';
 
 describe('ApiKeyStatusMessage', () => {

@@ -1,48 +1,48 @@
-import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { fetchKrEquityQuoteName } from './krEquityQuoteName';
-import { krExchangeOf } from '../lib/krExchange';
-import { resolveIndexAlias } from '../lib/indexAlias';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
-import { getCryptoAsset } from './cryptoAssetStore';
-import { fetchCryptoQuoteName } from './cryptoQuoteName';
-import { fmpCryptoMembership } from './fmpCryptoMembership';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { fireAndForget } from '@/shared/lib/backgroundTask';
+import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
+import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
+import {
+    reusableKoreanName,
+    withCanonicalKoreanName,
+} from '../lib/assetInfoResolution';
 import {
     API_UNTRANSLATED_CACHE_TTL,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
     buildApiAssetInfoCacheKey,
     buildAssetInfoProvisionalCacheKey,
 } from '../lib/cacheKeys';
-import {
-    filterUsExchanges,
-    findExactUsMatch,
-    searchBySymbol,
-} from './fmpTickerApi';
-import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
-import { translateCompanyNames } from './koreanTranslator';
-import {
-    getKoreanNames,
-    lookupTickerDisplayNames,
-    setKoreanTickers,
-} from './koreanNameStore';
-import {
-    reusableKoreanName,
-    withCanonicalKoreanName,
-} from '../lib/assetInfoResolution';
+import { resolveIndexAlias } from '../lib/indexAlias';
+import { krExchangeOf } from '../lib/krExchange';
 import {
     persistOrCacheProvisional,
     readFromDatabase,
     setCacheBestEffort,
 } from './assetInfoPersistence';
-import { fireAndForget } from '@/shared/lib/backgroundTask';
+import { getCryptoAsset } from './cryptoAssetStore';
+import { fetchCryptoQuoteName } from './cryptoQuoteName';
+import { fmpCryptoMembership } from './fmpCryptoMembership';
 import {
-    createSingleFlight,
-    __resetSingleFlightForTests,
-} from '@/shared/lib/singleFlight';
-import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
-import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+    filterUsExchanges,
+    findExactUsMatch,
+    searchBySymbol,
+} from './fmpTickerApi';
+import {
+    getKoreanNames,
+    lookupTickerDisplayNames,
+    setKoreanTickers,
+} from './koreanNameStore';
+import { translateCompanyNames } from './koreanTranslator';
+import { fetchKrEquityQuoteName } from './krEquityQuoteName';
 
 /**
  * 서버 키 LLM을 못 쓰는 흐름(공개 API)이면 번역 없이 영문명 결과를 API 전용 키에 1시간 두고 `true`를 돌려준다.

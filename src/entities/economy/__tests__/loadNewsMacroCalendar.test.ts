@@ -2,12 +2,12 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/shared/cache/getOrSetCache');
 vi.mock('@/shared/api/economy/getEconomyProvider');
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
-import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
+import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
+import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 
 const mockGetOrSetCache = vi.mocked(getOrSetCache);
 const mockGetEconomyProvider = vi.mocked(getEconomyProvider);

@@ -1,13 +1,13 @@
 'use client';
 
-/**
- * 섹터 신호 패널 — 타임프레임·섹터 선택과 선택한 섹터의 신호 소절을 조립한다.
- */
-import { useTranslations } from 'next-intl';
 import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
+/**
+ * 섹터 신호 패널 — 타임프레임·섹터 선택과 선택한 섹터의 신호 소절을 조립한다.
+ */
+import { useTranslations } from 'next-intl';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useSectorSignalState } from './hooks/useSectorSignalState';

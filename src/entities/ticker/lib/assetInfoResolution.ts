@@ -1,8 +1,8 @@
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import type { AssetTranslationRecord } from '@/shared/db/types';
 import type { AssetInfo } from '@/shared/lib/types';
-import { normalizeCompanyName } from './normalizeCompanyName';
 import type { TickerDisplayName } from './koreanNameSearch';
+import { normalizeCompanyName } from './normalizeCompanyName';
 
 /**
  * `asset_translations` 행을 AssetInfo로 바꾼다. FMP 표기가 정본 심볼과 다를 때만

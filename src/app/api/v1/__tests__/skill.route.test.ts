@@ -43,8 +43,8 @@ vi.mock(
 );
 
 import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
-import { GET } from '@/app/api/v1/skill/route';
 import { publicApiToolSpecs } from '@/app/api/v1/publicApiTools';
+import { GET } from '@/app/api/v1/skill/route';
 import { PUBLIC_API_RATE_LIMITS } from '@/shared/config/publicApi';
 
 /** 마크다운의 도구 섹션 제목(### `name`)만 뽑는다 — 설명문 속 언급과 구분하려고 제목으로 센다. */

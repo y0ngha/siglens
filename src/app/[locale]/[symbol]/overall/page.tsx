@@ -1,7 +1,6 @@
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-
+import { Suspense } from 'react';
 import { loadSymbolNewsList } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
@@ -13,8 +12,8 @@ import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvabl
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasOverallProse } from '@/entities/seo-snapshot/lib/overallContent';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { SymbolRouteParams } from '@/shared/config/market';
@@ -31,7 +30,6 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { OverallContent } from '@/widgets/overall/OverallContent';
-
 import { overallServerFallback } from './_components/overallServerFallback';
 import { buildOverallHeading } from './_lib/overallHeading';
 import { loadOverallPeek } from './_lib/overallPeek';

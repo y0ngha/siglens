@@ -3,10 +3,10 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { DashboardScopeId } from './dashboardScope';
 import type { Locale } from '@/shared/i18n/locales';
-import { MS_PER_MINUTE } from './time';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import type { DashboardScopeId } from './dashboardScope';
+import { MS_PER_MINUTE } from './time';
 
 /** Default cache freshness for queries without a domain-specific cadence. */
 export const QUERY_STALE_TIME_MS = MS_PER_MINUTE;

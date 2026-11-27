@@ -1,11 +1,11 @@
 import { cache } from 'react';
-import type { AssetInfo } from '@/shared/lib/types';
-import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
-import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
-import { getAssetInfoStatic } from './getAssetInfoStatic';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import type { AssetInfo } from '@/shared/lib/types';
+import { getAssetInfoStatic } from './getAssetInfoStatic';
 
 export interface ResilientAssetInfo {
     /** 정상 AssetInfo, 인프라 실패 시 fallback ticker 객체, 또는 실재하지 않는 종목일 때 null. */

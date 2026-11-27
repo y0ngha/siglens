@@ -26,15 +26,14 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-import type { MockedFunction } from 'vitest';
-
-import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
-import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
-import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
-import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
-import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import type { LlmProvider } from '@y0ngha/siglens-core';
 import { getProviderForModel } from '@y0ngha/siglens-core';
+import type { MockedFunction } from 'vitest';
+import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
+import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
+import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
+import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
+import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 
 const mockCallAnthropicChat = callAnthropicChat as MockedFunction<
     typeof callAnthropicChat

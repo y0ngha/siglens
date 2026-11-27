@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-
 import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { buildSymbolOgImage } from '@/entities/og-image/server/buildSymbolOgImage';
 import { resolveLocale } from '@/shared/i18n/locales';

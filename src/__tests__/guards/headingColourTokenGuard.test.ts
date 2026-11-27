@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-
+import { describe, it, expect } from 'vitest';
 import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import { blankComments } from './support/sourceScan';
 

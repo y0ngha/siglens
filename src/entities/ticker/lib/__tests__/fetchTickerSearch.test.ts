@@ -1,5 +1,5 @@
-import { fetchTickerSearch } from '../fetchTickerSearch';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { fetchTickerSearch } from '../fetchTickerSearch';
 
 const RESULTS: TickerSearchResult[] = [
     {

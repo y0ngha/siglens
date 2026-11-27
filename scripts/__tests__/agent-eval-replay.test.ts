@@ -5,7 +5,6 @@ vi.mock('server-only', () => ({}));
  * into the NEW variant's shape by the app's exported enrichment functions. Hand-written fixtures; no network, DB or LLM.
  */
 import { describe, expect, it, vi } from 'vitest';
-
 import {
     buildHolderReads,
     chartReferenceFromBarsResult,

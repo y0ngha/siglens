@@ -1,10 +1,10 @@
 import { useTranslations } from 'next-intl';
-import { ContactDialog } from '@/widgets/layout/ContactDialog';
 import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { ContactDialog } from '@/widgets/layout/ContactDialog';
 import { NotFoundMessage } from './NotFoundMessage';
 
 const CONTINUE_LINK_CLASSES = cn(

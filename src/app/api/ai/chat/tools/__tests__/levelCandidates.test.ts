@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import type {
     AnalysisResponse,
     Bar,
     IndicatorResult,
 } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     chartReferenceLevels,
     technicalLevelCandidates,

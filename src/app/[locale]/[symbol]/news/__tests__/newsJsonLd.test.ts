@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import type { SymbolNewsListItems } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import {
     buildNewsArticleJsonLd,

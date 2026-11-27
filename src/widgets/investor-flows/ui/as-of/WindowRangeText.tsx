@@ -1,8 +1,8 @@
+import type { InvestorFlowsWindow } from '@y0ngha/siglens-core';
 /**
  * 점수 창 문구 — "최근 N일(시작 ~ 끝)".
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsWindow } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatInteger } from '../../utils/flowFormat';
 

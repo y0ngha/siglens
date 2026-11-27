@@ -3,7 +3,6 @@ vi.mock('server-only', () => ({}));
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { WIKIPEDIA_USER_AGENT } from '@/shared/api/wikipedia/indexConstituents';
 import { fetchStockXAccounts } from '../stockXAccounts';
 

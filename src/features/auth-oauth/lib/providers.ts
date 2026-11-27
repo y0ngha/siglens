@@ -1,12 +1,12 @@
+import { isE2E } from '@/shared/api/e2eEnv';
 /**
  * OAuth provider 레지스트리와 리다이렉트 URL 도출. 시작·콜백 라우트가 이 파일에서
  * 어댑터와 redirect URI를 받아 두 라우트가 같은 값을 쓰게 한다.
  */
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
-import { googleOAuthAdapter } from './google';
 import { e2eFakeOAuthAdapter } from './E2eFakeOAuthAdapter';
+import { googleOAuthAdapter } from './google';
 import type { OAuthProviderAdapter } from './types';
-import { isE2E } from '@/shared/api/e2eEnv';
 
 const ADAPTERS: Record<SupportedOAuthProvider, OAuthProviderAdapter> = {
     google: googleOAuthAdapter,

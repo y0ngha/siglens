@@ -1,25 +1,25 @@
 'use client';
 
-/**
- * 펀더멘털 AI 분석 쿼리 훅 — SSE 스트림 호출, 게이트 대기(`awaiting_interaction`),
- * 오류 정규화를 한 곳에서 맡아 위젯이 상태 유니온만 보고 렌더하게 한다.
- */
-import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useQuery } from '@tanstack/react-query';
 import type {
     FundamentalAnalysisResponse,
     ModelId,
 } from '@y0ngha/siglens-core';
+/**
+ * 펀더멘털 AI 분석 쿼리 훅 — SSE 스트림 호출, 게이트 대기(`awaiting_interaction`),
+ * 오류 정규화를 한 곳에서 맡아 위젯이 상태 유니온만 보고 렌더하게 한다.
+ */
+import { useTranslations } from 'next-intl';
 import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
-import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
+import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 
 /** 위젯이 분기하는 분석 상태 유니온. 모든 variant가 `trigger`를 노출한다. */
 export type FundamentalAnalysisState =

@@ -1,18 +1,17 @@
 import 'server-only';
-
 import { cache } from 'react';
-import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { DrizzleSeoSnapshotRepository } from '../api';
 import { isPrewarmTab } from '../lib/applicability';
 import { filterWithinMaxAge, rehydrateSnapshots } from '../lib/snapshotRows';
 import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 심볼의 SEO 스냅샷을 ISR static-safe하게 읽는다. 종목 페이지 7개 탭과

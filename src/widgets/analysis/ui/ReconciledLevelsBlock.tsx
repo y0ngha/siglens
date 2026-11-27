@@ -1,10 +1,10 @@
 'use client';
 
+import type { ReconciledActionLevels } from '@y0ngha/siglens-core';
 /**
  * core가 AI의 손절·목표를 보정했을 때 보정된 청산 레벨·손익비와 사유를 보여주는 블록.
  */
 import { useTranslations } from 'next-intl';
-import type { ReconciledActionLevels } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';

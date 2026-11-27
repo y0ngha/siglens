@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest';
 import {
     fetchBarsWithIndicators,
     type Bar,
     type GetBarsOptions,
 } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
 import { extendedBarsFrom } from '@/entities/extended-bars/lib/extendedBarsRequest';
 import {
     EXTENDED_BAR_INTERVAL_SECONDS,
     EXTENDED_BAR_TIMEFRAMES,
 } from '@/shared/api/market/extendedBarsSession';
 import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
-import regular5Min from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.5min.json';
 import regular1Hour from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.1hour.json';
 import regular4Hour from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.4hour.json';
+import regular5Min from '../../../shared/api/fmp/__tests__/fixtures/regularBars.aapl.5min.json';
 
 /**
  * core는 `TIMEFRAME_LOOKBACK_DAYS`·`TIMEFRAME_MINUTES`를 공개 export하지 않아(2.17.0 확인) 확장 봉 쪽에 같은

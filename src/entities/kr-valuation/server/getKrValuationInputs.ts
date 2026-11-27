@@ -1,4 +1,5 @@
 import 'server-only';
+import { getKrDartCorp } from '@/entities/investor-flows/server/getKrDartCorp';
 import {
     DART_MAX_RETRIES,
     DART_REQUEST_TIMEOUT_MS,
@@ -22,12 +23,11 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { withTimeout } from '@/shared/lib/withTimeout';
-import { getKrDartCorp } from '@/entities/investor-flows/server/getKrDartCorp';
+import type { KrValuationData } from '../lib/computeKrValuation';
 import {
     extractShareTotals,
     extractStatementFigures,
 } from '../lib/dartAmounts';
-import type { KrValuationData } from '../lib/computeKrValuation';
 import {
     krReportCandidates,
     reportPeriodEnd,

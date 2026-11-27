@@ -1,7 +1,7 @@
 import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
-import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
 import { readOnlyClientOptions } from '@/shared/db/migrations/readOnlyClientOptions';
+import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
 
 describe('readOnlyClientOptions', () => {
     it('asks the server for a read-only session', () => {

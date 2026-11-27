@@ -112,13 +112,13 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 
 import { Suspense, isValidElement, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import OverallPage from '@/app/[locale]/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
-import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { sessionKeyedTtlSeconds } from '../../lib/sessionKeyedTtl';
 import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '../../model';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const TO = '2026-06-29';
 const SECONDS_UNTIL_ROLL = 9 * SECONDS_PER_HOUR;

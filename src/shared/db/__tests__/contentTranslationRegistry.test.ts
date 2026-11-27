@@ -1,7 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-
+import { describe, expect, it } from 'vitest';
 import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,

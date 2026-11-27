@@ -56,13 +56,13 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it } from 'vitest';
+import samsungCardAnnual from '@/entities/kr-valuation/__tests__/fixtures/samsungcard-2025-annual-cfs.json';
+import samsungCardH1 from '@/entities/kr-valuation/__tests__/fixtures/samsungcard-2026-h1-cfs.json';
+import samsungCardH1Shares from '@/entities/kr-valuation/__tests__/fixtures/samsungcard-2026-h1-stock-totals.json';
 import {
     extractShareTotals,
     extractStatementFigures,
 } from '@/entities/kr-valuation/lib/dartAmounts';
-import samsungCardAnnual from '@/entities/kr-valuation/__tests__/fixtures/samsungcard-2025-annual-cfs.json';
-import samsungCardH1 from '@/entities/kr-valuation/__tests__/fixtures/samsungcard-2026-h1-cfs.json';
-import samsungCardH1Shares from '@/entities/kr-valuation/__tests__/fixtures/samsungcard-2026-h1-stock-totals.json';
 import { runFundamentalAnalysisAction } from '../actions/runFundamentalAnalysisAction';
 
 const mockRun = vi.mocked(runFundamentalAnalysis);

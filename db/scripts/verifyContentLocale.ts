@@ -21,13 +21,13 @@
  * 모듈이라 폴백 체인을 그대로 가져다 쓴다.
  */
 import postgres from 'postgres';
-import { readDatabaseUrl } from './lib/dbTarget';
-import { LOCALES } from '../../src/shared/i18n/locales';
 // 폴백 체인은 **복제하지 않고 그대로 쓴다**. `contentLocale.ts`에는
 // `import 'server-only'`가 없어(`client.ts`/`schema.ts`와 다르다) `tsx`에서
 // 그대로 해석된다 — 복제하면 진짜 체인이 바뀌었을 때 점검만 옛 값을 보고
 // "정상"이라 보고한다(감사 라운드 1 recommended #2).
 import { CONTENT_LOCALE_FALLBACK } from '../../src/shared/db/contentLocale';
+import { LOCALES } from '../../src/shared/i18n/locales';
+import { readDatabaseUrl } from './lib/dbTarget';
 
 interface CheckResult {
     readonly label: string;

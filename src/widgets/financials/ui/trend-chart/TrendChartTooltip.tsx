@@ -4,11 +4,11 @@
 import type { CSSProperties } from 'react';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { seriesColorClasses } from '../../utils/trendChartColors';
-import type { TrendSeries } from '../../utils/trendChartTypes';
 import type { StatementCurrency } from '../../utils/statementCurrency';
 import { formatStatementValue } from '../../utils/statementFormat';
 import type { TooltipPosition } from '../../utils/tooltipPosition';
+import { seriesColorClasses } from '../../utils/trendChartColors';
+import type { TrendSeries } from '../../utils/trendChartTypes';
 
 interface TrendChartTooltipProps {
     series: TrendSeries[];

@@ -12,7 +12,6 @@ vi.mock('@/shared/config/googleAds', () => config);
 
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { FUNNEL_SIGNUP_COOKIE_NAME } from '@/shared/config/cookieNames';
 import {
     consumeFunnelSignupCookie,

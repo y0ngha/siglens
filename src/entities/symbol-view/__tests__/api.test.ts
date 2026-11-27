@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
 import { renderSql } from '@/__tests__/utils/renderSql';
+import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
 import { symbolViewsDaily } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 

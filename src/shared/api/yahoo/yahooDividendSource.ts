@@ -1,6 +1,4 @@
 import 'server-only';
-import { getYahooClient } from './createYahooClient';
-import { getYahooFundamentals } from './yahooFundamentalSource';
 import { sym } from '@/shared/api/fmp/symKey';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
@@ -8,6 +6,8 @@ import {
     MS_PER_DAY,
 } from '@/shared/config/time';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getYahooClient } from './createYahooClient';
+import { getYahooFundamentals } from './yahooFundamentalSource';
 
 const yahooFinance = getYahooClient();
 

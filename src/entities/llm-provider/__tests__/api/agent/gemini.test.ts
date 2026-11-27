@@ -7,14 +7,13 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { callGeminiAgent } from '@/entities/llm-provider/api/agent/gemini';
 import {
     AGENT_TOOL_SPECS,
     MODEL_SPECS,
     type AgentStreamEvent,
 } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { callGeminiAgent } from '@/entities/llm-provider/api/agent/gemini';
 
 async function* chunks(items: unknown[]) {
     for (const i of items) yield i;

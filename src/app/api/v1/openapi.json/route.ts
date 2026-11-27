@@ -1,3 +1,4 @@
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     apiError,
     API_STATUS,
@@ -9,7 +10,6 @@ import {
     OPENAPI_CACHE_CONTROL,
     OPENAPI_CORS_HEADERS,
 } from '../openApiDocument';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 

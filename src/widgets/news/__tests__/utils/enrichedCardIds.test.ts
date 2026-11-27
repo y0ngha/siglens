@@ -1,8 +1,8 @@
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     collectEnrichedCardIds,
     hasNewEnrichedCard,
 } from '@/widgets/news/utils/enrichedCardIds';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 
 const card = (
     id: string,

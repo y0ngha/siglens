@@ -1,11 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
 import type { AbstractIntlMessages } from 'next-intl';
-import ko from '../../../../../../messages/ko.json';
+import { describe, expect, it, vi } from 'vitest';
 import { AI_CLIENT_PATHS } from '@/app/ai/[locale]/_lib/aiClientPaths';
-import { pickMessages } from '@/shared/i18n/loadMessages';
 import type { ChatVisualBlock as ChatVisualBlockData } from '@/entities/chat-conversation/types';
+import { pickMessages } from '@/shared/i18n/loadMessages';
 import {
     COMPARE,
     DIVIDENDS,
@@ -16,6 +15,7 @@ import {
     OPTIONS,
     PORTFOLIO,
 } from '@/widgets/chart/__tests__/visual/fixtures';
+import ko from '../../../../../../messages/ko.json';
 import { ChatVisualBlock } from '../ChatVisualBlock';
 
 // 비교 선 차트는 lightweight-charts(캔버스)를 쓴다 — 차트 자체는 CompareLineChart 테스트가 본다.

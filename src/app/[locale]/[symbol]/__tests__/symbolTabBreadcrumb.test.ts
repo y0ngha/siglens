@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { getTranslations } from 'next-intl/server';
-
+import { describe, expect, it } from 'vitest';
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import { SITE_URL } from '@/shared/lib/seo';
 

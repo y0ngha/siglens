@@ -1,5 +1,5 @@
-import { resolveStrengthDisplay } from '@/widgets/analysis/utils/signalUtils';
 import type { SignalStrength } from '@y0ngha/siglens-core';
+import { resolveStrengthDisplay } from '@/widgets/analysis/utils/signalUtils';
 
 describe('resolveStrengthDisplay', () => {
     describe('유효한 SignalStrength 값일 때', () => {

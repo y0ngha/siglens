@@ -2,13 +2,13 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
+import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
+import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useDeleteAccountForm } from '../hooks/useDeleteAccountForm';
-import { cn } from '@/shared/lib/cn';
-import { ErrorAlert } from '@/shared/ui/ErrorAlert';
-import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
-import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
-import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import {
     getEmailConfirmStatus,
     type EmailConfirmStatus,

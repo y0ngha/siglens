@@ -41,9 +41,8 @@ vi.mock('next/server', () => {
     };
 });
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from '@/proxy';
 import { AI_SITE_URL, MAIN_SITE_URL } from '@/shared/config/aiHost';
 

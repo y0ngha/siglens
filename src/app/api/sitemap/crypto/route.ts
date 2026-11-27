@@ -1,8 +1,8 @@
-import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
-import { loadCryptoChildEntries } from '@/app/api/sitemap/_shared/childEntries';
 import { NextResponse } from 'next/server';
-import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
 import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
+import { loadCryptoChildEntries } from '@/app/api/sitemap/_shared/childEntries';
+import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 
 export const dynamic = 'force-dynamic';
 

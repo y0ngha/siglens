@@ -1,8 +1,8 @@
 import type { NextRequest, NextResponse } from 'next/server';
 import { exchangeProfile } from '@/app/api/auth/callback/_lib/exchangeProfile';
-import { redirectToConsent } from '@/app/api/auth/callback/_lib/redirectToConsent';
-import { redirectSignedIn } from '@/app/api/auth/callback/_lib/redirectSignedIn';
 import { redirectToLoginWithError } from '@/app/api/auth/callback/_lib/loginRedirect';
+import { redirectSignedIn } from '@/app/api/auth/callback/_lib/redirectSignedIn';
+import { redirectToConsent } from '@/app/api/auth/callback/_lib/redirectToConsent';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { isOAuthProvider } from '@/features/auth-oauth/lib/providers';
 import {

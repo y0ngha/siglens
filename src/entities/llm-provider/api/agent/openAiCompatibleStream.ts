@@ -1,9 +1,9 @@
 import 'server-only';
-import OpenAI from 'openai';
 import type {
     AgentProviderResult,
     CallAgentProviderOptions,
 } from '@y0ngha/siglens-core';
+import OpenAI from 'openai';
 import {
     accumulateToolCallDeltas,
     buildToolCalls,

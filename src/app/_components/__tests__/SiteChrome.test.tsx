@@ -47,13 +47,12 @@ vi.mock('@/shared/ui/ToastProvider', () => ({
     ToastProvider: marker('toast'),
 }));
 
-import React from 'react';
-
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useLocale, useMessages } from 'next-intl';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { SiteChrome } from '@/app/_components/SiteChrome';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 
 function LocaleProbe() {
     return (

@@ -1,12 +1,12 @@
+import type { FinancialsGrade } from '@y0ngha/siglens-core';
 /**
  * 축 점수(0–100) 진행 막대 — 점수 숫자와 등급 색 막대.
  */
 import { useTranslations } from 'next-intl';
 import { useId, type CSSProperties } from 'react';
-import type { FinancialsGrade } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { GRADE_PROGRESS_CLASS } from '../../utils/gradeStyles';
 import { SCORE_MAX, SCORE_MIN } from '../../utils/gaugeGeometry';
+import { GRADE_PROGRESS_CLASS } from '../../utils/gradeStyles';
 
 interface ScoreBarProps {
     score: number;

@@ -7,10 +7,10 @@ vi.mock('@/shared/hooks/useHydrated', () => ({
     useHydrated: () => mockUseHydrated(),
 }));
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
 import { renderHook, cleanup } from '@testing-library/react';
-import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 function clearCookies() {
     for (const c of document.cookie.split('; ')) {

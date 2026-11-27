@@ -127,36 +127,36 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: vi.fn(() => ({})),
 }));
 
-import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
-import {
-    MACRO_BRIEFING_CACHE_TAG,
-    MACRO_BRIEFING_SEED_SURFACE,
-} from '@/entities/economy/api/macroBriefingStaticCache';
-import {
-    marketBriefingCacheTag,
-    marketBriefingSeedSurface,
-} from '@/entities/market-summary/api/briefingStaticCache';
-import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
-import { ECONOMY_SNAPSHOT_CACHE_TAG } from '@/entities/economy/api/economySnapshotStaticCache';
-import {
-    CALENDAR_COUNTRY,
-    CALENDAR_COUNTRY_KR,
-    economyCalendarCacheTag,
-} from '@/entities/economy/lib/economyCalendarConstants';
-import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
-import { SITE_URL } from '@/shared/lib/seo';
-import { rssSources } from '@/app/api/rss/sources';
-import {
-    RSS_ECONOMY_SURFACE,
-    rssMarketSurface,
-    rssNewsSurface,
-} from '@/entities/rss-feed/model';
 import {
     HUB_DEADLINE_MS,
     HUB_UNIT_TIMEOUT_MS,
     hubTargets,
     runHubPrewarm,
 } from '@/app/api/cron/seo-prewarm/hubs';
+import { rssSources } from '@/app/api/rss/sources';
+import { ECONOMY_SNAPSHOT_CACHE_TAG } from '@/entities/economy/api/economySnapshotStaticCache';
+import {
+    MACRO_BRIEFING_CACHE_TAG,
+    MACRO_BRIEFING_SEED_SURFACE,
+} from '@/entities/economy/api/macroBriefingStaticCache';
+import {
+    CALENDAR_COUNTRY,
+    CALENDAR_COUNTRY_KR,
+    economyCalendarCacheTag,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
+import {
+    marketBriefingCacheTag,
+    marketBriefingSeedSurface,
+} from '@/entities/market-summary/api/briefingStaticCache';
+import {
+    RSS_ECONOMY_SURFACE,
+    rssMarketSurface,
+    rssNewsSurface,
+} from '@/entities/rss-feed/model';
+import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
+import { SITE_URL } from '@/shared/lib/seo';
 
 const NEWS_ROW = { id: 'n1' };
 

@@ -1,5 +1,5 @@
-import { getSurpriseBadge } from '@/widgets/news/utils/surpriseBadge';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import { getSurpriseBadge } from '@/widgets/news/utils/surpriseBadge';
 
 const BASE: EarningsReportComparisonItem = {
     symbol: 'AAPL',

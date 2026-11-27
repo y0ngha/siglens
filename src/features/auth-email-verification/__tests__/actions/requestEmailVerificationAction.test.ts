@@ -31,9 +31,8 @@ vi.mock('@/shared/email/dispatcher', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
-import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';

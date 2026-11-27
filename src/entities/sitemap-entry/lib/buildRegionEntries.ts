@@ -2,7 +2,6 @@ import {
     ALL_NAV_REGION_LINKS,
     type NavRegionId,
 } from '@/shared/config/assetClassNav';
-
 import type { SitemapEntry } from '../model';
 import { staticSitemapEntry } from './staticSitemapEntry';
 

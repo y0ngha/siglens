@@ -1,5 +1,6 @@
 import 'server-only';
 import { and, asc, eq, gt, inArray, isNull, notLike, sql } from 'drizzle-orm';
+import { KR_SYMBOL_LIKE_PATTERNS } from '@/entities/ticker/api';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     cusipSymbolMap,
@@ -17,7 +18,6 @@ import {
     INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
     INVESTOR_FLOWS_US_EXCHANGES,
 } from '../lib/investorFlowsPolicy';
-import { KR_SYMBOL_LIKE_PATTERNS } from '@/entities/ticker/api';
 
 export interface CusipMapRow {
     cusip: string;

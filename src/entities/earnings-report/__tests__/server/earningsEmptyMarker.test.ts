@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     EARNINGS_EMPTY_MARKER_TTL_SECONDS,
     isEarningsKnownEmpty,
     markEarningsEmpty,
 } from '../../server/earningsEmptyMarker';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const { store, fakeRedis } = vi.hoisted(() => {
     const store = new Map<string, unknown>();

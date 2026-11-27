@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { FutureDirectionCard } from '@/widgets/fundamental/sections/FutureDirectionCard';
 import type {
     FundamentalGradesConsensusInput,
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { FutureDirectionCard } from '@/widgets/fundamental/sections/FutureDirectionCard';
 
 const PT_SUMMARY: FundamentalPriceTargetSummaryInput = {
     lastMonth: { avgPriceTarget: 210 },

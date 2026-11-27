@@ -38,7 +38,6 @@ vi.mock('../FundamentalAiSummarySkeleton', () => ({
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
-
 import {
     ShareableAnalysisProvider,
     useShareable,

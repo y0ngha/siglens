@@ -1,9 +1,9 @@
-import { buildChainTableModel } from '@/widgets/options/utils/chainTableModel';
+import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
 import type {
     ClientOptionsChain,
     ClientOptionsContract,
 } from '@/entities/options-chain/lib/clientOptionsSnapshot';
-import type { StrikeOpenInterest } from '@y0ngha/siglens-core';
+import { buildChainTableModel } from '@/widgets/options/utils/chainTableModel';
 
 const contract = (strike: number): ClientOptionsContract => ({
     strike,

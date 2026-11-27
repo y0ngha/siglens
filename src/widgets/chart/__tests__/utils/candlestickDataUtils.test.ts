@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
-import * as reportModule from '@/shared/lib/reportClientError';
 import type { Bar } from '@y0ngha/siglens-core';
+import { describe, expect, it, vi } from 'vitest';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
+import * as reportModule from '@/shared/lib/reportClientError';
 import {
     buildCandlestickData,
     impulseColor,

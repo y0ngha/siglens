@@ -1,7 +1,7 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { CongressTrade } from '@y0ngha/siglens-core';
+// @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest';
 import { CongressTradesTable } from '../CongressTradesTable';
 import {
     SENATE_EFD_SEARCH_URL,

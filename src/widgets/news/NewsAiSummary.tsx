@@ -5,18 +5,18 @@
  * 맡는 오케스트레이터. 화면 조각은 `ui/ai-summary/`에 있다.
  */
 import { useTranslations } from 'next-intl';
-import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
+import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
-import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
-import { useAiRunPermission } from '@/features/symbol-model/hooks/useAiRunPermission';
 import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
-import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
-import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
-import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { NewsAiSummaryInlineError } from './ui/ai-summary/NewsAiSummaryInlineError';
 import { NewsAiSummaryView } from './ui/ai-summary/NewsAiSummaryView';
 import { StatusCard } from './ui/ai-summary/StatusCard';

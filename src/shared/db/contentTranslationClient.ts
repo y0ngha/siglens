@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { getDatabaseClient } from './client';
 import {
     DrizzleContentTranslationRepository,

@@ -1,10 +1,10 @@
-import { createExpiredSessionCookie } from './sessionCookie';
 import type {
     LogoutUserDependencies,
     LogoutUserInput,
     LogoutUserOptions,
     LogoutUserResult,
 } from './authUseCaseTypes';
+import { createExpiredSessionCookie } from './sessionCookie';
 
 /**
  * 저장된 세션 행을 지우고 브라우저용 만료 쿠키를 돌려준다. 세션이 이미 없어도 `ok: true`이며

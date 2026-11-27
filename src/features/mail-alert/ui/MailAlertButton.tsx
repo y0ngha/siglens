@@ -1,8 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import type { MailAlertTopic } from '@/entities/mail-alert/model';
 import { cn } from '@/shared/lib/cn';

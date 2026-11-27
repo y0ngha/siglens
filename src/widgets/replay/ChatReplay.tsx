@@ -3,16 +3,16 @@
 /** The auto-playing example conversation on ai.siglens.io `/about` and the `/lp` chat landing. */
 
 import type { ReactNode } from 'react';
-import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
-import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandAiName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
+import type { ReplayScenario } from '@/shared/lib/replay/replayScript';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { useReplayPlayback } from '@/widgets/replay/hooks/useReplayPlayback';
-import { deriveReplayView } from '@/widgets/replay/utils/replayView';
 import { ReplayAnswer } from '@/widgets/replay/ui/body/ReplayAnswer';
 import { ReplayCaret } from '@/widgets/replay/ui/body/ReplayCaret';
 import { ReplayPauseButton } from '@/widgets/replay/ui/controls/ReplayPauseButton';
+import { deriveReplayView } from '@/widgets/replay/utils/replayView';
 
 interface ChatReplayLabels {
     readonly region: string;

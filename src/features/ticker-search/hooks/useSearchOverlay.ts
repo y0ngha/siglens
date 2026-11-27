@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface UseSearchOverlayReturn {

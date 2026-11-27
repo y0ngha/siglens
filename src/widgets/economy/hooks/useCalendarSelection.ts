@@ -1,10 +1,10 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 경제 캘린더 날짜 선택 훅 — 오늘(KST) 갱신, 기본 선택일 동기화, 사용자 선택과 상세 패널 스크롤.
  */
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import type { DayGroup } from '../model/calendarTypes';
 import { pickDefaultDateKey } from '../utils/calendarGrouping';

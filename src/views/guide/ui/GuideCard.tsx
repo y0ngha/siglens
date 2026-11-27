@@ -1,11 +1,11 @@
 /** 가이드 항목 카드(목록 한 칸). */
 import type { GuideEntrySummary } from '@/entities/guide/types';
-import { guideEntryPath } from '@/shared/lib/guidePaths';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
+import { guideEntryPath } from '@/shared/lib/guidePaths';
 import { HEADING_SUBSECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
-import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
+import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 
 /** 카드에 싣는 다른 이름의 최대 개수 — 전체 목록(최대 11개)은 항목 페이지가 보여 준다. */
 export const GUIDE_CARD_ALIAS_LIMIT = 3;

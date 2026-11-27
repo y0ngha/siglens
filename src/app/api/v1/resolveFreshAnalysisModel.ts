@@ -4,9 +4,9 @@ import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { isKnownApiModel } from '@/entities/siglens-api-key/lib/apiModels';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { API_STATUS } from './apiResponse';
 import { fail, type Failure } from './freshAnalysisOutcomes';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 사용할 모델: 요청의 `model` 인자 → 없으면 `users.api_default_model`. 둘 다 없으면 400 `model_required`,

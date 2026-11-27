@@ -1,5 +1,5 @@
-import { hasAnalyzableNews } from '../../server/hasAnalyzableNews';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../../lib/newsLookback';
+import { hasAnalyzableNews } from '../../server/hasAnalyzableNews';
 
 /**
  * 보강이 끝난 행만 `buildAnalysisNewsItems`를 통과한다 — 이 술어의 존재 이유가

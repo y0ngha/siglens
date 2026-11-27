@@ -1,12 +1,12 @@
 import 'server-only';
-import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import type { MarketFearGreedHubView } from '../model';
 import {
     getCachedMarketFearGreedKr,
     MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT,
 } from './marketFearGreedKrCache';
-import type { MarketFearGreedHubView } from '../model';
 
 /**
  * ISR-safe 한국 시장 공포·탐욕 판독값. 미국판(`marketFearGreedStaticCache`)과 같은

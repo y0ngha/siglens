@@ -24,8 +24,8 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-import { getKrIndicatorCards } from '../getKrIndicatorCards';
 import { ECONOMY_CALENDAR_REVALIDATE_SECONDS } from '../../lib/economyCalendarConstants';
+import { getKrIndicatorCards } from '../getKrIndicatorCards';
 
 /**
  * `unstable_cache`의 keyParts·options를 캡처한다. 그냥 call-through로 두면

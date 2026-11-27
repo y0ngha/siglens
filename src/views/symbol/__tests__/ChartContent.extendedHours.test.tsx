@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import type { AnalysisResponse, Bar, Timeframe } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useExtendedBars } from '@/entities/extended-bars/hooks/useExtendedBars';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { STORAGE_KEYS } from '@/widgets/chart/constants';
 import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
-import { useExtendedBars } from '@/entities/extended-bars/hooks/useExtendedBars';
 import { useAnalysisDerivedData } from '../hooks/useAnalysisDerivedData';
-import { STORAGE_KEYS } from '@/widgets/chart/constants';
 
 /**
  * 시간외(프리·애프터마켓) 봉이 `ChartContent`에서 어떻게 배선되는지 — 지표·분석은 정규장 봉만,

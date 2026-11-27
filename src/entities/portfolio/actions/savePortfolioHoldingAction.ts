@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzlePortfolioRepository } from '../api';
 import { toView } from '../lib/toView';
@@ -17,7 +18,6 @@ import type {
     RawHoldingInput,
     SavePortfolioResult,
 } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `validateHoldingInput`이 돌려주는 코드 → `entities.portfolio.action` 키.

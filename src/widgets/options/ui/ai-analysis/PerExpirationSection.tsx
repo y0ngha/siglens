@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { OptionsPerExpirationCommentary } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';

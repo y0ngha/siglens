@@ -10,8 +10,8 @@ vi.mock('@upstash/redis', () => {
     return { Redis: MockRedis };
 });
 
-import type { Mock } from 'vitest';
 import { Redis } from '@upstash/redis';
+import type { Mock } from 'vitest';
 import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
 import { createEmailTokenStore } from '../api';
 import type { EmailTokenValue } from '../types';

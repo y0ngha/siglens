@@ -18,11 +18,10 @@ vi.mock('next-intl/server', () => ({
 import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import ko from '../../../../messages/ko.json';
-import en from '../../../../messages/en.json';
-
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import en from '../../../../messages/en.json';
+import ko from '../../../../messages/ko.json';
 import { BenchmarkResultSummary } from '../BenchmarkResultSummary';
 
 const CATALOGS = { ko, en } as const;

@@ -1,6 +1,3 @@
-import { fmpGet } from './httpClient';
-import { toFiniteNumber } from './toFiniteNumber';
-import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     BalanceSheetRow,
     CashFlowGrowthRow,
@@ -10,6 +7,7 @@ import type {
     IncomeGrowthRow,
     StatementPeriod,
 } from '@y0ngha/siglens-core';
+import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     RawFmpBalanceSheet,
     RawFmpCashFlow,
@@ -19,6 +17,8 @@ import type {
     RawFmpIncomeStatement,
     IncomeStatementRowWithFiling,
 } from './financialStatements.types';
+import { fmpGet } from './httpClient';
+import { toFiniteNumber } from './toFiniteNumber';
 
 /** toFiniteNumber의 단항 별칭 — undefined 입력을 허용하는 로컬 쇼트핸드. */
 const num = (v: number | undefined): number | null => toFiniteNumber(v);

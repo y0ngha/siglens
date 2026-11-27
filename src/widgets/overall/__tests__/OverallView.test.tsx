@@ -8,9 +8,8 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-
+import type { ReactNode } from 'react';
 import { OverallView } from '@/widgets/overall/OverallView';
 
 function makeResult(

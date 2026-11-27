@@ -1,12 +1,12 @@
 import { useTranslations } from 'next-intl';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import {
     regionsOf,
     type NavRegionId,
     type NavVerticalId,
 } from '@/shared/config/assetClassNav';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface RegionTabsProps {
     /** 어느 버티컬의 지역 목록을 그릴지. */

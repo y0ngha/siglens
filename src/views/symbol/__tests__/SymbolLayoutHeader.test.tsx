@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { useState } from 'react';
-import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { LOCAL_STORAGE_RECENT_SYMBOLS_KEY } from '@/shared/lib/storageKeys';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 
 vi.mock('next/link', () => ({
     default: ({

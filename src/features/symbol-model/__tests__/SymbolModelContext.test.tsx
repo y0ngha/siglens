@@ -1,13 +1,13 @@
-import { render, screen, renderHook, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { render, screen, renderHook, fireEvent } from '@testing-library/react';
 import type { ModelId } from '@y0ngha/siglens-core';
 import { getAllowedModels } from '@y0ngha/siglens-core';
+import type { ReactNode } from 'react';
+import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
 import {
     SymbolModelProvider,
     useSymbolModel,
 } from '@/features/symbol-model/model/SymbolModelContext';
-import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
 
 // The provider renders the ONE shared signup-nudge modal. Mock it to a simple
 // testid dialog so these tests can assert single-instance open/close behavior

@@ -3,11 +3,11 @@ import type {
     BacktestLegExitReason,
     BacktestTrade,
 } from '@y0ngha/siglens-core';
-import type { VerifiedBacktestRunData } from '@/entities/backtest-case/model';
-import summary from '../../../../backtest-results/2026-11-daily-ai/summary.json';
 import backtestData from '@/entities/backtest-case/data/data.json';
 import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import { validateBacktestRunData } from '@/entities/backtest-case/lib/validate';
+import type { VerifiedBacktestRunData } from '@/entities/backtest-case/model';
+import summary from '../../../../backtest-results/2026-11-daily-ai/summary.json';
 
 function trade(
     ticker: string,

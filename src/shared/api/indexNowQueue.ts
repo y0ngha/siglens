@@ -1,16 +1,16 @@
 import 'server-only';
-import { getRedisClient } from '@/shared/cache/redisClient';
-import {
-    MS_PER_DAY,
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-} from '@/shared/config/time';
 import {
     isUrlRejectionStatus,
     submitIndexNow,
     type IndexNowOutcome,
     type IndexNowResult,
 } from '@/shared/api/indexNow';
+import { getRedisClient } from '@/shared/cache/redisClient';
+import {
+    MS_PER_DAY,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 
 /**
  * IndexNow 제출 대기열 — Redis sorted set(`indexnow:pending`).

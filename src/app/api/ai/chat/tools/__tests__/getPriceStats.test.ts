@@ -40,20 +40,19 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     return { ...actual, computePriceStats: core.compute };
 });
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     AGENT_PRICE_STATS_MAX_DATES,
     PRICE_STATS_NOTE_TEMPLATES,
     type MarketDailyClose,
 } from '@y0ngha/siglens-core';
-import { isRecord } from '@/shared/lib/isRecord';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calendarChangeView } from '@/app/api/ai/chat/tools/calendarChange';
 import { getPriceStatsTool } from '@/app/api/ai/chat/tools/getPriceStats';
 import {
     PRICE_STATS_RESULT_MAX_CHARS,
     truncateToolResult,
 } from '@/app/api/ai/chat/tools/truncate';
+import { isRecord } from '@/shared/lib/isRecord';
 
 const ctx = {
     userId: 'u',

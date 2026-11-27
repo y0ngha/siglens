@@ -1,7 +1,7 @@
+import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
+import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
-import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import {
     CACHE_TAG_HEADER,
     CDN_CACHE_TAG,

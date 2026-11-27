@@ -1,23 +1,23 @@
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { ConfirmPasswordResetError } from '@/shared/lib/auth/types';
 import { normalizeEmail, validatePassword } from '@/shared/lib/auth/validation';
-import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
+import {
+    loginEmailIpKey,
+    loginEmailKey,
+    passwordResetConfirmIpKey,
+} from './authRateLimitKeys';
 import {
     PASSWORD_RESET_EXPIRED_TOKEN_CODE,
     PASSWORD_RESET_INVALID_TOKEN_CODE,
     PASSWORD_RESET_RATE_LIMITS,
     RATE_LIMITED_MESSAGE,
 } from './authUseCaseConstants';
-import {
-    loginEmailIpKey,
-    loginEmailKey,
-    passwordResetConfirmIpKey,
-} from './authRateLimitKeys';
 import type {
     ConfirmPasswordResetDependencies,
     ConfirmPasswordResetInput,
     ConfirmPasswordResetResult,
 } from './authUseCaseTypes';
+import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
 
 const PURPOSE = 'password_reset' as const;
 const INVALID_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 유효하지 않습니다.';

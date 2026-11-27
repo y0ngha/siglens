@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 import { useFinalizeOAuthSignup } from '@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup';
+import { CONSENT_DECLINED_VALUE } from '@/features/auth-oauth-consent/lib/readConsentForm';
+import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
+import { detectBrowserTimeZone } from '@/features/email-report-settings/lib/settingsForm';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { CONSENT_DECLINED_VALUE } from '@/features/auth-oauth-consent/lib/readConsentForm';
-import { detectBrowserTimeZone } from '@/features/email-report-settings/lib/settingsForm';
 
 vi.mock(
     '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',

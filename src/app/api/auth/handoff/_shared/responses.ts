@@ -1,6 +1,6 @@
-import { constants } from 'node:http2';
 import 'server-only';
 import { NextResponse } from 'next/server';
+import { constants } from 'node:http2';
 
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
 

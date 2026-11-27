@@ -1,8 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
 import { NEWS_PAGE_MAX_STALENESS_HOURS } from '@/entities/sitemap-entry/lib/buildNewsSitemapEntries';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 

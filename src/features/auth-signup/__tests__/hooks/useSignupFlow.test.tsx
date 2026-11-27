@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
-import { useSignupFlow } from '@/features/auth-signup/hooks/useSignupFlow';
-import { useSignupForm } from '@/features/auth-signup/hooks/useSignupForm';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
 } from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
+import { useSignupFlow } from '@/features/auth-signup/hooks/useSignupFlow';
+import { useSignupForm } from '@/features/auth-signup/hooks/useSignupForm';
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

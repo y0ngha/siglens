@@ -1,5 +1,5 @@
-import { createRef } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { createRef } from 'react';
 import { HoldingAmountField } from '../ui/HoldingAmountField';
 
 function renderField(invalid: boolean) {

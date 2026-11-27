@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { TrendLineChart } from '../ui/charts/TrendLineChart';
 import { FlowTooltip } from '../investorFlowsTooltips';
+import { TrendLineChart } from '../ui/charts/TrendLineChart';
 import {
     formatInteger,
     formatMonthDay,

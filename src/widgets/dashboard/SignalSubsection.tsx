@@ -1,9 +1,9 @@
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 /**
  * 신호 소절 하나 — 머리줄과 종목 카드 그리드(또는 빈 안내)를 조립한다.
  */
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SignalStockCard } from './SignalStockCard';
 import { SubsectionHeader } from './ui/signal/SubsectionHeader';

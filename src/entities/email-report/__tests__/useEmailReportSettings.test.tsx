@@ -6,8 +6,8 @@ vi.mock(
     () => ({ saveEmailReportSettingsAction: vi.fn() })
 );
 
-import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { getEmailReportSettingsAction } from '@/entities/email-report/actions/getEmailReportSettingsAction';
 import { saveEmailReportSettingsAction } from '@/entities/email-report/actions/saveEmailReportSettingsAction';

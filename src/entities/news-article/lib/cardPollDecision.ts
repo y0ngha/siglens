@@ -1,3 +1,7 @@
+import type {
+    CardListPollPolicy,
+    EnrichableCard,
+} from '@/entities/news-article/model';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
@@ -5,10 +9,6 @@ import {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
-import type {
-    CardListPollPolicy,
-    EnrichableCard,
-} from '@/entities/news-article/model';
 
 /**
  * 뉴스 카드 보강 폴링의 **판정**만 담는다(종목 뉴스·마켓 뉴스 공용).

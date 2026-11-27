@@ -98,11 +98,10 @@ vi.mock('@/shared/config/marketProfile/registry', async importOriginal => ({
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { calculateIndicators } from '@y0ngha/siglens-core';
-import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
 
 /**

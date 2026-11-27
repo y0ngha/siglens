@@ -1,8 +1,8 @@
-import type { MockedFunction } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
-import type { NewsDisplayItem } from '@/shared/lib/types';
+import type { ReactNode } from 'react';
+import type { MockedFunction } from 'vitest';
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
-import { useNewsCardPolling } from '@/widgets/news/hooks/useNewsCardPolling';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,
@@ -11,8 +11,8 @@ import {
     POLL_INTERVAL_MS,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import type { NewsDisplayItem } from '@/shared/lib/types';
+import { useNewsCardPolling } from '@/widgets/news/hooks/useNewsCardPolling';
 
 vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),

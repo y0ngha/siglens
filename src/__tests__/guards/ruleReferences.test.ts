@@ -1,6 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import { ruleDocPaths } from './support/ruleDocs';

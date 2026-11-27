@@ -1,11 +1,11 @@
 'use client';
 
-import { useId, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import {
     EXTREME_ZONE_REENTRY_GAP,
     FEAR_GREED_LABEL_CUTOFFS,
 } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
 import { MAIL_ALERT_SEND_HOURS_KST } from '@/entities/mail-alert/lib/mailAlertConstants';
 import type { MailAlertTopic } from '@/entities/mail-alert/model';
 import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';

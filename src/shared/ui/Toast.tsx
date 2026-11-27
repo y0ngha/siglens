@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
 import { LINK_ACCENT } from '@/shared/lib/linkStyles';
-import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
 

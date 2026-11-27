@@ -14,8 +14,8 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(() => mockRedis),
 }));
 
-import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     HUB_SEED_MAX_CRON_GAP_SECONDS,
     readHubSsrSeed,

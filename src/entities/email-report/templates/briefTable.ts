@@ -1,8 +1,8 @@
 import type { Locale } from '@/shared/i18n/locales';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { reportSymbolLabel } from '../lib/reportSymbolLabel';
-import { COLORS } from './emailTheme';
 import { formatClose, formatSignedPercent } from './emailFormat';
+import { COLORS } from './emailTheme';
 import type {
     ReportEmailTranslator,
     SignalLabelResolver,

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
     MaxPainTooltip,
     PutCallRatioTooltip,
@@ -7,7 +8,6 @@ import {
     CallVolumeTooltip,
     PutVolumeTooltip,
 } from '@/widgets/options/utils/optionsTooltips';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 
 vi.mock('@/shared/lib/eastern', () => ({
     EDT_OFFSET_HOURS: -4,

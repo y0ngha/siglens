@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BENCHMARK_SIGNIFICANCE_LEVEL } from '@/entities/benchmark/lib/benchmarkHeadline';
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
+import { BENCHMARK_SIGNIFICANCE_LEVEL } from '@/entities/benchmark/lib/benchmarkHeadline';
 import {
     buildBenchmarkPageModel,
     formatBenchmarkPoolSummary,

@@ -1,5 +1,6 @@
 'use client';
 
+import type { FloorHandlers } from '../../hooks/useFloorTooltip';
 /**
  * 빌딩의 층 하나 — 좌/우 벽면, 창문 장식, 층 경계선, 그리고 활성(hover/고정) 하이라이트.
  */
@@ -13,7 +14,6 @@ import {
     ROOF_EAVE_Y,
     ROOF_FRONT_Y,
 } from '../../utils/buildingGeometry';
-import type { FloorHandlers } from '../../hooks/useFloorTooltip';
 
 interface BuildingFloorProps {
     /** 저점 기준 층 번호 — 0 = 1층(최저가 구간). */

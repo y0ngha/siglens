@@ -1,15 +1,15 @@
 import { render } from '@testing-library/react';
-import { beforeAll } from 'vitest';
-import { getTranslations } from 'next-intl/server';
 import type { MarketFearGreedSnapshot } from '@y0ngha/siglens-core';
+import { getTranslations } from 'next-intl/server';
+import { beforeAll } from 'vitest';
+import koMessages from '@/../messages/ko.json';
 import type {
     MarketFearGreedCryptoView,
     MarketFearGreedView,
 } from '@/entities/market-fear-greed/model';
-import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
-import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import koMessages from '@/../messages/ko.json';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 
 /** ko 카탈로그의 팩터 라벨 — 소스 상수를 대체한다. */
 const FG = koMessages.shared.lib.fearGreedFactor as unknown as {

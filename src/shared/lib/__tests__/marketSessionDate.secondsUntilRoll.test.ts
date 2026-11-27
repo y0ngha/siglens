@@ -1,16 +1,16 @@
-import { describe, expect, it } from 'vitest';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import type { MarketSessionSpec } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import {
-    lastClosedSessionDate,
-    secondsUntilSessionRoll,
-} from '@/shared/lib/marketSessionDate';
 import {
     MS_PER_MINUTE,
     MS_PER_SECOND,
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
+import {
+    lastClosedSessionDate,
+    secondsUntilSessionRoll,
+} from '@/shared/lib/marketSessionDate';
 
 const hours = (h: number): number => h * SECONDS_PER_HOUR;
 

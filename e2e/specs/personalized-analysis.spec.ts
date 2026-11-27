@@ -1,9 +1,9 @@
-import { test, expect } from '../support/fixtures';
 import type { Locator, Page } from '@playwright/test';
 import {
     ANALYSIS_FIXTURE_SUMMARY_PREFIX,
     ANALYSIS_RENDER_TIMEOUT_MS,
 } from '../support/constants';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Authed spec — exercises the "내 평단 기준으로 분석했어요" personalized-analysis

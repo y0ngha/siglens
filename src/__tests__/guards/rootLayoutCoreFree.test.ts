@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { findCoreInClientGraph } from './support/coreClientGraph';
 import { SCAN_TIMEOUT_MS } from './support/controlUsage';
+import { findCoreInClientGraph } from './support/coreClientGraph';
 import { SRC } from './support/importGraph';
 
 /**

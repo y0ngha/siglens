@@ -1,26 +1,25 @@
 'use client';
 
-import { use, useCallback, useMemo, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { use, useCallback, useMemo, type ReactNode } from 'react';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
+import {
+    assignLocation,
+    replaceLocation,
+} from '@/shared/lib/crossHostNavigate';
 import {
     usePendingHref,
     useStartNavigation,
 } from '@/shared/model/NavigationPendingContext';
 import {
-    assignLocation,
-    replaceLocation,
-} from '@/shared/lib/crossHostNavigate';
-import { useSearchOverlay } from '../hooks/useSearchOverlay';
-import { NavigationProgressBar } from '../ui/NavigationProgressBar';
-import { SearchOverlay } from '../ui/SearchOverlay';
-
-import {
     SearchOverlayTriggerContext,
     type SearchOverlayTrigger,
 } from '@/shared/model/SearchOverlayTriggerContext';
+import { useSearchOverlay } from '../hooks/useSearchOverlay';
+import { NavigationProgressBar } from '../ui/NavigationProgressBar';
+import { SearchOverlay } from '../ui/SearchOverlay';
 
 /**
  * 전체화면 검색 오버레이를 **앱 전체에 단 하나만** 호스팅한다.

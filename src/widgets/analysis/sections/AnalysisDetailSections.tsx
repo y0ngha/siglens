@@ -1,17 +1,17 @@
 'use client';
 
-/**
- * '원본' 보기의 상세 섹션 묶음 — 미터 띠, 매매 전략, 주요 레벨, 추세선, 시나리오,
- * 보조지표, 패턴, 전략, 잠금 업셀 카드를 순서대로 배치한다. 각 섹션은 데이터가
- * 없으면 스스로 숨는다.
- */
-import type { Ref } from 'react';
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
     KrxTickTable,
     Timeframe,
 } from '@y0ngha/siglens-core';
+/**
+ * '원본' 보기의 상세 섹션 묶음 — 미터 띠, 매매 전략, 주요 레벨, 추세선, 시나리오,
+ * 보조지표, 패턴, 전략, 잠금 업셀 카드를 순서대로 배치한다. 각 섹션은 데이터가
+ * 없으면 스스로 숨는다.
+ */
+import type { Ref } from 'react';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 import type { OverlayCardControls } from '../model/types';
 import type { LockedSections } from '../utils/lockedSections';

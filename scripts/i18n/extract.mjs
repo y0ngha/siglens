@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execSync } from 'node:child_process';
 /**
  * 한국어 리터럴 추출 codemod.
  *
@@ -13,8 +14,9 @@
  * 오프셋 역순으로 적용해 앞선 치환이 뒤 오프셋을 밀지 않게 한다.
  */
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
+import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
+import { classify } from './lib/context.mjs';
 import {
     candidateFiles,
     collectCandidates,
@@ -24,8 +26,6 @@ import {
     parseFile,
     readSource,
 } from './lib/scan.mjs';
-import { classify } from './lib/context.mjs';
-import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
 
 const ROOT = resolve(process.argv[1], '../../..');
 const args = process.argv.slice(2);

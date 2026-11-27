@@ -61,10 +61,9 @@ vi.mock('@/entities/mail-alert/server/accountCleanup', () => ({
     })),
 }));
 
-import type { MockedFunction, Mock } from 'vitest';
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { MockedFunction, Mock } from 'vitest';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';

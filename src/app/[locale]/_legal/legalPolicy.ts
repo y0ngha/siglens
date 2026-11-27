@@ -3,9 +3,10 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
-import type { TermsKind } from '@/shared/db/constants';
 import { isDatabaseMissingAtBuild } from '@/shared/db/config';
+import type { TermsKind } from '@/shared/db/constants';
 import { resolveLocale, type Locale } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     buildBreadcrumbJsonLd,
@@ -14,14 +15,13 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
-import { brandName } from '@/shared/lib/brandName';
 import {
     localeAlternatesFrom,
     selfCanonicalAlternates,
     localeOpenGraph,
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /**
  * `/terms`·`/privacy`가 서로 다른 부분 중 메타데이터·JSON-LD에 쓰이는 것.

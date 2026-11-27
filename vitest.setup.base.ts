@@ -1,5 +1,5 @@
-import { afterAll, vi } from 'vitest';
 import { TextDecoder, TextEncoder } from 'util';
+import { afterAll, vi } from 'vitest';
 
 // E2E_TEST 누수 가드. `vmThreads` 풀은 워커 한 개 안에서 여러 테스트 파일이
 // process.env를 공유하므로, 한 파일이 raw로 설정한 `process.env.E2E_TEST='1'`이

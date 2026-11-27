@@ -1,5 +1,5 @@
-import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { KST_OFFSET_HOURS, MS_PER_HOUR } from '@/shared/config/time';
+import { escapeHtml } from '@/shared/lib/escapeHtml';
 import type { FeedbackDigest } from '../../lib/buildFeedbackDigest';
 
 /** 운영자 메일은 한국어 고정이다(수신자가 운영자 한 명). */

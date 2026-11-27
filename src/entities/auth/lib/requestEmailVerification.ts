@@ -1,5 +1,5 @@
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
-import { generateNumericCode, hashEmailToken } from './tokenUtils';
 import {
     EMAIL_VERIFICATION_CODE_LENGTH,
     EMAIL_VERIFICATION_PENDING_TTL_SECONDS,
@@ -15,7 +15,7 @@ import {
     emailVerificationAttemptsKey,
     emailVerificationCooldownKey,
 } from './emailVerificationKeys';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { generateNumericCode, hashEmailToken } from './tokenUtils';
 
 const PURPOSE = 'email_verification' as const;
 

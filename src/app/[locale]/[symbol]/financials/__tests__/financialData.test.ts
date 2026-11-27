@@ -55,17 +55,17 @@ vi.mock('next/cache', () => ({
     unstable_cache: (fn: () => unknown) => fn,
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
-import {
-    ANNUAL_LIMIT,
-    QUARTER_LIMIT,
-} from '@/entities/financials-statements/lib/financialsSnapshot';
 import {
     computeFinancialsScorecard,
     normalizeFinancialsSnapshot,
 } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
+import {
+    ANNUAL_LIMIT,
+    QUARTER_LIMIT,
+} from '@/entities/financials-statements/lib/financialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 
 describe('financialData', () => {
     beforeEach(() => {

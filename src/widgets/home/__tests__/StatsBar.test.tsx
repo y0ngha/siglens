@@ -10,7 +10,6 @@ vi.mock('@/shared/lib/skillStats', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-
 import { StatsBar } from '../StatsBar';
 
 const EMPTY_COUNTS = {

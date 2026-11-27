@@ -1,19 +1,19 @@
 import 'server-only';
-import { affectedRows } from './affectedRows';
 import { isNotNull, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { secFtd, secFtdFiles } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { withRetry } from '@/shared/lib/withRetry';
+import { compositeKey } from '../lib/dedupeByKey';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type { FtdFileState, FtdPointRecord, FtdRow } from '../model';
-import { compositeKey } from '../lib/dedupeByKey';
-import { warnWithDetail } from '@/shared/lib/warnWithDetail';
-import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
+import { affectedRows } from './affectedRows';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 /**
  * SEC fails-to-deliver 저장소. 반월 파일 하나의 행 저장과 "처리됨" 표시(`sec_ftd_files.processed_at`)는 **한 트랜잭션**이다 — 중간에

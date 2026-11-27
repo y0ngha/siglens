@@ -1,6 +1,6 @@
 import 'server-only';
-import { searchTicker } from '@/entities/ticker/server/searchTicker';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { searchTicker } from '@/entities/ticker/server/searchTicker';
 
 const MAX_RESULTS = 8;
 

@@ -1,20 +1,20 @@
-/**
- * 점수표의 축 카드 한 장 — 축 제목·방향 배지·점수와, 채점됐으면 근거 줄 / 아니면 부족 사유 문구.
- */
-import { useTranslations } from 'next-intl';
 import type {
     InvestorFlowsAxisId,
     InvestorFlowsScorecard,
 } from '@y0ngha/siglens-core';
+/**
+ * 점수표의 축 카드 한 장 — 축 제목·방향 배지·점수와, 채점됐으면 근거 줄 / 아니면 부족 사유 문구.
+ */
+import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../../investorFlowsTooltips';
-import { buildAxisEvidence } from '../../utils/axisEvidence';
 import { krNoReportsInWindow } from '../../utils/axis-evidence/krWindow';
-import { axisTerm } from '../../utils/axisTerm';
+import { buildAxisEvidence } from '../../utils/axisEvidence';
 import { axisTitleKey } from '../../utils/axisKeys';
+import { axisTerm } from '../../utils/axisTerm';
 import { formatSignedDecimal } from '../../utils/flowFormat';
 import type { AxisGap } from '../../utils/scorecardGap';
 import { LabelBadge } from './LabelBadge';

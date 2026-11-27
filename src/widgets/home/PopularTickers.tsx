@@ -7,12 +7,12 @@
  */
 
 import { useTranslations } from 'next-intl';
-import { HOME_POPULAR_ANCHOR_ID } from '@/shared/config/watchlist';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import {
     KR_CATEGORY_IDS,
     TICKER_CATEGORIES,
 } from '@/shared/config/popular-tickers';
+import { HOME_POPULAR_ANCHOR_ID } from '@/shared/config/watchlist';
 import { cn } from '@/shared/lib/cn';
 import type { CategoryId, CryptoCategoryId } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

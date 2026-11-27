@@ -4,7 +4,6 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
-import { AAPL_SUBMISSIONS } from './fixtures/submissionsSample';
 import {
     FmpInvestorFlowsClient,
     INSIDER_MAX_PAGES,
@@ -12,6 +11,7 @@ import {
     INSIDER_RENDER_BUDGET_MS,
     INSIDER_RENDER_MAX_PAGES,
 } from '../investorFlowsFmpClient';
+import { AAPL_SUBMISSIONS } from './fixtures/submissionsSample';
 
 /** Deny-by-default: URLs the test does not route throw instead of reaching FMP. */
 const fetchSpy = vi.fn(

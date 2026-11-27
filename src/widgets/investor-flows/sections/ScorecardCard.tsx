@@ -1,20 +1,20 @@
-/**
- * 수급 점수 카드 — 종합 점수와 축별 카드를 묶는 섹션.
- */
-import { useTranslations } from 'next-intl';
 import {
     INVESTOR_FLOWS_AXES,
     type InvestorFlowsAxisId,
     type InvestorFlowsScorecard,
 } from '@y0ngha/siglens-core';
+/**
+ * 수급 점수 카드 — 종합 점수와 축별 카드를 묶는 섹션.
+ */
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { COMPOSITE_TERM } from '../utils/axisTerm';
-import { resolveAxisGap } from '../utils/scorecardGap';
 import { AxisCard } from '../ui/scorecard/AxisCard';
 import { CompositeScore } from '../ui/scorecard/CompositeScore';
+import { COMPOSITE_TERM } from '../utils/axisTerm';
+import { resolveAxisGap } from '../utils/scorecardGap';
 
 const HEADING_ID = 'flows-scorecard-heading';
 

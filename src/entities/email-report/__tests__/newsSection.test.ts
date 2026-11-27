@@ -1,9 +1,9 @@
+import type { SymbolReportNews } from '@/entities/email-report/reportModel';
 import {
     isHttpUrl,
     newsHtml,
     newsLines,
 } from '@/entities/email-report/templates/newsSection';
-import type { SymbolReportNews } from '@/entities/email-report/reportModel';
 
 const t = (key: string): string => key;
 

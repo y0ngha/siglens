@@ -1,5 +1,3 @@
-import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import {
     currencyForSymbol,
     getDescriptor,
@@ -8,6 +6,8 @@ import type {
     MarketProfileId,
     PriceFormatConfig,
 } from '@/shared/config/marketProfile/types';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';

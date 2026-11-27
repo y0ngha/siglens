@@ -2,11 +2,11 @@
  * 종목 뉴스 사실 요약 카드 — 제목과 (빈 상태 | 본문) 선택만 맡는다. 집계는 `utils/newsFacts`, 본문은 `ui/news-facts/`.
  */
 import { useTranslations } from 'next-intl';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import type { NewsDisplayItem } from '@/shared/lib/types';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { NewsFactsBody } from './ui/news-facts/NewsFactsBody';
 
 export interface NewsFactsSummaryProps {

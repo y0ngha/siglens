@@ -5,12 +5,11 @@ vi.mock('@/entities/index-history/server/loadIndexMonthEnds', () => ({
     loadIndexMonthEnds: loader.load,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { IndexHistoryStats } from '@y0ngha/siglens-core';
-import { isRecord } from '@/shared/lib/isRecord';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getIndexHistoryStatsTool } from '@/app/api/ai/chat/tools/getIndexHistoryStats';
 import { INDEX_HISTORY_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import { isRecord } from '@/shared/lib/isRecord';
 
 const loaded = (monthEnds: unknown[], usCycle: boolean) => ({
     monthEnds,

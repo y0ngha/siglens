@@ -18,8 +18,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
     DEFAULT_TIER: 'free',
 }));
 
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';

@@ -11,6 +11,7 @@ import {
     or,
     sql,
 } from 'drizzle-orm';
+import { KR_SYMBOL_LIKE_PATTERNS } from '@/entities/ticker/api';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     dartCorpCode,
@@ -21,10 +22,10 @@ import {
     koreanTickers,
 } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { withRetry } from '@/shared/lib/withRetry';
-import { KR_SYMBOL_LIKE_PATTERNS } from '@/entities/ticker/api';
-import { commonShareCandidates, resolveDartCorp } from '../lib/dartSymbol';
 import { chunked } from '../lib/chunked';
+import { commonShareCandidates, resolveDartCorp } from '../lib/dartSymbol';
 import { compositeKey } from '../lib/dedupeByKey';
 import { INVESTOR_FLOWS_UPSERT_CHUNK_SIZE } from '../lib/investorFlowsPolicy';
 import type {
@@ -35,12 +36,11 @@ import type {
     DartTradingPlanRow,
 } from '../model';
 import { affectedRows } from './affectedRows';
-import { warnWithDetail } from '@/shared/lib/warnWithDetail';
-import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,
 } from './investorFlowsState';
+import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 /** 비율(`numeric`) 쓰기 — postgres-js는 numeric을 문자열로 주고받는다. */
 const toNumeric = (value: number | null): string | null =>

@@ -1,10 +1,10 @@
 'use client';
 
-import { type CSSProperties } from 'react';
 import { useTranslations } from 'next-intl';
+import { type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Spinner } from '@/shared/ui/Spinner';
 
 const SKELETON_WIDTH_START_PCT = 85;

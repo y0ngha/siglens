@@ -4,9 +4,10 @@ import {
     resolveNextEarnings,
 } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import { loadEarningsHintBounded } from '@/entities/analyst-views/server/loadEarningsHint';
-import type { SiglensDatabase } from '@/shared/db/types';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { applyResolvedNextEarnings } from './lib/applyResolvedNextEarnings';
 import { isEarningsReportStale } from './lib/isEarningsReportStale';
@@ -17,7 +18,6 @@ import {
     markEarningsEmpty,
 } from './server/earningsEmptyMarker';
 import { DrizzleEarningsReportsRepository } from './server/earningsReportsRepository';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * FMP/yahoo 실적 행 조회 개수(최신순, 예정 1~2행 포함). 5 → 12(2026-10-22, dev 결함 A12):

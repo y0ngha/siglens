@@ -1,7 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { resolve } from 'node:path';
-import { defined } from '@/shared/test-utils/defined';
 import {
     EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
     EMAIL_REPORT_MAX_SYMBOLS,
@@ -19,6 +17,8 @@ import type {
     ReportEmailTranslator,
     SignalLabelResolver,
 } from '@/entities/email-report/templates/reportEmailTypes';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
+import { defined } from '@/shared/test-utils/defined';
 
 /** ICU가 주는 시간대 이름을 테스트 안에서 같은 API·옵션으로 구한다(문구를 박아 두지 않는다). */
 function expectedZoneName(

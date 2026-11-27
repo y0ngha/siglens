@@ -13,8 +13,8 @@ import type {
     ChatVisualBlock,
 } from '@/entities/chat-conversation/types';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import { withTimeout } from '@/shared/lib/withTimeout';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { withTimeout } from '@/shared/lib/withTimeout';
 import type { ToolExecutor } from './chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
-import { useOptionsChainMetrics } from '@/widgets/options/hooks/useOptionsChainMetrics';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
+import { useOptionsChainMetrics } from '@/widgets/options/hooks/useOptionsChainMetrics';
 
 vi.mock('@/entities/options-chain/lib/pickActiveChain', () => ({
     pickActiveChain: (snapshot: OptionsSnapshot, exp: string) => {

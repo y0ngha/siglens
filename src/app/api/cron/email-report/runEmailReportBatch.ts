@@ -1,10 +1,5 @@
 import 'server-only';
 import {
-    selectReportSymbols,
-    type ReportHolding,
-    type ReportWatchlistItem,
-} from '@/entities/email-report/lib/selectReportSymbols';
-import {
     WELCOME_STALE_SENDING_MS,
     WELCOME_SUPPRESSES_REPORT_MS,
 } from '@/entities/email-report/lib/emailReportConstants';
@@ -16,6 +11,11 @@ import {
     buildUnsubscribeApiUrl,
     buildUnsubscribePageUrl,
 } from '@/entities/email-report/lib/reportLinks';
+import {
+    selectReportSymbols,
+    type ReportHolding,
+    type ReportWatchlistItem,
+} from '@/entities/email-report/lib/selectReportSymbols';
 import type {
     SymbolBrief,
     SymbolReport,
@@ -27,6 +27,10 @@ import type {
     SignalLabelResolver,
     SkillLabelResolver,
 } from '@/entities/email-report/templates/reportEmailTypes';
+import {
+    redactDbErrorForLog,
+    redactedErrorMessage,
+} from '@/shared/db/redactDbErrorForLog';
 import type {
     EmailReportDeliveryRepository,
     EmailReportRecipient,
@@ -38,10 +42,6 @@ import type { EmailMessage, KeyedEmailDispatcher } from '@/shared/email/types';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { mapChunked } from '@/shared/lib/mapChunked';
-import {
-    redactDbErrorForLog,
-    redactedErrorMessage,
-} from '@/shared/db/redactDbErrorForLog';
 import type { SymbolDrawings } from './loadSymbolDrawings';
 
 /** 발송 기록 보관 기간 — 그보다 오래된 행은 매 실행 끝에 지운다. */

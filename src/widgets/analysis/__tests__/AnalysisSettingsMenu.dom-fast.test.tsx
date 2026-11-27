@@ -1,8 +1,8 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
-import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
 import { mockViewport } from '@/__tests__/utils/mockViewport';
+import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
 
 const ALLOWED_MODELS: readonly ModelId[] = [
     DEEPSEEK_V4_1_FLASH_MODEL,

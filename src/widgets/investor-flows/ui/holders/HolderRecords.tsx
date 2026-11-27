@@ -1,17 +1,17 @@
+import type { InstitutionalHolderChange } from '@y0ngha/siglens-core';
 /**
  * 상위 보유 기관 목록 본문 — 좁은 화면은 카드, 넓은 화면은 표.
  */
 import { useTranslations } from 'next-intl';
-import type { InstitutionalHolderChange } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { formatCompact } from '../../utils/flowFormat';
 import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
 } from '@/shared/ui/ResponsiveRecordList';
+import { formatCompact } from '../../utils/flowFormat';
 import { HolderChangeText } from './HolderChangeText';
 import { StatusBadge } from './StatusBadge';
 

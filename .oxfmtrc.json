@@ -17,6 +17,21 @@
         "stylesheet": "./src/app/globals.css"
     },
 
+    // import 순서(패키지 -> `@/`·`@e2e/` 별칭 -> 상대 경로)는 포매터가 정한다.
+    // sortSideEffects 기본값 false라 부수효과 import는 자기 자리(인덱스)를 지키고
+    // 나머지 import가 그 둘레에서 정렬된다. 순서가 의미를 갖는 `server-only`·CSS는
+    // 파일 맨 위에 둔다.
+    "sortImports": {
+        "groups": [
+            ["builtin", "external"],
+            "internal",
+            ["parent", "sibling", "index"],
+            "unknown"
+        ],
+        "internalPattern": ["@/", "@e2e/"],
+        "newlinesBetween": false
+    },
+
     // oxfmt는 기본으로 .gitignore를 읽는다. 아래는 이전 .prettierignore에서
     // 유지해야 하는 항목(문서/생성물/에이전트 설정은 손대지 않는다).
     // .yarn/**은 .gitignore의 `!.yarn/releases` 부정 패턴 때문에 다시 후보로

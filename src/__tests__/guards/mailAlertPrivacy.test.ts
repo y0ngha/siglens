@@ -1,5 +1,5 @@
-import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MAIL_ALERT_COOKIE_NAME } from '@/entities/mail-alert/lib/mailAlertCookie';
 import type { MailAlertChange } from '@/entities/mail-alert/model';

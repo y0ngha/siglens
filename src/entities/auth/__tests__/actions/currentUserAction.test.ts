@@ -17,9 +17,8 @@ vi.mock('@/entities/auth/server/getCurrentUser', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 
 /** Cookie jar by name: `{ siglens_session: 'x' }`. Unlisted names are absent. */
 const jar = (values: Record<string, string>) =>

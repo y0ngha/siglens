@@ -3,9 +3,8 @@ vi.mock('bcryptjs', () => ({
     compare: vi.fn(),
 }));
 
-import type { MockedFunction } from 'vitest';
-
 import { compare, hash } from 'bcryptjs';
+import type { MockedFunction } from 'vitest';
 import {
     BCRYPT_DEFAULT_SALT_ROUNDS,
     bcryptPasswordHasher,

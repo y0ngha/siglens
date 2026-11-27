@@ -5,10 +5,9 @@ vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockViewport } from '@/__tests__/utils/mockViewport';
-
 import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
 
 function renderMenu(canUseReasoning: boolean) {

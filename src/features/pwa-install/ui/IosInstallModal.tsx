@@ -1,11 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
+import { cn } from '@/shared/lib/cn';
+import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { ModalShell } from '@/shared/ui/ModalShell';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
-import Image from 'next/image';
-import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
-import { cn } from '@/shared/lib/cn';
 
 const MODAL_TITLE_ID = 'ios-modal-title';
 

@@ -1,13 +1,13 @@
 import type { AgentToolSpec, JsonSchemaProperty } from '@y0ngha/siglens-core';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
-import type {
-    ApiToolArgument,
-    ApiToolReference,
-} from '@/entities/siglens-api-key/model';
 import {
     FRESH_ANALYSIS_TOOL,
     typeLabel,
 } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
+import type {
+    ApiToolArgument,
+    ApiToolReference,
+} from '@/entities/siglens-api-key/model';
 import { FRESH_ANALYSIS_DEADLINE_SECONDS } from '@/shared/config/freshAnalysisDeadline';
 import {
     API_KEY_ENV_NAME,

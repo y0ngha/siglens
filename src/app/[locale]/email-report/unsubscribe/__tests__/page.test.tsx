@@ -26,7 +26,6 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import EmailReportUnsubscribePage, {
     generateMetadata,
 } from '@/app/[locale]/email-report/unsubscribe/page';

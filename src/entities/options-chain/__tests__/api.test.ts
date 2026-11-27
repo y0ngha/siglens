@@ -12,10 +12,6 @@ vi.mock('../server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 import {
     runOptionsAnalysis,
     DEEPSEEK_V4_1_FLASH_MODEL,
@@ -23,8 +19,11 @@ import {
     type OptionsSnapshot,
     type OptionsChain,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '../server/optionsDataCache';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { prewarmOptions } from '../api';
+import { fetchOptionsSnapshot } from '../server/optionsDataCache';
 
 const SEAM_SOURCE = readFileSync(
     fileURLToPath(new URL('../api.ts', import.meta.url)),

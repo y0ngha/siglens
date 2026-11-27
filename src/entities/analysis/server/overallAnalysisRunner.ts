@@ -1,5 +1,4 @@
 import 'server-only';
-import type { Locale } from '@/shared/i18n/locales';
 import {
     runOverallAnalysis,
     type AssembledPromptRecord,
@@ -10,28 +9,29 @@ import {
     type RunOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
-import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
-import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { getDatabaseClient } from '@/shared/db/client';
-// Cross-entity(investor-flows): 종합 분석이 수급 점수표를 입력으로 받는다 — `src/entities/CLAUDE.md`
-// "의도적 예외" 표에 등재된 허용 경로.
-import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
-import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
 import {
     getNextEarningsReport,
     listEarningsDatesAfterRefresh,
 } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
-import { resolveReasoning } from '@/shared/lib/byokGate';
+// Cross-entity(investor-flows): 종합 분석이 수급 점수표를 입력으로 받는다 — `src/entities/CLAUDE.md`
+// "의도적 예외" 표에 등재된 허용 경로.
+import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/server/resolveHoldingPositionBucket';
+import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { Locale } from '@/shared/i18n/locales';
+import { resolveReasoning } from '@/shared/lib/byokGate';
 import {
     resolveCallerKeyOptions,
     type AnalysisCaller,

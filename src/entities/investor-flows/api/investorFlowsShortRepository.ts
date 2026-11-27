@@ -3,14 +3,14 @@ import { desc, eq, gte, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { finraShortInterest, finraShortVolume } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { withRetry } from '@/shared/lib/withRetry';
+import { compositeKey } from '../lib/dedupeByKey';
 import {
     INVESTOR_FLOWS_PRUNE_BATCH_SIZE,
     INVESTOR_FLOWS_UPSERT_CHUNK_SIZE,
 } from '../lib/investorFlowsPolicy';
 import type { ShortInterestRow, ShortVolumeRow } from '../model';
-import { compositeKey } from '../lib/dedupeByKey';
-import { warnWithDetail } from '@/shared/lib/warnWithDetail';
 import { type UpsertLog, uniqueForUpsert } from './uniqueForUpsert';
 
 /**

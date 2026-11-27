@@ -1,6 +1,6 @@
+import { runOutcomeLabeller } from '@/entities/analysis-outcome/server/runOutcomeLabeller';
 import { handleLeasedCron } from '../leasedCron';
 import { createAnalysisOutcomesDeps } from './createDeps';
-import { runOutcomeLabeller } from '@/entities/analysis-outcome/server/runOutcomeLabeller';
 
 /**
  * 마감 8분. 락 TTL 12분 = 마감 + 청크 하나(그룹당 로드 타임아웃 20초 + 행 쓰기) + DB만 쓰는 capture·relabel·prune 여유

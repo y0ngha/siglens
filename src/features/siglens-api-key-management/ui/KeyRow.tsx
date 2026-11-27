@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useId } from 'react';
 import type { SiglensApiKeySummary } from '@/entities/siglens-api-key/model';
 import { BUTTON_GHOST, BUTTON_OUTLINE_DANGER } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';

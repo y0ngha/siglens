@@ -4,8 +4,8 @@
  * 가격 차트와 거래량 차트의 인스턴스·보이는 범위·오른쪽 여백을 동기화하는 훅.
  */
 
-import { useCallback, useRef } from 'react';
 import type { IChartApi, LogicalRange } from 'lightweight-charts';
+import { useCallback, useRef } from 'react';
 import { applyRightOffsetPixels } from '../utils/rightOffset';
 
 interface ChartSyncHandlers {

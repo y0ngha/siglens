@@ -23,7 +23,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import postgres from 'postgres';
-import { assertRemoteWriteAllowed, readDatabaseUrl } from './lib/dbTarget';
 import {
     TRANSLATABLE_ENTITY,
     TRANSLATION_SOURCE,
@@ -33,6 +32,7 @@ import {
     isLocale,
     type Locale,
 } from '../../src/shared/i18n/locales';
+import { assertRemoteWriteAllowed, readDatabaseUrl } from './lib/dbTarget';
 
 /** 한 번에 모델에 보낼 항목 수. 카탈로그 번역과 같은 값. */
 const BATCH_SIZE = 40;

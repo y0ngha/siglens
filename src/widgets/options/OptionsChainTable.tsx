@@ -1,18 +1,20 @@
 'use client';
 
+import type {
+    OptionsExpirationMetrics,
+    StrikeOpenInterest,
+} from '@y0ngha/siglens-core';
 /**
  * Collapsible options chain table (one row per strike, call and put sides).
  * Row data comes from `buildChainTableModel`; cell text from `chainTableFormat`.
  */
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import type {
-    OptionsExpirationMetrics,
-    StrikeOpenInterest,
-} from '@y0ngha/siglens-core';
 import type { ClientOptionsChain } from '@/entities/options-chain/lib/clientOptionsSnapshot';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { OpenInterestTooltip } from './utils/openInterestTooltips';
 import {
     formatBidAsk,
     formatIv,
@@ -20,9 +22,7 @@ import {
     formatStrike,
 } from './utils/chainTableFormat';
 import { buildChainTableModel } from './utils/chainTableModel';
-import type { OptionsExpirationSelector } from '@/shared/lib/types';
-import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { OpenInterestTooltip } from './utils/openInterestTooltips';
 
 interface OptionsChainTableProps {
     symbol: string;

@@ -76,7 +76,6 @@ import { EventEmitter, getEventListeners } from 'node:events';
 import { Readable } from 'node:stream';
 import { deflateSync, gzipSync } from 'node:zlib';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     BlockedAddressError,
     pinnedGet,

@@ -18,8 +18,8 @@ import {
     PUBLIC_API_BASE_PATH,
 } from '@/shared/config/publicApi';
 import type { Locale } from '@/shared/i18n/locales';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { cn } from '@/shared/lib/cn';
 import { SITE_URL } from '@/shared/lib/seo';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';

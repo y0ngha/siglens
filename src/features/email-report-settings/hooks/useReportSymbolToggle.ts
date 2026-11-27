@@ -4,8 +4,8 @@
  * @file 미리보기 칩의 빼기·다시 넣기·기록 지우기 훅과 그 모드.
  */
 
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useTransition } from 'react';
 import { excludeReportSymbolAction } from '@/entities/email-report/actions/excludeReportSymbolAction';
 import { includeReportSymbolAction } from '@/entities/email-report/actions/includeReportSymbolAction';

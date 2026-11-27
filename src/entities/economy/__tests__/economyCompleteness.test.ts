@@ -1,6 +1,6 @@
+import type { EconomySnapshot } from '@y0ngha/siglens-core';
 import { describe, it, expect } from 'vitest';
 import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
-import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
 const POINT = { date: '2026-05-01', value: 3.63 };
 

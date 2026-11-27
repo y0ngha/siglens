@@ -1,10 +1,9 @@
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
-import { economicCalendarId } from '../economicCalendarId';
 import {
     dedupeCalendarEventsById,
     planCalendarIngestion,
 } from '../calendarIngestionPlan';
+import { economicCalendarId } from '../economicCalendarId';
 
 function event(
     overrides: Partial<EconomicCalendarEvent> = {}

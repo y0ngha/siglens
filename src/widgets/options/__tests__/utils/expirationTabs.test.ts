@@ -1,9 +1,9 @@
+import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
 import {
     buildExpirationTabs,
     findActiveTabIndex,
     findActiveTabValue,
 } from '@/widgets/options/utils/expirationTabs';
-import type { ExpirationSlotKey, SlotMapping } from '@y0ngha/siglens-core';
 
 const LABELS: Record<ExpirationSlotKey, string> = {
     '0D': 'Today',

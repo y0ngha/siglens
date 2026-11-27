@@ -1,8 +1,10 @@
 import 'server-only';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
-import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
-import type { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
+import {
+    resolveCurrentPrice,
+    resolvePriceAsOf,
+} from '@/entities/analysis-plain/server/currentPrice';
 import {
     prewarmTechnical,
     prewarmOverall,
@@ -13,25 +15,26 @@ import {
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { hasAnalyzableNews } from '@/entities/news-article/server/hasAnalyzableNews';
 import { prewarmNews } from '@/entities/news-article/server/prewarmNews';
-import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
-import {
-    resolveCurrentPrice,
-    resolvePriceAsOf,
-} from '@/entities/analysis-plain/server/currentPrice';
-import {
-    currencyForSymbol,
-    isKrEquitySymbol,
-} from '@/shared/config/marketProfile/registry';
 import { prewarmOptions } from '@/entities/options-chain/api';
+import type { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { prewarmSessionSpecFor } from '@/entities/seo-snapshot/lib/applicability';
 import {
     secondsUntilNextSnapshotBoundary,
     snapshotCloseBoundaryFor,
 } from '@/entities/seo-snapshot/lib/freshness';
+import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
 import {
     isSnapshotBasisStale,
     readSnapshotBasis,
 } from '@/entities/seo-snapshot/lib/snapshotBasis';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
+import {
+    currencyForSymbol,
+    isKrEquitySymbol,
+} from '@/shared/config/marketProfile/registry';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { fetchPageLastClose } from './lastClose';
 import {
     addFmpBudget,
     claimBasisForce,
@@ -42,10 +45,7 @@ import {
     NO_RECENT_NEWS_SKIP_TTL_SECONDS,
     TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
-import { fetchPageLastClose } from './lastClose';
-import { getDatabaseClient } from '@/shared/db/client';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
  * 프리웜 평이화 마감. 사용자 경로 기본값(15초)보다 넉넉한 30초. 이 호출은 여기 대신

@@ -1,10 +1,10 @@
 'use client';
 
+import type { ActionRecommendation } from '@y0ngha/siglens-core';
 /**
  * 매매 전략 섹션 — 계획 상태 배지, 포지션·진입·청산·손익비 문단, 보정 레벨, 계획 점검.
  */
 import { useTranslations } from 'next-intl';
-import type { ActionRecommendation } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { EyeIcon } from '@/shared/ui/EyeIcon';

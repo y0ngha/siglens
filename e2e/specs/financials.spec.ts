@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { E2E_FORCE_FINANCIALS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Financials tab E2E spec — Phase 7 of the financials feature.

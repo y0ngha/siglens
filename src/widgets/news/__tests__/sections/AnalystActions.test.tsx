@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import type { GradesEvent } from '@y0ngha/siglens-core';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import {
     fromAnalystAction,
     fromGradesEvent,

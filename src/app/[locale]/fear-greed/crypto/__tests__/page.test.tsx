@@ -10,6 +10,7 @@ vi.mock(
 );
 
 import { render, screen, within } from '@testing-library/react';
+import { CRYPTO_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import {
     describe,
     it,
@@ -18,17 +19,15 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-
 import FearGreedCryptoRoutePage, {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/fear-greed/crypto/page';
 import { getMarketFearGreedCryptoStatic } from '@/entities/market-fear-greed/api/marketFearGreedCryptoStaticCache';
 import type { MarketFearGreedCryptoHubView } from '@/entities/market-fear-greed/model';
-import { CRYPTO_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { SITE_URL } from '@/shared/lib/seo';
-import { koMessage } from '@/shared/test-utils/koMessage';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const mockLoader = getMarketFearGreedCryptoStatic as MockedFunction<
     typeof getMarketFearGreedCryptoStatic

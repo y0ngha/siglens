@@ -12,16 +12,17 @@ import type {
     ProposedSaleRecord,
     ThresholdStatusSummary,
 } from '../model';
+import { buildProposedSales, buildOfferings } from './snapshot/filings';
+import {
+    buildInsiderTransactions,
+    buildInsiderStats,
+} from './snapshot/insider';
 import type { AggregateRecord, HolderRecord } from './snapshot/institutional';
 import {
     buildInstitutionalQuarters,
     buildTopHolders,
     buildOptionQuarters,
 } from './snapshot/institutional';
-import {
-    buildInsiderTransactions,
-    buildInsiderStats,
-} from './snapshot/insider';
 import { buildLargeHolders } from './snapshot/largeHolders';
 import type { ShortInterestRecord, ShortVolumeRecord } from './snapshot/short';
 import {
@@ -30,7 +31,6 @@ import {
     buildFailsToDeliver,
     buildThresholdList,
 } from './snapshot/short';
-import { buildProposedSales, buildOfferings } from './snapshot/filings';
 import { finiteNumber } from './snapshot/snapshotRows';
 
 /** `assembleInvestorFlowsSnapshot`의 입력 — DB 행과 외부(FMP) 원본을 한데 모은 값. */

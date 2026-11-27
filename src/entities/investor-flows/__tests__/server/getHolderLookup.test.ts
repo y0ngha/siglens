@@ -22,17 +22,16 @@ vi.mock('../../api/investorFlowsSnapshotRepository', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import {
-    getHolderLookup,
-    lookupHolder,
-    type HolderLookupReads,
-} from '../../server/getHolderLookup';
 import {
     HOLDER_LOOKUP_MATCHES_MAX,
     HOLDER_LOOKUP_MAX_FILERS,
     HOLDER_LOOKUP_NOTE,
 } from '../../model';
+import {
+    getHolderLookup,
+    lookupHolder,
+    type HolderLookupReads,
+} from '../../server/getHolderLookup';
 
 const TODAY = '2026-11-21';
 const PERIOD = '2026-09-30';

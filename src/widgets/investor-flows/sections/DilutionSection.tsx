@@ -1,18 +1,18 @@
+import type { InvestorFlowsWindow, OfferingFiling } from '@y0ngha/siglens-core';
 /**
  * 증자·희석 공시 섹션.
  */
 import { useTranslations } from 'next-intl';
-import type { InvestorFlowsWindow, OfferingFiling } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FlowTooltip } from '../investorFlowsTooltips';
-import { formatInteger } from '../utils/flowFormat';
-import { DILUTION_HEADING_ID } from '../utils/sectionAnchors';
-import { buildOfferingRows, offeringKey } from '../utils/secFilings';
 import { OfferingRow } from '../ui/dilution/OfferingRow';
 import { OmittedNote } from '../ui/notes/OmittedNote';
+import { formatInteger } from '../utils/flowFormat';
+import { buildOfferingRows, offeringKey } from '../utils/secFilings';
+import { DILUTION_HEADING_ID } from '../utils/sectionAnchors';
 import { CollectingNotice } from './CollectingNotice';
 
 interface DilutionSectionProps {

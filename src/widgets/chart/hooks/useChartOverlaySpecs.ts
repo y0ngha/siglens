@@ -1,14 +1,11 @@
 'use client';
 
+import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 /**
  * AI 작도(`chartOverlays`) → 가격 차트에 그릴 선 스펙 계산 훅. 패턴 팔레트·레벨 제목 문구·
  * 꺼진/강조 항목·도달 판정을 묶어 화면용 스펙과 여백 계산용 제목 목록을 함께 낸다.
  */
 import { useMemo } from 'react';
-import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
-import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
-import { CHART_OVERLAY_COLORS } from '@/shared/lib/chartOverlayStyle';
 import {
     buildOverlayLineSpecs,
     hasDrawnLevels,
@@ -25,6 +22,9 @@ import {
     isReachedTarget,
     isReferenceTarget,
 } from '@/entities/analysis/lib/chartOverlays/reachedLevel';
+import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_OVERLAY_COLORS } from '@/shared/lib/chartOverlayStyle';
 import { useLevelTitleTexts } from './useLevelTitleTexts';
 
 interface UseChartOverlaySpecsParams {

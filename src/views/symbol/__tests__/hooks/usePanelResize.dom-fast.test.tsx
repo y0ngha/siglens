@@ -1,11 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
+import type React from 'react';
 import {
     usePanelResize,
     PANEL_MIN_WIDTH,
     PANEL_MAX_WIDTH,
     resolvePanelMaxWidth,
 } from '@/views/symbol/hooks/usePanelResize';
-import type React from 'react';
 
 describe('usePanelResize', () => {
     // 드래그 반영은 프레임당 한 번이다(`useDragListener`) — 각 mousemove 뒤에 프레임을 넘긴다.

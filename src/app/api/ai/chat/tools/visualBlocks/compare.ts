@@ -4,12 +4,12 @@ import {
     minusCalendarMonths,
     type Bar,
 } from '@y0ngha/siglens-core';
+import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import type {
     ChatCompareBlock,
     ChatCompareChartPeriod,
 } from '@/entities/chat-conversation/types';
-import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { StrikeVolumeChart } from '@/widgets/options/StrikeVolumeChart';
 import type { OptionsChain } from '@y0ngha/siglens-core';
+import { StrikeVolumeChart } from '@/widgets/options/StrikeVolumeChart';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

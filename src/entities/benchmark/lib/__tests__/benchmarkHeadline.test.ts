@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { BenchmarkContrast } from '../../types';
 import { BENCHMARK_FIXTURE } from '../../__tests__/fixtures/benchmarkFixture';
+import type { BenchmarkContrast } from '../../types';
 import {
     buildBenchmarkHeadline,
     classifyContrast,

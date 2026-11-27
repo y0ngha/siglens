@@ -5,20 +5,20 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     isRegularSessionOpen: vi.fn(),
 }));
 
-import { describe, expect, it, vi } from 'vitest';
 import type { Bar, BarsData } from '@y0ngha/siglens-core';
 import {
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     isRegularSessionOpen,
 } from '@y0ngha/siglens-core';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { describe, expect, it, vi } from 'vitest';
 import {
     hasFormingBar,
     lastBarIsForming,
     lastCompletedDailyClose,
     quantizeBarsDataToLastClosed,
 } from '@/entities/bars/lib/quantizeBars';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 
 const mockOpen = vi.mocked(isRegularSessionOpen);
 const now = new Date('2026-06-05T18:00:00Z');

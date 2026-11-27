@@ -43,19 +43,19 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { revalidateTag } from 'next/cache';
 import { runIndicatorTranslation } from '@y0ngha/siglens-core';
+import { revalidateTag } from 'next/cache';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
 import {
     isIndicatorTranslationPending,
     markIndicatorTranslationPending,
 } from '@/entities/economy/api/indicatorTranslationFlag';
-import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
-import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
 import {
     __resetIndicatorWhitelistCacheForTests,
     MAX_INDICATOR_NAME_LENGTH,
 } from '@/entities/economy/api/isTranslatableCalendarIndicator';
+import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
 
 /** 화면 캘린더 창에 실제로 걸린 이벤트 — 기간 접미사는 base 추출로 떨어진다. */
 const CALENDAR_EVENT = 'Some Obscure Index YoY (Sep)';

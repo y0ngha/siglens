@@ -1,8 +1,7 @@
+import { parse } from '@babel/parser';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
-import { parse } from '@babel/parser';
 
 /**
  * **코드 규칙 엔진.** AST로 판정하는 코드 규칙을 한 곳에서 돌린다.

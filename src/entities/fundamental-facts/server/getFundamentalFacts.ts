@@ -9,17 +9,17 @@ import { getNextEarningsSchedule } from '@/entities/earnings-report/api';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getInvestorFlowsScorecard } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
-import { loadPageGradesConsensus } from '@/shared/api/fmp/loadPageGradesConsensus';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { loadPageGradesConsensus } from '@/shared/api/fmp/loadPageGradesConsensus';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_DAY, SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     buildFundamentalFacts,
     isFundamentalIndexable,
 } from '../lib/buildFundamentalFacts';
 import type { FundamentalFactsInput, FundamentalFactsResult } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 목표가 컨센서스·요약 정적 캐시(`fundamental:pt-consensus`·`fundamental:pt-summary`)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.

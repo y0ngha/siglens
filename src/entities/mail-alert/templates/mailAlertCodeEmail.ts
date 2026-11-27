@@ -1,7 +1,7 @@
 import { EMAIL_VERIFICATION_PENDING_TTL_SECONDS } from '@/entities/auth/lib/authUseCaseConstants';
 import type { EmailTranslator } from '@/entities/email-token/templates/emailTranslator';
-import type { EmailMessage } from '@/shared/email/types';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
+import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 

@@ -16,10 +16,9 @@ import type {
     FundamentalValuationMetrics,
     GradesEvent,
 } from '@y0ngha/siglens-core';
+import type { FmpEarningsReportItem } from '@/shared/api/fmp/fundamentalClient';
 import type { FundamentalProviderWithRawPeers } from '@/shared/api/fmp/fundamentalProvider.types';
 import type { GradesConsensusWithSource } from '@/shared/api/fmp/gradesConsensusSource';
-import type { FmpEarningsReportItem } from '@/shared/api/fmp/fundamentalClient';
-import { getYahooFundamentals } from './yahooFundamentalSource';
 import {
     mapAnalystEstimate,
     mapCashFlow,
@@ -32,6 +31,7 @@ import {
     mapRatios,
     type YahooEarningsItem,
 } from './yahooFundamentalMap';
+import { getYahooFundamentals } from './yahooFundamentalSource';
 
 /** FMP 어댑터의 `EARNINGS_REPORT_LIMIT`과 같은 기본값. */
 const DEFAULT_EARNINGS_LIMIT = 8;

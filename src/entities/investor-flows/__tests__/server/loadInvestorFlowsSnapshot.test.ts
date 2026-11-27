@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { InvestorFlowsFmpProvider } from '@/shared/api/fmp/investorFlowsProvider.types';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
+import type { InvestorFlowsFmpProvider } from '@/shared/api/fmp/investorFlowsProvider.types';
 import {
     DbFmpInvestorFlowsDataProvider,
     loadInvestorFlowsSnapshot,

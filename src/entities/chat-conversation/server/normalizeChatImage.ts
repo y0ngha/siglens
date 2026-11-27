@@ -1,5 +1,4 @@
 import 'server-only';
-
 import sharp from 'sharp';
 import {
     CHAT_IMAGE_SERVER_MAX_EDGE,

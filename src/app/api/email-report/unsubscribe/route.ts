@@ -4,8 +4,8 @@ import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret
 import { REPORT_UNSUBSCRIBE_PAGE_PATH } from '@/entities/email-report/lib/reportLinks';
 import { unsubscribeWithSignature } from '@/entities/email-report/unsubscribeWithSignature';
 import { getDatabaseClient } from '@/shared/db/client';
-import { SITE_URL } from '@/shared/lib/seo';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { SITE_URL } from '@/shared/lib/seo';
 
 const {
     HTTP_STATUS_OK,

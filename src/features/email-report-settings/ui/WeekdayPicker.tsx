@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import type { Weekday } from '@/entities/email-report/model';
 import { cn } from '@/shared/lib/cn';
 import type { WeekdayOption } from '../hooks/useEmailReportSettingsForm';

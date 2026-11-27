@@ -9,7 +9,6 @@ import { createTranslator } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { describe, expect, it, vi } from 'vitest';
 import ko from '../../../../../messages/ko.json';
-
 import {
     buildReportScenarios,
     EMPTY_SKILL_COUNTS,

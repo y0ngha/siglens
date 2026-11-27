@@ -1,9 +1,9 @@
-import { HERO_QUICK_LINKS } from '../../utils/heroQuickLinks';
-import { koMessage } from '@/shared/test-utils/koMessage';
 import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
 } from '@/shared/config/assetClassNav';
+import { koMessage } from '@/shared/test-utils/koMessage';
+import { HERO_QUICK_LINKS } from '../../utils/heroQuickLinks';
 
 describe('HERO_QUICK_LINKS', () => {
     it('pins the exact label for every hero link', () => {

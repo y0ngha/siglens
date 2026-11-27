@@ -1,8 +1,8 @@
+import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import type { ComponentProps, ReactNode } from 'react';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 
 interface SymbolDegradedShellProps extends Pick<
     ComponentProps<typeof CrossLinkCards>,

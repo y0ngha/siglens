@@ -8,9 +8,9 @@ import { scheduleOperatorNotification } from '@/shared/email/operatorNotifier';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzleFeedbackRepository } from '../api';
-import { buildVocNotification } from '../templates/operator-mail/buildVocNotification';
 import { parseVocInput } from '../lib/validation';
 import { checkFeedbackRateLimit } from '../server/rateLimit';
+import { buildVocNotification } from '../templates/operator-mail/buildVocNotification';
 import type { FeedbackActionResult } from '../types';
 
 /**

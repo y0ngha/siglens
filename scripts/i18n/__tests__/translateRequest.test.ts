@@ -1,7 +1,7 @@
 import { ThinkingLevel } from '@google/genai';
 import { describe, expect, it } from 'vitest';
-import { buildTranslateRequest as buildCatalogRequest } from '../lib/translateRequest.mjs';
 import { buildTranslateRequest as buildDbRequest } from '../../../db/scripts/lib/translateRequest';
+import { buildTranslateRequest as buildCatalogRequest } from '../lib/translateRequest.mjs';
 
 /**
  * 두 번역 스크립트의 Gemini 요청 모양을 고정한다. `gemini-2.5-flash`는

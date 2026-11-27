@@ -1,15 +1,15 @@
-import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
-import { type SitemapIndexEntry } from '@/entities/sitemap-entry/model';
-import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
+import { NextResponse } from 'next/server';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 import {
     loadCryptoChildEntries,
     loadPopularChildEntries,
     loadStaticChildEntries,
 } from '@/app/api/sitemap/_shared/childEntries';
-import { SITE_URL } from '@/shared/lib/seo';
-import { NextResponse } from 'next/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
-import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
+import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
+import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
+import { type SitemapIndexEntry } from '@/entities/sitemap-entry/model';
+import { SITE_URL } from '@/shared/lib/seo';
 
 export const dynamic = 'force-dynamic';
 

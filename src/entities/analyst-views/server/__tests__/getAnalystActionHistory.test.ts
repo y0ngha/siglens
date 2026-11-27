@@ -10,7 +10,6 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode: () => e2e.fake }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getAnalystActionHistory } from '../getAnalystActionHistory';
 
 const summary = (actions: unknown[]) => ({

@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
-import { stubNoticesFetch } from './noticesFetchStub';
 import type { NoticeRecord } from '@/entities/notice/model/types';
-import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
+import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
+import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
+import { stubNoticesFetch } from './noticesFetchStub';
 
 const { mockPathname } = vi.hoisted(() => ({
     mockPathname: vi.fn(() => '/'),

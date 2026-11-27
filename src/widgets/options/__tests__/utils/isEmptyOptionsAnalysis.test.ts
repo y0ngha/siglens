@@ -1,5 +1,5 @@
-import { isEmptyOptionsAnalysis } from '@/widgets/options/utils/isEmptyOptionsAnalysis';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
+import { isEmptyOptionsAnalysis } from '@/widgets/options/utils/isEmptyOptionsAnalysis';
 
 const EMPTY: OptionsAnalysisResponse = {
     summary: '',

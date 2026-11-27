@@ -1,9 +1,9 @@
+import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import {
     buildOrganizationCoreJsonLd,
     ORGANIZATION_JSON_LD_ID,
     SITE_URL,
 } from '@/shared/lib/seo';
-import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
 import { JsonLd } from '@/shared/ui/JsonLd';
 
 export function SiteJsonLd() {

@@ -102,7 +102,8 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-import { koMessage } from '@/shared/test-utils/koMessage';
+import { render, screen } from '@testing-library/react';
+import { isValidElement } from 'react';
 import {
     describe,
     it,
@@ -111,10 +112,9 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import { isValidElement } from 'react';
-import { render, screen } from '@testing-library/react';
 import Home from '@/app/[locale]/(home)/page';
 import { countSkillFiles, loadShowcaseSkills } from '@/entities/skill/api';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const mockCountSkillFiles = countSkillFiles as MockedFunction<
     typeof countSkillFiles

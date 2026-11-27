@@ -23,18 +23,17 @@ vi.mock('next/server', () => ({
     },
 }));
 
-import type { MockedFunction } from 'vitest';
-
+import { NextResponse, type NextRequest } from 'next/server';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { NextResponse, type NextRequest } from 'next/server';
+import type { MockedFunction } from 'vitest';
 import { proxy } from '@/proxy';
-import { LOCALES } from '@/shared/i18n/locales';
 import {
     AUTH_REQUIRED_PATHS,
     GUEST_ONLY_PATHS,
     predictGuardedLanding,
 } from '@/shared/config/authGuardPaths';
+import { LOCALES } from '@/shared/i18n/locales';
 
 const mockRedirect = NextResponse.redirect as MockedFunction<
     typeof NextResponse.redirect

@@ -44,8 +44,8 @@ vi.mock('@/entities/seo-snapshot/server/getSnapshotStatic', () => ({
 vi.mock('next/navigation', () => ({ notFound: vi.fn() }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { generateMetadata } from '@/app/[locale]/[symbol]/fear-greed/page';
 import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
+import { generateMetadata } from '@/app/[locale]/[symbol]/fear-greed/page';
 
 // 실제 `computeFearGreedIndex`가 점수를 내는 봉 수(300). 같은 fixture를 20봉으로 자르면
 // `buildTechnicalFacts`는 값을 내지만 점수는 null이다.

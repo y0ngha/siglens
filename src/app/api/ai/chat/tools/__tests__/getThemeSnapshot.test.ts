@@ -15,15 +15,14 @@ vi.mock('@/entities/bars/lib/quantizeBars', () => ({
     lastBarIsForming: () => forming.value,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { AGENT_THEMES, type ThemeSnapshot } from '@y0ngha/siglens-core';
-import { isRecord } from '@/shared/lib/isRecord';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     getThemeSnapshotTool,
     loadThemeSnapshot,
 } from '@/app/api/ai/chat/tools/getThemeSnapshot';
 import { TOOL_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+import { isRecord } from '@/shared/lib/isRecord';
 
 const ctx = {
     userId: 'u',

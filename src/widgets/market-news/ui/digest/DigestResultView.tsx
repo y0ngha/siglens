@@ -1,16 +1,16 @@
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 완성된 다이제스트 본문.
  */
 import { useTranslations } from 'next-intl';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {
     SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from '@/shared/lib/sentimentDisplay';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { DigestEventList } from './DigestEventList';
 
 interface DigestResultViewProps {

@@ -1,3 +1,8 @@
+import type { InlinedRequest, InlinedResponse } from '@google/genai';
+import { GoogleGenAI, JobState, ThinkingLevel } from '@google/genai';
+import { isNull, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { fileURLToPath } from 'node:url';
 /**
  * Re-runnable seed: translate crypto asset English names to Korean via Gemini
  * Batch API and UPSERT the results into `crypto_assets.korean_name`.
@@ -30,14 +35,9 @@
  *      still run.
  */
 import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { isNull, sql } from 'drizzle-orm';
-import type { InlinedRequest, InlinedResponse } from '@google/genai';
-import { GoogleGenAI, JobState, ThinkingLevel } from '@google/genai';
-import { fileURLToPath } from 'node:url';
-import { cryptoAssets } from '../src/shared/db/schema';
-import { MS_PER_HOUR, MS_PER_SECOND } from '../src/shared/config/time';
 import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
+import { MS_PER_HOUR, MS_PER_SECOND } from '../src/shared/config/time';
+import { cryptoAssets } from '../src/shared/db/schema';
 
 // Env reads are deferred to run() (not module-level throws) so the pure helpers
 // below (extractKoreanName / buildUpsertValues) can be imported by unit tests

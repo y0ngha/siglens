@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { METHODOLOGY_PATH } from '@/shared/lib/legal';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 import type {
     ExtremeZoneRecord,

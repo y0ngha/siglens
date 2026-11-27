@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
-import { useChartOverlays } from '../../hooks/useChartOverlays';
 import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
+import { useChartOverlays } from '../../hooks/useChartOverlays';
 
 const mockRemoveSeries = vi.fn();
 const mockCreateSeriesMarkers = vi.fn();

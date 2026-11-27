@@ -1,9 +1,9 @@
 'use client';
 
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
-import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
+import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 
 /**
  * 종목 진입 골격(`SymbolEntrySkeleton`)의 헤더 자리 — `SymbolLayoutHeader`의 바깥 모양을 그대로 본뜬

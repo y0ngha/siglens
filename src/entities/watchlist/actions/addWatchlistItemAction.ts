@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { WATCHLIST_MAX_MEMBER } from '@/shared/config/watchlist';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzleWatchlistRepository } from '../api';
 import { isRawWatchlistInput } from '../lib/isRawWatchlistInput';
@@ -12,7 +13,6 @@ import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
 import { toWatchlistView } from '../lib/toWatchlistView';
 import { validateWatchlistSymbol } from '../lib/validateWatchlistSymbol';
 import type { AddWatchlistResult, RawWatchlistInput } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type CompanyNameResolution =
     | { status: 'ok'; companyName: string | null }

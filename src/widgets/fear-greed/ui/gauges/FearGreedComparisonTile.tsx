@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import type { ComparisonTile } from '../../utils/comparisonTiles';
 import { formatTileDate } from '../../utils/formatTileDate';
 

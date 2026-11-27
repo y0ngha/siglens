@@ -1,5 +1,6 @@
 'use client';
 
+import type { BenchmarkItem } from '@/entities/benchmark/types';
 /**
  * 문항 탐색기의 URL 동기화 상태(필터·펼친 문항) 훅.
  */
@@ -7,7 +8,6 @@ import {
     usePickUntilPopstate,
     useUrlSearchParam,
 } from '@/shared/hooks/useUrlSearchParam';
-import type { BenchmarkItem } from '@/entities/benchmark/types';
 import {
     BENCHMARK_FILTER_INITIAL,
     BENCHMARK_PARAMS,

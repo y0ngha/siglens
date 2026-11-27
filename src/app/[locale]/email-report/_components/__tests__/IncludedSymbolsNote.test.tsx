@@ -17,7 +17,6 @@ vi.mock('@/app/[locale]/email-report/_lib/loadReportPreview', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { ReportPreviewLoader } from '../IncludedSymbolsNote';

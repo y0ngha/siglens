@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';

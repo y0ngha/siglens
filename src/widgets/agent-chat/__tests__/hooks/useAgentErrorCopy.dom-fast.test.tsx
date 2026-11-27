@@ -2,10 +2,10 @@ import { renderHook } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import ko from '../../../../../messages/ko.json';
 import { useAgentErrorCopy } from '@/widgets/agent-chat/hooks/useAgentErrorCopy';
 import { AGENT_ERROR_RETRYABLE } from '@/widgets/agent-chat/utils/errorCopy';
 import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/utils/guestTurnLimit';
+import ko from '../../../../../messages/ko.json';
 
 const copy = ko.widgets['agent-chat'].ChatShell;
 

@@ -1,10 +1,10 @@
 import type { OAuthProvider } from '@/shared/lib/types';
-import { googleOAuthRevokerAdapter } from './googleRevoker';
 import type {
     OAuthRevoker,
     OAuthRevokerAdapter,
     RevokeTokenParams,
 } from '../lib/revokerTypes';
+import { googleOAuthRevokerAdapter } from './googleRevoker';
 
 const ADAPTER_MAP: Partial<Record<OAuthProvider, OAuthRevokerAdapter>> = {
     google: googleOAuthRevokerAdapter,

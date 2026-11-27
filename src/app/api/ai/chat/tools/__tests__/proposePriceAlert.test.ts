@@ -40,7 +40,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { proposePriceAlertTool } from '@/app/api/ai/chat/tools/proposePriceAlert';
 import { isChatPriceAlertProposalBlock } from '@/entities/chat-conversation/lib/chartBlock';
 import type { ChatBlock } from '@/entities/chat-conversation/types';

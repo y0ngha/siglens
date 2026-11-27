@@ -1,21 +1,21 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import { SampleFooterText } from '@/shared/ui/SampleFooterText';
+import { Suspense } from 'react';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
-import { useFearGreedShareRegistration } from './hooks/useFearGreedShareRegistration';
-import { FearGreedHero } from './FearGreedHero';
-import { LazyFearGreedHistoricalChart } from './LazyFearGreedHistoricalChart';
-import { chartWindow } from './utils/chartWindow';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
+import { FearGreedHero } from './FearGreedHero';
+import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
+import { useFearGreedShareRegistration } from './hooks/useFearGreedShareRegistration';
+import { LazyFearGreedHistoricalChart } from './LazyFearGreedHistoricalChart';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { FearGreedPageSkeleton } from './ui/page/FearGreedPageSkeleton';
 import { FearGreedUnavailable } from './ui/page/FearGreedUnavailable';
+import { chartWindow } from './utils/chartWindow';
 
 interface FearGreedPageProps {
     symbol: string;

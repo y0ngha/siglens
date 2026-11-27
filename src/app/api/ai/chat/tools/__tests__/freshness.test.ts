@@ -1,6 +1,6 @@
-import { assessFreshness, staleKrListingDate } from '../freshness';
 import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
+import { assessFreshness, staleKrListingDate } from '../freshness';
 
 const NOW = Date.UTC(2026, 8, 21, 12, 0, 0);
 

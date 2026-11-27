@@ -1,10 +1,10 @@
 'use client';
 
+import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
 /**
  * 재무제표 연간/분기 토글 상태 훅 — 분기 데이터는 처음 전환할 때 한 번만 지연 조회한다.
  */
 import { useState, useRef } from 'react';
-import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
 import { fetchAndApplyQuarterSnapshot } from '../utils/financialsPeriodUtils';
 
 interface UseFinancialsPeriodResult {

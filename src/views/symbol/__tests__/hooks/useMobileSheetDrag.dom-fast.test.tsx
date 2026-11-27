@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
-import { useMobileSheetDrag } from '@/views/symbol/hooks/useMobileSheetDrag';
 import type { RefObject } from 'react';
+import { useMobileSheetDrag } from '@/views/symbol/hooks/useMobileSheetDrag';
 
 function createMockRef<T>(value: T | null): RefObject<T | null> {
     return { current: value };

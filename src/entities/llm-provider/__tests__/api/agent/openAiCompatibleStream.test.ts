@@ -7,15 +7,14 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
+import { AGENT_TOOL_SPECS, type AgentStreamEvent } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { AGENT_NARRATION_HOLD_CHARS } from '@/entities/llm-provider/lib/agentStream';
 import {
     AGENT_PROVIDER_STALLED,
     AGENT_STALL_TIMEOUT_MS,
     streamOpenAiCompatibleAgent,
 } from '@/entities/llm-provider/api/agent/openAiCompatibleStream';
-import { AGENT_TOOL_SPECS, type AgentStreamEvent } from '@y0ngha/siglens-core';
+import { AGENT_NARRATION_HOLD_CHARS } from '@/entities/llm-provider/lib/agentStream';
 
 const REQ = { baseURL: 'https://x', messages: [], extraBody: {} };
 

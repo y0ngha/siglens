@@ -41,10 +41,9 @@ vi.mock('next/link', () => ({
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
-
 import { SEARCH_PLACEHOLDER_KEY } from '@/features/ticker-search/lib/searchLabels';
+import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 /**

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
     enterSymbolTabMetadata,
@@ -20,16 +19,15 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { cn } from '@/shared/lib/cn';
-import { buildSymbolPositionSeoContent } from '@/shared/lib/seoSymbol';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
+import { buildSymbolPositionSeoContent } from '@/shared/lib/seoSymbol';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { formatAmountAligned } from '@/widgets/portfolio-position/utils/buildingPriceFormat';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
-
+import { formatAmountAligned } from '@/widgets/portfolio-position/utils/buildingPriceFormat';
 import {
     resolveCurrentPricePosition,
     resolvePriceRange,

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { IncomeStatementRow } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     EARNINGS_REACTIONS_COUNT,
     earningsReactions,

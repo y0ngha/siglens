@@ -1,5 +1,5 @@
-import { quoteFromBars } from '@/features/watchlist/lib/quoteFromBars';
 import type { Bar } from '@y0ngha/siglens-core';
+import { quoteFromBars } from '@/features/watchlist/lib/quoteFromBars';
 
 const bar = (close: number): Bar => ({
     time: 1,

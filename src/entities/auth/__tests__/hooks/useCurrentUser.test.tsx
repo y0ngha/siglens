@@ -6,12 +6,12 @@ vi.mock('@/entities/auth/actions/currentUserAction', () => ({
     currentUserAction: mockCurrentUserAction,
 }));
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 function makeWrapper() {
     const client = new QueryClient({

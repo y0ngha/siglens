@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ForgotPasswordForm } from '@/features/auth-password-reset/ui/ForgotPasswordForm';
 import { useForgotPasswordForm } from '@/features/auth-password-reset/hooks/useForgotPasswordForm';
+import { ForgotPasswordForm } from '@/features/auth-password-reset/ui/ForgotPasswordForm';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 
 vi.mock('@/shared/db/client', () => ({

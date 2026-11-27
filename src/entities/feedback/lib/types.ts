@@ -1,9 +1,9 @@
+import type { Locale } from '@/shared/i18n/locales';
 import type {
     FeedbackDownReason,
     FeedbackSurface,
     FeedbackVote,
 } from '../types';
-import type { Locale } from '@/shared/i18n/locales';
 
 export type FeedbackKind = 'voc' | 'ai_response';
 

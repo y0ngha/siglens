@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defined } from '@/shared/test-utils/defined';
 import {
     computeKrValuation,
     providerKrValuation,
@@ -8,17 +9,16 @@ import {
     extractShareTotals,
     extractStatementFigures,
 } from '../../lib/dartAmounts';
-import { defined } from '@/shared/test-utils/defined';
 import { refreshShareCounts } from '../../lib/refreshShareCounts';
 import type { StatementFigures } from '../../model';
+import hpspAnnualOfs from '../fixtures/hpsp-2025-annual-ofs.json';
+import hpspH1Ofs from '../fixtures/hpsp-2026-h1-ofs.json';
+import hpspShares from '../fixtures/hpsp-2026-h1-stock-totals.json';
 import samsungCardAnnual from '../fixtures/samsungcard-2025-annual-cfs.json';
 import samsungCardH1 from '../fixtures/samsungcard-2026-h1-cfs.json';
 import samsungCardH1Shares from '../fixtures/samsungcard-2026-h1-stock-totals.json';
 import samsungCardQ1 from '../fixtures/samsungcard-2026-q1-cfs.json';
 import samsungCardQ3 from '../fixtures/samsungcard-2026-q3-cfs.json';
-import hpspShares from '../fixtures/hpsp-2026-h1-stock-totals.json';
-import hpspH1Ofs from '../fixtures/hpsp-2026-h1-ofs.json';
-import hpspAnnualOfs from '../fixtures/hpsp-2025-annual-ofs.json';
 
 /**
  * 삼성카드(029780) 실 DART 응답에서 계산한 값을 네이버 증권(2026-11-22, 반기 기준) 표시값과 대조한다 — EPS 5,358원, BPS 83,446원.

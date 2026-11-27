@@ -4,6 +4,19 @@ import {
     splitAgentFollowUps,
     type Tier,
 } from '@y0ngha/siglens-core';
+import {
+    AgentTurnError,
+    agentEventStream,
+} from '@/app/api/ai/chat/agentEventStream';
+import {
+    agentGlobalLimitsFromEnv,
+    createAgentCounters,
+} from '@/app/api/ai/chat/counters';
+import { createFollowUpTextFilter } from '@/app/api/ai/chat/followUps';
+import {
+    availableToolNames,
+    createToolExecutor,
+} from '@/app/api/ai/chat/tools/chatTools';
 import type {
     ChatMessageRecord,
     NewChatMessage,
@@ -14,27 +27,14 @@ import {
     AGENT_MODEL,
     type AgentProviderState,
 } from '@/entities/llm-provider/api/agent/router';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
-import {
-    AgentTurnError,
-    agentEventStream,
-} from '@/app/api/ai/chat/agentEventStream';
-import {
-    agentGlobalLimitsFromEnv,
-    createAgentCounters,
-} from '@/app/api/ai/chat/counters';
-import {
-    availableToolNames,
-    createToolExecutor,
-} from '@/app/api/ai/chat/tools/chatTools';
-import { createFollowUpTextFilter } from '@/app/api/ai/chat/followUps';
-import type { TurnSlot } from './turnSlots';
 import { persistedStatusFor } from './persistedStatus';
 import { isConversationGone, type ReadyTurn } from './prepareTurn';
 import { createTurnCharts } from './turnCharts';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import type { TurnSlot } from './turnSlots';
 
 /**
  * Answer length cap per provider call. Core's default (4,096) cut long

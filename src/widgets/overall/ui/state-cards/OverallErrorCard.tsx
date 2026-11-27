@@ -1,10 +1,10 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { OverallAxis } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** OverallAxis → `shared.symbolTab` 카탈로그 키. 탭바와 같은 라벨을 쓴다. */
 const AXIS_TAB_KEY: Record<OverallAxis, string> = {

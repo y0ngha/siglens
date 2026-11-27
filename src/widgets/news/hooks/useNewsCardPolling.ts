@@ -2,16 +2,16 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
-import type { NewsDisplayItem } from '@/shared/lib/types';
-import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import type { CardListPollPolicy } from '@/entities/news-article/model';
 import {
     decideCardListPoll,
     INITIAL_CARD_POLL_COUNTERS,
 } from '@/entities/news-article/lib/cardPollDecision';
+import type { CardListPollPolicy } from '@/entities/news-article/model';
+import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout

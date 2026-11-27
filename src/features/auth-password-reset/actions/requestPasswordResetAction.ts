@@ -1,18 +1,18 @@
 'use server';
 
-import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { getTranslations } from 'next-intl/server';
-import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
-import { createEmailDispatcher } from '@/shared/email/dispatcher';
-import { getDatabaseClient } from '@/shared/db/client';
-import { afterWithDrain } from '@/shared/lib/afterWithDrain';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 재설정 메일 발송을 요청한다. 형식 오류와 한도 초과(`rate_limited`)만

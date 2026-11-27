@@ -1,7 +1,6 @@
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
-
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import { RELEASE_ID } from '@/shared/config/release';
 import { SECONDS_PER_DAY } from '@/shared/config/time';

@@ -1,7 +1,7 @@
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { logActionError } from '@/shared/lib/logActionError';
 import { resolveTierOnly } from '@/shared/lib/byokGate';
+import { logActionError } from '@/shared/lib/logActionError';
 import { sseResponse } from './streamResponses';
 
 /** `e2eTechnicalResponse`가 fixture를 고르고 개인화 여부를 근사하는 데 쓰는 요청 정보. */

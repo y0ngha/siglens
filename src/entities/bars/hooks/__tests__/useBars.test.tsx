@@ -2,13 +2,13 @@ vi.mock('@/entities/bars/actions/getBarsAction', () => ({
     getBarsAction: vi.fn(),
 }));
 
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { useBars } from '@/entities/bars/hooks/useBars';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 
 const MOCK_BARS_DATA: BarsData = {
     bars: [

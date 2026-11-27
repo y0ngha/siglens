@@ -1,10 +1,10 @@
 import 'server-only';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { MS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { fetchCryptoAssetList } from '../cryptoAssetApi';
 import { CRYPTO_FMP_LIST_CACHE_KEY } from '../lib/cacheKeys';
 import type { CryptoAssetRow } from '../lib/fmpCryptoListClient';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** Shape of a single entry in the FMP cryptocurrency list. */
 export interface FmpCryptoEntry {

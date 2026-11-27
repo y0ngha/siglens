@@ -1,13 +1,13 @@
+import { screen } from '@testing-library/react';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import koMessages from '../../../../messages/ko.json';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import enMessages from '../../../../messages/en.json';
 import jaMessages from '../../../../messages/ja.json';
+import koMessages from '../../../../messages/ko.json';
 import zhMessages from '../../../../messages/zh.json';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { useSkillLabel } from '@/shared/i18n/skillLabel';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
 

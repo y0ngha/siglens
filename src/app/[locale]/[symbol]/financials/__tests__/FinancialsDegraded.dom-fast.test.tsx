@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 
 describe('FinancialsDegraded', () => {

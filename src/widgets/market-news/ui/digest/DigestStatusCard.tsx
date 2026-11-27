@@ -3,9 +3,9 @@
  */
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { Spinner } from '@/shared/ui/Spinner';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { Spinner } from '@/shared/ui/Spinner';
 
 /** 로딩 상태 전용 제목 id(`market-news-digest-status-heading`)로 스크린리더에 구분되는 맥락을 준다. */
 export function DigestStatusCard() {

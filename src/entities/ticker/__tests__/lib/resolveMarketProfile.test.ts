@@ -3,9 +3,8 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
 }));
 
 import { describe, it, expect, vi } from 'vitest';
-
-import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';
 
 describe('resolveMarketProfile', () => {
     it('returns "crypto" for a crypto-profile asset', async () => {

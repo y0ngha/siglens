@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { IndicatorResult } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { dropLastIndicatorBar } from '../../lib/dropLastIndicatorBar';
 
 function drop(input: Record<string, unknown>): Record<string, unknown> {

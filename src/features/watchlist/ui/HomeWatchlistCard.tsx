@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import { PLACEHOLDER_ON_CARD, SURFACE_CARD } from '@/shared/lib/surfaceStyles';

@@ -1,10 +1,10 @@
-// @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import type {
     InvestorFlowsSnapshot,
     SqueezeRiskScore,
 } from '@y0ngha/siglens-core';
+// @vitest-environment jsdom
+import { describe, expect, it, vi } from 'vitest';
 import type { CollectingArms } from '@/entities/investor-flows/model';
 import { DilutionSection } from '../sections/DilutionSection';
 import { FailsToDeliverBlock } from '../sections/FailsToDeliverBlock';

@@ -19,9 +19,8 @@ vi.mock('@/entities/auth/lib/findUserBySessionToken', () => ({
     findUserBySessionToken: vi.fn(),
 }));
 
-import type { MockedFunction } from 'vitest';
-
 import { cookies } from 'next/headers';
+import type { MockedFunction } from 'vitest';
 import { findUserBySessionToken } from '@/entities/auth/lib/findUserBySessionToken';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { resetDatabaseClientForTests } from '@/shared/db/client';

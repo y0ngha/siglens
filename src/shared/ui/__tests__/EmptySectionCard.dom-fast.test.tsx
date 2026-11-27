@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 
 describe('EmptySectionCard', () => {
     it('renders title with provided headingClassName and the shared empty message', () => {

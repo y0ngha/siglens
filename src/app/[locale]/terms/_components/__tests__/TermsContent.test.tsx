@@ -43,11 +43,11 @@ vi.mock('@/widgets/legal/UntranslatedNotice', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import type { TermsRecord } from '@/entities/terms/api';
 import {
     TERMS_EYEBROW,
     TermsContent,
 } from '@/app/[locale]/terms/_components/TermsContent';
+import type { TermsRecord } from '@/entities/terms/api';
 
 const record = (overrides: Partial<TermsRecord> = {}): TermsRecord => ({
     id: 'id-1',

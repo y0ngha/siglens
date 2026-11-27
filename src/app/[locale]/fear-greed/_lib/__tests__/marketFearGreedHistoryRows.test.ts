@@ -1,6 +1,6 @@
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import type { ScoredReading } from '@/entities/market-fear-greed/lib/publishableHistory';
 import { FEAR_GREED_SESSIONS_PER_YEAR } from '@/entities/market-fear-greed/lib/buildMarketFearGreedComparisons';
+import type { ScoredReading } from '@/entities/market-fear-greed/lib/publishableHistory';
 import {
     chartHistory,
     HISTORY_CHART_POINTS,

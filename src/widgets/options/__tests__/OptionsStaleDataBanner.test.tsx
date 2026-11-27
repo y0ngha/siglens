@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { renderToString } from 'react-dom/server';
-import koMessages from '../../../../messages/ko.json';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { OptionsStaleDataBanner } from '@/widgets/options/OptionsStaleDataBanner';
+import koMessages from '../../../../messages/ko.json';
 
 vi.mock('@/shared/lib/options/marketHoursDisplay', () => ({
     ET_MARKET_HOURS_DISPLAY: '9:30~16:00 ET',

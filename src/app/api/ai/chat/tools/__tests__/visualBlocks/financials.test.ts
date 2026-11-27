@@ -26,16 +26,15 @@ vi.mock('@/entities/earnings-report/server/earningsReportsRepository', () => ({
     },
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import type { IncomeStatementRow } from '@y0ngha/siglens-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildFinancialsBlock,
     FINANCIAL_QUARTERS_MAX,
     financialsQuartersFrom,
 } from '@/app/api/ai/chat/tools/visualBlocks/financials';
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { VisualBuildEnv } from '@/app/api/ai/chat/tools/visualBlocks/types';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 const env: VisualBuildEnv = {
     locale: 'ko',

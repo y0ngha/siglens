@@ -1,6 +1,6 @@
 import 'server-only';
-import { getRedisClient } from './redisClient';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { getRedisClient } from './redisClient';
 
 /** 고정 Redis 키를 사용하는 boolean-flag 핸들 (인수 없음 모드). */
 export interface RedisFlagHandle {

@@ -1,5 +1,5 @@
-import { useTranslations } from 'next-intl';
 import type { BacktestRunInfo } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import type { BacktestStats } from '@/entities/backtest-case/model';
 import { cn } from '@/shared/lib/cn';
 import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';

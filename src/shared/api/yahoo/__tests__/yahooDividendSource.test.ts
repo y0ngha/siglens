@@ -12,7 +12,6 @@ vi.mock('@/shared/api/yahoo/createYahooClient', () => ({
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { getYahooDividendData } from '@/shared/api/yahoo/yahooDividendSource';
 import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
 

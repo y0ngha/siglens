@@ -1,13 +1,13 @@
 import type { Mock } from 'vitest';
-import type { SiglensDatabase } from '@/shared/db/types';
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import {
     DrizzleSharedAnalysisRepository,
     SHARED_ANALYSIS_PRUNE_BATCH_SIZE,
     SHARED_ANALYSIS_PURGE_GRACE_DAYS,
 } from '@/entities/shared-analysis/api';
-import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
-import { MS_PER_DAY } from '@/shared/config/time';
 import type { SharedAnalysisSnapshot } from '@/entities/shared-analysis/types';
+import { MS_PER_DAY } from '@/shared/config/time';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const snapshot = {
     kind: 'chart',

@@ -1,10 +1,10 @@
 'use client';
 
+import type { Trend } from '@y0ngha/siglens-core';
 /**
  * 추세(강세/약세/보합) 배지. 알 수 없는 값이면 아무것도 그리지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { Trend } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { resolveTrendDisplay } from '../utils/trendUtils';
 

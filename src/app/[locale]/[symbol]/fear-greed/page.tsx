@@ -1,13 +1,12 @@
-import type { BarsData } from '@y0ngha/siglens-core';
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import {
     dehydrate,
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
+import type { BarsData } from '@y0ngha/siglens-core';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { ErrorBoundary } from 'react-error-boundary';
-
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
     enterSymbolTabMetadata,
@@ -17,11 +16,11 @@ import {
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import {
     clientSymbolFearGreed,
     symbolFearGreedInputs,
 } from '@/entities/bars/lib/symbolFearGreed';
+import { getSessionBarsStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
@@ -34,6 +33,7 @@ import {
 } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveSymbolFearGreedSeoContent } from '@/shared/lib/seoSymbol';
 import { symbolMetadataFromSeo } from '@/shared/lib/symbolMetadata';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
@@ -51,9 +51,7 @@ import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
-
 import { MARKET_FEAR_GREED_LINK } from './_lib/marketFearGreedLink';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * ISR 상한. SSR이 점수·요인·시계열 요약까지 텍스트로 렌더하므로(`FearGreedFactsSummary`) 이 값이

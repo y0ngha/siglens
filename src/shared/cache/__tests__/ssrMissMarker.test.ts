@@ -24,11 +24,11 @@ vi.mock('@/shared/cache/upstashRenderSafeCommand', () => ({
     runUpstashCommandOutsideFetch: mockCommand,
 }));
 
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     getRedisClient,
     getUpstashWriterCredentials,
 } from '@/shared/cache/redisClient';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { consumeSsrMiss, markSsrMiss } from '../ssrMissMarker';
 
 type RedisLike = import('@upstash/redis').Redis;

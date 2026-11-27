@@ -15,8 +15,8 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { CategoryTab } from '../../ui/tabs/CategoryTab';
 
 describe('CategoryTab', () => {

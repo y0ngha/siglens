@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 /**
  * [회귀] provider 팩토리는 **심볼로** 백엔드를 고른다 — 한국 종목이면 yahoo,

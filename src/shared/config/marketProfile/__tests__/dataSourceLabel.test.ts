@@ -1,9 +1,9 @@
-import { dataSourceLabelKey } from '../dataSourceLabel';
-import { CRYPTO_DESCRIPTOR } from '../crypto';
-import { KR_EQUITY_DESCRIPTOR } from '../krEquity';
-import { US_EQUITY_DESCRIPTOR } from '../usEquity';
-import type { MarketProfileDescriptor, MarketProfileId } from '../types';
 import ko from '../../../../../messages/ko.json';
+import { CRYPTO_DESCRIPTOR } from '../crypto';
+import { dataSourceLabelKey } from '../dataSourceLabel';
+import { KR_EQUITY_DESCRIPTOR } from '../krEquity';
+import type { MarketProfileDescriptor, MarketProfileId } from '../types';
+import { US_EQUITY_DESCRIPTOR } from '../usEquity';
 
 const NOTE = ko.views.symbol.AnalysisProvenanceNote;
 

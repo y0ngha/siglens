@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NaverNewsClient } from '../../server/naverNewsClient';
 import { stripNaverMarkup } from '@/shared/api/naver/naverSearch';
-import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
+import { NaverNewsClient } from '../../server/naverNewsClient';
 
 const SEVEN_DAYS_MS = 7 * MS_PER_DAY;
 

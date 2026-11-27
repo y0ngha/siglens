@@ -1,5 +1,4 @@
 import 'server-only';
-
 import type { EmailReportConsentSource } from '@/shared/db/constants';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';

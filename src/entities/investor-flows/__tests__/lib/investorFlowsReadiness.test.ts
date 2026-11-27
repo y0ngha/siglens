@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
+import { makeSnapshot } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+import { addDays } from '../../lib/investorFlowsDates';
+import { INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS } from '../../lib/investorFlowsPolicy';
 import {
     deriveDartStatus,
     deriveFilingsStatus,
@@ -14,10 +17,7 @@ import {
     resolveCollectingArms,
     UNKNOWN_PIPELINE_READINESS,
 } from '../../lib/investorFlowsReadiness';
-import { INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
 import type { InvestorFlowsPipelineReadiness } from '../../model';
-import { makeSnapshot } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
 
 const BASE: InvestorFlowsSnapshot = {
     asOf: '2026-10-16T00:00:00.000Z',

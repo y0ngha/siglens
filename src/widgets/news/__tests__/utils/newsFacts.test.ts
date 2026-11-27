@@ -1,3 +1,4 @@
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     MAX_HEADLINES,
     countAnalyzed,
@@ -5,7 +6,6 @@ import {
     getLatestPublishedAt,
     getSentimentCounts,
 } from '@/widgets/news/utils/newsFacts';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 
 const item = (over: Partial<Record<string, unknown>>) =>
     ({

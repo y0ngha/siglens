@@ -82,25 +82,24 @@ vi.mock('../fmpCryptoMembership', () => ({
 }));
 
 import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@/shared/lib/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
 } from '@/shared/db/types';
-import type { FmpSearchResult } from '../../model';
-
-import {
-    _resetInFlightTranslationsForTest,
-    getAssetInfo,
-} from '../getAssetInfo';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
+import type { AssetInfo } from '@/shared/lib/types';
 import {
     API_UNTRANSLATED_CACHE_TTL,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
     buildApiAssetInfoCacheKey,
 } from '../../lib/cacheKeys';
-import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
+import type { FmpSearchResult } from '../../model';
 import { getCryptoAsset } from '../cryptoAssetStore';
 import { fmpCryptoMembership } from '../fmpCryptoMembership';
+import {
+    _resetInFlightTranslationsForTest,
+    getAssetInfo,
+} from '../getAssetInfo';
 
 interface FakeDbClient {
     db: unknown;

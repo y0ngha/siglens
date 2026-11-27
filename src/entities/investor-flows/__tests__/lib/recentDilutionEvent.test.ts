@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { OfferingKind } from '../../model';
+import { addDays } from '../../lib/investorFlowsDates';
 import {
     DILUTION_BADGE_LOOKBACK_DAYS,
     pickRecentDilutionEvent,
 } from '../../lib/recentDilutionEvent';
-import { addDays } from '../../lib/investorFlowsDates';
+import type { OfferingKind } from '../../model';
 
 const TODAY = '2026-10-16';
 

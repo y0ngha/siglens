@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /**
  * 뉴스 카드 분석 준비가 누적 실패로 끝났을 때의 안내. 시작 CTA 자리를 대신하며,

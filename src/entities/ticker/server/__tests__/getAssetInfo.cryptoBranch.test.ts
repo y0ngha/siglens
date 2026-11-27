@@ -22,9 +22,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getAssetInfo } from '../getAssetInfo';
 import { getCryptoAsset } from '../cryptoAssetStore';
 import { fetchCryptoQuoteName } from '../cryptoQuoteName';
+import { getAssetInfo } from '../getAssetInfo';
 
 describe('getAssetInfo — crypto branch', () => {
     beforeEach(() => vi.clearAllMocks());

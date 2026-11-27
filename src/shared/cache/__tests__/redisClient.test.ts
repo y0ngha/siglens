@@ -9,6 +9,7 @@ vi.mock('@upstash/redis', () => ({
     }),
 }));
 
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 import {
     getRedisClient,
     getRedisReaderWriter,
@@ -17,7 +18,6 @@ import {
     REDIS_COMMAND_TIMEOUT_MS,
     REDIS_LONG_COMMAND_TIMEOUT_MS,
 } from '@/shared/cache/redisClient';
-import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 
 const URL = 'https://test.upstash.io';

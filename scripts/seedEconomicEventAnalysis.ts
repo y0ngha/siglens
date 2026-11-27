@@ -1,3 +1,5 @@
+import { runEconomicEventAnalysis } from '@y0ngha/siglens-core';
+import { drizzle } from 'drizzle-orm/postgres-js';
 /**
  * One-time SEED script: analyze all current Medium+ announced unanalyzed
  * `economic_calendar` rows via core `runEconomicEventAnalysis` (direct, non-queued).
@@ -17,9 +19,10 @@
  * applied separately before running this script.
  */
 import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { runEconomicEventAnalysis } from '@y0ngha/siglens-core';
-
+import {
+    guardRemoteWrite,
+    requireDatabaseUrl,
+} from '../db/scripts/lib/dbTarget';
 import { DrizzleEconomicCalendarRepository } from '../src/entities/economy/api/economicCalendarRepository';
 import {
     CALENDAR_ANALYZED_IMPACTS,
@@ -28,10 +31,6 @@ import {
     isCalendarCountry,
 } from '../src/entities/economy/lib/economyCalendarConstants';
 import * as schema from '../src/shared/db/schema';
-import {
-    guardRemoteWrite,
-    requireDatabaseUrl,
-} from '../db/scripts/lib/dbTarget';
 
 const databaseUrl = requireDatabaseUrl();
 

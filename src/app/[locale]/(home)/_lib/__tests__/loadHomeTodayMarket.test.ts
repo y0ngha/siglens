@@ -28,7 +28,6 @@ import type {
     FearGreedReading,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
-
 import { loadHomeTodayMarket } from '../loadHomeTodayMarket';
 
 const READING: FearGreedReading = {

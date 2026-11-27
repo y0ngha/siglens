@@ -1,15 +1,15 @@
+import type { FundamentalProfile } from '@y0ngha/siglens-core';
 /**
  * 기업 프로필 카드 — 회사명·섹터·시가총액과 CEO·웹사이트 행. 외부 값 정규화는 `utils/profileLinks`.
  */
 import { useTranslations } from 'next-intl';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { ReactNode } from 'react';
-import type { FundamentalProfile } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
-import { formatCompactCurrency } from '@/shared/lib/priceFormat';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import {
     normalizeCeo,
     normalizeWebsite,

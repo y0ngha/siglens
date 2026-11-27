@@ -1,17 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
-import { notFound } from 'next/navigation';
-import type { ReactNode } from 'react';
 import {
     getMessages,
     getTranslations,
     setRequestLocale,
 } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import Script from 'next/script';
+import type { ReactNode } from 'react';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { SiteChrome } from '@/app/_components/SiteChrome';
 import { FONT_VARIABLE_CLASSES } from '@/app/fontVariables';
 import { FIRST_INPUT_PROBE_SCRIPT } from '@/features/pwa-install/lib/firstInputProbe';
-import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { SITE_NAME } from '@/shared/config/brand';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { SITE_VIEWPORT } from '@/shared/config/viewport';
@@ -35,6 +34,7 @@ import { brandIntroName, ROOT_KEYWORDS, SITE_URL } from '@/shared/lib/seo';
 import { localeOpenGraph, localePageRobots } from '@/shared/lib/seoAlternates';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
+import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import '../globals.css';
 
 /**

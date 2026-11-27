@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
-import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
+import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';
 
 export function FundamentalAiSummaryError({
     error,

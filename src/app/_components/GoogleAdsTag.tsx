@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
 import Script from 'next/script';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     consumeSignupConversionFlag,

@@ -1,12 +1,12 @@
+import { renderHook, act } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useIndicatorVisibility } from '../../hooks/useIndicatorVisibility';
 import {
     FIRST_INDICATOR_PANE_INDEX,
     INACTIVE_PANE_INDEX,
     STORAGE_KEYS,
 } from '../../constants';
+import { useIndicatorVisibility } from '../../hooks/useIndicatorVisibility';
 import { INDICATOR_REGISTRY } from '../../model/indicatorRegistry';
 
 describe('useIndicatorVisibility', () => {

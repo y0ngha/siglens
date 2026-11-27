@@ -1,8 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EARNINGS_DATES_LOOKBACK_DAYS,
     listEarningsDates,
@@ -10,7 +8,9 @@ import {
     listReportedEarningsDates,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
+import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report/server/earningsReportsRepository';
 import { MS_PER_DAY } from '@/shared/config/time';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const { mockGetEarningsReports } = vi.hoisted(() => ({
     mockGetEarningsReports: vi.fn(),

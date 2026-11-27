@@ -21,7 +21,6 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
 
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { render, screen } from '@testing-library/react';
 import { Suspense, isValidElement } from 'react';
 import {
@@ -32,18 +31,18 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-
-import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import EconomyKrPage, {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/economy/kr/page';
-import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
+import { getKrIndicatorCards } from '@/entities/economy/api/getKrIndicatorCards';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 import { SITE_URL } from '@/shared/lib/seo';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 
 const mockCards = getKrIndicatorCards as MockedFunction<
     typeof getKrIndicatorCards

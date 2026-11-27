@@ -4,12 +4,12 @@ import {
     QueryClient,
 } from '@tanstack/react-query';
 import { getTranslations } from 'next-intl/server';
-
 import type { SymbolTabParams } from '@/app/[locale]/[symbol]/_lib/symbolTabEntry';
 import { getSymbolFearGreedChipStatic } from '@/entities/bars/server/sessionBarsStaticCache';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveLocale } from '@/shared/i18n/locales';
 import type { AssetInfo } from '@/shared/lib/types';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
@@ -17,7 +17,6 @@ import {
     SYMBOL_SUB_TAB_KEYS,
     type SymbolSubTabKey,
 } from '@/views/symbol/utils/symbolTabsConfig';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 interface SymbolLayoutChromeProps {
     /** `[locale]/[symbol]` 세그먼트 파라미터(레이아웃이 받은 그대로). */

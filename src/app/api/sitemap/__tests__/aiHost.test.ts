@@ -19,12 +19,12 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
 }));
 
 import { describe, expect, it } from 'vitest';
-import { GET as getIndex } from '@/app/api/sitemap/route';
 import { GET as getCrypto } from '@/app/api/sitemap/crypto/route';
-import { GET as getPopular } from '@/app/api/sitemap/popular/route';
-import { GET as getStatic } from '@/app/api/sitemap/static/route';
 import { GET as getLongtail } from '@/app/api/sitemap/longtail/[page]/route';
+import { GET as getPopular } from '@/app/api/sitemap/popular/route';
 import { GET as getRemoval } from '@/app/api/sitemap/removal/[kind]/route';
+import { GET as getIndex } from '@/app/api/sitemap/route';
+import { GET as getStatic } from '@/app/api/sitemap/static/route';
 
 function aiHostRequest(path: string): Request {
     return new Request(`https://ai.siglens.io${path}`, {

@@ -1,7 +1,6 @@
 import { SITE_URL } from '@/shared/lib/seo';
-
-import type { SitemapEntry } from '../model';
 import { withSymbolAlternates } from '../lib/withSymbolAlternates';
+import type { SitemapEntry } from '../model';
 
 const mocks = vi.hoisted(() => ({ locales: ['ko'] as string[] }));
 

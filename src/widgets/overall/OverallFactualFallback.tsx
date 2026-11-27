@@ -1,9 +1,9 @@
 import { useTranslations } from 'next-intl';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
 import { useFactualAxesText } from './hooks/useFactualAxesText';
 
 export interface OverallFactualFallbackProps {

@@ -1,7 +1,7 @@
 vi.mock('server-only', () => ({}));
 
-import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DrizzlePlainTextRepository } from '@/entities/analysis-plain/plainTextRepository';
 import type { SiglensDatabase } from '@/shared/db/types';

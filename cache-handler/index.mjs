@@ -1,15 +1,21 @@
-import { lookupEntry as s3Lookup } from './s3Store.mjs';
+import { createBoundedLru } from './boundedLru.mjs';
+import { config } from './config.mjs';
+import { isExpiredDegradedEntry } from './degradedEntry.mjs';
 import {
     getEntry as memGet,
     setEntry as memSet,
     deleteEntry as memDelete,
 } from './memStore.mjs';
 import {
+    entryCacheControl,
+    seedCacheControl,
+    staleLastModified,
+} from './nextInternals.mjs';
+import {
     getEntry as pageMemGet,
     setEntry as pageMemSet,
 } from './pageMemStore.mjs';
-import { pendingEntry, scheduleUpload } from './uploadQueue.mjs';
-import { createBoundedLru } from './boundedLru.mjs';
+import { lookupEntry as s3Lookup } from './s3Store.mjs';
 import {
     ensureTagsFresh,
     markRevalidated,
@@ -17,13 +23,7 @@ import {
     maxRevalidatedAt,
     publishRevalidated,
 } from './tagStore.mjs';
-import {
-    entryCacheControl,
-    seedCacheControl,
-    staleLastModified,
-} from './nextInternals.mjs';
-import { config } from './config.mjs';
-import { isExpiredDegradedEntry } from './degradedEntry.mjs';
+import { pendingEntry, scheduleUpload } from './uploadQueue.mjs';
 
 // Next 16.2가 set()에 넘기는 페이지 태그 헤더 키.
 // 출처: next/dist/lib/constants.js:275 — NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags'.

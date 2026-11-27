@@ -58,11 +58,6 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
-import type { MockedFunction, MockedClass, Mock } from 'vitest';
-
-import { headers } from 'next/headers';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import {
     runNewsAnalysis,
     type ModelId,
@@ -70,10 +65,14 @@ import {
     type EnrichedNewsItem,
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
+import { headers } from 'next/headers';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { submitNewsAnalysisAction } from '../actions/submitNewsAnalysisAction';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;

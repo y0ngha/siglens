@@ -3,10 +3,10 @@ import {
     createRedisLease,
     type RedisLease,
 } from '@/shared/cache/createRedisLease';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,

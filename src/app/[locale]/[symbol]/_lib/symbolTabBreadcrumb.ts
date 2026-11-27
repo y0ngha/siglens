@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-
 import type { Locale } from '@/shared/i18n/locales';
 import { buildBreadcrumbJsonLd, type SeoTranslator } from '@/shared/lib/seo';
 import { buildSymbolSeoContent } from '@/shared/lib/seoSymbol';

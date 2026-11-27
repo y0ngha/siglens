@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { OptionsTone } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { TONE_CLASS, TONE_LABEL_KEY } from '../../utils/optionsAnalysisBadges';
 import { AnalysisBadge } from './AnalysisBadge';
 

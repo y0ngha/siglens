@@ -1,13 +1,13 @@
 'use client';
 
-import type { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
-import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
-import { ShareButton } from '@/widgets/share/ui/ShareButton';
-import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
-import { RecordRecentSymbol } from '@/features/watchlist/ui/RecordRecentSymbol';
-import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { MailAlertButton } from '@/features/mail-alert/ui/MailAlertButton';
+import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
+import type { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
+import { RecordRecentSymbol } from '@/features/watchlist/ui/RecordRecentSymbol';
+import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
+import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
+import { ShareButton } from '@/widgets/share/ui/ShareButton';
 
 /** "분석 설정" 메뉴가 쓰는 모델·reasoning 상태 — 헤더가 `useSymbolModel()`에서 한 번 읽어 넘긴다. */
 type AnalysisSettings = Pick<

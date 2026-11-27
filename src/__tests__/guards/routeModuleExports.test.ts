@@ -1,10 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
-
 import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
-
 import { blankComments } from './support/sourceScan';
 
 /**

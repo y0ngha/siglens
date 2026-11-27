@@ -4,7 +4,6 @@ vi.mock('@/entities/ticker/server/resolveKrxTickTable', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { shareKrxTickTable } from '../shareKrxTickTable';
 
 const resolveKrxTickTableForDisplay = vi.fn();

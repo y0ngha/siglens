@@ -5,14 +5,13 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import type { Mock } from 'vitest';
-
 import { asc, desc, type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import type { SiglensDatabase } from '@/shared/db/types';
+import type { Mock } from 'vitest';
 import { earningsReports } from '@/shared/db/schema';
-import { DrizzleEarningsReportsRepository } from '../../server/earningsReportsRepository';
+import type { SiglensDatabase } from '@/shared/db/types';
 import type { EarningsReportUpsertInput } from '../../model';
+import { DrizzleEarningsReportsRepository } from '../../server/earningsReportsRepository';
 
 const rawPayload = {
     date: '2025-08-01',

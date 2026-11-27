@@ -1,5 +1,4 @@
 import 'server-only';
-
 import { asc, desc, gte, lt, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { symbolViewsDaily } from '@/shared/db/schema';

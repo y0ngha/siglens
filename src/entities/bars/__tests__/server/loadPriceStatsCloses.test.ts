@@ -14,13 +14,12 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     calendarPeriodChange,
     type Bar,
     type MarketDailyClose,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     __resetFullHistoryMemoForTests,

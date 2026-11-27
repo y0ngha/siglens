@@ -12,9 +12,8 @@ vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
 // @vitest-environment jsdom
 import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { useFunnelMeterShown } from '../useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
+import { useFunnelMeterShown } from '../useFunnelMeterShown';
 
 function Probe({
     state,

@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { AnalysisResponse, Trend } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import {

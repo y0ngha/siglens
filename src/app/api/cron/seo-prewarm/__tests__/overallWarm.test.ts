@@ -52,6 +52,7 @@ vi.mock('@/entities/ticker/server/getAssetInfoResilient', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
 
+import type { OverallWarmPendingEntry } from '../lock';
 import {
     OVERALL_WARM_MAX_PER_TICK,
     OVERALL_WARM_MAX_STARTS_PER_UTC_DAY,
@@ -63,7 +64,6 @@ import {
     type OverallWarmCounts,
     type OverallWarmInput,
 } from '../overallWarm';
-import type { OverallWarmPendingEntry } from '../lock';
 
 // 2026-11-20(금) 22:00 UTC — EST 마감(21:00 UTC)+버퍼가 지나 경계는 그 날 21:00 UTC. 정규장은 닫혀 있다.
 const NOW_FRI = new Date('2026-11-20T22:00:00.000Z');

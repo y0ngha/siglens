@@ -1,8 +1,9 @@
 import 'server-only';
+import type { ProseEntry } from '@/entities/analysis-translation/lib/proseFields';
 import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import { stripMarkdownCodeBlock } from '@/entities/llm-provider/lib/parseJsonResponse';
 import type { ProviderCallLimits } from '@/entities/llm-provider/model';
-import type { ProseEntry } from '@/entities/analysis-translation/lib/proseFields';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
 import { buildPlainPrompt } from '../lib/buildPlainPrompt';
 import type { PlainFacts } from '../lib/collectFacts';
@@ -24,7 +25,6 @@ import {
 } from '../plainGenerationCoordination';
 import type { PlainFlight } from './plainFlights';
 import type { PlainModelConfig } from './plainModel';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 평이화 호출 상한. 재시도는 SDK가 아니라 이 모듈이 정한다 — `attempt()`가 가드 실패에

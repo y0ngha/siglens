@@ -6,12 +6,11 @@ vi.mock('next/navigation', () => ({
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-
-import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
-import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { SEARCH_TRIGGER_LABEL_KEY } from '@/features/ticker-search/lib/searchLabels';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
+import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { HEADER_SEARCH_INPUT_ID } from '@/shared/model/SearchOverlayTriggerContext';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 문구를 테스트에 복제하지 않는다 — 카탈로그를 읽으면 키 오타나 문구 변경이
 // 곧바로 여기서 드러난다(TESTING.md#TE-10).

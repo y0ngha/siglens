@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { buildPrewarmUniverse } from '@/entities/seo-snapshot/lib/applicability';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 
 /**
  * 내부링크 ⊆ 프리웜 유니버스.

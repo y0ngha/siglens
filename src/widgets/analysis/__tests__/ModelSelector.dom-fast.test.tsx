@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ModelSelector } from '@/widgets/analysis/ModelSelector';
 import type { ModelId } from '@y0ngha/siglens-core';
+import { ModelSelector } from '@/widgets/analysis/ModelSelector';
 
 const ALLOWED_MODELS: readonly ModelId[] = [
     'gemini-3.5-flash-lite',

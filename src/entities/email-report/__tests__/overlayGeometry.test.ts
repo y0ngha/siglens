@@ -1,11 +1,9 @@
 import type { Bar, ChartOverlay, OverlaySegment } from '@y0ngha/siglens-core';
-import { defined } from '@/shared/test-utils/defined';
 import {
     patternPaletteByKey,
     buildOverlayMenuItems,
 } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { computeChartGeometry } from '@/entities/email-report/lib/chartGeometry';
 import {
     computeOverlayGeometry,
@@ -13,6 +11,8 @@ import {
     planDrawingWindow,
     toLegendEntries,
 } from '@/entities/email-report/lib/overlayGeometry';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { defined } from '@/shared/test-utils/defined';
 
 const DAY = 86_400;
 const T0 = 1_790_000_000;

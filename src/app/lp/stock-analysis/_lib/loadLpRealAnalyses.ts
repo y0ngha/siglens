@@ -1,9 +1,8 @@
 import 'server-only';
-
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
-import { LP_ANALYSIS_SUBJECTS } from '@/views/lp/lib/stockAnalysisContent';
 import { buildLpRealAnalysis } from '@/views/lp/lib/realAnalysis';
+import { LP_ANALYSIS_SUBJECTS } from '@/views/lp/lib/stockAnalysisContent';
 import type { LpRealAnalysis } from '@/views/lp/lib/types';
 
 /**

@@ -1,14 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
+import type { Locale } from '@/shared/i18n/locales';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import type { Locale } from '@/shared/i18n/locales';
-import ko from '../../../../messages/ko.json';
 import ja from '../../../../messages/ja.json';
+import ko from '../../../../messages/ko.json';
 import { GuideCategoryPage } from '../GuideCategoryPage';
 import { GuideHubPage } from '../GuideHubPage';
 import { GuideUnavailablePage } from '../GuideUnavailablePage';
-import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 
 const g = ko.views.guide;
 

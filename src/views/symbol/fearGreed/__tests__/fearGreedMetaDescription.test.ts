@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import { buildFearGreedMetaFacts } from '../utils/fearGreedFacts';
-import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
-import { composeFearGreedDescription } from '../utils/fearGreedMetaDescription';
 import { createTranslator } from 'next-intl';
-import koMessages from '@/../messages/ko.json';
+import { describe, it, expect } from 'vitest';
 import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';
+import koMessages from '@/../messages/ko.json';
 import zhMessages from '@/../messages/zh.json';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+import { buildFearGreedMetaFacts } from '../utils/fearGreedFacts';
+import { composeFearGreedDescription } from '../utils/fearGreedMetaDescription';
 
 /** 실제 ko 카탈로그를 읽는 번역자 — 키가 빠지면 키 문자열이 나와 단언이 실패한다. */
 function translator(root: unknown) {

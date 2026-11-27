@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getNewsClient } from '../../server/getNewsClient';
 import { FmpNewsClient } from '../../server/fmpNewsClient';
+import { getNewsClient } from '../../server/getNewsClient';
 
 /**
  * Branch + singleton tests for getNewsClient, mirroring the established

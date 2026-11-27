@@ -1,5 +1,5 @@
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface ChartEmptyCardProps {
     /** Chart title, kept so the empty state lines up with its sibling chart. */

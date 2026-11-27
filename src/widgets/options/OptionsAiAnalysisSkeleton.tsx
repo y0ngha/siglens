@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { Spinner } from '@/shared/ui/Spinner';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { Spinner } from '@/shared/ui/Spinner';
 
 const SKELETON_LINE_WIDTHS = [
     'w-full',

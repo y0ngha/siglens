@@ -7,17 +7,17 @@
  * 분기에서만 `await import`해 edge 번들에서 완전히 배제한다.
  */
 import { endDatabaseClient } from '@/shared/db/client';
-import {
-    drainBackgroundTasks,
-    stopAcceptingBackgroundTasks,
-} from '@/shared/lib/backgroundTask';
-import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
-import { isRecord } from '@/shared/lib/isRecord';
 import { installConsoleDbErrorRedaction } from '@/shared/db/installConsoleDbErrorRedaction';
 import {
     isDatabaseError,
     redactDbErrorForLog,
 } from '@/shared/db/redactDbErrorForLog';
+import {
+    drainBackgroundTasks,
+    stopAcceptingBackgroundTasks,
+} from '@/shared/lib/backgroundTask';
+import { isRecord } from '@/shared/lib/isRecord';
+import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
 
 /**
  * ISR 캐시 핸들러(`cache-handler/uploadQueue.mjs`)가 업로드 drain 함수를 등록하는 전역 키.

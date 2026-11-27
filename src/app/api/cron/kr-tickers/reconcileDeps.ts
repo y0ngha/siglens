@@ -1,7 +1,5 @@
 import 'server-only';
 import { revalidateTag } from 'next/cache';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { tryGetDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
@@ -10,6 +8,8 @@ import {
 import { invalidateKoreanTickerCache } from '@/entities/ticker/server/koreanNameStore';
 import { translateCompanyNames } from '@/entities/ticker/server/koreanTranslator';
 import type { ReconcileUsTickerNamesDeps } from '@/entities/ticker/server/reconcileUsTickerNames';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 
 /**
  * `reconcileUsTickerNames`의 실제 의존을 만든다. I/O 구성(DB 클라이언트·FMP·태그 무효화)을

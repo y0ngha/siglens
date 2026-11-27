@@ -12,22 +12,22 @@
  * lightweight-charts usage in one widget boundary.
  */
 
-import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import type { Bar } from '@y0ngha/siglens-core';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import {
     CandlestickSeries,
     CrosshairMode,
     createChart,
 } from 'lightweight-charts';
-import type { Bar } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
+import { dynamicDecimals } from '@/shared/lib/priceFormat';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
 import { chartLocalization } from './utils/chartLocalization';
 import { chartPriceFormat } from './utils/chartPriceFormat';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { dynamicDecimals } from '@/shared/lib/priceFormat';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
 interface ShareCandlestickChartProps {
     bars: Bar[];

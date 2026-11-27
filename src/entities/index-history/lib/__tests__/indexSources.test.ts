@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { AGENT_HISTORY_INDICES } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { INDEX_SOURCES } from '../indexSources';
 
 describe('INDEX_SOURCES', () => {

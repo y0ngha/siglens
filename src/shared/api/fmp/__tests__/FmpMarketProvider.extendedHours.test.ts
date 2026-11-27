@@ -3,12 +3,11 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     FmpMarketProvider,
     parseAftermarketTrade,
 } from '@/shared/api/fmp/FmpMarketProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
 import aftermarketTradeFixture from './fixtures/aftermarketTrade.aapl.json';
 import quoteFixture from './fixtures/quote.aapl.preMarket.json';
 

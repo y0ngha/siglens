@@ -1,11 +1,11 @@
 import type { Bar } from '@y0ngha/siglens-core';
-import { defined } from '@/shared/test-utils/defined';
 import {
     computeChartGeometry,
     isReportChartMaPeriod,
     REPORT_CHART_BARS,
     REPORT_CHART_MAX_BARS,
 } from '@/entities/email-report/lib/chartGeometry';
+import { defined } from '@/shared/test-utils/defined';
 
 const BOX = { width: 200, height: 120, padding: 10 };
 

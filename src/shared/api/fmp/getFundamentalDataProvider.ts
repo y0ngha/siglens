@@ -1,10 +1,10 @@
-import { CurrentGradesFmpClient } from './CurrentGradesFmpClient';
-import { CachedFundamentalProvider } from './CachedFundamentalProvider';
-import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
-import { FmpFinancialStatementsClient } from './financialStatementsClient';
 import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { YahooFundamentalProvider } from '@/shared/api/yahoo/YahooFundamentalProvider';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
+import { CachedFundamentalProvider } from './CachedFundamentalProvider';
+import { CurrentGradesFmpClient } from './CurrentGradesFmpClient';
+import { FmpFinancialStatementsClient } from './financialStatementsClient';
 import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
 /**

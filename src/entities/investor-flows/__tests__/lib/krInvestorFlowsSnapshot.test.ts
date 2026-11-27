@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import { evaluateInvestorFlows } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
+import type {
+    DartInsiderReportRecord,
+    DartMajorHoldingRecord,
+    DartTradingPlanRecord,
+} from '../../api/investorFlowsDartRepository';
 import {
     assembleKrInvestorFlowsSnapshot,
     dartFilingUrl,
@@ -7,11 +12,6 @@ import {
     toKrMajorHolderReport,
     toKrTradingPlan,
 } from '../../lib/krInvestorFlowsSnapshot';
-import type {
-    DartInsiderReportRecord,
-    DartMajorHoldingRecord,
-    DartTradingPlanRecord,
-} from '../../api/investorFlowsDartRepository';
 
 const MAJOR: DartMajorHoldingRecord = {
     rceptNo: '20261015000124',

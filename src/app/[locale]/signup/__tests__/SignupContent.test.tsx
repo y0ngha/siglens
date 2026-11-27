@@ -22,7 +22,6 @@ vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
 
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-
 import { SignupContent } from '../SignupContent';
 
 describe('SignupContent', () => {

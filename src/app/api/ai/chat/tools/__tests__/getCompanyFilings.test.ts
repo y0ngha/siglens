@@ -7,22 +7,21 @@ vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
     readCompanyFiling: readFiling,
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     AGENT_FILING_TEXT_MAX_CHARS,
     AGENT_FILINGS_LIST_MAX,
 } from '@y0ngha/siglens-core';
-import type {
-    CompanyFiling,
-    CompanyFilingBody,
-} from '@/entities/company-filings/model';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCompanyFilingsTool } from '@/app/api/ai/chat/tools/getCompanyFilings';
 import {
     COMPANY_FILINGS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
     truncateToolResult,
 } from '@/app/api/ai/chat/tools/truncate';
+import type {
+    CompanyFiling,
+    CompanyFilingBody,
+} from '@/entities/company-filings/model';
 
 const ctx = {
     userId: 'u',

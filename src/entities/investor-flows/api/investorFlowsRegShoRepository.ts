@@ -1,5 +1,4 @@
 import 'server-only';
-import { affectedRows } from './affectedRows';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { regShoThreshold } from '@/shared/db/schema';
@@ -11,6 +10,7 @@ import {
 } from '../lib/investorFlowsPolicy';
 import { parseRegShoCursor } from '../lib/regShoCursor';
 import type { RegShoThresholdRow, ThresholdListingRecord } from '../model';
+import { affectedRows } from './affectedRows';
 import {
     readInvestorFlowsState,
     writeInvestorFlowsState,

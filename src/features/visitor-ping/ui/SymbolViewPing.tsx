@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { postBeacon, sendOnHumanInteraction } from '@/shared/lib/beacon';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
     SYMBOL_VIEWS_STORAGE_KEY,
     parseSentSymbols,

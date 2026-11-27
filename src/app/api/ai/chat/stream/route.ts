@@ -1,17 +1,19 @@
-import { constants } from 'node:http2';
 import 'server-only';
 import {
     CounterStoreUnavailableError,
     hashClientIp,
     type Tier,
 } from '@y0ngha/siglens-core';
+import { constants } from 'node:http2';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { readGuestId } from '@/shared/api/guestId';
-import { CHAT_REQUEST_MAX_BYTES } from '@/shared/config/chatImages';
 import { isBot } from '@/shared/api/isBot';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { CHAT_REQUEST_MAX_BYTES } from '@/shared/config/chatImages';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { AGENT_TIME_ZONE_HEADER } from '@/shared/i18n/locales';
+import { guestSubject } from '@/shared/lib/guestSubject';
 import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import {
     BoundedBodyTooLargeError,
@@ -23,7 +25,6 @@ import {
     createGuestIpBackstopCounter,
     GUEST_IP_TURNS_PER_DAY,
 } from '../counters';
-import { guestSubject } from '@/shared/lib/guestSubject';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { acquireTurnLock } from '../turnLock';
 import { agentTurnStream } from './_lib/agentTurnStream';
@@ -36,7 +37,6 @@ import {
     getQueuedAgentTurns,
     MAX_ACTIVE_AGENT_TURNS,
 } from './_lib/turnSlots';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_BAD_REQUEST,

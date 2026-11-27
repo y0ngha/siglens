@@ -18,15 +18,14 @@ vi.mock('@/entities/economy/lib/economyCompleteness', () => ({
     shouldCacheEconomySnapshot: mocks.shouldCacheEconomySnapshot,
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { unstable_cache } from 'next/cache';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
-
+import { unstable_cache } from 'next/cache';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
 import {
     ECONOMY_SNAPSHOT_CACHE_TAG,
     getEconomySnapshotStatic,
 } from '@/entities/economy/api/economySnapshotStaticCache';
-import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockUnstableCache = vi.mocked(unstable_cache);

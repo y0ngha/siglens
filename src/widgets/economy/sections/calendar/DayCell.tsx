@@ -1,11 +1,11 @@
 'use client';
 
+import type { CalendarImpact } from '@y0ngha/siglens-core';
 /**
  * 이벤트가 있는 날의 월 그리드 칸 — 날짜·중요도 점·건수·인라인 미리보기를 담은 선택 버튼.
  */
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import type { CalendarImpact } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import type { DayGroup } from '../../model/calendarTypes';
 import { visibleEventsOf } from '../../utils/calendarGrouping';

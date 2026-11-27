@@ -1,5 +1,5 @@
-import { sortWatchlistItems } from '@/features/watchlist/lib/sortWatchlist';
 import type { WatchlistItemView } from '@/entities/watchlist/model';
+import { sortWatchlistItems } from '@/features/watchlist/lib/sortWatchlist';
 
 const item = (symbol: string): WatchlistItemView => ({
     symbol,

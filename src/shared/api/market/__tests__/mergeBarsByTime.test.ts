@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Bar } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import { mergeBarsByTime } from '@/shared/api/market/mergeBarsByTime';
 
 const bar = (time: number, close: number): Bar => ({

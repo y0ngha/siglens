@@ -1,11 +1,4 @@
 import {
-    EMPTY_SNAPSHOT_MAX_POLLS,
-    MAX_CONSECUTIVE_FAILURES,
-    MAX_POLL_DURATION_MS,
-    STAGNANT_POLL_LIMIT,
-    STAGNATION_FLOOR_POLLS,
-} from '@/shared/config/cardPollingConfig';
-import {
     CARD_WAIT_TIMEOUT_MESSAGE,
     type CardPollCounters,
     type CardPollOutcome,
@@ -21,6 +14,13 @@ import type {
     CardListPollPolicy,
     EnrichableCard,
 } from '@/entities/news-article/model';
+import {
+    EMPTY_SNAPSHOT_MAX_POLLS,
+    MAX_CONSECUTIVE_FAILURES,
+    MAX_POLL_DURATION_MS,
+    STAGNANT_POLL_LIMIT,
+    STAGNATION_FLOOR_POLLS,
+} from '@/shared/config/cardPollingConfig';
 
 interface Card extends EnrichableCard {
     id: string;

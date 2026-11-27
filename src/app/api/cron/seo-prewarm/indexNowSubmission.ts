@@ -10,10 +10,6 @@ import {
     type HarvestedUnits,
 } from '@/entities/sitemap-entry/lib/indexNowUrls';
 import type { SitemapEntry } from '@/entities/sitemap-entry/model';
-import {
-    INDEXNOW_ENDPOINTS,
-    INDEXNOW_TIMEOUT_MS,
-} from '@/shared/config/indexNow';
 import { isIndexNowEnabled } from '@/shared/api/indexNow';
 import {
     drainIndexNow,
@@ -21,11 +17,15 @@ import {
     type IndexNowQueueEntry,
 } from '@/shared/api/indexNowQueue';
 import {
+    INDEXNOW_ENDPOINTS,
+    INDEXNOW_TIMEOUT_MS,
+} from '@/shared/config/indexNow';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import {
     diffStaticLastmod,
     readStaticLastmods,
     writeStaticLastmods,
 } from './indexNowStaticPages';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 배치 로그(`[seo-prewarm] batch done`)에 실리는 IndexNow 응답 지표. */
 export interface IndexNowCounts {

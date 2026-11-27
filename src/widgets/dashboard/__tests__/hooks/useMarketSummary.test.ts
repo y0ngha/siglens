@@ -1,12 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
-import { useMarketSummary } from '@/widgets/dashboard/hooks/useMarketSummary';
 import { getMarketSummaryClientAction } from '@/entities/market-summary/actions/getMarketSummaryClientAction';
 import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useMarketSummary } from '@/widgets/dashboard/hooks/useMarketSummary';
 
 vi.mock(
     '@/entities/market-summary/actions/getMarketSummaryClientAction',

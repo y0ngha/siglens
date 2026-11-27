@@ -1,3 +1,4 @@
+import { glob } from 'glob';
 /**
  * Skill PROMPT_DIGEST metadata tooling.
  *
@@ -49,7 +50,6 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { glob } from 'glob';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(SCRIPT_DIR, '..');

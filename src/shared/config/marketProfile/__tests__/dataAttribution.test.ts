@@ -1,5 +1,5 @@
-import { DATA_ATTRIBUTION } from '../dataAttribution';
 import { CRYPTO_DESCRIPTOR } from '../crypto';
+import { DATA_ATTRIBUTION } from '../dataAttribution';
 import { KR_EQUITY_DESCRIPTOR } from '../krEquity';
 import { US_EQUITY_DESCRIPTOR } from '../usEquity';
 

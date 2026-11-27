@@ -1,8 +1,8 @@
+import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 재무 AI 요약 결과 본문 — 전체 결론, 축별 평가, 위험 요인. 공유 페이지도 이 뷰를 그대로 쓴다.
  */
 import { useTranslations } from 'next-intl';
-import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

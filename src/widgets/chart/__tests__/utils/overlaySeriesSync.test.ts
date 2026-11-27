@@ -1,11 +1,11 @@
 import { LineStyle } from 'lightweight-charts';
+import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
 import {
     isSameOverlayStyle,
     overlayGeometryKeys,
     overlaySeriesStyle,
     withOpacity,
 } from '../../utils/overlaySeriesSync';
-import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
 
 const SPEC: OverlayLineSpec = {
     paneIndex: 0,

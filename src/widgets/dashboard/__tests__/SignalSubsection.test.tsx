@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { SignalSubsection } from '@/widgets/dashboard/SignalSubsection';
 import { SIGNAL_CARD_GRID_CLASS } from '@/widgets/dashboard/utils/signalCardGrid';
-import type { StockWithConflict } from '@y0ngha/siglens-core';
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),

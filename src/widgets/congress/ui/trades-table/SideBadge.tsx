@@ -1,6 +1,6 @@
+import type { CongressTradeSide } from '@y0ngha/siglens-core';
 /** Buy/sell badge for a trades-table row. */
 import { useTranslations } from 'next-intl';
-import type { CongressTradeSide } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { SIDE_BG_CLASS, SIDE_CLASS, SIDE_LABEL } from '../../utils/tradeLabels';
 

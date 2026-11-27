@@ -1,13 +1,13 @@
 'use client';
 
 import type { ComponentType } from 'react';
+import { useAiNavLinkTarget } from './hooks/useAiNavLinkTarget';
 import {
     AiPillLink,
     AiTextLink,
     AiWordmarkLink,
     type AiLinkProps,
 } from './ui/ai/AiLinkVariants';
-import { useAiNavLinkTarget } from './hooks/useAiNavLinkTarget';
 
 interface Props {
     readonly className?: string;

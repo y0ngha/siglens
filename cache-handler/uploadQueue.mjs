@@ -26,8 +26,8 @@
 // 업로드 실패는 `s3Store.setEntry`가 이미 삼키고 로그를 남긴다 — 결과는 "다음 인스턴스/재시작
 // 후 한 번 더 재생성"이고, 예전에도 같은 실패는 응답에 영향을 주지 않았다.
 
-import { setEntry as s3Set } from './s3Store.mjs';
 import { readPositiveBound } from './boundedLru.mjs';
+import { setEntry as s3Set } from './s3Store.mjs';
 
 // 전역 레지스트리 키. 값은 drain 함수들의 **Set**이다 — 핸들러 모듈이 둘 이상 로드돼도
 // (다른 경로/번들 사본) 서로를 덮어쓰지 않고, instrumentation이 전부 drain한다.

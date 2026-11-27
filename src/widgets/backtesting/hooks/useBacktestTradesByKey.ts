@@ -2,8 +2,8 @@
 
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 import type { BacktestRunData, BacktestTrade } from '@y0ngha/siglens-core';
-import { tradeKey } from '@/entities/backtest-case/lib/tradeKey';
 import { fetchBacktestRunData } from '@/entities/backtest-case/lib/fetchBacktestRunData';
+import { tradeKey } from '@/entities/backtest-case/lib/tradeKey';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 /** 서버 행(`data-trade-detail`)과 같은 키로 매매를 찾는 표. */

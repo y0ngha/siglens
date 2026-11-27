@@ -4,11 +4,11 @@ vi.mock('../stock-analysis/_lib/loadLpRealAnalyses', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
+import { lpCopyViolations } from '@/views/lp/lib/lpCopyRules';
 import {
     metadata as analysisMetadata,
     revalidate as analysisRevalidate,
 } from '../stock-analysis/page';
-import { lpCopyViolations } from '@/views/lp/lib/lpCopyRules';
 import { metadata as chatMetadata } from '../stock-chat/page';
 
 describe.each([

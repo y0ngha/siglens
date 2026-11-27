@@ -17,16 +17,16 @@ import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { KeyedEmailDispatcher } from '@/shared/email/types';
 import { SITE_URL } from '@/shared/lib/seo';
-import {
-    createSymbolReportSources,
-    loadSymbolReport,
-} from './loadSymbolReport';
 import { createMarketPickSources, loadMarketPicks } from './loadMarketPicks';
 import { createSymbolBriefSources, loadSymbolBrief } from './loadSymbolBrief';
 import {
     createSymbolDrawingsSources,
     loadSymbolDrawings,
 } from './loadSymbolDrawings';
+import {
+    createSymbolReportSources,
+    loadSymbolReport,
+} from './loadSymbolReport';
 import type { EmailReportBatchDeps } from './runEmailReportBatch';
 
 /** 한 배치가 기억해 두는 일봉 종목 수의 상한. 한 통은 최대 20종목이라 동시에 처리 중인 회원 몇 명분을 담는다. */

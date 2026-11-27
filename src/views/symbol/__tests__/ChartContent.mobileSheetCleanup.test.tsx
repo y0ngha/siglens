@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { memo, StrictMode, useCallback, type ReactNode } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';

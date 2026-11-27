@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { buildSectorFacts } from '../lib/sectorFacts';
 import type {
     SectorSignalsResult,
     StockSignalResult,
 } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
+import { buildSectorFacts } from '../lib/sectorFacts';
 
 function makeStock(
     symbol: string,

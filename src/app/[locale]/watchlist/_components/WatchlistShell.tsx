@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
+import { PAGE_HEADER_LINK } from '@/app/[locale]/_personal/pageHeaderLink';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { WatchlistPageContent } from '@/views/watchlist/WatchlistPageContent';
-import { PAGE_HEADER_LINK } from '@/app/[locale]/_personal/pageHeaderLink';
 
 /**
  * `/watchlist` 본문 셸(제목·`/portfolio` 링크 + 클라이언트 목록). 쿠키·DB를 읽지 않는 정적

@@ -1,5 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-
 import { OverallTriggerCta } from '@/widgets/overall/ui/trigger-cta/OverallTriggerCta';
 
 describe('OverallTriggerCta', () => {

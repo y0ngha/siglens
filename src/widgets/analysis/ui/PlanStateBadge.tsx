@@ -1,5 +1,6 @@
 'use client';
 
+import type { NoSetupReason, PlanState } from '@y0ngha/siglens-core';
 /**
  * 계획 상태 배지 — 마지막 종가가 AI 계획의 진입 구간 어디에 있는지(core `planState`).
  *
@@ -17,7 +18,6 @@
  * `stopBasis`가 null이라 이 줄이 나오지 않는다.
  */
 import { useTranslations } from 'next-intl';
-import type { NoSetupReason, PlanState } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { isJustAboveZone } from '../utils/planZoneProximity';
 

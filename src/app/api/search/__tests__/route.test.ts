@@ -9,19 +9,18 @@ vi.mock('@/entities/ticker/server/searchTickerQuery', async importOriginal => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { GET } from '../route';
 import {
     MAX_SEARCH_QUERY_LENGTH,
     searchTickerQuery,
 } from '@/entities/ticker/server/searchTickerQuery';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
+import { __resetFixedWindowLimiterForTests } from '@/shared/lib/fixedWindowLimiter';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { GET } from '../route';
 import {
     SEARCH_REQUESTS_PER_IP_PER_MINUTE,
     searchLimiter,
 } from '../searchLimiter';
-import { __resetFixedWindowLimiterForTests } from '@/shared/lib/fixedWindowLimiter';
-import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 
 const mockedSearch = vi.mocked(searchTickerQuery);
 

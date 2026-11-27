@@ -7,13 +7,13 @@ import type {
     LlmsLinkTarget,
     LlmsSection,
 } from '@/app/api/llms/_lib/model';
-import { GUIDE_CATEGORIES } from '@/entities/guide/types';
+import { BACKTEST_DATA_PUBLIC_PATH } from '@/entities/backtest-case/lib/fetchBacktestRunData';
 import {
     REPO_RAW_MASTER_BASE,
     backtestResultsRepoPath,
     type BacktestResultsFile,
 } from '@/entities/backtest-case/lib/resultsFileUrl';
-import { BACKTEST_DATA_PUBLIC_PATH } from '@/entities/backtest-case/lib/fetchBacktestRunData';
+import { GUIDE_CATEGORIES } from '@/entities/guide/types';
 import { BENCHMARK_PATH } from '@/shared/config/benchmark';
 import {
     FEAR_GREED_DATA_FORMATS,
@@ -21,8 +21,8 @@ import {
     FEAR_GREED_HUB_PATH,
     fearGreedDataPath,
 } from '@/shared/config/fearGreedData';
-import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { LLMS_TXT_PATH } from '@/shared/config/llmsTxt';
+import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { RSS_FEED_PATH } from '@/shared/config/rssFeed';
 import { GUIDE_PATH, guideCategoryPath } from '@/shared/lib/guidePaths';
 import {

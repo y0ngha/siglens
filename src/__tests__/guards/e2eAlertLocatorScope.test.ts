@@ -1,7 +1,6 @@
+import { parse } from '@babel/parser';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-
-import { parse } from '@babel/parser';
 import { describe, expect, it } from 'vitest';
 
 /**

@@ -1,10 +1,10 @@
-import * as schema from '@/shared/db/schema';
+import type { SQL } from 'drizzle-orm';
+import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { contentLocaleEnum } from '@/shared/db/schema';
-import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
-import type { SQL } from 'drizzle-orm';
 import { EMAIL_REPORT_CONSENT_SOURCE_VALUES } from '@/shared/db/constants';
+import * as schema from '@/shared/db/schema';
+import { contentLocaleEnum } from '@/shared/db/schema';
 import { LOCALES } from '@/shared/i18n/locales';
 
 describe('schema 테이블 export', () => {

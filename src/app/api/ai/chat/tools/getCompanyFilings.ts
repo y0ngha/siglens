@@ -1,10 +1,10 @@
 import 'server-only';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { normalizeAccession } from '@/entities/company-filings/lib/normalizeAccession';
 import {
     listCompanyFilings,
     readCompanyFiling,
 } from '@/entities/company-filings/server/getCompanyFilings';
-import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     COMPANY_FILINGS_RESULT_MAX_CHARS,
     fitToEscapedBudget,

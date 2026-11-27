@@ -69,6 +69,7 @@ vi.mock('@/features/agent-chat/hooks/useAgentStream', async importOriginal => ({
     },
 }));
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     act,
     fireEvent,
@@ -78,7 +79,6 @@ import {
     within,
 } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     afterAll,
     afterEach,
@@ -92,9 +92,8 @@ import {
 import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
-import ko from '../../../../messages/ko.json';
-
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
+import ko from '../../../../messages/ko.json';
 
 interface MockStreamMessage {
     id: string;

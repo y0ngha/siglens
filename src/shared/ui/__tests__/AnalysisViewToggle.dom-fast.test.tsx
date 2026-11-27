@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
+import { describe, expect, it, vi } from 'vitest';
 import messages from '../../../../messages/ko.json';
 import { AnalysisViewToggle } from '../AnalysisViewToggle';
 

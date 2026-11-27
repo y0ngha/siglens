@@ -31,18 +31,18 @@ vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { useEffect } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Mock } from 'vitest';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import {
     ShareableAnalysisProvider,
     useShareable,
 } from '@/features/share/model/ShareableAnalysisContext';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 
 const mockStream = runAnalysisStream as Mock;
 

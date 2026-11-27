@@ -1,5 +1,4 @@
 import { renderHook } from '@testing-library/react';
-import { useAnalysisDerivedData } from '@/views/symbol/hooks/useAnalysisDerivedData';
 import type {
     AnalysisResponse,
     Bar,
@@ -7,6 +6,7 @@ import type {
     ReconciledActionLineData,
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
+import { useAnalysisDerivedData } from '@/views/symbol/hooks/useAnalysisDerivedData';
 
 vi.mock('@y0ngha/siglens-core', () => ({
     isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>

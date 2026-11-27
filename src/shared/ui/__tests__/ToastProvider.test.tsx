@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ToastProvider, useToast } from '@/shared/ui/ToastProvider';
 import { TOAST_AUTO_DISMISS_MS } from '@/shared/config/toast';
+import { ToastProvider, useToast } from '@/shared/ui/ToastProvider';
 
 function Trigger({
     message,

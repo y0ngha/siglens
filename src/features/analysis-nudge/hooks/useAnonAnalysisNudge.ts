@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
 import {
     ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD,
     recordAnonSymbolAnalysis,
@@ -10,13 +11,12 @@ import {
     claimNextAnonNudgeVariant,
     type SignupNudgeVariant,
 } from '@/shared/lib/anonAnalysisCount';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
     hasNudgeShownThisSession,
     markNudgeShownThisSession,
 } from '@/shared/lib/nudgeSession';
 import { isVocPromptDue } from '@/shared/lib/vocPromptStorage';
-import { readIsReturnVisitDay } from '@/features/visitor-ping/lib/visitHistoryStorage';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 /** Return value of {@link useAnonAnalysisNudge}. */
 export interface UseAnonAnalysisNudgeResult {

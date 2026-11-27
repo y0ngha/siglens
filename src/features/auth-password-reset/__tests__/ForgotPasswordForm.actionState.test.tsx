@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ForgotPasswordForm } from '@/features/auth-password-reset/ui/ForgotPasswordForm';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
+import { ForgotPasswordForm } from '@/features/auth-password-reset/ui/ForgotPasswordForm';
 
 vi.mock(
     '@/features/auth-password-reset/actions/requestPasswordResetAction',

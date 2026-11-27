@@ -1,5 +1,5 @@
-import { createRef, type RefObject } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { createRef, type RefObject } from 'react';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { PortfolioChipPopover } from '../ui/PortfolioChipPopover';
 

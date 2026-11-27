@@ -1,31 +1,31 @@
 import { getLocale, getTranslations } from 'next-intl/server';
+import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
 // app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
-import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstants';
 import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
-import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
-import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
-import { EconomyMacroFacts } from '@/widgets/economy/sections/EconomyMacroFacts';
-import { MacroBriefing } from '@/widgets/economy/sections/MacroBriefing';
 import {
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
+import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
+import { EconomyMacroFacts } from '@/widgets/economy/sections/EconomyMacroFacts';
+import { MacroBriefing } from '@/widgets/economy/sections/MacroBriefing';
 import { calendarEventsForClient } from '../_lib/calendarEventsForClient';
 import { hasEconomyData } from '../_lib/economyDegraded';
 import { buildEconomyPageJsonLd } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
 import { economyDescription, economyTitle } from '../constants';
 import { EconomyDegraded } from './EconomyDegraded';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `/economy` 본문의 서버 데이터 섹션(스냅샷·브리핑·캘린더) — 페이지 셸이 Suspense 없이 그린다.

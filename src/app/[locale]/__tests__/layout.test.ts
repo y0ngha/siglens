@@ -33,20 +33,19 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_HEIGHT: 630,
 }));
 
+import Script from 'next/script';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import koMessages from '@/../messages/ko.json';
 import RootLayout, {
     generateMetadata,
     generateStaticParams,
 } from '@/app/[locale]/layout';
-import Script from 'next/script';
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
-import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
-import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
-import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { brandIntroName } from '@/shared/lib/seo';
 import { SITE_NAME, SITE_NAME_KO } from '@/shared/config/brand';
-import koMessages from '@/../messages/ko.json';
-
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { LOCALES, LOCALE_OG } from '@/shared/i18n/locales';
+import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
+import { brandIntroName } from '@/shared/lib/seo';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 
 // 홈 제목은 `shared.seo.root` 카탈로그가 소유한다. 브랜드 접미사는 레이아웃이
 // 붙이므로 여기서 같은 방식으로 조립해 대조한다.

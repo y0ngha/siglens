@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import postgres from 'postgres';
 import {
     afterAll,
@@ -12,22 +12,22 @@ import {
     it,
     vi,
 } from 'vitest';
-import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
-import * as schema from '@/shared/db/schema';
+import { DrizzleKoreanTickerRepository } from '@/entities/ticker/api';
 import { dartFatalReason } from '@/shared/api/dart/dartClient';
 import {
     buildFakeDartData,
     createFakeDartClient,
 } from '@/shared/api/dart/fakeDartClient';
-import { INVESTOR_FLOWS_DART_MAX_LIST_PAGES } from '../../lib/investorFlowsPolicy';
-import { DrizzleKoreanTickerRepository } from '@/entities/ticker/api';
+import * as schema from '@/shared/db/schema';
+import { describeTarget } from '../../../../../db/scripts/lib/dbTarget';
 import { DrizzleInvestorFlowsDartRepository } from '../../api/investorFlowsDartRepository';
-import { runDartFilingsIngest } from '../../server/ingestDartFilings';
+import { INVESTOR_FLOWS_DART_MAX_LIST_PAGES } from '../../lib/investorFlowsPolicy';
 import type {
     DartInsiderReportRow,
     DartMajorHoldingRow,
     DartTradingPlanRow,
 } from '../../model';
+import { runDartFilingsIngest } from '../../server/ingestDartFilings';
 
 vi.mock('server-only', () => ({}));
 

@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Share flow E2E — Task 13.1 + Addendum D-4.

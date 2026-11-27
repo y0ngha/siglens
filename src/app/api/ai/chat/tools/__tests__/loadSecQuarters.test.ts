@@ -20,7 +20,6 @@ vi.mock('@/shared/api/sec/secClient', () => ({
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     loadSecQuarters,
     SEC_QUARTERS_BUDGET_MS,

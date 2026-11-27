@@ -4,7 +4,6 @@ vi.mock('@/entities/chat-conversation/server/normalizeChatImage', () => ({
 }));
 
 import { describe, expect, it, vi } from 'vitest';
-
 import { normalizeBodyImages } from '@/app/api/ai/chat/stream/_lib/normalizeBodyImages';
 
 describe('normalizeBodyImages', () => {

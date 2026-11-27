@@ -1,7 +1,6 @@
 vi.mock('server-only', () => ({}));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     fetchXTimelinePage,
     fetchXUsersByUsernames,

@@ -1,6 +1,6 @@
+import { runRegShoIngest } from '@/entities/investor-flows/server/ingestRegSho';
 import { handleLeasedCron } from '../leasedCron';
 import { createRegShoDeps } from './createDeps';
-import { runRegShoIngest } from '@/entities/investor-flows/server/ingestRegSho';
 
 /**
  * 마감 4분 + 진행 중 목록 하나 최악 ≈ 62초(요청 30초 × 2회 + 백오프 ≤ 2초) + DB 여유 30초 ≈ 5.5분 < 락 TTL 7분(SERVER.md#CC-7,

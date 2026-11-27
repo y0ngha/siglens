@@ -1,5 +1,5 @@
-import { useTranslations } from 'next-intl';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedScoreBar } from '@/shared/ui/FearGreedScoreBar';
 import { FearGreedFactorRow } from './ui/group/FearGreedFactorRow';

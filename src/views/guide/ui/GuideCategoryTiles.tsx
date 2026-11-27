@@ -1,9 +1,10 @@
 /** 분류 허브 하단의 다른 분류로 건너가는 타일 줄과, 분류 허브가 표시 문구를 채워 넘기는 타일 데이터 모양. */
 import type { ComponentType } from 'react';
 import type { GuideCategory } from '@/entities/guide/types';
-import { guideCategoryPath } from '@/shared/lib/guidePaths';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
+import { guideCategoryPath } from '@/shared/lib/guidePaths';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
 import {
     BookIcon,
     CandlesIcon,
@@ -11,7 +12,6 @@ import {
     LayersIcon,
     QuoteIcon,
 } from '@/shared/ui/StrokeIcons';
-import { LocaleLink } from '@/shared/ui/LocaleLink';
 
 type IconComponent = ComponentType<{ className?: string }>;
 

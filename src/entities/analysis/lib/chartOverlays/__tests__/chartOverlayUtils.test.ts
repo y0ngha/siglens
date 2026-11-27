@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { ChartOverlay } from '@y0ngha/siglens-core';
+import { describe, expect, it } from 'vitest';
 import {
     buildOverlayLineSpecs,
     firstSegmentDirection,

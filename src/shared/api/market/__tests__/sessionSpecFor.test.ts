@@ -1,4 +1,11 @@
+import {
+    US_EQUITY_SESSION,
+    CRYPTO_SESSION,
+    buildAgentTurnContext,
+    isRegularSessionOpen,
+} from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import {
     sessionSpecFor,
     sessionSpecForDashboardScope,
@@ -6,13 +13,6 @@ import {
     KR_CALENDAR_HORIZON,
     __resetKrHorizonWarnings,
 } from '../sessionSpecFor';
-import {
-    US_EQUITY_SESSION,
-    CRYPTO_SESSION,
-    buildAgentTurnContext,
-    isRegularSessionOpen,
-} from '@y0ngha/siglens-core';
-import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 
 describe('sessionSpecFor', () => {
     it('maps crypto → always-open session', () => {

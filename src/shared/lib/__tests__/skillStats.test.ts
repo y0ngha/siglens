@@ -1,5 +1,5 @@
-import { buildSkillStats, chartSkillTotal } from '@/shared/lib/skillStats';
 import type { SkillCounts } from '@y0ngha/siglens-core';
+import { buildSkillStats, chartSkillTotal } from '@/shared/lib/skillStats';
 
 const COUNTS: SkillCounts = {
     indicators: 37,

@@ -66,22 +66,22 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { render, screen } from '@testing-library/react';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { generateMetadata } from '@/app/[locale]/economy/page';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
-// JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import {
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
 import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+// JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
+import { JsonLd } from '@/shared/ui/JsonLd';
 
 const mockGetSnapshot = vi.mocked(getEconomySnapshotStatic);
 const mockPeekStatic = vi.mocked(peekMacroBriefingStatic);

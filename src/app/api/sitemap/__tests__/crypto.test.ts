@@ -15,10 +15,10 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
     loadPopularSitemapInputs: vi.fn(async () => PROSE_INPUTS),
 }));
 
+import type { MockedFunction } from 'vitest';
 import { GET } from '@/app/api/sitemap/crypto/route';
 import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
 import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
-import type { MockedFunction } from 'vitest';
 
 const PROSE_INPUTS = {
     snapshotGeneratedAt: new Map([['BTCUSD:overall', new Date(0)]]),

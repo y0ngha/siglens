@@ -1,9 +1,9 @@
+import type { FindUserBySessionTokenDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 import { findUserBySessionToken } from '@/entities/auth/lib/findUserBySessionToken';
 import {
     safeCompareTokenHashes,
     hashEmailToken,
 } from '@/entities/auth/lib/tokenUtils';
-import type { FindUserBySessionTokenDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 
 function createMockDependencies(
     overrides: Partial<FindUserBySessionTokenDependencies> = {}

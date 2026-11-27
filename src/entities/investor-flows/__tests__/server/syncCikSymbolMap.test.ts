@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { CikSymbolPair } from '../../lib/companyTickers';
+import { addDays } from '../../lib/investorFlowsDates';
 import {
     INVESTOR_FLOWS_CIK_MAP_MIN_PAIRS,
     INVESTOR_FLOWS_CIK_MAP_REFRESH_DAYS,
     INVESTOR_FLOWS_STATE_CIK_MAP_SYNCED,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
-import { addDays } from '../../lib/investorFlowsDates';
-import type { CikSymbolPair } from '../../lib/companyTickers';
 import {
     runCikSymbolMapSync,
     type SyncCikSymbolMapDeps,

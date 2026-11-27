@@ -29,17 +29,16 @@ vi.mock('../api/sectorSignalsProvider', () => ({
     sectorSignalsProviderFor: vi.fn(() => ({})),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
-import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
-import { getCachedSectorSignals } from '../api/sectorSignalsCache';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { getCachedSectorSignals } from '../api/sectorSignalsCache';
 import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
+import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
 
 const mockGetCachedSectorSignals = vi.mocked(getCachedSectorSignals);
 

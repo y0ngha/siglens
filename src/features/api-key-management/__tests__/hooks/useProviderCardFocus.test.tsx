@@ -1,5 +1,4 @@
 import { render, renderHook, screen } from '@testing-library/react';
-
 import { useProviderCardFocus } from '@/features/api-key-management/hooks/useProviderCardFocus';
 
 interface HarnessProps {

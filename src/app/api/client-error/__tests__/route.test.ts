@@ -1,8 +1,8 @@
 const { mockGetClientIp } = vi.hoisted(() => ({ mockGetClientIp: vi.fn() }));
 vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { constants } from 'node:http2';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/client-error/route';
 
 const MAX = 4096;

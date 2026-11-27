@@ -2,6 +2,7 @@ import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { peekRateLimits } from '@/entities/siglens-api-key/server/rateLimit';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     apiError,
     apiOk,
@@ -10,7 +11,6 @@ import {
 } from '../apiResponse';
 import { requireApiKey } from '../authenticate';
 import { enforceRateLimit } from '../rateLimitHeaders';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 

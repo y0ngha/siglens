@@ -1,11 +1,11 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { NewsDisplayItem } from '@/shared/lib/types';
 import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { getNewsCardsAction } from '../actions/getNewsCardsAction';
 import {
     type CardWaitPollPolicy,

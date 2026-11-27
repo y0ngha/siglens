@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+    PLANTED_TOKEN,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
+import type { AggregateMode } from '../../api/aggregateSql';
+import type { ApplyFilingInput } from '../../api/apply13fFiling';
+import type { DirtyBatch } from '../../api/investorFlows13fRepository';
+import type { InvestorFlowsUniverse } from '../../api/investorFlowsUniverseRepository';
+import type { AmendmentFiling } from '../../lib/amendmentPlan';
+import {
     INVESTOR_FLOWS_BASELINE_MIN_FILERS,
     INVESTOR_FLOWS_MAX_REAPPLY,
     INVESTOR_FLOWS_FAILED_BACKLOG_ALERT,
@@ -7,18 +16,13 @@ import {
     INVESTOR_FLOWS_STATE_BACKFILL_DONE,
     INVESTOR_FLOWS_STATE_UNIVERSE_COMPLETE,
 } from '../../lib/investorFlowsPolicy';
-import type { AmendmentFiling } from '../../lib/amendmentPlan';
 import { CURSOR_OVERLAP_DAYS } from '../../lib/sec13fIngestPlan';
+import type { FilingRecord } from '../../model';
 import { run13fIngest } from '../../server/ingest13f';
 import type {
     Ingest13fDeps,
     Ingest13fRepository,
 } from '../../server/ingest13fTypes';
-import type { AggregateMode } from '../../api/aggregateSql';
-import type { ApplyFilingInput } from '../../api/apply13fFiling';
-import type { DirtyBatch } from '../../api/investorFlows13fRepository';
-import type { InvestorFlowsUniverse } from '../../api/investorFlowsUniverseRepository';
-import type { FilingRecord } from '../../model';
 import {
     FILING_INDEX_JSON,
     INFO_TABLE_SAMPLE,
@@ -26,10 +30,6 @@ import {
     PRIMARY_DOC_ORIGINAL,
     PRIMARY_DOC_RESTATEMENT,
 } from '../fixtures/investorFlowsSamples';
-import {
-    PLANTED_TOKEN,
-    plantedDbError,
-} from '@/shared/test-utils/plantedDbError';
 
 const NOW = new Date('2026-10-15T12:00:00Z'); // Thursday; Q2 (06-30) is complete, Q3 (09-30) in progress
 const ABBOTT = '002824100';

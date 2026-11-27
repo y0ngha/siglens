@@ -1,7 +1,7 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { authNextQuery } from '@/shared/lib/auth/redirect';
 import { cn } from '@/shared/lib/cn';
@@ -16,8 +16,8 @@ import { MobileMenuTrigger } from './ui/mobile-menu/MobileMenuTrigger';
 import { MobileNavGroup } from './ui/mobile-menu/MobileNavGroup';
 import { MobileNavLink } from './ui/mobile-menu/MobileNavLink';
 import type { NavVerticalNode } from './utils/headerNavTree';
-import { SHOW_BELOW_PHONE_BAR } from './utils/phoneBarBreakpoint';
 import { isPathWithin } from './utils/navActiveState';
+import { SHOW_BELOW_PHONE_BAR } from './utils/phoneBarBreakpoint';
 
 interface HeaderMobileMenuProps {
     readonly items: ReadonlyArray<NavVerticalNode>;

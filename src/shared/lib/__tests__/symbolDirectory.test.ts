@@ -1,3 +1,5 @@
+import { buildPrewarmUniverse } from '@/entities/seo-snapshot/lib/applicability';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 /**
  * 종목 디렉터리의 **커버리지**를 고정한다.
  *
@@ -6,8 +8,6 @@
  * 그래서 화면 렌더가 아니라 **집합 동등성**을 단언한다.
  */
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { buildPrewarmUniverse } from '@/entities/seo-snapshot/lib/applicability';
 import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 

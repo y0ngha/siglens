@@ -1,8 +1,8 @@
+import type { OverlayLegendItem } from '@/widgets/chart/types';
 import {
     groupOverlayItems,
     formatOverlayValue,
 } from '@/widgets/chart/utils/overlayLegendFormat';
-import type { OverlayLegendItem } from '@/widgets/chart/types';
 
 describe('formatOverlayValue', () => {
     it('returns "-" for null', () => {

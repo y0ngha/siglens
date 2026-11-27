@@ -39,15 +39,15 @@ vi.mock('@/shared/api/e2eAnalysisStub', () => ({
     E2E_FORCE_CONGRESS_ERROR_COOKIE: 'e2e_force_congress_error',
 }));
 
-import type { MockedFunction } from 'vitest';
-import { headers } from 'next/headers';
 import {
     runCongressTrend,
     type ModelId,
     type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
-import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
+import { headers } from 'next/headers';
+import type { MockedFunction } from 'vitest';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { runCongressTrendAction } from '../actions/runCongressTrendAction';

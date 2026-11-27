@@ -21,13 +21,12 @@ vi.mock('@/entities/email-report/api', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { getEmailReportSettingsAction } from '@/entities/email-report/actions/getEmailReportSettingsAction';
 import { saveEmailReportSettingsAction } from '@/entities/email-report/actions/saveEmailReportSettingsAction';
 import type { RawEmailReportSettingsInput } from '@/entities/email-report/model';
 import type { EmailReportSubscriptionRecord } from '@/shared/db/types';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

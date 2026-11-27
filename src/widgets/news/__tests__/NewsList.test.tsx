@@ -1,12 +1,12 @@
-import type { MockedFunction } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { MockedFunction } from 'vitest';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
+import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
-import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 
 vi.mock('@/widgets/news/hooks/useNewsPollingWithInvalidation', () => ({
     useNewsPollingWithInvalidation: vi.fn(),

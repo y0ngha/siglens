@@ -4,6 +4,7 @@ import {
     type OutcomeSubject,
     type OutcomeWindow,
 } from '@y0ngha/siglens-core';
+import { FAILURE_SPEC, UNCAPTURED_TIMEFRAMES } from '../../lib/outcomePolicy';
 import type {
     AnalysisOutcomeRepository,
     AnchorCloseBasis,
@@ -19,7 +20,6 @@ import type {
     FailureKind,
     UnlabelableReason,
 } from '../../types';
-import { FAILURE_SPEC, UNCAPTURED_TIMEFRAMES } from '../../lib/outcomePolicy';
 
 /** One stored `analysis_outcomes` row as the fake keeps it. */
 export interface StoredOutcome {

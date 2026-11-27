@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import { expectAskAiDestination } from '../support/askAi';
+import { test, expect } from '../support/fixtures';
 
 /**
  * `/[symbol]` no longer hosts its own chatbot — the floating button in the

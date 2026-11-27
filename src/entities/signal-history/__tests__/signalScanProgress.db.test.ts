@@ -1,6 +1,6 @@
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import {
     afterAll,
@@ -11,8 +11,8 @@ import {
     it,
     vi,
 } from 'vitest';
-import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import * as schema from '@/shared/db/schema';
+import { describeTarget } from '../../../../db/scripts/lib/dbTarget';
 import { DrizzleSignalHistoryRepository } from '../api';
 import type { ScanEpisodeInsert } from '../types';
 

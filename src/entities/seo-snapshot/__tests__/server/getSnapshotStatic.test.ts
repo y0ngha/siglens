@@ -52,11 +52,11 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import {
     SNAPSHOT_MAX_AGE_MS,
     type SeoAnalysisSnapshot,
 } from '@/entities/seo-snapshot/model';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 
 // max-age 필터는 Date.now() 기준이라 실제 wall-clock에 기대면
 // 테스트가 시간 의존 flaky가 된다(TESTING.md#TE-7). fake

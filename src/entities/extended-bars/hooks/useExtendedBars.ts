@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { Bar, Timeframe } from '@y0ngha/siglens-core';
-import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { getExtendedBarsAction } from '../actions/getExtendedBarsAction';
 import { isExtendedBarsFetchEnabled } from '../lib/extendedBarsGate';

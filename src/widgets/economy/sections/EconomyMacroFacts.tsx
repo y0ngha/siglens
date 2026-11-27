@@ -1,8 +1,8 @@
+import { computeYieldSpread, type EconomySnapshot } from '@y0ngha/siglens-core';
 /**
  * 미국 거시 지표를 결정론적 문장 몇 줄로 요약하는 SSR 사실 블록.
  */
 import { useTranslations } from 'next-intl';
-import { computeYieldSpread, type EconomySnapshot } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { formatFixed } from '@/shared/lib/formatNum';

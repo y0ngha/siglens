@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-
 import type { ScanResult } from '../../src/__tests__/guards/support/codeRules';
 import {
     parseBaseline,

@@ -6,10 +6,10 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { and, eq, is, SQL } from 'drizzle-orm';
-import { portfolioHoldings } from '@/shared/db/schema';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import type { SiglensDatabase } from '@/shared/db/types';
 import { renderSql } from '@/__tests__/utils/renderSql';
+import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { portfolioHoldings } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const createdAt = new Date('2026-05-01T00:00:00.000Z');
 const updatedAt = new Date('2026-05-01T00:00:01.000Z');

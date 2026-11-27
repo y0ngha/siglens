@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateSymbolIndexability } from '../lib/evaluateSymbolIndexability';
 import type { AssetInfo } from '@/shared/lib/types';
+import { evaluateSymbolIndexability } from '../lib/evaluateSymbolIndexability';
 
 function asset(symbol: string, overrides: Partial<AssetInfo> = {}): AssetInfo {
     return {

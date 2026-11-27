@@ -1,17 +1,17 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, inArray, isNull, like, or, sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { hasDataGoKrCredentials } from '../src/shared/api/dataGoKr/krxListedInfoClient';
-import { fetchKrTickerRows } from '../src/shared/api/dataGoKr/fetchKrTickerRows';
-import {
-    formatCandidates,
-    planKrTickerReconcile,
-} from '../src/entities/ticker/lib/krTickerReconcile';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import {
     guardRemoteWrite,
     requireDatabaseUrl,
 } from '../db/scripts/lib/dbTarget';
+import {
+    formatCandidates,
+    planKrTickerReconcile,
+} from '../src/entities/ticker/lib/krTickerReconcile';
+import { fetchKrTickerRows } from '../src/shared/api/dataGoKr/fetchKrTickerRows';
+import { hasDataGoKrCredentials } from '../src/shared/api/dataGoKr/krxListedInfoClient';
 
 /**
  * `korean_tickers` 테이블 정의 — `src/shared/db/schema.ts`의 동명 테이블과 **같은 컬럼**이다.

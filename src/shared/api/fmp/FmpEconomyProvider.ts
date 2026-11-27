@@ -6,20 +6,19 @@ import {
     type EconomicIndicatorSeries,
     type TreasuryRateSnapshot,
 } from '@y0ngha/siglens-core';
-
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { normalizeCalendarForCountry } from './normalizeCalendarForCountry';
 import type {
     CountryCalendars,
     EconomyProvider,
 } from '@/shared/api/economy/EconomyProvider';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { FMP_CALENDAR_MAX_SPAN_DAYS } from '@/shared/config/economyCalendar';
 import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
 } from '@/shared/config/economyIndicators';
-import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import { MS_PER_DAY } from '@/shared/config/time';
-import { FMP_CALENDAR_MAX_SPAN_DAYS } from '@/shared/config/economyCalendar';
+import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
+import { normalizeCalendarForCountry } from './normalizeCalendarForCountry';
 
 interface DateRange {
     from: string;

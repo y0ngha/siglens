@@ -2,13 +2,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SITE_URL } from '@/shared/lib/seo';
-import { STATIC_PAGE_PATHS } from '../lib/staticPagePaths';
 import {
     INDEXNOW_DELAY_HOURS,
     classifyIndexNowUrl,
     indexNowNotBeforeMs,
     type IndexNowRouteKind,
 } from '../lib/indexNowDelays';
+import { STATIC_PAGE_PATHS } from '../lib/staticPagePaths';
 
 const NOW = Date.parse('2026-10-05T00:00:00Z');
 const HOUR = 3_600_000;

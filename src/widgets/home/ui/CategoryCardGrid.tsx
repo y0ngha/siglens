@@ -3,16 +3,15 @@
  * 제목·`nav` 랜드마크·탭은 `PopularTickers`가 소유한다(이 파일은 카드 격자만 그린다).
  */
 
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useTranslations } from 'next-intl';
 import type { WatchlistSource } from '@/entities/watchlist/model';
 import { WatchlistPillScope } from '@/features/watchlist/ui/WatchlistPillScope';
 import { WatchlistPillToggle } from '@/features/watchlist/ui/WatchlistPillToggle';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-
-import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import type { TickerItem } from '@/shared/lib/types';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { COLLAPSED_VISIBLE } from '../utils/popularCollapse';
 
 /** 카드 좌측 보더 + 라벨 텍스트의 Tailwind 색상 클래스 쌍. */

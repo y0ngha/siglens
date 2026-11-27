@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SignupForm } from '@/features/auth-signup/ui/SignupForm';
-import { useSignupForm } from '@/features/auth-signup/hooks/useSignupForm';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
 } from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
+import { useSignupForm } from '@/features/auth-signup/hooks/useSignupForm';
+import { SignupForm } from '@/features/auth-signup/ui/SignupForm';
 import type {
     RequestEmailVerificationFormState,
     SignupFormState,

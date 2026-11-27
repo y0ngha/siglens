@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AXIS_LABEL_KEY } from '@/entities/seo-snapshot/lib/financialsContent';
-import koMessages from '../../../../../messages/ko.json';
 import {
     SCORECARD_AXES,
     axisLabelKey,
 } from '@/widgets/financials/utils/axisLabels';
+import koMessages from '../../../../../messages/ko.json';
 
 describe('axisLabels', () => {
     it('스코어카드는 네 축을 정해진 순서로 그린다', () => {

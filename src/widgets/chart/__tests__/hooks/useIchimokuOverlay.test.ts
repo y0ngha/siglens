@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useIchimokuOverlay } from '../../hooks/useIchimokuOverlay';
 import { STORAGE_KEYS } from '../../constants';
+import { useIchimokuOverlay } from '../../hooks/useIchimokuOverlay';
 import { extendWithFutureCloud } from '../../utils/ichimokuUtils';
 
 const mockSetData = vi.fn();

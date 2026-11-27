@@ -1,10 +1,10 @@
 'use client';
 
+import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 /**
  * 섹터 신호 패널의 섹터·타임프레임 선택 상태와 URL 동기화.
  */
 import { usePathname, useRouter } from 'next/navigation';
-import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import { isDashboardTimeframe } from '@/shared/config/dashboard-tickers';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import {

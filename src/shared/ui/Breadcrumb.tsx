@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { brandName } from '@/shared/lib/brandName';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 export interface BreadcrumbCrumb {
     /**

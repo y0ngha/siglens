@@ -1,18 +1,18 @@
 'use client';
 
 import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
-import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
+import {
+    omitAnalysisModelFallback,
+    publishAnalysisModelFallback,
+    readAnalysisModelFallback,
+} from '@/shared/lib/sse/analysisModelFallback';
 import {
     isAnalysisRateLimitPayload,
     RATE_LIMITED_SSE_EVENT,
     type AnalysisRateLimitPayload,
 } from '@/shared/lib/sse/analysisRateLimit';
 import { publishAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
-import {
-    omitAnalysisModelFallback,
-    publishAnalysisModelFallback,
-    readAnalysisModelFallback,
-} from '@/shared/lib/sse/analysisModelFallback';
+import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 
 /**
  * 분석 SSE 스트림 소비 헬퍼.

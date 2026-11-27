@@ -1,7 +1,7 @@
-import { test, expect } from '../support/fixtures';
 import type { Page } from '@playwright/test';
-import { getEmailDebug } from '../support/emailHelper';
 import { LOCAL_STORAGE_WATCHLIST_KEY } from '@/shared/lib/storageKeys';
+import { getEmailDebug } from '../support/emailHelper';
+import { test, expect } from '../support/fixtures';
 
 /**
  * 관심종목: 비회원이 홈 인기 종목 알약의 ★로 2개 담고, 헤더 ★·`/watchlist`에서 보는 흐름과,

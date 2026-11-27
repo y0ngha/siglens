@@ -37,6 +37,7 @@ vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
 
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 
+import { render, screen } from '@testing-library/react';
 import {
     describe,
     it,
@@ -45,9 +46,8 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import NewsHubPage from '../page';
 import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
+import NewsHubPage from '../page';
 
 const mockGetMarketNewsList = getMarketNewsCards as MockedFunction<
     typeof getMarketNewsCards

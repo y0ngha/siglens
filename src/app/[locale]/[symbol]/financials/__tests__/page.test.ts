@@ -86,16 +86,16 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { notFound } from 'next/navigation';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/financials/page';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { getFinancialsSnapshot } from '@/entities/financials-statements/server/getFinancialsSnapshot';
-import type { MockedFunction } from 'vitest';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로
 // 캐스팅하기 위함(CONVENTIONS.md#TS-1). 부분 객체는 as unknown as <Result>로 통과시킨다.

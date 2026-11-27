@@ -27,7 +27,6 @@ vi.mock('next/script', () => ({
 
 import { render, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { ADS_CONVERSION_QUEUED_EVENT } from '@/shared/lib/googleAds';
 

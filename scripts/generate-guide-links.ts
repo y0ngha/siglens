@@ -1,3 +1,5 @@
+import { glob } from 'glob';
+import matter from 'gray-matter';
 /**
  * 스킬 → 가이드 링크 맵 생성기.
  *
@@ -12,8 +14,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { glob } from 'glob';
-import matter from 'gray-matter';
 import {
     GUIDE_CATEGORIES,
     isGuideCategory,

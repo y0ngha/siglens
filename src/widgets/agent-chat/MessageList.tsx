@@ -11,9 +11,10 @@ import {
     buildFeedbackTranscript,
 } from '@/features/agent-chat/lib/feedbackTranscript';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
-import { cn } from '@/shared/lib/cn';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
+import { cn } from '@/shared/lib/cn';
 import { ArrowDownIcon } from '@/shared/ui/StrokeIcons';
+import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 import { useRelatedPages } from './hooks/useRelatedPages';
 import { useTranscriptScroll } from './hooks/useTranscriptScroll';
 import { AssistantMessage } from './message/AssistantMessage';
@@ -21,7 +22,6 @@ import { EditMessageForm } from './message/EditMessageForm';
 import { MessageActions } from './message/MessageActions';
 import { SinceEarlierCard } from './message/SinceEarlierCard';
 import { UserMessage } from './message/UserMessage';
-import { AI_RAISED_CONTROL } from './aiSurfaceStyles';
 
 interface Props {
     readonly messages: AgentUiMessage[];

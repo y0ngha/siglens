@@ -5,9 +5,9 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
+import type { ModelId } from '@y0ngha/siglens-core';
 import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
 import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
-import type { ModelId } from '@y0ngha/siglens-core';
 
 describe('useSelectedModel — branch coverage', () => {
     beforeEach(() => {

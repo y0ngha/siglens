@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
-import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
 import {
     fetchOverallAnalysis,
     type FetchOverallAnalysisRequest,

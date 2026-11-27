@@ -15,9 +15,8 @@ vi.mock('@/entities/api-key/api', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

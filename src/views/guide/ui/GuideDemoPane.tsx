@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn';
+import type { DemoPane } from '@/views/guide/demos/types';
 import {
     linearScale,
     splitRuns,
@@ -17,7 +18,6 @@ import {
     paneTicks,
     paneTickText,
 } from '@/views/guide/lib/demoPaneLayout';
-import type { DemoPane } from '@/views/guide/demos/types';
 import {
     LABEL_HALO,
     SERIES_STROKE,

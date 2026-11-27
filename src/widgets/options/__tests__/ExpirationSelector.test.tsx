@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ExpirationSelector } from '@/widgets/options/ExpirationSelector';
 import type { SlotMapping } from '@y0ngha/siglens-core';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { ExpirationSelector } from '@/widgets/options/ExpirationSelector';
 
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (

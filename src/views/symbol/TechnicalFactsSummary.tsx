@@ -1,6 +1,9 @@
-import { useTranslations } from 'next-intl';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
 import { useId } from 'react';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { guideCategoryPath, guideEntryPath } from '@/shared/lib/guidePaths';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     buildTechnicalFactsSummaryModel,
     technicalFactsMacdMomentumLabel,
@@ -8,9 +11,6 @@ import {
     DIRECTION_LABEL_KEY,
     RSI_ZONE_LABEL_KEY,
 } from './utils/technicalFacts';
-import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import { guideCategoryPath, guideEntryPath } from '@/shared/lib/guidePaths';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /** `TechnicalFactsSummary`가 그려지는 자리(`placement` JSDoc). */
 export type TechnicalFactsPlacement = 'panel' | 'page';

@@ -7,15 +7,14 @@ vi.mock('next-intl/server', () => ({
 
 import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import ko from '../../../../messages/ko.json';
-
 import { AboutPage } from '../AboutPage';
 import { EMPTY_SKILL_COUNTS, getAboutFaq } from '../lib/aboutContent';
 

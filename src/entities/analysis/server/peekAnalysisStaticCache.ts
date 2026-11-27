@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import {
     peekAnalysisCache,
     type AnalysisLocale,
@@ -6,6 +5,7 @@ import {
     type ModelId,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import { unstable_cache } from 'next/cache';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
 
 /**

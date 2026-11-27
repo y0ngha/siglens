@@ -5,8 +5,8 @@
  */
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
-import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
+import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';
 
 /** 분석 실패를 보여 주고 재시도(`resetErrorBoundary`)를 연결한다. */
 export function FinancialsAiSummaryError({

@@ -1,7 +1,7 @@
+import type { LlmsInputs } from '@/app/api/llms/_lib/model';
 import backtestData from '@/entities/backtest-case/data/data.json';
 import { validateBacktestRunData } from '@/entities/backtest-case/lib/validate';
 import { getPublishedBenchmarkRelease } from '@/entities/benchmark/release';
-import type { LlmsInputs } from '@/app/api/llms/_lib/model';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_URL } from '@/shared/lib/seo';
 

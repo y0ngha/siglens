@@ -1,12 +1,12 @@
 import { render } from '@testing-library/react';
-import { renderToString } from 'react-dom/server';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
+import { renderToString } from 'react-dom/server';
 import {
     ShareableAnalysisProvider,
     useShareable,
 } from '@/features/share/model/ShareableAnalysisContext';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 
 const baseSnapshot: FearGreedSnapshot = {
     score: 50,

@@ -90,12 +90,12 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
 }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
 import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
-import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetProfileResilient = vi.mocked(getProfileResilient);

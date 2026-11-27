@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 
 const SAMPLE_PROFILE: FundamentalProfile = {
     symbol: 'AAPL',

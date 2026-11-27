@@ -1,11 +1,11 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 /**
  * 시그렌즈 AI가 제안한 가격대 알림 카드. 도구(`propose_price_alert`)는 아무것도 만들지 않는다 — 카드가 정확한 가격대와
  * 확인 규칙을 보여 주고, 사용자가 "알림 만들기"를 눌러야 서버 액션이 알림을 만든다.
  */
 import dynamic from 'next/dynamic';
-import { useTranslations } from 'next-intl';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import type { ChatPriceAlertProposalBlock } from '@/entities/chat-conversation/types';
 import { PRICE_ALERT_MAX_ACTIVE } from '@/entities/mail-alert/lib/priceAlertConstants';

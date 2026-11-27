@@ -19,8 +19,8 @@ vi.mock('drizzle-orm', async importOriginal => {
     };
 });
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
 
 /**

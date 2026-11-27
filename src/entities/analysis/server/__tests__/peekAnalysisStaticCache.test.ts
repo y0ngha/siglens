@@ -17,10 +17,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
     peekAnalysisCache: vi.fn(),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
 import { peekAnalysisCache } from '@y0ngha/siglens-core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
 
 const mockPeek = vi.mocked(peekAnalysisCache);
 

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-
 import { buildSymbolTabBreadcrumbJsonLd } from '@/app/[locale]/[symbol]/_lib/symbolTabBreadcrumb';
 import {
     enterSymbolTabMetadata,
@@ -13,12 +12,12 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { resolveSnapshotSlots } from '@/entities/options-chain/lib/optionsSlots';
 import { findSnapshotForLocale } from '@/entities/seo-snapshot/lib/findSnapshotForLocale';
-import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { hasOptionsProse } from '@/entities/seo-snapshot/lib/optionsContent';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/server/getSnapshotStatic';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import { SymbolRouteParams } from '@/shared/config/market';
 import { ALWAYS_NOINDEX_TAB_ROBOTS } from '@/shared/lib/seo';
 import { buildSymbolOptionsSeoContent } from '@/shared/lib/seoSymbol';
@@ -29,7 +28,6 @@ import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsS
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-
 import { loadHasOptionsMarket, loadOptionsSnapshot } from './_lib/optionsData';
 
 /** ISR 상한. SSR은 만기일 목록뿐이고 Max Pain·IV·OI는 클라가 그린다. */

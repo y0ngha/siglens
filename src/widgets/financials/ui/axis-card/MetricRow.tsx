@@ -1,8 +1,8 @@
+import type { ScoreMetric } from '@y0ngha/siglens-core';
 /**
  * 축 카드의 핵심 지표 한 줄 — 라벨과 단위별로 포맷한 값.
  */
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { ScoreMetric } from '@y0ngha/siglens-core';
 import { formatMetricValue } from '../../utils/metricFormat';
 import type { StatementCurrency } from '../../utils/statementCurrency';
 

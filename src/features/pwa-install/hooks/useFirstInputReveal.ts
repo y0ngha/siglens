@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { hadFirstInputBeforeHydration } from '../lib/firstInputProbe';
 import {
     POINTERUP_REVEAL_DELAY_MS,
     subscribeBannerTriggers,
 } from '../lib/bannerTriggers';
+import { hadFirstInputBeforeHydration } from '../lib/firstInputProbe';
 
 /**
  * 첫 사용자 입력이 끝났는지 — 설치 배너를 띄울 시점 — 를 돌려준다(`usePwaInstall` 전용).

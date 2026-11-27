@@ -1,12 +1,12 @@
 import 'server-only';
-import { hasDataGoKrCredentials } from '@/shared/api/dataGoKr/krxListedInfoClient';
 import { fetchKrTickerRows } from '@/shared/api/dataGoKr/fetchKrTickerRows';
+import { hasDataGoKrCredentials } from '@/shared/api/dataGoKr/krxListedInfoClient';
+import { tryGetDatabaseClient } from '@/shared/db/client';
+import { DrizzleKoreanTickerRepository } from '../api';
 import {
     formatCandidates,
     planKrTickerReconcile,
 } from '../lib/krTickerReconcile';
-import { DrizzleKoreanTickerRepository } from '../api';
-import { tryGetDatabaseClient } from '@/shared/db/client';
 import { invalidateKoreanTickerCache } from './koreanNameStore';
 
 export interface KrTickerSyncCounts {

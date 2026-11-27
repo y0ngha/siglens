@@ -1,12 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { GUIDE_CATEGORIES, type GuideCategory } from '@/entities/guide/types';
-import ko from '../../../../../messages/ko.json';
+import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
 import en from '../../../../../messages/en.json';
 import ja from '../../../../../messages/ja.json';
+import ko from '../../../../../messages/ko.json';
 import zh from '../../../../../messages/zh.json';
-import { SEO_TITLE_MAX_WIDTH, seoTitleWidth } from '@/shared/lib/seoClamp';
-
 import {
     HOWTO_COUNT_DISPLAY_MIN,
     countGuideHubEntries,

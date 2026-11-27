@@ -1,6 +1,6 @@
-import type { WithRetryOptions } from '@/shared/lib/withRetry';
-import { MS_PER_SECOND } from '@/shared/config/time';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
+import { MS_PER_SECOND } from '@/shared/config/time';
+import type { WithRetryOptions } from '@/shared/lib/withRetry';
 
 export const FMP_RATE_LIMIT_RETRY_DELAYS_MS = [10_000, 15_000, 20_000] as const;
 

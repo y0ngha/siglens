@@ -181,8 +181,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import { StockChart } from '@/widgets/chart/StockChart';
 import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import { StockChart } from '@/widgets/chart/StockChart';
 
 describe('StockChart with empty/zero data', () => {
     it('renders empty state message when bars array is empty', () => {

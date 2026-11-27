@@ -1,9 +1,13 @@
 import { getTranslations } from 'next-intl/server';
+import type { BenchmarkRelease } from '@/entities/benchmark/types';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath, type Locale } from '@/shared/i18n/locales';
+import { brandAiName } from '@/shared/lib/brandName';
+import type { FaqItem } from '@/shared/lib/seo';
 import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
-import type { FaqItem } from '@/shared/lib/seo';
-import { brandAiName } from '@/shared/lib/brandName';
+import { BenchmarkResultSummary } from '@/widgets/benchmark-summary/BenchmarkResultSummary';
+import { ChatReplay } from '@/widgets/replay/ChatReplay';
 import { buildScenarios } from './lib/aboutContent';
 import {
     buildDataTiles,
@@ -12,16 +16,12 @@ import {
     buildPainPoints,
 } from './lib/aboutSections';
 import { AboutCtaBar } from './ui/AboutCtaBar';
-import { AboutHero } from './ui/hero/AboutHero';
-import { AboutPainSection } from './ui/pain/AboutPainSection';
 import { AboutDataSection } from './ui/data/AboutDataSection';
-import { AboutFaqSection } from './ui/faq/AboutFaqSection';
-import { AboutMoreNav } from './ui/more/AboutMoreNav';
 import { AboutEndCta } from './ui/end/AboutEndCta';
-import { ChatReplay } from '@/widgets/replay/ChatReplay';
-import { BenchmarkResultSummary } from '@/widgets/benchmark-summary/BenchmarkResultSummary';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
-import type { BenchmarkRelease } from '@/entities/benchmark/types';
+import { AboutFaqSection } from './ui/faq/AboutFaqSection';
+import { AboutHero } from './ui/hero/AboutHero';
+import { AboutMoreNav } from './ui/more/AboutMoreNav';
+import { AboutPainSection } from './ui/pain/AboutPainSection';
 
 interface Props {
     readonly locale: Locale;

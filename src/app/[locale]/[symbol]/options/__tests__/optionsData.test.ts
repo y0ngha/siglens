@@ -13,7 +13,6 @@ vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import {
     loadHasOptionsMarket,
     loadOptionsSnapshot,

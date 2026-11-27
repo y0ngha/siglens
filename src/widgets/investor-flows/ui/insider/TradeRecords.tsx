@@ -1,20 +1,20 @@
+import type { InsiderTransaction } from '@y0ngha/siglens-core';
 /**
  * 내부자 거래 묶음 하나 — 좁은 화면은 카드, 넓은 화면은 표.
  */
 import { useTranslations } from 'next-intl';
-import type { InsiderTransaction } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
-import { formatCompact, formatUsdCompact } from '../../utils/flowFormat';
-import { shortRole } from '../../utils/insider';
-import { insiderTradeKey } from '../../utils/insiderTradeKey';
-import { FilingLink } from '../filings/FilingLink';
 import { CardFieldList } from '@/shared/ui/CardFieldList';
 import {
     ResponsiveRecordList,
     type RecordColumn,
 } from '@/shared/ui/ResponsiveRecordList';
+import { formatCompact, formatUsdCompact } from '../../utils/flowFormat';
+import { shortRole } from '../../utils/insider';
+import { insiderTradeKey } from '../../utils/insiderTradeKey';
+import { FilingLink } from '../filings/FilingLink';
 import { TypeBadge } from './TypeBadge';
 
 interface TradeRecordsProps {

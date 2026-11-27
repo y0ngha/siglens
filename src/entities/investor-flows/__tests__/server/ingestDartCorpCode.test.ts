@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { DartQuotaError, dartFatalReason } from '@/shared/api/dart/dartClient';
 import { createFakeDartClient } from '@/shared/api/dart/fakeDartClient';
 import { INVESTOR_FLOWS_DART_CORP_CODE_MIN_ROWS } from '../../lib/investorFlowsPolicy';
+import type { DartCorpCodeRow } from '../../model';
 import {
     runDartCorpCodeIngest,
     type IngestDartCorpCodeDeps,
 } from '../../server/ingestDartCorpCode';
-import type { DartCorpCodeRow } from '../../model';
 
 /** 상장사 `count`곳 — 종목코드 `100000`부터, 고유번호 `00100000`부터. */
 const listedCorps = (count: number) =>

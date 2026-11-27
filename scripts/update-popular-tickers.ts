@@ -28,10 +28,10 @@ import {
     writeFileSync,
 } from 'fs';
 import { dirname, resolve } from 'path';
-import { fromFmpSymbol, toFmpSymbol } from '@/shared/lib/fmpSymbol';
-import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import YahooFinance from 'yahoo-finance2';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
+import { fromFmpSymbol, toFmpSymbol } from '@/shared/lib/fmpSymbol';
+import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import {
     insertKrTrendingItems,
     type KrTrendingItem,

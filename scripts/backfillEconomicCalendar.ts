@@ -1,22 +1,21 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { sql } from 'drizzle-orm';
 import {
     normalizeEconomicCalendar,
     type EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
-
-import { economicCalendar } from '../src/shared/db/schema';
-import { economicCalendarId } from '../src/entities/economy/lib/economicCalendarId';
-import { CALENDAR_COUNTRY } from '../src/entities/economy/lib/economyCalendarConstants';
-import { chunkDateRange } from './lib/chunkDateRange';
-import { normalizeIndicatorBaseName } from './lib/normalizeIndicatorBaseName';
+import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import postgres from 'postgres';
 import {
     guardRemoteWrite,
     requireDatabaseUrl,
 } from '../db/scripts/lib/dbTarget';
+import { economicCalendarId } from '../src/entities/economy/lib/economicCalendarId';
+import { CALENDAR_COUNTRY } from '../src/entities/economy/lib/economyCalendarConstants';
+import { economicCalendar } from '../src/shared/db/schema';
+import { chunkDateRange } from './lib/chunkDateRange';
+import { normalizeIndicatorBaseName } from './lib/normalizeIndicatorBaseName';
 
 function requireFmpApiKey(): string {
     const key = process.env.FMP_API_KEY;

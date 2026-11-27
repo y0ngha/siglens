@@ -47,6 +47,11 @@ vi.mock('../../lib/optionsCacheLife', () => ({
 }));
 
 import {
+    COMPRESSED_VALUE_PREFIX,
+    decodeCacheValue,
+} from '@/shared/cache/cacheValueCodec';
+import { getOptionsCacheLifeProfile } from '../../lib/optionsCacheLife';
+import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
     HAS_OPTIONS_MARKET_TTL_SECONDS,
@@ -54,11 +59,6 @@ import {
     SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS,
 } from '../../server/optionsDataCache';
 import { LAST_GOOD_SNAPSHOT_TTL_SECONDS } from '../../server/optionsLastGoodStore';
-import { getOptionsCacheLifeProfile } from '../../lib/optionsCacheLife';
-import {
-    COMPRESSED_VALUE_PREFIX,
-    decodeCacheValue,
-} from '@/shared/cache/cacheValueCodec';
 
 // release-it 경유 실행 시 `.env.local`의 UPSTASH_REDIS_REST_*가 부모 프로세스에 주입되어,
 // module-level에서 import되는 `hasOptionsMarket`/`fetchOptionsSnapshot`이 cached Redis 인스턴스를

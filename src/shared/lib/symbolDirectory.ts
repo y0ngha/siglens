@@ -1,6 +1,6 @@
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { compareCodeUnits } from './compareCodeUnits';
 import { symbolLabel } from './symbolLabel';
 

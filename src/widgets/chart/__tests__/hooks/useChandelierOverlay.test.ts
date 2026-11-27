@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
-import type { LineWidth } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useChandelierOverlay } from '../../hooks/useChandelierOverlay';
+import type { LineWidth } from 'lightweight-charts';
 import { STORAGE_KEYS } from '../../constants';
+import { useChandelierOverlay } from '../../hooks/useChandelierOverlay';
 import { buildTrendSplitData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();

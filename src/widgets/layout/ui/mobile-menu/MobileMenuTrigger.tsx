@@ -1,7 +1,7 @@
 'use client';
 
-import type { Ref } from 'react';
 import { useTranslations } from 'next-intl';
+import type { Ref } from 'react';
 import { MenuIcon } from '@/shared/ui/StrokeIcons';
 
 /** 드로어 `id`. 햄버거의 `aria-controls`와 드로어 요소가 같은 값을 써야 한다. */

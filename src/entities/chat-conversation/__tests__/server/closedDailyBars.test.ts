@@ -9,7 +9,6 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadClosedDailyBars } from '@/entities/chat-conversation/server/closedDailyBars';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 

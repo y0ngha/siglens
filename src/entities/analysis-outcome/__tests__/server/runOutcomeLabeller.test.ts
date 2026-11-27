@@ -20,6 +20,7 @@ import {
     vi,
     type MockInstance,
 } from 'vitest';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import {
     MS_PER_DAY,
     MS_PER_SECOND,
@@ -51,7 +52,6 @@ import {
 } from '../../lib/outcomePolicy';
 import { runOutcomeLabeller } from '../../server/runOutcomeLabeller';
 import type { OutcomeLabellerDeps } from '../../types';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import fixtures from '../fixtures/storedAnalyses.json';
 import { FakeOutcomeRepo, type SeededHistory } from './fakeOutcomeRepo';
 

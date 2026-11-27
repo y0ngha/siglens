@@ -6,9 +6,9 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { ShowMoreButton } from '../ui/ShowMoreButton';
 import { AnalystActionsEmpty } from '../ui/analyst-actions/AnalystActionsEmpty';
 import { GradeRow } from '../ui/analyst-actions/GradeRow';
+import { ShowMoreButton } from '../ui/ShowMoreButton';
 import type { AnalystActionItem } from '../utils/analystActionItems';
 import { gradeRowKey } from '../utils/gradeRows';
 

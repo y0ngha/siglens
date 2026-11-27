@@ -7,8 +7,8 @@
  */
 import { useTranslations } from 'next-intl';
 import type { FundamentalFact } from '@/entities/fundamental-facts/model';
-import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { Locale } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import {
     formatFactCount,
     formatFactDate,

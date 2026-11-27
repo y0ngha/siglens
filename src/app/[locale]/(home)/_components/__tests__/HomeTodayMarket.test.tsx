@@ -1,17 +1,17 @@
 import { screen, within } from '@testing-library/react';
-import type { Locale } from '@/shared/i18n/locales';
-import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
-import { formatSignedPercent } from '@/shared/lib/priceFormat';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import ko from '../../../../../../messages/ko.json';
-import en from '../../../../../../messages/en.json';
-import { HomeTodayMarket } from '../HomeTodayMarket';
 import {
     SIGNAL_HUBS,
     signalHubPath,
 } from '@/entities/signal-history/lib/signalHubs';
+import type { Locale } from '@/shared/i18n/locales';
+import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
+import { formatSignedPercent } from '@/shared/lib/priceFormat';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import en from '../../../../../../messages/en.json';
+import ko from '../../../../../../messages/ko.json';
 import type { HomeTodayMarketData } from '../../_lib/loadHomeTodayMarket';
 import { toTodayMarketView } from '../../_lib/todayMarketView';
+import { HomeTodayMarket } from '../HomeTodayMarket';
 
 const c = ko.app.home.todayMarket;
 const US_SCANNED_AT = '2026-11-14T21:00:00.000Z';

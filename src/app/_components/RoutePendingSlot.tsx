@@ -1,11 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { SymbolEntrySkeleton } from '@/app/[locale]/[symbol]/SymbolEntrySkeleton';
 import { routeKindOf } from '@/shared/config/routeKind';
 import { usePendingRouteEntry } from '@/shared/model/NavigationPendingContext';
 import { PendingSlot } from '@/shared/ui/PendingSlot';
 import { RouteSkeleton } from '@/widgets/route-skeleton/RouteSkeleton';
-import { SymbolEntrySkeleton } from '@/app/[locale]/[symbol]/SymbolEntrySkeleton';
 
 /**
  * 루트 page slot. 다른 라우트로 가는 중이면 떠나온 페이지 대신 **목적지 모양의 골격**을

@@ -8,10 +8,9 @@ vi.mock('@/entities/ticker/actions/getAssetInfoAction', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AssetInfo } from '@/shared/lib/types';
-
-import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { getAssetInfoAction } from '@/entities/ticker/actions/getAssetInfoAction';
+import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
+import type { AssetInfo } from '@/shared/lib/types';
 
 const mockGetAssetInfo = vi.mocked(getAssetInfoAction);
 

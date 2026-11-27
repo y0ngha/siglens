@@ -1,20 +1,20 @@
 import type { Metadata } from 'next';
-import { localePath, type Locale } from '@/shared/i18n/locales';
-import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { brandName } from '@/shared/lib/brandName';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { localePath, type Locale } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
 import {
     NOINDEX_SYMBOL_METADATA,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import {
     buildSymbolTabSeoContent,
     type BuildSymbolSeoOptions,
     type SymbolSeoContent,
     type SymbolSeoTab,
 } from '@/shared/lib/seoSymbol';
-import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /*

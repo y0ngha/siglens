@@ -5,16 +5,16 @@ vi.mock('@/shared/hooks/useHumanInteracted', () => ({
     useHumanInteracted: vi.fn(),
 }));
 
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { Bar, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Bar, Timeframe } from '@y0ngha/siglens-core';
 import { getExtendedBarsAction } from '@/entities/extended-bars/actions/getExtendedBarsAction';
 import { useExtendedBars } from '@/entities/extended-bars/hooks/useExtendedBars';
-import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
-import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 
 const mockedAction = vi.mocked(getExtendedBarsAction);
 const mockedHuman = vi.mocked(useHumanInteracted);

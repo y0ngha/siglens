@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { SignalStockCard } from '@/widgets/dashboard/SignalStockCard';
-import type { StockWithConflict } from '@y0ngha/siglens-core';
 
 vi.mock('next/link', () => ({
     default: ({

@@ -44,8 +44,8 @@ import {
     shouldAttemptReanalyze,
 } from '@/app/api/analysis/stream/generationQuota';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { RateLimitedStreamError } from '@/shared/lib/sse/analysisRateLimit';
+import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,

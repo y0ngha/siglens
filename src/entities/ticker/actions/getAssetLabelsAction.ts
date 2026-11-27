@@ -1,9 +1,9 @@
 'use server';
 
-import { getAssetInfo } from '../server/getAssetInfo';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { MAX_RECENT_SEARCHES } from '../lib/recentSearches';
 import { pickAssetName } from '../lib/ticker';
-import { resolveLocale, type Locale } from '@/shared/i18n/locales';
+import { getAssetInfo } from '../server/getAssetInfo';
 
 export interface AssetLabelsResult {
     /** 이름을 찾은 심볼만. 이름이 없는 심볼은 여기서 빠진다. */

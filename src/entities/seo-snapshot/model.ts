@@ -1,5 +1,5 @@
-import type { Locale } from '@/shared/i18n/locales';
 import { MS_PER_DAY } from '@/shared/config/time';
+import type { Locale } from '@/shared/i18n/locales';
 
 /** SEO 분석 스냅샷이 커버하는 탭. 저장 가능한 탭 전체이며, 프리웜이 실제로 굽는 부분집합은 `PREWARM_TABS`다. */
 export const SEO_SNAPSHOT_TABS = [

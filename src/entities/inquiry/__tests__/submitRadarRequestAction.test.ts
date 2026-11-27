@@ -29,10 +29,9 @@ vi.mock('../lib/submitInquiry', () => ({
 }));
 
 import type { MockInstance } from 'vitest';
-
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 import { submitRadarRequestAction } from '../actions/submitRadarRequestAction';
 import type { RadarRequestFormState } from '../lib/types';
-import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const INITIAL_STATE: RadarRequestFormState = {
     submitted: false,

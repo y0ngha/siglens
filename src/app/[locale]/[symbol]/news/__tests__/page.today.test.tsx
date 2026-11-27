@@ -115,7 +115,6 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { EventCalendarSection } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import NewsPage from '@/app/[locale]/[symbol]/news/page';

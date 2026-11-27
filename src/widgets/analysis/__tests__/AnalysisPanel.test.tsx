@@ -88,7 +88,6 @@ vi.mock('@/widgets/analysis/utils/signalUtils', () => ({
     resolveStrengthDisplay: () => null,
 }));
 
-import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import type {
     ActionRecommendation,
@@ -99,23 +98,23 @@ import type {
     StrategyResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
-
 import {
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     measuredBaseRateFor,
 } from '@y0ngha/siglens-core';
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
+import { NextIntlClientProvider } from 'next-intl';
+import React from 'react';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-import { AnalysisPanel } from '../AnalysisPanel';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
-import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
+import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-import { NextIntlClientProvider } from 'next-intl';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
+import { AnalysisPanel } from '../AnalysisPanel';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.

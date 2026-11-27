@@ -4,8 +4,8 @@
  * 공지 다이얼로그의 바닥 — "다시 보지 않기"와 "닫기" 버튼.
  */
 import { useTranslations } from 'next-intl';
-import { cn } from '@/shared/lib/cn';
 import { BUTTON_GHOST, BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 
 /** NoticeDialogFooter의 props. */
 export interface NoticeDialogFooterProps {

@@ -1,10 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ContactForm } from '@/features/contact-form/ui/ContactForm';
-import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
-import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
-import type { ContactFormState } from '@/shared/lib/types';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
+import { ContactForm } from '@/features/contact-form/ui/ContactForm';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import type { ContactFormState } from '@/shared/lib/types';
 
 // Block transitive imports that pull in the postgres-js client (which
 // requires node APIs not available in the jsdom test environment).

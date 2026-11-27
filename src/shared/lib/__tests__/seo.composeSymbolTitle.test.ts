@@ -1,9 +1,9 @@
-import { composeSymbolTitle } from '@/shared/lib/seoSymbol';
-import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '@/shared/lib/seoClamp';
 import {
     SEO_WORST_CASE_KOREAN_NAME,
     SEO_WORST_CASE_TICKER,
 } from '@/__tests__/utils/seoTitleFixtures';
+import { seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '@/shared/lib/seoClamp';
+import { composeSymbolTitle } from '@/shared/lib/seoSymbol';
 
 describe('composeSymbolTitle', () => {
     it('예산이 남으면 tail까지 붙인다', () => {

@@ -1,6 +1,6 @@
+import { useTranslations } from 'next-intl';
 /** Column headers of the congress trades table. */
 import type { ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     AmountRangeTooltip,

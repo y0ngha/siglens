@@ -3,11 +3,11 @@ import { createHash } from 'node:crypto';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { PlainTextRepository } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { PLAIN_PROMPT_VERSION } from '../lib/buildPlainPrompt';
 import { DrizzlePlainTextRepository } from '../plainTextRepository';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 저장소 조회 상한(ms). DB 클라이언트(postgres-js)는 연결 타임아웃(`connect_timeout`)만

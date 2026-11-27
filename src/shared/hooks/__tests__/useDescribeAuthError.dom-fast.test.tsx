@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import koMessages from '../../../../messages/ko.json';
 
 function renderDescribe() {

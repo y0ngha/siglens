@@ -25,15 +25,14 @@ vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn(),
 }));
 
-import type { MockedFunction, MockedClass } from 'vitest';
-
 import { cookies } from 'next/headers';
-import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import type { MockedFunction, MockedClass } from 'vitest';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
 import { createEmailTokenStore } from '@/entities/email-token/api';
-import { getDatabaseClient } from '@/shared/db/client';
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
+import { getDatabaseClient } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 import {
     expectLogWithoutPlantedSecrets,

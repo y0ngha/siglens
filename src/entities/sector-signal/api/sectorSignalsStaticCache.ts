@@ -1,18 +1,18 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
+import { unstable_cache } from 'next/cache';
+import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
+import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     getCachedSectorSignals,
     sectorStocksConfigFingerprint,
 } from './sectorSignalsCache';
-import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import { sectorSignalsProviderFor } from './sectorSignalsProvider';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
 
 /**
  * ISR static-safe sector signals. timeframe별 캐시. revalidate=1h, `sector:signals:<scopeId>` tag.

@@ -1,45 +1,45 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { DrizzleAgreementRepository } from '@/entities/agreement/api';
+import {
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import {
+    CONSENT_REQUIRED_MESSAGE,
+    OAUTH_ERROR_REDIRECT,
+} from '@/entities/auth/lib/errorMessages';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import {
+    createAuthSession,
+    DEFAULT_SESSION_TTL_SECONDS,
+} from '@/entities/auth/lib/sessionCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
+import {
+    createPendingOAuthSignupStoreFromEnv,
+    type PendingOAuthSignup,
+} from '@/entities/oauth-account/server/pendingOAuthSignupStore';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
+import { getDatabaseClient } from '@/shared/db/client';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { localeHref, localeRedirect } from '@/shared/i18n/localeRedirect';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import {
     resolvePostSignupDestination,
     sanitizeNextPath,
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
-import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import { createFunnelSignupCookie } from '@/shared/lib/funnel/signupCookie';
-import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
-import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
-import {
-    CONSENT_REQUIRED_MESSAGE,
-    OAUTH_ERROR_REDIRECT,
-} from '@/entities/auth/lib/errorMessages';
-import {
-    createAuthSession,
-    DEFAULT_SESSION_TTL_SECONDS,
-} from '@/entities/auth/lib/sessionCookie';
-import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import {
-    DrizzleSessionRepository,
-    DrizzleUserRepository,
-} from '@/entities/auth/api';
-import { getDatabaseClient } from '@/shared/db/client';
-import type { SiglensDatabase } from '@/shared/db/types';
-import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
-import {
-    createPendingOAuthSignupStoreFromEnv,
-    type PendingOAuthSignup,
-} from '@/entities/oauth-account/server/pendingOAuthSignupStore';
-import { DrizzleAgreementRepository } from '@/entities/agreement/api';
-import { DrizzleTermsRepository } from '@/entities/terms/api';
-import { cookies } from 'next/headers';
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
-import { recordSignupEmailReportOptIn } from '@/entities/email-report/server/recordSignupEmailReportOptIn';
-import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { readConsentForm } from '../lib/readConsentForm';
 
 interface ActiveTermsIds {

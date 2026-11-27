@@ -7,14 +7,14 @@ import {
 import { getClientIp } from '@/shared/api/getClientIp';
 import { mintGuestIdOnResponse, readGuestId } from '@/shared/api/guestId';
 import { isVerifiedCrawler } from '@/shared/api/verifiedCrawler';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { isAiProviderFailure } from '@/shared/lib/aiProviderFailure';
-import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import {
     RateLimitedStreamError,
     type AnalysisRateLimitAudience,
     type AnalysisRateLimitReason,
 } from '@/shared/lib/sse/analysisRateLimit';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 
 /**
  * 이 라우트 요청 하나가 새 생성에 대해 받은 판정.

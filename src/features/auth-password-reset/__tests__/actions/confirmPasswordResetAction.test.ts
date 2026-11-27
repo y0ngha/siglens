@@ -47,11 +47,10 @@ vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
 }));
 
 import type { MockedFunction } from 'vitest';
-
 import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
-import { createEmailTokenStore } from '@/entities/email-token/api';
 import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
+import { createEmailTokenStore } from '@/entities/email-token/api';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

@@ -1,5 +1,4 @@
 import 'server-only';
-import { cache } from 'react';
 import {
     type BarsData,
     type MarketDataProvider,
@@ -9,6 +8,7 @@ import {
     computeBarsEffectiveTtl,
     fetchBarsWithIndicators,
 } from '@y0ngha/siglens-core';
+import { cache } from 'react';
 import {
     __resetMemoryLruForTests,
     createMemoryLru,

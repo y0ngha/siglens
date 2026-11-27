@@ -56,11 +56,11 @@ vi.mock('@/shared/lib/backgroundTask', () => ({
     fireAndForget: vi.fn((p: Promise<unknown>) => p.catch(() => {})),
 }));
 
+import { createCacheProvider } from '@y0ngha/siglens-core';
 import {
     searchTicker,
     _resetInFlightTranslationsForTest,
 } from '@/entities/ticker/server/searchTicker';
-import { createCacheProvider } from '@y0ngha/siglens-core';
 
 const mockCreateCacheProvider = createCacheProvider as ReturnType<typeof vi.fn>;
 

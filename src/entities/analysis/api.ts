@@ -15,35 +15,36 @@ import {
     type RunCongressTrendResult,
     type EnrichedNewsItem,
 } from '@y0ngha/siglens-core';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
-import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
-import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
-import {
-    currencyForSymbol,
-    getDescriptor,
-} from '@/shared/config/marketProfile/registry';
-import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
-import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
-import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { getDatabaseClient } from '@/shared/db/client';
-import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
-import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
 import {
     getNextEarningsReport,
     listEarningsDatesAfterRefresh,
     resolveEarningsDates,
 } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
+import { getOverallInvestorFlowsScorecard } from '@/entities/investor-flows/server/getOverallInvestorFlowsScorecard';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { newsInstrumentKindFor } from '@/entities/ticker/lib/assetClassification';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
+import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
+import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
+import {
+    currencyForSymbol,
+    getDescriptor,
+} from '@/shared/config/marketProfile/registry';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import {
     DrizzleAnalysisHistoryRepository,
@@ -56,7 +57,6 @@ import {
     loadFinancialsScorecardOrUndefined,
     loadOptionsSnapshotOrNull,
 } from './server/overallAxisInputs';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_1_FLASH_MODEL`을 직접 명시 전달하는

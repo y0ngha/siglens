@@ -9,11 +9,11 @@
  * 그 단어가 든 경로를 막는다.
  */
 import { headers } from 'next/headers';
+import { collapseLandingPath } from '@/app/api/presence/_shared/collapseLandingPath';
 import {
     createDailyPruner,
     noContent,
 } from '@/app/api/presence/_shared/dailyPruner';
-import { collapseLandingPath } from '@/app/api/presence/_shared/collapseLandingPath';
 import { entrySourceOf } from '@/app/api/presence/_shared/entrySourceOf';
 import {
     landingPathOf,
@@ -31,8 +31,8 @@ import {
 } from '@/entities/visitor/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { describeDbErrorForLog } from '@/shared/db/describeDbErrorForLog';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 export const dynamic = 'force-dynamic';
 

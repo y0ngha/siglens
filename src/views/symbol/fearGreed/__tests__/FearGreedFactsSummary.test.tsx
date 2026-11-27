@@ -1,4 +1,3 @@
-import type { Mock } from 'vitest';
 import { render } from '@testing-library/react';
 import {
     computeFearGreedHistory,
@@ -7,6 +6,7 @@ import {
     type BuySellVolumeResult,
     type FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
+import type { Mock } from 'vitest';
 import { FearGreedFactsSummary } from '../FearGreedFactsSummary';
 
 // computeFearGreedIndex의 실제 walk-forward 로직은 90+ bar 픽스처가 필요해

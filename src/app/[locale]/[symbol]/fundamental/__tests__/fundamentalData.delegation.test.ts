@@ -71,7 +71,6 @@ vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 // ---------------------------------------------------------------------------
 // Import the module under test AFTER mocks are in place.
 // ---------------------------------------------------------------------------

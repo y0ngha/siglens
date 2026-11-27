@@ -1,6 +1,5 @@
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { chatConversations } from '@/shared/db/schema';
 import {
     CONVERSATION_TITLE_COLUMN_MAX,
     deriveTitle,
@@ -9,6 +8,7 @@ import {
     toMessageView,
     type ChatMessageRecord,
 } from '@/entities/chat-conversation/model';
+import { chatConversations } from '@/shared/db/schema';
 
 describe('deriveTitle', () => {
     it('첫 줄 60자, 빈 문자열은 기본 제목', () => {

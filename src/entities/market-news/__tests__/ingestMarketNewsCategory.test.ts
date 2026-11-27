@@ -20,15 +20,15 @@ vi.mock('../api/getMarketNewsClient', () => ({
     getMarketNewsClient: vi.fn(),
 }));
 
+import * as core from '@y0ngha/siglens-core';
+import { revalidateTag } from 'next/cache';
 // 2. Static imports
 import { inspect } from 'node:util';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { revalidateTag } from 'next/cache';
-import * as core from '@y0ngha/siglens-core';
+import * as clientModule from '../api/getMarketNewsClient';
 import { ingestMarketNewsCategory } from '../api/ingestMarketNewsCategory';
 import * as flagsModule from '../api/marketNewsRefreshFlags';
 import * as repoModule from '../api/marketNewsRepository';
-import * as clientModule from '../api/getMarketNewsClient';
 
 function makeItem(id: string) {
     return {

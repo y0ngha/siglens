@@ -1,3 +1,5 @@
+import { GUIDE_LINE_STROKE_WIDTH } from '../../utils/chartStrokeWidths';
+import { barCenterX } from '../../utils/strikeChartGeometry';
 import {
     CHART_WIDTH,
     COLOR_GUIDE_LINE,
@@ -6,8 +8,6 @@ import {
     PAD_TOP,
     SVG_HEIGHT,
 } from '../../utils/strikeChartLayout';
-import { GUIDE_LINE_STROKE_WIDTH } from '../../utils/chartStrokeWidths';
-import { barCenterX } from '../../utils/strikeChartGeometry';
 
 interface StrikeGuideLinesProps {
     /** Number of strike slots. */

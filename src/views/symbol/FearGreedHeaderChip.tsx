@@ -1,10 +1,10 @@
-import { useTranslations } from 'next-intl';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { useTranslations } from 'next-intl';
+import { cn } from '@/shared/lib/cn';
 import {
     CONFIDENCE_LIMITED_KEY,
     SENTIMENT_LABEL_KEY,
 } from '@/shared/lib/fearGreedLabels';
-import { cn } from '@/shared/lib/cn';
 
 // alpha /40 vs /20 = EXTREME vs base intensity (no separate extreme tokens in design system).
 // 텍스트는 반드시 `-text` 변형을 쓴다 — 기본 `ui-*`는 그래픽(3:1) 기준이라

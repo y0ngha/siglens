@@ -34,15 +34,14 @@ vi.mock('../CongressTrendSummaryEmpty', () => ({
     CongressTrendSummaryEmpty: () => <div data-testid="empty" />,
 }));
 
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-
-import { CongressTrendSummary } from '../CongressTrendSummary';
-import { useCongressTrend } from '../hooks/useCongressTrend';
+import { describe, it, expect, vi } from 'vitest';
 import {
     ShareableAnalysisProvider,
     useShareable,
 } from '@/features/share/model/ShareableAnalysisContext';
+import { CongressTrendSummary } from '../CongressTrendSummary';
+import { useCongressTrend } from '../hooks/useCongressTrend';
 
 describe('CongressTrendSummary', () => {
     /**

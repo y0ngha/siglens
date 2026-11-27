@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { globSync } from 'glob';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     buildPlainPrompt,

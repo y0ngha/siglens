@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 /**
  * 가입 퍼널 이벤트 수집점. 한 요청에 이벤트 하나 — 묶음 전송은 만들지 않는다(사건이
  * 드물고, 묶으면 `keepalive` 전송이 커진다).
@@ -11,7 +12,6 @@
  * 정도의 노출을 감수한다 — 남용이 보이면 공용 헬퍼를 먼저 만들고 여기에 건다.
  */
 import { constants } from 'node:http2';
-import { headers } from 'next/headers';
 import {
     createDailyPruner,
     noContent,

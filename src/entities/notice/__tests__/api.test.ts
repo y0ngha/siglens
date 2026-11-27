@@ -1,7 +1,7 @@
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
-import type { SiglensDatabase } from '@/shared/db/types';
 import type { NoticeRecord } from '@/entities/notice/model/types';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 interface MockDbResult {
     db: SiglensDatabase;

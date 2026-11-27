@@ -1,8 +1,8 @@
+import type { ConflictInfo } from '@y0ngha/siglens-core';
 /**
  * 상충 신호 종목의 상승·하락 건수 안내.
  */
 import { useTranslations } from 'next-intl';
-import type { ConflictInfo } from '@y0ngha/siglens-core';
 
 interface ConflictNoteProps {
     conflict: ConflictInfo;

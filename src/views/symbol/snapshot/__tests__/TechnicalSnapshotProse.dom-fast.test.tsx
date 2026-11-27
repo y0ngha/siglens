@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { FilteredAnalysisResponse } from '@y0ngha/siglens-core';
-import { TechnicalSnapshotProse } from '../renderers/TechnicalSnapshotProse';
+import { describe, it, expect } from 'vitest';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { TechnicalSnapshotProse } from '../renderers/TechnicalSnapshotProse';
 
 // 스냅샷 저장소 content는 harvest.ts가 core submitAnalysis의 status==='cached'
 // 분기에서 얻은 result.result(AnalysisResponse | FilteredAnalysisResponse)를

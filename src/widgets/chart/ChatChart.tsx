@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
+import { useCallback, useMemo, useState } from 'react';
 import type {
     ChatChartBlock,
     ChatChartTimeframe,

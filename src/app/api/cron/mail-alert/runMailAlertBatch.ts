@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Tier } from '@y0ngha/siglens-core';
+import type { ReportSymbolNames } from '@/entities/email-report/reportModel';
 import { isMissingTableError } from '@/entities/mail-alert/lib/dbErrorKind';
 import {
     MAIL_ALERT_CHANGE_REFERENCE_MAX_AGE_DAYS,
@@ -35,7 +36,6 @@ import type {
     MailAlertEmailTranslator,
     MailAlertSignalLabelResolver,
 } from '@/entities/mail-alert/templates/mailAlertEmailTypes';
-import type { ReportSymbolNames } from '@/entities/email-report/reportModel';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import {
     redactDbErrorForLog,
@@ -55,10 +55,6 @@ import type { Locale } from '@/shared/i18n/locales';
 import { kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 import { mapChunked } from '@/shared/lib/mapChunked';
 import {
-    evaluatePriceAlerts,
-    type PriceAlertEvaluation,
-} from './evaluatePriceAlerts';
-import {
     checkSignalReadiness,
     expectedSessions,
     loadComputedSources,
@@ -69,6 +65,10 @@ import {
     type ExpectedSessions,
     type SymbolReading,
 } from './collectAlertSources';
+import {
+    evaluatePriceAlerts,
+    type PriceAlertEvaluation,
+} from './evaluatePriceAlerts';
 
 /**
  * 한 번의 실행이 새 구독자 처리를 시작할 수 있는 시간. 시간당 cron의 다음 실행(08시 최종 슬롯은 한 시간 뒤)과

@@ -1,6 +1,5 @@
 import { getTranslations } from 'next-intl/server';
 import { describe, expect, it } from 'vitest';
-
 import { MARKET_FEAR_GREED_LINK } from '@/app/[locale]/[symbol]/fear-greed/_lib/marketFearGreedLink';
 
 describe('MARKET_FEAR_GREED_LINK', () => {

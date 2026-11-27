@@ -265,15 +265,15 @@ vi.mock('@tanstack/react-query', () => ({
     dehydrate: vi.fn(() => ({})),
 }));
 
-import { generateMetadata as generateSymbolMetadata } from '@/app/[locale]/[symbol]/page';
+import type { Metadata } from 'next';
+import type { MockedFunction } from 'vitest';
+import { generateMetadata as generateFearGreedMetadata } from '@/app/[locale]/[symbol]/fear-greed/page';
 import { generateMetadata as generateFundamentalMetadata } from '@/app/[locale]/[symbol]/fundamental/page';
 import { generateMetadata as generateNewsMetadata } from '@/app/[locale]/[symbol]/news/page';
-import { generateMetadata as generateOverallMetadata } from '@/app/[locale]/[symbol]/overall/page';
-import { generateMetadata as generateFearGreedMetadata } from '@/app/[locale]/[symbol]/fear-greed/page';
 import { generateMetadata as generateOptionsMetadata } from '@/app/[locale]/[symbol]/options/page';
+import { generateMetadata as generateOverallMetadata } from '@/app/[locale]/[symbol]/overall/page';
+import { generateMetadata as generateSymbolMetadata } from '@/app/[locale]/[symbol]/page';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
-import type { MockedFunction } from 'vitest';
-import type { Metadata } from 'next';
 
 /**
  * noindex 분기의 canonical은 `null`도, 루트 레이아웃의 홈도 아니라 **자기 URL**이다

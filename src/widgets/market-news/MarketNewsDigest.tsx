@@ -1,10 +1,10 @@
 'use client';
 
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 /**
  * 카테고리 AI 다이제스트 — 훅이 돌려준 상태를 로딩·오류·결과 화면으로 나눠 그린다.
  */
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { AnalysisFeedback } from '@/features/ai-feedback/ui/AnalysisFeedback';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
 import { DigestErrorView } from './ui/digest/DigestErrorView';

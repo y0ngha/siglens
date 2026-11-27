@@ -1,9 +1,9 @@
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import {
     LOCAL_STORAGE_ANON_ANALYZED_SYMBOLS_KEY,
     LOCAL_STORAGE_ANON_NUDGE_SHOWN_KEY,
     LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY,
 } from '@/shared/lib/storageKeys';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * Anonymous distinct-symbol analysis counter — member-reasoning-toggle spec

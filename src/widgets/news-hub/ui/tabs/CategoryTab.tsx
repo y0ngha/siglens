@@ -1,8 +1,8 @@
+import { cn } from '@/shared/lib/cn';
 /**
  * @file 카테고리 탭 줄의 탭 하나(현재 카테고리는 텍스트, 나머지는 링크).
  */
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { cn } from '@/shared/lib/cn';
 import type { CategoryTabItem } from '../../utils/categoryTabs';
 
 const TAB_BASE_CLASS =

@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import {
@@ -28,7 +29,6 @@ import type {
     DispatchQuotaContext,
 } from './types';
 import { withDeadline } from './withDeadline';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 세션 조회 실패는 비회원으로 본다 — 한도가 엄격해질 뿐 생성이 새지 않는다.

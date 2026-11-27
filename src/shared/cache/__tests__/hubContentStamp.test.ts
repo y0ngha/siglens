@@ -19,8 +19,8 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(() => mockRedis),
 }));
 
-import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     hashHubBody,
     matchHubContentStamp,

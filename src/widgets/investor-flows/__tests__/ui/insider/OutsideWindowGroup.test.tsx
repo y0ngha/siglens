@@ -1,6 +1,6 @@
+import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import { OutsideWindowGroup } from '../../../ui/insider/OutsideWindowGroup';
 import { makeTransaction } from '../../fixtures/flowsFixtures';
 

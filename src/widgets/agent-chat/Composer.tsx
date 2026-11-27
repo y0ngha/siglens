@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import {
     useEffect,
     useRef,
@@ -11,14 +11,19 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from 'react';
+import type { RestoredDraft } from '@/features/agent-chat/hooks/useAgentStream';
+import {
+    isSendableMessage,
+    MESSAGE_MAX_CHARS,
+} from '@/features/agent-chat/lib/messageLimits';
 import type { ChatImageAttachment } from '@/features/agent-chat/model/types';
 import {
     CHAT_IMAGE_ACCEPT_TYPES,
     CHAT_IMAGES_PER_MESSAGE_MAX,
 } from '@/shared/config/chatImages';
 import { COARSE_POINTER_MEDIA_QUERY } from '@/shared/config/viewport';
-import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ArrowUpIcon, CloseIcon, ImageIcon } from '@/shared/ui/StrokeIcons';
 import {
@@ -31,11 +36,6 @@ import {
     type ImageNotice,
 } from './hooks/useImageAttachments';
 import { useMediaQuery } from './hooks/useMediaQuery';
-import type { RestoredDraft } from '@/features/agent-chat/hooks/useAgentStream';
-import {
-    isSendableMessage,
-    MESSAGE_MAX_CHARS,
-} from '@/features/agent-chat/lib/messageLimits';
 
 /** The counter stays hidden until the message is long enough that the cap is a real concern. */
 const COUNTER_VISIBLE_FROM = MESSAGE_MAX_CHARS * 0.8;

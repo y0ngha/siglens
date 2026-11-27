@@ -1,12 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 import {
     NavigationPendingProvider,
     usePendingHref,
     usePendingRouteEntry,
     useStartNavigation,
 } from '@/shared/model/NavigationPendingContext';
-import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 vi.mock('next/navigation', () => ({
     usePathname: vi.fn(() => '/market'),

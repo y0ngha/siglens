@@ -46,13 +46,13 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_HEIGHT: 630,
 }));
 
+import { isValidElement, type ReactNode } from 'react';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     generateMetadata,
     default as DevelopersRoute,
     revalidate,
 } from '@/app/[locale]/developers/page';
-import { isValidElement, type ReactNode } from 'react';
-import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { DEVELOPERS_PATH } from '@/shared/config/publicApi';
 import { ORGANIZATION_JSON_LD_ID, SITE_URL } from '@/shared/lib/seo';
 import ko from '../../../../../messages/ko.json';

@@ -1,5 +1,5 @@
-import { test, expect } from '../support/fixtures';
 import type { Locator, Page } from '@playwright/test';
+import { test, expect } from '../support/fixtures';
 
 /**
  * Authed spec — exercises the CURRENT placement of the "내 위치" position

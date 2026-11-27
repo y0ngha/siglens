@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
 import { useNoticeWrittenOnLabel } from '../hooks/useNoticeWrittenOnLabel';
 

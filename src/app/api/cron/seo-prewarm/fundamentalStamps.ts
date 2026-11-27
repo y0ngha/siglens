@@ -2,10 +2,10 @@ import 'server-only';
 import { getFundamentalFacts } from '@/entities/fundamental-facts/server/getFundamentalFacts';
 import { recordFundamentalIndexable } from '@/entities/fundamental-facts/server/indexableStamp';
 import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { withTimeout } from '@/shared/lib/withTimeout';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { withTimeout } from '@/shared/lib/withTimeout';
 
 /**
  * 펀더멘털 탭 색인 판정 스탬프(`fundamental-indexable:v1:*`)를 크론이 직접 채운다.

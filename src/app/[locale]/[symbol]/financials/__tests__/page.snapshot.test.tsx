@@ -104,16 +104,16 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
-import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
-import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
-import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/financialsSnapshot';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/server/getProfileResilient';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
+import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetProfileResilient = vi.mocked(getProfileResilient);

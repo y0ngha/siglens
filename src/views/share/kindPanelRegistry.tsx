@@ -12,8 +12,8 @@ import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import type { ShareableKind } from '@/shared/db/constants';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
-import type { SharePanelProps } from './types';
 import { shareHasOptionsTab } from './lib/shareHasOptionsTab';
+import type { SharePanelProps } from './types';
 import { ChartSharePanel } from './ui/chart/ChartSharePanel';
 
 /*

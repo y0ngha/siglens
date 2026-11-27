@@ -2,8 +2,8 @@
  * @file `/news/[category]` 페이지의 같은 지역 카테고리 탭 줄.
  */
 import { useTranslations } from 'next-intl';
-import { buildCategoryTabs, type CategoryTabItem } from './utils/categoryTabs';
 import { CategoryTab } from './ui/tabs/CategoryTab';
+import { buildCategoryTabs, type CategoryTabItem } from './utils/categoryTabs';
 
 interface NewsCategoryTabsProps {
     /** The category currently being viewed — rendered as the active tab. */

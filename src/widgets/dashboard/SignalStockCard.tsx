@@ -1,8 +1,8 @@
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 /**
  * 섹터 신호 종목 카드 — 시세·신호 배지·상충 안내를 담고, 큐레이션 종목이면 종목 페이지로 링크한다.
  */
 import { useTranslations } from 'next-intl';
-import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';

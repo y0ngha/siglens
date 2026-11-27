@@ -92,19 +92,19 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
     }),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import OptionsPage from '@/app/[locale]/[symbol]/options/page';
-import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
-import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
 } from '@/entities/options-chain/server/optionsDataCache';
-import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
-import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
+import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
+import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockHasOptionsMarket = vi.mocked(hasOptionsMarket);

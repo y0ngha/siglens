@@ -12,13 +12,13 @@ import type {
     SkillLabelResolver,
     SymbolBriefRow,
 } from '../templates/reportEmailTypes';
-import { buildSampleReportDrawings } from './sampleDrawings';
 import {
     buildSampleBars,
     SAMPLE_CHART_SYMBOLS,
     SAMPLE_REPORT_DATE,
     type SampleChartSymbol,
 } from './sampleBars';
+import { buildSampleReportDrawings } from './sampleDrawings';
 
 /**
  * 비회원에게 보여 주는 "메일이 이렇게 온다" 샘플의 고정 데이터.

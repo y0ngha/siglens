@@ -1,5 +1,5 @@
-import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';

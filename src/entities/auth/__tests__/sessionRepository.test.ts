@@ -1,8 +1,8 @@
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import {
     DrizzleSessionRepository,
     EXPIRED_SESSION_PRUNE_BATCH_SIZE,
 } from '@/entities/auth/api';
-import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import { sessions } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 

@@ -1,7 +1,7 @@
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import { test, expect } from '../support/fixtures';
-import { normalizeReactSsrText } from '../support/ssrText';
 import { seedSeoSnapshot } from '../support/seoSnapshotSeeder';
+import { normalizeReactSsrText } from '../support/ssrText';
 
 /**
  * SEO pre-warm snapshot rendering (crawler-facing) — Task 10.

@@ -1,6 +1,6 @@
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { buildComparisonTiles } from './utils/comparisonTiles';
 import { FearGreedComparisonTile } from './ui/gauges/FearGreedComparisonTile';
+import { buildComparisonTiles } from './utils/comparisonTiles';
 
 interface FearGreedComparisonGaugesProps {
     history: FearGreedHistoryPoint[];

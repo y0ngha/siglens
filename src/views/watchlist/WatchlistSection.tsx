@@ -7,11 +7,11 @@ import { useConvertToHolding } from './hooks/useConvertToHolding';
 import { useRemovedRowFocus } from './hooks/useRemovedRowFocus';
 import { useSortedWatchlist } from './hooks/useSortedWatchlist';
 import { isWatchlistListPending } from './lib/watchlistListState';
-import { WatchlistRow } from './ui/list/WatchlistRow';
 import {
     WatchlistEmptyState,
     WatchlistListSkeleton,
 } from './ui/list/WatchlistListStatus';
+import { WatchlistRow } from './ui/list/WatchlistRow';
 
 interface WatchlistSectionProps {
     /** 정렬 기준. 등락률 순일 때만 모든 행의 시세를 한꺼번에 불러온다(그 외에는 보일 때만). */

@@ -1,20 +1,20 @@
 import 'server-only';
 import type { NextRequest } from 'next/server';
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { aiSignedOutUrl } from '@/entities/auth/lib/handoffRedirect';
+import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { logoutUser } from '@/entities/auth/lib/logoutUser';
-import { DrizzleSessionRepository } from '@/entities/auth/api';
-import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { aiSignedOutUrl } from '@/entities/auth/lib/handoffRedirect';
 import { consumeLogoutCode } from '@/entities/auth/server/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const dynamic = 'force-dynamic';
 

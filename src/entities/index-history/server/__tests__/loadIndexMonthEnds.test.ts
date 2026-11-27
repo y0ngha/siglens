@@ -24,7 +24,6 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { loadIndexMonthEnds } from '../loadIndexMonthEnds';
 
 const NOW = new Date('2026-11-16T03:00:00Z'); // ET 11-15, KST 11-16

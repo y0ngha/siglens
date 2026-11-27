@@ -1,25 +1,25 @@
 'use server';
 
-import { localeRedirect } from '@/shared/i18n/localeRedirect';
+import { getTranslations } from 'next-intl/server';
+import { cookies } from 'next/headers';
+import { DrizzleUserRepository } from '@/entities/auth/api';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
+import { createMailAlertAccountCleanup } from '@/entities/mail-alert/server/accountCleanup';
 import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
 import { compositeOAuthRevoker } from '@/entities/oauth-account/server/revoker';
-import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
-import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
-import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
-import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
-import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
-import { DrizzleUserRepository } from '@/entities/auth/api';
-import { createMailAlertAccountCleanup } from '@/entities/mail-alert/server/accountCleanup';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
-import { cookies } from 'next/headers';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import { getDatabaseClient } from '@/shared/db/client';
-import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
-import { getTranslations } from 'next-intl/server';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 확인 이메일이 로그인한 본인과 같을 때 계정을 지우고 세션 쿠키를 만료한 뒤 홈으로

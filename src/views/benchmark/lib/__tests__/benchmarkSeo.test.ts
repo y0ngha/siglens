@@ -17,10 +17,9 @@ vi.mock('next-intl/server', () => ({
 
 import { createTranslator } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
+import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
 import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
-
-import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import {
     buildBenchmarkDatasetJsonLd,
     getBenchmarkSeoCopy,

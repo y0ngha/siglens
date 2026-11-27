@@ -6,8 +6,8 @@
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import type { NoticeRecord } from '@/entities/notice/model/types';
-import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import { useNoticeWrittenOnLabel } from '../../hooks/useNoticeWrittenOnLabel';
 import { resolveNoticeLink } from '../../utils/resolveNoticeLink';
 

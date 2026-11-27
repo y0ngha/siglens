@@ -92,6 +92,7 @@ vi.mock('@/shared/lib/seoSymbol', async importOriginal => ({
     }),
 }));
 
+import { isValidElement, type ReactNode } from 'react';
 import {
     describe,
     it,
@@ -100,13 +101,12 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
-import { isValidElement, type ReactNode } from 'react';
 import OptionsPage from '@/app/[locale]/[symbol]/options/page';
-import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
 } from '@/entities/options-chain/server/optionsDataCache';
+import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResilient';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

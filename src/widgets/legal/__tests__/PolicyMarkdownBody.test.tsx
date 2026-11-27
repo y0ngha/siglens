@@ -175,7 +175,6 @@ vi.mock('rehype-slug', () => ({ __esModule: true, default: () => {} }));
 
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 
 describe('PolicyMarkdownBody', () => {

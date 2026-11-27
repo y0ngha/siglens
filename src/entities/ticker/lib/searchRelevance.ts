@@ -1,6 +1,6 @@
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { KOREAN_SEARCH_ALIASES } from '@/shared/config/korean-search-aliases';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { koreanSearchKey } from './koreanSearchKey';
 
 export interface ScorableResult {

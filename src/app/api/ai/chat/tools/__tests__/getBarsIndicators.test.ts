@@ -97,13 +97,6 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    BARS_RESULT_MAX_CHARS,
-    TOOL_RESULT_MAX_CHARS,
-    truncateToolResult,
-} from '@/app/api/ai/chat/tools/truncate';
-
 import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
@@ -117,6 +110,7 @@ import {
     PULLBACK_BASE_RATES,
     scoreConfluence,
 } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildFearGreedHistoryView,
     getBarsIndicatorsTool,
@@ -124,14 +118,19 @@ import {
     MA_CROSS_SLOW_PERIOD,
     MA50_PERIOD,
 } from '@/app/api/ai/chat/tools/getBarsIndicators';
+import { chartReferenceLevels } from '@/app/api/ai/chat/tools/levelCandidates';
+import { pctVs } from '@/app/api/ai/chat/tools/percent';
+import {
+    BARS_RESULT_MAX_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+    truncateToolResult,
+} from '@/app/api/ai/chat/tools/truncate';
+import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import {
     buildFearGreedPeriodComparisonLine,
     buildFearGreedYearRangeLine,
 } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
-import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
-import { chartReferenceLevels } from '@/app/api/ai/chat/tools/levelCandidates';
-import { pctVs } from '@/app/api/ai/chat/tools/percent';
-import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
 const ctx = {
     userId: 'u',

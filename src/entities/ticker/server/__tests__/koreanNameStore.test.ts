@@ -37,10 +37,10 @@ vi.mock('../../api', () => ({
 }));
 
 import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { KoreanTickerEntry } from '@/shared/lib/types';
-import type { KoreanTickerRepository } from '@/shared/db/types';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
-
+import type { KoreanTickerRepository } from '@/shared/db/types';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
+import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from '../../lib/cacheKeys';
 import {
     __resetKoreanSearchSnapshotForTests,
     correctKrSymbolSuffix,
@@ -51,7 +51,6 @@ import {
     searchByKoreanName,
     setKoreanTickers,
 } from '../koreanNameStore';
-import { KOREAN_SEARCH_SNAPSHOT_TTL_MS } from '../../lib/cacheKeys';
 
 interface FakeDbClient {
     db: unknown;

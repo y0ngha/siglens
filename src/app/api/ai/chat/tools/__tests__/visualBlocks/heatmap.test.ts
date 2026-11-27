@@ -17,7 +17,6 @@ vi.mock('@/app/api/ai/chat/tools/getThemeSnapshot', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { buildHeatmapBlock } from '@/app/api/ai/chat/tools/visualBlocks/heatmap';
 
 const env = {

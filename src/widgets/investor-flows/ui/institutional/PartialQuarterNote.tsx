@@ -1,8 +1,8 @@
+import type { InstitutionalQuarter } from '@y0ngha/siglens-core';
 /**
  * 진행 중(부분 집계) 분기 안내 — 아직 제출이 덜 모인 값임을 밝힌다.
  */
 import { useTranslations } from 'next-intl';
-import type { InstitutionalQuarter } from '@y0ngha/siglens-core';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { FlowTooltip } from '../../investorFlowsTooltips';
 import { formatInteger, formatSignedCompact } from '../../utils/flowFormat';

@@ -1,31 +1,29 @@
 import 'server-only';
-import { revalidateTag } from 'next/cache';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
+import { revalidateTag } from 'next/cache';
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
-import { getDatabaseClient } from '@/shared/db/client';
 import { MS_PER_SECOND } from '@/shared/config/time';
-
-import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
-import {
-    isCalendarBackfillFresh,
-    isCalendarRecentlyFetched,
-    markCalendarBackfilled,
-    markCalendarFetched,
-} from './calendarRefreshFlag';
-import { etDateOf } from '../lib/calendarWindow';
+import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import {
     dedupeCalendarEventsById,
     planCalendarIngestion,
     type CalendarDateRange,
 } from '../lib/calendarIngestionPlan';
+import { etDateOf } from '../lib/calendarWindow';
 import {
     CALENDAR_BACKFILL_FLAG_TTL_SECONDS,
     CALENDAR_MAJORITY_FAILURE_DIVISOR,
     economyCalendarCacheTag,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import {
+    isCalendarBackfillFresh,
+    isCalendarRecentlyFetched,
+    markCalendarBackfilled,
+    markCalendarFetched,
+} from './calendarRefreshFlag';
+import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
 
 /**
  * `ingestEconomicCalendar`의 결과 — 호출부(액션·크론)가 `status`로 분기한다.

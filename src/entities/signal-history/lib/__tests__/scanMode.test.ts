@@ -1,5 +1,5 @@
-import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import type { ScanCursor } from '../../types';
 import { isSymbolSettled, scanDayCount, scanModeFor } from '../scanMode';
 import { SIGNAL_HISTORY_BOOTSTRAP_SESSIONS } from '../signalScanConstants';

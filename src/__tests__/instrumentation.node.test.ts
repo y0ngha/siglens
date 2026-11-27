@@ -48,7 +48,6 @@ vi.mock('@/shared/lib/sse/activeStreams', async () =>
 );
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 // activeStreams는 실제 구현을 사용한다 — 카운터를 조작해 drain 대기를 제어한다.
 import {
     incrementActiveStreams,
