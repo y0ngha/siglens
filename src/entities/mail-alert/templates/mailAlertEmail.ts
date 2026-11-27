@@ -224,11 +224,7 @@ function mineRows(
     items: readonly MailAlertMineItem[],
     input: BuildMailAlertEmailInput
 ): Row[] {
-    const groups = new Map<string, MailAlertMineItem[]>();
-    items.forEach(item => {
-        const key = `${item.market}:${item.symbol}`;
-        groups.set(key, [...(groups.get(key) ?? []), item]);
-    });
+    const groups = Map.groupBy(items, item => `${item.market}:${item.symbol}`);
     return [...groups.values()].map(group => {
         const first = group[0];
         const named = group.find(item => item.name !== null) ?? first;

@@ -788,6 +788,100 @@ async function runInWindow(
         });
     }
 
+    /**
+     * 메일을 만들고 보낸 결과. `mailNotSent`는 메일이 나가지 않았다고 확정된 경우다: 보내기 전에 실패했거나(메일을
+     * 만들다 던짐) 제공자가 확정적으로 거절했다. 보내다 던진 경우는 나갔는지 알 수 없어 `false`다.
+     */
+    type SendResult =
+        | { readonly kind: 'accepted'; readonly mailNotSent: false }
+        | { readonly kind: 'rejected'; readonly mailNotSent: true }
+        | {
+              readonly kind: 'threw';
+              readonly error: unknown;
+              readonly mailNotSent: boolean;
+          };
+
+    async function sendPhase(
+        buildMessage: () => Promise<
+            Parameters<KeyedEmailDispatcher['sendKeyedEmail']>[0]
+        >
+    ): Promise<SendResult> {
+        const built = await buildMessage().then(
+            message => ({ ok: true as const, message }),
+            (error: unknown) => ({ ok: false as const, error })
+        );
+        if (!built.ok) {
+            return { kind: 'threw', error: built.error, mailNotSent: true };
+        }
+        // 발송기가 동기로 던져도 거절된 약속과 같이 "보내다 던짐"으로 다룬다(finish가 반드시 돈다).
+        return Promise.resolve()
+            .then(() => deps.dispatcher.sendKeyedEmail(built.message))
+            .then(
+                (outcome): SendResult =>
+                    countsAsSent(outcome)
+                        ? { kind: 'accepted', mailNotSent: false }
+                        : { kind: 'rejected', mailNotSent: true },
+                (error: unknown): SendResult => ({
+                    kind: 'threw',
+                    error,
+                    mailNotSent: false,
+                })
+            );
+    }
+
+    /**
+     * 발송 결과를 기록하고 센다. 기록을 남겼으면 `true`. 받아 준 메일·거절의 기록이 던지면 실패로 세고 실패 기록을
+     * 한 번 더 시도한다(그 기록도 못 남기면 로그만 남긴다).
+     */
+    async function settleDelivery(
+        subscriberId: string,
+        claimId: string,
+        recordedKeys: readonly string[],
+        sent: SendResult
+    ): Promise<boolean> {
+        const recordFailure = async (error: unknown): Promise<boolean> => {
+            counts.failed += 1;
+            console.error(
+                `[mail-alert] delivery failed for ${subscriberId}`,
+                redactDbErrorForLog(error)
+            );
+            return deps.deliveries
+                .finish(
+                    claimId,
+                    'failed',
+                    recordedKeys,
+                    errorText(error),
+                    sent.mailNotSent
+                )
+                .then(
+                    () => true,
+                    (finishError: unknown) => {
+                        console.error(
+                            '[mail-alert] could not record failure',
+                            redactDbErrorForLog(finishError)
+                        );
+                        return false;
+                    }
+                );
+        };
+        if (sent.kind === 'threw') return recordFailure(sent.error);
+        const accepted = sent.kind === 'accepted';
+        try {
+            await deps.deliveries.finish(
+                claimId,
+                accepted ? 'sent' : 'failed',
+                recordedKeys,
+                accepted ? null : 'dispatcher rejected',
+                sent.mailNotSent
+            );
+        } catch (error) {
+            return recordFailure(error);
+        }
+        if (accepted) counts.sent += 1;
+        else counts.failed += 1;
+        return true;
+    }
+
     async function deliver(
         subscriber: PreparedSubscriber,
         planned: MailAlertPlan
@@ -836,19 +930,13 @@ async function runInWindow(
         counts.changeLines += plan.sections.mine.filter(
             item => item.kind === 'change'
         ).length;
-        // 보내기 전 실패(`not_sent`)와 확정적 거절(`rejected`)만 "메일이 나가지 않았다"로 본다.
-        let sendState: 'not_sent' | 'unknown' | 'accepted' | 'rejected' =
-            'not_sent';
-        let settled = false;
-        const mailNotSent = () =>
-            sendState === 'not_sent' || sendState === 'rejected';
-        try {
+        const buildMessage = async () => {
             const [t, signalLabel, disclaimer] = await Promise.all([
                 translatorFor(target.locale),
                 signalLabelFor(target.locale),
                 disclaimerFor(target.locale),
             ]);
-            const message = buildMailAlertEmail({
+            return buildMailAlertEmail({
                 to: target.email,
                 locale: target.locale,
                 alertDate,
@@ -878,49 +966,18 @@ async function runInWindow(
                 signalLabel,
                 symbolNames: await namesFor(plannedSymbols(plan)),
             });
-            sendState = 'unknown';
-            const accepted = countsAsSent(
-                await deps.dispatcher.sendKeyedEmail(message)
-            );
-            sendState = accepted ? 'accepted' : 'rejected';
-            await deps.deliveries.finish(
-                claimId,
-                accepted ? 'sent' : 'failed',
-                recordedKeys,
-                accepted ? null : 'dispatcher rejected',
-                mailNotSent()
-            );
-            settled = true;
-            if (accepted) counts.sent += 1;
-            else counts.failed += 1;
-        } catch (error) {
-            counts.failed += 1;
-            console.error(
-                `[mail-alert] delivery failed for ${target.id}`,
-                redactDbErrorForLog(error)
-            );
-            await deps.deliveries
-                .finish(
-                    claimId,
-                    'failed',
-                    recordedKeys,
-                    errorText(error),
-                    mailNotSent()
-                )
-                .then(() => {
-                    settled = true;
-                })
-                .catch(finishError =>
-                    console.error(
-                        '[mail-alert] could not record failure',
-                        redactDbErrorForLog(finishError)
-                    )
-                );
-        }
+        };
+        const sent = await sendPhase(buildMessage);
+        const settled = await settleDelivery(
+            target.id,
+            claimId,
+            recordedKeys,
+            sent
+        );
         // 끝낸 알림은 `finish`가 메일이 나간 뒤에만 지운다(나가지 않았으면 남아 다음 실행이 다시 알린다).
         if (
             settled &&
-            !mailNotSent() &&
+            !sent.mailNotSent &&
             plan.sections.voidedPriceAlerts.length > 0
         ) {
             counts.priceAlertsVoided += plan.sections.voidedPriceAlerts.length;

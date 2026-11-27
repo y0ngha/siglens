@@ -1137,20 +1137,18 @@ describe.skipIf(!URL)(
                     count: number
                 ): Promise<void> {
                     const deadline = Date.now() + 3_000;
-                    for (;;) {
+                    while (Date.now() <= deadline) {
                         const [row] = await client<{ n: number }[]>`
                             SELECT count(*)::int AS n FROM pg_stat_activity
                             WHERE wait_event_type = 'Lock'
                               AND datname = current_database()
                               AND pid <> ${holderPid}`;
                         if ((row?.n ?? 0) >= count) return;
-                        if (Date.now() > deadline) {
-                            throw new Error(
-                                `expected ${count} backends waiting on a lock held by ${holderPid}`
-                            );
-                        }
                         await new Promise(resolve => setTimeout(resolve, 20));
                     }
+                    throw new Error(
+                        `expected ${count} backends waiting on a lock held by ${holderPid}`
+                    );
                 }
 
                 async function twoAlerts() {

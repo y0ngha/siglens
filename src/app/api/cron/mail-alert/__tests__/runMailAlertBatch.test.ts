@@ -244,20 +244,14 @@ function makeHarness(
     const priceAlerts = {
         // 저장소의 만료 정의(시장별 기대 세션 이상)를 그대로 흉내 낸다.
         listActiveForDelivery: vi.fn(async (asOf: { us: string; kr: string }) =>
-            alerts
-                .filter(
+            Map.groupBy(
+                alerts.filter(
                     alert =>
                         alert.status === 'active' &&
                         alert.expiresOn >= asOf[alert.market]
-                )
-                .reduce(
-                    (map, alert) =>
-                        map.set(alert.subscriberId, [
-                            ...(map.get(alert.subscriberId) ?? []),
-                            alert,
-                        ]),
-                    new Map<string, PriceAlertRecord[]>()
-                )
+                ),
+                alert => alert.subscriberId
+            )
         ),
         removeSubscriberIfNothingToReceive: vi.fn(async () => false),
         pruneExpiredAndFired: vi
@@ -882,6 +876,40 @@ describe('runMailAlertBatch', () => {
             expect(recorded).not.toContain(PLANTED_TOKEN);
             expect(recorded).not.toContain(PLANTED_EMAIL);
             expect(recorded.length).toBeLessThanOrEqual(500);
+        });
+
+        it('발송기가 동기로 던져도 보내다 던진 것으로 보고 failed를 기록한다(나갔는지 알 수 없어 mailNotSent는 false)', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+            const harness = makeHarness(
+                {
+                    dispatcher: {
+                        sendEmail: async () => true,
+                        sendKeyedEmail: () => {
+                            throw new Error('sync boom');
+                        },
+                    },
+                },
+                {
+                    targets: [
+                        target('s1', { topics: [signalTopic('golden_cross')] }),
+                    ],
+                }
+            );
+            withEpisodes(harness, { us: [usEpisode('AAPL')] });
+
+            const counts = countsOf(
+                await runMailAlertBatch(harness.deps, FIRST)
+            );
+
+            expect(counts.failed).toBe(1);
+            expect(counts.sent).toBe(0);
+            expect(harness.deliveries.finish).toHaveBeenCalledWith(
+                `claim-s1|${ALERT_DATE}`,
+                'failed',
+                ['s:us:AAPL:golden_cross'],
+                expect.stringContaining('sync boom'),
+                false
+            );
         });
 
         it('실패 기록을 남기지 못해도 로그만 남기고 실행은 끝낸다', async () => {

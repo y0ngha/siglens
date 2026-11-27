@@ -55,14 +55,7 @@ function harness(barsBySymbol: Record<string, Bar[] | Error>) {
 }
 
 const bySubscriber = (...alerts: PriceAlertRecord[]) =>
-    alerts.reduce(
-        (map, item) =>
-            map.set(item.subscriberId, [
-                ...(map.get(item.subscriberId) ?? []),
-                item,
-            ]),
-        new Map<string, PriceAlertRecord[]>()
-    );
+    Map.groupBy(alerts, item => item.subscriberId);
 
 describe('evaluatePriceAlerts', () => {
     beforeEach(() => {

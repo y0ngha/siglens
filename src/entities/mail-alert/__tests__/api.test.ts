@@ -274,16 +274,18 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
     });
 
     describe('claim과 함께 알림을 알린 것으로 표시한다', () => {
-        /** `stillActive`: 선점 시점에도 `active`로 남아 UPDATE가 실제로 바꾸는 알림 id. 기본은 전부. */
+        /**
+         * `stillActive`: 선점 시점에도 `active`로 남아 UPDATE가 실제로 바꾸는 알림 id. 기본은 전부. UPDATE는 넘긴
+         * 알림 순서대로 하나씩 일어나므로 n번째 `set` 호출이 `FIRED[n]`이다.
+         */
         function fakeTransaction(
             winner: boolean,
             stillActive: (id: string) => boolean = () => true
         ) {
-            const pending: string[] = [];
             const set = vi.fn((_values: unknown) => ({
                 where: vi.fn(() => ({
                     returning: vi.fn(async () => {
-                        const id = pending.shift() ?? '';
+                        const id = FIRED[set.mock.calls.length - 1]?.id ?? '';
                         return stillActive(id) ? [{ id }] : [];
                     }),
                 })),
@@ -303,7 +305,7 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
                 }),
                 update,
             };
-            return { tx, update, set, pending };
+            return { tx, update, set };
         }
 
         const FIRED = [
@@ -312,8 +314,7 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
         ];
 
         it('선점이 이기면 알림마다 같은 트랜잭션 안에서 UPDATE한다(세션과 종가를 고정 6자리 문자열로)', async () => {
-            const { tx, update, set, pending } = fakeTransaction(true);
-            pending.push('alert-1', 'alert-2');
+            const { tx, update, set } = fakeTransaction(true);
 
             await new DrizzleMailAlertDeliveryRepository(
                 inTransaction(tx)
@@ -339,11 +340,7 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
         });
 
         it('실제로 fired로 바뀐 알림 id만 돌려준다(판정 뒤 지워진 알림은 빠진다)', async () => {
-            const { tx, pending } = fakeTransaction(
-                true,
-                id => id !== 'alert-2'
-            );
-            pending.push('alert-1', 'alert-2');
+            const { tx } = fakeTransaction(true, id => id !== 'alert-2');
 
             await expect(
                 new DrizzleMailAlertDeliveryRepository(inTransaction(tx)).claim(

@@ -344,34 +344,38 @@ function computeOne(
               change.kind === 'signal_started' ? [change.type] : []
           )
         : [];
-    const byTier = new Map<Tier, readonly MailAlertChange[]>();
     const row = references.row;
-    if (row !== undefined) {
-        references.tiers.forEach(tier => {
-            const reference = changeReferenceOf(
-                row.result,
-                { tier },
-                { analyzedAt: row.generatedAt.toISOString() }
-            );
-            if (
-                reference === null ||
-                !hasLevels(reference) ||
-                !referenceScaleHolds(reference, upTo, market)
-            ) {
-                return;
-            }
-            const result = technicalChangesBetween(upTo, {
-                fromIndex: upTo.length - 2,
-                reference,
-            });
-            const lines = result.ok
-                ? toMailAlertChanges(result.changes, reference).filter(
-                      change => change.kind !== 'trend'
-                  )
-                : [];
-            byTier.set(tier, lines);
-        });
-    }
+    const byTier = new Map(
+        row === undefined
+            ? []
+            : references.tiers.flatMap(
+                  (tier): [Tier, readonly MailAlertChange[]][] => {
+                      const reference = changeReferenceOf(
+                          row.result,
+                          { tier },
+                          { analyzedAt: row.generatedAt.toISOString() }
+                      );
+                      if (
+                          reference === null ||
+                          !hasLevels(reference) ||
+                          !referenceScaleHolds(reference, upTo, market)
+                      ) {
+                          return [];
+                      }
+                      const result = technicalChangesBetween(upTo, {
+                          fromIndex: upTo.length - 2,
+                          reference,
+                      });
+                      const lines = result.ok
+                          ? toMailAlertChanges(
+                                result.changes,
+                                reference
+                            ).filter(change => change.kind !== 'trend')
+                          : [];
+                      return [[tier, lines]];
+                  }
+              )
+    );
     return {
         kind: 'ok',
         value: {

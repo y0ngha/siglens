@@ -125,6 +125,20 @@ function evaluateAlert(
         : { kind: 'fire', item: toItem(alert, trigger, null) };
 }
 
+/** 구독자 id → 값 목록(들어온 순서 그대로). */
+function groupBySubscriber<T>(
+    entries: ReadonlyArray<{ readonly subscriberId: string; readonly value: T }>
+): Map<string, T[]> {
+    return new Map(
+        [...Map.groupBy(entries, entry => entry.subscriberId)].map(
+            ([subscriberId, group]) => [
+                subscriberId,
+                group.map(entry => entry.value),
+            ]
+        )
+    );
+}
+
 export interface PriceAlertEvaluationDeps {
     readonly loadDailyBars: (symbol: string) => Promise<readonly Bar[]>;
 }
@@ -182,45 +196,57 @@ export async function evaluatePriceAlerts(
         }
     );
     const barsOf = new Map(loaded);
-    const fires = new Map<string, MailAlertPriceAlertItem[]>();
-    const voids = new Map<string, MailAlertVoidedPriceAlertItem[]>();
-    const notReady = new Map<string, Set<string>>();
-    alerts.forEach(alert => {
+    const judged = alerts.map(alert => {
         const bars = barsOf.get(alert.symbol) ?? null;
-        if (
-            bars === null ||
-            !hasWindowEnd(alert, bars, expected.signals[alert.market])
-        ) {
-            notReady.set(
-                alert.subscriberId,
-                (notReady.get(alert.subscriberId) ?? new Set<string>()).add(
-                    alert.symbol
-                )
-            );
-        }
-        if (bars === null) return;
-        const outcome = evaluateAlert(
+        const expectedSession = expected.signals[alert.market];
+        return {
             alert,
-            bars,
-            expected.signals[alert.market]
-        );
-        if (outcome.kind === 'void') {
-            voids.set(alert.subscriberId, [
-                ...(voids.get(alert.subscriberId) ?? []),
-                {
-                    kind: 'price_alert_voided',
-                    alertId: alert.id,
-                    symbol: alert.symbol,
-                },
-            ]);
-        }
-        if (outcome.kind === 'fire') {
-            fires.set(alert.subscriberId, [
-                ...(fires.get(alert.subscriberId) ?? []),
-                outcome.item,
-            ]);
-        }
+            ready: bars !== null && hasWindowEnd(alert, bars, expectedSession),
+            outcome:
+                bars === null
+                    ? ({ kind: 'none' } as const)
+                    : evaluateAlert(alert, bars, expectedSession),
+        };
     });
+    const fires = groupBySubscriber(
+        judged.flatMap(({ alert, outcome }) =>
+            outcome.kind === 'fire'
+                ? [{ subscriberId: alert.subscriberId, value: outcome.item }]
+                : []
+        )
+    );
+    const voids = groupBySubscriber(
+        judged.flatMap(({ alert, outcome }) =>
+            outcome.kind === 'void'
+                ? [
+                      {
+                          subscriberId: alert.subscriberId,
+                          value: {
+                              kind: 'price_alert_voided' as const,
+                              alertId: alert.id,
+                              symbol: alert.symbol,
+                          },
+                      },
+                  ]
+                : []
+        )
+    );
+    const notReady = new Map(
+        [
+            ...groupBySubscriber(
+                judged.flatMap(({ alert, ready }) =>
+                    ready
+                        ? []
+                        : [
+                              {
+                                  subscriberId: alert.subscriberId,
+                                  value: alert.symbol,
+                              },
+                          ]
+                )
+            ),
+        ].map(([subscriberId, symbols]) => [subscriberId, new Set(symbols)])
+    );
     return {
         fires,
         voids,
