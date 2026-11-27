@@ -4,6 +4,7 @@ const { runTurn, appendMessages, setTurnAt, executorOptions } = vi.hoisted(
         appendMessages: vi.fn(),
         setTurnAt: vi.fn(),
         executorOptions: {
+            runtime: undefined as unknown,
             onChart: undefined as
                 | ((
                       call: { name: string; args: Record<string, unknown> },
@@ -27,9 +28,10 @@ vi.mock('@/app/api/ai/chat/counters', () => ({
 }));
 vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
     createToolExecutor: (
-        _runtime: unknown,
+        runtime: unknown,
         options?: { onChart?: typeof executorOptions.onChart }
     ) => {
+        executorOptions.runtime = runtime;
         executorOptions.onChart = options?.onChart;
         return vi.fn();
     },
@@ -86,6 +88,7 @@ const memberTurn = (): ReadyTurn => ({
     userMessageSeq: 1,
     turnAtRowId: 'u1',
     history: [],
+    earlierAnalyses: [],
     portfolioSymbols: [],
 });
 
@@ -274,6 +277,21 @@ describe('agentTurnStream', () => {
             expect.anything(),
             expect.objectContaining({ webSearchMetering: 'executor' })
         );
+    });
+
+    it('이 대화의 이전 분석을 도구 실행기 런타임에 넘긴다(sinceEarlier의 기준)', async () => {
+        const earlierAnalyses = [
+            {
+                symbol: 'AAPL',
+                generatedAt: '2026-11-18T14:00:00.000Z',
+                analysis: { trend: 'bullish' },
+                seq: 4,
+            },
+        ];
+        await readAll(
+            start({ turn: { ...memberTurn(), earlierAnalyses } }).stream
+        );
+        expect(executorOptions.runtime).toMatchObject({ earlierAnalyses });
     });
 
     it('이번 턴 이미지는 base64로 runAgentTurn의 userImages에 실리고, 없으면 키가 없다', async () => {

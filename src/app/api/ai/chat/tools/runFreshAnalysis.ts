@@ -33,6 +33,7 @@ import {
 import { isMemberCaller, loadPublicAnalysis } from './getCachedAnalysis';
 import { loadAnalysisChartBlock, peekChartDrawings } from './chartBlock';
 import { logToolDegrade } from './logToolDegrade';
+import { loadSinceEarlier, type SinceEarlier } from './sinceEarlier';
 
 /**
  * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
@@ -250,7 +251,9 @@ function finishedResult(outcome: Outcome): unknown {
 export function unwrap(
     kind: string,
     timeframe: Timeframe | undefined,
-    outcome: Outcome
+    outcome: Outcome,
+    /** technical 일봉 결과에만 — 이 대화의 이전 분석과의 차이(`sinceEarlier`). fit **전에** envelope에 합친다. */
+    sinceEarlier?: SinceEarlier
 ): unknown {
     if (finishedResult(outcome) !== undefined) {
         const cached = outcome.status === 'cached';
@@ -280,9 +283,10 @@ export function unwrap(
             // really is `projected` (a `ProjectedTechnicalAnalysis`), and this
             // cast just recovers the type erased by that shared function's
             // loose `unknown` return type.
-            return fitTechnicalAnalysis(
-                envelope as { analysis: typeof projected }
-            );
+            return fitTechnicalAnalysis({
+                ...(envelope as { analysis: typeof projected }),
+                ...(sinceEarlier ? { sinceEarlier } : {}),
+            });
         }
         if (kind === 'overall') {
             const projected = projectOverall(
@@ -524,7 +528,22 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                                 ),
                         })
                     );
-                return unwrap(kind, timeframe, outcome);
+                // 이 대화의 이전 턴에 본 같은 종목 분석과의 차이 — 새 분석이 아니라 캐시 적중이어도
+                // 생성 시각이 더 늦으면 싣는다.
+                const sinceEarlier =
+                    analysis === undefined
+                        ? undefined
+                        : await loadSinceEarlier({
+                              earlierAnalyses: runtime.earlierAnalyses,
+                              symbol,
+                              timeframe,
+                              tier: ctx.tier,
+                              // 생성 시각을 모르면(`analyzedAt` 없음) 지금 시각으로 때우지 않고 비교하지 않는다.
+                              resultGeneratedAt: analysis.analyzedAt ?? null,
+                              fmpSymbol: asset?.fmpSymbol,
+                              marketProfile: profile,
+                          });
+                return unwrap(kind, timeframe, outcome, sinceEarlier);
             }
             // overall/news/options go through server actions shared with siglens.io's
             // user-chosen model paths, which must not fall back — no providerFallback there.

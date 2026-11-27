@@ -128,13 +128,14 @@ export function agentTurnStream({
         userMessageSeq,
         turnAtRowId,
         history,
+        earlierAnalyses,
         portfolioSymbols,
     } = turn;
 
     const controller = new AbortController();
     const charts = createTurnCharts();
     const executeTool = createToolExecutor(
-        { analysisModel: AGENT_MODEL },
+        { analysisModel: AGENT_MODEL, earlierAnalyses },
         { onChart: charts.register }
     );
     // 도구 호출 id별 주차 해제 함수 — 새 분석을 기다리는 동안만 슬롯을 "일하는 턴"에서 뺀다.

@@ -836,6 +836,35 @@ describe('tool registry', () => {
             expect(typeof runtimes[0]!.ensureSymbolData).toBe('function');
         });
 
+        it('earlierAnalyses는 입력 런타임에서 툴 런타임으로 그대로 가고, 생략하면 키가 없다(공개 API)', async () => {
+            const earlierAnalyses = [
+                {
+                    symbol: 'AAPL',
+                    generatedAt: '2026-11-18T14:00:00.000Z',
+                    analysis: {},
+                    seq: 3,
+                },
+            ];
+            const seen: ToolRuntime[] = [];
+            search.mockImplementation(
+                async (_args: unknown, _ctx: unknown, runtime: ToolRuntime) => {
+                    seen.push(runtime);
+                    return { ok: true };
+                }
+            );
+            await createToolExecutor({
+                analysisModel: 'm' as never,
+                earlierAnalyses,
+            })('search_ticker', { query: 'a' }, makeCtx());
+            await createToolExecutor({ analysisModel: 'm' as never })(
+                'search_ticker',
+                { query: 'a' },
+                makeCtx()
+            );
+            expect(seen[0]?.earlierAnalyses).toBe(earlierAnalyses);
+            expect(seen[1]).not.toHaveProperty('earlierAnalyses');
+        });
+
         it('allowUnofficialSources는 에이전트 기본이 true이고 옵션 false가 runtime에 실린다', async () => {
             const { exec, runtimes } = capture();
             await exec('search_ticker', { query: 'a' }, makeCtx());

@@ -23,7 +23,7 @@ export interface SignalHub {
  * 드문 신호는 열지 않는다(얇고 겹치는 페이지가 늘어난다). 늘릴 때는 같은 요청으로 "<신호> 종목"을
  * 넣어 자동완성이 붙는지 다시 확인한다.
  */
-export const SIGNAL_HUBS: readonly SignalHub[] = [
+const SIGNAL_HUB_LIST = [
     {
         slug: 'golden-cross',
         signalType: 'golden_cross',
@@ -66,7 +66,17 @@ export const SIGNAL_HUBS: readonly SignalHub[] = [
         signalType: 'macd_bearish_cross',
         guide: { category: 'indicators', slug: 'macd' },
     },
-];
+] as const satisfies readonly SignalHub[];
+
+export const SIGNAL_HUBS: readonly SignalHub[] = SIGNAL_HUB_LIST;
+
+/** 신호별 종목 페이지가 여는 신호 유형 — `SIGNAL_HUBS`에서 나온 리터럴 유니온이다. */
+export type SignalHubType = (typeof SIGNAL_HUB_LIST)[number]['signalType'];
+
+/** `SIGNAL_HUBS`의 신호 유형을 순서 그대로, 리터럴 유니온 타입으로. */
+export const SIGNAL_HUB_TYPES: readonly SignalHubType[] = SIGNAL_HUB_LIST.map(
+    hub => hub.signalType
+);
 
 /** 신호 페이지가 보여 주는 기간(일). 사람들이 "최근 골든크로스 종목"으로 찾는 범위에 맞춘다. */
 export const SIGNAL_HUB_WINDOW_DAYS = 30;

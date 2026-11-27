@@ -74,6 +74,12 @@ export const QUERY_KEYS = {
     /** 프리·애프터마켓 한 줄 시세(표시 전용 — 봉·지표와 무관). */
     extendedQuote: (symbol: string) =>
         ['extended-quote', upper(symbol)] as const,
+    /**
+     * 다시 연 대화 아래 "달라진 점" 카드(회원 전용). 대화 id가 키다. 회원 값이라 로그아웃 뒤에 남지 않게 훅이
+     * `gcTime: 0`으로 읽는다 — 카드가 사라지는 순간 항목도 사라져 `useLogout`의 키 목록에 올리지 않는다.
+     */
+    conversationChanges: (conversationId: string) =>
+        ['conversation-changes', conversationId] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
     /**

@@ -22,6 +22,13 @@ vi.mock(
     })
 );
 
+// 저장된 대화(`conversationId="c1"`)를 여는 모든 테스트에서 "달라진 점" 카드가 서버 액션을 부른다 — 여기서는 카드가
+// 없는 쪽(빈 결과)으로 막아 두고, 카드 자체는 `ChatShell.sinceEarlier.test.tsx`가 본다.
+vi.mock(
+    '@/entities/chat-conversation/actions/getConversationChangesAction',
+    () => ({ getConversationChangesAction: vi.fn(async () => []) })
+);
+
 const mockStream = vi.hoisted(() => ({
     messages: [
         {

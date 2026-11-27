@@ -31,6 +31,7 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
@@ -53,6 +54,7 @@ import {
     peekChartDrawings,
     type ChartAnalysisSource,
 } from './chartBlock';
+import { loadSinceEarlier } from './sinceEarlier';
 
 const STALE_AFTER_MS: Record<string, number> = {
     technical: MS_PER_DAY,
@@ -620,6 +622,8 @@ export interface TechnicalCacheHit {
     positionBucket: Awaited<ReturnType<typeof positionBucketFor>>;
     /** 캐시 키의 `:bm=`. 같은 분석의 차트 작도를 읽을 때 같은 값을 넘긴다. */
     benchmarkSymbol: string | undefined;
+    /** peek이 이미 정한 종목의 시장 — 같은 결과의 `sinceEarlier`가 다시 묻지 않고 쓴다. */
+    marketProfile: MarketProfileId;
 }
 
 /**
@@ -666,7 +670,7 @@ export async function peekTechnicalCacheHit(
         ? await peekMemberLatest(peekTechnical, c => c.result.analyzedAt)
         : { hit: await peekTechnical(false), reasoning: false };
     return cached
-        ? { cached, reasoning, positionBucket, benchmarkSymbol }
+        ? { cached, reasoning, positionBucket, benchmarkSymbol, marketProfile }
         : null;
 }
 
@@ -698,7 +702,7 @@ async function peekTechnicalResult(
     const reasoning = hit?.reasoning ?? false;
     const positionBucket = hit?.positionBucket;
     const benchmarkSymbol = hit?.benchmarkSymbol;
-    if (cached) {
+    if (hit && cached) {
         const a = cached.result;
         const generatedAt = a.analyzedAt ? new Date(a.analyzedAt) : new Date();
         // Both started only NOW (a confirmed cache hit) — on a miss,
@@ -706,12 +710,30 @@ async function peekTechnicalResult(
         // (as `priceNowFor` used to, in parallel with
         // `positionBucketFor` above) paid for a quote/bars lookup on
         // every miss for no reason. Run in parallel with each other
-        // instead, since both are independent lookups with their own
+        // instead, since all three are independent lookups with their own
         // bounded timeout.
-        const [{ stale: isStale, dailySeries }, priceNow] = await Promise.all([
-            staleAndDailySeries(tab, timeframe, generatedAt, symbol, fmpSymbol),
-            priceNowFor(symbol, fmpSymbol),
-        ]);
+        const [{ stale: isStale, dailySeries }, priceNow, sinceEarlier] =
+            await Promise.all([
+                staleAndDailySeries(
+                    tab,
+                    timeframe,
+                    generatedAt,
+                    symbol,
+                    fmpSymbol
+                ),
+                priceNowFor(symbol, fmpSymbol),
+                // 이 대화의 이전 턴에 본 같은 종목 분석과의 차이. 생성 시각을 모르면(`analyzedAt` 없음)
+                // 지금 시각으로 때우지 않고 비교하지 않는다. 결과 envelope에는 fit **전에** 합친다.
+                loadSinceEarlier({
+                    earlierAnalyses: runtime.earlierAnalyses,
+                    symbol,
+                    timeframe,
+                    tier: ctx.tier,
+                    resultGeneratedAt: a.analyzedAt ?? null,
+                    fmpSymbol,
+                    marketProfile: hit.marketProfile,
+                }),
+            ]);
         const sinceAnalysis = sinceAnalysisFrom(a, priceNow, dailySeries);
         // Budget-fit via the SAME shared helper `run_fresh_analysis`
         // uses (`fitTechnicalAnalysis`) — without it, an oversized
@@ -731,6 +753,7 @@ async function peekTechnicalResult(
             ...(memberCaller ? { reasoning } : {}),
             analysis: projectTechnicalAnalysis(a, timeframe),
             ...(sinceAnalysis ? { sinceAnalysis } : {}),
+            ...(sinceEarlier ? { sinceEarlier } : {}),
         });
         return {
             result,
