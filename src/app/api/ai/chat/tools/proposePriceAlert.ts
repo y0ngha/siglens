@@ -40,6 +40,7 @@ import { peekTechnicalCacheHit } from './getCachedAnalysis';
 import type { ToolExecutor } from './chatTools';
 import { staleKrListingDate } from './freshness';
 import { logToolDegrade } from './logToolDegrade';
+import type { AssetInfo } from '@/shared/lib/types';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const TOOL = 'propose_price_alert';
@@ -218,6 +219,13 @@ function firesWhen(condition: PriceLevelCondition): string {
         : 'a daily close at or above the level';
 }
 
+/** 카드에 보일 종목명: 기본 로케일(한국어)은 한글 이름을 먼저, 그 밖에는 영문 이름. 종목을 못 읽었으면 `null`. */
+function cardName(asset: AssetInfo | null, locale: string): string | null {
+    if (asset === null) return null;
+    if (locale === DEFAULT_LOCALE) return asset.koreanName ?? asset.name;
+    return asset.name;
+}
+
 const NOT_CREATED_NOTE =
     'Nothing is created yet: the user creates it with the button under this answer. Tell them that in one sentence. Never say the alert is set.';
 
@@ -318,12 +326,7 @@ export const proposePriceAlertTool: ToolExecutor = async (
         kind: 'price_alert_proposal',
         proposal,
         token: signPriceAlertProposal(secret, proposal),
-        name:
-            asset === null
-                ? null
-                : ctx.locale === DEFAULT_LOCALE
-                  ? (asset.koreanName ?? asset.name)
-                  : asset.name,
+        name: cardName(asset, ctx.locale),
     };
     // 클라이언트가 같은 가드로 못 그리는 카드는 내보내지 않는다 — 모델이 "아래 버튼"이라고 말하면 안 된다(SA-24).
     if (!isChatPriceAlertProposalBlock(block)) {

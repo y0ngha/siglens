@@ -40,28 +40,24 @@ export function PriceAlertSummary({ block, stored }: PriceAlertSummaryProps) {
             day: 'numeric',
         });
 
-    const sentence =
-        condition.kind === 'enter_zone'
-            ? condition.approach === 'from_above'
-                ? t('PriceAlertCard.zoneFromAbove', {
-                      name: label,
-                      low: price(condition.low),
-                      high: price(condition.high),
-                  })
-                : t('PriceAlertCard.zoneFromBelow', {
-                      name: label,
-                      low: price(condition.low),
-                      high: price(condition.high),
-                  })
-            : condition.kind === 'close_below'
-              ? t('PriceAlertCard.below', {
-                    name: label,
-                    level: price(condition.level),
-                })
-              : t('PriceAlertCard.above', {
-                    name: label,
-                    level: price(condition.level),
-                });
+    const conditionSentence = (): string => {
+        if (condition.kind === 'enter_zone') {
+            const zone = {
+                name: label,
+                low: price(condition.low),
+                high: price(condition.high),
+            };
+            if (condition.approach === 'from_above') {
+                return t('PriceAlertCard.zoneFromAbove', zone);
+            }
+            return t('PriceAlertCard.zoneFromBelow', zone);
+        }
+        const level = { name: label, level: price(condition.level) };
+        if (condition.kind === 'close_below') {
+            return t('PriceAlertCard.below', level);
+        }
+        return t('PriceAlertCard.above', level);
+    };
     // 분석 시각은 순간이라 시장의 시간대로 날짜를 읽는다(미국 장 마감 뒤 23:30Z는 한국에서는 다음 날이다).
     const analysisDate = (value: string) =>
         format.dateTime(new Date(value), {
@@ -70,16 +66,16 @@ export function PriceAlertSummary({ block, stored }: PriceAlertSummaryProps) {
             month: 'long',
             day: 'numeric',
         });
-    const basis =
-        proposal.basis === 'price_level' || proposal.analysisAt === null
-            ? t('PriceAlertCard.basisPrice')
-            : proposal.basis === 'analysis_entry_zone'
-              ? t('PriceAlertCard.basisEntry', {
-                    date: analysisDate(proposal.analysisAt),
-                })
-              : t('PriceAlertCard.basisInvalidation', {
-                    date: analysisDate(proposal.analysisAt),
-                });
+    const basisSentence = (): string => {
+        if (proposal.basis === 'price_level' || proposal.analysisAt === null) {
+            return t('PriceAlertCard.basisPrice');
+        }
+        const date = analysisDate(proposal.analysisAt);
+        if (proposal.basis === 'analysis_entry_zone') {
+            return t('PriceAlertCard.basisEntry', { date });
+        }
+        return t('PriceAlertCard.basisInvalidation', { date });
+    };
     const lastClose = t('PriceAlertCard.lastClose', {
         date: sessionDate(proposal.startsAfterSession),
         price: price(proposal.referenceClose),
@@ -100,10 +96,10 @@ export function PriceAlertSummary({ block, stored }: PriceAlertSummaryProps) {
 
     return (
         <>
-            <p className="text-secondary-100">{sentence}</p>
+            <p className="text-secondary-100">{conditionSentence()}</p>
             {stored === undefined ? (
                 <p className="text-secondary-400">
-                    {basis} {lastClose}
+                    {basisSentence()} {lastClose}
                 </p>
             ) : null}
             <p className="text-secondary-400">{rule}</p>
