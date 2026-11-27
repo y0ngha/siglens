@@ -29,7 +29,7 @@ const TREND_STYLE: Record<Trend, { color: string; bgColor: string }> = {
         // 채움과 같은 색 계열이지만 **텍스트는 `-text` 짝**을 쓴다. `chart-*`는
         // 그래픽용(3:1)으로 맞춘 토큰이라, 자기 /10 틴트 위 12px 굵은 글씨에서
         // 라이트 3.99:1로 본문 기준(4.5)을 밑돈다 — globals.css가 그 이유를
-        // 적어두고 있고, 같은 위젯의 `ENTRY_RECOMMENDATION_COLOR`는 이미 준수한다.
+        // 적어두고 있고, 같은 위젯의 `PlanStateBadge` `POSITION_COLOR`도 같은 짝을 쓴다.
         color: 'text-ui-success-text',
         bgColor: 'bg-chart-bullish/10 border-chart-bullish/30',
     },

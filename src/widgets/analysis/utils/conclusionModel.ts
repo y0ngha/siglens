@@ -9,7 +9,7 @@
  *   여기서 걸러 내거나 다시 정렬하지 않는다.
  * - 무효화 기준: 보정값 우선인 `resolveEffectiveActionLevels`의 손절. `actionRecommendation.stopLoss`를
  *   직접 읽으면 core가 거부한 손절을 집어 오므로 이 함수만 거친다.
- * - 진입가·목표가·진입 판단·리스크 등급은 카드에 싣지 않는다.
+ * - 진입가·목표가·계획 상태·변동성 등급은 카드에 싣지 않는다.
  */
 import type {
     AnalysisResponse,

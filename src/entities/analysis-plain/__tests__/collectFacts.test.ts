@@ -21,7 +21,7 @@ describe('collectNumbers', () => {
 });
 
 describe('collectFacts', () => {
-    it('trend·riskLevel이 있으면 싣는다', () => {
+    it('trend와 riskLevel이 있으면 싣고, riskLevel은 volatility 키로 싣는다', () => {
         expect(
             collectFacts(
                 { trend: 'bullish', riskLevel: 'medium', p: 10 },
@@ -30,9 +30,25 @@ describe('collectFacts', () => {
         ).toEqual({
             symbol: 'AAPL',
             trend: 'bullish',
-            riskLevel: 'medium',
+            volatility: 'medium',
             numbers: [10],
         });
+    });
+
+    /**
+     * core `riskLevel`은 변동성 등급이다. `riskLevel` 키로 실으면 모델이 `high`를
+     * "위험"으로 풀어 써서 화면의 "변동성" 라벨과 어긋난다.
+     */
+    it('프롬프트 facts에 riskLevel 키를 남기지 않는다', () => {
+        const facts = collectFacts({ riskLevel: 'high' }, 'AAPL');
+        expect(facts).not.toHaveProperty('riskLevel');
+        expect(facts).toHaveProperty('volatility', 'high');
+    });
+
+    it('riskLevel이 문자열이 아니면(필터로 null) volatility를 만들지 않는다', () => {
+        expect(collectFacts({ riskLevel: null }, 'AAPL')).not.toHaveProperty(
+            'volatility'
+        );
     });
 
     /**
