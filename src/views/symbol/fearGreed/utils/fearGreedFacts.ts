@@ -448,7 +448,10 @@ export function buildFearGreedMarketGapLine(
     const symbolScore = Math.round(gap.symbolScore);
     const marketScore = Math.round(gap.marketScore);
     const diff = symbolScore - marketScore;
-    const keyOf = () => {
+    const keyOf = ():
+        | 'regimeMarketGapSame'
+        | 'regimeMarketGapUp'
+        | 'regimeMarketGapDown' => {
         if (diff === 0) return 'regimeMarketGapSame';
         return diff > 0 ? 'regimeMarketGapUp' : 'regimeMarketGapDown';
     };

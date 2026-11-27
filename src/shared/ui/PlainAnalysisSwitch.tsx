@@ -169,7 +169,7 @@ export function PlainAnalysisSwitch({
         />
     ) : null;
 
-    const bodyOf = () => {
+    const bodyOf = (): ReactNode => {
         if (!showPlain) return children;
         if (!keepRawCollapsed) return plainView;
         return (

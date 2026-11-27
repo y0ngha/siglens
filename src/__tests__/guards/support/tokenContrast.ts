@@ -157,14 +157,12 @@ export function minContrastOverSurfaces(
         // 섞여 있으면 어느 쪽에 앉는지 소스만으로 못 가리는데, 한쪽만 재면 그
         // 방향이 관대할 수 있다 — 실제로 흰 면이 `primary-800`에는 8.72로 후하고
         // 램프에서는 2.18이라, 흰 면 기준으로 재면 위반이 사라진다.
-        const rampSurfaces = SURFACE_TOKENS.map(s => tokens.get(s));
-        const surfaces =
-            fill === 'fixed-white'
-                ? [FIXED_SURFACE]
-                : [
-                      ...rampSurfaces,
-                      ...(fill === 'either' ? [FIXED_SURFACE] : []),
-                  ];
+        const surfacesFor = (): (string | undefined)[] => {
+            if (fill === 'fixed-white') return [FIXED_SURFACE];
+            const ramp = SURFACE_TOKENS.map(s => tokens.get(s));
+            return fill === 'either' ? [...ramp, FIXED_SURFACE] : ramp;
+        };
+        const surfaces = surfacesFor();
         for (const surface of surfaces) {
             if (surface === undefined) continue;
             const over = composite(resolved.hex, resolved.alpha, surface);

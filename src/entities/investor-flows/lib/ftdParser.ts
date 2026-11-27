@@ -1,3 +1,4 @@
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import type {
     FtdFileLink,
     FtdFileRow,
@@ -5,7 +6,6 @@ import type {
     FtdTrailer,
     ParsedFtdFile,
 } from '../model';
-import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { normalizeCusip } from './sec13fPositions';
 import type { SymbolResolver } from './symbolAliasResolver';
 

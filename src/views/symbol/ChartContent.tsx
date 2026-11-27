@@ -519,7 +519,7 @@ export function ChartContent({
 
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis, fallbackSummary);
-        const awaitingOrBanner = () => {
+        const awaitingOrBanner = (): ReactNode => {
             if (!isAwaitingInteraction) return statusBanner;
             return (
                 <AiAnalysisAwaitingSection

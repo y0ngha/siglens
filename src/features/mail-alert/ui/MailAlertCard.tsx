@@ -60,7 +60,7 @@ export function MailAlertCard({
     const t = useTranslations('features.mail-alert');
     const [isOpen, setIsOpen] = useState(false);
     const topic = topicOf(target);
-    const lineOf = () => {
+    const lineOf = (): string => {
         if (target.kind !== 'fear_greed') {
             return t('cardSignalHub', { hubName: target.hubName });
         }

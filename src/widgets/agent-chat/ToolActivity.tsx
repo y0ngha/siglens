@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Fragment, useState, type ComponentType } from 'react';
+import { Fragment, useState, type ComponentType, type ReactNode } from 'react';
 import type { ToolActivityItem } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -131,7 +131,7 @@ export function ToolActivity({
     const seconds = (ms: number): string =>
         t('ToolActivity.seconds', { n: (ms / 1000).toFixed(1) });
 
-    const statusMark = (item: ToolActivityItem) => {
+    const statusMark = (item: ToolActivityItem): ReactNode => {
         if (item.status === 'running') {
             return (
                 <span className="motion-safe:animate-pulse">

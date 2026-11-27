@@ -9,6 +9,7 @@ import {
     type ClipboardEvent,
     type DragEvent,
     type KeyboardEvent,
+    type ReactNode,
 } from 'react';
 import type { ChatImageAttachment } from '@/features/agent-chat/model/types';
 import {
@@ -139,7 +140,7 @@ export function Composer({
     // 데스크톱 동작으로 시작하지만, 그 사이에는 입력 이벤트가 붙지 않아 차이가 없다.
     const isTouch = useMediaQuery(COARSE_POINTER_MEDIA_QUERY);
     const overLimit = text.length > MESSAGE_MAX_CHARS;
-    const counterNote = () => {
+    const counterNote = (): ReactNode => {
         if (overLimit) {
             return (
                 <span className="text-ui-danger-text">

@@ -377,14 +377,14 @@ const weekdays = (from: string, to: string, skip: string[] = []): string[] =>
         .map(d => d.toISOString().slice(0, 10))
         .filter(d => !skip.includes(d));
 
-/**
- * US sessions 2026-08-10 .. 2026-09-11 (Labor Day 09-07 absent), every close 100 except 08-24 = 90 and
- * 08-25 = 99. Changes by hand: 08-24 -10%, 08-25 +10% (99/90), 08-26 +1.01% (100/99), every other session 0.
- */
 const US_CLOSE_OVERRIDES: Record<string, number> = {
     '2026-08-24': 90,
     '2026-08-25': 99,
 };
+/**
+ * US sessions 2026-08-10 .. 2026-09-11 (Labor Day 09-07 absent), every close 100 except 08-24 = 90 and
+ * 08-25 = 99. Changes by hand: 08-24 -10%, 08-25 +10% (99/90), 08-26 +1.01% (100/99), every other session 0.
+ */
 const usBars = () =>
     weekdays('2026-08-10', '2026-09-11', ['2026-09-07']).map(d =>
         dayBar(d, US_CLOSE_OVERRIDES[d] ?? 100)
