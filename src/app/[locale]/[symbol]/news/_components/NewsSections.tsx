@@ -111,6 +111,9 @@ async function loadBoundedOptional<T>(options: {
             .catch((error: unknown) => {
                 // 로더가 `DegradedValueError`로 던진 일시 상태 값 — 저장되지 않았고, 그릴 값은 있다.
                 if (error instanceof DegradedValueError)
+                    // `DegradedValueError<T>`의 T는 던질 때만 정해져 catch의 `unknown`에서는 복원되지 않는다(TS 한계). 이 `.catch`는
+                    // 바로 위 `staticSymbolCache(…, load, …)`의 거부만 받고 그 `load`가 던지는 `DegradedValueError`는 이 로더
+                    // 호출부의 것뿐이라 페이로드는 항상 이 로더의 `T`다.
                     return {
                         value: error.value as T,
                         pin: error.pinRevalidate,

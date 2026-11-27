@@ -19,7 +19,11 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { SEC_FILING_HEAD_MAX_BYTES } from '@/shared/config/investorFlows';
-import { SECONDS_PER_DAY, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import {
+    MS_PER_DAY,
+    SECONDS_PER_DAY,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { readErrorCode } from '@/shared/lib/readErrorCode';
 import { extractHeadline } from '../lib/extractHeadline';
@@ -120,12 +124,11 @@ type FilerLookup =
  * 중요한데 30일 `headline: null`이 굳으면 안 되기 때문이다. 이 기간이 지난 "없음"은 영구하다. `filedAt`은 날짜만 있어
  * (UTC 자정 기준으로 읽는다) 접수 시각의 오차 하루를 이 값의 하루가 흡수한다.
  */
-export const FILING_PUBLICATION_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
+export const FILING_PUBLICATION_WINDOW_MS = 2 * MS_PER_DAY;
 
 /** 접수일이 끝난 뒤 게시 대기 기간이 지났는가 — 지났으면 "없음"이 영구하다. */
 function isPastPublicationWindow(filedAt: string): boolean {
-    const endOfFiledDay =
-        Date.parse(`${filedAt}T00:00:00Z`) + 24 * 60 * 60 * 1000;
+    const endOfFiledDay = Date.parse(`${filedAt}T00:00:00Z`) + MS_PER_DAY;
     return Date.now() - endOfFiledDay > FILING_PUBLICATION_WINDOW_MS;
 }
 
