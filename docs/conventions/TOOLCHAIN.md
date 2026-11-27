@@ -93,7 +93,7 @@ oxlint는 자체 파서라 무관하고, 저장소 전체 린트가 1초대에 �
 
 JSON 설정(IAM 정책, 설정 파일 등)을 범용 직렬화기로 다시 쓰면 무관한 항목까지 재포맷돼 diff가 부풀고 `format:check`가 실패한다.
 의도한 줄만 텍스트로 수정하거나 수정 후 저장소 포맷터를 다시 돌려 diff에 의도한 변경만 남긴다.
-그리고 검사 결과는 출력의 마지막 줄이 아니라 **종료 코드**로 판단한다.
+검사 결과는 종료 코드로 판단한다(`CLAUDE.md#RT-1`).
 
 ## React Doctor
 
@@ -393,7 +393,7 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 
 #### TC-38 — CloudWatch 필터 문구는 소스에 실제로 있어야 한다
 
-`infra/aws/*.sh`의 metric filter는 `console.*` 문구를 글자 그대로 매치하므로 문구가 어긋나면 알람이 조용히 죽는다. 따옴표 용어는 ASCII여야 하고 `src`·`scripts`·`cache-handler`·설치된 core `dist`의 **문자열·템플릿 리터럴 안에** 있어야 한다(주석은 근거가 아니다). `${}` 슬롯이 만드는 문구는 슬롯 값이 소스의 따옴표 리터럴로 정확히 있고 마지막 고정 문구에 닿을 때만 인정한다. `alarmFilterPhrases.test.ts`가 이를 검사한다(소스 밖 문구는 허용 목록에 이유와 함께). `alarmFilterReachability.test.ts`는 `src`에서 그 로그가 절대 reject하지 않는 함수(`cacheNonNull` 등)의 직접 `.catch` 안에 있는 경우를 막는다.
+`infra/aws/*.sh`의 metric filter는 `console.*` 문구를 글자 그대로 매치하므로 문구가 어긋나면 알람이 조용히 죽는다. 로그 문구를 고치면 같은 변경에서 필터도 고친다. 검사 범위와 허용 목록은 `alarmFilterPhrases.test.ts`·`alarmFilterReachability.test.ts`가 정한다(가드가 걸리면 문구를 맞춘다).
 
 <a id="TC-40"></a>
 
@@ -408,7 +408,7 @@ const bySector = Object.groupBy(stocks, s => s.sector);
 
 #### TC-41 — 규칙 기준선은 줄이기만 한다
 
-`src/__tests__/guards/codeRules.baseline.json`은 `ratchet` 규칙(`non-null-assertion`, `mock-call-index`, `let-then-try`)의 파일별 위반 수를 얼려 둔 기준선이다. `codeRules.test.ts`는 수가 늘거나 새 파일에 위반이 생기면(새 파일은 0에서 시작) 실패하고, 파일이 사라졌는데 남은 항목도 실패한다. 파일이 있는데 위반이 0이 된 항목은 통과하고 줄일 수 있는 항목으로 보고된다(같은 파일을 줄이는 PR 둘이 합쳐져도 master가 깨지지 않게). `yarn rules:ratchet --tighten`을 주기적으로 돌려 줄이고 0 항목을 지운다. 파일의 이름을 바꾸거나 지웠다면(옛 경로가 사라졌을 때만) `--move <옛> <새>`로(`--tighten`보다 먼저) 항목을 따라 옮기고, 고친 파일을 새 파일로 넘기는 용도로는 거절된다. 값이 같거나 작다는 이유만으로 사라진 항목과 새 항목을 짝짓지 않는다. 도구에는 올리는 경로가 없다. 값을 올리거나 규칙 키를 더하는 것은 JSON을 손으로 고치는 일이고 사용자 승인을 PR 본문에 적어야 한다. 줄 번호가 아니라 파일별 개수만 쓴다(`TESTING.md#TE-44`).
+`src/__tests__/guards/codeRules.baseline.json`은 `ratchet` 규칙의 파일별 위반 수를 얼려 둔 기준선이고, 늘거나 새 파일에 생기면 `codeRules.test.ts`가 실패한다. `yarn rules:ratchet --tighten`을 주기적으로 돌려 줄이고, 이름을 바꾸거나 지운 파일은 `--move <옛> <새>`로(`--tighten`보다 먼저) 항목을 옮긴다. 값이 같거나 작다는 이유만으로 사라진 항목과 새 항목을 짝짓지 않는다. 값을 올리거나 규칙 키를 더하는 것은 JSON을 손으로 고치는 일이고 사용자 승인을 PR 본문에 적어야 한다. 줄 번호가 아니라 파일별 개수만 쓴다(`TESTING.md#TE-44`).
 
 - ❌ 새 테스트의 `mock.calls[0]`이 가드에 걸리자 기준선의 숫자를 올려 통과시킨다.
 - ✅ `mock.calls.find(...)`나 `toHaveBeenCalledWith`로 고친다. `yarn rules:ratchet --against origin/master`가 올라간 값과, git 이름 변경(`-M`)으로 짝지어지지 않은 새 키를 나열한다.
