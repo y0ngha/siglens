@@ -90,53 +90,57 @@ vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: async () => null,
 }));
 // 나머지 실행기 모듈 — 이 테스트와 무관하다.
-vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
+vi.mock('@/features/agent-tools/server/tools/searchTicker', () => ({
     searchTickerTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getQuote', () => ({ getQuoteTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getBarsIndicators', () => ({
+vi.mock('@/features/agent-tools/server/tools/getQuote', () => ({
+    getQuoteTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getBarsIndicators', () => ({
     getBarsIndicatorsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
+vi.mock('@/features/agent-tools/server/tools/getOptionsSummary', () => ({
     getOptionsSummaryTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMyPortfolio', () => ({
     getMyPortfolioTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/freshAnalysis/runFreshAnalysis', () => ({
     runFreshAnalysisTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
+vi.mock('@/features/agent-tools/server/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getFundamentals', () => ({
+vi.mock('@/features/agent-tools/server/tools/getFundamentals', () => ({
     getFundamentalsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMarketOverview', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMarketOverview', () => ({
     getMarketOverviewTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
+vi.mock('@/features/agent-tools/server/tools/getEconomy', () => ({
     getEconomyTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCongressTrades', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCongressTrades', () => ({
     getCongressTradesTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({ getGuideTool: vi.fn() }));
-vi.mock('@/app/api/ai/chat/tools/getAnalystViews', () => ({
+vi.mock('@/features/agent-tools/server/tools/getGuide', () => ({
+    getGuideTool: vi.fn(),
+}));
+vi.mock('@/features/agent-tools/server/tools/getAnalystViews', () => ({
     getAnalystViewsTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getMacroQuotes', () => ({
+vi.mock('@/features/agent-tools/server/tools/getMacroQuotes', () => ({
     getMacroQuotesTool: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/getCompanyFilings', () => ({
+vi.mock('@/features/agent-tools/server/tools/getCompanyFilings', () => ({
     getCompanyFilingsTool: vi.fn(),
 }));
 
-import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { POST } from '@/app/api/v1/tools/[name]/route';
+import { createToolExecutor } from '@/features/agent-tools/server/createToolExecutor';
 
 const principal = {
     keyId: 'key-1',

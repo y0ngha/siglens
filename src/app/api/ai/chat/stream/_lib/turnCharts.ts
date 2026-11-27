@@ -1,6 +1,6 @@
 import 'server-only';
-import type { ChartToolCall } from '@/app/api/ai/chat/tools/chatTools';
 import type { ChatBlock } from '@/entities/chat-conversation/types';
+import type { ChartToolCall } from '@/features/agent-tools/model';
 
 /**
  * 한 턴의 차트 블록 짝짓기. core의 도구 실행 컨텍스트에는 호출 id가 없어, 실행기가 낸 블록은 **이름·인자**로 받고

@@ -37,7 +37,7 @@ vi.mock('@/app/api/v1/executePublicTool', () => ({
     executePublicTool: mockExecute,
     resolveApiLocale: () => 'en',
 }));
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     availableToolNames: () => new Set(['get_quote']),
     createToolExecutor: vi.fn(),
 }));

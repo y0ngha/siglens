@@ -1,0 +1,3048 @@
+const {
+    profile,
+    assetInfo,
+    getCachedBars,
+    classify,
+    detect,
+    spec,
+    detectCandlePatternEntries,
+    getDetectionBars,
+    computeFearGreed,
+    evaluateConfluenceSpy,
+    findEvents,
+    resolveEarnings,
+    lookback,
+    caveatSpy,
+    forming,
+} = vi.hoisted(() => ({
+    profile: vi.fn(),
+    assetInfo: vi.fn(),
+    getCachedBars: vi.fn(),
+    classify: vi.fn(),
+    detect: vi.fn(),
+    spec: vi.fn(),
+    detectCandlePatternEntries: vi.fn(),
+    getDetectionBars: vi.fn(),
+    computeFearGreed: vi.fn(),
+    evaluateConfluenceSpy: vi.fn(),
+    findEvents: vi.fn(),
+    resolveEarnings: vi.fn(),
+    lookback: vi.fn(),
+    caveatSpy: vi.fn(),
+    forming: vi.fn(),
+}));
+vi.mock('@y0ngha/siglens-core', async importOriginal => {
+    const actual =
+        await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    // 기본은 실제 구현을 태운다 — 표본이 짧으면 core가 기권(null)하는지를 다른
+    // 테스트들이 실측 확률 계산으로 검증하기 때문이다. "기권" 자체를 고정하는
+    // 테스트에서만 mockReturnValueOnce로 null을 강제한다.
+    computeFearGreed.mockImplementation(actual.computeFearGreedIndex);
+    // Real implementation, observed only to check which htfBars the tool passes.
+    evaluateConfluenceSpy.mockImplementation(actual.evaluateConfluence);
+    caveatSpy.mockImplementation(actual.pullbackEventCaveat);
+    return {
+        ...actual,
+        classifyTrend: classify,
+        detectSignals: detect,
+        detectCandlePatternEntries,
+        getDetectionBars,
+        computeFearGreedIndex: computeFearGreed,
+        evaluateConfluence: evaluateConfluenceSpy,
+        pullbackEventCaveat: caveatSpy,
+    };
+});
+vi.mock('next-intl/server', async () => {
+    const { catalogTranslator } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return {
+        getTranslations: async ({
+            namespace,
+            locale,
+        }: {
+            namespace: string;
+            locale: string;
+        }) => catalogTranslator(namespace, locale),
+    };
+});
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: () => ({ db: { tag: 'db' } }),
+}));
+vi.mock('@/entities/news-article/marketEventsRepository', () => ({
+    findMarketEventsForPrompt: findEvents,
+}));
+vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
+    marketEventsLookback: lookback,
+}));
+vi.mock('@/entities/earnings-report/api', () => ({
+    listEarningsDates: resolveEarnings,
+}));
+vi.mock('@/entities/bars/server/barsDataCache', () => ({
+    getCachedBarsWithIndicators: getCachedBars,
+}));
+vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
+    getAssetInfo: assetInfo,
+}));
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
+    resolveMarketProfile: profile,
+}));
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: () => ({}),
+}));
+vi.mock('@/shared/api/market/sessionSpecFor', () => ({ sessionSpecFor: spec }));
+vi.mock('@/entities/bars/lib/quantizeBars', () => ({
+    lastBarIsForming: forming,
+}));
+vi.mock('@/shared/config/marketProfile/registry', () => ({
+    getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
+}));
+
+import {
+    aggregateBarsToMonthly,
+    aggregateBarsToWeekly,
+    BARS_RESULT_NOTES,
+    calculateIndicators,
+    calculateMA,
+    classifyOscillatorZones,
+    CONFLUENCE_MIN_BARS,
+    CONFLUENCE_TREND_MA_PERIOD,
+    evaluateConfluence,
+    PULLBACK_BASE_RATES,
+    scoreConfluence,
+} from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pctVs } from '@/entities/bars/lib/percent';
+import { roundNumber } from '@/entities/bars/lib/roundIndicators';
+import { chartReferenceLevels } from '@/features/agent-tools/lib/levelCandidates';
+import {
+    BARS_RESULT_MAX_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+    truncateToolResult,
+} from '@/features/agent-tools/lib/truncate';
+import {
+    buildFearGreedHistoryView,
+    getBarsIndicatorsTool,
+    MA_CROSS_FAST_PERIOD,
+    MA_CROSS_SLOW_PERIOD,
+    MA50_PERIOD,
+} from '@/features/agent-tools/server/tools/getBarsIndicators';
+
+const ctx = {
+    userId: 'u',
+    tier: 'member' as const,
+    locale: 'ko' as const,
+    signal: new AbortController().signal,
+};
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData: async (): Promise<void> => {},
+};
+
+const bar = (time: number, close: number) => ({
+    time,
+    open: close,
+    high: close,
+    low: close,
+    close,
+    volume: 100,
+});
+const indicators = {
+    rsi: [1, 2],
+    macd: [],
+    bollinger: [],
+    atr: [null, 3],
+    ma: { 20: [1, 2] },
+    ema: { 20: [1, 2] },
+    dmi: [{ adx: 20, diPlus: 25, diMinus: 15 }],
+    stochastic: [{ percentK: 60, percentD: 55 }],
+    cci: [42],
+    mfi: [50],
+    williamsR: [-30],
+    vwap: [101],
+    ichimoku: [{ tenkan: 1, kijun: 2, senkouA: 3, senkouB: 4, chikou: 5 }],
+    supertrend: [{ supertrend: 99, trend: 'up' }],
+    parabolicSar: [{ sar: 98, trend: 'up' }],
+    squeezeMomentum: [
+        { momentum: 1.2, sqzOn: true, sqzOff: false, noSqz: false },
+    ],
+};
+
+describe('getBarsIndicatorsTool', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        assetInfo.mockResolvedValue({ symbol: 'AAPL', name: 'Apple' });
+        getDetectionBars.mockImplementation((bars: unknown[]) =>
+            bars.slice(-15)
+        );
+        detectCandlePatternEntries.mockReturnValue([]);
+        findEvents.mockResolvedValue([]);
+        resolveEarnings.mockResolvedValue(undefined);
+        lookback.mockReturnValue({ lookbackDays: 60 });
+        forming.mockReturnValue(false);
+    });
+
+    it('쓴 봉 그대로 작도 없는 차트 블록을 낸다', async () => {
+        const day = Math.floor(Date.UTC(2026, 9, 22) / 1000);
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(day - 86_400, 10), bar(day, 11)],
+            indicators,
+        });
+        const emitted: { block?: Promise<unknown> } = {};
+        await getBarsIndicatorsTool({ symbol: 'QQQ', timeframe: '1Day' }, ctx, {
+            ...rt,
+            emitChart: pending => {
+                emitted.block = pending;
+            },
+        });
+        await expect(emitted.block).resolves.toMatchObject({
+            symbol: 'QQQ',
+            timeframe: '1Day',
+            marketProfile: 'us-equity',
+            overlays: [],
+            bars: [{ time: day - 86_400 }, { time: day }],
+        });
+    });
+
+    describe('진행 중인 마지막 봉', () => {
+        const day = Math.floor(Date.UTC(2026, 9, 22) / 1000);
+        const twoBars = [bar(day - 86_400, 16.68), bar(day, 18.35)];
+        const load = async (
+            timeframe: string,
+            bars: ReturnType<typeof bar>[] = twoBars,
+            count?: number
+        ) => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'VIX', timeframe, bars: count },
+                ctx,
+                rt
+            )) as Record<string, unknown>;
+        };
+
+        it('정규장 중 일봉이면 진행 중 표시와 직전 완료 세션의 종가·날짜를 싣는다', async () => {
+            forming.mockReturnValue(true);
+            const r = await load('1Day');
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r.lastCompletedClose).toEqual({
+                date: '2026-10-21',
+                close: 16.68,
+            });
+        });
+
+        it('장 마감 뒤에는 진행 중이 아니고 직전 종가 필드를 싣지 않는다', async () => {
+            const r = await load('1Day');
+            expect(r.lastBarInProgress).toBe(false);
+            expect(r).not.toHaveProperty('lastCompletedClose');
+        });
+
+        it('캐시된 전체 봉과 그 종목의 세션 규격으로 판정한다', async () => {
+            const SESSION = { id: 'session-sentinel' };
+            spec.mockReturnValueOnce(SESSION);
+            await load('1Day');
+            expect(forming).toHaveBeenCalledWith(
+                twoBars,
+                SESSION,
+                expect.any(Date)
+            );
+        });
+
+        it('진행 중인 봉 하나뿐이면 직전 종가 없이 진행 중 표시만 싣는다', async () => {
+            forming.mockReturnValue(true);
+            const r = await load('1Day', [bar(day, 18.35)]);
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r).not.toHaveProperty('lastCompletedClose');
+        });
+
+        it('예산 절단으로 봉이 잘려도 두 필드는 남는다', async () => {
+            forming.mockReturnValue(true);
+            const many = Array.from({ length: 250 }, (_, i) =>
+                bar(day - (249 - i) * 86_400, 100 + i)
+            );
+            const r = await load('1Day', many, 200);
+            expect(r.barsTrimmed).toBeGreaterThan(0);
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r.lastCompletedClose).toEqual({
+                date: '2026-10-21',
+                close: 348,
+            });
+        });
+
+        it('분봉은 진행 중 표시만 싣는다(직전 봉은 세션 종가가 아니다)', async () => {
+            forming.mockReturnValue(true);
+            const r = await load('5Min');
+            expect(r.lastBarInProgress).toBe(true);
+            expect(r).not.toHaveProperty('lastCompletedClose');
+        });
+    });
+
+    it('1Day에서는 종목 자체 공포·탐욕 지수를 함께 내고, 다른 타임프레임·짧은 흐름 데이터에서는 null', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        // 워크포워드 표본을 채우려면 긴 일봉이 필요하다 — 실제 core 함수를 그대로 태운다.
+        // `bar()` 헬퍼는 고가=저가=종가·거래량 고정이라 변동성·거래량 백분위가
+        // 서지 않는다 — 공포·탐욕은 그 표본으로는 기권(null)한다.
+        const longBars = Array.from({ length: 400 }, (_, i) => {
+            const close = 100 + Math.sin(i / 7) * 12 + i * 0.05;
+            return {
+                time: i * 86_400,
+                open: close - 0.5,
+                high: close + 1,
+                low: close - 1,
+                close,
+                volume: 100 + ((i * 37) % 50),
+            };
+        });
+        const withFlow = {
+            ...indicators,
+            buySellVolume: longBars.map((_, i) => ({
+                buyVolume: 60 + ((i * 13) % 20),
+                sellVolume: 40 + ((i * 7) % 20),
+            })),
+        };
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: withFlow,
+        });
+        const daily = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: { score: number; groups: unknown[] } | null };
+        expect(daily.fearGreed).not.toBeNull();
+        expect(daily.fearGreed?.score).toBeGreaterThanOrEqual(0);
+        expect(daily.fearGreed?.score).toBeLessThanOrEqual(100);
+        expect(daily.fearGreed?.groups.length).toBeGreaterThan(0);
+
+        // 화면(`/{symbol}/fear-greed`)이 일봉에 고정돼 있다 — 다른 봉으로 계산하면
+        // 어느 화면에도 없는 점수를 내놓게 된다.
+        const intraday = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '4Hour' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown };
+        expect(intraday.fearGreed).toBeNull();
+
+        // 흐름 배열이 봉보다 짧으면 core가 인덱스로 읽다 throw한다.
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: { ...indicators, buySellVolume: [] },
+        });
+        const shortFlow = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown; trend: string };
+        expect(shortFlow.fearGreed).toBeNull();
+        expect(shortFlow.trend).toBe('uptrend');
+    });
+
+    /**
+     * 모델이 말하는 점수는 화면과 같은 5년 일봉으로 계산해야 한다. 캐시된 일봉에
+     * `fearGreedBars`가 있으면 그 배열을 core에 넘기는지 고정한다 — 표준 봉으로
+     * 되돌아가면 이 테스트가 깨진다.
+     */
+    it('일봉에 5년 시계열(fearGreedBars)이 있으면 그 봉으로 공포·탐욕을 계산한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const stdBars = Array.from({ length: 30 }, (_, i) => ({
+            time: 1_700_000_000 + (i + 50) * 86_400,
+            open: 100,
+            high: 101,
+            low: 99,
+            close: 100,
+            volume: 1_000,
+        }));
+        const longBars = Array.from({ length: 80 }, (_, i) => ({
+            ...stdBars[0]!,
+            time: 1_700_000_000 + i * 86_400,
+        }));
+        getCachedBars.mockResolvedValue({
+            bars: stdBars,
+            indicators: {
+                ...indicators,
+                buySellVolume: stdBars.map(() => ({
+                    buyVolume: 500,
+                    sellVolume: 500,
+                })),
+            },
+            fearGreedBars: longBars,
+        });
+
+        await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+
+        const call = computeFearGreed.mock.calls.find(
+            ([bars]) => (bars as unknown[]).length === longBars.length
+        );
+        expect(call).toBeDefined();
+        expect(call![0]).toEqual(longBars);
+        expect((call![1] as unknown[]).length).toBe(longBars.length);
+    });
+
+    it('core가 표본 부족으로 기권(null)하면 fearGreed만 null이고 나머지 페이로드는 그대로 나간다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        computeFearGreed.mockReturnValueOnce(null);
+        const longBars = Array.from({ length: 400 }, (_, i) => ({
+            time: i * 86_400,
+            open: 100,
+            high: 101,
+            low: 99,
+            close: 100,
+            volume: 100,
+        }));
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: {
+                ...indicators,
+                buySellVolume: longBars.map(() => ({
+                    buyVolume: 60,
+                    sellVolume: 40,
+                })),
+            },
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown; trend: string };
+        expect(r.fearGreed).toBeNull();
+        expect(r.trend).toBe('uptrend');
+    });
+
+    it('한국 종목의 마지막 봉이 14일 넘게 묵으면(죽은 리스팅) stale_listing 오류로 돌린다', async () => {
+        profile.mockResolvedValue('kr-equity');
+        const lastTrade = Math.floor(Date.UTC(2024, 6, 19) / 1000);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(lastTrade - 86_400, 40000), bar(lastTrade, 40100)],
+            indicators,
+        });
+        const r = await getBarsIndicatorsTool(
+            { symbol: '253450.KS', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({
+            symbol: '253450.KS',
+            timeframe: '1Day',
+            found: false,
+            error: 'stale_listing',
+            lastTradeDate: '2024-07-19',
+        });
+    });
+
+    it('같은 나이의 봉이라도 미국 종목은 거부하지 않는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const lastTrade = Math.floor(Date.UTC(2024, 6, 19) / 1000);
+        getCachedBars.mockResolvedValue({
+            bars: [bar(lastTrade - 86_400, 100), bar(lastTrade, 101)],
+            indicators,
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { error?: string };
+        expect(r.error).toBeUndefined();
+    });
+
+    it('봉이 없으면 found:false', async () => {
+        profile.mockResolvedValue('us-equity');
+        getCachedBars.mockResolvedValue({ bars: [], indicators });
+        const r = await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+        expect(r).toEqual({ symbol: 'AAPL', timeframe: '1Day', found: false });
+    });
+
+    it('N봉 절단 + trend/signals 포함, fmpSymbol이 캐시 조회에 전달된다', async () => {
+        profile.mockResolvedValue('us-equity');
+        assetInfo.mockResolvedValue({ symbol: 'BRK.A', fmpSymbol: 'BRK-A' });
+        const bars = Array.from({ length: 50 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([
+            {
+                type: 'golden_cross',
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: 0,
+            },
+        ]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'BRK.A', timeframe: '1Day', bars: 10 },
+            ctx,
+            rt
+        )) as {
+            bars: unknown[];
+            trend: string;
+            signals: Array<{ type: string }>;
+            latest: { rsi: number | null; rsiZone: string | null };
+        };
+        expect(r.bars).toHaveLength(10);
+        expect(r.trend).toBe('uptrend');
+        expect(r.signals).toEqual([
+            { type: 'golden_cross', direction: 'bullish', phase: 'confirmed' },
+        ]);
+        expect(r.latest.rsi).toBe(2);
+        // 차트 탭·분석 프롬프트와 같은 core 구간 판정(≤ 30 → oversold)을 싣는다.
+        expect(r.latest.rsiZone).toBe('oversold');
+        expect(getCachedBars).toHaveBeenCalledWith(
+            {},
+            'BRK.A',
+            '1Day',
+            'BRK-A',
+            undefined
+        );
+    });
+
+    it('해석된 종목명과 공급자 심볼을 결과에 실어 다른 종목으로 해석된 사실이 보이게 한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        assetInfo.mockResolvedValue({
+            symbol: 'VIX',
+            name: 'VIX',
+            fmpSymbol: '^VIX',
+        });
+        getCachedBars.mockResolvedValue({
+            bars: [bar(1_700_000_000, 16.68)],
+            indicators,
+        });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = await getBarsIndicatorsTool(
+            { symbol: 'VIX', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+
+        expect(r).toMatchObject({
+            symbol: 'VIX',
+            resolvedName: 'VIX',
+            resolvedSymbol: '^VIX',
+        });
+    });
+
+    it.each([
+        // NVDA 보고 사례: 37.5는 차트 탭과 같이 neutral이어야 한다.
+        { rsi: [40, 37.5], zone: 'neutral' },
+        { rsi: [60, 70], zone: 'overbought' },
+        // RSI가 없거나 유한하지 않으면 구간을 지어내지 않는다.
+        { rsi: [50, null], zone: null },
+        { rsi: [50, Number.NaN], zone: null },
+    ])('latest.rsiZone은 마지막 RSI $rsi → $zone', async ({ rsi, zone }) => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: 50 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({
+            bars,
+            indicators: { ...indicators, rsi },
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day', bars: 10 },
+            ctx,
+            rt
+        )) as { latest: { rsiZone: string | null } };
+        expect(r.latest.rsiZone).toBe(zone);
+    });
+
+    describe('latest.oscillatorZones · oscillatorSummary', () => {
+        type OscillatorLatest = {
+            rsiZone: string | null;
+            oscillatorZones: Record<string, string | null>;
+            oscillatorSummary: string | null;
+        };
+        const readLatest = async (
+            overrides: Record<string, unknown>
+        ): Promise<OscillatorLatest> => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 50 }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: { ...indicators, ...overrides },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day', bars: 10 },
+                ctx,
+                rt
+            )) as { latest: OscillatorLatest };
+            return r.latest;
+        };
+
+        it('다섯 오실레이터 구간과 한 줄 요약을 core 함수 결과 그대로 싣는다', async () => {
+            const latest = await readLatest({
+                rsi: [50, 44.74],
+                stochastic: [{ percentK: 15.96, percentD: 18 }],
+                williamsR: [-80.08],
+                cci: [-103.51],
+                mfi: [32.07],
+            });
+            const expected = classifyOscillatorZones({
+                rsi: 44.74,
+                stochasticK: 15.96,
+                williamsR: -80.08,
+                cci: -103.51,
+                mfi: 32.07,
+            });
+            expect(latest.oscillatorZones).toEqual(expected.zones);
+            expect(latest.oscillatorSummary).toBe(expected.summary);
+            // 손으로 쓴 기대값 — core 함수와 같이 틀리지 않도록 문구까지 고정한다.
+            expect(latest.oscillatorZones).toEqual({
+                rsi: 'neutral',
+                stochastic: 'oversold',
+                williamsR: 'oversold',
+                cci: 'oversold',
+                mfi: 'neutral',
+            });
+            expect(latest.oscillatorSummary).toBe(
+                '3 of 5 oscillators oversold (stochastic %K 15.96, Williams %R -80.08, CCI -103.51); 0 overbought; neutral: RSI 44.74, MFI 32.07'
+            );
+            // rsiZone은 공개 API 소비자를 위해 그대로 남고 zones.rsi와 같다.
+            expect(latest.rsiZone).toBe(latest.oscillatorZones.rsi);
+        });
+
+        it('구간은 직렬화 경계에서 반올림한 값으로 가른다(원값 30.000004는 30이라 oversold)', async () => {
+            const latest = await readLatest({ rsi: [50, 30.000004] });
+            expect(latest.oscillatorZones.rsi).toBe('oversold');
+            expect(latest.rsiZone).toBe('oversold');
+        });
+
+        it('없는 판독값은 0이 아니라 null이라 구간도 null이고 요약이 "not available"로 이름을 댄다', async () => {
+            const latest = await readLatest({
+                stochastic: [],
+                cci: [null],
+                mfi: [Number.NaN],
+            });
+            expect(latest.oscillatorZones).toMatchObject({
+                stochastic: null,
+                cci: null,
+                mfi: null,
+            });
+            expect(latest.oscillatorSummary).toContain(
+                'not available: stochastic %K, CCI, MFI'
+            );
+        });
+
+        it('판독값이 하나도 없으면 요약은 null이고 구간은 모두 null', async () => {
+            const latest = await readLatest({
+                rsi: [],
+                stochastic: [],
+                williamsR: [],
+                cci: [],
+                mfi: [],
+            });
+            expect(latest.oscillatorSummary).toBeNull();
+            expect(Object.values(latest.oscillatorZones)).toEqual([
+                null,
+                null,
+                null,
+                null,
+                null,
+            ]);
+            expect(latest.rsiZone).toBeNull();
+        });
+    });
+
+    it('getAssetInfo가 throw해도 fmpSymbol 없이 진행된다', async () => {
+        profile.mockResolvedValue('us-equity');
+        assetInfo.mockRejectedValue(new Error('db down'));
+        const bars = [bar(1_700_000_000, 100)];
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+        expect(r).toMatchObject({ symbol: 'AAPL' });
+        expect(getCachedBars).toHaveBeenCalledWith(
+            {},
+            'AAPL',
+            '1Day',
+            undefined,
+            undefined
+        );
+    });
+
+    it('latest는 dmi/stochastic/cci/mfi/williamsR/vwap/ichimoku/supertrend/parabolicSar/squeezeMomentum을 압축 형태로 포함한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = [bar(1_700_000_000, 100), bar(1_700_086_400, 101)];
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { latest: Record<string, unknown> };
+
+        expect(r.latest.dmi).toEqual({ adx: 20, diPlus: 25, diMinus: 15 });
+        expect(r.latest.stochastic).toEqual({ percentK: 60, percentD: 55 });
+        expect(r.latest.cci).toBe(42);
+        expect(r.latest.mfi).toBe(50);
+        expect(r.latest.williamsR).toBe(-30);
+        expect(r.latest.vwap).toBe(101);
+        expect(r.latest.ichimoku).toEqual({
+            tenkan: 1,
+            kijun: 2,
+            senkouA: 3,
+            senkouB: 4,
+        });
+        expect(r.latest.supertrend).toEqual({ value: 99, trend: 'up' });
+        expect(r.latest.parabolicSar).toEqual({ sar: 98, trend: 'up' });
+        expect(r.latest.squeezeMomentum).toEqual({
+            momentum: 1.2,
+            sqzOn: true,
+        });
+    });
+
+    it('missing/empty 배열은 null로 tolerate된다', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = [bar(1_700_000_000, 100)];
+        getCachedBars.mockResolvedValue({
+            bars,
+            indicators: { ...indicators, dmi: [], supertrend: [] },
+        });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { latest: Record<string, unknown> };
+        expect(r.latest.dmi).toBeNull();
+        expect(r.latest.supertrend).toBeNull();
+    });
+
+    it('candlePatterns: selectLastCandlePatternEntries와 같은 선택(최신 multi + 최신 single)만 남기고 날짜를 detection window 기준으로 매핑한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: 20 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        // Several detected entries, mixing single/multi at various
+        // barIndex values — only the freshest multi (barIndex 6) and the
+        // freshest single (barIndex 5) should survive, exactly what
+        // `selectLastCandlePatternEntries` (also used by the chart markers
+        // in `useCandlePatternMarkers.ts` and the analysis prompt) selects.
+        // `selectLastCandlePatternEntries` isn't mocked here — the module
+        // mock only overrides `detectCandlePatternEntries`/`getDetectionBars`
+        // and spreads `...actual` for everything else, so this exercises
+        // core's real selection logic against the mocked entries.
+        detectCandlePatternEntries.mockReturnValue([
+            {
+                barIndex: 0,
+                patternType: 'single',
+                singlePattern: 'pattern_0',
+                multiPattern: null,
+            },
+            {
+                barIndex: 1,
+                patternType: 'multi',
+                singlePattern: null,
+                multiPattern: 'multi_1',
+            },
+            {
+                barIndex: 2,
+                patternType: 'single',
+                singlePattern: 'pattern_2',
+                multiPattern: null,
+            },
+            {
+                barIndex: 3,
+                patternType: 'multi',
+                singlePattern: null,
+                multiPattern: 'multi_3',
+            },
+            {
+                barIndex: 4,
+                patternType: 'single',
+                singlePattern: 'pattern_4',
+                multiPattern: null,
+            },
+            {
+                barIndex: 5,
+                patternType: 'single',
+                singlePattern: 'pattern_5',
+                multiPattern: null,
+            },
+            {
+                barIndex: 6,
+                patternType: 'multi',
+                singlePattern: null,
+                multiPattern: 'multi_6',
+            },
+        ]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { candlePatterns: Array<{ date: string; pattern: string }> };
+
+        // Exactly 2 — the freshest single + freshest multi, NOT the last 5
+        // raw entries the old `.slice(-MAX_BAR_CANDLE_PATTERNS)` would keep.
+        expect(r.candlePatterns).toHaveLength(2);
+        const detectionWindow = bars.slice(-15);
+        // Sorted by barIndex ascending: single (5) before multi (6).
+        // timeframe is '1Day' → date-only (spec §3.1 B2 timestamp fix).
+        expect(r.candlePatterns[0]).toEqual({
+            date: new Date(detectionWindow[5]!.time * 1000)
+                .toISOString()
+                .slice(0, 10),
+            pattern: 'pattern_5',
+        });
+        expect(r.candlePatterns[1]).toEqual({
+            date: new Date(detectionWindow[6]!.time * 1000)
+                .toISOString()
+                .slice(0, 10),
+            pattern: 'multi_6',
+        });
+    });
+
+    it('candlePatterns: intraday timeframe는 date가 전체 ISO instant(Z 포함)다', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: 20 }, (_, i) =>
+            bar(1_700_000_000 + i * 3_600, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        detectCandlePatternEntries.mockReturnValue([
+            {
+                barIndex: 6,
+                patternType: 'single',
+                singlePattern: 'pattern_6',
+                multiPattern: null,
+            },
+        ]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Hour' },
+            ctx,
+            rt
+        )) as { candlePatterns: Array<{ date: string; pattern: string }> };
+        const detectionWindow = bars.slice(-15);
+        expect(r.candlePatterns[0]!.date).toBe(
+            new Date(detectionWindow[6]!.time * 1000).toISOString()
+        );
+    });
+
+    it('bars:200 처럼 예산을 초과하면 가장 오래된 봉부터 잘라 최신 봉을 보존한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        const SOURCE_BARS = 250;
+        const bars = Array.from({ length: SOURCE_BARS }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue(
+            Array.from({ length: 5 }, (_, i) => ({
+                type: `signal_${i}`,
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: 0,
+            }))
+        );
+
+        const raw = await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day', bars: 200 },
+            ctx,
+            rt
+        );
+        // `fitBarsToBudget` itself must target `BARS_RESULT_MAX_CHARS`
+        // (7,000), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
+        // (pre-registry) result should already sit close to the LARGER
+        // ceiling, strictly above the smaller one, proving the fit ran
+        // against 7,000 rather than silently trimming to 4,000.
+        const rawSerializedLength = JSON.stringify(raw).length;
+        expect(rawSerializedLength).toBeLessThanOrEqual(BARS_RESULT_MAX_CHARS);
+        expect(rawSerializedLength).toBeGreaterThan(TOOL_RESULT_MAX_CHARS);
+
+        // Simulates the registry's actual ceiling for this tool
+        // (`server/createToolExecutor.ts`'s `ceilingFor` routes `get_bars_indicators` to
+        // `BARS_RESULT_MAX_CHARS`, not the shared `TOOL_RESULT_MAX_CHARS`).
+        const registryOutput = truncateToolResult(raw, BARS_RESULT_MAX_CHARS);
+        const serialized = JSON.stringify(registryOutput);
+
+        expect(serialized.length).toBeLessThanOrEqual(BARS_RESULT_MAX_CHARS);
+
+        const r = raw as {
+            barsReturned: number;
+            barsTrimmed: number;
+            bars: Array<{ c: number }>;
+        };
+        expect(r.barsTrimmed).toBeGreaterThan(0);
+        // The newest bar (close = 100 + SOURCE_BARS - 1) must survive the trim —
+        // it's the last element of the source array (oldest-first).
+        const newestClose = 100 + SOURCE_BARS - 1;
+        expect(r.bars.at(-1)?.c).toBe(newestClose);
+        expect(serialized).toContain(String(newestClose));
+    });
+
+    it('예산 초과 시 pullback.measured(긴 고정 문단)가 켜져 있어도 봉만 더 잘리고 판독·최신 봉은 온전히 남는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const SOURCE_BARS = 250;
+        const rising = Array.from({ length: SOURCE_BARS }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        // Same series with the last close dropped below its 14-bar low while
+        // still above MA200 (≈249): Williams %R -100 lights the reading.
+        const CRASH_CLOSE = 300;
+        const washout = [
+            ...rising.slice(0, -1),
+            bar(rising.at(-1)!.time, CRASH_CLOSE),
+        ];
+        const run = async (bars: typeof rising) => {
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day', bars: 200 },
+                ctx,
+                rt
+            )) as {
+                barsTrimmed: number;
+                bars: Array<{ c: number }>;
+                pullback: { reading: string; measured: string } | null;
+            };
+        };
+
+        const quiet = await run(rising);
+        const lit = await run(washout);
+
+        expect(quiet.pullback).toBeNull();
+        expect(lit.pullback?.reading).toBe('washoutInUptrend');
+        expect(lit.pullback?.measured).toBeTruthy();
+        expect(JSON.stringify(lit).length).toBeLessThanOrEqual(
+            BARS_RESULT_MAX_CHARS
+        );
+        // The paragraph displaces bars, never itself: more bars are trimmed…
+        expect(lit.barsTrimmed).toBeGreaterThan(quiet.barsTrimmed);
+        // …and the newest bar still survives.
+        expect(lit.bars.at(-1)?.c).toBe(CRASH_CLOSE);
+    });
+
+    it('confluence: 전체 캐시 봉(요청 bars 아님)으로 core evaluateConfluence를 돌려 압축 형태로 싣는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        // Oscillating uptrend — the real detector catalogue lights several
+        // signals on it and ma50 comes out non-integer (exercises rounding).
+        const bars = Array.from({ length: 150 }, (_, i) =>
+            bar(
+                1_700_000_000 + i * 86_400,
+                100 + 10 * Math.sin(i / 8) + i * 0.1
+            )
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            // bars:10 < CONFLUENCE_MIN_BARS — confluence must still read the full series.
+            { symbol: 'AAPL', timeframe: '1Day', bars: 10 },
+            ctx,
+            rt
+        )) as { confluence: Record<string, unknown> | null };
+
+        // `evaluateConfluence`/`scoreConfluence`/`aggregateBarsToWeekly` are
+        // core's real implementations (the module mock spreads `...actual`
+        // and only observes `evaluateConfluence`), so this is the real
+        // computation — '1Day's higher timeframe is the weekly aggregation of
+        // the SAME cached daily bars. The view carries neither the rule
+        // states nor `htfGate` (2026-10-03): the model misnamed both.
+        const weeklyBars = aggregateBarsToWeekly(bars);
+        const snapshot = evaluateConfluence(bars, {
+            timeframe: '1Day',
+            htfBars: weeklyBars,
+            htfLabel: '1Week',
+        });
+        expect(snapshot).not.toBeNull();
+        expect(snapshot!.bullish.length).toBeGreaterThan(0);
+        expect(r.confluence).toEqual({
+            score: scoreConfluence(snapshot),
+            bullish: snapshot!.bullish,
+            bearish: snapshot!.bearish,
+            freshBullish: snapshot!.freshBullish,
+            freshBearish: snapshot!.freshBearish,
+            ma50: roundNumber(snapshot!.ma50!),
+        });
+    });
+
+    it('confluence: htfBars가 로드되면 core evaluateConfluence에 htfBars가 전달된다(점수의 92 고정이 상위 타임프레임 조건을 반영)', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: 150 }, (_, i) =>
+            bar(1_700_000_000 + i * 3_600, 100 + 10 * Math.sin(i / 8) + i * 0.1)
+        );
+        const htfBars = Array.from({ length: 150 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i * 0.2)
+        );
+        // First call = main '1Hour' bars, second = '4Hour' HTF bars.
+        getCachedBars
+            .mockResolvedValueOnce({ bars, indicators })
+            .mockResolvedValueOnce({ bars: htfBars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Hour', bars: 10 },
+            ctx,
+            rt
+        )) as { confluence: Record<string, unknown> | null };
+
+        const call = evaluateConfluenceSpy.mock.calls.find(
+            ([series, opts]) => series === bars && opts?.timeframe === '1Hour'
+        );
+        expect(call?.[1]).toMatchObject({ htfBars, htfLabel: '4Hour' });
+        expect(r.confluence).not.toHaveProperty('htfGate');
+    });
+
+    it('confluence: CONFLUENCE_MIN_BARS 미만이면 null(기권)', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: CONFLUENCE_MIN_BARS - 1 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toHaveProperty('confluence', null);
+    });
+
+    it('모델이 준 bars는 1..200으로 제한된다(0은 slice(-0) 전체 반환 함정)', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: 50 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const barsFor = async (requested: unknown) =>
+            (
+                (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '1Day', bars: requested },
+                    ctx,
+                    rt
+                )) as { bars: unknown[] }
+            ).bars.length;
+        // `slice(-0)` returns the WHOLE array, so 0 must clamp to 1, not 50.
+        expect(await barsFor(0)).toBe(1);
+        expect(await barsFor(-5)).toBe(1);
+        expect(await barsFor(Number.NaN)).toBe(30);
+    });
+
+    describe('derived (spec §3.1, B1)', () => {
+        /** The `1Day` date the tool prints for a bar time. */
+        const day = (t: number) =>
+            new Date(t * 1000).toISOString().slice(0, 10);
+        /** The intraday instant the tool prints for a bar time. */
+        const instant = (t: number) => new Date(t * 1000).toISOString();
+        const barV = (time: number, close: number, volume = 100) => ({
+            time,
+            open: close,
+            high: close + 1,
+            low: close - 1,
+            close,
+            volume,
+        });
+
+        it('lastClose/changePct/range/volumeVsAvg20/atrPct/priceVsMa를 정확히 계산한다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 60 }, (_, i) =>
+                barV(1_700_000_000 + i * 86_400, 100 + i, i === 59 ? 300 : 100)
+            );
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: {
+                    ...indicators,
+                    ma: { 20: [2] },
+                    ema: { 20: [2] },
+                    atr: [3],
+                },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: Record<string, unknown> };
+
+            expect(r.derived.lastClose).toBe(159);
+            expect(r.derived.changePct).toEqual({
+                '1bar': roundNumber(((159 - 158) / 158) * 100),
+                '5bars': roundNumber(((159 - 154) / 154) * 100),
+                '20bars': roundNumber(((159 - 139) / 139) * 100),
+                '60bars': null, // exactly 60 bars — not `bars.length > 60`
+                '252bars': null,
+            });
+            expect(r.derived.range).toEqual({
+                high: 160,
+                highDate: day(bars[59]!.time),
+                low: 99,
+                lowDate: day(bars[0]!.time),
+                fromHighPct: roundNumber(((159 - 160) / 160) * 100),
+                fromLowPct: roundNumber(((159 - 99) / 99) * 100),
+                highClose: 159,
+                highCloseDate: day(bars[59]!.time),
+                fromHighClosePct: 0,
+                lowClose: 100,
+                lowCloseDate: day(bars[0]!.time),
+                fromLowClosePct: roundNumber(((159 - 100) / 100) * 100),
+                bars: 60,
+            });
+            expect(r.derived.volumeVsAvg20).toBe(roundNumber(300 / 100));
+            expect(r.derived.atrPct).toBe(roundNumber((3 / 159) * 100)); // ATR is atr/price, not a "vs base" diff
+            // Mean of the last MA50_PERIOD closes of this
+            // fixture, computed independently of core's calculateMA.
+            const maWindow = bars.slice(-MA50_PERIOD).map(b => b.close);
+            const ma50 =
+                maWindow.reduce((sum, c) => sum + c, 0) / maWindow.length;
+            expect(r.derived.priceVsMa).toEqual({
+                ma50Pct: roundNumber(((159 - ma50) / ma50) * 100),
+                ma20Pct: roundNumber(((159 - 2) / 2) * 100),
+                ema20Pct: roundNumber(((159 - 2) / 2) * 100),
+            });
+            // Last 20 bars (i=40..59): closes 140..159, highs 141..160, lows 139..158.
+            // Last 60 bars = the whole fixture, same window `range` already used.
+            expect(r.derived.ranges).toEqual({
+                '20bars': {
+                    high: 160,
+                    highDate: day(bars[59]!.time),
+                    low: 139,
+                    lowDate: day(bars[40]!.time),
+                    fromHighPct: roundNumber(((159 - 160) / 160) * 100),
+                    fromLowPct: roundNumber(((159 - 139) / 139) * 100),
+                    highClose: 159,
+                    highCloseDate: day(bars[59]!.time),
+                    fromHighClosePct: 0,
+                    lowClose: 140,
+                    lowCloseDate: day(bars[40]!.time),
+                    fromLowClosePct: roundNumber(((159 - 140) / 140) * 100),
+                },
+                '60bars': {
+                    high: 160,
+                    highDate: day(bars[59]!.time),
+                    low: 99,
+                    lowDate: day(bars[0]!.time),
+                    fromHighPct: roundNumber(((159 - 160) / 160) * 100),
+                    fromLowPct: roundNumber(((159 - 99) / 99) * 100),
+                    highClose: 159,
+                    highCloseDate: day(bars[59]!.time),
+                    fromHighClosePct: 0,
+                    lowClose: 100,
+                    lowCloseDate: day(bars[0]!.time),
+                    fromLowClosePct: roundNumber(((159 - 100) / 100) * 100),
+                },
+            });
+        });
+
+        it('null rule: zero/negative base, NaN, null 입력은 모두 null (base>0 아니면 % 없음)', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = [barV(1_700_000_000, 100), barV(1_700_086_400, 101)];
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: {
+                    ...indicators,
+                    ma: { 20: [0], 60: [-5], 120: [null] },
+                    ema: {},
+                    atr: [Number.NaN],
+                },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: Record<string, unknown> };
+
+            expect(r.derived.priceVsMa).toEqual({
+                ma50Pct: null, // only 2 bars loaded — far under the 50-bar MA period
+                ma20Pct: null, // base === 0
+                ma60Pct: null, // base < 0
+                ma120Pct: null, // base === null
+            });
+            expect(r.derived.atrPct).toBeNull(); // atr === NaN
+            expect(
+                (r.derived.changePct as Record<string, unknown>)['5bars']
+            ).toBeNull(); // not enough bars
+        });
+
+        it('range: 유한한 high/low가 하나도 없으면 high/low/pct 전부 null (bars 카운트는 유지)', async () => {
+            profile.mockResolvedValue('us-equity');
+            const badBars = [
+                {
+                    time: 1_700_000_000,
+                    open: 100,
+                    high: Number.NaN,
+                    low: Number.POSITIVE_INFINITY,
+                    close: 100,
+                    volume: 100,
+                },
+                {
+                    time: 1_700_086_400,
+                    open: 101,
+                    high: Number.NaN,
+                    low: Number.NaN,
+                    close: 101,
+                    volume: 100,
+                },
+            ];
+            getCachedBars.mockResolvedValue({ bars: badBars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: {
+                    range: {
+                        high: number | null;
+                        low: number | null;
+                        fromHighPct: number | null;
+                        fromLowPct: number | null;
+                        bars: number;
+                    };
+                };
+            };
+            expect(r.derived.range).toEqual({
+                high: null,
+                highDate: null,
+                low: null,
+                lowDate: null,
+                fromHighPct: null,
+                fromLowPct: null,
+                // Closes are finite even though every high/low is not.
+                highClose: 101,
+                highCloseDate: day(1_700_086_400),
+                fromHighClosePct: 0,
+                lowClose: 100,
+                lowCloseDate: day(1_700_000_000),
+                fromLowClosePct: 1,
+                bars: 2,
+            });
+        });
+
+        it('volumeVsAvg20: 마지막 거래량이나 평균에 들어가는 거래량 중 하나라도 비유한값이면 null (NaN이 roundNumber에 닿지 않는다)', async () => {
+            profile.mockResolvedValue('us-equity');
+            // 21 bars: 20 prior (one NaN) + 1 last.
+            const bars = Array.from({ length: 21 }, (_, i) =>
+                barV(
+                    1_700_000_000 + i * 86_400,
+                    100 + i,
+                    i === 5 ? Number.NaN : 100
+                )
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            let r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: { volumeVsAvg20: number | null } };
+            expect(r.derived.volumeVsAvg20).toBeNull();
+
+            // Now a finite average, but the LAST volume itself is NaN.
+            const bars2 = Array.from({ length: 21 }, (_, i) =>
+                barV(
+                    1_700_000_000 + i * 86_400,
+                    100 + i,
+                    i === 20 ? Number.NaN : 100
+                )
+            );
+            getCachedBars.mockResolvedValue({ bars: bars2, indicators });
+            r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: { volumeVsAvg20: number | null } };
+            expect(r.derived.volumeVsAvg20).toBeNull();
+        });
+
+        it('maStack: MA_DEFAULT_PERIODS 값이 있는 것만으로 bullish/bearish/mixed/null을 판정한다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = [barV(1_700_000_000, 100)];
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const stackFor = async (ma: Record<number, (number | null)[]>) => {
+                profile.mockResolvedValue('us-equity');
+                getCachedBars.mockResolvedValue({
+                    bars,
+                    indicators: { ...indicators, ma },
+                });
+                const r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '1Day' },
+                    ctx,
+                    rt
+                )) as { derived: { maStack: string | null } };
+                return r.derived.maStack;
+            };
+            expect(
+                await stackFor({
+                    5: [110],
+                    20: [105],
+                    60: [100],
+                    120: [95],
+                    200: [90],
+                })
+            ).toBe('bullish');
+            expect(
+                await stackFor({
+                    5: [90],
+                    20: [95],
+                    60: [100],
+                    120: [105],
+                    200: [110],
+                })
+            ).toBe('bearish');
+            expect(await stackFor({ 5: [100], 20: [110], 60: [90] })).toBe(
+                'mixed'
+            );
+            expect(await stackFor({ 20: [100] })).toBeNull(); // < 2 periods present
+        });
+
+        it('intraday range는 daily 252봉 상한 없이 로드된 전체 봉을 쓴다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 30 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { derived: { range: { bars: number } } };
+            expect(r.derived.range.bars).toBe(30);
+        });
+
+        it('ranges: 20bars/60bars는 timeframe과 무관하게 고정 봉 수 윈도우이고, 모자란 쪽만 null이다', async () => {
+            profile.mockResolvedValue('us-equity');
+            // 45 bars: enough for the 20bars window, not enough for 60bars.
+            const bars = Array.from({ length: 45 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { derived: { ranges: Record<string, unknown> } };
+
+            // Last 20 bars (i=25..44): closes 125..144, highs 126..145, lows 124..143.
+            expect(r.derived.ranges).toEqual({
+                '20bars': {
+                    high: 145,
+                    highDate: instant(bars[44]!.time),
+                    low: 124,
+                    lowDate: instant(bars[25]!.time),
+                    fromHighPct: roundNumber(((144 - 145) / 145) * 100),
+                    fromLowPct: roundNumber(((144 - 124) / 124) * 100),
+                    highClose: 144,
+                    highCloseDate: instant(bars[44]!.time),
+                    fromHighClosePct: 0,
+                    lowClose: 125,
+                    lowCloseDate: instant(bars[25]!.time),
+                    fromLowClosePct: roundNumber(((144 - 125) / 125) * 100),
+                },
+                '60bars': null, // only 45 bars loaded
+            });
+        });
+
+        it('ranges: 윈도우 안의 NaN high 하나는 나머지 유한값으로 무시된다(Math.max가 NaN에 전부 오염되지 않는다)', async () => {
+            profile.mockResolvedValue('us-equity');
+            // Exactly 20 bars so the whole fixture IS the 20bars window.
+            // Closes 100..119, highs 101..120 — the LAST bar (i=19) would be
+            // the natural max high; forcing it to NaN proves the filter, not
+            // just a coincidental non-max NaN.
+            const bars = Array.from({ length: 20 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            bars[19] = { ...bars[19]!, high: Number.NaN };
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: { ranges: { '20bars': { high: number | null } } };
+            };
+
+            // Without the finite filter, Math.max(...highs) would be NaN —
+            // the next-highest finite high (bar 18's 119) must survive instead.
+            expect(r.derived.ranges['20bars'].high).toBe(119);
+        });
+
+        it('range/ranges dates: a tie resolves to the most recent bar', async () => {
+            profile.mockResolvedValue('us-equity');
+            // Flat 100 closes; highs peak at 120 on bars 3 and 10, lows bottom
+            // at 80 on bars 5 and 15.
+            const bars = Array.from({ length: 20 }, (_, i) => ({
+                ...barV(1_700_000_000 + i * 86_400, 100),
+                high: i === 3 || i === 10 ? 120 : 101,
+                low: i === 5 || i === 15 ? 80 : 99,
+            }));
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: {
+                    range: { highDate: string | null; lowDate: string | null };
+                    ranges: {
+                        '20bars': {
+                            highDate: string | null;
+                            lowDate: string | null;
+                        };
+                    };
+                };
+            };
+            expect(r.derived.range.highDate).toBe(day(bars[10]!.time));
+            expect(r.derived.range.lowDate).toBe(day(bars[15]!.time));
+            expect(r.derived.ranges['20bars'].highDate).toBe(
+                day(bars[10]!.time)
+            );
+        });
+
+        describe('highClose/lowClose (종가 기준 극값)', () => {
+            const run = async (closes: number[], intraday = false) => {
+                profile.mockResolvedValue('us-equity');
+                // high/low deliberately differ from close so the two families cannot be confused.
+                const bars = closes.map((c, i) => ({
+                    time: 1_700_000_000 + i * 86_400,
+                    open: c,
+                    high: c + 10,
+                    low: c - 10,
+                    close: c,
+                    volume: 100,
+                }));
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                const r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: intraday ? '1Hour' : '1Day' },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        range: Record<string, number | string | null>;
+                    };
+                };
+                return { bars, range: r.derived.range };
+            };
+
+            it('종가 최고/최저와 날짜, 마지막 종가 대비 거리를 intraday high/low와 따로 낸다', async () => {
+                const { bars, range } = await run([100, 120, 90, 110]);
+                expect(range.high).toBe(130);
+                expect(range.highClose).toBe(120);
+                expect(range.highCloseDate).toBe(day(bars[1]!.time));
+                expect(range.fromHighClosePct).toBe(
+                    roundNumber(((110 - 120) / 120) * 100)
+                );
+                expect(range.low).toBe(80);
+                expect(range.lowClose).toBe(90);
+                expect(range.lowCloseDate).toBe(day(bars[2]!.time));
+                expect(range.fromLowClosePct).toBe(
+                    roundNumber(((110 - 90) / 90) * 100)
+                );
+            });
+
+            it('같은 종가가 여럿이면 가장 최근 봉의 날짜를 쓴다', async () => {
+                const { bars, range } = await run([120, 100, 120, 100, 110]);
+                expect(range.highCloseDate).toBe(day(bars[2]!.time));
+                expect(range.lowCloseDate).toBe(day(bars[3]!.time));
+            });
+
+            it('분봉에서는 날짜 자리에 ISO 시각을 쓴다', async () => {
+                const { bars, range } = await run([100, 120, 110], true);
+                expect(range.highCloseDate).toBe(instant(bars[1]!.time));
+            });
+        });
+
+        describe('closeStreak (연속 종가 방향)', () => {
+            const T0 = Math.floor(Date.UTC(2026, 9, 5) / 1000);
+            const run = async (
+                closes: number[],
+                opts: { timeframe?: string; inProgress?: boolean } = {}
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                forming.mockReturnValue(opts.inProgress ?? false);
+                const bars = closes.map((c, i) => bar(T0 + i * 86_400, c));
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                const r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: opts.timeframe ?? '1Day' },
+                    ctx,
+                    rt
+                )) as { derived: { closeStreak: unknown } };
+                return { bars, streak: r.derived.closeStreak };
+            };
+
+            it('연속 하락: 10,9,8 → down 2일, 시작일은 첫 하락일', async () => {
+                const { bars, streak } = await run([10, 9, 8]);
+                expect(streak).toEqual({
+                    direction: 'down',
+                    days: 2,
+                    sinceDate: day(bars[1]!.time),
+                    truncated: true,
+                });
+            });
+
+            it('연속 상승을 센다', async () => {
+                const { bars, streak } = await run([5, 4, 5, 6, 7]);
+                expect(streak).toEqual({
+                    direction: 'up',
+                    days: 3,
+                    sinceDate: day(bars[2]!.time),
+                    truncated: false,
+                });
+            });
+
+            it('상승 뒤 하루 하락이면 down 1일이다(스트릭 없음이 아니다)', async () => {
+                const { bars, streak } = await run([8, 9, 10, 9]);
+                expect(streak).toEqual({
+                    direction: 'down',
+                    days: 1,
+                    sinceDate: day(bars[3]!.time),
+                    truncated: false,
+                });
+            });
+
+            it('종가가 같으면 flat이고 days는 연속 보합 횟수다', async () => {
+                const { bars, streak } = await run([9, 10, 10, 10]);
+                expect(streak).toEqual({
+                    direction: 'flat',
+                    days: 2,
+                    sinceDate: day(bars[2]!.time),
+                    truncated: false,
+                });
+            });
+
+            it('진행 중인 마지막 봉은 제외한다', async () => {
+                const { bars, streak } = await run([10, 9, 8, 50], {
+                    inProgress: true,
+                });
+                expect(streak).toEqual({
+                    direction: 'down',
+                    days: 2,
+                    sinceDate: day(bars[1]!.time),
+                    truncated: true,
+                });
+            });
+
+            it('연속이 로드된 첫 봉까지 이어지면 truncated, 방향이 바뀐 봉을 만나면 아니다', async () => {
+                expect((await run([10, 9, 8])).streak).toMatchObject({
+                    truncated: true,
+                });
+                expect((await run([9, 10, 9, 8])).streak).toMatchObject({
+                    days: 2,
+                    truncated: false,
+                });
+            });
+
+            it('완료된 봉이 2개 미만이면 null', async () => {
+                expect((await run([10])).streak).toBeNull();
+                expect(
+                    (await run([10, 9], { inProgress: true })).streak
+                ).toBeNull();
+            });
+
+            it('일봉이 아니면 null', async () => {
+                expect(
+                    (await run([10, 9, 8], { timeframe: '1Hour' })).streak
+                ).toBeNull();
+            });
+
+            it('비유한 종가가 걸리면 null', async () => {
+                expect((await run([10, Number.NaN, 8])).streak).toBeNull();
+            });
+        });
+
+        describe('maCross50_200 (dev-2026-10-22 A5)', () => {
+            const DAY = 86_400;
+            const start = Date.parse('2024-10-21T00:00:00Z') / 1000;
+            const series = (closes: number[]) =>
+                closes.map((c, i) => barV(start + i * DAY, c));
+            const run = async (
+                bars: ReturnType<typeof barV>[],
+                timeframe: '1Day' | '1Hour' = '1Day'
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        maCross50_200: { date: string; kind: string }[] | null;
+                    };
+                    barsReturned: number;
+                };
+            };
+            /** Plain trailing mean, independent of core. */
+            const sma = (closes: number[], end: number, n: number) =>
+                closes.slice(end - n + 1, end + 1).reduce((a, b) => a + b, 0) /
+                n;
+
+            it('lists the dead cross on the bar an independent SMA check finds, from the full history (not the returned bars)', async () => {
+                // 360 rising closes, then a slide: MA50 starts above MA200 and
+                // falls through it once inside the last 252 bars.
+                const closes = Array.from({ length: 500 }, (_, i) =>
+                    i < 360 ? 100 + i * 0.5 : 280 - (i - 360) * 1.5
+                );
+                const bars = series(closes);
+                let crossIndex = -1;
+                for (let i = 248; i < closes.length; i++) {
+                    if (
+                        sma(closes, i - 1, 50) > sma(closes, i - 1, 200) &&
+                        sma(closes, i, 50) < sma(closes, i, 200)
+                    ) {
+                        crossIndex = i;
+                        break;
+                    }
+                }
+                expect(crossIndex).toBeGreaterThan(closes.length - 252);
+
+                const r = await run(bars);
+
+                expect(r.derived.maCross50_200).toEqual([
+                    { date: day(bars[crossIndex]!.time), kind: 'dead' },
+                ]);
+                // The cross is far older than the 30 bars returned.
+                expect(crossIndex).toBeLessThan(closes.length - r.barsReturned);
+            });
+
+            it('a fully checked year with no crossing is [] (a real "none")', async () => {
+                const r = await run(
+                    series(Array.from({ length: 500 }, (_, i) => 100 + i))
+                );
+                expect(r.derived.maCross50_200).toEqual([]);
+            });
+
+            it('history too short to check the whole window is null, not []', async () => {
+                // 252 + 200 bars are needed; 451 is one short.
+                const r = await run(
+                    series(Array.from({ length: 451 }, (_, i) => 100 + i))
+                );
+                expect(r.derived.maCross50_200).toBeNull();
+            });
+
+            it('the key name states the SMA periods the scan uses', async () => {
+                const r = await run(
+                    series(Array.from({ length: 500 }, (_, i) => 100 + i))
+                );
+                // A period change must force a key rename (the key is the contract).
+                expect(
+                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                ).toBe('maCross50_200');
+                expect(Object.keys(r.derived)).toContain(
+                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                );
+            });
+
+            it('is null on intraday timeframes', async () => {
+                const bars = Array.from({ length: 500 }, (_, i) =>
+                    barV(1_700_000_000 + i * 3_600, 100 + i)
+                );
+                const r = await run(bars, '1Hour');
+                expect(r.derived.maCross50_200).toBeNull();
+            });
+        });
+
+        describe('252bars and calendarChange (dev-2026-10-22 A4·A10)', () => {
+            /** Weekday-only daily bars (UTC midnight) from `from` through `to`, close = 100 + index. */
+            const weekdayBars = (from: string, to: string) => {
+                const out: ReturnType<typeof barV>[] = [];
+                for (
+                    let t = Date.parse(`${from}T00:00:00Z`);
+                    t <= Date.parse(`${to}T00:00:00Z`);
+                    t += 86_400_000
+                ) {
+                    const dow = new Date(t).getUTCDay();
+                    if (dow === 0 || dow === 6) continue;
+                    out.push(barV(t / 1000, 100 + out.length));
+                }
+                return out;
+            };
+            const run = async (
+                bars: ReturnType<typeof barV>[],
+                timeframe: '1Day' | '1Hour' = '1Day'
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    derived: {
+                        changePct: Record<string, number | null>;
+                        calendarChange: Record<
+                            string,
+                            {
+                                baseDate: string;
+                                baseClose: number;
+                                pct: number | null;
+                            } | null
+                        > | null;
+                    };
+                };
+            };
+
+            it('changePct.252bars compares with the close 252 bars back', async () => {
+                const bars = weekdayBars('2025-01-01', '2026-10-19');
+                const r = await run(bars);
+                const lastClose = bars.at(-1)!.close;
+                expect(r.derived.changePct['252bars']).toBe(
+                    pctVs(lastClose, bars[bars.length - 1 - 252]!.close)
+                );
+            });
+
+            it('calendarChange: base is the last session on or before the date 1/3/12 calendar months back', async () => {
+                // Last session Mon 2026-10-19 → targets Sat 09-19, Sun 07-19 and
+                // Sun 2025-10-19, so each base is the Friday before.
+                const bars = weekdayBars('2025-01-01', '2026-10-19');
+                const r = await run(bars);
+                // Closes are 100 + weekday index, so the last close is 568. Literal 2-decimal returns,
+                // worked out by hand: 568/547 = +3.84%, 568/502 = +13.15%, 568/307 = +85.02%.
+                expect(r.derived.calendarChange).toEqual({
+                    '1month': {
+                        baseDate: '2026-09-18',
+                        baseClose: 547,
+                        pct: 3.84,
+                    },
+                    '3months': {
+                        baseDate: '2026-07-17',
+                        baseClose: 502,
+                        pct: 13.15,
+                    },
+                    '1year': {
+                        baseDate: '2025-10-17',
+                        baseClose: 307,
+                        pct: 85.02,
+                    },
+                });
+                // A calendar month is not 20 bars: the two returns differ here.
+                expect(r.derived.calendarChange!['1month']!.pct).not.toBe(
+                    r.derived.changePct['20bars']
+                );
+            });
+
+            it('calendarChange: a period the loaded series does not reach is null', async () => {
+                const bars = weekdayBars('2026-08-01', '2026-10-19');
+                const r = await run(bars);
+                expect(r.derived.calendarChange!['1month']).not.toBeNull();
+                expect(r.derived.calendarChange!['3months']).toBeNull();
+                expect(r.derived.calendarChange!['1year']).toBeNull();
+                expect(r.derived.changePct['252bars']).toBeNull();
+            });
+
+            it('calendarChange is null on intraday timeframes', async () => {
+                const bars = Array.from({ length: 30 }, (_, i) =>
+                    barV(1_700_000_000 + i * 3_600, 100 + i)
+                );
+                const r = await run(bars, '1Hour');
+                expect(r.derived.calendarChange).toBeNull();
+            });
+        });
+
+        it('priceVsMa.ma50Pct: core calculateMA로 직접 계산되어 기간보다 1봉 모자라면 null, intraday에서도 채워진다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const oneShort = Array.from({ length: MA50_PERIOD - 1 }, (_, i) =>
+                barV(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({
+                bars: oneShort,
+                indicators: { ...indicators, ma: {}, ema: {} },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            let r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: { priceVsMa: Record<string, unknown> } };
+            expect(r.derived.priceVsMa.ma50Pct).toBeNull(); // one close short of the MA period
+
+            // Intraday timeframe, a few bars past the period — the expected
+            // mean is taken straight from the fixture's last-period closes.
+            const pastPeriod = Array.from({ length: MA50_PERIOD + 5 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            const intradayWindow = pastPeriod
+                .slice(-MA50_PERIOD)
+                .map(b => b.close);
+            const intradayMa =
+                intradayWindow.reduce((sum, c) => sum + c, 0) /
+                intradayWindow.length;
+            const intradayLast = pastPeriod[pastPeriod.length - 1]!.close;
+            getCachedBars.mockResolvedValue({
+                bars: pastPeriod,
+                indicators: { ...indicators, ma: {}, ema: {} },
+            });
+            r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { derived: { priceVsMa: Record<string, unknown> } };
+            expect(r.derived.priceVsMa.ma50Pct).toBe(
+                roundNumber(((intradayLast - intradayMa) / intradayMa) * 100)
+            );
+        });
+
+        it('priceVsMa.ma50Pct: indicators.ma에 period 50이 있으면 그 값이 core 계산값을 덮어쓴다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 60 }, (_, i) =>
+                barV(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: {
+                    ...indicators,
+                    ma: { [MA50_PERIOD]: [999] },
+                    ema: {},
+                },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: { priceVsMa: Record<string, unknown> } };
+            // indicators.ma['50'] must win over the fallback `calculateMA`
+            // computation (lastClose = 159, i=59).
+            expect(r.derived.priceVsMa.ma50Pct).toBe(pctVs(159, 999));
+        });
+    });
+
+    describe('pullback (단기 과매도 눌림 판독 — core evaluatePullback 어댑터)', () => {
+        interface PullbackResult {
+            reading: string;
+            williamsR: number;
+            rsi2: number | null;
+            closeVsMa200Pct: number;
+            ma5: number | null;
+            measured: string;
+            caveat: string | null;
+        }
+        // 판독 경계값(-90/-80)과 MA200 기권 규칙은 core pullback 테스트가 소유한다.
+        // 여기서는 일봉 게이트, 필드 이름·반올림, 기저율 문장 매핑만 고정한다.
+
+        // 종가가 i에 따라 선형으로 오르거나(상승 추세) 내린다(하락 추세) — 마지막 종가가
+        // MA200 위/아래 어느 쪽에 있는지가 fixture만으로 확정된다.
+        const trendBars = (length: number, slope: number) =>
+            Array.from({ length }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 300 + i * slope)
+            );
+        // 마지막 봉만 `close`로 바꾼다 — 14봉 저점 아래로 내리면 Williams %R은 -100.
+        const endingAt = (
+            bars: ReturnType<typeof trendBars>,
+            close: number
+        ) => [...bars.slice(0, -1), bar(bars.at(-1)!.time, close)];
+        const meanOfLast = (bars: { close: number }[], n: number) =>
+            bars.slice(-n).reduce((sum, b) => sum + b.close, 0) / n;
+
+        const pullbackFor = async (
+            bars: ReturnType<typeof trendBars>,
+            timeframe = '1Day'
+        ): Promise<PullbackResult | null> => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe },
+                ctx,
+                rt
+            )) as { pullback: PullbackResult | null };
+            return r.pullback;
+        };
+
+        it('상승 추세 끝의 급락 종가는 washoutInUptrend이고 core 값을 반올림해 기저율 문장과 함께 싣는다', async () => {
+            // 종가 300→429.5 상승 후 마지막 봉만 400 — 14봉 저점(423) 아래, MA200(≈380) 위.
+            const bars = endingAt(trendBars(260, 0.5), 400);
+            const r = await pullbackFor(bars);
+
+            expect(r).toEqual({
+                reading: 'washoutInUptrend',
+                williamsR: -100,
+                rsi2: expect.any(Number),
+                closeVsMa200Pct: pctVs(400, meanOfLast(bars, 200)),
+                ma5: roundNumber(meanOfLast(bars, 5)),
+                measured: PULLBACK_BASE_RATES.washoutInUptrend,
+                caveat: null,
+            });
+            // 하루 급락 뒤의 RSI(2)는 trader 규칙(< 10)의 과매도 영역이다.
+            expect(r!.rsi2!).toBeLessThan(10);
+        });
+
+        it('하락 추세 끝의 급락 종가는 washoutBelowMa200이고 고위험 기저율을 싣는다', async () => {
+            const r = await pullbackFor(endingAt(trendBars(260, -0.5), 150));
+            expect(r?.reading).toBe('washoutBelowMa200');
+            expect(r?.measured).toBe(PULLBACK_BASE_RATES.washoutBelowMa200);
+            expect(r?.closeVsMa200Pct).toBeLessThan(0);
+        });
+
+        it('판독이 none이면 pullback 자체가 null이다 — 모델이 "없음"을 보고하지 않도록', async () => {
+            // 상승 추세의 마지막 종가가 14봉 고점 — 과매도가 아니다.
+            expect(await pullbackFor(trendBars(260, 0.5))).toBeNull();
+        });
+
+        it('RSI(2)는 판독과 무관하게 일봉 latest.rsi2로 싣고, 일봉이 아니면 null이다', async () => {
+            const run = async (
+                bars: ReturnType<typeof trendBars>,
+                timeframe: string
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    pullback: PullbackResult | null;
+                    latest: { rsi2: number | null };
+                };
+            };
+            const quiet = await run(trendBars(260, 0.5), '1Day');
+            expect(quiet.pullback).toBeNull();
+            // Monotonic rise: RSI(2) pins at its ceiling.
+            expect(quiet.latest.rsi2).toBe(100);
+
+            const lit = await run(endingAt(trendBars(260, 0.5), 400), '1Day');
+            expect(lit.latest.rsi2).toBe(lit.pullback?.rsi2);
+
+            const intraday = await run(trendBars(260, 0.5), '1Hour');
+            expect(intraday.latest.rsi2).toBeNull();
+
+            // Below 200 daily bars core abstains, and rsi2 must follow it.
+            const short = await run(trendBars(150, 0.5), '1Day');
+            expect(short.latest.rsi2).toBeNull();
+        });
+
+        describe('caveat (core pullbackEventCaveat)', () => {
+            const washoutBars = () => endingAt(trendBars(260, 0.5), 400);
+            // 마지막 봉 직후에 발행된 악재 가이던스 — 뉴스 주도 급락이라 기저율이 적용되지 않는다.
+            const guidanceEvent = (bars: ReturnType<typeof trendBars>) => ({
+                publishedAt: new Date((bars.at(-1)!.time + 3_600) * 1000),
+                category: 'guidance' as const,
+                sentiment: 'bearish' as const,
+                impact: 'high' as const,
+            });
+
+            it('불 켜진 판독에는 시장 이벤트·실적일·일봉을 core에 넘겨 얻은 caveat을 싣는다', async () => {
+                const bars = washoutBars();
+                const events = [guidanceEvent(bars)];
+                findEvents.mockResolvedValue(events);
+                resolveEarnings.mockResolvedValue(['2024-01-02']);
+                spec.mockReturnValueOnce({ tag: 'session' });
+
+                const r = await pullbackFor(bars);
+
+                expect(caveatSpy).toHaveBeenCalledTimes(1);
+                expect(caveatSpy).toHaveBeenCalledWith({
+                    events,
+                    earningsDates: ['2024-01-02'],
+                    bars,
+                });
+                // 이벤트 창은 분석 경로와 같은 1Day 룩백 + 같은 세션이다.
+                expect(lookback).toHaveBeenCalledWith('1Day', {
+                    tag: 'session',
+                });
+                expect(findEvents).toHaveBeenCalledWith(
+                    { tag: 'db' },
+                    expect.objectContaining({
+                        symbol: 'AAPL',
+                        lookbackDays: 60,
+                    })
+                );
+                expect(resolveEarnings).toHaveBeenCalledWith('AAPL', {
+                    tag: 'db',
+                });
+                const expected = caveatSpy.mock.results[0]!.value as
+                    | string
+                    | null;
+                expect(expected).toEqual(expect.any(String));
+                expect(r?.caveat).toBe(expected);
+            });
+
+            it('이벤트가 없으면 caveat은 null이다', async () => {
+                const r = await pullbackFor(washoutBars());
+                expect(r?.caveat).toBeNull();
+            });
+
+            it('이벤트 조회가 실패해도 도구는 판독을 유지하고 caveat만 null이다', async () => {
+                const errorSpy = vi
+                    .spyOn(console, 'error')
+                    .mockImplementation(() => undefined);
+                findEvents.mockRejectedValue(new Error('db down'));
+
+                const r = await pullbackFor(washoutBars());
+
+                expect(r?.reading).toBe('washoutInUptrend');
+                expect(r?.caveat).toBeNull();
+                expect(caveatSpy).not.toHaveBeenCalled();
+                expect(errorSpy).toHaveBeenCalled();
+                errorSpy.mockRestore();
+            });
+
+            it('판독이 none이거나 일봉이 아니면 조회 자체를 하지 않는다', async () => {
+                await pullbackFor(trendBars(260, 0.5));
+                await pullbackFor(washoutBars(), '1Hour');
+                expect(findEvents).not.toHaveBeenCalled();
+                expect(resolveEarnings).not.toHaveBeenCalled();
+            });
+        });
+
+        it('일봉이 아니거나 core가 기권하면(200봉 미만) null이다', async () => {
+            const washout = endingAt(trendBars(260, 0.5), 400);
+            expect(await pullbackFor(washout, '1Hour')).toBeNull();
+            expect(
+                await pullbackFor(endingAt(trendBars(199, 0.5), 350))
+            ).toBeNull();
+        });
+    });
+
+    describe('higherTimeframe (spec §3.1, B3)', () => {
+        it("timeframe '1Day'는 이미 로드된 daily bars를 aggregateBarsToWeekly로 집계해 weekly HTF를 만든다(추가 캐시 조회 없음); weekly 데이터가 부족하면(<120봉) confluenceScore/priceVsMa50Pct는 null로 기권한다", async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 30 }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                higherTimeframe: {
+                    timeframe: string;
+                    trend: string;
+                    confluenceScore: number | null;
+                    priceVsMa50Pct: number | null;
+                } | null;
+            };
+            // 30 daily bars → ~5 weekly bars, far under CONFLUENCE_MIN_BARS
+            // (120) — core abstains, not a fake neutral score.
+            expect(r.higherTimeframe).not.toBeNull();
+            expect(r.higherTimeframe!.timeframe).toBe('1Week');
+            expect(r.higherTimeframe!.confluenceScore).toBeNull();
+            expect(r.higherTimeframe!.priceVsMa50Pct).toBeNull();
+            // Weekly aggregation reuses the SAME already-loaded daily bars —
+            // no second `getCachedBarsWithIndicators` call for '1Day'.
+            expect(getCachedBars).toHaveBeenCalledTimes(1);
+        });
+
+        it("timeframe '1Day': weekly 데이터가 충분하면(>=120봉) confluenceScore/rsi가 core의 실제 계산과 일치한다", async () => {
+            profile.mockResolvedValue('us-equity');
+            // ~900 daily bars → well over 120 weekly bars.
+            const bars = Array.from({ length: 900 }, (_, i) =>
+                bar(
+                    1_700_000_000 + i * 86_400,
+                    100 + 20 * Math.sin(i / 30) + i * 0.05
+                )
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                higherTimeframe: {
+                    timeframe: string;
+                    confluenceScore: number | null;
+                    rsi: number | null;
+                } | null;
+            };
+
+            // Real core computation on the same weekly aggregation, as the
+            // oracle for what the tool should have produced.
+            const weeklyBars = aggregateBarsToWeekly(bars);
+            const weeklyIndicators = calculateIndicators(weeklyBars);
+            const weeklySnapshot = evaluateConfluence(weeklyBars, {
+                timeframe: '1Week',
+            });
+            expect(weeklySnapshot).not.toBeNull(); // sanity: fixture actually clears CONFLUENCE_MIN_BARS
+            expect(r.higherTimeframe!.confluenceScore).toBe(
+                scoreConfluence(weeklySnapshot)
+            );
+            const lastRsi = weeklyIndicators.rsi.at(-1) ?? null;
+            expect(r.higherTimeframe!.rsi).toBe(
+                lastRsi !== null && Number.isFinite(lastRsi)
+                    ? roundNumber(lastRsi)
+                    : null
+            );
+        });
+
+        it("timeframe '1Day', 프로덕션 규모(500봉): weekly 봉이 CONFLUENCE_MIN_BARS(120) 미만이라 confluenceScore는 기권(null)이지만, 50개 이상의 종가는 있으므로 priceVsMa50Pct는 trailing 50-period 평균으로 실제 값을 낸다", async () => {
+            profile.mockResolvedValue('us-equity');
+            // 500 daily bars (production max — see `getCachedBarsWithIndicators`
+            // callers elsewhere) → ~101 weekly bars: over 50 (enough for a
+            // trailing SMA) but under CONFLUENCE_MIN_BARS (120, so core's own
+            // confluence scoring still abstains for every '1Day' request).
+            const bars = Array.from({ length: 500 }, (_, i) =>
+                bar(
+                    1_700_000_000 + i * 86_400,
+                    100 + 20 * Math.sin(i / 30) + i * 0.05
+                )
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                higherTimeframe: {
+                    confluenceScore: number | null;
+                    priceVsMa50Pct: number | null;
+                } | null;
+            };
+
+            const weeklyBars = aggregateBarsToWeekly(bars);
+            expect(weeklyBars.length).toBeGreaterThanOrEqual(50);
+            expect(weeklyBars.length).toBeLessThan(CONFLUENCE_MIN_BARS);
+            const weeklySnapshot = evaluateConfluence(weeklyBars, {
+                timeframe: '1Week',
+            });
+            expect(weeklySnapshot).toBeNull(); // sanity: fixture stays under core's own gate
+
+            expect(r.higherTimeframe!.confluenceScore).toBeNull();
+
+            // Oracle: the SAME `calculateMA` + `pctVs` the
+            // source uses — real, unmocked core functions, not a hand-rolled
+            // reimplementation.
+            const ma50 = calculateMA(weeklyBars, CONFLUENCE_TREND_MA_PERIOD).at(
+                -1
+            );
+            const lastClose = weeklyBars.at(-1)!.close;
+            expect(r.higherTimeframe!.priceVsMa50Pct).toBe(
+                pctVs(lastClose, ma50)
+            );
+            expect(r.higherTimeframe!.priceVsMa50Pct).not.toBeNull();
+        });
+
+        it('intraday timeframe은 매핑된 상위 timeframe의 봉을 두 번째 캐시 호출로 불러와 trend/confluenceScore/priceVsMa50Pct/rsi를 채운다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 150 }, (_, i) =>
+                bar(
+                    1_700_000_000 + i * 3_600,
+                    100 + 10 * Math.sin(i / 8) + i * 0.1
+                )
+            );
+            const htfBars = Array.from({ length: 150 }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 100 + i * 0.2)
+            );
+            const htfIndicators = { ...indicators, rsi: [1, 55] };
+            getCachedBars
+                .mockResolvedValueOnce({ bars, indicators })
+                .mockResolvedValueOnce({
+                    bars: htfBars,
+                    indicators: htfIndicators,
+                });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as {
+                higherTimeframe: {
+                    timeframe: string;
+                    trend: string;
+                    rsi: number | null;
+                    confluenceScore: number | null;
+                    priceVsMa50Pct: number | null;
+                } | null;
+            };
+            expect(r.higherTimeframe).not.toBeNull();
+            expect(r.higherTimeframe!.timeframe).toBe('4Hour'); // 1Hour → 4Hour mapping
+            expect(r.higherTimeframe!.rsi).toBe(55);
+            // Second call must target the mapped HTF timeframe, same symbol/session.
+            expect(getCachedBars).toHaveBeenNthCalledWith(
+                2,
+                {},
+                'AAPL',
+                '4Hour',
+                undefined,
+                undefined
+            );
+            const htfSnapshot = evaluateConfluence(htfBars, {
+                timeframe: '4Hour',
+            });
+            expect(r.higherTimeframe!.confluenceScore).toBe(
+                scoreConfluence(htfSnapshot)
+            );
+        });
+
+        it('higherTimeframe.rsi는 latest 값처럼 유효숫자 반올림되고, 비유한값이면 null', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 150 }, (_, i) =>
+                bar(
+                    1_700_000_000 + i * 3_600,
+                    100 + 10 * Math.sin(i / 8) + i * 0.1
+                )
+            );
+            const htfBars = Array.from({ length: 150 }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 100 + i * 0.2)
+            );
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+
+            getCachedBars
+                .mockResolvedValueOnce({ bars, indicators })
+                .mockResolvedValueOnce({
+                    bars: htfBars,
+                    indicators: { ...indicators, rsi: [1, 78.098971092601] },
+                });
+            let r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { higherTimeframe: { rsi: number | null } | null };
+            expect(r.higherTimeframe!.rsi).toBe(roundNumber(78.098971092601));
+            expect(r.higherTimeframe!.rsi).not.toBe(78.098971092601);
+
+            getCachedBars
+                .mockResolvedValueOnce({ bars, indicators })
+                .mockResolvedValueOnce({
+                    bars: htfBars,
+                    indicators: { ...indicators, rsi: [1, Number.NaN] },
+                });
+            r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { higherTimeframe: { rsi: number | null } | null };
+            expect(r.higherTimeframe!.rsi).toBeNull();
+        });
+
+        it('상위 timeframe 캐시 로드가 빈 배열이거나 throw하면 null로 내려가고 도구 자체는 죽지 않는다, throw는 degrade로 로그된다', async () => {
+            const consoleErrorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                profile.mockResolvedValue('us-equity');
+                const bars = [bar(1_700_000_000, 100)];
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+
+                getCachedBars
+                    .mockResolvedValueOnce({ bars, indicators })
+                    .mockResolvedValueOnce({ bars: [], indicators });
+                let r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '4Hour' },
+                    ctx,
+                    rt
+                )) as { higherTimeframe: unknown };
+                expect(r.higherTimeframe).toBeNull();
+
+                getCachedBars
+                    .mockResolvedValueOnce({ bars, indicators })
+                    .mockRejectedValueOnce(new Error('provider down'));
+                r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '4Hour' },
+                    ctx,
+                    rt
+                )) as { higherTimeframe: unknown };
+                expect(r.higherTimeframe).toBeNull();
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    '[AgentTool]',
+                    'get_bars_indicators',
+                    'higher-timeframe bars fetch failed, degrading',
+                    { errorName: 'Error', code: undefined }
+                );
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
+        });
+    });
+
+    it('기본 요청(30봉, 1Day)은 운영 규모 일봉(500봉·실제 지표·공포탐욕)에서도 봉이 잘리지 않는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        // 장중 페이로드(진행 중 표시 + 직전 완료 종가)가 더 크므로 그쪽으로 고정한다.
+        forming.mockReturnValue(true);
+        // 운영과 같은 모양: 500 거래일, 소수 둘째 자리 가격, 백만 단위 거래량.
+        const DAY = 86_400;
+        const start = Date.parse('2024-10-21T00:00:00Z') / 1000;
+        const realistic = Array.from({ length: 500 }, (_, i) => {
+            const close =
+                Math.round((420 + Math.sin(i / 9) * 35 + i * 0.09) * 100) / 100;
+            return {
+                time: start + i * DAY,
+                open: Math.round((close - 1.37) * 100) / 100,
+                high: Math.round((close + 3.21) * 100) / 100,
+                low: Math.round((close - 4.08) * 100) / 100,
+                close,
+                volume: 1_000_000 + ((i * 7_919) % 2_345_678),
+            };
+        });
+        const computed = calculateIndicators(realistic);
+        getCachedBars.mockResolvedValue({
+            bars: realistic,
+            indicators: {
+                ...computed,
+                buySellVolume: realistic.map((b, i) => ({
+                    buyVolume: b.volume * (0.45 + ((i * 13) % 10) / 100),
+                    sellVolume: b.volume * (0.45 + ((i * 7) % 10) / 100),
+                })),
+            },
+        });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([
+            {
+                type: 'golden_cross',
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: 0,
+            },
+            {
+                type: 'rsi_bullish_divergence',
+                direction: 'bullish',
+                phase: 'expected',
+                detectedAt: 0,
+            },
+            {
+                type: 'bollinger_squeeze',
+                direction: 'neutral',
+                phase: 'confirmed',
+                detectedAt: 0,
+            },
+        ]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { barsReturned: number; barsTrimmed: number };
+
+        expect(r.barsTrimmed).toBe(0);
+        expect(r.barsReturned).toBe(30);
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            BARS_RESULT_MAX_CHARS
+        );
+    });
+
+    it('budget 절단 후에도 derived/higherTimeframe은 trim 대상 밖이라 그대로 남는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        const SOURCE_BARS = 250;
+        const bars = Array.from({ length: SOURCE_BARS }, (_, i) =>
+            bar(1_700_000_000 + i * 3_600, 100 + i)
+        );
+        const htfBars = Array.from({ length: 100 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars
+            .mockResolvedValueOnce({ bars, indicators })
+            .mockResolvedValueOnce({ bars: htfBars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const raw = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '4Hour', bars: 200 },
+            ctx,
+            rt
+        )) as {
+            barsTrimmed: number;
+            derived: { lastClose: number | null };
+            higherTimeframe: { timeframe: string } | null;
+        };
+        expect(raw.barsTrimmed).toBeGreaterThan(0);
+        expect(raw.derived.lastClose).not.toBeNull();
+        expect(raw.higherTimeframe).not.toBeNull();
+        expect(raw.higherTimeframe!.timeframe).toBe('1Day');
+    });
+
+    /**
+     * `notes`: core's `BARS_RESULT_NOTES` attached verbatim, only where the field is null
+     * (`PUBLIC_API.md`, `runAgentTurn` action ⑩). The expected arrays are built from the same
+     * exported texts, so a reworded note never breaks a test but a wrong condition does.
+     */
+    describe('notes (BARS_RESULT_NOTES)', () => {
+        const DAY = 86_400;
+        const START = Date.parse('2024-10-21T00:00:00Z') / 1000;
+        /** Production-shaped daily series: real OHLCV movement, so fear & greed and the 252-session scan both have data. */
+        const series = (length: number, step = DAY) =>
+            Array.from({ length }, (_, i) => {
+                const close =
+                    Math.round((420 + Math.sin(i / 9) * 35 + i * 0.09) * 100) /
+                    100;
+                return {
+                    time: START + i * step,
+                    open: Math.round((close - 1.37) * 100) / 100,
+                    high: Math.round((close + 3.21) * 100) / 100,
+                    low: Math.round((close - 4.08) * 100) / 100,
+                    close,
+                    volume: 1_000_000 + ((i * 7_919) % 2_345_678),
+                };
+            });
+        const withFlow = (bars: ReturnType<typeof series>) => ({
+            ...calculateIndicators(bars),
+            buySellVolume: bars.map((b, i) => ({
+                buyVolume: b.volume * (0.45 + ((i * 13) % 10) / 100),
+                sellVolume: b.volume * (0.45 + ((i * 7) % 10) / 100),
+            })),
+        });
+        type NotesResult = {
+            notes?: string[];
+            barsReturned: number;
+            barsTrimmed: number;
+            derived: {
+                closeStreak: unknown;
+                maCross50_200: unknown;
+            };
+            fearGreed: unknown;
+        };
+        const run = async (
+            bars: ReturnType<typeof series>,
+            timeframe: string,
+            args: Record<string, unknown> = {}
+        ) => {
+            profile.mockResolvedValue('us-equity');
+            spec.mockReturnValue({
+                kind: 'scheduled',
+                timeZone: 'America/New_York',
+                openMinute: 570,
+                closeMinute: 960,
+                weekendDays: [0, 6],
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: withFlow(bars),
+            });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe, ...args },
+                ctx,
+                rt
+            )) as NotesResult;
+        };
+
+        it('a full 1Day result (every field present) has no notes key at all', async () => {
+            const r = await run(series(500), '1Day');
+            expect(r.derived.closeStreak).not.toBeNull();
+            expect(r.derived.maCross50_200).not.toBeNull();
+            expect(r.fearGreed).not.toBeNull();
+            expect(r).not.toHaveProperty('notes');
+        });
+
+        it.each(['4Hour', '1Hour', '1Week', '1Month'])(
+            '%s: one dailyOnlyFields note naming the requested timeframe, and nothing else',
+            async timeframe => {
+                const r = await run(
+                    series(500, timeframe === '4Hour' ? 14_400 : DAY),
+                    timeframe
+                );
+                expect(r.notes).toEqual([
+                    BARS_RESULT_NOTES.dailyOnlyFields(timeframe),
+                ]);
+                expect(r.notes?.[0]).toContain(`timeframe ${timeframe}`);
+            }
+        );
+
+        it('1Day with fewer than two completed bars: closeStreakUnavailable (and the other two nulls), in fixed order', async () => {
+            const r = await run(series(1), '1Day');
+            expect(r.derived.closeStreak).toBeNull();
+            expect(r.notes).toEqual([
+                BARS_RESULT_NOTES.closeStreakUnavailable,
+                BARS_RESULT_NOTES.maCrossShortHistory,
+                BARS_RESULT_NOTES.fearGreedUnavailable,
+            ]);
+        });
+
+        it('1Day, a non-finite last close (the streak walk gives up): closeStreakUnavailable is attached', async () => {
+            const bars = series(500);
+            const broken = [
+                ...bars.slice(0, -1),
+                { ...bars.at(-1)!, close: Number.NaN },
+            ];
+            const r = await run(broken, '1Day');
+            expect(r.derived.closeStreak).toBeNull();
+            expect(r.notes).toContain(BARS_RESULT_NOTES.closeStreakUnavailable);
+        });
+
+        it('1Day, 451 bars (one short of the 252-session cross scan): only maCrossShortHistory', async () => {
+            const r = await run(series(451), '1Day');
+            expect(r.derived.maCross50_200).toBeNull();
+            expect(r.derived.closeStreak).not.toBeNull();
+            expect(r.fearGreed).not.toBeNull();
+            expect(r.notes).toEqual([BARS_RESULT_NOTES.maCrossShortHistory]);
+        });
+
+        it('1Day with 452 bars the scan can finish: no maCross note', async () => {
+            const r = await run(series(452), '1Day');
+            expect(r.derived.maCross50_200).not.toBeNull();
+            expect(r.notes ?? []).not.toContain(
+                BARS_RESULT_NOTES.maCrossShortHistory
+            );
+        });
+
+        it('1Day, core abstains from the fear & greed reading: only fearGreedUnavailable', async () => {
+            computeFearGreed.mockReturnValueOnce(null);
+            const r = await run(series(500), '1Day');
+            expect(r.fearGreed).toBeNull();
+            expect(r.notes).toEqual([BARS_RESULT_NOTES.fearGreedUnavailable]);
+        });
+
+        it('the daily-only note is the only one on other timeframes even though the three fields are null there too', async () => {
+            const r = await run(series(1, 3_600), '1Hour');
+            expect(r.derived.closeStreak).toBeNull();
+            expect(r.fearGreed).toBeNull();
+            expect(r.notes).toHaveLength(1);
+        });
+
+        it('the note is part of what the budget fit counts: a 200-bar request on a non-daily timeframe still ends under the cap with the note kept', async () => {
+            const r = await run(series(500, 14_400), '4Hour', { bars: 200 });
+            expect(r.barsTrimmed).toBeGreaterThan(0);
+            expect(r.barsReturned).toBeGreaterThan(0);
+            expect(r.notes).toEqual([
+                BARS_RESULT_NOTES.dailyOnlyFields('4Hour'),
+            ]);
+            expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+                BARS_RESULT_MAX_CHARS
+            );
+        });
+
+        it('the default 30-bar request keeps every bar on a non-daily timeframe with the note attached', async () => {
+            const r = await run(series(500, 14_400), '4Hour');
+            expect(r.barsTrimmed).toBe(0);
+            expect(r.barsReturned).toBe(30);
+            expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+                BARS_RESULT_MAX_CHARS
+            );
+        });
+    });
+
+    describe('fearGreed groups and history', () => {
+        const longBars = Array.from({ length: 400 }, (_, i) => {
+            const close = 100 + Math.sin(i / 7) * 12 + i * 0.05;
+            return {
+                time: 1_600_000_000 + i * 86_400,
+                open: close - 0.5,
+                high: close + 1,
+                low: close - 1,
+                close,
+                volume: 100 + ((i * 37) % 50),
+            };
+        });
+        type View = {
+            fearGreed: {
+                groups: { name: string; label: string; score: number }[];
+                history: Record<string, { date: string } | null>;
+            };
+        };
+        const run = async (locale: 'ko' | 'en' | 'ja' | 'zh') => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({
+                bars: longBars,
+                indicators: {
+                    ...indicators,
+                    buySellVolume: longBars.map((_, i) => ({
+                        buyVolume: 60 + ((i * 13) % 20),
+                        sellVolume: 40 + ((i * 7) % 20),
+                    })),
+                },
+            });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                { ...ctx, locale },
+                rt
+            )) as View;
+        };
+
+        it.each([
+            ['ko', '수급', '추세'],
+            ['en', 'Flow', 'Trend'],
+            ['ja', '需給', 'トレンド'],
+            ['zh', '资金流', '趋势'],
+        ] as const)(
+            '%s 로케일은 화면과 같은 그룹명을 붙이고 점수는 정수다',
+            async (locale, flow, trend) => {
+                const r = await run(locale);
+                const byName = Object.fromEntries(
+                    r.fearGreed.groups.map(g => [g.name, g])
+                );
+                expect(byName.Flow?.label).toBe(flow);
+                expect(byName.Trend?.label).toBe(trend);
+                for (const g of r.fearGreed.groups)
+                    expect(Number.isInteger(g.score)).toBe(true);
+            }
+        );
+
+        it('history는 일봉 날짜(YYYY-MM-DD)로 나온다', async () => {
+            const r = await run('ko');
+            const dates = Object.values(r.fearGreed.history).flatMap(p =>
+                p ? [p.date] : []
+            );
+            expect(dates.length).toBeGreaterThan(0);
+            for (const d of dates) expect(d).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        });
+    });
+
+    describe('buildFearGreedHistoryView', () => {
+        const series = (n: number, withWarmup = 0) => [
+            ...Array.from({ length: withWarmup }, (_, i) => ({
+                date: `w${i}`,
+                score: null,
+                label: null,
+            })),
+            ...Array.from({ length: n }, (_, i) => ({
+                date: `d${i}`,
+                score: i + 0.4,
+                label: 'NEUTRAL' as const,
+            })),
+        ];
+
+        it('거래일 오프셋(5/21/63/252)으로 점수가 있는 점만 센다', () => {
+            const v = buildFearGreedHistoryView(series(300, 10));
+            expect(v.weekAgo).toEqual({
+                date: 'd294',
+                score: 294,
+                label: 'NEUTRAL',
+            });
+            expect(v.monthAgo?.date).toBe('d278');
+            expect(v.threeMonthsAgo?.date).toBe('d236');
+            expect(v.yearAgo?.date).toBe('d47');
+        });
+
+        it('연간 최저/최고는 페이지처럼 최근 252점 안에서 고른다', () => {
+            const v = buildFearGreedHistoryView(series(300));
+            expect(v.yearMin).toEqual({ date: 'd48', score: 48 });
+            expect(v.yearMax).toEqual({ date: 'd299', score: 299 });
+        });
+
+        it('시계열이 짧으면 닿지 않는 지점은 null', () => {
+            const v = buildFearGreedHistoryView(series(30));
+            expect(v.weekAgo).not.toBeNull();
+            expect(v.monthAgo).not.toBeNull();
+            expect(v.threeMonthsAgo).toBeNull();
+            expect(v.yearAgo).toBeNull();
+            expect(v.yearMin).not.toBeNull();
+        });
+
+        it('동률은 먼저 나온 지점을 유지하고 비교는 원점수로 한다(페이지와 동일)', () => {
+            const mk = (scores: number[]) =>
+                scores.map((score, i) => ({
+                    date: `t${i}`,
+                    score,
+                    label: 'NEUTRAL' as const,
+                }));
+            // raw 10.4 < 10.6 though both round to 10/11 apart; 20 ties twice.
+            const v = buildFearGreedHistoryView(mk([20, 10.6, 10.4, 20, 15]));
+            expect(v.yearMin).toEqual({ date: 't2', score: 10 });
+            expect(v.yearMax).toEqual({ date: 't0', score: 20 });
+        });
+
+        it('점수 있는 점이 없으면 전부 null', () => {
+            expect(buildFearGreedHistoryView(series(0, 5))).toEqual({
+                weekAgo: null,
+                monthAgo: null,
+                threeMonthsAgo: null,
+                yearAgo: null,
+                yearMin: null,
+                yearMax: null,
+            });
+        });
+    });
+
+    describe('주봉·월봉 (1Week·1Month)', () => {
+        const DAY = 86_400;
+        const US = {
+            kind: 'scheduled' as const,
+            timeZone: 'America/New_York',
+            openMinute: 570,
+            closeMinute: 960,
+            weekendDays: [0, 6],
+        };
+        const KR = {
+            ...US,
+            timeZone: 'Asia/Seoul',
+            openMinute: 540,
+            closeMinute: 930,
+        };
+        const CRYPTO = { kind: 'always-open' as const };
+        // 2024-01-01(월)부터 매일 한 봉. 실제 core 지표가 돌도록 OHLC를 움직인다.
+        const START = Math.floor(Date.UTC(2024, 0, 1) / 1000);
+        const daily = (n: number, start = START) =>
+            Array.from({ length: n }, (_, i) => {
+                const close = 100 + Math.sin(i / 9) * 10 + i * 0.03;
+                return {
+                    time: start + i * DAY,
+                    open: close - 0.4,
+                    high: close + 1,
+                    low: close - 1,
+                    close,
+                    volume: 1_000 + ((i * 31) % 200),
+                };
+            });
+        const iso = (t: number) =>
+            new Date(t * 1000).toISOString().slice(0, 10);
+        // daily(400)의 마지막 봉은 2025-02-03(월), daily(404)는 2025-02-07(금).
+        const at = (isoInstant: string) =>
+            vi.setSystemTime(new Date(isoInstant));
+
+        beforeEach(() => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('downtrend');
+            detect.mockReturnValue([]);
+            spec.mockReturnValue(US);
+            vi.useFakeTimers({ toFake: ['Date'] });
+            at('2025-02-04T12:00:00Z');
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        type Result = {
+            timeframe: string;
+            asOf: string;
+            lastBarInProgress: boolean;
+            lastCompletedClose: unknown;
+            bars: { t: string; c: number; v: number }[];
+            pullback: unknown;
+            fearGreed: unknown;
+            higherTimeframe: { timeframe: string } | null;
+            derived: {
+                calendarChange: unknown;
+                maCross50_200: unknown;
+                closeStreak: unknown;
+                volumeVsAvg20: number | null;
+            };
+        };
+        const call = async (timeframe: string, bars?: number) =>
+            (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe, ...(bars ? { bars } : {}) },
+                ctx,
+                rt
+            )) as Result;
+
+        it('1Week: 일봉을 원본 그대로 받아(1Day 조회) ISO 주로 묶고, 상위는 월봉이다', async () => {
+            const bars = daily(400);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            const r = await call('1Week', 60);
+            expect(getCachedBars.mock.calls.every(c => c[2] === '1Day')).toBe(
+                true
+            );
+            const weekly = aggregateBarsToWeekly(bars);
+            expect(r.timeframe).toBe('1Week');
+            expect(r.bars.at(-1)).toMatchObject({
+                t: iso(weekly.at(-1)!.time),
+                c: weekly.at(-1)!.close,
+            });
+            // 주봉은 월요일로 찍히고 asOf는 마지막 일봉 날짜다.
+            expect(r.bars.at(-1)!.t).toBe('2025-02-03');
+            expect(r.asOf).toBe('2025-02-03');
+            expect(r.higherTimeframe?.timeframe).toBe('1Month');
+            expect(r.pullback).toBeNull();
+            expect(r.fearGreed).toBeNull();
+            expect(r.derived.calendarChange).toBeNull();
+            expect(r.derived.maCross50_200).toBeNull();
+            expect(r.derived.closeStreak).toBeNull();
+            // 도구 설명이 약속한 대로 null을 명시한다(누락이 아니라).
+            expect(r.lastCompletedClose).toBeNull();
+        });
+
+        it('1Month: 달력 월로 묶고 상위 타임프레임은 없다', async () => {
+            const bars = daily(400);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            const r = await call('1Month');
+            const monthly = aggregateBarsToMonthly(bars);
+            expect(r.bars.map(b => b.t)).toEqual(
+                monthly.slice(-30).map(b => iso(b.time))
+            );
+            expect(r.bars.at(-1)!.t).toBe('2025-02-01');
+            expect(r.higherTimeframe).toBeNull();
+        });
+
+        it('5년 일봉(fearGreedBars)이 있으면 그것으로 묶고, 1Day의 주봉 상위 타임프레임도 같은 원본을 쓴다', async () => {
+            const long = daily(1_200, START - 800 * DAY);
+            const standard = long.slice(-400);
+            getCachedBars.mockResolvedValue({
+                bars: standard,
+                indicators,
+                fearGreedBars: long,
+            });
+            const r = await call('1Month', 60);
+            // 출력 예산이 오래된 봉을 자를 수 있지만, 남은 봉도 표준 창(2024-01-01 시작)보다 이르다.
+            expect(r.bars[0]!.t < '2024-01-01').toBe(true);
+            expect(r.bars.length).toBeGreaterThan(
+                aggregateBarsToMonthly(standard).length
+            );
+
+            evaluateConfluenceSpy.mockClear();
+            await call('1Day');
+            const htfCall = evaluateConfluenceSpy.mock.calls.find(
+                c => c[1]?.timeframe === '1Week'
+            );
+            expect(htfCall?.[0]).toEqual(aggregateBarsToWeekly(long));
+        });
+
+        // daily(404) ends Friday 2025-02-07, so asOf differs from both the
+        // weekly stamp (Monday 02-03) and the monthly stamp (02-01).
+        it.each([
+            ['1Week', '2025-02-03'],
+            ['1Month', '2025-02-01'],
+        ])(
+            '%s: asOf는 기간 첫날이 아니라 마지막 일봉 날짜다',
+            async (timeframe, periodStart) => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                const r = await call(timeframe);
+                expect(r.bars.at(-1)!.t).toBe(periodStart);
+                expect(r.asOf).toBe('2025-02-07');
+            }
+        );
+
+        it('asOf는 집계가 실제로 쓴 마지막 일봉이다(가격 없는 끝 행은 건너뛴다)', async () => {
+            const bars = daily(404);
+            const placeholder = {
+                ...bars.at(-1)!,
+                time: bars.at(-1)!.time + DAY,
+                close: 0,
+            };
+            getCachedBars.mockResolvedValue({
+                bars: [...bars, placeholder],
+                indicators,
+            });
+            const r = await call('1Week');
+            expect(r.asOf).toBe('2025-02-07');
+        });
+
+        describe('진행 중 판정은 장 세션 기준이다', () => {
+            it('미국: 이번 주에 거래일이 남았으면 진행 중, 다음 주면 끝난 봉', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(400),
+                    indicators,
+                });
+                // 화 07:00 ET, 화요일 봉이 아직 없다.
+                expect((await call('1Week')).lastBarInProgress).toBe(true);
+                at('2025-02-12T12:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(false);
+            });
+
+            it('미국: 금요일 봉까지 있는 주를 토요일에 보면 끝난 봉이다', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-08T15:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(false);
+            });
+
+            it('미국: 장중이면(마지막 일봉이 형성 중) 진행 중이다', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-07T17:00:00Z');
+                forming.mockReturnValue(true);
+                expect((await call('1Week')).lastBarInProgress).toBe(true);
+            });
+
+            it('한국: 월요일 08:00 KST(UTC로는 일요일)에 지난주 봉은 진행 중이 아니다', async () => {
+                spec.mockReturnValue(KR);
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-09T23:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(false);
+            });
+
+            it('크립토(상시 개장)는 주말에도 이번 주 봉이 진행 중이다', async () => {
+                spec.mockReturnValue(CRYPTO);
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-08T15:00:00Z');
+                expect((await call('1Week')).lastBarInProgress).toBe(true);
+            });
+
+            it('월봉: 같은 달 주말이면 남은 평일에 봉이 없을 때만 진행 중이다', async () => {
+                // 2025-02-07(금)까지 봉, 2025-02-08(토): 2월에 평일이 남았다.
+                getCachedBars.mockResolvedValue({
+                    bars: daily(404),
+                    indicators,
+                });
+                at('2025-02-08T15:00:00Z');
+                expect((await call('1Month')).lastBarInProgress).toBe(true);
+                // 2025-05-30(금)까지 봉, 2025-05-31(토)이 5월의 마지막 날이다.
+                getCachedBars.mockResolvedValue({
+                    bars: daily(516),
+                    indicators,
+                });
+                at('2025-05-31T15:00:00Z');
+                const done = await call('1Month');
+                expect(done.bars.at(-1)!.t).toBe('2025-05-01');
+                expect(done.asOf).toBe('2025-05-30');
+                expect(done.lastBarInProgress).toBe(false);
+            });
+
+            it('크립토 월봉은 그달 안이면 주말에도 진행 중이다', async () => {
+                spec.mockReturnValue(CRYPTO);
+                getCachedBars.mockResolvedValue({
+                    bars: daily(516),
+                    indicators,
+                });
+                at('2025-05-31T15:00:00Z');
+                expect((await call('1Month')).lastBarInProgress).toBe(true);
+            });
+
+            it('월봉: 이번 달이면 진행 중, 달이 바뀌면 끝난 봉', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(400),
+                    indicators,
+                });
+                expect((await call('1Month')).lastBarInProgress).toBe(true);
+                at('2025-03-01T15:00:00Z');
+                expect((await call('1Month')).lastBarInProgress).toBe(false);
+            });
+
+            it('진행 중인 주·월은 거래량 비율을 내지 않는다(부분 기간이라 비교 불가)', async () => {
+                getCachedBars.mockResolvedValue({
+                    bars: daily(400),
+                    indicators,
+                });
+                const live = await call('1Week');
+                expect(live.lastBarInProgress).toBe(true);
+                expect(live.derived.volumeVsAvg20).toBeNull();
+                at('2025-02-12T12:00:00Z');
+                const done = await call('1Week');
+                expect(done.derived.volumeVsAvg20).not.toBeNull();
+            });
+        });
+
+        it('일봉이 없으면 found:false', async () => {
+            getCachedBars.mockResolvedValue({ bars: [], indicators });
+            expect(
+                await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '1Week' },
+                    ctx,
+                    rt
+                )
+            ).toEqual({ symbol: 'AAPL', timeframe: '1Week', found: false });
+        });
+    });
+
+    describe('get_cached_analysis 사다리의 차트 기준과 같은 값을 낸다', () => {
+        it('52주 고저·20일 고저는 derived.range/ranges, 20/50/200일 평균은 latest.ma와 일치한다', async () => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            // 300 bars with a wave, so the 252-bar window drops the first 48 and the extremes sit mid-series.
+            const bars = Array.from({ length: 300 }, (_, i) => ({
+                time: 1_700_000_000 + i * 86_400,
+                open: 100,
+                // a spike inside the first 48 bars, which the 252-bar window leaves out
+                high: i === 10 ? 500 : 110 + (i % 37) + i / 100,
+                low: 90 - (i % 23) - i / 100,
+                close: 100 + (i % 11),
+                volume: 100,
+            }));
+            // Unrounded last values: both paths must print them through the same significant-digit rounding.
+            const series = {
+                ...indicators,
+                ma: {
+                    20: [101.123456789],
+                    50: [102.987654321],
+                    200: [99.5555555],
+                },
+            };
+            getCachedBars.mockResolvedValue({ bars, indicators: series });
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: {
+                    range: { high: number; low: number };
+                    ranges: Record<string, { high: number; low: number }>;
+                };
+                latest: { ma: Record<string, number> };
+            };
+            const chart = chartReferenceLevels(bars, series as never);
+            expect(chart.high52w).toBe(r.derived.range.high);
+            expect(chart.low52w).toBe(r.derived.range.low);
+            expect(chart.high20).toBe(r.derived.ranges['20bars']?.high);
+            expect(chart.low20).toBe(r.derived.ranges['20bars']?.low);
+            expect(chart.sma20).toBe(r.latest.ma['20']);
+            expect(chart.sma50).toBe(r.latest.ma['50']);
+            expect(chart.sma200).toBe(r.latest.ma['200']);
+            // The unrounded input really was rounded (otherwise this test proves nothing about the path).
+            expect(chart.sma50).toBe(102.988);
+            // And the 252-bar window mattered: the full series' highest high is older than the window.
+            expect(chart.high52w).toBeLessThan(500);
+        });
+    });
+});

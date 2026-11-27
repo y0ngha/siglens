@@ -6,7 +6,7 @@ const { mockCreateExecutor, mockExecute, mockByok, mockAgentTool } = vi.hoisted(
         mockAgentTool: vi.fn(),
     })
 );
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     createToolExecutor: mockCreateExecutor,
     availableToolNames: () => new Set(),
 }));
@@ -14,7 +14,7 @@ vi.mock('@/app/api/v1/runByokFreshAnalysis', () => ({
     runByokFreshAnalysis: mockByok,
 }));
 // 서버 키로 LLM을 부르는 에이전트 구현 — 공개 API 경로에서 불리면 안 된다.
-vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
+vi.mock('@/features/agent-tools/server/freshAnalysis/runFreshAnalysis', () => ({
     runFreshAnalysisTool: mockAgentTool,
 }));
 vi.mock('@/entities/llm-provider/api/agent/router', () => ({

@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MEMBER_ONLY_TOOLS } from '@/app/api/ai/chat/tools/memberOnlyTools';
+import { MEMBER_ONLY_TOOLS } from '@/features/agent-tools/lib/memberOnlyTools';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 
 /**

@@ -1,12 +1,12 @@
 import 'server-only';
 import { getProviderForModel, type Timeframe } from '@y0ngha/siglens-core';
+import { resolveByokOnlyKey } from '@/entities/api-key/server/resolveByokOnlyKey';
+import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import {
     DEFAULT_TIMEFRAME,
     FRESH_ANALYSIS_KINDS,
     tryAcquireFreshSlot,
-} from '@/app/api/ai/chat/tools/runFreshAnalysis';
-import { resolveByokOnlyKey } from '@/entities/api-key/server/resolveByokOnlyKey';
-import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
+} from '@/features/agent-tools/server/freshAnalysis/runFreshAnalysis';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';

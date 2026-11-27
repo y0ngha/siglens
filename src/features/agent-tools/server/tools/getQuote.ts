@@ -1,0 +1,111 @@
+import 'server-only';
+import type { MarketQuote } from '@y0ngha/siglens-core';
+import {
+    assessFreshness,
+    type FreshnessView,
+    staleKrListingDate,
+} from '@/entities/ticker/lib/freshness';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from '@/entities/ticker/server/resolveAssetInfo';
+import type { ToolExecutor } from '@/features/agent-tools/model';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
+import { MS_PER_SECOND } from '@/shared/config/time';
+
+const MAX_SYMBOLS = 3;
+
+/**
+ * `MarketQuote.timestamp` (core, unix seconds) is the provider's own quote
+ * time, when the adapter reports one — `FmpMarketProvider`/`YahooMarketProvider`
+ * both pass it through now (spec §3.8, audit B10). Falls
+ * back to fetch time + `asOfIsFetchTime: true` only when the field is
+ * absent, so a provider outage/degraded row that genuinely has no quote time
+ * still gets an honest `asOf`.
+ */
+function quoteAsOf(quote: MarketQuote): {
+    asOf: string;
+    asOfIsFetchTime?: true;
+    freshness?: FreshnessView;
+} {
+    if (quote.timestamp !== undefined && Number.isFinite(quote.timestamp)) {
+        const asOfMs = quote.timestamp * MS_PER_SECOND;
+        return {
+            asOf: new Date(asOfMs).toISOString(),
+            freshness: assessFreshness({
+                asOfMs,
+                maxAgeMs: QUOTE_MAX_AGE_MS,
+                nowMs: Date.now(),
+            }),
+        };
+    }
+    return { asOf: new Date().toISOString(), asOfIsFetchTime: true };
+}
+
+/** 한 심볼의 시세 행. 공급자 오류는 던지므로 호출부가 심볼 단위로 잡는다. */
+async function quoteFor(symbol: string) {
+    const [profile, asset] = await Promise.all([
+        resolveMarketProfile(symbol),
+        resolveAssetInfoOrNull(symbol, 'get_quote'),
+    ]);
+    const quote = await getCachedMarketDataProvider(
+        sessionSpecFor(profile)
+    ).getQuote(asset?.fmpSymbol ?? symbol);
+    if (quote === null) return { symbol, found: false };
+    // 한국의 죽은 리스팅(잘못된 접미사 등)은 가격이 아니라 데이터 오류로 돌린다.
+    const lastTradeDate = staleKrListingDate(
+        profile,
+        quote.timestamp === undefined
+            ? undefined
+            : quote.timestamp * MS_PER_SECOND,
+        Date.now()
+    );
+    if (lastTradeDate !== null)
+        return {
+            symbol,
+            found: false,
+            error: 'stale_listing' as const,
+            lastTradeDate,
+        };
+    const descriptor = getDescriptor(profile);
+    return {
+        symbol,
+        ...resolvedInstrumentFields(asset),
+        found: true,
+        price: quote.price,
+        changesPercentage: quote.changesPercentage,
+        currency: descriptor.priceFormat.currency,
+        marketProfile: profile,
+        quoteDelayMinutes: descriptor.quoteDelayMinutes,
+        ...quoteAsOf(quote),
+    };
+}
+
+/**
+ * Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP), quoted
+ * through `fmpSymbol` when the canonical symbol differs from the one the
+ * provider expects (e.g. indices). `quoteDelayMinutes` is surfaced so the
+ * model doesn't present a 20-minute-delayed KR quote as real-time.
+ */
+export const getQuoteTool: ToolExecutor = async args => {
+    const symbols = (args.symbols as string[])
+        .slice(0, MAX_SYMBOLS)
+        .map(s => s.toUpperCase());
+    // Each lookup catches its own failure — one symbol's provider error (e.g.
+    // FMP rate limit on a single ticker) must not blank out every other
+    // requested quote in the same call.
+    const quotes = await Promise.all(
+        symbols.map(symbol =>
+            quoteFor(symbol).catch(() => ({ symbol, found: false }))
+        )
+    );
+    return {
+        asOf: new Date().toISOString(),
+        source: 'market data provider (60s in-session cache)',
+        quotes,
+    };
+};

@@ -4,8 +4,11 @@ import {
     type ModelId,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { unwrap, type Outcome } from '@/app/api/ai/chat/tools/runFreshAnalysis';
-import { truncateToolResult } from '@/app/api/ai/chat/tools/truncate';
+import { truncateToolResult } from '@/features/agent-tools/lib/truncate';
+import {
+    unwrap,
+    type Outcome,
+} from '@/features/agent-tools/server/freshAnalysis/runFreshAnalysis';
 import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import { providerFailureStatus } from '@/shared/lib/aiProviderFailure';

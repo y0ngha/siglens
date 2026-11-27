@@ -10,7 +10,7 @@ import {
     MAX_ADMITTED_AGENT_TURNS,
     type TurnSlot,
 } from '@/app/api/ai/chat/stream/_lib/turnSlots';
-import { MAX_CONCURRENT_FRESH } from '@/app/api/ai/chat/tools/runFreshAnalysis';
+import { MAX_CONCURRENT_FRESH } from '@/features/agent-tools/server/freshAnalysis/runFreshAnalysis';
 
 const open = () => true;
 

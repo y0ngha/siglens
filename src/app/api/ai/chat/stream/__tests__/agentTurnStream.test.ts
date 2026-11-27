@@ -26,7 +26,7 @@ vi.mock('@/app/api/ai/chat/counters', () => ({
     agentGlobalLimitsFromEnv: () => undefined,
     createAgentCounters: () => ({}),
 }));
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     createToolExecutor: (
         runtime: unknown,
         options?: { onChart?: typeof executorOptions.onChart }

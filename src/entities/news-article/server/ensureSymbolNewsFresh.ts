@@ -99,7 +99,7 @@ async function withBudget<T>(
 
 /**
  * 챗 툴이 심볼 데이터를 읽기 **전에** 돌리는 수급 단계
- * (`app/api/ai/chat/tools/chatTools.ts`의 `ensureSymbolData`가 호출한다).
+ * (`features/agent-tools/server/createToolExecutor.ts`의 `ensureSymbolData`가 호출한다).
  *
  * 같은 "적재 → 보강 → 무효화" 골격을 쓰는 형제 경로가 둘 더 있다 — 뉴스 탭 방문
  * (`actions/ensureNewsCardsAnalyzedAction`, 180일 목록 창·Server Action이라 즉시

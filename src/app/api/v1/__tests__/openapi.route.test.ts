@@ -1,4 +1,4 @@
-vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
+vi.mock('@/features/agent-tools/server/createToolExecutor', () => ({
     // 실행기가 가진 도구 전부(제외 대상 포함) — 제외는 publicApiTools(실물)가 맡는다.
     availableToolNames: () =>
         new Set([

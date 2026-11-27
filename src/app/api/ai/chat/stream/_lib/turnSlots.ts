@@ -1,4 +1,4 @@
-import { MAX_CONCURRENT_FRESH } from '@/app/api/ai/chat/tools/runFreshAnalysis';
+import { MAX_CONCURRENT_FRESH } from '@/features/agent-tools/server/freshAnalysis/runFreshAnalysis';
 
 /**
  * 인스턴스당 동시에 "일하는" 에이전트 턴의 상한. 카운터는 프로세스(인스턴스)

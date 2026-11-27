@@ -4,9 +4,9 @@ import {
     type AgentToolSpec,
     type ToolExecutionContext,
 } from '@y0ngha/siglens-core';
-import { createToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { AGENT_MODEL } from '@/entities/llm-provider/api/agent/router';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
+import { createToolExecutor } from '@/features/agent-tools/server/createToolExecutor';
 import {
     PUBLIC_API_CHART_DATA,
     PUBLIC_API_RESULT_CAPS,
