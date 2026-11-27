@@ -963,7 +963,7 @@
                 "emailReport": "仅在您需要时，通过邮件接收持仓和自选股的动态",
                 "heading": "会员权益",
                 "models": "可额外选用{count}个AI模型",
-                "timeframes": "查看从{from}到{to}更短周期的图表和AI分析"
+                "timeframes": "查看从{from}到{to}多种周期的图表和AI分析"
             }
         },
         "contact-form": {
@@ -3868,7 +3868,8 @@
                 "supportNote": "下方的关键在于{v0}附近的支撑能否守住。",
                 "targetZone": "- 参考目标区间：{v0}",
                 "trendSummary": "当前走势在{v0}中被解读为{v1}，波动率为{v2}水平。",
-                "upside": "- 上行：{v0} → {v1}"
+                "upside": "- 上行：{v0} → {v1}",
+                "contextHeading": "更大周期与市场："
             },
             "panel": {
                 "analyzing": "分析中…",
@@ -4152,7 +4153,25 @@
                 "caveat": "整理至分析时点的走势，并非对未来的预测。",
                 "planVoidDescription": "分析时的收盘价已低于该价格。",
                 "trendHeadline": "<prefix>当前趋势：</prefix><value>{v0}</value>",
-                "analyzedAt": "分析时间"
+                "analyzedAt": "分析时间",
+                "kindDaily": "日线",
+                "kindWeekly": "周线",
+                "kindMonthly": "月线",
+                "htfTrend": "{v0}趋势为{v1}。",
+                "htfAligned": "{v0}趋势为{v1}，与本图表方向一致。",
+                "htfOpposed": "{v0}趋势为{v1}，与本图表方向相反。",
+                "htfMixed": "{v0}趋势为{v1}，与本图表的方向并不明确重合。",
+                "htfUnknown": "目前还无法判断{v0}趋势。",
+                "progressDaily": "分析时最后一根日K线仍在形成中，上面的判断可能会变化。",
+                "progressWeekly": "分析时最后一根周K线仍在形成中，上面的判断可能会变化。",
+                "progressMonthly": "分析时最后一根月K线仍在形成中，上面的判断可能会变化。",
+                "marketTrend": "对比指数{v0}的趋势为{v1}。",
+                "marketUnknown": "目前还无法判断对比指数{v0}的趋势。",
+                "marketChange": "最近{v0}个交易日的涨跌幅：{v1}为{v2}，指数为{v3}。",
+                "marketBasis": "对比指数截至{v0}。",
+                "trendWordBullish": "看涨",
+                "trendWordBearish": "看跌",
+                "trendWordNeutral": "盘整"
             },
             "planState": {
                 "aboveZone": "高于入场区间",

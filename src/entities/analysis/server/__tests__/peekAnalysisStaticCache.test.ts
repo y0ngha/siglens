@@ -39,7 +39,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             'AAPL',
             'gemini-3.5-flash-lite',
-            'ko'
+            'ko',
+            'SPY'
         );
 
         expect(result).toBe(cached);
@@ -52,7 +53,8 @@ describe('peekAnalysisStatic', () => {
             'free',
             undefined,
             undefined,
-            'ko'
+            'ko',
+            { benchmarkSymbol: 'SPY' }
         );
     });
 
@@ -64,7 +66,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             undefined,
             'gemini-3.5-flash-lite',
-            'ko'
+            'ko',
+            undefined
         );
 
         expect(result).toBeNull();
@@ -77,7 +80,8 @@ describe('peekAnalysisStatic', () => {
             'free',
             undefined,
             undefined,
-            'ko'
+            'ko',
+            { benchmarkSymbol: undefined }
         );
     });
 
@@ -89,7 +93,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             undefined,
             'deepseek-v4.1-flash',
-            'ko'
+            'ko',
+            undefined
         );
 
         expect(mockPeek).toHaveBeenCalledWith(
@@ -101,7 +106,8 @@ describe('peekAnalysisStatic', () => {
             'free',
             undefined,
             undefined,
-            'ko'
+            'ko',
+            { benchmarkSymbol: undefined }
         );
     });
 
@@ -113,7 +119,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             undefined,
             'gemini-3.5-flash-lite',
-            'ja'
+            'ja',
+            undefined
         );
 
         expect(mockPeek).toHaveBeenCalledWith(
@@ -125,7 +132,34 @@ describe('peekAnalysisStatic', () => {
             'free',
             undefined,
             undefined,
-            'ja'
+            'ja',
+            { benchmarkSymbol: undefined }
+        );
+    });
+
+    it('인자로 받은 benchmarkSymbol을 peek 옵션으로 그대로 넘긴다(writer의 :bm= 키와 맞추기 위해)', async () => {
+        mockPeek.mockResolvedValue(null);
+
+        await peekAnalysisStatic(
+            '005930.KS',
+            '1Day',
+            undefined,
+            'deepseek-v4.1-flash',
+            'ko',
+            'KS11'
+        );
+
+        expect(mockPeek).toHaveBeenCalledWith(
+            '005930.KS',
+            '1Day',
+            undefined,
+            'deepseek-v4.1-flash',
+            false,
+            'free',
+            undefined,
+            undefined,
+            'ko',
+            { benchmarkSymbol: 'KS11' }
         );
     });
 });

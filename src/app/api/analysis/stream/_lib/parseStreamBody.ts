@@ -1,4 +1,4 @@
-import { isServedTimeframe } from '@/shared/config/market';
+import { isValidTimeframe } from '@/shared/config/market';
 import { isDispatchedType } from './dispatch';
 import type {
     DispatchParams,
@@ -25,8 +25,8 @@ function isParamsObject(value: unknown): value is object {
  * 종류인지 순. 핸들러가 `params`를 곧바로 구조분해하므로, 여기서 거르지 않으면 `{"type":"technical"}`
  * 같은 입력이 처리되지 않은 throw로 500이 된다 — 400이어야 한다.
  *
- * `technical`과 `overall`의 `timeframe`은 여기서 siglens `TIMEFRAMES`에 있는지 확인한다(임시 — `isServedTimeframe`의
- * 주석대로 주봉 화면을 공개할 때 제거한다). 나머지 `params` 필드(symbol 등)는 좁히지 않는다. 게이트·core가 검증하고,
+ * `technical`과 `overall`의 `timeframe`은 여기서 siglens `TIMEFRAMES`에 있는지 확인한다(빠졌거나 문자열이 아니거나
+ * 목록 밖이면 400). 나머지 `params` 필드(symbol 등)는 좁히지 않는다. 게이트·core가 검증하고,
  * 잘못된 값은 라우트의 catch가 500 sentinel로 받는다(예약한 한도는 환불된다).
  */
 export async function parseStreamBody(
@@ -47,8 +47,7 @@ export async function parseStreamBody(
     if (type === 'technical') {
         if (!isParamsObject(params))
             return badRequest('technical requires a params object');
-        // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (`isServedTimeframe`).
-        if (!isServedTimeframe(Reflect.get(params, 'timeframe')))
+        if (!isValidTimeframe(Reflect.get(params, 'timeframe')))
             return badRequest('invalid timeframe');
         // 캐스트 근거: 나머지 필드 검증은 게이트·core 몫이다(위 JSDoc).
         return {
@@ -62,7 +61,7 @@ export async function parseStreamBody(
     // 종합 분석(`overall`)도 timeframe으로 분석 축을 정한다 — 위 technical과 같은 이유로 거른다.
     if (
         type === 'overall' &&
-        !isServedTimeframe(Reflect.get(params, 'timeframe'))
+        !isValidTimeframe(Reflect.get(params, 'timeframe'))
     )
         return badRequest('invalid timeframe');
     return {

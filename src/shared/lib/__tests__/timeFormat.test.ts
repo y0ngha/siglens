@@ -73,6 +73,17 @@ describe('timeFormat', () => {
             });
         });
 
+        describe('1Week 타임프레임', () => {
+            it('1Day와 같은 날짜 서식(MMM D)이다 — 주 시작 시각은 UTC 자정이라 시각은 그리지 않는다', () => {
+                const week = getTimeFormatter('1Week', 'en');
+                const day = getTimeFormatter('1Day', 'en');
+                expect(week(UTC_TIMESTAMP_SECONDS)).toBe('Mar 30');
+                expect(week(UTC_TIMESTAMP_SECONDS)).toBe(
+                    day(UTC_TIMESTAMP_SECONDS)
+                );
+            });
+        });
+
         describe('날짜 경계 (UTC 기준 전날이지만 KST 기준 다음날)', () => {
             it('5Min: UTC 15:00은 KST 00:00 (다음날)으로 포맷된다', () => {
                 const formatter = getTimeFormatter('5Min', 'ko');

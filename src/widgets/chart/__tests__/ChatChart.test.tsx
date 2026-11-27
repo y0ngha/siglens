@@ -125,8 +125,13 @@ describe('ChatChart', () => {
         });
     });
 
-    it('주봉·월봉은 일봉 시간축 서식으로 그린다', () => {
+    it('주봉은 시간축 주기를 바꾸지 않고 그대로 넘긴다', () => {
         renderChart('1Week');
+        expect(latestProps().timeframe).toBe('1Week');
+    });
+
+    it('월봉은 core Timeframe에 없어 일봉 서식으로 그린다', () => {
+        renderChart('1Month');
         expect(latestProps().timeframe).toBe('1Day');
     });
 

@@ -15,6 +15,8 @@ interface ChartTimeframeBarProps {
     onTimeframeChange: (next: Timeframe) => void;
     isFreeTier: boolean;
     isTierHydrated: boolean;
+    /** 종목의 시장 프로필이 허용하는 프레임(셀렉터 버튼 목록). */
+    timeframes: readonly Timeframe[];
     /** 비회원이 잠긴 시간 프레임을 눌렀을 때 — 가입 안내 모달을 연다. */
     onLockedTimeframeClick: () => void;
     /** 모바일 분석 시트를 FULL로 연다. */
@@ -38,6 +40,7 @@ export function ChartTimeframeBar({
     onTimeframeChange,
     isFreeTier,
     isTierHydrated,
+    timeframes,
     onLockedTimeframeClick,
     onOpenAnalysisSheet,
 }: ChartTimeframeBarProps) {
@@ -80,6 +83,7 @@ export function ChartTimeframeBar({
                     onChange={onTimeframeChange}
                     isFreeTier={isFreeTier}
                     isTierHydrated={isTierHydrated}
+                    timeframes={timeframes}
                     onLockedClick={onLockedTimeframeClick}
                 />
             </div>
