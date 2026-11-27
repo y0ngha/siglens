@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_harami, bearish_harami, bullish_harami_cross, bearish_harami_cross]
-token_cost: 298
-digest_hash: "9e616c30"
-digest_text_hash: "07ae7232"
+token_cost: 308
+digest_hash: "c8d66b6d"
+digest_text_hash: "64363250"
 ---
 
 ## Overview
@@ -25,10 +25,10 @@ entirely inside the first body — an inside bar that shows the prior move stall
 
 The core detector checks shape only, not the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Bullish Harami — Bulkowski (thepatternsite.com/HaramiBull.html): bullish reversal **53%**; overall performance rank **38 of 103**.
-- Bearish Harami — (thepatternsite.com/HaramiBear.html): textbook bearish reversal, but measured as a **bullish continuation 53%**; overall rank **72**. Tidbit: near the top of a trend channel a downward breakout is more likely.
+- Bearish Harami — (thepatternsite.com/HaramiBear.html): textbook bearish reversal, but in his data a **bullish continuation 53%**; overall rank **72**. Tidbit: near the top of a trend channel a downward breakout is more likely.
 - Bullish Harami Cross — (thepatternsite.com/HaramiCrossBull.html): acts as a **bearish continuation 55%** (bullish reversal 45%); overall rank **50**.
 - Bearish Harami Cross — (thepatternsite.com/HaramiCrossBear.html): acts as a **bullish continuation 57%** (bearish reversal 43%); overall rank **80**.
 - The cross versions are **not** stronger — they measure slightly worse than the plain harami.
@@ -52,7 +52,7 @@ The core detector checks shape only, not the prior trend.
 Harami Pattern Guide (Bullish/Bearish Harami, Harami Cross)
 - Interpret only if a harami or harami_cross label is listed in the detected-pattern section.
 - Shape: tall first candle, second body fully inside the first body (inside bar); cross = second candle is a doji. Detector checks shape only — not the prior trend.
-- Measured (Bulkowski, thepatternsite.com): Bullish Harami reversal 53%, overall rank 38/103 (HaramiBull.html). Bearish Harami acts as a bullish continuation 53%, rank 72 (HaramiBear.html). Bullish Harami Cross acts as a bearish continuation 55%, rank 50 (HaramiCrossBull.html). Bearish Harami Cross acts as a bullish continuation 57%, rank 80 (HaramiCrossBear.html). All near random — needs confirmation. The cross is NOT stronger than the plain harami. Weight 0.4.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Bullish Harami, Bearish Harami and both Harami Crosses showed no reliable direction in his study (no usable edge either way); the bearish variant and the crosses leaned, if anything, to the prior trend continuing. All near random — needs confirmation. The cross is NOT stronger than the plain harami. Weight 0.4.
 - Read as a pause / volatility contraction, not a reversal. Direction = the next close beyond the first candle's high or low; until then say "harami — awaiting a breakout".
 - More relevant after an extended trend, at S/R, with RSI extreme or a shrinking MACD histogram; taller candles work better. Ignore in sideways ranges (ADX < 20).
 - Never derive a target; cite levels only from Market Reference / S/R.

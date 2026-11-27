@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_triangle]
-token_cost: 903
+token_cost: 963
 digest_hash: "c16765a8"
-digest_text_hash: "1fbe8ecc"
+digest_text_hash: "d50c86ca"
 ---
 
 ## Detection Criteria
@@ -96,12 +96,12 @@ Geometry:
 
 Confirmation: close ABOVE horizontal resistance with increased volume (surge 50%+ above average). Within-bar wick above resistance without a close = not confirmed. Volume should decline as triangle narrows. Post-breakout: a pullback to the former resistance that holds as support confirms the pattern. Accelerating higher lows on the ascending support trendline = intensifying buying pressure.
 
-Confidence (weight 0.7) — Bulkowski at.html: breaks up 63%; up-breakout failure 17% (down 38%); 70% of up breakouts meet target; rank 16/39.
+Confidence (weight 0.7) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): most breakouts were upward and up-breakouts rarely failed, while down-breakouts failed far more often; most up-breakouts met their target; above-average rank.
 - Increase: 3+ touches on resistance, 3+ on support, declining volume, breakout in first 2/3 of triangle (between 50%–75% point most reliable), prior uptrend.
 - Decrease: <2 touches either line, breakout near/past apex, no prior trend, volume rising without breakout, only marginal higher lows.
 
 False positives / invalidation:
-- Over a third break downward (up only 63%); close below ascending trendline invalidates bullish thesis.
+- A sizable minority broke downward in his study; close below ascending trendline invalidates bullish thesis.
 - Apex/near-apex breakout = reduced reliability & target.
 - Breakout without volume surge may be false.
 

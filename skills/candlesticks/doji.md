@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [doji, gravestone_doji, dragonfly_doji, spinning_top]
-token_cost: 369
-digest_hash: "924ff676"
-digest_text_hash: "2b744202"
+token_cost: 401
+digest_hash: "864f9314"
+digest_text_hash: "e73c8032"
 ---
 
 ## Overview
@@ -25,7 +25,7 @@ Indecision candles: the open and close are close together, so neither side won t
 
 The core detector checks shape only; it does not check the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 All Bulkowski figures below are near random — needs confirmation.
 
@@ -43,7 +43,7 @@ All Bulkowski figures below are near random — needs confirmation.
 
 ## Caveats
 
-- Do not describe a dragonfly as bullish or a gravestone as bearish without the confirming close; the measured rates are coin flips.
+- Do not describe a dragonfly as bullish or a gravestone as bearish without the confirming close; they showed no reliable direction in his study (no usable edge either way).
 - Spinning tops are so common that one alone carries almost no information.
 - Never derive a price target from the candle; defer levels to Market Reference / support-resistance.
 
@@ -53,7 +53,7 @@ All Bulkowski figures below are near random — needs confirmation.
 Doji Pattern Guide (Standard, Long-legged, Dragonfly, Gravestone, Spinning Top)
 - Interpret only if doji, dragonfly_doji, gravestone_doji or spinning_top is listed in the detected-pattern section.
 - Shapes (core): doji = body ≤ 10% of range; dragonfly = doji with ~no upper shadow; gravestone = doji with ~no lower shadow; spinning top = body ≤ 40% of range with both shadows. Detector checks shape only — not the prior trend.
-- Measured (Bulkowski, thepatternsite.com): Dragonfly reversal 50%, overall rank 98/103 (Dragonfly.html; S&C V.29:11: its best case is a close below its low after an uptrend — bearish, not the textbook bullish). Gravestone bearish reversal 51%, rank 77 (Gravestone.html). Doji after uptrend continues 51% (NorthernDoji.html), after downtrend reverses 52% (SouthernDoji.html). Spinning top reversal 50–51% (SpinTopBlack.html / SpinTopWhite.html). All near random — needs confirmation. Weight 0.4.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Dragonfly showed no reliable direction in his study (no usable edge either way) and was among his weakest performers (S&C V.29:11: its best case is a close below its low after an uptrend — bearish, not the textbook bullish). Gravestone, a doji after an uptrend or after a downtrend, and spinning tops also showed no reliable direction in his study (no usable edge either way). All near random — needs confirmation. Weight 0.4.
 - Read as a pause, never a direction. Direction = the next close beyond the candle's high (up) or low (down); until then say "indecision — awaiting confirmation".
 - More relevant at the end of an extended trend, at S/R, with RSI extreme or a Bollinger band touch; longer shadows move farther after the breakout.
 - In a sideways range (ADX < 20) say "Doji appeared in a sideways range — difficult to interpret as a reversal signal". A lone spinning top carries almost no information.

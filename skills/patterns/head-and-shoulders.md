@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [head_and_shoulders]
-token_cost: 1044
+token_cost: 1092
 digest_hash: "2fe02287"
-digest_text_hash: "beebf910"
+digest_text_hash: "c46f9abd"
 ---
 
 ## Detection Criteria
@@ -82,7 +82,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-헤드앤숄더 (Head & Shoulders) — bearish reversal, confidence_weight 0.75 (Bulkowski hst.html: rank 9/36, failure 19%, 51% meet target; +0.05 Savin et al. 2007). Three peaks: left shoulder, head (center), right shoulder.
+헤드앤숄더 (Head & Shoulders) — bearish reversal, confidence_weight 0.75 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): highly ranked, failures uncommon, target met inconsistently; +0.05 Savin et al. 2007). Three peaks: left shoulder, head (center), right shoulder.
 
 ### Detection
 - Head must be highest peak, clearly above both shoulders.

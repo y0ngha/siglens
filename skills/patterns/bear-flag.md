@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bear_flag]
-token_cost: 966
+token_cost: 1016
 digest_hash: "addd96ab"
-digest_text_hash: "b6b32c9b"
+digest_text_hash: "664b8c07"
 ---
 
 ## Detection Criteria
@@ -95,7 +95,7 @@ Geometry:
 - Confirmed: close BELOW lower flag channel with increased volume.
 - Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); pole = two consecutive confirmed pivots ≥3 ATR apart within 20 bars; flag = 5–20 bars after the pole top, pullback ≤50% of the pole, no bar >0.5 ATR past the pole end, channel start width ≤50% of the pole, channel through the flag's own swing highs/lows (≥2 touches per line that the other lacks, touches ≥2 bars apart); flag = width ratio >0.7× and ≤1.15×, neither edge falls with the pole by more than min(0.75 ATR, 1% price) (≤0.7× = pennant); label fixed by the shortest first-qualifying flag; if the flag ends before the last bar the next bar must be outside the channel (else box); age counted to the fitted end (≤max(20, half the span) bars, not spent). Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
-Confidence (weight 0.5) — Bulkowski flags.html: failure 45% (down breakouts), 46% meet target, avg decline 8%; not ranked (short swing).
+Confidence (weight 0.5) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): down-breakouts failed often, fewer than half met target and the average decline was modest; not ranked (short swing).
 - Increase: flagpole decline ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakdown volume returns to flagpole levels.
 - Decrease: shallow/slow flagpole, retrace > 50%, volume rising in flag, duration > 4 weeks, channel too wide / loses parallel structure.
 

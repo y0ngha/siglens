@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [upside_gap_tasuki, downside_gap_tasuki, on_neck, in_neck]
-token_cost: 331
-digest_hash: "af64812b"
-digest_text_hash: "93057514"
+token_cost: 353
+digest_hash: "1f36703f"
+digest_text_hash: "15c3c33d"
 ---
 
 ## Overview
@@ -25,20 +25,20 @@ Textbook continuation patterns: a counter-trend candle that fails to undo the tr
 
 The core detector checks shape only, not the prior trend, and scores all four as direction-neutral.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Upside Tasuki Gap — Bulkowski (thepatternsite.com/UpsideTasukiGap.html): bullish continuation **57%**; overall performance rank **5 of 103**; rare (704 examples). Tidbit: after a downward breakout the stock sometimes returns to the launch price.
-- Downside Tasuki Gap — (thepatternsite.com/DownsideTasukiGap.html): textbook bearish continuation, but measured as a **bullish reversal 54%** (continuation only 46%); overall rank **23**. Tidbit: a 4–6 week decline containing one is likely to see a reversal.
+- Downside Tasuki Gap — (thepatternsite.com/DownsideTasukiGap.html): textbook bearish continuation, but in his data a **bullish reversal 54%** (continuation only 46%); overall rank **23**. Tidbit: a 4–6 week decline containing one is likely to see a reversal.
 - On Neck — (thepatternsite.com/OnNeck.html): bearish continuation **56%**; overall rank **33**.
 - In Neck — (thepatternsite.com/InNeck.html): bearish continuation **53%** (reversal 47%); overall rank **17**.
-- All four sit near random on direction; measurement overrides the textbook for the Downside Tasuki Gap. Several trend well once they break out (good overall ranks).
+- All four sit near random on direction; Bulkowski's study contradicts the textbook for the Downside Tasuki Gap. Several trend well once they break out (good overall ranks).
 - Weight 0.4 (weakest label: Downside Tasuki Gap, 46% in its claimed direction — near random, needs confirmation).
 
 ## Signal Interpretation
 
 - Read these as **pauses**, not direction calls. The direction comes from the next close beyond the pattern's high or low.
 - Upside Tasuki Gap: if the gap later closes (price trades back through it), the continuation read is void.
-- Downside Tasuki Gap: do not assume the decline continues — measured odds lean slightly to a bounce.
+- Downside Tasuki Gap: do not assume the decline continues — in Bulkowski's study it leaned slightly to a bounce.
 - Neck patterns: a weak bounce that stalls at the prior low; continuation is only slightly favored.
 - **Ignore** in sideways ranges (ADX < 20).
 
@@ -53,8 +53,8 @@ The core detector checks shape only, not the prior trend, and scores all four as
 Gap Continuation Guide (Tasuki / Neck)
 - Interpret only if upside_gap_tasuki, downside_gap_tasuki, on_neck or in_neck is listed in the detected-pattern section.
 - Tasuki: two same-direction candles with a gap, then a counter candle closing into the gap without closing it. On/In Neck: tall bearish candle → bullish candle opening below the prior low and closing at (On) or just above (In) the prior low. Detector checks shape only; core scores all four as neutral.
-- Measured (Bulkowski): Upside Tasuki bullish continuation 57%, overall rank 5/103 (thepatternsite.com/UpsideTasukiGap.html); Downside Tasuki is textbook bearish continuation but acts as a bullish reversal 54% (thepatternsite.com/DownsideTasukiGap.html, rank 23); On Neck bearish continuation 56%, rank 33 (thepatternsite.com/OnNeck.html); In Neck 53%, rank 17 (thepatternsite.com/InNeck.html). Near random on direction — needs confirmation. Weight 0.4.
-- Read as a pause, not a direction call; direction = the next close beyond the pattern's high/low. Say so when measurement contradicts the textbook (Downside Tasuki).
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Upside Tasuki continued up somewhat more often than not and was among his best performers; Downside Tasuki is textbook bearish continuation but turned up slightly more often than it continued; On Neck and In Neck showed no reliable direction in his study (no usable edge either way). Near random on direction — needs confirmation. Weight 0.4.
+- Read as a pause, not a direction call; direction = the next close beyond the pattern's high/low. Say so when Bulkowski's study contradicts the textbook (Downside Tasuki).
 - Upside Tasuki: if the gap later closes, drop the continuation read.
 - Ignore in sideways ranges (ADX < 20); gaps are rare in 24h markets (crypto).
 - Never derive a target from the candles; cite levels only from Market Reference / S/R.

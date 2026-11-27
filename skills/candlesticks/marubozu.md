@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_marubozu, bearish_marubozu]
-token_cost: 321
-digest_hash: "f893e663"
-digest_text_hash: "94934912"
+token_cost: 366
+digest_hash: "568a8200"
+digest_text_hash: "9ef975af"
 ---
 
 ## Overview
@@ -22,10 +22,10 @@ one extreme and closes at the other.
 - **Bullish (white) Marubozu**: opens at/near the low, closes at/near the high.
 - **Bearish (black) Marubozu**: opens at/near the high, closes at/near the low.
 
-Textbook: a same-direction marubozu "confirms" the trend. Measurement does not support that reading.
+Textbook: a same-direction marubozu "confirms" the trend. Bulkowski's study does not support that reading.
 The core detector checks shape only, not the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - White Marubozu — Bulkowski (thepatternsite.com/WhiteMarubozu.html): continuation **56%** of the time — near random; overall performance rank **71 of 103**.
 - Black Marubozu — (thepatternsite.com/BlackMarubozu.html): continuation **53%** — near random; overall rank **57**; upward breakouts in 34% of 19,993 samples. Bulkowski: marubozu candles "have been given more weight by candlestick followers than I think they deserve."
@@ -53,9 +53,9 @@ The core detector checks shape only, not the prior trend.
 Marubozu Guide
 - Interpret only if bullish_marubozu or bearish_marubozu is listed in the detected-pattern section.
 - Shape: almost all body (core: body ≥ 90% of range), open at one extreme, close at the other. Detector checks shape only — not the prior trend.
-- Measured (Bulkowski): White Marubozu continuation 56%, overall rank 71/103 (thepatternsite.com/WhiteMarubozu.html); Black Marubozu continuation 53%, rank 57 (thepatternsite.com/BlackMarubozu.html). Near random — needs confirmation. Weight 0.4.
-- Same color as the trend (white in uptrend / black in downtrend): do NOT call it trend confirmation — continuation is near a coin flip.
-- Opposite color to the trend: often a temporary counter-move, not a reversal. Bulkowski, "The Eight Best-Performing Candles" (S&C V.29:11): a black marubozu in an uptrend that then closes above its high resumed the uptrend (avg 10-day +4.39%); a white marubozu in a downtrend that then closes below its low resumed the downtrend (56%, avg 10-day −3.55%). Apply this only after that confirming close.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): White and Black Marubozu each showed no reliable direction in his study (no usable edge either way) on whether the trend continued, both below-average performers. Near random — needs confirmation. Weight 0.4.
+- Same color as the trend (white in uptrend / black in downtrend): do NOT call it trend confirmation — continuation showed no reliable direction in his study (no usable edge either way).
+- Opposite color to the trend: often a temporary counter-move, not a reversal. Bulkowski, "The Eight Best-Performing Candles" (S&C V.29:11): a black marubozu in an uptrend followed by a close above its high, and a white marubozu in a downtrend followed by a close below its low, were among his best common continuation setups. Apply this only after that confirming close.
 - A marubozu breaking key S/R matters more than one inside a range; ignore in sideways ranges (ADX < 20). Consecutive marubozu = extended move → check RSI, don't chase.
 - Never derive a target; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

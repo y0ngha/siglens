@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_three_line_strike, bearish_three_line_strike]
-token_cost: 268
-digest_hash: "fc5e863f"
-digest_text_hash: "f8479f36"
+token_cost: 291
+digest_hash: "e13a1d2c"
+digest_text_hash: "853e8301"
 ---
 
 ## Overview
@@ -23,13 +23,13 @@ Four candles: three same-color candles with consecutively extending closes, then
 
 The core detector checks the four-candle shape only, not the preceding trend.
 
-## Name vs Measured Direction
+## Name vs Reversal Direction
 
 The traditional names call these **continuation** patterns (the "bullish" one continues up, the "bearish" one continues down). Bulkowski's tests show the opposite: both usually act as **reversals in the direction of the fourth candle**.
 
-- The core maps the trend by the **measured** direction: `bullish_three_line_strike` → bearish, `bearish_three_line_strike` → bullish. The trend label shown next to the pattern in the prompt already follows this — do not flip it back to match the name.
+- The core maps the trend by the **reversal** direction Bulkowski found: `bullish_three_line_strike` → bearish, `bearish_three_line_strike` → bullish. The trend label shown next to the pattern in the prompt already follows this — do not flip it back to match the name.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Bullish Three-Line Strike — Bulkowski (thepatternsite.com/ThreeLineStrikeBull.html): acts as a **bearish reversal 65%**; overall performance rank **2 of 103**; frequency rank **95 of 103** (rare).
 - Bearish Three-Line Strike — (thepatternsite.com/ThreeLineStrikeBear.html): acts as a **bullish reversal 84%**; overall performance rank **1 of 103**; frequency rank **94 of 103** (rare).
@@ -41,7 +41,7 @@ The traditional names call these **continuation** patterns (the "bullish" one co
 - Read the fourth candle as the signal: a bullish strike bar (bearish_three_line_strike) → bullish reading; a bearish strike bar (bullish_three_line_strike) → bearish reading.
 - **Stronger**: bearish_three_line_strike ending a pullback inside an uptrend or near the yearly low; a tall fourth candle; at support/resistance.
 - **Weak**: sideways range (ADX < 20); very small candles.
-- Rare pattern — few samples behind any single chart; state the measured odds, not certainty.
+- Rare pattern — few samples behind any single chart; describe Bulkowski's result in words, not as certainty or a probability.
 
 ## Caveats
 
@@ -54,8 +54,8 @@ The traditional names call these **continuation** patterns (the "bullish" one co
 Three-Line Strike Guide
 - Interpret only if bullish_three_line_strike or bearish_three_line_strike is listed in the detected-pattern section.
 - Shape: three same-color candles with extending closes, then a 4th candle that opens beyond the 3rd close and closes beyond the 1st open. The detector checks shape only — not the prior trend.
-- Name vs measured: the names say continuation, but both usually reverse in the 4th candle's direction. bullish_three_line_strike acts as a BEARISH reversal 65%, rank 2/103; bearish_three_line_strike acts as a BULLISH reversal 84%, rank 1/103 (Bulkowski, thepatternsite.com/<ThreeLineStrikeBull|ThreeLineStrikeBear>.html). Both rare (frequency rank 94–95/103). Weight 0.65 (weakest label).
-- The trend label shown with the pattern already follows the measured direction — keep it; do not flip it to match the name.
+- Name vs Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): the names say continuation, but both usually reversed in the 4th candle's direction — bullish_three_line_strike as a BEARISH reversal, bearish_three_line_strike as a BULLISH reversal — and he ranked them his two best-performing candles. Both rare. Weight 0.65 (weakest label).
+- The trend label shown with the pattern already follows that reversal direction — keep it; do not flip it to match the name.
 - Stronger: bearish_three_line_strike ending a pullback in an uptrend or near the yearly low; tall 4th candle; at S/R. Weak: ADX < 20.
 - Never derive a target from the candles; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

@@ -76,9 +76,18 @@ import { AGENT_TOOL_SPECS, buildAgentSystemPrompt } from './toolSetHarness';
  *   alert descriptions stop naming other tools. Measured: ko guest 59,063 ->
  *   59,114, en guest 59,572 -> 59,623; tool specs 74,462 -> 75,339 chars of JSON, so the tool specs budget goes 74,500 -> 75,500; longest
  *   description `get_bars_indicators` 6,818 (unchanged).
+ * - 2026-11-28 (toolset 2026-11-28.3): a routing row sends "what changed
+ *   since the earlier analysis" turns to `get_cached_analysis` (in 5 of 8
+ *   synthetic two-session turns the model called get_bars_indicators
+ *   instead and never saw `sinceEarlier`), with a fallback for a result
+ *   without it, and that tool's description says when `sinceEarlier` appears.
+ *   Measured: ko guest 59,114 -> 59,665, en guest 59,623 -> 60,174; tool
+ *   specs 75,339 -> 75,576 chars of JSON. System prompt budget 59,500 ->
+ *   60,000, tool specs budget 75,500 -> 76,000; longest description
+ *   `get_bars_indicators` 6,818 (unchanged).
  */
-const SYSTEM_PROMPT_CHAR_BUDGET = 59_500;
-const TOOL_SPECS_JSON_CHAR_BUDGET = 75_500;
+const SYSTEM_PROMPT_CHAR_BUDGET = 60_000;
+const TOOL_SPECS_JSON_CHAR_BUDGET = 76_000;
 const TOOL_DESCRIPTION_MAX_CHARS = 7_000;
 const FLOOR_SLACK = 2_000;
 

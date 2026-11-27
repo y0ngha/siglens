@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [three_white_soldiers, three_black_crows]
-token_cost: 304
-digest_hash: "542ff51f"
-digest_text_hash: "ebf962d1"
+token_cost: 332
+digest_hash: "3668637d"
+digest_text_hash: "581cdc0a"
 ---
 
 ## Overview
@@ -24,7 +24,7 @@ inside the prior body and closing beyond it.
 
 The core detector checks shape only, not the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Three White Soldiers — Bulkowski (thepatternsite.com/ThreeWhiteSoldiers.html): bullish reversal **82%** (reversal-rate rank 3 of 103); overall performance rank **32** — price does not trend far after the breakout.
 - Three Black Crows — (thepatternsite.com/ThreeBlackCrows.html): bearish reversal **78%**; overall rank **3**.
@@ -50,7 +50,7 @@ The core detector checks shape only, not the prior trend.
 Three Soldiers/Crows Guide (3-candle reversal)
 - Interpret only if three_white_soldiers or three_black_crows is listed in the detected-pattern section.
 - Shape: three tall same-direction candles, each opening inside the prior body and closing beyond it. Detector checks shape only — verify the opposing prior trend yourself.
-- Measured (Bulkowski): Three White Soldiers bullish reversal 82%, overall rank 32/103 — modest follow-through (thepatternsite.com/ThreeWhiteSoldiers.html); Three Black Crows bearish reversal 78%, rank 3 (thepatternsite.com/ThreeBlackCrows.html). Part of the rate is mechanical: the pattern closes near its own extreme, so the breakout is easy. Weight 0.75.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Three White Soldiers and Three Black Crows reversed in a large majority of his cases; the crows were among his best performers, the soldiers showed modest follow-through. Part of that is mechanical: the pattern closes near its own extreme, so the breakout is easy. Weight 0.75.
 - Stronger: clear opposing trend before it; tall bodies, short shadows; rising volume across the three; EMA(20) or key-level break; RSI moving from neutral toward an extreme.
 - Weak: after a large move already in the pattern's direction (exhaustion); soldiers inside a larger downtrend are often only a retracement (Bulkowski).
 - An exceptionally long third candle → "caution for potential overheating", don't chase. Near major S/R consider a failed breakout.

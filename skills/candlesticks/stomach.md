@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [above_the_stomach, below_the_stomach]
-token_cost: 281
-digest_hash: "54b13340"
-digest_text_hash: "639f64f0"
+token_cost: 321
+digest_hash: "f0fba139"
+digest_text_hash: "d90b49a4"
 ---
 
 ## Overview
@@ -21,9 +21,9 @@ Two-candle reversals where the second candle opens past the midpoint of the firs
 - **Above the Stomach**: long bearish candle → bullish candle that opens (and closes) at or above the midpoint of the first body. Textbook context: a downtrend.
 - **Below the Stomach**: long bullish candle → bearish candle that opens (and closes) at or below the midpoint of the first body. Textbook context: an uptrend.
 
-The core detector requires a **long-bodied first candle** and checks the two-candle shape only. It does **not** check the prior trend, while Bulkowski's rates were measured on patterns that follow a trend (downtrend for Above, uptrend for Below). The detector also checks the stomach last, so a pair that already matches another two-candle label (engulfing, harami, piercing, etc.) keeps that label instead.
+The core detector requires a **long-bodied first candle** and checks the two-candle shape only. It does **not** check the prior trend, while Bulkowski's rates come from patterns that follow a trend (downtrend for Above, uptrend for Below). The detector also checks the stomach last, so a pair that already matches another two-candle label (engulfing, harami, piercing, etc.) keeps that label instead.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Above the Stomach — Bulkowski (thepatternsite.com/AboveStomach.html): bullish reversal **66%**; overall performance rank **31 of 103**. S&C V.29:11 ("The Eight Best-Performing Candles"): ranked first among the common bullish reversals, average 10-day rise 2.74%.
 - Below the Stomach — (thepatternsite.com/BelowStomach.html): bearish reversal **60%**; rank **59 of 103** (middle of the pack).
@@ -32,7 +32,7 @@ The core detector requires a **long-bodied first candle** and checks the two-can
 
 ## Signal Interpretation
 
-- **Check the trend first.** The measured rate applies only after a prior move in the opposite direction (decline before Above, rise before Below). Without that move the pattern is just a two-bar swing inside a range.
+- **Check the trend first.** Bulkowski's result applies only after a prior move in the opposite direction (decline before Above, rise before Below). Without that move the pattern is just a two-bar swing inside a range.
 - **Stronger**: Above the Stomach ending a pullback inside an uptrend; near support (Above) / resistance (Below); above-average volume on the second candle.
 - **Weak**: sideways range (ADX < 20); Below the Stomach (close to the random end of its band).
 
@@ -47,8 +47,8 @@ The core detector requires a **long-bodied first candle** and checks the two-can
 Above/Below the Stomach Guide
 - Interpret only if above_the_stomach or below_the_stomach is listed in the detected-pattern section.
 - Above = long bearish candle, then a bullish candle opening/closing at or above the 1st body's midpoint. Below = long bullish candle, then a bearish candle opening/closing at or below that midpoint. The detector requires the long 1st body but does NOT check the trend.
-- Measured (Bulkowski, thepatternsite.com/<AboveStomach|BelowStomach>.html): Above bullish reversal 66%, rank 31/103 (S&C V.29:11: best common bullish reversal); Below bearish reversal 60%, rank 59. Weight 0.55 (weakest label).
-- The rates assume a prior move against the pattern (decline before Above, rise before Below). Check the trend yourself; with no such move, treat it as range noise.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Above reversed up in most of his cases (S&C V.29:11: best common bullish reversal); Below reversed down somewhat more often than not and performed below average. Weight 0.55 (weakest label).
+- His results assume a prior move against the pattern (decline before Above, rise before Below). Check the trend yourself; with no such move, treat it as range noise.
 - Stronger: Above ending a pullback inside an uptrend (Bulkowski's best case); at support/resistance; above-average 2nd-candle volume. Weak: ADX < 20; Below is close to random.
 - Confirmation = a later close beyond the pattern's far extreme.
 - Never derive a target from the candles; cite levels only from Market Reference / S/R.

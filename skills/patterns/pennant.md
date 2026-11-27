@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [pennant]
-token_cost: 1147
+token_cost: 1195
 digest_hash: "c5759bc9"
-digest_text_hash: "21c6e88f"
+digest_text_hash: "87891deb"
 ---
 
 ## Detection Criteria
@@ -104,7 +104,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-페넌트 (Pennant) — continuation, confidence_weight 0.5 (Bulkowski pennants.html: failure 54%, 35%/32% meet target, breaks up 57%). Flagpole + converging symmetrical-triangle consolidation. Bull (up flagpole) or Bear (down flagpole).
+페넌트 (Pennant) — continuation, confidence_weight 0.5 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): failures common, most did not meet target, slightly more broke up than down). Flagpole + converging symmetrical-triangle consolidation. Bull (up flagpole) or Bear (down flagpole).
 
 ### Detection
 - Strong decisive flagpole must PRECEDE pattern, on above-average volume. Bull = up move, Bear = down move.

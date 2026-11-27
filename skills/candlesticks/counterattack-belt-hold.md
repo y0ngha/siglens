@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_counterattack_line, bearish_counterattack_line, bullish_belt_hold, bearish_belt_hold]
-token_cost: 318
-digest_hash: "3fe119df"
-digest_text_hash: "d77ee4ce"
+token_cost: 322
+digest_hash: "9f1eb2d4"
+digest_text_hash: "637ac799"
 ---
 
 ## Overview
@@ -24,7 +24,7 @@ digest_text_hash: "d77ee4ce"
 Bulkowski catalogs counterattack lines under their other name, **meeting lines**. The core detector checks
 shape only (0.2% close tolerance for counterattack), not the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Bullish Belt Hold — Bulkowski (thepatternsite.com/BeltHoldBull.html): bullish reversal **71%**; overall performance rank **62 of 103** (reverses often, but the 10-day move is weak); frequency rank 22.
 - Bearish Belt Hold — (thepatternsite.com/BeltHoldBear.html): bearish reversal **68%**; overall rank **63**; frequency rank 19.
@@ -35,7 +35,7 @@ shape only (0.2% close tolerance for counterattack), not the prior trend.
 ## Signal Interpretation
 
 - **Belt Hold**: a real but short-lived turn signal. Stronger when the candle is taller than recent candles (Bulkowski: tall belt holds perform significantly better) and sits at support/resistance.
-- **Counterattack**: direction is near random; the value is that once price breaks out, it tends to trend (good overall ranks). Wait for the next close — for the bearish version, a lower next close is the measured confirmation.
+- **Counterattack**: direction is near random; the value is that once price breaks out, it tends to trend (good overall ranks). Wait for the next close — for the bearish version, Bulkowski's confirmation is a lower next close.
 - **Weak**: sideways ranges (ADX < 20) for all four.
 
 ## Caveats
@@ -49,7 +49,7 @@ shape only (0.2% close tolerance for counterattack), not the prior trend.
 Counterattack / Belt Hold Guide
 - Interpret only if a counterattack_line or belt_hold label is listed in the detected-pattern section.
 - Belt Hold: one tall candle opening at its extreme (bullish opens at the low, bearish at the high). Counterattack: tall candle → tall opposite candle closing at ~the same price (Bulkowski's "meeting lines"). The detector checks shape only — verify the prior trend yourself.
-- Measured (Bulkowski): Bullish Belt Hold reversal 71%, overall rank 62/103 (thepatternsite.com/BeltHoldBull.html); Bearish Belt Hold 68%, rank 63 (thepatternsite.com/BeltHoldBear.html) — reverse often, move little. Bullish Counterattack 56%, rank 18 (thepatternsite.com/MeetingLinesBull.html); Bearish Counterattack acts as bullish continuation 51% — random, rank 16 (thepatternsite.com/MeetingLinesBear.html). Weight 0.4 (weakest label; near random — needs confirmation).
-- Belt Hold: short-lived turn; stronger when taller than recent candles and at S/R. Counterattack: direction random, but trends once it breaks; for the bearish version a lower next close is the measured confirmation (67–70%, same page).
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): both Belt Holds reversed in most of his cases but performed below average — reverse often, move little. Both Counterattacks showed no reliable direction in his study (no usable edge either way), yet ranked among his better performers once price broke out. Weight 0.4 (weakest label; near random — needs confirmation).
+- Belt Hold: short-lived turn; stronger when taller than recent candles and at S/R. Counterattack: direction random, but trends once it breaks; for the bearish version Bulkowski's confirmation is a lower next close.
 - Weak in sideways ranges (ADX < 20). Never call a trend change from one candle; never derive a target — cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bearish_engulfing]
-token_cost: 296
-digest_hash: "5f95477e"
-digest_text_hash: "4c0d91ed"
+token_cost: 340
+digest_hash: "b3aca5c5"
+digest_text_hash: "475d5fe5"
 ---
 
 ## Overview
@@ -22,7 +22,7 @@ close and closes at or below the prior open, so the second body covers the first
 The textbook pattern requires a preceding uptrend. The core detector checks the two-candle shape only —
 it does not check the trend — so the prior advance must be verified from the chart.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Bulkowski (thepatternsite.com/BearEngulfing.html): bearish reversal **79%** of the time (reversal-rate rank 5); overall performance rank **91 of 103**; frequency rank 11 (very common).
 - The low overall rank comes from failures: upward breakouts rank 103 / 100 (bull / bear market), while downward breakouts rank 25 / 21 (same page).
@@ -49,7 +49,7 @@ it does not check the trend — so the prior advance must be verified from the c
 Bearish Engulfing Guide
 - Interpret only if bearish_engulfing is listed in the detected-pattern section.
 - Shape: bullish candle, then a bearish candle whose BODY opens ≥ prior close and closes ≤ prior open (ignore wicks). The detector checks shape only — verify the preceding advance yourself (EMA20 slope, higher swing highs).
-- Measured (Bulkowski, thepatternsite.com/BearEngulfing.html): bearish reversal 79%; overall performance rank 91/103 because failed (upward) breakouts perform worst of all candles. S&C V.29:11 ("Eight Best-Performing Candles"): after a downward breakout, average 10-day drop 3.56% (bull market) / 5.92% (bear market). Weight 0.75.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): it reversed down in a large majority of his cases, yet ranked among his weakest performers because failed (upward) breakouts perform worst of all candles. S&C V.29:11 ("Eight Best-Performing Candles"): after a downward breakout the average 10-day drop was larger in bear markets than in bull markets. Weight 0.75.
 - Stronger: clear prior uptrend; 2nd body taller than recent candles; above-average 2nd-candle volume; RSI overbought / upper Bollinger touch; near resistance. Weak: sideways range (ADX < 20) → say "sideways range — engulfing reliability is low".
 - Confirmation = a later close below the pattern's low. A close above the pattern's high voids the bearish read.
 - Gapless markets (crypto) form it more easily — require extra confirmation.

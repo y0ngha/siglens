@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rising_three_methods, falling_three_methods]
-token_cost: 276
-digest_hash: "913413f0"
-digest_text_hash: "bb294d61"
+token_cost: 296
+digest_hash: "62dc4384"
+digest_text_hash: "7a07ae3a"
 ---
 
 ## Overview
@@ -23,7 +23,7 @@ Five-candle **continuation** patterns: a long candle, a three-candle pause held 
 
 The core detector requires long first and fifth bodies, three non-long middle candles inside the first candle's high–low range, and the fifth close beyond the first close. It does **not** check the prior trend or the middle candles' colors (Bulkowski's definition expects them to drift against the trend).
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Rising Three Methods — Bulkowski (thepatternsite.com/Rising3Methods.html): **bullish continuation 74%**; overall performance rank **94 of 103**; frequency rank **88** (rare). Tidbit: trade it only when the primary trend is up.
 - Falling Three Methods — (thepatternsite.com/Falling3Methods.html): **bearish continuation 71%**; overall performance rank **89 of 103**; frequency rank **91** (rare).
@@ -48,7 +48,7 @@ The core detector requires long first and fifth bodies, three non-long middle ca
 Rising/Falling Three Methods Guide
 - Interpret only if rising_three_methods or falling_three_methods is listed in the detected-pattern section.
 - Shape: long candle → three small candles held inside its high–low range → long same-color candle closing beyond the 1st close. CONTINUATION pattern. The detector does not check the prior trend or the middle candles' colors — verify the trend yourself.
-- Measured (Bulkowski, thepatternsite.com/<Rising3Methods|Falling3Methods>.html): Rising bullish continuation 74%, rank 94/103; Falling bearish continuation 71%, rank 89/103. Both rare. High continuation rate but low performance rank → the trend usually resumes but the follow-through has been small; do not overstate the move. Weight 0.65 (weakest label).
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Rising and Falling Three Methods each continued in most of his cases but ranked among his weakest performers. Both rare. The trend usually resumes but the follow-through has been small; do not overstate the move. Weight 0.65 (weakest label).
 - Stronger: clear prior trend in the pattern's direction (Bulkowski: trade Rising only in an uptrend); light-volume pause; above-average 5th-candle volume. Weak: no prior trend; ADX < 20.
 - A later close back inside the 1st candle's range weakens the reading.
 - Never derive a target from the candles; cite levels only from Market Reference / S/R.

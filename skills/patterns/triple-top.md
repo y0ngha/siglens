@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_top]
-token_cost: 920
+token_cost: 973
 digest_hash: "1a0ce876"
-digest_text_hash: "a09ad4c4"
+digest_text_hash: "8c44aa1f"
 ---
 
 ## Detection Criteria
@@ -85,7 +85,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.6 (Bulkowski tt.html: rank 24/36, failure 25%, 49% meet target). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
+삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.6 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): below-average rank, failures in a minority of cases, target met inconsistently). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
 
 ### Detection
 - Three distinct peaks at ~same price, within 2–3% of each other.

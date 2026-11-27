@@ -74,6 +74,16 @@ export const AGENT_ROUTING_ROWS: readonly AgentRoutingRow[] = [
         text: 'Named chart patterns (head and shoulders, wedge, double top) or "what does SIGLENS think / show SIGLENS analysis" → get_cached_analysis.',
     },
     {
+        // In 5 of 8 synthetic two-session "what changed since" turns the
+        // model called get_bars_indicators instead of an analysis tool, so it
+        // never saw `sinceEarlier`, which only an analysis result carries.
+        // The row sends those turns to the analysis tool even though the
+        // earlier result is already in the history, and names no other tool
+        // so it renders unchanged whatever else is available.
+        requires: ['get_cached_analysis'],
+        text: 'What changed for a symbol since an analysis shown earlier in this conversation (그 뒤로 바뀐 거 있어?, 그때 분석이랑 지금 차이, 그때 말한 지지선 깨졌어?, since last time) → get_cached_analysis for that symbol with tab technical and timeframe 1Day, even though the earlier result is already in the conversation: only a new result carries `sinceEarlier`, the computed list of what changed, so answer from it, not from the earlier answer or the bars alone. If the result has no `sinceEarlier`, compare the new result with the earlier one yourself and say the comparison is yours.',
+    },
+    {
         requires: ['get_guide'],
         text: 'What a pattern, candlestick, indicator or strategy is, or how to read or check it on a chart, with no symbol in question ("RSI가 뭐야", "RSI 어떻게 봐", "what is a double bottom") → get_guide, and link the guide url it returns. When a symbol is also named, add the per-symbol rows for that symbol.',
     },

@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_engulfing]
-token_cost: 280
-digest_hash: "f73c8705"
-digest_text_hash: "d9e4243c"
+token_cost: 318
+digest_hash: "1eb76433"
+digest_text_hash: "9ae6e77b"
 ---
 
 ## Overview
@@ -22,7 +22,7 @@ close and closes at or above the prior open, so the second body covers the first
 The textbook pattern requires a preceding downtrend. The core detector checks the two-candle shape only —
 it does not check the trend — so the prior decline must be verified from the chart.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Bulkowski (thepatternsite.com/BullEngulfing.html): bullish reversal **63%** of the time; overall performance rank **84 of 103** candles; frequency rank 12 (very common).
 - Weak follow-through (same page): even after an upward breakout, the best average 10-day move is a drop of 1.18%. The pattern often turns price, but the turn rarely runs far.
@@ -48,7 +48,7 @@ it does not check the trend — so the prior decline must be verified from the c
 Bullish Engulfing Guide
 - Interpret only if bullish_engulfing is listed in the detected-pattern section.
 - Shape: bearish candle, then a bullish candle whose BODY opens ≤ prior close and closes ≥ prior open (ignore wicks). The detector checks shape only — verify the preceding decline yourself (EMA20 slope, lower swing lows).
-- Measured (Bulkowski, thepatternsite.com/BullEngulfing.html): bullish reversal 63%; overall performance rank 84/103 — it often turns price, but the follow-through is usually short. Weight 0.55.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): it reversed up in most of his cases but ranked among his weakest performers — it often turns price, but the follow-through is usually short. Weight 0.55.
 - Stronger: pullback inside a larger uptrend or at support; 2nd body taller than recent candles; above-average 2nd-candle volume; RSI oversold / lower Bollinger touch. Weak: sideways range (ADX < 20) → say "sideways range — engulfing reliability is low"; also weak inside a strong primary downtrend (Bulkowski: avoid).
 - Confirmation = a later close above the pattern's high; until then call it a reversal hint, not a trend change.
 - Gapless markets (crypto) form it more easily — require extra confirmation.

@@ -7,9 +7,9 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 518
-digest_hash: "c773387a"
-digest_text_hash: "25833e79"
+token_cost: 524
+digest_hash: "fa7934f0"
+digest_text_hash: "9987bbfa"
 ---
 
 ## Candle Reading Primer (compressed)
@@ -36,7 +36,7 @@ OHLC. A fuller per-pattern guide is injected only when that pattern is detected.
 - **Three White Soldiers / Three Black Crows:** three strong same-direction bodies confirming a reversal thrust.
 - **Piercing Line / Dark Cloud Cover, Tweezers, Belt Hold, Counterattack:** weaker 1–2 bar reversal hints; need confirmation.
 - **Above / Below the Stomach:** 2nd candle opens past the long prior body's midpoint = reversal hint; the detector does not check the trend.
-- **Three-Line Strike:** measured as a reversal in the 4th candle's direction (opposite of its name); the trend label already follows the measured direction.
+- **Three-Line Strike:** Bulkowski's study found it usually reverses in the 4th candle's direction (opposite of its name); the trend label already follows that direction.
 
 ### Continuation family (favor the prior trend resuming)
 
@@ -61,7 +61,7 @@ Candle Reading Primer — compact map of candlestick families.
   - Three White Soldiers/Three Black Crows: three strong same-direction bodies = reversal thrust.
   - Piercing Line/Dark Cloud Cover, Tweezers, Belt Hold, Counterattack: weaker 1–2 bar reversal hints; need confirmation.
   - Above/Below the Stomach: 2nd candle opens past the long prior body's midpoint = reversal hint; trend not checked by the detector.
-  - Three-Line Strike: measured reversal in the 4th candle's direction (opposite of its name); trend label already follows it.
+  - Three-Line Strike: usually a reversal in the 4th candle's direction (opposite of its name, per Bulkowski's study); trend label already follows it.
 - **Continuation family** (favor prior trend resuming):
   - Marubozu (bull/bear): full-body, no wick = one-sided conviction.
   - Gap patterns/Tasuki: brief pause inside an ongoing trend, not a turn.

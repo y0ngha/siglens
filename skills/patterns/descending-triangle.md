@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_triangle]
-token_cost: 882
+token_cost: 948
 digest_hash: "90efe86d"
-digest_text_hash: "041ed269"
+digest_text_hash: "f6cc7a09"
 ---
 
 ## Detection Criteria
@@ -95,12 +95,12 @@ Geometry:
 
 Confirmation: close BELOW horizontal support with increased volume. Within-bar wick below support without a close = not confirmed. Volume should decline as triangle narrows.
 
-Confidence (weight 0.55) — Bulkowski dt.html: breaks UP 53% of the time; failure 22% up / 23% down; 50% of down breakouts meet target; performance almost halved since the 1990s.
+Confidence (weight 0.55) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): its breakout direction showed no reliable lean (no usable edge either way), failures were uncommon either way, and down-breakouts met their target inconsistently; performance has weakened markedly since the 1990s.
 - Increase: 3+ touches on support, 3+ on resistance, declining volume, breakdown in first 2/3 (50%–75% point most reliable), prior downtrend.
 - Decrease: <2 touches either line, breakdown near/past apex, no prior trend, volume high without breakdown, only marginal lower highs.
 
 False positives / invalidation:
-- Upward break (53%) is a normal bullish resolution, not a rare failure — check volume (bull trap risk).
+- An upward break is a normal bullish resolution in his study, not a rare failure — check volume (bull trap risk).
 - Apex/near-apex breakdown = reduced reliability & target.
 - Breakdown without volume surge may be false.
 - Support at major historical level tested first time → a bounce is more plausible.

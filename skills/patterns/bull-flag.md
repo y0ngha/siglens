@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bull_flag]
-token_cost: 949
+token_cost: 999
 digest_hash: "cee9ce26"
-digest_text_hash: "2c6e2434"
+digest_text_hash: "9f64aa59"
 ---
 
 ## Detection Criteria
@@ -94,7 +94,7 @@ Geometry:
 - Confirmed: close ABOVE upper flag channel with increased volume.
 - Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); pole = two consecutive confirmed pivots ≥3 ATR apart within 20 bars; flag = 5–20 bars after the pole top, pullback ≤50% of the pole, no bar >0.5 ATR past the pole end, channel start width ≤50% of the pole, channel through the flag's own swing highs/lows (≥2 touches per line that the other lacks, touches ≥2 bars apart); flag = width ratio >0.7× and ≤1.15×, neither edge rises with the pole by more than min(0.75 ATR, 1% price) (≤0.7× = pennant); label fixed by the shortest first-qualifying flag; if the flag ends before the last bar the next bar must be outside the channel (else box); age counted to the fitted end (≤max(20, half the span) bars, not spent). Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
-Confidence (weight 0.5) — Bulkowski flags.html: failure 44% (up breakouts), 46% meet target, avg rise 9%; not ranked (short swing).
+Confidence (weight 0.5) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): up-breakouts failed often, fewer than half met target and the average rise was modest; not ranked (short swing).
 - Increase: flagpole gain ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakout volume returns to flagpole levels.
 - Decrease: shallow/slow flagpole, retrace > 50%, volume high in flag (distribution), duration > 4 weeks, channel too wide / loses parallel structure.
 

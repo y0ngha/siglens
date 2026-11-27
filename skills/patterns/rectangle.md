@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rectangle]
-token_cost: 1121
+token_cost: 1160
 digest_hash: "cc5e2194"
-digest_text_hash: "974f6468"
+digest_text_hash: "65397f4a"
 ---
 
 ## Detection Criteria
@@ -91,7 +91,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.7. Horizontal support/resistance range; Bulkowski recttops/rectbots.html: breaks up 59–63%, up-breakout failure 15% (down 24–34%).
+직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.7. Horizontal support/resistance range; Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): most broke up, up-breakouts rarely failed, down-breakouts failed more often.
 
 ### Detection
 - Horizontal resistance: ≥2 touches at ~same price (within 2%).
@@ -110,7 +110,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Grading
 - Increase: 3+ touches on both boundaries; volume declining during pattern with break surge; breakout aligns with prior trend; duration >20 bars; strong prior trend.
 - Decrease: <2 touches on either boundary; high/erratic volume; no clear prior trend; sloping boundaries; prior false breakouts.
-- Up-breaks dominate (Bulkowski: Tops 63%, Bottoms 59%) — Tops usually continue up, Bottoms more often reverse up; down-breaks perform worse.
+- Up-breaks dominate in his study — Tops usually continue up, Bottoms more often reverse up; down-breaks perform worse.
 - Too many touches (>6–7) without resolution → pattern stale, losing energy.
 - Accumulation (higher volume on support bounces) in Tops; distribution (higher volume on resistance rejections) in Bottoms.
 

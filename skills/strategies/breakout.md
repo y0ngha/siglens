@@ -9,16 +9,16 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
-token_cost: 1176
-digest_hash: "8a8a73e8"
-digest_text_hash: "58da5c9d"
+token_cost: 1184
+digest_hash: "2431c9bc"
+digest_text_hash: "5546f9cb"
 ---
 
 ## Overview
 
 The Breakout Strategy enters positions when price decisively penetrates a well-defined support or resistance boundary. Breakouts represent the market's resolution of a supply-demand equilibrium — when accumulated buying or selling pressure finally overwhelms the opposing side, price moves rapidly as orders are triggered.
 
-The primary challenge is distinguishing genuine breakouts from false breakouts (fakeouts). Failure rates differ by pattern — cite the matching pattern skill's Bulkowski figures, not a generic rate. This strategy employs multiple confirmation filters — volume, closing price, multi-bar confirmation, and momentum alignment — to improve the success rate.
+The primary challenge is distinguishing genuine breakouts from false breakouts (fakeouts). Failure rates differ by pattern — refer to the matching pattern skill's Bulkowski findings in words, not a generic rate or a percentage. This strategy employs multiple confirmation filters — volume, closing price, multi-bar confirmation, and momentum alignment — to improve the success rate.
 
 The Turtle Trading system (Richard Dennis, 1983) is the most famous historical application of breakout trading, demonstrating that systematic breakout strategies can produce consistent returns over decades.
 
@@ -151,7 +151,7 @@ ATR-based stop levels below may be described as an ATR multiple **in words only*
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.72 — Breakout trading is one of the oldest and most systematically validated strategies, with decades of documented performance (Turtle Trading, channel breakout systems). The systematic nature allows clear rules and backtesting. The 0.72 weight reflects the strategy's historical track record while acknowledging that false breakouts are frequent, so filter application is critical and introduces some discretion. Failure rates differ by pattern — cite the matching pattern skill's Bulkowski figures, not a generic rate.
+confidence_weight: 0.72 — Breakout trading is one of the oldest and most systematically validated strategies, with decades of documented performance (Turtle Trading, channel breakout systems). The systematic nature allows clear rules and backtesting. The 0.72 weight reflects the strategy's historical track record while acknowledging that false breakouts are frequent, so filter application is critical and introduces some discretion. Failure rates differ by pattern — refer to the matching pattern skill's Bulkowski findings in words, not a generic rate or a percentage.
 
 Factors that increase confidence:
 - Volume expansion confirms the breakout (50%+ above average)
@@ -171,7 +171,7 @@ Factors that decrease confidence:
 
 ## Limitations and Caveats
 
-- **False breakouts are the inherent cost**: filters reduce but never remove them. Failure rates differ by pattern — cite the matching pattern skill's Bulkowski figures, not a generic rate.
+- **False breakouts are the inherent cost**: filters reduce but never remove them. Failure rates differ by pattern — refer to the matching pattern skill's Bulkowski findings in words, not a generic rate or a percentage.
 - **Late entry**: By definition, breakout trading buys after price has already moved. This means worse average entry prices compared to anticipatory strategies (like mean reversion)
 - **Chop markets**: Breakout strategies suffer significantly in range-bound, choppy markets. Frequent small losses accumulate. Use ADX or similar to filter environments
 - **Overnight gaps**: Breakouts that occur via overnight gaps may not be tradeable at the breakout price. Gap breakouts are valid but slippage can be significant
@@ -204,7 +204,7 @@ Additional output rules:
 
 <!-- PROMPT_DIGEST:START -->
 브레이크아웃 전략 (confidence_weight 0.72)
-Enter when price decisively closes beyond a defined support/resistance boundary. Failure rates differ by pattern — cite the matching pattern skill's Bulkowski figures, not a generic rate. Late entry (buys after move); suffers in choppy/range markets — filter environment with ADX.
+Enter when price decisively closes beyond a defined support/resistance boundary. Failure rates differ by pattern — refer to the matching pattern skill's Bulkowski findings in words, not a generic rate or a percentage. Late entry (buys after move); suffers in choppy/range markets — filter environment with ADX.
 
 ### Breakout Types
 - Range: close beyond horizontal range → long above resistance / short below support. Longer range = more significant. Volume should increase substantially on breakout bar.
