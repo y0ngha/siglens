@@ -88,7 +88,7 @@ export interface ChatImageWithOwner {
  * 소유자 범위다: 조회 후 검사가 아니라 SQL `WHERE`에서 `userId`로 걸러, 훗날 리팩터링에도
  * 다른 사용자의 행이 새지 않는다.
  *
- * **메시지 메서드(`listMessages`, `appendMessages`, `supersedeAfterLastUser`,
+ * **메시지 메서드(`listMessages`, `appendMessages`, `setTurnAt`, `supersedeAfterLastUser`,
  * `deleteFromSeq`)는 `conversationId`만 받으며 소유자 범위가 아니다** — 호출자가 이미 그 id를
  * 확인·인가했다고 신뢰한다. 호출자는 반드시 먼저 `findForUser(id, userId)`로 소유를 확인해야 한다
  * (불일치는 null). 건너뛰면 id만으로 남의 메시지를 읽거나 바꿀 수 있다.
@@ -421,6 +421,36 @@ export class DrizzleChatConversationRepository {
             .returning();
         await this.refreshCounters(conversationId);
         return inserted as ChatMessageRecord[];
+    }
+
+    /**
+     * user 행에 그 턴의 시계 메모를 만든 UTC 시각을 저장한다(멱등 UPDATE 한 번 — `regenerate`는 같은 행을 덮어쓴다).
+     * `turnAt`은 core가 돌려준 ISO 문자열이며 `Date`로 바꿔도 밀리초까지 그대로다. `conversationId`를 WHERE에 함께 걸어,
+     * 호출자가 쥔 (대화, 행) 쌍이 어긋나면 아무 행도 바꾸지 않는다. 소유자 범위가 아니다(클래스 문서 참고).
+     * 형식이 틀린 id나 시각은 쿼리 없이 no-op. 시각이 없으면 다음 턴 캐시가 한 번 빗나갈 뿐이라, 실패를 어떻게
+     * 다룰지는 호출자가 정한다.
+     */
+    async setTurnAt(
+        conversationId: string,
+        messageId: string,
+        turnAt: string
+    ): Promise<void> {
+        if (!isValidUuid(conversationId) || !isValidUuid(messageId)) return;
+        const at = new Date(turnAt);
+        if (Number.isNaN(at.getTime())) return;
+        await withRetry(
+            () =>
+                this.db
+                    .update(chatMessages)
+                    .set({ turnAt: at })
+                    .where(
+                        and(
+                            eq(chatMessages.id, messageId),
+                            eq(chatMessages.conversationId, conversationId)
+                        )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
     }
 
     /**

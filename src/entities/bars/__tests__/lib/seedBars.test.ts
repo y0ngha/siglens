@@ -13,7 +13,7 @@ import { keepLastNonNull, toSeedBarsData } from '../../lib/seedBars';
  * 전체를 다시 받아 덮어쓰기 때문). 그래서 여기서 고정한다.
  */
 
-// rsi·macd는 워밍업 구간이 null이고 뒤로 갈수록 값이 찬다 — 실제 모양을 흉내낸다.
+/** rsi·macd는 워밍업 구간이 null이고 뒤로 갈수록 값이 찬다 — 실제 모양을 흉내낸다. */
 const FULL = {
     // `buildTechnicalFacts`는 MIN_BARS_FOR_FACTS=2 미만이면 null을 반환하고,
     // prev.close === 0이어도 null이다 — 둘 다 피해야 출력 비교가 공허해지지 않는다.

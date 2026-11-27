@@ -85,8 +85,8 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
         const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
         expect(renderSql(where).params).toEqual(['fmp']);
         const [orderBy] = callsOf(ops[0] as never, 'orderBy') as [unknown[]];
-        expect(renderSql(orderBy[0] as never).text).toContain(
-            'ASC NULLS FIRST'
+        expect(renderSql(orderBy[0] as never).text).toBe(
+            '"cusip_symbol_map"."checked_at" ASC NULLS FIRST'
         );
         expect(callsOf(ops[0] as never, 'limit')).toEqual([[100]]);
     });
@@ -125,8 +125,9 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
             [{ setWhere: never }],
         ];
         const { text } = renderSql(config.setWhere);
-        expect(text).toContain('IS DISTINCT FROM excluded.symbol');
-        expect(text).toContain('IS DISTINCT FROM excluded.source');
+        expect(text).toBe(
+            '"cusip_symbol_map"."symbol" IS DISTINCT FROM excluded.symbol OR "cusip_symbol_map"."source" IS DISTINCT FROM excluded.source'
+        );
     });
 
     describe('upsertCusipMap with a CUSIP claimed by more than one symbol', () => {
@@ -195,7 +196,9 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
             );
             const [[where]] = callsOf(ops[1] as never, 'where') as [[never]];
             const { text, params } = renderSql(where);
-            expect(text).toContain('"delisted_at" is null');
+            expect(text).toBe(
+                '("korean_tickers"."symbol" in ($1) and "korean_tickers"."delisted_at" is null and "korean_tickers"."exchange" in ($2, $3, $4))'
+            );
             expect(params).toEqual(['FB', ...INVESTOR_FLOWS_US_EXCHANGES]);
         });
 
@@ -220,8 +223,9 @@ describe('DrizzleInvestorFlowsUniverseRepository', () => {
         expect(symbols).toEqual(['AAA', 'AAB']);
         const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
         const { text, params } = renderSql(where);
-        expect(text).toContain('NOT EXISTS');
-        expect(text).toContain('cusip_symbol_map');
+        expect(text).toBe(
+            '("korean_tickers"."symbol" > $1 and "korean_tickers"."delisted_at" is null and "korean_tickers"."exchange" in ($2, $3, $4) and "korean_tickers"."symbol" not like $5 and "korean_tickers"."symbol" not like $6 and NOT EXISTS ( SELECT 1 FROM cusip_symbol_map m WHERE m.symbol = "korean_tickers"."symbol" ))'
+        );
         expect(params).toContain('AA');
         expect(params).toEqual(
             expect.arrayContaining(['NASDAQ', 'NYSE', 'AMEX', '%.KS', '%.KQ'])
@@ -266,8 +270,8 @@ describe('DrizzleInvestorFlowsShortRepository', () => {
         const [[config]] = callsOf(ops[0] as never, 'onConflictDoUpdate') as [
             [{ setWhere: never }],
         ];
-        expect(renderSql(config.setWhere).text).toContain(
-            'IS DISTINCT FROM excluded.short_volume'
+        expect(renderSql(config.setWhere).text).toBe(
+            '"finra_short_volume"."short_volume" IS DISTINCT FROM excluded.short_volume OR "finra_short_volume"."total_volume" IS DISTINCT FROM excluded.total_volume'
         );
     });
 
@@ -350,7 +354,7 @@ describe('DrizzleInvestorFlowsShortRepository.listShortVolumeTradeDates', () => 
         expect(callsOf(ops[0] as never, 'from')).toEqual([[finraShortVolume]]);
         const [[where]] = callsOf(ops[0] as never, 'where') as [[never]];
         const { text, params } = renderSql(where);
-        expect(text).toContain('"trade_date" >= $1');
+        expect(text).toBe('"finra_short_volume"."trade_date" >= $1');
         expect(params).toEqual(['2026-07-17']);
     });
 });
@@ -424,6 +428,168 @@ describe('DrizzleInvestorFlowsSnapshotRepository', () => {
         ]);
         expect(callsOf(ops[0] as never, 'limit')).toEqual([[8]]);
         expect(callsOf(ops[0] as never, 'orderBy')).toHaveLength(1);
+    });
+
+    describe('named-holder lookup reads', () => {
+        const whereOf = (op: unknown) => {
+            const [[where]] = callsOf(op as never, 'where') as [[never]];
+            return renderSql(where);
+        };
+
+        it('findFilersByNameTokens: no tokens reads nothing', async () => {
+            const { db, ops } = createFakeDb([[{ cik: 1, name: 'X' }]]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    db
+                ).findFilersByNameTokens([], 50)
+            ).toEqual([]);
+            expect(ops).toHaveLength(0);
+        });
+
+        it('findFilersByNameTokens: ANDs one upper(name) LIKE per token, shortest names first, with the limit', async () => {
+            const rows = [{ cik: 7, name: 'ACME FUND' }];
+            const { db, ops } = createFakeDb([rows]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    db
+                ).findFilersByNameTokens(['ACME', 'FUND'], 50)
+            ).toEqual(rows);
+            const { text, params } = whereOf(ops[0]);
+            expect(text).toBe(
+                '(upper("sec_13f_filers"."name") LIKE $1 and upper("sec_13f_filers"."name") LIKE $2)'
+            );
+            expect(params).toEqual(['%ACME%', '%FUND%']);
+            expect(callsOf(ops[0] as never, 'limit')).toEqual([[50]]);
+            expect(callsOf(ops[0] as never, 'orderBy')).toHaveLength(1);
+        });
+
+        it('findFilersByNameTokens: LIKE wildcards and the escape character in a token are matched literally', async () => {
+            const { db, ops } = createFakeDb([[]]);
+            await new DrizzleInvestorFlowsSnapshotRepository(
+                db
+            ).findFilersByNameTokens(['A%B_C\\D'], 50);
+            expect(whereOf(ops[0]).params).toEqual(['%A\\%B\\_C\\\\D%']);
+        });
+
+        it('findFilersByNameTokens: the AND token (from "&") stays out of the SQL filter, so "DODGE & COX" is found', async () => {
+            const { db, ops } = createFakeDb([
+                [{ cik: 9, name: 'DODGE & COX' }],
+            ]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    db
+                ).findFilersByNameTokens(['DODGE', 'AND', 'COX'], 50)
+            ).toEqual([{ cik: 9, name: 'DODGE & COX' }]);
+            // `LIKE '%AND%'` would not match the raw name "DODGE & COX"
+            expect(whereOf(ops[0]).params).toEqual(['%DODGE%', '%COX%']);
+        });
+
+        it('findFilersByNameTokens: a query made only of AND reads nothing', async () => {
+            const { db, ops } = createFakeDb([[]]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    db
+                ).findFilersByNameTokens(['AND'], 50)
+            ).toEqual([]);
+            expect(ops).toHaveLength(0);
+        });
+
+        it('findHolderPositions: no ciks reads nothing', async () => {
+            const { db, ops } = createFakeDb([[]]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    db
+                ).findHolderPositions('037833100', '2026-09-30', [])
+            ).toEqual([]);
+            expect(ops).toHaveLength(0);
+        });
+
+        it('findHolderPositions: restricts to the filers and the period, largest first, value x1000, name falls back to the cik', async () => {
+            const { db, ops } = createFakeDb([
+                [
+                    {
+                        cik: 1,
+                        filerName: 'Big LLC',
+                        shares: 9,
+                        valueK: 90,
+                        prevShares: 8,
+                    },
+                    {
+                        cik: 2,
+                        filerName: null,
+                        shares: 5,
+                        valueK: 50,
+                        prevShares: null,
+                    },
+                ],
+            ]);
+            const rows = await new DrizzleInvestorFlowsSnapshotRepository(
+                db
+            ).findHolderPositions('037833100', '2026-09-30', [1, 2]);
+            expect(rows).toEqual([
+                {
+                    cik: 1,
+                    filerName: 'Big LLC',
+                    shares: 9,
+                    valueUsd: 90_000,
+                    prevShares: 8,
+                },
+                {
+                    cik: 2,
+                    filerName: '0000000002',
+                    shares: 5,
+                    valueUsd: 50_000,
+                    prevShares: null,
+                },
+            ]);
+            const { text, params } = whereOf(ops[0]);
+            expect(text).toBe(
+                '("sec_13f_positions"."cusip_id" = (SELECT id FROM cusip_symbol_map WHERE cusip = $1) and "sec_13f_positions"."period" = $2 and "sec_13f_positions"."cik" in ($3, $4))'
+            );
+            expect(params).toEqual(['037833100', '2026-09-30', 1, 2]);
+            expect(callsOf(ops[0] as never, 'orderBy')).toHaveLength(1);
+            // no LIMIT: the caller already bounded the filers (at most 5)
+            expect(callsOf(ops[0] as never, 'limit')).toEqual([]);
+        });
+
+        it('findFilerFilings: no ciks reads nothing; otherwise filters on the filers and the period and passes rows through', async () => {
+            const empty = createFakeDb([[]]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    empty.db
+                ).findFilerFilings('037833100', [], '2026-09-30')
+            ).toEqual([]);
+            expect(empty.ops).toHaveLength(0);
+
+            const rows = [{ cik: 1, processed: true, couldListCusip: false }];
+            const { db, ops } = createFakeDb([rows]);
+            expect(
+                await new DrizzleInvestorFlowsSnapshotRepository(
+                    db
+                ).findFilerFilings('037833100', [1], '2026-09-30')
+            ).toEqual(rows);
+            const { text, params } = whereOf(ops[0]);
+            expect(text).toBe(
+                '("sec_13f_filings"."cik" in ($1) and "sec_13f_filings"."period" = $2)'
+            );
+            expect(params).toEqual([1, '2026-09-30']);
+        });
+
+        it('countHoldersAbove: counts holders with strictly more shares in the period; no row is 0', async () => {
+            const { db, ops } = createFakeDb([[{ count: 4 }], []]);
+            const repo = new DrizzleInvestorFlowsSnapshotRepository(db);
+            expect(
+                await repo.countHoldersAbove('037833100', '2026-09-30', 1_000)
+            ).toBe(4);
+            const { text, params } = whereOf(ops[0]);
+            expect(text).toBe(
+                '("sec_13f_positions"."cusip_id" = (SELECT id FROM cusip_symbol_map WHERE cusip = $1) and "sec_13f_positions"."period" = $2 and "sec_13f_positions"."shares" > $3)'
+            );
+            expect(params).toEqual(['037833100', '2026-09-30', 1_000]);
+            expect(
+                await repo.countHoldersAbove('037833100', '2026-09-30', 1_000)
+            ).toBe(0);
+        });
     });
 
     it('returns exited holders with zero shares and their prior quarter shares', async () => {

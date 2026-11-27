@@ -67,7 +67,7 @@ describe('BacktestHero', () => {
         render(<BacktestHero stats={STATS} />);
         const card = screen.getByText('+0.39%').closest('div')?.parentElement;
         expect(card).toHaveTextContent(
-            '같은 종목을 기간 중 어느 날에 사든 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 -0.06% (95% 범위 -0.40%~+0.30%)'
+            '같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 -0.06% (95% 범위 -0.40%~+0.30%)'
         );
     });
 

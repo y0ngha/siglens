@@ -55,6 +55,17 @@ describe('createEmailDispatcher', () => {
         expect(ResendCtor).not.toHaveBeenCalled();
     });
 
+    it('noop dispatcher의 멱등 키 발송도 항상 rejected다', async () => {
+        const result = await createEmailDispatcher().sendKeyedEmail({
+            to: 't@t.com',
+            subject: 's',
+            html: 'h',
+            text: 't',
+            idempotencyKey: 'k',
+        });
+        expect(result).toBe('rejected');
+    });
+
     it('RESEND_API_KEY가 있으면 ResendEmailDispatcher를 반환한다', () => {
         process.env.RESEND_API_KEY = 'test-key';
         createEmailDispatcher();

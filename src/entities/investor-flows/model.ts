@@ -477,3 +477,68 @@ export interface ResolveCollectingInput {
     /** Reg SHO 플래그 — 꺼져 있으면 과열 목록은 수집 중이 아니다(공매도의 `finraEnabled`와 같은 역할, 낡은 준비 상태 캐시 방어). */
     readonly regShoEnabled: boolean;
 }
+
+/**
+ * Most filers a holder query may match. Above this the lookup does not guess which institution was meant:
+ * it reports `too_many_matches` with the names so the model asks (a hedge fund's name is often a prefix of
+ * several affiliates').
+ */
+export const HOLDER_LOOKUP_MAX_FILERS = 5;
+
+/**
+ * What a named-holder lookup proved. Each value states only what the query established (a missing row is
+ * not "does not hold" when the filing could not have listed the stock).
+ */
+export type HolderLookupStatus =
+    /** At least one matching filer holds the stock in `period`. */
+    | 'found'
+    /** The matching filers filed for `period`, none lists the stock, and each filing could have listed it. */
+    | 'not_holding'
+    /**
+     * A matching filer's filing was parsed before this stock's CUSIP was mapped (`universe_stamp` <
+     * `cusip_symbol_map.created_at`), so its positions were filtered out of that filing: absence proves nothing.
+     */
+    | 'not_determinable'
+    /** Matching filer(s) exist but none has a processed filing for `period`. */
+    | 'no_filing_for_period'
+    | 'no_matching_filer'
+    /** More than {@link HOLDER_LOOKUP_MAX_FILERS} filers match; ask for a fuller name. */
+    | 'too_many_matches'
+    /** The stock has no complete quarter with positions (no CUSIP mapped, or no positions kept). */
+    | 'no_13f_period'
+    | 'not_us_stock';
+
+/** One matching filer's position in the stock. Neither the CIK nor the CUSIP is exposed (CUSIP licence note, `schema.ts`). */
+export interface HolderLookupMatch {
+    filerName: string;
+    shares: number;
+    valueUsd: number;
+    /** Shares in the previous quarter; `null` when the filer had no position then. */
+    prevShares: number | null;
+    /** Rank among this stock's holders in `period` by shares, 1 = largest. */
+    rankByShares: number;
+}
+
+/** The `holderLookup` block of the `get_investor_flows` result. */
+export interface HolderLookupView {
+    /** The institution name as asked (trimmed, clamped). */
+    query: string;
+    /** The 13F quarter the positions were read for; `null` when none was resolved. */
+    period: string | null;
+    status: HolderLookupStatus;
+    /** At most {@link HOLDER_LOOKUP_MATCHES_MAX} matching positions, largest first. */
+    matches: HolderLookupMatch[];
+    /** Names of the filers the query matched (up to {@link HOLDER_LOOKUP_MAX_FILERS}). */
+    matchedFilers: string[];
+    note: string;
+}
+
+/** Most positions listed in `HolderLookupView.matches`. */
+export const HOLDER_LOOKUP_MATCHES_MAX = 3;
+
+/** Longest holder query read from the model's `holder` argument. */
+export const HOLDER_QUERY_MAX_CHARS = 80;
+
+/** Fixed caveat on every lookup: 13F is quarterly and late. */
+export const HOLDER_LOOKUP_NOTE =
+    'SEC 13F is quarterly and filed up to ~45 days after quarter end: this is the filer position at period end, not today.';

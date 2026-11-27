@@ -53,7 +53,7 @@ describe('resolveByokOnlyKey', () => {
 
     it.each([
         ['claude-opus-5', 'anthropic'],
-        ['gpt-6-astra', 'openai'],
+        ['gpt-6.2-astra', 'openai'],
         ['gemini-4-argon', 'google'],
     ])('%s는 %s 키를 조회한다', async (modelId, provider) => {
         mockFind.mockResolvedValue({ apiKey: 'k' });

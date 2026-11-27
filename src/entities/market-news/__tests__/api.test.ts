@@ -7,6 +7,7 @@ import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { orderColumnName } from '@/__tests__/utils/orderColumnName';
+import { renderSql } from '@/__tests__/utils/renderSql';
 
 const ITEM: MarketNewsItem = {
     id: 'm1',
@@ -48,29 +49,6 @@ function makeUpdateDb(): {
     };
 }
 
-/** Build a mock `db` for a select…from…where…orderBy chain returning `rows`. */
-/**
- * drizzle `SQL`에서 리터럴 조각만 뽑는다(`JSON.stringify`는 테이블 참조가 순환이라
- * 던진다). `isNotNull`은 `' is not null'`, `isNull`은 `' is null'`을 남긴다.
- */
-function sqlChunks(node: unknown, out: string[] = []): string[] {
-    if (Array.isArray(node)) {
-        for (const item of node) sqlChunks(item, out);
-        return out;
-    }
-    if (node && typeof node === 'object') {
-        const obj = node as Record<string, unknown>;
-        if (Array.isArray(obj.queryChunks)) sqlChunks(obj.queryChunks, out);
-        if (
-            Array.isArray(obj.value) &&
-            obj.value.every(v => typeof v === 'string')
-        ) {
-            out.push(...(obj.value as string[]));
-        }
-    }
-    return out;
-}
-
 /** `listAnalyzedIds`용 — `orderBy` 없이 `where()`를 바로 await하는 형태. */
 function makeFilterSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
@@ -82,6 +60,7 @@ function makeFilterSelectDb(rows: unknown[]): {
     return { db: { select } as unknown as SiglensDatabase, where };
 }
 
+/** Build a mock `db` for a select…from…where…orderBy chain returning `rows`. */
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: ReturnType<typeof vi.fn>;
@@ -370,9 +349,10 @@ describe('DrizzleMarketNewsRepository.listAnalyzedIds는', () => {
         const ids = await repo.listAnalyzedIds('__NEWS_CRYPTO__', 1000);
 
         expect(ids).toEqual(new Set(['m1']));
-        const literals = sqlChunks((where.mock.calls[0] as [unknown])[0]);
-        expect(literals).toContain(' is not null');
-        expect(literals).not.toContain(' is null');
+        const { sql } = renderSql((where.mock.calls[0] as [unknown])[0]);
+        expect(sql).toBe(
+            '(("market_news"."symbol" = $1 and "market_news"."published_at" >= $2) and "market_news"."analyzed_at" is not null)'
+        );
     });
 });
 

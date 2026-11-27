@@ -277,17 +277,9 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
         const { sql: projectionSql } = new PgDialect().sqlToQuery(
             selected.prose as never
         );
-        expect(projectionSql).toContain('jsonb_build_object(');
-        for (const field of [
-            'summary',
-            'patternSummaries',
-            'strategyResults',
-            'currentDriverKo',
-            'keyEventsKo',
-            'upcomingEventsKo',
-        ]) {
-            expect(projectionSql).toContain(`'${field}'`);
-        }
+        expect(projectionSql).toBe(
+            'case "seo_analysis_snapshots"."tab" when $1 then jsonb_build_object(\'summary\', "seo_analysis_snapshots"."content" -> \'summary\', \'patternSummaries\', "seo_analysis_snapshots"."content" -> \'patternSummaries\', \'strategyResults\', "seo_analysis_snapshots"."content" -> \'strategyResults\') when $2 then jsonb_build_object(\'currentDriverKo\', "seo_analysis_snapshots"."content" -> \'currentDriverKo\', \'keyEventsKo\', "seo_analysis_snapshots"."content" -> \'keyEventsKo\', \'upcomingEventsKo\', "seo_analysis_snapshots"."content" -> \'upcomingEventsKo\') else null end'
+        );
         expect(where.mock.calls[0]?.[0]).toEqual(
             and(
                 inArray(seoAnalysisSnapshots.tab, ['technical', 'news']),
@@ -529,10 +521,9 @@ describe('DrizzleSeoSnapshotRepository.listSymbolsWithDetectedPatterns', () => {
         expect(Object.keys(projection)).toContain('detectedPatterns');
         expect(Object.keys(projection)).not.toContain('patternSummaries');
         const query = toQuery(projection.detectedPatterns);
-        expect(query.sql).toContain(`->'patternSummaries'`);
-        expect(query.sql).toContain('jsonb_array_elements(');
-        expect(query.sql).toContain(`elem->>'detected' = 'true'`);
-        expect(query.sql).toContain('jsonb_array_elements_text(');
+        expect(query.sql.replace(/\s+/g, ' ').trim()).toBe(
+            "( select coalesce(jsonb_agg(elem->>'patternName'), '[]'::jsonb) from jsonb_array_elements(\"seo_analysis_snapshots\".\"content\"->'patternSummaries') as elem where elem->>'detected' = 'true' and elem->>'patternName' in (select jsonb_array_elements_text($1::jsonb)) )"
+        );
         expect(query.params).toEqual([
             JSON.stringify(['double_bottom', 'cup_and_handle']),
         ]);
@@ -546,13 +537,10 @@ describe('DrizzleSeoSnapshotRepository.listSymbolsWithDetectedPatterns', () => {
             { since, limit: 5, market: 'us' }
         );
         const query = toQuery(where.mock.calls[0]![0]);
-        expect(query.sql).toContain('"tab" = ');
-        expect(query.sql).toContain('"locale" = ');
-        expect(query.sql).toContain('"generated_at" >= ');
-        expect(query.sql).toContain('"symbol" not in (');
-        expect(query.sql).toContain(`->'patternSummaries' @>`);
         // 두 containment는 OR로 묶인다.
-        expect(query.sql).toMatch(/::jsonb or .*->'patternSummaries' @>/);
+        expect(query.sql).toBe(
+            '("seo_analysis_snapshots"."tab" = $1 and "seo_analysis_snapshots"."locale" = $2 and "seo_analysis_snapshots"."generated_at" >= $3 and "seo_analysis_snapshots"."symbol" not in ($4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) and NOT ("seo_analysis_snapshots"."symbol" ~* $33) and ("seo_analysis_snapshots"."content"->\'patternSummaries\' @> $34::jsonb or "seo_analysis_snapshots"."content"->\'patternSummaries\' @> $35::jsonb))'
+        );
         expect(query.params).toEqual(
             expect.arrayContaining([
                 'technical',
@@ -605,8 +593,9 @@ describe('DrizzleSeoSnapshotRepository.listSymbolsWithDetectedPatterns', () => {
             market: 'kr',
         });
         const krQuery = toQuery(kr.where.mock.calls[0]![0]);
-        expect(krQuery.sql).toContain('"symbol" ~* ');
-        expect(krQuery.sql).not.toContain('NOT (');
+        expect(krQuery.sql).toBe(
+            '("seo_analysis_snapshots"."tab" = $1 and "seo_analysis_snapshots"."locale" = $2 and "seo_analysis_snapshots"."generated_at" >= $3 and "seo_analysis_snapshots"."symbol" not in ($4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) and "seo_analysis_snapshots"."symbol" ~* $33 and "seo_analysis_snapshots"."content"->\'patternSummaries\' @> $34::jsonb)'
+        );
         expect(krQuery.params).toContain(KR_SYMBOL_RE.source);
 
         const us = makeListPatternsDb([]);
@@ -618,8 +607,8 @@ describe('DrizzleSeoSnapshotRepository.listSymbolsWithDetectedPatterns', () => {
             market: 'us',
         });
         const usQuery = toQuery(us.where.mock.calls[0]![0]);
-        expect(usQuery.sql).toContain(
-            'NOT ("seo_analysis_snapshots"."symbol" ~* '
+        expect(usQuery.sql).toBe(
+            '("seo_analysis_snapshots"."tab" = $1 and "seo_analysis_snapshots"."locale" = $2 and "seo_analysis_snapshots"."generated_at" >= $3 and "seo_analysis_snapshots"."symbol" not in ($4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) and NOT ("seo_analysis_snapshots"."symbol" ~* $33) and "seo_analysis_snapshots"."content"->\'patternSummaries\' @> $34::jsonb)'
         );
         expect(usQuery.params).toContain(KR_SYMBOL_RE.source);
     });

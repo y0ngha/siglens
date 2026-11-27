@@ -1,5 +1,9 @@
 import type { ExtremeFearGreedZone, SignalType } from '@y0ngha/siglens-core';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
+import type {
+    PriceAlertConditionRecord,
+    PriceAlertRecord,
+} from '@/shared/db/types';
 
 /** 공포·탐욕 알림을 받을 수 있는 시장. 크립토 지수는 있지만 크립토 종목은 v1에서 알리지 않는다. */
 export type MailAlertFearGreedMarket = 'us' | 'kr' | 'crypto';
@@ -20,7 +24,9 @@ export type MailAlertConsentSource =
     | 'symbol'
     | 'fear_greed'
     | 'signal_hub'
-    | 'settings';
+    | 'settings'
+    /** 시그렌즈 AI 대화에서 만든 가격대 알림. */
+    | 'agent_chat';
 
 /** 메일 한 통에 실리는 항목. `section`은 "담은 종목"(mine)과 "신호별 새 종목"(hub)을 가른다. */
 export type MailAlertItem =
@@ -118,4 +124,34 @@ export interface MailAlertManageView {
     readonly topics: readonly MailAlertTopic[];
     /** 회원일 때만 스위치가 의미 있다. */
     readonly includePortfolio: boolean | null;
+}
+
+/** 가격대 알림이 읽는 가격의 출처. DB `price_alerts.basis`의 허용 값과 같다. */
+export type PriceAlertBasis =
+    | 'analysis_entry_zone'
+    | 'analysis_invalidation'
+    | 'price_level';
+
+/**
+ * 알림 조건의 DB 모양. core의 `PriceLevelCondition`과 같은 세 모양이지만 `shared/db`가 core를 import하지
+ * 않으려고 저장 계층 타입을 그대로 쓴다(이름 하나로 두 계층이 같은 모양을 본다).
+ */
+export type PriceAlertCondition = PriceAlertConditionRecord;
+
+/** 화면과 메일이 그리는 가격대 알림 한 건. */
+export interface PriceAlertView {
+    readonly id: string;
+    readonly symbol: string;
+    readonly market: PriceAlertRecord['market'];
+    readonly condition: PriceAlertCondition;
+    readonly basis: PriceAlertBasis;
+    /** 기준이 된 AI 분석 시각. 가격을 직접 말한 알림은 null. */
+    readonly analysisAt: Date | null;
+    readonly referenceClose: number;
+    readonly createdAt: Date;
+    /** 한국 날짜. 이 날까지 유지된다. */
+    readonly expiresOn: string;
+    readonly status: PriceAlertRecord['status'];
+    readonly firedSession: string | null;
+    readonly firedClose: number | null;
 }

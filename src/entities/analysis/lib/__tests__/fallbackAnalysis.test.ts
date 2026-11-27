@@ -22,7 +22,7 @@ describe('isFallbackAnalysis', () => {
     // `{ ...analysis }` 스프레드는 FALLBACK_ANALYSIS를 참조가 다른 clone으로 바꿔
     // 놓는다. 이게 실제 프로덕션에서 클라이언트가 받는 값의 형태다. 값 기반 판정으로
     // 바뀌었으므로 내용이 같은 clone은 true여야 한다(참조만 다른 clone을 false로 보면
-    // 가드가 프로덕션에서 절대 발동하지 않는 dead code가 된다. PR #685 round-3).
+    // 가드가 프로덕션에서 절대 발동하지 않는 dead code가 된다).
     it('내용이 같은 clone(참조만 다름)도 true, 값 기반 판정', () => {
         expect(
             isFallbackAnalysis({ ...FALLBACK_ANALYSIS }, FALLBACK_SUMMARY)

@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
  *
  * 모든 페이지에는 Next의 빈 route announcer(`role="alert"`)가 항상 있다.
  * `page.getByRole('alert')`는 그것과 앱 배너를 함께 잡아 strict mode에서 실패하고,
- * 로컬에선 배너가 안 떠 있어 통과하다가 CI에서만 깨진다(#1404).
+ * 로컬에선 배너가 안 떠 있어 통과하다가 CI에서만 깨진다.
  *
  * 허용되는 형태 두 가지:
  *  - `page.getByRole('alert').filter({ hasText })` — 텍스트로 좁힌다.

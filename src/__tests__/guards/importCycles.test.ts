@@ -102,6 +102,8 @@ describe('순환 검출기', () => {
                 typeOnly: false,
                 dynamic: true,
                 lazyChunk: false,
+                names: ['*'],
+                line: 1,
             },
         ]);
     });

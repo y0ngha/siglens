@@ -361,8 +361,8 @@ describe('모델 결정', () => {
     it('인자가 기본 모델을 이긴다(기본 모델은 읽지도 않는다)', async () => {
         m.findDefaultModel.mockResolvedValue(BYOK_MODEL);
         core.cache = { summary: 'cached' };
-        await run({ model: 'gpt-6-astra' });
-        expect(core.calls[0].model).toBe('gpt-6-astra');
+        await run({ model: 'gpt-6.2-astra' });
+        expect(core.calls[0].model).toBe('gpt-6.2-astra');
         expect(m.findDefaultModel).not.toHaveBeenCalled();
     });
 
@@ -375,6 +375,19 @@ describe('모델 결정', () => {
         });
         expect(core.calls).toHaveLength(0);
     });
+
+    it.each(['claude-fable-5-1', 'gpt-6.1-sol', 'gpt-6-astra'])(
+        '퇴역한 %s를 model 인자로 주면 후속 모델로 바꾸지 않고 400 invalid_model',
+        async retired => {
+            const result = await run({ model: retired });
+            expect(result).toMatchObject({
+                ok: false,
+                status: 400,
+                code: 'invalid_model',
+            });
+            expect(core.calls).toHaveLength(0);
+        }
+    );
 
     it('저장된 기본 모델이 로스터에서 사라졌으면 400 invalid_model', async () => {
         m.findDefaultModel.mockResolvedValue('retired-model');
@@ -509,7 +522,7 @@ describe('캐시 미스', () => {
 
     it.each([
         ['claude-opus-5', 'anthropic'],
-        ['gpt-6-astra', 'openai'],
+        ['gpt-6.2-astra', 'openai'],
         ['gemini-4-argon', 'google'],
     ])('%s의 키가 없으면 provider는 %s', async (model, provider) => {
         const result = await run({ model });
@@ -876,7 +889,7 @@ describe('provider 오류 → 502 provider_error', () => {
             'no access',
             HEADERS
         );
-        const result = await run({ model: 'gpt-6-astra' });
+        const result = await run({ model: 'gpt-6.2-astra' });
         expect(result).toMatchObject({
             status: 502,
             details: { provider: 'openai', status: 403 },
@@ -1183,7 +1196,11 @@ describe('스트리밍 경계 — 사전 검사를 모두 통과한 생성만 �
 
     it.each([
         ['model_required', {}, (): void => undefined],
-        ['byok_key_required', { model: 'gpt-6-astra' }, (): void => undefined],
+        [
+            'byok_key_required',
+            { model: 'gpt-6.2-astra' },
+            (): void => undefined,
+        ],
         [
             'rate_limited',
             { model: BYOK_MODEL },

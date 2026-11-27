@@ -232,7 +232,7 @@ describe('RelatedSymbols', () => {
     /**
      * `DYNAMIC_SERVER_USAGE`는 실패가 아니라 Next의 제어 흐름 신호다 — 정적 생성
      * 중 동적 API가 쓰였으니 이 렌더를 포기하라는 뜻이다. 삼키면 Next가 의도한
-     * bail-out을 막아 잘못된 결과가 캐시에 굳는다(#545 인시던트 클래스).
+     * bail-out을 막아 잘못된 결과가 캐시에 굳는다.
      * 위 "조회 실패는 삼킨다" 테스트와 짝을 이뤄 두 경로를 구분해 고정한다.
      */
     it('DYNAMIC_SERVER_USAGE는 삼키지 않고 되던진다', async () => {

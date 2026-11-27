@@ -1,18 +1,10 @@
-import type {
-    MarketSessionSpec,
-    SectorSignalsResult,
-} from '@y0ngha/siglens-core';
+import type { MarketSessionSpec } from '@y0ngha/siglens-core';
 import {
     lastClosedSessionDate,
     previousSessionDate,
     zonedDate,
 } from '@/shared/lib/marketSessionDate';
-import type {
-    SignalEpisodeInsert,
-    SignalEpisodeKey,
-    SignalEpisodePlan,
-    SignalHistoryMarket,
-} from '../types';
+import type { SignalHistoryMarket } from '../types';
 
 /**
  * 마감 뒤 이만큼 지나야 기록한다(분). 미국은 마지막 봉이 확정될 여유 15분. 한국은 시세가 20분
@@ -54,53 +46,4 @@ export function continuationFloor(
     sessionDate: string
 ): string {
     return previousSessionDate(spec, sessionDate);
-}
-
-function keyOf(key: SignalEpisodeKey): string {
-    return `${key.symbol}\u0000${key.signalType}`;
-}
-
-/**
- * 스캐너 결과 → 이번 세션 기록 계획.
- *
- * **확정** 신호만 본다(예상 신호는 오지 않을 수도 있는 사건이다). (종목, 신호)마다 한 번만 센다 —
- * 스캐너가 같은 종목을 두 섹터에 실어도 한 번이다. `openKeys`(직전 세션 이후로 이어진 에피소드)에
- * 있으면 마지막 포착일만 늘리고(`extends`), 없으면 새 에피소드를 연다(`inserts`).
- */
-export function planSignalEpisodes(input: {
-    readonly result: SectorSignalsResult;
-    readonly market: SignalHistoryMarket;
-    readonly sessionDate: string;
-    readonly openKeys: readonly SignalEpisodeKey[];
-}): SignalEpisodePlan {
-    const open = new Set(input.openKeys.map(keyOf));
-    const confirmed = input.result.stocks.flatMap(stock =>
-        stock.signals
-            .filter(signal => signal.phase === 'confirmed')
-            .map((signal): SignalEpisodeInsert => ({
-                market: input.market,
-                sessionDate: input.sessionDate,
-                symbol: stock.symbol,
-                signalType: signal.type,
-                direction: signal.direction,
-                changePercent: stock.changePercent,
-                priceAtDetection:
-                    Number.isFinite(stock.price) && stock.price > 0
-                        ? stock.price
-                        : null,
-                koreanName: stock.koreanName === '' ? null : stock.koreanName,
-                computedAt: input.result.computedAt,
-            }))
-    );
-    // 키별 한 행으로 접는다. 같은 종목이 두 섹터에 실린 경우라 두 행의 값은 같다 — 어느 쪽을
-    // 남겨도 되고, Map은 처음 넣은 키의 순서를 지킨다.
-    const unique = [
-        ...new Map(confirmed.map(row => [keyOf(row), row])).values(),
-    ];
-    return {
-        inserts: unique.filter(row => !open.has(keyOf(row))),
-        extends: unique
-            .filter(row => open.has(keyOf(row)))
-            .map(({ symbol, signalType }) => ({ symbol, signalType })),
-    };
 }

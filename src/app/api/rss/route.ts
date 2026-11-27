@@ -1,12 +1,15 @@
 import { constants } from 'node:http2';
 import { NextResponse } from 'next/server';
-import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 import {
     SITEMAP_CACHE_CONTROL,
-    SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
-import { buildRssItem } from '@/app/api/rss/_lib/buildRssItem';
+import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
+import {
+    buildRssItem,
+    isEligibleRssSource,
+} from '@/app/api/rss/_lib/buildRssItem';
 import { loadDeclaredUrls } from '@/app/api/rss/_lib/loadDeclaredUrls';
 import { rssSources } from '@/app/api/rss/sources';
 import { buildRssXml } from '@/entities/rss-feed/lib/buildRssXml';
@@ -21,6 +24,13 @@ const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 // sitemap과 같은 이유로 force-dynamic + CDN 캐시다. 항목은 Redis 스탬프에 달려 있어
 // 빌드 시점에 굳히면 안 된다.
 export const dynamic = 'force-dynamic';
+
+/**
+ * 항목이 하나라도 빠진 피드(캐시 미스·스탬프와 본문이 어긋난 순간)의 공개 캐시. 완전한 피드의
+ * 1시간+stale 1시간을 그대로 쓰면 일시적으로 줄어든 피드가 CDN에 최대 1시간 남는다 —
+ * 짧게만 두고 stale 허용은 없앤다.
+ */
+export const RSS_PARTIAL_CACHE_CONTROL = 'public, max-age=60';
 
 const CHANNEL = {
     // 한글 표기와 영문 표기를 함께 — 피드 구독 목록·검색에서 "시그렌즈"로도 찾힌다.
@@ -42,19 +52,33 @@ export async function GET(request: Request): Promise<Response> {
     if (declaredUrls === null) {
         return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
             status: HTTP_STATUS_SERVICE_UNAVAILABLE,
-            headers: { 'Retry-After': SITEMAP_RETRY_AFTER_SECONDS },
+            headers: { 'Retry-After': RETRY_AFTER_SECONDS },
         });
     }
+    // 항목을 낼 수 있는 소스만 센다 — 경로가 없거나 정적 sitemap에 없는 허브는 설계상
+    // 빠지는 것이라 피드가 "줄었다"고 볼 수 없다.
+    const eligible = rssSources().filter(source =>
+        isEligibleRssSource(source, declaredUrls)
+    );
     const settled = await Promise.all(
-        rssSources().map(source =>
-            buildRssItem(source, declaredUrls).catch(error => {
-                // 소스 하나의 읽기 실패가 피드 전체를 500으로 만들면 구독자가 피드를 잃는다.
-                console.error(
-                    `[rss] ${source.surface} failed:`,
-                    redactDbErrorForLog(error)
-                );
-                return null;
-            })
+        eligible.map(source =>
+            buildRssItem(source, declaredUrls)
+                .catch(error => {
+                    // 소스 하나의 읽기 실패가 피드 전체를 500으로 만들면 구독자가 피드를 잃는다.
+                    console.error(
+                        `[rss] ${source.surface} failed:`,
+                        redactDbErrorForLog(error)
+                    );
+                    return null;
+                })
+                .then(item => {
+                    if (item === null) {
+                        console.error(
+                            `[rss] ${source.surface} dropped out of feed`
+                        );
+                    }
+                    return item;
+                })
         )
     );
     const items = settled.filter((item): item is RssItem => item !== null);
@@ -68,7 +92,10 @@ export async function GET(request: Request): Promise<Response> {
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/rss+xml; charset=utf-8',
-            'Cache-Control': SITEMAP_CACHE_CONTROL,
+            'Cache-Control':
+                items.length < eligible.length
+                    ? RSS_PARTIAL_CACHE_CONTROL
+                    : SITEMAP_CACHE_CONTROL,
         },
     });
 }

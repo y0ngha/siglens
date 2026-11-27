@@ -15,6 +15,7 @@ import { pickYahooDisplayName } from './displayName';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { mapOrNull } from '@/shared/api/market/mapOrNull';
+import { clampBarsRange } from '@/shared/api/market/barRange';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
@@ -188,7 +189,18 @@ export class YahooMarketProvider implements SiglensMarketProvider {
         // `YahooChartQuote`는 OHLCV를 전부 nullable로 선언하고 `toBar`가 결측을
         // 걸러내므로, 실제 응답이 이 형상을 벗어나도 런타임에서 흡수된다.
         const quotes = result.quotes as unknown as YahooChartQuote[];
-        return quotes.map(toBar).filter((bar): bar is Bar => bar !== null);
+        // 소스 쪽 정규화. 읽기 경로(`eodHistoryCache`)에도 같은 클램프가 있다 — 이 수정 전에
+        // 쓰인 캐시 엔트리를 위한 것이고, 새로 받는 봉은 여기서 고친다.
+        const { bars, fixed } = clampBarsRange(
+            quotes.map(toBar).filter((bar): bar is Bar => bar !== null)
+        );
+        // 호출당 한 줄. 고친 봉이 없으면 남기지 않는다.
+        if (fixed > 0) {
+            console.warn(
+                `[YahooMarketProvider] ohlc-normalized symbol=${options.symbol} timeframe=${options.timeframe} fixed=${fixed} total=${bars.length}`
+            );
+        }
+        return [...bars];
     }
 
     /**

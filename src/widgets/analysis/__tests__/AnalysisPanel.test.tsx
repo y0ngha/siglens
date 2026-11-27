@@ -72,7 +72,7 @@ vi.mock('../AdBanner', () => ({
     AdBanner: () => null,
 }));
 vi.mock('../StaleAnalysisBanner', () => ({
-    StaleAnalysisBanner: () => null,
+    StaleAnalysisBanner: () => <div data-testid="stale-banner" />,
 }));
 vi.mock('@/widgets/analysis/utils/parseStructuredSummary', () => ({
     parseStructuredSummary: () => null,
@@ -105,6 +105,11 @@ import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis'
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { renderWithoutAct } from '@/shared/test-utils/renderWithoutAct';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
+import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { NextIntlClientProvider } from 'next-intl';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
@@ -480,6 +485,38 @@ describe('AnalysisPanel', () => {
                     .mocked(isAnalysisStale)
                     .mock.calls.filter(([, , , s]) => s !== undefined)
             ).toEqual([]);
+        });
+    });
+
+    describe('stale 배너 첫 렌더', () => {
+        afterEach(() => {
+            vi.mocked(isAnalysisStale).mockReturnValue(false);
+        });
+
+        it('stale 분석이면 첫 동기 커밋에 배너가 이미 있다 — 패널이 그려진 뒤에 끼어들지 않는다(CLS)', () => {
+            vi.mocked(isAnalysisStale).mockReturnValue(true);
+            renderWithoutAct(
+                <LocaleProvider locale={DEFAULT_LOCALE}>
+                    <NextIntlClientProvider
+                        locale={DEFAULT_LOCALE}
+                        messages={MESSAGE_CATALOGS[DEFAULT_LOCALE]}
+                        timeZone="Asia/Seoul"
+                    >
+                        <AnalysisPanel
+                            symbol="AAPL"
+                            analysis={makeAnalysis()}
+                            keyLevels={EMPTY_KEY_LEVELS}
+                            timeframe="1Day"
+                            onReanalyze={vi.fn()}
+                        />
+                    </NextIntlClientProvider>
+                </LocaleProvider>,
+                container => {
+                    expect(
+                        container.querySelector('[data-testid="stale-banner"]')
+                    ).not.toBeNull();
+                }
+            );
         });
     });
 

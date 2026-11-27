@@ -7,6 +7,7 @@ const {
     getCachedAnalysis,
     getBarsIndicators,
     getNews,
+    getFundamentals,
     getEconomy,
     ensureSymbolNewsFresh,
 } = vi.hoisted(() => ({
@@ -15,6 +16,7 @@ const {
     getCachedAnalysis: vi.fn(),
     getBarsIndicators: vi.fn(),
     getNews: vi.fn(),
+    getFundamentals: vi.fn(),
     getEconomy: vi.fn(),
     ensureSymbolNewsFresh: vi.fn(),
 }));
@@ -32,6 +34,9 @@ vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: getCachedAnalysis,
 }));
 vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: getNews }));
+vi.mock('@/app/api/ai/chat/tools/getFundamentals', () => ({
+    getFundamentalsTool: getFundamentals,
+}));
 vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
     getEconomyTool: getEconomy,
 }));
@@ -84,6 +89,7 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
 }));
 
 import {
+    AGENT_RESULT_CAPS,
     availableToolNames,
     createToolExecutor,
     type ToolRuntime,
@@ -562,7 +568,7 @@ describe('tool registry', () => {
         );
     });
 
-    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·6,500자 이내는 온전히, 6,500자 초과는 절단된다', async () => {
+    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·7,000자 이내는 온전히, 7,000자 초과는 절단된다', async () => {
         const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
         const exec = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
@@ -571,7 +577,7 @@ describe('tool registry', () => {
             exec('get_bars_indicators', { symbol: 'AAPL' }, makeCtx());
         // Regression guard for `ceilingFor` ignoring the bars ceiling: a
         // result strictly between TOOL_RESULT_MAX_CHARS (4,000) and
-        // BARS_RESULT_MAX_CHARS (6,500) would be collapsed into a
+        // BARS_RESULT_MAX_CHARS (7,000) would be collapsed into a
         // `{truncated, preview}` blob by the shared 4,000 default.
         const midSize = Math.floor(
             (TOOL_RESULT_MAX_CHARS + BARS_RESULT_MAX_CHARS) / 2
@@ -848,6 +854,8 @@ describe('결과 상한 옵션(resultCaps)', () => {
         indexHistory: 9_000,
         swingHistory: 9_000,
         analystViews: 9_000,
+        news: 9_000,
+        fundamentals: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };
@@ -922,5 +930,50 @@ describe('결과 상한 옵션(resultCaps)', () => {
         );
         const result = await exec('get_economy', {}, makeCtx());
         expect(result).toEqual(big(12_000));
+    });
+
+    it('get_news는 standard가 아니라 news 상한을 쓴다', async () => {
+        // 4,000자 기본 상한에서는 항목 8~10건 결과가 앞부분 미리보기 덩어리로 무너졌다.
+        getNews.mockResolvedValue(big(7_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, news: 8_000 } }
+        );
+        const result = await exec('get_news', { symbol: 'AAPL' }, makeCtx());
+        expect(result).toEqual(big(7_000));
+    });
+
+    it('get_news도 news 상한을 넘으면 잘린다', async () => {
+        getNews.mockResolvedValue(big(9_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, news: 8_000 } }
+        );
+        const result = (await exec(
+            'get_news',
+            { symbol: 'AAPL' },
+            makeCtx()
+        )) as { truncated?: boolean };
+        expect(result.truncated).toBe(true);
+    });
+
+    it('에이전트 기본 상한의 news는 8,000자, fundamentals는 5,000자다', () => {
+        expect(AGENT_RESULT_CAPS.news).toBe(8_000);
+        expect(AGENT_RESULT_CAPS.fundamentals).toBe(5_000);
+    });
+
+    it('get_fundamentals는 standard가 아니라 fundamentals 상한을 쓴다', async () => {
+        getFundamentals.mockResolvedValue(big(4_500));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, fundamentals: 5_000 } }
+        );
+        expect(
+            await exec('get_fundamentals', { symbol: 'AAPL' }, makeCtx())
+        ).toEqual(big(4_500));
+        getFundamentals.mockResolvedValue(big(5_500));
+        expect(
+            await exec('get_fundamentals', { symbol: 'AAPL' }, makeCtx())
+        ).toMatchObject({ truncated: true });
     });
 });

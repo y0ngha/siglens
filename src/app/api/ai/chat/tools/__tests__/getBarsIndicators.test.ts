@@ -109,6 +109,7 @@ import {
     aggregateBarsToWeekly,
     calculateIndicators,
     calculateMA,
+    classifyOscillatorZones,
     CONFLUENCE_MIN_BARS,
     CONFLUENCE_TREND_MA_PERIOD,
     evaluateConfluence,
@@ -118,6 +119,8 @@ import {
 import {
     buildFearGreedHistoryView,
     getBarsIndicatorsTool,
+    MA_CROSS_FAST_PERIOD,
+    MA_CROSS_SLOW_PERIOD,
     MA50_PERIOD,
 } from '@/app/api/ai/chat/tools/getBarsIndicators';
 import {
@@ -125,6 +128,7 @@ import {
     buildFearGreedYearRangeLine,
 } from '@/views/symbol/fearGreed/utils/fearGreedFacts';
 import { scoredHistory } from '@/entities/bars/lib/fearGreedWindow';
+import { chartReferenceLevels } from '@/app/api/ai/chat/tools/levelCandidates';
 import { pctVs } from '@/app/api/ai/chat/tools/percent';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
@@ -567,6 +571,107 @@ describe('getBarsIndicatorsTool', () => {
         expect(r.latest.rsiZone).toBe(zone);
     });
 
+    describe('latest.oscillatorZones · oscillatorSummary', () => {
+        type OscillatorLatest = {
+            rsiZone: string | null;
+            oscillatorZones: Record<string, string | null>;
+            oscillatorSummary: string | null;
+        };
+        const readLatest = async (
+            overrides: Record<string, unknown>
+        ): Promise<OscillatorLatest> => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 50 }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: { ...indicators, ...overrides },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day', bars: 10 },
+                ctx,
+                rt
+            )) as { latest: OscillatorLatest };
+            return r.latest;
+        };
+
+        it('다섯 오실레이터 구간과 한 줄 요약을 core 함수 결과 그대로 싣는다', async () => {
+            const latest = await readLatest({
+                rsi: [50, 44.74],
+                stochastic: [{ percentK: 15.96, percentD: 18 }],
+                williamsR: [-80.08],
+                cci: [-103.51],
+                mfi: [32.07],
+            });
+            const expected = classifyOscillatorZones({
+                rsi: 44.74,
+                stochasticK: 15.96,
+                williamsR: -80.08,
+                cci: -103.51,
+                mfi: 32.07,
+            });
+            expect(latest.oscillatorZones).toEqual(expected.zones);
+            expect(latest.oscillatorSummary).toBe(expected.summary);
+            // 손으로 쓴 기대값 — core 함수와 같이 틀리지 않도록 문구까지 고정한다.
+            expect(latest.oscillatorZones).toEqual({
+                rsi: 'neutral',
+                stochastic: 'oversold',
+                williamsR: 'oversold',
+                cci: 'oversold',
+                mfi: 'neutral',
+            });
+            expect(latest.oscillatorSummary).toBe(
+                '3 of 5 oscillators oversold (stochastic %K 15.96, Williams %R -80.08, CCI -103.51); 0 overbought; neutral: RSI 44.74, MFI 32.07'
+            );
+            // rsiZone은 공개 API 소비자를 위해 그대로 남고 zones.rsi와 같다.
+            expect(latest.rsiZone).toBe(latest.oscillatorZones.rsi);
+        });
+
+        it('구간은 직렬화 경계에서 반올림한 값으로 가른다(원값 30.000004는 30이라 oversold)', async () => {
+            const latest = await readLatest({ rsi: [50, 30.000004] });
+            expect(latest.oscillatorZones.rsi).toBe('oversold');
+            expect(latest.rsiZone).toBe('oversold');
+        });
+
+        it('없는 판독값은 0이 아니라 null이라 구간도 null이고 요약이 "not available"로 이름을 댄다', async () => {
+            const latest = await readLatest({
+                stochastic: [],
+                cci: [null],
+                mfi: [Number.NaN],
+            });
+            expect(latest.oscillatorZones).toMatchObject({
+                stochastic: null,
+                cci: null,
+                mfi: null,
+            });
+            expect(latest.oscillatorSummary).toContain(
+                'not available: stochastic %K, CCI, MFI'
+            );
+        });
+
+        it('판독값이 하나도 없으면 요약은 null이고 구간은 모두 null', async () => {
+            const latest = await readLatest({
+                rsi: [],
+                stochastic: [],
+                williamsR: [],
+                cci: [],
+                mfi: [],
+            });
+            expect(latest.oscillatorSummary).toBeNull();
+            expect(Object.values(latest.oscillatorZones)).toEqual([
+                null,
+                null,
+                null,
+                null,
+                null,
+            ]);
+            expect(latest.rsiZone).toBeNull();
+        });
+    });
+
     it('getAssetInfo가 throw해도 fmpSymbol 없이 진행된다', async () => {
         profile.mockResolvedValue('us-equity');
         assetInfo.mockRejectedValue(new Error('db down'));
@@ -781,10 +886,10 @@ describe('getBarsIndicatorsTool', () => {
             rt
         );
         // `fitBarsToBudget` itself must target `BARS_RESULT_MAX_CHARS`
-        // (6,500), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
+        // (7,000), not the shared `TOOL_RESULT_MAX_CHARS` (4,000) — the raw
         // (pre-registry) result should already sit close to the LARGER
         // ceiling, strictly above the smaller one, proving the fit ran
-        // against 6,500 rather than silently trimming to 4,000.
+        // against 7,000 rather than silently trimming to 4,000.
         const rawSerializedLength = JSON.stringify(raw).length;
         expect(rawSerializedLength).toBeLessThanOrEqual(BARS_RESULT_MAX_CHARS);
         expect(rawSerializedLength).toBeGreaterThan(TOOL_RESULT_MAX_CHARS);
@@ -1576,6 +1681,19 @@ describe('getBarsIndicatorsTool', () => {
                     series(Array.from({ length: 451 }, (_, i) => 100 + i))
                 );
                 expect(r.derived.maCross50_200).toBeNull();
+            });
+
+            it('the key name states the SMA periods the scan uses', async () => {
+                const r = await run(
+                    series(Array.from({ length: 500 }, (_, i) => 100 + i))
+                );
+                // A period change must force a key rename (the key is the contract).
+                expect(
+                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                ).toBe('maCross50_200');
+                expect(Object.keys(r.derived)).toContain(
+                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                );
             });
 
             it('is null on intraday timeframes', async () => {
@@ -2735,6 +2853,57 @@ describe('getBarsIndicatorsTool', () => {
                     rt
                 )
             ).toEqual({ symbol: 'AAPL', timeframe: '1Week', found: false });
+        });
+    });
+
+    describe('get_cached_analysis 사다리의 차트 기준과 같은 값을 낸다', () => {
+        it('52주 고저·20일 고저는 derived.range/ranges, 20/50/200일 평균은 latest.ma와 일치한다', async () => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            // 300 bars with a wave, so the 252-bar window drops the first 48 and the extremes sit mid-series.
+            const bars = Array.from({ length: 300 }, (_, i) => ({
+                time: 1_700_000_000 + i * 86_400,
+                open: 100,
+                // a spike inside the first 48 bars, which the 252-bar window leaves out
+                high: i === 10 ? 500 : 110 + (i % 37) + i / 100,
+                low: 90 - (i % 23) - i / 100,
+                close: 100 + (i % 11),
+                volume: 100,
+            }));
+            // Unrounded last values: both paths must print them through the same significant-digit rounding.
+            const series = {
+                ...indicators,
+                ma: {
+                    20: [101.123456789],
+                    50: [102.987654321],
+                    200: [99.5555555],
+                },
+            };
+            getCachedBars.mockResolvedValue({ bars, indicators: series });
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: {
+                    range: { high: number; low: number };
+                    ranges: Record<string, { high: number; low: number }>;
+                };
+                latest: { ma: Record<string, number> };
+            };
+            const chart = chartReferenceLevels(bars, series as never);
+            expect(chart.high52w).toBe(r.derived.range.high);
+            expect(chart.low52w).toBe(r.derived.range.low);
+            expect(chart.high20).toBe(r.derived.ranges['20bars']?.high);
+            expect(chart.low20).toBe(r.derived.ranges['20bars']?.low);
+            expect(chart.sma20).toBe(r.latest.ma['20']);
+            expect(chart.sma50).toBe(r.latest.ma['50']);
+            expect(chart.sma200).toBe(r.latest.ma['200']);
+            // The unrounded input really was rounded (otherwise this test proves nothing about the path).
+            expect(chart.sma50).toBe(102.988);
+            // And the 252-bar window mattered: the full series' highest high is older than the window.
+            expect(chart.high52w).toBeLessThan(500);
         });
     });
 });

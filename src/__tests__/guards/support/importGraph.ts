@@ -182,14 +182,59 @@ export interface ImportRecord {
      * 같은 청크에 실린다 — 번들 구성을 보는 가드는 `dynamic`이 아니라 이것을 본다.
      */
     lazyChunk: boolean;
+    /**
+     * 런타임에 가져오는 이름(`type` 지정자 제외). 기본 import는 `default`, 이름공간·`export *`·
+     * `import()`·`require()`처럼 이름을 알 수 없는 형태는 `*`다. 부수효과 import는 빈 배열.
+     */
+    names: string[];
+    /** 지정자가 있는 소스 줄(1부터). */
+    line: number;
 }
+
+interface LocShape {
+    start: { line: number };
+}
+
+const nameOf = (node: unknown): string | null =>
+    !isNode(node)
+        ? null
+        : node.type === 'Identifier' && typeof node.name === 'string'
+          ? node.name
+          : node.type === 'StringLiteral' && typeof node.value === 'string'
+            ? node.value
+            : null;
+
+/** 지정자 하나가 런타임에 가져오는 이름. 타입 지정자는 빈 배열. */
+const valueNamesOf = (specifiers: unknown): string[] =>
+    Array.isArray(specifiers)
+        ? specifiers.flatMap((s: unknown): string[] => {
+              if (!isNode(s)) return [];
+              if (s.importKind === 'type' || s.exportKind === 'type') return [];
+              switch (s.type) {
+                  case 'ImportSpecifier':
+                      return [nameOf(s.imported) ?? '*'];
+                  case 'ExportSpecifier':
+                      return [nameOf(s.local) ?? '*'];
+                  case 'ImportDefaultSpecifier':
+                      return ['default'];
+                  default:
+                      return ['*'];
+              }
+          })
+        : [];
+
+const lineOf = (node: AstNode): number => {
+    const loc = node.loc as LocShape | undefined;
+    return loc?.start.line ?? 0;
+};
 
 /** 노드 하나가 만드는 import 기록(없으면 빈 배열). */
 function recordOf(node: AstNode): ImportRecord[] {
     const record = (
         specifier: string | null,
         typeOnly: boolean,
-        kind: 'static' | 'import()' | 'require'
+        kind: 'static' | 'import()' | 'require',
+        names: string[] = ['*']
     ): ImportRecord[] =>
         specifier
             ? [
@@ -198,6 +243,8 @@ function recordOf(node: AstNode): ImportRecord[] {
                       typeOnly,
                       dynamic: kind !== 'static',
                       lazyChunk: kind === 'import()',
+                      names,
+                      line: lineOf(node),
                   },
               ]
             : [];
@@ -207,7 +254,8 @@ function recordOf(node: AstNode): ImportRecord[] {
                 stringSource(node.source),
                 node.importKind === 'type' ||
                     allSpecifiersAreTypes(node.specifiers),
-                'static'
+                'static',
+                valueNamesOf(node.specifiers)
             );
         case 'ExportNamedDeclaration':
         case 'ExportAllDeclaration':
@@ -215,7 +263,10 @@ function recordOf(node: AstNode): ImportRecord[] {
                 stringSource(node.source),
                 node.exportKind === 'type' ||
                     allSpecifiersAreTypes(node.specifiers),
-                'static'
+                'static',
+                node.type === 'ExportAllDeclaration'
+                    ? ['*']
+                    : valueNamesOf(node.specifiers)
             );
         case 'ImportExpression':
             return record(stringSource(node.source), false, 'import()');

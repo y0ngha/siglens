@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { defined } from '@/shared/test-utils/defined';
 import {
     findSignalHub,
+    isHubGuide,
     isSignalHubIndexable,
     SIGNAL_HUB_MIN_INDEXABLE_ROWS,
     SIGNAL_HUBS,
@@ -24,6 +26,17 @@ describe('SIGNAL_HUBS', () => {
         for (const hub of SIGNAL_HUBS) {
             expect(hub.slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
         }
+    });
+
+    it('정의 문구 키는 골든·데드크로스 허브에만 있고 서로 짝이 맞다', () => {
+        const withDefinition = SIGNAL_HUBS.filter(
+            hub => hub.definitionKey !== undefined
+        ).map(hub => [hub.signalType, hub.definitionKey]);
+
+        expect(withDefinition).toEqual([
+            ['golden_cross', 'definitionGoldenCross'],
+            ['death_cross', 'definitionDeathCross'],
+        ]);
     });
 
     it('빌려 오는 가이드 항목이 시드에 실제로 있다 — 없으면 설명 카드가 조용히 빠진다', () => {
@@ -64,5 +77,21 @@ describe('isSignalHubIndexable', () => {
             false
         );
         expect(isSignalHubIndexable(SIGNAL_HUB_MIN_INDEXABLE_ROWS)).toBe(true);
+    });
+});
+
+describe('isHubGuide', () => {
+    const golden = defined(findSignalHub('golden-cross'), 'golden-cross hub');
+
+    it('가이드 카테고리와 슬러그가 모두 같을 때만 참이다', () => {
+        expect(isHubGuide(golden, { category: 'indicators', slug: 'ma' })).toBe(
+            true
+        );
+        expect(isHubGuide(golden, { category: 'howto', slug: 'ma' })).toBe(
+            false
+        );
+        expect(
+            isHubGuide(golden, { category: 'indicators', slug: 'rsi' })
+        ).toBe(false);
     });
 });

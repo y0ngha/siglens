@@ -36,11 +36,8 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
 - Chat prompt builder
 - Usage limit policy: "checkAnalysisLimit / checkChatbotLimit"
 
-> **2026-09 갱신**: siglens에는 더 이상 종목 페이지 자체 챗봇이 없다 —
-> `/[symbol]`의 플로팅 버튼은 `ai.siglens.io`로 보내는 링크일 뿐이다. 위
-> "Chat prompt builder"/"checkChatbotLimit" 트리거는 core 레포 자체 작업에
-> 여전히 적용되는 규칙이며, siglens 쪽에 챗 어댑터를 새로 만드는 작업은
-> 없다 — siglens의 유일한 챗은 `ai.siglens.io` 에이전트뿐이다.
+> siglens에는 종목 페이지 챗봇이 없다(`/[symbol]`의 플로팅 버튼은 `ai.siglens.io` 링크, 유일한 챗은 그 에이전트).
+> 위 챗 트리거는 core 레포 작업에 적용되며, siglens 쪽에 챗 어댑터를 새로 만들지 않는다.
 
 **What you must do when triggered**:
 
@@ -211,8 +208,7 @@ app  →  views  →  widgets  →  features  →  entities  →  shared
 
 ### oxlint 강제
 
-- 아래 방향 레이어 규칙은 oxlint `no-restricted-imports`(`.oxlintrc.json`의 레이어별 override)가 강제한다.
-- 순환은 `src/__tests__/guards/importCycles.test.ts`, widgets 간 import는 `src/__tests__/guards/noCrossWidgetImports.test.ts`, barrel(`index.ts`와 re-export 전용 파일)은 `src/__tests__/guards/noBarrelFiles.test.ts`가 강제한다.
+- 아래 방향 레이어 규칙은 oxlint `no-restricted-imports`(`.oxlintrc.json`의 레이어별 override)가, 순환·widgets 간 import는 위에 적은 가드가, barrel(`index.ts`와 re-export 전용 파일)은 `src/__tests__/guards/noBarrelFiles.test.ts`가 강제한다.
 - 위 가드들이 다루지 않는 같은 레이어 슬라이스 간 import 금지(entities·features·shared 예외 밖)는 리뷰 시점 규칙이다. 위반 시 PR 머지 불가.
 
 ---

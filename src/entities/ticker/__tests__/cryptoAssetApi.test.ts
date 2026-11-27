@@ -10,18 +10,14 @@ import {
     fetchCryptoAssetList,
 } from '@/entities/ticker/cryptoAssetApi';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { orderColumnName } from '@/__tests__/utils/orderColumnName';
+import { renderSql } from '@/__tests__/utils/renderSql';
 import type { CryptoAssetRecord, SiglensDatabase } from '@/shared/db/types';
 
-type SqlLike = {
-    queryChunks?: Array<SqlLike | { name?: string }>;
-    name?: string;
-};
-
-function collectColumnNames(node: SqlLike): string[] {
-    if (node.name) return [node.name];
-    if (!node.queryChunks) return [];
-    return node.queryChunks.flatMap(chunk =>
-        collectColumnNames(chunk as SqlLike)
+/** where 조건에 쓰인 컬럼 이름(`"table"."col"`의 col)을 렌더링된 SQL에서 읽는다. */
+function collectColumnNames(node: unknown): string[] {
+    return [...renderSql(node).sql.matchAll(/(?:"[^"]+"\.)?"([^"]+)"/g)].map(
+        match => match[1]
     );
 }
 
@@ -184,16 +180,27 @@ describe('DrizzleCryptoAssetRepository', () => {
             expect(orderBy).toHaveBeenCalledTimes(1);
             const orderByArgs = orderBy.mock.calls[0];
             expect(orderByArgs).toHaveLength(2);
-            // 1st arg: sql CASE object — Drizzle's sql`` template result carries a
-            // queryChunks array (the SQL fragment tree). Asserting the property is more
-            // precise than a bare typeof-object check and distinguishes it from a column ref.
-            const caseArg = orderByArgs[0] as SqlLike;
-            expect(caseArg).toHaveProperty('queryChunks');
-            // 2nd arg: desc(cryptoAssets.circulatingSupply) — Drizzle wraps the column
-            // in a SQL chunk tree; collectColumnNames recurses into queryChunks to find
-            // the column name node, confirming the tiebreak sorts by circulating_supply.
-            const descArg = orderByArgs[1] as SqlLike;
-            expect(collectColumnNames(descArg)).toContain('circulating_supply');
+            // 1st arg: relevance CASE — exact match, then prefix match, then the rest.
+            const rendered = renderSql(orderByArgs[0]);
+            expect(rendered.sql.replace(/\s+/g, ' ').trim()).toBe(
+                'CASE WHEN lower("crypto_assets"."korean_name") = lower($1) OR lower("crypto_assets"."symbol") = lower($2) OR lower("crypto_assets"."name") = lower($3) THEN $4 WHEN "crypto_assets"."korean_name" ILIKE $5 OR "crypto_assets"."symbol" ILIKE $6 OR "crypto_assets"."name" ILIKE $7 THEN $8 ELSE $9 END'
+            );
+            // 순위 값(정확 0 < 접두 1 < 그 외 2)이 곧 정렬 계약이다.
+            expect(rendered.params).toEqual([
+                'btc',
+                'btc',
+                'btc',
+                0,
+                'btc%',
+                'btc%',
+                'btc%',
+                1,
+                2,
+            ]);
+            // 2nd arg: desc(cryptoAssets.circulatingSupply) tie-break.
+            expect(orderColumnName(orderByArgs[1])).toBe(
+                'circulating_supply desc'
+            );
         });
 
         it('limit 인자를 그대로 전달한다', async () => {
@@ -214,11 +221,10 @@ describe('DrizzleCryptoAssetRepository', () => {
             const repo = new DrizzleCryptoAssetRepository(db);
             await repo.search('비트코', 10);
             expect(where).toHaveBeenCalledTimes(1);
-            // The or() expression passed to .where() must reference the korean_name column.
-            // Drizzle nests SQL objects (or → [ilike, ilike, ilike]); we recurse into
-            // queryChunks to collect all column `.name` values. This assertion fails if
-            // korean_name is removed from the ilike OR-condition.
-            const condition = where.mock.calls[0][0] as SqlLike;
+            // The or() expression passed to .where() must reference the korean_name column;
+            // the rendered SQL fails this assertion if korean_name is removed from the
+            // ilike OR-condition.
+            const condition = where.mock.calls[0][0];
             expect(collectColumnNames(condition)).toContain('korean_name');
         });
     });

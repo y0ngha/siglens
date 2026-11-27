@@ -1,4 +1,5 @@
 import {
+    isDailyOrLonger,
     isRegularSessionOpen,
     type MarketSessionSpec,
     type Timeframe,
@@ -21,6 +22,7 @@ export const STALE_THRESHOLD_MS: Record<Timeframe, number> = {
     '1Hour': 30 * MS_PER_MINUTE,
     '4Hour': 30 * MS_PER_MINUTE,
     '1Day': 4 * MS_PER_HOUR,
+    '1Week': 4 * MS_PER_HOUR,
 };
 
 /**
@@ -30,7 +32,7 @@ export const STALE_THRESHOLD_MS: Record<Timeframe, number> = {
  * 화면 힌트일 뿐이며 서버 캐시·재분석 쿨다운과 무관하다.
  *
  * `session`이 없거나 24/7 시장(크립토)이면 시계 임계값만 쓴다. 정규 세션이 있는 시장은:
- * - 일봉: 분석 뒤 정규장이 한 번이라도 마감했거나(새 일봉 완성), 장이 열려 있고 임계값을
+ * - 일봉·주봉: 분석 뒤 정규장이 한 번이라도 마감했거나(새 일봉 완성), 장이 열려 있고 임계값을
  *   넘겼을 때. 마감 뒤 저녁·주말·휴장일에는 새 봉이 없으므로 오래되지 않았다.
  * - 분·시간봉: 장이 열려 있으면 시계 임계값, 닫혀 있으면 분석이 마지막 마감 이전일 때만.
  */
@@ -53,7 +55,7 @@ export function isAnalysisStale(
         lastClose !== null && analyzedTime < lastClose.getTime();
     const isOpen = isRegularSessionOpen(session, now);
 
-    if (timeframe === '1Day')
+    if (isDailyOrLonger(timeframe))
         return closedSinceAnalysis || (isOpen && clockStale);
     return isOpen ? clockStale : closedSinceAnalysis;
 }

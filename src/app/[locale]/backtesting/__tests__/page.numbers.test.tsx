@@ -119,7 +119,7 @@ describe('/backtesting numbers equal data.json', () => {
         const excess = bench.perTradeExcess;
         expect(textOf(card)).toContain(signed(summary.overall.meanRet, 2));
         expect(textOf(card)).toContain(
-            `같은 종목을 기간 중 어느 날에 사든 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 ${signed(excess.meanPct, 2)} (95% 범위 ${signed(excess.ci95.low, 2)}~${signed(excess.ci95.high, 2)})`
+            `같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면 거래당 평균 차이는 ${signed(excess.meanPct, 2)} (95% 범위 ${signed(excess.ci95.low, 2)}~${signed(excess.ci95.high, 2)})`
         );
     });
 

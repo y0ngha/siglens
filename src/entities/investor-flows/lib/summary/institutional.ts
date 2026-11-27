@@ -1,7 +1,9 @@
-import type {
-    InstitutionalHolderChange,
-    InstitutionalQuarter,
-    InvestorFlowsScorecard,
+import {
+    readPutCallRatio,
+    type InstitutionalHolderChange,
+    type InstitutionalQuarter,
+    type InvestorFlowsScorecard,
+    type PutCallReading,
 } from '@y0ngha/siglens-core';
 import type {
     NetFlow,
@@ -69,13 +71,41 @@ export function summarizeHolder(
 const PUT_CALL_NOTE =
     '13F option notional (underlying value, not premium); often hedges, not directional bets.';
 
+/**
+ * 13F 풋/콜 블록에 `reading`(명목금액 기준으로 읽은 쪽)을 `priorPutCallValueRatio` 바로 뒤에 끼운다. 읽는 값은 블록이 **출력하는**
+ * `putCallValueRatio`라 모델이 인용하는 숫자와 쪽이 어긋날 수 없다. 기존 `reading`이 있으면 다시 계산한다. 평가 재생이 기록된
+ * 옛 결과에 같은 함수를 부르도록 순수 함수로 둔다.
+ */
+export function withPutCallValueReading<
+    P extends { putCallValueRatio: number | null },
+>(putCall: P): P & { reading: PutCallReading | null } {
+    const reading = readPutCallRatio(putCall.putCallValueRatio, 'notional');
+    const entries = Object.entries(putCall).flatMap(
+        ([key, value]): [string, unknown][] => {
+            if (key === 'reading') return [];
+            return key === 'priorPutCallValueRatio'
+                ? [
+                      [key, value],
+                      ['reading', reading],
+                  ]
+                : [[key, value]];
+        }
+    );
+    const withReading = Object.fromEntries(
+        entries.some(([key]) => key === 'reading')
+            ? entries
+            : [...entries, ['reading', reading]]
+    );
+    return withReading as P & { reading: PutCallReading | null };
+}
+
 /** 점수표의 13F 옵션 풋/콜 비율을 옮긴다. 옵션 분기가 없으면 `null`. */
 export function summarizePutCall(
     scorecard: InvestorFlowsScorecard
 ): SummaryPutCall | null {
     const m = scorecard.institutional.metrics;
     if (m.optionsPeriod === null) return null;
-    return {
+    return withPutCallValueReading({
         period: m.optionsPeriod,
         putCallValueRatio:
             m.putCallValueRatio === null
@@ -86,5 +116,5 @@ export function summarizePutCall(
                 ? null
                 : round(m.priorPutCallValueRatio, SUMMARY_RATIO_DIGITS),
         note: PUT_CALL_NOTE,
-    };
+    });
 }

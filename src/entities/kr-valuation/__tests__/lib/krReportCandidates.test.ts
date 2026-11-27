@@ -151,15 +151,17 @@ describe('shareReportOrder', () => {
         ]);
     });
 
-    it('3분기는 주식 표가 없어 같은 해 반기 → 전년 사업보고서를 본다', () => {
+    it('3분기는 그 보고서 자신의 표가 먼저고, 비어 있으면 같은 해 반기 → 전년 사업보고서를 본다', () => {
         expect(shareReportOrder(2026, '11014')).toEqual([
+            { year: 2026, reportCode: '11014' },
             { year: 2026, reportCode: '11012' },
             { year: 2025, reportCode: '11011' },
         ]);
     });
 
-    it('1분기는 같은 해 반기가 아직 없으니 전년 사업보고서 하나다', () => {
+    it('1분기는 자기 표 다음에 전년 사업보고서다(같은 해 반기는 아직 없다)', () => {
         expect(shareReportOrder(2026, '11013')).toEqual([
+            { year: 2026, reportCode: '11013' },
             { year: 2025, reportCode: '11011' },
         ]);
     });

@@ -8,6 +8,8 @@ import {
     extractShareTotals,
     extractStatementFigures,
 } from '../../lib/dartAmounts';
+import { defined } from '@/shared/test-utils/defined';
+import { refreshShareCounts } from '../../lib/refreshShareCounts';
 import type { StatementFigures } from '../../model';
 import samsungCardAnnual from '../fixtures/samsungcard-2025-annual-cfs.json';
 import samsungCardH1 from '../fixtures/samsungcard-2026-h1-cfs.json';
@@ -136,6 +138,7 @@ describe('computeKrValuation (삼성카드 2026 반기)', () => {
             epsShares: 'issued_incl_treasury',
             bpsShares: 'outstanding_ex_treasury',
             sharesAsOf: '2026-06-30',
+            sharesSource: 'dart',
             priceDate: '2026-11-20',
         });
         expect(v?.basis.note).toBe(
@@ -224,6 +227,29 @@ describe('computeKrValuation (삼성카드 2026 반기)', () => {
             nullReason: { pe: 'missing', pb: 'missing' },
         });
         expect(v?.basis.sharesAsOf).toBeNull();
+        expect(v?.basis.sharesSource).toBeNull();
+    });
+
+    it('KRX 상장주식수로 갱신한 주식수는 출처·기준일을 밝히고 EPS·BPS 분모로 쓴다', () => {
+        const refreshed = refreshShareCounts(defined(SAMSUNG_CARD_SHARES), {
+            asOf: '2026-09-30',
+            common: 118_000_000,
+            preferred: null,
+        });
+        const v = computeKrValuation({ ...HALF, shares: refreshed });
+        expect(v?.basis).toMatchObject({
+            sharesSource: 'dart_krx',
+            sharesAsOf: '2026-09-30',
+        });
+        expect(v?.basis.note).toContain(
+            'Share counts are the DART share table updated to the KRX listed share count of 2026-09-30'
+        );
+        expect(v?.epsTtm).toBeCloseTo(620_770e6 / 118_000_000, 6);
+        expect(v?.bps).toBeCloseTo(8_904_529e6 / (106_710_695 + 2_141_109), 6);
+    });
+
+    it('DART 표 그대로인 주식수에는 KRX 문구가 붙지 않는다', () => {
+        expect(computeKrValuation(HALF)?.basis.note).not.toContain('KRX');
     });
 
     it.each([
@@ -283,6 +309,7 @@ describe('providerKrValuation', () => {
             epsShares: 'provider_implied',
             bpsShares: 'provider_implied',
             sharesAsOf: null,
+            sharesSource: null,
             priceDate: null,
         });
     });

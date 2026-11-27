@@ -172,7 +172,7 @@ async function ingestMarket(
  * 목록 심볼은 CUSIP이 없어 별칭 해석(`BRK.B`·`BRK B`·`BRK/B` → `BRK-B`)으로 맞춘다.
  *
  * ⚠️ 비상업 라이선스 — `deps.isEnabled()`가 false면 **아무 요청도 보내지 않고** DB도 읽지 않고 끝낸다
- * (`shared/api/exchange/regShoThresholdDataEnabled.ts`, 이슈 #1042). 거래소 서버라 SEC 요청 예산과는 무관하다.
+ * (`shared/api/exchange/regShoThresholdDataEnabled.ts`). 거래소 서버라 SEC 요청 예산과는 무관하다.
  */
 export async function runRegShoIngest(
     deps: IngestRegShoDeps

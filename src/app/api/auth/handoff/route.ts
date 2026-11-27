@@ -29,11 +29,12 @@ export const dynamic = 'force-dynamic';
  * route, which sets the browser-binding cookie and comes straight back with a
  * state — see `handoff/start/route.ts` for the login-CSRF rationale. Start
  * always supplies a valid state, so this cannot loop.
+ *
+ * The only side effect besides issuing a code is clearing the non-secret,
+ * non-auth presence hint on the no-user branch: idempotent, and a cross-site
+ * trigger can at worst cost one missed automatic sign-in. The route is a
+ * browser-navigation hop by design (`noStoreRedirect`, no-store).
  */
-// The only side effect besides issuing a code is clearing the non-secret,
-// non-auth presence hint on the no-user branch: idempotent, and a cross-site
-// trigger can at worst cost one missed automatic sign-in. The route is a
-// browser-navigation hop by design (`noStoreRedirect`, no-store).
 // react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     const params = request.nextUrl.searchParams;

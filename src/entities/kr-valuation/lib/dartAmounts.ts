@@ -1,5 +1,16 @@
-import type { KrReportCode, ShareTotals, StatementFigures } from '../model';
-import { DART_SHARE_KIND_ROWS, DART_SHARE_TOTAL_ROW } from './dartSourceTokens';
+import type {
+    KrReportCode,
+    ShareKindCounts,
+    ShareTotals,
+    StatementFigures,
+} from '../model';
+import {
+    DART_SHARE_COMMON_ROWS,
+    DART_SHARE_KIND_ROWS,
+    DART_SHARE_PREFERRED_ROWS,
+    DART_SHARE_TOTAL_ROW,
+    normalizeShareRowLabel,
+} from './dartSourceTokens';
 
 /**
  * DART `fnlttSinglAcntAll`(단일회사 전체 재무제표)와 `stockTotqySttus`(주식의 총수 현황) 응답 행에서 PER·PBR 계산에 쓰는 숫자만
@@ -161,18 +172,61 @@ export function extractStatementFigures(
 const treasuryOf = (row: DartRow): number =>
     parseDartAmount(row.tesstk_co) ?? 0;
 
+const isShareRowOf =
+    (labels: readonly string[]) =>
+    (row: DartRow): boolean =>
+        typeof row.se === 'string' &&
+        labels.includes(normalizeShareRowLabel(row.se));
+
+/** 줄 하나의 발행·자기주식·유통주식수. 발행주식 총수가 비었거나 0이면 null. */
+function shareRowCounts(row: DartRow): ShareKindCounts | null {
+    const issued = parseDartAmount(row.istc_totqy);
+    if (issued === null || issued <= 0) return null;
+    const treasury = treasuryOf(row);
+    return {
+        issued,
+        treasury,
+        outstanding: parseDartAmount(row.distb_stock_co) ?? issued - treasury,
+    };
+}
+
+/** 한 종류(보통주 또는 우선주)로 분류되고 숫자가 있는 줄들의 주식수. */
+function kindRowCounts(
+    rows: readonly DartRow[],
+    labels: readonly string[]
+): ShareKindCounts[] {
+    return rows
+        .filter(isShareRowOf(labels))
+        .flatMap(row => shareRowCounts(row) ?? []);
+}
+
+/** 줄별 주식수의 합. 줄이 없으면 null. */
+function sumKindCounts(
+    counts: readonly ShareKindCounts[]
+): ShareKindCounts | null {
+    return counts.reduce<ShareKindCounts | null>(
+        (sum, next) =>
+            sum === null
+                ? next
+                : {
+                      issued: sum.issued + next.issued,
+                      treasury: sum.treasury + next.treasury,
+                      outstanding: sum.outstanding + next.outstanding,
+                  },
+        null
+    );
+}
+
 /**
- * 주식의 총수 현황 행 → 합계(보통주 + 우선주)의 발행·자기주식·유통주식수. 합계 줄이 비었으면 보통주·우선주 줄을 더한다.
- * 분기보고서는 이 표를 싣지 않아 모든 줄이 `-`로 오고(실측), 그때는 null이다 — 호출부가 숫자가 있는 앞선 보고서를 찾는다.
+ * 주식의 총수 현황 행 → 합계(보통주 + 우선주)의 발행·자기주식·유통주식수와 종류별(보통주·우선주) 주식수. 합계 줄이 비었으면 보통주·우선주
+ * 줄을 더한다. 종류별 줄의 구분 값은 회사마다 달라(`보통주식`·`의결권있는 주식`·`의결권 있는\n보통주` 등) `dartSourceTokens`가 정규화해 맞댄다.
+ * 분기보고서는 이 표를 싣지 않는 회사가 많아 모든 줄이 `-`로 오고(실측), 그때는 null이다 — 호출부가 숫자가 있는 앞선 보고서를 찾는다.
  */
 export function extractShareTotals(
     rows: readonly DartRow[]
 ): ShareTotals | null {
     const total = rows.find(row => row.se === DART_SHARE_TOTAL_ROW);
-    const kinds = rows.filter(
-        row =>
-            typeof row.se === 'string' && DART_SHARE_KIND_ROWS.includes(row.se)
-    );
+    const kinds = rows.filter(isShareRowOf(DART_SHARE_KIND_ROWS));
     const totalIssued =
         total === undefined ? null : parseDartAmount(total.istc_totqy);
     const rowsToSum =
@@ -191,11 +245,16 @@ export function extractShareTotals(
         : issued - treasury;
     if (outstanding <= 0) return null;
     const settled = rowsToSum[0]?.stlm_dt;
+    const preferredRows = kindRowCounts(rows, DART_SHARE_PREFERRED_ROWS);
     return {
         issued,
         treasury,
         outstanding,
         settledOn:
             typeof settled === 'string' && settled !== '' ? settled : null,
+        source: 'dart',
+        common: sumKindCounts(kindRowCounts(rows, DART_SHARE_COMMON_ROWS)),
+        preferred: sumKindCounts(preferredRows),
+        preferredIsMixed: preferredRows.length > 1,
     };
 }

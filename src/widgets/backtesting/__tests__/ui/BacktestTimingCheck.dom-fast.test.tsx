@@ -32,7 +32,7 @@ describe('BacktestTimingCheck', () => {
         render(<BacktestTimingCheck stats={makeStats()} />);
         expect(
             screen.getByText(
-                '매매마다 같은 종목을 기간 중 어느 날에 사든 같은 날수만큼 들고 있었을 때의 평균 수익률을 빼면, 거래당 평균 차이는 -0.06%였어요 (95% 범위 -0.40%~+0.30%, 690건).'
+                '매매마다 같은 종목을 기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균 수익률과 비교하면, 거래당 평균 차이는 -0.06%였어요 (95% 범위 -0.40%~+0.30%, 690건).'
             )
         ).toBeInTheDocument();
     });

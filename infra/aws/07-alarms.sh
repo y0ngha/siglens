@@ -28,11 +28,12 @@ LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
 # 피할 수 없는 오탐이었고, 그 노이즈가 진짜 알람을 묻었다.
 #
 #   P1  지금 당장 봐야 하는 것. 사이트가 죽었거나 죽기 직전. ALARM + OK 양방향.
-#   P2  degrade. 오늘 중 보면 되는 것. **ALARM만** — 복구 알림은 보내지 않는다.
+#   P2  degrade. 오늘 중 보면 되는 것. ALARM + OK 양방향(같은 저우선 토픽).
+#       2026-11: 점수 알람 하나로 합쳐 발동이 드물어졌고, 회복 여부를 콘솔로 확인하는 수고가 더 커서 OK도 받는다.
 #
 # 판정 기준: "이 알람을 받고 지금 하던 일을 멈출 것인가?" 아니면 P2다.
 P1="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
-P2="--alarm-actions $ALARM_SNS_LOW"
+P2="--alarm-actions $ALARM_SNS_LOW --ok-actions $ALARM_SNS_LOW"
 
 # 2026-10 무료 티어 통합: 알람 40개·커스텀 메트릭 20여 개가 무료 티어(알람 지표 10개,
 # 커스텀 메트릭 10개)를 크게 넘어 유료였다. 원인별 알람 30개를 **점수 알람 2개**로 합쳤다.
@@ -74,7 +75,7 @@ P2="--alarm-actions $ALARM_SNS_LOW"
 #   | sort n desc
 # P2 (로그 그룹 /siglens/app):
 #   fields @timestamp, @message
-#   | parse @message /(?<cause>getSeedBarsStatic failed|\[isr-cache\] s3 get failed|\[isr-cache\] s3 set failed|\[isr-cache\] tag sync failed|\[isr-cache\] tag publish failed|\[isr-cache\] tag prune failed|\[getOrSetCache\] get failed|\[getOrSetCache\] set failed|getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|getMarketFearGreedCryptoStatic failed|\[loadMarketSignals:kr\] getMarketSummaryStatic failed|\[loadMarketSignals:kr\] getSectorSignalsStatic failed|\[seo-prewarm\] unit-error|\[seo-prewarm\] unit-timeout|\[seo-prewarm\] batch failed|\[seo-prewarm\] batch deadline reached|NAVER_CLIENT_ID\/SECRET|non-OK response|\[KR_EQUITY_SESSION\]|\[seo-prewarm\] redis unavailable|\[kr-tickers\] sync failed|\[agent\] busy|\[agent\] web search budget exhausted|\[xPosts\] daily read budget exhausted)/
+#   | parse @message /(?<cause>getSeedBarsStatic failed|\[isr-cache\] s3 get failed|\[isr-cache\] s3 set failed|\[isr-cache\] tag sync failed|\[isr-cache\] tag publish failed|\[isr-cache\] tag prune failed|\[getOrSetCache\] get failed|\[getOrSetCache\] set failed|getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|getMarketFearGreedCryptoStatic failed|\[loadMarketSignals:kr\] getMarketSummaryStatic failed|\[loadMarketSignals:kr\] getSectorSignalsStatic failed|\[market:kr\] summary index quotes missing|\[seo-prewarm\] unit-error|\[seo-prewarm\] unit-timeout|\[seo-prewarm\] batch failed|\[seo-prewarm\] batch deadline reached|NAVER_CLIENT_ID\/SECRET|non-OK response|\[KR_EQUITY_SESSION\]|\[seo-prewarm\] redis unavailable|\[kr-tickers\] sync failed|\[agent\] busy|\[agent\] web search budget exhausted|\[xPosts\] daily read budget exhausted)/
 #   | filter ispresent(cause)
 #   | stats count() as n by cause
 #   | sort n desc
@@ -248,18 +249,26 @@ put_alert_filter siglens-agent-x-budget '"[xPosts] daily read budget exhausted"'
 #     `[loadMarketSignals:<scope id>]` 접두로 로그를 남기고 빈 배열로 fail-open하면
 #     canonical null + noindex가 ISR에 굳는다. `:kr`만 센다). 둘 다 실패한 KR 한 번의 렌더는
 #     2줄(요약 + 섹터 로더, React `cache()`로 요청당 한 번)이라 25 x 2 = 50점이다.
-#     ⚠️ yahoo 429·장애는 여기 걸리지 않는다: `YahooMarketProvider.getQuote`가 오류를
-#     `null`로 접고(`[YahooMarketProvider] getQuote failed` 경고만 남는데 이를 매치하는
-#     필터는 없다) core가 그 null을 0-가격 행으로 바꿔 배열이 비지 않으므로, 던지지도
-#     `degraded`(indices·sectors·stocks가 전부 빔)로 판정되지도 않는다.
-#     예전 `[MarketContent:kr]`는 코드에 없는 문구라 한 번도 매치되지 않았다 — 문구가 소스에
-#     있는지는 src/__tests__/guards/alarmFilterPhrases.test.ts가 지킨다.
-# 25점(가중치 변경 없음): siglens-p2는 15분 합계 100점 이상에서 발화한다. KR 한 번의 완전 degrade는
-# 50점이라 **KR 단독 한 번의 재생성으로는 임계값에 못 미친다**(같은 창에 다른 신호가 더해져야 한다).
+#   - `[market:kr] summary index quotes missing` — `/market/kr`. yahoo 429·장애는
+#     `YahooMarketProvider.getQuote`가 `null`로 접고 core가 0-가격 행으로 바꿔 던지지 않는다.
+#     `getMarketSummaryStatic`의 `unstable_cache` 콜백이 **지수 행**이 0일 때만 이 줄을 남긴다
+#     (섹터 ETF 결측은 얇은 거래의 일상이라 세지 않는다). 콜백은 캐시 미스에서만 돌아 실제
+#     provider 조회 1회(캐시 1시간)당 한 줄이고, 렌더 수·로케일 수와 무관하다. 지수가 0인 원인이
+#     장애인지 종목 없음인지는 이 줄이 가르지 않는다. 전부 0이면 같은 콜백이
+#     `[market:kr] summary quotes all missing`을 던져(0원 번들은 Data Cache에 굳지 않는다)
+#     위 `[loadMarketSignals:kr] getMarketSummaryStatic failed` 줄로 센다. 그 렌더는
+#     revalidate 300초 핀이 걸리고, 섹터 로더까지 비어 `degraded`면 noindex 표식도 붙는다.
+#   - 브리핑 seed 읽기 실패(`[MarketContent:kr] peekBriefingStatic failed`)는 필터에 넣지 않는다.
+#     `peekBriefingStatic`이 `cacheNonNull`로 실패를 null로 삼키고, 브리핑은 클라가 직접 받는
+#     소프트 실패라 사람을 깨울 일이 아니다. 예전 `[MarketContent:kr]` 필터는 코드에 없는 문구라
+#     한 번도 매치되지 않았다 — 문구가 소스에 있는지는
+#     src/__tests__/guards/alarmFilterPhrases.test.ts가 지킨다.
+# 25점(가중치 변경 없음): siglens-p2는 15분 합계 100점 이상에서 발화한다. `[market:kr]` 줄은 provider
+# 조회당 한 번이라 캐시 1시간에 25점 한 번이다. KR 한 번의 완전 degrade는 50점이라 **KR 단독 한 번의 재생성으로는 임계값에 못 미친다**(같은 창에 다른 신호가 더해져야 한다).
 # US·crypto는 실패 1회가 로그 2줄이라 50점 → 15분 안에 두 라우트(또는 같은 라우트 2회)가
 # 실패하면 발화한다. 네 페이지는 약 1시간마다 재생성되므로 한 15분 창에 나올 수 있는 실패는
 # 많아야 4회다 — 그 이상을 요구하는 가중치는 전부 실패해도 울리지 않는다.
-put_alert_filter siglens-market-data-loader-failed '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed" ?"[loadMarketSignals:kr] getMarketSummaryStatic failed" ?"[loadMarketSignals:kr] getSectorSignalsStatic failed"' P2 25
+put_alert_filter siglens-market-data-loader-failed '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed" ?"[loadMarketSignals:kr] getMarketSummaryStatic failed" ?"[loadMarketSignals:kr] getSectorSignalsStatic failed" ?"[market:kr] summary index quotes missing"' P2 25
 
 # 설정/자격증명 신호 (네이버 뉴스 + KR 캘린더 지평선 + prewarm redis 통합).
 # "발생 자체가 이상 신호"라 1건=100점.

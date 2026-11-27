@@ -460,7 +460,7 @@ describe('SymbolLayoutHeader', () => {
     it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {
         // 칩은 이제 서버 스냅샷을 렌더하는 순수 컴포넌트지만, ErrorBoundary는
         // 그대로 둔다 — 칩이 어떤 이유로든 throw해도 헤더 셸은 살아남아야 한다
-        // (#513이 지키던 SSR 실패 모드와 같은 계약).
+        // (SSR 실패 모드와 같은 계약).
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => undefined);

@@ -3,6 +3,7 @@ import type { SQL } from 'drizzle-orm';
 import {
     DrizzleMailAlertDeliveryRepository,
     DrizzleMailAlertSubscriberRepository,
+    DrizzlePriceAlertRepository,
 } from '@/entities/mail-alert/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 
@@ -56,15 +57,16 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
         ]);
         expect(row['email']).toBe('a@x.io');
         const owner = render(row['userId']);
-        expect(owner.sql).toContain('"users"."email_verified"');
-        expect(owner.sql).toContain('not exists');
+        expect(owner.sql).toBe(
+            '(select "users"."id" from "users" where "users"."email" = $1 and "users"."email_verified" and not exists (select 1 from "mail_alert_subscribers" where "mail_alert_subscribers"."user_id" = "users"."id"))'
+        );
         expect(owner.params).toEqual(['a@x.io']);
         const config = onlyCallArg(onConflictDoUpdate) as {
             set: Record<string, unknown>;
         };
         // 처음 동의 값은 충돌 갱신 대상이 아니다.
         expect(Object.keys(config.set).sort()).toEqual(['updatedAt', 'userId']);
-        expect(render(config.set['userId']).sql).toContain(
+        expect(render(config.set['userId']).sql).toBe(
             'coalesce("mail_alert_subscribers"."user_id", excluded.user_id)'
         );
     });
@@ -136,7 +138,7 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
         }
     );
 
-    it('findAllForDelivery: 항목이 있거나 보유·관심종목 함께 받기가 켜진 구독자만 묶는다', async () => {
+    it('findAllForDelivery: 항목이 있거나 보유·관심종목 함께 받기가 켜졌거나 살아 있는 가격대 알림이 있는 구독자만 묶는다', async () => {
         const orderBy = vi.fn().mockResolvedValue([]);
         const having = vi.fn((_condition: unknown) => ({ orderBy }));
         const db = {
@@ -152,8 +154,32 @@ describe('DrizzleMailAlertSubscriberRepository', () => {
         await new DrizzleMailAlertSubscriberRepository(db).findAllForDelivery();
 
         expect(render(onlyCallArg(having)).sql).toBe(
-            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0'
+            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0 or exists (select 1 from "price_alerts" where "price_alerts"."subscriber_id" = "mail_alert_subscribers"."id" and "price_alerts"."status" = \'active\' and "price_alerts"."expires_on" >= (now() at time zone \'Asia/Seoul\')::date)'
         );
+    });
+});
+
+describe('findAllForDelivery alertDate', () => {
+    it('알림 날짜를 주면 만료 판정에 그 값을 바인딩한다', async () => {
+        const orderBy = vi.fn().mockResolvedValue([]);
+        const having = vi.fn((_condition: unknown) => ({ orderBy }));
+        const db = {
+            select: () => ({
+                from: () => ({
+                    leftJoin: () => ({ groupBy: () => ({ having }) }),
+                }),
+            }),
+        } as unknown as SiglensDatabase;
+
+        await new DrizzleMailAlertSubscriberRepository(db).findAllForDelivery(
+            '2026-11-23'
+        );
+
+        const { sql, params } = render(onlyCallArg(having));
+        expect(sql).toBe(
+            '"mail_alert_subscribers"."include_portfolio" or count("mail_alert_topics"."kind") > 0 or exists (select 1 from "price_alerts" where "price_alerts"."subscriber_id" = "mail_alert_subscribers"."id" and "price_alerts"."status" = \'active\' and "price_alerts"."expires_on" >= $1)'
+        );
+        expect(params).toEqual(['2026-11-23']);
     });
 });
 
@@ -218,8 +244,9 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
         expect(keys.get('s1')).toEqual(new Set(['a', 'b', 'c']));
         expect(keys.get('s2')).toEqual(new Set());
         const { sql, params } = render(onlyCallArg(where));
-        expect(sql).toContain('"mail_alert_deliveries"."status" = $1');
-        expect(sql).toContain('"mail_alert_deliveries"."alert_date" >= $2');
+        expect(sql).toBe(
+            '("mail_alert_deliveries"."status" = $1 and "mail_alert_deliveries"."alert_date" >= $2)'
+        );
         expect(params).toEqual(['sent', '2026-11-17']);
     });
 
@@ -235,7 +262,170 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
             new DrizzleMailAlertDeliveryRepository(db).pruneBefore('2026-08-25')
         ).resolves.toBe(2);
         const { sql, params } = render(onlyCallArg(where));
-        expect(sql).toContain('"mail_alert_deliveries"."alert_date" < $1');
+        expect(sql).toBe('"mail_alert_deliveries"."alert_date" < $1');
         expect(params).toEqual(['2026-08-25']);
+    });
+});
+
+describe('DrizzlePriceAlertRepository', () => {
+    const row = {
+        id: 'a1',
+        subscriberId: 's1',
+        proposalId: 'p1',
+        symbol: 'AAPL',
+        market: 'us',
+        condition: 'enter_zone',
+        approach: 'from_above',
+        zoneLow: '178.000000',
+        zoneHigh: '181.500000',
+        level: null,
+        basis: 'analysis_entry_zone',
+        analysisAt: new Date('2026-11-20T08:30:00Z'),
+        referenceClose: '190.500000',
+        startsAfterSession: '2026-11-20',
+        expiresOn: '2026-12-21',
+        status: 'active',
+        firedSession: null,
+        firedClose: null,
+        firedAt: null,
+        createdAt: new Date('2026-11-21T01:00:00Z'),
+    } as const;
+
+    function selectDb(rows: unknown[]) {
+        const where = vi.fn((_condition: unknown) => ({
+            orderBy: vi.fn().mockResolvedValue(rows),
+            limit: vi.fn().mockResolvedValue(rows),
+        }));
+        const db = {
+            select: () => ({ from: () => ({ where }) }),
+        } as unknown as SiglensDatabase;
+        return { db, where };
+    }
+
+    const owner = { kind: 'guest', subscriberId: 's1' } as const;
+
+    it('listForSubscriber: numeric 문자열을 숫자로, 구간 열을 조건 유니온으로 되돌린다', async () => {
+        const { db } = selectDb([row]);
+
+        const [record] = await new DrizzlePriceAlertRepository(
+            db
+        ).listForSubscriber(owner);
+
+        expect(record).toMatchObject({
+            condition: {
+                kind: 'enter_zone',
+                low: 178,
+                high: 181.5,
+                approach: 'from_above',
+            },
+            referenceClose: 190.5,
+            firedClose: null,
+        });
+    });
+
+    it('단일 가격 행은 level만 가진 조건이 되고, 알린 종가는 숫자가 된다', async () => {
+        const { db } = selectDb([
+            {
+                ...row,
+                condition: 'close_above',
+                approach: null,
+                zoneLow: null,
+                zoneHigh: null,
+                level: '200.250000',
+                status: 'fired',
+                firedClose: '201.000000',
+            },
+        ]);
+
+        const [record] = await new DrizzlePriceAlertRepository(
+            db
+        ).listForSubscriber(owner);
+
+        expect(record?.condition).toEqual({
+            kind: 'close_above',
+            level: 200.25,
+        });
+        expect(record?.firedClose).toBe(201);
+    });
+
+    it('CHECK가 막는 모양이 새어 나오면 조용히 넘기지 않고 던진다', async () => {
+        const { db } = selectDb([{ ...row, approach: null }]);
+
+        await expect(
+            new DrizzlePriceAlertRepository(db).listForSubscriber(owner)
+        ).rejects.toThrow('Malformed enter_zone price alert a1');
+    });
+
+    it('findByProposal: 행이 없으면 null이다', async () => {
+        const { db } = selectDb([]);
+
+        await expect(
+            new DrizzlePriceAlertRepository(db).findByProposal(owner, 'p1')
+        ).resolves.toBeNull();
+    });
+
+    it('createWithinLimit: 유한한 양수가 아닌 값은 DB를 건드리지 않고 invalid다', async () => {
+        const transaction = vi.fn();
+        const db = { transaction } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzlePriceAlertRepository(db).createWithinLimit(
+                owner,
+                {
+                    proposalId: 'p1',
+                    symbol: 'AAPL',
+                    market: 'us',
+                    condition: { kind: 'close_below', level: Number.NaN },
+                    basis: 'price_level',
+                    analysisAt: null,
+                    referenceClose: 100,
+                    startsAfterSession: '2026-11-20',
+                    expiresOn: '2026-12-20',
+                },
+                10
+            )
+        ).resolves.toBe('invalid');
+        expect(transaction).not.toHaveBeenCalled();
+    });
+
+    it('listActiveForDelivery: 진행 중이고 만료일이 알림 날짜 이상인 알림을 구독자별로 묶는다', async () => {
+        const { db, where } = selectDb([
+            row,
+            { ...row, id: 'a2', proposalId: 'p2' },
+            { ...row, id: 'a3', subscriberId: 's2', proposalId: 'p3' },
+        ]);
+
+        const byId = await new DrizzlePriceAlertRepository(
+            db
+        ).listActiveForDelivery('2026-11-23');
+
+        expect(byId.get('s1')?.map(a => a.id)).toEqual(['a1', 'a2']);
+        expect(byId.get('s2')?.map(a => a.id)).toEqual(['a3']);
+        const { sql, params } = render(onlyCallArg(where));
+        expect(sql).toBe(
+            '("price_alerts"."status" = $1 and "price_alerts"."expires_on" >= $2)'
+        );
+        expect(params).toEqual(['active', '2026-11-23']);
+    });
+
+    it('pruneExpiredAndFired: 지울 알림을 가진 구독자가 없으면 알림도 구독자도 지우지 않는다', async () => {
+        const lock = vi.fn().mockResolvedValue([]);
+        const select = vi.fn(() => ({
+            from: () => ({ where: () => ({ orderBy: () => ({ for: lock }) }) }),
+        }));
+        const del = vi.fn();
+        const tx = { select, delete: del };
+        const db = {
+            transaction: async (fn: (t: typeof tx) => unknown) => fn(tx),
+        } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzlePriceAlertRepository(db).pruneExpiredAndFired(
+                '2026-11-23'
+            )
+        ).resolves.toEqual({ alertsDeleted: 0, subscribersDeleted: 0 });
+
+        expect(lock).toHaveBeenCalledWith('no key update');
+        expect(del).not.toHaveBeenCalled();
     });
 });

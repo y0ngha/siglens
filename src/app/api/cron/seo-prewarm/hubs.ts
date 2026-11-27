@@ -204,7 +204,7 @@ function runResult(outcome: HubOutcome, stampChanged = false): HubRunResult {
 export interface HubPrewarmResult {
     readonly attempted: number;
     readonly generated: number;
-    /** 이미 core 캐시에 있어 생성도 무효화도 하지 않은 수. */
+    /** 이미 core 캐시에 있어 새로 굽지 않은 수. 본문 스탬프가 바뀐 허브는 태그를 털지만(`changedUrls`), 같은 본문이면 무효화도 하지 않는다. */
     readonly alreadyFresh: number;
     /** 입력 자체가 비어(기사 0건) 만들 게 없던 수. 고장이 아니다. */
     readonly noData: number;
@@ -225,8 +225,8 @@ export interface HubPrewarmResult {
     readonly generatedUrls: readonly string[];
     /**
      * 본문이 바뀐 것으로 확인됐지만 **새로 굽지는 않은**(`alreadyFresh` + 스탬프 변경) 허브의
-     * 공개 URL. `generatedUrls`와 겹치지 않는다. 크론이 태그를 털지 않았으므로 IndexNow 지연이
-     * 더 길다(`indexNowDelays`).
+     * 공개 URL. `generatedUrls`와 겹치지 않는다. 크론이 태그를 털었으므로(스탬프 변경 시)
+     * IndexNow 지연은 `generatedUrls`와 같다(`indexNowDelays`).
      */
     readonly changedUrls: readonly string[];
 }
@@ -234,7 +234,7 @@ export interface HubPrewarmResult {
 interface HubTarget {
     readonly label: string;
     readonly run: () => Promise<HubRunResult>;
-    /** 새로 구웠을 때만 털 태그 — 이걸 안 털면 `peek*Static`이 TTL 내내 옛 `null`을 준다. */
+    /** 새로 구웠거나 본문 스탬프가 바뀌었을 때 털 태그 — 안 털면 `peek*Static`이 TTL 내내 옛 `null`·옛 본문을 준다. */
     readonly tag: string;
     /**
      * 대상이 실제 변경이 있을 때 **스스로** 태그를 턴다(경제 캘린더 — 내부 함수가
@@ -724,7 +724,15 @@ export async function runHubPrewarm(
             }
             if (outcome === 'alreadyFresh') {
                 alreadyFresh += 1;
-                if (stampChanged) recordChanged(target);
+                if (stampChanged) {
+                    recordChanged(target);
+                    // 본문이 바뀌었으면 ISR HTML도 새 본문으로 다시 만들어야 한다. 방문자가
+                    // 먼저 생성해 캐시에 새 본문이 있어도 페이지는 자기 ISR 주기(페이지 파일의
+                    // revalidate)가 끝날 때까지 옛 본문을 들고 있고, RSS 항목 링크는 그 페이지를 가리킨다.
+                    revalidateTag(target.tag, 'max');
+                    await consumeSsrMiss(target.tag);
+                    continue;
+                }
                 // 값은 이미 있는데 페이지가 비어 있는 채로 렌더된 적이 있으면(방문자가
                 // 먼저 생성했거나 렌더 직후 캐시가 찼다) 그때만 턴다 — `markSsrMiss`
                 // JSDoc. 무조건 털면 tick마다 ISR 쓰기가 나간다.

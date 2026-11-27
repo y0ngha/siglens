@@ -223,7 +223,7 @@ describe('GET /api/auth/handoff/consume (ai host: exchange)', () => {
     });
 
     it.each([
-        // Any `//` in the path falls back to the root (open-redirect hotfix #801), never off-origin.
+        // Any `//` in the path falls back to the root (open-redirect guard), never off-origin.
         ['/ko/ko//evil.com', 'https://ai.siglens.io/'],
         ['/ko//evil.com', 'https://ai.siglens.io/'],
         ['/api/auth/handoff/start?next=%2Fc%2Fx', 'https://ai.siglens.io/'],

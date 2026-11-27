@@ -48,7 +48,7 @@ test.describe('backtesting showcase', () => {
         ).toBeVisible();
         await expect(
             page.getByText(
-                /기간 중 어느 날에 사든 같은 날수만큼 들고 있었을 때의 평균과 비교하면/
+                /기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면/
             )
         ).toBeVisible();
         await expect(

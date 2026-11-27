@@ -12,7 +12,12 @@ import {
     stopAcceptingBackgroundTasks,
 } from '@/shared/lib/backgroundTask';
 import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
-import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+import { isRecord } from '@/shared/lib/isRecord';
+import { installConsoleDbErrorRedaction } from '@/shared/db/installConsoleDbErrorRedaction';
+import {
+    isDatabaseError,
+    redactDbErrorForLog,
+} from '@/shared/db/redactDbErrorForLog';
 
 /**
  * ISR 캐시 핸들러(`cache-handler/uploadQueue.mjs`)가 업로드 drain 함수를 등록하는 전역 키.
@@ -155,4 +160,41 @@ export function registerShutdownHandlers(): void {
     // additive 등록 — Next 자체 종료 로직을 대체하지 않는다.
     process.on('SIGTERM', handleShutdown);
     process.on('SIGINT', handleShutdown);
+}
+
+/**
+ * Next가 처리하지 못한 에러를 찍는 `console.error(err)`에서 DB 에러의 바인딩 파라미터를 지운다.
+ * `onRequestError`는 Next가 에러를 찍은 **뒤** 관찰용으로만 불려 로그를 막을 수 없으므로(막는 자리는 출력 경계인
+ * `console`) 부팅 시 1회 설치한다. 자세한 근거는 `installConsoleDbErrorRedaction`.
+ */
+export function registerErrorLogRedaction(): void {
+    installConsoleDbErrorRedaction();
+}
+
+/** `onRequestError`가 받는 컨텍스트 중 로그에 쓰는 부분. */
+interface RequestErrorContext {
+    readonly routerKind: string;
+    readonly routePath: string;
+    readonly routeType: string;
+}
+
+/**
+ * Next의 `onRequestError` 훅. 위 `console` 래퍼가 DB 에러를 이름·코드만 남기므로 어느 라우트에서 났는지가 로그에서
+ * 사라진다. DB 에러일 때만 라우트 패턴을 한 줄 남긴다. 요청 URL(`request.path`)은 쿼리스트링에 토큰이 실릴 수
+ * 있어 쓰지 않고, 파라미터가 없는 `routePath`(`/[symbol]`)만 쓴다. 다른 에러는 Next가 이미 전부 찍었다.
+ */
+export function reportRequestError(
+    error: unknown,
+    context: RequestErrorContext
+): void {
+    if (!isDatabaseError(error)) return;
+    // Next가 사용자에게 보여 주는 "Digest: N"을 로그 줄과 잇는다. 에러가 지워진 뒤에도 추적할 유일한 키다.
+    const digest =
+        isRecord(error) && typeof error.digest === 'string'
+            ? error.digest
+            : 'none';
+    console.error(
+        `[onRequestError] database error route=${context.routePath} type=${context.routeType} router=${context.routerKind} digest=${digest}:`,
+        redactDbErrorForLog(error)
+    );
 }

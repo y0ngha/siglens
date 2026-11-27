@@ -86,6 +86,7 @@ vi.mock('@/widgets/news/sections/EventCalendar', () => ({
 }));
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
+    shortenRevalidateForPendingEnrichment: vi.fn(async () => undefined),
 }));
 vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
     // 기본은 SEC 공시 대상이 아님 — 섹션을 그리지 않는다. DB·SEC에 나가지 않는다.
@@ -157,6 +158,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 
 import React from 'react';
 import {
+    afterEach,
     describe,
     it,
     expect,
@@ -177,7 +179,12 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import { getNewsList } from '@/entities/news-article/api';
 import { getAnalystActionHistory } from '@/entities/analyst-views/server/getAnalystActionHistory';
 import { listCompanyFilings } from '@/entities/company-filings/server/getCompanyFilings';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    shortenRevalidateForPendingEnrichment,
+    shortenRevalidateForRuntimeDegrade,
+} from '@/shared/cache/buildDegradedRevalidate';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     getEarningsReportComparison,
     getGradeEvents,
@@ -196,6 +203,10 @@ const mockGetEarningsReportComparison =
 const mockShortenRevalidate =
     shortenRevalidateForRuntimeDegrade as MockedFunction<
         typeof shortenRevalidateForRuntimeDegrade
+    >;
+const mockShortenPending =
+    shortenRevalidateForPendingEnrichment as MockedFunction<
+        typeof shortenRevalidateForPendingEnrichment
     >;
 const mockListCompanyFilings = listCompanyFilings as MockedFunction<
     typeof listCompanyFilings
@@ -591,7 +602,12 @@ describe('/[symbol]/news 직렬화 행 상한', () => {
 describe('/[symbol]/news 최근 공시 섹션', () => {
     beforeEach(() => {
         mockShortenRevalidate.mockClear();
+        mockShortenPending.mockClear();
         mockListCompanyFilings.mockReset();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     const filing = (n: number) => ({
@@ -599,16 +615,20 @@ describe('/[symbol]/news 최근 공시 섹션', () => {
         form: '8-K' as const,
         filedAt: '2026-11-13',
         items: [],
-        headline: null,
+        headline: 'Reports results' as string | null,
         hasPressRelease: false,
         url: 'https://www.sec.gov/Archives/edgar/data/1/x.htm',
     });
 
+    const okResult = (
+        filings: ReturnType<typeof filing>[],
+        headlinesPending = false
+    ) => ({ status: 'ok' as const, filings, headlinesPending });
+
     it('목록이 있으면 그린다', async () => {
-        mockListCompanyFilings.mockResolvedValueOnce({
-            status: 'ok',
-            filings: [filing(1), filing(2)],
-        });
+        mockListCompanyFilings.mockResolvedValueOnce(
+            okResult([filing(1), filing(2)])
+        );
         const node = await CompanyFilingsSection({ symbol: 'IONQ' });
         render(<>{node}</>);
         expect(
@@ -616,9 +636,60 @@ describe('/[symbol]/news 최근 공시 섹션', () => {
         ).toBe('2');
     });
 
+    const filingsCall = () =>
+        vi
+            .mocked(staticSymbolCache)
+            .mock.calls.find(([key]) => key[0] === 'news:company-filings');
+
+    it('정상 목록은 페이지 revalidate(12h)로 캐시하고 revalidate를 낮추지 않는다', async () => {
+        mockListCompanyFilings.mockResolvedValueOnce(okResult([filing(1)]));
+        vi.mocked(staticSymbolCache).mockClear();
+        await CompanyFilingsSection({ symbol: 'IONQ' });
+        expect(filingsCall()?.[4]).toBe(SECONDS_PER_HALF_DAY);
+        expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        expect(mockShortenPending).not.toHaveBeenCalled();
+    });
+
+    it('읽고도 제목이 없는 공시(headline: null, headlinesPending false)는 12h 캐시다 — 로더가 던지지 않는다', async () => {
+        const list = [filing(1), { ...filing(2), headline: null }];
+        mockListCompanyFilings.mockResolvedValue(okResult(list));
+        vi.mocked(staticSymbolCache).mockClear();
+        const node = await CompanyFilingsSection({ symbol: 'IONQ' });
+        const call = filingsCall();
+        expect(call?.[4]).toBe(SECONDS_PER_HALF_DAY);
+        await expect(call?.[2]()).resolves.toEqual(list);
+        render(<>{node}</>);
+        expect(
+            screen.getByTestId('company-filings').getAttribute('data-count')
+        ).toBe('2');
+        expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        expect(mockShortenPending).not.toHaveBeenCalled();
+    });
+
+    it('제목 로드가 재시도할 사유로 밀린 목록(headlinesPending)은 저장하지 않고(로더가 던진다) 그리되 이번 렌더를 1h로 낮춘다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const list = [filing(1), { ...filing(2), headline: null }];
+        mockListCompanyFilings.mockResolvedValue(okResult(list, true));
+        vi.mocked(staticSymbolCache).mockClear();
+        const node = await CompanyFilingsSection({ symbol: 'IONQ' });
+        // 로더(fetcher)가 던져야 unstable_cache가 값을 저장하지 않는다.
+        await expect(filingsCall()?.[2]()).rejects.toThrow(/pending headlines/);
+        render(<>{node}</>);
+        expect(
+            screen.getByTestId('company-filings').getAttribute('data-count')
+        ).toBe('2');
+        expect(mockShortenPending).toHaveBeenCalledTimes(1);
+        // 5분 런타임 핀이 아니라 1h 핀이다 — SEC 재요청을 12배로 늘리지 않는다.
+        expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        expect(warn).not.toHaveBeenCalled();
+    });
+
     it.each([
         ['SEC 공시 대상 아님', { status: 'no_sec_filer' as const }],
-        ['빈 목록', { status: 'ok' as const, filings: [] }],
+        [
+            '빈 목록',
+            { status: 'ok' as const, filings: [], headlinesPending: false },
+        ],
     ])('%s이면 섹션을 그리지 않는다', async (_name, result) => {
         mockListCompanyFilings.mockResolvedValueOnce(result);
         expect(await CompanyFilingsSection({ symbol: 'IONQ' })).toBeNull();
@@ -646,6 +717,5 @@ describe('/[symbol]/news 최근 공시 섹션', () => {
             expect.any(Error)
         );
         expect(mockShortenRevalidate).not.toHaveBeenCalled();
-        warn.mockRestore();
     });
 });

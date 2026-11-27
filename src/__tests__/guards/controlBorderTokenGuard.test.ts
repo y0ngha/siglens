@@ -216,10 +216,11 @@ const CONST_DECL_HEAD_RE = /(?:export\s+)?const\s+(\w+)(?:\s*:[^=]*)?\s*=\s*/g;
 /**
  * 이름이 컨트롤을 가리키는 클래스 속성. 대문자 합성어까지 받는다 —
  * 소문자 시작으로만 잡았을 때 `submitButtonClassName`류가 통째로 빠져나갔다.
+ *
+ * `:`(객체 속성)뿐 아니라 `=`(JSX 어트리뷰트)도 본다. 래퍼 컴포넌트에 클래스를
+ * 넘겨 그쪽이 진짜 컨트롤에 얹는 형태가 이 레포에 셋 있는데, 속성만 보던 때는
+ * 통째로 안 보였다(Footer·not-found의 `triggerClassName=`, HoldingForm의 `inputClassName=`).
  */
-// `:`(객체 속성)뿐 아니라 `=`(JSX 어트리뷰트)도 본다. 래퍼 컴포넌트에 클래스를
-// 넘겨 그쪽이 진짜 컨트롤에 얹는 형태가 이 레포에 셋 있는데, 속성만 보던 때는
-// 통째로 안 보였다(Footer·not-found의 `triggerClassName=`, HoldingForm의 `inputClassName=`).
 const CLASS_PROP_HEAD_RE =
     /(\w*(?:[Bb]utton|[Ll]ink|[Ii]nput|[Tt]rigger|[Cc]ontrol|[Cc]hip|[Tt]ab|[Tt]oggle)ClassName)\s*[:=]\s*\{?\s*/g;
 

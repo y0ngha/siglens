@@ -1,5 +1,10 @@
 import 'server-only';
-import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
+import {
+    tallyEarningsReactions,
+    type Bar,
+    type EarningsReactionTally,
+    type MarketSessionSpec,
+} from '@y0ngha/siglens-core';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
 import type { EarningsSession } from '@/entities/analyst-views/model';
@@ -249,6 +254,43 @@ export function earningsDateCertainty(
         earningsDateNote: earningsDateNoteFor(confirmed, timingNote),
         ...(session !== null && { earningsSession: session }),
         ...(session !== null && callAt !== null && { earningsCallAt: callAt }),
+    };
+}
+
+/**
+ * Attaches `earningsReactionTally` right after `earningsReactions` so the model quotes
+ * the up/down counts and extremes instead of counting the list (the miscount
+ * the tally exists to remove). `null` exactly when `earningsReactions` is `null`.
+ *
+ * Pure function of the result shape: the tally reads the reactions as printed
+ * (already rounded), and the evaluation replay calls this same function on a
+ * recorded result, so it never runs a copy of production logic.
+ */
+export function withEarningsReactionTally<T extends object>(
+    result: T
+): T & { earningsReactionTally: EarningsReactionTally | null } {
+    const reactions =
+        (
+            result as {
+                earningsReactions?: readonly EarningsReactionView[] | null;
+            }
+        ).earningsReactions ?? null;
+    const tally = reactions === null ? null : tallyEarningsReactions(reactions);
+    const entries = Object.entries(result).flatMap(
+        ([key, value]): [string, unknown][] =>
+            key === 'earningsReactions'
+                ? [
+                      [key, value],
+                      ['earningsReactionTally', tally],
+                  ]
+                : [[key, value]]
+    );
+    // A result without the `earningsReactions` key still carries the tally (null), at the end.
+    const withTally = entries.some(([key]) => key === 'earningsReactionTally')
+        ? entries
+        : [...entries, ['earningsReactionTally', tally]];
+    return Object.fromEntries(withTally) as T & {
+        earningsReactionTally: EarningsReactionTally | null;
     };
 }
 
@@ -551,7 +593,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
 
     // Provider ratios arrive as raw floats (P/E 27.622012578616346); trim them
     // to significant digits like every other number the agent quotes.
-    return roundNumbersDeep({
+    const result = roundNumbersDeep({
         /*
          * `asOf`는 **조회 시각**이다 — 데이터가 그 시점 값이라는 뜻이 아니다.
          *
@@ -721,4 +763,5 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             ),
         },
     });
+    return withEarningsReactionTally(result);
 };

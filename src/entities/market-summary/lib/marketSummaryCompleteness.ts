@@ -28,3 +28,14 @@ export function hasMissingQuotes(summary: MarketSummaryData): boolean {
 export function allQuotesPresent(summary: MarketSummaryData): boolean {
     return !hasMissingQuotes(summary);
 }
+
+/**
+ * 지수·섹터 중 하나라도 실제 시세가 있으면 true. 전부 0이면 종목 하나의 결측이 아니라
+ * provider 전면 장애(예: yahoo 429)다 — 정적 캐시가 그 번들을 굳히지 않고 던지는 기준.
+ */
+export function hasAnyQuote(summary: MarketSummaryData): boolean {
+    return (
+        summary.indices.some(q => q.price !== 0) ||
+        summary.sectors.some(q => q.price !== 0)
+    );
+}

@@ -51,9 +51,8 @@ describe('listMessages — 이미지 참조', () => {
             q.sql.includes('from "chat_message_images"')
         );
         expect(imageQuery).toBeDefined();
-        expect(imageQuery?.sql).not.toContain('"data"');
-        expect(imageQuery?.sql).toContain(
-            'order by "chat_message_images"."position"'
+        expect(imageQuery?.sql).toBe(
+            'select "chat_message_images"."message_id", "chat_message_images"."id", "chat_message_images"."width", "chat_message_images"."height" from "chat_message_images" inner join "chat_messages" on "chat_message_images"."message_id" = "chat_messages"."id" where "chat_messages"."conversation_id" = $1 order by "chat_message_images"."position"'
         );
         expect(imageQuery?.params).toContain(CONV);
     });
@@ -155,8 +154,8 @@ describe('appendUserMessage', () => {
             db
         ).appendUserMessage(CONV, 'q', []);
         expect(saved?.id).toBe(MSG_A);
-        expect(captured[0]?.sql.toLowerCase()).toContain(
-            'insert into "chat_messages"'
+        expect(captured[0]?.sql.toLowerCase()).toBe(
+            'insert into "chat_messages" ("id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "chart", "status", "created_at") values (default, $1, (select coalesce(max("chat_messages"."seq"), 0) from "chat_messages" where "chat_messages"."conversation_id" = $2) + $3, $4, $5, $6, $7, $8, $9, $10, default, $11, $12, default) returning "id", "conversation_id", "seq", "role", "content", "tool_calls", "tool_call_id", "tool_name", "model_id", "usage", "turn_at", "chart", "status", "created_at"'
         );
     });
 
@@ -186,9 +185,9 @@ describe('이미지 조회', () => {
         ).findImageWithOwner(IMG_1);
         expect(found).toEqual(row);
         const sqlText = captured[0]?.sql.toLowerCase() ?? '';
-        expect(sqlText).toContain('"chat_conversations"."user_id"');
-        expect(sqlText).toContain('inner join "chat_messages"');
-        expect(sqlText).toContain('inner join "chat_conversations"');
+        expect(sqlText).toBe(
+            'select "chat_message_images"."media_type", "chat_message_images"."data", "chat_conversations"."user_id" from "chat_message_images" inner join "chat_messages" on "chat_message_images"."message_id" = "chat_messages"."id" inner join "chat_conversations" on "chat_messages"."conversation_id" = "chat_conversations"."id" where "chat_message_images"."id" = $1 limit $2'
+        );
         expect(captured[0]?.params).toContain(IMG_1);
     });
 
@@ -218,8 +217,9 @@ describe('이미지 조회', () => {
                 height: 4,
             },
         ]);
-        expect(captured[0]?.sql).toContain('"data"');
-        expect(captured[0]?.sql).toContain('"media_type"');
+        expect(captured[0]?.sql).toBe(
+            'select "media_type", "data", "width", "height" from "chat_message_images" where "chat_message_images"."message_id" = $1 order by "chat_message_images"."position"'
+        );
         expect(captured[0]?.params).toContain(MSG_A);
         expect(await repo.listImagesOfMessage('nope')).toEqual([]);
         expect(captured).toHaveLength(1);
