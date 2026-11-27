@@ -258,6 +258,8 @@ export const MA_DEMO_START = GOLDEN_CROSS_SLOW_PERIOD;
  * 이 파일의 `sma`로 계산하고, 200일선은 core 결과에서 꺼낸다. 시세는 200봉이 넘어야 해서 따로 둔
  * `getGoldenCrossSeries`를 쓴다.
  */
+/** 이동평균 데모가 보여 줄 봉 수. 교차 전후가 한 화면에 들어오도록 기본 구간(90)보다 조금 길게 잡는다. */
+const MA_DEMO_LENGTH = 100;
 const maDemo = windowed(
     MA_DEMO_START,
     c => {
@@ -274,7 +276,7 @@ const maDemo = windowed(
         };
     },
     getGoldenCrossSeries,
-    100
+    MA_DEMO_LENGTH
 );
 
 const emaDemo = windowed(40, c => ({

@@ -131,6 +131,16 @@ beforeEach(() => {
     };
 });
 
+/** 정의 문구 템플릿의 자리표시자를 판정에 쓰는 core 상수로 채운다. */
+function fillDefinition(template: string): string {
+    return template
+        .replace('{bars}', String(CROSS_LOOKBACK_BARS))
+        .replace('{fast}', String(GOLDEN_CROSS_FAST_PERIOD))
+        .replace('{slow}', String(GOLDEN_CROSS_SLOW_PERIOD))
+        .replace('{shortFast}', String(SHORT_MA_CROSS_FAST_PERIOD))
+        .replace('{shortSlow}', String(SHORT_MA_CROSS_SLOW_PERIOD));
+}
+
 describe('SignalHubBody', () => {
     it('제목·소개에 신호 이름을 넣고, 시장 분석으로 가는 브레드크럼을 둔다', async () => {
         await renderBody();
@@ -160,30 +170,20 @@ describe('SignalHubBody', () => {
     it('골든크로스 페이지에만 50일선이 200일선을 넘은 종목이라는 정의를 붙인다', async () => {
         await renderBody();
 
-        const definition = c.definitionGoldenCross
-            .replace('{bars}', String(CROSS_LOOKBACK_BARS))
-            .replace('{fast}', String(GOLDEN_CROSS_FAST_PERIOD))
-            .replace('{slow}', String(GOLDEN_CROSS_SLOW_PERIOD))
-            .replace('{shortFast}', String(SHORT_MA_CROSS_FAST_PERIOD))
-            .replace('{shortSlow}', String(SHORT_MA_CROSS_SLOW_PERIOD));
+        const definition = fillDefinition(c.definitionGoldenCross);
         expect(screen.getByText(definition)).toBeInTheDocument();
         expect(definition).toContain(
-            '최근 3거래일 안에 50일 이동평균선이 200일'
+            `최근 ${CROSS_LOOKBACK_BARS}거래일 안에 ${GOLDEN_CROSS_FAST_PERIOD}일 이동평균선이 ${GOLDEN_CROSS_SLOW_PERIOD}일`
         );
         expect(definition).toContain(
-            '20일선과 50일선의 교차는 단기 이동평균선'
+            `${SHORT_MA_CROSS_FAST_PERIOD}일선과 ${SHORT_MA_CROSS_SLOW_PERIOD}일선의 교차는 단기 이동평균선`
         );
     });
 
     it('데드크로스 페이지는 위에서 아래로 내려간 종목이라는 정의를 붙인다', async () => {
         await renderBody('ko', defined(findSignalHub('death-cross')));
 
-        const definition = c.definitionDeathCross
-            .replace('{bars}', String(CROSS_LOOKBACK_BARS))
-            .replace('{fast}', String(GOLDEN_CROSS_FAST_PERIOD))
-            .replace('{slow}', String(GOLDEN_CROSS_SLOW_PERIOD))
-            .replace('{shortFast}', String(SHORT_MA_CROSS_FAST_PERIOD))
-            .replace('{shortSlow}', String(SHORT_MA_CROSS_SLOW_PERIOD));
+        const definition = fillDefinition(c.definitionDeathCross);
         expect(screen.getByText(definition)).toBeInTheDocument();
         expect(definition).toContain('위에서 아래로');
     });

@@ -359,7 +359,9 @@ describe('ma demo', () => {
         const closes = getGoldenCrossSeries().bars.map(b => b.close);
         const abs = MA_DEMO_START + 5;
         const expected =
-            closes.slice(abs - 49, abs + 1).reduce((a, b) => a + b, 0) / 50;
+            closes
+                .slice(abs - (GOLDEN_CROSS_FAST_PERIOD - 1), abs + 1)
+                .reduce((a, b) => a + b, 0) / GOLDEN_CROSS_FAST_PERIOD;
         expect(required(fast.values[5])).toBeCloseTo(expected, 8);
     });
 });
