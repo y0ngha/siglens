@@ -1,18 +1,15 @@
 /**
- * 알람 필터 셸 스크립트(`infra/aws/*.sh`) 파서. `alarmFilterPhrases`(문구가 소스에 있는가)와
- * `alarmFilterReachability`(그 로그가 실제로 닿는가)가 같은 패턴 목록을 읽도록 공유한다.
+ * 알람 필터 셸 스크립트(`infra/aws/*.sh`)에서 읽은 필터 패턴 하나. `alarmFilterPhrases`(문구가 소스에 있는가)와
+ * `alarmFilterReachability`(그 로그가 실제로 닿는가)가 같은 파서로 같은 패턴 목록을 읽는다.
  */
-
 export interface FilterPattern {
     readonly file: string;
     readonly kind: 'terms' | 'json';
     readonly terms: readonly string[];
 }
-export type SourceLang = 'js' | 'sh';
 
-/* ------------------------------------------------------------------ */
-/* 셸 스크립트 파서                                                      */
-/* ------------------------------------------------------------------ */
+/** 주석을 지울 소스의 언어: `js`(줄·블록 주석)와 `sh`(`#` 주석). */
+export type SourceLang = 'js' | 'sh';
 
 const DQ = String.raw`"(?:[^"\\]|\\.)*"`;
 const SQ = String.raw`'[^']*'`;

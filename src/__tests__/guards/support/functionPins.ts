@@ -3,6 +3,7 @@ import {
     isFunctionLike,
     listAt,
     nodeAt,
+    numAt,
     parseSource,
     str,
     walk,
@@ -42,7 +43,7 @@ import {
  * 근거가 아니라 "안에서 던져도 감싸는 try/catch나 `cacheNonNull`이 삼킨다"는 구조에 기댄다.
  */
 
-export type PinShape =
+type PinShape =
     /** `[const 선언 prefixStatements개] return callee(...);` — 문장은 그뿐이고 `return`은 하나다. */
     | {
           kind: 'return';
@@ -136,7 +137,7 @@ function callLabel(node: AstNode): string | undefined {
 }
 
 /** 함수 노드 전체(매개변수·본문·콜백)의 호출 이름 집합. */
-export function callNamesIn(fn: AstNode): string[] {
+function callNamesIn(fn: AstNode): string[] {
     const names = new Set<string>();
     walk(fn, node => {
         const label = callLabel(node);
@@ -188,7 +189,7 @@ function memberLabel(node: AstNode | undefined): string {
 }
 
 /** `root` 아래 모든 멤버 접근(연쇄의 중간 단계 포함)의 정규화 텍스트 집합. */
-export function memberTextsIn(root: AstNode): string[] {
+function memberTextsIn(root: AstNode): string[] {
     const found = new Set<string>();
     walk(root, node => {
         if (
@@ -202,7 +203,7 @@ export function memberTextsIn(root: AstNode): string[] {
 }
 
 /** 중첩 함수(콜백) 본문을 제외한, 함수가 즉시 평가하는 호출 이름 집합. */
-export function eagerCallNamesIn(fn: AstNode): string[] {
+function eagerCallNamesIn(fn: AstNode): string[] {
     const names = new Set<string>();
     const collect = (node: AstNode): void => {
         if (node !== fn && isFunctionLike(node)) return;
@@ -217,21 +218,26 @@ export function eagerCallNamesIn(fn: AstNode): string[] {
 /** 중첩 함수를 제외하고 `root` 아래의 노드를 모은다. */
 function ownNodes(root: AstNode, type: string): AstNode[] {
     const found: AstNode[] = [];
-    const collect = (node: AstNode): void => {
+    const visit = (node: AstNode): void => {
         if (node !== root && isFunctionLike(node)) return;
         if (node.type === type) found.push(node);
-        childrenOf(node).forEach(collect);
+        childrenOf(node).forEach(visit);
     };
-    collect(root);
+    visit(root);
+    return found;
+}
+
+/** `root`와 모든 하위 노드(중첩 함수 포함) 중 `type`인 것. */
+function collect(root: AstNode, type: string): AstNode[] {
+    const found: AstNode[] = [];
+    walk(root, node => {
+        if (node.type === type) found.push(node);
+    });
     return found;
 }
 
 function contains(root: AstNode, type: string): boolean {
-    let found = false;
-    walk(root, node => {
-        if (node.type === type) found = true;
-    });
-    return found;
+    return collect(root, type).length > 0;
 }
 
 function isInertReturn(arg: AstNode | undefined): boolean {
@@ -542,20 +548,34 @@ export function checkFunctionPin(
     return problems;
 }
 
+/** 이름이 `name`인 함수 선언 하나와 그 본문. 없거나 둘 이상이면 이름을 붙인 오류로 멈춘다. */
+function requireFunction(
+    text: string,
+    name: string
+): { fn: AstNode; body: AstNode } {
+    const found = findFunctions(parseSource(text), name);
+    if (found.length !== 1) {
+        throw new Error(
+            `\`${name}\` 정의가 ${found.length}개다(하나여야 한다)`
+        );
+    }
+    const { fn } = found[0];
+    const body = nodeAt(fn, 'body');
+    if (body === undefined) throw new Error(`\`${name}\`에 본문이 없다`);
+    return { fn, body };
+}
+
 /** 함수 본문 안쪽 텍스트의 범위(`{` 다음 ~ `}` 앞)와 함수 전체 범위. 변형 테스트가 쓴다. */
 export function functionRanges(
     text: string,
     name: string
 ): { start: number; end: number; bodyStart: number; bodyEnd: number } {
-    const [{ fn }] = findFunctions(parseSource(text), name);
-    const body = nodeAt(fn, 'body') as AstNode;
-    const num = (node: AstNode, key: string): number =>
-        typeof node[key] === 'number' ? (node[key] as number) : 0;
+    const { fn, body } = requireFunction(text, name);
     return {
-        start: num(fn, 'start'),
-        end: num(fn, 'end'),
-        bodyStart: num(body, 'start') + 1,
-        bodyEnd: num(body, 'end') - 1,
+        start: numAt(fn, 'start'),
+        end: numAt(fn, 'end'),
+        bodyStart: numAt(body, 'start') + 1,
+        bodyEnd: numAt(body, 'end') - 1,
     };
 }
 
@@ -567,35 +587,19 @@ export function catchInfo(
     text: string,
     name: string
 ): { bodyStart: number; bodyEnd: number; tryCallee: string } | undefined {
-    const [{ fn }] = findFunctions(parseSource(text), name);
-    const body = nodeAt(fn, 'body') as AstNode;
+    const { body } = requireFunction(text, name);
     const tryStmt = listAt(body, 'body').find(st => st.type === 'TryStatement');
     const handlerBody = nodeAt(nodeAt(tryStmt, 'handler'), 'body');
     const block = nodeAt(tryStmt, 'block');
-    if (
-        tryStmt === undefined ||
-        handlerBody === undefined ||
-        block === undefined
-    ) {
-        return undefined;
-    }
-    let tryCallee: string | undefined;
-    walk(block, node => {
-        const callee = nodeAt(node, 'callee');
-        if (
-            tryCallee === undefined &&
-            node.type === 'CallExpression' &&
-            callee?.type === 'Identifier'
-        ) {
-            tryCallee = str(callee, 'name');
-        }
-    });
-    if (tryCallee === undefined) return undefined;
-    const num = (node: AstNode, key: string): number =>
-        typeof node[key] === 'number' ? (node[key] as number) : 0;
+    if (handlerBody === undefined || block === undefined) return undefined;
+    const tryCallee = collect(block, 'CallExpression')
+        .map(call => nodeAt(call, 'callee'))
+        .find(callee => callee?.type === 'Identifier');
+    const calleeName = str(tryCallee, 'name');
+    if (calleeName === undefined) return undefined;
     return {
-        bodyStart: num(handlerBody, 'start') + 1,
-        bodyEnd: num(handlerBody, 'end') - 1,
-        tryCallee,
+        bodyStart: numAt(handlerBody, 'start') + 1,
+        bodyEnd: numAt(handlerBody, 'end') - 1,
+        tryCallee: calleeName,
     };
 }

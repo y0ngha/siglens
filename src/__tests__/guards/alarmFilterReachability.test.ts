@@ -24,20 +24,21 @@ import {
 /**
  * **알람 필터 문구 도달 가능성 가드** (`docs/conventions/TOOLCHAIN.md#TC-38`).
  *
- * `alarmFilterPhrases`는 문구가 소스에 **있다**는 것만 본다. 그 로그가 실제로 찍힐 수 있는지는
- * 보지 않아서, 절대 reject하지 않는 호출(`peekBriefingStatic` → `cacheNonNull`이 모든 오류를 삼켜
- * `null`로 resolve)의 `.catch`·`catch {}` 안에 있는 로그를 알람 문구로 걸어도 통과했다
- * (2026-11-20 감사). 이 가드는 알람 필터의 모든 용어가 찍히는 `console.*` 호출을 찾아,
- * 그것이 대상이 절대 실패하지 않는 실패 경로 안에 있으면 실패한다.
+ * `alarmFilterPhrases`는 문구가 소스에 **있다**는 것만 본다. 문구를 찍는 로그가 절대 reject하지 않는 호출
+ * (`peekBriefingStatic` → `cacheNonNull`이 모든 오류를 삼켜 `null`로 resolve)의 `.catch` 안에 있으면
+ * 알람이 영영 발화하지 못하는데도 그 가드는 통과한다. 이 가드는 알람 필터의 모든 용어를 찍는 `console.*`를 찾아
+ * 그런 `.catch`/`.then(_, onRejected)` 안에 있으면 실패한다.
  *
- * 검사하는 것은 목록(`NEVER_REJECTS`)의 함수에 **바로** 붙은 `.catch`/`.then(_, onRejected)` 안의
- * 로그뿐이다. `try`/`catch` 블록, 간접 호출, 메서드 호출, 헬퍼가 찍는 로그는 검사하지 않는다(TE-63,
- * 전체 목록과 해석 규칙은 `support/alarmReachability.ts` 머리 주석). 스캔 대상은 `src`의 비테스트
- * 소스뿐이다. `scripts`·`cache-handler`·core가 찍는 문구는 `UNLOCATED_TERMS`에 이유와 함께 둔다(양방향으로
- * 맞춰서, 새 용어가 위치를 못 찾으면 실패하고 낡은 항목도 실패한다).
+ * 판정 규칙·`NEVER_REJECTS`·못 보는 것(try/catch, 간접·메서드 호출, 헬퍼가 찍는 로그)은
+ * `support/alarmReachability.ts`와 `support/functionPins.ts` 머리 주석에 있다(TE-63). 스캔 대상은 `src`의
+ * 비테스트 소스뿐이라 `scripts`·`cache-handler`·core가 찍는 문구는 `UNLOCATED_TERMS`에 이유와 함께 둔다
+ * (양방향으로 맞춘다: 새 용어가 위치를 못 찾으면 실패하고 낡은 항목도 실패한다).
  */
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const INFRA_DIR = path.join(REPO_ROOT, 'infra/aws');
+
+/** 멤버 접근이 없는 함수의 `members` 핀. */
+const NO_MEMBERS: readonly string[] = [];
 
 /** 위치를 못 찾는 용어와 이유. 알람 용어는 위치를 찾았거나 여기에 있어야 한다(TE-64). */
 const UNLOCATED_TERMS: Readonly<Record<string, string>> = {
@@ -1029,7 +1030,7 @@ describe('핀 검사 반증(호출 이름 집합이 같아도 모양이 틀리�
             async: true,
             shape: TRY,
             calls: ['await', 'f'],
-            members: [] as string[],
+            members: NO_MEMBERS,
         };
         const w = (inner: string) =>
             `async function w(e0) { try { ${inner} } catch { return null; } }`;
@@ -1083,7 +1084,7 @@ describe('핀 검사 반증(호출 이름 집합이 같아도 모양이 틀리�
     });
 
     it('매개변수 구조 분해는 `paramPattern`이 있고 평평한 객체 패턴일 때만 허용한다', () => {
-        const pin = { shape: TRY, calls: ['f'], members: [] as string[] };
+        const pin = { shape: TRY, calls: ['f'], members: NO_MEMBERS };
         const fn = (param: string) =>
             `function w(${param}) { try { return f(); } catch { return null; } }`;
         expect(problems(fn('{ a, b }'), pin)).not.toEqual([]);
@@ -1125,7 +1126,7 @@ describe('핀 검사 반증(호출 이름 집합이 같아도 모양이 틀리�
         const pin = {
             shape: TRY,
             calls: ['f'],
-            members: [] as string[],
+            members: NO_MEMBERS,
             paramPattern: true,
         };
         expect(
@@ -1151,7 +1152,7 @@ describe('핀 검사 반증(호출 이름 집합이 같아도 모양이 틀리�
                 catchMembers: [],
             } as const,
             calls: ['await', 'f', 'g'],
-            members: [] as string[],
+            members: NO_MEMBERS,
         };
         const code = (h: string) =>
             `async function w() { try { return await f(); } catch (e) { ${h} } }`;

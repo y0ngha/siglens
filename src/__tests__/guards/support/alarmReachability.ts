@@ -57,28 +57,37 @@ export const NEVER_REJECTS: ReadonlySet<string> = new Set([
 /** 로그를 남기는 `console` 메서드. */
 const LOG_METHODS = new Set(['error', 'warn', 'log', 'info']);
 
+/** `@babel/parser`가 만든 노드를 키로 읽는 느슨한 모양. 모든 노드는 `type` 문자열을 가진다. */
 export interface AstNode {
     readonly type: string;
     readonly [key: string]: unknown;
 }
 
+/** 소스 텍스트를 TypeScript·JSX로 파싱해 `Program` 노드를 돌려준다. 구문 오류는 복구하고 넘어간다. */
 export function parseSource(text: string): AstNode {
-    return parse(text, {
+    const { program } = parse(text, {
         sourceType: 'module',
         errorRecovery: true,
         plugins: ['typescript', 'jsx'],
         attachComment: false,
-    }).program as unknown as AstNode;
+    });
+    if (!isNode(program)) {
+        throw new Error('파서가 Program 노드를 돌려주지 않았다');
+    }
+    return program;
 }
 
+/** 값이 `type` 문자열을 가진 AST 노드인가. */
 function isNode(value: unknown): value is AstNode {
     return (
         typeof value === 'object' &&
         value !== null &&
-        typeof (value as { type?: unknown }).type === 'string'
+        'type' in value &&
+        typeof value.type === 'string'
     );
 }
 
+/** 노드의 직계 자식 노드(배열 속 포함). 위치 정보(`loc`·`extra`)는 건너뛴다. */
 export function childrenOf(node: AstNode): AstNode[] {
     return Object.entries(node)
         .filter(([key]) => key !== 'loc' && key !== 'extra')
@@ -102,48 +111,51 @@ export function walk(
     childrenOf(node).forEach(child => walk(child, visit, next));
 }
 
+/** 노드의 `key`가 문자열이면 그 값, 아니면 `undefined`. */
 export function str(node: unknown, key: string): string | undefined {
     const value = isNode(node) ? node[key] : undefined;
     return typeof value === 'string' ? value : undefined;
 }
 
+/** 노드의 `key`가 노드이면 그 노드, 아니면 `undefined`. */
 export function nodeAt(node: unknown, key: string): AstNode | undefined {
     const value = isNode(node) ? node[key] : undefined;
     return isNode(value) ? value : undefined;
 }
 
+/** 노드의 `key`가 노드 배열이면 그 노드들, 아니면 빈 배열. */
 export function listAt(node: unknown, key: string): AstNode[] {
     const value = isNode(node) ? node[key] : undefined;
     return Array.isArray(value) ? value.filter(isNode) : [];
 }
 
-function numAt(node: AstNode, key: string): number {
+/** 노드의 `key`가 숫자이면 그 값, 아니면 0(소스 위치 읽기용). */
+export function numAt(node: AstNode, key: string): number {
     const value = node[key];
     return typeof value === 'number' ? value : 0;
 }
 
+/** 함수·메서드·화살표 함수 노드인가. */
 export function isFunctionLike(node: AstNode): boolean {
     return /Function|Method/.test(node.type);
 }
+
+/** `unwrap`이 벗기는 래퍼: 괄호와 타입 단언. 값은 그대로다. */
+const TRANSPARENT_WRAPPERS: ReadonlySet<string> = new Set([
+    'ParenthesizedExpression',
+    'TSNonNullExpression',
+    'TSAsExpression',
+    'TSSatisfiesExpression',
+]);
 
 /**
  * `(x)`·`x!`·`x as T`를 벗긴다. `await x`는 벗기지 않는다: `(await p()).catch(...)`의 `.catch`는
  * `p`의 결과 값에 붙은 것이라 `p`의 reject와 무관하다.
  */
 function unwrap(node: AstNode | undefined): AstNode | undefined {
-    let cur = node;
-    while (
-        cur !== undefined &&
-        [
-            'ParenthesizedExpression',
-            'TSNonNullExpression',
-            'TSAsExpression',
-            'TSSatisfiesExpression',
-        ].includes(cur.type)
-    ) {
-        cur = nodeAt(cur, 'expression');
-    }
-    return cur;
+    return node !== undefined && TRANSPARENT_WRAPPERS.has(node.type)
+        ? unwrap(nodeAt(node, 'expression'))
+        : node;
 }
 
 function isLogCall(node: AstNode): boolean {
@@ -157,10 +169,6 @@ function isLogCall(node: AstNode): boolean {
         LOG_METHODS.has(str(property, 'name') ?? '')
     );
 }
-
-/* ------------------------------------------------------------------ */
-/* 파일 범위: 호출 이름을 목록의 함수로 해석한다                           */
-/* ------------------------------------------------------------------ */
 
 interface FileScope {
     /** 로컬 경로(`@/…`·상대)의 이름 있는 import: local → imported. 패키지 import는 넣지 않는다. */
@@ -305,12 +313,18 @@ function resolvesToSafe(
     return false;
 }
 
-/* ------------------------------------------------------------------ */
-/* 로그 문구                                                            */
-/* ------------------------------------------------------------------ */
-
 /** 정적 문구 조각. `null`은 `${}` 슬롯이나 문자열이 아닌 피연산자(값을 모른다). */
 type Piece = string | null;
+
+/** 템플릿 조각(`TemplateElement`)의 문자열. `value`는 `type`이 없는 평범한 객체라 `nodeAt`으로 못 읽는다. */
+function quasiText(quasi: AstNode): string {
+    const { value } = quasi;
+    if (typeof value !== 'object' || value === null) return '';
+    const cooked = 'cooked' in value ? value.cooked : undefined;
+    const raw = 'raw' in value ? value.raw : undefined;
+    if (typeof cooked === 'string') return cooked;
+    return typeof raw === 'string' ? raw : '';
+}
 
 function piecesOf(
     node: AstNode | undefined,
@@ -323,9 +337,7 @@ function piecesOf(
     }
     if (node.type === 'TemplateLiteral') {
         const quasis = listAt(node, 'quasis').map(q => {
-            // `value`는 `type`이 없는 평범한 객체라 `nodeAt`으로 읽을 수 없다.
-            const value = q.value as { cooked?: string; raw?: string };
-            return value.cooked ?? value.raw ?? '';
+            return quasiText(q);
         });
         const slots = listAt(node, 'expressions');
         return quasis.flatMap((q, i) => [
@@ -425,11 +437,7 @@ export function logCanProduce(parts: readonly string[], term: string): boolean {
     });
 }
 
-/* ------------------------------------------------------------------ */
-/* 로그 위치 찾기                                                        */
-/* ------------------------------------------------------------------ */
-
-export interface LogSite {
+interface LogSite {
     readonly file: string;
     readonly line: number;
     /** 로그 호출 노드의 소스 범위(반증용 변형이 이 범위를 감싼다). */
@@ -440,7 +448,7 @@ export interface LogSite {
     readonly deadReason: string | undefined;
 }
 
-export type DeadLogSite = LogSite & { readonly reason: string };
+type DeadLogSite = LogSite & { readonly reason: string };
 
 function lineOf(text: string, offset: number): number {
     return text.slice(0, offset).split('\n').length;
