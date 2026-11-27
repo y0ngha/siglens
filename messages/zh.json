@@ -3730,6 +3730,19 @@
                 "button": "查看苹果的分析"
             },
             "updated": "最后更新：{date}"
+        },
+        "signal-record": {
+            "basisBearish": "信号首次确认当天的收盘价与数日后收盘价相比，后者更低的案例占比。请将四个时间段合在一起看。天数按交易日计算。",
+            "basisBullish": "信号首次确认当天的收盘价与数日后收盘价相比，后者更高的案例占比。请将四个时间段合在一起看。天数按交易日计算。",
+            "disclaimer": "这是过往记录，并不代表未来的结果。",
+            "eventRow": "{days}天后朝信号方向变动的占比 {event}（{n, number}个案例）",
+            "heading": "{signal}信号的过往记录",
+            "horizonLabel": "{days}天后",
+            "insufficient": "样本较少，因此不列出占比。",
+            "placeboRow": "同一只股票随机日期按同样方式统计的占比 {placebo}",
+            "scope": "统计范围：美国{us, number}只、韩国{kr, number}只股票的日线中，信号首次确认的日期为{from}至{to}的案例。",
+            "verdictBeats": "高于随机日期。",
+            "verdictNoEdge": "未能确认高于随机日期。"
         }
     },
     "widgets": {

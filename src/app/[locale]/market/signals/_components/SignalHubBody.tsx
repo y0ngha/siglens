@@ -40,6 +40,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { MailAlertCard } from '@/features/mail-alert/ui/MailAlertCard';
 import { SignalHubLinks } from '@/widgets/signal-hubs/SignalHubLinks';
+import { SignalBaseRateTable } from '@/views/signal-record/SignalBaseRateTable';
 import { isSignalHubDataIndexable } from '../_lib/isSignalHubDataIndexable';
 import { loadSignalHub } from '../_lib/loadSignalHub';
 import { signalHubCopy } from '../_lib/signalHubCopy';
@@ -212,6 +213,13 @@ export async function SignalHubBody({
                             </Link>
                         </section>
                     )}
+
+                    {/* 합산 기록이라 데이터 소스(신호 기록)가 비어도 그린다. 네 기간이 다 없으면 null이다. */}
+                    <SignalBaseRateTable
+                        signalType={hub.signalType}
+                        locale={locale}
+                        className="mt-6"
+                    />
 
                     {data.degraded ? (
                         <p className="mt-8 text-sm text-secondary-400">

@@ -31,6 +31,10 @@ vi.mock('@/entities/guide/api', () => ({
     })),
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
+// 이 파일은 카드 위치만 본다 — 과거 기록 표(자기 제목을 가진다)는 `views/signal-record` 스위트가 검사한다.
+vi.mock('@/views/signal-record/SignalBaseRateTable', () => ({
+    SignalBaseRateTable: () => null,
+}));
 const launched = vi.hoisted(() => ({ value: true }));
 vi.mock(
     '@/entities/mail-alert/lib/mailAlertConstants',

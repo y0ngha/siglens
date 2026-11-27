@@ -26,7 +26,7 @@ vi.mock('@/views/guide/GuideUnavailablePage', () => ({
     GuideUnavailablePage: () => null,
 }));
 
-import { isValidElement, type ReactNode } from 'react';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { loadGuideCatalog } from '@/entities/guide/api';
 import type { GuideCatalog } from '@/entities/guide/types';
 import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
@@ -447,6 +447,32 @@ describe('/guide/[category]/[slug]', () => {
             GuideEntryPage
         );
         expect(props?.liveSymbols).toBeNull();
+    });
+
+    it('신호 페이지가 설명 문서로 삼는 항목에는 그 신호마다 과거 기록 표를 넘긴다', async () => {
+        const { GuideEntryPage } = await import('@/views/guide/GuideEntryPage');
+        const props = findProps(
+            await GuideEntryRoute(entryParams('indicators', 'rsi', 'en')),
+            GuideEntryPage
+        );
+        const records = props?.signalRecords as ReactElement<{
+            signalType: string;
+            locale: string;
+        }>[];
+        expect(records.map(node => node.props.signalType)).toEqual([
+            'rsi_oversold',
+            'rsi_overbought',
+        ]);
+        expect(records.map(node => node.props.locale)).toEqual(['en', 'en']);
+    });
+
+    it('신호 페이지가 가리키지 않는 항목에는 과거 기록 표가 없다', async () => {
+        const { GuideEntryPage } = await import('@/views/guide/GuideEntryPage');
+        const props = findProps(
+            await GuideEntryRoute(entryParams('candlesticks', 'doji')),
+            GuideEntryPage
+        );
+        expect(props?.signalRecords).toEqual([]);
     });
 
     describe('카탈로그를 못 읽으면', () => {

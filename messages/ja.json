@@ -3730,6 +3730,19 @@
                 "button": "アップルの分析を見る"
             },
             "updated": "最終更新：{date}"
+        },
+        "signal-record": {
+            "basisBearish": "シグナルが初めて確定した日の終値より、数日後の終値が低かった事例の割合です。4つの期間をすべて合わせてご覧ください。日数は営業日です。",
+            "basisBullish": "シグナルが初めて確定した日の終値より、数日後の終値が高かった事例の割合です。4つの期間をすべて合わせてご覧ください。日数は営業日です。",
+            "disclaimer": "過去の記録であり、今後の結果を示すものではありません。",
+            "eventRow": "{days}日後にシグナルの方向へ動いた割合 {event}（{n, number}件）",
+            "heading": "{signal}シグナルの過去の記録",
+            "horizonLabel": "{days}日後",
+            "insufficient": "事例が少ないため割合は掲載しません。",
+            "placeboRow": "同じ銘柄の任意の日で同様に数えた割合 {placebo}",
+            "scope": "測定範囲：米国{us, number}銘柄と韓国{kr, number}銘柄の日足で、シグナルが初めて確定した日が{from}から{to}までの事例です。",
+            "verdictBeats": "任意の日より高い結果でした。",
+            "verdictNoEdge": "任意の日より高いとは確認されませんでした。"
         }
     },
     "widgets": {
