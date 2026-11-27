@@ -180,6 +180,29 @@ describe('KR_EQUITY_SESSION 특수 거래일', () => {
         }
     );
 
+    /**
+     * 지평선을 다음 해로 늘리면서 특수일 표를 잊으면, 그해 첫 거래일·수능일이 조용히 09:00
+     * 개장으로 남는다. 지평선 해에 두 종류가 모두 있어야 통과하므로 지평선을 올리는 변경이
+     * 표 갱신을 함께 강제한다.
+     */
+    it('지평선 해의 연초 첫 거래일과 수능일이 표에 있다', () => {
+        const year = Number(KR_CALENDAR_HORIZON.slice(0, 4));
+        const dayMs = 24 * 60 * 60 * 1000;
+        const kinds: string[] = [];
+        for (
+            let t = Date.UTC(year, 0, 1, 3);
+            t <= Date.parse(`${KR_CALENDAR_HORIZON}T03:00:00Z`);
+            t += dayMs
+        ) {
+            const noonKst = new Date(t);
+            const open = openMinuteFor(noonKst);
+            const close = closeMinuteFor(noonKst);
+            if (open === 600 && close === 930) kinds.push('first-trading-day');
+            if (open === 600 && close === 990) kinds.push('csat');
+        }
+        expect(kinds).toEqual(['first-trading-day', 'csat']);
+    });
+
     it('평범한 거래일은 09:00 개장, 15:30 마감', () => {
         // 2026-11-18(수) — 수능일 전날.
         const noonKst = new Date('2026-11-18T03:00:00Z');

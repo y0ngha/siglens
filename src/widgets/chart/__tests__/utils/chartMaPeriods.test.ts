@@ -1,4 +1,5 @@
 import {
+    EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
     calculateMA,
@@ -10,6 +11,7 @@ import {
     CHART_ONLY_MA_PERIODS,
 } from '@/widgets/chart/constants';
 import { withChartOnlyMaPeriods } from '@/widgets/chart/utils/chartMaPeriods';
+import { getPeriodColor } from '@/shared/lib/chartColors';
 
 function barsWithCloses(closes: readonly number[]): Bar[] {
     return closes.map((close, index) => ({
@@ -40,6 +42,24 @@ describe('CHART_MA_PERIODS', () => {
         for (const period of CHART_ONLY_MA_PERIODS) {
             expect(MA_DEFAULT_PERIODS).not.toContain(period);
         }
+    });
+});
+
+/**
+ * 50일선은 10일선 색(period10)을 빌린다. 그게 안전한 건 MA·EMA 기본 기간에 10이 없어서다 —
+ * core가 10을 기본 기간에 넣으면 한 차트에 같은 색 선이 둘 생기므로, 그때 여기서 깨져 50일선
+ * 색을 다시 고르게 한다.
+ */
+describe('50일선 색', () => {
+    it('period10 색을 쓰고, 그 색을 쓰는 10은 core MA·EMA 기본 기간에 없다', () => {
+        expect(getPeriodColor(50)).toBe(getPeriodColor(10));
+        expect(MA_DEFAULT_PERIODS).not.toContain(10);
+        expect(EMA_DEFAULT_PERIODS).not.toContain(10);
+    });
+
+    it('차트 MA 메뉴의 다른 기간과 색이 겹치지 않는다', () => {
+        const colors = CHART_MA_PERIODS.map(period => getPeriodColor(period));
+        expect(new Set(colors).size).toBe(CHART_MA_PERIODS.length);
     });
 });
 

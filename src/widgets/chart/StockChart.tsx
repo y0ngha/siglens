@@ -44,7 +44,6 @@ import { useOverlayLegend } from './hooks/useOverlayLegend';
 import { usePaneLabels } from './hooks/usePaneLabels';
 import { usePaneResizeOnToggle } from './hooks/usePaneResizeOnToggle';
 import { usePriceOverlayIndicators } from './hooks/usePriceOverlayIndicators';
-import { withChartOnlyMaPeriods } from './utils/chartMaPeriods';
 import { usePricePaneSize } from './hooks/usePricePaneSize';
 import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useRightGutter } from './hooks/useRightGutter';
@@ -52,6 +51,7 @@ import { useSmcZones } from './hooks/useSmcZones';
 import type { IndicatorHookParams } from './model/chartHookParams';
 import { ChartHeaderBar } from './ui/ChartHeaderBar';
 import { ExtendedHoursLegendBadge } from './ui/ExtendedHoursLegendBadge';
+import { withChartOnlyMaPeriods } from './utils/chartMaPeriods';
 import { createExtendedGapController } from './utils/extendedGapChart';
 import { buildIndicatorBindings } from './utils/indicatorBindings';
 import {
