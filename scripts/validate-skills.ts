@@ -37,12 +37,14 @@ import { fileURLToPath } from 'node:url';
 import { glob } from 'glob';
 import matter from 'gray-matter';
 import {
+    COMPUTED_CARD_KINDS,
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
     STRATEGY_OVERLAY_KINDS,
 } from '@y0ngha/siglens-core';
 import type {
     CandlePattern,
+    CycleCardKind,
     MultiCandlePattern,
     SignalType,
     SkillStateFeature,
@@ -431,12 +433,77 @@ function validateOverlayKind(type: unknown, raw: unknown): string | null {
         : `\`overlay_kind\` must be one of ${STRATEGY_OVERLAY_KINDS.join(' | ')} (got ${String(raw)}).`;
 }
 
+// core's own list — a catalog tag is checked against it, never a local copy.
+const COMPUTED_CARD_KIND_SET: ReadonlySet<string> = new Set<string>(
+    COMPUTED_CARD_KINDS
+);
+
+/**
+ * The `computed_card` values a strategy skill may carry; every other kind belongs to an `indicator_guide`.
+ * Core exports no cycle-only list, so the record is tied to `CycleCardKind`: a new cycle kind is a
+ * compile error here until it is listed.
+ */
+const CYCLE_CARD_KINDS = Object.keys({
+    ma_cycle: true,
+    macd_cycle: true,
+} satisfies Record<CycleCardKind, true>);
+const CYCLE_CARD_KIND_SET: ReadonlySet<string> = new Set<string>(
+    CYCLE_CARD_KINDS
+);
+
+interface ComputedCardOptions {
+    /**
+     * Every `indicator_guide` that is not a reference doc (`_core/`, the SMC full guide) must
+     * carry a tag: without one core builds no card and the panel silently loses that indicator.
+     */
+    readonly requireOnIndicatorGuide: boolean;
+}
+
+/**
+ * `computed_card` makes core build this skill's card in code from the lines the prompt
+ * prints (the model no longer writes it). A wrong value drops the card without an error
+ * (core ignores an unknown kind), so the build rejects it first.
+ */
+function validateComputedCard(
+    type: unknown,
+    raw: unknown,
+    options: ComputedCardOptions
+): string | null {
+    if (raw === undefined) {
+        return type === 'indicator_guide' && options.requireOnIndicatorGuide
+            ? '`computed_card` is required on a non-reference `indicator_guide` (core builds no card without it).'
+            : null;
+    }
+    if (type !== 'indicator_guide' && type !== 'strategy') {
+        return '`computed_card` is only allowed on type: indicator_guide or strategy';
+    }
+    if (typeof raw !== 'string' || !COMPUTED_CARD_KIND_SET.has(raw)) {
+        return `\`computed_card\` must be one of ${COMPUTED_CARD_KINDS.join(' | ')} (got ${String(raw)}).`;
+    }
+    const isCycle = CYCLE_CARD_KIND_SET.has(raw);
+    if (type === 'strategy' && !isCycle) {
+        return `\`computed_card: ${raw}\` is an indicator card kind; a strategy takes ${CYCLE_CARD_KINDS.join(' | ')}.`;
+    }
+    if (type === 'indicator_guide' && isCycle) {
+        return `\`computed_card: ${raw}\` is a cycle card kind; an indicator_guide takes an indicator card kind.`;
+    }
+    return null;
+}
+
 /**
  * Validate a single skill's frontmatter `data`. Returns the list of error
  * messages (empty when the skill is valid). Exported for unit testing without
  * spawning the CLI.
  */
-export const validateSkillData = (data: Record<string, unknown>): string[] => {
+export const validateSkillData = (
+    data: Record<string, unknown>,
+    options: ComputedCardOptions = { requireOnIndicatorGuide: false }
+): string[] => {
+    const computedCardError = validateComputedCard(
+        data.type,
+        data.computed_card,
+        options
+    );
     const usageRolesError = validateUsageRoles(
         data.type,
         data.usage_roles,
@@ -454,6 +521,7 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
             ...(usageRolesError !== null ? [usageRolesError] : []),
             ...(displayColorError !== null ? [displayColorError] : []),
             ...(overlayKindError !== null ? [overlayKindError] : []),
+            ...(computedCardError !== null ? [computedCardError] : []),
             'missing `gating` block — every skill must declare `gating.tier` (see skills/CLAUDE.md explicit-gating policy).',
         ];
     }
@@ -462,6 +530,7 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
         ...(usageRolesError !== null ? [usageRolesError] : []),
         ...(displayColorError !== null ? [displayColorError] : []),
         ...(overlayKindError !== null ? [overlayKindError] : []),
+        ...(computedCardError !== null ? [computedCardError] : []),
         ...validateGating(data.gating, data.type),
     ];
 };
@@ -539,6 +608,10 @@ function validateGating(gating: unknown, type: unknown): string[] {
     return [];
 }
 
+/** `_core/` docs and the SMC full guide are reference text: core builds no card for them. */
+const isReferenceDoc = (rel: string, data: Record<string, unknown>): boolean =>
+    rel.split('/').includes('_core') || data.smc_full_guide === true;
+
 interface FileResult {
     hasGating: boolean;
     errors: SkillError[];
@@ -574,7 +647,9 @@ export const parseSkillFile = (file: string): FileResult => {
 
     return {
         hasGating: 'gating' in data,
-        errors: validateSkillData(data).map(withFile),
+        errors: validateSkillData(data, {
+            requireOnIndicatorGuide: !isReferenceDoc(rel, data),
+        }).map(withFile),
     };
 };
 

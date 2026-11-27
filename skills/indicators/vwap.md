@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['vwap']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, measurement]
+computed_card: vwap
 gating:
   tier: gated
   signal_kind: state

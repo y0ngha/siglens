@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['supertrend']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, risk]
+computed_card: supertrend
 gating:
   tier: gated
   signal_kind: event

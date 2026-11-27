@@ -32,6 +32,7 @@ All keys are **snake_case**; the loader maps them to camelCase `Skill` fields.
 | `gating.triggers` | `event` only | `[signal_name, ...]` | each must be a valid catalog name or a detected candle pattern; non-empty |
 | `gating.state` | `state` only | `{ feature, predicate }` | must be one of the valid pairs below; optional `hi`/`lo` numeric thresholds |
 | `token_cost` | top-level | number | **measured token estimate of the skill's `PROMPT_DIGEST` section** (`Math.ceil(digestText.length / 4)`) — maintained by `yarn skills:digest-update`, checked by `yarn skills:digest-verify`. See [PROMPT_DIGEST markers](#prompt_digest-markers) below. Do not hand-set it. |
+| `computed_card` | top-level | an indicator card kind, or `ma_cycle` \| `macd_cycle` | **`indicator_guide` and the two cycle strategies only** — core builds this skill's card in code from the lines the prompt prints (the model does not write it), and an untagged guide gets no card; `smart-money-concepts.md` and the `_core/` reference docs carry none. A new kind needs its siglens renderer (`widgets/analysis/utils/renderIndicatorReading.ts`) before the tag lands. |
 | `smc_full_guide` | top-level | `true` | **SMC full-guide skill only** — identifies it so a compressed note can replace it |
 | `overlay_kind` | top-level | `divergence` \| `fibonacci` \| `elliott` | **`type: strategy` only** — the one chart overlay kind this strategy's card may draw. core drops any other kind the model cites (the chart menu names a drawing after its card), and a strategy without it draws nothing. Rationale: siglens-core `resolveChartOverlays` (`strategySlotKinds` JSDoc). |
 
@@ -86,7 +87,7 @@ different things depending on which analysis type the skill belongs to:
 - **Chart skills** — chart-relevant, deliberately ungated (no detector, or used as
   an analysis lens): theory strategies (elliott-wave / fibonacci / multi-timeframe),
   S/R, SMC. Chart-pattern skills are **not** in this list — each is
-  event-gated on its own chart-pattern pre-screener candidate (see below); the
+  event-gated on its own qualified chart-pattern candidate (see below); the
   always-on `_core/pattern-index.md` covers baseline pattern awareness for every
   chart prompt regardless of which individual pattern skills gate in. Ichimoku
   (`indicators/ichimoku-cloud.md`) is also **not** in this list — it is
@@ -110,9 +111,11 @@ a trigger from the wrong category even if the name is valid in another:
 1. A valid `detectSignals` catalog name (below) — for `indicator_guide`,
    `strategy`, and `support_resistance` skills.
 2. A detected candle-pattern name — for `candlestick` skills only.
-3. A chart-pattern pre-screener candidate id — for `pattern` skills only. These
-   are the `ChartPatternId` values the core's `screenChartPatterns()` can flag —
-   the list is `PATTERN_TRIGGER_CATALOG` in `scripts/validate-skills.ts`.
+3. A chart-pattern id — for `pattern` skills only. These are the
+   `ChartPatternId` values the core's `screenChartPatterns()` can flag — the list
+   is `PATTERN_TRIGGER_CATALOG` in `scripts/validate-skills.ts`. The skill is
+   injected only when the engine qualifies that pattern and prints it under
+   `## Chart Pattern Candidates`; a loose pre-screener shape hint selects nothing.
 
 The validator cross-checks each skill's triggers against only the category
 valid for its own `type`: a typo'd trigger, or a trigger borrowed from the
@@ -229,8 +232,8 @@ leaves the index restating the old rule is the usual miss.
 1. **Pick the tier** per "tier: always_on" above. A `type: pattern` skill is always `tier: gated` on its own
    `ChartPatternId` event trigger; never leave `gating` off.
 2. **If gated, pick the kind:**
-   - **event** — there is a catalog signal, candle pattern, or chart-pattern
-     pre-screener candidate that should turn it on. Add `signal_kind: event` + a
+   - **event** — there is a catalog signal, candle pattern, or qualified
+     chart-pattern candidate that should turn it on. Add `signal_kind: event` + a
      non-empty `triggers` list drawn from the category that matches this skill's
      `type` (indicator/strategy/S-R → `detectSignals` names, `candlestick` →
      candle names, `pattern` → `ChartPatternId` values).

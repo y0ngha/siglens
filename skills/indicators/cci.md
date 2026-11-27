@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['cci']
 confidence_weight: 0.75
 usage_roles: [signal, confirmation]
+computed_card: cci
 gating:
   tier: gated
   signal_kind: event

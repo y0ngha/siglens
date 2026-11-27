@@ -1,4 +1,4 @@
-import type { Trend } from '@y0ngha/siglens-core';
+import type { CycleReading, CycleStage, Trend } from '@y0ngha/siglens-core';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { createEnumGuard } from './createEnumGuard';
 import { asRecord, narrowCleanString } from './narrowJson';
@@ -18,6 +18,82 @@ interface NarrowedSkillDetection {
     name: string;
     trend: Trend | null;
     summary: string;
+    /**
+     * core가 코드로 만든 대순환 카드의 구조화된 읽기. 있으면 `summary`는 영어 정본이라 렌더러가
+     * 이 값을 독자 언어로 풀어 쓴다. 패턴·모델이 쓴 전략·옛 행은 `null`.
+     */
+    cycle: CycleReading | null;
+}
+
+const CYCLE_KINDS: ReadonlySet<unknown> = new Set(['ma_cycle', 'macd_cycle']);
+const CYCLE_ROLES: ReadonlySet<unknown> = new Set(['short', 'medium', 'long']);
+const CYCLE_SLOPES: ReadonlySet<unknown> = new Set([
+    'rising',
+    'falling',
+    'flat',
+]);
+
+const isCycleStage = (value: unknown): value is CycleStage =>
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 1 &&
+    value <= 6;
+
+const isFiniteNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value);
+
+/** 숫자만 담긴 레코드면 그대로, 하나라도 숫자가 아니면 `null`. */
+function narrowNumberRecord(value: unknown): Record<string, number> | null {
+    const record = asRecord(value);
+    if (record === null) return null;
+    const entries = Object.entries(record);
+    return entries.every(([, v]) => isFiniteNumber(v))
+        ? Object.fromEntries(entries.map(([k, v]) => [k, Number(v)]))
+        : null;
+}
+
+/**
+ * 저장된 JSONB의 `cycle`을 `CycleReading`으로 좁힌다. 한 필드라도 모양이 어긋나면 `null` —
+ * 손상된 읽기를 추측해 고치지 않고 영어 정본(`summary`)이 아니라 일반 전략 줄로 물러난다.
+ */
+export function narrowCycleReading(value: unknown): CycleReading | null {
+    const record = asRecord(value);
+    if (record === null) return null;
+    const { kind, stage, previousStage, barsInStage, progression } = record;
+    const values = narrowNumberRecord(record.values);
+    const slopesRecord = asRecord(record.slopes);
+    if (
+        !CYCLE_KINDS.has(kind) ||
+        !isCycleStage(stage) ||
+        !(previousStage === null || isCycleStage(previousStage)) ||
+        !(
+            barsInStage === null ||
+            (isFiniteNumber(barsInStage) && barsInStage >= 0)
+        ) ||
+        !(
+            progression === null ||
+            progression === 'forward' ||
+            progression === 'reverse'
+        ) ||
+        !isFiniteNumber(record.stageChanges) ||
+        values === null ||
+        slopesRecord === null
+    ) {
+        return null;
+    }
+    const slopeEntries = Object.entries(slopesRecord);
+    if (
+        !slopeEntries.every(([, v]) => v === null || CYCLE_SLOPES.has(v)) ||
+        !(
+            record.order === undefined ||
+            (Array.isArray(record.order) &&
+                record.order.every(role => CYCLE_ROLES.has(role)))
+        )
+    ) {
+        return null;
+    }
+    // safe: 위에서 종류·단계·이력 필드·값·기울기·순서를 모두 `CycleReading`의 모양으로 검증했다.
+    return record as unknown as CycleReading;
 }
 
 function narrowSkillDetection(
@@ -33,6 +109,10 @@ function narrowSkillDetection(
         name: typeof record[nameField] === 'string' ? record[nameField] : '',
         trend: isTrend(record.trend) ? record.trend : null,
         summary,
+        cycle:
+            nameField === 'strategyName'
+                ? narrowCycleReading(record.cycle)
+                : null,
     };
 }
 
@@ -80,8 +160,12 @@ export function narrowTechnicalContent(
             ? stripSnapshotMarkdown(record.summary)
             : '';
 
+    // 감지되지 않은 패턴 줄("이 패턴은 보이지 않아요")은 크롤러·메일에 내보낼 산문이 아니다.
+    // 엔진이 자격을 인정한 후보에 대한 판정만 `patternSummaries`에 남지만(core), 옛 행과
+    // 후보가 반려된 판정은 `detected: false`로 남아 있어 여기서 거른다.
     const patternSummaries = Array.isArray(record.patternSummaries)
         ? record.patternSummaries
+              .filter(item => asRecord(item)?.detected === true)
               .map(item => narrowSkillDetection(item, 'patternName'))
               .filter((p): p is NarrowedSkillDetection => p !== null)
         : [];

@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['atr']
 confidence_weight: 0.8
 usage_roles: [confirmation, measurement, risk]
+computed_card: atr
 gating:
   tier: always_on
 token_cost: 448

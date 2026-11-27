@@ -21,6 +21,11 @@ import { quotedPriceForSymbol } from '@/shared/lib/analysisPriceFormat';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { selectPanelSkillResults } from './panelSkillResults';
+import {
+    renderCycleReading,
+    renderIndicatorReading,
+    type ReadingRenderContext,
+} from './renderIndicatorReading';
 import { TREND_LABEL_KEY } from './trendUtils';
 
 interface BuildExpertAnalysisReportInput {
@@ -42,6 +47,11 @@ interface BuildExpertAnalysisReportInput {
      * 복사본에 한국어 front-matter 이름이 섞인다(패널은 이미 표시명을 쓴다).
      */
     skillLabel: (name: string) => string;
+    /**
+     * 지표·대순환 카드의 구조화된 읽기를 독자 언어로 푸는 컨텍스트(`useReadingRenderContext`).
+     * 필수다 — 빠지면 core가 코드로 만든 카드가 영어 정본 줄로 복사본에 섞인다.
+     */
+    readingContext: ReadingRenderContext;
 }
 
 /**
@@ -209,7 +219,21 @@ function buildKeyLevelsBlock(
 
 /** 근거 한 항목 — 이름 아래에 별표(마크다운 강조)를 걷어낸 설명을 들여 쓴다. */
 function formatEvidenceLine(name: string, description: string): string {
-    return `- ${name}\n  - ${normalizeWhitespace(description).replace(/\*/g, '')}`;
+    return formatEvidenceLines(name, [description]);
+}
+
+/** 근거 한 항목의 설명이 여러 줄일 때(대순환 카드) — 줄마다 들여 쓴 하위 항목으로. */
+function formatEvidenceLines(
+    name: string,
+    descriptions: readonly string[]
+): string {
+    return [
+        `- ${name}`,
+        ...descriptions.map(
+            description =>
+                `  - ${normalizeWhitespace(description).replace(/\*/g, '')}`
+        ),
+    ].join('\n');
 }
 
 /**
@@ -219,7 +243,8 @@ function formatEvidenceLine(name: string, description: string): string {
 function buildEvidenceBlock(
     analysis: AnalysisResponse,
     tReport: ReportTranslator,
-    skillLabel: (name: string) => string
+    skillLabel: (name: string) => string,
+    readingContext: ReadingRenderContext
 ): string | null {
     const { detectedPatterns, strategies, indicatorResults } =
         selectPanelSkillResults(analysis);
@@ -229,19 +254,35 @@ function buildEvidenceBlock(
             result.signals.map(signal =>
                 formatEvidenceLine(
                     skillLabel(result.indicatorName),
-                    signal.description
+                    // core가 코드로 만든 카드는 `description`이 영어 정본이다 — 화면과 같이
+                    // 읽기를 독자 언어로 풀고, 읽기가 없는 카드만 `description`을 쓴다.
+                    (signal.reading === undefined
+                        ? null
+                        : renderIndicatorReading(
+                              signal.reading,
+                              readingContext
+                          )) ?? signal.description
                 )
             )
         ),
         ...detectedPatterns.map(pattern =>
             formatEvidenceLine(skillLabel(pattern.skillName), pattern.summary)
         ),
-        ...strategies.map(strategy =>
-            formatEvidenceLine(
-                skillLabel(strategy.strategyName),
-                strategy.summary
-            )
-        ),
+        ...strategies.map(strategy => {
+            const cycleLines =
+                strategy.cycle === undefined
+                    ? null
+                    : renderCycleReading(strategy.cycle, readingContext);
+            return cycleLines === null
+                ? formatEvidenceLine(
+                      skillLabel(strategy.strategyName),
+                      strategy.summary
+                  )
+                : formatEvidenceLines(
+                      skillLabel(strategy.strategyName),
+                      cycleLines
+                  );
+        }),
     ];
 
     return headedBlock(tReport('evidenceHeading'), lines);
@@ -355,6 +396,7 @@ export function buildExpertAnalysisReport({
     t,
     tReport,
     skillLabel,
+    readingContext,
 }: BuildExpertAnalysisReportInput): string {
     // keyLevels(ClusteredKeyLevels)는 부분 객체로 전달될 수 있으므로 support/
     // resistance 배열을 입구에서 1회 정규화한다 — 이후 helper들이 안전한 배열을
@@ -398,7 +440,7 @@ export function buildExpertAnalysisReport({
             tReport,
             formatPrice
         ),
-        buildEvidenceBlock(analysis, tReport, skillLabel),
+        buildEvidenceBlock(analysis, tReport, skillLabel, readingContext),
         buildScenarioBlock(analysis, tReport, formatPrice),
         `${tReport('responseStance')}
 ${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport, formatPrice)}`,

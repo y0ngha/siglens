@@ -8,8 +8,11 @@ import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { GuideHintLink } from '../GuideHintLink';
+import { useReadingRenderContext } from '../hooks/useReadingRenderContext';
 import type { OverlayCardControls } from '../model/types';
 import { parseStructuredSummary } from '../utils/parseStructuredSummary';
+import { renderCycleReading } from '../utils/renderIndicatorReading';
+import { CycleReadingSummary } from './CycleReadingSummary';
 import { SkillAccordionCard } from './SkillAccordionCard';
 import { StructuredSkillSummary } from './StructuredSkillSummary';
 
@@ -27,7 +30,14 @@ export function StrategyAccordionItem({
     overlay,
 }: StrategyAccordionItemProps) {
     const skillLabel = useSkillLabel();
+    const readingContext = useReadingRenderContext();
     const title = skillLabel(strategy.strategyName);
+    // 대순환 카드는 `summary`가 영어 정본이라 구조화된 `cycle`을 독자 언어로 푼다. `cycle`이
+    // 없는 카드(옛 캐시·모델이 쓴 전략)와 표에 없는 종류는 기존 요약 렌더로 물러난다.
+    const cycleLines =
+        strategy.cycle === undefined
+            ? null
+            : renderCycleReading(strategy.cycle, readingContext);
     const sections = parseStructuredSummary(strategy.summary);
     const guidePath = guidePathForSkill(strategy.strategyName);
 
@@ -40,7 +50,9 @@ export function StrategyAccordionItem({
             showConfidence={showConfidence}
             overlay={overlay}
         >
-            {sections !== null ? (
+            {cycleLines !== null ? (
+                <CycleReadingSummary lines={cycleLines} />
+            ) : sections !== null ? (
                 <StructuredSkillSummary sections={sections} />
             ) : (
                 <MarkdownText className="text-xs text-secondary-400">

@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['stochastic']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation]
+computed_card: stochastic
 gating:
   tier: gated
   signal_kind: state

@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
 usage_roles: [confirmation, regime]
+computed_card: adx
 gating:
   tier: always_on
 token_cost: 436

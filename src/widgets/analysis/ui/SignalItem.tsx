@@ -8,6 +8,8 @@ import type { AnalysisSignal, AnalysisSignalType } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { GuideHintLink } from '../GuideHintLink';
+import { useReadingRenderContext } from '../hooks/useReadingRenderContext';
+import { renderIndicatorReading } from '../utils/renderIndicatorReading';
 import { resolveStrengthDisplay } from '../utils/signalUtils';
 import { TrendBadge } from './TrendBadge';
 
@@ -26,7 +28,15 @@ export function SignalItem({ signal, typeLabel, guidePath }: SignalItemProps) {
     const tSection = useTranslations('widgets.analysis.sectionLabel');
     const tStrength = useTranslations('widgets.analysis.signalStrength');
     const strengthDisplay = resolveStrengthDisplay(signal.strength);
+    const readingContext = useReadingRenderContext();
     const label = typeLabel ?? tSection(SIGNAL_TYPE_LABEL[signal.type]);
+    // core가 코드로 만든 카드는 `description`이 영어 정본이다 — 화면에는 구조화된 읽기를
+    // 독자 언어로 푼 문장을 쓴다. 읽기가 없거나(옛 캐시·모델이 쓴 카드) 표에 없는 종류면
+    // `description`을 그대로 보여 준다.
+    const readingText =
+        signal.reading === undefined
+            ? null
+            : renderIndicatorReading(signal.reading, readingContext);
 
     return (
         <div className="flex flex-col gap-1.5 rounded bg-secondary-700/40 px-3 py-2">
@@ -48,9 +58,13 @@ export function SignalItem({ signal, typeLabel, guidePath }: SignalItemProps) {
                     )}
                 </div>
             </div>
-            <MarkdownText className="text-xs text-secondary-400">
-                {signal.description}
-            </MarkdownText>
+            {readingText !== null ? (
+                <p className="text-xs text-secondary-400">{readingText}</p>
+            ) : (
+                <MarkdownText className="text-xs text-secondary-400">
+                    {signal.description}
+                </MarkdownText>
+            )}
             {guidePath != null && (
                 <GuideHintLink href={guidePath} name={label} />
             )}
