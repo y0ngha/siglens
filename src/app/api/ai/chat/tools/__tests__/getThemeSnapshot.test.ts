@@ -8,7 +8,7 @@ const { provider, asset, forming } = vi.hoisted(() => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => provider,
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: asset.info,
 }));
 vi.mock('@/entities/bars/lib/quantizeBars', () => ({

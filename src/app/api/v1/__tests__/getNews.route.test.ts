@@ -86,7 +86,7 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: async () => null,
 }));
 // 나머지 실행기 모듈 — 이 테스트와 무관하다.

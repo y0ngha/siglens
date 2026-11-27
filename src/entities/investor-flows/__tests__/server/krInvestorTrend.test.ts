@@ -17,7 +17,7 @@ import {
     KR_TREND_ROWS_SHOWN,
     loadKrInvestorTrend,
     loadKrInvestorTrendRows,
-} from '@/app/api/ai/chat/tools/krInvestorTrend';
+} from '@/entities/investor-flows/server/krInvestorTrend';
 import type { NaverInvestorTrendRow } from '@/shared/api/naver/naverInvestorTrend';
 import { __resetInFlightForTests } from '@/shared/cache/getOrSetCache';
 

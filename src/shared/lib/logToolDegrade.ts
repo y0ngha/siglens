@@ -6,7 +6,7 @@ import { readErrorCode } from '@/shared/lib/readErrorCode';
  * error object, its `.message`, or `.stack`: a `DrizzleQueryError`'s message
  * (and often its stack) embeds the failed statement's bound params, which
  * for these tools can be the caller's `userId` or a symbol string built from
- * raw model tool-call args. Shared by `logToolError` (`./index.ts`) and
+ * raw model tool-call args. Shared by the tool dispatcher's `logToolError` and
  * `logToolDegrade` below so this extraction exists exactly once.
  */
 export function safeErrorFields(error: unknown): {

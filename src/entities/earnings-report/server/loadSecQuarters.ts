@@ -1,10 +1,4 @@
 import 'server-only';
-import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
-import { fetchCompanyConceptJson } from '@/shared/api/sec/secClient';
-import { createRedisFlag } from '@/shared/cache/createRedisFlag';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
-import type { SiglensDatabase } from '@/shared/db/types';
 import {
     buildSecQuarters,
     parseConceptFacts,
@@ -14,7 +8,13 @@ import {
     SEC_REVENUE_CONCEPTS,
     SEC_REVENUE_UNIT,
     type SecQuarter,
-} from './secQuarters';
+} from '@/entities/earnings-report/lib/secQuarters';
+import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
+import { fetchCompanyConceptJson } from '@/shared/api/sec/secClient';
+import { createRedisFlag } from '@/shared/cache/createRedisFlag';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 /**
  * Bump when the cached {@link SecQuarter} shape or the extraction rules

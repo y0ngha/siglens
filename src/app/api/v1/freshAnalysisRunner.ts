@@ -9,13 +9,13 @@ import {
     loadOverallHistoryInputs,
     loadTechnicalAnalysisInputs,
 } from '@/app/api/ai/chat/tools/freshAnalysisInputs';
-import { resolveAssetInfoOrNull } from '@/app/api/ai/chat/tools/resolveAssetInfo';
 import type { Outcome } from '@/app/api/ai/chat/tools/runFreshAnalysis';
 import { executeOverallAnalysis } from '@/entities/analysis/server/overallAnalysisRunner';
 import { executeNewsAnalysis } from '@/entities/news-article/server/newsAnalysisRunner';
 import { executeOptionsAnalysis } from '@/entities/options-chain/server/optionsAnalysisRunner';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { resolveKrxTickTable } from '@/entities/ticker/server/resolveKrxTickTable';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { benchmarkFor } from '@/shared/config/marketProfile/benchmark';

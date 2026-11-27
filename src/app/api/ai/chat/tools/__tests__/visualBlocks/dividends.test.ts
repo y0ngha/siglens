@@ -4,7 +4,7 @@ const m = vi.hoisted(() => ({ source: vi.fn(), assetOf: vi.fn() }));
 vi.mock('@/app/api/ai/chat/tools/dividends', () => ({
     fetchDividendSource: m.source,
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: m.assetOf,
 }));
 

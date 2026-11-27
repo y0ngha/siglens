@@ -21,18 +21,18 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    loadSecQuarters,
-    SEC_QUARTERS_BUDGET_MS,
-} from '@/app/api/ai/chat/tools/loadSecQuarters';
-import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
-import type { SiglensDatabase } from '@/shared/db/types';
-import {
     ipRevenue,
     jbhtRevenueIncludingTax,
     jbhtRevenuesStale,
     tprEps,
     tprRevenue,
-} from './fixtures/secConcepts';
+} from '@/entities/earnings-report/__tests__/fixtures/secConcepts';
+import {
+    loadSecQuarters,
+    SEC_QUARTERS_BUDGET_MS,
+} from '@/entities/earnings-report/server/loadSecQuarters';
+import { FMP_FUNDAMENTAL_CACHE_TTL_SECONDS } from '@/shared/config/time';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const db = 'fake-db' as unknown as SiglensDatabase;
 

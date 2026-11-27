@@ -2,10 +2,6 @@ import 'server-only';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
-    loadKrInvestorTrend,
-    type KrInvestorTrendView,
-} from '@/app/api/ai/chat/tools/krInvestorTrend';
-import {
     EMPTY_COLLECTING_SNAPSHOT,
     isKrDisclosureCollecting,
     maskUncollectedSections,
@@ -25,13 +21,17 @@ import {
     getInvestorFlowsScorecard,
     type InvestorFlowsScorecardResult,
 } from '@/entities/investor-flows/server/getInvestorFlowsScorecard';
+import {
+    loadKrInvestorTrend,
+    type KrInvestorTrendView,
+} from '@/entities/investor-flows/server/krInvestorTrend';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
     getYahooOwnershipShares,
     type YahooOwnershipShares,
 } from '@/shared/api/yahoo/yahooOwnershipSource';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { logToolDegrade } from './logToolDegrade';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 const BASE_SOURCE =
     'SEC 13F (institutions and their put/call options, quarterly, filed up to ~45 days after quarter end), Form 4 and 13D/13G via FMP, SEC Form 144, registration/offering filings and fails-to-deliver';

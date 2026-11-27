@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+    ipRevenue,
+    jbhtRevenueIncludingTax,
+    jbhtRevenuesStale,
+    tprEps,
+    tprRevenue,
+} from '@/entities/earnings-report/__tests__/fixtures/secConcepts';
+import {
     buildSecQuarters,
     findSecQuarter,
     parseConceptFacts,
@@ -9,14 +16,7 @@ import {
     SEC_REVENUE_UNIT,
     type SecConceptFact,
     type SecQuarter,
-} from '@/app/api/ai/chat/tools/secQuarters';
-import {
-    ipRevenue,
-    jbhtRevenueIncludingTax,
-    jbhtRevenuesStale,
-    tprEps,
-    tprRevenue,
-} from './fixtures/secConcepts';
+} from '@/entities/earnings-report/lib/secQuarters';
 
 const eps = (json: unknown) => parseConceptFacts(json, SEC_EPS_UNIT);
 const revenue = (json: unknown) => parseConceptFacts(json, SEC_REVENUE_UNIT);

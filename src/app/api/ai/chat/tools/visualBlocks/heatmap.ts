@@ -6,9 +6,9 @@ import type {
 } from '@/entities/chat-conversation/types';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { dashboardScopeOf } from '@/shared/config/dashboardScope';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { isRankableSector, sectorDisplayNames } from '../getMarketOverview';
 import { loadThemeSnapshot } from '../getThemeSnapshot';
-import { logToolDegrade } from '../logToolDegrade';
 import { noData, type VisualBuildEnv, type VisualOutcome } from './types';
 
 async function buildSectorHeatmap(

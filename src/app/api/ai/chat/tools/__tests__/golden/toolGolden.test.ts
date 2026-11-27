@@ -418,7 +418,9 @@ const MOVED_PATH_PREFIXES = [
     '@/features/agent-tools',
 ] as const;
 const MOVED_DESTINATION_MODULES = [
-    '@/shared/api/guestSubject',
+    '@/shared/lib/guestSubject',
+    '@/shared/lib/logToolDegrade',
+    '@/entities/bars/lib/percent',
     '@/entities/ticker/server/resolveAssetInfo',
     '@/entities/ticker/server/krSymbolCorrection',
     '@/entities/ticker/lib/freshness',
@@ -652,10 +654,14 @@ describe('골든 커버리지', () => {
     });
 
     it('도구 이동 PR이 옮기지 않는 모듈만, 경계 목록 그대로 목한다', () => {
-        const source = readFileSync(__filename, 'utf8');
+        // 주석 속 `vi.mock('…')`가 목으로 잡히거나 가려지지 않게 주석을 먼저 걷어낸다.
+        const source = readFileSync(__filename, 'utf8')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/^\s*\/\/.*$/gm, '');
         const mocked = [...source.matchAll(/^vi\.mock\(\s*'([^']+)'/gm)].map(
             match => match[1] ?? ''
         );
+        expect(mocked).toHaveLength(Object.keys(MOCKED_MODULES).length + 1);
         expect(mocked.filter(isMovedPath)).toEqual([]);
         expect(mocked.toSorted()).toEqual(
             [...Object.keys(MOCKED_MODULES), 'next-intl/server'].toSorted()

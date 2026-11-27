@@ -12,12 +12,12 @@ import type {
     ChatCompareChartPeriod,
     ChatVisualBlock,
 } from '@/entities/chat-conversation/types';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { isGuestSubject } from '@/shared/lib/guestSubject';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import type { ToolExecutor } from './chatTools';
-import { logToolDegrade } from './logToolDegrade';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 import {
     buildCompareBlock,
     COMPARE_DEFAULT_PERIOD,

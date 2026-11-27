@@ -10,15 +10,15 @@ import type {
     ChatCompareBlock,
     ChatCompareChartPeriod,
 } from '@/entities/chat-conversation/types';
+import { staleKrListingDate } from '@/entities/ticker/lib/freshness';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { barDate } from '../calendarChange';
-import { staleKrListingDate } from '../freshness';
-import { logToolDegrade } from '../logToolDegrade';
-import { resolveAssetInfoOrNull } from '../resolveAssetInfo';
 import { downsample, roundTo } from './round';
 import { noData, type VisualBuildEnv, type VisualOutcome } from './types';
 

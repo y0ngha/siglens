@@ -60,6 +60,7 @@ import {
     TRADING_DAYS,
     yearScoreExtremes,
 } from '@/entities/bars/lib/fearGreedWindow';
+import { pctVs, ratioPct } from '@/entities/bars/lib/percent';
 import { lastBarIsForming } from '@/entities/bars/lib/quantizeBars';
 import {
     roundIndicators,
@@ -70,7 +71,12 @@ import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCach
 import { listEarningsDates } from '@/entities/earnings-report/api';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { staleKrListingDate } from '@/entities/ticker/lib/freshness';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from '@/entities/ticker/server/resolveAssetInfo';
 import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -79,17 +85,11 @@ import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { calendarChangeView, type CalendarChangeView } from './calendarChange';
 import { chartBlockFrom } from './chartBlock';
-import { staleKrListingDate } from './freshness';
-import { logToolDegrade } from './logToolDegrade';
-import { pctVs, ratioPct } from './percent';
 import { computeRangeWindow, type RangeWindow } from './rangeWindow';
-import {
-    resolveAssetInfoOrNull,
-    resolvedInstrumentFields,
-} from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
 
 /**

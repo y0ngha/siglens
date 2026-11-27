@@ -35,7 +35,7 @@ export async function fetchQuotePriceForAnalysis(
             ? quote.price
             : undefined;
     } catch (error) {
-        // `logToolError`/`logToolDegrade`(`app/api/ai/chat/tools/logToolDegrade.ts`)와
+        // `logToolError`/`logToolDegrade`(`shared/lib/logToolDegrade.ts`)와
         // 같은 프라이버시 규칙: 에러 객체·`.message`·`.stack`은 남기지 않고 `name`만
         // 남긴다 — `DrizzleQueryError` 메시지에 바인딩 파라미터가 실릴 수 있다. entities
         // 레이어는 그 app 레이어 헬퍼를 import할 수 없어 name 추출을 인라인한다.

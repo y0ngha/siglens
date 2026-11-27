@@ -13,6 +13,7 @@ import {
 } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import type { EarningsSession } from '@/entities/analyst-views/model';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
+import { pctVs, ratioPct } from '@/entities/bars/lib/percent';
 import {
     lastBarIsForming,
     lastCompletedDailyClose,
@@ -27,12 +28,20 @@ import {
     getNextEarningsSchedule,
     listReportedEarningsDates,
 } from '@/entities/earnings-report/api';
+import { loadSecQuarters } from '@/entities/earnings-report/server/loadSecQuarters';
+import {
+    loadIndexMemberships,
+    type IndexMemberships,
+} from '@/entities/index-history/server/indexMembership';
+import { krListedBasis } from '@/entities/kr-valuation/lib/krListedBasis';
 import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
 import {
     findKrListedShares,
     isTabAllowedForSymbol,
 } from '@/entities/ticker/api';
+import { staleKrListingDate } from '@/entities/ticker/lib/freshness';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
@@ -55,6 +64,7 @@ import {
 } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import {
     buildDividends,
@@ -69,14 +79,7 @@ import {
     type EarningsReactionView,
     type SecQuarterView,
 } from './earningsHistory';
-import { staleKrListingDate } from './freshness';
-import { loadIndexMemberships, type IndexMemberships } from './indexMembership';
 import { fetchKrAnnualDividend } from './krAnnualDividend';
-import { krListedBasis } from './krListedBasis';
-import { loadSecQuarters } from './loadSecQuarters';
-import { logToolDegrade } from './logToolDegrade';
-import { pctVs, ratioPct } from './percent';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 function settledOrNull<T>(r: PromiseSettledResult<T>): T | null {
     return r.status === 'fulfilled' ? r.value : null;

@@ -14,7 +14,12 @@ import {
     type PriceStatsCloses,
 } from '@/entities/bars/server/loadPriceStatsCloses';
 import { INDEX_SOURCES } from '@/entities/index-history/lib/indexSources';
+import { staleKrListingDate } from '@/entities/ticker/lib/freshness';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import {
+    resolveAssetLookup,
+    resolvedInstrumentFields,
+} from '@/entities/ticker/server/resolveAssetInfo';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     getDescriptor,
@@ -22,18 +27,13 @@ import {
 } from '@/shared/config/marketProfile/registry';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { AssetInfo } from '@/shared/lib/types';
-import { staleKrListingDate } from './freshness';
-import { logToolDegrade } from './logToolDegrade';
 import {
     parsePriceStatsArgs,
     type PriceStatsInvalidArgs,
 } from './priceStatsArgs';
-import {
-    resolveAssetLookup,
-    resolvedInstrumentFields,
-} from './resolveAssetInfo';
 
 const TOOL = 'get_price_stats';
 const SOURCE =

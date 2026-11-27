@@ -5,7 +5,7 @@ const { isTabAllowed, loadScorecard, loadKrTrend } = vi.hoisted(() => ({
     loadScorecard: vi.fn(),
     loadKrTrend: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/krInvestorTrend', () => ({
+vi.mock('@/entities/investor-flows/server/krInvestorTrend', () => ({
     loadKrInvestorTrend: loadKrTrend,
 }));
 // 실제 로더 위에서 "네이버 실패 → 도구는 그대로 응답"을 보기 위한 목: 네이버 호출과 Redis만 막는다.
@@ -986,8 +986,8 @@ describe('getInvestorFlowsTool', () => {
 
         it('Naver failure through the real loader: the tool still answers with notProvided (no throw)', async () => {
             const actual = await vi.importActual<
-                typeof import('@/app/api/ai/chat/tools/krInvestorTrend')
-            >('@/app/api/ai/chat/tools/krInvestorTrend');
+                typeof import('@/entities/investor-flows/server/krInvestorTrend')
+            >('@/entities/investor-flows/server/krInvestorTrend');
             loadKrTrend.mockImplementation(actual.loadKrInvestorTrend);
             naverFetch.mockRejectedValue(new Error('naver trend: HTTP 503'));
             vi.spyOn(console, 'error').mockImplementation(() => {});

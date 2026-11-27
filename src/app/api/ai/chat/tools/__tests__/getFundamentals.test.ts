@@ -96,13 +96,13 @@ vi.mock('@/app/api/ai/chat/tools/dividends', async importOriginal => ({
 vi.mock('@/app/api/ai/chat/tools/krAnnualDividend', () => ({
     fetchKrAnnualDividend,
 }));
-vi.mock('@/app/api/ai/chat/tools/loadSecQuarters', () => ({
+vi.mock('@/entities/earnings-report/server/loadSecQuarters', () => ({
     loadSecQuarters,
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
 }));
-vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
+vi.mock('@/entities/index-history/server/indexMembership', () => ({
     loadIndexMemberships,
 }));
 

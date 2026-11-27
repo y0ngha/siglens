@@ -1,6 +1,6 @@
+import { pctVs, roundPct2 } from '@/entities/bars/lib/percent';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { isRecord } from '@/shared/lib/isRecord';
-import { pctVs, roundPct2 } from './percent';
 
 /**
  * Quarterly figures AS FILED, extracted from the SEC XBRL `companyconcept`
@@ -224,6 +224,7 @@ function currentPeriodFacts(facts: readonly SecConceptFact[]): {
 } {
     const quarters = new Map<string, SeriesEntry>();
     const years = new Map<string, SecConceptFact>();
+    // CONVENTIONS.md#CP-6 예외: 접수번호 그룹을 한 번 훑으며 분기·연간 두 Map을 "기간별 최신 접수" 규칙으로 함께 채운다 — reduce로 풀면 그룹마다 Map을 복사한다(O(N²)).
     for (const group of groupByAccn(facts).values()) {
         const currentEnd = group.reduce(
             (max, f) => (f.end > max ? f.end : max),
@@ -319,11 +320,12 @@ function buildSeries(
 ): Map<string, SeriesEntry> {
     const { quarters, years } = currentPeriodFacts(facts);
     if (!deriveQ4) return quarters;
-    const merged = new Map(quarters);
-    for (const q4 of deriveFourthQuarters(quarters, years)) {
-        merged.set(q4.end, q4);
-    }
-    return merged;
+    return new Map([
+        ...quarters,
+        ...deriveFourthQuarters(quarters, years).map(
+            q4 => [q4.end, q4] as const
+        ),
+    ]);
 }
 
 function entryNear(

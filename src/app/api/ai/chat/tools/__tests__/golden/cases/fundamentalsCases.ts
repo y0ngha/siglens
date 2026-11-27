@@ -1,6 +1,9 @@
+import {
+    tprEps,
+    tprRevenue,
+} from '@/entities/earnings-report/__tests__/fixtures/secConcepts';
 import { providerKrValuation } from '@/entities/kr-valuation/lib/computeKrValuation';
 import { addUtcIsoDays } from '@/shared/lib/isoDate';
-import { tprEps, tprRevenue } from '../../fixtures/secConcepts';
 import { fakes, repos } from '../boundary';
 import { analystViews } from '../fixtures';
 import {

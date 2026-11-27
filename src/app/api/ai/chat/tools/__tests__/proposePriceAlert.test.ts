@@ -16,7 +16,7 @@ vi.mock('@/entities/email-report/emailReportSecret', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: m.profile,
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: m.asset,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({

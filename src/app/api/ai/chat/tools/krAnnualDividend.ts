@@ -9,7 +9,7 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
-import { logToolDegrade } from './logToolDegrade';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 /**
  * 한국 종목의 **사업보고서 확정 배당**(DART `alotMatter.json`, 보고서 코드 `11011`)에서 읽은 원자료.

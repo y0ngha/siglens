@@ -1,4 +1,3 @@
-import 'server-only';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
 /**

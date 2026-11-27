@@ -1,7 +1,7 @@
 vi.mock('server-only', () => ({}));
 
 const resolveAssetInfoOrNull = vi.hoisted(() => vi.fn());
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull,
 }));
 

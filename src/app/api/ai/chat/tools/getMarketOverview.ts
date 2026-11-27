@@ -6,6 +6,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { ppDelta } from '@/entities/bars/lib/percent';
 import { lastCompletedDailyClose } from '@/entities/bars/lib/quantizeBars';
 import { getCachedBarsWithIndicators } from '@/entities/bars/server/barsDataCache';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
@@ -24,8 +25,7 @@ import {
 } from '@/shared/config/dashboardScope';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
-import { logToolDegrade } from './logToolDegrade';
-import { ppDelta } from './percent';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 
 /** Capped so a busy signal scan (dozens of flagged stocks) stays inside the tool's budget. */
 const TOP_SIGNALS_MAX = 10;

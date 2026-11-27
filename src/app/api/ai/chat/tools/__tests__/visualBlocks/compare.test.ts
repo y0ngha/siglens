@@ -10,7 +10,7 @@ vi.mock('@/entities/bars/server/barsDataCache', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: assetOf,
 }));
 

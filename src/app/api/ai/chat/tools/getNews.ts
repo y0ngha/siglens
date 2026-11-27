@@ -16,10 +16,12 @@ import {
 } from '@/entities/market-news/lib/categoryConfig';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveAssetInfoOrNull } from '@/entities/ticker/server/resolveAssetInfo';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate, zonedWallClockToUtc } from '@/shared/lib/marketSessionDate';
 import {
     resolveNewsBody,
@@ -28,8 +30,6 @@ import {
 } from '@/shared/lib/news/resolveNewsTitle';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { barDate } from './calendarChange';
-import { logToolDegrade } from './logToolDegrade';
-import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 import {
     fitToEscapedBudget,
     NEWS_ANNOTATE_HEADROOM_CHARS,

@@ -8,16 +8,16 @@ import {
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { loadDailyCloseHistory } from '@/entities/bars/server/loadDailyCloseHistory';
 import { marketProfileForAssetInfo } from '@/entities/ticker/lib/resolveMarketProfile';
+import {
+    resolveAssetInfoOrNull,
+    resolvedInstrumentFields,
+} from '@/entities/ticker/server/resolveAssetInfo';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { profileIdForSymbol } from '@/shared/config/marketProfile/registry';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
-import { logToolDegrade } from './logToolDegrade';
-import {
-    resolveAssetInfoOrNull,
-    resolvedInstrumentFields,
-} from './resolveAssetInfo';
 
 const TOOL = 'get_swing_history';
 const SOURCE = 'SIGLENS daily closes (price only)';

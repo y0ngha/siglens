@@ -9,9 +9,9 @@ import {
     type YahooDividendSummary,
 } from '@/shared/api/yahoo/yahooDividendSource';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { KrAnnualDividendRaw } from './krAnnualDividend';
-import { logToolDegrade } from './logToolDegrade';
 
 /**
  * 에이전트에게 보이는 배당 요약. 이 필드명은 siglens-core 쪽 설명과의 계약이다.

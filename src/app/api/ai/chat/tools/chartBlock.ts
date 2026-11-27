@@ -24,12 +24,12 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { logToolDegrade } from '@/shared/lib/logToolDegrade';
 import {
     isTargetReferenceOnly,
     resolvePatternBaseRate,
 } from '@/shared/lib/patternBaseRate';
 import { withTimeout } from '@/shared/lib/withTimeout';
-import { logToolDegrade } from './logToolDegrade';
 
 /** 작도가 없을 때 싣는 최근 봉 수 — 채팅 폭에서 캔들이 읽히는 정도. */
 const CHART_BLOCK_BARS = 120;

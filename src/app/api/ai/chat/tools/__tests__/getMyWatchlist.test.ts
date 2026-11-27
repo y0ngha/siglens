@@ -24,7 +24,7 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     marketProfileForAssetInfo: (info: { marketProfile?: string } | null) =>
         info?.marketProfile ?? 'us-equity',
 }));
-vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
+vi.mock('@/entities/ticker/server/resolveAssetInfo', () => ({
     resolveAssetInfoOrNull: asset,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
