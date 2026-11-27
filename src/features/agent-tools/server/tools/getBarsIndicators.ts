@@ -881,11 +881,8 @@ function periodPctEntries(
  * 50 isn't one of the caller-configured MA periods), ATR% (spec §3.1, audit
  * B1). Every field follows the null rule (spec §0): computed only when every
  * input is finite and (for a percentage) the base is positive.
- *
- * Exported for the bar-statistics parity test, which compares it against the
- * pre-core implementation over a seeded corpus.
  */
-export function computeDerived(
+function computeDerived(
     bars: readonly Bar[],
     indicators: IndicatorResult,
     timeframe: AgentBarsTimeframe,
