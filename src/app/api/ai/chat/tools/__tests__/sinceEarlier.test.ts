@@ -41,6 +41,12 @@ import {
     tradingDateOf,
 } from './fixtures/sinceEarlier';
 
+/**
+ * 진동 봉 전체에 신호 탐지를 다시 돌리는 테스트는 로컬 약 1초, CI 공유 러너에서 6초를 넘긴다.
+ * 기본 5초 상한으로는 느린 러너에서 실패한다.
+ */
+const HEAVY_COMPUTE_TIMEOUT_MS = 30_000;
+
 const bars = rallyBars();
 const BASELINE = 112;
 const earlierAt = analyzedAfterClose(bars, BASELINE);
@@ -236,44 +242,50 @@ describe('buildSinceEarlier', () => {
         expect(block).not.toHaveProperty('omittedSignals');
     });
 
-    it('같은 신호가 여러 번 다시 시작해도 종류마다 가장 나중 시작 하나만 싣고 나머지는 개수로 알린다', () => {
-        const osc = oscillatingBars();
-        const from = 50;
-        const earlierGeneratedAt = analyzedAfterClose(osc, from);
-        const block = buildSinceEarlier({
-            earlierGeneratedAt,
-            reference: referenceFor(),
-            session: US_EQUITY_SESSION,
-            bars: osc,
-        });
-        const core = technicalChangesBetween(osc, {
-            fromIndex: from,
-            signalTypes: CHAT_CHANGE_SIGNAL_TYPES,
-        });
-        if (!core.ok) throw new Error('fixture must be measurable');
-        const starts = core.changes.flatMap(c =>
-            c.kind === 'signal_started' ? [c] : []
-        );
-        const types = new Set(starts.map(c => c.type));
-        // 전제: 신호 시작이 종류 수(최대 8)보다 훨씬 많다.
-        expect(starts.length).toBeGreaterThan(
-            CHAT_CHANGE_SIGNAL_TYPES.length * 2
-        );
-        const listed = block?.changes.filter(c => c.kind === 'signal_started');
-        expect(listed).toHaveLength(types.size);
-        expect(block?.omittedSignals).toBe(starts.length - types.size);
-        for (const item of listed ?? []) {
-            if (item.kind !== 'signal_started') continue;
-            const newest = Math.max(
-                ...starts.filter(c => c.type === item.type).map(c => c.time)
+    it(
+        '같은 신호가 여러 번 다시 시작해도 종류마다 가장 나중 시작 하나만 싣고 나머지는 개수로 알린다',
+        { timeout: HEAVY_COMPUTE_TIMEOUT_MS },
+        () => {
+            const osc = oscillatingBars();
+            const from = 50;
+            const earlierGeneratedAt = analyzedAfterClose(osc, from);
+            const block = buildSinceEarlier({
+                earlierGeneratedAt,
+                reference: referenceFor(),
+                session: US_EQUITY_SESSION,
+                bars: osc,
+            });
+            const core = technicalChangesBetween(osc, {
+                fromIndex: from,
+                signalTypes: CHAT_CHANGE_SIGNAL_TYPES,
+            });
+            if (!core.ok) throw new Error('fixture must be measurable');
+            const starts = core.changes.flatMap(c =>
+                c.kind === 'signal_started' ? [c] : []
             );
-            expect(item.date).toBe(
-                new Date(newest * 1000).toISOString().slice(0, 10)
+            const types = new Set(starts.map(c => c.type));
+            // 전제: 신호 시작이 종류 수(최대 8)보다 훨씬 많다.
+            expect(starts.length).toBeGreaterThan(
+                CHAT_CHANGE_SIGNAL_TYPES.length * 2
             );
+            const listed = block?.changes.filter(
+                c => c.kind === 'signal_started'
+            );
+            expect(listed).toHaveLength(types.size);
+            expect(block?.omittedSignals).toBe(starts.length - types.size);
+            for (const item of listed ?? []) {
+                if (item.kind !== 'signal_started') continue;
+                const newest = Math.max(
+                    ...starts.filter(c => c.type === item.type).map(c => c.time)
+                );
+                expect(item.date).toBe(
+                    new Date(newest * 1000).toISOString().slice(0, 10)
+                );
+            }
+            // 실제 시리즈로 만든 블록의 크기 점검(상한 자체는 아래 '블록 크기'의 가장 긴 모양 시험이 건다).
+            expect(JSON.stringify(block).length).toBeLessThan(3_000);
         }
-        // 실제 시리즈로 만든 블록의 크기 점검(상한 자체는 아래 '블록 크기'의 가장 긴 모양 시험이 건다).
-        expect(JSON.stringify(block).length).toBeLessThan(3_000);
-    });
+    );
 
     it('추세가 중간에 뒤집혔다 돌아왔으면 양 끝이 같은 추세라 trend_changed가 없다', () => {
         const flip = flipBackBars();
