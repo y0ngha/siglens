@@ -63,10 +63,13 @@ const block = (timeframe: ChatChartTimeframe): ChatChartBlock => ({
     analyzedAt: null,
 });
 
-const renderChart = (timeframe: ChatChartTimeframe = '1Day') =>
+const renderChart = (
+    timeframe: ChatChartTimeframe = '1Day',
+    extra: Partial<ChatChartBlock> = {}
+) =>
     render(
         <NextIntlClientProvider locale="ko" messages={ko}>
-            <ChatChart block={block(timeframe)} />
+            <ChatChart block={{ ...block(timeframe), ...extra }} />
         </NextIntlClientProvider>
     );
 
@@ -95,6 +98,16 @@ describe('ChatChart', () => {
                 label: '어밴던드 베이비 / 트라이스타형',
             }),
         ]);
+    });
+
+    it('블록의 참고 거리 패턴 id를 StockChart에 넘겨 목표선을 흐리게 한다', () => {
+        renderChart('1Day', { referenceOnlyOverlayKeys: ['p1'] });
+        expect(latestProps().referenceOnlyOverlayKeys).toEqual(new Set(['p1']));
+    });
+
+    it('옛 블록(필드 없음)은 흐리게 하는 패턴이 없다', () => {
+        renderChart();
+        expect(latestProps().referenceOnlyOverlayKeys).toEqual(new Set());
     });
 
     it('작도는 모두 켜진 채로 시작한다', () => {

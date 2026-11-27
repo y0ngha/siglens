@@ -24,6 +24,10 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import {
+    isTargetReferenceOnly,
+    resolvePatternBaseRate,
+} from '@/shared/lib/patternBaseRate';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import { logToolDegrade } from './logToolDegrade';
 
@@ -143,10 +147,14 @@ function slimBars(bars: readonly Bar[]): ChatChartBars {
 /**
  * 봉과 (있으면) 분석 작도로 차트 블록을 만든다 — 봉 창에 시각이 모두 들어가는 작도만 싣는다. 작도가 하나도 맞지 않으면
  * 봉만 그린다(빈 작도 목록). 봉이 없으면 `null`.
+ *
+ * `analysisTimeframe`은 분석의 주기다(블록의 주기는 주봉·월봉도 되지만 분석은 없다). 주면 분석 카드와 같은 판정으로
+ * "참고 거리"로 흐리게 그릴 패턴을 `referenceOnlyOverlayKeys`에 싣는다. 안 주면(봉 지표) 필드를 두지 않는다.
  */
 export function chartBlockFrom(
     source: ChartBlockSource,
-    analysis?: ChartAnalysisSource
+    analysis?: ChartAnalysisSource,
+    analysisTimeframe?: Timeframe
 ): ChatChartBlock | null {
     const overlays: readonly ChartOverlay[] = analysis?.chartOverlays ?? [];
     const bars = windowFor(source.bars, overlays);
@@ -172,7 +180,31 @@ export function chartBlockFrom(
             ]),
         ]),
         analyzedAt: analysis?.analyzedAt ?? null,
+        ...(analysis !== undefined && analysisTimeframe !== undefined
+            ? {
+                  referenceOnlyOverlayKeys: referenceOnlyKeysOf(
+                      analysis.patternSummaries ?? [],
+                      analysisTimeframe
+                  ),
+              }
+            : {}),
     };
+}
+
+/**
+ * 목표선을 "참고 거리"로 흐리게 그릴 패턴의 id. 분석 카드(`PatternsSection`)·종목 페이지 차트(`ChartContent`)와 같은
+ * 함수(`resolvePatternBaseRate`·`isTargetReferenceOnly`)로 판정해 세 곳의 선과 문구가 어긋나지 않는다. 오버레이는 이 id를
+ * `sourceRef`로 가진다.
+ */
+function referenceOnlyKeysOf(
+    patterns: readonly PatternResult[],
+    timeframe: Timeframe
+): string[] {
+    return patterns
+        .filter(p =>
+            isTargetReferenceOnly(resolvePatternBaseRate(p, timeframe))
+        )
+        .map(p => p.id);
 }
 
 interface AnalysisChartInput {
@@ -208,7 +240,8 @@ async function buildAnalysisChartBlock(
             marketProfile,
             bars,
         },
-        analysis
+        analysis,
+        input.timeframe
     );
 }
 

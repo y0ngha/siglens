@@ -2,7 +2,7 @@
 
 /**
  * 패턴·전략 카드가 공유하는 아코디언 껍데기 — 제목·추세 배지·펼침 버튼, 작도 토글,
- * 신뢰도 배지로 된 헤더와 펼쳤을 때만 마운트되는 본문.
+ * 카드가 정한 배지(전략의 신뢰도 배지 등)로 된 헤더와 펼쳤을 때만 마운트되는 본문.
  */
 import { useState, type ReactNode } from 'react';
 import type { Trend } from '@y0ngha/siglens-core';
@@ -11,7 +11,6 @@ import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';
 import type { OverlayCardControls } from '../model/types';
 import { overlayHoverHandlers } from '../utils/overlayCardControls';
-import { ConfidenceBadge } from './ConfidenceBadge';
 import { OverlayToggleButton } from './OverlayToggleButton';
 import { TrendBadge } from './TrendBadge';
 
@@ -21,12 +20,11 @@ interface SkillAccordionCardProps {
     /** 로케일 표시명(`useSkillLabel`을 거친 값). */
     title: string;
     trend: Trend | null | undefined;
-    confidenceWeight: number;
     /**
-     * confidence 정보 깊이가 잠긴 티어에서는 confidenceWeight가 0으로 마스킹되어
-     * 도착한다. 0을 그대로 그리면 'medium'으로 오표시되므로 잠긴 경우 배지를 숨긴다.
+     * 헤더 오른쪽 배지 — 카드 종류가 정한다. 패턴 카드는 문헌 신뢰도 대신 본문에 실측
+     * base rate 줄을 두므로 배지가 없고, 전략 카드만 신뢰도 배지를 넘긴다.
      */
-    showConfidence: boolean;
+    badge?: ReactNode;
     /** 차트 작도 제어 — 이 항목에 그려지는 작도가 없으면 undefined(버튼 없음). */
     overlay?: OverlayCardControls;
     /** 펼친 본문. 닫혀 있으면 렌더하지 않는다. */
@@ -37,8 +35,7 @@ export function SkillAccordionCard({
     id,
     title,
     trend,
-    confidenceWeight,
-    showConfidence,
+    badge,
     overlay,
     children,
 }: SkillAccordionCardProps) {
@@ -74,10 +71,8 @@ export function SkillAccordionCard({
                         overlay={overlay}
                     />
                 )}
-                {showConfidence && (
-                    <span className="shrink-0 pr-2">
-                        <ConfidenceBadge confidenceWeight={confidenceWeight} />
-                    </span>
+                {badge !== undefined && (
+                    <span className="shrink-0 pr-2">{badge}</span>
                 )}
             </div>
 

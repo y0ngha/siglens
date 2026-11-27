@@ -59,6 +59,10 @@ import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { PANEL_MIN_WIDTH, usePanelResize } from './hooks/usePanelResize';
 import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
+import {
+    isTargetReferenceOnly,
+    resolvePatternBaseRate,
+} from '@/shared/lib/patternBaseRate';
 import { publishSymbolAnalyzed } from '@/shared/lib/symbolAnalyzedSignal';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
@@ -354,6 +358,23 @@ export function ChartContent({
                 )
             ),
         [analysis.patternSummaries]
+    );
+
+    // 목표선을 "참고 거리"로 흐리게 그릴 패턴 카드 — 위약(같은 거리의 다른 날 가격)보다
+    // 목표를 더 잘 맞힌다고 확인되지 않은 카드. 판정은 카드 본문의 base rate 줄과 같은
+    // 함수(`resolvePatternBaseRate`·`isTargetReferenceOnly`)라 선과 문구가 어긋나지 않는다.
+    const referenceOnlyOverlayKeys = useMemo(
+        () =>
+            new Set(
+                (analysis.patternSummaries ?? [])
+                    .filter(p =>
+                        isTargetReferenceOnly(
+                            resolvePatternBaseRate(p, timeframe)
+                        )
+                    )
+                    .map(p => p.id)
+            ),
+        [analysis.patternSummaries, timeframe]
     );
 
     // 비회원 첫 분석 회원가입 유도 (member-reasoning-toggle spec Part B, 문턱 1).
@@ -817,6 +838,7 @@ export function ChartContent({
                         chartOverlays={chartOverlays}
                         overlayColors={overlayColors}
                         overlayItems={overlayItems}
+                        referenceOnlyOverlayKeys={referenceOnlyOverlayKeys}
                         hiddenOverlayKeys={hiddenOverlayKeys}
                         highlightedOverlayKey={highlightedOverlayKey}
                         onSetOverlayVisible={setOverlayVisible}

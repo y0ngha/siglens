@@ -21,7 +21,10 @@ import {
     patternPaletteByKey,
     type OverlayMenuItem,
 } from '@/entities/analysis/lib/chartOverlays/overlayItems';
-import { isReachedTarget } from '@/entities/analysis/lib/chartOverlays/reachedLevel';
+import {
+    isReachedTarget,
+    isReferenceTarget,
+} from '@/entities/analysis/lib/chartOverlays/reachedLevel';
 import { useLevelTitleTexts } from './useLevelTitleTexts';
 
 interface UseChartOverlaySpecsParams {
@@ -37,6 +40,11 @@ interface UseChartOverlaySpecsParams {
     rsiPaneIndex: number | null;
     /** 수평 레벨 오른쪽 연장 — 사용자 설정. */
     extendLevelsRight: boolean;
+    /**
+     * 목표선을 "참고 거리"로 흐리게 그릴 패턴 카드의 `sourceRef` — 위약 대비 우위가 확인되지
+     * 않은 카드(`isTargetReferenceOnly`). 판정은 카드 본문과 같은 함수로 호출부가 내린다.
+     */
+    referenceOnlyKeys: ReadonlySet<string>;
 }
 
 interface UseChartOverlaySpecsReturn {
@@ -63,6 +71,7 @@ export function useChartOverlaySpecs({
     bars,
     rsiPaneIndex,
     extendLevelsRight,
+    referenceOnlyKeys,
 }: UseChartOverlaySpecsParams): UseChartOverlaySpecsReturn {
     const levelTexts = useLevelTitleTexts();
     const patternLabels = useMemo(
@@ -118,7 +127,7 @@ export function useChartOverlaySpecs({
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: (label, overlay, reached) =>
+                levelLabelFor: (label, overlay, reached, reference) =>
                     levelTitleFor(
                         label,
                         overlay,
@@ -126,10 +135,13 @@ export function useChartOverlaySpecs({
                             ...levelTexts,
                             cardName: patternLabels.get(overlay.sourceRef),
                         },
-                        reached
+                        reached,
+                        reference
                     ),
                 isReachedLevel: (level, overlay) =>
                     isReachedTarget(level, overlay, lastClose),
+                isReferenceLevel: (level, overlay) =>
+                    isReferenceTarget(level, overlay, referenceOnlyKeys),
                 extendLevelsRight,
             }),
         [
@@ -144,6 +156,7 @@ export function useChartOverlaySpecs({
             patternLabels,
             lastClose,
             extendLevelsRight,
+            referenceOnlyKeys,
         ]
     );
 

@@ -33,8 +33,23 @@ describe('isChatChartBlock', () => {
         expect(isChatChartBlock(block)).toBe(true);
     });
 
+    it('참고 거리 목록이 없는 옛 블록도 받는다', () => {
+        expect(isChatChartBlock(block)).toBe(true);
+        expect(
+            isChatChartBlock({ ...block, referenceOnlyOverlayKeys: ['p1'] })
+        ).toBe(true);
+    });
+
     it.each([
         ['다른 버전', { ...block, version: 2 }],
+        [
+            '참고 거리 목록이 배열이 아님',
+            { ...block, referenceOnlyOverlayKeys: 'p1' },
+        ],
+        [
+            '참고 거리 목록에 문자열이 아닌 값',
+            { ...block, referenceOnlyOverlayKeys: [1] },
+        ],
         ['모르는 주기', { ...block, timeframe: '2Day' }],
         ['모르는 시장', { ...block, marketProfile: 'jp-equity' }],
         ['빈 봉', { ...block, bars: [] }],

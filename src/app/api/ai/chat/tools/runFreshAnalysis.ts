@@ -256,7 +256,8 @@ export function unwrap(
         const cached = outcome.status === 'cached';
         if (kind === 'technical') {
             const projected = projectTechnicalAnalysis(
-                outcome.result as AnalysisResponse
+                outcome.result as AnalysisResponse,
+                timeframe
             );
             // Budget-fit via the SAME shared helper `get_cached_analysis`
             // uses for its Redis peek path (`fitTechnicalAnalysis`), so an

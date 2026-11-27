@@ -34,6 +34,7 @@ const ctx: LevelTitleContext = {
     outcomeTexts: {
         invalidation: owner => (owner ? `${owner} 무효화` : '무효화'),
         target: owner => (owner ? `${owner} 목표` : '목표'),
+        referenceTarget: owner => (owner ? `${owner} 참고 거리` : '참고 거리'),
         wave5Cap: owner => (owner ? `${owner} 5파 상한` : '5파 상한'),
         elliottStructure: {
             impulse: '임펄스',
@@ -92,5 +93,26 @@ describe('levelTitleFor — reached targets', () => {
             '상승 목표 127.2% 도달'
         );
         expect(levelTitleFor('ext 127.2%', fib, ctx)).toBe('상승 목표 127.2%');
+    });
+});
+
+describe('levelTitleFor — reference-only pattern targets', () => {
+    it('calls a reference-only target a reference distance instead of a target', () => {
+        expect(levelTitleFor('target', pattern, ctx, false, true)).toBe(
+            '이중천장 참고 거리'
+        );
+        expect(levelTitleFor('target', pattern, ctx)).toBe('이중천장 목표');
+    });
+
+    it('leaves lines that are not the target alone', () => {
+        expect(levelTitleFor('invalidation', pattern, ctx, false, true)).toBe(
+            '이중천장 무효화'
+        );
+    });
+
+    it('keeps the reached wording when a target is both reached and reference-only', () => {
+        expect(levelTitleFor('target', pattern, ctx, true, true)).toBe(
+            '이중천장 참고 거리 도달'
+        );
     });
 });

@@ -4,21 +4,27 @@
  * 감지된 차트 패턴 카드 — 펼치면 요약, 핵심 가격, 가이드 링크를 보여준다.
  */
 import { useTranslations } from 'next-intl';
-import type { KrxTickTable, PatternResult } from '@y0ngha/siglens-core';
+import type {
+    KrxTickTable,
+    PatternResult,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatAnalysisPrice } from '@/shared/lib/analysisPriceFormat';
 import { guidePathForSkill } from '@/shared/lib/guideLinkLookup';
+import { resolvePatternBaseRate } from '@/shared/lib/patternBaseRate';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { GuideHintLink } from '../GuideHintLink';
 import type { OverlayCardControls } from '../model/types';
+import { PatternBaseRateLine } from './PatternBaseRateLine';
 import { SkillAccordionCard } from './SkillAccordionCard';
 
 interface PatternAccordionItemProps {
     pattern: PatternResult;
-    /** 잠긴 티어의 마스킹된 confidenceWeight(0) 오표시 방지. `SkillAccordionCard` 참조. */
-    showConfidence: boolean;
+    /** 분석한 시간 단위 — 실측 base rate는 일봉만 있어, 옛 결과를 채우고 측정 여부를 가른다. */
+    timeframe: Timeframe;
     /** 차트 작도 제어 — 이 항목에 그려지는 작도가 없으면 undefined(버튼 없음). */
     overlay?: OverlayCardControls;
     symbol: string;
@@ -27,7 +33,7 @@ interface PatternAccordionItemProps {
 
 export function PatternAccordionItem({
     pattern,
-    showConfidence,
+    timeframe,
     overlay,
     symbol,
     krxTickTable,
@@ -47,8 +53,6 @@ export function PatternAccordionItem({
             id={pattern.id}
             title={title}
             trend={pattern.trend}
-            confidenceWeight={pattern.confidenceWeight}
-            showConfidence={showConfidence}
             overlay={overlay}
         >
             <MarkdownText className="text-xs text-secondary-400">
@@ -81,6 +85,9 @@ export function PatternAccordionItem({
                     </div>
                 </div>
             )}
+            <PatternBaseRateLine
+                rate={resolvePatternBaseRate(pattern, timeframe)}
+            />
             {guidePath !== null && (
                 <GuideHintLink href={guidePath} name={title} />
             )}
