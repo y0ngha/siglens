@@ -251,6 +251,22 @@ export const CYCLE_HISTORY_KEYS = {
     changes: 'cycle.changes',
 } as const;
 
+/** 진행 방향을 모르는 이전 단계(`progression: null`)는 방향 없이 "직전 단계"로만 말한다. */
+const PREVIOUS_STAGE_KEYS = {
+    forward: CYCLE_HISTORY_KEYS.previousForward,
+    reverse: CYCLE_HISTORY_KEYS.previousReverse,
+} as const;
+
+/** 이전 단계 문장의 키: 이전 단계가 없으면 없다고, 있으면 진행 방향에 맞는 문장을 고른다. */
+function previousStageKey(cycle: CycleReading): string {
+    if (cycle.previousStage === null) return CYCLE_HISTORY_KEYS.previousNone;
+    if (cycle.progression === null) return CYCLE_HISTORY_KEYS.previousOther;
+    // 손상된 캐시가 모르는 방향을 실어 와도 방향 없는 문장으로 물러난다(이전 삼항과 같은 동작).
+    return Object.hasOwn(PREVIOUS_STAGE_KEYS, cycle.progression)
+        ? PREVIOUS_STAGE_KEYS[cycle.progression]
+        : CYCLE_HISTORY_KEYS.previousOther;
+}
+
 /**
  * 지표 카드 한 장의 화면 문장. 카탈로그에 없는 종류·상태(core가 늘렸는데 아직 이 표가 못 따라간
  * 새 값, 손상된 캐시)는 `null`을 돌려 호출부가 영어 정본(`description`)으로 물러나게 한다.
@@ -332,14 +348,7 @@ export function renderCycleReading(
     );
     const hasSlope = Object.values(cycle.slopes).some(slope => slope !== null);
 
-    const previousKey =
-        cycle.previousStage === null
-            ? CYCLE_HISTORY_KEYS.previousNone
-            : cycle.progression === 'forward'
-              ? CYCLE_HISTORY_KEYS.previousForward
-              : cycle.progression === 'reverse'
-                ? CYCLE_HISTORY_KEYS.previousReverse
-                : CYCLE_HISTORY_KEYS.previousOther;
+    const previousKey = previousStageKey(cycle);
 
     return [
         t(keys.headline, {
