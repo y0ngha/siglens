@@ -14,7 +14,7 @@ IDs follow the root `CLAUDE.md` "Rule IDs and references". Cite them as `CONVENT
 | `CM` | Comments & documentation |
 | `CS` | Change synchronization |
 
-Retired IDs: TS-4
+Retired IDs: TS-4, CM-14
 
 ## Coding Paradigm
 
@@ -456,12 +456,8 @@ import { helper } from './helper';
 
 ### No Barrels — Import from the Defining File
 
-Barrels are banned (root `CLAUDE.md`; `src/__tests__/guards/noBarrelFiles.test.ts`). Every import, including tests and
-`vi.mock`/`vi.importActual`/`await import()` paths, names the file that defines the symbol: `vi.mock` intercepts by
-module path, so a different path is not mocked.
-
-❌ `import { useSymbolModel } from '@/features/symbol-model';`
-✅ `import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';`
+Barrels are banned (root `CLAUDE.md`; `noBarrelFiles.test.ts`). `vi.mock`/`vi.importActual`/`await import()` paths
+also name the defining file: `vi.mock` intercepts by module path, so a different path is not mocked.
 
 ---
 
@@ -508,9 +504,7 @@ label a section, narrate a state transition, restate a name or a type narrowing 
 `// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options
 interface's name (`/** [[useX]] options. */`: say what the options control instead) or only lists a props interface's
 field names, a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
-export), comments framed as history ("회귀:", "previously…", "fixed in…"; state the current reason
-instead), and
-structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
+export), comments framed as history ("회귀:", "previously…"; CM-11), and structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
 multi-line WHY blocks.
 
 ```typescript
@@ -678,19 +672,6 @@ claim or extend the check in the same change; a rule that nothing enforces says 
 - ❌ "Refuses non-local databases and Redis" over a helper that validates only `DATABASE_URL`.
 - ✅ One guard checks every inherited address variable, and the comment lists exactly those.
 
-<a id="CM-14"></a>
-
-#### CM-14 — Every export in a module gets JSDoc once its siblings do
-
-When a file's exports carry JSDoc (role, consumer, WHY), a newly added or split-out export gets one too, and a JSDoc
-that only restates the name or type does not count. A lone undocumented export reads as an oversight and hides its
-consumer.
-
-```typescript
-// ❌ siblings documented, this one bare
-export function rssNewsSurface() {}
-// ✅ /** Why this surface exists and who consumes it. */
-
 <a id="CM-13"></a>
 
 #### CM-13 — One comment language per file
@@ -701,14 +682,17 @@ language, never introducing a second one. A mixed file reads as two authors and 
 ```typescript
 // ❌ English JSDoc throughout the file, one new block written in Korean
 // ✅ the new block is English like its neighbours
+```
+
 <a id="CM-12"></a>
 
 #### CM-12 — Every exported component, hook and helper carries its own JSDoc
 
-A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one.
+A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one. Any other export (constant, type) added or split out beside documented siblings gets one too; a JSDoc that only restates the name or type does not count.
 
 - ❌ A new `useEconomyFilter` exported under only the file's header comment.
 - ✅ A short JSDoc above `useEconomyFilter` naming what it owns and returns.
+
 <a id="CM-11"></a>
 
 #### CM-11 — Comments describe the current design and WHY, not history

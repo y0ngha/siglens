@@ -29,5 +29,3 @@ oxlint의 shared override는 상위 레이어(features·widgets·views·app)만 
 2. **순수 함수 + primitive 컴포넌트.** Side-effect 코드는 캡슐화. `shared/lib`는 순수 유틸과 위 표에 적힌 서버 런타임 헬퍼만 담는 곳이지 잡동사니 창고가 아니다 — 외부 I/O(fetch, fs, DB)는 `shared/db`·`shared/api`로 보낸다.
 3. **shared/lib/, shared/config/에 React import 금지.** shared/ui/와 shared/hooks/만 React 사용. 여러 레이어가 공유하는 타입은 `shared/lib`가 아니라 entity `model.ts`/`types.ts` 또는 `@y0ngha/siglens-core`에 둔다.
 4. **3번째 사용 후 승격.** 1~2개 슬라이스에서만 쓰는 유틸은 해당 슬라이스에 둔다. 위젯 전용 순수 헬퍼는 그 위젯의 `utils/`에 두고 세 번째 소비자가 생길 때 `shared/lib`로 올린다.
-5. **shared 내부 cross-slice import 허용.** (예: shared/ui → shared/lib 가능)
-6. **barrel(`index.ts`) 금지.** `shared/ui/tabs/TabsUnderline`처럼 정의 파일에서 직접 import한다(테스트·`vi.mock` 포함).

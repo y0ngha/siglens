@@ -4,7 +4,7 @@ Test conventions for Siglens (split out of CONVENTIONS.md). Cite rules as `TESTI
 
 **Rule IDs** follow the root `CLAUDE.md` "Rule IDs and references". Sections group rules by topic, so numbers are not contiguous within a section.
 
-Retired IDs: TE-32, TE-35
+Retired IDs: TE-32, TE-35, TE-57
 
 ## File Locations
 
@@ -54,9 +54,9 @@ When code is refactored or moved, the destination module carries the edge-case t
 
 <a id="TE-5"></a>
 
-#### TE-5 — New helpers, actions, adapters and policy components need their own tests
+#### TE-5 — New helpers, actions, adapters, hooks and branchy components need their own tests
 
-Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged).
+Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged). A new custom hook or a component with its own branches (states, empty/error paths, derived labels) gets a colocated test that drives it directly (`renderHook`, a render test per branch); the parent's integration test alone leaves the branches unpinned.
 
 - ❌ A new `callGeminiWithKeyFallback` added to an adapter with no colocated test file.
 - ✅ A `__tests__/` file next to it covering undefined input, missing levels, duplicates, zero values and the empty result.
@@ -104,15 +104,6 @@ A new `describe`/`it` name uses the same language as the other tests in that fil
 
 - ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
 - ✅ `it('반 센트는 올림한다')` in the same file.
-
-<a id="TE-57"></a>
-
-#### TE-57 — New hooks and branchy components get their own tests
-
-A new custom hook, or a UI component with its own branches (states, empty/error paths, derived labels), gets a colocated test that drives it directly. Coverage through the parent's integration test alone leaves the branches unpinned and lets a regression in the extracted unit stay green.
-
-- ❌ A hook split out of a component, covered only by the parent component's test.
-- ✅ A `renderHook` test for the hook and a render test per branch of the component, next to the source.
 
 ## Required Test Cases
 
