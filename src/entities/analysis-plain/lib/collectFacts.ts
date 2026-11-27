@@ -5,7 +5,7 @@
  *  1. 모델이 사용해도 되는 숫자의 화이트리스트
  *  2. `guardPlainText`의 숫자 판정 기준(정답지)
  *
- * `trend`·`riskLevel`은 응답 타입에 따라 없다(`news`·`congress` 등). 타입별 분기가
+ * `trend`·`volatility`는 응답 타입에 따라 없다(`news`·`congress` 등). 타입별 분기가
  * 아니라 존재 검사 하나로 처리한다 — 이 레이어는 7종 분석에 공통으로 쓰이므로
  * 특정 타입의 필드를 전제하면 안 된다.
  */
@@ -21,7 +21,17 @@ export interface PlainFacts {
      */
     readonly currency?: string;
     readonly trend?: string;
-    readonly riskLevel?: string;
+    /**
+     * 분석 응답의 `riskLevel`(`low`·`medium`·`high`)을 **`volatility`라는 이름으로** 싣는다.
+     *
+     * core의 `riskLevel`은 하락 위험이 아니라 가격이 얼마나 크게 움직이는지(ATR%, MA200
+     * 거리 등)를 매긴 변동성 등급이다. 키 이름이 `riskLevel`이면 모델이 `high`를 "위험하다"로
+     * 풀어 써서, 같은 값을 "변동성"으로 보여 주는 패널·리포트와 어긋난다. 그래서 프롬프트에
+     * 규칙 문장을 더하지 않고 키 이름으로 뜻을 전한다: 규칙 문장은 `buildInputDigest`를 통해
+     * 모든 분석 종류의 저장 행을 무효화하지만, 키 이름은 이 필드가 있는 응답(technical)의
+     * 프롬프트만 바꾼다.
+     */
+    readonly volatility?: string;
     /**
      * 현재 주가.
      *
@@ -111,7 +121,7 @@ export function collectFacts(
             : {}),
         ...(typeof record.trend === 'string' ? { trend: record.trend } : {}),
         ...(typeof record.riskLevel === 'string'
-            ? { riskLevel: record.riskLevel }
+            ? { volatility: record.riskLevel }
             : {}),
         ...(typeof currentPrice === 'number' && Number.isFinite(currentPrice)
             ? { currentPrice }

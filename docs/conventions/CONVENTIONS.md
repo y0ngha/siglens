@@ -546,9 +546,10 @@ geometry, time conversions, numbers) matches reality when written and after ever
   loader lists which callers moved and which keep their own path. A JSDoc describes only its own unit (a reducer's doc
   claims no rendering, a view's doc no state-transition rules). A count or policy value another constant or file owns
   (`TABS.length`, a TTL) is pointed at, not restated.
-- **Re-read on every change.** When a function's processing order, workload, input, data source, location, caching or
-  name changes, or it is split, moved, replaced or deleted (a comment naming a test or guard that was replaced
-  promises protection that is gone), grep the old name, its concept and paraphrases repo-wide (`src/`,
+- **Re-read on every change.** When a function's processing order, workload, input, data source, location, caching,
+  name or user-facing label (a relabelled concept) changes, or it is split, moved, replaced or deleted (a comment
+  naming a test or guard that was replaced promises protection that is gone), grep the old name, its concept and
+  paraphrases repo-wide (`src/`,
   `e2e/`, `docs/`; CS-8) and update in the same change the comments, JSDoc, test names, sibling test comments ("in
   the same module"), class- or module-level summaries and sibling files, route and public docs, and the header doc of
   every touched file, including the one that holds the change. This covers a reversed layout contract, a setup, config

@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * AI 기술적 분석 패널 — 분석 응답을 받아 머리(추세·리스크·복사), 요약, 상세 섹션,
+ * AI 기술적 분석 패널 — 분석 응답을 받아 머리(추세·변동성·복사), 요약, 상세 섹션,
  * 재분석 버튼, 광고를 조립하는 오케스트레이터다. 판정은 `utils/`·`hooks/`가, 각 섹션의
  * 렌더는 `sections/`·`ui/`가 맡고 이 파일은 상태 연결과 배치만 한다.
  */
@@ -83,7 +83,7 @@ interface AnalysisPanelProps {
     /**
      * 잠긴 상세 조각. 원본 값은 이 컴포넌트에 전달되지 않는다.
      * SSR·hydration 이전에도(initialLockedInfoDepth 경유) 채워질 수 있고,
-     * 이 배열이 비어있지 않은 것만으로 게이트된 필드(리스크 배지·매매 전략·
+     * 이 배열이 비어있지 않은 것만으로 게이트된 필드(변동성 배지·매매 전략·
      * 신뢰도 배지·복사 버튼)를 숨긴다(`resolveLockedSections`). 주요 레벨은 core
      * `filterAnalysisResult`가 `partial_detail` 깊이에서 이미 비워 보내므로 별도
      * 게이트가 없다. tier hydration 완료 여부에는 의존하지 않으므로,

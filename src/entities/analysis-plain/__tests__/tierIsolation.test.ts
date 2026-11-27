@@ -87,6 +87,20 @@ describe('티어 격리', () => {
         );
     });
 
+    /**
+     * core `riskLevel`은 변동성 등급이라 facts에는 `volatility`로 실린다(`collectFacts`).
+     * 필터를 거친 실제 응답에서도 프롬프트에 `riskLevel` 키가 남지 않아야 모델이
+     * `high`를 "위험"으로 풀어 쓰지 않는다.
+     */
+    it('필터를 거친 프롬프트의 facts는 riskLevel 대신 volatility를 싣는다', () => {
+        const prompt = promptFor(
+            filterAnalysisResult(ANALYSIS, 'member').result
+        );
+
+        expect(prompt).toContain('"volatility":"medium"');
+        expect(prompt).not.toContain('"riskLevel"');
+    });
+
     it('필터 전 payload는 free와 다른 키를 만든다 — 순서가 뒤바뀌면 테스트가 깨진다', () => {
         expect(keyFor(ANALYSIS)).not.toBe(
             keyFor(filterAnalysisResult(ANALYSIS, 'free').result)
