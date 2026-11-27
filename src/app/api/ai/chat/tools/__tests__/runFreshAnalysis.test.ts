@@ -24,6 +24,10 @@ const m = vi.hoisted(() => ({
     resolveHoldingPositionBucket: vi.fn(
         async (): Promise<string | undefined> => undefined
     ),
+    // WP-28 app-D: 비교 계산은 `sinceEarlier.test.ts`가 검증한다. 여기서는 호출 배선과 결과 합성만 본다.
+    loadSinceEarlier: vi.fn(
+        async (_input: unknown): Promise<unknown> => undefined
+    ),
 }));
 const chart = vi.hoisted(() => ({ load: vi.fn(), peekDrawings: vi.fn() }));
 vi.mock('@/app/api/ai/chat/tools/chartBlock', () => ({
@@ -91,6 +95,9 @@ vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
         from: new Date('2026-06-01T00:00:00Z'),
         to: new Date('2026-08-01T00:00:00Z'),
     })),
+}));
+vi.mock('@/app/api/ai/chat/tools/sinceEarlier', () => ({
+    loadSinceEarlier: m.loadSinceEarlier,
 }));
 vi.mock('@/entities/portfolio/server/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
@@ -1544,4 +1551,143 @@ describe('runFreshAnalysisTool — E2E 전용 보류 시험 이음매', () => {
             expect(m.runAnalysis).toHaveBeenCalledTimes(1);
         }
     );
+});
+
+describe('runFreshAnalysisTool — sinceEarlier (WP-28 app-D)', () => {
+    const BLOCK = {
+        earlierGeneratedAt: '2026-10-21T22:00:00.000Z',
+        fromSessionDate: '2026-10-21',
+        toSessionDate: '2026-11-13',
+        closeThen: 93.3,
+        closeNow: 112,
+        changes: [],
+        comparedLevels: true,
+        note: 'n',
+    };
+    const earlierAnalyses = [
+        {
+            symbol: 'AAPL',
+            generatedAt: BLOCK.earlierGeneratedAt,
+            analysis: {},
+            seq: 3,
+        },
+    ];
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        m.profile.mockResolvedValue('us-equity');
+        m.assetInfo.mockResolvedValue({ name: 'Apple', fmpSymbol: 'AAPL' });
+        m.findBySymbol.mockResolvedValue([]);
+        m.findRecentForPrompt.mockResolvedValue([]);
+        m.loadSinceEarlier.mockResolvedValue(undefined);
+        chart.load.mockReturnValue(Promise.resolve(null));
+        __resetFreshSemaphoreForTests();
+        __resetActiveStreamsForTests();
+    });
+
+    it('새 일봉 분석: 런타임의 이전 분석·종목·등급·생성 시각을 넘기고 블록을 결과에 싣는다', async () => {
+        m.loadSinceEarlier.mockResolvedValue(BLOCK);
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: {
+                ...TECHNICAL_FIXTURE,
+                analyzedAt: '2026-11-14T10:00:00.000Z',
+            },
+        });
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'aapl', kind: 'technical' },
+            ctx,
+            { ...rt, earlierAnalyses }
+        )) as { sinceEarlier: unknown; source: string };
+        expect(m.loadSinceEarlier).toHaveBeenCalledWith({
+            earlierAnalyses,
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tier: 'member',
+            resultGeneratedAt: '2026-11-14T10:00:00.000Z',
+            fmpSymbol: 'AAPL',
+            // 이 도구가 이미 정한 시장을 그대로 넘긴다.
+            marketProfile: 'us-equity',
+        });
+        expect(r.source).toBe('fresh');
+        expect(r.sinceEarlier).toEqual(BLOCK);
+    });
+
+    it('블록이 없으면 결과는 이 기능이 없던 때와 같다(키 자체가 없다)', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: TECHNICAL_FIXTURE,
+        });
+        const r = await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            { ...rt, earlierAnalyses }
+        );
+        expect(r).not.toHaveProperty('sinceEarlier');
+    });
+
+    it.each(['cached', 'done'])(
+        '%s인데 분석 생성 시각을 모르면 지금 시각으로 때우지 않고 null로 넘겨 비교하지 않는다',
+        async status => {
+            m.runAnalysis.mockResolvedValue({
+                status,
+                result: TECHNICAL_FIXTURE,
+            });
+            await runFreshAnalysisTool(
+                { symbol: 'AAPL', kind: 'technical' },
+                ctx,
+                { ...rt, earlierAnalyses }
+            );
+            expect(m.loadSinceEarlier).toHaveBeenCalledWith(
+                expect.objectContaining({ resultGeneratedAt: null })
+            );
+        }
+    );
+
+    it('분석에 실패하면 비교를 시도하지 않는다', async () => {
+        m.runAnalysis.mockResolvedValue({ status: 'error', code: 'x' });
+        await runFreshAnalysisTool({ symbol: 'AAPL', kind: 'technical' }, ctx, {
+            ...rt,
+            earlierAnalyses,
+        });
+        expect(m.loadSinceEarlier).not.toHaveBeenCalled();
+    });
+
+    it('overall 분석에는 싣지 않는다', async () => {
+        m.loadSinceEarlier.mockResolvedValue(BLOCK);
+        m.overall.mockResolvedValue({
+            status: 'done',
+            result: { headlineKo: 'h' },
+        });
+        const r = await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            { ...rt, earlierAnalyses }
+        );
+        expect(m.loadSinceEarlier).not.toHaveBeenCalled();
+        expect(r).not.toHaveProperty('sinceEarlier');
+    });
+
+    it('블록을 실어도 분석 본문이 상한을 넘으면 본문이 줄고 블록과 구조는 남는다', async () => {
+        m.loadSinceEarlier.mockResolvedValue(BLOCK);
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: {
+                ...REALISTIC_TECHNICAL_RESULT,
+                summary: '요약 문장입니다. '.repeat(1500),
+            },
+        });
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            { ...rt, earlierAnalyses }
+        )) as { sinceEarlier: unknown; analysis: { keyLevels: unknown } };
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
+        expect(r.sinceEarlier).toEqual(BLOCK);
+        expect(r.analysis.keyLevels).toEqual(
+            REALISTIC_TECHNICAL_RESULT.keyLevels
+        );
+    });
 });

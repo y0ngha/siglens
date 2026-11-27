@@ -135,6 +135,11 @@ export function ChatSession({
         },
     });
     const hasMessages = stream.messages.length > 0;
+    // 저장된 대화를 열었을 때의 마지막 메시지 — "분석 이후 달라진 점" 카드가 붙는 자리다. 이 세션에서 만든 대화나
+    // 새 턴에는 붙이지 않는다(열 때 한 번만 정한다).
+    const [sinceEarlierAnchorId] = useState(() =>
+        conversationId === null ? null : (stream.messages.at(-1)?.id ?? null)
+    );
     const login = loginHref(
         siteUrl,
         localePrefix,
@@ -219,6 +224,16 @@ export function ChatSession({
                 localePrefix={localePrefix}
                 conversationId={stream.conversationId}
                 guest={!signedIn}
+                sinceEarlier={
+                    signedIn &&
+                    conversationId !== null &&
+                    sinceEarlierAnchorId !== null
+                        ? {
+                              conversationId,
+                              afterMessageId: sinceEarlierAnchorId,
+                          }
+                        : undefined
+                }
             />
         );
     };

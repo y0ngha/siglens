@@ -5,6 +5,7 @@ import type {
     ChartOverlay,
 } from '@y0ngha/siglens-core';
 import type { PriceAlertProposal } from '@/entities/mail-alert/model';
+import type { SignalHubType } from '@/entities/signal-history/lib/signalHubs';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 /** 차트 블록의 봉 주기 — 공급자 주기(`1Day`, `1Hour` …) 또는 일봉을 접은 `1Week`·`1Month`. */
@@ -231,3 +232,79 @@ export type ChatBlock = ChatDrawableBlock | ChatActionBlock;
 
 /** 시각화 블록 하나를 직렬화했을 때의 상한(바이트) — 행 크기가 커지지 않게 빌더가 지킨다. */
 export const CHAT_VISUAL_BLOCK_MAX_BYTES = 50_000;
+
+/** 카드가 문장으로 푸는 신호 — 신호별 종목 페이지(허브)가 여는 유형과 같다(이름 카탈로그가 이 유형들뿐이다). */
+export type ChatChangeSignalType = SignalHubType;
+
+export type ChatChangeTrend = 'bullish' | 'bearish' | 'neutral';
+
+/** 카드 한 줄 — 가격·날짜까지 서버가 채워 보낸다(날짜는 일봉의 거래일 `YYYY-MM-DD`). */
+export type ChatChangeItem =
+    | {
+          kind: 'trend';
+          from: ChatChangeTrend;
+          to: ChatChangeTrend;
+          /** 마지막 종가의 거래일. */
+          date: string;
+      }
+    | { kind: 'signal'; type: ChatChangeSignalType; date: string }
+    | {
+          kind: 'level';
+          side: 'support' | 'resistance';
+          /** `down`: 그 선 아래로 마감, `up`: 그 선 위로 마감. */
+          direction: 'down' | 'up';
+          price: number;
+          close: number;
+          /** 처음 건넌 종가의 거래일. */
+          date: string;
+      }
+    | {
+          kind: 'plan';
+          position: 'in_zone' | 'above_zone' | 'below_zone';
+          zoneLow: number;
+          zoneHigh: number;
+          date: string;
+      }
+    | { kind: 'plan_stopped'; stop: number; date: string }
+    | { kind: 'plan_no_setup'; date: string };
+
+export interface ChatSymbolChangesBase {
+    symbol: string;
+    marketProfile: MarketProfileId;
+    /** 비교 기준 분석의 생성 시각(ISO). */
+    analyzedAt: string;
+    /**
+     * 카드에 쓰는 "분석일" — 분석이 속한 일봉의 거래일(`YYYY-MM-DD`). 일봉을 찾지 못한 경우(너무 오래됨)만
+     * `analyzedAt`의 UTC 날짜다.
+     */
+    analyzedDate: string;
+}
+
+/**
+ * 다시 연 대화 아래 "달라진 점" 카드(WP-28 A13c)의 한 종목 비교 결과 — 서버 액션이 그 자리에서 계산해 돌려주는
+ * 표시 전용 값이다. 어디에도 저장하지 않는다. `items`가 비어도 `trendMeasured`가 거짓이거나 `unreadDays`가
+ * 0보다 크면 "달라진 점 없음"이라고 말하지 않는다.
+ */
+export interface ChatSymbolChanges extends ChatSymbolChangesBase {
+    status: 'changes';
+    /** 마지막 일봉의 거래일. */
+    latestDate: string;
+    /** 분석일 종가. */
+    closeThen: number;
+    /** 마지막 완결 일봉의 종가(`latestDate`). 시세가 아니라 종가라 기준이 정확하다. */
+    closeNow: number;
+    items: ChatChangeItem[];
+    /** 분석에 가격대(지지·저항)가 있었는지 — 없으면 "분석 가격대 기준"이라 말할 수 없다. */
+    hasLevels: boolean;
+    /** 추세 판정을 두 시점 모두에서 읽었는가. */
+    trendMeasured: boolean;
+    /** 추세 판정이 기울기를 재는 지수이동평균 기간(일) — core 상수를 서버가 실어 보낸다(클라이언트는 core를 싣지 않는다). */
+    trendEmaPeriod: number;
+    /** 신호 판정이 안 되거나 종가를 못 읽은 거래일 수(둘 중 큰 쪽). 0이면 전부 읽었다. */
+    unreadDays: number;
+}
+
+export type ChatSymbolChangesResult =
+    | ChatSymbolChanges
+    | (ChatSymbolChangesBase & { status: 'same_session' })
+    | (ChatSymbolChangesBase & { status: 'too_old' });

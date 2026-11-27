@@ -6587,6 +6587,33 @@
                 "imageAlt": "Attached image {n}",
                 "imagesLabel": "Attached images",
                 "openImage": "Open attached image {n} in new tab"
+            },
+            "sinceEarlier": {
+                "title": "{name}: changes since the {date} analysis",
+                "price": "Close on {date} {now}, close on the analysis day {base}, change {pct}",
+                "trend": "The trend reading changed from “{from}” to “{to}” ({date} close)",
+                "trendBasis": "Based on the slope of the {period}-day EMA and where the close sits",
+                "signal": {
+                    "line": "New signal: {signal} ({date} daily bar)"
+                },
+                "supportBroken": "Closed below the support at {price} from that analysis ({date}, close {close})",
+                "supportRegained": "Closed back above the support at {price} from that analysis ({date}, close {close})",
+                "resistanceBroken": "Closed above the resistance at {price} from that analysis ({date}, close {close})",
+                "resistanceLost": "Closed back below the resistance at {price} from that analysis ({date}, close {close})",
+                "planInZone": "Closed inside the entry zone {low} to {high} from that analysis ({date})",
+                "planAbove": "Closed above the entry zone {low} to {high} from that analysis ({date})",
+                "planBelow": "Closed below the entry zone {low} to {high} from that analysis ({date})",
+                "planStopped": "Closed at or below the invalidation level {stop} from that analysis ({date})",
+                "planNoSetup": "The entry plan from that analysis no longer holds on the {date} close",
+                "partialTrend": "The trend reading could not be compared because of too little data",
+                "partialDays": "{count, plural, one {# trading day} other {# trading days}} could not be checked for signals or closes",
+                "noneWithLevels": "Since then, no change in the trend reading, no new signals and no crossings of the analysis's price levels ({date} close)",
+                "noneWithoutLevels": "Since then, no change in the trend reading and no new signals ({date} close)",
+                "tooOld": "This analysis is too old to compare. Run a new one.",
+                "ask": "Ask what changed",
+                "askLabel": "Ask what changed for {name}",
+                "askPrompt": "What changed for {name} ({symbol}) since the {date} analysis?",
+                "announce": "Changes since the analysis are shown below"
             }
         }
     }

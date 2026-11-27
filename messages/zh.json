@@ -6587,6 +6587,33 @@
                 "imageAlt": "附加图片 {n}",
                 "imagesLabel": "已附加图片",
                 "openImage": "在新标签页中打开附加图片 {n}"
+            },
+            "sinceEarlier": {
+                "title": "{name} {date}分析以来的变化",
+                "price": "{date}收盘价 {now}，分析日收盘价 {base}，变化 {pct}",
+                "trend": "趋势判定已从{from}变为{to}（{date}收盘）",
+                "trendBasis": "判定依据是{period}日EMA的斜率与收盘价所处位置",
+                "signal": {
+                    "line": "新信号 {signal}（{date}日线）"
+                },
+                "supportBroken": "收盘跌破该分析的支撑位 {price}（{date}，收盘价 {close}）",
+                "supportRegained": "收盘重新站上该分析的支撑位 {price}（{date}，收盘价 {close}）",
+                "resistanceBroken": "收盘突破该分析的阻力位 {price}（{date}，收盘价 {close}）",
+                "resistanceLost": "收盘回落到该分析的阻力位 {price} 之下（{date}，收盘价 {close}）",
+                "planInZone": "收盘位于该分析的入场区间 {low}~{high} 内（{date}）",
+                "planAbove": "收盘高于该分析的入场区间 {low}~{high}（{date}）",
+                "planBelow": "收盘低于该分析的入场区间 {low}~{high}（{date}）",
+                "planStopped": "收盘在该分析的失效标准 {stop} 或以下（{date}）",
+                "planNoSetup": "按{date}收盘价，该分析的入场计划已不再成立",
+                "partialTrend": "数据不足，无法比较趋势判定",
+                "partialDays": "有 {count} 个交易日无法确认信号或收盘价",
+                "noneWithLevels": "此后，趋势判定、新信号和分析价位均无变化（{date}收盘）",
+                "noneWithoutLevels": "此后，趋势判定和新信号均无变化（{date}收盘）",
+                "tooOld": "距离该分析已过久，无法比较。请重新分析。",
+                "ask": "询问变化",
+                "askLabel": "询问变化（{name}）",
+                "askPrompt": "{name}（{symbol}）自{date}的分析以来有什么变化",
+                "announce": "分析以来的变化已显示在下方"
             }
         }
     }

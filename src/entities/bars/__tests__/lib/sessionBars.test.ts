@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
 import {
+    anchorBarIndexOf,
+    EMPTY_INDICATOR_RESULT,
+    US_EQUITY_SESSION,
+    type BarsData,
+} from '@y0ngha/siglens-core';
+import {
+    closedAnchorIndexOf,
     lastBarSessionDate,
     lastDailyBarDate,
     toSessionBarsData,
 } from '@/entities/bars/lib/sessionBars';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 
 /** `YYYY-MM-DD` 일봉(그 날 UTC 자정). */
 function bar(date: string, close = 100) {
@@ -108,5 +115,44 @@ describe('lastDailyBarDate', () => {
 
     it('봉이 없으면 null', () => {
         expect(lastDailyBarDate([])).toBeNull();
+    });
+});
+
+describe('closedAnchorIndexOf', () => {
+    const bars = data(DATES).bars;
+
+    it('미국 장이 열리기 전(한국 낮)의 분석은 아직 열리지 않은 그날 봉이 아니라 직전 마감 봉에 붙는다', () => {
+        // 2026-10-05(월) 14:00 KST = 뉴욕 01:00 — 그날 봉(UTC 자정)은 시작 시각만 보면 분석 이전이다.
+        const analyzedAt = '2026-10-05T05:00:00Z';
+
+        expect(anchorBarIndexOf(bars, analyzedAt)).toBe(2);
+        expect(closedAnchorIndexOf(bars, US_EQUITY_SESSION, analyzedAt)).toBe(
+            1
+        );
+    });
+
+    it('마감 뒤의 분석은 그 세션 봉에 붙는다(EOD 발행 버퍼를 기다리지 않는다)', () => {
+        // 2026-10-05(월) 17:00 EDT — 16:00 마감 한 시간 뒤.
+        expect(
+            closedAnchorIndexOf(bars, US_EQUITY_SESSION, '2026-10-05T21:00:00Z')
+        ).toBe(2);
+    });
+
+    it('시장 세션마다 마감 시각을 따른다', () => {
+        // 2026-10-06(화) 16:00 KST — 한국은 마감 뒤, 미국은 개장 전.
+        const analyzedAt = '2026-10-06T07:00:00Z';
+
+        expect(closedAnchorIndexOf(bars, KR_EQUITY_SESSION, analyzedAt)).toBe(
+            3
+        );
+        expect(closedAnchorIndexOf(bars, US_EQUITY_SESSION, analyzedAt)).toBe(
+            2
+        );
+    });
+
+    it('받은 봉보다 앞선 분석은 null', () => {
+        expect(
+            closedAnchorIndexOf(bars, US_EQUITY_SESSION, '2026-09-20T12:00:00Z')
+        ).toBeNull();
     });
 });

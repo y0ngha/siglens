@@ -82,6 +82,7 @@ describe('guestTurn', () => {
             userMessageSeq: null,
             turnAtRowId: null,
             history,
+            earlierAnalyses: [],
             portfolioSymbols: [],
         });
     });
@@ -200,6 +201,88 @@ describe('prepareMemberTurn', () => {
         });
         expect(repo.appendUserMessage).not.toHaveBeenCalled();
         expect(repo.listImagesOfMessage).not.toHaveBeenCalled();
+    });
+
+    describe('earlierAnalyses (WP-28 app-D)', () => {
+        const ANALYSIS = {
+            found: true,
+            tab: 'technical',
+            timeframe: '1Day',
+            generatedAt: '2026-11-18T14:00:00.000Z',
+            analysis: { trend: 'bullish' },
+        };
+        const callRow = (seq: number) => ({
+            ...ROW(seq, 'assistant', ''),
+            toolCalls: [
+                {
+                    id: 'call_0',
+                    name: 'get_cached_analysis',
+                    args: { symbol: 'AAPL', tab: 'technical' },
+                },
+            ],
+        });
+        const resultRow = (seq: number) => ({
+            ...ROW(seq, 'assistant', JSON.stringify(ANALYSIS)),
+            role: 'tool' as const,
+            toolCallId: 'call_0',
+            toolName: 'get_cached_analysis',
+        });
+
+        it('저장된 이전 턴의 일봉 분석을 읽어 싣는다', async () => {
+            repo.listMessages.mockResolvedValue([
+                ROW(1, 'user', 'AAPL 분석'),
+                callRow(2),
+                resultRow(3),
+                ROW(4, 'assistant', '답'),
+            ]);
+            const out = await prepareMemberTurn(
+                'u1',
+                sendBody(),
+                'member',
+                'ko'
+            );
+            expect(out).toMatchObject({
+                earlierAnalyses: [
+                    {
+                        symbol: 'AAPL',
+                        generatedAt: ANALYSIS.generatedAt,
+                        analysis: ANALYSIS.analysis,
+                        seq: 3,
+                    },
+                ],
+            });
+        });
+
+        it('edit: 지워질 구간(editSeq 이상)의 분석은 기준으로 쓰지 않는다', async () => {
+            repo.listMessages.mockResolvedValue([
+                ROW(1, 'user', 'q'),
+                callRow(2),
+                resultRow(3),
+                ROW(4, 'user', 'q2'),
+            ]);
+            const body: ParsedBody = {
+                ...sendBody(),
+                action: 'edit',
+                editSeq: 1,
+            };
+            const out = await prepareMemberTurn('u1', body, 'member', 'ko');
+            expect(out).toMatchObject({ earlierAnalyses: [] });
+        });
+
+        it('superseded 행의 분석은 읽지 않는다', async () => {
+            repo.listMessages.mockResolvedValue([
+                ROW(1, 'user', 'q'),
+                { ...callRow(2), status: 'superseded' as const },
+                { ...resultRow(3), status: 'superseded' as const },
+            ]);
+            const out = await prepareMemberTurn(
+                'u1',
+                { ...sendBody(), action: 'regenerate' },
+                'member',
+                'ko'
+            );
+            expect(out).toMatchObject({ earlierAnalyses: [] });
+        });
     });
 
     it('regenerate: 대체할 사용자 행이 없으면 400 invalid_body', async () => {

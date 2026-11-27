@@ -5,6 +5,7 @@
  * 점프, "맨 아래로" 버튼 노출, 그 버튼으로 켜는 스트리밍 따라가기(opt-in follow)를 맡는다.
  */
 import {
+    useCallback,
     useEffect,
     useLayoutEffect,
     useRef,
@@ -59,6 +60,11 @@ interface UseTranscriptScrollReturn {
     showScrollButton: boolean;
     handleScroll: (e: UIEvent<HTMLDivElement>) => void;
     scrollToBottom: () => void;
+    /**
+     * 내용이 맨 아래에 새로 붙은 뒤(다시 연 대화의 "달라진 점" 카드) 호출한다. 마지막 스크롤 이벤트 때 맨 아래
+     * 근처였을 때만 맨 아래로 즉시 붙이고, 위로 올려 읽던 사람의 자리는 건드리지 않는다.
+     */
+    keepAtBottomIfWasThere: () => void;
 }
 
 /**
@@ -98,6 +104,11 @@ export function useTranscriptScroll(
      * 아니라 이 최고점과 비교해야 프레임당 1~3px의 느린 위 스크롤도 누적돼 "떠남"으로 잡힌다.
      */
     const followPeakTopRef = useRef(0);
+    /**
+     * 마지막 **스크롤 이벤트** 때 맨 아래 근처였는가. 내용이 자란 뒤의 `scrollHeight`로는 "자라기 전에 맨 아래였는지"를
+     * 알 수 없어 스크롤 이벤트 시점의 판정을 기억해 둔다(내용 증가는 스크롤 이벤트를 내지 않는다).
+     */
+    const wasNearBottomRef = useRef(true);
 
     /** 따라가기 최고점에서 `tolerance`보다 내려왔고, 맨 아래 띠에서도 벗어났다(클램프·고무줄 제외). */
     const userScrolledUpFromPeak = (
@@ -121,8 +132,15 @@ export function useTranscriptScroll(
             else if (userScrolledUpFromPeak(el, USER_SCROLL_UP_TOLERANCE_PX))
                 followingRef.current = false;
         }
+        wasNearBottomRef.current = !isAwayFromBottom(el);
         setShowScrollButton(isAwayFromBottom(el));
     };
+
+    const keepAtBottomIfWasThere = useCallback((): void => {
+        const el = containerRef.current;
+        if (!el || !wasNearBottomRef.current) return;
+        el.scrollTop = el.scrollHeight;
+    }, []);
 
     const scrollToBottom = (): void => {
         const el = containerRef.current;
@@ -211,5 +229,6 @@ export function useTranscriptScroll(
         showScrollButton,
         handleScroll,
         scrollToBottom,
+        keepAtBottomIfWasThere,
     };
 }

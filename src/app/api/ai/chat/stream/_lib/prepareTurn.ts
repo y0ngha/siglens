@@ -9,6 +9,10 @@ import {
     DrizzleChatConversationRepository,
     type StoredChatImage,
 } from '@/entities/chat-conversation/api';
+import {
+    extractConversationAnalyses,
+    type ConversationAnalysis,
+} from '@/entities/chat-conversation/server/conversationAnalyses';
 import type { NormalizedChatImage } from '@/entities/chat-conversation/server/normalizeChatImage';
 import {
     toAgentHistory,
@@ -56,6 +60,11 @@ export interface ReadyTurn {
      */
     turnAtRowId: string | null;
     history: AgentMessage[];
+    /**
+     * 이 대화의 이전 턴에 보인 일봉 기술적 분석 — 도구가 이번 결과와 비교해 `sinceEarlier`를 싣는 기준(WP-28 app-D).
+     * 저장된 행에서만 읽으므로 게스트(브라우저가 보낸 기록은 믿지 않는다)는 비어 있다.
+     */
+    earlierAnalyses: readonly ConversationAnalysis[];
     portfolioSymbols: string[];
 }
 
@@ -99,6 +108,7 @@ export function guestTurn(
         userMessageSeq: null,
         turnAtRowId: null,
         history: body.history,
+        earlierAnalyses: [],
         portfolioSymbols: [],
     };
 }
@@ -274,6 +284,8 @@ export async function prepareMemberTurn(
         userMessageSeq,
         turnAtRowId,
         history,
+        // 이번 턴 user 행은 이 읽기 뒤에 붙으므로 `rows`는 전부 이전 턴이다. superseded·error 행의 결과는 파서가 읽지 않는다.
+        earlierAnalyses: extractConversationAnalyses(rows),
         portfolioSymbols,
     };
 }

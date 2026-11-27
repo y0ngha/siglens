@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { AI_CLIENT_PATHS } from '@/app/ai/[locale]/_lib/aiClientPaths';
+import { CHAT_CHANGE_SIGNAL_TYPES } from '@/entities/chat-conversation/lib/chatChangeSignalTypes';
+import ko from '../../../../../../messages/ko.json';
 
 function walk(dir: string, exts: readonly string[] = ['.tsx']): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap(e => {
@@ -32,9 +34,17 @@ describe('AI_CLIENT_PATHS', () => {
             for (const m of code.matchAll(/getTranslations\('([^']+)'\)/g))
                 used.add(m[1]!);
         }
+        // 정확히 같거나 조상 네임스페이스이거나, 그 네임스페이스 아래 **잎 키**만 싣는 항목(`shared.enumLabel.signalType.<type>`)이어도
+        // 이 네임스페이스가 덮인 것으로 본다 — 아래 헤더 트리 검사와 같은 규칙이다.
         for (const ns of used)
             expect(
-                AI_CLIENT_PATHS.some(p => ns === p || ns.startsWith(`${p}.`))
+                AI_CLIENT_PATHS.some(
+                    p =>
+                        ns === p ||
+                        ns.startsWith(`${p}.`) ||
+                        p.startsWith(`${ns}.`)
+                ),
+                ns
             ).toBe(true);
     });
 
@@ -83,5 +93,37 @@ describe('AI_CLIENT_PATHS', () => {
                         p.startsWith(`${ns}.`)
                 )
             ).toBe(true);
+    });
+
+    /**
+     * 위 두 검사는 조상·후손 접두로 "덮였다"를 판정해, `shared.enumLabel.signalType` 아래 잎 키가 하나만 있어도
+     * 통과한다. 카드가 푸는 신호마다 이름 키가 **정확히** 실리는지는 따로 본다 — 하나라도 빠지면 그 신호 줄은
+     * ai 호스트에서 키 문자열로 보인다.
+     */
+    it('carries the name key of every signal the since-earlier card renders, leaf by leaf', () => {
+        const labels = (
+            ko as {
+                shared: { enumLabel: { signalType: Record<string, string> } };
+            }
+        ).shared.enumLabel.signalType;
+        expect(CHAT_CHANGE_SIGNAL_TYPES.length).toBeGreaterThan(0);
+        for (const type of CHAT_CHANGE_SIGNAL_TYPES) {
+            expect(AI_CLIENT_PATHS, type).toContain(
+                `shared.enumLabel.signalType.${type}`
+            );
+            expect(labels[type], type).toEqual(expect.any(String));
+        }
+        // 이름 카탈로그는 통째가 아니라 쓰는 잎 키만 싣는다.
+        expect(AI_CLIENT_PATHS).not.toContain('shared.enumLabel.signalType');
+        expect(AI_CLIENT_PATHS).not.toContain('shared.enumLabel');
+        expect(
+            AI_CLIENT_PATHS.filter(p =>
+                p.startsWith('shared.enumLabel.signalType.')
+            ).toSorted()
+        ).toEqual(
+            CHAT_CHANGE_SIGNAL_TYPES.map(
+                type => `shared.enumLabel.signalType.${type}`
+            ).toSorted()
+        );
     });
 });
