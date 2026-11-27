@@ -57,6 +57,8 @@ describe('buildReportScenarios', () => {
                 .flatMap(l => l.segments.map(x => x.text))
                 .join('');
             expect(text).not.toMatch(/<\/?(b|up|down)>/);
+            // Invented prices and percentages next to a real ticker read as quotes.
+            expect(text).not.toMatch(/\d/);
             expect(s.summary).toBe(`${s.tools.length}단계를 거쳐 분석했어요`);
             // The AI step is how the report gets written, not what it rests on.
             expect(s.sources).not.toContain('AI 리포트');

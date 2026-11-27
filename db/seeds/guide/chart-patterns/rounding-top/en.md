@@ -20,13 +20,13 @@ Price rises slowly, stays flat at the top for a while, and then comes down slowl
 
 ## What it tells you
 
-Buying pressure fades slowly and selling pressure builds slowly, so control changes hands gradually. Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, described the standard form as one with an uptrend leading into the pattern. When it appears at the end of an uptrend, it is read as a candidate for a turn down.
+Buying pressure fades slowly and selling pressure builds slowly, so control changes hands gradually. Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, described the standard form as one with an uptrend leading into the pattern. When it appears at the end of an uptrend, it is read as a candidate for a turn down.
 
 The pattern completes only when a close falls below the lower of the two rims. Until then it is just a candidate. A dome does not always lead to a decline, either: in Bulkowski's tabulation, cases that broke upward actually performed better (went further after the breakout). He said taller patterns and heavier volume on the rim break both went with better performance. The two rims act as support zones, where a falling price tends to stall.
 
 ## How SIGLENS detects it
 
-SIGLENS takes two clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the dome. It fits an upside-down U curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding top. The conditions:
+SIGLENS takes two clear lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) as the two rims of the dome. It fits an upside-down U curve to the closes between them, and if the curve follows the actual price path closely, it treats the shape as a rounding top. The conditions:
 
 - The two rims must be at least 30 bars apart.
 - The rim prices must be within 5% of each other and no more than 25% of the dome's height apart.

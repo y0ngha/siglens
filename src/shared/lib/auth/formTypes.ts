@@ -54,11 +54,12 @@ type UnexpectedErrorCode = 'unexpected';
 type RequestEmailVerificationErrorCode =
     | LocalInfraErrorCode
     | 'invalid_email'
+    | 'rate_limited'
+    | 'email_send_failed'
     | UnexpectedErrorCode;
 
 type SignupFormErrorCode =
     | RegisterUserErrorCode
-    | 'auto_login_failed'
     | 'consent_required'
     | 'service_unavailable'
     | LocalInfraErrorCode;

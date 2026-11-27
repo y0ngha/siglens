@@ -22,7 +22,7 @@ It consists of a pole, where price nearly doubles in a short time, followed by a
 
 Even after nearly doubling, there is little profit-taking and price stays high. The reading is that holders expect more upside and are not selling, so a close above the pole's top is read as the advance continuing. It appears rarely, in stocks with very strong upward drive.
 
-In the counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, cases that failed to move far enough after the breakout were rare. Yet its performance rank (a ranking by how far price went afterward) was 30th of 39 bullish patterns. That means the rise after the breakout was often small relative to the pole. The 82% rate of reaching the target is also based on a target of half the pole height, not the full height. Tighter flags, and flags with shrinking volume, performed better.
+In the counts of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, cases that failed to move far enough after the breakout were rare. Yet its performance rank (a ranking by how far price went afterward) was 30th of 39 bullish patterns. That means the rise after the breakout was often small relative to the pole. The 82% rate of reaching the target is also based on a target of half the pole height, not the full height. Tighter flags, and flags with shrinking volume, performed better.
 
 ## How SIGLENS finds it
 

@@ -352,7 +352,16 @@ describe('confirmMailAlertCode', () => {
 
     it('저장돼 있는 verified 값은 받아들이지 않는다(틀린 코드여도 만료로 처리, 통과 아님)', async () => {
         const { deps, tokens } = makeDeps();
-        await tokens.set('mail_alert', EMAIL_HASH, { status: 'verified' }, 60);
+        await tokens.set(
+            'mail_alert',
+            EMAIL_HASH,
+            {
+                status: 'verified',
+                tokenHash: 'a'.repeat(64),
+                bindingHash: 'b'.repeat(64),
+            },
+            60
+        );
 
         await expect(
             confirmMailAlertCode(EMAIL, '123456', deps)

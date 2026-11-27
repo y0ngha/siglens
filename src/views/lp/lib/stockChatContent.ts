@@ -29,25 +29,25 @@ export const HOW: readonly HowStep[] = [
     {
         Icon: QuoteIcon,
         title: '시세 직접 조회',
-        body: '답하기 전에 최신 시세와 차트를 직접 찾아봅니다.',
+        body: '답하기 전에 최신 시세와 차트를 직접 찾아봐요.',
     },
     {
         Icon: LayersIcon,
         title: '지표는 규칙으로 계산',
-        body: 'RSI, 이동평균 같은 지표는 AI가 짐작하지 않고 정해진 규칙으로 계산합니다.',
+        body: 'RSI, 이동평균 같은 지표는 AI가 짐작하지 않고 정해진 규칙으로 계산해요.',
     },
     {
         Icon: SparkIcon,
         title: '답변마다 출처와 기준 시각',
-        body: '어떤 데이터를 언제 기준으로 봤는지 답변과 함께 보여 줍니다.',
+        body: '어떤 데이터를 언제 기준으로 봤는지 답변과 함께 보여 줘요.',
     },
 ];
 
 /** The worked example the question-to-answer flow is drawn around. */
 export const HOW_DEMO: HowDemo = {
     question: '엔비디아 지금 비싼 편이야?',
-    answer: '이익에 비하면 비싼 편이에요. 다만 이익이 빠르게 늘고 있어서 보는 사람마다 판단이 갈려요.',
-    chips: ['시세', '기업 정보', '기준 2026-09-18'],
+    answer: '이익에 비해 가격이 높은지는 PER 같은 지표로 볼 수 있어요. 판단은 보는 사람마다 갈릴 수 있어서, 근거가 되는 데이터를 함께 보여 줘요.',
+    chips: ['시세', '기업 정보', '기준 시각'],
 };
 
 /** The disclosure FAQ: coverage, price and "no investment advice". */
@@ -73,7 +73,11 @@ const tool = (label: string, subject: string, ms: number): ReplayTool => ({
     ms,
 });
 
-/** One example conversation; the summary names the lookups and their total time. */
+/**
+ * One example conversation. The answer lines say what the agent covers, never a
+ * figure, so no number can be read as a real quote for the ticker it names. The
+ * summary names the lookups only (no duration, which would be a made-up number).
+ */
 function scenario(
     id: string,
     question: string,
@@ -82,13 +86,12 @@ function scenario(
     sources: readonly string[],
     time: string
 ): ReplayScenario {
-    const seconds = (tools.reduce((sum, x) => sum + x.ms, 0) / 1000).toFixed(1);
     return {
         id,
         question,
         tools,
         lines: toReplayLines(lines),
-        summary: `${tools.map(x => x.label).join(', ')} 확인, ${seconds}초`,
+        summary: `${tools.map(x => x.label).join(', ')} 확인`,
         sources,
         asOf: `기준 ${time}`,
     };
@@ -96,7 +99,9 @@ function scenario(
 
 /**
  * `ai.siglens.io/about`'s example conversations (`views.ai-about` in
- * `messages/ko.json`), minus the coin one and with the middle dots spelled out.
+ * `messages/ko.json`), minus the coin one, with the middle dots spelled out
+ * and the figures taken out: this page is an ad, so an invented price or
+ * percentage next to a real ticker would read as a quote.
  */
 export const CHAT_SCENARIOS: readonly ReplayScenario[] = [
     scenario(
@@ -109,14 +114,14 @@ export const CHAT_SCENARIOS: readonly ReplayScenario[] = [
             tool('시그렌즈 분석', '005930', 780),
         ],
         [
-            '삼성전자는 9월 18일 <b>71,800원</b>에 마감했어요. 전날보다 <up>+1.3%</up> 올랐어요.',
-            '최근 20일 평균 가격(69,950원)보다는 높고, 60일 평균(72,400원)보다는 아직 낮아요. 짧게 보면 오르는 중이고, 길게 보면 아직 회복 전이에요.',
-            '너무 많이 올랐는지 보는 RSI 지표는 <b>54</b>예요. 과열도 침체도 아닌 보통 수준이에요.',
-            '오르고 내리는 힘을 보는 MACD 지표는 9월 12일에 신호선을 위로 넘었어요. 오르는 힘이 붙기 시작했다는 뜻이에요.',
-            '시그렌즈 분석에서는 <b>72,400원</b>을 넘는지가 다음에 볼 지점이라고 했어요.',
+            '삼성전자의 가장 최근 종가와 전날 대비 등락부터 볼게요.',
+            '지금 가격이 단기 평균보다 위면 짧게는 오름세, 장기 평균보다 아래면 길게는 아직 회복 전이라고 읽어요.',
+            'RSI는 너무 많이 올랐는지 보는 지표예요. 과열도 침체도 아니면 보통 수준이에요.',
+            'MACD는 오르고 내리는 힘을 보여 줘요. 신호선을 위로 넘으면 힘이 붙기 시작했다는 뜻이에요.',
+            '시그렌즈 분석에서 다음에 볼 가격대가 나오면 같이 적어 둬요.',
         ],
         ['시세', '차트와 지표', '시그렌즈 분석'],
-        '2026-09-18 종가'
+        '가장 최근 종가'
     ),
     scenario(
         'nvda',
@@ -127,14 +132,14 @@ export const CHAT_SCENARIOS: readonly ReplayScenario[] = [
             tool('뉴스', 'NVDA', 820),
         ],
         [
-            '이익에 비하면 비싼 편이에요. 다만 이익이 빠르게 늘고 있어서 보는 사람마다 판단이 갈려요.',
-            '주가가 1년 이익의 몇 배인지 보는 PER은 <b>45배</b>예요. 미국 대형 기술주 평균(약 30배)보다 높아요.',
-            '매출은 1년 전보다 <up>+56%</up> 늘었어요.',
-            '애널리스트 목표가 평균은 <b>210달러</b>로, 지금 가격(182달러)보다 높게 잡혀 있어요.',
-            '다음 실적 발표는 11월 19일이에요. 그때 이익이 기대만큼 나오는지가 중요해요.',
+            '이익에 비해 가격이 높은지는 지표 몇 가지로 나눠서 살펴봐요.',
+            'PER은 주가가 한 해 이익의 몇 배인지 보여 줘요. 비슷한 종목과 견줘서 높은지 낮은지 설명해요.',
+            '매출이 작년보다 얼마나 늘었는지도 보면 성장 속도를 가늠할 수 있어요.',
+            '애널리스트 목표가 평균이 지금 가격보다 높은지 낮은지도 참고해요.',
+            '다음 실적 발표 날짜가 가까우면, 그 결과가 중요하다는 점도 짚어 둬요.',
         ],
-        ['시세', '기업 정보', '뉴스 12건'],
-        '2026-09-18 16:00 (미국 동부)'
+        ['시세', '기업 정보', '뉴스'],
+        '가장 최근 시세'
     ),
     scenario(
         'market',
@@ -145,13 +150,13 @@ export const CHAT_SCENARIOS: readonly ReplayScenario[] = [
             tool('뉴스', '미국 시장', 900),
         ],
         [
-            '이번 주 미국 시장에서 볼 만한 건 세 가지예요.',
-            '연준이 금리를 동결했어요. 올해 남은 인하 전망은 한 번으로 줄었어요.',
-            '8월 소비자물가 상승률(CPI)은 <b>2.9%</b>로 예상(3.0%)보다 낮았고, 그날 나스닥은 <up>+1.1%</up> 올랐어요.',
-            '반도체 업종이 한 주 동안 <up>+3.4%</up> 올라 11개 업종 중 가장 많이 올랐어요.',
-            '한 주 동안 S&P 500은 <up>+0.8%</up>, 나스닥은 <up>+1.6%</up> 올랐어요.',
+            '이번 주 미국 시장은 볼 만한 것만 추려서 정리할게요.',
+            '연준의 금리 결정과 앞으로 금리를 내릴지에 대한 전망을 먼저 봐요.',
+            '소비자물가(CPI)가 예상보다 낮으면 보통 시장에 반가운 소식이에요. 그날 시장 반응도 함께 봐요.',
+            '업종별로 어디가 많이 오르고 내렸는지도 비교해요.',
+            '마지막에는 한 주 동안 주요 지수가 어땠는지 정리해요.',
         ],
-        ['시장 동향', '경제 지표', '뉴스 40건'],
-        '2026-09-19 09:00'
+        ['시장 동향', '경제 지표', '뉴스'],
+        '이번 주'
     ),
 ];

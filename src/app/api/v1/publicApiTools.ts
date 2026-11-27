@@ -62,6 +62,10 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  * `get_swing_history`(2026-11): **공개 API에서 제외**한다. 한국 종목 일봉 이력이 Yahoo Finance 비공식 엔드포인트를
  *   거치고, 미국 종목은 캐시 미스마다 FMP 일봉 구간 6개를 읽는다. SiglensAI 에이전트에서만 쓴다.
  *
+ * `get_price_stats`(2026-11): **공개 API에서 제외**한다. 한국 종목·KOSPI·KOSDAQ 일봉 이력이 Yahoo Finance 비공식 엔드포인트를
+ *   거치고, 미국 종목은 5년 캐시에 닿지 않는 기간(`max`·10년 등)이면 캐시 미스마다 FMP 일봉 구간 6개를 읽는다(미국 지수는 항상).
+ *   종가 이력 위의 계산 결과라 제3자 API 계약으로 고정하기도 이르다. SiglensAI 에이전트에서만 쓴다.
+ *
  * `show_chart`(2026-11): **공개 API에서 제외**한다. 답변 아래 그림을 그리는 표시 전용 도구라 결과(`{rendered, kind, summary}`)가
  *   제3자 API 계약에 쓸모가 없고, 그림 데이터는 `emitChart`로만 나가는데 API 실행기에는 그 길이 없다(데이터는 각
  *   데이터 도구가 이미 준다). SiglensAI 에이전트에서만 쓴다.
@@ -89,13 +93,14 @@ export const PUBLIC_API_EXCLUDED_TOOLS: ReadonlySet<string> = new Set([
     'get_theme_snapshot',
     'get_index_history_stats',
     'get_swing_history',
+    'get_price_stats',
     'show_chart',
 ]);
 
 /** BYOK 분석 생성 도구. 에이전트 스펙에서 `model` 인자와 API 전용 설명을 덧붙여 내보낸다. */
 export const PUBLIC_API_FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
-const FRESH_ANALYSIS_DESCRIPTION = `Get an AI analysis for a symbol (kind: technical, overall, news or options) in the same structure as get_cached_analysis. A shared cached analysis is returned at no cost (meta.source "cache"). Otherwise a NEW analysis is generated (usually about a minute, at most ${FRESH_ANALYSIS_DEADLINE_SECONDS} seconds) with YOUR registered LLM key — BYOK only, SigLens never spends its own LLM key — and counts against the stricter "ai" rate limit. Any listed model can be generated, but only with a registered key for that model's provider.`;
+const FRESH_ANALYSIS_DESCRIPTION = `Get an AI analysis for a symbol (kind: technical, overall, news or options) in the same structure as get_cached_analysis. A shared cached analysis is returned at no cost (meta.source "cache"). Otherwise a NEW analysis is generated (usually about a minute, at most ${FRESH_ANALYSIS_DEADLINE_SECONDS} seconds) with YOUR registered LLM key (BYOK only: SIGLENS never spends its own LLM key) and counts against the stricter "ai" rate limit. Any listed model can be generated, but only with a registered key for that model's provider.`;
 
 /**
  * 에이전트 스펙(`inputSchema`: symbol·kind·timeframe)에 API 전용 `model`을 더한다. 생략하면 계정의 "API 기본 모델"이다.
@@ -113,7 +118,7 @@ function withApiModelArgument(spec: AgentToolSpec): AgentToolSpec {
                 model: {
                     type: 'string',
                     enum: API_KNOWN_MODELS,
-                    description: `Model to use. Optional: defaults to the API default model set at siglens.io/account, and the request fails with model_required when neither is set. Every model listed here is generated with your own provider key (SigLens's own LLM key is never used), so register the key of that model's provider at siglens.io/account.`,
+                    description: `Model to use. Optional: defaults to the API default model set at siglens.io/account, and the request fails with model_required when neither is set. Every model listed here is generated with your own provider key (SIGLENS's own LLM key is never used), so register the key of that model's provider at siglens.io/account.`,
                 },
             },
         },

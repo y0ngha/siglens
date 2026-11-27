@@ -137,14 +137,8 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
         const [query] = onlyCall(execute);
         const rendered = new PgDialect().sqlToQuery(query as never);
         const sqlText = rendered.sql.replace(/\s+/g, ' ');
-        expect(sqlText).toContain(
-            `(u.created_at at time zone 'Asia/Seoul')::date as signup_date from "users" u where u.created_at >= $1::timestamptz and u.created_at < $2::timestamptz`
-        );
-        expect(sqlText).toContain(
-            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $3::int and c.signup_date + $4::int )`
-        );
-        expect(sqlText).toContain(
-            `exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $5::int and c.signup_date + $6::int )`
+        expect(sqlText).toBe(
+            ' with cohort as ( select u.id, (u.created_at at time zone \'Asia/Seoul\')::date as signup_date from "users" u where u.created_at >= $1::timestamptz and u.created_at < $2::timestamptz ) select to_char(date_trunc(\'week\', c.signup_date), \'YYYY-MM-DD\') as week, count(*)::int as signups, count(*) filter (where exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $3::int and c.signup_date + $4::int ))::int as d7, count(*) filter (where exists ( select 1 from "visitor_days" v where v.user_id = c.id and v."date" between c.signup_date + $5::int and c.signup_date + $6::int ))::int as d30 from cohort c group by 1 order by 1 '
         );
         expect(rendered.params).toEqual([
             FROM.toISOString(),
@@ -172,9 +166,8 @@ describe('DrizzleFunnelEventRepository 리포트 쿼리', () => {
         const [query] = onlyCall(execute);
         const rendered = new PgDialect().sqlToQuery(query as never);
         const sqlText = rendered.sql.replace(/\s+/g, ' ');
-        expect(sqlText).toContain(`where s.event = 'meter_shown'`);
-        expect(sqlText).toContain(
-            `c.event = 'signup_completed' and c.visitor_hash = s.visitor_hash and c.occurred_at >= s.occurred_at and c.occurred_at < s.occurred_at + make_interval(days => $1::int)`
+        expect(sqlText).toBe(
+            " select s.context ->> 'state' as state, count(distinct s.visitor_hash)::int as visitors, count(distinct s.visitor_hash) filter (where exists ( select 1 from \"funnel_events\" c where c.event = 'signup_completed' and c.visitor_hash = s.visitor_hash and c.occurred_at >= s.occurred_at and c.occurred_at < s.occurred_at + make_interval(days => $1::int) ))::int as signups from \"funnel_events\" s where s.event = 'meter_shown' and s.occurred_at >= $2::timestamptz and s.occurred_at < $3::timestamptz group by 1 order by 1 "
         );
         expect(rendered.params).toEqual([
             7,

@@ -171,8 +171,9 @@ export function resolveFtdRows(
  * FTD 목록 페이지 HTML에서 반월 파일 링크를 뽑는다. 파일은 대부분 `/files/data/fails-deliver-data/`에 있지만 일부 월은
  * `/files/data/other/fails-deliver-data/`이고 `cnsfails202308b_0.zip`처럼 접미사가 붙기도 한다(2026-10-16 페이지 실측) —
  * 그래서 URL을 만들지 않고 링크에서 읽는다. 같은 파일 키가 여러 번 나오면 **처음** 링크를 쓴다. 키 내림차순(최신 먼저).
+ *
+ * CONVENTIONS.md#CP-6 예외: 링크마다 파일 키 Map에 처음 것만 남긴다(한 페이지 수백 링크). 링크마다 Map을 복사하면 O(N²)다.
  */
-// CONVENTIONS.md#CP-6 예외: 링크마다 파일 키 Map에 처음 것만 남긴다(한 페이지 수백 링크). 링크마다 Map을 복사하면 O(N²)다.
 export function extractFtdFileLinks(html: string): FtdFileLink[] {
     const pattern =
         /href="(\/files\/[^"]*?\/cnsfails(\d{4})(0[1-9]|1[0-2])([ab])(?:_\d+)?\.zip)"/gi;

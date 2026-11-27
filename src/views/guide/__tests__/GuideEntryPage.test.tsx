@@ -23,7 +23,7 @@ vi.mock('../ui/GuideDemoChart', () => ({
 }));
 
 import { screen, within } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { aiAskUrl } from '@/shared/config/aiHost';
@@ -78,9 +78,16 @@ async function renderEntry(
     entry: GuideEntry = RSI,
     locale: Locale = 'ko',
     catalog: readonly GuideEntry[] = CATALOG,
-    liveSymbols: readonly LiveSymbolGroup[] | null = null
+    liveSymbols: readonly LiveSymbolGroup[] | null = null,
+    signalRecords: readonly ReactNode[] = []
 ) {
-    const tree = await GuideEntryPage({ locale, entry, catalog, liveSymbols });
+    const tree = await GuideEntryPage({
+        locale,
+        entry,
+        catalog,
+        liveSymbols,
+        signalRecords,
+    });
     return renderWithIntl(
         (await resolveAsyncServerTree(tree)) as ReactElement,
         { locale }
@@ -117,6 +124,7 @@ const LIVE: readonly LiveSymbolGroup[] = [
                 name: '엔비디아',
                 changePercent: 1,
                 basis: 'scanner',
+                firstSeenSession: null,
                 detectedOn: '2026-10-25T00:00:00.000Z',
                 match: null,
             },
@@ -214,6 +222,7 @@ describe('GuideEntryPage', () => {
                             name: null,
                             changePercent: null,
                             basis: 'snapshot',
+                            firstSeenSession: null,
                             detectedOn: '2026-10-24T21:00:00.000Z',
                             match: {
                                 kind: 'pattern',
@@ -496,6 +505,40 @@ describe('GuideEntryPage', () => {
             expect(
                 screen.queryByRole('heading', { name: g.liveHeading })
             ).toBeNull();
+        });
+    });
+
+    describe('신호 기록 슬롯', () => {
+        it('넘긴 표를 본문 안에 그린다', async () => {
+            await renderEntry(RSI, 'ko', CATALOG, null, [
+                <section key="a" data-testid="signal-record-a" />,
+                <section key="b" data-testid="signal-record-b" />,
+            ]);
+
+            expect(screen.getByTestId('signal-record-a')).toBeInTheDocument();
+            expect(screen.getByTestId('signal-record-b')).toBeInTheDocument();
+        });
+
+        it('라이브 종목 모듈 자리(확인하는 법 절)와 그 뒤 절 사이에 놓인다', async () => {
+            await renderEntry(HOWTO, 'ko', HOWTO_CATALOG, null, [
+                <section key="a" data-testid="signal-record-a" />,
+            ]);
+
+            const record = screen.getByTestId('signal-record-a');
+            const anchor = screen.getByRole('heading', {
+                name: '시그렌즈에서 확인하는 법',
+            });
+            const later = screen.getByRole('heading', {
+                name: '자주 틀리는 경우',
+            });
+            expect(
+                anchor.compareDocumentPosition(record) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            expect(
+                record.compareDocumentPosition(later) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
         });
     });
 

@@ -16,9 +16,9 @@ describe('PlanStateBadge', () => {
     });
 
     it.each([
-        ['in_zone', '계획 구간 안'],
-        ['above_zone', '계획 구간보다 위'],
-        ['below_zone', '계획 구간보다 아래'],
+        ['in_zone', '진입 구간 안'],
+        ['above_zone', '진입 구간보다 위'],
+        ['below_zone', '진입 구간보다 아래'],
     ] as const)('writes the %s position as a fact', (position, label) => {
         render(<PlanStateBadge planState={placed(position)} />);
         expect(screen.getByText('계획 상태')).toBeInTheDocument();
@@ -83,6 +83,6 @@ describe('PlanStateBadge', () => {
             locale: 'en',
         });
         expect(screen.getByText('Plan status')).toBeInTheDocument();
-        expect(screen.getByText('Above the plan zone')).toBeInTheDocument();
+        expect(screen.getByText('Above the entry zone')).toBeInTheDocument();
     });
 });

@@ -7,7 +7,10 @@ import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
 import { getMarketSummaryClientAction } from '@/entities/market-summary/actions/getMarketSummaryClientAction';
-import { hasMissingQuotes as detectMissingQuotes } from '@/entities/market-summary/lib/marketSummaryCompleteness';
+import {
+    hasAnyQuote,
+    hasMissingQuotes as detectMissingQuotes,
+} from '@/entities/market-summary/lib/marketSummaryCompleteness';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,
@@ -107,7 +110,11 @@ export function useMarketSummary(
         ? detectMissingQuotes(resolved.summary)
         : false;
 
-    const isTotalFailure = !isPending && resolved === undefined;
+    // 응답이 없거나, 있어도 시세가 하나도 없으면(서버가 요약 로더 실패로 빈 번들을 심었거나 전 행이
+    // 0-가격) 서버·클라가 같은 번들을 같게 판정해 전면 안내를 띄운다. 부분 결측은 아래 안내다.
+    const isTotalFailure =
+        !isPending &&
+        (resolved === undefined || !hasAnyQuote(resolved.summary));
 
     return { isPending, isTotalFailure, sectorMap, indices, hasMissingQuotes };
 }

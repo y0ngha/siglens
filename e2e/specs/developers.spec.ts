@@ -242,7 +242,7 @@ test.describe('public API documents', () => {
 
         const doc = (await res.json()) as OpenApiJson;
         expect(doc.openapi).toMatch(/^3\.1\./);
-        expect(doc.info.title).toBe('SigLens API');
+        expect(doc.info.title).toBe('SIGLENS API');
         expect(doc.servers[0]?.url).toMatch(/\/api\/v1$/);
         expect(doc.components.securitySchemes.bearerAuth).toMatchObject({
             type: 'http',

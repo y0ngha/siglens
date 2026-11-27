@@ -107,7 +107,7 @@ describe('EstimateTrendSection', () => {
             />
         );
         expect(
-            screen.getByText('최근 30일 상향 3명 · 하향 1명')
+            screen.getByText('최근 30일 상향 3명, 하향 1명')
         ).toBeInTheDocument();
         const bar = container.querySelector('[aria-hidden="true"].flex');
         const [upBar, downBar] = Array.from(bar?.children ?? []);

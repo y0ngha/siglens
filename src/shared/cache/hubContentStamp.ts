@@ -22,6 +22,14 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
  * 읽는 쪽(RSS)은 자기가 읽은 본문의 해시가 여기 저장된 해시와 같을 때만 그 시각을
  * 쓴다 — 크론이 본 적 없는 본문은 항목이 되지 않는다.
  *
+ * ## 직전 스탬프(`prev`) 유예
+ *
+ * 새 해시를 쓰면 직전 `{hash, at}`을 **한 칸만** `prev`에 남긴다. 크론이 새 스탬프를 쓴 뒤에도
+ * 허브의 정적 reader는 태그가 재검증될 때까지 이전 본문을 돌려주는데, 그동안 읽는 쪽이
+ * `prev`와 맞으면 이전 항목(같은 guid·pubDate)을 유지한다 — 현재 해시만 보면 그 구간에 항목이
+ * 피드에서 빠진다. 한 칸이라 두 번 연속 바뀐 본문의 첫 본문은 유예가 없고, 같은 해시의 TTL 갱신은
+ * `prev`를 그대로 둔다.
+ *
  * 키 이름은 호출부가 소유한다(`hubSsrSeed`와 같은 규약) — 이 모듈은 접두만 책임진다.
  */
 
@@ -48,6 +56,33 @@ export interface HubContentStamp {
     readonly hash: string;
     /** 이 해시가 **처음** 확인된 시각(ISO). */
     readonly at: string;
+    /**
+     * 바로 앞 본문의 해시·시각. 새 해시를 쓸 때 직전 스탬프를 한 칸만 남긴다.
+     *
+     * 크론이 새 스탬프를 쓴 뒤에도 허브의 정적 reader(`unstable_cache`)는 재검증 전까지 이전
+     * 본문을 돌려준다. 그 사이 RSS는 `hash`와 대조하면 어긋나 항목을 통째로 잃는다 — `prev`와
+     * 맞으면 이전 항목(같은 guid·pubDate)을 그대로 싣는다.
+     */
+    readonly prev?: PreviousHubContentStamp;
+}
+
+export interface PreviousHubContentStamp {
+    readonly hash: string;
+    readonly at: string;
+}
+
+/**
+ * reader가 읽은 본문 해시에 맞는 스탬프 항목을 고른다 — 현재 것, 아니면 직전 것.
+ * 둘 다 아니면 크론이 본 적 없는 본문이라 `null`(시각을 지어내지 않는다).
+ */
+export function matchHubContentStamp(
+    stamp: HubContentStamp,
+    bodyHash: string
+): PreviousHubContentStamp | null {
+    if (stamp.hash === bodyHash) return { hash: stamp.hash, at: stamp.at };
+    if (stamp.prev !== undefined && stamp.prev.hash === bodyHash)
+        return stamp.prev;
+    return null;
 }
 
 function keyFor(surface: string): string {
@@ -94,7 +129,7 @@ export function hashHubBody(body: unknown): string {
     return createHash('sha256').update(stableStringify(body)).digest('hex');
 }
 
-function isStamp(value: unknown): value is HubContentStamp {
+function isHashAt(value: unknown): value is PreviousHubContentStamp {
     return (
         typeof value === 'object' &&
         value !== null &&
@@ -103,6 +138,27 @@ function isStamp(value: unknown): value is HubContentStamp {
         'at' in value &&
         typeof value.at === 'string'
     );
+}
+
+/** 저장값을 스탬프로 읽는다. 모양이 틀린 `prev`는 버린다 — 현재 스탬프까지 버리면 항목이 사라진다. */
+function toStamp(value: unknown): HubContentStamp | null {
+    if (!isHashAt(value)) return null;
+    const prev = 'prev' in value ? value.prev : undefined;
+    return isHashAt(prev)
+        ? {
+              hash: value.hash,
+              at: value.at,
+              prev: { hash: prev.hash, at: prev.at },
+          }
+        : { hash: value.hash, at: value.at };
+}
+
+function withPrev(
+    hash: string,
+    at: string,
+    prev: PreviousHubContentStamp | undefined
+): HubContentStamp {
+    return prev === undefined ? { hash, at } : { hash, at, prev };
 }
 
 /**
@@ -117,7 +173,7 @@ export async function readHubContentStamp(
     if (redis === null) return null;
     try {
         const stored = await redis.get<unknown>(keyFor(surface));
-        return isStamp(stored) ? stored : null;
+        return toStamp(stored);
     } catch (error) {
         console.error(
             `[hub-content-stamp] read failed: ${surface}`,
@@ -156,8 +212,8 @@ export async function recordHubContentStamp(
     if (redis === null) return false;
     try {
         const hash = hashHubBody(body);
-        const existing = await redis.get<unknown>(keyFor(surface));
-        if (isStamp(existing) && existing.hash === hash) {
+        const existing = toStamp(await redis.get<unknown>(keyFor(surface)));
+        if (existing !== null && existing.hash === hash) {
             const remaining = await redis.ttl(keyFor(surface));
             // -1(만료 없음)·-2(키 없음)도 되돌린다 — 정상 흐름에서는 나오지 않는 값이라
             // 만료 없는 키가 남았다면 TTL을 다시 붙이는 쪽이 안전하다.
@@ -165,12 +221,18 @@ export async function recordHubContentStamp(
                 return false;
             await redis.set(
                 keyFor(surface),
-                { hash: existing.hash, at: existing.at },
+                withPrev(existing.hash, existing.at, existing.prev),
                 { ex: STAMP_TTL_SECONDS }
             );
             return false;
         }
-        const stamp: HubContentStamp = { hash, at: now.toISOString() };
+        const stamp: HubContentStamp = {
+            hash,
+            at: now.toISOString(),
+            ...(existing !== null
+                ? { prev: { hash: existing.hash, at: existing.at } }
+                : {}),
+        };
         await redis.set(keyFor(surface), stamp, { ex: STAMP_TTL_SECONDS });
         return true;
     } catch (error) {

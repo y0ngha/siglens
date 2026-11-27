@@ -1,6 +1,10 @@
 import 'server-only';
 import type { Redis } from '@upstash/redis';
-import type { EmailDispatcher, EmailMessage } from './types';
+import type {
+    EmailMessage,
+    KeyedEmailDispatcher,
+    KeyedEmailOutcome,
+} from './types';
 import {
     buildEmailDebugKey,
     extractEmailDebugRecord,
@@ -16,7 +20,7 @@ const EMAIL_DEBUG_TTL_SECONDS = 600;
  * 외부로 아무것도 나가지 않는다. `createEmailDispatcher`가 정적 import로
  * `E2E_TEST=1` 분기에서만 생성하므로 운영에서는 죽은 분기다.
  */
-export class E2eEmailDispatcher implements EmailDispatcher {
+export class E2eEmailDispatcher implements KeyedEmailDispatcher {
     private readonly redis: Redis;
 
     constructor(redis: Redis) {
@@ -30,5 +34,12 @@ export class E2eEmailDispatcher implements EmailDispatcher {
         });
         // 실제 발송은 수락된 것으로 가장해 인증 흐름이 이어지게 한다.
         return true;
+    }
+
+    /** 멱등 키는 무시한다 — 가짜는 항상 수락한다. */
+    async sendKeyedEmail(
+        message: EmailMessage & { idempotencyKey: string }
+    ): Promise<KeyedEmailOutcome> {
+        return (await this.sendEmail(message)) ? 'accepted' : 'rejected';
     }
 }

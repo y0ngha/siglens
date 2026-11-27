@@ -11,8 +11,9 @@ gating:
   state:
     feature: buySellVolume
     predicate: ratio
-token_cost: 544
-digest_hash: "8dd03db0"
+token_cost: 549
+digest_hash: "8faaa4ef"
+digest_text_hash: "f3969af3"
 ---
 
 ## Overview
@@ -48,7 +49,7 @@ A close near the high implies buyers dominated the bar; a close near the low imp
 
 ### Breakout and Trend Confirmation
 
-- Price breaking above resistance + high buy ratio: breakout backed by genuine buying conviction — high-probability follow-through.
+- Price breaking above resistance + high buy ratio: breakout backed by buying volume — follow-through is plausible but not assured.
 - Price breaking above resistance + high sell ratio: breakout lacks buy-side conviction — suspect breakout; watch for reversal.
 - Price in a downtrend + persistent high sell ratios: downtrend has internal volume confirmation — avoid premature counter-trend entries.
 - Price in an uptrend + persistent high buy ratios: uptrend has internal volume confirmation — trend continuation is likely.
@@ -89,7 +90,7 @@ Cumulative:
 - sellVol spike on a bar closing near its low = climactic selling (exhaustion or acceleration per trend context); buyVol spike closing near high = climactic buying.
 
 Breakout / trend:
-- Break resistance + high buy ratio = genuine conviction, high follow-through; + high sell ratio = suspect breakout, watch reversal.
+- Break resistance + high buy ratio = buying volume backs the breakout, follow-through plausible; + high sell ratio = suspect breakout, watch reversal.
 - Downtrend + persistent high sell ratios = internal volume confirmation, avoid counter-trend entries; uptrend + persistent high buy ratios = continuation likely.
 
 Divergence:

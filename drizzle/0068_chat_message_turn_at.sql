@@ -1,0 +1,1 @@
+ALTER TABLE "chat_messages" ADD COLUMN "turn_at" timestamp with time zone;

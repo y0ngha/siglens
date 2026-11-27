@@ -8,6 +8,11 @@ export interface SignalHub {
     readonly signalType: SignalType;
     /** 신호 설명을 빌려 올 가이드 항목 — 제목·요약·링크(4개 로케일 번역이 이미 있다). */
     readonly guide: { readonly category: GuideCategory; readonly slug: string };
+    /**
+     * 소개 문단 뒤에 한 줄 정의를 붙일 신호 페이지만 가진다. 값은 `app.market.signalHub`의 명시 키라
+     * 번역 추출기가 두 키를 모두 읽는다(슬러그 분기 없음).
+     */
+    readonly definitionKey?: 'definitionGoldenCross' | 'definitionDeathCross';
 }
 
 /**
@@ -23,11 +28,13 @@ export const SIGNAL_HUBS: readonly SignalHub[] = [
         slug: 'golden-cross',
         signalType: 'golden_cross',
         guide: { category: 'indicators', slug: 'ma' },
+        definitionKey: 'definitionGoldenCross',
     },
     {
         slug: 'death-cross',
         signalType: 'death_cross',
         guide: { category: 'indicators', slug: 'ma' },
+        definitionKey: 'definitionDeathCross',
     },
     {
         slug: '52-week-high',
@@ -87,6 +94,19 @@ export function signalHubPath(slug: string): string {
 /** URL 슬러그로 신호 페이지를 찾는다. 목록에 없으면 `null` — 라우트가 404를 낸다. */
 export function findSignalHub(slug: string): SignalHub | null {
     return SIGNAL_HUBS.find(hub => hub.slug === slug) ?? null;
+}
+
+/**
+ * 이 가이드 항목이 이 신호 페이지의 설명 문서인가(`SIGNAL_HUBS[].guide`의 역방향 판정 — 가이드 → 신호 페이지
+ * 링크와 과거 기록 표가 같은 술어를 쓴다).
+ */
+export function isHubGuide(
+    hub: SignalHub,
+    entry: { readonly category: string; readonly slug: string }
+): boolean {
+    return (
+        hub.guide.category === entry.category && hub.guide.slug === entry.slug
+    );
 }
 
 /** 색인할 만큼 모였는가 — 메타데이터·구조화데이터·사이트맵이 함께 쓰는 단일 판정. */

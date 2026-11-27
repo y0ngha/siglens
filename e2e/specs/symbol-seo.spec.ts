@@ -34,8 +34,10 @@ import { normalizeReactSsrText } from '../support/ssrText';
  *   - /AAPL  warmed 2nd req → `x-nextjs-cache: HIT` (ISR cache serves the route)
  */
 
-// `[\s\S]*?` (not the `s`/dotAll flag, which needs an es2018+ target) so the
-// matcher is newline-tolerant while staying within this project's TS target.
+/**
+ * `[\s\S]*?` (not the `s`/dotAll flag, which needs an es2018+ target) so the
+ * matcher is newline-tolerant while staying within this project's TS target.
+ */
 const LD_JSON_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
 
 /**
@@ -132,7 +134,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         // the count variant interpolates digits, which React SSR splits with
         // comment nodes.)
         expect(normalizedHtml).toMatch(
-            /최근 뉴스 데이터는 아직 준비되지 않았습니다|현재 서버가 확인한 최근 뉴스는 \d+건/
+            /최근 뉴스 데이터는 아직 준비되지 않았습니다|현재 확인된 최근 뉴스는 \d+건/
         );
     });
 

@@ -11,6 +11,7 @@ gating:
   triggers: [bullish_three_line_strike, bearish_three_line_strike]
 token_cost: 268
 digest_hash: "fc5e863f"
+digest_text_hash: "f8479f36"
 ---
 
 ## Overview

@@ -16,11 +16,11 @@ faq:
 
 ## How it's calculated
 
-In one line: it divides the [MACD](/guide/indicators/macd) value by the stock's normal wobble, so different stocks can be read on the same scale.
+MACD-V divides the [MACD](/guide/indicators/macd) value by how much the stock usually swings, so different stocks can be read on the same scale.
 
 MACD-V = (12-day EMA − 26-day EMA) ÷ 26-day [ATR](/guide/indicators/atr) × 100
 
-ATR is the average size of recent bars' moves. Dividing momentum (the force behind price moves) by this average range shows, as a percentage, how strong the push is compared with normal wobble. The signal line is the 9-day EMA of MACD-V.
+ATR is the average size of recent bars' moves. Dividing momentum (the force behind price moves) by this average range shows, as a percentage, how strong the push is compared with its usual swings. The signal line is the 9-day EMA of MACD-V.
 
 A similar idea is PPO, which divides MACD by price to turn it into a percentage. PPO only solves comparisons between different periods of the same stock; MACD-V can also compare across different markets. The original paper reports that the same ±150 levels held for the S&P, German Bunds and natural gas.
 
@@ -39,7 +39,7 @@ What follows is the traditional reading Spiroglou proposed. SIGLENS uses it as c
 
 SIGLENS flags the stretches where MACD-V moves outside ±150.
 
-- Calculation: the 12, 26, 9 settings, divided by the 26-day ATR.
+- Calculation: MACD with the 12, 26, 9 settings, divided by the 26-day ATR.
 - Flag: when the value enters the zone at or above +150 or at or below −150.
 - Interpretation: it pays particular attention to oversold relief (crossing up through −150) and overbought relief (crossing down through +150).
 

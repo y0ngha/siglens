@@ -10,7 +10,8 @@ gating:
   signal_kind: event
   triggers: [gap_up, gap_down]
 token_cost: 462
-digest_hash: "23be6cc4"
+digest_hash: "654754e0"
+digest_text_hash: "d94a4e2f"
 ---
 
 ## Overview
@@ -23,7 +24,7 @@ A price gap is a range of prices where no trading happened between two bars. Wha
 - `gap_down`: the latest bar's **high** is below the previous bar's **low**.
 - The gap must be at least 0.25 × ATR(14) (when ATR is available), so tiny gaps are ignored.
 - These signals only gate this skill in — the signal name is **not printed** anywhere in the prompt. This guide appears only when the engine detected a gap on the latest bar; the `- Gap (last bar vs previous bar):` line in ## Indicator State gives the direction, size and ATR multiple. If that line is absent, tell the direction by comparing the last bar's low/high with the previous bar's high/low in the recent bar data.
-- Only the latest bar is checked. Instruments that trade around the clock (crypto) rarely gap on daily bars; intraday bars gap mostly at the session open.
+- Only the latest bar is checked. Instruments that trade around the clock (crypto) rarely gap on daily bars; bars shorter than a day gap mostly at the session open.
 
 ## Gap Types (classical classification — Edwards & Magee)
 

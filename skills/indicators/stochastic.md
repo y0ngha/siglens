@@ -11,8 +11,9 @@ gating:
   state:
     feature: stochastic
     predicate: level
-token_cost: 368
-digest_hash: "69730dbb"
+token_cost: 367
+digest_hash: "0a64d93c"
+digest_text_hash: "b9387eee"
 ---
 
 ## Overview
@@ -47,7 +48,7 @@ The Stochastic Oscillator measures the current closing price relative to the hig
 
 - Stochastic + RSI: Both are oscillators, but each reacts differently. When both are simultaneously in overbought or oversold territory and diverge together with price, the signal strength is materially higher.
 - Stochastic + MACD: Stochastic provides the short-term timing; MACD provides the medium-term direction filter. Only take stochastic crossover signals that align with MACD direction.
-- Stochastic + Bollinger Bands: A stochastic buy signal at the Bollinger lower band is a high-probability mean reversion setup in ranging markets.
+- Stochastic + Bollinger Bands: A stochastic buy signal at the Bollinger lower band is a mean reversion setup in ranging markets.
 
 ## Caveats
 
@@ -76,7 +77,7 @@ Close relative to high-low range. %K primary line; %D smoothed signal. 14-period
 
 **%D trend bias:** consistently >50 = bullish bias; consistently <50 = bearish bias.
 
-**Combos:** +RSI (both extreme + diverge with price = materially higher strength); +MACD (short-term timing + medium-term direction filter, only take aligned crossovers); +BB (buy signal at lower band = high-prob mean reversion in ranges).
+**Combos:** +RSI (both extreme + diverge with price = materially higher strength); +MACD (short-term timing + medium-term direction filter, only take aligned crossovers); +BB (buy signal at lower band = mean reversion setup in ranges).
 
 **Caveats:** strong trends keep stoch extreme many bars — don't auto-sell when >80 in strong trend; use ADX regime (ADX<20 = stoch reliable/range; ADX>25 = stoch may lag); (14,3,3) moderate — %K 5/9 faster+noisier, 21 slower+higher quality.
 <!-- PROMPT_DIGEST:END -->

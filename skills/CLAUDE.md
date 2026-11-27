@@ -160,19 +160,23 @@ exactly one of, appended once at the very end of the file, after the body:
   **hash-mismatch**: that means **the digest is stale** (it no longer reflects
   the current body) and must be **re-authored by hand** against the new body,
   then refreshed with `yarn skills:digest-update`.
+- `digest_text_hash` is the same hash of the trimmed digest text. `digest-verify`
+  fails when either hash is stale, so a hand-edited digest needs
+  `yarn skills:digest-update` too, and `digest-update` refuses a body change
+  whose digest text did not change since the last update. Pass
+  `--digest-unchanged-ok <file...>` (a path is required) only for a body edit
+  the digest does not reflect, such as a typo.
 - `token_cost` is `Math.ceil(digestText.length / 4)` — recomputed the same way,
   from the digest text alone.
-- **Editing only the digest leaves `digest_hash` unchanged**, so
-  `digest-verify` still passes even if the digest now contradicts the body.
-  Re-read the body section the digest summarizes and update both in the same
+- Re-read the body section the digest summarizes and update both in the same
   change. The digest is the only skill text the prompt sees, so every case it
   covers (setup / near / below / non-daily) must steer the consumer correctly;
   after a digest edit that changes a verdict, run an A/B on the real LLM to
   confirm the output still follows the rule.
 
 **Tooling** (`scripts/skills-digest.ts`): `yarn skills:digest-verify` (read-only; run before pushing a digested
-skill) flags a missing digest, malformed markers, a stale `digest_hash` or a stale `token_cost`;
-`yarn skills:digest-update` rewrites both fields for files whose digest section is valid and is idempotent.
+skill) flags a missing digest, malformed markers, a stale `digest_hash`, `digest_text_hash` or `token_cost`;
+`yarn skills:digest-update` rewrites the three fields for files whose digest section is valid and is idempotent.
 
 ## Keeping a skill consistent
 
@@ -183,8 +187,11 @@ skill) flags a missing digest, malformed markers, a stale `digest_hash` or a sta
 - Frontmatter `indicators` lists every indicator the body references; the body states the capabilities the system
   really has (e.g. the actual recent-bar count), not an idealized one.
 - Claims about gating ("always available" vs "injected when the signal fires"), category (neutral vs continuation),
-  and numeric evidence match the implementation, the prompt injection and the cited design doc or measurement.
+  and numeric evidence match the implementation, the prompt injection and the cited design doc or measurement; a
+  cited measurement states its scope (pooled/daily, n, period) and comes from a source the consumed core release
+  exports. When quoting a sentence core prints, copy its qualifiers verbatim or defer to the block; never paraphrase.
   When a rule, category or gating changes, update the body, the digest and the index grouping together.
+  After a body edit, re-author the digest by hand (see PROMPT_DIGEST markers); `skills:digest-update` refuses a body change whose digest text is unchanged.
 - Examples match the condition they illustrate: a "support holds, enter long" example must not use a price below the
   support; a pattern's description must match what it signals (a UTAD signals completed distribution, not buying).
 - Adding a skill or changing its display name/summary also updates the skill-card catalog keys in every locale; the
@@ -206,8 +213,9 @@ skill still works on the previous version.
 ### SK-3 — When an exclusive rule changes, update every restatement
 
 An exclusive rule (allowed sources, permitted values) is usually restated in the skill body, the digest, the output
-rules and injected directives. Grep the rule name and its synonyms across skills, prompt and directive files, update
-all restatements in the same change, and A/B on the real LLM when the rule affects instruction following.
+rules and injected directives. Grep the rule name and its synonyms by the claim's meaning, not only the exact phrase,
+across skills, prompt and directive files, and update all restatements in the same change (also after removing a
+claim, in every skill's body and digest). A/B on the real LLM when the rule affects instruction following.
 This includes the always-on index (`skills/_core/pattern-index.md`): grep the rule and its synonyms in both its body
 and its `PROMPT_DIGEST`, and also in intro, "beyond this catalog" and notation passages, since a gated-doc edit that
 leaves the index restating the old rule is the usual miss.
@@ -228,7 +236,7 @@ leaves the index restating the old rule is the usual miss.
      candle names, `pattern` → `ChartPatternId` values).
    - **state** — it's a persistent condition (overbought, band-proximity, etc.).
      Add `signal_kind: state` + a `state: { feature, predicate }` from the valid pairs.
-3. Leave `token_cost` and `digest_hash` to the digest tooling — never hand-set them.
+3. Leave `token_cost`, `digest_hash` and `digest_text_hash` to the digest tooling — never hand-set them.
    If/when the skill gets a `PROMPT_DIGEST` section (see below), run
    `yarn skills:digest-update` to compute both. Add `smc_full_guide: true` only on
    the SMC guide.

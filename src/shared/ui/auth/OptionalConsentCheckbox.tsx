@@ -17,8 +17,8 @@ interface OptionalConsentCheckboxProps {
 }
 
 /**
- * `min-w-0`·`wrap-anywhere`: fieldset은 기본이 `min-inline-size: min-content`이고 전역 `keep-all`은
- * 공백 없는 ja·zh 문장을 나누지 못해, 좁은 화면에서 이 묶음이 열보다 넓어졌다.
+ * `min-w-0`: fieldset은 기본이 `min-inline-size: min-content`라 긴 문장이 있으면 열보다 넓어진다.
+ * ja·zh 줄바꿈은 전역(`globals.css`의 `:lang(ja)`·`:lang(zh)`)이 맡는다.
  *
  * 필수 약관 묶음과 따로 두는 **선택** 동의 한 줄. 필수 표시(`required`·`aria-required`)가 없고,
  * "모두 동의" 같은 묶음 컨트롤이 다루지 않는다 — 선택 동의를 필수 동의에 끼워 한 번에 받으면
@@ -53,17 +53,14 @@ export function OptionalConsentCheckbox({
                         onChange: event => onChange(event.target.checked),
                     }}
                 />
-                <span className="min-w-0 text-sm wrap-anywhere text-secondary-300">
+                <span className="min-w-0 text-sm text-secondary-300">
                     <span className="mr-1 text-xs text-secondary-400">
                         {t('OptionalConsentCheckbox.optional')}
                     </span>
                     {label}
                 </span>
             </label>
-            <p
-                id={descriptionId}
-                className="text-xs wrap-anywhere text-secondary-400"
-            >
+            <p id={descriptionId} className="text-xs text-secondary-400">
                 {description}
             </p>
         </fieldset>

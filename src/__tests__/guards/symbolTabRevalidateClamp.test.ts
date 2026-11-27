@@ -3,8 +3,33 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS } from '@/entities/analysis/server/peekAnalysisStaticCache';
+import { BARS_STATIC_REVALIDATE_SECONDS } from '@/entities/bars/server/barsStaticCache';
+import { EARNINGS_HINT_REVALIDATE_SECONDS } from '@/entities/analyst-views/server/loadEarningsHint';
+import { FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS } from '@/entities/financials-statements/server/getFinancialsSnapshot';
+import {
+    PRICE_TARGET_REVALIDATE_SECONDS,
+    FUNDAMENTAL_FACTS_REVALIDATE_SECONDS,
+} from '@/entities/fundamental-facts/server/getFundamentalFacts';
+import { INVESTOR_FLOWS_READINESS_REVALIDATE_SECONDS } from '@/entities/investor-flows/server/getInvestorFlowsPipelineReadiness';
+import { INVESTOR_FLOWS_SNAPSHOT_REVALIDATE_SECONDS } from '@/entities/investor-flows/server/getInvestorFlowsSnapshot';
+import { DILUTION_BADGE_REVALIDATE_SECONDS } from '@/entities/investor-flows/server/getRecentDilutionEvent';
+import { KR_VALUATION_REVALIDATE_SECONDS } from '@/entities/kr-valuation/server/loadPageKrValuation';
+import { ASSET_INFO_STATIC_REVALIDATE_SECONDS } from '@/entities/ticker/server/getAssetInfoStatic';
+import { CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS } from '@/entities/ticker/server/isCryptoSymbolStatic';
+import { PROFILE_REVALIDATE_SECONDS } from '@/entities/ticker/server/getProfileResilient';
+import { GRADES_CONSENSUS_REVALIDATE_SECONDS } from '@/shared/api/fmp/loadPageGradesConsensus';
 import * as time from '@/shared/config/time';
 import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
+
+import { NEWS_LIST_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
+import { FUNDAMENTAL_SECTION_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
+import {
+    COMPANY_FILINGS_CACHE_TTL_SECONDS,
+    NEWS_SECTION_REVALIDATE_SECONDS,
+} from '@/app/[locale]/[symbol]/news/_components/NewsSections';
+import { OPTIONS_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/options/_lib/optionsData';
+import { OVERALL_PEEK_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/overall/_lib/overallPeek';
 
 import { blankComments } from './support/sourceScan';
 
@@ -34,8 +59,9 @@ import { blankComments } from './support/sourceScan';
  * 3. **목록** — 각 탭 렌더가 읽는 `unstable_cache`와 그 revalidate를 아래 표에 적고, 전부 선언 이상인지
  *    확인한다. 표가 소스와 따로 놀지 않도록 각 행의 `token`(읽기 함수·키 리터럴)이 그 페이지(또는
  *    레이아웃)와 로컬 헬퍼의 코드에 실제로 나타나는지 단언한다 — 읽기를 지우거나 바꾸면
- *    표도 같이 고치게 된다. 호출 그래프 전체를 정적으로 따라가지는 못하므로, **새 정적 캐시 읽기를
- *    추가하면 표에도 적는다.**
+ *    표도 같이 고치게 된다. 행의 revalidate는 읽기 모듈이 내보내는 `*_REVALIDATE_SECONDS`를 가리키므로
+ *    읽기 쪽 TTL을 바꾸면 표가 따라온다. 호출 그래프 전체를 정적으로 따라가지는 못하므로, **새 정적
+ *    캐시 읽기를 추가하면 표에도 적는다**(모듈이 상수를 내보내고 호출이 그것을 쓰게 한다).
  *
  * 탭 revalidate를 24h보다 길게 올리면 `SESSION_KEYED_CACHE_REVALIDATE_SECONDS`(세션 키 캐시)와
  * 24h 캐시들도 함께 올려야 한다 — 마지막 단언이 잡는다.
@@ -138,10 +164,10 @@ function withLocalHelpers(rel: string): { rel: string; source: string }[] {
 /** 6h 이하 revalidate의 `unstable_cache`를 두는 모듈 — 이 값보다 긴 선언의 탭·레이아웃은 import 금지. */
 const SHORT_REVALIDATE_MODULES: Readonly<Record<string, number>> = {
     // getBarsStatic / getQuantizedBarsStatic / getSeedBarsStatic
-    '@/entities/bars/server/barsStaticCache': time.SECONDS_PER_QUARTER_DAY,
+    '@/entities/bars/server/barsStaticCache': BARS_STATIC_REVALIDATE_SECONDS,
     // peekAnalysisStatic
     '@/entities/analysis/server/peekAnalysisStaticCache':
-        time.SECONDS_PER_QUARTER_DAY,
+        PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS,
     // 시장 공포·탐욕 허브 캐시(1h). 종목 탭은 `marketFearGreedReading`(세션 키 24h)으로 읽는다.
     '@/entities/market-fear-greed/api/marketFearGreedStaticCache':
         time.SECONDS_PER_HOUR,
@@ -162,30 +188,32 @@ const SHORT_REVALIDATE_READERS = [
 /**
  * 표의 한 행. `token`은 그 읽기가 소스에 있다는 증거(읽기 함수 이름 또는 캐시 키 리터럴)다 —
  * 페이지(또는 레이아웃)와 로컬 헬퍼(전이적)의 코드에서 찾는다.
+ *
+ * `revalidate`는 **읽기 모듈이 내보내는 `*_REVALIDATE_SECONDS`를 그대로 가리킨다.** 값을 표에
+ * 옮겨 적으면 읽기 쪽 TTL을 바꿔도 표는 옛 값으로 남아 가드가 초록이다. 상수를 참조하면 읽기와
+ * 표가 같은 값을 본다. 읽기 호출은 같은 상수를 `revalidate` 인자로 쓴다.
  */
 interface CacheRead {
     readonly token: string;
     readonly revalidate: number;
-    /** `token`에서 실제 `unstable_cache`까지의 경로(사람용). */
-    readonly via?: string;
 }
 
 /** 레이아웃(`[symbol]/layout.tsx`) — 9탭 전부에서 읽힌다. */
 const LAYOUT_READS: readonly CacheRead[] = [
+    // requireResolvableAsset → getAssetInfoResilient → getAssetInfoStatic
     {
         token: 'requireResolvableAsset',
-        via: 'getAssetInfoResilient → getAssetInfoStatic',
-        revalidate: time.SECONDS_PER_DAY,
+        revalidate: ASSET_INFO_STATIC_REVALIDATE_SECONDS,
     },
+    // 예전 getQuantizedBarsStatic(6h)을 대체한 헤더 공포·탐욕 칩
     {
-        // 예전 getQuantizedBarsStatic(6h)을 대체한 헤더 공포·탐욕 칩
         token: 'getSymbolFearGreedChipStatic',
         revalidate: time.SESSION_KEYED_CACHE_REVALIDATE_SECONDS,
     },
+    // 피어 8종 getAssetInfoResilient → getAssetInfoStatic
     {
         token: 'RelatedSymbols',
-        via: '피어 8종 getAssetInfoResilient → getAssetInfoStatic',
-        revalidate: time.SECONDS_PER_DAY,
+        revalidate: ASSET_INFO_STATIC_REVALIDATE_SECONDS,
     },
 ];
 
@@ -203,95 +231,159 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
     'page.tsx': [
         {
             token: 'getQuantizedBarsStatic',
-            revalidate: time.SECONDS_PER_QUARTER_DAY,
+            revalidate: BARS_STATIC_REVALIDATE_SECONDS,
         },
         {
             token: 'getSeedBarsStatic',
-            revalidate: time.SECONDS_PER_QUARTER_DAY,
+            revalidate: BARS_STATIC_REVALIDATE_SECONDS,
         },
         {
             token: 'peekAnalysisStatic',
-            revalidate: time.SECONDS_PER_QUARTER_DAY,
+            revalidate: PEEK_ANALYSIS_STATIC_REVALIDATE_SECONDS,
         },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
+        // 헤더 증자·희석 배지(미국 개별 주식만)
         {
-            // 헤더 증자·희석 배지(미국 개별 주식만)
             token: 'getRecentDilutionEvent',
-            via: "dilutionHeadingBadge.tsx → getRecentDilutionEventStatic → staticSymbolCache('investor-flows:dilution-badge-v1')",
-            revalidate: time.SECONDS_PER_HALF_DAY,
+            revalidate: DILUTION_BADGE_REVALIDATE_SECONDS,
         },
     ],
     'news/page.tsx': [
-        { token: 'getNewsList', revalidate: time.SECONDS_PER_HALF_DAY },
-        { token: "'news:earnings'", revalidate: time.SECONDS_PER_HALF_DAY },
-        { token: "'news:grades'", revalidate: time.SECONDS_PER_HALF_DAY },
+        // 공시 섹션(한국 종목도 읽는다): 정상 목록은 탭 선언과 같은 12h, 제목을 못 읽은 목록은 저장하지 않고
+        // 그 렌더만 낮춘다(DegradedValueError). 1h로 두면 탭 전체가 1h마다 재생성된다(2026-11 실측).
+        {
+            token: "'news:company-filings'",
+            revalidate: COMPANY_FILINGS_CACHE_TTL_SECONDS,
+        },
+        { token: 'getNewsList', revalidate: NEWS_LIST_REVALIDATE_SECONDS },
+        {
+            token: "'news:earnings'",
+            revalidate: NEWS_SECTION_REVALIDATE_SECONDS,
+        },
+        { token: "'news:grades'", revalidate: NEWS_SECTION_REVALIDATE_SECONDS },
+        // 실적 카드의 Yahoo 힌트(loadEarningsHintBounded)
+        {
+            token: 'loadEarningsHintBounded',
+            revalidate: EARNINGS_HINT_REVALIDATE_SECONDS,
+        },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
     ],
     'overall/page.tsx': [
-        { token: 'getNewsList', revalidate: time.SECONDS_PER_HALF_DAY },
-        { token: "'peek:overall'", revalidate: time.SECONDS_PER_HALF_DAY },
+        { token: 'getNewsList', revalidate: NEWS_LIST_REVALIDATE_SECONDS },
+        {
+            token: "'peek:overall'",
+            revalidate: OVERALL_PEEK_REVALIDATE_SECONDS,
+        },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
     ],
     'fundamental/page.tsx': [
-        { token: "'fundamental:profile'", revalidate: time.SECONDS_PER_DAY },
-        { token: "'fundamental:metrics-v2'", revalidate: time.SECONDS_PER_DAY },
+        {
+            token: "'fundamental:profile'",
+            revalidate: FUNDAMENTAL_SECTION_REVALIDATE_SECONDS,
+        },
+        {
+            token: "'fundamental:metrics-v3'",
+            revalidate: FUNDAMENTAL_SECTION_REVALIDATE_SECONDS,
+        },
+        // 일시적 대체 값은 캐시하지 않고 섹션이 이 렌더의 revalidate를 낮춘다
+        {
+            token: 'loadPageKrValuation',
+            revalidate: KR_VALUATION_REVALIDATE_SECONDS,
+        },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
+        // getFundamentalFacts가 한 렌더에서 읽는 캐시 전부 — 실적, 수급 점수표(flows 탭과 같은 키), 재무,
+        // 목표가, 등급, Yahoo 힌트. 읽기마다 자기 상수를 가리킨다.
         {
             token: 'getFundamentalFacts',
-            via: 'entities/fundamental-facts → getInvestorFlowsScorecard (staticSymbolCache 12h, flows 탭과 같은 키) + getFinancialsSnapshot (cacheNonEmpty 24h) + 실적 staticSymbolCache(fundamental-facts:earnings) 12h + Yahoo 힌트 staticSymbolCache(fundamental-facts:earnings-hint) 12h(2.5초 예산, 실패는 null); 목표가·의견은 섹션과 같은 staticSymbolCache 키(fundamental:pt-consensus 등) 24h',
-            revalidate: time.SECONDS_PER_HALF_DAY,
+            revalidate: FUNDAMENTAL_FACTS_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getFundamentalFacts',
+            revalidate: INVESTOR_FLOWS_SNAPSHOT_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getFundamentalFacts',
+            revalidate: INVESTOR_FLOWS_READINESS_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getFundamentalFacts',
+            revalidate: FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS,
+        },
+        // 목표가 캐시 두 개(pt-consensus, pt-summary)가 같은 상수를 쓴다
+        {
+            token: 'getFundamentalFacts',
+            revalidate: PRICE_TARGET_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getFundamentalFacts',
+            revalidate: GRADES_CONSENSUS_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getFundamentalFacts',
+            revalidate: EARNINGS_HINT_REVALIDATE_SECONDS,
         },
     ],
     'financials/page.tsx': [
         {
             token: 'getFinancialsSnapshot',
-            via: 'financialData.ts → cacheNonEmpty(financials:*)',
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: FINANCIALS_SNAPSHOT_REVALIDATE_SECONDS,
         },
         {
             token: 'getProfileResilient',
-            via: "staticSymbolCache('fundamental:profile')",
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: PROFILE_REVALIDATE_SECONDS,
         },
         {
             token: 'isTabAllowedForSymbol',
-            via: 'isCryptoSymbolStatic',
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS,
         },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
     ],
     'congress/page.tsx': [
-        { token: 'getProfileResilient', revalidate: time.SECONDS_PER_DAY },
+        {
+            token: 'getProfileResilient',
+            revalidate: PROFILE_REVALIDATE_SECONDS,
+        },
         {
             token: 'isTabAllowedForSymbol',
-            via: 'isCryptoSymbolStatic',
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS,
         },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
     ],
     'flows/page.tsx': [
+        // 점수표의 숏스퀴즈 입력 봉(getInvestorFlowsEvaluationOptions → getSessionBarsStatic, 세션 키)
         {
             token: 'getInvestorFlowsScorecard',
-            via: 'getInvestorFlowsResilient → getInvestorFlowsSnapshot + getInvestorFlowsPipelineReadiness (staticSymbolCache 둘 다 12h; FMP 일시 오류로 degrade된 스냅샷만 별도 키 investor-flows:snapshot-degraded-v2 600s로 읽혀 그 렌더를 10분으로 의도적으로 하향 — INVESTOR_FLOWS_DEGRADED_SNAPSHOT_TTL_SECONDS), getInvestorFlowsEvaluationOptions → getSessionBarsStatic (세션 키 24h)',
-            revalidate: time.SECONDS_PER_HALF_DAY,
+            revalidate: time.SESSION_KEYED_CACHE_REVALIDATE_SECONDS,
         },
-        { token: 'getProfileResilient', revalidate: time.SECONDS_PER_DAY },
+        // getInvestorFlowsResilient → 스냅샷 + 파이프라인 준비 상태. FMP 일시 오류로 degrade된
+        // 스냅샷만 별도 키의 10분 엔트리로 읽혀 그 렌더를 일부러 낮춘다
+        // (INVESTOR_FLOWS_DEGRADED_SNAPSHOT_TTL_SECONDS).
+        {
+            token: 'getInvestorFlowsScorecard',
+            revalidate: INVESTOR_FLOWS_SNAPSHOT_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getInvestorFlowsScorecard',
+            revalidate: INVESTOR_FLOWS_READINESS_REVALIDATE_SECONDS,
+        },
+        {
+            token: 'getProfileResilient',
+            revalidate: PROFILE_REVALIDATE_SECONDS,
+        },
         {
             token: 'isTabAllowedForSymbol',
-            via: 'isCryptoSymbolStatic',
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS,
         },
     ],
     'options/page.tsx': [
-        { token: "'options:has'", revalidate: time.SECONDS_PER_HALF_DAY },
+        { token: "'options:has'", revalidate: OPTIONS_REVALIDATE_SECONDS },
         {
             token: "'options:snapshot-v2'",
-            revalidate: time.SECONDS_PER_HALF_DAY,
+            revalidate: OPTIONS_REVALIDATE_SECONDS,
         },
         {
             token: 'isTabAllowedForSymbol',
-            via: 'isCryptoSymbolStatic',
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS,
         },
         { token: 'getSeoSnapshotsStatic', revalidate: PAGE },
     ],
@@ -303,8 +395,7 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
         },
         {
             token: 'isTabAllowedForSymbol',
-            via: 'isCryptoSymbolStatic',
-            revalidate: time.SECONDS_PER_DAY,
+            revalidate: CRYPTO_MEMBERSHIP_REVALIDATE_SECONDS,
         },
     ],
     'fear-greed/page.tsx': [

@@ -1,6 +1,9 @@
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+import { defined } from '@/shared/test-utils/defined';
 import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
+import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
 import {
+    hubSlugsFor,
     resolveLiveTargets,
     selectLiveSymbols,
     withDisplayNames,
@@ -219,6 +222,7 @@ describe('selectLiveSymbols', () => {
         expect(groups[0].rows[0]).toMatchObject({
             symbol: 'NVDA',
             basis: 'scanner',
+            firstSeenSession: null,
             changePercent: -2,
             match: {
                 kind: 'pattern',
@@ -479,6 +483,151 @@ describe('selectLiveSymbols', () => {
     });
 });
 
+describe('selectLiveSymbols — 신호 기록 행', () => {
+    const episode = (
+        symbol: string,
+        sessionDate: string,
+        signalType = 'rsi_oversold'
+    ) => ({
+        symbol,
+        koreanName: null,
+        signalType,
+        sessionDate,
+        changePercent: -4.2,
+    });
+    const firstGroup = (groups: ReturnType<typeof selectLiveSymbols>) =>
+        defined(groups[0], 'first group');
+    const firstRow = (groups: ReturnType<typeof selectLiveSymbols>) =>
+        defined(firstGroup(groups).rows[0], 'first row');
+    const targets = {
+        signalTypes: ['rsi_oversold' as const],
+        patternNames: [],
+    };
+
+    it('기록 행은 처음 잡힌 날을 담고 등락률은 비우며, 입력 순서(첫 포착 최신순)를 지킨다', () => {
+        const groups = selectLiveSymbols({
+            targets,
+            scanner: [],
+            history: [
+                {
+                    market: 'us',
+                    rows: [
+                        episode('AAPL', '2026-11-20'),
+                        episode('MSFT', '2026-11-18'),
+                    ],
+                },
+            ],
+            snapshotHits: [],
+            limitPerMarket: 5,
+        });
+
+        expect(groups).toHaveLength(1);
+        expect(firstGroup(groups).rows.map(row => row.symbol)).toEqual([
+            'AAPL',
+            'MSFT',
+        ]);
+        expect(firstRow(groups)).toEqual({
+            symbol: 'AAPL',
+            name: null,
+            changePercent: null,
+            basis: 'history',
+            detectedOn: '2026-11-20T00:00:00.000Z',
+            firstSeenSession: '2026-11-20',
+            match: {
+                kind: 'signal',
+                signalType: 'rsi_oversold',
+                expected: false,
+            },
+        });
+    });
+
+    it('대상이 아닌 신호 유형의 기록 행은 버리고, 같은 종목은 한 행만 남긴다', () => {
+        const groups = selectLiveSymbols({
+            targets,
+            scanner: [],
+            history: [
+                {
+                    market: 'us',
+                    rows: [
+                        episode('AAPL', '2026-11-20', 'golden_cross'),
+                        episode('AAPL', '2026-11-20'),
+                        episode('AAPL', '2026-11-10'),
+                    ],
+                },
+            ],
+            snapshotHits: [],
+            limitPerMarket: 5,
+        });
+
+        expect(firstGroup(groups).rows).toHaveLength(1);
+        expect(firstRow(groups).firstSeenSession).toBe('2026-11-20');
+    });
+
+    it('시장당 limit을 넘기지 않고 한국 종목은 kr 그룹으로 간다', () => {
+        const groups = selectLiveSymbols({
+            targets,
+            scanner: [],
+            history: [
+                {
+                    market: 'us',
+                    rows: ['A', 'B', 'C'].map(s => episode(s, '2026-11-20')),
+                },
+                { market: 'kr', rows: [episode('005930.KS', '2026-11-20')] },
+            ],
+            snapshotHits: [],
+            limitPerMarket: 2,
+        });
+
+        expect(groups.map(g => [g.market, g.rows.length])).toEqual([
+            ['us', 2],
+            ['kr', 1],
+        ]);
+    });
+});
+
+describe('hubSlugsFor', () => {
+    it('SIGNAL_HUBS의 guide를 뒤집은 값이라 모든 허브가 자기 가이드 항목에서 나온다', () => {
+        SIGNAL_HUBS.forEach(hub => {
+            const entry = guideEntry({
+                slug: hub.guide.slug,
+                category: hub.guide.category,
+            });
+            expect(hubSlugsFor(entry, [entry])).toContain(hub.slug);
+        });
+    });
+
+    it('한 가이드를 가리키는 허브가 여럿이면 모두 돌려준다(이동평균 → 골든·데드크로스)', () => {
+        const ma = guideEntry({ slug: 'ma', category: 'indicators' });
+        expect(hubSlugsFor(ma, [ma])).toEqual(['golden-cross', 'death-cross']);
+    });
+
+    it('허브가 가리키지 않는 항목은 빈 배열이다', () => {
+        const unknown = guideEntry({
+            slug: 'no-hub-here',
+            category: 'indicators',
+        });
+        expect(hubSlugsFor(unknown, [unknown])).toEqual([]);
+    });
+
+    it('카테고리가 다르면 같은 slug여도 맞지 않는다', () => {
+        const wrong = guideEntry({ slug: 'rsi', category: 'strategies' });
+        expect(hubSlugsFor(wrong, [wrong])).toEqual([]);
+    });
+
+    it('howto는 about이 가리키는 항목의 허브를 얻는다', () => {
+        const rsiEntry = guideEntry({ slug: 'rsi', category: 'indicators' });
+        const guide = guideEntry({
+            slug: 'rsi-howto',
+            category: 'howto',
+            about: ['rsi', 'missing'],
+        });
+        expect(hubSlugsFor(guide, [guide, rsiEntry])).toEqual([
+            'rsi-oversold',
+            'rsi-overbought',
+        ]);
+    });
+});
+
 describe('withDisplayNames', () => {
     const group = (name: string | null) => [
         {
@@ -489,6 +638,7 @@ describe('withDisplayNames', () => {
                     name,
                     changePercent: null,
                     basis: 'snapshot' as const,
+                    firstSeenSession: null,
                     detectedOn: '2026-10-24T21:00:00.000Z',
                     match: null,
                 },

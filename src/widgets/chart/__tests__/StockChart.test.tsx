@@ -8,11 +8,11 @@ import {
     INACTIVE_PANE_INDEX,
     TRANSPARENT_COLOR,
 } from '@/widgets/chart/constants';
-import type { OverlayMenuItem } from '@/widgets/chart/utils/overlayItems';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
 import { LINE_PANE_SPECS } from '@/widgets/chart/model/linePaneSpecs';
-import { LABEL_PRIORITY } from '@/widgets/chart/utils/levelLabelCulling';
+import { LABEL_PRIORITY } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
 
 const INACTIVE_PANES = Object.fromEntries(
     [

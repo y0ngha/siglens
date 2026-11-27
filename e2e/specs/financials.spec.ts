@@ -49,7 +49,7 @@ import { E2E_FORCE_FINANCIALS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub'
  *   - Overall financials bullets: "E2E 고정 재무 요약: 현금흐름 양호, 부채비율 적정"
  */
 
-// The financials AI conclusion text from e2e/fixtures/analysis.json
+/** The financials AI conclusion text from e2e/fixtures/analysis.json */
 const FINANCIALS_AI_CONCLUSION =
     'E2E 고정 분석 결과: 재무제표 종합 결론입니다.';
 

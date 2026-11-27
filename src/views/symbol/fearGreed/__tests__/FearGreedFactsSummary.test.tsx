@@ -236,7 +236,7 @@ describe('FearGreedFactsSummary', () => {
             />
         );
 
-        expect(getByText(/장기 강세 흐름/)).toBeInTheDocument();
+        expect(getByText(/오랫동안 강세 흐름/)).toBeInTheDocument();
     });
 
     it('computeFearGreedIndex가 null이면(데이터 부족) 아무것도 렌더하지 않는다', () => {
@@ -329,7 +329,7 @@ describe('FearGreedFactsSummary', () => {
         });
 
         /**
-         * siglens-core#252·#256: 구간 전환 날짜, 같은 날 시장 대비 차이, 극단 구간 기록.
+         * 구간 전환 날짜, 같은 날 시장 대비 차이, 극단 구간 기록.
          * 기록은 집계 기간과 "예측·권유 아님" 고지가 **같은 블록에서 함께** 보여야
          * 한다 — 표만 떼어 읽히면 매매 신호처럼 보인다.
          */
@@ -369,7 +369,7 @@ describe('FearGreedFactsSummary', () => {
             });
             expect(block).toHaveTextContent('집계 기간:');
             expect(block).toHaveTextContent(
-                '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않아요'
+                '앞으로의 가격을 예측하거나 매수나 매도를 권하지 않습니다'
             );
         });
 

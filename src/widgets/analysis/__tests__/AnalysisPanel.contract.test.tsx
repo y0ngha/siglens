@@ -281,7 +281,7 @@ describe('AnalysisPanel — core output contract', () => {
 
         // 매매 전략(ActionRecommendation) + 계획 상태 배지.
         expect(screen.getByText('매매 전략')).toBeInTheDocument();
-        expect(screen.getByText('계획 구간보다 위')).toBeInTheDocument();
+        expect(screen.getByText('진입 구간보다 위')).toBeInTheDocument();
     });
 
     it('expands a detected pattern accordion to reveal its key prices', () => {

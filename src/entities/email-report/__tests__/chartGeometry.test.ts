@@ -1,8 +1,10 @@
 import type { Bar } from '@y0ngha/siglens-core';
+import { defined } from '@/shared/test-utils/defined';
 import {
     computeChartGeometry,
     isReportChartMaPeriod,
     REPORT_CHART_BARS,
+    REPORT_CHART_MAX_BARS,
 } from '@/entities/email-report/lib/chartGeometry';
 
 const BOX = { width: 200, height: 120, padding: 10 };
@@ -81,5 +83,38 @@ describe('isReportChartMaPeriod', () => {
         expect(isReportChartMaPeriod(20)).toBe(true);
         expect(isReportChartMaPeriod(60)).toBe(true);
         expect(isReportChartMaPeriod(50)).toBe(false);
+    });
+});
+
+describe('computeChartGeometry — 창 크기와 투영', () => {
+    const bars = Array.from({ length: 200 }, () => bar(10, 11, 12, 9));
+
+    it('창 크기를 넘기면 그만큼 보이고 REPORT_CHART_MAX_BARS까지 쓸 수 있다', () => {
+        const geo = defined(
+            computeChartGeometry(bars, {}, BOX, REPORT_CHART_MAX_BARS)
+        );
+
+        expect(geo.count).toBe(REPORT_CHART_MAX_BARS);
+        expect(geo.startIndex).toBe(200 - REPORT_CHART_MAX_BARS);
+        expect(geo.candles).toHaveLength(REPORT_CHART_MAX_BARS);
+    });
+
+    it('xAt·yAt는 캔들이 쓰는 값과 같다(작도가 캔들 중심에 얹힌다)', () => {
+        const geo = defined(computeChartGeometry(bars, {}, BOX, 80));
+
+        expect(geo.candles.map(c => c.x)).toEqual(
+            geo.candles.map((_, i) => geo.xAt(i))
+        );
+        expect(geo.yAt(geo.high)).toBe(BOX.padding);
+        expect(geo.yAt(geo.low)).toBe(BOX.height - BOX.padding);
+    });
+
+    it('봉이 창보다 적으면 있는 만큼만 보인다', () => {
+        const geo = defined(
+            computeChartGeometry(bars.slice(0, 10), {}, BOX, 80)
+        );
+
+        expect(geo.startIndex).toBe(0);
+        expect(geo.count).toBe(10);
     });
 });

@@ -27,9 +27,10 @@ export const dynamic = 'force-dynamic';
  * missing/reused/expired code, a different or no main user, Redis down — still
  * lands on the ai landing without touching the main session. Not an open
  * redirect: the target origin is always the `AI_SITE_URL` constant.
+ *
+ * 브라우저가 ai 로그아웃 액션의 리다이렉트로 도착하는 지점이라 GET이어야 한다.
+ * CSRF는 메서드가 아니라 1회용 코드와 userId 대조로 막는다.
  */
-// 브라우저가 ai 로그아웃 액션의 리다이렉트로 도착하는 지점이라 GET이어야 한다.
-// CSRF는 메서드가 아니라 1회용 코드와 userId 대조로 막는다.
 // react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (isAiHost(request.headers.get('host'))) {

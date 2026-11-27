@@ -61,10 +61,11 @@ export const KR_SYMBOL_RE = new RegExp(`^${KR_SHORT_CODE_PATTERN}\\.K[SQ]$`);
  *
  * `.KS`/`.KQ`는 yahoo 벤더 규약이고 한국 검색량이 0이다. 실제로 검색되는 건 6자리
  * 코드이고, schema.org `tickerSymbol`이 기대하는 것도 거래소 코드와 종목 코드의 조합
- * (`KRX:005930`)이지 이 형태가 아니다. 그래서 title 표기(`shared/lib/seo`)와 JSON-LD
- * 식별자(`entities/ticker/lib/assetClassification`) 두 곳이 같은 절단을 한다.
+ * (`KRX:005930`)이지 이 형태가 아니다. 표기용 절단은 `shared/lib/displayTicker`가 하고
+ * (title·메일·목록·관련 종목이 모두 그 헬퍼를 쓴다), JSON-LD 식별자
+ * (`entities/ticker/lib/assetClassification`)도 같은 접미사 집합을 쓴다.
  *
- * 한 곳에 두는 이유: 접미사 집합이 바뀌면(신규 시장 등) 두 경로가 조용히 어긋난다.
+ * 한 곳에 두는 이유: 접미사 집합이 바뀌면(신규 시장 등) 경로들이 조용히 어긋난다.
  * **canonical 심볼·URL·라우팅에는 쓰지 말 것** — 거기서는 접미사가 있어야 종목이 특정된다.
  */
 export const KR_EXCHANGE_SUFFIX_RE = /\.K[SQ]$/;

@@ -172,7 +172,7 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('Breakout');
         expect(result).toContain('시나리오:');
         expect(result).toContain('대응 관점:');
-        expect(result).toContain('현재가가 계획 진입 구간보다 위에 있습니다.');
+        expect(result).toContain('현재가가 진입 구간보다 위에 있습니다.');
         expect(result).toContain('변동성:');
     });
 
@@ -336,9 +336,9 @@ describe('buildExpertAnalysisReport', () => {
     } as const;
 
     it.each([
-        ['in_zone', '현재가가 계획 진입 구간 안에 있습니다.'],
-        ['above_zone', '현재가가 계획 진입 구간보다 위에 있습니다.'],
-        ['below_zone', '현재가가 계획 진입 구간보다 아래에 있습니다.'],
+        ['in_zone', '현재가가 진입 구간 안에 있습니다.'],
+        ['above_zone', '현재가가 진입 구간보다 위에 있습니다.'],
+        ['below_zone', '현재가가 진입 구간보다 아래에 있습니다.'],
     ] as const)(
         'planState %s writes its own stance sentence',
         (position, sentence) => {
@@ -388,8 +388,10 @@ describe('buildExpertAnalysisReport', () => {
             skillLabel,
         });
 
-        expect(result).not.toContain('분할 접근 가능성을 검토할 수 있습니다.');
-        expect(result).not.toContain('현재가가 계획 진입 구간');
+        expect(result).not.toContain(
+            '핵심 지지선을 확인한 뒤 나눠서 진입하는 방안을 검토해 볼 수 있습니다.'
+        );
+        expect(result).not.toContain('현재가가 진입 구간');
         expect(result).toContain('저항 확인 전까지 보수적 관리');
     });
 

@@ -18,6 +18,11 @@ const MIGRATION = readFileSync(
     join(process.cwd(), 'drizzle', '0063_mail_alerts.sql'),
     'utf8'
 );
+/** 구독자 신청 화면 CHECK는 0065가 `agent_chat`을 더해 다시 만들었다 — 최신 정의는 그쪽이다. */
+const PRICE_ALERTS_MIGRATION = readFileSync(
+    join(process.cwd(), 'drizzle', '0065_price_alerts.sql'),
+    'utf8'
+);
 const dialect = new PgDialect();
 
 /** 컴파일 시점에 엔티티 유니온의 모든 값을 키로 강제한다 — 값이 빠지거나 늘면 타입 오류가 난다. */
@@ -26,6 +31,7 @@ const ENTITY_CONSENT_SOURCES: Record<MailAlertConsentSource, true> = {
     fear_greed: true,
     signal_hub: true,
     settings: true,
+    agent_chat: true,
 };
 const ENTITY_TOPIC_KINDS: Record<MailAlertTopic['kind'], true> = {
     symbol: true,
@@ -51,11 +57,14 @@ function schemaCheckLiterals(
     return literals(dialect.sqlToQuery(check?.value as SQL).sql);
 }
 
-function migrationCheckLiterals(name: string): string[] {
+function migrationCheckLiterals(
+    name: string,
+    migration: string = MIGRATION
+): string[] {
     return literals(
-        MIGRATION.split('--> statement-breakpoint').find(statement =>
-            statement.includes(`"${name}" CHECK`)
-        ) ?? ''
+        migration
+            .split('--> statement-breakpoint')
+            .find(statement => statement.includes(`"${name}" CHECK`)) ?? ''
     );
 }
 
@@ -101,7 +110,14 @@ describe('알림 메일 스키마 상수', () => {
         '%s는 스키마와 마이그레이션 SQL 모두 상수와 같은 값을 같은 순서로 적는다',
         (name, table, values) => {
             expect(schemaCheckLiterals(table(), name)).toEqual([...values]);
-            expect(migrationCheckLiterals(name)).toEqual([...values]);
+            expect(
+                migrationCheckLiterals(
+                    name,
+                    name === 'mail_alert_subscribers_consent_source_check'
+                        ? PRICE_ALERTS_MIGRATION
+                        : MIGRATION
+                )
+            ).toEqual([...values]);
         }
     );
 });
@@ -159,5 +175,19 @@ describe('0063_mail_alerts 마이그레이션', () => {
         expect(MIGRATION).not.toMatch(/\bDROP\b/);
         expect(MIGRATION).not.toMatch(/ALTER TABLE "(?!mail_alert_)/);
         expect(MIGRATION).not.toMatch(/^(UPDATE|DELETE FROM|INSERT INTO)\b/m);
+    });
+});
+
+describe('0065_price_alerts 마이그레이션의 신청 화면 CHECK', () => {
+    it('옛 CHECK를 지우고 agent_chat을 더해 다시 만든다', () => {
+        expect(PRICE_ALERTS_MIGRATION).toContain(
+            'DROP CONSTRAINT IF EXISTS "mail_alert_subscribers_consent_source_check"'
+        );
+        expect(
+            migrationCheckLiterals(
+                'mail_alert_subscribers_consent_source_check',
+                PRICE_ALERTS_MIGRATION
+            )
+        ).toContain('agent_chat');
     });
 });

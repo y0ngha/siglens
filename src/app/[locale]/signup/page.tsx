@@ -55,8 +55,6 @@ export default async function SignupPage({
         <AuthCardShell
             title={t('page.925d56')}
             subtitle={t('page.subtitleOptional')}
-            // 일본어·중국어 문장은 공백이 없고 전역 keep-all이 줄을 못 나눠 좁은 화면에서 넘친다.
-            subtitleClassName="wrap-anywhere"
             footer={
                 <p>
                     {t('page.9922a0')}{' '}

@@ -1,11 +1,22 @@
 import 'server-only';
 
-import { and, eq, gte, inArray, isNull, lt, sql, type SQL } from 'drizzle-orm';
+import {
+    and,
+    asc,
+    eq,
+    gte,
+    inArray,
+    isNull,
+    lt,
+    sql,
+    type SQL,
+} from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     mailAlertDeliveries,
     mailAlertSubscribers,
     mailAlertTopics,
+    priceAlerts,
     users,
 } from '@/shared/db/schema';
 import type {
@@ -17,11 +28,19 @@ import type {
     MailAlertSubscriberRecord,
     MailAlertSubscriberRepository,
     MailAlertTopicRecord,
+    CancelPriceAlertOutcome,
+    CreatePriceAlertInput,
+    CreatePriceAlertOutcome,
+    PriceAlertConditionRecord,
+    PriceAlertRecord,
+    PriceAlertRepository,
+    PruneExpiredPriceAlertsResult,
     RemoveMailAlertTopicOutcome,
     SiglensDatabase,
     UpsertVerifiedMailAlertSubscriberInput,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { PRICE_ALERT_FIRED_RETENTION_DAYS } from './lib/priceAlertConstants';
 
 /** 구독자 행의 select 컬럼 — 조회·갱신 반환이 같은 `MailAlertSubscriberRecord` 모양을 쓴다. */
 const subscriberColumns = {
@@ -67,9 +86,36 @@ function verifiedAddressOf(userId: string) {
     return sql`(select ${users.email} from ${users} where ${users.id} = ${userId} and ${users.emailVerified})`;
 }
 
+/** 알림 날짜(KST)의 기준이 되는 DB 시각. 발송기는 한국 날짜로 `alertDate`를 정하므로 같은 시간대로 맞춘다. */
+const KST_TODAY = sql`(now() at time zone 'Asia/Seoul')::date`;
+
+/**
+ * 살아 있는 알림: 진행 중이고 만료일(당일 포함)이 `asOf` 전이 아니다. 지워지기 전의 만료 행은 세지 않는다.
+ * `asOf`는 호출자가 쓰는 알림 날짜(`YYYY-MM-DD`) — 없으면 DB의 한국 오늘이다.
+ */
+function liveAlertCondition(asOf: SQL | string = KST_TODAY): SQL {
+    return sql`${priceAlerts.status} = 'active' and ${priceAlerts.expiresOn} >= ${asOf}`;
+}
+
+/** 구독자에게 살아 있는 가격대 알림이 하나라도 있는지 — 받을 것이 있다는 증거다(항목·보유 스위치와 같은 급). */
+function hasLivePriceAlert(
+    subscriberId: SQL | typeof mailAlertSubscribers.id,
+    asOf?: string
+): SQL {
+    return sql`exists (select 1 from ${priceAlerts} where ${priceAlerts.subscriberId} = ${subscriberId} and ${liveAlertCondition(asOf)})`;
+}
+
+/** 소유자의 구독자 id — 알림 읽기가 소유자 조건을 같은 문장 안에서 풀 때 쓴다(DB-12). */
+function ownedSubscriberIds(db: SiglensDatabase, owner: MailAlertOwner) {
+    return db
+        .select({ id: mailAlertSubscribers.id })
+        .from(mailAlertSubscribers)
+        .where(ownerCondition(owner));
+}
+
 /**
  * {@link MailAlertSubscriberRepository}의 Drizzle 구현. 이메일 주소당 한 행(`email` 유니크)이고,
- * 행을 지우는 것이 곧 수신 거부다(받을 항목·발송 기록은 FK 연쇄로 사라진다). 모든 쿼리는 일시적 DB
+ * 행을 지우는 것이 곧 수신 거부다(받을 항목·발송 기록·가격대 알림은 FK 연쇄로 사라진다). 모든 쿼리는 일시적 DB
  * 오류에 한해 `withRetry`로 재시도한다.
  *
  * 항목 추가·제거와 `include_portfolio` 변경은 구독자 행을 `FOR NO KEY UPDATE`로 잠근 트랜잭션에서
@@ -240,7 +286,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
     }
 
     /**
-     * 항목을 지우고, 받을 것이 남지 않으면(항목 0개이고 `include_portfolio`가 꺼짐) 구독자도 지운다.
+     * 항목을 지우고, 받을 것이 남지 않으면(항목 0개, `include_portfolio` 꺼짐, 살아 있는 가격대 알림 0개) 구독자도 지운다.
      * 지울 항목이 없었으면 구독자는 건드리지 않는다.
      */
     async removeTopic(
@@ -289,7 +335,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
     }
 
     /**
-     * 끄면서 받을 항목이 하나도 없으면 구독자를 지운다(`removeTopic`과 같은 규칙). 보유·관심종목은 회원
+     * 끄면서 받을 것이 하나도 없으면(항목도 살아 있는 가격대 알림도 없음) 구독자를 지운다(`removeTopic`과 같은 규칙). 보유·관심종목은 회원
      * 것이라 회원이 아닌 소유자(비회원, 메일 링크)는 DB를 건드리지 않고 `found: false`로 거절한다 — 비회원
      * 행에는 이 스위치가 켜질 길이 없고, 켜져 있으면 발송이 존재하지 않는 포트폴리오를 읽는다.
      */
@@ -361,7 +407,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
         return linked.length > 0;
     }
 
-    /** 소유자의 구독자 행을 지운다(수신 거부). 항목·발송 기록은 FK 연쇄로 사라진다. */
+    /** 소유자의 구독자 행을 지운다(수신 거부). 항목·발송 기록·가격대 알림은 FK 연쇄로 사라진다. */
     async deleteByOwner(owner: MailAlertOwner): Promise<boolean> {
         const deleted = await withRetry(
             () =>
@@ -393,8 +439,14 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
         return deleted.length;
     }
 
-    /** 발송 대상 — 항목이 있거나 보유·관심종목 함께 받기가 켜진 구독자. 항목은 한 쿼리로 모은다. */
-    async findAllForDelivery(): Promise<MailAlertDeliveryTarget[]> {
+    /**
+     * 발송 대상 — 항목이 있거나 보유·관심종목 함께 받기가 켜졌거나 살아 있는 가격대 알림이 있는 구독자.
+     * 가격대 알림만 가진 구독자도 빠지면 알림이 영영 판정되지 않는다. 항목은 한 쿼리로 모은다.
+     * `alertDate`(발송기가 쓰는 한국 날짜)를 주면 만료 판정이 `listActiveForDelivery`와 같은 시계를 쓴다.
+     */
+    async findAllForDelivery(
+        alertDate?: string
+    ): Promise<MailAlertDeliveryTarget[]> {
         const rows = await withRetry(
             () =>
                 this.db
@@ -418,7 +470,7 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
                     )
                     .groupBy(mailAlertSubscribers.id)
                     .having(
-                        sql`${mailAlertSubscribers.includePortfolio} or count(${mailAlertTopics.kind}) > 0`
+                        sql`${mailAlertSubscribers.includePortfolio} or count(${mailAlertTopics.kind}) > 0 or ${hasLivePriceAlert(mailAlertSubscribers.id, alertDate)}`
                     )
                     .orderBy(
                         mailAlertSubscribers.createdAt,
@@ -431,7 +483,8 @@ export class DrizzleMailAlertSubscriberRepository implements MailAlertSubscriber
 }
 
 /**
- * 잠긴 구독자 행에 대해: 항목이 0개이고 `include_portfolio`가 꺼져 있으면 지운다. 지웠는지 돌려준다.
+ * 잠긴 구독자 행에 대해: 항목이 0개이고 `include_portfolio`가 꺼져 있고 살아 있는 가격대 알림도 없으면
+ * 지운다(알림만 가진 구독자를 지우면 연쇄로 알림이 사라진다). 지웠는지 돌려준다.
  * 호출자가 같은 트랜잭션에서 행을 잠근 상태여야 한다(남은 항목 수를 믿을 수 있다).
  */
 async function deleteIfNothingToReceive(
@@ -447,6 +500,17 @@ async function deleteIfNothingToReceive(
         .where(eq(mailAlertTopics.subscriberId, subscriberId))
         .limit(1);
     if (remaining.length > 0) return false;
+    const liveAlerts = await tx
+        .select({ id: priceAlerts.id })
+        .from(priceAlerts)
+        .where(
+            and(
+                eq(priceAlerts.subscriberId, subscriberId),
+                liveAlertCondition()
+            )
+        )
+        .limit(1);
+    if (liveAlerts.length > 0) return false;
     await tx
         .delete(mailAlertSubscribers)
         .where(
@@ -545,5 +609,410 @@ export class DrizzleMailAlertDeliveryRepository implements MailAlertDeliveryRepo
             DB_TRANSIENT_RETRY
         );
         return deleted.length;
+    }
+}
+
+const priceAlertColumns = {
+    id: priceAlerts.id,
+    subscriberId: priceAlerts.subscriberId,
+    proposalId: priceAlerts.proposalId,
+    symbol: priceAlerts.symbol,
+    market: priceAlerts.market,
+    condition: priceAlerts.condition,
+    approach: priceAlerts.approach,
+    zoneLow: priceAlerts.zoneLow,
+    zoneHigh: priceAlerts.zoneHigh,
+    level: priceAlerts.level,
+    basis: priceAlerts.basis,
+    analysisAt: priceAlerts.analysisAt,
+    referenceClose: priceAlerts.referenceClose,
+    startsAfterSession: priceAlerts.startsAfterSession,
+    expiresOn: priceAlerts.expiresOn,
+    status: priceAlerts.status,
+    firedSession: priceAlerts.firedSession,
+    firedClose: priceAlerts.firedClose,
+    firedAt: priceAlerts.firedAt,
+    createdAt: priceAlerts.createdAt,
+};
+
+type PriceAlertRow = Pick<
+    typeof priceAlerts.$inferSelect,
+    keyof typeof priceAlertColumns
+>;
+
+/**
+ * 저장된 모양(`numeric`은 문자열)을 조건 유니온으로 되돌린다. CHECK가 조건별 열 모양을 지키므로
+ * 비어 있어야 할 열이 비어 있지 않은 행은 만들어질 수 없다 — 그래도 어긋난 행은 조용히 넘기지 않고 던진다.
+ */
+function toCondition(row: PriceAlertRow): PriceAlertConditionRecord {
+    if (row.condition === 'enter_zone') {
+        if (
+            row.approach === null ||
+            row.zoneLow === null ||
+            row.zoneHigh === null
+        ) {
+            throw new Error(`Malformed enter_zone price alert ${row.id}`);
+        }
+        return {
+            kind: 'enter_zone',
+            low: Number(row.zoneLow),
+            high: Number(row.zoneHigh),
+            approach: row.approach,
+        };
+    }
+    if (row.level === null) {
+        throw new Error(`Malformed ${row.condition} price alert ${row.id}`);
+    }
+    return { kind: row.condition, level: Number(row.level) };
+}
+
+function toPriceAlertRecord(row: PriceAlertRow): PriceAlertRecord {
+    return {
+        id: row.id,
+        subscriberId: row.subscriberId,
+        proposalId: row.proposalId,
+        symbol: row.symbol,
+        market: row.market,
+        condition: toCondition(row),
+        basis: row.basis,
+        analysisAt: row.analysisAt,
+        referenceClose: Number(row.referenceClose),
+        startsAfterSession: row.startsAfterSession,
+        expiresOn: row.expiresOn,
+        status: row.status,
+        firedSession: row.firedSession,
+        firedClose: row.firedClose === null ? null : Number(row.firedClose),
+        firedAt: row.firedAt,
+        createdAt: row.createdAt,
+    };
+}
+
+/** `numeric(20,6)`에 들어가는 십진 문자열 — 지수 표기 없이 6자리로 맞춘다(중복 비교도 같은 값으로 한다). */
+const toNumeric = (value: number): string => value.toFixed(6);
+
+/** 가격은 모두 유한한 양수여야 하고 구간은 low <= high여야 한다 — 어긋나면 DB 오류가 아니라 결과로 거절한다. */
+function isValidAlertInput(input: CreatePriceAlertInput): boolean {
+    const isPrice = (value: number) => Number.isFinite(value) && value > 0;
+    const { condition } = input;
+    const levelsValid =
+        condition.kind === 'enter_zone'
+            ? isPrice(condition.low) &&
+              isPrice(condition.high) &&
+              condition.low <= condition.high
+            : isPrice(condition.level);
+    return levelsValid && isPrice(input.referenceClose);
+}
+
+/** 같은 종목·조건·가격인 알림의 열 값. 구간이 아니면 구간 열은 null이다. */
+function conditionColumns(condition: PriceAlertConditionRecord) {
+    return condition.kind === 'enter_zone'
+        ? {
+              condition: condition.kind,
+              approach: condition.approach,
+              zoneLow: toNumeric(condition.low),
+              zoneHigh: toNumeric(condition.high),
+              level: null,
+          }
+        : {
+              condition: condition.kind,
+              approach: null,
+              zoneLow: null,
+              zoneHigh: null,
+              level: toNumeric(condition.level),
+          };
+}
+
+/**
+ * {@link PriceAlertRepository}의 Drizzle 구현. 알림은 구독자 행에 딸려 있어 구독자가 지워지면 함께
+ * 사라진다. 모든 쿼리는 일시적 DB 오류에 한해 `withRetry`로 재시도한다.
+ *
+ * 만들기는 구독자 행을 `FOR NO KEY UPDATE`로 잠근 트랜잭션에서 한다 — "개수 조회 → 삽입"을 따로 하면
+ * 동시에 들어온 두 요청이 같은 개수를 보고 상한을 넘긴다. 같은 제안 id는 `exists`로 멱등하게 끝나서
+ * 재시도(`withRetry`)와 더블클릭이 두 번째 행을 만들지 못한다.
+ */
+export class DrizzlePriceAlertRepository implements PriceAlertRepository {
+    constructor(private readonly db: SiglensDatabase) {}
+
+    async createWithinLimit(
+        owner: MailAlertOwner,
+        input: CreatePriceAlertInput,
+        max: number
+    ): Promise<CreatePriceAlertOutcome> {
+        if (!isValidAlertInput(input)) return 'invalid';
+        const columns = conditionColumns(input.condition);
+        return withRetry(
+            () =>
+                this.db.transaction(async tx => {
+                    const [locked] = await tx
+                        .select({ id: mailAlertSubscribers.id })
+                        .from(mailAlertSubscribers)
+                        .where(ownerCondition(owner))
+                        .for('no key update');
+                    if (locked === undefined) {
+                        return 'subscriber_missing' as const;
+                    }
+                    const subscriberId = locked.id;
+                    const [sameProposal] = await tx
+                        .select({ id: priceAlerts.id })
+                        .from(priceAlerts)
+                        .where(
+                            and(
+                                eq(priceAlerts.subscriberId, subscriberId),
+                                eq(priceAlerts.proposalId, input.proposalId)
+                            )
+                        )
+                        .limit(1);
+                    if (sameProposal !== undefined) return 'exists' as const;
+                    const [sameLevels] = await tx
+                        .select({ id: priceAlerts.id })
+                        .from(priceAlerts)
+                        .where(
+                            and(
+                                eq(priceAlerts.subscriberId, subscriberId),
+                                liveAlertCondition(),
+                                eq(priceAlerts.symbol, input.symbol),
+                                eq(priceAlerts.condition, columns.condition),
+                                sql`${priceAlerts.approach} is not distinct from ${columns.approach}`,
+                                sql`${priceAlerts.zoneLow} is not distinct from ${columns.zoneLow}::numeric`,
+                                sql`${priceAlerts.zoneHigh} is not distinct from ${columns.zoneHigh}::numeric`,
+                                sql`${priceAlerts.level} is not distinct from ${columns.level}::numeric`
+                            )
+                        )
+                        .limit(1);
+                    if (sameLevels !== undefined) return 'duplicate' as const;
+                    const [live] = await tx
+                        .select({ n: sql<number>`count(*)::int` })
+                        .from(priceAlerts)
+                        .where(
+                            and(
+                                eq(priceAlerts.subscriberId, subscriberId),
+                                liveAlertCondition()
+                            )
+                        );
+                    if ((live?.n ?? 0) >= max) return 'limit_reached' as const;
+                    await tx.insert(priceAlerts).values({
+                        subscriberId,
+                        proposalId: input.proposalId,
+                        symbol: input.symbol,
+                        market: input.market,
+                        ...columns,
+                        basis: input.basis,
+                        analysisAt: input.analysisAt,
+                        referenceClose: toNumeric(input.referenceClose),
+                        startsAfterSession: input.startsAfterSession,
+                        expiresOn: input.expiresOn,
+                    });
+                    return 'created' as const;
+                }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * 소유자의 알림 하나를 지운다. 구독자 행을 잠근 트랜잭션에서 지우고, 받을 것이 남지 않으면
+     * (`removeTopic`과 같은 규칙) 구독자도 지운다 — 알림만 가진 구독자가 마지막 알림을 지운 뒤에도 남아
+     * 메일 주소가 쓸모없이 저장되는 것을 막는다. 다른 소유자의 알림 id는 아무 행도 가리키지 못한다(DB-12).
+     */
+    async cancel(
+        owner: MailAlertOwner,
+        id: string
+    ): Promise<CancelPriceAlertOutcome> {
+        return withRetry(
+            () =>
+                this.db.transaction(async tx => {
+                    const [locked] = await tx
+                        .select({
+                            id: mailAlertSubscribers.id,
+                            includePortfolio:
+                                mailAlertSubscribers.includePortfolio,
+                        })
+                        .from(mailAlertSubscribers)
+                        .where(ownerCondition(owner))
+                        .for('no key update');
+                    if (locked === undefined) {
+                        return { deleted: false, subscriberDeleted: false };
+                    }
+                    const removed = await tx
+                        .delete(priceAlerts)
+                        .where(
+                            and(
+                                eq(priceAlerts.id, id),
+                                eq(priceAlerts.subscriberId, locked.id)
+                            )
+                        )
+                        .returning({ id: priceAlerts.id });
+                    if (removed.length === 0) {
+                        return { deleted: false, subscriberDeleted: false };
+                    }
+                    const subscriberDeleted = await deleteIfNothingToReceive(
+                        tx,
+                        owner,
+                        locked.id,
+                        locked.includePortfolio
+                    );
+                    return { deleted: true, subscriberDeleted };
+                }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    async listForSubscriber(
+        owner: MailAlertOwner
+    ): Promise<PriceAlertRecord[]> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select(priceAlertColumns)
+                    .from(priceAlerts)
+                    .where(
+                        inArray(
+                            priceAlerts.subscriberId,
+                            ownedSubscriberIds(this.db, owner)
+                        )
+                    )
+                    .orderBy(asc(priceAlerts.createdAt), asc(priceAlerts.id)),
+            DB_TRANSIENT_RETRY
+        );
+        return rows.map(toPriceAlertRecord);
+    }
+
+    async findByProposal(
+        owner: MailAlertOwner,
+        proposalId: string
+    ): Promise<PriceAlertRecord | null> {
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select(priceAlertColumns)
+                    .from(priceAlerts)
+                    .where(
+                        and(
+                            inArray(
+                                priceAlerts.subscriberId,
+                                ownedSubscriberIds(this.db, owner)
+                            ),
+                            eq(priceAlerts.proposalId, proposalId)
+                        )
+                    )
+                    .limit(1),
+            DB_TRANSIENT_RETRY
+        );
+        return row === undefined ? null : toPriceAlertRecord(row);
+    }
+
+    async countActive(owner: MailAlertOwner): Promise<number> {
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select({ n: sql<number>`count(*)::int` })
+                    .from(priceAlerts)
+                    .where(
+                        and(
+                            inArray(
+                                priceAlerts.subscriberId,
+                                ownedSubscriberIds(this.db, owner)
+                            ),
+                            liveAlertCondition()
+                        )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+        return row?.n ?? 0;
+    }
+
+    /** 만료일 당일(`expires_on = alertDate`)은 아직 판정 대상이다. */
+    async listActiveForDelivery(
+        alertDate: string
+    ): Promise<Map<string, PriceAlertRecord[]>> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select(priceAlertColumns)
+                    .from(priceAlerts)
+                    .where(
+                        and(
+                            eq(priceAlerts.status, 'active'),
+                            gte(priceAlerts.expiresOn, alertDate)
+                        )
+                    )
+                    .orderBy(asc(priceAlerts.createdAt), asc(priceAlerts.id)),
+            DB_TRANSIENT_RETRY
+        );
+        return rows.reduce((bySubscriber, row) => {
+            const record = toPriceAlertRecord(row);
+            return bySubscriber.set(record.subscriberId, [
+                ...(bySubscriber.get(record.subscriberId) ?? []),
+                record,
+            ]);
+        }, new Map<string, PriceAlertRecord[]>());
+    }
+
+    /**
+     * 만료일이 `alertDate` 전인 진행 중 알림과, 알린 지 `PRICE_ALERT_FIRED_RETENTION_DAYS`일을 넘긴
+     * 알림을 지운다. 알린 날은 `fired_at`의 한국 날짜로 센다(DB 시간대와 무관). 그 알림이 사라져 받을 것이
+     * 없어진 구독자(항목 0개, 보유 스위치 꺼짐, `alertDate` 기준 살아 있는 알림 0개)도 같은 트랜잭션에서
+     * 지운다 — 이번 정리로 알림을 잃은 구독자만 본다(막 확인을 마치고 첫 항목을 담기 전의 구독자를 건드리지
+     * 않는다).
+     *
+     * 잠금 순서: 모든 사용자 경로(`cancel`, `createWithinLimit`, `removeTopic`)는 구독자 행을 먼저 잠그고
+     * 알림 행을 만진다. 정리도 같은 순서를 따라 — 지울 알림을 가진 구독자 행을 id 순으로 먼저 잠근 뒤,
+     * 잠근 구독자의 알림만 지운다. 알림부터 지우면 구독자 행을 쥔 사용자 경로와 서로의 행을 기다려 교착한다.
+     * 잠근 뒤의 구독자 판정은 동시에 들어온 알림 만들기와 엇갈리지 않는다.
+     */
+    async pruneExpiredAndFired(
+        alertDate: string
+    ): Promise<PruneExpiredPriceAlertsResult> {
+        const prunable = sql`((${priceAlerts.status} = 'active' and ${priceAlerts.expiresOn} < ${alertDate}::date) or (${priceAlerts.status} = 'fired' and (${priceAlerts.firedAt} at time zone 'Asia/Seoul')::date < ${alertDate}::date - ${PRICE_ALERT_FIRED_RETENTION_DAYS}::int))`;
+        return withRetry(
+            () =>
+                this.db.transaction(async tx => {
+                    const lockedRows = await tx
+                        .select({ id: mailAlertSubscribers.id })
+                        .from(mailAlertSubscribers)
+                        .where(
+                            inArray(
+                                mailAlertSubscribers.id,
+                                tx
+                                    .select({ id: priceAlerts.subscriberId })
+                                    .from(priceAlerts)
+                                    .where(prunable)
+                            )
+                        )
+                        .orderBy(mailAlertSubscribers.id)
+                        .for('no key update');
+                    const lockedIds = lockedRows.map(row => row.id);
+                    if (lockedIds.length === 0) {
+                        return { alertsDeleted: 0, subscribersDeleted: 0 };
+                    }
+                    const deleted = await tx
+                        .delete(priceAlerts)
+                        .where(
+                            and(
+                                inArray(priceAlerts.subscriberId, lockedIds),
+                                prunable
+                            )
+                        )
+                        .returning({ id: priceAlerts.id });
+                    const removed = await tx
+                        .delete(mailAlertSubscribers)
+                        .where(
+                            and(
+                                inArray(mailAlertSubscribers.id, lockedIds),
+                                eq(
+                                    mailAlertSubscribers.includePortfolio,
+                                    false
+                                ),
+                                sql`not exists (select 1 from ${mailAlertTopics} where ${mailAlertTopics.subscriberId} = ${mailAlertSubscribers.id})`,
+                                sql`not ${hasLivePriceAlert(mailAlertSubscribers.id, alertDate)}`
+                            )
+                        )
+                        .returning({ id: mailAlertSubscribers.id });
+                    return {
+                        alertsDeleted: deleted.length,
+                        subscribersDeleted: removed.length,
+                    };
+                }),
+            DB_TRANSIENT_RETRY
+        );
     }
 }

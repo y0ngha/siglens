@@ -71,7 +71,8 @@ export function StockChatLanding() {
                         doneIcon={<ReplayDoneIcon />}
                     />
                     <p className="mx-auto mt-2 max-w-3xl text-xs text-secondary-400">
-                        예시 대화예요. 수치는 실제와 다를 수 있어요.
+                        예시 대화예요. 어떤 내용을 답하는지 보여 주는 글이라
+                        실제 수치는 담지 않았어요.
                     </p>
                 </div>
 
@@ -79,7 +80,7 @@ export function StockChatLanding() {
                     id="lp-examples"
                     align="center"
                     title="이렇게 물어보세요"
-                    sub="평소 말투 그대로, 종목 이름으로 물어보면 됩니다."
+                    sub="평소 말투 그대로, 종목 이름으로 물어보면 돼요."
                     className="mt-20"
                 >
                     <ul className="mt-7 flex flex-col items-center gap-3">
@@ -95,7 +96,7 @@ export function StockChatLanding() {
                     id="lp-how"
                     align="center"
                     title="이렇게 답해요"
-                    sub="답하기 전에 데이터를 직접 찾아보고, 무엇을 봤는지 함께 보여 줍니다."
+                    sub="답하기 전에 데이터를 직접 찾아보고, 무엇을 봤는지 함께 보여 줘요."
                     className="mt-20"
                 >
                     <HowItAnswers steps={HOW} demo={HOW_DEMO} />

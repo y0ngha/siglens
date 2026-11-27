@@ -55,7 +55,7 @@ function makeDependencies(options: {
                 findById,
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn(),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             sessions: {
                 createSession: vi.fn(),

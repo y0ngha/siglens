@@ -16,8 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [inverse_head_and_shoulders]
-token_cost: 1080
-digest_hash: "339aadc4"
+token_cost: 1081
+digest_hash: "01ec0a4d"
+digest_text_hash: "011ed3c8"
 ---
 
 ## Detection Criteria
@@ -58,7 +59,7 @@ Factors that decrease confidence:
 - **Downtrend continuation bounce**: In a strong downtrend, a temporary three-trough bounce may resemble inverse H&S but is merely a consolidation before further decline. Check if the broader trend context supports reversal.
 - **Asymmetric shoulders exceeding 10%**: When shoulder depths differ by more than 10%, the pattern loses structural integrity and should not be classified as inverse H&S.
 - **Insufficient depth**: If the neckline-to-head distance is less than 3% of the neckline price, the pattern is too shallow to produce a meaningful move.
-- **Premature neckline break**: A brief intraday break above the neckline that immediately reverses (wick only, no close above) is not a confirmed break.
+- **Premature neckline break**: A brief within-bar break above the neckline that immediately reverses (wick only, no close above) is not a confirmed break.
 - **Declining volume throughout**: If volume continues to decline through the right shoulder and neckline break without any surge, the bullish signal lacks conviction.
 
 ## Entry/Exit Considerations
@@ -101,7 +102,7 @@ When this pattern is detected, include the following in the analysis response:
 - Confirmed by decisive CLOSE above neckline on above-average volume. Low-volume break may be false.
 - Retest: price often retests neckline from above; holding above it reinforces bullish signal.
 - Invalidation: close BELOW right shoulder low negates the pattern (stop reference).
-- Wick-only intraday break with no close above = not confirmed.
+- Wick-only within-bar break with no close above = not confirmed.
 
 ### False positives (do NOT classify as inverse H&S)
 - Shoulder depths differ by >10% (loses structural integrity).

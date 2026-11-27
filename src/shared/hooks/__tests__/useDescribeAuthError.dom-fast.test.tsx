@@ -40,6 +40,36 @@ describe('useDescribeAuthError', () => {
         ).toBe(koMessages.entities.auth.error.expiredCode);
     });
 
+    it('translates email_send_failed to the verification mail failure copy', () => {
+        const describeAuthError = renderDescribe();
+        expect(
+            describeAuthError({ code: 'email_send_failed', message: '원문' })
+        ).toBe(koMessages.entities.auth.error.verificationEmailFailed);
+    });
+
+    it('translates the signup verification limit errors to their own messages', () => {
+        const describeAuthError = renderDescribe();
+        expect(
+            describeAuthError({ code: 'rate_limited', message: '원문' })
+        ).toBe(koMessages.entities.auth.error.tooManyRequests);
+        expect(
+            describeAuthError({
+                code: 'too_many_verification_attempts',
+                message: '원문',
+            })
+        ).toBe(koMessages.entities.auth.error.tooManyCodeAttempts);
+    });
+
+    it('translates the login attempt limit to its own message', () => {
+        const describeAuthError = renderDescribe();
+        expect(
+            describeAuthError({
+                code: 'too_many_login_attempts',
+                message: '원문',
+            })
+        ).toBe(koMessages.entities.auth.error.tooManyLoginAttempts);
+    });
+
     it('falls back to the raw message for an unknown or missing code', () => {
         const describeAuthError = renderDescribe();
         expect(describeAuthError({ code: 'unexpected', message: '원문' })).toBe(

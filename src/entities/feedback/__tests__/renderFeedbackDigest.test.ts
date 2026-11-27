@@ -35,7 +35,7 @@ describe('renderFeedbackDigest', () => {
         const { text } = renderFeedbackDigest(digest, at);
         expect(text).toContain('- siglens / technical: 👍 0 / 👎 1');
         expect(text).toContain(
-            'siglens / technical / AAPL [부정확, 너무 김] — 숫자가 틀려요'
+            'siglens / technical / AAPL [부정확, 너무 김]: 숫자가 틀려요'
         );
     });
 

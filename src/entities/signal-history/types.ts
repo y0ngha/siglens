@@ -30,6 +30,19 @@ export interface SignalEpisodeRow {
 }
 
 /**
+ * 가이드의 "지금 이 신호가 나온 종목"이 읽는 에피소드 한 줄. 마지막 포착 세션이 그 시장의 가장 최근 완료
+ * 세션인(= 그 세션에도 계속 잡힌) 에피소드다. `sessionDate`는 처음 포착된 세션이라 실제 교차일보다 늦을 수 있다.
+ */
+export interface SignalLatestEpisodeRow {
+    readonly symbol: string;
+    readonly koreanName: string | null;
+    readonly signalType: string;
+    /** 처음 포착된 세션(`YYYY-MM-DD`, 그 시장 현지 날짜). */
+    readonly sessionDate: string;
+    readonly changePercent: number;
+}
+
+/**
  * 신호 하나의 기간 집계 — 사이트맵이 색인할 신호 페이지와 lastmod를 고른다. 페이지가 종목마다 한 줄만
  * 그리므로(`listHubRows`가 종목마다 한 줄만 고른다) 색인 판정도 에피소드 수가 아니라 종목 수로 한다.
  */
@@ -39,18 +52,6 @@ export interface SignalHubCount {
     readonly symbols: number;
     /** 그 에피소드들의 가장 최근 마지막 포착 세션(`YYYY-MM-DD`) — 목록이 실제로 바뀐 날. */
     readonly latestSession: string;
-}
-
-/** (종목, 신호) — 에피소드를 고르는 키. 시장은 호출 단위로 따로 준다. */
-export interface SignalEpisodeKey {
-    readonly symbol: string;
-    readonly signalType: string;
-}
-
-/** 한 세션 기록 계획 — 새로 여는 에피소드와, 직전 세션에서 이어져 마지막 포착일만 늘릴 키. */
-export interface SignalEpisodePlan {
-    readonly inserts: readonly SignalEpisodeInsert[];
-    readonly extends: readonly SignalEpisodeKey[];
 }
 
 /** 한 세션에 처음 포착된 에피소드 한 줄 — 알림 메일이 읽는다. */

@@ -20,6 +20,7 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
@@ -59,6 +60,7 @@ export async function loginAction(
                 users: new DrizzleUserRepository(db),
                 sessions: new DrizzleSessionRepository(db),
                 passwordVerifier: bcryptPasswordVerifier,
+                ...createAuthRateLimitGuards('loginRateLimit'),
             },
             { secureCookie: secure }
         );

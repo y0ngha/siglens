@@ -42,7 +42,10 @@ export interface RegisterUserError {
 }
 
 /** Error code returned when email login fails. */
-export type LoginUserErrorCode = 'invalid_credentials';
+export type LoginUserErrorCode =
+    | 'invalid_credentials'
+    | 'rate_limited'
+    | 'too_many_login_attempts';
 
 /** Error code returned when account deletion cannot be completed. */
 export type DeleteAccountErrorCode = 'user_not_found';
@@ -51,14 +54,17 @@ export type DeleteAccountErrorCode = 'user_not_found';
 export type VerifyEmailErrorCode =
     | 'invalid_verification_code'
     | 'expired_verification_code'
-    | 'email_already_exists';
+    | 'email_already_exists'
+    | 'rate_limited'
+    | 'too_many_verification_attempts';
 
 /** Error code returned when password reset confirmation fails. */
 export type ConfirmPasswordResetErrorCode =
     | AuthValidationErrorCode
     | 'invalid_token'
     | 'expired_token'
-    | 'same_password';
+    | 'same_password'
+    | 'rate_limited';
 
 /** Structured error returned when password reset confirmation fails. */
 export interface ConfirmPasswordResetError {

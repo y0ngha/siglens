@@ -40,11 +40,8 @@ import {
     type AggregateRecord,
     type HolderRecord,
 } from '../lib/snapshot/institutional';
-import {
-    addDays,
-    isPeriodComplete,
-    positionsRetentionFloor,
-} from '../lib/investorFlowsDates';
+import { addDays, isPeriodComplete } from '../lib/investorFlowsDates';
+import { resolveHoldersPeriod } from './resolveHoldersPeriod';
 import { INVESTOR_FLOWS_REG_SHO_RETENTION_DAYS } from '../lib/investorFlowsPolicy';
 import { summarizeThresholdListings } from '../lib/regShoParsers';
 
@@ -102,12 +99,12 @@ export interface InvestorFlowsSnapshotDeps {
     fmp: InvestorFlowsFmpProvider;
     /**
      * FINRA 꺼짐이면 공매도 필드는 DB를 읽지 않고 `null`이다. FINRA 데이터는 비상업 전용 약관이라
-     * 상업화 전에 꺼야 한다 — `shared/api/finra/finraShortDataEnabled.ts`, 이슈 #1042.
+     * 상업화 전에 꺼야 한다 — `shared/api/finra/finraShortDataEnabled.ts`.
      */
     isFinraEnabled: () => boolean;
     /**
      * Reg SHO 과열 목록 플래그. 꺼짐이면 DB를 읽지 않고 `thresholdList: null`이다(거래소 데이터 비상업 라이선스 —
-     * `shared/api/exchange/regShoThresholdDataEnabled.ts`, 이슈 #1042).
+     * `shared/api/exchange/regShoThresholdDataEnabled.ts`).
      */
     isRegShoEnabled: () => boolean;
     now: () => Date;
@@ -156,14 +153,7 @@ async function loadInstitutional(
                 return null;
             }),
     ]);
-    const floor = positionsRetentionFloor(today);
-    const latestComplete = aggregates
-        .filter(a => isPeriodComplete(a.period, today) && a.period >= floor)
-        .map(a => a.period)
-        .sort()
-        .at(-1);
-    const period =
-        latestComplete ?? (await reads.findLatestPositionPeriod(cusip));
+    const period = await resolveHoldersPeriod(reads, cusip, aggregates, today);
     if (period === null) return { aggregates, optionAggregates, ...empty };
     const [topHolders, exitedHolders] = await Promise.all([
         reads.findTopHolders(cusip, period, SNAPSHOT_MAX_TOP_HOLDERS),

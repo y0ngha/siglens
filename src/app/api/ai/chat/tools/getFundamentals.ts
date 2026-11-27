@@ -1,6 +1,13 @@
 import 'server-only';
-import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
+import {
+    FUNDAMENTALS_RESULT_NOTES,
+    tallyEarningsReactions,
+    type Bar,
+    type EarningsReactionTally,
+    type MarketSessionSpec,
+} from '@y0ngha/siglens-core';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
+import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
 import type { EarningsSession } from '@/entities/analyst-views/model';
 import {
     resolveNextEarnings,
@@ -55,13 +62,15 @@ import {
     QUARTERS_FETCH_COUNT,
     recentQuarterRows,
     type EarningsReactionView,
+    type SecQuarterView,
 } from './earningsHistory';
 import {
     buildDividends,
     fetchDividendSource,
     withAnnualReported,
+    type DividendsView,
 } from './dividends';
-import { loadIndexMemberships } from './indexMembership';
+import { loadIndexMemberships, type IndexMemberships } from './indexMembership';
 import { fetchKrAnnualDividend } from './krAnnualDividend';
 import { krListedBasis } from './krListedBasis';
 import { loadSecQuarters } from './loadSecQuarters';
@@ -252,6 +261,140 @@ export function earningsDateCertainty(
 }
 
 /**
+ * Attaches `earningsReactionTally` right after `earningsReactions` so the model quotes
+ * the up/down counts and extremes instead of counting the list (the miscount
+ * the tally exists to remove). `null` exactly when `earningsReactions` is `null`.
+ *
+ * Pure function of the result shape: the tally reads the reactions as printed
+ * (already rounded), and the evaluation replay calls this same function on a
+ * recorded result, so it never runs a copy of production logic.
+ */
+export function withEarningsReactionTally<T extends object>(
+    result: T
+): T & { earningsReactionTally: EarningsReactionTally | null } {
+    const reactions =
+        (
+            result as {
+                earningsReactions?: readonly EarningsReactionView[] | null;
+            }
+        ).earningsReactions ?? null;
+    const tally = reactions === null ? null : tallyEarningsReactions(reactions);
+    const entries = Object.entries(result).flatMap(
+        ([key, value]): [string, unknown][] =>
+            key === 'earningsReactions'
+                ? [
+                      [key, value],
+                      ['earningsReactionTally', tally],
+                  ]
+                : [[key, value]]
+    );
+    // A result without the `earningsReactions` key still carries the tally (null), at the end.
+    const withTally = entries.some(([key]) => key === 'earningsReactionTally')
+        ? entries
+        : [...entries, ['earningsReactionTally', tally]];
+    return Object.fromEntries(withTally) as T & {
+        earningsReactionTally: EarningsReactionTally | null;
+    };
+}
+
+/** The slice of a finished `get_fundamentals` result that decides which `notes` apply. */
+interface FundamentalsNotesInput {
+    valuation: { pe: number | null } | null;
+    dividends: DividendsView | null;
+    recentQuarters: readonly { sec: SecQuarterView | null }[] | null;
+    indexMemberships: IndexMemberships | null;
+    analyst: {
+        nextEarningsDate: string | null;
+        earningsSession?: EarningsSession | null;
+        earningsDateAlt?: unknown;
+        earningsDateConfirmed?: boolean | null;
+    };
+}
+
+/** A confirmed non-payer, exactly as `dividends.ts` prints it. */
+function isConfirmedNonPayer(dividends: DividendsView): boolean {
+    return (
+        dividends.latestExDate === null &&
+        dividends.latestAmount === null &&
+        dividends.trailing12mAmount === 0 &&
+        dividends.trailingYieldPct === 0
+    );
+}
+
+/**
+ * Texts for the result's top-level `notes` (`PUBLIC_API.md`, `runAgentTurn` action ⑩; the
+ * wording is core's `FUNDAMENTALS_RESULT_NOTES`, attached verbatim). The tool description
+ * no longer carries these null rules, so a note that is missing here is a rule the model
+ * never sees. Each condition is the field's own printed state, read from the finished
+ * result (after rounding), and the order is the order of the list in core's contract:
+ *
+ * - `earningsSessionUnknown`: a next date, no session, no second-source date
+ *   (`earningsDateAlt` brings its own "sources disagree" rule) and a date not marked as an
+ *   estimate (an estimate already says the timing is unannounced, `earningsDateNote`).
+ * - `secFieldMissing`: a row's `sec` block exists and one of its three figures is null
+ *   (`form`, `filed` and `accn` are never null); a row with no `sec` is not a finding.
+ * - dividends: exactly one of non-payer / unknown (`null`, ETFs included) / latest payment
+ *   without any trailing figure. A null yield beside a trailing AMOUNT (no price) gets no
+ *   note: the amount is real and the model must not be told to hide it.
+ * - Korean annual dividend: `dpsCommon` null → `krDpsUnknown` only; a non-null DPS with a
+ *   null yield → `krYieldOnLastCloseNull`, so the two pieces of advice never disagree.
+ * - `indexMembershipUnknown`: US results only (the field is always null for Korean stocks).
+ * - `peUntrusted`: no `valuation` block or a null `pe`.
+ *
+ * Returns `[]` when nothing applies; the caller omits the key then (no empty array).
+ */
+function fundamentalsResultNotes(
+    result: FundamentalsNotesInput,
+    isKr: boolean
+): string[] {
+    const { analyst, dividends, valuation } = result;
+    const annual = dividends?.annualReported;
+    return [
+        ...(analyst.nextEarningsDate !== null &&
+        (analyst.earningsSession ?? null) === null &&
+        (analyst.earningsDateAlt ?? null) === null &&
+        analyst.earningsDateConfirmed !== false
+            ? [FUNDAMENTALS_RESULT_NOTES.earningsSessionUnknown]
+            : []),
+        ...(result.recentQuarters?.some(
+            row =>
+                row.sec !== null &&
+                (row.sec.epsDiluted === null ||
+                    row.sec.revenue === null ||
+                    row.sec.revenueYoYPct === null)
+        )
+            ? [FUNDAMENTALS_RESULT_NOTES.secFieldMissing]
+            : []),
+        ...(dividends !== null && isConfirmedNonPayer(dividends)
+            ? [FUNDAMENTALS_RESULT_NOTES.dividendsNonPayer]
+            : []),
+        ...(dividends === null
+            ? [FUNDAMENTALS_RESULT_NOTES.dividendsUnknown]
+            : []),
+        ...(dividends !== null &&
+        dividends.latestExDate !== null &&
+        dividends.trailing12mAmount === null &&
+        dividends.trailingYieldPct === null
+            ? [FUNDAMENTALS_RESULT_NOTES.dividendsTrailingUnknown]
+            : []),
+        ...(annual !== undefined &&
+        annual.yieldOnLastClosePct === null &&
+        annual.dpsCommon !== null
+            ? [FUNDAMENTALS_RESULT_NOTES.krYieldOnLastCloseNull]
+            : []),
+        ...(annual !== undefined && annual.dpsCommon === null
+            ? [FUNDAMENTALS_RESULT_NOTES.krDpsUnknown]
+            : []),
+        ...(!isKr && result.indexMemberships === null
+            ? [FUNDAMENTALS_RESULT_NOTES.indexMembershipUnknown]
+            : []),
+        ...(valuation === null || valuation.pe === null
+            ? [FUNDAMENTALS_RESULT_NOTES.peUntrusted]
+            : []),
+    ];
+}
+
+/**
  * Compact valuation/profitability/growth/health/analyst snapshot for stocks
  * (US and Korean — crypto has no fundamental tab, gated the same way
  * `getOptionsSummaryTool` gates options). One `Promise.allSettled` fan-out so
@@ -329,7 +472,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
         );
         return bars;
     };
-    // KRX 상장주식수 기준 시총·PER·PBR은 한국 종목에만 필요하다(`krListedBasis`).
+    // KRX 상장주식수 기준 시총(`krListedBasis`)과 DART 기준 PER·PBR(`getKrValuation`)은 한국 종목에만 필요하다.
     const isKr = isKrEquitySymbol(symbol);
     // Yahoo (analyst views) is an unofficial source with no redistribution terms: the public API
     // (`allowUnofficialSources: false`) neither calls Yahoo from this tool nor emits the NEW Yahoo-derived
@@ -484,26 +627,35 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             ? quote.price
             : null;
 
-    // KR: yahoo's own share count skews market cap (and PER/PBR, which divide it) —
-    // recompute on KRX listed shares × last completed close. See `krListedBasis`.
+    // KR: yahoo's own share count skews market cap — recompute on KRX listed shares × last
+    // completed close. See `krListedBasis`. (PER/PBR are not rescaled by it: they come from DART below.)
     if (listedSharesR.status === 'rejected')
         logToolDegrade(
             'get_fundamentals',
             'krx listed shares',
             listedSharesR.reason
         );
+    const lastClose = settledOrNull(lastCloseR);
     const krBasis = isKr
         ? krListedBasis({
               providerMarketCap: profile.marketCap,
-              providerPe: keyMetrics?.peRatioTTM ?? null,
-              providerPb: keyMetrics?.pbRatioTTM ?? null,
-              providerPs: keyMetrics?.priceToSalesRatioTTM ?? null,
               providerEvToEbitda:
                   keyMetrics?.enterpriseValueOverEBITDATTM ?? null,
               listedShares: settledOrNull(listedSharesR),
-              lastClose: settledOrNull(lastCloseR),
+              lastClose,
           })
         : null;
+    // KR P/E and P/B: DART consolidated controlling-interest figures on the same basis the fundamental tab
+    // and the analysis inputs use (`getKrValuation`); the provider's own values only when DART cannot be
+    // used, and `basis` says which. Never throws.
+    const krValuation =
+        isKr && keyMetrics
+            ? await getKrValuation(symbol, lastClose, {
+                  pe: keyMetrics.peRatioTTM,
+                  pb: keyMetrics.pbRatioTTM,
+                  epsTtm: keyMetrics.epsTTM,
+              })
+            : null;
     const dividends = withAnnualReported(
         buildDividends(settledOrNull(dividendSourceR), {
             price,
@@ -541,7 +693,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
 
     // Provider ratios arrive as raw floats (P/E 27.622012578616346); trim them
     // to significant digits like every other number the agent quotes.
-    return roundNumbersDeep({
+    const result = roundNumbersDeep({
         /*
          * `asOf`는 **조회 시각**이다 — 데이터가 그 시점 값이라는 뜻이 아니다.
          *
@@ -585,7 +737,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             marketCap: krBasis?.marketCap ?? profile.marketCap,
             currency,
             // KR only. `krx_listed`: marketCap = KRX listed shares ×
-            // `marketCapCloseDate`'s close, and valuation.pe/pb use it too.
+            // `marketCapCloseDate`'s close (valuation.pe/pb do NOT use it: see `valuation.basis`).
             // `provider`: yahoo's own market cap (listed shares or close missing).
             ...(krBasis && {
                 sharesBasis: krBasis.sharesBasis,
@@ -594,14 +746,27 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             }),
         },
         valuation: keyMetrics && {
-            pe: krBasis ? krBasis.pe : keyMetrics.peRatioTTM,
-            pb: krBasis ? krBasis.pb : keyMetrics.pbRatioTTM,
-            // KR on the `krx_listed` basis: ps is rescaled with the market cap, evToEbitda
-            // is null (EV includes net debt we cannot recompute) — see `krListedBasis`.
-            ps: krBasis ? krBasis.ps : keyMetrics.priceToSalesRatioTTM,
+            pe: krValuation ? krValuation.pe : keyMetrics.peRatioTTM,
+            pb: krValuation ? krValuation.pb : keyMetrics.pbRatioTTM,
+            // KR: the provider's own P/S (its market cap is not the KRX one, but P/S is not rescaled any more).
+            ps: keyMetrics.priceToSalesRatioTTM,
+            // KR on the `krx_listed` basis evToEbitda is null (EV includes net debt we cannot
+            // recompute) — see `krListedBasis`.
             evToEbitda: krBasis
                 ? krBasis.evToEbitda
                 : keyMetrics.enterpriseValueOverEBITDATTM,
+            // KR only. `basis` says what `pe`/`pb` are computed on (`source` dart or provider, `ttmEnd`,
+            // `equityAsOf`, `priceDate`); `epsTtm` and `bps` are the per-share figures behind them and
+            // `nullReason` says why a null ratio is null. `profile.sharesBasis` is the share count behind
+            // market cap only.
+            ...(krValuation && {
+                epsTtm: krValuation.epsTtm,
+                bps: krValuation.bps,
+                basis: krValuation.basis,
+                ...(Object.keys(krValuation.nullReason).length > 0 && {
+                    nullReason: krValuation.nullReason,
+                }),
+            }),
         },
         profitability: ratios && {
             roePct:
@@ -698,4 +863,9 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             ),
         },
     });
+    const notes = fundamentalsResultNotes(result, isKr);
+    return {
+        ...withEarningsReactionTally(result),
+        ...(notes.length > 0 && { notes }),
+    };
 };

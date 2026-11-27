@@ -16,7 +16,7 @@ faq:
 
 ## What it is
 
-A breakout is price pushing through a boundary where buyers and sellers had been evenly matched. It is grouped into four types by the kind of boundary.
+A breakout is price pushing through a boundary where buyers and sellers had been evenly matched. There are four types, depending on the boundary.
 
 - **Range breakout**: after moving inside horizontal support and resistance for a long time, price closes outside the boundary. The longer the range, the more weight the breakout is given.
 - **Pattern breakout**: price leaves the boundary of a chart pattern such as a triangle, flag, wedge, rectangle or head and shoulders. Continuation patterns break in the prior direction; reversal patterns break the other way.
@@ -50,7 +50,7 @@ It then counts how many false-breakout filters are passed.
 - Is the last bar's volume at least 1.5 times the average of the last 20 bars?
 - Do RSI and MACD agree with the breakout direction, and is [ADX](/guide/indicators/adx) (a measure of trend strength) rising above 25?
 
-A target is used only when a chart pattern has been detected, in which case it is that pattern's measured target: the price reached if price moves another pattern height, and only a reference value. The point at which the breakout is considered wrong is described only in words, such as the opposite boundary or "1.5 times [ATR](/guide/indicators/atr) (the average range of recent bars)", never as a specific price. If price is still short of the boundary, it also explains what would be needed for a breakout to count.
+A target is used only when a chart pattern has been detected: the pattern's measured target, which is where price would be after moving one more pattern height. It is only a reference. The point at which the breakout is considered wrong is described only in words, such as the opposite boundary or "1.5 times [ATR](/guide/indicators/atr) (the average range of recent bars)", never as a specific price. If price is still short of the boundary, it also explains what would be needed for a breakout to count.
 
 ## Watch out for
 

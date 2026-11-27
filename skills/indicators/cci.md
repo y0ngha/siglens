@@ -11,6 +11,7 @@ gating:
   triggers: [cci_bullish_cross, cci_bearish_cross]
 token_cost: 452
 digest_hash: "ff167cee"
+digest_text_hash: "f06b647a"
 ---
 
 ## Overview

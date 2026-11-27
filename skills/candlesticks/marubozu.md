@@ -11,6 +11,7 @@ gating:
   triggers: [bullish_marubozu, bearish_marubozu]
 token_cost: 321
 digest_hash: "f893e663"
+digest_text_hash: "94934912"
 ---
 
 ## Overview

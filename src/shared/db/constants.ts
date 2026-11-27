@@ -41,6 +41,7 @@ export const MAIL_ALERT_CONSENT_SOURCE_VALUES = [
     'fear_greed',
     'signal_hub',
     'settings',
+    'agent_chat',
 ] as const;
 export type MailAlertConsentSourceValue =
     (typeof MAIL_ALERT_CONSENT_SOURCE_VALUES)[number];
@@ -60,6 +61,39 @@ export const MAIL_ALERT_DELIVERY_STATUS_VALUES = [
     'sent',
     'failed',
 ] as const;
+
+/** `price_alerts.market`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const PRICE_ALERT_MARKET_VALUES = ['us', 'kr'] as const;
+export type PriceAlertMarketValue = (typeof PRICE_ALERT_MARKET_VALUES)[number];
+
+/** `price_alerts.condition`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const PRICE_ALERT_CONDITION_VALUES = [
+    'enter_zone',
+    'close_below',
+    'close_above',
+] as const;
+export type PriceAlertConditionValue =
+    (typeof PRICE_ALERT_CONDITION_VALUES)[number];
+
+/** `price_alerts.approach`의 허용 값(구간 알림에만 쓴다) — 마이그레이션 CHECK와 같다. */
+export const PRICE_ALERT_APPROACH_VALUES = [
+    'from_above',
+    'from_below',
+] as const;
+export type PriceAlertApproachValue =
+    (typeof PRICE_ALERT_APPROACH_VALUES)[number];
+
+/** `price_alerts.basis`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const PRICE_ALERT_BASIS_VALUES = [
+    'analysis_entry_zone',
+    'analysis_invalidation',
+    'price_level',
+] as const;
+export type PriceAlertBasisValue = (typeof PRICE_ALERT_BASIS_VALUES)[number];
+
+/** `price_alerts.status`의 허용 값 — 마이그레이션 CHECK와 같다. */
+export const PRICE_ALERT_STATUS_VALUES = ['active', 'fired'] as const;
+export type PriceAlertStatusValue = (typeof PRICE_ALERT_STATUS_VALUES)[number];
 
 /** `signal_scan_cursors.last_outcome`의 허용 값 — 마이그레이션 CHECK와 같다. */
 export const SIGNAL_SCAN_OUTCOME_VALUES = [

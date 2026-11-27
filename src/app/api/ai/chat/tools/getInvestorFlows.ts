@@ -22,12 +22,16 @@ import {
     type KrInvestorTrendView,
 } from '@/app/api/ai/chat/tools/krInvestorTrend';
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
-import type {
-    CollectingArms,
-    InvestorFlowsDegradedPart,
-    InvestorFlowsPipelineReadiness,
+import {
+    HOLDER_QUERY_MAX_CHARS,
+    type CollectingArms,
+    type HolderLookupView,
+    type InvestorFlowsDegradedPart,
+    type InvestorFlowsPipelineReadiness,
 } from '@/entities/investor-flows/model';
+import { getHolderLookup } from '@/entities/investor-flows/server/getHolderLookup';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { logToolDegrade } from './logToolDegrade';
 
 const BASE_SOURCE =
     'SEC 13F (institutions and their put/call options, quarterly, filed up to ~45 days after quarter end), Form 4 and 13D/13G via FMP, SEC Form 144, registration/offering filings and fails-to-deliver';
@@ -180,6 +184,33 @@ function ownershipView(shares: YahooOwnershipShares | null) {
 /** 보유 비율(Yahoo)을 실을 때 결과 `source`에 덧붙이는 출처 — 모델이 SEC 13F 값으로 오인하지 않게 한다. */
 const OWNERSHIP_SOURCE_NOTE = '; ownership shares: Yahoo Finance aggregate';
 
+/** `holder` 인자 → 조회어. 문자열이 아니거나 비어 있으면 `null`(조회 안 함), 앞뒤 공백을 떼고 `HOLDER_QUERY_MAX_CHARS`로 자른다. */
+export function readHolderQuery(raw: unknown): string | null {
+    if (typeof raw !== 'string') return null;
+    const query = raw.trim().slice(0, HOLDER_QUERY_MAX_CHARS).trim();
+    return query === '' ? null : query;
+}
+
+/**
+ * 이름 지정 기관의 13F 포지션 조회 결과를 `holderLookup` 키 하나짜리 객체로 낸다. `holder`가 없으면 `{}`(키 자체가 없다 — 결과가
+ * 예전과 같다). `period`는 같은 결과의 보유 기관 목록이 쓴 분기(`topHoldersPeriod`)라 조회가 그 목록과 다른 분기를 말하지 못한다.
+ * 던지지 않는다: DB 실패는 로그만 남기고 `{}`로 낮춰 나머지 수급 결과는 살린다.
+ */
+async function holderLookupField(
+    symbol: string,
+    raw: unknown,
+    period: string | null
+): Promise<{ holderLookup?: HolderLookupView }> {
+    const query = readHolderQuery(raw);
+    if (query === null) return {};
+    try {
+        return { holderLookup: await getHolderLookup(symbol, query, period) };
+    } catch (error) {
+        logToolDegrade('get_investor_flows', 'holder lookup', error);
+        return {};
+    }
+}
+
 /**
  * 수급 요약. 미국 주식은 기관 13F·풋콜 · 내부자 Form 4·Form 144 · 5% 대량보유 · 증자·희석 공시 · FINRA 공매도 · SEC FTD ·
  * Reg SHO 과열 목록 · 숏스퀴즈 점수, 한국 주식은 DART 대량보유(5%)·임원·주요주주 소유보고·거래계획보고서(`krResult`, `market: 'kr'`)다.
@@ -224,6 +255,7 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
     if (result.market === 'kr')
         return {
             ...(await krResult(symbol, result, krTrendPending)),
+            ...(await holderLookupField(symbol, args.holder, null)),
             ...(rt.allowUnofficialSources === false
                 ? {}
                 : { ownershipShares: null }),
@@ -254,10 +286,17 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
             noData: true,
             ...(dataStatus === undefined ? {} : { dataStatus }),
             ...ownership,
+            ...(await holderLookupField(symbol, args.holder, null)),
         };
 
     const temporarilyUnavailable = buildTemporarilyUnavailable(
         snapshot.degraded
+    );
+    const listed = maskUncollectedSections(snapshot, readiness);
+    const holderField = await holderLookupField(
+        symbol,
+        args.holder,
+        listed.institutional.topHoldersPeriod
     );
     return {
         asOf: snapshot.asOf,
@@ -269,10 +308,8 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
         ...(temporarilyUnavailable === undefined
             ? {}
             : { temporarilyUnavailable }),
-        ...summarizeInvestorFlows(
-            maskUncollectedSections(snapshot, readiness),
-            scorecard
-        ),
+        ...summarizeInvestorFlows(listed, scorecard),
         ...ownership,
+        ...holderField,
     };
 };

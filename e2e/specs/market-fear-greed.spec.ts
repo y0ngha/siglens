@@ -158,7 +158,7 @@ test.describe('market fear & greed', () => {
     });
 });
 
-const CRYPTO_PAGE_TITLE = '코인 공포탐욕지수 - 오늘 암호화폐 시장 심리';
+const CRYPTO_PAGE_TITLE = '코인 공포탐욕지수: 오늘 암호화폐 시장 심리';
 
 /**
  * `/fear-greed/crypto` — 암호화폐 시장 공포탐욕지수. `fetchCryptoDailyBars`가

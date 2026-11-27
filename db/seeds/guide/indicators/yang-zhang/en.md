@@ -14,7 +14,7 @@ faq:
 
 ## How it's calculated
 
-In one line: it folds in the overnight gap, the open-to-close move and the intraday high and low, so it measures how much price actually swung more accurately than the close alone.
+Yang-Zhang volatility folds in the overnight gap, the open-to-close move and the intraday high and low, so it measures how much price actually swung more accurately than closing prices alone can.
 
 It blends three kinds of movement. For each, it finds how widely that move was spread over recent bars (its variance).
 

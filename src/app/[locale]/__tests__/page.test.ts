@@ -154,7 +154,7 @@ describe('홈 generateMetadata', () => {
             const twitter = meta.twitter as Record<string, unknown> | undefined;
 
             // 이미지는 `(home)/opengraph-image.tsx`·`twitter-image.tsx` 파일 컨벤션이
-            // 채운다 — 옛 공용 `/og-image.png`를 다시 박으면 카드가 이중이 된다.
+            // 채운다 — 공용 `/og-image.png`를 다시 박으면 카드가 이중이 된다.
             expect(og?.['images']).toBeUndefined();
             expect(og?.['type']).toBe('website');
             expect(og?.['url']).toBeTruthy();

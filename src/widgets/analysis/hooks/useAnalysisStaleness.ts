@@ -3,21 +3,47 @@
 /**
  * 분석 결과가 오래됐는지(stale 배너 노출 여부) 판정하는 훅.
  */
-import { startTransition, useEffect, useEffectEvent, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import type { MarketSessionSpec, Timeframe } from '@y0ngha/siglens-core';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 
-/**
- * 탭이 다시 보이게 될 때마다 `onVisible`을 부른다. 리스너 등록·해제는 훅 본문 밖에 둔다(EF-3).
- * 반환값은 해제 함수다.
- */
-function subscribeBecameVisible(onVisible: () => void): () => void {
-    const handle = (): void => {
-        if (document.visibilityState === 'visible') onVisible();
-    };
-    document.addEventListener('visibilitychange', handle);
-    return () => document.removeEventListener('visibilitychange', handle);
+/** 판정 기준 시각을 담는 작은 외부 저장소 — `useSyncExternalStore`가 구독한다. */
+interface NowStore {
+    subscribe: (onChange: () => void) => () => void;
+    /** `key`가 바뀌면(새 분석) 시각을 새로 잡는다. 같은 key로는 같은 `Date` 인스턴스를 돌려준다. */
+    getSnapshot: (key: string | undefined) => Date;
 }
+
+/**
+ * 첫 `getSnapshot` 호출 때 현재 시각을 잡고, 탭이 다시 보이는 순간(`visibilitychange`)에
+ * 새로 잡아 구독자에게 알린다. 리스너 등록·해제는 훅 본문 밖에 둔다(EF-3).
+ */
+function createNowStore(): NowStore {
+    let now: Date | null = null;
+    let nowKey: string | undefined;
+    return {
+        subscribe: onChange => {
+            const handle = (): void => {
+                if (document.visibilityState !== 'visible') return;
+                now = new Date();
+                onChange();
+            };
+            document.addEventListener('visibilitychange', handle);
+            return () =>
+                document.removeEventListener('visibilitychange', handle);
+        },
+        getSnapshot: key => {
+            if (now === null || nowKey !== key) {
+                now = new Date();
+                nowKey = key;
+            }
+            return now;
+        },
+    };
+}
+
+/** 서버 렌더·hydration 첫 패스에는 시각이 없다 — 서버 시각은 ISR 캐시 뒤에서 의미가 없다. */
+const getServerNow = (): null => null;
 
 interface UseAnalysisStalenessInput {
     analyzedAt: string | undefined;
@@ -36,13 +62,14 @@ interface UseAnalysisStalenessInput {
  * `analyzedAt`이 타임프레임 임계값보다 오래됐으면 `true`.
  *
  * SSR/hydration mismatch 방지 — 서버 렌더 시점의 `new Date()`와 클라이언트
- * hydration 시점이 다를 수 있어 현재 시각은 client mount 이후에만 캡처한다(`now`가
- * null인 동안은 `false`). 인터벌 타이머는 두지 않는다 — 다음 render(인터랙션·신규
- * 분석·라우트 변경)나 탭이 다시 보이는 순간(`visibilitychange`)에 갱신된다.
+ * hydration 시점이 다를 수 있어 hydration 첫 패스는 서버 스냅샷(`null`, `false`)으로
+ * 맞춘다. 그 뒤(그리고 hydration 없이 클라이언트에서 처음 마운트되는 패널, 예: 새 분석이
+ * 도착해 폴백이 실제 분석으로 바뀌는 경우)에는 첫 렌더에서 곧바로 현재 시각을 읽는다.
+ * 이전에는 마운트 뒤 effect에서 시각을 잡아 패널이 그려진 다음 프레임에 배너가 끼어들었고,
+ * 그 ~60px 밀림이 CLS였다.
  *
- * useEffectEvent는 deps 없이 최신 값을 읽게 할 뿐 set-state-in-effect 린트를 피하게
- * 하지 않는다(oxlint가 그 본문의 setState도 추적). 린트를 통과시키는 것은
- * startTransition 래핑이다 — 그 콜백 안의 setState는 동기 호출로 취급되지 않는다.
+ * 시각은 `analyzedAt`이 바뀔 때와 탭이 다시 보이는 순간에 갱신된다.
+ * 인터벌 타이머는 두지 않는다.
  */
 export function useAnalysisStaleness({
     analyzedAt,
@@ -50,22 +77,17 @@ export function useAnalysisStaleness({
     session,
     enabled,
 }: UseAnalysisStalenessInput): boolean {
-    const [now, setNow] = useState<Date | null>(null);
-
-    const captureNow = useEffectEvent((): void => {
-        startTransition(() => {
-            setNow(new Date());
-        });
-    });
-
-    useEffect(() => {
-        captureNow();
-    }, [analyzedAt]);
-
-    // 장 마감을 넘겨 열어 둔 탭은 타이머가 없어 `now`가 그대로다. 탭이 다시 보일 때 한 번
-    // 다시 잡아, 방치된 사이 마감·시간 경과가 경고에 반영되게 한다. 구독 콜백 안의 setState라
-    // 렌더 루프를 만들지 않는다.
-    useEffect(() => subscribeBecameVisible(captureNow), []);
+    const [store] = useState(createNowStore);
+    // `analyzedAt`을 키로 넘겨 새 분석이 도착한 렌더에서 시각을 다시 잡는다.
+    const getSnapshot = useCallback(
+        () => store.getSnapshot(analyzedAt),
+        [store, analyzedAt]
+    );
+    const now = useSyncExternalStore(
+        store.subscribe,
+        getSnapshot,
+        getServerNow
+    );
 
     if (!enabled || !analyzedAt || now === null) return false;
     return isAnalysisStale(analyzedAt, timeframe, now, session);

@@ -90,10 +90,10 @@ describe('CrossLinkCards', () => {
     it('renders descriptions for all pages', () => {
         render(<CrossLinkCards symbol="AAPL" current="chart" />);
         expect(
-            screen.getByText('기술적 지표 + AI 종합 리포트')
+            screen.getByText('기술적 지표와 AI 종합 리포트')
         ).toBeInTheDocument();
         expect(
-            screen.getByText('실시간 뉴스 + 애널리스트 의견 분석')
+            screen.getByText('실시간 뉴스와 애널리스트 의견 분석')
         ).toBeInTheDocument();
     });
 });
@@ -133,9 +133,15 @@ describe('CrossLinkCards — crypto profile', () => {
                 marketProfile="crypto"
             />
         );
-        expect(screen.queryByText('4축 통합 AI 결론 + 시나리오')).toBeNull();
         expect(
-            screen.getByText('차트, 뉴스, 시장 분위기 통합 AI 결론 + 시나리오')
+            screen.queryByText(
+                '차트, 실적, 뉴스, 매수 분위기를 묶은 AI 결론과 시나리오'
+            )
+        ).toBeNull();
+        expect(
+            screen.getByText(
+                '차트, 뉴스, 시장 분위기를 묶은 AI 결론과 시나리오'
+            )
         ).toBeInTheDocument();
     });
 

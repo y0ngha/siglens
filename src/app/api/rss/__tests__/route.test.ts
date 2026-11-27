@@ -36,7 +36,7 @@ vi.mock('@/app/api/sitemap/_shared/childEntries', () => ({
 }));
 
 import nextConfig from '../../../../../next.config';
-import { GET } from '@/app/api/rss/route';
+import { GET, RSS_PARTIAL_CACHE_CONTROL } from '@/app/api/rss/route';
 import { RSS_FEED_PATH } from '@/shared/config/rssFeed';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import {
@@ -47,9 +47,9 @@ import {
 import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import {
     SITEMAP_CACHE_CONTROL,
-    SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
+import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
 import { hashHubBody } from '@/shared/cache/hubContentStamp';
 import { SITE_URL } from '@/shared/lib/seo';
 
@@ -271,6 +271,55 @@ describe('GET /api/rss', () => {
         expect(itemGuids(xml)).toHaveLength(2 + NEWS_CATEGORIES.length);
     });
 
+    it('크론이 새 스탬프를 쓴 직후(reader는 아직 이전 본문)에도 항목이 빠지지 않는다 — 직전 항목의 guid·pubDate 그대로', async () => {
+        const OLD_AT = '2026-10-03T03:00:00.000Z';
+        const oldBody = { summary: '이전 본문입니다.' };
+        const current = bodies();
+        // reader(unstable_cache)는 옛 본문을 돌려주고, 스탬프는 이미 새 본문으로 넘어갔다.
+        current[rssMarketSurface('us')] = oldBody;
+        wirePageReaders(current);
+        const stored = bodies();
+        mocks.readHubContentStamp.mockImplementation(async (surface: string) =>
+            surface === rssMarketSurface('us')
+                ? {
+                      hash: hashHubBody(US_BODY),
+                      at: STAMP_AT,
+                      prev: { hash: hashHubBody(oldBody), at: OLD_AT },
+                  }
+                : { hash: hashHubBody(stored[surface]), at: STAMP_AT }
+        );
+
+        const res = await GET(request());
+        const xml = await res.text();
+
+        expect(itemGuids(xml)).toHaveLength(3 + NEWS_CATEGORIES.length);
+        expect(xml).toContain(
+            `<guid isPermaLink="false">${SITE_URL}/market#${hashHubBody(oldBody).slice(0, 12)}</guid>`
+        );
+        expect(xml).toContain(
+            `<pubDate>${new Date(OLD_AT).toUTCString()}</pubDate>`
+        );
+        expect(res.headers.get('Cache-Control')).toBe(SITEMAP_CACHE_CONTROL);
+    });
+
+    it('항목이 하나라도 빠진 피드는 짧게만 캐시한다 — 줄어든 피드가 CDN에 오래 남지 않는다', async () => {
+        const current = bodies();
+        delete current[rssNewsSurface('stock')];
+        wirePageReaders(current);
+
+        const res = await GET(request());
+
+        expect(res.headers.get('Cache-Control')).toBe(
+            RSS_PARTIAL_CACHE_CONTROL
+        );
+        expect(console.error).toHaveBeenCalledWith(
+            `[rss] ${rssNewsSurface('stock')} dropped out of feed`
+        );
+        expect(RSS_PARTIAL_CACHE_CONTROL).not.toContain(
+            'stale-while-revalidate'
+        );
+    });
+
     it('스탬프가 없으면 항목을 내지 않는다 — 날짜를 지어내지 않는다', async () => {
         const stored = bodies();
         delete stored[RSS_ECONOMY_SURFACE];
@@ -323,6 +372,10 @@ describe('GET /api/rss', () => {
 
         expect(xml).not.toContain(`<link>${SITE_URL}/news/forex</link>`);
         expect(xml).toContain(`<link>${SITE_URL}/news/stock</link>`);
+        // 설계상 빠진 허브는 "줄어든 피드"가 아니다 — 긴 캐시를 유지하고 로그도 없다.
+        const res = await GET(request());
+        expect(res.headers.get('Cache-Control')).toBe(SITEMAP_CACHE_CONTROL);
+        expect(console.error).not.toHaveBeenCalled();
     });
 
     it('항목이 하나도 없어도 유효한 빈 피드를 200으로 낸다', async () => {
@@ -348,9 +401,7 @@ describe('GET /api/rss', () => {
         const res = await GET(request());
 
         expect(res.status).toBe(503);
-        expect(res.headers.get('Retry-After')).toBe(
-            SITEMAP_RETRY_AFTER_SECONDS
-        );
+        expect(res.headers.get('Retry-After')).toBe(RETRY_AFTER_SECONDS);
         expect(res.headers.get('Cache-Control')).toBeNull();
         expect(await res.text()).toBe(SITEMAP_UNAVAILABLE_BODY);
         expect(console.error).toHaveBeenCalledWith(

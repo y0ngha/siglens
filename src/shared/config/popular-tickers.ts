@@ -1,5 +1,7 @@
 import type { CategoryId, TickerCategory } from '@/shared/lib/types';
 
+// 심볼은 앱 정식 표기다(`BRK.B`) — URL·sitemap이 이 값으로 만들어진다. FMP·Yahoo 표기(`BRK-B`)는
+// 요청 경계에서만 쓴다(`toFmpSymbol`/`toYahooSymbol`, 유입은 `fromFmpSymbol`). POPULAR_OPTIONS_TICKERS도 같다.
 // TODO(seo): 현재 수동 관리 — 매일 새벽 FMP `/stable/stock-list`와 동기화하는 cron job 검토.
 //            상장폐지된 종목이 sitemap에 남아 404를 유발하는 케이스 모니터링 필요.
 export const TICKER_CATEGORIES: readonly TickerCategory[] = [
@@ -538,7 +540,7 @@ export const POPULAR_TICKERS = [
     'MNST',
     'SNY',
     'STX',
-    'BRK-B',
+    'BRK.B',
     'HWM',
     'PLD',
     'ADP',

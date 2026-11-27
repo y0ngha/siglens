@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { getTranslations } from 'next-intl/server';
 import type { GuideEntry } from '@/entities/guide/types';
 import { LIVE_ANCHOR_HEADING } from '@/shared/config/guideLive';
@@ -18,7 +19,7 @@ import {
 } from './lib/guideBrowse';
 import { loadGuideCategoryCopy } from './lib/guideCopy';
 import { patternTitlesByPath, resolveDemoSource } from './lib/guideEntry';
-import type { LiveSymbolGroup } from './lib/liveSymbols';
+import { hubSlugsFor, type LiveSymbolGroup } from './lib/liveSymbols';
 import { splitMarkdownAtHeading } from './lib/splitMarkdown';
 import { GuideEntryAside } from './ui/entry/GuideEntryAside';
 import { GuideEntryCardSection } from './ui/entry/GuideEntryCardSection';
@@ -37,6 +38,11 @@ interface GuideEntryPageProps {
     readonly catalog: readonly GuideEntry[];
     /** 라우트 로더(`loadGuideLiveSymbols`)의 결과. null이면 모듈을 그리지 않는다. */
     readonly liveSymbols: readonly LiveSymbolGroup[] | null;
+    /**
+     * 이 항목이 설명하는 신호의 과거 기록 표(라우트가 `views/signal-record`로 만들어 넘긴다 — 뷰끼리는
+     * 서로 import하지 않는다). 비어 있으면 그리지 않는다. 라이브 종목 모듈 바로 뒤에 놓인다.
+     */
+    readonly signalRecords?: readonly ReactNode[];
 }
 
 const ANSWERED_BY_HEADING_ID = 'guide-answered-by-heading';
@@ -55,6 +61,7 @@ export async function GuideEntryPage({
     entry,
     catalog,
     liveSymbols,
+    signalRecords = [],
 }: GuideEntryPageProps) {
     const [t, tFab, tLegal, copy] = await Promise.all([
         getTranslations({ locale, namespace: 'views.guide' }),
@@ -111,8 +118,10 @@ export async function GuideEntryPage({
                             locale={locale}
                             groups={liveSymbols}
                             patternTitles={patternTitlesByPath(catalog)}
+                            hubSlugs={hubSlugsFor(entry, catalog)}
                         />
                     )}
+                    {signalRecords}
                     {body.after === null ? null : (
                         // GuideMarkdown은 첫 자식의 위 여백을 지운다(`[&>:first-child]:mt-0`).
                         // 둘째 조각의 첫 h2는 분할 전엔 첫 자식이 아니었으니 h2 기본 여백

@@ -221,8 +221,8 @@ describe('listReportedEarningsDates (실제로 발표된 실적일만)', () => {
 
         expect(dates).toEqual(['2026-04-30', '2026-07-30']);
         const { sql, params } = new PgDialect().sqlToQuery(whereArg!);
-        expect(sql).toContain(
-            '("earnings_reports"."eps_actual" is not null or "earnings_reports"."revenue_actual" is not null)'
+        expect(sql).toBe(
+            '("earnings_reports"."symbol" = $1 and "earnings_reports"."earnings_date" >= $2 and ("earnings_reports"."eps_actual" is not null or "earnings_reports"."revenue_actual" is not null))'
         );
         expect(params).toEqual(['AAPL', '2024-10-18']);
     });

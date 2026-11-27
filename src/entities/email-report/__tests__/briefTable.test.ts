@@ -16,6 +16,7 @@ function row(overrides: Partial<SymbolBrief> = {}): {
     return {
         brief: {
             symbol: 'MSFT',
+            names: null,
             close: 1234.5,
             changePercent: 1.5,
             trend: 'uptrend',

@@ -20,7 +20,7 @@ vi.mock('server-only', () => ({}));
  *   docker run -d --name <unique> -e POSTGRES_PASSWORD=x -e POSTGRES_USER=siglens -e POSTGRES_DB=siglens_test \
  *     -p 127.0.0.1:55432:5432 --pull never postgres:17-alpine
  *   TEST_DATABASE_URL=postgres://siglens:x@127.0.0.1:55432/siglens_test yarn test mailAlert.db.test.ts
- * 접속 대상이 로컬이 아니면 거부하고, 임시 스키마에 실제 마이그레이션(`0063_mail_alerts.sql`)을
+ * 접속 대상이 로컬이 아니면 거부하고, 임시 스키마에 실제 마이그레이션(`0063_mail_alerts.sql`, `0065_price_alerts.sql`)을
  * 적용한 뒤 끝나면 스키마를 지운다. `users`는 FK에 필요한 열만 둔 최소 테이블이다.
  */
 const URL = process.env.TEST_DATABASE_URL;
@@ -158,6 +158,8 @@ describe.skipIf(!URL)(
                 'CREATE TABLE "users" ("id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, "email" varchar(320) NOT NULL UNIQUE, "email_verified" boolean DEFAULT false NOT NULL)'
             );
             await runInOrder(migration('0063_mail_alerts.sql'));
+            // 발송 대상 조회와 마지막 항목 제거가 price_alerts를 읽는다 — 0065가 그 테이블을 만든다.
+            await runInOrder(migration('0065_price_alerts.sql'));
         });
 
         afterAll(async () => {

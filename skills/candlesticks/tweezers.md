@@ -11,6 +11,7 @@ gating:
   triggers: [tweezers_top, tweezers_bottom]
 token_cost: 261
 digest_hash: "184f5dda"
+digest_text_hash: "ffb05829"
 ---
 
 ## Overview

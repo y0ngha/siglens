@@ -80,6 +80,7 @@ describe('guestTurn', () => {
             userImages: [],
             userMessageId: null,
             userMessageSeq: null,
+            turnAtRowId: null,
             history,
             portfolioSymbols: [],
         });
@@ -156,6 +157,7 @@ describe('prepareMemberTurn', () => {
             userMessage: 'hello',
             userMessageId: 'u-1',
             userMessageSeq: 1,
+            turnAtRowId: 'u-1',
             portfolioSymbols: ['AAPL'],
         });
         expect(repo.appendUserMessage).toHaveBeenCalledWith('c1', 'hello', []);
@@ -189,6 +191,8 @@ describe('prepareMemberTurn', () => {
         expect(out).toMatchObject({
             userMessage: 'q2',
             userMessageId: null,
+            // 다시 쓰는 마지막 user 행 — 그 행의 옛 시계 메모를 이번 턴 메모로 덮어쓴다.
+            turnAtRowId: ROW(3, 'user', 'q2').id,
             history: [
                 { role: 'user', content: 'q1' },
                 { role: 'assistant', content: 'a1' },

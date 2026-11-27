@@ -10,7 +10,8 @@ gating:
   signal_kind: event
   triggers: [macd_bullish_cross, macd_bearish_cross]
 token_cost: 1330
-digest_hash: "df4ccbb6"
+digest_hash: "f77662c1"
+digest_text_hash: "eaa1261e"
 ---
 
 ## Overview
@@ -87,7 +88,7 @@ Cross-check the cited `stage N` against the sign pattern (+/−) of the cited `u
 
 **Step 3 — Assess transition imminence**:
 
-Using the CITED `upper`/`middle`/`lower` values, note which one is approaching zero from its current side — this indicates an imminent EMA crossover (stage change). The closer a cited value is to zero relative to its recent range, the higher the probability of an imminent stage transition.
+Using the CITED `upper`/`middle`/`lower` values, note which one is approaching zero from its current side — this indicates an imminent EMA crossover (stage change). The closer a cited value is to zero relative to its recent range, the nearer the stage transition.
 
 **Step 4 — Confirm with MACD(12,26,9)**:
 
@@ -188,7 +189,7 @@ Forward cycle 1→2→3→4→5→6→1. Reverse: uptrend reverse (S1→2→1, L
 ### Stage identification steps
 1. Read upper/middle/lower/stage from the cited `MACD cycle` line — never compute from `- EMA:` values.
 2. Confirm cited stage against sign pattern (+/−) of the cited values; if two adjacent values have opposite signs and one is very close to zero → transition in progress.
-3. Transition imminence: among the CITED values, note which is approaching zero from its current side = imminent EMA crossover; closer to zero relative to recent range = higher probability.
+3. Transition imminence: among the CITED values, note which is approaching zero from its current side = imminent EMA crossover; closer to zero relative to recent range = transition nearer.
 4. Confirm with MACD(12,26,9) as MACD(중) momentum proxy: hist>0 growing = 중 momentum rising (bullish for stage); hist>0 shrinking = weakening (S6→1 or S2→3 risk); hist<0 growing (more negative) = bearish building; hist<0 shrinking (toward zero) = potential S4→5 or S3→4 imminent.
 
 ### Signal interpretation — Long Entry Timing (3 levels; LONG only, no short entries)

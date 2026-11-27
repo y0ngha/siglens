@@ -36,7 +36,7 @@ describe('VocPromptModal', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                '별점과 한 줄 의견을 남겨 주시면 서비스 개선에 바로 반영할게요.'
+                '별점과 한 줄 의견을 남겨 주시면 서비스 개선에 반영할게요.'
             )
         ).toBeInTheDocument();
         expect(

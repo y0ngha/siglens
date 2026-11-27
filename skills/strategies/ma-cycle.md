@@ -8,20 +8,21 @@ confidence_weight: 0.55
 gating:
   tier: gated
   signal_kind: event
-  triggers: [golden_cross, death_cross]
-token_cost: 1642
-digest_hash: "02561d8f"
+  triggers: [short_ma_bullish_cross, short_ma_bearish_cross, golden_cross, death_cross]
+token_cost: 1643
+digest_hash: "46990249"
+digest_text_hash: "3b244ebb"
 ---
 
 ## Overview
 
-The MA Cycle Analysis framework classifies the current market into one of six stages based on the ordering of the short-term (MA5), medium-term (MA20), and long-term (MA60) moving averages, and provides a response strategy appropriate for each stage. Granville's Law identifies eight buy/sell signals by analyzing the crossover and positional relationship between the short-term line and a reference line (medium or long-term). Analysis proceeds through three dimensions — ordering, spacing, and slope — to assess the current situation and evaluate the probability of transitioning to the next stage.
+The MA Cycle Analysis framework classifies the current market into one of six stages based on the ordering of the short-term (MA5), medium-term (MA20), and long-term (MA60) moving averages, and provides a response strategy appropriate for each stage. Granville's Law identifies eight buy/sell signals by analyzing the crossover and positional relationship between the short-term line and a reference line (medium or long-term). Analysis proceeds through three dimensions — ordering, spacing, and slope — to assess the current situation and evaluate how close the transition to the next stage is.
 
 ---
 
 ## MA Cycle Stage Definitions
 
-Stages transition at crossover (cross) events and generally follow a forward sequence (1→2→3→4→5→6→1). Reverse transitions are possible but have lower probability and always return to the forward sequence.
+Stages transition at crossover (cross) events and generally follow a forward sequence (1→2→3→4→5→6→1). Reverse transitions are possible but are less common and always return to the forward sequence.
 
 | Stage | Name | Ordering (top → bottom) | Entry Cross | Duration |
 |---|---|---|---|---|
@@ -38,7 +39,7 @@ Stages transition at crossover (cross) events and generally follow a forward seq
 
 ## Stage-by-Stage Response Strategy (3-Dimensional Analysis)
 
-**3-Dimensional Analysis Principle**: Use *ordering* to identify the current situation, *spacing* to assess the probability of transitioning to the next stage, and *slope* to identify false signals.
+**3-Dimensional Analysis Principle**: Use *ordering* to identify the current situation, *spacing* to assess how close the next-stage transition is, and *slope* to identify false signals.
 
 ### Stage 1: Stable Uptrend
 
@@ -147,7 +148,7 @@ A temporary bounce is a transient recovery within a downtrend — the exact oppo
 ## MA Spacing Pattern Analysis
 
 ### Stable Trend
-All three lines nearly parallel → high probability the current trend will continue for some time.
+All three lines nearly parallel → the current trend is more likely to persist for now.
 
 ### Accelerating Trend
 The gap between the three lines is widening → the trend has building momentum.
@@ -155,7 +156,7 @@ The gap between the three lines is widening → the trend has building momentum.
 - **Late expansion**: risk of a sharp reversal after reaching a top (uptrend) or bottom (downtrend)
 
 ### Decelerating Trend
-The gap between the three lines is narrowing → the trend is losing momentum. Increased probability of transitioning to the next stage.
+The gap between the three lines is narrowing → the trend is losing momentum. The next-stage transition is nearer.
 
 ### Identifying Range-Bound Breakouts
 - During a range-bound market, the three lines move sideways and converge (convergence of the medium and long-term lines is the key point)
@@ -200,7 +201,7 @@ When analyzing the current MA Cycle results, include the following:
 
 <!-- PROMPT_DIGEST:START -->
 이동평균선 대순환 분석 (confidence_weight 0.55)
-Classify market into 6 stages by ordering of short MA5 / medium MA20 / long MA60. Granville's Law gives 8 buy/sell signals. Analyze via 3 dimensions: ordering (identify situation), spacing (probability of next-stage transition), slope (spot false signals).
+Classify market into 6 stages by ordering of short MA5 / medium MA20 / long MA60. Granville's Law gives 8 buy/sell signals. Analyze via 3 dimensions: ordering (identify situation), spacing (how close the next-stage transition is), slope (spot false signals).
 Simple MA-crossover edges vanished out of sample after 1986 (Sullivan, Timmermann & White 1999) — use as a regime description, not a timing edge.
 
 ### DATA SOURCE RULE (mandatory)
@@ -213,7 +214,7 @@ When ## Indicator State has a `- MA cycle (MA5/MA20/MA60):` line, copy its order
 4 Stable Downtrend | Long>Medium>Short | Medium dead-crosses Long | Long
 5 Upside Shift 1 (End of Bear) | Long>Short>Medium | Short golden-crosses Medium | Short
 6 Upside Shift 2 (Entrance to Bull) | Short>Long>Medium | Short golden-crosses Long | Short
-Forward sequence 1→2→3→4→5→6→1; reverse possible but lower probability, always returns to forward. Range-bound: Stages 1&4 brief + 2,3,5,6 prolonged.
+Forward sequence 1→2→3→4→5→6→1; reverse possible but less common, always returns to forward. Range-bound: Stages 1&4 brief + 2,3,5,6 prolonged.
 
 ### Stage response strategy
 S1: all 3 MAs rising, buy edge; widening gaps → aggressive buy; strong while med/long rising; →S2 when short dead-crosses medium.
@@ -241,7 +242,7 @@ Occurs: (1) S1→S2/S3 then reverse to S1 continuing up; (2) during S1, only pri
 Occurs: (1) S4→S5/S6 then reverse to S4 continuing down; (2) during S4, only price rises above med/long then returns. Key: even if short/price rose, if med+long keep falling = temp bounce. Sell timing: short that rose above medium falls again and widens gap in long>medium>short.
 
 ### MA Spacing patterns
-Stable: 3 lines near-parallel → trend continues. Accelerating: gaps widening → building momentum; early expansion = strong continuation, late expansion = risk of sharp reversal after top/bottom. Decelerating: gaps narrowing → losing momentum, higher next-stage transition probability.
+Stable: 3 lines near-parallel → trend more likely to persist for now. Accelerating: gaps widening → building momentum; early expansion = strong continuation, late expansion = risk of sharp reversal after top/bottom. Decelerating: gaps narrowing → losing momentum, next-stage transition nearer.
 Range breakout: lines sideways & converge (med/long convergence is key). Upside breakout: lines rise with widening gaps + short stays above medium without re-crossing. Downside: lines fall with widening gaps + short stays below medium. False: apparent breakout but short re-crosses medium → range continues; don't enter prematurely.
 
 ### AI instructions (narrative summary, include)

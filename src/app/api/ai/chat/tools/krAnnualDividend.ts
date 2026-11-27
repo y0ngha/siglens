@@ -16,7 +16,10 @@ import { logToolDegrade } from './logToolDegrade';
  * 현재가에 의존하는 계산(`yieldOnLastClosePct`)은 `withAnnualReported`(`./dividends.ts`)가 나중에 한다.
  *
  * - `fiscalYear`: 그 값이 속한 사업연도(예: 2025 = 2025년 귀속 배당, 보통 이듬해 3월 정기주총에서 확정·사업보고서 공시).
- * - `dpsCommon`: **보통주** 1주당 현금배당금(원, 연간 합계). 보고서는 있으나 보통주 현금배당이 없으면 null.
+ * - `dpsCommon`: **보통주** 1주당 현금배당금(원, 연간 합계). 보고서가 보통주(또는 종류 구분 없는) 행에 `-`로 적었으면
+ *   "배당 없음"이라 0이다(`yieldOnLastClosePct`도 0이 된다). null은 **확인하지 못했다**는 뜻이다: 그 행이 보고서에 없거나
+ *   숫자도 `-`도 아닌 값이 적혀 있을 때. 모델 설명이 `dpsCommon 0`을 무배당으로, `get_fundamentals`의 `krDpsUnknown` note가
+ *   null을 미확인으로 말하므로 이 구분이 둘의 전제다.
  * - `dartYieldPct`: 보고서가 적은 `현금배당수익률(%)` — 분모가 **배당 기준일 전후 주가**(보통 사업연도 말 가까운 가격)라
  *   현재가 기준 수익률과 다르다.
  */
@@ -41,8 +44,10 @@ const SE_YIELD = '현금배당수익률(%)';
 const KIND_COMMON = '보통주';
 const KIND_UNSPLIT = '-';
 
+// 캐시 키 버전: 저장 값의 의미가 바뀌면(v2: 보통주 DPS 칸이 `-`이면 null이 아니라 0) 같은 PR에서 올린다.
+// 안 올리면 옛 null이 TTL(7일) 동안 "미확인"으로 남는다.
 const alotMatterKey = (corpCode: string, fiscalYear: number): string =>
-    `dart:alot-matter:v1:${corpCode}:${fiscalYear}`;
+    `dart:alot-matter:v2:${corpCode}:${fiscalYear}`;
 
 /** 현재 KST 달력 연도 — 사업연도는 UTC가 아니라 한국 날짜를 따른다. */
 const kstYear = (now: Date): number => Number(kstDateKey(now).split('-')[0]);
@@ -71,6 +76,27 @@ function pickCommon(rows: readonly DartRecord[], se: string): number | null {
     );
 }
 
+/** DART가 값이 없는 칸에 적는 표기. 보통주 DPS 칸에서는 "그 해 배당 없음"이다. */
+const DART_EMPTY_VALUE = '-';
+
+/**
+ * 보통주 DPS. 숫자가 있으면 그 값. 숫자가 없을 때는 **주 행**(첫 보통주 행, 없으면 종류 구분 없는 `-` 첫 행)의 값이 `-`일 때만
+ * 배당이 없던 해라 0이다. 주 행이 `-`가 아닌 알 수 없는 문자열이면 둘째 줄의 `-`(종류 구분 없는 회사의 우선주 칸 자리 표시)가
+ * 있어도 null(미확인)이다. 우선주 행은 보지 않는다.
+ */
+function pickCommonDps(rows: readonly DartRecord[]): number | null {
+    const dps = pickCommon(rows, SE_DPS);
+    if (dps !== null) return dps;
+    const dpsRows = rows.filter(row => row.se === SE_DPS);
+    const primary =
+        dpsRows.find(row => row.stock_knd === KIND_COMMON) ??
+        dpsRows.find(row => row.stock_knd === KIND_UNSPLIT);
+    return typeof primary?.thstrm === 'string' &&
+        primary.thstrm.trim() === DART_EMPTY_VALUE
+        ? 0
+        : null;
+}
+
 /** 사업보고서 배당 행들 → 보통주 DPS·보고 수익률. 행이 없으면 null(= 그 연도 보고서 없음). */
 export function parseAlotMatterRows(
     rows: readonly DartRecord[],
@@ -79,7 +105,7 @@ export function parseAlotMatterRows(
     if (rows.length === 0) return null;
     return {
         fiscalYear,
-        dpsCommon: pickCommon(rows, SE_DPS),
+        dpsCommon: pickCommonDps(rows),
         dartYieldPct: pickCommon(rows, SE_YIELD),
     };
 }

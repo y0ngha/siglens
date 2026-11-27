@@ -15,11 +15,17 @@ interface FearGreedExtremeZoneRecordProps {
      * 바뀌는 건 집계 기간 문장뿐이다 — "이 종목 점수"라는 말이 시장 지수에는 맞지 않는다.
      */
     readonly subject?: 'symbol' | 'market';
+    /**
+     * 머문 기간을 세는 단위. 거래일이 있는 시장은 `'trading'`(기본), 24시간 거래되는
+     * 암호화폐는 `'calendar'`라 "거래일" 대신 "일"로 쓴다. 호출부가 시장(프로필·허브 종류)에서 고른다.
+     */
+    readonly dayUnit?: ExtremeZoneDayUnit;
 }
 
+export type ExtremeZoneDayUnit = 'trading' | 'calendar';
+
 /**
- * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록
- * (siglens-core#256).
+ * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록.
  *
  * 종목 탭과 시장 허브(`app/[locale]/fear-greed`)가 함께 쓴다.
  *
@@ -35,16 +41,21 @@ interface FearGreedExtremeZoneRecordProps {
 export function FearGreedExtremeZoneRecord({
     record,
     subject = 'symbol',
+    dayUnit = 'trading',
 }: FearGreedExtremeZoneRecordProps) {
     const t = useTranslations('views.symbol.fearGreedFacts');
     const headingId = useId();
     // 같은 구간으로 다시 들어온 날을 한 기록으로 묶는 기준(재진입 간격)은 `/methodology`가
     // 설명한다 — 모든 종목 페이지에서 같은 문장이 반복되지 않게 링크로 대신한다.
     const periodArgs = { v0: record.from, v1: record.to };
+    const symbolPeriod =
+        dayUnit === 'calendar'
+            ? t('extremeZonePeriodDays', periodArgs)
+            : t('extremeZonePeriod', periodArgs);
     const period =
         subject === 'market'
             ? t('extremeZonePeriodMarket', periodArgs)
-            : t('extremeZonePeriod', periodArgs);
+            : symbolPeriod;
 
     return (
         <div aria-labelledby={headingId} role="group" className="space-y-2">
@@ -70,6 +81,7 @@ export function FearGreedExtremeZoneRecord({
                     <ExtremeZoneSectionTable
                         key={section.zone}
                         section={section}
+                        dayUnit={dayUnit}
                     />
                 ))
             )}
@@ -82,23 +94,31 @@ export function FearGreedExtremeZoneRecord({
 
 interface ExtremeZoneSectionTableProps {
     readonly section: ExtremeZoneSection;
+    readonly dayUnit: ExtremeZoneDayUnit;
 }
 
-function ExtremeZoneSectionTable({ section }: ExtremeZoneSectionTableProps) {
+function ExtremeZoneSectionTable({
+    section,
+    dayUnit,
+}: ExtremeZoneSectionTableProps) {
     const t = useTranslations('views.symbol.fearGreedFacts');
     const peakHeader =
         section.zone === 'EXTREME_FEAR'
             ? t('extremeZoneColPeakFear')
             : t('extremeZoneColPeakGreed');
 
+    const summaryArgs = {
+        v0: section.label,
+        v1: section.entryCount,
+        v2: section.medianSessions,
+    };
+
     return (
         <div className="space-y-1">
             <p className="text-sm leading-6 font-medium text-secondary-200">
-                {t('extremeZoneSummary', {
-                    v0: section.label,
-                    v1: section.entryCount,
-                    v2: section.medianSessions,
-                })}
+                {dayUnit === 'calendar'
+                    ? t('extremeZoneSummaryDays', summaryArgs)
+                    : t('extremeZoneSummary', summaryArgs)}
             </p>
             <div className="overflow-x-auto">
                 <table className="w-full min-w-[24rem] text-left text-sm text-secondary-300">
@@ -114,7 +134,9 @@ function ExtremeZoneSectionTable({ section }: ExtremeZoneSectionTableProps) {
                                 {t('extremeZoneColEnd')}
                             </th>
                             <th scope="col" className="py-1.5 pr-3 font-medium">
-                                {t('extremeZoneColSessions')}
+                                {dayUnit === 'calendar'
+                                    ? t('extremeZoneColDays')
+                                    : t('extremeZoneColSessions')}
                             </th>
                             <th scope="col" className="py-1.5 pr-3 font-medium">
                                 {peakHeader}

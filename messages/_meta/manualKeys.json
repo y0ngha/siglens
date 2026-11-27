@@ -118,6 +118,7 @@
         "widgets.congress.tooltip",
         "widgets.dashboard.MarketDataErrorNotice",
         "widgets.dashboard.panelHeading",
+        "widgets.dashboard.QuotePrice",
         "widgets.dashboard.sectorGroup",
         "widgets.dashboard.signalGuide",
         "widgets.economy.krMacroFacts",

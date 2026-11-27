@@ -9,6 +9,8 @@ import {
     DEFAULT_EMAIL_REPORT_HOUR,
     DEFAULT_EMAIL_REPORT_TIMEZONE,
 } from '@/entities/email-report/lib/emailReportConstants';
+import { DELIVERY_RETENTION_MS } from '@/app/api/cron/email-report/runEmailReportBatch';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { EMAIL_REPORT_CONSENT_SOURCE_VALUES } from '@/shared/db/constants';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 
@@ -125,6 +127,64 @@ const NO_RESTRICTION_SENTENCE: Record<Locale, string> = {
     zh: '注册时不选择接收邮件报告,也不会对注册和使用服务造成任何限制。',
 };
 
+/** 가입 첫 리포트: §2 수집 항목(발송 상태·시도 횟수 저장), §3 목적, §4 보유, §6 Resend 이전 항목의 문구. */
+const WELCOME_PHRASES: Record<
+    Locale,
+    {
+        collected: string;
+        purpose: string;
+        retentionOpening: string;
+        retentionDays: RegExp;
+        processor: string;
+    }
+> = {
+    ko: {
+        collected: '가입한 뒤 첫 리포트를 한 번 보내며',
+        purpose: '가입할 때 신청한 경우의 첫 리포트',
+        retentionOpening: '- 가입 후 첫 리포트 발송 기록',
+        retentionDays: /(\d+)일/,
+        processor: '메일 리포트(가입 후 첫 리포트 포함)',
+    },
+    en: {
+        collected: 'the first report is sent once after signup',
+        purpose: 'the first report when the member subscribed at signup',
+        retentionOpening: '- First-report delivery record after signup',
+        retentionDays: /(\d+) days/,
+        processor: 'the email report (including the first report after signup)',
+    },
+    ja: {
+        collected: '登録後に最初のレポートを一度送信し',
+        purpose: '登録時に申し込んだ場合の最初のレポート',
+        retentionOpening: '- 登録後の最初のレポートの送信記録',
+        retentionDays: /(\d+)日/,
+        processor: 'メールレポート(登録後の最初のレポートを含む)',
+    },
+    zh: {
+        collected: '注册后发送一次首份报告',
+        purpose: '注册时订阅的首份报告',
+        retentionOpening: '- 注册后首份报告的发送记录',
+        retentionDays: /(\d+)天/,
+        processor: '邮件报告(含注册后的首份报告)',
+    },
+};
+
+/** §4에서 첫 리포트 발송 기록 불릿. 못 찾으면 빈 문자열. */
+function welcomeRetentionBullet(locale: Locale, section4: string): string {
+    return (
+        section4
+            .split('\n')
+            .find(line =>
+                line.startsWith(WELCOME_PHRASES[locale].retentionOpening)
+            ) ?? ''
+    );
+}
+
+/** 불릿의 "N일" 숫자. 없으면 `null`. */
+function retentionDays(locale: Locale, bullet: string): number | null {
+    const match = WELCOME_PHRASES[locale].retentionDays.exec(bullet);
+    return match?.[1] === undefined ? null : Number(match[1]);
+}
+
 /** 불릿이 세 문구를 모두 담았는가. 하나라도 빠지면 `false`. */
 function hasConsentClauses(locale: Locale, bullet: string): boolean {
     const { schedule, unselected, screens, timezone, language } =
@@ -166,6 +226,39 @@ describe.each(LOCALES)(
             expect(sectionBetween(policy, 4, 5)).toContain(
                 RETENTION_SCREEN_PHRASE[locale]
             );
+        });
+
+        it('§2 메일 리포트 항목에 가입 첫 리포트의 발송 상태 저장이 적혀 있다', () => {
+            expect(mailBullet(locale, sectionBetween(policy, 2, 3))).toContain(
+                WELCOME_PHRASES[locale].collected
+            );
+        });
+
+        it('§3 목적에 가입할 때 신청한 경우의 첫 리포트 발송이 적혀 있다', () => {
+            expect(sectionBetween(policy, 3, 4)).toContain(
+                WELCOME_PHRASES[locale].purpose
+            );
+        });
+
+        it('§4에 첫 리포트 발송 기록 항목이 있고 보유 일수가 발송 기록 보관 기간과 같다', () => {
+            const bullet = welcomeRetentionBullet(
+                locale,
+                sectionBetween(policy, 4, 5)
+            );
+
+            expect(bullet).not.toBe('');
+            expect(retentionDays(locale, bullet)).toBe(
+                DELIVERY_RETENTION_MS / MS_PER_DAY
+            );
+        });
+
+        it('§6 Resend 항목이 첫 리포트도 발송 대상으로 적는다', () => {
+            const resendLine =
+                sectionBetween(policy, 6, 7)
+                    .split('\n')
+                    .find(line => line.includes('Resend, Inc.')) ?? '';
+
+            expect(resendLine).toContain(WELCOME_PHRASES[locale].processor);
         });
 
         it('§8에 가입할 때 수신을 고르지 않아도 제약이 없다는 문장이 있다', () => {
@@ -217,5 +310,29 @@ describe('탐지기 반증(공회전 방지)', () => {
     it('항목을 못 찾으면 빈 문자열이라 거짓이다', () => {
         expect(mailBullet('ko', '')).toBe('');
         expect(hasConsentClauses('ko', '')).toBe(false);
+    });
+});
+
+describe('탐지기 반증: 첫 리포트 항목', () => {
+    const section4 = sectionBetween(readPolicy('ko'), 4, 5);
+
+    it('보유 일수를 바꾼 사본은 숫자가 달라진다', () => {
+        const bullet = welcomeRetentionBullet('ko', section4);
+        const tampered = bullet.replace('90일', '30일');
+
+        expect(retentionDays('ko', bullet)).toBe(
+            DELIVERY_RETENTION_MS / MS_PER_DAY
+        );
+        expect(retentionDays('ko', tampered)).toBe(30);
+    });
+
+    it('항목을 지운 사본은 빈 문자열이고 일수도 없다', () => {
+        const tampered = section4
+            .split('\n')
+            .filter(line => !line.startsWith('- 가입 후 첫 리포트'))
+            .join('\n');
+
+        expect(welcomeRetentionBullet('ko', tampered)).toBe('');
+        expect(retentionDays('ko', '')).toBeNull();
     });
 });

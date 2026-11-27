@@ -33,13 +33,6 @@ features 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않�
 `queryFn`/`mutationFn`/`useActionState`로 연결하고 UI는 훅만 쓴다 — 자세한 기준은 `REACT.md`의
 "React Query and Server State Rules" 참조.
 
-## import 규칙
-
-barrel(`index.ts`)은 금지다. 다른 슬라이스의 심볼은 정의 파일(`ui/<file>.tsx`, `hooks/<file>.ts`, `lib/<file>.ts` 등)에서 직접 import한다(테스트·`vi.mock` 포함).
-
 ## `'use server'` 규칙
 
-`actions.ts` 같은 re-export 파일을 두지 않는다. 개별 action 파일(`actions/<name>.ts`)에서만
-`'use server'`를 선언하고, 소비자는 그 파일에서 직접 import한다.
-
-자세한 규칙은 `src/entities/CLAUDE.md` § `'use server'` 규칙 참조.
+`src/entities/CLAUDE.md` § `'use server'` 규칙을 따른다(개별 `actions/<name>.ts`, re-export 파일 금지).

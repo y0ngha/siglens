@@ -103,7 +103,7 @@ export function zonedDate(date: Date, timeZone: string): string {
  * 전환 전/후 중 어느 쪽 오프셋인지 알 수 없다. 1차 보정으로 얻은 순간에서 오프셋을 다시
  * 재면 전환의 올바른 쪽에 들어간다.
  */
-function zonedWallClockToUtc(
+export function zonedWallClockToUtc(
     isoDate: string,
     minutesOfDay: number,
     timeZone: string

@@ -72,6 +72,26 @@ describe('parseStreamBody', () => {
         });
     });
 
+    // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (1Week 통과 단언으로 바꾼다).
+    it.each(['technical', 'overall'])(
+        '%s 요청의 timeframe이 화면이 내는 목록 밖(1Week·미지정)이면 400이다',
+        async type => {
+            await expectBadRequest(
+                post(
+                    JSON.stringify({
+                        type,
+                        params: { symbol: 'AAPL', timeframe: '1Week' },
+                    })
+                ),
+                'invalid timeframe'
+            );
+            await expectBadRequest(
+                post(JSON.stringify({ type, params: { symbol: 'AAPL' } })),
+                'invalid timeframe'
+            );
+        }
+    );
+
     it('technical이 아닌 종류에 params가 없으면 400이다', async () => {
         await expectBadRequest(
             post('{"type":"overall"}'),

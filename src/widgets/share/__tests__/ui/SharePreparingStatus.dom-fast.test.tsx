@@ -8,7 +8,7 @@ describe('SharePreparingStatus', () => {
                 <SharePreparingStatus phase="pending" />
             );
             expect(container).toHaveTextContent(
-                'AI가 분석 결과를 준비하고 있어요…보통 10–30초면 끝나요'
+                'AI가 분석 결과를 준비하고 있어요…보통 10~30초면 끝나요'
             );
         });
     });
@@ -26,7 +26,7 @@ describe('SharePreparingStatus', () => {
         it('does not render the timing hint', () => {
             render(<SharePreparingStatus phase="error" />);
             expect(
-                screen.queryByText('보통 10–30초면 끝나요')
+                screen.queryByText('보통 10~30초면 끝나요')
             ).not.toBeInTheDocument();
         });
     });

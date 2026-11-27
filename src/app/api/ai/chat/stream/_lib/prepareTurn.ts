@@ -50,6 +50,11 @@ export interface ReadyTurn {
     userImages: readonly StoredChatImage[];
     userMessageId: string | null;
     userMessageSeq: number | null;
+    /**
+     * 이번 턴의 "## Now" 시계 메모를 저장할 user 행 id. `send`·`edit`은 방금 넣은 행, `regenerate`는 다시 쓰는
+     * 마지막 user 행(옛 메모를 덮어쓴다). 게스트는 저장하지 않으므로 `null`.
+     */
+    turnAtRowId: string | null;
     history: AgentMessage[];
     portfolioSymbols: string[];
 }
@@ -92,6 +97,7 @@ export function guestTurn(
         userImages: images,
         userMessageId: null,
         userMessageSeq: null,
+        turnAtRowId: null,
         history: body.history,
         portfolioSymbols: [],
     };
@@ -160,6 +166,7 @@ export async function prepareMemberTurn(
     let userMessage = body.message;
     let userMessageId: string | null = null;
     let userMessageSeq: number | null = null;
+    let turnAtRowId: string | null = null;
     let title: string | undefined;
 
     if (conversation === null) {
@@ -228,6 +235,7 @@ export async function prepareMemberTurn(
               : [];
     if (body.action === 'regenerate') {
         userMessage = lastUser?.content ?? '';
+        turnAtRowId = lastUser?.id ?? null;
         const lastUserIndex = history.map(m => m.role).lastIndexOf('user');
         history =
             lastUserIndex >= 0 ? history.slice(0, lastUserIndex) : history;
@@ -249,6 +257,7 @@ export async function prepareMemberTurn(
         }
         userMessageId = saved?.id ?? null;
         userMessageSeq = saved?.seq ?? null;
+        turnAtRowId = saved?.id ?? null;
     }
 
     const portfolioSymbols = (
@@ -262,6 +271,7 @@ export async function prepareMemberTurn(
         userImages,
         userMessageId,
         userMessageSeq,
+        turnAtRowId,
         history,
         portfolioSymbols,
     };

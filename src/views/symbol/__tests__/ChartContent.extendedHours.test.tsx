@@ -323,7 +323,7 @@ describe('ChartContent — 시간외 봉 배선', () => {
     );
 
     describe('하단 시간외 안내 문구는 그려지는 상태와 맞는다', () => {
-        const OLD = '차트는 Pre-market, After-market 주가를 반영하지 않습니다.';
+        const OLD = '차트는 프리마켓과 애프터마켓 주가를 반영하지 않습니다.';
         const NEW =
             '음영 구간은 프리마켓과 애프터마켓(시간외) 거래이며, 지표와 AI 분석은 정규장 봉만 사용합니다.';
 

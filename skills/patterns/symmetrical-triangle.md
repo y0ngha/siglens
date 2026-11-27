@@ -17,7 +17,8 @@ gating:
   signal_kind: event
   triggers: [symmetrical_triangle]
 token_cost: 1066
-digest_hash: "45f41c7e"
+digest_hash: "82790610"
+digest_text_hash: "99172f40"
 ---
 
 ## Detection Criteria
@@ -62,7 +63,7 @@ Factors that decrease confidence:
 - **Apex breakout**: Breakouts occurring at or past the apex have minimal measured move potential and high failure rates. The pattern essentially expires near its apex.
 - **No prior trend**: Without a preceding trend the pattern is mere range compression. Check for a clear prior move of at least 10% before the pattern began. Even then the triangle does not pick a side — Bulkowski (st.html) measures breakouts up 60% / down 40%.
 - **Low-volume breakout**: A breakout without volume confirmation is unreliable. Price often reverses back into the triangle, creating a false breakout trap.
-- **Whipsaw in narrow range**: As the triangle narrows, small moves can breach a trendline intraday without confirming a true breakout. Wait for a closing break.
+- **Whipsaw in narrow range**: As the triangle narrows, small moves can breach a trendline within a bar without confirming a true breakout. Wait for a closing break.
 - **Confusion with wedge**: If one trendline has a significantly steeper slope than the other, the pattern may be a wedge (ascending or descending) rather than a symmetrical triangle. Both trendlines should converge at roughly equal rates.
 
 ## Entry/Exit Considerations
@@ -106,7 +107,7 @@ When this pattern is detected, include the following in the analysis response:
 - Apex breakout (at/past apex): minimal measured move, high failure — pattern expires near apex.
 - No prior trend → mere range compression; require prior move ≥10% before pattern. Even then the split is only up 60% / down 40%.
 - Low-volume breakout → often reverses (false-breakout trap).
-- Narrow-range whipsaw: intraday breach without close → wait for closing break.
+- Narrow-range whipsaw: within-bar breach without close → wait for closing break.
 - One trendline much steeper than the other → wedge, not symmetrical triangle (should converge at ~equal rates).
 
 ### Geometry (do not calculate targets)

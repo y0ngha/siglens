@@ -15,6 +15,32 @@ describe('tryGetModelAccess', () => {
     });
 });
 
+describe('2026-11 roster classes', () => {
+    it.each([
+        'claude-fable-5-2',
+        'gpt-6.2-sol',
+        'gpt-6.2-astra',
+        'gemini-4-carbon',
+        'gemini-4-neon',
+        'gemini-4-hydrogen',
+    ] as const)('%s needs the user own key (byok)', id => {
+        expect(tryGetModelAccess(id)).toBe('byok');
+    });
+
+    it.each([
+        ['gemini-3.5-flash-lite', 'free'],
+        ['gemini-3.6-flash', 'free'],
+        ['claude-haiku-5-5', 'free'],
+        ['gpt-6-luna', 'free'],
+        ['gemini-3.8-flash', 'member'],
+        ['gemini-3.1-pro-preview', 'member'],
+        ['claude-sonnet-5-5', 'member'],
+        ['gpt-6-sol', 'member'],
+    ] as const)('keeps %s in the %s class', (id, access) => {
+        expect(tryGetModelAccess(id)).toBe(access);
+    });
+});
+
 describe('resolveGateAccess', () => {
     it('mirrors tryGetModelAccess for a known model', () => {
         expect(resolveGateAccess('gpt-6-luna')).toBe('free');

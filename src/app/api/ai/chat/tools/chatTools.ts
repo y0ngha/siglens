@@ -19,10 +19,14 @@ import {
     COMPANY_FILINGS_RESULT_MAX_CHARS,
     INDEX_HISTORY_RESULT_MAX_CHARS,
     SWING_HISTORY_RESULT_MAX_CHARS,
+    PRICE_STATS_RESULT_MAX_CHARS,
     ANALYST_VIEWS_RESULT_MAX_CHARS,
+    BARS_ANNOTATE_HEADROOM_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+    FUNDAMENTALS_RESULT_MAX_CHARS,
+    NEWS_RESULT_MAX_CHARS,
     TOOL_RESULT_MAX_CHARS,
     truncateToolResult,
 } from './truncate';
@@ -47,6 +51,7 @@ import { getCompanyFilingsTool } from './getCompanyFilings';
 import { getXPostsTool } from './getXPosts';
 import { getThemeSnapshotTool } from './getThemeSnapshot';
 import { getIndexHistoryStatsTool } from './getIndexHistoryStats';
+import { getPriceStatsTool } from './getPriceStats';
 import { getSwingHistoryTool } from './getSwingHistory';
 import { showChartTool } from './showChart';
 import { safeErrorFields } from './logToolDegrade';
@@ -94,6 +99,13 @@ export interface ToolRuntime {
      * 넘기는 promise는 절대 reject하지 않아야 한다(`loadAnalysisChartBlock`처럼 실패를 `null`로 접는다).
      */
     emitChart?: (pending: Promise<ChatBlock | null>) => void;
+    /**
+     * `get_bars_indicators`가 봉 수를 맞출 문자 수 상한. 실행기(`createToolExecutor`)가 자기 `resultCaps.bars`에서
+     * `annotate`가 앞에 붙이는 몫(`BARS_ANNOTATE_HEADROOM_CHARS`)을 뺀 값으로 채운다 — 에이전트와 공개 API가 각자의 상한에
+     * 맞춰 오래된 봉을 줄이고, 결과 전체가 `{ truncated, preview }`로 무너지지 않게 한다. 도구를 실행기 없이 직접 부르면
+     * (테스트) 비어 있고, 그때는 에이전트 상한 `BARS_RESULT_MAX_CHARS`를 쓴다.
+     */
+    barsResultMaxChars?: number;
 }
 /**
  * `createToolExecutor`에 넘기는 입력. `ensureSymbolData`는 턴 메모가 필요해
@@ -105,6 +117,7 @@ export type ToolRuntimeInput = Omit<
     | 'allowUnofficialSources'
     | 'substituteFreshTechnicalForOverall'
     | 'emitChart'
+    | 'barsResultMaxChars'
 >;
 
 /** 차트 블록을 낸 도구 호출 — core가 `tool_start`에 싣는 것과 같은 이름·인자(교정 전). */
@@ -117,7 +130,7 @@ export interface ChartToolCall {
 export interface ToolResultCaps {
     /** Default for tools without a class of their own. */
     standard: number;
-    /** `get_bars_indicators` (the tool also fits itself against `BARS_RESULT_MAX_CHARS`). */
+    /** `get_bars_indicators` (the tool fits its bar count to this cap minus `BARS_ANNOTATE_HEADROOM_CHARS`, via `ToolRuntime.barsResultMaxChars`). */
     bars: number;
     /** `get_market_overview`. */
     aggregate: number;
@@ -136,8 +149,14 @@ export interface ToolResultCaps {
     indexHistory: number;
     /** `get_swing_history` (decline and rally summaries, size bands and up to 20 episodes each). */
     swingHistory: number;
+    /** `get_price_stats` (up to 3 subjects × 5 date lookups, every note, 3 correlation pairs). */
+    priceStats: number;
     /** `get_analyst_views` (up to 15 actions plus four estimate periods). */
     analystViews: number;
+    /** `get_fundamentals` (every section filled plus the earnings tally). */
+    fundamentals: number;
+    /** `get_news` (up to 20 items with summaries plus the symbol price-move block; the tool fits itself under this). */
+    news: number;
     /** One stored analysis (`get_cached_analysis` / `run_fresh_analysis`). */
     cachedAnalysis: number;
     /** Total analysis chars one executor instance may spend above `standard`. */
@@ -157,7 +176,10 @@ export const AGENT_RESULT_CAPS: ToolResultCaps = {
     xPosts: X_POSTS_RESULT_MAX_CHARS,
     indexHistory: INDEX_HISTORY_RESULT_MAX_CHARS,
     swingHistory: SWING_HISTORY_RESULT_MAX_CHARS,
+    priceStats: PRICE_STATS_RESULT_MAX_CHARS,
     analystViews: ANALYST_VIEWS_RESULT_MAX_CHARS,
+    fundamentals: FUNDAMENTALS_RESULT_MAX_CHARS,
+    news: NEWS_RESULT_MAX_CHARS,
     cachedAnalysis: CACHED_ANALYSIS_MAX_CHARS,
     cachedAnalysisBudget: CACHED_ANALYSIS_TURN_BUDGET_CHARS,
 };
@@ -224,6 +246,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_theme_snapshot: getThemeSnapshotTool,
     get_index_history_stats: getIndexHistoryStatsTool,
     get_swing_history: getSwingHistoryTool,
+    get_price_stats: getPriceStatsTool,
     show_chart: showChartTool,
 };
 
@@ -250,6 +273,8 @@ export function availableToolNames(): Set<string> {
     if (e2eFake) names.delete('get_index_history_stats');
     // 긴 일봉 이력도 같다(엔티티가 E2E fake 모드에서 던진다).
     if (e2eFake) names.delete('get_swing_history');
+    // 가격 통계도 같다 — 종가 이력을 같은 엔티티 경로로 읽고, fake 공급자의 봉은 3개뿐이다.
+    if (e2eFake) names.delete('get_price_stats');
     return names;
 }
 
@@ -330,6 +355,10 @@ export function createToolExecutor(
         ensureSymbolData,
         allowUnofficialSources,
         substituteFreshTechnicalForOverall,
+        barsResultMaxChars: Math.max(
+            1,
+            resultCaps.bars - BARS_ANNOTATE_HEADROOM_CHARS
+        ),
     };
 
     // One executor per turn (`stream/route.ts`), so this closure is the turn's
@@ -341,11 +370,11 @@ export function createToolExecutor(
     const isAnalysis = (name: string): boolean =>
         name === 'get_cached_analysis' || name === 'run_fresh_analysis';
     const ceilingFor = (name: string): number => {
-        // `get_bars_indicators` already fits itself against
-        // `BARS_RESULT_MAX_CHARS` (`getBarsIndicators.ts`'s
-        // `fitBarsToBudget`) — routing it through the shared 4,000 default
-        // here would re-cut an already-fit 6,500-char result down to 4,000
-        // and collapse it into a front-cut preview blob.
+        // `get_bars_indicators` already fits itself against this same cap
+        // (`ToolRuntime.barsResultMaxChars`, set above from `resultCaps.bars`;
+        // `getBarsIndicators.ts`'s `fitBarsToBudget`) — routing it through the
+        // shared 4,000 default here would re-cut an already-fit result and
+        // collapse it into a front-cut preview blob.
         if (name === 'get_bars_indicators') return resultCaps.bars;
         if (name === 'get_market_overview') return resultCaps.aggregate;
         if (name === 'get_economy') return resultCaps.economy;
@@ -359,7 +388,10 @@ export function createToolExecutor(
         if (name === 'get_x_posts') return resultCaps.xPosts;
         if (name === 'get_index_history_stats') return resultCaps.indexHistory;
         if (name === 'get_swing_history') return resultCaps.swingHistory;
+        if (name === 'get_price_stats') return resultCaps.priceStats;
         if (name === 'get_analyst_views') return resultCaps.analystViews;
+        if (name === 'get_news') return resultCaps.news;
+        if (name === 'get_fundamentals') return resultCaps.fundamentals;
         if (!isAnalysis(name)) return resultCaps.standard;
         return Math.max(
             resultCaps.standard,

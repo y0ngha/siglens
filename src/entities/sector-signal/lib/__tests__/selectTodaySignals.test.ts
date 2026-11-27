@@ -38,6 +38,19 @@ describe('selectTodaySignals', () => {
         expect(rows.map(row => row.symbol)).toEqual(['GOLD', 'CCI']);
     });
 
+    it('단기 이평 교차는 52주 신저가보다 뒤, RSI 과매도보다 앞이다', () => {
+        const rows = selectTodaySignals(
+            [
+                stock('RSI', [signal('rsi_oversold')], 9),
+                stock('SHORT', [signal('short_ma_bullish_cross')], 1),
+                stock('LOW', [signal('new_52w_low')], 0.1),
+            ],
+            5
+        );
+
+        expect(rows.map(row => row.symbol)).toEqual(['LOW', 'SHORT', 'RSI']);
+    });
+
     it('종목마다 가장 높은 우선순위 신호 하나를 대표로 고른다', () => {
         const [row] = selectTodaySignals(
             [

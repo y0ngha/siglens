@@ -15,7 +15,7 @@ import path from 'node:path';
  * Renovate가 버전을 올리면 패치 지정자가 통째로 교체되며 조용히 빠지고
  * `yarn install`은 성공한다. 설치된 산출물을 직접 읽는 것만이 유실을 잡아낸다.
  *
- * D2(감사) — 이 테스트의 제거 조건: 업스트림 이슈 #496이 closed되고 vaul이
+ * 이 테스트의 제거 조건: 업스트림 vaul 이슈(MobileAnalysisSheet JSDoc의 링크)가 closed되고 vaul이
  * `modal` passthrough를 정식으로 릴리스하면, `.yarn/patches/vaul-npm-1.1.2-*.patch`
  * 파일과 `package.json`의 `patch:` 지정자와 함께 이 테스트 파일도 삭제한다
  * (`src/views/symbol/MobileAnalysisSheet.tsx`의 JSDoc에 동일 제거 절차가

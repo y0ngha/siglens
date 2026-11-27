@@ -11,8 +11,9 @@ gating:
   state:
     feature: williamsR
     predicate: level
-token_cost: 564
-digest_hash: "6508ba52"
+token_cost: 568
+digest_hash: "6a37c218"
+digest_text_hash: "9c6f1754"
 ---
 
 ## Overview
@@ -50,13 +51,13 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 - Williams %R + Stochastic: Williams %R is equivalent to Fast Stochastic %K with a -100 shift, but the Stochastic indicator shown on this project is Slow Stochastic (Fast %K smoothed by 3-period SMA). Comparing unsmoothed %R against smoothed Slow %K therefore reveals short-term momentum divergence: when %R extremes appear before Slow %K confirms, an early turning point is likely.
 - Williams %R + RSI: %R reacts faster to price changes due to its simpler calculation. Use %R for early entry timing and RSI for broader overbought/oversold context.
 - Williams %R + MACD: MACD provides trend direction while %R provides entry timing within the trend context. Enter long when MACD is bullish and %R crosses above -80.
-- Williams %R + Bollinger Bands: %R oversold + price at Bollinger lower band = high-probability mean reversion buy in ranging markets.
+- Williams %R + Bollinger Bands: %R oversold + price at Bollinger lower band = mean reversion buy candidate in ranging markets.
 
 ## Caveats
 
 - Like all oscillators, Williams %R generates frequent false signals in strong trending markets. An asset in a strong uptrend can remain above -20 for many bars — do not sell solely based on overbought readings during trends.
 - %R is related to Fast Stochastic %K by a fixed linear offset (`%R = %K - 100`), so it carries identical informational content on a shifted scale. Using both simultaneously adds no new signal — choose one or the other.
-- The 14-period setting is standard for daily charts. For shorter timeframes, periods of 10 or 21 may provide better sensitivity depending on the asset's characteristics.
+- The 14-period setting is the usual reference. For other timeframes, periods of 10 or 21 may provide better sensitivity depending on the asset's characteristics.
 - %R does not incorporate volume information. Combine with volume-based indicators (OBV, MFI) for more robust signal confirmation.
 
 <!-- PROMPT_DIGEST:START -->
@@ -84,7 +85,7 @@ Close relative to highest high over lookback. Range 0 to -100. `%R = Fast Stocha
 - Bearish: price higher high while %R lower high → upside weakening, reversal down.
 - Most reliable at extreme OB/OS levels.
 
-**Combos:** +Stochastic (%R = Fast %K −100; project's Stochastic is Slow %K [Fast %K smoothed 3] — comparing unsmoothed %R vs smoothed Slow %K reveals early turning points when %R extremes appear before Slow %K confirms); +RSI (%R faster for early entry timing, RSI for context); +MACD (enter long when MACD bullish & %R crosses above -80); +BB (%R oversold + price at lower band = high-prob mean reversion buy in ranges).
+**Combos:** +Stochastic (%R = Fast %K −100; project's Stochastic is Slow %K [Fast %K smoothed 3] — comparing unsmoothed %R vs smoothed Slow %K reveals early turning points when %R extremes appear before Slow %K confirms); +RSI (%R faster for early entry timing, RSI for context); +MACD (enter long when MACD bullish & %R crosses above -80); +BB (%R oversold + price at lower band = mean reversion buy candidate in ranges).
 
-**Caveats:** frequent false signals in strong trends (can stay >-20 many bars — don't sell on overbought alone); %R = %K−100 fixed offset, identical info — don't use both together; 14 standard daily, 10/21 for shorter TF; no volume — combine OBV/MFI.
+**Caveats:** frequent false signals in strong trends (can stay >-20 many bars — don't sell on overbought alone); %R = %K−100 fixed offset, identical info — don't use both together; 14 = the usual reference, 10/21 for other timeframes; no volume — combine OBV/MFI.
 <!-- PROMPT_DIGEST:END -->
