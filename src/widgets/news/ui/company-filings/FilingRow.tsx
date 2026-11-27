@@ -5,6 +5,7 @@
  */
 import { useTranslations } from 'next-intl';
 import type { CompanyFiling } from '@/entities/company-filings/model';
+import type { Locale } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -14,6 +15,17 @@ import { formatGradeDate } from '../../utils/gradeRows';
 interface FilingRowProps {
     filing: CompanyFiling;
 }
+
+/**
+ * 종류 라벨을 잇는 구분자. ja/zh는 나열에 쉼표 대신 「、」를 쓴다.
+ * `Intl.ListFormat`의 unit 형식은 ICU 버전마다 공백만 남기거나 붙여 써서 쓰지 않는다.
+ */
+const KIND_SEPARATOR: Record<Locale, string> = {
+    ko: ', ',
+    en: ', ',
+    ja: '、',
+    zh: '、',
+};
 
 export function FilingRow({ filing }: FilingRowProps) {
     const t = useTranslations('widgets.news');
@@ -42,7 +54,7 @@ export function FilingRow({ filing }: FilingRowProps) {
             <div className="min-w-0 flex-1 text-sm">
                 {kinds.length > 0 && (
                     <p className="font-medium break-words">
-                        {kinds.join(' · ')}
+                        {kinds.join(KIND_SEPARATOR[locale])}
                     </p>
                 )}
                 {filing.headline !== null && (

@@ -22,11 +22,11 @@ Highs and lows fall together, and price stays boxed in between two parallel tren
 
 Sellers keep the upper hand, but the decline is orderly and holds a steady width. As long as rallies turn down near the upper line, the downtrend is considered intact; a close above the upper line suggests the decline may have broken.
 
-There is no scorecard for channels themselves. Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in his books, did not measure channel performance either and only guessed it is similar to a rectangle. He also saw no set breakout direction. So a descending channel is used less as a signal of when to buy or sell and more as a gauge of how wide the decline is running.
+There is no scorecard for channels themselves. Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, did not measure channel performance either and only guessed it is similar to a rectangle. He also saw no set breakout direction. So a descending channel is used less as a signal of when to buy or sell and more as a gauge of how wide the decline is running.
 
 ## How it differs from an ascending channel
 
-In an [ascending channel](/guide/chart-patterns/ascending-channel) the key break is through the lower line, but in a descending channel the break above the upper line is the more important signal. Bulkowski treated a breakout above the channel as the point where a short sale (a position that profits when price falls, a bet on decline) made inside a down-sloping channel no longer holds. A close below the lower line, by contrast, is not a bottom; it means the decline is speeding up.
+In an [ascending channel](/guide/chart-patterns/ascending-channel) the key break is through the lower line, but in a descending channel the break above the upper line is the more important signal. Bulkowski treated a breakout above the channel as the point where a short sale (a position that profits when price falls) made inside a down-sloping channel no longer holds. A close below the lower line, by contrast, is not a bottom; it means the decline is speeding up.
 
 In a falling market, price can look cheap every time it touches the lower line, which makes buying tempting. But while the channel holds, the lower line is not a floor; it is one wall of a pipe that keeps heading down. Bulkowski also held that betting on a rise does not suit a down-sloping channel and that it is better viewed from the falling side.
 
@@ -34,7 +34,7 @@ The breakout direction is anticipated the same way as in an ascending channel. W
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines fall together and the width stays about the same, it treats the shape as a descending channel.
+SIGLENS connects clear highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines fall together and the width stays about the same, it treats the shape as a descending channel.
 
 - Both lines must fall at least 1.5 times ATR over the pattern.
 - Swings must touch each line at least twice. A swing within 0.35 times ATR of a line counts as a touch.

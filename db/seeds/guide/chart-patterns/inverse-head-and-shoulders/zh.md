@@ -26,7 +26,7 @@ faq:
 
 ## 与头肩顶的区别
 
-布尔科夫斯基（Thomas Bulkowski）统计了几十年美股图表中形态出现后的实际走势并写成书，从他的统计看，头肩底的结果比[头肩顶](/guide/chart-patterns/head-and-shoulders)好。
+布尔科夫斯基（Thomas Bulkowski）统计过几十年美股图表中各种形态的实际表现，从他的统计看，头肩底的结果比[头肩顶](/guide/chart-patterns/head-and-shoulders)好。
 
 - 突破后没能走够距离的比例（盈亏平衡失败率）为 11%，低于头肩顶的 19%。
 - 达到目标价的比例为 71%，高于头肩顶的 51%。

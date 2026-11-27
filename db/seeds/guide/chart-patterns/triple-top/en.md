@@ -22,11 +22,11 @@ Price rises to a similar high and gets pushed back down three times. Two lows fo
 
 If an advance was stopped three times in the same price zone, that price is acting as resistance. It is read as a sign that the uptrend may be ending and turning down.
 
-The pattern completes only when a close finishes below the neckline. Volume that shrinks with each new high, then rises as price breaks the neckline, makes it more reliable. Even so, in the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, the triple top sat in the lower ranks of his performance ranking (a ranking by how far price went after the breakout): 24th of 36 bearish patterns. Confirming resistance one more time does not make it work out proportionally better.
+The pattern completes only when a close finishes below the neckline. Volume that shrinks with each new high, then rises as price breaks the neckline, makes it more reliable. Even so, in the tabulation of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, the triple top sat in the lower ranks of his performance ranking (a ranking by how far price went after the breakout): 24th of 36 bearish patterns. Confirming resistance one more time does not make it work out proportionally better.
 
 ## How SIGLENS detects it
 
-SIGLENS checks whether the three most recent clearly turned highs (swing highs: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) sit at a similar price. Once a swing is set, it does not change as more bars arrive. The conditions:
+SIGLENS checks whether the three most recent clear highs (swing highs: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) sit at a similar price. Once a swing is set, it does not change as more bars arrive. The conditions:
 
 - The gap between the highest and lowest of the three highs must be within the smaller of 1 times ATR and 3% of the average price.
 - Neighboring highs must be at least 10 bars apart, so the whole pattern spans at least 21 bars.

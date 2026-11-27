@@ -112,12 +112,12 @@ describe('buildOpenApiDocument — structure (OpenAPI 3.1 sanity)', () => {
     it('declares 3.1, info, servers, paths and components', () => {
         expect(doc.openapi).toBe(OPENAPI_VERSION);
         expect(doc.openapi).toMatch(/^3\.1\.\d+$/);
-        expect(doc.info).toMatchObject({ title: 'SigLens API' });
+        expect(doc.info).toMatchObject({ title: 'SIGLENS API' });
         expect(typeof doc.info.version).toBe('string');
         expect(doc.servers).toEqual([
             {
                 url: `${BASE_URL}${PUBLIC_API_BASE_PATH}`,
-                description: 'SigLens',
+                description: 'SIGLENS',
             },
         ]);
         expect(Object.keys(doc.paths).length).toBeGreaterThan(0);
@@ -311,7 +311,7 @@ describe('buildOpenApiDocument — run_fresh_analysis', () => {
     it('carries the BYOK and streaming notes on the operation', () => {
         const description = op.description as string;
         expect(description).toContain('(BYOK)');
-        expect(description).toContain('SigLens never spends its own LLM key');
+        expect(description).toContain('SIGLENS never spends its own LLM key');
         expect(description).toContain('`byok_key_required`');
         expect(description).toContain('whitespace keepalive');
         expect(description).toContain(

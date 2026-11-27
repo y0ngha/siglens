@@ -4,7 +4,7 @@
             "page": {
                 "109043": "Loading account information…",
                 "14fab1": "Profile",
-                "1987ac": "Risk Zone",
+                "1987ac": "Danger Zone",
                 "1b62d0": "Return to Account Settings →",
                 "1b6c6d": "Loading AI Model API Key",
                 "3a0c2b": "Account Withdrawal",
@@ -14,7 +14,7 @@
                 "64f90b": "AI Model API Key",
                 "752a1e": "This action cannot be undone",
                 "7be993": "Display Name",
-                "b8fd1b": "Check profile information and manage your account.",
+                "b8fd1b": "View your profile and manage your account.",
                 "bfc060": "Changed your mind?",
                 "c4079e": "Loading Profile",
                 "c6c674": "Not Set",
@@ -80,7 +80,7 @@
         },
         "economy": {
             "EconomyDegraded": {
-                "2e0811": "Currently unable to load U.S. macroeconomic data. There may be a temporary issue with the data provider.\n                Please visit again shortly.",
+                "2e0811": "We couldn't load U.S. macroeconomic data right now. There may be a temporary issue with the data provider.\n                Please visit again shortly.",
                 "82acf3": "Please try again shortly"
             },
             "error": {
@@ -366,7 +366,7 @@
                 "d311d2": "US Market News",
                 "d97943": "AI summarizes the latest news from US General, Stocks, Forex, and Market Articles for you.",
                 "dc06c4": "Market News Hub",
-                "e02fdd": "Category Shortcut",
+                "e02fdd": "Jump to a category",
                 "faef4a": "Loading AI Digest",
                 "fdb87b": "Failed to load recent {v0} news. Please check again shortly.",
                 "newsEmptyAria": "No {v0} news"
@@ -379,8 +379,8 @@
         },
         "portfolio": {
             "page": {
-                "55ca69": "My Portfolio Position",
-                "605ada": "Loading holdings position.",
+                "55ca69": "Where your holdings stand",
+                "605ada": "Loading your holdings",
                 "90a081": "Failed to load portfolio.",
                 "92020d": "Please try again shortly.",
                 "ac9263": "You haven't registered any holdings yet.",
@@ -395,7 +395,7 @@
             "page": {
                 "7ba818": "Resend Reset Link →",
                 "921c49": "Set New Password",
-                "e10323": "Please set a value different from your previous password."
+                "e10323": "Please choose a password different from your previous one."
             }
         },
         "share": {
@@ -417,11 +417,11 @@
         },
         "signup": {
             "SignupContent": {
-                "50f3e4": "After starting social login, there is a terms agreement step.",
+                "50f3e4": "After you choose social login, you'll be asked to accept the terms.",
                 "emailDivider": "Or sign up with email"
             },
             "page": {
-                "8ba06b": "Social Login Signup",
+                "8ba06b": "Sign up with a social account",
                 "925d56": "Become a member to see more",
                 "9922a0": "Already have an account?",
                 "e2d231": "Log In →",
@@ -442,7 +442,7 @@
             },
             "FundamentalDegraded": {
                 "595d2d": "Financial data is temporarily unavailable",
-                "9e0659": "{v0} Financial Indicators and Analyst Opinions",
+                "9e0659": "{v0} Financial Metrics and Analyst Opinions",
                 "a37ac2": "The external data provider is temporarily unresponsive. Please visit again later to view PER, ROE, and analyst consensus."
             },
             "error": {
@@ -453,11 +453,11 @@
                 "eb2523": "{v0} Home"
             },
             "flows": {
-                "degradedBody": "The data store is temporarily unresponsive. Please visit again shortly to see institutional, insider and short-selling flows.",
+                "degradedBody": "We can't load this data right now. Please visit again shortly to see institutional, insider and short-selling flows.",
                 "degradedTitle": "Investor flows data is temporarily unavailable",
                 "heading": "{v0} Investor Flows",
                 "krHeading": "{v0} Major Holder & Insider Filings",
-                "krDegradedBody": "The data store is temporarily unresponsive. Please visit again shortly to see major-holder and insider ownership filings."
+                "krDegradedBody": "We can't load this data right now. Please visit again shortly to see major-holder and insider ownership filings."
             },
             "loading": {
                 "486c8b": "Loading data…",
@@ -509,7 +509,7 @@
                 "positionGuideHeading": "{v0}: which floor of this building is the price on?",
                 "positionRangeSentence": "The 52-week range for {v0} is {v1} to {v2}, and the current price of {v3} sits at the {v4}% mark of that range: {v5}.",
                 "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building.",
-                "marketFearGreedLinkCrypto": "Crypto Market Fear and Greed Index",
+                "marketFearGreedLinkCrypto": "Crypto Market Fear & Greed Index",
                 "marketLabelCrypto": "the crypto market"
             },
             "position": {
@@ -540,7 +540,7 @@
                 "deleteFailed": "An error occurred while deleting.",
                 "deleted": "Deleted.",
                 "invalidKeyFormat": "That API key is not valid.",
-                "invalidProvider": "That provider is not valid.",
+                "invalidProvider": "That AI model provider is not valid.",
                 "saved": "Your API key was saved.",
                 "serverMisconfigured": "A server configuration error prevented saving the API key. Please contact an administrator.",
                 "storageUnavailable": "The API key store is temporarily unreachable. Please try again in a moment.",
@@ -613,7 +613,7 @@
                 "unauthenticated": "You need to sign in.",
                 "unsubscribeFailed": "Unsubscribing failed. Please try again in a moment.",
                 "excludeFailed": "Failed to exclude from the report. Please try again shortly.",
-                "excludeLimitReached": "You can exclude a maximum of {v0} items from the report.",
+                "excludeLimitReached": "You can exclude up to {v0} stocks from the report.",
                 "includeFailed": "Failed to re-include in the report. Please try again shortly.",
                 "invalidSymbol": "Invalid ticker symbol."
             },
@@ -670,7 +670,7 @@
                 "signalAbstain": "Confluence -",
                 "signalBearish": "Bearish {v0}",
                 "signalBullish": "Bullish {v0}",
-                "signalFresh": "Newly lit: {v0}",
+                "signalFresh": "New: {v0}",
                 "signalMore": "+{v0}",
                 "signalPullback": "Pullback: {v0}",
                 "signalScore": "Confluence {v0}",
@@ -727,32 +727,32 @@
         "market-news": {
             "category": {
                 "articles": {
-                    "description": "Collected in-depth market analysis articles written by the FMP research team.",
+                    "description": "Market analysis articles from the FMP research team.",
                     "label": "US Market Articles",
                     "shortLabel": "Articles"
                 },
                 "crypto": {
-                    "description": "Collected major cryptocurrency market trends, including Bitcoin and Ethereum.",
+                    "description": "Market trends for major cryptocurrencies such as Bitcoin and Ethereum.",
                     "label": "Cryptocurrency",
                     "shortLabel": "Crypto"
                 },
                 "forex": {
-                    "description": "Collected forex market news for major currency pairs such as USD, JPY, and EUR.",
+                    "description": "Forex news on major currency pairs such as USD, JPY and EUR.",
                     "label": "US Forex",
                     "shortLabel": "Forex"
                 },
                 "general": {
-                    "description": "Collected news on overall US market trends and macroeconomic developments.",
+                    "description": "Overall US market trends and macroeconomic news.",
                     "label": "US General Market",
                     "shortLabel": "General"
                 },
                 "kr": {
-                    "description": "Collected major domestic stock market news, including KOSPI and KOSDAQ, from Naver News.",
+                    "description": "Key Korean stock market news, including KOSPI and KOSDAQ, from Naver News.",
                     "label": "Korean Stock Market",
                     "shortLabel": "KR Market"
                 },
                 "stock": {
-                    "description": "Collected major stock news and earnings issues from the US stock market.",
+                    "description": "Major US stock news and earnings updates.",
                     "label": "US Stocks",
                     "shortLabel": "Stocks"
                 }
@@ -830,7 +830,7 @@
             "DeleteAccountConfirm": {
                 "009e27": "Permanently Delete Account",
                 "19b2d1": "Cancel",
-                "56dd08": "To continue, please accurately enter your email.",
+                "56dd08": "To continue, enter your email exactly.",
                 "5c7233": "You will be logged out from all devices currently logged in, and social login (Google\n                    etc.) connections will be automatically disconnected.",
                 "6f8404": "If there is a legal reason for retention, data will be retained only for that period.",
                 "a060ae": "Your email, nickname, and profile picture will be immediately and permanently deleted.",
@@ -889,7 +889,7 @@
             },
             "OAuthConsentForm": {
                 "19b2d1": "Cancel",
-                "6615ab": "Sign Up Complete",
+                "6615ab": "Complete Sign Up",
                 "e6e1a2": "Processing..."
             }
         },
@@ -1044,7 +1044,7 @@
             "PortfolioChipPopover": {
                 "19b2d1": "Cancel",
                 "1f1712": "Save",
-                "51fc60": "{v0} Set Average Price",
+                "51fc60": "Set average price for {v0}",
                 "7294d6": "Quantity",
                 "7c07f7": "e.g., 10…",
                 "900beb": "Average Price",
@@ -1103,10 +1103,10 @@
         "premium-gate": {
             "PremiumModelGateModal": {
                 "2b8afd": "Go to Sign Up",
-                "2d4880": "Premium Model Usage Information",
+                "2d4880": "Using premium models",
                 "2f2f6d": "API Key Registration Required",
-                "41b8c4": "Sign up to use this model — no API key needed.",
-                "671fa2": "After signing up, if you register an API key, you can use this model.",
+                "41b8c4": "Sign up to use this model without an API key.",
+                "671fa2": "Sign up and register an API key to use this model.",
                 "94b7db": "Close",
                 "e91c23": "Go to Register"
             }
@@ -1134,9 +1134,9 @@
         },
         "reasoning-toggle": {
             "ReasoningToggle": {
-                "3592be": "This feature allows AI to reason more deeply in multiple steps before providing an answer.",
+                "3592be": "The AI reasons through more steps before it answers.",
                 "c48ae3": "However, analysis may take a bit longer.",
-                "ddf353": "Enables a more thorough analysis considering indicators, news, and scenarios."
+                "ddf353": "Turn it on and the AI weighs indicators, news and scenarios more carefully for a detailed analysis."
             },
             "a11y": {
                 "featureLabel": "Detailed analysis",
@@ -1215,7 +1215,7 @@
                 "d7fe41": "Recent Searches"
             },
             "TickerAutocomplete": {
-                "124e37": "Search by Name (e.g.: Apple, Samsung Electronics, Bitcoin)",
+                "124e37": "Search by name (e.g. Apple, Samsung Electronics, Bitcoin)",
                 "30cf1e": "Search Ticker",
                 "4f5a3f": "Search",
                 "5dd6d9": "No search results",
@@ -1282,7 +1282,7 @@
                 "failed": "Something went wrong. Please try again.",
                 "merged": "Moved {v0} watchlist symbols into your account",
                 "mergedSkipped": "{v1} were left out because of the {v0}-symbol limit",
-                "holdingKeptInWatchlist": "Holding saved, but could not remove from Watchlist. Please delete it manually from the Watchlist page.",
+                "holdingKeptInWatchlist": "Holding saved, but it couldn't be removed from your watchlist. Remove it on the Watchlist page.",
                 "undo": "Undo",
                 "viewWatchlist": "View Watchlist"
             },
@@ -1379,14 +1379,14 @@
                 "reasonOffTopic": "Irrelevant to the question",
                 "reasonOther": "Other",
                 "reasonTooLong": "Too long or difficult",
-                "reasonUnsupported": "Insufficient basis",
+                "reasonUnsupported": "Not well supported",
                 "send": "Send",
-                "title": "What was unsatisfactory?"
+                "title": "What could be better?"
             }
         },
         "voc-prompt": {
             "VocPromptModal": {
-                "body": "Your rating and comment will be immediately reflected in service improvements.",
+                "body": "Leave a rating and a short comment, and we'll use it to improve the service.",
                 "close": "Close",
                 "commentLabel": "Comment",
                 "counter": "{current}/{max}",
@@ -1416,7 +1416,7 @@
             "errExpired": "The code has expired. Please request a new one.",
             "errInvalid": "We could not process the request. Refresh and try again.",
             "errInvalidEmail": "Please check the email address.",
-            "errLimit": "You can receive up to {max} items. Please tidy up in alert email settings.",
+            "errLimit": "You can receive up to {max} items. Remove some in alert email settings.",
             "errRateLimited": "Please try again in a moment.",
             "errTooMany": "Too many wrong attempts. Please request a new code.",
             "errUnavailable": "We cannot take requests right now. Please try again shortly.",
@@ -1703,17 +1703,17 @@
         },
         "crossLink": {
             "description": {
-                "chart": "Technical indicators plus an AI overall report",
+                "chart": "Technical indicators and an AI summary report",
                 "congress": "Senate and House trade disclosures with AI trend reading",
                 "fear-greed": "0–100 score from volume and price position",
                 "financials": "Income statement, balance sheet and cash flow",
                 "flows": "Institutional buying and selling, insider trades, short interest and an AI reading",
                 "fundamental": "Financials, valuation and analyst outlook",
-                "news": "Real-time news plus analyst opinion analysis",
+                "news": "Real-time news and analyst views",
                 "options": "Price levels and implied volatility as the options market sees them",
-                "overall": "A four-angle AI conclusion plus scenarios"
+                "overall": "AI conclusion and scenarios from chart, earnings, news and buying sentiment"
             },
-            "descriptionOverallCrypto": "An AI conclusion combining chart, news and market sentiment, plus scenarios",
+            "descriptionOverallCrypto": "AI conclusion and scenarios from chart, news and market sentiment",
             "title": {
                 "chart": "Chart Analysis",
                 "congress": "Congressional Trades",
@@ -1940,7 +1940,7 @@
             "byokGate": {
                 "ai_server_unstable": "The AI server is unstable, so the analysis couldn't finish. Change the model from the gear icon at the top right.",
                 "api_key_corrupted": "Could not decrypt the stored API key. Please register it again.",
-                "invalid_model": "This model is no longer supported. Reload the page and choose a model again.",
+                "invalid_model": "This model isn't supported. Reload the page and choose a model again.",
                 "tier_premium_blocked": "The selected model is available on the Premium tier only. Register an API key or upgrade your tier.",
                 "unexpected_error": "An unexpected error occurred. Please try again shortly."
             },
@@ -2105,7 +2105,7 @@
                     "copy_faq1q": "Why realized volatility instead of VKOSPI?",
                     "copy_faq2a": "The formula is the same but the inputs are not. Korea has no liquid high-yield bond market, so the credit factor is proxied by the spread between corporate bonds and similarly dated 3-year KTBs.",
                     "copy_faq2q": "Can I compare this score directly with the US Fear & Greed Index?",
-                    "copy_faq3a": "It updates once per session, on the KOSPI regular-hours closing price. The page itself is cached for up to an hour.",
+                    "copy_faq3a": "It updates once a day, on the KOSPI regular-session close. A new score can take up to an hour to appear on this page.",
                     "copy_faq3q": "How often does the score update?",
                     "copy_intro0": "The Korean market Fear & Greed Index combines recent closes of KOSPI 200 (KODEX 200), KOSPI realized volatility, 30-year KTBs, corporate bonds, 3-year KTBs and equal-weight KOSPI 200 into a 0–100 score for short-term buying sentiment across Korean equities.",
                     "copy_intro1": "Each of the five factors is converted to a percentile within its own history, then averaged with equal weights. A lower score means fear dominates; a higher score means greed does.",
@@ -2120,7 +2120,7 @@
                     "copy_faq0q": "What does the market Fear & Greed Index measure?",
                     "copy_faq1a": "No. This index is computed independently of CNN, deriving its own five factors (momentum, volatility, safe-haven demand, junk-bond demand and breadth) from daily closing data alone. It leaves out some inputs CNN uses, such as the options put/call ratio. Because the construction differs, fear and greed tend to move in the same direction while the exact score does not match.",
                     "copy_faq1q": "Is this the same as CNN's Fear & Greed Index?",
-                    "copy_faq2a": "It updates once per session, on the regular-hours closing price. The page itself is cached for up to an hour.",
+                    "copy_faq2a": "It updates once a day, on the regular-session close. A new score can take up to an hour to appear on this page.",
                     "copy_faq2q": "How often does the score update?",
                     "copy_intro0": "The market Fear & Greed Index combines recent closes of the S&P 500, VIX, long-dated Treasuries, corporate bonds (high-yield and investment grade) and the equal-weight index into a 0–100 score for short-term buying sentiment across US equities.",
                     "copy_intro1": "Each of the five factors is converted to a percentile within its own history, then averaged with equal weights. A lower score means fear dominates; a higher score means greed does.",
@@ -2131,7 +2131,7 @@
                     "titleSubject": "US Fear & Greed Index"
                 },
                 "crypto": {
-                    "title": "Crypto Fear and Greed Index - Today's Crypto Market Sentiment",
+                    "title": "Crypto Fear and Greed Index: Today's Crypto Market Sentiment",
                     "heading": "Crypto Fear and Greed Index",
                     "description": "Combines recent prices and trading volume of Bitcoin, 19 other large coins and gold into a 0 to 100 score and a five-stage label for buying sentiment across the crypto market.",
                     "copy_intro0": "The Crypto Fear and Greed Index combines recent price and trading volume trends of the 20 largest coins by market cap, led by Bitcoin, into a 0 to 100 score for short-term sentiment across the crypto market. A lower score means fear dominates; a higher score means greed does.",
@@ -2143,7 +2143,7 @@
                     "copy_faq2q": "How is the gold price handled on weekends?",
                     "copy_faq2a": "Coins trade seven days a week, but gold trades only five. On weekends and holidays when there is no gold quote, the previous trading day's gold close (usually Friday's) is carried forward.",
                     "copy_faq3q": "How often does the score update?",
-                    "copy_faq3a": "It updates once a day, based on the daily bar that closes at 00:00 UTC; live prices from the day still in progress are never used. The page itself is cached for up to an hour.",
+                    "copy_faq3a": "It updates once a day, based on the daily bar that closes at 00:00 UTC; live prices from the day still in progress are never used. A new score can take up to an hour to appear on this page.",
                     "copy_faq4q": "Can I trade based on this score?",
                     "copy_faq4a": "This index is a reference that summarizes market sentiment, not investment advice. Extreme fear or greed does not by itself signal an imminent rebound or decline, so investment decisions and their consequences remain your own.",
                     "answerSubject": "Crypto market",
@@ -2160,7 +2160,7 @@
                 "title": "Log In"
             },
             "manifest": {
-                "description": "AI analysis for US and Korean equities and crypto. Chart, fundamentals and news combined into one indicator-backed Overall Analysis, with Backtesting against past data.",
+                "description": "AI analysis for US and Korean stocks and crypto. Charts, indicators, fundamentals and news come together in one overall analysis, and past analyses are checked with backtests.",
                 "name": "{v0}: AI analysis for US and Korean equities and crypto",
                 "shortcutMarket": "Market overview",
                 "shortcutSearch": "Search tickers"
@@ -2180,7 +2180,7 @@
                 }
             },
             "methodology": {
-                "description": "Explains what data and rules SIGLENS analysis uses for calculations, and what AI does. Includes data sources by market, constituent indicators of the Fear & Greed Index, limitations, how to report errors, and change history.",
+                "description": "How SIGLENS analysis is calculated, from which data and rules, and what the AI does. Covers data sources by market, the indicators behind the Fear & Greed Index, limitations, how to report errors, and the change log.",
                 "metaTitle": "SIGLENS Analysis Methodology: Data Sources and AI Analysis Process",
                 "title": "Analysis Methodology"
             },
@@ -2202,7 +2202,7 @@
             "oauthConsentFullTitle": "{v0}: social sign-up terms consent",
             "oauthConsentTitle": "Social sign-up consent",
             "portfolio": {
-                "description": "A personalized page to check where your average price stands within the recent price range for holdings registered on SigLens.",
+                "description": "A personalized page to check where your average price stands within the recent price range for holdings registered on SIGLENS.",
                 "title": "My Portfolio"
             },
             "position": {
@@ -2312,11 +2312,11 @@
                 "title": "Most-viewed symbols: US and Korean stocks and crypto"
             },
             "terms": {
-                "description": "Read SIGLENS's Terms of Service: sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the company.",
+                "description": "Read SIGLENS's Terms of Service: sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the operator.",
                 "title": "Terms of Service"
             },
             "watchlist": {
-                "description": "A personalized page to view prices and 5-day trends for your saved Watchlist stocks and recently viewed stocks on SigLens, all in one place.",
+                "description": "A personalized page to view prices and 5-day trends for your saved Watchlist stocks and recently viewed stocks on SIGLENS, all in one place.",
                 "title": "Watchlist"
             }
         },
@@ -2564,7 +2564,7 @@
             "Hurst Exponent Signal Guide": "Observes whether prices tend to continue in one direction or revert to their mean.",
             "Ichimoku Cloud Signal Guide": "Uses the cloud and conversion/base lines to simultaneously identify trend direction, support, and resistance.",
             "Keltner Channel Signal Guide": "Uses channels offset by volatility above and below the average price to observe trends and biases.",
-            "MA Signal Guide": "Uses the average price line over a certain period to observe trends and golden crosses and death crosses.",
+            "MA Signal Guide": "Uses the average price over a set period to read the trend and spot a Golden Cross or Death Cross.",
             "MACD Signal Guide": "Observes the change in the gap between two moving averages to identify trend speed and reversal signals.",
             "MACD 대순환 분석": "Reads the current position within a six-stage cycle using the three signs and crosses of MACD.",
             "MACD-V Signal Guide": "Uses volatility-adjusted MACD to see if the trend speed is excessive.",
@@ -2702,6 +2702,10 @@
                     "kr": "Korea",
                     "us": "US"
                 },
+                "pool": {
+                    "aux": "Supplementary",
+                    "primary": "Primary"
+                },
                 "results": "Verdict by target",
                 "truth": "Ground truth"
             },
@@ -2789,17 +2793,17 @@
         },
         "methodology": {
             "ai": {
-                "check": "Easy-to-understand texts are checked before being displayed. If prices or large numbers not present in the original analysis or calculated values are included, the text is rewritten once. If they remain, the sentence is removed. If the text is still not clear after removing sentences, only the original view is shown without the easy-to-understand version.",
-                "checkTitle": "How Easy-to-Understand Texts Are Checked",
+                "check": "Simple view text is checked before it appears. If it contains a price or large number that is not in the original analysis or the calculated values, the AI rewrites it once, and if the number is still there, that sentence is removed. If removing sentences still does not fix the text, only the Original view is shown.",
+                "checkTitle": "How Simple View Text Is Checked",
                 "do1": "Models from OpenAI, Anthropic, Google, and DeepSeek receive calculated values and write explanatory texts.",
                 "do2": "Determine if chart pattern candidates match their actual shapes.",
                 "do3": "Read chart structures and suggest Support, Resistance, entry, Stop Loss, and Take Profit price ranges.",
-                "do4": "For easy-to-understand texts, technical terms are rephrased into simpler language.",
+                "do4": "In the Simple view, it rewrites technical terms in plain language.",
                 "doTitle": "What It Does",
                 "dont1": "It does not determine indicator values, Candlestick Patterns, or signals. These values are calculated by rules.",
                 "dont2": "It does not interfere with the Fear & Greed Index. Both the score and interpretive sentences are generated by rules.",
-                "dont3": "When writing easy-to-understand texts, it does not tell readers what to do. It describes prices as positions, and is instructed not to suggest actions.",
-                "dont4": "Texts are not read and edited by a person one by one before they appear. Instead, numbers come from rules, and easy-to-understand texts pass an automatic check before they are published.",
+                "dont3": "Simple view text never tells readers what to do. The AI is instructed to describe only what kind of level a price is.",
+                "dont4": "No person reads and edits each piece before it appears. Instead, numbers come from rules, and Simple view text passes an automatic check before it is published.",
                 "dontTitle": "What It Does Not Do",
                 "levels": "The entry, stop loss, and target levels in an analysis are values the AI proposes after reading the chart structure. The code checks whether the stop loss and the first target fall within a reasonable range given volatility (ATR), and if they do not, it also shows a correction calculated from volatility. Targets implied by a chart pattern are calculated by the code from the pattern's shape. These are not trading instructions.",
                 "levelsTitle": "Price Ranges Are Reference Figures",
@@ -2912,7 +2916,7 @@
                 "step3": "AI Generates Text",
                 "step3Body": "AI receives the calculated values and explains them in easy-to-read text.",
                 "step4": "Review and Display",
-                "step4Body": "Easy-to-read texts are reviewed for prices not included in the calculation or large numbers before being displayed.",
+                "step4Body": "Simple view text is checked for prices or large numbers that are not in the calculation before it is shown.",
                 "sub": "Each analysis goes through four steps before appearing on screen.",
                 "title": "Overview"
             },
@@ -2923,7 +2927,7 @@
         },
         "symbol": {
             "AnalysisProvenanceNote": {
-                "aiBody": "AI wrote this text from values SIGLENS calculated with fixed rules. In the easy-to-understand version, a sentence with a price not found in the calculation is automatically rewritten or removed. No person reads each piece, and it is not investment advice. Data: {source}, etc.",
+                "aiBody": "AI wrote this text from values SIGLENS calculated with fixed rules. In the Simple view, a sentence with a price that is not in the calculation is automatically rewritten or removed. No person reads each piece, and it is not investment advice. Data: {source}, etc.",
                 "calcLink": "Calculation Method",
                 "dataSource": {
                     "crypto": "Quotes & News Financial Modeling Prep",
@@ -2940,7 +2944,7 @@
                 "ruleBody": "This score is calculated solely by rules, without AI narration. Data: {source}."
             },
             "ChartContent": {
-                "93c3a3": "The chart does not reflect Pre-market, After-market prices. | ",
+                "93c3a3": "The chart does not include pre-market or after-hours prices. | ",
                 "d1a23e": "Adjust Panel Width",
                 "extendedHoursNotice": "Shaded areas are pre-/after-market (extended hours) trading; indicators and AI analysis use regular-session bars only. | ",
                 "f69071": "AI Chart Analysis",
@@ -3036,7 +3040,7 @@
                 "170a59": "{v0} Technical Indicators Summary",
                 "269f7b": "{v0}% from high, +{v1}% from low",
                 "497d1e": "Current Price",
-                "beae1d": "The above indicators are automatically calculated values based on the displayed chart data.",
+                "beae1d": "These indicators are calculated automatically from the chart data shown.",
                 "d8446c": "MACD Momentum",
                 "e532e4": "({v0} min delay)",
                 "guideIndicators": "All indicator guides",
@@ -3231,7 +3235,7 @@
             "end": {
                 "body": "You can start without signing up.",
                 "button": "Open SIGLENS AI",
-                "title": "Ask right now"
+                "title": "Got a stock to ask about?"
             },
             "faq": {
                 "adviceA": "No. It only analyzes and explains the data; it never tells you to buy or sell. Investment decisions are yours to make.",
@@ -3254,7 +3258,7 @@
             },
             "hero": {
                 "button": "Ask SIGLENS AI",
-                "lede": "SIGLENS AI interprets the price, indicator and news data SIGLENS computes and keeps itself through its analysis logic, and explains it in plain words.",
+                "lede": "SIGLENS AI reads the prices, indicators and news that SIGLENS computes and collects itself, and explains them in plain words.",
                 "title": "Curious about a stock? Ask now"
             },
             "market": {
@@ -3600,7 +3604,7 @@
                     "kinds": "{count} types"
                 },
                 "aapl": {
-                    "a1": "<b>Apple (AAPL)</b> starts with the trend: above its moving averages reads as an uptrend, below as weakness.",
+                    "a1": "<b>Apple (AAPL)</b> starts with the trend: above its moving averages reads as an uptrend, below as a downtrend.",
                     "a2": "Its past month against the Nasdaq shows whether it beat the market.",
                     "a3": "RSI gauges overheating. The closer it gets to the line, the likelier a short pause.",
                     "a4": "Support and resistance mark where price tends to hold or stall.",
@@ -3763,12 +3767,12 @@
                 "550fe5": "Re-analysis can only be performed once every 5 minutes.",
                 "5ec98c": "Key Levels",
                 "79282c": "Downtrend",
-                "82e32f": "This is the result of AI-suggested values being further verified and corrected with internal data.\n                            ",
+                "82e32f": "The AI's values, double-checked and adjusted against our own data.\n                            ",
                 "8d481f": "No Pattern Detected",
                 "8da27a": "Support",
                 "911acb": "{v0} {v0, plural, one {indicator} other {indicators}} applied",
                 "913a74": "Strategy",
-                "9971e1": "In-depth indicator analysis, Candlestick Pattern, key\n                                    Support and Resistance Levels, and trading scenarios are included.\n                                    ",
+                "9971e1": "Includes detailed indicator analysis, candlestick patterns, key support and resistance levels, and trading scenarios.\n                                    ",
                 "b321c3": "This is a level where multiple indicators converge at a close price range.",
                 "b3df82": "Internal Correction Value",
                 "bdeea2": "Chart Pattern",
@@ -3890,7 +3894,7 @@
                     "t4": "It is applying strategies such as Elliott Wave and Fibonacci to the data.",
                     "t5": "Summarizes indicator-based scenarios, key price levels, and risk factors.",
                     "t6": "It detects chart patterns such as head-and-shoulders and double bottom alongside candlestick patterns.",
-                    "t7": "A finished analysis is cached for a while, so reopening it shows the result immediately."
+                    "t7": "A finished analysis is kept for a while, so reopening it shows the result right away."
                 }
             },
             "sectionLabel": {
@@ -4055,7 +4059,7 @@
                 "plan": "Plan at entry: first target ${v0}, final target ${v1}, stop loss ${v2}, second stop loss ${v3}",
                 "reviews": "{v0} reviews while holding",
                 "summaryHeading": "AI summary at the entry decision",
-                "files": "Prompt {v0} · Response {v1}",
+                "files": "Prompt {v0}, response {v1}",
                 "symbolLink": "View {v0} analysis",
                 "loading": "Loading the trade details…",
                 "loadError": "Could not load the trade details. They are also in trades.csv in the results folder."
@@ -4207,34 +4211,34 @@
                 "colTo": "End Date",
                 "colWeight": "Weight",
                 "compareAria": "Line chart comparing {symbols} returns. Change over the last {period}: {changes}",
-                "compareTitle": "Return Comparison · Last {period}",
+                "compareTitle": "Returns over the Last {period}",
                 "dataTable": "View Data Table",
                 "dividendsAria": "Bar chart of {symbol} dividends per share by year. Most recent {year}: {amount}",
                 "dividendsAriaPartial": "Bar chart of {symbol} dividends per share by year. Most recent {year}: {amount} (partial year)",
                 "dividendsTitle": "{symbol} Dividends Per Share ({currency})",
                 "financialsAria": "Bar chart of {symbol} revenue and net income for the last {count} quarters. Most recent {period}: revenue {revenue}, net income {netIncome}",
-                "financialsTitle": "{symbol} Quarterly Earnings · Last {count} Quarters",
+                "financialsTitle": "{symbol} Quarterly Earnings (Last {count} Quarters)",
                 "flowsInsiderAria": "{symbol} insider net buying by month, bar chart. {months}-month total {total}",
                 "flowsInsiderCaption": "Insider Net Buy Amount (Monthly, USD)",
                 "flowsInstitutionalCaption": "Institutional Holdings Net Change (Quarterly)",
                 "flowsKrAria": "Bar chart of {symbol} daily net buying by foreign, institutional, and individual investors. Last {days} days total: foreign {foreign}, institutional {institution}, individual {individual}",
-                "flowsKrTitle": "{symbol} Investor Net Buying (shares) · Last {days} Days",
-                "flowsUsTitle": "{symbol} Supply & Demand · Institutional Quarterly, Insider Monthly",
-                "heatmapSectorsTitle": "{market} Sector Performance · Today",
-                "heatmapThemeTitle": "{label} Theme · Constituent Performance",
+                "flowsKrTitle": "{symbol} Net Buying by Investor Type (Shares, Last {days} Days)",
+                "flowsUsTitle": "{symbol} Supply & Demand (Institutional Quarterly, Insider Monthly)",
+                "heatmapSectorsTitle": "{market} Sector Performance Today",
+                "heatmapThemeTitle": "{label} Theme Stock Performance",
                 "legendForeign": "Foreign",
                 "legendIndividual": "Individual",
                 "legendInstitution": "Institutional",
                 "marketKr": "Korea",
                 "marketUs": "US",
-                "optionsSummary": "Max pain {maxPain} · Put/call ratio {ratio}",
-                "optionsTitle": "{symbol} Options Open Interest · {expiry} Expiry",
+                "optionsSummary": "Max pain {maxPain}, put/call ratio {ratio}",
+                "optionsTitle": "{symbol} Options Open Interest ({expiry} Expiry)",
                 "period1M": "1 Month",
                 "period1Y": "1 Year",
                 "period3M": "3 Months",
                 "period6M": "6 Months",
                 "portfolioGroup": "{currency} Holdings",
-                "portfolioTitle": "My Holdings · Weight and P&L",
+                "portfolioTitle": "My Holdings (Weight and P&L)",
                 "yearPartial": "{year} (Partial)"
             }
         },
@@ -4323,7 +4327,7 @@
                 ]
             },
             "tradesCaptionTruncated": "Congressional trades disclosure list (showing the latest {v0} of {v1} trades)",
-            "tradesTruncated": "Showing only the latest {v0} trades · {v1} in total"
+            "tradesTruncated": "Showing the latest {v0} of {v1} trades"
         },
         "dashboard": {
             "BriefingCard": {
@@ -4789,7 +4793,7 @@
                 "ratingsAnalystBasis": "Based on {count, plural, one {# analyst} other {# analysts}} currently covering this stock",
                 "targetSourcesDisagree": "Price targets differ by more than {pct}% between data providers. The figures above are FMP's; this line is Yahoo Finance's.",
                 "yahooTargetMean": "Yahoo Finance average target: {amount}",
-                "yahooTargetMeanCount": "Yahoo Finance average target: {amount} · {count, plural, one {# analyst} other {# analysts}}"
+                "yahooTargetMeanCount": "Yahoo Finance average target: {amount} ({count, plural, one {# analyst} other {# analysts}})"
             },
             "GrowthChart": {
                 "06ae38": "Revenue Growth Rate",
@@ -4815,30 +4819,30 @@
                 "6a5d30": "Return on Equity (ROE)",
                 "7a7512": "This ratio shows how much profit the company generated from its total assets.\n                                ",
                 "83c700": "Profitability",
-                "b3a38b": "This ratio shows how many won are left from the core business for every 100 won in sales.\n                                ",
+                "b3a38b": "This ratio shows how much of every 100 in sales is left from the core business.\n                                ",
                 "c62afe": "Operating Profit Margin",
                 "d1ca4f": "Net Profit Margin",
                 "d3c380": "It indicates how efficiently assets are managed; 5%\n                                or more is considered good.",
                 "d73ac0": "This ratio shows how much profit the company generated from the money invested by shareholders.\n                                ",
                 "f5d222": "15% or more is excellent, 10-15% is good, and below that is considered average.\n                                ",
-                "f77781": "Shows how many won are actually left from 100 won in sales after deducting all expenses and taxes.\n                                "
+                "f77781": "Shows how much of every 100 in sales is actually left after all expenses and taxes.\n                                "
             },
             "ValuationCard": {
                 "0f77d0": "A value less than 1 means the company is trading below its assets.\n                                ",
                 "12a32f": "Valuation",
-                "132b50": "This value shows how many times the stock price is compared to the company's net assets.\n                                ",
+                "132b50": "Shows the share price as a multiple of the company's net assets (book value).\n                                ",
                 "2276f3": "A higher value means one share of stock is generating more profit.\n                                ",
                 "25e975": "Earnings Per Share (TTM)",
                 "28586e": "Comparing it to the industry average is the most accurate.",
                 "41b238": "Growth-Value Ratio (TTM)",
                 "4e6c09": "Typically, below 1 is considered undervalued relative to sales, and above 5 is considered overvalued.",
-                "634f35": "This value shows how many times the current stock price is compared to the annual earnings.",
+                "634f35": "Shows the current share price as a multiple of one year's earnings.",
                 "68e99d": "Below 1 is considered undervalued relative to growth, and above 1 is considered overvalued relative to growth.",
                 "711a9f": "Often used in M&A or inter-company comparisons; the lower it is, the cheaper it is considered.",
                 "8a717e": "Price-to-Sales Ratio (TTM)",
                 "9dbbcf": "Often used when evaluating growth stocks with low earnings or loss-making companies.",
                 "a02a9a": "Price-to-Earnings Ratio (TTM)",
-                "a56ae3": "This value shows how many times the stock price is compared to sales.",
+                "a56ae3": "Shows the share price as a multiple of revenue.",
                 "b499b2": "If it's 1 or higher, it means the company is valued above its asset value.",
                 "d7d691": "Enterprise Value/EBITDA (TTM)",
                 "d9788e": "Price-to-Book Ratio (TTM)",
@@ -4871,7 +4875,7 @@
                 "analysts": "{count, plural, one {# analyst} other {# analysts}}",
                 "vs30d": "vs 30 days ago",
                 "vs90d": "vs 90 days ago",
-                "revisions30d": "Last 30 days: {up} raised · {down} lowered",
+                "revisions30d": "Last 30 days: {up} raised, {down} lowered",
                 "noChange": "No change",
                 "srUp": "Up",
                 "srDown": "Down"
@@ -5562,7 +5566,7 @@
                 "myPortfolio": "My Portfolio"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
-            "xAccountAria": "{v0} X (Twitter) Account (opens in new tab)",
+            "xAccountAria": "{v0} X (Twitter) account (opens in a new tab)",
             "preferences": {
                 "language": "Language",
                 "theme": "Theme",
@@ -5589,7 +5593,7 @@
                 "1d7b3e": "Insufficient data to calculate the Market Fear & Greed Index.",
                 "41205a": "Comparison by Period",
                 "c099fa": "Factor Contribution",
-                "e446f9": "Data may not be sufficiently accumulated yet. Please check again shortly."
+                "e446f9": "There may not be enough data yet. Please check again shortly."
             },
             "page": {
                 "asOfClose": "As of the close on {v1}/{v2}/{v0}",
@@ -5700,7 +5704,7 @@
                 "0a451a": "Sentiment distribution: Positive {v0}, Neutral {v1}, Negative {v2}.",
                 "34b3fc": "The {v0} page displays the {v1} most recent news items.",
                 "3ed34b": "{v0} latest news data is not yet ready. Once news cards are analyzed, recent articles and sentiment summaries will appear in this area.",
-                "5a1c5f": "You can check key issues and sentiment of coin news together.",
+                "5a1c5f": "See the key issues and sentiment in crypto news.",
                 "c154a3": "Along with the news flow, you can check earnings schedules, recent earnings, and analyst rating changes.",
                 "d54f8a": "Latest articles are based on {v0}.",
                 "fc9900": "Recent Article Titles"
@@ -5748,7 +5752,7 @@
             "ExpirationSelector": {
                 "15dbc6": "Select Option Expiration",
                 "88dc87": "The date when the option contract expires.",
-                "c94421": "Closer expiration dates lead to faster price changes. Options expire after their expiration date.",
+                "c94421": "The nearer the expiry, the faster the option price moves. After expiry, the option no longer exists.",
                 "ef6fe0": "Expiration",
                 "f7c86d": "Overall",
                 "slot0D": "This week",
@@ -5813,10 +5817,10 @@
             },
             "OptionsStaleDataBanner": {
                 "6ac929": "Options OI data is empty",
-                "6bdf35": "It is currently {v0}, please check again at {v1}.",
+                "6bdf35": "It is currently {v0}. Please check again at {v1}.",
                 "92d2c9": "Standard Time (EST)",
                 "951cc7": "Daylight Saving Time (EDT)",
-                "baed2a": "After the close of the US regular trading session, Yahoo does not update values such as Open Interest, quotes, and IV, so it is temporarily unavailable."
+                "baed2a": "After the US regular session closes, Yahoo stops updating values such as Open Interest, quotes and IV, so they are temporarily blank."
             },
             "StrikeVolumeChart": {
                 "2156df": "Displays today's Call and Put Volume by strike price as a bar chart.\n                    The current stock price is highlighted with a vertical line.",
@@ -5842,14 +5846,14 @@
                 "est": "standard time (EST)"
             },
             "optionsTooltips": {
-                "149b70": "This is the implied Volatility reflected by the option closest to the current stock price.",
+                "149b70": "This is the implied volatility of the option closest to the current stock price.",
                 "2c2508": ": After U.S. regular market hours or during pre-market, Yahoo sometimes sends ATM option IVs cleared to 0, making it impossible to get accurate figures. Please check again on weekdays in Korean time at {v0} (U.S. regular market hours, {v1}). U.S. market holidays are excluded.",
                 "2eb007": "This is the range that the Options market has priced in, reflecting “how much this stock is expected to fluctuate in the future.”",
                 "974bf0": "When displayed as ‘-’",
                 "cc43f8": ": Since it is calculated from ATM IV, if ATM IV is empty (e.g., outside regular market hours), it will also be empty. Also, on the expiry date, if the remaining time is 0, calculation is impossible, and it may appear empty. Please check again on weekdays in Korean time at {v0} (U.S. regular market hours). U.S. market holidays are excluded.",
-                "d9d063": "It usually rises just before Earnings announcements.",
+                "d9d063": "It usually rises just before earnings announcements.",
                 "f76775": "For example, if it's ±4%, the market expects the stock price to move by approximately ±4% until the next expiration date.",
-                "f899ef": "This value usually increases more than usual just before major events like Earnings."
+                "f899ef": "It tends to run higher than usual just before big events like earnings."
             },
             "tooltip": {
                 "callOpenInterest": [
@@ -5926,18 +5930,18 @@
                 "sectionLabel": "{v0} overall analysis summary"
             },
             "OverallFactualFallback": {
-                "278a07": "The server has currently identified {v0} recent news items, of which {v1} have completed AI news card analysis.",
+                "278a07": "There are currently {v0} recent news items, and AI news card analysis is complete for {v1} of them.",
                 "3a92a1": "Recent news data is not yet ready. Once news cards are analyzed, the news axis status of the overall analysis will also be reflected.",
                 "87d0df": "Overall analysis data status",
                 "ab960a": "{v0} Overall Analysis looks at {v1} together.",
-                "ea75f6": "The overall AI conclusion has not been cached yet. When the analysis results are\n                    ready, bullish, neutral, and bearish scenarios and risk factors will be displayed in this area."
+                "ea75f6": "The overall AI conclusion is not ready yet. Once the analysis finishes, bullish, neutral and bearish scenarios and risk factors will appear here."
             },
             "OverallSummary": {
                 "99a89d": "Overall Summary"
             },
             "OverallTriggerCta": {
                 "51480a": "Get AI Overall Analysis",
-                "5f4a34": "Once individual news analysis is complete, you can automatically receive an overall analysis\n                    (usually takes 30 seconds to 1 minute).",
+                "5f4a34": "The overall analysis arrives automatically once the individual news analysis is done (usually 30 seconds to 1 minute).",
                 "8b7ae7": "AI Overall Analysis",
                 "ff9889": "Analyzing news cards..."
             },
@@ -5982,10 +5986,10 @@
                 "ffe45d": "Position within recent range"
             },
             "PositionCta": {
-                "019ed7": "Register your Holdings to see your purchase floor.",
+                "019ed7": "Register your holdings to see the floor you bought on.",
                 "2bf3cd": "Recent Range {v0}",
                 "5edaf2": "Register Holdings",
-                "8df3cf": "If you register your average price and quantity, the floor you bought (★) in this building will also be displayed."
+                "8df3cf": "Add your average price and quantity to see the floor you bought on (★) in this building."
             },
             "PositionHoldingCard": {
                 "0ac914": "Avg. Price {v0}",
@@ -6110,7 +6114,7 @@
                 "imagePrivacyHint": "Please cover personal information such as account numbers before uploading.",
                 "imageTooLarge": "{name} file is too large (only files under 25MB can be uploaded)",
                 "imageUnreadable": "Failed to read {name} file.",
-                "imageUnsupported": "{name} is an unsupported format (PNG, JPEG, WebP, GIF).",
+                "imageUnsupported": "{name} is an unsupported format (only PNG, JPEG, WebP, and GIF can be uploaded).",
                 "removeImage": "Remove attached image {n}"
             },
             "EmptyState": {

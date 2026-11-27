@@ -86,32 +86,42 @@ describe('buildBenchmarkPageModel', () => {
 
 describe('formatBenchmarkPoolSummary', () => {
     const POOLS = { primary: 1190, aux: 16, L5: 30 };
+    const NAMES = { primary: '기본 문항', aux: '보조 문항' };
 
     it('joins pools with the Korean list conjunction', () => {
-        expect(formatBenchmarkPoolSummary(POOLS, 'ko')).toBe(
-            'primary 1,190, aux 16 및 L5 30'
+        expect(formatBenchmarkPoolSummary(POOLS, 'ko', NAMES)).toBe(
+            '기본 문항 1,190, 보조 문항 16 및 L5 30'
         );
     });
 
     it('joins pools with the English list conjunction', () => {
-        expect(formatBenchmarkPoolSummary(POOLS, 'en')).toBe(
-            'primary 1,190, aux 16, and L5 30'
-        );
+        expect(
+            formatBenchmarkPoolSummary(POOLS, 'en', {
+                primary: 'Primary',
+                aux: 'Supplementary',
+            })
+        ).toBe('Primary 1,190, Supplementary 16, and L5 30');
     });
 
     it('uses the ideographic enumeration comma in Japanese', () => {
-        expect(formatBenchmarkPoolSummary(POOLS, 'ja')).toBe(
-            'primary 1,190、aux 16、L5 30'
-        );
+        expect(
+            formatBenchmarkPoolSummary(POOLS, 'ja', {
+                primary: '基本問題',
+                aux: '補助問題',
+            })
+        ).toBe('基本問題 1,190、補助問題 16、L5 30');
     });
 
     it('uses the ideographic enumeration comma in Chinese', () => {
-        expect(formatBenchmarkPoolSummary(POOLS, 'zh')).toBe(
-            'primary 1,190、aux 16和L5 30'
-        );
+        expect(
+            formatBenchmarkPoolSummary(POOLS, 'zh', {
+                primary: '基本题',
+                aux: '辅助题',
+            })
+        ).toBe('基本题 1,190、辅助题 16和L5 30');
     });
 
     it('is a single entry for a single pool', () => {
-        expect(formatBenchmarkPoolSummary({ A: 3 }, 'en')).toBe('A 3');
+        expect(formatBenchmarkPoolSummary({ A: 3 }, 'en', NAMES)).toBe('A 3');
     });
 });

@@ -165,7 +165,7 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('시나리오:');
         expect(result).toContain('대응 관점:');
         expect(result).toContain(
-            '추세 재확인 전까지는 관망 관점이 더 적절합니다.'
+            '추세를 다시 확인할 때까지는 지켜보는 편이 낫습니다.'
         );
     });
 
@@ -323,7 +323,7 @@ describe('buildExpertAnalysisReport', () => {
         });
 
         expect(result).toContain(
-            '핵심 지지 확인 이후 분할 접근 가능성을 검토할 수 있습니다.'
+            '핵심 지지선을 확인한 뒤 나눠서 진입하는 방안을 검토해 볼 수 있습니다.'
         );
     });
 
@@ -348,7 +348,7 @@ describe('buildExpertAnalysisReport', () => {
         });
 
         expect(result).toContain(
-            '공격적 대응보다 보수적 관리와 비중 점검이 우선되는 구간입니다.'
+            '무리하게 대응하기보다 비중을 점검하며 보수적으로 관리할 구간입니다.'
         );
     });
 

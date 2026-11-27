@@ -56,7 +56,7 @@ describe('SignupContent', () => {
         render(<SignupContent />);
         const slot = screen.getByTestId('signup-form');
         const note = screen.getByText(
-            '소셜 로그인 시작 후 약관 동의 단계가 있습니다.'
+            '소셜 로그인을 시작하면 약관 동의 단계로 이어집니다.'
         );
         const divider = screen.getByText('또는 이메일로 가입');
 

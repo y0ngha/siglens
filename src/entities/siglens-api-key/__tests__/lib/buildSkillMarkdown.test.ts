@@ -52,7 +52,7 @@ describe('buildSkillMarkdown', () => {
     it('프런트매터에 이름과 설명을 둔다', () => {
         const md = build([quote]);
         expect(md.startsWith('---\nname: siglens\ndescription: ')).toBe(true);
-        expect(md).toContain('\n---\n\n# SigLens');
+        expect(md).toContain('\n---\n\n# SIGLENS');
     });
 
     it('기본 URL로 curl 예시를 만든다', () => {
@@ -107,7 +107,7 @@ describe('buildSkillMarkdown', () => {
 
     it('get_news가 저장된 기사만 돌려준다고 밝힌다', () => {
         expect(build([quote])).toContain(
-            'only news SigLens has already stored'
+            'only news SIGLENS has already stored'
         );
     });
 
@@ -140,7 +140,7 @@ describe('buildSkillMarkdown', () => {
             expect(md).toContain(
                 'Every model in the `model` argument list can generate a new analysis, free and member models included'
             );
-            expect(md).toContain("SigLens's own LLM key is never used");
+            expect(md).toContain("SIGLENS's own LLM key is never used");
             expect(md).not.toContain('premium');
             expect(md).not.toContain('only read the shared cache');
         });

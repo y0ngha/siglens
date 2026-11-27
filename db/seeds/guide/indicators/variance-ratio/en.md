@@ -14,7 +14,7 @@ faq:
 
 ## How it's calculated
 
-In one line: it checks whether movement over several days is larger or smaller than one day's movement stacked up for that many days. Larger points to a trend that keeps going the same way; smaller points to price coming back.
+The variance ratio checks whether movement over several days is larger or smaller than one day's movement stacked up for that many days. Larger points to a trend that keeps going the same way; smaller points to price coming back.
 
 The size of movement here is measured as variance (how widely returns are spread around their average).
 
@@ -48,4 +48,4 @@ It is one of three indicators, with the [Hurst exponent](/guide/indicators/hurst
 - The value depends on how the comparison period (q) is chosen. It is better to look at several periods rather than relying on one.
 - In real markets, high-movement days cluster for a while. A formal test uses a statistic that accounts for this (Z\*); otherwise it concludes too often that the series is not a random walk.
 - A result of "not a random walk" is not a direction. It only says whether there is a trend.
-- The fixed 0.2 cutoff is a rough value. Crossing it does not mean the result is statistically significant.
+- The fixed 1.2 and 0.8 cutoffs are rough values. Crossing them does not mean the result is statistically significant.

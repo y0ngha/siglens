@@ -29,7 +29,7 @@ describe('HeatmapBlockView — 표', () => {
     it('섹터: 이름·등락률 머리글과 받은 순서 그대로의 행, 상승·하락 글자색', () => {
         wrap(<HeatmapBlockView block={HEATMAP_SECTORS} />);
         const table = screen.getByRole('table', {
-            name: '미국 섹터 등락률 · 오늘',
+            name: '오늘의 미국 섹터 등락률',
         });
         expect(
             within(table)
@@ -54,7 +54,7 @@ describe('HeatmapBlockView — 표', () => {
     it('테마: 이름·심볼·1·5·20일 열, 1일 등락률이 큰 순, 값이 없으면 줄표', () => {
         wrap(<HeatmapBlockView block={HEATMAP_THEME} />);
         const table = screen.getByRole('table', {
-            name: 'AI 반도체 테마 · 구성 종목 등락률',
+            name: 'AI 반도체 테마 구성 종목 등락률',
         });
         expect(
             within(table)
@@ -114,9 +114,7 @@ describe('PortfolioBlockView — 표', () => {
 
     it('제목과 기준 시각을 단다', () => {
         wrap(<PortfolioBlockView block={PORTFOLIO} />);
-        expect(
-            screen.getByText('내 보유종목 · 비중과 손익')
-        ).toBeInTheDocument();
+        expect(screen.getByText('내 보유종목 비중과 손익')).toBeInTheDocument();
         expect(screen.getByText('기준 2026-11-19')).toBeInTheDocument();
     });
 });

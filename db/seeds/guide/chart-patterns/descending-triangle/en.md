@@ -22,7 +22,7 @@ The lows hold at a nearly flat horizontal line, while each high comes in lower t
 
 Buyers step in at the same price every time, but each bounce tops out lower. Selling pressure looks like it is building, so textbooks lean toward the support line breaking.
 
-The actual counts differ a little. According to Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results, 53% broke upward, making direction close to even. He also reports that its performance has dropped by almost half since the 1990s. So it is read as bearish only after a close below the flat support line; before that, it is safer to treat both directions as open.
+The actual counts differ a little. According to Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 53% broke upward, making direction close to even. He also reports that its performance has dropped by almost half since the 1990s. So it is read as bearish only after a close below the flat support line; before that, it is safer to treat both directions as open.
 
 ## How it differs from an ascending triangle
 

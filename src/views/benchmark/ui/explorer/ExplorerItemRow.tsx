@@ -14,6 +14,7 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';
 import { useBenchmarkEnumText } from '../../hooks/useBenchmarkEnumText';
+import { benchmarkPoolName } from '../../lib/benchmarkPoolName';
 import { BenchmarkItemDetailPanel } from './BenchmarkItemDetailPanel';
 import { BenchmarkVerdictChip } from './BenchmarkVerdictChip';
 
@@ -56,7 +57,7 @@ export function ExplorerItemRow({
         { key: 'level', text: levelNames[item.level] },
         { key: 'market', text: enumText.market[item.market] },
         { key: 'template', text: item.template },
-        { key: 'pool', text: item.pool },
+        { key: 'pool', text: benchmarkPoolName(item.pool, enumText.pool) },
     ];
     const results = shownTargets.flatMap(target => {
         const result = item.results[target.id];

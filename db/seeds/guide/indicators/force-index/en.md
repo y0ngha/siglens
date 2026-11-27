@@ -44,4 +44,4 @@ When SIGLENS checked later returns from the zero-line cross alone, there was no 
 ## Watch out for
 
 - Volume is multiplied in, so you can't compare the size of values between stocks or between volume environments. Read only the sign and the slope.
-- A divergence is a warning, not timing. It can last a long time without a reversal, or before one.
+- A divergence is a warning, not timing. It can end with no reversal at all, or drag on for a long time before one comes.

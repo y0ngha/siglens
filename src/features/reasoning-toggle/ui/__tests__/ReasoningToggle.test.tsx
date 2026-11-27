@@ -325,7 +325,7 @@ describe('ReasoningToggle', () => {
 
         expect(
             screen.getByText(
-                'オンにすると指標、ニュース、シナリオをより詳細に考慮し、詳細な分析を提供します。'
+                'オンにすると、指標、ニュース、シナリオをより丁寧に検討した詳しい分析をお届けします。'
             )
         ).toBeInTheDocument();
     });

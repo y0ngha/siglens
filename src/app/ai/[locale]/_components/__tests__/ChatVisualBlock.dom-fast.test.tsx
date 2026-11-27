@@ -87,7 +87,7 @@ describe('ChatVisualBlock — 시그렌즈 위젯 재사용', () => {
         // 재무제표 표(StatementTable)의 스크롤 영역과 캡션.
         expect(
             within(figure).getByRole('region', {
-                name: /AAPL 분기 실적 · 최근 2분기.*좌우 스크롤 가능/,
+                name: /AAPL 최근 2분기 실적.*좌우 스크롤 가능/,
             })
         ).toBeInTheDocument();
         const rowHeaders = within(figure)
@@ -155,7 +155,7 @@ describe('ChatVisualBlock — 시그렌즈 위젯 재사용', () => {
             })
         ).toBeInTheDocument();
         expect(
-            within(figure).getByText('맥스페인 100 · 풋콜 비율 0.85')
+            within(figure).getByText('맥스페인 100, 풋콜 비율 0.85')
         ).toBeInTheDocument();
         // 차트가 이미 카드라 틀은 표면을 한 번 더 두르지 않는다(카드 안의 카드 금지).
         expect(figure.className).not.toMatch(/surface-raised/);
@@ -164,9 +164,7 @@ describe('ChatVisualBlock — 시그렌즈 위젯 재사용', () => {
 
     it('옵션: 맥스페인을 모르면 줄표', () => {
         renderBlock({ ...OPTIONS, maxPain: null, putCallRatio: null });
-        expect(
-            screen.getByText('맥스페인 - · 풋콜 비율 -')
-        ).toBeInTheDocument();
+        expect(screen.getByText('맥스페인 -, 풋콜 비율 -')).toBeInTheDocument();
     });
 
     it('수급(미국): 기관 분기는 수급 탭의 QuarterFlowChart, 진행 중 분기는 부분 집계로 표시', () => {
@@ -215,7 +213,7 @@ describe('ChatVisualBlock — 시그렌즈 위젯 재사용', () => {
         const [figure] = figures();
         expect(
             within(figure).getByRole('img').getAttribute('aria-label')
-        ).toMatch(/005930\.KS 외국인·기관·개인 일별 순매수량/);
+        ).toMatch(/005930\.KS 외국인, 기관, 개인의 일별 순매수량/);
         expect(isFixedFrame(figure)).toBe(true);
     });
 

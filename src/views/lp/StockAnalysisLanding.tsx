@@ -106,7 +106,7 @@ export function StockAnalysisLanding({ analyses }: StockAnalysisLandingProps) {
 
                 <LpEndCta
                     title="궁금한 종목을 바로 열어 보세요"
-                    body="종목 페이지에서 차트, 재무, 뉴스, 옵션과 AI 리포트를 함께 볼 수 있어요."
+                    body="종목 페이지에서 차트, 재무, 뉴스, 옵션과 AI 리포트를 함께 볼 수 있습니다."
                     cta={ANALYSIS_CTA}
                     href={ANALYSIS_CTA_HREF}
                 />

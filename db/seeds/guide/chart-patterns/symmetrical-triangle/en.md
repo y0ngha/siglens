@@ -22,11 +22,11 @@ Each high is a little lower than the last, and each low a little higher. The upp
 
 Buyers and sellers are evenly matched and the price range keeps shrinking. After the range narrows like this, a large move in one direction often follows, so the triangle itself is read as a sign that volatility is about to increase.
 
-Textbooks say it continues in the direction of the prior trend. But in the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, only 60% broke upward. Its performance ranking (a ranking by how far price went after the breakout) was also low: 36th of 39 bullish patterns for upward breaks. Since neither side clearly dominates, the direction is judged only after a close clearly leaves one of the lines.
+Textbooks say it continues in the direction of the prior trend. But in the tabulation of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, only 60% broke upward. Its performance ranking (a ranking by how far price went after the breakout) was also low: 36th of 39 bullish patterns for upward breaks. Since neither side clearly dominates, the direction is judged only after a close clearly leaves one of the lines.
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turned highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) into upper and lower lines, then checks whether the upper line falls, the lower line rises, and the gap narrows. The conditions:
+SIGLENS connects clear highs and lows (swings: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) into upper and lower lines, then checks whether the upper line falls, the lower line rises, and the gap narrows. The conditions:
 
 - The upper line falls and the lower line rises, each by at least 1.5 times ATR. A line that moves no more than the smaller of 0.75 times ATR and 1% of price is treated as flat, and the pattern is classed as an [ascending triangle](/guide/chart-patterns/ascending-triangle) or [descending triangle](/guide/chart-patterns/descending-triangle) instead.
 - Both lines must be touched at least twice. A swing within 0.35 times ATR of a line counts as a touch.

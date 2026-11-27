@@ -1,22 +1,25 @@
 'use client';
 
 /**
- * 탐색기가 쓰는 판정·시장 이름 조회 훅.
+ * 탐색기가 쓰는 판정, 시장, 문항 풀 이름 조회 훅.
  */
 import { useTranslations } from 'next-intl';
 import type {
     BenchmarkLabel,
     BenchmarkMarket,
 } from '@/entities/benchmark/types';
+import type { BenchmarkPoolNames } from '../lib/benchmarkPoolName';
 
-/** 판정·시장 enum 값 → 번역된 이름. */
+/** 판정·시장·문항 풀 enum 값 → 번역된 이름. */
 export interface BenchmarkEnumText {
     readonly label: Readonly<Record<BenchmarkLabel, string>>;
     readonly market: Readonly<Record<BenchmarkMarket, string>>;
+    /** 이름이 있는 풀만 담는다. 나머지 풀 id(L4, L5)는 {@link benchmarkPoolName}이 그대로 쓴다. */
+    readonly pool: BenchmarkPoolNames;
 }
 
 /**
- * 판정·시장 이름. 키를 `t('label.' + x)`로 조립하면 카탈로그 스캐너가 참조를 못 봐 키를
+ * 판정·시장·문항 풀 이름. 키를 `t('label.' + x)`로 조립하면 카탈로그 스캐너가 참조를 못 봐 키를
  * 지우므로, 리터럴 키로 맵을 만들어 둔다.
  */
 export function useBenchmarkEnumText(): BenchmarkEnumText {
@@ -31,5 +34,6 @@ export function useBenchmarkEnumText(): BenchmarkEnumText {
             pending: t('label.pending'),
         },
         market: { us: t('market.us'), kr: t('market.kr') },
+        pool: { primary: t('pool.primary'), aux: t('pool.aux') },
     };
 }

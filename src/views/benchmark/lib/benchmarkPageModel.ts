@@ -11,6 +11,10 @@ import {
 import type { BenchmarkRelease } from '@/entities/benchmark/types';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { formatBenchmarkContrast } from '@/shared/lib/benchmarkFormat';
+import {
+    benchmarkPoolName,
+    type BenchmarkPoolNames,
+} from './benchmarkPoolName';
 
 /** 헤드라인 비교표 한 줄 — 표에 찍을 문자열까지 만든 값. */
 export interface BenchmarkHeadlineRow {
@@ -121,17 +125,19 @@ function poolSummaryFormatters(locale: Locale): PoolSummaryFormatters {
 }
 
 /**
- * 풀별 문항 수 요약(`primary 119, aux 16 및 L5 30`). 구분자와 접속사는 `Intl.ListFormat`이
+ * 풀별 문항 수 요약(`기본 문항 119, 보조 문항 16 및 L5 30`). 구분자와 접속사는 `Intl.ListFormat`이
  * 로케일에 맞춰 정한다 — 쉼표를 손으로 이으면 ja·zh 문장에 라틴 쉼표가 박힌다.
  */
 export function formatBenchmarkPoolSummary(
     poolSizes: Readonly<Record<string, number>>,
-    locale: Locale
+    locale: Locale,
+    names: BenchmarkPoolNames
 ): string {
     const { count, list } = poolSummaryFormatters(locale);
     return list.format(
         Object.entries(poolSizes).map(
-            ([pool, size]) => `${pool} ${count.format(size)}`
+            ([pool, size]) =>
+                `${benchmarkPoolName(pool, names)} ${count.format(size)}`
         )
     );
 }
