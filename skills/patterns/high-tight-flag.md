@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [high_tight_flag]
-token_cost: 554
+token_cost: 600
 digest_hash: "0c3e3a06"
-digest_text_hash: "252741b2"
+digest_text_hash: "9d341de6"
 ---
 
 ## Detection Criteria
@@ -76,7 +76,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-하이 타이트 플래그 (High Tight Flag) — bullish continuation, confidence_weight 0.7 (Bulkowski htf.html: failure 15%, rank 30/39, 82% meet a HALF-height target, throwback 67%).
+하이 타이트 플래그 (High Tight Flag) — bullish continuation, confidence_weight 0.7 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): failures uncommon, below-average rank, most met a HALF-height target, throwbacks common).
 
 ### Detection
 - Pole: ≥+90% from pole base (lowest low) to pole top (highest high) within 40 bars (Bulkowski: ≥90% in ≤2 months). Realistic only on daily or longer bars.
@@ -88,7 +88,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Grading
 - Increase: tight flag; receding flag volume; down-sloping flag top; pole near 45° rather than vertical.
 - Decrease: loose flag (meanders, pokes outside, white space, jagged); give-back near 25%; no close above pole top yet (may drift for months).
-- Throwback toward the pole top after breakout is common (67%), not failure by itself.
+- Throwback toward the pole top after breakout is common, not failure by itself.
 
 ### Geometry (do not calculate targets)
 `geometry` = { breakoutLevel: the pole top (a confirmed swing high), extremeLevel: the pole base, direction: 'up', invalidationLevel: the flag low (the lowest confirmed swing low after the pole top) }. Copy from `## Chart Pattern Candidates (computed)` only when this instance is listed there (with its Candidate id); when not listed, the pattern may be described but `geometry` is null and candidateId empty. Never compute a measured target, conservative target, or R:R — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)). Bulkowski's 82% is for a half-height target.

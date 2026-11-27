@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_top]
-token_cost: 615
+token_cost: 680
 digest_hash: "317ddf4a"
-digest_text_hash: "aa11a003"
+digest_text_hash: "d492ab95"
 ---
 
 ## Detection Criteria
@@ -77,7 +77,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-원형천장 (Rounding Top) — bearish reversal, confidence_weight 0.7 (Bulkowski roundingtop.html: failure up/down 9%/20%, rank 2/39 up, 3/36 down, target met 58%/14%; no breakout-direction split published).
+원형천장 (Rounding Top) — bearish reversal, confidence_weight 0.7 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): failures rare after up-breaks and uncommon after down-breaks, near the top of his ranks both ways, target met often after up-breaks but rarely after down-breaks; no breakout-direction split published).
 
 ### Detection
 - Gentle rounded dome (inverted bowl) — slow rise, crest, slow decline. NOT a V-top spike, NOT a flat range.

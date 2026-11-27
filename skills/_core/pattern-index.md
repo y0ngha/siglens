@@ -6,9 +6,9 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 1778
+token_cost: 1829
 digest_hash: "476245fa"
-digest_text_hash: "a52d9ea2"
+digest_text_hash: "c285508a"
 ---
 
 ## Pattern Index (compressed)
@@ -100,14 +100,14 @@ Continuation:
 - cup_and_handle: rounded U cup + small handle, break up = bullish continuation. geom: B=right rim price, E=cup bottom, dir=up, inv=handle low (lowest confirmed swing low after right rim).
 - high_tight_flag: ≥+90% pole in ~2 months + shallow pause (≤25% give-back), close above pole top = bullish continuation. geom: B=pole top, E=pole base, dir=up, inv=flag low (lowest confirmed swing low after the top).
 Neutral/bilateral:
-- descending_triangle: flat bottom support + falling highs; near-neutral (Bulkowski: breaks up 53%), bearish only on close below support. geom: B=flat support@last bar, E=B+triangle height (width at first touch), dir=down, inv=last confirmed touch of resistance line (lower high).
-- symmetrical_triangle: lower highs + higher lows converge; neutral until break (Bulkowski: up 60% / down 40%). geom: B=trendline on dir side@last bar, E=B∓triangle height (width at first touch), dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite trendline.
+- descending_triangle: flat bottom support + falling highs; near-neutral (Bulkowski's study: no reliable breakout direction), bearish only on close below support. geom: B=flat support@last bar, E=B+triangle height (width at first touch), dir=down, inv=last confirmed touch of resistance line (lower high).
+- symmetrical_triangle: lower highs + higher lows converge; neutral until break (Bulkowski's study: mildly tilted up). geom: B=trendline on dir side@last bar, E=B∓triangle height (width at first touch), dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite trendline.
 - pennant: sharp move (pole) + small symmetrical triangle; continues in pole direction. geom: B=pennant trendline@last bar (upper=bull/lower=bear), E=B∓pole height, dir=pole direction, inv=pennant lowest low (bull) or highest high (bear) since pole top.
 - rectangle: range between horizontal support & resistance; direction = side that breaks. geom: B=boundary on dir side@last bar, E=B∓rectangle height (opposite boundary), dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
 - ascending_channel: parallel rising lines; up-trend until a close outside (below lower = up-trend broken). geom: B=line on dir side@last bar, E=B∓channel height, dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
 - descending_channel: parallel falling lines; down-trend until a close outside (above upper = down-trend broken). geom: B=line on dir side@last bar, E=B∓channel height, dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
-- broadening_formation: higher highs + lower lows (megaphone); neutral until a close outside (Bulkowski: up 60%). geom: B=line on dir side@last bar, E=B∓height (width at last touch), dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
+- broadening_formation: higher highs + lower lows (megaphone); neutral until a close outside (Bulkowski's study: mildly tilted up). geom: B=line on dir side@last bar, E=B∓height (width at last touch), dir=prior trend (up/down; none → geometry null), inv=last confirmed touch of opposite boundary.
 Directive: a pattern NOT in this prompt's detailed set (not listed in the computed section) may be described in the summary if clearly visible, never as a patternSummaries entry; the REDUCED confidence attaches ONLY to that identification claim (detailed nuance not supplied this run), NOT to the overall analysis. Key levels, indicators, strategies, and action plan stay fully committed and quantified. Listed (Candidate id) patterns: copy their printed geometry (null when `dir` is undetermined). A listed Candidate's status (`forming` / `broken` / `failed breakout` = a close beyond the breakout line after its last touch, last close back inside: structure intact, break failed and unconfirmed) is an internal code: say what it means in the answer language, never print the code. Never compute targets — the app derives 측정 목표가/보수 목표가(50%) from `geometry`.
-Evidence: Bulkowski — many patterns perform worse than in the 1990s (descending triangles almost half, thepatternsite.com/dt.html); never call a trade on a pattern alone.
+Evidence: Bulkowski's figures are literature (US stocks), not SIGLENS measurements — describe them in words, never as a percentage, a probability or a ratio such as 50% or 반반; many patterns perform worse than in the 1990s (descending triangles almost half, thepatternsite.com/dt.html); never call a trade on a pattern alone.
 Beyond this catalog: the 22 above are not exhaustive — you may also name any other well-established chart pattern you clearly see (e.g. diamond, island reversal) by its standard English name, in the summary only: no `geom:` line or Candidate id exists for these, so it is never a patternSummaries entry. Never compute a target or R:R yourself.
 <!-- PROMPT_DIGEST:END -->

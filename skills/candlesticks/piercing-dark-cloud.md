@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [piercing_line, dark_cloud_cover]
-token_cost: 296
-digest_hash: "a1878d4f"
-digest_text_hash: "5bec89ab"
+token_cost: 317
+digest_hash: "7ee6cdef"
+digest_text_hash: "a7dc75b7"
 ---
 
 ## Overview
@@ -24,7 +24,7 @@ Two-candle reversals where the second candle closes deep into, but not beyond, t
 The textbook version needs a gap beyond the prior candle's extreme; the core detector only requires an
 open beyond the prior close and does not check the prior trend. Verify the trend from the chart.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Piercing Line — Bulkowski (thepatternsite.com/Piercing.html): bullish reversal **64%** of the time; overall performance rank **13 of 103**. Tidbits: taller candles perform better; avoid it when the primary trend is down.
 - Dark Cloud Cover — Bulkowski (thepatternsite.com/DarkCloudCover.html): bearish reversal **60%** of the time; overall performance rank **22 of 103**. Tidbit: it breaks out downward most often.
@@ -49,7 +49,7 @@ open beyond the prior close and does not check the prior trend. Verify the trend
 Piercing Line / Dark Cloud Cover Guide
 - Interpret only if piercing_line or dark_cloud_cover is listed in the detected-pattern section.
 - Piercing (bullish): tall bearish candle → bullish candle opening below the prior close and closing above the prior body's midpoint but below its open. Dark Cloud (bearish): mirror after a tall bullish candle. The detector checks shape only — verify the prior trend yourself.
-- Measured (Bulkowski): Piercing bullish reversal 64%, overall rank 13/103 (thepatternsite.com/Piercing.html); Dark Cloud bearish reversal 60%, overall rank 22/103 (thepatternsite.com/DarkCloudCover.html). Turns only modestly more often than chance, but trends reasonably once it breaks. Weight 0.55.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Piercing and Dark Cloud reversed more often than not and ranked among his better performers. Turns only modestly more often than chance, but trends reasonably once it breaks. Weight 0.55.
 - Stronger: clear prior trend; tall bodies; deep penetration past the midpoint; at support (Piercing) / resistance (Dark Cloud); above-average 2nd-candle volume. Weak: sideways range (ADX < 20); Piercing inside a strong primary downtrend (Bulkowski: avoid).
 - Confirmation = a later close beyond the pattern's far extreme (above its high / below its low). Call it a hint until then.
 - Never derive a target from the candles; cite levels only from Market Reference / S/R.

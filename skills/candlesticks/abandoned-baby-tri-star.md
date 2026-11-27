@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_abandoned_baby, bearish_abandoned_baby, bullish_triple_star, bearish_triple_star]
-token_cost: 303
-digest_hash: "f2488b62"
-digest_text_hash: "1bb4ae85"
+token_cost: 351
+digest_hash: "35c368e2"
+digest_text_hash: "808af7fc"
 ---
 
 ## Overview
@@ -25,7 +25,7 @@ Rare three-candle reversals built around doji candles and gaps.
 
 The core detector checks the shape and gaps only, not the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Bullish Abandoned Baby — Bulkowski (thepatternsite.com/AbandonBabyBull.html): bullish reversal **70%**; overall performance rank **9 of 103**; frequency rank 92 (only 293 examples in 4.7 million candles). Tidbit: forms at the end of short downtrends.
 - Bearish Abandoned Baby — (thepatternsite.com/AbandonBaby.html): bearish reversal **69%**; overall rank **64**; frequency rank 96.
@@ -51,7 +51,7 @@ The core detector checks the shape and gaps only, not the prior trend.
 Abandoned Baby / Tri-Star Guide
 - Interpret only if bullish/bearish_abandoned_baby or bullish/bearish_triple_star is listed in the detected-pattern section.
 - Abandoned Baby: tall candle → doji gapped fully away (no shadow overlap) → candle gapped fully back the other way. Tri-Star: three doji, the middle gapped beyond the first, the third closing in the new direction. The detector checks shape/gaps only — verify the prior trend yourself.
-- Measured (Bulkowski): Bullish Abandoned Baby reversal 70%, overall rank 9/103 (thepatternsite.com/AbandonBabyBull.html); Bearish Abandoned Baby 69%, rank 64 (thepatternsite.com/AbandonBaby.html); Bullish Tri-Star 60%, rank 28 (thepatternsite.com/TriStarBull.html); Bearish Tri-Star 52%, rank 76 — near random (thepatternsite.com/TriStarBear.html). All rare → small samples. Weight 0.4 (weakest label).
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Bullish Abandoned Baby reversed in most of his cases and was among his best performers; Bearish Abandoned Baby also reversed in most of his cases but performed below average; Bullish Tri-Star reversed somewhat more often than not with an above-average rank; Bearish Tri-Star showed no reliable direction in his study (no usable edge either way). All rare → small samples. Weight 0.4 (weakest label).
 - Abandoned Baby is the credible one: stronger with tall outer candles, clean gaps, at S/R. Tri-Star = indecision until a close beyond the pattern's high/low.
 - Gaps are rare in 24h markets (crypto) — scrutinize a detection there.
 - Confirmation = a later close beyond the pattern's far extreme. Never derive a target; cite levels only from Market Reference / S/R.

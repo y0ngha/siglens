@@ -9,9 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [morning_star, evening_star, morning_doji_star, evening_doji_star]
-token_cost: 312
-digest_hash: "f16bfbdb"
-digest_text_hash: "88875784"
+token_cost: 324
+digest_hash: "09147987"
+digest_text_hash: "291d3c91"
 ---
 
 ## Overview
@@ -25,7 +25,7 @@ Three-candle reversals.
 The core detector requires a body gap between candles 1 and 2 and a third close past the first body's
 midpoint; it does not check the prior trend.
 
-## Measured Behavior
+## Literature (Bulkowski, not measured by SIGLENS)
 
 - Morning Star — Bulkowski (thepatternsite.com/MorningStar.html): bullish reversal **78%** (reversal-rate rank 6); overall performance rank **12 of 103**.
 - Evening Star — (thepatternsite.com/EveningStar.html): bearish reversal **72%**; overall rank **4**.
@@ -54,7 +54,7 @@ midpoint; it does not check the prior trend.
 Morning/Evening Star Guide (3-candle reversal)
 - Interpret only if morning_star, evening_star, morning_doji_star or evening_doji_star is listed in the detected-pattern section.
 - Shape: tall candle → small body gapped beyond the first body (doji in the Doji Star variants) → opposite candle closing past the first body's midpoint. Detector checks shape only — verify the prior trend yourself.
-- Measured (Bulkowski, thepatternsite.com): Morning Star bullish reversal 78%, overall rank 12/103 (MorningStar.html); Evening Star bearish reversal 72%, rank 4 (EveningStar.html); Morning Doji Star 76%, rank 25 (MorningDojiStar.html); Evening Doji Star 71%, rank 30 (EveningDojiStar.html). The doji variants are NOT more reliable. Rare → small samples. Weight 0.65.
+- Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): Morning Star, Evening Star and both Doji Star variants reversed in most of his cases, and Morning and Evening Star were among his best performers. The doji variants are NOT more reliable. Rare → small samples. Weight 0.65.
 - Stronger: clear prior trend; tall outer candles; deep third-candle penetration into the first body; above-average third-candle volume; at S/R; RSI extreme or MACD histogram turn. Morning Star works best as a pullback low inside a primary uptrend.
 - Weak: sideways range (ADX < 20) or a middle body nearly as large as the outer candles.
 - Body gaps are rare in 24h markets (crypto) — scrutinize a detection there.

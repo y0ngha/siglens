@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [inverse_head_and_shoulders]
-token_cost: 1081
+token_cost: 1134
 digest_hash: "01ec0a4d"
-digest_text_hash: "011ed3c8"
+digest_text_hash: "736dbc46"
 ---
 
 ## Detection Criteria
@@ -81,7 +81,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-역헤드앤숄더 (Inverse Head & Shoulders) — bullish reversal, confidence_weight 0.75 (Bulkowski hsb.html: rank 13/39, failure 11%, 71% meet target; +0.05 Savin et al. 2007). Three troughs: left shoulder, head (center), right shoulder.
+역헤드앤숄더 (Inverse Head & Shoulders) — bullish reversal, confidence_weight 0.75 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): highly ranked, failures uncommon, most met target; +0.05 Savin et al. 2007). Three troughs: left shoulder, head (center), right shoulder.
 
 ### Detection
 - Head must be lowest trough, clearly below both shoulders.
@@ -95,7 +95,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Grading
 - Increase: near-horizontal neckline (slope <2%); symmetric shoulders (price diff <3%); volume confirmation on neckline break; duration >30 bars.
 - Decrease: steep neckline (slope >5%); asymmetric shoulders (price diff >5%); forming in strong downtrend with no prior support.
-- Volume: typically highest on left shoulder or head, diminished on right shoulder (Bulkowski hsb.html; trends down 65%) — quiet right shoulder is normal; the confirmation is the break-volume surge.
+- Volume: typically highest on left shoulder or head, diminished on right shoulder (Bulkowski hsb.html: volume usually trends down across the pattern) — quiet right shoulder is normal; the confirmation is the break-volume surge.
 - Bullish momentum divergence (RSI/MACD higher lows vs price head low) strengthens signal.
 
 ### Confirmation / invalidation

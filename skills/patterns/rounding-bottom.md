@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_bottom]
-token_cost: 963
+token_cost: 1005
 digest_hash: "3293fab3"
-digest_text_hash: "e0b8286b"
+digest_text_hash: "bb3351c5"
 ---
 
 ## Detection Criteria
@@ -85,7 +85,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.8 (Bulkowski roundb.html: rank 7/39, failure 4%, 65% meet target). Often coincides with sector/market rotation into the stock.
+원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.8 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): top-ranked, failures very rare, most met target). Often coincides with sector/market rotation into the stock.
 
 ### Detection
 - Gradual rounded U-shape over extended period — NOT V-shaped bottom nor flat base.
@@ -99,7 +99,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Grading
 - Increase: formation >3 months (60+ daily bars); clear volume U-shape; smooth curves without sharp moves; rim breakout with significant volume.
 - Decrease: V-shape not U; flat/erratic volume; sharp moves within pattern; right rim >5% below left rim.
-- Prior trend: not required — Bulkowski roundb.html: price trends UP into the pattern 67% of the time (67% act as continuations).
+- Prior trend: not required — Bulkowski roundb.html: price usually trends UP into the pattern (most act as continuations).
 - Volume U-shape is the MOST important confirmation (distribution→accumulation).
 - Left & right sides roughly equal duration (time symmetry); large lopsidedness reduces reliability.
 

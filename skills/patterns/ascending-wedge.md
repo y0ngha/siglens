@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_wedge]
-token_cost: 850
+token_cost: 900
 digest_hash: "2d52411b"
-digest_text_hash: "097aa82d"
+digest_text_hash: "9b91393f"
 ---
 
 ## Detection Criteria
@@ -91,7 +91,7 @@ Geometry:
 - Confirmed by break BELOW lower trendline.
 - Engine: lines through confirmed pivots (window 8→5 pivots, grown back to ≤16 while all touches kept), bars contained within 0.25 ATR, touch = within 0.35 ATR, lines interleave (≥2 touches each from the other's first touch); both lines rising ≥1.5 ATR, ≥3 touches per side, end width ≤0.7× start (0.7–0.85 or <3 touches = not drawn; 0.85–1.15× = channel); direction fixed down; ≥15 bars; height ≥2.5 ATR and the price-share minimum. Lines drawn solid first→last touch, dashed to the bar the printed value is read. Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
-Confidence (weight 0.5) — Bulkowski risewedge.html: breaks down 60%, but down-breakout failure 51%, 32% meet target, rank 36/36 (last).
+Confidence (weight 0.5) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): most broke down, but down-breakouts failed often and few met their target; he ranked it last among bearish patterns.
 - Increase: clear convergence with 4+ touches per line, consistent volume decline as wedge narrows, decisive break below lower trendline with volume surge, duration > 25 bars.
 - Decrease: <3 touches per line, no volume decline, break near apex, ambiguous convergence (trendlines near parallel).
 

@@ -8,9 +8,9 @@ usage_roles: [confirmation, measurement]
 computed_card: volume_profile
 gating:
   tier: always_on
-token_cost: 425
-digest_hash: "9a3e7f61"
-digest_text_hash: "8515f117"
+token_cost: 438
+digest_hash: "6d18208c"
+digest_text_hash: "2859a5f6"
 ---
 
 ## Overview
@@ -33,7 +33,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 - Price trading within the Value Area: market is in an accepted range — balanced, rotational behavior is likely.
 - Price breaking above VAH with expanding volume: a bullish breakout from accepted value — trend continuation is likely; price may seek a new, higher equilibrium.
 - Price breaking below VAL with expanding volume: a bearish breakdown — trend continuation lower is likely.
-- Price returning into the Value Area after an excursion outside: a value reversion trade — historically, price returns to the prior Value Area approximately 80% of the time on the next bar (the 80% rule in volume profile theory).
+- Price returning into the Value Area after an excursion outside: a value reversion trade — volume profile theory's "80% rule" (trading lore, not measured by SIGLENS) says price tends to travel back through the prior Value Area.
 
 ### Thin Volume Zones
 
@@ -56,7 +56,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 ## Caveats
 
 - Volume Profile is only as valid as the period from which it is computed. A profile computed over 30 bars has a different meaning than one from 500 bars.
-- The 80% return-to-value-area rule is a probabilistic observation, not a guarantee.
+- The "80% rule" is a rule of thumb from trading literature, not a measured rate; never quote it as a probability.
 - In low-liquidity or pre-market hours, volume profile distributions can be distorted by thin trading.
 - POC and VAH/VAL levels shift as new bars are added to the profile window. Real-time changes in these levels should be factored into ongoing analysis.
 
@@ -72,7 +72,7 @@ Volume Profile distributes cumulative traded volume across price levels within a
 - Within VA = accepted range, balanced/rotational.
 - Break above VAH with expanding volume = bullish breakout, continuation likely (seek higher equilibrium).
 - Break below VAL with expanding volume = bearish breakdown, continuation lower.
-- Return into VA after excursion = value reversion; price returns to prior VA ~80% of the time on next bar (the 80% rule).
+- Return into VA after excursion = value reversion; price tends to travel back through the prior VA (the "80% rule", trading lore, not measured by SIGLENS).
 
 **Thin volume zones** (low vol between high-volume nodes): price moves rapidly through in either direction. Thin zone above price = upside acceleration path; below = downside. Prepare for faster-than-usual movement.
 
@@ -80,5 +80,5 @@ Volume Profile distributes cumulative traded volume across price levels within a
 
 **Combos:** +VWAP (VWAP near POC = both at about the same price, an observation); +MA(20/60) (POC near an MA = same price, an observation); +BB (POC near middle band = same price, an observation). No strength claim for any overlap.
 
-**Caveats:** valid only for its computed period (30 vs 500 bars differ); 80% rule is probabilistic, not guaranteed; low-liquidity/pre-market distorts distributions; POC/VAH/VAL shift as bars added.
+**Caveats:** valid only for its computed period (30 vs 500 bars differ); the 80% rule is a rule of thumb, never a probability to quote; low-liquidity/pre-market distorts distributions; POC/VAH/VAL shift as bars added.
 <!-- PROMPT_DIGEST:END -->

@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [broadening_formation]
-token_cost: 778
+token_cost: 846
 digest_hash: "f6b4723d"
-digest_text_hash: "67246f91"
+digest_text_hash: "0ce77698"
 ---
 
 ## Detection Criteria
@@ -74,7 +74,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-확장형 패턴 (Broadening Formation / megaphone) — neutral, confidence_weight 0.6. Bulkowski: tops (bt.html) failure up/down 18%/27%, bottoms (broadb.html) 16%/26%; both break UP 60%; "The broadening top is a poor performer."
+확장형 패턴 (Broadening Formation / megaphone) — neutral, confidence_weight 0.6. Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): tops and bottoms failed in a minority of cases (more often after down-breaks) and both broke up more often than down; "The broadening top is a poor performer."
 
 ### Detection
 - Higher peaks + lower valleys: upper line rising, lower line falling (each ≥1.5 ATR over the span; end width ≥1.3× the start; lines through confirmed swing pivots containing all bars within 0.25 ATR).
@@ -84,7 +84,7 @@ When this pattern is detected, include the following in the analysis response:
 - Engine: lines through confirmed pivots (window 8→5 pivots, grown back to ≤16 while all touches kept), bars contained within 0.25 ATR, touch = within 0.35 ATR, lines interleave (≥2 touches each from the other's first touch); high line rising and low line falling, each ≥1.5 ATR, end width ≥1.3× start, ≥5 touches in total and ≥3 on one line, height = width at the last touch; direction = the prior trend (a ≥2 ATR close change over the 20 bars before the pattern; none → undetermined, no target); ≥15 bars; height ≥2.5 ATR and the price-share minimum. Lines drawn solid first→last touch, dashed to the bar the printed value is read. Status `failed breakout` = a close beyond the breakout line by >0.25 ATR after its last touch, last close back inside: structure intact but the break failed — not plain `forming`, not a confirmed break (`broken` = last close outside).
 
 ### Grading
-- Partial decline (turns up before the lower line) predicts an up-break — works 72–73% (Bulkowski); strongest signal here. Partial rise works only 52–53%.
+- Partial decline (turns up before the lower line) predicted an up-break in most of his cases (Bulkowski); strongest signal here. A partial rise showed no reliable direction in his study (no usable edge either way).
 - Increase: ≥5 touches; upward volume trend inside the pattern.
 - Decrease: minimal touches; a single late spike on a real channel; throwback/pullback after the break.
 - Up-breaks outperform; weight a downside break less.

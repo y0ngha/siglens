@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_bottom]
-token_cost: 910
+token_cost: 956
 digest_hash: "2004c5b2"
-digest_text_hash: "929f07dd"
+digest_text_hash: "e148c27f"
 ---
 
 ## Detection Criteria
@@ -85,7 +85,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-삼중바닥 (Triple Bottom) — bullish reversal, confidence_weight 0.7 (Bulkowski tb.html: rank 12/39, failure 13%, 74% meet target). Three troughs at ~equal support; neckline = line connecting the two peaks between troughs.
+삼중바닥 (Triple Bottom) — bullish reversal, confidence_weight 0.7 (Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): above-average rank, failures uncommon, most met target). Three troughs at ~equal support; neckline = line connecting the two peaks between troughs.
 
 ### Detection
 - Three distinct troughs at ~same price, within 2–3% of each other.

@@ -67,8 +67,6 @@ const KNOWN_UNDESCRIBED: Readonly<Record<string, readonly string[]>> = {
         'publicAnalysisAt',
         'reasoning',
         'requestedTab',
-        'sinceEarlier',
-        'timeframe',
     ],
     get_congress_trades: ['stats'],
     get_economy: ['note'],

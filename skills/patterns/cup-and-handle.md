@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cup_and_handle]
-token_cost: 949
+token_cost: 999
 digest_hash: "5d6b34c7"
-digest_text_hash: "e11bb31f"
+digest_text_hash: "24c4b9c4"
 ---
 
 ## Detection Criteria
@@ -99,7 +99,7 @@ Geometry:
 - Confirmed: close ABOVE handle's upper resistance with volume 50%+ above average.
 - Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); confirmed swing-high rims ≥30 bars apart, within 7% of the higher rim AND rim gap ≤25% of the depth (from the lower rim); no bar between >0.25 ATR above the lower rim (the higher rim's own leg excluded); depth ≥2.5 ATR and the price-share minimum; ≥40% of closes in the bottom third of the depth (U not V); left rim = highest high of the bars before it over half the cup width; bottom in the middle half of the span (25–75%); right rim 5–20 bars before the last bar (earliest passing); handle low = lowest confirmed swing low after the right rim, at/above the cup midpoint (≤50% of the depth below the right rim).
 
-Confidence (weight 0.8) — Bulkowski cup.html: rank 3/39, failure 5%, 61% meet target; O'Neil CANSLIM.
+Confidence (weight 0.8) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): among his top-ranked patterns, failures very rare, most met target; O'Neil CANSLIM.
 - Increase: smooth rounded U (not V), cup depth 12–33% of prior advance, handle retrace < 10% from rim, breakout volume +50%, prior uptrend ≥30%, handle in upper THIRD of cup.
 - Decrease: V-shaped bottom, cup deeper than 40% of prior advance, handle in lower half, no breakout volume surge, flat/declining breakout volume, handle > 4 weeks.
 

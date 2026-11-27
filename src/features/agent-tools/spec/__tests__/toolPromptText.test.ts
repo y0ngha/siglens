@@ -184,6 +184,30 @@ describe('buildAgentSystemPrompt', () => {
         expect(withoutGuide).not.toContain('→ get_guide');
     });
 
+    it('이전 분석 이후 달라진 점을 묻는 질문은 sinceEarlier를 싣는 get_cached_analysis로 보내고, 툴이 없으면 그 줄을 뺀다', () => {
+        const row = prompt
+            .split('\n')
+            .find(line => line.includes('since an analysis shown earlier'));
+        expect(row).toContain('그 뒤로 바뀐 거 있어?');
+        expect(row).toContain(
+            '→ get_cached_analysis for that symbol with tab technical and timeframe 1Day'
+        );
+        expect(row).toContain('`sinceEarlier`');
+        expect(findToolSpec('get_cached_analysis')?.description).toContain(
+            '`sinceEarlier` lists what changed'
+        );
+        const withoutAnalysis = buildAgentSystemPrompt({
+            locale: 'ko',
+            tools: AGENT_TOOL_SPECS.filter(
+                s => s.name !== 'get_cached_analysis'
+            ),
+            now: NOW,
+        });
+        expect(withoutAnalysis).not.toContain(
+            'since an analysis shown earlier'
+        );
+    });
+
     it('주봉·월봉 질문을 1Week·1Month로 보내고 그 기간의 시야를 정한다', () => {
         expect(prompt).toContain(
             '1Month bars → months to years; 1Week → weeks to a few months'

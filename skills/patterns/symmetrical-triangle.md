@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [symmetrical_triangle]
-token_cost: 1066
+token_cost: 1122
 digest_hash: "82790610"
-digest_text_hash: "99172f40"
+digest_text_hash: "a22fbbc6"
 ---
 
 ## Detection Criteria
@@ -85,7 +85,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: For a listed pattern instance (with a Candidate id), fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. For an unlisted pattern, `geometry` is null and candidateId is empty. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-대칭삼각형 (Symmetrical Triangle) — neutral continuation, confidence_weight 0.5. Bulkowski st.html: breaks up 60%; failure 25% up / 37% down; rank 36/39 — weak on its own.
+대칭삼각형 (Symmetrical Triangle) — neutral continuation, confidence_weight 0.5. Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반): it broke up somewhat more often than down, failures were common (more after down-breaks) and it ranked near the bottom — weak on its own.
 
 ### Detection
 - Descending resistance trendline connecting ≥2 progressively lower highs.
@@ -105,7 +105,7 @@ When this pattern is detected, include the following in the analysis response:
 
 ### False positives
 - Apex breakout (at/past apex): minimal measured move, high failure — pattern expires near apex.
-- No prior trend → mere range compression; require prior move ≥10% before pattern. Even then the split is only up 60% / down 40%.
+- No prior trend → mere range compression; require prior move ≥10% before pattern. Even then its direction is only mildly tilted up.
 - Low-volume breakout → often reverses (false-breakout trap).
 - Narrow-range whipsaw: within-bar breach without close → wait for closing break.
 - One trendline much steeper than the other → wedge, not symmetrical triangle (should converge at ~equal rates).
@@ -117,7 +117,7 @@ When this pattern is detected, include the following in the analysis response:
 - keyPrices: current upper trendline, current lower trendline, projected apex.
 - patternSummaries: status (forming / approaching apex / broken up / broken down); convergence rate; touches per side; position in triangle (early/mid/late); prior trend direction (context only, not a breakout forecast).
 - Volume context: declining during formation? surge confirmed breakout? volume vs recent average.
-- Completion status: forming (direction unresolved; up 60% / down 40%) vs confirmed by close outside a trendline.
+- Completion status: forming (direction unresolved) vs confirmed by close outside a trendline.
 - geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R; only for a listed instance, else `geometry` null and candidateId empty.
 - trend: neutral until breakout; set by realized breakout direction.
 <!-- PROMPT_DIGEST:END -->

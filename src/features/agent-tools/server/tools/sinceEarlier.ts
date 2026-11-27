@@ -37,7 +37,11 @@ export const SINCE_EARLIER_MAX_LEVEL_CROSSINGS = 6;
 /** 이전 분석과의 비교를 계산하는 시간 상한(ms). 넘기면 블록만 빠지고 도구 결과는 그대로 나간다. */
 export const SINCE_EARLIER_TIMEOUT_MS = 3_000;
 
-/** 모델에게 보이는 규칙 문장. 도구 설명은 core 소유라 바꾸지 않고 결과가 규칙을 실어 나른다. */
+/**
+ * 결과의 `sinceEarlier.note`로 모델에게 가는 읽는 법(비교 기준·범위·빈 목록의 뜻). 이 블록이 **언제** 붙는지는
+ * siglens 도구 명세(`spec/getCachedAnalysis.ts` 설명과 `spec/routingRows.ts`의 "이전 분석 이후 달라진 점" 줄)가
+ * 말하고, 결과를 읽는 규칙은 블록과 함께 다니도록 여기 둔다. 문장을 바꾸면 모델이 보는 결과가 바뀐다.
+ */
 export const SINCE_EARLIER_NOTE =
     'Computed: what changed between the analysis shown earlier in this conversation and now. ' +
     'State these facts and numbers as given; do not infer others. ' +

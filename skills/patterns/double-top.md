@@ -16,9 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_top]
-token_cost: 780
+token_cost: 829
 digest_hash: "2c503ab2"
-digest_text_hash: "573f73c8"
+digest_text_hash: "eb3d28d5"
 ---
 
 ## Detection Criteria
@@ -89,7 +89,7 @@ Geometry:
 - Confirmed: close BELOW neckline (the trough between peaks).
 - Engine: pivots = confirmed swings (1.5 ATR reversal measured with the confirming bar's ATR; fixed once confirmed; one pivot per bar); last two confirmed swing highs; price difference ≤ min(1 ATR, 3% of average price); peaks ≥10 bars apart; no bar between them beyond the matched peaks by >0.25 ATR; neckline = lowest confirmed trough between them, in the middle half of the span (≥25% of the distance from either peak); height ≥2.5 ATR and the price-share minimum; rejected if the troughs under the equal highs clearly rise (≥1.5 ATR, = triangle); last peak ≤ max(20 bars, half the span) before the last bar.
 
-Confidence (weight 0.6) — Bulkowski Adam/Eve double-top pages: failure 20–25% (median 21%), ranks 10–19 of 36, 43–64% meet target.
+Confidence (weight 0.6) — Bulkowski's study (literature, US stocks; not measured by SIGLENS, so describe it in words: never quote its percentages, call them a probability or restate them as a ratio such as 50% or 반반) (Adam/Eve double-top pages): failures in a minority of cases, above-average ranks, target met inconsistently.
 - Increase: peak prices within 1%, volume decline on second peak, neckline break with volume surge, spacing > 15 bars.
 - Decrease: peaks differ > 2.5%, no volume divergence, shallow trough (< 3% from peak avg), pattern in narrow range.
 
