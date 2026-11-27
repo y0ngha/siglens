@@ -10,6 +10,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { SIGNED_UP_USER_TIER } from '@/entities/auth/lib/authUseCaseConstants';
 import { EMAIL_REPORT_TIERS } from '@/entities/email-report/lib/emailReportConstants';
+import { isServedTimeframe } from '@/shared/config/market';
 
 /**
  * 가입 화면의 "회원 혜택" 한 줄. 판별 유니언이라 줄마다 문구에 필요한 값만 싣는다.
@@ -31,10 +32,10 @@ function timeframesBenefit(
     signedUpTier: Tier
 ): SignupBenefit | null {
     // 1Week는 core가 회원 등급에 열어 두었지만 화면(차트·분석 탭, 라벨)이 아직 주봉을 내놓지 않는다.
-    // 가입 혜택 문구가 화면에 없는 기능을 약속하지 않도록 뺀다. 주봉 UI가 열릴 때 이 필터를 없앤다.
+    // 가입 혜택 문구가 화면에 없는 기능을 약속하지 않도록 뺀다. 주봉 화면을 공개할 때 제거한다 (`isServedTimeframe`).
     const extra = getAllowedTimeframes(signedUpTier, config).filter(
         timeframe =>
-            timeframe !== '1Week' &&
+            isServedTimeframe(timeframe) &&
             !isTimeframeAllowed('free', timeframe, config)
     );
     const [from] = extra;

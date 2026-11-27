@@ -68,7 +68,7 @@ const stale = (tab: string, generatedAt: Date): boolean =>
 const STALE_NEW_BARS: Record<Timeframe, number> = {
     '1Day': 1,
     // 도달하지 않는 항목이다 — 이 도구의 timeframe 열거(core `TIMEFRAME_ENUM` = `PROVIDER_TIMEFRAMES`)에
-    // 1Week가 없다. `Record<Timeframe, …>`라 컴파일을 맞추려고만 둔다. 에이전트가 주봉 분석을 열면(Q15)
+    // 1Week가 없다. `Record<Timeframe, …>`라 컴파일을 맞추려고만 둔다. 에이전트가 주봉 분석을 열면
     // `isStaleByBars`의 1Day 분기처럼 **거래일 비교**를 주봉에도 써야 한다(주봉 시각은 그 주 월요일 UTC 자정이라
     // 순간 비교로는 분석 시각과의 시장 현지 날짜 차이를 놓친다).
     '1Week': 1,

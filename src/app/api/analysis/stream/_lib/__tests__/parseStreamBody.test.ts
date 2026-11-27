@@ -72,7 +72,7 @@ describe('parseStreamBody', () => {
         });
     });
 
-    // WP-19: 주봉 UI가 나가면 이 테스트를 1Week 통과 단언으로 바꾼다.
+    // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (1Week 통과 단언으로 바꾼다).
     it.each(['technical', 'overall'])(
         '%s 요청의 timeframe이 화면이 내는 목록 밖(1Week·미지정)이면 400이다',
         async type => {

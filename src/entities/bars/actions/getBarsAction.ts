@@ -6,8 +6,8 @@ import {
     isTimeframeAllowed,
 } from '@y0ngha/siglens-core';
 import { resolveCallerTier } from '@/entities/auth/server/resolveCallerTier';
-import { isValidTimeframe } from '@/shared/config/market';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
+import { isServedTimeframe } from '@/shared/config/market';
 import { loadBarsData } from '../server/loadBarsData';
 
 /**
@@ -27,9 +27,8 @@ export async function getBarsAction(
     timeframe: Timeframe,
     fmpSymbol?: string
 ): Promise<BarsData> {
-    // WP-19: 주봉 UI가 나가면 이 거절을 없앤다(`TIMEFRAMES`에 1Week를 넣으면 통과). core 3.0.0 `TIER_CONFIG`는
-    // 이미 member·pro에 '1Week'를 열었지만 화면이 아직 주봉을 내놓지 않아, 직접 호출을 여기서 막는다.
-    if (!isValidTimeframe(timeframe))
+    // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (`isServedTimeframe`).
+    if (!isServedTimeframe(timeframe))
         throw new Error(`Invalid timeframe: ${String(timeframe)}`);
     const tier = await resolveCallerTier('getBarsAction');
     if (!isTimeframeAllowed(tier, timeframe)) {

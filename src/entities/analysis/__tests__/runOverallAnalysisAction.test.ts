@@ -22,8 +22,8 @@ describe('runOverallAnalysisAction', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
-    describe('timeframe이 siglens TIMEFRAMES 밖일 때 (WP-19)', () => {
-        // WP-19: 주봉 UI가 나가면 이 테스트를 1Week 허용 단언으로 바꾼다.
+    describe('timeframe이 siglens TIMEFRAMES 밖일 때', () => {
+        // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (1Week 허용 단언으로 바꾼다).
         it('화면이 내지 않는 주기(1Week)는 게이트·분석 전에 일반 오류로 거절한다', async () => {
             const result = await runOverallAnalysisAction(
                 'AAPL',

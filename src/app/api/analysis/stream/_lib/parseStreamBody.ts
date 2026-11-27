@@ -1,4 +1,4 @@
-import { isValidTimeframe } from '@/shared/config/market';
+import { isServedTimeframe } from '@/shared/config/market';
 import { isDispatchedType } from './dispatch';
 import type {
     DispatchParams,
@@ -25,8 +25,8 @@ function isParamsObject(value: unknown): value is object {
  * 종류인지 순. 핸들러가 `params`를 곧바로 구조분해하므로, 여기서 거르지 않으면 `{"type":"technical"}`
  * 같은 입력이 처리되지 않은 throw로 500이 된다 — 400이어야 한다.
  *
- * `technical`과 `overall`의 `timeframe`은 여기서 siglens `TIMEFRAMES`에 있는지 확인한다(WP-19 임시 —
- * 주봉 UI가 나가면 없앤다). 나머지 `params` 필드(symbol 등)는 좁히지 않는다. 게이트·core가 검증하고,
+ * `technical`과 `overall`의 `timeframe`은 여기서 siglens `TIMEFRAMES`에 있는지 확인한다(임시 — `isServedTimeframe`의
+ * 주석대로 주봉 화면을 공개할 때 제거한다). 나머지 `params` 필드(symbol 등)는 좁히지 않는다. 게이트·core가 검증하고,
  * 잘못된 값은 라우트의 catch가 500 sentinel로 받는다(예약한 한도는 환불된다).
  */
 export async function parseStreamBody(
@@ -47,9 +47,8 @@ export async function parseStreamBody(
     if (type === 'technical') {
         if (!isParamsObject(params))
             return badRequest('technical requires a params object');
-        // WP-19: 주봉 UI가 나가면 이 거절을 없앤다(`TIMEFRAMES`에 1Week를 넣으면 통과). core 3.0.0
-        // `TIER_CONFIG`는 이미 member·pro에 '1Week'를 열었지만 화면이 아직 주봉을 내놓지 않아, 직접 호출을 막는다.
-        if (!isValidTimeframe(Reflect.get(params, 'timeframe')))
+        // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (`isServedTimeframe`).
+        if (!isServedTimeframe(Reflect.get(params, 'timeframe')))
             return badRequest('invalid timeframe');
         // 캐스트 근거: 나머지 필드 검증은 게이트·core 몫이다(위 JSDoc).
         return {
@@ -60,10 +59,10 @@ export async function parseStreamBody(
     if (!isParamsObject(params)) return badRequest('params must be an object');
     if (!isDispatchedType(type))
         return badRequest(`unsupported analysis type: ${String(type)}`);
-    // 종합 분석(`overall`)도 timeframe으로 분석 축을 정한다 — 위 technical과 같은 이유(WP-19)로 거른다.
+    // 종합 분석(`overall`)도 timeframe으로 분석 축을 정한다 — 위 technical과 같은 이유로 거른다.
     if (
         type === 'overall' &&
-        !isValidTimeframe(Reflect.get(params, 'timeframe'))
+        !isServedTimeframe(Reflect.get(params, 'timeframe'))
     )
         return badRequest('invalid timeframe');
     return {
