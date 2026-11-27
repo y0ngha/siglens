@@ -31,6 +31,22 @@ vi.mock('@/entities/investor-flows/server/getHolderLookup', () => ({
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    evaluate,
+    makeExpandedSnapshot,
+    makeKrInsiderRecord,
+    makeKrMajorHoldingRecord,
+    makeKrSnapshot,
+    makeKrTradingPlanRecord,
+    makeHolder,
+    makeLargeHolder,
+    makeOffering,
+    makeProposedSale,
+    makeSnapshot,
+    makeSqueezeContext,
+    makeThresholdList,
+    makeTransaction,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
     EMPTY_COLLECTING_SNAPSHOT,
     resolveCollectingArms,
 } from '@/entities/investor-flows/lib/investorFlowsReadiness';
@@ -56,22 +72,6 @@ import {
 } from '@/entities/investor-flows/model';
 import { INVESTOR_FLOWS_RESULT_MAX_CHARS } from '@/features/agent-tools/lib/truncate';
 import { getInvestorFlowsTool } from '@/features/agent-tools/server/tools/getInvestorFlows';
-import {
-    evaluate,
-    makeExpandedSnapshot,
-    makeKrInsiderRecord,
-    makeKrMajorHoldingRecord,
-    makeKrSnapshot,
-    makeKrTradingPlanRecord,
-    makeHolder,
-    makeLargeHolder,
-    makeOffering,
-    makeProposedSale,
-    makeSnapshot,
-    makeSqueezeContext,
-    makeThresholdList,
-    makeTransaction,
-} from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
 
 /** 실측(2026-11-16 NVDA) 모양의 보유 비율 — 크기 예산 테스트에도 실린다. */
 const OWNERSHIP = {

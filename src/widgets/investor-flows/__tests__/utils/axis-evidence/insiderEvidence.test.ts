@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildAxisEvidence } from '../../../utils/axisEvidence';
 import {
     evaluate,
     makeProposedSale,
     makeSnapshot,
     makeTransaction,
-} from '../../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { buildAxisEvidence } from '../../../utils/axisEvidence';
 
 describe('내부자 순매수 근거 줄', () => {
     it('Form 144만 있고 Form 4가 없어 순액이 정확히 0이면 순매수가 아니라 "순매수도 순매도도 아님"으로 말한다', () => {

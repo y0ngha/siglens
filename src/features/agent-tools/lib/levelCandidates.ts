@@ -1,14 +1,14 @@
-import type {
-    AnalysisResponse,
-    Bar,
-    FilteredAnalysisResponse,
-    IndicatorResult,
-    LevelCandidate,
-    LevelSourceKind,
+import {
+    computeBarRangeStats,
+    type AnalysisResponse,
+    type Bar,
+    type FilteredAnalysisResponse,
+    type IndicatorResult,
+    type LevelCandidate,
+    type LevelSourceKind,
 } from '@y0ngha/siglens-core';
 import { resolveEffectiveActionLevels } from '@/entities/analysis/lib/effectiveActionLevels';
 import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
-import { computeRangeWindow } from './rangeWindow';
 
 /**
  * Chart reference prices of a daily series, the inputs of the level ladder
@@ -29,9 +29,6 @@ export interface ChartReferenceLevels {
 const RANGE_52W_BARS = 252;
 const RANGE_20_BARS = 20;
 
-const isoDay = (unixSeconds: number): string =>
-    new Date(unixSeconds * 1000).toISOString().slice(0, 10);
-
 const lastOrNull = (series: readonly (number | null)[] | undefined) =>
     series !== undefined && series.length > 0
         ? (series[series.length - 1] ?? null)
@@ -41,29 +38,28 @@ const lastOrNull = (series: readonly (number | null)[] | undefined) =>
  * 52-week and 20-day high/low and the 20/50/200-day simple averages of a daily series.
  *
  * Must equal what `get_bars_indicators` prints for the SAME series, or the model would see two different "52-week
- * highs" in one turn: the windows are `bars.slice(-252)` / `bars.slice(-20)` through the shared
- * `computeRangeWindow` (intraday high/low, like `derived.range`), and the averages are read from
- * `roundIndicators(indicators).ma` exactly like `latestIndicators`. The 20-day window needs 20 bars (as `ranges`).
+ * highs" in one turn: the windows are `bars.slice(-252)` / `bars.slice(-20)` through core's `computeBarRangeStats`,
+ * the same function `computeRangeWindow` projects for `derived.range` (intraday high/low), and the averages are read
+ * from `roundIndicators(indicators).ma` exactly like `latestIndicators`. The 20-day window needs 20 bars (as `ranges`).
  */
 export function chartReferenceLevels(
     dailyBars: readonly Bar[],
     indicators: IndicatorResult
 ): ChartReferenceLevels {
-    const range52 = computeRangeWindow(
+    const range52 = computeBarRangeStats(
         dailyBars.slice(-RANGE_52W_BARS),
-        null,
-        isoDay
+        null
     );
     const range20 =
         dailyBars.length >= RANGE_20_BARS
-            ? computeRangeWindow(dailyBars.slice(-RANGE_20_BARS), null, isoDay)
+            ? computeBarRangeStats(dailyBars.slice(-RANGE_20_BARS), null)
             : null;
     const { ma } = roundIndicators(indicators);
     return {
-        high52w: range52.high,
-        low52w: range52.low,
-        high20: range20?.high ?? null,
-        low20: range20?.low ?? null,
+        high52w: range52.high?.value ?? null,
+        low52w: range52.low?.value ?? null,
+        high20: range20?.high?.value ?? null,
+        low20: range20?.low?.value ?? null,
         sma20: lastOrNull(ma[20]),
         sma50: lastOrNull(ma[50]),
         sma200: lastOrNull(ma[200]),

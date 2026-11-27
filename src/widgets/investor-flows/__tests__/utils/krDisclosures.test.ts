@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import {
+    makeKrSnapshot,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import type { InvestorFlowsPipelineReadiness } from '@/entities/investor-flows/model';
 import {
     buildKrCollectingView,
     KR_SCORECARD_AXES,
 } from '../../utils/krDisclosures';
-import { makeKrSnapshot, makeSnapshot } from '../fixtures/flowsFixtures';
 
 const READINESS: InvestorFlowsPipelineReadiness = {
     institutional: 'ready',

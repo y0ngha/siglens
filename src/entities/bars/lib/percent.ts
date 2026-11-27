@@ -27,7 +27,23 @@ export function pctVs(
     return roundNumber(((current - base) / base) * 100);
 }
 
-/** Decimals-to-factor for {@link roundPct2} (2 decimals); `pctVs` itself keeps 4 significant digits. */
+/** Ratio-to-percent factor (`0.05` → `5`). */
+const PCT_PER_RATIO = 100;
+
+/**
+ * A raw ratio from core (`(current - base) / base`, or `numerator /
+ * denominator`) as a percent with the same significant-digit rounding
+ * (`roundNumber`) as {@link pctVs} / {@link ratioPct}. Core applies the null
+ * rule and returns the unrounded ratio; scaling and rounding stay here so
+ * every printed byte matches what those helpers produced from the same inputs
+ * (`ratio * 100` is the exact expression they evaluate). `null` passes
+ * through.
+ */
+export function ratioToPct(ratio: number | null): number | null {
+    return ratio === null ? null : roundNumber(ratio * PCT_PER_RATIO);
+}
+
+/** Decimals-to-factor for {@link roundPct2} (2 decimals); `pctVs` itself rounds with `roundNumber` (`INDICATOR_SIGNIFICANT_DIGITS` significant digits). */
 const PCT_ROUND_FACTOR = 10 ** 2;
 
 /** A percent rounded to exactly 2 decimals (for fields contracted as such); `null` passes through. */

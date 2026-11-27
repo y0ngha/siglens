@@ -14,7 +14,7 @@
  *   `yarn format`으로 다시 만들고, 바뀐 JSON의 차이(어느 필드가 왜)를 PR 본문에 설명한다.
  * - 파일이 없으면 실패한다 — CI에서 자동으로 쓰지 않는다.
  * - 공유 픽스처를 재사용한다: `@/entities/analysis-outcome/__tests__/fixtures/storedAnalyses.json`(저장된 기술 분석),
- *   `../fixtures/secConcepts`·`../fixtures/sinceEarlier`, `@/widgets/investor-flows/__tests__/fixtures/flowsFixtures`,
+ *   `../fixtures/secConcepts`·`../fixtures/sinceEarlier`, `@/entities/investor-flows/__tests__/fixtures/flowsFixtures`,
  *   `@/__tests__/fixtures/guideFixtures`. 이 파일들을 바꾸면 골든도 바뀔 수 있다 — 그때도 위 규칙대로 다시 만들고 설명한다.
  *
  * 목한 경로(도구 이동 PR이 옮기지 않는 모듈만 — 도구 폴더 `src/app/api/ai/chat/**`와 그 이동 목적지는 하나도 없다; 메타

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildMajorHolderRows } from '../../utils/krMajorHolders';
 import {
     makeKrMajorHoldingRecord,
     makeKrSnapshot,
-} from '../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { buildMajorHolderRows } from '../../utils/krMajorHolders';
 
 function reportsOf(records: ReturnType<typeof makeKrMajorHoldingRecord>[]) {
     return makeKrSnapshot({ majorHoldings: records }).kr!.majorHolders;

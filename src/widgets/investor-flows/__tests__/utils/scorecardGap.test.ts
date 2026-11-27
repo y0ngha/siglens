@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAxisGap } from '../../utils/scorecardGap';
 import {
     evaluate,
     makeEmptySnapshot,
     makeSnapshot,
-} from '../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { resolveAxisGap } from '../../utils/scorecardGap';
 
 describe('resolveAxisGap', () => {
     const empty = evaluate(makeEmptySnapshot());

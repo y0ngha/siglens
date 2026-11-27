@@ -1,4 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import {
+    evaluate,
+    makeEmptySnapshot,
+    makeExpandedSnapshot,
+    makeFailsToDeliver,
+    makeOffering,
+    makeOptionsQuarter,
+    makeProposedSale,
+    makeThresholdList,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { FTD_LOOKBACK_DAYS } from '@/entities/investor-flows/lib/snapshot/short';
 import { buildAxisEvidence } from '../../utils/axisEvidence';
 import { buildFailsToDeliverSeries } from '../../utils/failsToDeliver';
@@ -11,16 +21,6 @@ import {
     OFFERING_TONE,
 } from '../../utils/secFilings';
 import { formatComponentValue } from '../../utils/squeeze';
-import {
-    evaluate,
-    makeEmptySnapshot,
-    makeExpandedSnapshot,
-    makeFailsToDeliver,
-    makeOffering,
-    makeOptionsQuarter,
-    makeProposedSale,
-    makeThresholdList,
-} from '../fixtures/flowsFixtures';
 
 describe('buildFailsToDeliverSeries', () => {
     it('sorts settlement dates oldest first and exposes the latest row and the max', () => {

@@ -5,7 +5,7 @@ import {
     makeKrMajorHoldingRecord,
     makeKrSnapshot,
     makeKrTradingPlanRecord,
-} from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import {
     KR_SUMMARY_MAX_TRADING_PLANS,
     summarizeKrInvestorFlows,

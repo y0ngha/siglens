@@ -1,11 +1,14 @@
-import type { Bar, IncomeStatementRow } from '@y0ngha/siglens-core';
-import { pctVs, roundPct2 } from '@/entities/bars/lib/percent';
+import {
+    computeEarningsReactions,
+    type Bar,
+    type IncomeStatementRow,
+} from '@y0ngha/siglens-core';
+import { pctVs, ratioToPct, roundPct2 } from '@/entities/bars/lib/percent';
 import {
     findSecQuarter,
     type SecForm,
     type SecQuarter,
 } from '@/entities/earnings-report/lib/secQuarters';
-import { barDate } from './calendarChange';
 
 /** Fiscal quarters in a year — the look-back to a quarter's year-ago row. */
 const QUARTERS_PER_YEAR = 4;
@@ -192,7 +195,8 @@ export interface EarningsReactionView {
  * reported earnings dates, newest first, from daily `bars` (oldest-first).
  * A date is skipped when the loaded bars do not have a COMPLETED session on
  * both sides of it (too old for the series, or no finished session after it
- * yet).
+ * yet). The sessions and the move are core's `computeEarningsReactions`;
+ * this turns its raw ratio into the rounded `movePct`.
  *
  * `lastBarForming`: the cached daily series ends with today's live bar during
  * the session (a 60-second quote snapshot). Its close is the current price,
@@ -204,24 +208,11 @@ export function earningsReactions(
     reportedDates: readonly string[],
     lastBarForming: boolean
 ): EarningsReactionView[] {
-    const bars = lastBarForming ? allBars.slice(0, -1) : allBars;
-    const dates = bars.map(barDate);
-    const newestFirst = [...new Set(reportedDates)].toSorted((a, b) =>
-        b.localeCompare(a)
-    );
-    return newestFirst
-        .flatMap((date): EarningsReactionView[] => {
-            const afterIndex = dates.findIndex(d => d > date);
-            // -1: no session after the report yet; 0: the series starts after it.
-            if (afterIndex <= 0) return [];
-            const beforeIndex =
-                dates[afterIndex - 1] === date
-                    ? afterIndex - 2
-                    : afterIndex - 1;
-            const after = bars[afterIndex];
-            const before = bars[beforeIndex];
-            if (after === undefined || before === undefined) return [];
-            return [{ date, movePct: pctVs(after.close, before.close) }];
-        })
-        .slice(0, EARNINGS_REACTIONS_COUNT);
+    return computeEarningsReactions(allBars, reportedDates, {
+        excludeLastBar: lastBarForming,
+        limit: EARNINGS_REACTIONS_COUNT,
+    }).map(({ date, moveRatio }) => ({
+        date,
+        movePct: ratioToPct(moveRatio),
+    }));
 }

@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import {
+    makeLargeHolder,
+    makeOffering,
+    makeProposedSale,
+    makeTransaction,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
 import { OfferingRow } from '../../../ui/dilution/OfferingRow';
 import { DartFilingLink } from '../../../ui/filings/DartFilingLink';
@@ -8,12 +14,6 @@ import { FilingLink } from '../../../ui/filings/FilingLink';
 import { ProposedSaleRecords } from '../../../ui/form144/ProposedSaleRecords';
 import { TradeRecords } from '../../../ui/insider/TradeRecords';
 import { LargeHolderCard } from '../../../ui/large-holders/LargeHolderCard';
-import {
-    makeLargeHolder,
-    makeOffering,
-    makeProposedSale,
-    makeTransaction,
-} from '../../fixtures/flowsFixtures';
 
 describe('FilingLink', () => {
     it('눈에 보이는 글자와 별개로 공시를 가리키는 접근 가능한 이름을 가진다', () => {

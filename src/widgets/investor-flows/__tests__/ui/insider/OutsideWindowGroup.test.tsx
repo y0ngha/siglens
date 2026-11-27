@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import { makeTransaction } from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { OutsideWindowGroup } from '../../../ui/insider/OutsideWindowGroup';
-import { makeTransaction } from '../../fixtures/flowsFixtures';
 
 describe('OutsideWindowGroup', () => {
     it('제목·요약에 세지 않는다는 안내·거래 목록을 함께 보인다', () => {

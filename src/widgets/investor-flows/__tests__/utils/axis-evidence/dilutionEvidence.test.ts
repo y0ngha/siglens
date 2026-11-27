@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { dilutionLines } from '../../../utils/axis-evidence/dilutionEvidence';
 import {
     evaluate,
     makeEmptySnapshot,
     makeExpandedSnapshot,
     makeOffering,
-} from '../../fixtures/flowsFixtures';
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import { dilutionLines } from '../../../utils/axis-evidence/dilutionEvidence';
 
 describe('dilutionLines', () => {
     it('증자 공시가 없으면 "공시 없음" 한 줄만 낸다', () => {

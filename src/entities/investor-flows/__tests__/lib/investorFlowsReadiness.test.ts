@@ -1,6 +1,6 @@
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { makeSnapshot } from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
+import { makeSnapshot } from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
 import { addDays } from '../../lib/investorFlowsDates';
 import { INVESTOR_FLOWS_SEC_FILINGS_READY_LAG_DAYS } from '../../lib/investorFlowsPolicy';
 import {

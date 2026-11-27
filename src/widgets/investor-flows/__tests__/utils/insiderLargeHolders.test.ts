@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+    makeLargeHolder,
+    makeTransaction,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
     buildInsiderTable,
     MAX_INSIDER_ROWS,
     shortRole,
@@ -9,7 +13,6 @@ import {
     largeHolderKind,
     MAX_LARGE_HOLDER_ROWS,
 } from '../../utils/largeHolders';
-import { makeLargeHolder, makeTransaction } from '../fixtures/flowsFixtures';
 
 describe('buildInsiderTable', () => {
     it('buy·sell만 최신순으로 싣고 other는 건수로만 센다', () => {

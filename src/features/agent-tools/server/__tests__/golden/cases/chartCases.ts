@@ -1,4 +1,8 @@
 import {
+    evaluate,
+    makeSnapshot,
+} from '@/entities/investor-flows/__tests__/fixtures/flowsFixtures';
+import {
     fakes,
     repos,
 } from '@/features/agent-tools/server/__tests__/golden/boundary';
@@ -16,10 +20,6 @@ import {
     SYMBOLS,
     type GoldenCase,
 } from '@/features/agent-tools/server/__tests__/golden/goldenCase';
-import {
-    evaluate,
-    makeSnapshot,
-} from '@/widgets/investor-flows/__tests__/fixtures/flowsFixtures';
 import { arrangeUsFundamentals } from './fundamentalsCases';
 import { listThemeMembers } from './historyCases';
 import { usOverview } from './marketCases';
