@@ -203,7 +203,7 @@ describe('prepareMemberTurn', () => {
         expect(repo.listImagesOfMessage).not.toHaveBeenCalled();
     });
 
-    describe('earlierAnalyses (WP-28 app-D)', () => {
+    describe('earlierAnalyses (이 대화의 이전 분석)', () => {
         const ANALYSIS = {
             found: true,
             tab: 'technical',

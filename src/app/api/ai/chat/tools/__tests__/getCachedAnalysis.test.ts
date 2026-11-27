@@ -2381,7 +2381,7 @@ describe('withLevelLadder (evaluation replay enricher)', () => {
     });
 });
 
-describe('getCachedAnalysisTool — sinceEarlier (WP-28 app-D)', () => {
+describe('getCachedAnalysisTool — sinceEarlier', () => {
     const bars = rallyBars();
     const earlierAt = analyzedAfterClose(bars, 112);
     const laterAt = '2026-11-14T10:00:00.000Z';

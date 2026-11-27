@@ -41,10 +41,10 @@ function parseJsonObject(content: string): Record<string, unknown> | null {
 }
 
 /**
- * 저장된 대화의 도구 결과에서 일봉 기술적 분석을 모은다(WP-28 A13c).
+ * 저장된 대화의 도구 결과에서 일봉 기술적 분석을 모은다.
  *
  * 도구 결과에는 종목이 없다 — 그 호출의 인자(앞선 assistant 행의 `toolCalls`)에서 `tool_call_id`로 짝지어 읽는다.
- * 비교 기준이 될 수 있는 것은 `found: true`, `tab: 'technical'`, `timeframe: '1Day'`(Q7), 읽을 수 있는
+ * 비교 기준이 될 수 있는 것은 `found: true`, `tab: 'technical'`, `timeframe: '1Day'`(일봉만), 읽을 수 있는
  * `generatedAt`, 객체 `analysis`가 모두 있는 결과뿐이다. 길이 상한에 잘린 결과(`{ truncated, preview }`)는
  * `found`가 없어 여기서 걸러진다.
  *

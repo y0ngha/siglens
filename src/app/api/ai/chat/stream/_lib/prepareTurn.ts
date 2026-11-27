@@ -61,7 +61,7 @@ export interface ReadyTurn {
     turnAtRowId: string | null;
     history: AgentMessage[];
     /**
-     * 이 대화의 이전 턴에 보인 일봉 기술적 분석 — 도구가 이번 결과와 비교해 `sinceEarlier`를 싣는 기준(WP-28 app-D).
+     * 이 대화의 이전 턴에 보인 일봉 기술적 분석 — 도구가 이번 결과와 비교해 `sinceEarlier`를 싣는 기준.
      * 저장된 행에서만 읽으므로 게스트(브라우저가 보낸 기록은 믿지 않는다)는 비어 있다.
      */
     earlierAnalyses: readonly ConversationAnalysis[];

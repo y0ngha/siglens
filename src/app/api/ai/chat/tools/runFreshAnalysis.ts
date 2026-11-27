@@ -528,7 +528,7 @@ const runFreshAnalysisOnce: ToolExecutor = async (args, ctx, runtime) => {
                                 ),
                         })
                     );
-                // 이 대화의 이전 턴에 본 같은 종목 분석과의 차이(WP-28 app-D) — 새 분석이 아니라 캐시 적중이어도
+                // 이 대화의 이전 턴에 본 같은 종목 분석과의 차이 — 새 분석이 아니라 캐시 적중이어도
                 // 생성 시각이 더 늦으면 싣는다.
                 const sinceEarlier =
                     analysis === undefined

@@ -45,7 +45,7 @@ async function loadOne(
 }
 
 /**
- * 저장된 대화의 일봉 기술적 분석마다 "그 분석 이후 달라진 점"을 계산한다(WP-28 A13c). 종목별로 따로 시간 상한을
+ * 저장된 대화의 일봉 기술적 분석마다 "그 분석 이후 달라진 점"을 계산한다. 종목별로 따로 시간 상한을
  * 걸고, 실패한 종목은 로그만 남기고 뺀다. 아무것도 저장하지 않는다.
  */
 export async function loadConversationChanges(

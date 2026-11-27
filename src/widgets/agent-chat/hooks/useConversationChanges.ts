@@ -8,7 +8,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
 const NO_CHANGES: readonly ChatSymbolChangesResult[] = [];
 
 /**
- * 다시 연 대화의 "분석 이후 달라진 점"(WP-28 A13c). 서버 액션이 페이지가 뜬 뒤에 계산해 돌려준다 — 카드가
+ * 다시 연 대화의 "분석 이후 달라진 점". 서버 액션이 페이지가 뜬 뒤에 계산해 돌려준다 — 카드가
  * 대화 열기를 늦추지 않는다. `conversationId`가 `null`이면 부르지 않는다.
  *
  * 회원 값이라 `gcTime: 0`: 카드가 언마운트되면 항목이 지워져 로그아웃·계정 전환 뒤에 다음 사람에게 남지 않는다

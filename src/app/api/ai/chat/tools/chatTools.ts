@@ -118,9 +118,9 @@ export interface ToolRuntime {
      */
     barsResultMaxChars?: number;
     /**
-     * 이 대화의 **이전 턴**에 회원이 본 일봉 기술적 분석(종목마다 가장 나중 것, 최대 3종목).
-     * `get_cached_analysis`·`run_fresh_analysis`의 technical 1Day 결과가 이것과 비교해 `sinceEarlier` 블록을 싣는다
-     * (WP-28 app-D). 8턴 창이 오래된 도구 결과를 `omitted`로 보내므로 모델이 직접 볼 수 없는 숫자를 코드가 대신
+     * 이 대화의 **이전 턴**에 회원이 본 일봉 기술적 분석(종목마다 가장 나중 것, 최근에 본 순).
+     * `get_cached_analysis`·`run_fresh_analysis`의 technical 1Day 결과가 이것과 비교해 `sinceEarlier` 블록을 싣는다.
+     * 8턴 창이 오래된 도구 결과를 `omitted`로 보내므로 모델이 직접 볼 수 없는 숫자를 코드가 대신
      * 계산해 주는 길이다. 저장된 대화가 없으면(게스트·공개 API) 생략한다.
      */
     earlierAnalyses?: readonly ConversationAnalysis[];

@@ -24,7 +24,7 @@ const m = vi.hoisted(() => ({
     resolveHoldingPositionBucket: vi.fn(
         async (): Promise<string | undefined> => undefined
     ),
-    // WP-28 app-D: 비교 계산은 `sinceEarlier.test.ts`가 검증한다. 여기서는 호출 배선과 결과 합성만 본다.
+    // 비교 계산은 `sinceEarlier.test.ts`가 검증한다. 여기서는 호출 배선과 결과 합성만 본다.
     loadSinceEarlier: vi.fn(
         async (_input: unknown): Promise<unknown> => undefined
     ),
@@ -1553,7 +1553,7 @@ describe('runFreshAnalysisTool — E2E 전용 보류 시험 이음매', () => {
     );
 });
 
-describe('runFreshAnalysisTool — sinceEarlier (WP-28 app-D)', () => {
+describe('runFreshAnalysisTool — sinceEarlier', () => {
     const BLOCK = {
         earlierGeneratedAt: '2026-10-21T22:00:00.000Z',
         fromSessionDate: '2026-10-21',

@@ -722,7 +722,7 @@ async function peekTechnicalResult(
                     fmpSymbol
                 ),
                 priceNowFor(symbol, fmpSymbol),
-                // 이 대화의 이전 턴에 본 같은 종목 분석과의 차이(WP-28 app-D). 생성 시각을 모르면(`analyzedAt` 없음)
+                // 이 대화의 이전 턴에 본 같은 종목 분석과의 차이. 생성 시각을 모르면(`analyzedAt` 없음)
                 // 지금 시각으로 때우지 않고 비교하지 않는다. 결과 envelope에는 fit **전에** 합친다.
                 loadSinceEarlier({
                     earlierAnalyses: runtime.earlierAnalyses,
