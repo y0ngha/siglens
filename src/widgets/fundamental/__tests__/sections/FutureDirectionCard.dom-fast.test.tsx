@@ -167,7 +167,7 @@ describe('FutureDirectionCard', () => {
             expect(items[1]).toHaveTextContent('다음 회계연도');
             expect(items[0]).toHaveTextContent('30일 전보다 ▲ 상향 US$0.05');
             expect(items[0]).toHaveTextContent('90일 전보다 ▼ 하향 US$0.10');
-            expect(items[0]).toHaveTextContent('최근 30일 상향 6명 · 하향 2명');
+            expect(items[0]).toHaveTextContent('최근 30일 상향 6명, 하향 2명');
         });
 
         it('표시 단위에서 0이 되는 변화(US$0.002)는 방향 기호 없이 "변동 없음"이다', () => {
@@ -282,7 +282,7 @@ describe('FutureDirectionCard', () => {
             });
             expect(
                 screen.getByText(
-                    `Yahoo Finance 집계 평균 ${formatCurrencyForSymbol(276.56, 'AAPL', 'ko')} · 애널리스트 53명`
+                    `Yahoo Finance 집계 평균 ${formatCurrencyForSymbol(276.56, 'AAPL', 'ko')}(애널리스트 53명)`
                 )
             ).toBeInTheDocument();
             expect(

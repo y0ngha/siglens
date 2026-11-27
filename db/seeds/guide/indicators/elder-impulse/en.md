@@ -28,7 +28,7 @@ MACD uses the standard (12, 26, 9). The 13-bar EMA captures trend inertia and th
 
 What follows is the traditional reading Elder set out. SIGLENS also uses it not as a trading signal but as context about which direction is blocked.
 
-Elder himself called this a prohibition rule, not a rule that tells you when to buy. His words: it doesn't tell you what to do, it tells you what you must not do. So the colors are not instructions to buy or sell; they only say which side of trading is blocked.
+Elder himself called this a prohibition rule, not a rule that tells you when to buy. His words: it doesn't tell you what to do, it tells you what you must not do.
 
 - Green: buying is allowed and short selling (a position that bets on a fall) is prohibited.
 - Red: short selling is allowed and buying is prohibited.

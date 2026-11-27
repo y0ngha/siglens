@@ -89,7 +89,7 @@ describe('OptionsChainTable', () => {
                 nearestExpiry="2025-06-20"
             />
         );
-        expect(screen.getByText(/0 contracts/)).toBeInTheDocument();
+        expect(screen.getByText(/계약 0건/)).toBeInTheDocument();
     });
 
     it('renders the expand button with contract count', () => {
@@ -105,7 +105,7 @@ describe('OptionsChainTable', () => {
                 nearestExpiry="2025-06-20"
             />
         );
-        expect(screen.getByText(/2 contracts/)).toBeInTheDocument();
+        expect(screen.getByText(/계약 2건/)).toBeInTheDocument();
     });
 
     it('expands the table on button click', async () => {
@@ -162,7 +162,7 @@ describe('OptionsChainTable', () => {
         );
         const button = screen.getByRole('button');
         await user.click(button);
-        expect(button).toHaveTextContent('선택된 만기: 2025-06-20');
+        expect(button).toHaveTextContent('선택한 만기: 2025-06-20');
     });
 
     it('renders the aggregate-expiry note when expirationDate is "all" and expanded', async () => {

@@ -166,7 +166,7 @@ describe('StockAnalysisLanding', () => {
         });
         expect(samsung).not.toHaveTextContent('기술적 방향성');
         expect(samsung).toHaveTextContent('거래량은 평소 수준입니다.');
-        expect(section).toHaveTextContent('지금 시세와 다를 수 있어요');
+        expect(section).toHaveTextContent('지금 시세와 다를 수 있습니다');
         expect(section.querySelector('ul')).toHaveClass('sm:grid-cols-2');
     });
 

@@ -22,19 +22,19 @@ Price moves between two parallel rising trendlines, like a tilted pipe with pric
 
 The uptrend is continuing within a steady range. While declines stop near the lower line, the trend is considered intact; a close below the lower line is read as a sign the trend has weakened.
 
-It has limits as a directional signal. Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in his books, did not tabulate channel performance separately and said only that it is probably similar to a rectangle. He also noted the breakout can go either way. So a channel works less as a buy or sell signal and more as a way to see the range the current trend is moving in.
+It has limits as a directional signal. Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, did not tabulate channel performance separately and said only that it is probably similar to a rectangle. He also noted the breakout can go either way. So a channel works less as a buy or sell signal and more as a way to see the range the current trend is moving in.
 
 ## How it differs from a descending channel
 
 It looks like a [descending channel](/guide/chart-patterns/descending-channel) flipped upside down, but the break that matters is on the other side. In an ascending channel, the more informative break is the one through the lower line. Bulkowski's example also treats a close below the lower line as the sell signal. A close above the upper line, by contrast, reads less as a turn and more as the rise speeding up.
 
-While price stays inside, the uptrend is considered intact. Bulkowski held that short selling (a position that profits when price falls, a bet on decline) does not suit an up-sloping channel and that it is better viewed only from the rising side. For a position betting on the rise, he treated a close outside the lower line as the point where that view no longer holds.
+While price stays inside, the uptrend is considered intact. Bulkowski held that short selling (a position that profits when price falls) does not suit an up-sloping channel and that it is better viewed only from the rising side. For a position betting on the rise, he treated a close outside the lower line as the point where that view no longer holds.
 
 Moves inside the channel can hint at the breakout direction. When price turns down before reaching the upper line (a partial rise), a downward break is expected; when it turns up before reaching the lower line (a partial decline), an upward break is expected. Because the lower-line break is the more important signal in an ascending channel, a partial rise is worth watching as a possible early warning of it.
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines rise together and the width stays about the same, it treats the shape as an ascending channel.
+SIGLENS connects clear highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines rise together and the width stays about the same, it treats the shape as an ascending channel.
 
 - Both lines must rise at least 1.5 times ATR over the pattern.
 - Swings must touch each line at least twice. A swing within 0.35 times ATR of a line counts as a touch.

@@ -31,7 +31,7 @@ export const FEATURES: readonly Feature[] = [
         Icon: LayersIcon,
         title: '지지선과 저항선 정리',
         scope: '미국, 한국',
-        body: '가격이 자주 멈추고 되돌아선 구간을 모아 지금 주목할 가격대를 정리합니다.',
+        body: '가격이 자주 멈추고 되돌아선 구간을 모아 지금 눈여겨볼 가격대를 정리합니다.',
         href: '/005930.KS',
         example: '삼성전자 분석 보기',
     },
@@ -47,7 +47,7 @@ export const FEATURES: readonly Feature[] = [
         Icon: OptionsIcon,
         title: '옵션과 재무, 뉴스',
         scope: '옵션은 미국 주식',
-        body: '옵션 흐름, 재무제표, 최신 뉴스를 종목 하나에서 함께 확인합니다.',
+        body: '옵션 흐름, 재무제표, 최신 뉴스를 한 종목 페이지에서 함께 볼 수 있습니다.',
         href: '/NVDA/options',
         example: '엔비디아 옵션 보기',
     },
@@ -75,8 +75,8 @@ export const LP_ANALYSIS_SUBJECTS: readonly LpAnalysisSubject[] = [
 /** Copy of the real-analysis section. */
 export const REAL_ANALYSIS_COPY = {
     title: '시그렌즈가 최근에 쓴 분석',
-    sub: '종목을 열면 시세와 차트를 불러와 지표와 패턴을 계산하고, AI가 한 편의 리포트로 정리합니다. 아래는 실제로 만든 리포트의 앞부분이에요.',
+    sub: '종목을 열면 시세와 차트를 불러와 지표와 패턴을 계산하고, AI가 한 편의 리포트로 정리합니다. 아래는 실제로 만든 리포트의 앞부분입니다.',
     trendPrefix: '기술적 방향성',
     more: (name: string) => `${name} 전체 분석 보기`,
-    note: '미리 만들어 둔 지난 분석이라 지금 시세와 다를 수 있어요. 규칙으로 계산한 값을 AI가 문장으로 정리한 글이고, 사람이 한 편씩 읽어 보지는 않아요.',
+    note: '미리 만들어 둔 지난 분석이라 지금 시세와 다를 수 있습니다. 규칙으로 계산한 값을 AI가 문장으로 정리한 글이고, 사람이 한 편씩 읽어 보지는 않습니다.',
 } as const;

@@ -22,7 +22,7 @@ Highs and lows both move lower while the two trendlines above and below converge
 
 Price is falling, but the swings get smaller as it falls. That is a sign downward pressure is fading, so a close above the upper line is read as a turn up. It is known as a reversal pattern that appears at the end of a downtrend.
 
-In the counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, 68% broke upward. Performance after the breakout, however, was on the low side among bullish patterns. Volume that shrinks as the wedge narrows and then rises on the breakout adds weight to the signal.
+In the counts of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 68% broke upward. Performance after the breakout, however, was on the low side among bullish patterns. Volume that shrinks as the wedge narrows and then rises on the breakout adds weight to the signal.
 
 ## How it differs from a rising wedge
 

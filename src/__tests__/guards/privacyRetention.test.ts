@@ -295,7 +295,7 @@ const ENTRIES: readonly Entry[] = [
         unit: 'hour',
         places: [
             { section: 2, marker: LOGIN_LIMIT_LINE },
-            { section: 4, marker: '- 로그인·비밀번호 재설정 횟수 제한 기록' },
+            { section: 4, marker: '- 로그인과 비밀번호 재설정 횟수 제한 기록' },
             { section: 6, marker: UPSTASH, scopeAfter: RESET_PURPOSE },
         ],
     },

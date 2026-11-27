@@ -73,7 +73,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec2Verified: '인증 코드를 입력해 주소를 확인한 뒤에만 저장됩니다',
         resend: '알림 메일의 경우 실린 종목명과 종목 코드, 신호 이름, 공포 탐욕 점수와 구간, 구독자 식별자가 서명과 함께 담긴 설정 링크와 수신거부 링크',
         upstash:
-            '알림 메일 신청의 인증 코드 보관과 요청·입력·항목 추가 횟수 제한',
+            '알림 메일 신청의 인증 코드 보관과 인증 메일 요청, 코드 입력, 항목 추가 횟수 제한',
         sec2Limits: '인증 메일 요청, 코드 입력, 항목 추가 횟수를 제한하려고',
         upstashKeyed: '이메일 주소의 해시를 키로 보관하는 인증 코드',
         cookieIntro: '알림 메일을 신청한 브라우저에는 다음 쿠키도 사용합니다',
@@ -102,7 +102,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec8: 'Alert emails can be turned off at any time using the unsubscribe link at the bottom of the email, the unsubscribe button of the email app, the settings link in the email, or the [alert email settings](/email-report/alerts) screen after logging in',
     },
     ja: {
-        sec2Opening: '- アラートメールを申し込んだ場合(会員・非会員とも)',
+        sec2Opening: '- アラートメールを申し込んだ場合(会員と非会員のどちらも)',
         sec3: '- 申し込まれたアラートメールの送信、1日1通の上限および同じ情報の重複送信の防止、認証メールの悪用防止',
         sec4Subscription: '- アラートメールの申し込み情報',
         sec4Deliveries: '- アラートメールの送信記録',
@@ -112,7 +112,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
             '認証コードを入力してアドレスを確認した後にのみ保存されます',
         resend: 'アラートメールの場合は、メールに載せる銘柄名と銘柄コード、シグナル名、恐怖強欲スコアとゾーン、および購読者識別子が署名とともに含まれる設定リンクと配信停止リンク',
         upstash:
-            'アラートメール申し込みの認証コードの保管とリクエスト・入力・項目追加回数の制限',
+            'アラートメール申し込みの認証コードの保管と、認証メールのリクエスト、コード入力、項目追加の回数制限',
         sec2Limits:
             '認証メールのリクエスト、コード入力、項目追加の回数を制限するため',
         upstashKeyed: 'メールアドレスのハッシュをキーとして保管する認証コード',

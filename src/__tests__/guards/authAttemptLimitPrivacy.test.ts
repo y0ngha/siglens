@@ -53,9 +53,9 @@ interface LocalePhrases {
 const PHRASES: Record<Locale, LocalePhrases> = {
     ko: {
         sec2Opening: '- 로그인과 비밀번호 재설정 요청 횟수를 제한하려고',
-        sec4Opening: '- 로그인·비밀번호 재설정 횟수 제한 기록',
+        sec4Opening: '- 로그인과 비밀번호 재설정 횟수 제한 기록',
         upstashPurpose: '로그인과 비밀번호 재설정 요청 횟수 제한',
-        sec9Opening: '- 로그인 시도와 인증·재설정 메일 요청의 횟수 제한',
+        sec9Opening: '- 로그인 시도와 인증 메일, 재설정 메일 요청의 횟수 제한',
     },
     en: {
         sec2Opening: '- To limit login attempts and password reset requests',
@@ -67,9 +67,10 @@ const PHRASES: Record<Locale, LocalePhrases> = {
     ja: {
         sec2Opening:
             '- ログインとパスワード再設定リクエストの回数を制限するため',
-        sec4Opening: '- ログイン・パスワード再設定の回数制限の記録',
+        sec4Opening: '- ログインとパスワード再設定の回数制限の記録',
         upstashPurpose: 'ログインとパスワード再設定リクエストの回数制限',
-        sec9Opening: '- ログイン試行と認証・再設定メールのリクエストの回数制限',
+        sec9Opening:
+            '- ログイン試行と認証メール、再設定メールのリクエストの回数制限',
     },
     zh: {
         sec2Opening: '- 为限制登录和密码重设请求的次数',

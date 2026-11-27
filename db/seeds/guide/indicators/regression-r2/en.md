@@ -14,9 +14,9 @@ faq:
 
 ## How it's calculated
 
-In one line: it scores, from 0 to 1, how closely recent price moved along a ruler-straight line.
+R² scores, from 0 to 1, how closely recent price moved along a ruler-straight line.
 
-Line up the closes of a recent window in time order and fit the straight line that best matches those points (a linear regression line). The coefficient of determination, R², is a number from 0 to 1 that says how much of the price movement that line explains. It equals the square of the correlation between price and time.
+Line up the closes of a recent window in time order and fit the straight line that best matches those points (a linear regression line). The coefficient of determination, R², says how much of the price movement that line explains. It equals the square of the correlation between price and time.
 
 Near 0, price moved up and down with no relation to a straight line; near 1, it moved almost along a straight line.
 

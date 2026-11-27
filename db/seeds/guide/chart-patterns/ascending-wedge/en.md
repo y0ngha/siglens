@@ -22,7 +22,7 @@ Highs and lows both rise, and the upper and lower trendlines converge toward a s
 
 Price is rising, but the range of movement shrinks as it climbs. That signals fading upward momentum, so a close below the lower line is read as a turn down. For this reason it is known as a reversal pattern at the end of an uptrend.
 
-Its track record is poor, though. In the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in his books, 60% broke downward. Yet in the performance ranking, which orders patterns by how far price went after the breakout, its downside breaks came last among 36 bearish patterns. Shrinking volume during the narrowing and rising volume as the lower line breaks give the signal more weight.
+Its track record is poor, though. In the tabulation of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 60% broke downward. Yet in the performance ranking, which orders patterns by how far price went after the breakout, its downside breaks came last among 36 bearish patterns. Shrinking volume during the narrowing and rising volume as the lower line breaks give the signal more weight.
 
 ## How it differs from a falling wedge
 
@@ -32,7 +32,7 @@ So a rising wedge is better read as a warning that the advance is tiring than as
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines rise and gradually converge, it treats the shape as a rising wedge.
+SIGLENS connects clear highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When both lines rise and gradually converge, it treats the shape as a rising wedge.
 
 - Both lines must rise at least 1.5 times ATR over the pattern.
 - Swings must touch each line at least 3 times. A swing within 0.35 times ATR of a line counts as a touch.
