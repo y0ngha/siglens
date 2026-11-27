@@ -1,10 +1,10 @@
 import type { ReactElement } from 'react';
 import type { SignalEpisodeRow } from '@/entities/signal-history/types';
-import { isPopularSymbol } from '@/entities/ticker/lib/searchRelevance';
 import type { Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { isFollowedHubSymbol } from '../_lib/isFollowedHubSymbol';
 import { signalHubRowLabel } from '../_lib/signalHubRowLabel';
 
 interface SignalHubRowItemProps {
@@ -26,9 +26,11 @@ export function SignalHubRowItem({
                 <Link
                     href={`/${row.symbol}`}
                     prefetch={false}
-                    // 색인하지 않는 종목 페이지(인기 목록 밖)로는 크롤러를 보내지 않는다 — 스캔 대상이
-                    // 커지면 신호 페이지가 수백 개의 얇은 종목 페이지로 가는 링크를 달게 된다.
-                    rel={isPopularSymbol(row.symbol) ? undefined : 'nofollow'}
+                    // 색인하지 않는 종목 페이지(인기 목록·한국 대시보드 목록 밖)로는 크롤러를 보내지 않는다 —
+                    // 스캔 대상이 커지면 신호 페이지가 수백 개의 얇은 종목 페이지로 가는 링크를 달게 된다.
+                    rel={
+                        isFollowedHubSymbol(row.symbol) ? undefined : 'nofollow'
+                    }
                     className="block truncate text-sm font-medium text-secondary-100 underline-offset-4 hover:text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {signalHubRowLabel(row, locale)}

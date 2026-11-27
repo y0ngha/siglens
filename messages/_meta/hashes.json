@@ -222,7 +222,7 @@
     "app.market.signalHub.firstSeen": "f08c9df835fd",
     "app.market.signalHub.guideHeading": "907c2be3018b",
     "app.market.signalHub.guideLink": "067959cc7eba",
-    "app.market.signalHub.intro": "4153a167c4c2",
+    "app.market.signalHub.intro": "3d3c411512be",
     "app.market.signalHub.itemListName": "6c9f19260b9d",
     "app.market.signalHub.keywordRecent": "aace7b9bac3e",
     "app.market.signalHub.keywordStocks": "041cb18c11b2",
@@ -4641,5 +4641,7 @@
     "widgets.share.ShareTriggerDialog.5481d6": "5481d6733919",
     "widgets.share.ShareTriggerDialog.94b7db": "94b7dba15907",
     "widgets.share.ShareTriggerDialog.b74ea2": "c4f30f27e363",
-    "widgets.share.ShareTriggerDialog.cc6aae": "cc6aaecc4784"
+    "widgets.share.ShareTriggerDialog.cc6aae": "cc6aaecc4784",
+    "app.market.signalHub.definitionGoldenCross": "193627997637",
+    "app.market.signalHub.definitionDeathCross": "4da12861afbf"
 }

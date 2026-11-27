@@ -4,12 +4,12 @@ aliases: [Moving Average, MA, SMA, Simple Moving Average, Golden Cross, Death Cr
 summary: "A line of average closing prices over a set period, used to read trend, support and resistance, and crosses."
 seoTitle: "Moving Averages: Golden Cross and Death Cross"
 seoDescription: How to read the 5-, 20-, 60-, 120- and 200-day moving averages, what golden and death crosses and bullish or bearish alignment mean, and the limits of a lagging line.
-demoCaption: "Synthetic, illustrative bars. The marked point is a golden cross, where the 20-day line crosses above the 50-day line."
+demoCaption: "Synthetic, illustrative bars. The marked point is a golden cross, where the 50-day line crosses above the 200-day line."
 faq:
   - q: "What are a golden cross and a death cross?"
     a: "A golden cross is when a short moving average crosses above a long one; a death cross is when it crosses below. Both confirm a trend change that has already started, so they are not a way to predict what comes next."
   - q: "Which moving average periods are most common?"
-    a: "The 5, 20, 60, 120 and 200-day averages. SIGLENS calculates all five, and also uses the 50-day line for golden cross and support/resistance detection."
+    a: "The 5, 20, 60, 120 and 200-day averages. SIGLENS calculates all five, and also uses the 50-day line for golden cross, short-term moving average cross and support/resistance detection."
   - q: "Can I trust golden crosses on minute or hourly charts?"
     a: "They are fairly reliable on daily charts and above. On minute and hourly charts, false signals are common."
 ---
@@ -31,7 +31,7 @@ SIGLENS uses moving averages to read the frame of the current trend, and separat
 
 Crosses and approaches to support or resistance count as signals. The 50-day line used here is calculated separately from the five lines above.
 
-- Golden cross and death cross: if the 20-day line crosses above the 50-day line within the last 3 bars, it is a golden cross; crossing below is a death cross. SIGLENS uses this 20/50-day cross, not the 20/60-day over 120/200-day crosses described above.
+- Golden cross and death cross: if the 50-day line crosses above the 200-day line within the last 3 bars, it is a golden cross; crossing below is a death cross. The 20-day and 50-day crossover is tracked separately as a short-term MA bullish or bearish cross.
 - Support approach: the close has fallen to within 2% above the 50-day or 200-day line while being lower than 5 bars ago.
 - Resistance approach: the close has risen to within 2% below the 50-day or 200-day line while being higher than 5 bars ago.
 

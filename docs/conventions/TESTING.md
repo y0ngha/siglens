@@ -251,7 +251,7 @@ Exception: persisted or wire-level strings (storage keys, persisted event names,
 
 #### TE-6 — Import boundary constants
 
-Period and threshold constants come from the source (`import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core'`), not a local `const TEST_PERIOD = 14`. Do not mirror a private source constant by hand or leave literal copies in assertions and log strings after the source is converted.
+Period and threshold constants come from the source (`import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core'`), not a local `const TEST_PERIOD = 14`. Do not mirror a private source constant by hand or leave literal copies in assertions and log strings after the source is converted. The same holds for logic: a demo or fixture test runs the production detector or function the copy relies on, never a local re-implementation of it.
 
 <a id="TE-4"></a>
 

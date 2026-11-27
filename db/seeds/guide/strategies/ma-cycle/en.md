@@ -50,7 +50,7 @@ SIGLENS looks at the order of the three moving averages on the last bar and sets
 - It sorts the 5-, 20- and 60-day simple moving average (SMA) values by size.
 - If two lines have exactly the same value, it does not set a stage. It does not use exponential moving averages (EMA). The [MACD grand cycle analysis](/guide/strategies/macd-cycle) uses EMA 9, 21 and 60, so its results differ.
 
-What brings this analysis up is separate from the six stages: the widely used 20-day/50-day crossover. When the 20-day line crosses above the 50-day line (golden cross) or below it (death cross) within the last 3 bars, SIGLENS looks at this analysis too. It also checks:
+What brings this analysis up is separate from the six stages: the widely used moving average crosses. When the 50-day line crosses above the 200-day line (golden cross) or below it (death cross), or the 20-day line crosses the 50-day line (short-term moving average cross), within the last 3 bars, SIGLENS looks at this analysis too. It also checks:
 
 - Whether the market arrived from the previous stage in forward order or came back in reverse
 - The order, gaps and slope
