@@ -73,14 +73,17 @@ function KrBasisCaption({ basis }: { basis: KrValuationBasis }) {
         ttmEnd: basis.ttmEnd ?? '',
         equityAsOf: basis.equityAsOf ?? '',
     };
-    const text =
-        basis.source === 'provider'
-            ? t('ValuationCard.krBasisProvider')
-            : basis.ttmEnd === null
-              ? t('ValuationCard.krBasisDartEquityOnly', dates)
-              : basis.statements === 'separate'
-                ? t('ValuationCard.krBasisDartSeparate', dates)
-                : t('ValuationCard.krBasisDartConsolidated', dates);
+    const textOf = (): string => {
+        if (basis.source === 'provider')
+            return t('ValuationCard.krBasisProvider');
+        if (basis.ttmEnd === null) {
+            return t('ValuationCard.krBasisDartEquityOnly', dates);
+        }
+        return basis.statements === 'separate'
+            ? t('ValuationCard.krBasisDartSeparate', dates)
+            : t('ValuationCard.krBasisDartConsolidated', dates);
+    };
+    const text = textOf();
     return (
         <p className="mt-3 text-xs leading-relaxed text-secondary-400">
             {text}

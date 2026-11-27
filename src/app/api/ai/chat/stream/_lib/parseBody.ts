@@ -121,8 +121,12 @@ const BASE64_RE = /^[A-Za-z0-9+/]*={0,2}$/;
 function decodedByteLength(data: string): number | null {
     if (data.length === 0 || data.length % 4 !== 0 || !BASE64_RE.test(data))
         return null;
-    const padding = data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0;
-    return (data.length / 4) * 3 - padding;
+    return (data.length / 4) * 3 - base64PaddingLength(data);
+}
+
+function base64PaddingLength(data: string): number {
+    if (data.endsWith('==')) return 2;
+    return data.endsWith('=') ? 1 : 0;
 }
 
 /**

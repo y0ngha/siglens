@@ -253,12 +253,11 @@ export function dynamicDecimals(value: number): number {
 
 /** Format a price as currency, applying the descriptor's precision rule. */
 export function formatPrice(value: number, spec: PriceFormatConfig): string {
-    const digits =
-        spec.precision.kind === 'fixed'
-            ? spec.precision.digits
-            : spec.precision.kind === 'integer'
-              ? 0
-              : dynamicDecimals(value);
+    const digitsOf = (): number => {
+        if (spec.precision.kind === 'fixed') return spec.precision.digits;
+        return spec.precision.kind === 'integer' ? 0 : dynamicDecimals(value);
+    };
+    const digits = digitsOf();
     return cachedNumberFormat(spec.locale, {
         style: 'currency',
         currency: spec.currency,

@@ -145,14 +145,16 @@ function changeLines(
             ];
         }
         case 'level': {
-            const key =
-                change.side === 'support'
-                    ? change.direction === 'down'
-                        ? 'changeSupportDown'
-                        : 'changeSupportUp'
-                    : change.direction === 'up'
-                      ? 'changeResistanceUp'
-                      : 'changeResistanceDown';
+            const key = {
+                support: {
+                    down: 'changeSupportDown',
+                    up: 'changeSupportUp',
+                },
+                resistance: {
+                    up: 'changeResistanceUp',
+                    down: 'changeResistanceDown',
+                },
+            }[change.side][change.direction];
             return [
                 t(key, {
                     v0: date,

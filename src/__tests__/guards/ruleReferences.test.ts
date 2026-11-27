@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import { ruleDocPaths } from './support/ruleDocs';
 
 /**
@@ -230,43 +231,59 @@ describe('rule reference guard', () => {
         text: readFileSync(file, 'utf8'),
     }));
 
-    it('스캔 범위가 비어 있지 않다(파서가 깨지면 모든 검사가 공허해진다)', () => {
-        expect(texts.length).toBeGreaterThan(100);
-        const references = texts.flatMap(({ relative, text }) =>
-            extractReferences(relative, text)
-        );
-        expect(references.length).toBeGreaterThan(50);
-    });
+    it(
+        '스캔 범위가 비어 있지 않다(파서가 깨지면 모든 검사가 공허해진다)',
+        { timeout: SCAN_TIMEOUT_MS },
+        () => {
+            expect(texts.length).toBeGreaterThan(100);
+            const references = texts.flatMap(({ relative, text }) =>
+                extractReferences(relative, text)
+            );
+            expect(references.length).toBeGreaterThan(50);
+        }
+    );
 
-    it('모든 FILE#ID 참조가 실재하는 <a id> 앵커로 풀린다', () => {
-        const references = texts.flatMap(({ relative, text }) =>
-            extractReferences(relative, text)
-        );
-        expect(findDanglingReferences(references, anchorsIn)).toEqual([]);
-    });
+    it(
+        '모든 FILE#ID 참조가 실재하는 <a id> 앵커로 풀린다',
+        { timeout: SCAN_TIMEOUT_MS },
+        () => {
+            const references = texts.flatMap(({ relative, text }) =>
+                extractReferences(relative, text)
+            );
+            expect(findDanglingReferences(references, anchorsIn)).toEqual([]);
+        }
+    );
 
-    it('규칙 ID는 문서 전체에서 한 번만 정의된다', () => {
-        const owners = new Map<string, string[]>();
-        texts
-            .filter(({ relative }) => relative.endsWith('.md'))
-            .forEach(({ relative, text }) => {
-                [...text.matchAll(ANCHOR_PATTERN)].forEach(match => {
-                    const id = match[1]!;
-                    owners.set(id, [...(owners.get(id) ?? []), relative]);
+    it(
+        '규칙 ID는 문서 전체에서 한 번만 정의된다',
+        { timeout: SCAN_TIMEOUT_MS },
+        () => {
+            const owners = new Map<string, string[]>();
+            texts
+                .filter(({ relative }) => relative.endsWith('.md'))
+                .forEach(({ relative, text }) => {
+                    [...text.matchAll(ANCHOR_PATTERN)].forEach(match => {
+                        const id = match[1]!;
+                        owners.set(id, [...(owners.get(id) ?? []), relative]);
+                    });
                 });
-            });
-        const duplicated = [...owners.entries()]
-            .filter(([, where]) => where.length > 1)
-            .map(([id, where]) => `${id}: ${where.join(', ')}`);
-        expect(duplicated).toEqual([]);
-    });
+            const duplicated = [...owners.entries()]
+                .filter(([, where]) => where.length > 1)
+                .map(([id, where]) => `${id}: ${where.join(', ')}`);
+            expect(duplicated).toEqual([]);
+        }
+    );
 
-    it('해체된 MISTAKES 문서에 대한 언급이 남아 있지 않다', () => {
-        const stale = texts
-            .filter(({ text }) => LEGACY_DOC_PATTERN.test(text))
-            .map(({ relative }) => relative);
-        expect(stale).toEqual([]);
-    });
+    it(
+        '해체된 MISTAKES 문서에 대한 언급이 남아 있지 않다',
+        { timeout: SCAN_TIMEOUT_MS },
+        () => {
+            const stale = texts
+                .filter(({ text }) => LEGACY_DOC_PATTERN.test(text))
+                .map(({ relative }) => relative);
+            expect(stale).toEqual([]);
+        }
+    );
 
     it('끊어진 참조를 실제로 찾아낸다(가드가 공허하지 않음)', () => {
         const references: Reference[] = [
@@ -302,7 +319,7 @@ describe('rule reference guard', () => {
             expect(findRetiredDeclarationProblems(liveDocs)).toEqual([]);
         });
 
-        it('폐기된 ID를 인용한 곳이 없다', () => {
+        it('폐기된 ID를 인용한 곳이 없다', { timeout: SCAN_TIMEOUT_MS }, () => {
             const references = texts.flatMap(({ relative, text }) =>
                 extractReferences(relative, text)
             );

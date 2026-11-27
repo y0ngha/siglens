@@ -13,6 +13,7 @@ import {
 } from '@/entities/chat-conversation/model';
 import { toOpenAiChatMessages } from '@/entities/llm-provider/api/agent/mapMessages';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 
 /**
  * DeepSeek bills the longest byte-identical request prefix at a cached rate, so turn N+1's first request must
@@ -60,15 +61,7 @@ function jsonbOrder(value: unknown): unknown {
     if (typeof value !== 'object' || value === null) return value;
     return Object.fromEntries(
         Object.entries(value)
-            .sort(([a], [b]) =>
-                a.length !== b.length
-                    ? a.length - b.length
-                    : a < b
-                      ? -1
-                      : a > b
-                        ? 1
-                        : 0
-            )
+            .sort(([a], [b]) => a.length - b.length || compareCodeUnits(a, b))
             .map(([key, v]) => [key, jsonbOrder(v)])
     );
 }

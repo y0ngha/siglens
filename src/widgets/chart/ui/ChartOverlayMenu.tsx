@@ -215,11 +215,11 @@ export function ChartOverlayMenu({
                         }
                         const onCount = keys.filter(isOn).length;
                         const allOn = onCount === keys.length;
-                        const pressed: CheckState = allOn
-                            ? true
-                            : onCount === 0
-                              ? false
-                              : 'mixed';
+                        const pressedOf = (): CheckState => {
+                            if (allOn) return true;
+                            return onCount === 0 ? false : 'mixed';
+                        };
+                        const pressed = pressedOf();
                         return (
                             <div
                                 key={group.kind}

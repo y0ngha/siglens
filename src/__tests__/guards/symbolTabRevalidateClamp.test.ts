@@ -128,11 +128,15 @@ function importedModules(source: string): string[] {
  * 슬라이스 밖이거나 못 찾으면 건너뛴다.
  */
 function resolveLocalImport(specifier: string, fromAbs: string): string | null {
-    const base = specifier.startsWith('@/app/[locale]/[symbol]/')
-        ? path.join(SRC_DIR, specifier.slice('@/'.length))
-        : specifier.startsWith('.')
-          ? path.join(path.dirname(fromAbs), specifier)
-          : null;
+    const baseOf = (): string | null => {
+        if (specifier.startsWith('@/app/[locale]/[symbol]/')) {
+            return path.join(SRC_DIR, specifier.slice('@/'.length));
+        }
+        return specifier.startsWith('.')
+            ? path.join(path.dirname(fromAbs), specifier)
+            : null;
+    };
+    const base = baseOf();
     if (base === null) return null;
     if (!base.startsWith(`${SYMBOL_DIR}${path.sep}`)) return null;
     const found = ['.ts', '.tsx']

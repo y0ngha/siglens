@@ -384,10 +384,9 @@ export function scanErrorLogs(source: string, rel: string): ErrorLogScan {
             ...(ast.errors ?? []).map(error => `파싱 오류: ${error.message}`),
             ...result.unparsed,
         ],
-        directive: directives.includes('use client')
-            ? 'use client'
-            : directives.includes('use server')
-              ? 'use server'
-              : null,
+        directive:
+            (['use client', 'use server'] as const).find(d =>
+                directives.includes(d)
+            ) ?? null,
     };
 }

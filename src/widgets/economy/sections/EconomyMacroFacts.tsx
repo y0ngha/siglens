@@ -50,36 +50,35 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
     // matches the previous local guard: `year2 === null || year10 === null`.
     const spread = computeYieldSpread(treasury ?? null);
 
-    const ratesSentence =
-        federalFunds !== null &&
-        year2 !== null &&
-        year10 !== null &&
-        spread !== null
-            ? tFacts('ratesWithSpread', {
-                  v0: fixed(federalFunds, 2),
-                  v1: fixed(year2, 2),
-                  v2: fixed(year10, 2),
-                  // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
-                  // 달라져 번역이 어긋난다.
-                  v3: formatSignedFixed(spread, 2, locale),
-              })
-            : federalFunds !== null
-              ? tFacts('ratesOnly', { v0: fixed(federalFunds, 2) })
-              : null;
+    const ratesSentenceOf = (): string | null => {
+        if (federalFunds === null) return null;
+        if (year2 !== null && year10 !== null && spread !== null) {
+            return tFacts('ratesWithSpread', {
+                v0: fixed(federalFunds, 2),
+                v1: fixed(year2, 2),
+                v2: fixed(year10, 2),
+                // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
+                // 달라져 번역이 어긋난다.
+                v3: formatSignedFixed(spread, 2, locale),
+            });
+        }
+        return tFacts('ratesOnly', { v0: fixed(federalFunds, 2) });
+    };
+    const ratesSentence = ratesSentenceOf();
 
-    const macroSentence =
-        cpi !== null && unemploymentRate !== null
-            ? tFacts('cpiAndUnemployment', {
-                  v0: fixed(cpi, 1),
-                  v1: fixed(unemploymentRate, 1),
-              })
-            : cpi !== null
-              ? tFacts('cpiOnly', { v0: fixed(cpi, 1) })
-              : unemploymentRate !== null
-                ? tFacts('unemploymentOnly', {
-                      v0: fixed(unemploymentRate, 1),
-                  })
-                : null;
+    const macroSentenceOf = (): string | null => {
+        if (cpi !== null && unemploymentRate !== null) {
+            return tFacts('cpiAndUnemployment', {
+                v0: fixed(cpi, 1),
+                v1: fixed(unemploymentRate, 1),
+            });
+        }
+        if (cpi !== null) return tFacts('cpiOnly', { v0: fixed(cpi, 1) });
+        return unemploymentRate !== null
+            ? tFacts('unemploymentOnly', { v0: fixed(unemploymentRate, 1) })
+            : null;
+    };
+    const macroSentence = macroSentenceOf();
 
     if (ratesSentence === null && macroSentence === null) return null;
 

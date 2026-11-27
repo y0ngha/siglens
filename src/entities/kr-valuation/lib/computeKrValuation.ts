@@ -108,22 +108,24 @@ export function computeKrValuation(data: KrValuationData): KrValuation | null {
 
     const peMissing = epsTtm === null || close === null;
     const pbMissing = bps === null || close === null;
+    const peReasonOf = (): { pe?: 'missing' | 'loss' } => {
+        if (peMissing) return { pe: 'missing' as const };
+        return epsTtm !== null && epsTtm <= 0 ? { pe: 'loss' as const } : {};
+    };
+    const pbReasonOf = (): { pb?: 'missing' | 'negative_equity' } => {
+        if (pbMissing) return { pb: 'missing' as const };
+        return bps !== null && bps <= 0
+            ? { pb: 'negative_equity' as const }
+            : {};
+    };
     return {
         pe: !peMissing && epsTtm > 0 ? close / epsTtm : null,
         pb: !pbMissing && bps > 0 ? close / bps : null,
         epsTtm,
         bps,
         nullReason: {
-            ...(peMissing
-                ? { pe: 'missing' as const }
-                : epsTtm <= 0
-                  ? { pe: 'loss' as const }
-                  : {}),
-            ...(pbMissing
-                ? { pb: 'missing' as const }
-                : bps <= 0
-                  ? { pb: 'negative_equity' as const }
-                  : {}),
+            ...peReasonOf(),
+            ...pbReasonOf(),
         },
         basis: {
             source: 'dart',

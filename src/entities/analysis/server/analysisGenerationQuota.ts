@@ -233,11 +233,13 @@ function guestClaims(
             : ANALYSIS_GUEST_IP_GENERATIONS_PER_DAY,
         retryAt: dayEnd,
     };
-    const ipHourLimit = unknownIp
-        ? ANALYSIS_UNKNOWN_IP_GENERATIONS_PER_HOUR
-        : identity.guestId === null
-          ? ANALYSIS_COOKIELESS_IP_GENERATIONS_PER_HOUR
-          : null;
+    const ipHourLimitOf = (): number | null => {
+        if (unknownIp) return ANALYSIS_UNKNOWN_IP_GENERATIONS_PER_HOUR;
+        return identity.guestId === null
+            ? ANALYSIS_COOKIELESS_IP_GENERATIONS_PER_HOUR
+            : null;
+    };
+    const ipHourLimit = ipHourLimitOf();
     const ipHour: readonly WindowClaim[] =
         ipHourLimit === null
             ? []

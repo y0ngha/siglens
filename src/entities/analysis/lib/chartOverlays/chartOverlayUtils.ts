@@ -207,11 +207,13 @@ export function buildOverlayLineSpecs(
             return [];
         const highlighted = activeHighlight !== null && key === activeHighlight;
         const dimmed = activeHighlight !== null && !highlighted;
-        const opacity = dimmed
-            ? DIMMED_OVERLAY_OPACITY
-            : overlay.variant === 'alternate'
-              ? ALTERNATE_OVERLAY_OPACITY
-              : 1;
+        const opacityOf = (): number => {
+            if (dimmed) return DIMMED_OVERLAY_OPACITY;
+            return overlay.variant === 'alternate'
+                ? ALTERNATE_OVERLAY_OPACITY
+                : 1;
+        };
+        const opacity = opacityOf();
         const lineWidthMult = highlighted ? HIGHLIGHT_LINE_WIDTH_MULT : 1;
 
         const segmentSpecs = overlay.segments.flatMap(

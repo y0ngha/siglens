@@ -33,6 +33,12 @@ const getCrawlDelayAgents = (result: MetadataRoute.Robots) =>
         .filter(rule => rule.crawlDelay !== undefined)
         .flatMap(toUserAgents);
 
+/** robots `allow`/`disallow`는 문자열 하나, 배열, 또는 없음이다. 빈 문자열도 없음으로 본다. */
+function asList(value: string | string[] | undefined): string[] {
+    if (Array.isArray(value)) return value;
+    return value ? [value] : [];
+}
+
 describe('robots', () => {
     it('allows all paths for the default user agent but disallows /api/', () => {
         const result = robots();
@@ -377,25 +383,13 @@ describe('robots', () => {
             // 되돌리는 Allow를 **더** 갖는다(`HUB_SOCIAL_IMAGE_ALLOW`). parity가
             // 지켜야 하는 방향은 "`*`에 있는 규칙이 Googlebot에도 있다"이므로
             // 포함 관계로 고정한다.
-            const wildcardAllow = Array.isArray(wildcardGroup?.allow)
-                ? wildcardGroup.allow
-                : wildcardGroup?.allow
-                  ? [wildcardGroup.allow]
-                  : [];
+            const wildcardAllow = asList(wildcardGroup?.allow);
             expect(googlebotGroup?.allow).toEqual(
                 expect.arrayContaining(wildcardAllow)
             );
 
-            const wildcardDisallow = Array.isArray(wildcardGroup?.disallow)
-                ? wildcardGroup.disallow
-                : wildcardGroup?.disallow
-                  ? [wildcardGroup.disallow]
-                  : [];
-            const googlebotDisallow = Array.isArray(googlebotGroup?.disallow)
-                ? googlebotGroup.disallow
-                : googlebotGroup?.disallow
-                  ? [googlebotGroup.disallow]
-                  : [];
+            const wildcardDisallow = asList(wildcardGroup?.disallow);
+            const googlebotDisallow = asList(googlebotGroup?.disallow);
 
             for (const rule of wildcardDisallow) {
                 expect(googlebotDisallow).toContain(rule);
@@ -421,15 +415,13 @@ describe('robots', () => {
 
         const isAllowedForGooglebot = (path: string): boolean => {
             const group = findGroupByUserAgent(robots().rules, 'Googlebot');
-            const asArray = (v: string | string[] | undefined) =>
-                Array.isArray(v) ? v : v ? [v] : [];
             const longestMatch = (patterns: readonly string[]) =>
                 patterns
                     .filter(p => patternToRegExp(p).test(path))
                     .reduce((max, p) => Math.max(max, p.length), -1);
 
-            const allow = longestMatch(asArray(group?.allow));
-            const disallow = longestMatch(asArray(group?.disallow));
+            const allow = longestMatch(asList(group?.allow));
+            const disallow = longestMatch(asList(group?.disallow));
             // 동률이면 Allow가 이긴다(구글 파서 동작).
             return allow >= disallow;
         };

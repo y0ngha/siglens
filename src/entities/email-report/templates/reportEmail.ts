@@ -90,12 +90,11 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
         welcome !== undefined &&
         input.sections.length === 0 &&
         input.briefRows.length === 0;
-    const kind: ReportKind =
-        welcome !== undefined
-            ? 'welcome'
-            : marketBriefing !== undefined
-              ? 'market'
-              : 'regular';
+    const kindOf = (): ReportKind => {
+        if (welcome !== undefined) return 'welcome';
+        return marketBriefing !== undefined ? 'market' : 'regular';
+    };
+    const kind = kindOf();
     // 수신자 로케일의 브랜드 표기 — ko `시그렌즈`, 그 외 `SIGLENS`(`I18N.md#I18-11`).
     const brand = brandName(locale);
     const { subject, heading } = buildTitles(kind, t, brand, date);

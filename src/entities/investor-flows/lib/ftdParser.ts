@@ -1,3 +1,4 @@
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import type {
     FtdFileLink,
     FtdFileRow,
@@ -192,6 +193,6 @@ export function extractFtdFileLinks(html: string): FtdFileLink[] {
         if (!byKey.has(fileKey)) byKey.set(fileKey, { fileKey, path });
     }
     return [...byKey.values()].toSorted((a, b) =>
-        a.fileKey < b.fileKey ? 1 : a.fileKey > b.fileKey ? -1 : 0
+        compareCodeUnits(b.fileKey, a.fileKey)
     );
 }

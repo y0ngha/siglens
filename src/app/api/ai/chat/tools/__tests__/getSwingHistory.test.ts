@@ -59,12 +59,11 @@ function longHistory(): { date: string; close: number }[] {
     return Array.from({ length: 13_000 }, (_, i) => {
         const cycle = i % 90;
         const base = 100 * 1.0002 ** i;
-        const close =
-            cycle === 88
-                ? base * 0.85
-                : cycle === 89
-                  ? base * 0.85 * 1.2
-                  : base;
+        const closeOf = (): number => {
+            if (cycle === 88) return base * 0.85;
+            return cycle === 89 ? base * 0.85 * 1.2 : base;
+        };
+        const close = closeOf();
         return {
             date: new Date(Date.UTC(1990, 0, 2 + i)).toISOString().slice(0, 10),
             close,
