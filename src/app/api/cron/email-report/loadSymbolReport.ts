@@ -138,7 +138,8 @@ export async function loadSymbolReport(
         symbol,
         technical,
         plain: usedTechnicalRow?.plain ?? null,
-        analyzedAt: usedTechnicalRow?.generatedAt ?? null,
+        // 분석 내용 안의 시각 — 행의 `generatedAt`은 하베스트가 `cached` 결과를 다시 쓴 시각일 수 있다.
+        analyzedAt: technical?.analyzedAt ?? null,
         news,
         optionsMetrics,
         optionsProse,

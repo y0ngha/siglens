@@ -37,8 +37,13 @@ function barsData(count: number): BarsData {
     return { bars, indicators: calculateIndicators(bars) };
 }
 
-function sources(data: Promise<BarsData>): SymbolBriefSources {
-    return { getDailyBars: vi.fn().mockReturnValue(data) };
+function sources(
+    data: Promise<BarsData>,
+    names: SymbolBriefSources['getNames'] = vi
+        .fn()
+        .mockResolvedValue({ name: 'SK hynix Inc.', koreanName: 'SK하이닉스' })
+): SymbolBriefSources {
+    return { getDailyBars: vi.fn().mockReturnValue(data), getNames: names };
 }
 
 describe('loadSymbolBrief', () => {
@@ -81,6 +86,7 @@ describe('loadSymbolBrief', () => {
 
         expect(brief).toEqual({
             symbol: 'BROKEN',
+            names: { name: 'SK hynix Inc.', koreanName: 'SK하이닉스' },
             close: null,
             changePercent: null,
             trend: null,
@@ -133,6 +139,7 @@ describe('loadSymbolBrief', () => {
 
         expect(brief).toEqual({
             symbol: 'ODD',
+            names: { name: 'SK hynix Inc.', koreanName: 'SK하이닉스' },
             close: null,
             changePercent: null,
             trend: null,
@@ -142,5 +149,40 @@ describe('loadSymbolBrief', () => {
             expect.stringContaining('ODD'),
             expect.any(Error)
         );
+    });
+
+    it('종목 이름을 사이트 자산 정보에서 받아 싣는다', async () => {
+        const src = sources(
+            Promise.resolve(barsData(CONFLUENCE_MIN_BARS + 10))
+        );
+
+        const brief = await loadSymbolBrief('000660.KS', src);
+
+        expect(src.getNames).toHaveBeenCalledWith('000660.KS');
+        expect(brief.names).toEqual({
+            name: 'SK hynix Inc.',
+            koreanName: 'SK하이닉스',
+        });
+    });
+
+    it('이름 조회가 실패해도 브리핑은 나가고 이름만 null이다', async () => {
+        const src = sources(
+            Promise.resolve(barsData(CONFLUENCE_MIN_BARS + 10)),
+            vi.fn().mockRejectedValue(new Error('asset info down'))
+        );
+
+        const brief = await loadSymbolBrief('000660.KS', src);
+
+        expect(brief.names).toBeNull();
+        expect(brief.close).not.toBeNull();
+    });
+
+    it('일봉 조회가 실패해도 이름은 싣는다', async () => {
+        const src = sources(Promise.reject(new Error('bars down')));
+
+        const brief = await loadSymbolBrief('000660.KS', src);
+
+        expect(brief.signals).toBeNull();
+        expect(brief.names?.koreanName).toBe('SK하이닉스');
     });
 });

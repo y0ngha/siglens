@@ -842,7 +842,7 @@ export async function runPrewarmBatch(
  * 18 × 7 × 2 = 252회였다. 마커가 present면 skip 조회를 생략하므로
  * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 낮다.
  *
- * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
+ * FIX 2 — 이 창 안의 후보 분류(`classifySymbol`)는 서로
  * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
  * `for`-루프 안에서 순차 `await` — 당시 worst case 252회 왕복이 전부 직렬이었다).
  * 결과 배열은 Promise.all이 입력 순서 그대로 반환하므로 회전 결정성이 유지된다.
@@ -1003,7 +1003,7 @@ async function processSymbol(
 
         try {
             const marker = await getInFlightMarker(u.symbol, tab);
-            // FIX 1(감사, PR #698 리뷰) — in-flight 마커가 있으면 이번 tick은
+            // FIX 1 — in-flight 마커가 있으면 이번 tick은
             // 건너뛴다. TTL(30min) 만료 후 다음 tick이 새로 submit한다.
             if (marker.present) continue;
             if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.

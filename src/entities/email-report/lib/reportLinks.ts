@@ -8,28 +8,45 @@ export const REPORT_UNSUBSCRIBE_API_PATH = '/api/email-report/unsubscribe';
 /** 본문 수신거부 링크가 여는 확인 페이지 경로(로케일 접두 전). */
 export const REPORT_UNSUBSCRIBE_PAGE_PATH = '/email-report/unsubscribe';
 
-/** 차트 서명 입력 — 심볼과 날짜를 함께 묶어 날짜만 바꾼 URL을 막는다. */
-export function chartSignatureValue(symbol: string, date: string): string {
-    return `${symbol}:${date}`;
+/**
+ * 차트 서명 입력 — 심볼과 날짜를 함께 묶어 날짜만 바꾼 URL을 막는다. 작도를 가져온 분석 시각(`analysisAt`,
+ * epoch 밀리초)이 있으면 그것도 묶는다 — 같은 서명으로 다른 분석의 작도를 받지 못하게 한다. 없으면 작도 도입 전
+ * 메일이 쓰던 `symbol:date` 그대로다(이미 나간 메일의 URL이 계속 동작한다).
+ */
+export function chartSignatureValue(
+    symbol: string,
+    date: string,
+    analysisAt: string | null = null
+): string {
+    return analysisAt === null
+        ? `${symbol}:${date}`
+        : `${symbol}:${date}:${analysisAt}`;
 }
+
+/** 이미지 URL의 `a`(분석 시각, epoch 밀리초) 모양 — 서명 전에 걸러 쓰레기 입력이 조회에 닿지 않게 한다. */
+export const CHART_ANALYSIS_AT_RE = /^\d{10,14}$/;
 
 /**
  * 메일에 넣는 차트 이미지 URL. 날짜가 경로 키라 같은 날 같은 종목을 가진 회원들이
- * 같은 URL을 받아 CDN 캐시를 나눠 쓴다.
+ * 같은 URL을 받아 CDN 캐시를 나눠 쓴다. `analysisAt`이 있으면 그 분석의 작도를 그린다 — 시각이 URL에 박혀
+ * 이미지가 영원히 같은 분석을 가리킨다(캐시를 불변으로 둘 수 있는 이유).
  */
 export function buildChartImageUrl(
     siteUrl: string,
     secret: string,
     symbol: string,
-    date: string
+    date: string,
+    analysisAt: Date | null = null
 ): string {
+    const at = analysisAt === null ? null : String(analysisAt.getTime());
     const params = new URLSearchParams({
         s: symbol,
         d: date,
+        ...(at === null ? {} : { a: at }),
         sig: signReportValue(
             secret,
             'chart',
-            chartSignatureValue(symbol, date)
+            chartSignatureValue(symbol, date, at)
         ),
     });
     return `${siteUrl}${REPORT_CHART_PATH}?${params.toString()}`;

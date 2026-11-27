@@ -84,6 +84,12 @@ export interface CachedMarketDataProviderOptions {
      * provider) 예전처럼 전체 창을 단일 키로 캐시한다.
      */
     intradayDateTimeZone?: string;
+    /**
+     * 히스토리 L1(메모리) 엔트리 상한. 기본은 `HISTORY_MEMORY_MAX_ENTRIES`(128). 신호 기록기처럼 수백 종목을
+     * 한 번씩만 훑는 소비자는 작게 줘서 요청 경로 provider의 힙 몫을 늘리지 않는다 — 한 벌이 힙에서 약
+     * 110KB라, 128개는 약 14MB이고 16개는 약 1.8MB다. 대신 같은 종목을 다시 읽을 때 Redis GET이 한 번 는다.
+     */
+    historyMemoryMaxEntries?: number;
 }
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
@@ -120,25 +126,28 @@ export class CachedMarketDataProvider
      * 있는 값이라 메모리에서 낸다. 일봉은 `EodHistoryEntry`, 인트라데이는 `Bar[]`를
      * 담는다 — 한 LRU에 섞어 둬야 인스턴스 힙 상한(`HISTORY_MEMORY_MAX_ENTRIES`)이 하나로 유지된다.
      */
-    private readonly historyMemory: HistoryMemory = createHistoryMemory(
-        HISTORY_MEMORY_MAX_ENTRIES
-    );
+    private readonly historyMemory: HistoryMemory;
 
     private readonly extendedHistoryMemory: HistoryMemory = createHistoryMemory(
         EXTENDED_HISTORY_MEMORY_MAX_ENTRIES
     );
 
-    private readonly eodHistoryDeps: EodHistoryDeps = {
-        getBars: options => this.inner.getBars(options),
-        memory: this.historyMemory,
-    };
+    private readonly eodHistoryDeps: EodHistoryDeps;
 
     constructor(
         private readonly inner: SiglensMarketProvider &
             Partial<ExtendedBarsProvider>,
         private readonly session: MarketSessionSpec = US_EQUITY_SESSION,
         private readonly options: CachedMarketDataProviderOptions = {}
-    ) {}
+    ) {
+        this.historyMemory = createHistoryMemory(
+            options.historyMemoryMaxEntries ?? HISTORY_MEMORY_MAX_ENTRIES
+        );
+        this.eodHistoryDeps = {
+            getBars: getOptions => this.inner.getBars(getOptions),
+            memory: this.historyMemory,
+        };
+    }
 
     private ttl(timeframe: Timeframe): number {
         return computeBarsEffectiveTtl(timeframe, new Date(), this.session);

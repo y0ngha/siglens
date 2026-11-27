@@ -57,8 +57,8 @@ describe('DrizzlePlainTextRepository.find', () => {
         const condition = (spies.where.mock.calls as unknown[][])[0][0] as SQL;
         const query = new PgDialect().sqlToQuery(condition);
 
-        expect(query.sql).toMatch(
-            /"prompt_version" = \$1 and .*"locale" = \$2 and .*"input_digest" = \$3/
+        expect(query.sql).toBe(
+            '("analysis_plain_texts"."prompt_version" = $1 and "analysis_plain_texts"."locale" = $2 and "analysis_plain_texts"."input_digest" = $3)'
         );
         expect(query.params).toEqual(['v14', 'ja', 'deadbeef']);
         expect(spies.limit).toHaveBeenCalledWith(1);

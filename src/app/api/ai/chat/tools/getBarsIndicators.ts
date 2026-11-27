@@ -773,9 +773,18 @@ interface MaCrossView {
     kind: 'golden' | 'dead';
 }
 
-/** SMA periods and window behind `maCross50_200` — the key name is the contract. */
-const MA_CROSS_FAST_PERIOD = 50;
-const MA_CROSS_SLOW_PERIOD = 200;
+/**
+ * SMA periods and window behind `maCross50_200` — the key name is the
+ * contract (pinned by a test: a period change forces a key rename).
+ */
+export const MA_CROSS_FAST_PERIOD = 50;
+export const MA_CROSS_SLOW_PERIOD = 200;
+/**
+ * A tool-window choice (~1 trading year), unrelated to core's 3-bar
+ * `CROSS_LOOKBACK_BARS`, which only bounds "fresh cross" signal detection.
+ * The agent asks "when did the last golden/dead cross happen", so the scan
+ * must reach back a full year.
+ */
 const MA_CROSS_LOOKBACK_BARS = 252;
 
 /**

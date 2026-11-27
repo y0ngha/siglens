@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 import { resolve } from 'node:path';
+import { defined } from '@/shared/test-utils/defined';
 import {
     EMAIL_REPORT_MAX_BRIEF_SYMBOLS,
     EMAIL_REPORT_MAX_SYMBOLS,
@@ -17,6 +19,19 @@ import type {
     ReportEmailTranslator,
     SignalLabelResolver,
 } from '@/entities/email-report/templates/reportEmailTypes';
+
+/** ICU가 주는 시간대 이름을 테스트 안에서 같은 API·옵션으로 구한다(문구를 박아 두지 않는다). */
+function expectedZoneName(
+    timeZone: string,
+    locale: 'ko' | 'en'
+): string | undefined {
+    return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone,
+        timeZoneName: 'longGeneric',
+    })
+        .formatToParts(new Date('2024-01-07T00:00:00Z'))
+        .find(part => part.type === 'timeZoneName')?.value;
+}
 
 /** 키와 인자를 그대로 드러내는 번역자 — 어떤 키가 쓰였는지 단언할 수 있다. */
 const t: ReportEmailTranslator = (key, values) =>
@@ -62,6 +77,7 @@ const REPORT: SymbolReport = {
 
 const BRIEF: SymbolBrief = {
     symbol: 'AAPL',
+    names: null,
     close: 180.5,
     changePercent: 1.234,
     trend: 'uptrend',
@@ -102,8 +118,10 @@ const INPUT: BuildReportEmailInput = {
     unsubscribePageUrl: 'https://siglens.io/email-report/unsubscribe?u=1',
     unsubscribeApiUrl: 'https://siglens.io/api/email-report/unsubscribe?u=1',
     settingsUrl: 'https://siglens.io/email-report',
+    timeZone: 'Asia/Seoul',
     t,
     signalLabel,
+    skillLabel: name => `skill:${name}`,
 };
 
 describe('buildReportEmail', () => {
@@ -143,6 +161,135 @@ describe('buildReportEmail', () => {
 
         expect(email.html).not.toContain('marketHint');
         expect(email.text).not.toContain('marketMore');
+    });
+
+    describe('가입 첫 리포트', () => {
+        const WELCOME = {
+            consentedAt: new Date('2026-10-07T23:30:00.000Z'),
+            daysOfWeek: 0b0000010,
+            sendHour: 8,
+            sampleUrl: 'https://siglens.io/email-report/sample',
+        };
+
+        it('환영 제목과 머리글, 일정, 동의 일시를 맨 위에 싣고 리포트가 이어진다', () => {
+            const email = buildReportEmail({ ...INPUT, welcome: WELCOME });
+
+            expect(email.subject).toBe('welcomeSubject(시그렌즈)');
+            [email.html, email.text].forEach(body => {
+                expect(body).toContain('welcomeHeading');
+                expect(body).toContain(
+                    `welcomeIntro(월요일,오전 8:00,${expectedZoneName('Asia/Seoul', 'ko')})`
+                );
+                expect(body).toContain(
+                    'welcomeConsentAt(2026년 10월 8일 오전 8:30)'
+                );
+                // 이어지는 실제 리포트.
+                expect(body).toContain('intro(10월 8일)');
+                expect(body).not.toContain('welcomeNoData');
+            });
+            expect(email.html).toContain('AAPL');
+            expect(email.html.indexOf('welcomeHeading')).toBeLessThan(
+                email.html.indexOf('intro(10월 8일)')
+            );
+        });
+
+        it('일정의 시간대 이름과 동의 일시는 메일의 수신자 시간대(timeZone)로 쓴다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                timeZone: 'America/New_York',
+                welcome: WELCOME,
+            });
+
+            expect(email.text).toContain(
+                `welcomeIntro(월요일,오전 8:00,${expectedZoneName('America/New_York', 'ko')})`
+            );
+            expect(email.text).toContain(
+                'welcomeConsentAt(2026년 10월 7일 오후 7:30)'
+            );
+        });
+
+        it('수신거부 헤더, 사유 문구, 관리·수신거부 링크를 그대로 단다', () => {
+            const email = buildReportEmail({ ...INPUT, welcome: WELCOME });
+
+            expect(email.headers).toEqual({
+                'List-Unsubscribe':
+                    '<https://siglens.io/api/email-report/unsubscribe?u=1>',
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            });
+            expect(email.html).toContain('reason(시그렌즈)');
+            expect(email.html).toContain(
+                'href="https://siglens.io/email-report/unsubscribe?u=1"'
+            );
+            expect(email.text).toContain('https://siglens.io/email-report');
+        });
+
+        it('광고 표시나 홍보 문구를 싣지 않는다', () => {
+            const email = buildReportEmail({ ...INPUT, welcome: WELCOME });
+
+            expect(email.subject).not.toContain('광고');
+            expect(email.html).not.toContain('(광고)');
+            expect(email.text).not.toContain('(광고)');
+        });
+
+        it('보낼 종목이 없으면 인사말·표 대신 안내와 샘플 링크만 싣는다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                sections: [],
+                briefRows: [],
+                welcome: WELCOME,
+            });
+
+            [email.html, email.text].forEach(body => {
+                expect(body).toContain('welcomeNoData');
+                expect(body).toContain('welcomeSampleLink');
+                expect(body).toContain(
+                    'https://siglens.io/email-report/sample'
+                );
+                expect(body).not.toContain('intro(10월 8일)');
+                expect(body).not.toContain('briefColSymbol');
+            });
+        });
+
+        it('시장 브리핑 종목이 있으면 환영 머리글 아래에 브리핑 소개와 표를 싣는다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                sections: [],
+                briefRows: [
+                    {
+                        brief: briefOf('NVDA'),
+                        pageUrl: 'https://siglens.io/NVDA?utm_source=email',
+                    },
+                ],
+                marketBriefing: { marketUrl: 'https://siglens.io/market' },
+                welcome: WELCOME,
+            });
+
+            expect(email.subject).toBe('welcomeSubject(시그렌즈)');
+            expect(email.html).toContain('welcomeHeading');
+            expect(email.html).toContain('marketIntro(10월 8일)');
+            expect(email.html).toContain('NVDA');
+            expect(email.html).not.toContain('welcomeNoData');
+        });
+
+        it('샘플 링크 같은 외부 값은 이스케이프한다', () => {
+            const email = buildReportEmail({
+                ...INPUT,
+                sections: [],
+                briefRows: [],
+                welcome: { ...WELCOME, sampleUrl: 'https://x.test/?a=1&b="2"' },
+            });
+
+            expect(email.html).toContain(
+                'href="https://x.test/?a=1&amp;b=&quot;2&quot;"'
+            );
+        });
+
+        it('환영 블록이 없는 정기 메일은 환영 문구를 싣지 않는다', () => {
+            const email = buildReportEmail(INPUT);
+
+            expect(email.html).not.toContain('welcome');
+            expect(email.text).not.toContain('welcome');
+        });
     });
 
     it('원클릭 수신거부 헤더를 단다', () => {
@@ -566,5 +713,186 @@ describe('buildReportEmail', () => {
             expect(html).toContain('그 외 관심종목');
             expect(html).toContain('상승추세 내 단기 과매도');
         });
+    });
+
+    describe('종목 표시 이름', () => {
+        const FIRST_SECTION = defined(INPUT.sections[0]);
+        const KR_REPORT = { ...REPORT, symbol: '000660.KS' };
+        const KR_BRIEF = briefOf('000660.KS', {
+            names: { name: 'SK hynix Inc.', koreanName: 'SK하이닉스' },
+        });
+        const krInput = (locale: 'ko' | 'en'): BuildReportEmailInput => ({
+            ...INPUT,
+            locale,
+            sections: [
+                { ...FIRST_SECTION, report: KR_REPORT, brief: KR_BRIEF },
+            ],
+            briefRows: [
+                {
+                    brief: KR_BRIEF,
+                    pageUrl: 'https://siglens.io/000660.KS?utm_source=email',
+                },
+            ],
+        });
+
+        it('ko 본문·평문·표·alt에 한글명을 쓰고 벤더 접미사를 노출하지 않는다', () => {
+            const email = buildReportEmail(krInput('ko'));
+
+            expect(email.html).toContain('SK하이닉스');
+            expect(email.html).toContain('chartAlt(SK하이닉스 (000660))');
+            expect(email.text).toContain('■ SK하이닉스 (000660)');
+            expect(email.text).toContain('- SK하이닉스 (000660) |');
+            expect(email.html).not.toMatch(/>000660\.KS</);
+            expect(email.html).not.toContain('(000660.KS)');
+            expect(email.text).not.toContain('000660.KS |');
+            expect(email.text).not.toContain('■ 000660.KS');
+        });
+
+        it('en 본문·평문은 영문 법인명을 쓴다', () => {
+            const email = buildReportEmail(krInput('en'));
+
+            expect(email.html).toContain('SK hynix Inc.');
+            expect(email.html).not.toContain('SK하이닉스');
+            expect(email.text).toContain('■ SK hynix Inc. (000660)');
+        });
+
+        it('이름이 없으면 접미사를 뗀 코드를 제목으로 쓴다', () => {
+            const email = buildReportEmail({
+                ...krInput('ko'),
+                sections: [
+                    {
+                        ...FIRST_SECTION,
+                        report: KR_REPORT,
+                        brief: briefOf('000660.KS', { names: null }),
+                    },
+                ],
+            });
+
+            expect(email.text).toContain('■ 000660\n');
+            expect(email.html).toContain('>000660</h2>');
+        });
+    });
+});
+
+describe('buildReportEmail — 차트 작도 범례와 근거', () => {
+    const DRAWINGS = {
+        // 서울 달력으로 10월 8일(UTC 10월 7일 21:00)
+        analyzedAt: '2026-10-07T21:00:00Z',
+        legend: [
+            { kind: 'card' as const, name: '상승삼각형', color: '#22d3ee' },
+            { kind: 'trendUp' as const, color: '#26a69a' },
+            { kind: 'fibonacci' as const, color: '#f59e0b' },
+        ],
+    };
+
+    function build(
+        drawings: typeof DRAWINGS | null,
+        report: SymbolReport = REPORT
+    ) {
+        const [section] = INPUT.sections;
+        return buildReportEmail({
+            ...INPUT,
+            sections: [{ ...defined(section), report, drawings }],
+        });
+    }
+
+    it('작도가 있으면 대체 텍스트를 바꾸고 이미지 아래에 범례 칸을 색 견본과 함께 낸다', () => {
+        const { html } = build(DRAWINGS);
+
+        expect(html).toContain('alt="chartAltDrawings(AAPL)"');
+        expect(html).toContain('skill:상승삼각형');
+        expect(html).toContain('legendTrendUp');
+        expect(html).toContain('legendFibonacci');
+        expect(html).toContain('background:#22d3ee');
+        // 범례는 이미지 링크 밖(아래)에 있다.
+        expect(html.indexOf('</a>', html.indexOf('<img'))).toBeLessThan(
+            html.indexOf('skill:상승삼각형')
+        );
+    });
+
+    it('작도가 없으면 범례 없이 예전 대체 텍스트 그대로다', () => {
+        const { html } = build(null);
+
+        expect(html).toContain('alt="chartAlt(AAPL)"');
+        expect(html).not.toContain('legendTrendUp');
+        expect(html).not.toContain('chartAltDrawings');
+    });
+
+    it('범례는 6칸까지 적고 나머지는 "외 N개"로 센다', () => {
+        const legend = Array.from({ length: 8 }, (_, i) => ({
+            kind: 'card' as const,
+            name: `패턴${i}`,
+            color: '#22d3ee',
+        }));
+
+        const { html } = build({ ...DRAWINGS, legend });
+
+        expect(html).toContain('skill:패턴5');
+        expect(html).not.toContain('skill:패턴6');
+        expect(html).toContain('legendMore(2)');
+    });
+
+    it('작도와 분석 글이 같은 날 분석이면 한 문장으로 근거를 쓴다', () => {
+        const { html, text } = build(DRAWINGS);
+
+        expect(html).toContain('analysisBasis(10월 8일)');
+        expect(html).not.toContain('chartDrawingsBasis');
+        expect(html).not.toContain('proseBasis');
+        expect(text).toContain('analysisBasis(10월 8일)');
+    });
+
+    it('분석 날짜가 다르면 작도 근거와 분석 글 근거를 각각 쓴다', () => {
+        const { html } = build(
+            { ...DRAWINGS, analyzedAt: '2026-10-05T01:00:00Z' },
+            REPORT
+        );
+
+        expect(html).toContain('chartAndProseBasis(10월 5일,10월 8일)');
+        expect(html).not.toContain('analysisBasis');
+        expect(html).not.toContain('proseBasis(');
+    });
+
+    it('날짜는 수신자 타임존 달력으로 쓴다(같은 시각이 UTC에서는 하루 앞)', () => {
+        const [section] = INPUT.sections;
+        const { html } = buildReportEmail({
+            ...INPUT,
+            timeZone: 'UTC',
+            sections: [{ ...defined(section), drawings: DRAWINGS }],
+        });
+
+        expect(html).toContain('analysisBasis(10월 7일)');
+        expect(html).not.toContain('analysisBasis(10월 8일)');
+    });
+
+    it('작도만 있고 분석 글이 없으면 작도 근거만 쓴다', () => {
+        const { html } = build(DRAWINGS, {
+            ...REPORT,
+            technical: null,
+            plain: null,
+        });
+
+        expect(html).toContain('chartDrawingsBasis(10월 8일)');
+        expect(html).not.toContain('proseBasis');
+    });
+
+    it('분석 글만 있고 작도가 없으면 분석 글 근거만 쓴다', () => {
+        const { html } = build(null);
+
+        expect(html).toContain('proseBasis(10월 8일)');
+        expect(html).not.toContain('chartDrawingsBasis');
+    });
+
+    it('분석 시각을 모르면(null) 근거 문장을 쓰지 않는다', () => {
+        const { html } = build(null, { ...REPORT, analyzedAt: null });
+
+        expect(html).not.toContain('Basis');
+    });
+
+    it('평문 파트에는 범례 이름과 근거 한 줄이 들어간다', () => {
+        const { text } = build(DRAWINGS);
+
+        expect(text).toContain(
+            'skill:상승삼각형, legendTrendUp 및 legendFibonacci'
+        );
     });
 });

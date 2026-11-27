@@ -27,6 +27,12 @@ describe('resetPasswordErrorSlot', () => {
         ).toBe('form');
     });
 
+    it('places the rate limit error in the form banner', () => {
+        expect(
+            resetPasswordErrorSlot({ code: 'rate_limited', message: 'slow' })
+        ).toBe('form');
+    });
+
     it('places an unexpected error in the form banner', () => {
         expect(
             resetPasswordErrorSlot({ code: 'unexpected', message: 'boom' })

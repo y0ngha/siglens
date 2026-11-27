@@ -38,7 +38,7 @@ describe('findApiDefaultModel', () => {
         const { sql, params } = render(
             (fx.where.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"id" = $1');
+        expect(sql).toBe('"users"."id" = $1');
         expect(params).toEqual([OWNER]);
     });
 
@@ -98,16 +98,16 @@ describe('setApiDefaultModel', () => {
         const repo = new DrizzleSiglensApiKeyRepository(fx.db);
 
         await expect(
-            repo.setApiDefaultModel(OWNER, 'gpt-6-astra')
+            repo.setApiDefaultModel(OWNER, 'gpt-6.2-astra')
         ).resolves.toBe(true);
 
         expect(fx.set).toHaveBeenCalledWith({
-            apiDefaultModel: 'gpt-6-astra',
+            apiDefaultModel: 'gpt-6.2-astra',
         });
         const { sql, params } = render(
             (fx.where.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"id" = $1');
+        expect(sql).toBe('"users"."id" = $1');
         expect(params).toEqual([OWNER]);
     });
 

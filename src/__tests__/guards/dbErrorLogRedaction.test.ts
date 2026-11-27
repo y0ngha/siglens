@@ -19,6 +19,8 @@ import { buildImportGraph, fileImports } from './support/importGraph';
  * 전체**에서 잡은 에러를 찍는 모든 `console.*`가 `redactDbErrorForLog`(DB 에러일 때만 지우고 아니면 그대로 둔다)를
  * 거치게 한다. 비DB 에러의 로그 내용은 바뀌지 않으므로 비용은 호출 한 겹이다.
  *
+ * 런타임 안전망 `installConsoleDbErrorRedaction`(`console` 래퍼)은 프레임워크가 찍는 줄만 덮고 SA-26을 대신하지 않는다: 호출부는 여전히 `redactDbErrorForLog`를 거쳐야 한다.
+ *
  * 이 가드가 **못 보는 것**은 스캐너(`support/errorLogScan.ts`)의 머리 주석에 있다. 요약: `x.reason`은 보지만
  * 거절 사유를 다른 변수에 옮긴 뒤 찍는 경우, 에러를 다른 이름 변수로 옮긴 뒤 찍는 경우, 에러를 로거 함수
  * (`deps.log`)에 넘기는 경우(`warnWithDetail`은 싱크에서 막는다), 메시지를 문자열로 옮겨 담아 다시 던진 에러.

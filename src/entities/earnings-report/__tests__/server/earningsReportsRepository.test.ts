@@ -323,10 +323,8 @@ describe('DrizzleEarningsReportsRepository', () => {
 
             const [clause] = where.mock.calls[0] as unknown as [SQL];
             const { sql, params } = renderSql(clause);
-            expect(sql).toContain('"earnings_reports"."symbol" = $1');
-            expect(sql).toContain('"earnings_reports"."earnings_date" <= $2');
-            expect(sql).toContain(
-                '"earnings_reports"."eps_actual" is not null'
+            expect(sql).toBe(
+                '("earnings_reports"."symbol" = $1 and "earnings_reports"."earnings_date" <= $2 and "earnings_reports"."eps_actual" is not null)'
             );
             expect(params).toEqual(['LAES', '2026-11-07']);
         });
@@ -496,10 +494,9 @@ describe('DrizzleEarningsReportsRepository', () => {
             const { sql: whereSql, params } = renderSql(
                 where.mock.calls[0]![0] as SQL
             );
-            expect(whereSql).toContain('"earnings_date" >=');
-            expect(whereSql).toContain('"eps_actual" is null');
-            expect(whereSql).toContain('"revenue_actual" is null');
-            expect(whereSql).toContain('"earnings_date" not in');
+            expect(whereSql).toBe(
+                '("earnings_reports"."symbol" = $1 and "earnings_reports"."earnings_date" >= $2 and "earnings_reports"."eps_actual" is null and "earnings_reports"."revenue_actual" is null and "earnings_reports"."earnings_date" not in ($3, $4))'
+            );
             expect(params).toEqual([
                 'COP',
                 '2026-10-22',

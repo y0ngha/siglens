@@ -81,13 +81,13 @@ describe('buildScenarios', () => {
 
 describe('buildScenarios summary', () => {
     it.each([
-        ['ko', '종목 검색, 시세, 차트와 지표 및 시그렌즈 분석 확인, 3.0초'],
+        ['ko', '종목 검색, 시세, 차트와 지표 및 시그렌즈 분석 확인'],
         [
             'en',
-            'Checked Ticker search, Quote, Charts & indicators, and SIGLENS analysis in 3.0s',
+            'Checked Ticker search, Quote, Charts & indicators, and SIGLENS analysis',
         ],
-        ['ja', '銘柄検索、株価、チャートと指標、SIGLENS分析を確認（3.0秒）'],
-        ['zh', '已查看股票搜索、行情、图表与指标和SIGLENS 分析，用时3.0秒'],
+        ['ja', '銘柄検索、株価、チャートと指標、SIGLENS分析を確認'],
+        ['zh', '已查看股票搜索、行情、图表与指标和SIGLENS 分析'],
     ] as const)(
         'joins the tool labels with the %s list separators',
         (locale, summary) => {
@@ -100,8 +100,26 @@ describe('buildScenarios summary', () => {
         const nvdaPro = buildScenarios(translators.ko, 'ko').find(
             s => s.id === 'nvdaPro'
         );
-        expect(nvdaPro?.summary).toBe('시세 및 옵션 확인, 1.8초');
+        expect(nvdaPro?.summary).toBe('시세 및 옵션 확인');
     });
+});
+
+describe('buildScenarios figures', () => {
+    it.each(['ko', 'en', 'ja', 'zh'] as const)(
+        'carries no figure in a %s answer, source label or as-of time',
+        locale => {
+            for (const scenario of buildScenarios(
+                translators[locale],
+                locale
+            )) {
+                const text = scenario.lines
+                    .flatMap(line => line.segments.map(seg => seg.text))
+                    .concat(scenario.sources, scenario.asOf, scenario.summary)
+                    .join(' ');
+                expect(text).not.toMatch(/\d/);
+            }
+        }
+    );
 });
 
 describe('buildScenarios answer lines', () => {

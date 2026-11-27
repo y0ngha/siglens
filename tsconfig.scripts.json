@@ -48,6 +48,7 @@
         "scripts/update-popular-cryptos.ts",
         "scripts/update-popular-tickers.ts",
         "scripts/validate-skills.ts",
+        "scripts/load/agent-slots.mts",
         "scripts/signal-universe/build-us-sp500.ts",
         "scripts/signal-universe/build-kr-index.ts",
         "scripts/signal-universe/usSp500Source.ts",

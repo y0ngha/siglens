@@ -11,8 +11,9 @@ gating:
   state:
     feature: macdV
     predicate: level
-token_cost: 480
-digest_hash: "a960f947"
+token_cost: 483
+digest_hash: "fe435ebf"
+digest_text_hash: "5fec8838"
 ---
 
 ## Overview
@@ -41,7 +42,7 @@ MACD-V (Volatility-Normalised Momentum) was introduced by Alex Spiroglou in "MAC
 
 Confidence weight **0.4** — advisory only. In our 2-year look-ahead-safe forward-edge study, MACD-V scored **0 of 18 cells significant** (best was 1H h=12, t ≈ 1.94, not significant). This null does **not** contradict the source paper: Spiroglou's work is descriptive/taxonomic and contains no forward-profitability test, so there was never a standalone edge claimed to refute.
 
-Use MACD-V as **momentum-state context under a trend filter**, never as a standalone intraday trigger.
+Use MACD-V as **momentum-state context under a trend filter**, never as a standalone trigger on short bar timeframes.
 
 ## Recommended Combinations
 
@@ -68,7 +69,7 @@ Momentum lifecycle: 8-state map (Ranging / Rallying / Rebounding / Retracing / R
 
 Trend-filtered asymmetry: under a 200-EMA filter OB/OS become asymmetric — in a bull regime pullbacks tend to bottom near −100 (the "new oversold"), not −150. Read the band relative to the prevailing trend, not absolutely.
 
-Confidence weight 0.4 — advisory only. Forward-edge study: 0 of 18 cells significant (best 1H h=12, t ≈ 1.94, not significant). Source paper is descriptive/taxonomic with no forward-profitability test. Use as momentum-state context under a trend filter, never as a standalone intraday trigger.
+Confidence weight 0.4 — advisory only. Forward-edge study: 0 of 18 cells significant (best 1H h=12, t ≈ 1.94, not significant). Source paper is descriptive/taxonomic with no forward-profitability test. Use as momentum-state context under a trend filter, never as a standalone trigger on short bar timeframes.
 
 Combinations: + 200-EMA filter (act only on oversold resets in uptrend, overbought rollovers in downtrend — the filter gives the band its usable asymmetric meaning); + regime lens (Hurst/VR/R²: high-R²/H>0.5 → ±150 = continuation context; mean-reverting regime → extreme closer to reversion setup); + event signal (Bollinger %B, MACD cross) grades backdrop while the event triggers.
 

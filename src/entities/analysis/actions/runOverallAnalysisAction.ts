@@ -7,6 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { isServedTimeframe } from '@/shared/config/market';
 import type { Locale } from '@/shared/i18n/locales';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { buildGateError, resolveTierAndByok } from '@/shared/lib/byokGate';
@@ -42,6 +43,10 @@ export async function runOverallAnalysisAction(
     signal?: AbortSignal
 ): Promise<RunOverallAnalysisActionResult> {
     try {
+        // 임시 거절 — 주봉 화면을 공개할 때 제거한다 (`isServedTimeframe`).
+        // throw는 아래 catch가 일반 오류 게이트 형태로 돌려준다.
+        if (!isServedTimeframe(timeframe))
+            throw new Error(`Invalid timeframe: ${String(timeframe)}`);
         // E2E는 LLM/worker를 단락하고 결정적인 캐시 픽스처를 돌려준다(`e2eAnalysisStub`).
         // 스텁과 JSON 픽스처는 인라인 E2E 가드 아래 동적 import로 불러 프로덕션 메인
         // 번들이 아닌 지연 청크에 놓이게 하고, vitest 러너가 분기를 해석할 수 있게

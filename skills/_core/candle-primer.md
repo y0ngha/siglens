@@ -9,6 +9,7 @@ gating:
   tier: always_on
 token_cost: 518
 digest_hash: "c773387a"
+digest_text_hash: "25833e79"
 ---
 
 ## Candle Reading Primer (compressed)

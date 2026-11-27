@@ -42,6 +42,7 @@ const EXPECTED_PII_TABLES = [
     'mail_alert_subscribers',
     'mail_alert_topics',
     'mail_alert_deliveries',
+    'price_alerts',
     'agreements',
     'inquiries',
     'visitor_days',
@@ -108,6 +109,7 @@ describe('db-dev-seed-from-prod.sh', () => {
         expect(referencing.sort()).toEqual([
             'mail_alert_deliveries',
             'mail_alert_topics',
+            'price_alerts',
         ]);
         for (const table of referencing) {
             expect(excluded).toContain(table);

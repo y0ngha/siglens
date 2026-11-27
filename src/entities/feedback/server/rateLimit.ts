@@ -11,7 +11,11 @@ const LIMIT_PER_HOUR = {
 
 export type FeedbackRateLimitBucket = keyof typeof LIMIT_PER_HOUR;
 
-const WINDOW_SECONDS = 3600;
+/**
+ * 제출 횟수 제한 기록(IP 해시)이 Redis에 남는 시간. 개인정보처리방침의 보관 기간과 묶여 있어
+ * `privacyRetention.test.ts`가 이 값을 import해 방침 본문과 대조한다.
+ */
+export const FEEDBACK_RATE_WINDOW_SECONDS = 3600;
 
 /**
  * IP 해시당 시간당 제출 횟수를 버킷별로 제한한다. 고정 1시간 창이며 해시는 Redis에만
@@ -27,7 +31,7 @@ export async function checkFeedbackRateLimit(
     return checkFixedWindowRateLimit({
         key: `feedback:rl:${bucket}:${ipHash}`,
         limit: LIMIT_PER_HOUR[bucket],
-        windowSeconds: WINDOW_SECONDS,
+        windowSeconds: FEEDBACK_RATE_WINDOW_SECONDS,
         logTag: 'checkFeedbackRateLimit',
     });
 }

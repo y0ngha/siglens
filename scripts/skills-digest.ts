@@ -10,12 +10,17 @@
  *
  * placed once, at the end of the file, after the original (frontmatter) body.
  * The digest text itself is authored by hand — this script never writes it.
- * What this script owns is the two frontmatter keys that describe it:
+ * What this script owns is the three frontmatter keys that describe it:
  *
  *   - `digest_hash`  — first 8 hex chars of SHA-256(original body). A
  *     staleness fingerprint: if the original body changes but the digest
  *     doesn't get re-authored against it, the hash goes stale and `verify`
  *     catches it.
+ *   - `digest_text_hash` — the same hash applied to the digest block text
+ *     (trimmed, LF-normalised). `digest_hash` alone cannot tell whether the
+ *     digest was re-authored after a body edit, so `update-meta` refuses a
+ *     body-changed refresh unless this hash moved (see below) and `verify`
+ *     catches a hand-edited digest whose hash was never refreshed.
  *   - `token_cost`   — Math.ceil(digestText.length / 4), an estimate of the
  *     digest's prompt-token footprint.
  *
@@ -23,17 +28,26 @@
  *   - `verify`      — read-only. Reports every file missing a digest, with a
  *     stale hash, a stale token_cost, or malformed/duplicate markers. Exits
  *     1 if any violation is found (wired into CI once digests are authored).
- *   - `update-meta` — recomputes `digest_hash` + `token_cost` for every file
- *     that HAS a digest section and rewrites just those two frontmatter
- *     lines in place (line-based edit — the rest of the frontmatter, gating
- *     blocks included, is left byte-for-byte untouched). Idempotent: running
- *     it twice in a row makes zero changes the second time.
+ *   - `update-meta` — recomputes the three keys for every file that HAS a
+ *     digest section and rewrites just those frontmatter lines in place
+ *     (line-based edit — the rest of the frontmatter, gating blocks
+ *     included, is left byte-for-byte untouched). Idempotent: running it
+ *     twice in a row makes zero changes the second time. When the body
+ *     changed but the digest text did not (its hash still equals
+ *     `digest_text_hash`), the file is REFUSED: nothing is written for it and
+ *     the process exits 1. `--digest-unchanged-ok` allows the refresh for a
+ *     body edit that does not concern the digest (a typo) and REQUIRES at
+ *     least one file path (exit 2 otherwise), so it never applies repo-wide.
+ *     A file without `digest_text_hash` is a one-time backfill and is always
+ *     allowed; if its `digest_hash` was stale too it is logged as
+ *     "backfilled (body hash was stale)".
+ *     Trailing path arguments limit the run to those files.
  *
  * Run via `yarn skills:digest-verify` / `yarn skills:digest-update`.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { glob } from 'glob';
 
@@ -246,6 +260,7 @@ export type ViolationKind =
     | 'missing-digest'
     | 'malformed-markers'
     | 'hash-mismatch'
+    | 'digest-text-hash-mismatch'
     | 'token-cost-mismatch';
 
 export interface Violation {
@@ -289,6 +304,18 @@ export function verifyFileContent(content: string): Violation[] {
         });
     }
 
+    const computedTextHash = computeDigestHash(section.digestText);
+    const frontmatterTextHash = readFrontmatterScalar(
+        split.header,
+        'digest_text_hash'
+    );
+    if (frontmatterTextHash !== computedTextHash) {
+        violations.push({
+            kind: 'digest-text-hash-mismatch',
+            detail: `frontmatter digest_text_hash=${frontmatterTextHash ?? '(missing)'} != computed=${computedTextHash} (the digest text was edited without \`yarn skills:digest-update\`)`,
+        });
+    }
+
     const computedTokens = estimateTokenCost(section.digestText);
     const frontmatterTokenRaw = readFrontmatterScalar(
         split.header,
@@ -321,20 +348,49 @@ export type SkipReason =
     | 'missing-digest'
     | 'malformed-markers';
 
+interface UpdateOptions {
+    /** Allow a body-changed refresh although the digest text did not change. */
+    digestUnchangedOk?: boolean;
+}
+
 export interface UpdateResult {
     changed: boolean;
     skippedReason?: SkipReason;
+    /**
+     * The body changed since the last update but the digest text did not, and
+     * `digestUnchangedOk` was not set. Nothing was written (`content` is the
+     * input).
+     */
+    refused?: boolean;
+    /** `digest_text_hash` was absent and has been filled in (one-time backfill). */
+    backfilled?: boolean;
+    /**
+     * The body changed but the digest text did not, and the refresh went
+     * through only because `digestUnchangedOk` was set. The CLI logs it so the
+     * exemption is visible (TESTING.md#TE-63).
+     */
+    exempted?: boolean;
+    /**
+     * A backfill where `digest_hash` was also stale (the body changed since the
+     * last update). The guard cannot tell whether the digest was re-authored,
+     * so the CLI logs it distinctly for a manual body-vs-digest check.
+     */
+    bodyHashStale?: boolean;
     /** New file content. Equal to the input when `changed` is false. */
     content: string;
 }
 
 /**
- * Recompute `digest_hash` + `token_cost` for a single file's content and
- * return the rewritten content. Only files with an `ok` digest section are
- * touched — files with no digest, or a malformed one, are left completely
- * alone (that's `verify`'s job to flag, not this mode's to "fix").
+ * Recompute `digest_hash`, `digest_text_hash` + `token_cost` for a single
+ * file's content and return the rewritten content. Only files with an `ok`
+ * digest section are touched — files with no digest, or a malformed one, are
+ * left completely alone (that's `verify`'s job to flag, not this mode's to
+ * "fix").
  */
-export function updateFileContent(content: string): UpdateResult {
+export function updateFileContent(
+    content: string,
+    options: UpdateOptions = {}
+): UpdateResult {
     const split = splitFrontmatter(content);
     if (!split) {
         return {
@@ -353,20 +409,37 @@ export function updateFileContent(content: string): UpdateResult {
     }
 
     const computedHash = computeDigestHash(section.originalBody);
+    const computedTextHash = computeDigestHash(section.digestText);
     const computedTokens = estimateTokenCost(section.digestText);
 
     const currentHash = readFrontmatterScalar(split.header, 'digest_hash');
+    const currentTextHash = readFrontmatterScalar(
+        split.header,
+        'digest_text_hash'
+    );
     const currentTokensRaw = readFrontmatterScalar(split.header, 'token_cost');
     const currentTokens =
         currentTokensRaw !== undefined && currentTokensRaw !== ''
             ? Number(currentTokensRaw)
             : undefined;
 
-    if (currentHash === computedHash && currentTokens === computedTokens) {
+    if (
+        currentHash === computedHash &&
+        currentTextHash === computedTextHash &&
+        currentTokens === computedTokens
+    ) {
         return { changed: false, content };
     }
 
-    // digest_hash is written quoted: an 8-hex-char string has a real chance of
+    const backfilled = currentTextHash === undefined;
+    const bodyChanged = currentHash !== computedHash;
+    const digestRewritten = currentTextHash !== computedTextHash;
+    const needsExemption = bodyChanged && !backfilled && !digestRewritten;
+    if (needsExemption && !options.digestUnchangedOk) {
+        return { changed: false, refused: true, content };
+    }
+
+    // Hashes are written quoted: an 8-hex-char string has a real chance of
     // being all-digit (~3.6% of the keyspace), which a YAML parser would
     // otherwise read back as a number and silently drop leading zeros from.
     let newHeader = upsertFrontmatterScalar(
@@ -380,8 +453,20 @@ export function updateFileContent(content: string): UpdateResult {
         `"${computedHash}"`,
         'token_cost'
     );
+    newHeader = upsertFrontmatterScalar(
+        newHeader,
+        'digest_text_hash',
+        `"${computedTextHash}"`,
+        'digest_hash'
+    );
 
-    return { changed: true, content: joinFrontmatter(newHeader, split.body) };
+    return {
+        changed: true,
+        backfilled,
+        bodyHashStale: backfilled && bodyChanged,
+        exempted: needsExemption,
+        content: joinFrontmatter(newHeader, split.body),
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -422,8 +507,10 @@ function runVerify(files: string[]): void {
     console.log(`✓ ${files.length} skill file(s) have valid digest metadata.`);
 }
 
-function runUpdateMeta(files: string[]): void {
+function runUpdateMeta(files: string[], options: UpdateOptions): void {
     let updated = 0;
+    let backfilled = 0;
+    let refused = 0;
     let unchanged = 0;
     let skippedMissing = 0;
     let skippedMalformed = 0;
@@ -431,7 +518,7 @@ function runUpdateMeta(files: string[]): void {
 
     for (const file of files) {
         const content = readFileSync(file, 'utf-8');
-        const result = updateFileContent(content);
+        const result = updateFileContent(content, options);
         const rel = relative(REPO_ROOT, file);
 
         switch (result.skippedReason) {
@@ -450,22 +537,87 @@ function runUpdateMeta(files: string[]): void {
                 break;
         }
 
+        if (result.refused) {
+            refused++;
+            console.error(
+                `  ✖ ${rel}: body changed but the digest was not re-written; ` +
+                    'edit the digest block or pass --digest-unchanged-ok (typo-level body edits only). Nothing written.'
+            );
+            continue;
+        }
+
         if (result.changed) {
             writeFileSync(file, result.content);
             updated++;
+            if (result.exempted) {
+                console.log(
+                    `  ! ${rel}: body changed, digest kept as is (--digest-unchanged-ok)`
+                );
+            }
+            if (result.backfilled) {
+                backfilled++;
+                console.log(
+                    result.bodyHashStale
+                        ? `  ! ${rel}: backfilled (body hash was stale) - check the body against the digest by hand`
+                        : `  + ${rel}: digest_text_hash backfilled`
+                );
+            }
         } else {
             unchanged++;
         }
     }
 
     console.log(
-        `✓ update-meta: ${updated} updated, ${unchanged} unchanged, ` +
+        `✓ update-meta: ${updated} updated (${backfilled} backfilled), ${unchanged} unchanged, ` +
             `${skippedMissing} skipped (no digest), ${skippedMalformed} skipped (malformed), ` +
-            `${skippedInvalid} skipped (invalid frontmatter).`
+            `${skippedInvalid} skipped (invalid frontmatter), ${refused} refused.`
     );
+    if (refused > 0) process.exit(1);
 }
 
-const USAGE = 'usage: tsx scripts/skills-digest.ts <verify|update-meta>';
+interface CliArgs {
+    digestUnchangedOk: boolean;
+    paths: string[];
+    error?: string;
+}
+
+/**
+ * Split the args after the mode into the flag and file paths. The flag
+ * without a path is an error: a repo-wide "digest unchanged" override would
+ * defeat the guard.
+ */
+export function parseCliArgs(args: string[]): CliArgs {
+    const digestUnchangedOk = args.includes('--digest-unchanged-ok');
+    // An unknown flag is an error: silently skipping it would turn a typo such
+    // as `--digest-unchanged` into a flagless run nobody notices (TESTING.md#TE-63).
+    const unknownFlag = args.find(
+        arg => arg.startsWith('--') && arg !== '--digest-unchanged-ok'
+    );
+    // Resolved and de-duplicated, so `a.md a.md` names one file.
+    const paths = [
+        ...new Set(
+            args.filter(arg => !arg.startsWith('--')).map(arg => resolve(arg))
+        ),
+    ];
+    if (unknownFlag !== undefined) {
+        return {
+            digestUnchangedOk,
+            paths,
+            error: `unknown flag: ${unknownFlag}`,
+        };
+    }
+    if (digestUnchangedOk && paths.length === 0) {
+        return {
+            digestUnchangedOk,
+            paths,
+            error: '--digest-unchanged-ok requires at least one skill file path',
+        };
+    }
+    return { digestUnchangedOk, paths };
+}
+
+const USAGE =
+    'usage: tsx scripts/skills-digest.ts <verify|update-meta [--digest-unchanged-ok] [file...]>';
 
 async function main(): Promise<void> {
     const mode = process.argv[2];
@@ -474,11 +626,25 @@ async function main(): Promise<void> {
         process.exit(2);
     }
 
-    const files = await listSkillFiles();
+    const parsed = parseCliArgs(process.argv.slice(3));
+    if (parsed.error !== undefined) {
+        console.error(`✖ ${parsed.error}`);
+        process.exit(2);
+    }
+    const { digestUnchangedOk, paths: explicit } = parsed;
+    const all = await listSkillFiles();
+    const notSkill = explicit.filter(path => !all.includes(path));
+    if (notSkill.length > 0) {
+        console.error(
+            `✖ not a skill file under skills/: ${notSkill.join(', ')}`
+        );
+        process.exit(2);
+    }
+    const files = explicit.length > 0 ? explicit : all;
     if (mode === 'verify') {
         runVerify(files);
     } else {
-        runUpdateMeta(files);
+        runUpdateMeta(files, { digestUnchangedOk });
     }
 }
 

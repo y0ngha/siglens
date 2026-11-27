@@ -40,6 +40,77 @@ describe('FaqSection', () => {
         expect(document.querySelectorAll('dt')).toHaveLength(entities.length);
     });
 
+    describe('collapsible', () => {
+        it('문항마다 details/summary이고 앞쪽 defaultOpenCount개만 열려 있다', () => {
+            const { container } = render(
+                <FaqSection
+                    heading="자주 묻는 질문"
+                    items={ITEMS}
+                    collapsible
+                    defaultOpenCount={1}
+                />
+            );
+
+            const details = [...container.querySelectorAll('details')];
+            expect(details.map(d => d.open)).toEqual([true, false]);
+            expect(
+                [...container.querySelectorAll('summary')].map(
+                    summary => summary.textContent
+                )
+            ).toEqual(ITEMS.map(item => item.question));
+            expect(container.querySelector('dl')).toBeNull();
+        });
+
+        it('닫힌 문항의 답변도 문서에 있다(서버 HTML에 남는다)', () => {
+            const { container } = render(
+                <FaqSection
+                    heading="자주 묻는 질문"
+                    items={ITEMS}
+                    collapsible
+                />
+            );
+
+            expect(
+                [...container.querySelectorAll('details')].map(d => d.open)
+            ).toEqual([false, false]);
+            ITEMS.forEach(({ answer }) =>
+                expect(screen.getByText(answer)).toBeInTheDocument()
+            );
+        });
+
+        it('구조화데이터 항목 수와 summary 수가 같다', () => {
+            const { container } = render(
+                <FaqSection
+                    heading="자주 묻는 질문"
+                    items={ITEMS}
+                    collapsible
+                />
+            );
+
+            const entities = buildFaqJsonLd(ITEMS).mainEntity as unknown[];
+            expect(container.querySelectorAll('summary')).toHaveLength(
+                entities.length
+            );
+        });
+
+        it('linkifyPaths와 함께 쓰면 접힌 답변 속 경로도 링크다', () => {
+            render(
+                <FaqSection
+                    heading="자주 묻는 질문"
+                    items={[
+                        { question: '어디?', answer: '/market 에서 봅니다.' },
+                    ]}
+                    collapsible
+                    linkifyPaths
+                />
+            );
+
+            expect(
+                screen.getByRole('link', { name: '/market' })
+            ).toHaveAttribute('href', '/market');
+        });
+    });
+
     describe('linkifyPaths', () => {
         const PATH_ITEMS = [
             {

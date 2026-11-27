@@ -11,6 +11,7 @@ gating:
   triggers: [bullish_harami, bearish_harami, bullish_harami_cross, bearish_harami_cross]
 token_cost: 298
 digest_hash: "9e616c30"
+digest_text_hash: "07ae7232"
 ---
 
 ## Overview

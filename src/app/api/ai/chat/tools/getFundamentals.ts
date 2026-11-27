@@ -1,6 +1,7 @@
 import 'server-only';
 import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
+import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
 import type { EarningsSession } from '@/entities/analyst-views/model';
 import {
     resolveNextEarnings,
@@ -329,7 +330,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
         );
         return bars;
     };
-    // KRX 상장주식수 기준 시총·PER·PBR은 한국 종목에만 필요하다(`krListedBasis`).
+    // KRX 상장주식수 기준 시총(`krListedBasis`)과 DART 기준 PER·PBR(`getKrValuation`)은 한국 종목에만 필요하다.
     const isKr = isKrEquitySymbol(symbol);
     // Yahoo (analyst views) is an unofficial source with no redistribution terms: the public API
     // (`allowUnofficialSources: false`) neither calls Yahoo from this tool nor emits the NEW Yahoo-derived
@@ -484,26 +485,35 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             ? quote.price
             : null;
 
-    // KR: yahoo's own share count skews market cap (and PER/PBR, which divide it) —
-    // recompute on KRX listed shares × last completed close. See `krListedBasis`.
+    // KR: yahoo's own share count skews market cap — recompute on KRX listed shares × last
+    // completed close. See `krListedBasis`. (PER/PBR are not rescaled by it: they come from DART below.)
     if (listedSharesR.status === 'rejected')
         logToolDegrade(
             'get_fundamentals',
             'krx listed shares',
             listedSharesR.reason
         );
+    const lastClose = settledOrNull(lastCloseR);
     const krBasis = isKr
         ? krListedBasis({
               providerMarketCap: profile.marketCap,
-              providerPe: keyMetrics?.peRatioTTM ?? null,
-              providerPb: keyMetrics?.pbRatioTTM ?? null,
-              providerPs: keyMetrics?.priceToSalesRatioTTM ?? null,
               providerEvToEbitda:
                   keyMetrics?.enterpriseValueOverEBITDATTM ?? null,
               listedShares: settledOrNull(listedSharesR),
-              lastClose: settledOrNull(lastCloseR),
+              lastClose,
           })
         : null;
+    // KR P/E and P/B: DART consolidated controlling-interest figures on the same basis the fundamental tab
+    // and the analysis inputs use (`getKrValuation`); the provider's own values only when DART cannot be
+    // used, and `basis` says which. Never throws.
+    const krValuation =
+        isKr && keyMetrics
+            ? await getKrValuation(symbol, lastClose, {
+                  pe: keyMetrics.peRatioTTM,
+                  pb: keyMetrics.pbRatioTTM,
+                  epsTtm: keyMetrics.epsTTM,
+              })
+            : null;
     const dividends = withAnnualReported(
         buildDividends(settledOrNull(dividendSourceR), {
             price,
@@ -585,7 +595,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             marketCap: krBasis?.marketCap ?? profile.marketCap,
             currency,
             // KR only. `krx_listed`: marketCap = KRX listed shares ×
-            // `marketCapCloseDate`'s close, and valuation.pe/pb use it too.
+            // `marketCapCloseDate`'s close (valuation.pe/pb do NOT use it: see `valuation.basis`).
             // `provider`: yahoo's own market cap (listed shares or close missing).
             ...(krBasis && {
                 sharesBasis: krBasis.sharesBasis,
@@ -594,14 +604,27 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             }),
         },
         valuation: keyMetrics && {
-            pe: krBasis ? krBasis.pe : keyMetrics.peRatioTTM,
-            pb: krBasis ? krBasis.pb : keyMetrics.pbRatioTTM,
-            // KR on the `krx_listed` basis: ps is rescaled with the market cap, evToEbitda
-            // is null (EV includes net debt we cannot recompute) — see `krListedBasis`.
-            ps: krBasis ? krBasis.ps : keyMetrics.priceToSalesRatioTTM,
+            pe: krValuation ? krValuation.pe : keyMetrics.peRatioTTM,
+            pb: krValuation ? krValuation.pb : keyMetrics.pbRatioTTM,
+            // KR: the provider's own P/S (its market cap is not the KRX one, but P/S is not rescaled any more).
+            ps: keyMetrics.priceToSalesRatioTTM,
+            // KR on the `krx_listed` basis evToEbitda is null (EV includes net debt we cannot
+            // recompute) — see `krListedBasis`.
             evToEbitda: krBasis
                 ? krBasis.evToEbitda
                 : keyMetrics.enterpriseValueOverEBITDATTM,
+            // KR only. `basis` says what `pe`/`pb` are computed on (`source` dart or provider, `ttmEnd`,
+            // `equityAsOf`, `priceDate`); `epsTtm` and `bps` are the per-share figures behind them and
+            // `nullReason` says why a null ratio is null. `profile.sharesBasis` is the share count behind
+            // market cap only.
+            ...(krValuation && {
+                epsTtm: krValuation.epsTtm,
+                bps: krValuation.bps,
+                basis: krValuation.basis,
+                ...(Object.keys(krValuation.nullReason).length > 0 && {
+                    nullReason: krValuation.nullReason,
+                }),
+            }),
         },
         profitability: ratios && {
             roePct:

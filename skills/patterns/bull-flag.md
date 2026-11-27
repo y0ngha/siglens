@@ -18,6 +18,7 @@ gating:
   triggers: [bull_flag]
 token_cost: 949
 digest_hash: "cee9ce26"
+digest_text_hash: "2c6e2434"
 ---
 
 ## Detection Criteria

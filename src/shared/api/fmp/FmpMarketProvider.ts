@@ -2,7 +2,7 @@ import type {
     GetBarsOptions,
     Bar,
     MarketQuote,
-    Timeframe,
+    ProviderTimeframe,
 } from '@y0ngha/siglens-core';
 import type {
     ExtendedHoursTrade,
@@ -108,7 +108,10 @@ function fmpIntradayDateToUtcSeconds(dateStr: string): number {
     return Math.floor(utcMs / MS_PER_SECOND);
 }
 
-const FMP_INTRADAY_TIMEFRAME_MAP: Record<Exclude<Timeframe, '1Day'>, string> = {
+const FMP_INTRADAY_TIMEFRAME_MAP: Record<
+    Exclude<ProviderTimeframe, '1Day'>,
+    string
+> = {
     '5Min': '5min',
     '15Min': '15min',
     '30Min': '30min',
@@ -273,7 +276,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
         // Safe: the '1Day' branch returned above, so timeframe is guaranteed non-'1Day' here.
         return this.getIntradayBars(
             symbol,
-            timeframe as Exclude<Timeframe, '1Day'>,
+            timeframe as Exclude<ProviderTimeframe, '1Day'>,
             fromDate,
             endDate,
             false
@@ -296,7 +299,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
         if (timeframe === '1Day') return [];
         return this.getIntradayBars(
             symbol,
-            timeframe as Exclude<Timeframe, '1Day'>,
+            timeframe as Exclude<ProviderTimeframe, '1Day'>,
             from?.substring(0, ISO_DATE_PREFIX_LENGTH),
             before?.substring(0, ISO_DATE_PREFIX_LENGTH),
             true
@@ -305,7 +308,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
 
     private async getIntradayBars(
         symbol: string,
-        timeframe: Exclude<Timeframe, '1Day'>,
+        timeframe: Exclude<ProviderTimeframe, '1Day'>,
         fromDate: string | undefined,
         endDate: string | undefined,
         extended: boolean

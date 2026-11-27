@@ -1,21 +1,31 @@
 import type { Bar } from '@y0ngha/siglens-core';
 import { ImageResponse } from 'next/og';
+import type { ChartDrawingSource } from '@/entities/analysis/lib/narrowChartDrawings';
 import { SITE_NAME } from '@/shared/config/brand';
 import { CHART_COLORS_RAW_DARK } from '@/shared/lib/chartColors';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { OG_BG, OG_FG, OG_MUTED } from '@/shared/lib/og';
 import {
-    computeChartGeometry,
     isReportChartMaPeriod,
     REPORT_CHART_MA_PERIODS,
     type ReportChartMaPeriod,
 } from '../lib/chartGeometry';
+import {
+    layoutReportChart,
+    REPORT_CHART_GUTTER_WIDTH,
+    REPORT_CHART_HEADER_HEIGHT as HEADER_HEIGHT,
+    REPORT_CHART_HEIGHT,
+    REPORT_CHART_PLOT_HEIGHT as PLOT_HEIGHT,
+    REPORT_CHART_WIDTH,
+} from '../lib/reportChartLayout';
 
-/** 메일 본문 폭 600px의 2배 — 레티나에서 흐리지 않게 한다. */
-const REPORT_CHART_WIDTH = 1200;
-const REPORT_CHART_HEIGHT = 600;
-const HEADER_HEIGHT = 120;
-const PLOT_HEIGHT = REPORT_CHART_HEIGHT - HEADER_HEIGHT;
-const PLOT_PADDING = 24;
+/** 작도 선 굵기 — 레티나 2배 이미지에서 약 1.3 css px. */
+const OVERLAY_STROKE_WIDTH = 3;
+const OVERLAY_DASH = '12 8';
+const TAG_FONT_SIZE = 22;
+const TAG_LEFT_PADDING = 10;
+const POINT_LABEL_WIDTH = 60;
+const POINT_LABEL_OFFSET = 8;
 
 /** 기간별 이동평균선 색 — 사이트 차트와 같은 색을 쓴다. 키는 `REPORT_CHART_MA_PERIODS`와 같아야 한다. */
 const MA_COLORS: Readonly<Record<ReportChartMaPeriod, string>> = {
@@ -30,6 +40,11 @@ export interface ReportChartImageInput {
     date: string;
     bars: readonly Bar[];
     ma: Readonly<Record<number, readonly (number | null)[]>>;
+    /**
+     * 분석이 그은 작도. 없거나 하나도 그릴 수 없으면 캔들·이동평균만 그린다. 이미지 안의 글자는 라틴 글자·숫자뿐이다 —
+     * 이름·날짜 같은 번역 문구는 메일 본문이 적는다.
+     */
+    drawings?: ChartDrawingSource | null;
     /** 응답의 `cache-control` 헤더 값. 실제 메일은 불변 장기 캐시, 샘플은 하루. */
     cacheControl: string;
 }
@@ -42,7 +57,8 @@ function formatPrice(value: number): string {
 }
 
 /**
- * 메일용 일봉 차트 PNG. 글자는 심볼·숫자·날짜뿐이라 기본(라틴) 글꼴로 충분하다 —
+ * 메일용 일봉 차트 PNG. 글자는 티커(국내 종목은 `.KS`/`.KQ`를 뗀 코드)·숫자·날짜뿐이라 기본(라틴) 글꼴로 충분하다 —
+ * 종목 이름은 이 이미지 위의 카드 제목이 적는다(한글 글꼴을 내려받지 않는다).
  * 로케일 글꼴을 내려받지 않아 첫 요청이 가볍다.
  *
  * 봉이 없으면 `null`. 호출자가 404로 답한다.
@@ -59,13 +75,10 @@ export function buildReportChartImage(
     const maPeriods = REPORT_CHART_MA_PERIODS.filter(
         period => ma[period] !== undefined
     );
-    const geo = computeChartGeometry(input.bars, ma, {
-        width: REPORT_CHART_WIDTH,
-        height: PLOT_HEIGHT,
-        padding: PLOT_PADDING,
-    });
+    const layout = layoutReportChart(input.bars, ma, input.drawings ?? null);
     const last = input.bars.at(-1);
-    if (geo === null || last === undefined) return null;
+    if (layout === null || last === undefined) return null;
+    const { geo, drawn, plotWidth } = layout;
 
     const prev = input.bars.at(-2);
     const changePct =
@@ -99,7 +112,7 @@ export function buildReportChartImage(
             >
                 <div style={{ display: 'flex', alignItems: 'baseline' }}>
                     <span style={{ fontSize: 52, fontWeight: 700 }}>
-                        {input.symbol}
+                        {displayTicker(input.symbol)}
                     </span>
                     <span style={{ fontSize: 40, marginLeft: 24 }}>
                         {formatPrice(last.close)}
@@ -139,51 +152,120 @@ export function buildReportChartImage(
                     </div>
                 </div>
             </div>
-            <svg
-                width={REPORT_CHART_WIDTH}
-                height={PLOT_HEIGHT}
-                viewBox={`0 0 ${REPORT_CHART_WIDTH} ${PLOT_HEIGHT}`}
+            <div
+                style={{
+                    position: 'relative',
+                    display: 'flex',
+                    width: REPORT_CHART_WIDTH,
+                    height: PLOT_HEIGHT,
+                }}
             >
-                {geo.candles.map(c => {
-                    const color = c.up
-                        ? CHART_COLORS_RAW_DARK.bullish
-                        : CHART_COLORS_RAW_DARK.bearish;
-                    return (
-                        <g key={c.x}>
-                            <line
-                                x1={c.x}
-                                x2={c.x}
-                                y1={c.wickTop}
-                                y2={c.wickBottom}
-                                stroke={color}
-                                strokeWidth={2}
+                <svg
+                    width={REPORT_CHART_WIDTH}
+                    height={PLOT_HEIGHT}
+                    viewBox={`0 0 ${REPORT_CHART_WIDTH} ${PLOT_HEIGHT}`}
+                >
+                    {geo.candles.map(c => {
+                        const color = c.up
+                            ? CHART_COLORS_RAW_DARK.bullish
+                            : CHART_COLORS_RAW_DARK.bearish;
+                        return (
+                            <g key={c.x}>
+                                <line
+                                    x1={c.x}
+                                    x2={c.x}
+                                    y1={c.wickTop}
+                                    y2={c.wickBottom}
+                                    stroke={color}
+                                    strokeWidth={2}
+                                />
+                                <rect
+                                    x={c.x - geo.bodyWidth / 2}
+                                    y={c.bodyTop}
+                                    width={geo.bodyWidth}
+                                    height={c.bodyHeight}
+                                    fill={color}
+                                />
+                            </g>
+                        );
+                    })}
+                    {geo.maLines
+                        .filter(line => line.points.length > 0)
+                        .map(line => (
+                            <polyline
+                                key={line.period}
+                                points={line.points}
+                                fill="none"
+                                stroke={
+                                    isReportChartMaPeriod(line.period)
+                                        ? MA_COLORS[line.period]
+                                        : undefined
+                                }
+                                strokeWidth={3}
                             />
-                            <rect
-                                x={c.x - geo.bodyWidth / 2}
-                                y={c.bodyTop}
-                                width={geo.bodyWidth}
-                                height={c.bodyHeight}
-                                fill={color}
-                            />
+                        ))}
+                    {drawn === null ? null : (
+                        // 가격축 밖으로 나가는 선분은 svg 뷰포트가 자른다 — 선분 x는 모두 plot 안이라 별도 clipPath가 필요 없다.
+                        <g>
+                            {drawn.lines.map(line => (
+                                <line
+                                    key={`${line.x1}-${line.y1}-${line.x2}-${line.y2}`}
+                                    x1={line.x1}
+                                    y1={line.y1}
+                                    x2={line.x2}
+                                    y2={line.y2}
+                                    stroke={line.color}
+                                    strokeWidth={OVERLAY_STROKE_WIDTH}
+                                    strokeOpacity={line.opacity}
+                                    strokeDasharray={
+                                        line.dashed ? OVERLAY_DASH : undefined
+                                    }
+                                />
+                            ))}
                         </g>
-                    );
-                })}
-                {geo.maLines
-                    .filter(line => line.points.length > 0)
-                    .map(line => (
-                        <polyline
-                            key={line.period}
-                            points={line.points}
-                            fill="none"
-                            stroke={
-                                isReportChartMaPeriod(line.period)
-                                    ? MA_COLORS[line.period]
-                                    : undefined
-                            }
-                            strokeWidth={3}
-                        />
-                    ))}
-            </svg>
+                    )}
+                </svg>
+                {drawn?.tags.map(tag => (
+                    <div
+                        key={`tag-${tag.y}-${tag.text}`}
+                        style={{
+                            position: 'absolute',
+                            left: plotWidth + TAG_LEFT_PADDING,
+                            top: tag.y - TAG_FONT_SIZE * 0.7,
+                            width: REPORT_CHART_GUTTER_WIDTH - TAG_LEFT_PADDING,
+                            display: 'flex',
+                            fontSize: TAG_FONT_SIZE,
+                            color: tag.color,
+                            opacity: tag.opacity,
+                        }}
+                    >
+                        {tag.text}
+                    </div>
+                ))}
+                {drawn?.pointLabels.map(label => (
+                    <div
+                        key={`label-${label.x}-${label.y}-${label.text}`}
+                        style={{
+                            position: 'absolute',
+                            left: label.x - POINT_LABEL_WIDTH / 2,
+                            top:
+                                label.position === 'above'
+                                    ? label.y -
+                                      TAG_FONT_SIZE -
+                                      POINT_LABEL_OFFSET
+                                    : label.y + POINT_LABEL_OFFSET,
+                            width: POINT_LABEL_WIDTH,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            fontSize: TAG_FONT_SIZE,
+                            fontWeight: 700,
+                            color: label.color,
+                        }}
+                    >
+                        {label.text}
+                    </div>
+                ))}
+            </div>
         </div>,
         {
             width: REPORT_CHART_WIDTH,

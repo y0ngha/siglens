@@ -1,7 +1,11 @@
 import { getTranslations } from 'next-intl/server';
-import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
+import {
+    findSignalHub,
+    signalHubPath,
+} from '@/entities/signal-history/lib/signalHubs';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { formatKoreanDate } from '@/shared/lib/legal';
 import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';
@@ -22,6 +26,11 @@ interface GuideLiveSymbolsProps {
     readonly groups: readonly LiveSymbolGroup[];
     /** 가이드 경로 → 제목. 스냅샷 행이 어떤 패턴에 맞았는지 적는 데 쓴다. */
     readonly patternTitles: Readonly<Record<string, string>>;
+    /**
+     * 이 항목이 설명하는 신호의 신호 페이지 슬러그(`hubSlugsFor`). 있으면 모듈 끝에 "종목 모두 보기" 링크를
+     * 단다 — 가이드 → 신호 페이지 내부 링크가 서버 HTML에 생긴다.
+     */
+    readonly hubSlugs?: readonly string[];
 }
 
 interface MatchLabelProps {
@@ -63,16 +72,11 @@ function latest(
               null);
 }
 
-/** 화면 표기용 코드 — 한국 종목의 거래소 접미사(`.KS`/`.KQ`)를 뗀다. 링크 경로에는 쓰지 않는다. */
-function displayCode(symbol: string): string {
-    return symbol.replace(KR_EXCHANGE_SUFFIX_RE, '');
-}
-
 /** 링크 문구에 쓸 종목 표기. ko는 한국어 이름만(코드는 병기하지 않는다), 이름이 없으면 표시용 코드다. */
 function rowLabel(row: LiveSymbolRow, locale: Locale): string {
     return row.name !== null && locale === DEFAULT_LOCALE
         ? row.name
-        : displayCode(row.symbol);
+        : displayTicker(row.symbol);
 }
 
 /**
@@ -85,12 +89,33 @@ export async function GuideLiveSymbols({
     locale,
     groups,
     patternTitles,
+    hubSlugs = [],
 }: GuideLiveSymbolsProps) {
     if (groups.length === 0) return null;
-    const t = await getTranslations({ locale, namespace: 'views.guide' });
+    const [t, tLabel] = await Promise.all([
+        getTranslations({ locale, namespace: 'views.guide' }),
+        // 신호 이름은 시장 페이지 배지와 같은 `shared.enumLabel`(추출기 보존 목록 — 변수 키 조회가 안전하다).
+        getTranslations({ locale, namespace: 'shared.enumLabel' }),
+    ]);
     const allRows = groups.flatMap(group => group.rows);
     const scannerAt = latest(allRows, 'scanner');
     const snapshotAt = latest(allRows, 'snapshot');
+    const detectedDate = (row: LiveSymbolRow) =>
+        formatKoreanDate(new Date(row.detectedOn), locale);
+    const hasHistory = allRows.some(row => row.basis === 'history');
+    const hubLinks = hubSlugs.flatMap(slug => {
+        const hub = findSignalHub(slug);
+        return hub === null
+            ? []
+            : [
+                  {
+                      href: signalHubPath(hub.slug),
+                      label: t('liveHubLink', {
+                          signal: tLabel(`signalType.${hub.signalType}`),
+                      }),
+                  },
+              ];
+    });
 
     return (
         <section
@@ -108,6 +133,7 @@ export async function GuideLiveSymbols({
                         })}
                     </span>
                 )}
+                {hasHistory ? <span>{t('liveBasisHistory')}</span> : null}
                 {snapshotAt === null ? null : (
                     <span>
                         {t('liveBasisSnapshot', {
@@ -151,12 +177,13 @@ export async function GuideLiveSymbols({
                                     </div>
                                     {row.changePercent === null ? (
                                         <span className="shrink-0 text-xs text-secondary-500">
-                                            {t('liveDetectedOn', {
-                                                date: formatKoreanDate(
-                                                    new Date(row.detectedOn),
-                                                    locale
-                                                ),
-                                            })}
+                                            {row.basis === 'history'
+                                                ? t('liveFirstSeen', {
+                                                      date: detectedDate(row),
+                                                  })
+                                                : t('liveDetectedOn', {
+                                                      date: detectedDate(row),
+                                                  })}
                                         </span>
                                     ) : (
                                         <span
@@ -178,6 +205,21 @@ export async function GuideLiveSymbols({
                     </div>
                 ))}
             </div>
+            {hubLinks.length === 0 ? null : (
+                <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-secondary-700 pt-4">
+                    {hubLinks.map(link => (
+                        <li key={link.href}>
+                            <LocaleLink
+                                href={link.href}
+                                prefetch={false}
+                                className="tap-target rounded-sm text-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none"
+                            >
+                                {link.label}
+                            </LocaleLink>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </section>
     );
 }

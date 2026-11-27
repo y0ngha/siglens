@@ -1,6 +1,6 @@
 import type { SignalEpisodeRow } from '@/entities/signal-history/types';
-import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { displayTicker } from '@/shared/lib/displayTicker';
 
 /**
  * 종목 한 줄의 이름 — 화면 링크와 구조화데이터(ItemList `name`)가 같은 값을 쓴다. 한글 이름은 ko에서만
@@ -12,5 +12,5 @@ export function signalHubRowLabel(
 ): string {
     return row.koreanName !== null && locale === DEFAULT_LOCALE
         ? row.koreanName
-        : row.symbol.replace(KR_EXCHANGE_SUFFIX_RE, '');
+        : displayTicker(row.symbol);
 }

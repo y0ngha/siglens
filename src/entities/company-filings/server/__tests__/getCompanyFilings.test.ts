@@ -5,6 +5,15 @@ const sec = vi.hoisted(() => ({
     fetchFilingIndexJson: vi.fn(),
     fetchFilingDocumentHead: vi.fn(),
 }));
+// 오류 클래스는 실물이 아니라 같은 이름의 대역이다(실물 secClient는 설정 모듈을 끌어와 목과 충돌한다).
+const secErrors = vi.hoisted(() => ({
+    SecSlotTimeoutError: class SecSlotTimeoutError extends Error {},
+    SecBodyTimeoutError: class SecBodyTimeoutError extends Error {
+        constructor(readonly kind: 'idle' | 'budget') {
+            super(`body ${kind}`);
+        }
+    },
+}));
 const db = vi.hoisted(() => ({
     findCikBySymbol: vi.fn(),
     getDatabaseClient: vi.fn(),
@@ -19,6 +28,8 @@ const profile = vi.hoisted(() => ({ resolve: vi.fn() }));
 const HEAD_CAP = vi.hoisted(() => 262_144);
 
 vi.mock('@/shared/api/sec/secClient', () => ({
+    SecSlotTimeoutError: secErrors.SecSlotTimeoutError,
+    SecBodyTimeoutError: secErrors.SecBodyTimeoutError,
     fetchSubmissionsJson: sec.fetchSubmissionsJson,
     fetchFilingIndexJson: sec.fetchFilingIndexJson,
     fetchFilingDocumentHead: sec.fetchFilingDocumentHead,
@@ -66,9 +77,12 @@ import {
     AGENT_FILINGS_LIST_MAX,
 } from '@y0ngha/siglens-core';
 import {
+    FILING_META_LOAD_MAX,
+    FILING_PUBLICATION_WINDOW_MS,
     listCompanyFilings,
     readCompanyFiling,
 } from '@/entities/company-filings/server/getCompanyFilings';
+const { SecBodyTimeoutError, SecSlotTimeoutError } = secErrors;
 
 const FOLDER = 'https://www.sec.gov/Archives/edgar/data/1824920';
 
@@ -442,6 +456,7 @@ describe('listCompanyFilings', () => {
         expect(await listCompanyFilings('IONQ')).toEqual({
             status: 'ok',
             filings: [],
+            headlinesPending: false,
         });
         expect(sec.fetchFilingIndexJson).not.toHaveBeenCalled();
     });
@@ -669,5 +684,204 @@ describe('readCompanyFiling', () => {
         expect(await readCompanyFiling('IONQ', accessionOf(0))).toEqual({
             status: 'failed',
         });
+    });
+});
+
+describe('listCompanyFilings headlinesPending', () => {
+    async function listOk() {
+        const result = await listCompanyFilings('IONQ');
+        if (result.status !== 'ok') throw new Error('expected ok');
+        return result;
+    }
+
+    it('모두 읽혔으면 false다', async () => {
+        happyPath();
+        expect((await listOk()).headlinesPending).toBe(false);
+    });
+
+    it('읽고도 제목이 없는 공시는 headline null이어도 pending이 아니다 — 30일 캐시된다', async () => {
+        happyPath();
+        // 보도자료도 Item 본문도 없는 주 문서: 정제 본문은 있지만 뽑을 제목이 없다.
+        sec.fetchFilingIndexJson.mockImplementation(async () => ({
+            directory: {
+                item: [{ name: 'main0.htm', size: '100' }],
+            },
+        }));
+        sec.fetchFilingDocumentHead.mockResolvedValue(
+            '<html><body><p>Washington, D.C. 20549</p></body></html>'
+        );
+        const result = await listOk();
+        const settledAsNull = result.filings
+            .slice(0, FILING_META_LOAD_MAX)
+            .filter(f => f.headline === null);
+        // 가정 확인: 이 문서는 실제로 제목 없이 "읽힌" 상태여야 한다(거부가 아니라).
+        expect(settledAsNull.length).toBeGreaterThan(0);
+        expect(cache.store.has(`sec:filing-meta:v2:${accessionOf(0)}`)).toBe(
+            true
+        );
+        expect(result.headlinesPending).toBe(false);
+    });
+
+    it('비차단 사유로 메타가 거부되면 pending이다(목록 안 위치 무관 — 시도한 마지막 공시 포함)', async () => {
+        happyPath();
+        const last = accessionOf(FILING_META_LOAD_MAX - 1);
+        sec.fetchFilingIndexJson.mockImplementation(
+            async (_cik: string, accession: string) => {
+                if (accession === last) throw new Error('boom');
+                return indexJson(indexOfAccession(accession));
+            }
+        );
+        expect((await listOk()).headlinesPending).toBe(true);
+    });
+
+    it('시도하지 않은 뒤쪽 공시(FILING_META_LOAD_MAX 이후)의 headline null은 pending이 아니다', async () => {
+        happyPath();
+        const result = await listOk();
+        expect(result.filings[FILING_META_LOAD_MAX]?.headline).toBeNull();
+        expect(result.headlinesPending).toBe(false);
+    });
+
+    it.each([
+        ['SEC 차단(403·429)', () => blockedError()],
+        ['슬롯 대기 예산 초과', () => new SecSlotTimeoutError()],
+        ['본문 수신 시간 초과', () => new SecBodyTimeoutError('budget')],
+        [
+            '요청 시간 초과(abort — AbortError)',
+            () => new DOMException('aborted', 'AbortError'),
+        ],
+        [
+            '요청 시간 초과(TimeoutError)',
+            () => new DOMException('timed out', 'TimeoutError'),
+        ],
+    ])(
+        '%s로 거부되면 pending이 아니다 — 짧게 다시 그리면 한도를 더 두드린다',
+        async (_name, make) => {
+            happyPath();
+            sec.fetchFilingIndexJson.mockRejectedValue(make());
+            const result = await listOk();
+            expect(result.filings.every(f => f.headline === null)).toBe(true);
+            expect(result.headlinesPending).toBe(false);
+        }
+    );
+
+    it('state.blocked는 같은 호출의 다른(비차단) 거부보다 우선한다 — pending이 아니다', async () => {
+        happyPath();
+        sec.fetchFilingIndexJson.mockImplementation(
+            async (_cik: string, accession: string) => {
+                if (accession === accessionOf(0)) throw blockedError();
+                if (accession === accessionOf(1)) throw new Error('boom');
+                return indexJson(indexOfAccession(accession));
+            }
+        );
+        expect((await listOk()).headlinesPending).toBe(false);
+    });
+});
+
+describe('결정적 실패는 제목 없는 메타로 캐시된다', () => {
+    // 모든 공시가 게시 대기 기간(접수일 + 2일)을 한참 지난 시각.
+    beforeEach(() => {
+        vi.setSystemTime(new Date('2026-12-01T00:00:00Z'));
+    });
+
+    const permanent: [string, () => void][] = [
+        [
+            '색인이 없다(null)',
+            () => sec.fetchFilingIndexJson.mockResolvedValue(null),
+        ],
+        [
+            '문서 앞부분이 없다(null)',
+            () => sec.fetchFilingDocumentHead.mockResolvedValue(null),
+        ],
+        [
+            '정제하면 본문이 빈다',
+            () =>
+                sec.fetchFilingDocumentHead.mockResolvedValue(
+                    '<html><body></body></html>'
+                ),
+        ],
+    ];
+
+    it.each(permanent)(
+        '%s: headline null로 30일 캐시하고 pending이 아니며 다음 호출은 SEC를 다시 부르지 않는다',
+        async (_name, arrange) => {
+            happyPath();
+            arrange();
+            const first = await listCompanyFilings('IONQ');
+            if (first.status !== 'ok') throw new Error('expected ok');
+            expect(first.headlinesPending).toBe(false);
+            expect(first.filings[0]).toMatchObject({
+                headline: null,
+                hasPressRelease: false,
+                url: `${FOLDER}/${accessionOf(0).replaceAll('-', '')}/main0.htm`,
+            });
+            expect(
+                cache.writes.find(
+                    w => w.key === `sec:filing-meta:v2:${accessionOf(0)}`
+                )?.ttl
+            ).toBe(30 * 24 * 60 * 60);
+            const calls = secCallCount();
+            const again = await listCompanyFilings('IONQ');
+            if (again.status !== 'ok') throw new Error('expected ok');
+            expect(again.headlinesPending).toBe(false);
+            // 제출 목록(30분 캐시 목) 외 공시별 SEC 요청은 없다.
+            expect(secCallCount() - calls).toBeLessThanOrEqual(1);
+        }
+    );
+
+    it('일시 거부(generic)는 그대로 캐시되지 않고 pending이다', async () => {
+        happyPath();
+        sec.fetchFilingIndexJson.mockRejectedValue(new Error('boom'));
+        const result = await listCompanyFilings('IONQ');
+        if (result.status !== 'ok') throw new Error('expected ok');
+        expect(result.headlinesPending).toBe(true);
+        expect(cache.store.has(`sec:filing-meta:v2:${accessionOf(0)}`)).toBe(
+            false
+        );
+    });
+
+    it('본문 읽기(readCompanyFiling)는 여전히 failed다 — 제목 메타만 캐시한다', async () => {
+        happyPath();
+        sec.fetchFilingDocumentHead.mockResolvedValue(null);
+        await listCompanyFilings('IONQ');
+        const read = await readCompanyFiling('IONQ', accessionOf(0));
+        expect(read.status).toBe('failed');
+    });
+});
+
+describe('접수 직후 공시의 "없음"은 일시 사유다 (FILING_PUBLICATION_WINDOW_MS)', () => {
+    // 최신 공시(accessionOf(0))의 접수일은 2026-11-13 → 접수일 끝은 11-14T00:00Z.
+    const EDGE =
+        Date.parse('2026-11-14T00:00:00Z') + FILING_PUBLICATION_WINDOW_MS;
+
+    async function listAt(now: number) {
+        vi.setSystemTime(new Date(now));
+        happyPath();
+        sec.fetchFilingIndexJson.mockResolvedValue(null);
+        const result = await listCompanyFilings('IONQ');
+        if (result.status !== 'ok') throw new Error('expected ok');
+        return result;
+    }
+
+    it('기간 안(접수 다음 날)의 404는 캐시하지 않고 pending이다', async () => {
+        const result = await listAt(Date.parse('2026-11-14T12:00:00Z'));
+        expect(result.headlinesPending).toBe(true);
+        expect(cache.store.has(`sec:filing-meta:v2:${accessionOf(0)}`)).toBe(
+            false
+        );
+    });
+
+    it('기간이 지난 404는 headline null 메타를 30일 캐시하고 pending이 아니다', async () => {
+        const result = await listAt(EDGE + 24 * 60 * 60 * 1000);
+        expect(result.headlinesPending).toBe(false);
+        expect(cache.store.has(`sec:filing-meta:v2:${accessionOf(0)}`)).toBe(
+            true
+        );
+    });
+
+    it('경계: 정확히 기간 끝이면 아직 일시, 1ms 뒤부터 영구다', async () => {
+        expect((await listAt(EDGE)).headlinesPending).toBe(true);
+        cache.store.clear();
+        sec.fetchFilingIndexJson.mockReset();
+        expect((await listAt(EDGE + 1)).headlinesPending).toBe(false);
     });
 });

@@ -21,8 +21,8 @@ vi.mock('@/widgets/home/StatsBar', () => ({
 vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
     HomeWatchlistCard: () => null,
 }));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
+vi.mock('@/widgets/home/PopularTickers', () => ({
+    PopularTickers: () => null,
 }));
 vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
     // 컴포넌트가 아닌 상수도 이 배럴을 통해 나간다 — 빠뜨리면 `page.tsx`가
@@ -37,9 +37,6 @@ vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
         { href: '/news', labelKey: 'shared.config.nav.full.news.us' },
     ],
 }));
-vi.mock('@/widgets/home/CryptoShowcase', () => ({
-    CryptoShowcase: () => null,
-}));
 vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
 }));
@@ -48,9 +45,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-}));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
 }));
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => null,
@@ -170,6 +164,16 @@ describe('Home page ISR empty-cache prevention', () => {
                 name: koMessage('shared.config.nav.full.market.us'),
             })
         ).toHaveAttribute('href', '/market');
+    });
+
+    it('지표 개수를 못 읽으면 소개 문단은 "0종" 대신 숫자 없는 문장을 쓴다', async () => {
+        mockCountSkillFiles.mockRejectedValue(new Error('ENOENT'));
+        mockLoadShowcaseSkills.mockResolvedValue([]);
+
+        render(await Home({ params: Promise.resolve({ locale: 'ko' }) }));
+
+        expect(screen.getByText(/^보조지표로 차트를 읽고/)).toBeInTheDocument();
+        expect(screen.queryByText(/0종/)).not.toBeInTheDocument();
     });
 
     it('loadShowcaseSkills throw → Home resolves (non-empty element, does not throw)', async () => {

@@ -35,7 +35,7 @@ export interface SymbolOgImageOptions {
 
 /**
  * 심볼 OG 이미지(1200×630)를 그린다 — `ticker`·`label`을 로케일 폰트로 렌더하는
- * app 라우트의 OG 이미지 공통 진입점. 폰트 로드가 실패하면 Latin 폴백으로 그린다.
+ * app 라우트의 OG 이미지 공통 진입점. en 외 로케일은 폰트 로드 실패 시 `loadOgFont`가 던진다(tofu를 캐시에 굳히지 않는다).
  */
 export async function buildSymbolOgImage({
     ticker,

@@ -7,6 +7,13 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: vi.fn(() => ({})),
 }));
+// 한국 종목은 PER·PBR을 DART 기준으로 바꿔 끼운 provider를 core에 넘긴다 — 감싸는 호출 자체를 관찰한다.
+const { withKrValuation } = vi.hoisted(() => ({
+    withKrValuation: vi.fn((provider: unknown) => provider),
+}));
+vi.mock('@/entities/kr-valuation/server/withKrValuation', () => ({
+    withKrValuation,
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
@@ -130,6 +137,24 @@ describe('executeOverallAnalysis — 뉴스 축 instrumentKind', () => {
             modelId: BYOK_MODEL,
         });
         expect(callFor(BYOK_MODEL)?.instrumentKind).toBe(kind);
+    });
+});
+
+describe('executeOverallAnalysis — 한국 종목 PER·PBR provider', () => {
+    it('core의 fundamentalProvider는 `withKrValuation`이 심볼과 함께 감싼 것이다', async () => {
+        const wrapped = { label: 'dart-aware provider' };
+        withKrValuation.mockReturnValueOnce(wrapped);
+
+        await executeOverallAnalysis({
+            ...base,
+            symbol: '005930.KS',
+            companyName: '삼성전자',
+            caller: byokCaller,
+            modelId: BYOK_MODEL,
+        });
+
+        expect(callFor(BYOK_MODEL)?.fundamentalProvider).toBe(wrapped);
+        expect(withKrValuation).toHaveBeenCalledWith({}, '005930.KS');
     });
 });
 

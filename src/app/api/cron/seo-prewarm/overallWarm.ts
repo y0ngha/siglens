@@ -146,8 +146,8 @@ export async function runOverallWarmStep(
  * 시간 초과로 포기한 호출의 태그 재검증. 대기 목록은 오늘의 상위 목록과 무관하게 전부 읽는다.
  *
  * 항목마다: 12시간이 지났거나 확인 횟수가 찼으면 버린다(영원히 남지 않는다). `OVERALL_WARM_TIMEOUT_MS`가
- * 지나기 전이면 기다린다. 지났으면 캐시에 결과가 **있는지** 읽기 전용으로 확인하고(`hasPrewarmedOverall` —
- * 페이지가 읽는 것과 같은 캐시, LLM 없음) 있을 때만 태그를 턴다. 아직 없으면 확인 횟수만 올려 다음 tick에
+ * 지나기 전이면 기다린다. 지났으면 캐시에 이 호출 시작 이후의 **새 결과**가 있는지 읽기 전용으로 확인하고(`hasPrewarmedOverall` —
+ * 페이지가 읽는 것과 같은 캐시, LLM 없음) 있을 때만 태그를 턴다. 아직 없으면(이전 결과만 있어도 같다) 확인 횟수만 올려 다음 tick에
  * 다시 본다 — 그냥 털면 페이지가 빈 엿보기를 다시 몇 시간 캐시한다. 포기한 promise에는 아무것도 매달지
  * 않는다(프로세스가 끝나면 함께 사라진다).
  */
@@ -169,11 +169,10 @@ async function loadPendingEntries(): Promise<OverallWarmPendingEntry[]> {
 }
 
 /**
- * 알려진 한계(동작은 그대로): 종합 엿보기 키는 "최신 결과를 덮어쓰는 포인터"이고 TTL이 24시간이다.
- * 그래서 시간 초과 뒤 첫 확인이 **새 결과가 아니라 이전 결과**(어제의 사전 생성이나 방문자가 만든 것)를 적중시킬
- * 수 있다 — 그러면 태그를 털고 항목을 지우는데 새 결과는 아직 안 올라온 상태다. 이때 페이지는 빈 화면이
- * 아니라 이전 종합을 자기 캐시 기간이 끝날 때까지 보여 준다. 새 결과와 이전 결과를 가르려면 캐시 항목에
- * 생성 시각이 있어야 하는데, 그건 core 변경이라 여기서 하지 않았다.
+ * 캐시 확인은 항목의 `analyzedAt`이 이 호출의 시작 시각 이후인지로 새 결과를 가린다
+ * (`hasPrewarmedOverall`). 엿보기 키는 최신 결과를 덮어쓰는 포인터라 어제의 사전 생성이나 방문자가 만든
+ * 이전 결과도 "있다"로 읽히는데, 그걸로 태그를 털면 새 결과가 아직 안 올라온 채 항목만 지워진다.
+ * `analyzedAt`이 없는 옛 항목은 이전 결과로 보고 계속 기다린다.
  */
 async function settlePending(
     entry: OverallWarmPendingEntry,
@@ -192,7 +191,7 @@ async function settlePending(
             return;
         }
         if (ageMs < OVERALL_WARM_TIMEOUT_MS) return;
-        if (await hasPrewarmedOverall(entry.symbol)) {
+        if (await hasPrewarmedOverall(entry.symbol, entry.startedAtMs)) {
             revalidateTag(overallPeekTag(entry.symbol), 'max');
             await removeOverallWarmPending(entry.member);
             input.counts.overallWarmPendingRevalidated++;

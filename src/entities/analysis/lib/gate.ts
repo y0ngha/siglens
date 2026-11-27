@@ -19,9 +19,10 @@ const GATE_ERROR_CODE_KEYS: Record<AnalysisGateErrorCode, true> = {
 /**
  * 모든 게이트 에러 코드의 런타임 배열. {@link GATE_ERROR_CODE_KEYS}에서 뽑아
  * `AnalysisGateErrorCode` 유니온과 자동으로 동기화된다.
+ *
+ * safe: Object.keys는 string[]로 넓히지만, Record<AnalysisGateErrorCode, true>가
+ * 유니온의 모든 멤버를 키로 갖도록 강제하므로 런타임에 어긋나지 않는다.
  */
-// safe: Object.keys는 string[]로 넓히지만, Record<AnalysisGateErrorCode, true>가
-// 유니온의 모든 멤버를 키로 갖도록 강제하므로 런타임에 어긋나지 않는다.
 export const GATE_ERROR_CODES: readonly AnalysisGateErrorCode[] = Object.keys(
     GATE_ERROR_CODE_KEYS
 ) as AnalysisGateErrorCode[];

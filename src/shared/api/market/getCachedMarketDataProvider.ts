@@ -28,7 +28,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
  * `mergeBarsByTime`이 시각으로 중복을 지운다(tail 우선 — 같은 봉이라 값도 같다). 경계
  * 위치는 캐시 키를 하루 단위로 정규화하는 데만 쓰인다.
  */
-const FMP_PROVIDER_OPTIONS = {
+export const FMP_PROVIDER_OPTIONS = {
     intradayDateTimeZone: FMP_EXCHANGE_TIME_ZONE,
 } as const;
 

@@ -641,6 +641,13 @@ export const ENV_REGISTRY = [
         note: 'E2E only: forces the economy calendar to an empty state.',
     },
     {
+        name: 'E2E_FAKE_FRESH_ANALYSIS_MS',
+        requirement: 'optional',
+        sources: ['local'],
+        readBy: ['siglens'],
+        note: 'E2E only: holds run_fresh_analysis for this many ms (max 180000) before a stub result, for the agent slot load test (scripts/load/agent-slots.mts).',
+    },
+    {
         name: 'E2E_FLOWS_PIPELINE',
         requirement: 'optional',
         sources: ['local'],

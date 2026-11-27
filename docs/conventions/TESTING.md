@@ -4,7 +4,7 @@ Test conventions for Siglens (split out of CONVENTIONS.md). Cite rules as `TESTI
 
 **Rule IDs** follow the root `CLAUDE.md` "Rule IDs and references". Sections group rules by topic, so numbers are not contiguous within a section.
 
-Retired IDs: TE-32, TE-35
+Retired IDs: TE-32, TE-35, TE-57
 
 ## File Locations
 
@@ -54,9 +54,9 @@ When code is refactored or moved, the destination module carries the edge-case t
 
 <a id="TE-5"></a>
 
-#### TE-5 — New helpers, actions, adapters and policy components need their own tests
+#### TE-5 — New helpers, actions, adapters, hooks and branchy components need their own tests
 
-Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged).
+Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged). A new custom hook or a component with its own branches (states, empty/error paths, derived labels) gets a colocated test that drives it directly (`renderHook`, a render test per branch); the parent's integration test alone leaves the branches unpinned.
 
 - ❌ A new `callGeminiWithKeyFallback` added to an adapter with no colocated test file.
 - ✅ A `__tests__/` file next to it covering undefined input, missing levels, duplicates, zero values and the empty result.
@@ -104,15 +104,6 @@ A new `describe`/`it` name uses the same language as the other tests in that fil
 
 - ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
 - ✅ `it('반 센트는 올림한다')` in the same file.
-
-<a id="TE-57"></a>
-
-#### TE-57 — New hooks and branchy components get their own tests
-
-A new custom hook, or a UI component with its own branches (states, empty/error paths, derived labels), gets a colocated test that drives it directly. Coverage through the parent's integration test alone leaves the branches unpinned and lets a regression in the extracted unit stay green.
-
-- ❌ A hook split out of a component, covered only by the parent component's test.
-- ✅ A `renderHook` test for the hook and a render test per branch of the component, next to the source.
 
 ## Required Test Cases
 
@@ -198,7 +189,7 @@ When a function starts passing a new argument or dependency to a mocked collabor
 
 #### TE-27 — Never assert by call index
 
-Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. `codeRules.test.ts` (rule `mock-call-index`, per-file baseline, `TOOLCHAIN.md#TC-41`) fails any new one.
+Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. Guard: `mock-call-index`.
 
 Assert what was written (the key and TTL), not just how many times the collaborator was called.
 
@@ -300,7 +291,7 @@ If a fixture value equals the literal in the assertion, reverting a dynamic prop
 
 #### TE-15 — Fixture shape equals the real call-site envelope
 
-A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission. The same holds for text heuristics over real documents (headline extraction, picking the primary document): derive the rules and the cases from cleaned samples of real documents, because hand-made text skips split titles, boilerplate and odd attachments.
+A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission. The same holds for URL and pattern assertions on framework-emitted output (metadata image routes get a hash suffix): read the framework source or a built page before writing the pattern. The same holds for text heuristics over real documents (headline extraction, picking the primary document): derive the rules and the cases from cleaned samples of real documents, because hand-made text skips split titles, boilerplate and odd attachments.
 
 Values a surface formats (scores, prices, ratios) use production-shaped unrounded numbers (`24.48367166813769`, not `24`) in fixtures for every text and metadata surface (title, description, structured data); integer fixtures hide a missing rounding step.
 
@@ -381,11 +372,10 @@ Pin the fix with inputs that almost match its guard, not only the one the review
 
 Code using `Date.now()` or `new Date()` runs under a mocked clock (`vi.useFakeTimers` / `vi.setSystemTime`). Hardcoded expected TTLs or dates without a fixed clock make flaky tests.
 
-This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event.
+This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event (a concurrency DB test polls `pg_blocking_pids` of the lock holder, never `setTimeout(500)`).
 
-- ❌ Passing a synthetic `now` of `999` to a limiter whose backing cache expires entries on `Date.now()`; a 1 ms TTL elapses in real CI time and a new window opens.
-- ✅ Freeze the clock for the suite (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
-- ❌ A cache key's date segment is matched with a regex (`/:\d{4}-\d{2}-\d{2}$/`) against the wall clock, so any date passes. ✅ Pin the clock with `vi.setSystemTime` and assert the exact key.
+- ❌ A synthetic `now` of `999` passed to a limiter whose cache expires on `Date.now()`; the TTL elapses in real CI time.
+- ✅ Freeze the clock (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
 
 <a id="TE-9"></a>
 
@@ -434,7 +424,7 @@ A guard that walks imports follows `import … from`, `export … from` re-expor
 
 #### TE-42 — Strip comments before matching source text
 
-A safety guard that matches a comment instead of the code line passes vacuously. Strip comments before matching, and pin explicit lists (excluded columns, allowed paths) rather than patterns.
+A safety guard that matches a comment instead of the code line passes vacuously. Strip comments before matching, and pin explicit lists (excluded columns, allowed paths) rather than patterns. Test a script's behaviour (for example a check mode) by running it on a temp copy, not by counting calls in its own source.
 
 <a id="TE-43"></a>
 
@@ -463,7 +453,9 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 #### TE-63 — A parser-based guard accounts for every candidate
 
-A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line.
+A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header. A rename that silences a new guard is a matcher gap to close, not a fix.
+
+`coreClientExports.test.ts` fails when client-bundle code imports a core value missing from the browser entry (`dist/index.client.js`), with no baseline. A bundle-reachability guard walks value edges only (type-only imports are erased); fix a latent violation's cause instead of baselining it.
 
 <a id="TE-64"></a>
 
@@ -524,11 +516,12 @@ When behavior or a constant changes, update every layer in the same change; scop
 
 #### TE-65 — An e2e update must pin the changed behaviour and fail against the old code
 
-"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Three recurring ways to pass without pinning:
+"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Recurring ways to pass without pinning:
 
 - Order change: adjusting the array a spec iterates keeps the old and new orders green. Assert the exact order (`toHaveText([...])`) and prove it by swapping two items.
 - Moved spec: moving a spec to another route to keep it passing leaves the route it left uncovered. Give the original route an equivalent assertion (for a link, host, path and decoded query, not only `href` containing a fragment).
 - Awaited mount: scope the locator to the container whose client mount is awaited. A bare `.first()` can match a server-rendered copy and return at once, so the wait never waits.
+- Alert locator: every page carries Next's empty route announcer (`role="alert"`), so `page.getByRole('alert')` needs `.filter({ hasText })` or a container scope (`e2eAlertLocatorScope.test.ts` enforces it).
 
 - ❌ Reorder the tab list in the spec's loop; the old order still passes.
 - ✅ `await expect(tabs).toHaveText(['A', 'B', 'C'])`, run against the old code to see it fail.
@@ -577,10 +570,9 @@ Fake LLMs and similar doubles that parse a vendor or core message format break s
 
 Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Vacuous shapes and their fix:
 
-- **Mocked logic.** A query builder whose condition is never inspected, a SQL assertion built from short `toContain`
-  fragments, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
+- **Mocked logic.** A query builder whose condition is never inspected, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
   behaviour (the value computation, the branch predicate). Mock only the I/O boundary; render the real condition (SQL
-  text and params, the full clause); run the script on a real or emulated Redis or assert its effects; assert values
+  text and params), pin rendered SQL as a full string (guard-enforced); run the script on a real or emulated Redis or assert its effects; assert values
   that differ per branch.
 - **Wrong surface.** A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only
   through the data flag, a "renders independently" test that mounts only the inner component, a new tracking call with
@@ -603,7 +595,7 @@ Before keeping a test, remove or break the behaviour it claims to cover and conf
   (read the hook first), not a combination it never emits (a live result while analysing).
 
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
-- ✅ Render the condition to SQL plus params and assert both.
+- ✅ Assert the full rendered SQL and params.
 
 <a id="TE-54"></a>
 
@@ -620,7 +612,7 @@ A new global stylesheet rule (for example a `:has()` selector) has no runtime te
 
 #### TE-55 — SQL whose meaning is the feature is verified on a real Postgres, and CI runs it
 
-A rendered-SQL assertion (`sqlToQuery` text and params) proves the statement is built, not that it computes the right numbers: joins, `FILTER` counts, `IS DISTINCT FROM` guards and `ON CONFLICT` behaviour only show up when the statement runs. Aggregation, dedup and pruning SQL therefore gets a `*.db.test.ts` that runs the real statements against Postgres, asserts the invariants (for example `priorHolders = holders − new + exited`) and seeds through the real write path instead of hand-inserting the rows the query is meant to produce.
+A rendered-SQL assertion (`sqlToQuery` text and params) proves the statement is built, not that it computes the right numbers: joins, `FILTER` counts, `IS DISTINCT FROM` guards and `ON CONFLICT` behaviour only show up when the statement runs; a predicate such as "latest completed session" is verified by running it on seeded rows, never by reading its rendered text. Aggregation, dedup and pruning SQL therefore gets a `*.db.test.ts` that runs the real statements against Postgres, asserts the invariants (for example `priorHolders = holders − new + exited`) and seeds through the real write path instead of hand-inserting the rows the query is meant to produce.
 
 - The test is opt-in by URL: every `*.db.test.ts` guards on the one shared variable, `describe.skipIf(!process.env.TEST_DATABASE_URL)`. It refuses any target that is not a local database (`describeTarget`: not local, or a tunnel port) and works in a throwaway schema it drops afterwards.
 - CI's `e2e` workflow (shard 1, after migrating its compose Postgres) runs `yarn test .db.test.ts`, selecting by file name: a new test joins CI only when it is named `*.db.test.ts` and reads `TEST_DATABASE_URL`, never a per-feature variable.

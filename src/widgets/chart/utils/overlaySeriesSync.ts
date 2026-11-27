@@ -6,7 +6,7 @@
  * 갱신에서 시리즈를 통째로 지웠다 다시 만들지 않기 위해서다.
  */
 import { LineStyle } from 'lightweight-charts';
-import type { OverlayLineSpec } from './chartOverlayUtils';
+import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
 
 /** lightweight-charts `LineWidth` 상한. */
 const MAX_LINE_WIDTH = 4;

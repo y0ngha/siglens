@@ -1,9 +1,13 @@
+import { defined } from '@/shared/test-utils/defined';
 import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
 
 const getSectorSignalsStatic = vi.fn();
 const listSymbolsWithDetectedPatterns = vi.fn();
 const isOfflineBuild = vi.fn(() => false);
 const lookupTickerDisplayNames = vi.fn();
+const listLatestSessionEpisodes = vi.fn();
+const shortenIfDbMissing = vi.fn(() => Promise.resolve());
+const shortenForRuntimeDegrade = vi.fn(() => Promise.resolve());
 
 const unstableCache = vi.fn((fn: () => unknown, ..._rest: unknown[]) => fn);
 
@@ -25,12 +29,24 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     lookupTickerDisplayNames: (...args: unknown[]) =>
         lookupTickerDisplayNames(...args),
 }));
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateIfDatabaseMissingAtBuild: () => shortenIfDbMissing(),
+    shortenRevalidateForRuntimeDegrade: () => shortenForRuntimeDegrade(),
+}));
+vi.mock('@/entities/signal-history/api', () => ({
+    SIGNAL_HISTORY_CACHE_TAG: 'signal-history',
+    DrizzleSignalHistoryRepository: class {
+        listLatestSessionEpisodes = listLatestSessionEpisodes;
+    },
+}));
 vi.mock('@/entities/seo-snapshot/api', () => ({
     DrizzleSeoSnapshotRepository: class {
         listSymbolsWithDetectedPatterns = listSymbolsWithDetectedPatterns;
     },
 }));
 
+import { TWICE_WEEKLY_MAX_GAP_MS } from '@/entities/seo-snapshot/lib/freshness';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
 
@@ -69,6 +85,10 @@ describe('loadGuideLiveSymbols', () => {
         getSectorSignalsStatic.mockReset();
         listSymbolsWithDetectedPatterns.mockReset();
         lookupTickerDisplayNames.mockReset();
+        listLatestSessionEpisodes.mockReset();
+        shortenIfDbMissing.mockClear();
+        shortenForRuntimeDegrade.mockClear();
+        listLatestSessionEpisodes.mockResolvedValue([]);
         unstableCache.mockClear();
         lookupTickerDisplayNames.mockResolvedValue({});
         isOfflineBuild.mockReturnValue(false);
@@ -359,5 +379,197 @@ describe('loadGuideLiveSymbols', () => {
             ['us', 5],
             ['kr', 1],
         ]);
+    });
+    describe('신호 대상의 신호 기록 읽기', () => {
+        const episode = (
+            symbol: string,
+            sessionDate = '2026-11-20',
+            signalType = 'rsi_oversold'
+        ) => ({
+            symbol,
+            koreanName: null,
+            signalType,
+            sessionDate,
+            changePercent: -2.5,
+        });
+
+        it('기록에 행이 있으면 스캐너를 부르지 않고 처음 잡힌 날을 담은 기록 행을 돌려준다', async () => {
+            listLatestSessionEpisodes.mockImplementation(
+                (_types: string[], market: string) =>
+                    Promise.resolve(
+                        market === 'kr'
+                            ? [episode('005930.KS', '2026-11-19')]
+                            : [episode('AAPL')]
+                    )
+            );
+            const groups = await loadGuideLiveSymbols(rsi, catalog);
+            expect(getSectorSignalsStatic).not.toHaveBeenCalled();
+            expect(groups?.map(g => [g.market, g.rows[0]])).toEqual([
+                [
+                    'us',
+                    expect.objectContaining({
+                        symbol: 'AAPL',
+                        basis: 'history',
+                        firstSeenSession: '2026-11-20',
+                    }),
+                ],
+                [
+                    'kr',
+                    expect.objectContaining({
+                        symbol: '005930.KS',
+                        firstSeenSession: '2026-11-19',
+                    }),
+                ],
+            ]);
+        });
+
+        it('시장별 읽기 인자 — 신호 유형·시장·시장당 상한×여유 배수', async () => {
+            getSectorSignalsStatic.mockResolvedValue(scan('AAPL'));
+            await loadGuideLiveSymbols(rsi, catalog);
+            expect(listLatestSessionEpisodes).toHaveBeenCalledWith(
+                ['rsi_oversold'],
+                'us',
+                15
+            );
+            expect(listLatestSessionEpisodes).toHaveBeenCalledWith(
+                ['rsi_oversold'],
+                'kr',
+                15
+            );
+        });
+
+        it('캐시는 신호 기록 태그와 가이드 태그를 달고 한 시간 창이며, 키에 시장과 신호 유형이 든다', async () => {
+            listLatestSessionEpisodes.mockResolvedValue([episode('AAPL')]);
+            await loadGuideLiveSymbols(rsi, catalog);
+            expect(unstableCache).toHaveBeenCalledWith(
+                expect.any(Function),
+                ['guide-live', 'history', 'v1', 'us', 'rsi_oversold'],
+                {
+                    revalidate: 3600,
+                    tags: ['signal-history', 'guide'],
+                }
+            );
+        });
+
+        it('기록 읽기가 던지면 그 시장은 스캐너로 대신하고 실패를 로그에 적는다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            listLatestSessionEpisodes.mockRejectedValue(new Error('db down'));
+            getSectorSignalsStatic.mockImplementation((scope: { id: string }) =>
+                Promise.resolve(scan(scope.id === 'kr' ? '005930.KS' : 'AAPL'))
+            );
+            const groups = await loadGuideLiveSymbols(rsi, catalog);
+            expect(getSectorSignalsStatic).toHaveBeenCalledTimes(2);
+            expect(groups?.map(g => defined(g.rows[0]).basis)).toEqual([
+                'scanner',
+                'scanner',
+            ]);
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringContaining('us history'),
+                expect.any(Error)
+            );
+            warn.mockRestore();
+        });
+
+        it('0064 표가 아직 없어(42P01) 던져도 스캐너로 대신한다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            listLatestSessionEpisodes.mockRejectedValue(
+                Object.assign(
+                    new Error('relation "signal_scan_sessions" does not exist'),
+                    { code: '42P01' }
+                )
+            );
+            getSectorSignalsStatic.mockResolvedValue(scan('AAPL'));
+            const groups = await loadGuideLiveSymbols(rsi, catalog);
+            expect(getSectorSignalsStatic).toHaveBeenCalled();
+            expect(groups?.[0]?.rows[0]).toMatchObject({
+                symbol: 'AAPL',
+                basis: 'scanner',
+            });
+            warn.mockRestore();
+        });
+
+        it('한 시장만 기록이 있으면 그 시장은 기록, 비어 있는 시장은 스캐너다', async () => {
+            listLatestSessionEpisodes.mockImplementation(
+                (_types: string[], market: string) =>
+                    Promise.resolve(market === 'us' ? [episode('AAPL')] : [])
+            );
+            getSectorSignalsStatic.mockResolvedValue(scan('005930.KS'));
+            const groups = await loadGuideLiveSymbols(rsi, catalog);
+            expect(getSectorSignalsStatic).toHaveBeenCalledTimes(1);
+            expect(
+                getSectorSignalsStatic.mock.calls.map(([scope]) => scope.id)
+            ).toEqual(['kr']);
+            expect(
+                groups?.map(g => [g.market, defined(g.rows[0]).basis])
+            ).toEqual([
+                ['us', 'history'],
+                ['kr', 'scanner'],
+            ]);
+        });
+
+        it('기록도 스캐너도 모두 실패하면 null', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            listLatestSessionEpisodes.mockRejectedValue(new Error('db down'));
+            getSectorSignalsStatic.mockRejectedValue(new Error('fmp down'));
+            await expect(
+                loadGuideLiveSymbols(rsi, catalog)
+            ).resolves.toBeNull();
+            warn.mockRestore();
+        });
+
+        it('오프라인 빌드는 기록도 읽지 않는다', async () => {
+            isOfflineBuild.mockReturnValue(true);
+            await expect(
+                loadGuideLiveSymbols(rsi, catalog)
+            ).resolves.toBeNull();
+            expect(listLatestSessionEpisodes).not.toHaveBeenCalled();
+        });
+
+        it('DB 부재 빌드의 revalidate 핀을 렌더 경로에서 부른다(굳지 않게)', async () => {
+            getSectorSignalsStatic.mockResolvedValue(scan('AAPL'));
+            await loadGuideLiveSymbols(rsi, catalog);
+            expect(shortenIfDbMissing).toHaveBeenCalledTimes(1);
+        });
+
+        it('오프라인 빌드는 핀도 부르지 않는다', async () => {
+            isOfflineBuild.mockReturnValue(true);
+            await loadGuideLiveSymbols(rsi, catalog);
+            expect(shortenIfDbMissing).not.toHaveBeenCalled();
+        });
+
+        it('기록 읽기가 실패해 스캐너로 대신한 렌더는 런타임 degrade 핀으로 낮추고, 정상 렌더는 낮추지 않는다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            getSectorSignalsStatic.mockResolvedValue(scan('AAPL'));
+            await loadGuideLiveSymbols(rsi, catalog);
+            expect(shortenForRuntimeDegrade).not.toHaveBeenCalled();
+
+            listLatestSessionEpisodes.mockRejectedValue(new Error('db down'));
+            await loadGuideLiveSymbols(rsi, catalog);
+            expect(shortenForRuntimeDegrade).toHaveBeenCalledTimes(1);
+            warn.mockRestore();
+        });
+
+        it('패턴 항목은 기록을 읽지 않는다', async () => {
+            listSymbolsWithDetectedPatterns.mockResolvedValue([]);
+            await loadGuideLiveSymbols(doubleBottom, catalog);
+            expect(listLatestSessionEpisodes).not.toHaveBeenCalled();
+        });
+    });
+
+    it('스냅샷 창은 조용한 종목의 주기(주 2회 앵커의 가장 긴 간격)에 하루를 더한 값이다', async () => {
+        listSymbolsWithDetectedPatterns.mockResolvedValue([]);
+        const now = Date.parse('2026-11-22T00:00:00.000Z');
+        vi.useFakeTimers({ now });
+        try {
+            await loadGuideLiveSymbols(doubleBottom, catalog);
+        } finally {
+            vi.useRealTimers();
+        }
+        const sinces = listSymbolsWithDetectedPatterns.mock.calls.map(
+            ([, options]) => options.since.getTime()
+        );
+        expect(new Set(sinces)).toEqual(
+            new Set([now - (TWICE_WEEKLY_MAX_GAP_MS + MS_PER_DAY)])
+        );
     });
 });

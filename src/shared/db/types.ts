@@ -15,6 +15,10 @@ import type {
     EmailReportConsentSource,
     MailAlertConsentSourceValue,
     MailAlertTopicKindValue,
+    PriceAlertApproachValue,
+    PriceAlertBasisValue,
+    PriceAlertMarketValue,
+    PriceAlertStatusValue,
 } from './constants';
 import type * as schema from './schema';
 
@@ -134,7 +138,15 @@ export interface UserRepository {
         input: CreateEmailUserInput
     ): Promise<AuthUserRecord | null>;
     deleteUser(userId: string): Promise<boolean>;
-    updatePassword(userId: string, passwordHash: string): Promise<boolean>;
+    /**
+     * 비밀번호 해시를 바꾸고 그 사용자의 세션을 **모두** 지운다(같은 트랜잭션). 반환값은 사용자 행이
+     * 바뀌었는지이며, 바뀐 행이 없으면 세션도 건드리지 않는다. 유출된 비밀번호로 만든 세션이
+     * 재설정 뒤에도 살아 있지 않게 한다.
+     */
+    resetPasswordRevokingSessions(
+        userId: string,
+        passwordHash: string
+    ): Promise<boolean>;
 }
 
 /** Interface for credential lookup required by email login. */
@@ -376,6 +388,42 @@ export interface EmailReportExclusionRepository {
     includeSymbol(userId: string, symbol: string): Promise<boolean>;
 }
 
+/** A welcome-report recipient claimed by the cron: the usual recipient fields plus the consent time. */
+export interface EmailReportWelcomeRecipient extends EmailReportRecipient {
+    consentedAt: Date;
+    /** 1 for the first try; grows by one on every retry. */
+    attempts: number;
+}
+
+/**
+ * Final state of a claimed welcome report. `retry` hands the row back without spending the attempt
+ * (the provider said an identical request is still in flight): it becomes `failed` with the attempt
+ * count restored, so the next run takes it again.
+ */
+export type EmailReportWelcomeOutcome = 'sent' | 'failed' | 'retry';
+
+/** Idempotency log for the first report sent to members who opted in at signup (one row per user). */
+export interface EmailReportWelcomeRepository {
+    /**
+     * Claims members due a first report: new eligible members are inserted, failed or stalled ones are
+     * taken again for a retry (bounded by attempts and the 24h window).
+     */
+    claimDue(now: Date): Promise<EmailReportWelcomeRecipient[]>;
+    /** Records the outcome. A row already `sent` is never overwritten by `failed` or `retry`. */
+    finish(
+        userId: string,
+        outcome: EmailReportWelcomeOutcome,
+        error: string | null
+    ): Promise<void>;
+    /**
+     * Users whose regular report must be skipped because of the first report: sent after `sentSince`, or
+     * still `sending` (updated after `inFlightSince`), e.g. claimed by a concurrent run.
+     */
+    findWelcomed(sentSince: Date, inFlightSince: Date): Promise<Set<string>>;
+    /** Deletes rows created before `cutoff`; returns the count. */
+    pruneOlderThan(cutoff: Date): Promise<number>;
+}
+
 /** Final state of a claimed delivery. */
 export type EmailReportDeliveryOutcome = 'sent' | 'failed' | 'skipped';
 
@@ -436,7 +484,7 @@ export type AddMailAlertTopicOutcome =
 export interface RemoveMailAlertTopicOutcome {
     /** The topic existed and was removed. */
     deleted: boolean;
-    /** Removing it left the subscriber with nothing to receive, so the row was deleted too. */
+    /** Removing it left the subscriber with nothing to receive (no topics, portfolio off, no live price alert), so the row was deleted too. */
     subscriberDeleted: boolean;
 }
 
@@ -506,7 +554,7 @@ export interface MailAlertSubscriberRepository {
         topic: MailAlertTopicRecord
     ): Promise<RemoveMailAlertTopicOutcome>;
     /**
-     * Turning it off with no topics left deletes the subscriber. `found` is false when the owner has no
+     * Turning it off with nothing else to receive (no topics, no live price alert) deletes the subscriber. `found` is false when the owner has no
      * row, and always for a guest or link owner (the portfolio is a member's own setting; nothing is
      * written).
      */
@@ -529,12 +577,138 @@ export interface MailAlertSubscriberRepository {
      * from it).
      */
     deleteForAccount(userId: string): Promise<number>;
-    /** Subscribers with at least one topic or the portfolio switch on. */
-    findAllForDelivery(): Promise<MailAlertDeliveryTarget[]>;
+    /**
+     * Subscribers with at least one topic, the portfolio switch on, or a live price alert. `alertDate`
+     * (the sender's KST date) sets the expiry clock; omitted, the DB's KST today.
+     */
+    findAllForDelivery(alertDate?: string): Promise<MailAlertDeliveryTarget[]>;
 }
 
 /** Final state of a claimed mail-alert delivery. */
 export type MailAlertDeliveryOutcome = 'sent' | 'failed';
+
+/**
+ * A price-alert condition as stored: the same three shapes core's `PriceLevelCondition` has, kept
+ * here so `shared/db` does not import core. Prices are JS numbers in this layer; the column is
+ * `numeric(20,6)`, so a value is exact to six decimals.
+ */
+export type PriceAlertConditionRecord =
+    | {
+          kind: 'enter_zone';
+          low: number;
+          high: number;
+          approach: PriceAlertApproachValue;
+      }
+    | { kind: 'close_below'; level: number }
+    | { kind: 'close_above'; level: number };
+
+/** A persisted price alert. */
+export interface PriceAlertRecord {
+    id: string;
+    subscriberId: string;
+    proposalId: string;
+    symbol: string;
+    market: PriceAlertMarketValue;
+    condition: PriceAlertConditionRecord;
+    basis: PriceAlertBasisValue;
+    /** `analyzedAt` of the AI analysis the levels came from; `null` for a price the user named. */
+    analysisAt: Date | null;
+    /** The price shown on the card when the alert was proposed. */
+    referenceClose: number;
+    /** KST `YYYY-MM-DD` of the last closed session at creation: only later closes count. */
+    startsAfterSession: string;
+    /** KST `YYYY-MM-DD`; the alert is still live on this date. */
+    expiresOn: string;
+    status: PriceAlertStatusValue;
+    firedSession: string | null;
+    firedClose: number | null;
+    firedAt: Date | null;
+    createdAt: Date;
+}
+
+/** What the create action hands over after verifying the signed proposal. */
+export interface CreatePriceAlertInput {
+    /** From the signed proposal: makes a repeated create of the same proposal idempotent. */
+    proposalId: string;
+    symbol: string;
+    market: PriceAlertMarketValue;
+    condition: PriceAlertConditionRecord;
+    basis: PriceAlertBasisValue;
+    analysisAt: Date | null;
+    referenceClose: number;
+    startsAfterSession: string;
+    expiresOn: string;
+}
+
+export type CreatePriceAlertOutcome =
+    | 'created'
+    /** The same proposal was already created (a retry or a double click). */
+    | 'exists'
+    /** A live alert with the same symbol, condition and levels already exists. */
+    | 'duplicate'
+    | 'limit_reached'
+    /** The owner has no subscriber row (unsubscribed between the caller's lookup and this call, or not theirs). */
+    | 'subscriber_missing'
+    /** A price is not a finite positive number, or a zone has low above high. Nothing was written. */
+    | 'invalid';
+
+export interface CancelPriceAlertOutcome {
+    /** The alert existed, was the owner's, and was removed. */
+    deleted: boolean;
+    /** Removing it left the subscriber with nothing to receive, so the row was deleted too. */
+    subscriberDeleted: boolean;
+}
+
+export interface PruneExpiredPriceAlertsResult {
+    alertsDeleted: number;
+    /** Subscribers that lost an alert in this run and were left with nothing to receive. */
+    subscribersDeleted: number;
+}
+
+/**
+ * Persistence operations for price alerts. Every user-reachable method takes a {@link MailAlertOwner}
+ * and resolves the subscriber inside the statement (DB-12): another owner's subscriber, or an alert id
+ * that is not theirs, matches nothing. `listActiveForDelivery` and `pruneExpiredAndFired` are
+ * cron-only and system-wide.
+ */
+export interface PriceAlertRepository {
+    /**
+     * Under a `FOR NO KEY UPDATE` lock on the owner's subscriber row: `invalid` for a non-finite or
+     * non-positive price, `exists` for a repeated proposal id, `duplicate` for a live alert with the
+     * same symbol, condition and levels, `limit_reached` when the live count is already `max`, else
+     * inserts. Safe under `withRetry`.
+     */
+    createWithinLimit(
+        owner: MailAlertOwner,
+        input: CreatePriceAlertInput,
+        max: number
+    ): Promise<CreatePriceAlertOutcome>;
+    /**
+     * Deletes the owner's own alert; deletes the subscriber too when nothing is left to receive (no
+     * topics, portfolio switch off, no live alert). Another owner's alert id is a no-op.
+     */
+    cancel(owner: MailAlertOwner, id: string): Promise<CancelPriceAlertOutcome>;
+    /** Every alert of the owner's subscriber (live, expired-unpruned and fired), oldest first. */
+    listForSubscriber(owner: MailAlertOwner): Promise<PriceAlertRecord[]>;
+    findByProposal(
+        owner: MailAlertOwner,
+        proposalId: string
+    ): Promise<PriceAlertRecord | null>;
+    /** Live alerts: `status = 'active'` and not past its KST expiry date. */
+    countActive(owner: MailAlertOwner): Promise<number>;
+    /** Active alerts with `expires_on >= alertDate`, grouped by subscriber, oldest first. */
+    listActiveForDelivery(
+        alertDate: string
+    ): Promise<Map<string, PriceAlertRecord[]>>;
+    /**
+     * Deletes active alerts with `expires_on < alertDate` and fired alerts fired more than
+     * `PRICE_ALERT_FIRED_RETENTION_DAYS` KST days before `alertDate`, then the subscribers that lost an
+     * alert here and have nothing left to receive (same rule as `removeTopic`).
+     */
+    pruneExpiredAndFired(
+        alertDate: string
+    ): Promise<PruneExpiredPriceAlertsResult>;
+}
 
 /**
  * Idempotency log for mail-alert deliveries (one row per subscriber per KST alert date). Cron-only:

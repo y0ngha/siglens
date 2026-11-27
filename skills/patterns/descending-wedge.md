@@ -18,6 +18,7 @@ gating:
   triggers: [descending_wedge]
 token_cost: 838
 digest_hash: "d715fd85"
+digest_text_hash: "aca615ad"
 ---
 
 ## Detection Criteria

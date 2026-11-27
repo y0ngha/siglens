@@ -10,7 +10,7 @@ import { test, expect } from '../support/fixtures';
  * `installLegacyBrowserPolyfills`가 앱 코드보다 먼저 채워 두므로 오류가 없어야 한다.
  * 운영 로그의 `[client-error] RootRoute … toSorted is not a function`이 이 형태였다.
  */
-// 폴리필(`legacyBrowserPolyfills.ts`)이 채우는 대상과 같게 둔다 — 단위 테스트의 TARGETS와도 같다.
+/** 폴리필(`legacyBrowserPolyfills.ts`)이 채우는 대상과 같게 둔다 — 단위 테스트의 TARGETS와도 같다. */
 const REMOVE_MODERN_METHODS = `
     for (const [target, name] of [
         [Array.prototype, 'toSorted'],
@@ -34,7 +34,7 @@ test.describe('legacy browser without ES2022/ES2023 built-ins', () => {
     });
 
     for (const { path, heading } of [
-        { path: '/', heading: /주식과 코인 분석 서비스/ },
+        { path: '/', heading: /주식과 코인의 가격대 지도/ },
         { path: '/AAPL', heading: /AAPL/ },
     ]) {
         test(`${path} renders and hydrates without missing-method errors`, async ({

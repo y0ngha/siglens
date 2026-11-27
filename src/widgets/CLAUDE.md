@@ -21,7 +21,3 @@ oxlint `no-restricted-imports`는 "자기 슬라이스가 아닌 `@/widgets/*`"�
   타입 정의 파일(`model.ts`/`types.ts`)에서 import한다.
 - 위젯 전용 순수 헬퍼는 그 위젯의 `utils/`에 두고, 세 번째 소비자가 생기면 `shared/lib`로 올린다(`src/shared/CLAUDE.md` 규칙 4).
   훅은 `hooks/`, 헬퍼는 `utils/`에 두며 UI 파일과 같은 디렉터리 레벨에 섞지 않는다.
-
-## import 규칙
-
-barrel(`index.ts`)은 금지다. 위젯 컴포넌트·훅·유틸은 정의 파일에서 직접 import한다(테스트·`vi.mock` 포함).

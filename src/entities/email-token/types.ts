@@ -11,11 +11,12 @@ export type EmailTokenPurpose =
 /**
  * Redis에 저장되는 email-token 값. `pending`은 토큰 발급 상태로, 검증 때 상수 시간 비교를 하도록
  * `tokenHash`만 저장한다. `verified`는 이메일 인증 플로우 전용 표식으로, 이후 가입 시 코드를 다시
- * 묻지 않고 소유 확인을 이어가게 한다.
+ * 묻지 않고 소유 확인을 이어가게 한다. `tokenHash`는 확인한 코드의 해시(다시 확인할 때 비교용),
+ * `bindingHash`는 인증한 브라우저에 심은 무작위 값(쿠키)의 해시로, 가입은 그 값을 가진 브라우저만 마칠 수 있다.
  */
 export type EmailTokenValue =
     | { status: 'pending'; tokenHash: string }
-    | { status: 'verified' };
+    | { status: 'verified'; tokenHash: string; bindingHash: string };
 
 /**
  * Redis 기반 email-token KV store. 키는 구현체가 (purpose, email)에서 파생한다.

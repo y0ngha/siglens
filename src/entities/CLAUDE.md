@@ -27,6 +27,8 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 | `entities/company-filings/server/getCompanyFilings.ts` | `entities/ticker/lib/resolveMarketProfile` | 심볼이 한국 주식·크립토인지(= SEC 제출자가 아닌지) 가르려면 자산 정보 조회가 필요하다. CIK 맵에 없다는 사실만으로는 "공시 없음"과 "조회 구멍"을 구분할 수 없어, 시장 프로필을 먼저 해석한다 — 읽기 전용 |
 | `entities/siglens-api-key/api.ts` | `entities/llm-provider/lib/retiredModelSuccessors` (`resolveRetiredModelId`) | 저장된 API 기본 모델(`users.api_default_model`)과 브라우저에 저장된 모델 선택이 퇴역 ID를 같은 후속 모델로 옮겨야 한다 — 매핑을 두 번 두지 않는다. 순수 데이터 import |
 | `entities/index-history/server/loadIndexMonthEnds.ts`, `entities/bars/server/loadDailyCloseHistory.ts` | `entities/market-fear-greed/lib/parseFmpEodRows` (`parseDailyCloseRows`) | FMP EOD 응답에서 쓸 수 있는 일별 종가만 추리는 규칙(`typeof` 검사로 `null` 종가 차단)을 두 번 두지 않는다 — 지수 장기 이력과 공포·탐욕 요인이 같은 파서를 쓴다. 순수 함수 import |
+| `entities/analysis` (`api.ts`의 `prewarmFundamental`·`prewarmOverall`, `server/overallAnalysisRunner.ts`, `actions/runFundamentalAnalysisAction.ts`) | `entities/kr-valuation/server/withKrValuation` | 한국 종목의 PER·PBR·EPS(미국 종목 분석은 한국 peer의 PER도)를 DART 기준 값으로 바꾼 provider(`withKrValuation`)를 분석 입력에 넘긴다. 탭·에이전트가 같은 기준을 읽어야 core의 inputHash와 화면·에이전트 숫자가 갈라지지 않는다 — server-only deep import |
+| `entities/kr-valuation/server/getKrValuationInputs.ts`, `entities/kr-valuation/server/loadKrLastClose.ts` | `entities/investor-flows/server/getKrDartCorp`, `entities/bars/server/barsDataCache`, `entities/bars/lib/quantizeBars` | DART 고유번호 매핑(우선주는 보통주 회사로)은 investor-flows가 소유·갱신하므로 두 번 만들지 않는다. PER·PBR 분자는 에이전트 `get_fundamentals`가 시총에 쓰는 것과 같은 일봉 캐시의 마지막 완료 종가라, 표면마다 종가가 갈리지 않는다 — server-only deep import, 읽기 전용 |
 
 entities 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않는다. 순환은 `src/__tests__/guards/importCycles.test.ts`가 막는다. 이 표는 사유가 비자명한 조합을 적은 것이지 허용 목록이 아니다.
 
@@ -83,8 +85,7 @@ export async function myAction() { ... }
 
 ## import 규칙 (barrel 금지)
 
-`index.ts` barrel은 금지다(`src/__tests__/guards/noBarrelFiles.test.ts`). 소비자는 심볼을 정의한 파일
-(`api.ts`, `lib/<file>.ts`, `hooks/<file>.ts`, `model.ts` 등)에서 직접 import한다(테스트·`vi.mock` 포함).
+barrel 금지는 루트 `CLAUDE.md`가 정한다.
 
 server-only 모듈(`import 'server-only'`, `next/headers`, drizzle/DB client, Node 전용 라이브러리 등)은
 서버 소비자(RSC, route handler, Server Action, 다른 server-only 모듈)만 import한다. client component의

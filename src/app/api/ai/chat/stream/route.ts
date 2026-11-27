@@ -31,10 +31,10 @@ import { normalizeBodyImages } from './_lib/normalizeBodyImages';
 import { parseBody } from './_lib/parseBody';
 import { guestTurn, prepareMemberTurn } from './_lib/prepareTurn';
 import {
+    acquireTurnSlot,
     getActiveAgentTurns,
-    hasFreeTurnSlot,
-    MAX_CONCURRENT_AGENT_TURNS,
-    reserveTurnSlot,
+    getQueuedAgentTurns,
+    MAX_ACTIVE_AGENT_TURNS,
 } from './_lib/turnSlots';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
@@ -48,6 +48,9 @@ const {
     HTTP_STATUS_TOO_MANY_REQUESTS,
     HTTP_STATUS_UNAUTHORIZED,
 } = constants;
+
+/** nginx 관례의 "클라이언트가 먼저 끊음" — 줄에서 기다리다 끊긴 요청에 돌려줄 응답은 없다. */
+const HTTP_STATUS_CLIENT_CLOSED = 499;
 
 export const dynamic = 'force-dynamic';
 
@@ -177,17 +180,31 @@ export async function POST(request: Request): Promise<Response> {
         }
     }
 
-    const streamSlotsFull = !canAcceptAnalysisStream();
-    if (streamSlotsFull || !hasFreeTurnSlot()) {
+    // 자리가 없으면 줄에서 짧게(15초, 8명) 기다린다. 줄이 차면 기다리지 않고 거절한다.
+    // 확인과 예약은 `acquireTurnSlot` 안에서 await 없이 이어진다. 슬롯은 게이트를 통과한 그 순간
+    // 잡힌다 — tier 해석과 사전 DB 호출 뒤가 아니다(그 사이에 몰린 요청이 모두 같은 카운트를
+    // 읽고 통과해 정원을 넘기던 경합). 여기서부터 모든 종료 경로(락 충돌, 검증 오류, 저장소
+    // 예외, 턴 자체)는 슬롯을 정확히 한 번 반납해야 한다 — 락을 잡기 전은 `slot.release`,
+    // 잡은 뒤는 `releaseOnce`.
+    const acquired = await acquireTurnSlot({
+        signal: request.signal,
+        canAcceptStream: canAcceptAnalysisStream,
+    });
+    if (!acquired.ok) {
+        const { reason: refusal, blockedBy, waitedMs } = acquired;
+        // 줄에서 기다리다 클라이언트가 끊었다 — 응답을 받을 사람이 없다.
+        if (refusal === 'aborted')
+            return new Response(null, { status: HTTP_STATUS_CLIENT_CLOSED });
         // Capacity refusal — alarmed (`siglens-agent-busy`). The per-user turn
         // lock's 409 below is NOT logged here: that is one person double-sending,
         // not the instance running out of room.
         console.warn(AGENT_BUSY_LOG, {
-            reason: streamSlotsFull
-                ? 'analysis_stream_slots'
-                : 'agent_turn_slots',
+            reason: refusal,
+            blockedBy,
             activeAgentTurns: getActiveAgentTurns(),
-            cap: MAX_CONCURRENT_AGENT_TURNS,
+            cap: MAX_ACTIVE_AGENT_TURNS,
+            queued: getQueuedAgentTurns(),
+            waitedMs,
         });
         return json(
             HTTP_STATUS_SERVICE_UNAVAILABLE,
@@ -195,14 +212,8 @@ export async function POST(request: Request): Promise<Response> {
             { 'Retry-After': '30' }
         );
     }
-
-    // Reserve a slot the instant the gate passes — not after tier resolution and every
-    // pre-turn DB call, which was late enough that many requests arriving in that window
-    // all read the same pre-increment count and all proceed, letting an instance exceed
-    // `MAX_CONCURRENT_AGENT_TURNS`. Every exit path from here on (lock busy, validation
-    // errors, repository throw, or the turn itself) must release this slot exactly once —
-    // `releaseSlot` below, and `releaseOnce` after the lock exists.
-    const releaseSlot = reserveTurnSlot();
+    const { slot, waitedMs: queuedMs } = acquired;
+    const releaseSlot = slot.release;
 
     // Taken before any DB call (turnLock.ts doc) — the 720s TTL already
     // covers the deadline + pre-turn reads, and holding it any earlier
@@ -253,6 +264,8 @@ export async function POST(request: Request): Promise<Response> {
             locale,
             timeZone: request.headers.get(AGENT_TIME_ZONE_HEADER) ?? undefined,
             release: releaseOnce,
+            slot,
+            queuedMs,
         });
         return new Response(stream, { headers: SSE_HEADERS });
     } catch (error) {

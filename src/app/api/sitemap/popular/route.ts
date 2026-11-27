@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import { loadPopularChildEntries } from '@/app/api/sitemap/_shared/childEntries';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
-import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 
 // 슬라이딩 lastmod 때문에 빌드 시점 prerender 불가. force-dynamic + CDN 1h
 // max-age로 처리.

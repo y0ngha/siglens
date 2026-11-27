@@ -170,7 +170,9 @@ describe('SignalHubBody', () => {
         expect(definition).toContain(
             '최근 3거래일 안에 50일 이동평균선이 200일'
         );
-        expect(definition).toContain('20일선과 50일선의 교차는 단기 이평');
+        expect(definition).toContain(
+            '20일선과 50일선의 교차는 단기 이동평균선'
+        );
     });
 
     it('데드크로스 페이지는 위에서 아래로 내려간 종목이라는 정의를 붙인다', async () => {

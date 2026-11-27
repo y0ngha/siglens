@@ -17,21 +17,17 @@ vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
     AuthCardShell: ({
         title,
         subtitle,
-        subtitleClassName,
         children,
         footer,
     }: {
         title: string;
         subtitle: string;
-        subtitleClassName?: string;
         children: React.ReactNode;
         footer?: React.ReactNode;
     }) => (
         <div>
             <h1>{title}</h1>
-            <p data-testid="subtitle" className={subtitleClassName}>
-                {subtitle}
-            </p>
+            <p data-testid="subtitle">{subtitle}</p>
             {children}
             {footer}
         </div>
@@ -85,11 +81,6 @@ describe('SignupPage render', () => {
             )
         ).toBeInTheDocument();
         expect(screen.queryByText('이메일로 시작하기')).not.toBeInTheDocument();
-    });
-
-    it('subtitle wraps anywhere so ja/zh text cannot overflow narrow screens', async () => {
-        render(await SignupPage({ params: Promise.resolve({ locale: 'ko' }) }));
-        expect(screen.getByTestId('subtitle')).toHaveClass('wrap-anywhere');
     });
 
     it('renders the member benefits outside the Suspense boundary', async () => {

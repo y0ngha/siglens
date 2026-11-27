@@ -5,7 +5,11 @@ import type {
     EmailTokenPurpose,
     EmailTokenValue,
 } from '@/entities/email-token/types';
+import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
+
+/** 인증한 브라우저가 쿠키로 들고 있는 바인딩 값. 마커에는 이 값의 해시만 있다. */
+const BINDING = 'binding-nonce-of-the-verifying-browser';
 
 const createdAt = new Date('2026-04-26T00:00:00.000Z');
 const updatedAt = new Date('2026-04-26T00:00:01.000Z');
@@ -51,7 +55,11 @@ function makeDependencies(options?: {
     const verificationState =
         options && 'verificationState' in options
             ? (options.verificationState ?? null)
-            : ({ status: 'verified' } satisfies EmailTokenValue);
+            : ({
+                  status: 'verified',
+                  tokenHash: hashEmailToken(BINDING),
+                  bindingHash: hashEmailToken(BINDING),
+              } satisfies EmailTokenValue);
     const getToken = vi
         .fn<
             (
@@ -70,7 +78,7 @@ function makeDependencies(options?: {
                 findById: vi.fn(),
                 createEmailUser,
                 deleteUser,
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             agreements: { insertMany },
             passwordHasher: { hashPassword },
@@ -95,6 +103,7 @@ const DEFAULT_INPUT = {
     email: 'user@example.com',
     password: 'Password1',
     agreedTermsIds: ['terms-privacy-id', 'terms-tos-id'],
+    verificationBinding: BINDING,
 } as const;
 
 describe('registerUser', () => {
@@ -170,6 +179,63 @@ describe('registerUser', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_not_verified');
+    });
+
+    it('rejects a legacy-shaped verified marker without a binding hash', async () => {
+        // parseEmailTokenValue가 이런 값을 null로 돌려주므로 실제로는 "마커 없음"과 같다. 여기서는
+        // 방어적으로, 해시가 비어 있는 마커도 어떤 바인딩과도 맞지 않음을 고정한다.
+        const { dependencies, findByEmail, createEmailUser } = makeDependencies(
+            {
+                verificationState: {
+                    status: 'verified',
+                    tokenHash: hashEmailToken('123456'),
+                    bindingHash: '',
+                },
+            }
+        );
+
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe('email_not_verified');
+        expect(findByEmail).not.toHaveBeenCalled();
+        expect(createEmailUser).not.toHaveBeenCalled();
+    });
+
+    it('rejects a sign-up without the binding cookie (another browser) before any lookup', async () => {
+        const { dependencies, findByEmail, createEmailUser, deleteToken } =
+            makeDependencies();
+
+        const result = await registerUser(
+            { ...DEFAULT_INPUT, verificationBinding: null },
+            dependencies
+        );
+
+        expect(result).toEqual({
+            ok: false,
+            error: expect.objectContaining({ code: 'email_not_verified' }),
+        });
+        expect(findByEmail).not.toHaveBeenCalled();
+        expect(createEmailUser).not.toHaveBeenCalled();
+        expect(deleteToken).not.toHaveBeenCalled();
+    });
+
+    it('rejects a binding that does not match the marker hash with the same error', async () => {
+        const { dependencies, findByEmail, createEmailUser, deleteToken } =
+            makeDependencies();
+
+        const result = await registerUser(
+            { ...DEFAULT_INPUT, verificationBinding: 'someone-elses-nonce' },
+            dependencies
+        );
+
+        expect(result).toEqual({
+            ok: false,
+            error: expect.objectContaining({ code: 'email_not_verified' }),
+        });
+        expect(findByEmail).not.toHaveBeenCalled();
+        expect(createEmailUser).not.toHaveBeenCalled();
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
     it('rejects when the email is already registered', async () => {

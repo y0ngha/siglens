@@ -19,6 +19,11 @@ import type { OfferingRecord } from '../model';
 import { getInvestorFlowsDataProvider } from './getInvestorFlowsDataProvider';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
+/**
+ * 헤더 증자·희석 배지 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const DILUTION_BADGE_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
+
 export interface RecentDilutionEventDeps {
     /** `sinceDate` 이후 증자 공시(최신순 `limit`건). */
     readOfferings(
@@ -87,7 +92,7 @@ export function getRecentDilutionEventStatic(
         upper,
         () => loadRecentDilutionEvent(upper, realDeps),
         [investorFlowsTag(upper)],
-        SECONDS_PER_HALF_DAY
+        DILUTION_BADGE_REVALIDATE_SECONDS
     );
 }
 

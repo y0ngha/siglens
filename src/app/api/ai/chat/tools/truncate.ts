@@ -45,6 +45,10 @@ export const BARS_RESULT_MAX_CHARS = 6_500;
  * result carries at most one of the two; the test only asserts
  * `< TOOL_RESULT_MAX_CHARS`),
  * `get_congress_trades` ~2,500.
+ *
+ * 한국 종목의 `valuation`은 DART 기준 블록(`epsTtm`·`bps`·`basis`·`nullReason`, 최대 ≈660자 — `basis.note`가 ≈350자)을
+ * 더 싣는다. 모든 섹션 + 5분기 + 8 반응 + 확정 배당을 채운 한국 최악 케이스가 3,541자(2026-11-22)라 4,000 안이다
+ * (`getFundamentals.test.ts`가 `< TOOL_RESULT_MAX_CHARS`로 고정한다).
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 

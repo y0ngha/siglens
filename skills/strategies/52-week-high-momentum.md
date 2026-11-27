@@ -11,6 +11,7 @@ gating:
   triggers: [new_52w_high, new_52w_low]
 token_cost: 476
 digest_hash: "15f53ec7"
+digest_text_hash: "b583c6e2"
 ---
 
 ## Overview

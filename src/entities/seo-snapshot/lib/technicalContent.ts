@@ -41,6 +41,17 @@ interface NarrowedTechnicalContent {
     trend: Trend | null;
     patternSummaries: NarrowedSkillDetection[];
     strategyResults: NarrowedSkillDetection[];
+    /**
+     * 분석이 만들어진 시각(분석 내용 안의 `analyzedAt`). 행의 `generatedAt`은 하베스트가 행을 다시 쓴 시각일 수
+     * 있어 분석 시각이 아니다. 내용에 없거나 읽을 수 없으면 `null`.
+     */
+    analyzedAt: Date | null;
+}
+
+function narrowAnalyzedAt(value: unknown): Date | null {
+    if (typeof value !== 'string') return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /**
@@ -89,7 +100,13 @@ export function narrowTechnicalContent(
     }
 
     const trend = isTrend(record.trend) ? record.trend : null;
-    return { summary, trend, patternSummaries, strategyResults };
+    return {
+        summary,
+        trend,
+        patternSummaries,
+        strategyResults,
+        analyzedAt: narrowAnalyzedAt(record.analyzedAt),
+    };
 }
 
 /**

@@ -276,6 +276,17 @@ const nextConfig: NextConfig = {
                 },
             ],
         },
+        // OpenTimestamps 증명(`.ots`)은 확장자 때문에 OpenDocument 템플릿 MIME으로 나간다.
+        // 벤치마크 공개 파일(바이트 동결)이라 응답 헤더만 바로잡는다.
+        {
+            source: '/benchmark/:path*.ots',
+            headers: [
+                {
+                    key: 'Content-Type',
+                    value: 'application/octet-stream',
+                },
+            ],
+        },
         // 배포가 HTML만 골라 퍼지하도록 응답마다 Cloudflare `Cache-Tag`를 단다. 규칙 순서가
         // 의미이므로(뒤가 이긴다) 펼친 그대로 둔다 — `src/shared/config/cdnCacheTags.ts` 참고.
         ...CDN_CACHE_TAG_HEADER_RULES,

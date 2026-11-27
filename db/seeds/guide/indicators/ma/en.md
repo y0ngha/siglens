@@ -9,7 +9,7 @@ faq:
   - q: "What are a golden cross and a death cross?"
     a: "A golden cross is when a short moving average crosses above a long one; a death cross is when it crosses below. Both confirm a trend change that has already started, so they are not a way to predict what comes next."
   - q: "Which moving average periods are most common?"
-    a: "The 5, 20, 60, 120 and 200-day averages. SIGLENS calculates all five, and also uses the 50-day line for golden cross, short-term MA cross and support/resistance detection."
+    a: "The 5, 20, 60, 120 and 200-day averages. SIGLENS calculates all five, and also uses the 50-day line for golden cross, short-term moving average cross and support/resistance detection."
   - q: "Can I trust golden crosses on minute or hourly charts?"
     a: "They are fairly reliable on daily charts and above. On minute and hourly charts, false signals are common."
 ---

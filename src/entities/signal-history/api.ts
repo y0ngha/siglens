@@ -33,10 +33,9 @@ import type {
     ScanFailureOutcome,
     ScanProgressPruneResult,
     ScanSessionRow,
-    SignalEpisodeInsert,
     SignalEpisodeRow,
-    SignalEpisodeKey,
     SignalEpisodeStartedRow,
+    SignalLatestEpisodeRow,
     SignalHistoryMarket,
     SignalHubCount,
     SignalHubSymbolCounts,
@@ -51,27 +50,6 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 export const SIGNAL_HISTORY_CACHE_TAG = 'signal-history';
 
 export interface SignalHistoryRepository {
-    /**
-     * `market`에서 `symbols`의 에피소드 중 마지막 포착 세션이 `sinceSession` 이상인 것 — 직전 세션
-     * 이후로 이어진(아직 끊기지 않은) 에피소드의 (종목, 신호).
-     */
-    openEpisodeKeys(
-        market: SignalHistoryMarket,
-        symbols: readonly string[],
-        sinceSession: string
-    ): Promise<SignalEpisodeKey[]>;
-    /** 새 에피소드를 연다(같은 키·같은 첫 세션은 무시). 넣은 행 수를 돌려준다. */
-    insertEpisodes(rows: readonly SignalEpisodeInsert[]): Promise<number>;
-    /**
-     * 이어진 에피소드의 마지막 포착 세션을 `sessionDate`로 늘린다. `sinceSession` 이전에 끊긴 에피소드는
-     * 건드리지 않는다. 늘린 행 수를 돌려준다.
-     */
-    extendEpisodes(
-        market: SignalHistoryMarket,
-        keys: readonly SignalEpisodeKey[],
-        sessionDate: string,
-        sinceSession: string
-    ): Promise<number>;
     /** 마지막 포착 세션이 `cutoffDate`보다 이른 에피소드를 지운다. 지운 행 수를 돌려준다. */
     pruneOlderThan(cutoffDate: string): Promise<number>;
     /**
@@ -83,8 +61,10 @@ export interface SignalHistoryRepository {
         sinceSession: string
     ): Promise<SignalHubCount[]>;
     /**
-     * `market`에서 기록된 가장 최근 마지막 포착 세션(`YYYY-MM-DD`). 기록이 하나도 없으면 `null`.
+     * `market`에서 **끝까지** 기록된 가장 최근 세션(`YYYY-MM-DD`) — `signal_scan_sessions`에서 모든 대상이
+     * 정리된(`completed_at`) 세션. 하나도 없으면 `null`.
      * 알림 발송기가 "그 세션이 이미 기록됐는가"를 가리는 영속 표식이다(Redis 표식은 사라질 수 있다).
+     * 종목이 나뉘어 기록되는 날 첫 종목만 끝나도 참이 되는 `max(last_seen_session)`을 쓰지 않는다.
      */
     latestRecordedSession(market: SignalHistoryMarket): Promise<string | null>;
     /**
@@ -106,6 +86,25 @@ export interface SignalHistoryRepository {
         sinceSession: string,
         perMarketLimit: number
     ): Promise<SignalEpisodeRow[]>;
+    /**
+     * `market`의 가장 최근 **완료된** 세션 D(`signal_scan_sessions.completed_at`이 채워진 가장 늦은 세션)까지
+     * 시작돼 D 이후에도 이어진(`last_seen_session >= D`) 에피소드 중 `signalTypes`에 드는 것 — 처음 포착된 세션이 최신인 순, 같은 날이면 등락률 크기순,
+     * 최대 `limit`개. 완료된 세션이 없으면 빈 목록(표가 아직 없는 환경은 `42P01`을 던진다 — 호출부가
+     * 대신할 데이터원으로 넘어간다). 가이드 라이브 블록이 읽는다.
+     *
+     * 비용: 기본키 `(market, session_date, symbol, signal_type)`의 `session_date <= D` 범위를 **거꾸로** 훑으며
+     * `last_seen_session >= D`를 행 필터로 거르고, 정렬 첫 키가 `session_date desc`라 `limit`개를 채우면 멈춘다.
+     * 2026-11-22 로컬 EXPLAIN ANALYZE(미국 12만 행 합성, 신호 한 종류): 정렬 없는 인덱스 역방향 스캔 312행,
+     * 0.4ms. 최악은 최근 첫 포착 행 중 이어진 것이 적어 더 먼 과거까지 훑는 경우인데, 에피소드가 끊기지 않고
+     * 오래 이어지는 상태 신호(52주 신고가 등)도 `limit`이 작아 수천 행 안에서 끝나고 결과는 1시간 캐시된다.
+     * 그래서 지금은 인덱스를 더하지 않는다. 표가 수백만 행으로 커져 이 스캔이 눈에 띄게 느려지면
+     * `(market, last_seen_session)` 인덱스를 추가한다(마이그레이션은 그때).
+     */
+    listLatestSessionEpisodes(
+        signalTypes: readonly string[],
+        market: SignalHistoryMarket,
+        limit: number
+    ): Promise<SignalLatestEpisodeRow[]>;
     /**
      * `signalType`이 `sinceSession` 이후 첫 포착된 서로 다른 종목 수 — 시장별. 페이지 색인 판정과 사이트맵
      * 집계(`recentCountsByType`)가 같은 수를 보게, 목록 상한과 무관하게 전체를 센다.
@@ -278,93 +277,15 @@ function lastSeenUpdateStatement(
 }
 
 /**
- * `signal_events`(신호 에피소드) 저장소. 기록은 `seo-prewarm` 크론의 `recordSignalHistory`가 세션당 한 번
- * 쓴다 — 이어진 에피소드를 찾고(`openEpisodeKeys`), 새로 열거나(`insertEpisodes`) 늘린다(`extendEpisodes`).
- * 모든 쓰기는 같은 날 재실행에 멱등이다. 일시적 DB 오류는 `withRetry`로 재시도한다.
+ * `signal_events`(신호 에피소드)와 기록 진행 표식(`signal_scan_cursors`·`signal_scan_sessions`) 저장소.
+ * 기록은 `seo-prewarm` 크론의 `recordSignalHistory`가 종목마다 `applySymbolScan` 한 번(한 트랜잭션)으로 쓴다.
+ * 쓰기는 같은 입력의 재실행에 멱등이다(삽입은 충돌 무시, 마지막 포착 세션은 늘리기만 한다). 일시적 DB 오류는
+ * `withRetry`로 재시도한다. 읽기(신호 페이지·사이트맵·알림 메일)도 여기서 한다.
  */
 export class DrizzleSignalHistoryRepository
     implements SignalHistoryRepository, SignalScanProgressRepository
 {
     constructor(private readonly db: SiglensDatabase) {}
-
-    async openEpisodeKeys(
-        market: SignalHistoryMarket,
-        symbols: readonly string[],
-        sinceSession: string
-    ): Promise<SignalEpisodeKey[]> {
-        if (symbols.length === 0) return [];
-        return withRetry(
-            () =>
-                this.db
-                    .selectDistinct({
-                        symbol: signalEvents.symbol,
-                        signalType: signalEvents.signalType,
-                    })
-                    .from(signalEvents)
-                    .where(
-                        and(
-                            eq(signalEvents.market, market),
-                            inArray(signalEvents.symbol, [...symbols]),
-                            gte(signalEvents.lastSeenSession, sinceSession)
-                        )
-                    ),
-            DB_TRANSIENT_RETRY
-        );
-    }
-
-    async insertEpisodes(
-        rows: readonly SignalEpisodeInsert[]
-    ): Promise<number> {
-        if (rows.length === 0) return 0;
-        const inserted = await withRetry(
-            () =>
-                this.db
-                    .insert(signalEvents)
-                    .values(
-                        rows.map(row => ({
-                            ...row,
-                            lastSeenSession: row.sessionDate,
-                            computedAt: new Date(row.computedAt),
-                        }))
-                    )
-                    .onConflictDoNothing()
-                    .returning({ symbol: signalEvents.symbol }),
-            DB_TRANSIENT_RETRY
-        );
-        return inserted.length;
-    }
-
-    async extendEpisodes(
-        market: SignalHistoryMarket,
-        keys: readonly SignalEpisodeKey[],
-        sessionDate: string,
-        sinceSession: string
-    ): Promise<number> {
-        if (keys.length === 0) return 0;
-        // (종목, 신호) 쌍 그대로 고른다. 종목 목록 × 신호 목록으로 따로 거르면, 오늘 A에는 X만,
-        // B에는 Y만 잡혔을 때 이어진 A-Y 에피소드까지 늘어난다.
-        const pairs = sql.join(
-            keys.map(key => sql`(${key.symbol}, ${key.signalType})`),
-            sql`, `
-        );
-        const updated = await withRetry(
-            () =>
-                this.db
-                    .update(signalEvents)
-                    .set({ lastSeenSession: sessionDate })
-                    .where(
-                        and(
-                            eq(signalEvents.market, market),
-                            gte(signalEvents.lastSeenSession, sinceSession),
-                            lt(signalEvents.lastSeenSession, sessionDate),
-                            sql`(${signalEvents.symbol}, ${signalEvents.signalType}) in (${pairs})`
-                        )
-                    )
-                    .returning({ symbol: signalEvents.symbol }),
-            DB_TRANSIENT_RETRY
-        );
-        return updated.length;
-    }
 
     async recentCountsByType(
         signalTypes: readonly string[],
@@ -394,19 +315,7 @@ export class DrizzleSignalHistoryRepository
     async latestRecordedSession(
         market: SignalHistoryMarket
     ): Promise<string | null> {
-        const [row] = await withRetry(
-            () =>
-                this.db
-                    .select({
-                        latest: sql<
-                            string | null
-                        >`max(${signalEvents.lastSeenSession})::text`,
-                    })
-                    .from(signalEvents)
-                    .where(eq(signalEvents.market, market)),
-            DB_TRANSIENT_RETRY
-        );
-        return row?.latest ?? null;
+        return this.latestCompletedSession(market);
     }
 
     async findEpisodesStartedOn(
@@ -505,6 +414,55 @@ export class DrizzleSignalHistoryRepository
             row.market === 'us' || row.market === 'kr'
                 ? [{ ...row, market: row.market }]
                 : []
+        );
+    }
+
+    async listLatestSessionEpisodes(
+        signalTypes: readonly string[],
+        market: SignalHistoryMarket,
+        limit: number
+    ): Promise<SignalLatestEpisodeRow[]> {
+        if (signalTypes.length === 0 || limit <= 0) return [];
+        const latestCompleted = sql`(
+            SELECT max(${signalScanSessions.sessionDate})
+            FROM ${signalScanSessions}
+            WHERE ${signalScanSessions.market} = ${market}
+              AND ${signalScanSessions.completedAt} IS NOT NULL
+        )`;
+        return withRetry(
+            () =>
+                this.db
+                    .select({
+                        symbol: signalEvents.symbol,
+                        koreanName: signalEvents.koreanName,
+                        signalType: signalEvents.signalType,
+                        sessionDate: signalEvents.sessionDate,
+                        changePercent: signalEvents.changePercent,
+                    })
+                    .from(signalEvents)
+                    .where(
+                        and(
+                            eq(signalEvents.market, market),
+                            inArray(signalEvents.signalType, [...signalTypes]),
+                            // 가장 최근 완료 세션 D 기준으로, D까지 시작됐고(`session_date <= D`) D 이후에도
+                            // 이어진(`last_seen_session >= D`) 에피소드. `>=`인 이유: 다음 세션 D+1을 여러
+                            // 실행에 나눠 기록하는 동안 이미 늘어난 에피소드(last_seen = D+1)와 아직 못 만난
+                            // 에피소드(last_seen = D)가 모두 보여야 한다 — `=`로 두면 D+1이 일부만 기록된
+                            // 동안 이어진 에피소드가 목록에서 사라진다. `session_date <= D`는 D+1에 새로
+                            // 열린(미완료 세션의) 행이 먼저 나오지 않게 한다. D의 서브쿼리가 null(완료 세션
+                            // 없음)이면 두 비교가 모두 거짓이라 빈 목록이다.
+                            sql`${signalEvents.lastSeenSession} >= ${latestCompleted}`,
+                            sql`${signalEvents.sessionDate} <= ${latestCompleted}`
+                        )
+                    )
+                    .orderBy(
+                        desc(signalEvents.sessionDate),
+                        desc(sql`abs(${signalEvents.changePercent})`),
+                        signalEvents.symbol,
+                        signalEvents.signalType
+                    )
+                    .limit(limit),
+            DB_TRANSIENT_RETRY
         );
     }
 

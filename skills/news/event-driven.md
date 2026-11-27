@@ -8,6 +8,7 @@ gating:
   tier: always_on
 token_cost: 267
 digest_hash: "250238fb"
+digest_text_hash: "42ea5430"
 ---
 
 # 이벤트 드리븐 분석 프레임

@@ -21,8 +21,12 @@ describe('SignalBadge', () => {
     it('renders the short-term MA cross labels', () => {
         render(<SignalBadge type="short_ma_bullish_cross" />);
         render(<SignalBadge type="short_ma_bearish_cross" />);
-        expect(screen.getByText('단기 이평 상승 교차')).toBeInTheDocument();
-        expect(screen.getByText('단기 이평 하락 교차')).toBeInTheDocument();
+        expect(
+            screen.getByText('단기 이동평균선 상승 교차')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('단기 이동평균선 하락 교차')
+        ).toBeInTheDocument();
     });
 
     it('renders MACD bullish cross label', () => {

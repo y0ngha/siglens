@@ -49,6 +49,26 @@ describe('MailAlertCard', () => {
         ).toBeInTheDocument();
     });
 
+    it('showMarketInLine이면 공포 탐욕 문구에 시장 이름이 든다', () => {
+        render(<MailAlertCard target={FEAR_GREED} showMarketInLine />);
+
+        expect(
+            screen.getByText(
+                '한국 공포 탐욕 지수가 극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('showMarketInLine은 신호 허브 카드의 문구를 바꾸지 않는다', () => {
+        render(<MailAlertCard target={HUB} showMarketInLine />);
+
+        expect(
+            screen.getByText(
+                '새로 잡힌 골든크로스 종목을 아침에 메일로 받아 보세요'
+            )
+        ).toBeInTheDocument();
+    });
+
     it('신호별 종목 화면: 신호 이름이 든 문구', () => {
         render(<MailAlertCard target={HUB} />);
 

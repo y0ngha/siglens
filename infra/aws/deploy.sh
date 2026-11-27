@@ -67,10 +67,11 @@ log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 
 # Start an instance refresh with:
 #   MinHealthyPercentage 100  — capacity must never drop below 100 % of desired during the
-#                               refresh. With desired=2, at least two healthy instances must
-#                               remain available before any old instance is drained.
+#                               refresh. 06-asg.sh runs desired=1, so the one old instance is
+#                               only drained after its replacement is InService (the group
+#                               must therefore surge above desired; see MaxHealthyPercentage).
 #   MaxHealthyPercentage 200  — allows the ASG to temporarily exceed desired capacity by 1
-#                               batch (desired=2 → max running=4) so replacements are launched
+#                               batch (desired=1 → 2 running during the roll) so replacements are launched
 #                               and clear the launch lifecycle hook BEFORE old instances are
 #                               drained. This avoids the zero-serving-replica gap that causes
 #                               whole-site 502s. ASG max-size=4, so the surge is within limits.
@@ -112,7 +113,8 @@ log "instance refresh started for $TAG (refresh-id: $REFRESH_ID)"
 
 # Poll until the refresh reaches a terminal state.
 # 상한 산정(Fix 3): 새 인스턴스 warmup(InstanceWarmup=300s) + deregistration(185s) +
-# docker stop -t 185s = 최대 ~670s/인스턴스. desired=2일 때 ~1350s < 1800s(90×20s).
+# docker stop -t 185s = 최대 ~670s/인스턴스. 06이 desired=1이라 인스턴스 한 대만 굴러 ~670s < 1800s(90×20s).
+# (desired를 N으로 수동 증설해 두고 배포하면 N × ~670s가 된다. N≥3이면 상한을 넘을 수 있어 REFRESH_MAX_ITERATIONS로 늘린다.)
 # Fix 3 이전(deregistration 30s + stop 30s)에는 최대 ~360s/인스턴스으로 1200s 안에
 # 충분했지만 drain 예산이 늘어 여유를 30분으로 확장한다.
 # Max ~30 minutes (90 iterations × 20 s = 1800 s).
@@ -151,7 +153,8 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
             ;;
         RollbackSuccessful)
             log "instance refresh rolled back to previous image — new image ($TAG) failed health checks. StatusReason: $REASON"
-            # AutoRollback을 켜지 않아 지금은 닿지 않는다. 켜면 ASG가 인스턴스는 되돌려도 템플릿
+            # start-instance-refresh preferences에 AutoRollback을 넣지 않으므로 ASG는 스스로 롤백하지 않는다
+            # (실패한 refresh는 Failed로 끝나고 옛 인스턴스가 남을 뿐이다). 그래서 지금은 닿지 않는다. 켜면 ASG가 인스턴스는 되돌려도 템플릿
             # `$Latest`는 이 태그에 남으므로 다른 종료 상태와 같이 템플릿도 되돌린다.
             revert_launch_template
             exit 1
