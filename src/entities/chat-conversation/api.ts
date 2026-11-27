@@ -5,8 +5,13 @@ import {
     desc,
     eq,
     getTableColumns,
+    gt,
     gte,
+    like,
+    lt,
     max,
+    not,
+    or,
     sql,
     type SQL,
 } from 'drizzle-orm';
@@ -20,6 +25,10 @@ import {
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import {
+    WEB_SEARCH_BODIES_OMITTED_KEY,
+    WEB_SEARCH_RETENTION_DAYS,
+} from '@/shared/api/web/webSearchResult';
 import type { NormalizedChatImage } from './server/normalizeChatImage';
 import {
     CONVERSATION_LIST_LIMIT,
@@ -539,5 +548,89 @@ export class DrizzleChatConversationRepository {
                 updatedAt: new Date(),
             })
             .where(eq(chatConversations.id, conversationId));
+    }
+
+    /**
+     * 보존 기간 작업용(소유자 범위가 아니다 — 시스템 작업이라 사용자와 무관하게 읽는다). 생성 시각이 DB 시계 기준
+     * 보존 일수(`WEB_SEARCH_RETENTION_DAYS`)보다 이른(`now() - make_interval`, DB-7) `web_search` 도구 행 중 **아직 줄이지 않은** 행을 `id` 순서로 `afterId` 다음부터 `limit`개 돌려준다.
+     * "줄이지 않았다"는 표식(`"bodiesOmitted":true`)이 없는 결과 모양(`"results":[` 또는 잘림 봉투의 `"preview":`)이다 —
+     * 오류 결과는 어느 쪽에도 맞지 않아 매일 다시 읽히지 않는다. 직렬화에 공백이 없어 부분 문자열로 찾는다. `id` 키셋
+     * 페이지네이션이라 줄일 수 없었던 행이 있어도 한 번의 실행 안에서는 다시 읽지 않는다.
+     */
+    async listUnstrippedWebSearchRows(
+        afterId: string | null,
+        limit: number
+    ): Promise<Array<{ id: string; content: string }>> {
+        return withRetry(
+            () =>
+                this.db
+                    .select({
+                        id: chatMessages.id,
+                        content: chatMessages.content,
+                    })
+                    .from(chatMessages)
+                    .where(
+                        and(
+                            eq(chatMessages.toolName, 'web_search'),
+                            lt(
+                                chatMessages.createdAt,
+                                sql`now() - make_interval(days => ${WEB_SEARCH_RETENTION_DAYS})`
+                            ),
+                            not(
+                                like(
+                                    chatMessages.content,
+                                    `%"${WEB_SEARCH_BODIES_OMITTED_KEY}":true%`
+                                )
+                            ),
+                            or(
+                                like(chatMessages.content, '%"results":[%'),
+                                like(chatMessages.content, '%"preview":%')
+                            ),
+                            afterId === null
+                                ? undefined
+                                : gt(chatMessages.id, afterId)
+                        )
+                    )
+                    .orderBy(chatMessages.id)
+                    .limit(limit),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * 보존 기간 작업용. 줄인 `content`를 한 트랜잭션에서 쓴다. 이미 줄인 행(표식이 있는 행)은 `WHERE`가 거르므로 같은
+     * 입력으로 다시 불러도 아무것도 바뀌지 않는다(멱등). 실제로 바뀐 행 수를 돌려준다.
+     */
+    async rewriteWebSearchContent(
+        updates: ReadonlyArray<{ id: string; content: string }>
+    ): Promise<number> {
+        if (updates.length === 0) return 0;
+        // 트랜잭션은 연결 하나라 UPDATE가 어차피 한 줄로 선다. `Promise.all`로 동시에 띄운 것처럼 보이지 않게
+        // 하나가 끝난 뒤 다음을 보내는 사슬로 쓴다.
+        return this.db.transaction(async tx =>
+            updates.reduce<Promise<number>>(
+                (previous, update) =>
+                    previous.then(async sum => {
+                        const rows = await tx
+                            .update(chatMessages)
+                            .set({ content: update.content })
+                            .where(
+                                and(
+                                    eq(chatMessages.id, update.id),
+                                    eq(chatMessages.toolName, 'web_search'),
+                                    not(
+                                        like(
+                                            chatMessages.content,
+                                            `%"${WEB_SEARCH_BODIES_OMITTED_KEY}":true%`
+                                        )
+                                    )
+                                )
+                            )
+                            .returning({ id: chatMessages.id });
+                        return sum + rows.length;
+                    }),
+                Promise.resolve(0)
+            )
+        );
     }
 }

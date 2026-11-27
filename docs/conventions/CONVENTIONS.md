@@ -873,7 +873,7 @@ numbers (attempt caps, TTLs, windows) published there are pinned by a guard read
 - Copy never promises a delivery or effect some users skip (gate it on the real state or word it conditionally), names
   a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it
   (a filing proves "filed", not "in progress"). A timing promise ("right away") is checked against the path's real
-  latency (a cron cadence is not instant) in every locale's copy.
+  latency (a cron cadence is not instant) in every locale's copy. A heading or label that groups items holds for every item under it (a non-holding comparison is not listed under "holding strategies").
 - Policies list the storage items, the data actually used and every item sent to a third party (including identifiers
   embedded in links). Processor-held identifiers (a member id inside cache or quota keys) and every new event appear in
   the stored-data, purpose and retention sections; non-advertising items stay out of the advertising-cookie paragraph.

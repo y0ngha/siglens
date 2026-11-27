@@ -353,7 +353,9 @@ adversarial input under a time bound.
 A scan that returns at the first match becomes a full fall-through once you add skip/continue conditions, so re-check
 every per-item helper it calls (and its siblings in the same file) for searches from index 0 and for `slice(from)`
 copies of the remainder: compute spans once or search a bounded window, and add one cap-sized adversarial test per new
-skip class. Anchor label-only skip patterns to the whole line so they do not match the first words of real titles.
+skip class. Anchor label-only skip patterns to the whole line so they do not match the first words of real titles. A
+callback that handles third-party input (a response or stream handler) catches, tears the connection down and rejects: a
+throw there leaves the promise unsettled.
 
 A helper that gains a new caller (for example when it moves to a shared file) gets its input bound re-checked: a
 per-match `slice(0, index)` that is safe for a bounded caller is quadratic for an unbounded one. Bound constant factors

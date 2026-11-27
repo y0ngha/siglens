@@ -1251,5 +1251,60 @@
             "buyHoldPct": 39.73,
             "buyHoldMaxDrawdownPct": -22.88
         }
-    ]
+    ],
+    "benchmarks": {
+        "version": 1,
+        "tradesSha256": "3b1a38ff44882aed223b8c98ef6d6770b0baf8c4c0193caf4bdbb227c982f7ee",
+        "barsFingerprint": "4b8d0f13f34282105e901c961b841de787ae9ed82eb5b49c0ce19f095df8ad98",
+        "coreSha": "65eaed8ac51fc6466db6bc5f89e8d65a7294d2c3",
+        "holdPortfolio": {
+            "returnPct": 44.2921,
+            "maxDrawdownPct": -29.9994
+        },
+        "exposureMatchedHold": {
+            "exposurePct": 62.495,
+            "returnPct": 27.499,
+            "maxDrawdownPct": -19.6524
+        },
+        "strategyMarkToMarketMaxDrawdownPct": -12.3901,
+        "perTradeExcess": {
+            "basis": "same_length_drift",
+            "n": 690,
+            "meanPct": -0.0602,
+            "baselineMeanPct": 0.4457,
+            "ci95": {
+                "low": -0.4009,
+                "high": 0.3021
+            },
+            "clusters": "week"
+        },
+        "randomEntry": {
+            "draws": 2000,
+            "seed": 650227714,
+            "returnPct": {
+                "p5": 12.6988,
+                "median": 29.4794,
+                "p95": 49.9152
+            },
+            "maxDrawdownPct": {
+                "p5": -24.3956,
+                "median": -19.6684,
+                "p95": -14.7418
+            },
+            "shareAboveStrategyReturn": 0.509,
+            "shareWithSmallerDrawdown": 0.006
+        },
+        "bracket": {
+            "n": 641,
+            "initialPlan": {
+                "resolvedRaces": 641,
+                "targetFirstShare": 0.5273
+            },
+            "placebo": {
+                "resolvedRaces": 1919,
+                "targetFirstShare": 0.4914
+            },
+            "storedTargetFirstShare": 0.5663
+        }
+    }
 }

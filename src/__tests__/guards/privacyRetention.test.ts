@@ -29,6 +29,7 @@ import {
     API_KEY_AUTH_CACHE_TTL_SECONDS,
     API_KEY_REVOKED_TOMBSTONE_TTL_SECONDS,
 } from '@/shared/config/publicApi';
+import { WEB_SEARCH_RETENTION_DAYS } from '@/shared/api/web/webSearchResult';
 import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 import {
@@ -324,6 +325,12 @@ const ENTRIES: readonly Entry[] = [
         seconds: MAIL_ALERT_DELIVERY_RETENTION_DAYS * SECONDS_PER_DAY,
         unit: 'day',
         places: [{ section: 4, marker: '- 알림 메일 발송 기록' }],
+    },
+    {
+        id: '대화에 저장된 웹 검색 결과 본문 보관(WEB_SEARCH_RETENTION_DAYS)',
+        seconds: WEB_SEARCH_RETENTION_DAYS * SECONDS_PER_DAY,
+        unit: 'day',
+        places: [{ section: 4, marker: '- 시그렌즈 AI 대화 내역' }],
     },
     {
         id: '메일 리포트·가입 첫 리포트 발송 기록 보관(DELIVERY_RETENTION_MS)',

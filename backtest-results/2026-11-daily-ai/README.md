@@ -8,32 +8,57 @@ We ran SIGLENS's production technical analysis once per trading day over two yea
 
 Equal capital split across 10 tickers, no rebalancing.
 
-| | AI strategy | Buy and hold (10-ticker mean) | SPY buy and hold |
-|---|---|---|---|
-| 2-year return | **+29.1%** | +44.3% | +31.7% |
-| Max drawdown (AI on closed trades, buy and hold on daily closes) | **−9.3%** | — | −19.0% |
-| Time in market | 62% on average | 100% | 100% |
+| | AI strategy | Buy and hold (10-ticker mean) | Hold for the AI's time in market only | SPY buy and hold |
+|---|---|---|---|---|
+| 2-year return | **+29.1%** | +44.3% | +27.5% | +31.7% |
+| Max drawdown (daily closes) | **−12.4%** | −30.0% | −19.7% | −19.0% |
+| Max drawdown (closed trades only) | −9.3% | n/a | n/a | n/a |
+| Time in market | 62% on average | 100% | 62% | 100% |
+
+"Hold for the AI's time in market only" holds each ticker from the first day for the share of the period the AI strategy was invested and keeps the rest in cash. Results are simulated without commissions or slippage. Past results do not guarantee future results.
 
 | Trades | Win rate | Mean per trade | Median per trade | Mean holding |
 |---|---|---|---|---|
 | 690 | 57.4% | +0.39% | +0.43% | 4.5 trading days |
 
+The win rate is the share of trades with a net return above 0. It is a different measure from the target-first share in the table below.
+
+| Share of trades whose first target was reached before the first stop (initial levels, 338 of 641) | Same distances on random dates of the same ticker, same race rule |
+|---|---|
+| 52.7% | 49.1% |
+
 ### By ticker
 
-| Ticker | Trades | Win rate | AI strategy | Max DD | Time in market | Buy and hold | Buy and hold max DD |
-|---|---|---|---|---|---|---|---|
-| GOOGL | 65 | 66.2% | +77.3% | −11.6% | 66% | +62.9% | −30.7% |
-| NVDA | 68 | 63.2% | +71.1% | −18.0% | 61% | +49.2% | −36.9% |
-| META | 77 | 59.7% | +47.8% | −14.7% | 59% | +7.0% | −34.2% |
-| MSFT | 65 | 60.0% | +47.1% | −14.4% | 67% | +23.6% | −34.9% |
-| AVGO | 79 | 54.4% | +43.0% | −17.3% | 58% | +90.8% | −41.5% |
-| AAPL | 59 | 66.1% | +29.6% | −11.8% | 69% | +51.8% | −33.4% |
-| SPY | 64 | 57.8% | +5.0% | −12.0% | 65% | +31.7% | −19.0% |
-| AMZN | 70 | 51.4% | −3.6% | −20.1% | 60% | +24.1% | −30.9% |
-| QQQ | 65 | 46.2% | −11.5% | −15.0% | 65% | +39.7% | −22.9% |
-| TSLA | 78 | 51.3% | −14.9% | −42.4% | 55% | +62.2% | −53.8% |
+| Ticker | Trades | Win rate | AI strategy | Max DD (daily) | Time in market | Buy and hold | Exposure-matched hold | Buy and hold max DD |
+|---|---|---|---|---|---|---|---|---|
+| NVDA | 68 | 63.2% | +71.1% | −22.8% | 61% | +49.2% | +30.1% | −36.9% |
+| AAPL | 59 | 66.1% | +29.6% | −16.6% | 69% | +51.8% | +36.0% | −33.4% |
+| MSFT | 65 | 60.0% | +47.1% | −17.2% | 67% | +23.6% | +15.8% | −34.9% |
+| AMZN | 70 | 51.4% | −3.6% | −21.3% | 60% | +24.1% | +14.5% | −30.9% |
+| GOOGL | 65 | 66.2% | +77.3% | −15.6% | 66% | +62.9% | +41.3% | −30.7% |
+| META | 77 | 59.7% | +47.8% | −15.8% | 59% | +7.0% | +4.1% | −34.2% |
+| AVGO | 79 | 54.4% | +43.0% | −18.7% | 58% | +90.8% | +52.9% | −41.5% |
+| TSLA | 78 | 51.3% | −14.9% | −42.4% | 55% | +62.2% | +34.0% | −53.8% |
+| SPY | 64 | 57.8% | +5.0% | −14.8% | 65% | +31.7% | +20.5% | −19.0% |
+| QQQ | 65 | 46.2% | −11.5% | −16.6% | 65% | +39.7% | +25.9% | −22.9% |
 
-The AI strategy's drawdown is measured on closed trades only. Open-position marks are not included, so a real account would show a deeper drawdown.
+Tickers are listed in run order, not sorted by return. Every drawdown is valued on daily closes. The closed-trade drawdown of the AI strategy per ticker is `perTicker[].strategyMaxDrawdownPct` in `summary.json`.
+
+### Entry timing check
+
+A return alone does not show whether the AI's entry timing helped, so the same trades were compared with other baselines, all computed from the same daily bars. The definitions are written in the header of core's `scripts/replay/backtestBenchmarks.ts` before the run.
+
+| Comparison | Result |
+|---|---|
+| Per-trade difference after subtracting the mean return of holding the same ticker for the same number of days | Mean −0.06% (95% range −0.40% to +0.30%, 690 trades) |
+| Portfolio return with the same holding lengths placed on random dates (2,000 draws) | Middle 90% from +12.7% to +49.9%, median +29.5%. Draws above the AI strategy (+29.1%): 50.9% |
+| Max drawdown in the same test (daily closes) | Middle 90% from −24.4% to −14.7%, median −19.7%. Draws with a smaller drawdown than the AI strategy (−12.4%): 0.6% |
+| Share of trades whose first target was reached before the first stop (initial levels, 641 trades) | 52.7% (338). The same distances on random dates: 49.1% |
+
+- The 95% range of the per-trade difference includes 0, so there is no clear difference from holding for the same number of days.
+- The random-date test has no rule that exits at the stop, so the drawdown difference mixes in the effect of that rule.
+- The target and stop comparison re-runs the initial levels under the same daily-bar rule. The first-half take-profit share that reflects levels raised in holding reviews (56.6%, 363 of 641) is not comparable.
+- 586 trades re-ran to the same result as recorded; 55 differ because a holding review changed the levels.
 
 ### Exit paths
 
@@ -88,6 +113,7 @@ Because the value describes the move up to the analysis, SIGLENS labels it "curr
 ## Limitations
 
 - No commissions or slippage.
+- The baselines are simulated on the same daily bars. The random-date test matches only holding lengths and time in market and does not use the AI's stop rule.
 - Intraday order is unknown, so fills are approximated from daily highs and lows.
 - Technical analysis only. No news, earnings dates, or market events, because historical news was not available on our data plan.
 - Tickers were chosen in advance as the largest by market cap, but they are today's large caps, so survivorship bias remains.
@@ -97,9 +123,9 @@ Because the value describes the move up to the analysis, SIGLENS labels it "curr
 
 | File | Contents |
 |---|---|
-| [`trades.csv`](./trades.csv) | One row per trade: entry type, decision date, entry, exit date, price, reason and return for each half, initial plan |
+| [`trades.csv`](./trades.csv) | One row per trade: entry type, decision date, entry, exit date, price, reason and return for each half, initial plan, mean return of holding the same ticker for the same days (`same_length_drift_pct`) and the difference from it (`excess_pct`) |
 | [`decisions.csv`](./decisions.csv) | One row per AI call (1,168 entry decisions + 2,493 holding reviews): decision, entry zone, stop, targets, 5- and 10-day forward returns, prompt and response file paths |
-| [`summary.json`](./summary.json) | All aggregated results |
+| [`summary.json`](./summary.json) | All aggregated results plus `benchmarks` (the comparison figures above) |
 | [Full prompts and responses (release asset)](https://github.com/y0ngha/siglens/releases/tag/backtest-2026-11-daily-ai) | `2026-11-daily-ai-prompts-and-responses.tar.gz`: per-call prompts (with prior analyses), full AI responses, and the system prompt. `prompt_file` and `response_file` in `decisions.csv` are paths inside this archive |
 | [Raw data repository](https://github.com/y0ngha/siglens-backtest-data) | Daily bars, per-day indicators, chart patterns, Fibonacci levels and candles, raw DeepSeek requests and responses, and the scripts |
 

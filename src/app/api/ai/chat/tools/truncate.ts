@@ -204,6 +204,17 @@ export const PRICE_STATS_RESULT_MAX_CHARS = 11_000;
 export const ANALYST_VIEWS_RESULT_MAX_CHARS = 5_500;
 
 /**
+ * `web_search` ceiling (counted on the SERIALIZED length). Five results carry a title (clipped to 400 chars), a
+ * snippet (400), a URL (at most 500, longer ones are dropped) and an age; the top two also carry an `excerpt`
+ * of up to 1,800 chars and `publishedAt`. Measured 2026-11-22 on a heavier-than-real worst case
+ * (`webSearch.test.ts`: every text field full to its clip with a `"` and a newline every 12 characters, so
+ * JSON escaping adds ~15%, 480-char URLs, `cached: true`): 11,918 chars. 13,000 leaves ~9% above it; the shared
+ * 4,000 default would cut the second excerpt off into a front-cut preview blob. A realistic result with two
+ * ~1,800-char excerpts is ~6,000-7,000.
+ */
+export const WEB_SEARCH_RESULT_MAX_CHARS = 13_000;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK

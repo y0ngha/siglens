@@ -28,68 +28,90 @@
             "ticker": "NVDA",
             "buyHoldPct": 49.23,
             "buyHoldMaxDrawdownPct": -36.89,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 30.0698,
+            "markToMarketMaxDrawdownPct": -22.7607
         },
         {
             "ticker": "AAPL",
             "buyHoldPct": 51.77,
             "buyHoldMaxDrawdownPct": -33.43,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 35.963,
+            "markToMarketMaxDrawdownPct": -16.6467
         },
         {
             "ticker": "MSFT",
             "buyHoldPct": 23.58,
             "buyHoldMaxDrawdownPct": -34.91,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 15.7646,
+            "markToMarketMaxDrawdownPct": -17.1828
         },
         {
             "ticker": "AMZN",
             "buyHoldPct": 24.1,
             "buyHoldMaxDrawdownPct": -30.88,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 14.527,
+            "markToMarketMaxDrawdownPct": -21.2677
         },
         {
             "ticker": "GOOGL",
             "buyHoldPct": 62.88,
             "buyHoldMaxDrawdownPct": -30.71,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 41.2897,
+            "markToMarketMaxDrawdownPct": -15.5835
         },
         {
             "ticker": "META",
             "buyHoldPct": 6.98,
             "buyHoldMaxDrawdownPct": -34.21,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 4.1081,
+            "markToMarketMaxDrawdownPct": -15.8379
         },
         {
             "ticker": "AVGO",
             "buyHoldPct": 90.76,
             "buyHoldMaxDrawdownPct": -41.48,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 52.8974,
+            "markToMarketMaxDrawdownPct": -18.7344
         },
         {
             "ticker": "TSLA",
             "buyHoldPct": 62.19,
             "buyHoldMaxDrawdownPct": -53.77,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 34.012,
+            "markToMarketMaxDrawdownPct": -42.4455
         },
         {
             "ticker": "SPY",
             "buyHoldPct": 31.71,
             "buyHoldMaxDrawdownPct": -19,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 20.5052,
+            "markToMarketMaxDrawdownPct": -14.8409
         },
         {
             "ticker": "QQQ",
             "buyHoldPct": 39.73,
             "buyHoldMaxDrawdownPct": -22.88,
-            "tradingDays": 501
+            "tradingDays": 501,
+            "exposureMatchedHoldPct": 25.8528,
+            "markToMarketMaxDrawdownPct": -16.6074
         }
     ],
     "spy": {
         "ticker": "SPY",
         "buyHoldPct": 31.71,
         "buyHoldMaxDrawdownPct": -19,
-        "tradingDays": 501
+        "tradingDays": 501,
+        "exposureMatchedHoldPct": 20.5052,
+        "markToMarketMaxDrawdownPct": -14.8409
     },
     "trendRecognition": {
         "windowDays": 10,
@@ -27024,5 +27046,60 @@
             "promptFile": "prompts/SPY/2026-10-19_entry.json",
             "responseFile": "responses/SPY/2026-10-19_entry.json"
         }
-    ]
+    ],
+    "benchmarks": {
+        "version": 1,
+        "tradesSha256": "3b1a38ff44882aed223b8c98ef6d6770b0baf8c4c0193caf4bdbb227c982f7ee",
+        "barsFingerprint": "4b8d0f13f34282105e901c961b841de787ae9ed82eb5b49c0ce19f095df8ad98",
+        "coreSha": "65eaed8ac51fc6466db6bc5f89e8d65a7294d2c3",
+        "holdPortfolio": {
+            "returnPct": 44.2921,
+            "maxDrawdownPct": -29.9994
+        },
+        "exposureMatchedHold": {
+            "exposurePct": 62.495,
+            "returnPct": 27.499,
+            "maxDrawdownPct": -19.6524
+        },
+        "strategyMarkToMarketMaxDrawdownPct": -12.3901,
+        "perTradeExcess": {
+            "basis": "same_length_drift",
+            "n": 690,
+            "meanPct": -0.0602,
+            "baselineMeanPct": 0.4457,
+            "ci95": {
+                "low": -0.4009,
+                "high": 0.3021
+            },
+            "clusters": "week"
+        },
+        "randomEntry": {
+            "draws": 2000,
+            "seed": 650227714,
+            "returnPct": {
+                "p5": 12.6988,
+                "median": 29.4794,
+                "p95": 49.9152
+            },
+            "maxDrawdownPct": {
+                "p5": -24.3956,
+                "median": -19.6684,
+                "p95": -14.7418
+            },
+            "shareAboveStrategyReturn": 0.509,
+            "shareWithSmallerDrawdown": 0.006
+        },
+        "bracket": {
+            "n": 641,
+            "initialPlan": {
+                "resolvedRaces": 641,
+                "targetFirstShare": 0.5273
+            },
+            "placebo": {
+                "resolvedRaces": 1919,
+                "targetFirstShare": 0.4914
+            },
+            "storedTargetFirstShare": 0.5663
+        }
+    }
 }

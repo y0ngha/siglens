@@ -198,6 +198,8 @@ export function agentTurnStream({
                         executeTool,
                         counters: createAgentCounters(),
                         globalLimits: agentGlobalLimitsFromEnv(),
+                        // 전역 `web_search` 예산은 게이트가 아니라 실행기가 Brave 요청 직전에 차감한다(`webSearch.ts`).
+                        webSearchMetering: 'executor',
                         maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
                         onEvent: event => {
                             if (

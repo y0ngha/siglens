@@ -19,4 +19,40 @@ test.describe('backtesting showcase', () => {
             })
         ).toBeVisible();
     });
+
+    // 수익률 옆에 보유 기준선이 함께 있다. 옛 화면(AI 전략 결과만)에서는 이 표 제목도 열도
+    // 없어서 실패한다.
+    test('shows the hold baselines next to the returns', async ({ page }) => {
+        await page.goto('/backtesting');
+
+        await expect(
+            page.getByRole('heading', { level: 2, name: '보유 전략과 비교' })
+        ).toBeVisible();
+        await expect(
+            page
+                .getByRole('region', { name: '보유 전략과 비교 표' })
+                .getByRole('columnheader')
+        ).toHaveText([
+            '종목',
+            '매매',
+            '승률',
+            'AI 전략',
+            '최대 낙폭 (매일 평가)',
+            '투자 비중',
+            '계속 보유',
+            '비중 맞춘 보유',
+            '보유 시 최대 낙폭',
+        ]);
+        await expect(
+            page.getByText(/같은 \d+종목을 계속 들고 있었다면/)
+        ).toBeVisible();
+        await expect(
+            page.getByText(
+                /기간 중 아무 날에나 사서 같은 날수만큼 들고 있었을 때의 평균과 비교하면/
+            )
+        ).toBeVisible();
+        await expect(
+            page.getByRole('heading', { level: 2, name: '진입 시점의 효과' })
+        ).toBeVisible();
+    });
 });
