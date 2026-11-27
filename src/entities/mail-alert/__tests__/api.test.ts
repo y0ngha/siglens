@@ -222,10 +222,35 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
             subscriberId: 'sub-1',
             alertDate: '2026-11-24',
             status: 'pending',
+            itemKeys: [],
         });
     });
 
-    it('recentItemKeys: sent 발송만 알림 날짜 하한(이상)으로 읽고 구독자별 집합으로 합친다', async () => {
+    it('claim: 넘긴 항목 키를 pending 행과 함께 저장한다', async () => {
+        const values = vi.fn((_row: unknown) => ({
+            onConflictDoNothing: () => ({
+                returning: vi.fn().mockResolvedValue([{ id: 'del-1' }]),
+            }),
+        }));
+        const db = {
+            insert: () => ({ values }),
+        } as unknown as SiglensDatabase;
+
+        await new DrizzleMailAlertDeliveryRepository(db).claim(
+            'sub-1',
+            '2026-11-24',
+            ['a', 'b']
+        );
+
+        expect(onlyCallArg(values)).toEqual({
+            subscriberId: 'sub-1',
+            alertDate: '2026-11-24',
+            status: 'pending',
+            itemKeys: ['a', 'b'],
+        });
+    });
+
+    it('recentItemKeys: sent·pending 행만 알림 날짜 하한(이상)으로 읽고 구독자별 집합으로 합친다', async () => {
         const where = vi.fn((_condition: unknown) =>
             Promise.resolve([
                 { subscriberId: 's1', itemKeys: ['a', 'b'] },
@@ -245,9 +270,9 @@ describe('DrizzleMailAlertDeliveryRepository', () => {
         expect(keys.get('s2')).toEqual(new Set());
         const { sql, params } = render(onlyCallArg(where));
         expect(sql).toBe(
-            '("mail_alert_deliveries"."status" = $1 and "mail_alert_deliveries"."alert_date" >= $2)'
+            '("mail_alert_deliveries"."status" in ($1, $2) and "mail_alert_deliveries"."alert_date" >= $3)'
         );
-        expect(params).toEqual(['sent', '2026-11-17']);
+        expect(params).toEqual(['sent', 'pending', '2026-11-17']);
     });
 
     it('pruneBefore: 알림 날짜가 기준일보다 이른 행만 지우고 수를 센다', async () => {

@@ -1,5 +1,7 @@
 import type { EmailMessage } from '../types';
 import {
+    buildEmailDebugCountKey,
+    buildEmailDebugIdemKey,
     buildEmailDebugKey,
     extractEmailDebugRecord,
 } from '../emailDebugRecord';
@@ -13,6 +15,17 @@ describe('buildEmailDebugKey', () => {
     it('recipient을 prefix와 결합한 키를 만든다', () => {
         expect(buildEmailDebugKey('user@example.com')).toBe(
             'email_debug:user@example.com'
+        );
+    });
+});
+
+describe('buildEmailDebugCountKey / buildEmailDebugIdemKey', () => {
+    it('카운터 키와 멱등 표지 키는 debug 키와 prefix가 겹치지 않는다', () => {
+        expect(buildEmailDebugCountKey('a@b.com')).toBe(
+            'email_debug_count:a@b.com'
+        );
+        expect(buildEmailDebugIdemKey('mail-alert/1/2026-11-24')).toBe(
+            'email_debug_idem:mail-alert/1/2026-11-24'
         );
     });
 });

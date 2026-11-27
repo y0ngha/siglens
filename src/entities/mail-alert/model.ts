@@ -48,6 +48,15 @@ export type MailAlertItem =
           readonly score: number;
       };
 
+/** 메일에 실리는 신호 줄. */
+export type MailAlertSignalItem = Extract<MailAlertItem, { kind: 'signal' }>;
+
+/** 메일에 실리는 공포·탐욕 극단 구간 진입 줄. */
+export type MailAlertFearGreedItem = Extract<
+    MailAlertItem,
+    { kind: 'fear_greed' }
+>;
+
 /**
  * 대화상자가 열릴 때 서버가 알려 주는 이 화면 항목의 상태. 주소는 가린 모양(`maskEmail`)만 내려간다.
  *

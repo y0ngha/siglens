@@ -716,15 +716,23 @@ export interface PriceAlertRepository {
  * user request, so they take no {@link MailAlertOwner}.
  */
 export interface MailAlertDeliveryRepository {
-    /** Claims the (subscriber, alertDate) slot; returns the row id, or `null` when already claimed. */
-    claim(subscriberId: string, alertDate: string): Promise<string | null>;
+    /**
+     * Claims the (subscriber, alertDate) slot; returns the row id, or `null` when already claimed.
+     * `itemKeys` are stored with the `pending` row, so a crash after the send still leaves them to
+     * suppress repeats on later dates.
+     */
+    claim(
+        subscriberId: string,
+        alertDate: string,
+        itemKeys?: readonly string[]
+    ): Promise<string | null>;
     finish(
         id: string,
         outcome: MailAlertDeliveryOutcome,
         itemKeys: readonly string[],
         error: string | null
     ): Promise<void>;
-    /** Item keys of `sent` deliveries with `alert_date >= sinceAlertDate`, per subscriber. */
+    /** Item keys of `sent` and `pending` deliveries with `alert_date >= sinceAlertDate`, per subscriber. */
     recentItemKeys(sinceAlertDate: string): Promise<Map<string, Set<string>>>;
     /** Deletes deliveries whose `alert_date` is before `alertDate`; returns the count. */
     pruneBefore(alertDate: string): Promise<number>;

@@ -37,6 +37,7 @@ import type {
 import type { EmailMessage, KeyedEmailDispatcher } from '@/shared/email/types';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { mapChunked } from '@/shared/lib/mapChunked';
 import {
     redactDbErrorForLog,
     redactedErrorMessage,
@@ -148,29 +149,6 @@ interface DueRecipient {
 
 function errorText(error: unknown): string {
     return redactedErrorMessage(error).slice(0, ERROR_MAX_LENGTH);
-}
-
-/**
- * `items`를 `size`개씩 순서대로 처리한다 — 결과 순서는 입력 순서.
- * 청크를 직렬로 돌리는 이유: 한 번에 떠 있는 조회를 `size`개로 묶기 위해서다.
- * reduce가 프라미스 체인을 만들어, 앞 청크가 끝나야 다음 청크의 `work`가 시작된다.
- */
-function mapChunked<T, R>(
-    items: readonly T[],
-    size: number,
-    work: (item: T) => Promise<R>
-): Promise<R[]> {
-    const chunks = Array.from(
-        { length: Math.ceil(items.length / size) },
-        (_, i) => items.slice(i * size, (i + 1) * size)
-    );
-    return chunks.reduce<Promise<R[]>>(
-        (previous, chunk) =>
-            previous.then(done =>
-                Promise.all(chunk.map(work)).then(rows => [...done, ...rows])
-            ),
-        Promise.resolve([])
-    );
 }
 
 /** 요약 조회 결과에 그 종목이 없을 때의 빈 칸 — 메일은 그 종목을 "데이터 없음"으로 그린다. */

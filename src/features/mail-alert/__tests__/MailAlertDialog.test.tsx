@@ -119,6 +119,10 @@ describe('MailAlertDialog 처음 신청 (new)', () => {
         expect(trap).not.toBeNull();
         expect(trap?.tabIndex).toBe(-1);
         expect(trap?.closest('[aria-hidden="true"]')).not.toBeNull();
+        // 함정 래퍼는 absolute라, 가장 가까운 위치 기준 조상이 폼이어야 조상 배치에 휘둘리지 않는다.
+        expect(trap?.closest('form')?.classList.contains('relative')).toBe(
+            true
+        );
     });
 
     it('인증 전 회원의 계정 주소는 채워져 고정된다', async () => {
@@ -168,7 +172,7 @@ describe('MailAlertDialog 처음 신청 (new)', () => {
 
         expect(
             await screen.findByText(
-                '신청했어요. 새로 잡힌 소식이 있는 날 아침에 g***@example.com로 보내 드려요.'
+                '신청했어요. 새로 잡힌 소식이 있으면 한국 시간 아침에 g***@example.com로 보내 드려요.'
             )
         ).toBeInTheDocument();
         expect(formValues(actions.confirm)).toEqual({

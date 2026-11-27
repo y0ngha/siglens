@@ -3,6 +3,9 @@ import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import { ThrottledEmailDispatcher } from '@/shared/email/ThrottledEmailDispatcher';
+import { scheduleMailAlertPass } from '../mail-alert/scheduleMailAlertPass';
 import { createEmailReportDeps } from './createEmailReportDeps';
 import { runEmailReportBatch } from './runEmailReportBatch';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
@@ -21,6 +24,11 @@ const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
  *
  * 서명 비밀값이 없으면 아무것도 보내지 않는다 — 수신거부 링크가 동작하지 않는 메일이
  * 나가면 안 된다.
+ *
+ * **알림 메일 패스를 함께 시작한다.** 한국 시간 7시·8시에만 일하는 패스(`runMailAlertBatch`)가 같은 매시
+ * 트리거에 얹혀 EventBridge 규칙을 늘리지 않는다. 두 패스는 서로의 마감(CC-13)과 실패에 영향받지 않게 각자
+ * `after()` 작업이고, **발송기 하나를 공유한다** — 워커 풀이 각각 4개라 따로 보내면 Resend 초당 한도를 합쳐
+ * 넘고, 한도를 넘은 요청은 거절(`false`)되어 그 메일은 사라진다.
  */
 export async function PATCH(request: Request): Promise<Response> {
     if (!isAuthorizedCronRequest(request)) {
@@ -36,11 +44,12 @@ export async function PATCH(request: Request): Promise<Response> {
     }
 
     const now = new Date();
+    const dispatcher = new ThrottledEmailDispatcher(createEmailDispatcher());
     afterWithDrain(() =>
         runAsBatchWork(async () => {
             try {
                 const counts = await runEmailReportBatch(
-                    createEmailReportDeps(secret, now),
+                    createEmailReportDeps(secret, now, dispatcher),
                     now
                 );
                 console.log('[email-report] run done:', JSON.stringify(counts));
@@ -52,6 +61,16 @@ export async function PATCH(request: Request): Promise<Response> {
             }
         })
     );
+
+    // 메일 리포트 패스는 이미 예약됐다. 알림 패스를 예약하다 던져도(`after()` 문맥 문제 등) 202와 리포트는 지킨다.
+    try {
+        scheduleMailAlertPass({ now, dispatcher });
+    } catch (error) {
+        console.error(
+            '[mail-alert] could not schedule pass:',
+            redactDbErrorForLog(error)
+        );
+    }
 
     return new Response(null, { status: HTTP_STATUS_ACCEPTED });
 }
