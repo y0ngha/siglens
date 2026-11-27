@@ -3,7 +3,12 @@
  * 각 항목이 core `detectCandlePatternEntries`로 실제 그 패턴으로 잡히는지는
  * `__tests__/candlesticks.test.ts`가 단언한다 (설명과 그림이 엔진과 어긋나지 않게).
  */
-import { candle, concatBars, trendBars } from '@/views/guide/demos/generators';
+import {
+    candle,
+    concatBars,
+    pathToBars,
+    trendBars,
+} from '@/views/guide/demos/generators';
 import type {
     DemoBar,
     DemoOverlay,
@@ -17,9 +22,10 @@ function lead(
     direction: Direction,
     count: number,
     end: number,
-    seed: number
+    seed: number,
+    perBar = 1.6
 ): DemoBar[] {
-    const travel = count * 1.6;
+    const travel = count * perBar;
     return direction === 'down'
         ? trendBars(count, end + travel, end, {
               seed,
@@ -42,12 +48,50 @@ function marker(
     return { kind: 'marker', i, label, tone, position };
 }
 
-function build(
+/**
+ * core는 패턴 앞의 추세(ATR(14) 워밍업 15봉)를 읽어야 패턴을 이름 붙인다. 손으로 정한 봉과
+ * 짧은 추세 봉만으로는 그 문맥이 모자라서, 데모 앞에 같은 방향의 추세 봉을 이 개수만큼 덧붙인다.
+ * 덧붙인 만큼 마커·강조 구간의 인덱스도 밀리므로 `build`가 함께 옮긴다(데모 정의는 덧붙이기 전 인덱스로 쓴다).
+ */
+export const DEMO_LEAD_PAD = 15;
+
+/** 첫 봉 앞에 데모 초반 방향을 잇는 추세 봉을 덧붙인다. 마지막 종가가 첫 시가로 이어진다. */
+function padLead(bars: readonly DemoBar[]): DemoBar[] {
+    const [first] = bars;
+    const probe = bars[Math.min(4, bars.length - 1)];
+    const falling = probe.close < first.open;
+    const travel = DEMO_LEAD_PAD * 1.6;
+    return trendBars(
+        DEMO_LEAD_PAD,
+        falling ? first.open + travel : first.open - travel,
+        first.open,
+        { seed: 41, rangePct: 0.012, noisePct: 0.002 }
+    );
+}
+
+/** 테스트가 `padOverride` 길이와 인덱스 이동을 직접 확인한다. */
+export function build(
     parts: readonly (readonly DemoBar[])[],
     overlays: readonly DemoOverlay[],
-    highlight?: { fromIndex: number; toIndex: number }
+    highlight?: { fromIndex: number; toIndex: number },
+    padOverride?: readonly DemoBar[]
 ): GuideDemo {
-    return { bars: concatBars(...parts), overlays, highlight };
+    const body = concatBars(...parts);
+    const pad = padOverride ?? padLead(body);
+    // 밀어내는 폭은 상수가 아니라 실제로 덧붙인 봉 수다 — 길이가 다른 `padOverride`가 와도 마커가 어긋나지 않는다.
+    const shift = pad.length;
+    return {
+        bars: concatBars(pad, body),
+        overlays: overlays.map(overlay =>
+            overlay.kind === 'marker'
+                ? { ...overlay, i: overlay.i + shift }
+                : overlay
+        ),
+        highlight: highlight && {
+            fromIndex: highlight.fromIndex + shift,
+            toIndex: highlight.toIndex + shift,
+        },
+    };
 }
 
 const bullishEngulfing = (): GuideDemo => {
@@ -110,7 +154,19 @@ const doji = (): GuideDemo =>
             marker(4, 'Dragonfly', 'bull', 'below'),
             marker(6, 'Gravestone', 'bear', 'above'),
             marker(9, 'Spinning top', 'neutral', 'above'),
-        ]
+        ],
+        undefined,
+        // 잠자리형(4)은 하락 뒤, 비석형(6)은 상승 뒤라야 이름이 붙는다. 데모 초반이 짧게 오르내려
+        // 한 방향 추세 봉으로는 둘을 다 못 만족시키므로, 먼저 내려온 뒤 바닥에서 올라오는 모양으로 깐다.
+        pathToBars(
+            [
+                { i: 0, price: 110 },
+                { i: 8, price: 106 },
+                { i: 10, price: 100.2 },
+                { i: DEMO_LEAD_PAD - 1, price: 100 },
+            ],
+            { seed: 41, rangePct: 0.012, noisePct: 0.002 }
+        )
     );
 
 const harami = (): GuideDemo => {
@@ -179,7 +235,7 @@ const morningEveningStar = (): GuideDemo => {
 };
 
 const piercingDarkCloud = (): GuideDemo => {
-    const pre = lead('down', 5, 102, 18);
+    const pre = lead('down', 5, 102, 18, 0.3);
     return build(
         [
             pre,
@@ -236,7 +292,7 @@ const threeInsideOutside = (): GuideDemo => {
 };
 
 const threeLineStrike = (): GuideDemo => {
-    const pre = lead('up', 6, 108.6, 22);
+    const pre = lead('down', 6, 108.6, 22);
     return build(
         [
             pre,
@@ -287,7 +343,7 @@ const threeSoldiersCrows = (): GuideDemo => {
 };
 
 const tweezers = (): GuideDemo => {
-    const pre = lead('down', 5, 101, 25);
+    const pre = lead('down', 5, 101, 25, 0.3);
     return build(
         [
             pre,

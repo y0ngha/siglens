@@ -23,8 +23,8 @@ describe('priority list coverage', () => {
     });
 
     it('pins the head of every provider list', () => {
-        expect(CLAUDE_MODEL_PRIORITY[0]).toBe('claude-fable-5-1');
-        expect(CHATGPT_MODEL_PRIORITY[0]).toBe('gpt-6-astra');
+        expect(CLAUDE_MODEL_PRIORITY[0]).toBe('claude-fable-5-2');
+        expect(CHATGPT_MODEL_PRIORITY[0]).toBe('gpt-6.2-astra');
         // 의도적 예외 — Gemini는 최신 세대가 Flash 라인뿐이라 구세대 Pro가 앞선다.
         // "최신 모델을 맨 앞으로" 라는 순진한 수정이 여기서 실패해야 한다.
         expect(GEMINI_MODEL_PRIORITY[0]).toBe('gemini-3.1-pro-preview');

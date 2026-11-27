@@ -1911,6 +1911,8 @@
                 "rsi_bullish_divergence": "RSI 強気ダイバージェンス",
                 "rsi_overbought": "RSI 買われすぎ",
                 "rsi_oversold": "RSI 売られすぎ",
+                "short_ma_bearish_cross": "短期移動平均線 下降クロス",
+                "short_ma_bullish_cross": "短期移動平均線 上昇クロス",
                 "squeeze_momentum_bearish": "スクイーズ 陰転",
                 "squeeze_momentum_bullish": "スクイーズ 陽転",
                 "supertrend_bearish_flip": "Supertrend 下降転換",

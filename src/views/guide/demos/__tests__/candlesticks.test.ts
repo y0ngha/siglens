@@ -4,13 +4,18 @@ import {
     type CandlePatternEntry,
 } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { CANDLESTICK_DEMOS } from '@/views/guide/demos/candlesticks';
+import { candle, trendBars } from '@/views/guide/demos/generators';
+import {
+    build,
+    CANDLESTICK_DEMOS,
+    DEMO_LEAD_PAD,
+} from '@/views/guide/demos/candlesticks';
 
 const DETECTION_WINDOW = 15;
 
 interface Expected {
     id: string;
-    /** 패턴의 마지막 봉 인덱스 (데모 봉열 기준) */
+    /** 패턴의 마지막 봉 인덱스 (앞 추세 봉 `DEMO_LEAD_PAD`개를 덧붙이기 전 데모 봉열 기준) */
     at: number;
 }
 
@@ -86,7 +91,8 @@ describe('candlestick demos', () => {
             for (const expected of expectations) {
                 const found = entries.some(
                     entry =>
-                        entry.barIndex + offset === expected.at &&
+                        entry.barIndex + offset ===
+                            expected.at + DEMO_LEAD_PAD &&
                         entryId(entry) === expected.id
                 );
                 expect(
@@ -95,16 +101,56 @@ describe('candlestick demos', () => {
                 ).toBe(true);
                 const marked = (demo.overlays ?? []).some(
                     overlay =>
-                        overlay.kind === 'marker' && overlay.i === expected.at
+                        overlay.kind === 'marker' &&
+                        overlay.i === expected.at + DEMO_LEAD_PAD
                 );
                 expect(marked, `marker at ${expected.at}`).toBe(true);
             }
         });
     }
 
+    it('길이가 다른 padOverride도 마커·강조 구간을 실제로 덧붙인 봉 수만큼 옮긴다', () => {
+        const padLength = DEMO_LEAD_PAD + 5;
+        const pad = trendBars(padLength, 124, 100, {
+            seed: 7,
+            rangePct: 0.012,
+            noisePct: 0.002,
+        });
+        const demo = build(
+            [[candle(100.4, 101, 97.5, 98), candle(97.4, 101.9, 97, 101.6)]],
+            [
+                {
+                    kind: 'marker',
+                    i: 1,
+                    label: 'E',
+                    tone: 'bull',
+                    position: 'below',
+                },
+            ],
+            { fromIndex: 0, toIndex: 1 },
+            pad
+        );
+        const at = padLength + 1;
+        expect(demo.bars).toHaveLength(padLength + 2);
+        expect(demo.highlight).toEqual({
+            fromIndex: padLength,
+            toIndex: at,
+        });
+        expect(demo.overlays?.[0]).toMatchObject({ kind: 'marker', i: at });
+        const entries = detectCandlePatternEntries(toCoreBars(demo.bars));
+        const offset = Math.max(0, demo.bars.length - DETECTION_WINDOW);
+        expect(
+            entries.some(
+                entry =>
+                    entry.barIndex + offset === at &&
+                    entryId(entry) === 'bullish_engulfing'
+            )
+        ).toBe(true);
+    });
+
     it('spinning-top demo bar has a small body with shadows on both sides', () => {
         const demo = CANDLESTICK_DEMOS.doji();
-        const bar = demo.bars[9];
+        const bar = demo.bars[9 + DEMO_LEAD_PAD];
         const range = bar.high - bar.low;
         const body = Math.abs(bar.close - bar.open);
         expect(body / range).toBeLessThanOrEqual(0.4);

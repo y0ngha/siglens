@@ -22,6 +22,10 @@ export const RETIRED_MODEL_SUCCESSORS: ReadonlyMap<string, ModelId> = new Map([
     ['claude-sonnet-5', 'claude-sonnet-5-5'],
     ['gpt-5.6-luna', 'gpt-6-luna'],
     ['gpt-5.6-terra', 'gpt-6-sol'],
+    // 2026-11 로스터 교체 — 같은 계열·같은 추론 하한의 후속 모델(byok)로 옮긴다.
+    ['claude-fable-5-1', 'claude-fable-5-2'],
+    ['gpt-6.1-sol', 'gpt-6.2-sol'],
+    ['gpt-6-astra', 'gpt-6.2-astra'],
 ]);
 
 /**

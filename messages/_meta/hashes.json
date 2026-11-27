@@ -1422,6 +1422,8 @@
     "shared.enumLabel.signalType.rsi_bullish_divergence": "c7e278e8240b",
     "shared.enumLabel.signalType.rsi_overbought": "8cebaca58f4a",
     "shared.enumLabel.signalType.rsi_oversold": "50610ef67a20",
+    "shared.enumLabel.signalType.short_ma_bearish_cross": "ffafda07bf80",
+    "shared.enumLabel.signalType.short_ma_bullish_cross": "a40d79e36172",
     "shared.enumLabel.signalType.squeeze_momentum_bearish": "b3e01fed2174",
     "shared.enumLabel.signalType.squeeze_momentum_bullish": "de7caae927fa",
     "shared.enumLabel.signalType.supertrend_bearish_flip": "db60f9eb9f55",

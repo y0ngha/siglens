@@ -1671,7 +1671,7 @@ describe('POST /api/analysis/stream', () => {
                     undefined,
                     JSON.stringify({
                         type: 'overall',
-                        params: { symbol: 'AAPL' },
+                        params: { symbol: 'AAPL', timeframe: '1Day' },
                     })
                 )
             );
