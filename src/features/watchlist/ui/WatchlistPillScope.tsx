@@ -13,7 +13,7 @@ interface WatchlistPillScopeProps {
 }
 
 /**
- * 종목 알약 그리드(`CategoryCardGrid`) 하나에 두는 관심종목 구독. 알약 ★는 `useWatchlist`를
+ * 종목 알약 그리드(`CategoryCardGridBody`) 하나에 두는 관심종목 구독. 알약 ★는 `useWatchlist`를
  * 직접 부르지 않고 여기서 받는다 — 알약마다 부르면 알약 수만큼 현재 사용자 쿼리·하이드레이션을
  * 따로 구독해, 쿼리 상태가 바뀔 때마다 모든 알약이 다시 그려진다. 내려주는 값은 `has`·`toggle`·
  * `isHydrated`가 바뀔 때만 바뀌므로 알약도 그때만 다시 그린다. 다시 재려면 react-data-xray 로

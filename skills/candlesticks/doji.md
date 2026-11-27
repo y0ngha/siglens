@@ -11,6 +11,7 @@ gating:
   triggers: [doji, gravestone_doji, dragonfly_doji, spinning_top]
 token_cost: 369
 digest_hash: "924ff676"
+digest_text_hash: "2b744202"
 ---
 
 ## Overview

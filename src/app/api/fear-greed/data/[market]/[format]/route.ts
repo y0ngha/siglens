@@ -1,6 +1,6 @@
 import { constants } from 'node:http2';
-import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
-import { SITEMAP_RETRY_AFTER_SECONDS } from '@/app/api/sitemap/_shared/constants';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
+import { RETRY_AFTER_SECONDS } from '@/app/api/_shared/constants';
 import { FEAR_GREED_DATA_LOADERS } from '@/app/api/fear-greed/data/_lib/loaders';
 import {
     FEAR_GREED_DATA_CACHE_CONTROL,
@@ -73,7 +73,7 @@ export async function GET(
         return new Response(UNAVAILABLE_BODY, {
             status: HTTP_STATUS_SERVICE_UNAVAILABLE,
             headers: {
-                'Retry-After': SITEMAP_RETRY_AFTER_SECONDS,
+                'Retry-After': RETRY_AFTER_SECONDS,
                 'Cache-Control': 'no-store',
                 ...NOINDEX,
             },

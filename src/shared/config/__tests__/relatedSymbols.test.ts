@@ -350,7 +350,7 @@ describe('relatedSymbolsFor', () => {
          * `KOREAN_NAMES`는 다섯 소스를 spread로 합치는데, `Map` 생성자는 같은 키가
          * 두 번 오면 **나중 값으로 조용히 덮어쓴다.** 지금은 어긋나는 심볼이 없지만
          * 그건 우연이고, 소스를 추가하면 예고 없이 이름이 바뀔 수 있다
-         * (claude-review PR #765 제안). 충돌을 즉시 실패로 만든다.
+         * 충돌을 즉시 실패로 만든다.
          */
         it('소스 간 한글명이 어긋나지 않는다 (조용한 덮어쓰기 방지)', () => {
             const sources: readonly (readonly (readonly [string, string])[])[] =

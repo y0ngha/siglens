@@ -91,8 +91,33 @@ describe('AboutPage', () => {
             name: ko.views.about.replay.region,
         });
         expect(region).toHaveTextContent('siglens.io/AAPL');
-        expect(region).toHaveTextContent('50일 이동평균선');
-        expect(region).toHaveTextContent('+6.2%');
+        expect(region).toHaveTextContent('이동평균선');
+        expect(region).toHaveTextContent(
+            ko.views.about.replay.aapl.a1.replace(/<\/?b>/g, '')
+        );
+    });
+
+    it('shows none of the old made-up example figures, and says so', async () => {
+        await renderPage();
+        const region = screen.getByRole('region', {
+            name: ko.views.about.replay.region,
+        });
+        const text = region.textContent ?? '';
+        [
+            '+6.2%',
+            '$221',
+            '$238',
+            'RSI는 64',
+            '-4.1%',
+            '70,000원',
+            '$68,500',
+            '$63,200',
+            '+1.3%',
+        ].forEach(literal => {
+            expect(text).not.toContain(literal);
+        });
+        expect(text).toContain(ko.views.about.replay.badge);
+        expect(document.body).toHaveTextContent(ko.views.about.replay.note);
     });
 
     it('keeps the E-E-A-T content: operator links, method, limits, disclaimer', async () => {

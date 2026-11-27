@@ -66,14 +66,10 @@ describe('OptionalConsentCheckbox', () => {
         expect(onChange).toHaveBeenLastCalledWith(false);
     });
 
-    it('공백 없는 긴 문장이 좁은 열을 넘기지 않도록 fieldset과 문구에 줄바꿈 클래스를 둔다', () => {
+    it('긴 문장이 좁은 열을 넘기지 않도록 fieldset에 min-w-0을 둔다', () => {
         render(<Harness />);
 
         expect(screen.getByRole('group')).toHaveClass('min-w-0');
-        expect(screen.getByText('소식 받기')).toHaveClass('wrap-anywhere');
-        expect(screen.getByText('매주 보내 드려요.')).toHaveClass(
-            'wrap-anywhere'
-        );
     });
 
     it('id를 넘기면 그 id를 쓰고 설명 id도 그에서 파생된다', () => {

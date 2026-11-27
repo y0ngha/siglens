@@ -92,6 +92,51 @@ test.describe('auth signup (3-phase)', () => {
         ).toBeVisible({ timeout: 15_000 });
     });
 
+    test('step 3 from a browser without the verification cookie is refused', async ({
+        page,
+        context,
+    }) => {
+        const email = `e2e-signup-binding-${Date.now()}@test.com`;
+
+        await page.goto('/signup');
+        await page.getByLabel('이메일').fill(email);
+        await page.getByRole('button', { name: '인증 코드 받기' }).click();
+
+        const codeField = page.getByLabel('인증 코드');
+        await expect(codeField).toBeVisible({ timeout: 15_000 });
+        const debug = await getEmailDebug(email);
+        expect(debug?.code).toMatch(/^\d{6}$/);
+        await codeField.fill(debug?.code ?? '');
+        await page.getByRole('button', { name: '코드 확인' }).click();
+
+        const passwordField = page.getByLabel('비밀번호', { exact: true });
+        await expect(passwordField).toBeVisible({ timeout: 15_000 });
+
+        // The verifying browser holds an HttpOnly Strict cookie; removing it
+        // makes this submit look like a stranger who only knows the address
+        // (a fresh browser context cannot reach step 3 of the same form).
+        const cookieName = 'siglens_signup_verify';
+        const issued = (await context.cookies()).find(
+            cookie => cookie.name === cookieName
+        );
+        expect(issued?.httpOnly).toBe(true);
+        expect(issued?.sameSite).toBe('Strict');
+        await context.clearCookies({ name: cookieName });
+
+        await passwordField.fill('E2eSignup1!');
+        await page.getByLabel('모두 동의').check();
+        await page.getByRole('button', { name: '회원가입' }).click();
+
+        // The page also renders Next's empty route announcer (role="alert"), so match the
+        // banner by its text instead of the first alert on the page.
+        await expect(
+            page.getByRole('alert').filter({
+                hasText: '이메일 인증을 완료해야 회원가입이 가능합니다.',
+            })
+        ).toBeVisible({ timeout: 15_000 });
+        await expect(page).toHaveURL(/\/signup/);
+    });
+
     test('signup page: benefits in the server HTML, Google above the email field', async ({
         page,
         request,

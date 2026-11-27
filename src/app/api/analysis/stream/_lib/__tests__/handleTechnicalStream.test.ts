@@ -488,10 +488,23 @@ describe('handleTechnicalStream', () => {
                 tab: 'technical',
                 modelId: 'analysis-worker',
                 tier: 'free',
+                personalized: false,
                 locale: 'ko',
                 result: { entry: 1 },
                 prompt: undefined,
             });
+        });
+
+        it('포지션 버킷이 있으면 맞춤 분석으로 표시해 저장한다', async () => {
+            vi.mocked(resolveHoldingPositionBucket).mockResolvedValue('loss');
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done',
+                unfilteredResult: { entry: 1 },
+            } as never);
+            await (await handleTechnicalStream(request(), params)).text();
+            expect(schedulePersistAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ personalized: true })
+            );
         });
 
         it('이력에는 BYOK 게이트가 정한 생성 tier를 남긴다', async () => {

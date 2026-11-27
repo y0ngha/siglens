@@ -18,10 +18,10 @@ export interface DependencyCheck {
     error?: string;
 }
 
-class PingTimeoutError extends Error {}
+export class PingTimeoutError extends Error {}
 
 /** `promise`를 최대 `ms`까지 기다리고, 초과 시 `PingTimeoutError`로 reject한다. */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         const timer = setTimeout(
             () => reject(new PingTimeoutError(`timeout after ${ms}ms`)),

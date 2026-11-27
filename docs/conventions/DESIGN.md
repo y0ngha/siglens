@@ -1,22 +1,6 @@
 # Design System
 
-**Rule IDs.** 반복해서 어겨진 규칙에는 바뀌지 않는 ID(`DS-N`)와 앵커가 붙어 있다. 코드 주석·리뷰에서는
-`DESIGN.md#DS-3`처럼 인용한다. ID는 재사용·재번호하지 않는다. 새 규칙은 가장 큰 번호 + 1을 쓴다.
-
-| ID | 주제 |
-|---|---|
-| DS-1 | 색은 토큰으로 |
-| DS-2 | 상승/하락 색 고정 |
-| DS-3 | 비활성 상태 표현 |
-| DS-4 | 제목 위계 |
-| DS-5 ~ DS-8 | 레이아웃 안정성·오버레이 |
-| DS-9 | 차트 토큰은 UI 컴포넌트에 쓰지 않는다 |
-| DS-10 | 차트 색 상수 추가 시 문서 갱신 |
-| DS-11 ~ DS-13 | 재는 법(표면·틴트, 불투명도, 레이아웃 주장) |
-| DS-14 | 라이트 테마 짝 정의·양 테마 측정 |
-| DS-15 | 방향 색에 좋고 나쁨을 싣지 않는다 |
-| DS-16 | 표면 토큰을 경계로 쓰지 않는다 |
-| DS-17 | 카드 면 위에 카드 면을 겹치지 않는다 |
+**Rule IDs.** ID 규칙은 root `CLAUDE.md` "Rule IDs and references"를 따른다. `DESIGN.md#DS-3`처럼 인용한다.
 
 ## 컬러 철학
 
@@ -36,10 +20,7 @@ WCAG **AA(4.5:1)는 하한선이고 목표는 AAA(7:1)**다. 본문·헤딩·보
 
 ### 토큰은 한 층이다
 
-한때 `surface` / `fg` / `accent` 같은 **역할 이름의 2계층**을 얹고 "신규 코드는 이것만
-쓴다"고 적어 두었다. 리디자인에서 페이지 30여 개를 다시 쓰면서 확인해 보니 그 14개
-토큰의 **소비자가 하나도 없었다.** 주석이 코드가 하지 않는 보장을 약속하고 있었던
-것이라 토큰을 지웠다. 지금 존재하는 것은 다음뿐이다.
+역할 이름의 2계층(`surface` / `fg` / `accent`)은 소비자가 없어 지웠다. 지금 존재하는 것은 다음뿐이다.
 
 | 종류 | 이름 | 성격 |
 |---|---|---|
@@ -50,17 +31,12 @@ WCAG **AA(4.5:1)는 하한선이고 목표는 AAA(7:1)**다. 본문·헤딩·보
 **프로미넌스 서열은 두 테마에서 같다** — 400이 500보다 눈에 띈다. 램프가 단조롭지
 않은 것은 결함이 아니라 의도된 배치다. 그라데이션이 아니라 이름 붙은 역할이기 때문이다.
 
-> **죽은 토큰은 용량이 아니라 거짓 안내가 문제다.** 다음 사람은 이름만 보고 그게 이
-> 코드베이스의 규약이라고 읽는다. 게다가 어떤 대비 가드도 그 값을 검사하지 않으므로
-> (가드는 실제 사용된 유틸리티를 훑는다) 기준 미달인 값이 규약처럼 보이는 자리에 앉는다.
-> `deadColourTokenGuard`가 소비자 없는 `--color-*`를 막는다. 허용목록은 비어 있다.
+> **죽은 토큰은 거짓 안내다.** 이름만 보고 규약으로 읽히는데, 대비 가드는 실제 사용된 유틸리티만 훑으므로
+> 기준 미달 값이 검사 없이 남는다. `deadColourTokenGuard`가 막는다(허용목록은 비어 있다).
 
 ### 반복되는 클래스 조합은 상수로
 
-토큰만으로는 부족한 자리가 있다. 리디자인 전에는
-`rounded-xl border border-secondary-700 bg-secondary-800` 문자열이 **83곳에 그대로
-복제**돼 있었고 반경 6종·표면 틴트 20종이 뒤섞여 있었다. 페이지마다 다른 템플릿을
-이어붙인 인상의 가장 큰 원인이었다.
+복제된 클래스 리터럴은 한쪽만 고쳐지면서 반경·표면 틴트가 화면마다 갈라진다. 아래 상수를 쓴다.
 
 | 상수 | 파일 | 쓰는 자리 |
 |---|---|---|
@@ -76,7 +52,7 @@ border-secondary-700` + `bg-secondary-800/900` 채움, 알파 포함)도 같은 
 `shadow-*`가 붙은 떠 있는 메뉴는 대상이 아니다.
 카드 위에 `bg-*`를 덧대 면 색을 바꾸지 않는다 — 라이트의 그라데이션(`background-image`)이 그 위에 그려진다.
 
-컴포넌트가 아니라 **문자열 상수**인 이유: 83곳을 컴포넌트로 감싸면 DOM 구조가 바뀌어
+컴포넌트가 아니라 **문자열 상수**인 이유: 컴포넌트로 감싸면 DOM 구조가 바뀌어
 E2E 로케이터와 SEO 텍스트 위치에 회귀 위험이 생긴다. 클래스만 바꾸면 구조는 그대로다.
 
 ---
@@ -498,20 +474,7 @@ Tailwind v4를 사용하므로 별도의 `tailwind.config.ts`(JS 설정) 파일�
 ✅ className="bg-primary-600 hover:bg-primary-700"
 ✅ className="text-ui-danger"
 ✅ className="text-on-fixed-light"                // globals.css @theme에 등록된 고정 표면 토큰
-```
-
-```
-✅ 컬러 토큰 사용
-<div className="bg-secondary-900 text-primary-400">
-
-✅ 차트 컬러는 상수로 관리
-import { CHART_COLORS } from '@/shared/lib/chartColors';
-
-❌ 하드코딩 금지
-<div style={{ backgroundColor: '#0f172a' }}>
-
-❌ 임의 hex 값 금지 (토큰에 없는 색상)
-className="text-[#1a2b3c]"
+❌ style={{ backgroundColor: '#0f172a' }}         // 인라인 hex도 같다
 ```
 
 ---
@@ -526,11 +489,7 @@ className="text-[#1a2b3c]"
 #### DS-2 — 상승/하락 색은 teal / red로 고정한다
 
 상승/하락을 green/red로 쓰지 않는다. Siglens는 teal(`#26a69a`) / red(`#ef5350`)로 고정이고 임의로 바꾸지 않는다
-(라이트 테마는 같은 색을 진하게 조정한 짝을 쓴다).
-
-방향 색은 **움직임**만 전한다. 오르는 것이 나쁜 지표(물가·실업률 등)에 상승=초록, 하락=빨강처럼 좋고 나쁨을
-얹지 않는다 — 같은 화면의 다른 카드와 해석이 갈린다. 좋고 나쁨이 필요하면 색이 아니라 문구로 말한다
-([DS-15](#DS-15)).
+(라이트 테마는 같은 색을 진하게 조정한 짝을 쓴다). 좋고 나쁨은 색에 싣지 않는다([DS-15](#DS-15)).
 
 <a id="DS-3"></a>
 
@@ -538,7 +497,7 @@ className="text-[#1a2b3c]"
 
 `opacity-*`는 글자와 밑판·경계를 **함께** 페이지 배경 쪽으로 끌어 둘 사이 대비를 무너뜨린다(WCAG 1.4.11은 조작 요소 경계에 3:1을
 요구한다). 라이트에서 특히 나쁘다 — 밑판과 글자가 같은 흰 배경으로 수렴해 버튼이 종잇장이 된다(실측 최저 1.51:1).
-`disabledOpacityGuard`(`disabled:`·`aria-disabled:`·`group-disabled:` 및 겹친 variant까지)가 정적으로 막는다.
+`disabledOpacityGuard`가 막는다.
 
 - 채운 컨트롤: `disabled:bg-secondary-700 disabled:text-secondary-500` → 4.89(다크) / 5.49(라이트)
 - 고스트·경계 컨트롤: `disabled:text-secondary-500` → 6.84 / 6.34. 색을 띤 경계는 `disabled:border-border-control`로 함께 중화 → 3.57 / 3.81
@@ -602,8 +561,8 @@ className="text-[#1a2b3c]"
 #### DS-4 — 제목(h1~h6)은 위계 단계마다 공유 토큰을 쓰고, 부모 제목과 달라야 한다
 
 - **색 클래스가 없는 제목을 두지 않는다.** `globals.css`의 `body { color }`가 가장 밝은 단계(`secondary-50`)라, 색 없는 제목은
-  그 단계를 상속해 자신을 다스리는 h2/h1과 같거나 더 밝아진다. **대비 스윕으로는 못 잡는다** — 가장 밝은 색은 항상 대비를 통과하므로
-  225개 요소 스윕이 0건을 보고하는 동안에도 결함은 살아 있었다. 위계 결함이지 대비 결함이 아니다(`headingColourTokenGuard`가 정적으로 막는다).
+  그 단계를 상속해 자신을 다스리는 h2/h1과 같거나 더 밝아진다. 가장 밝은 색은 대비를 항상 통과하므로 대비 스윕은 못 잡는
+  위계 결함이다(`headingColourTokenGuard`가 막는다).
 - **색이 있어도 충분하지 않다.** 부모와 색·굵기가 같고 크기만 다른 제목도 같은 결함이다. 임계값이 아니라 **자기 부모 제목과 비교**한다.
   `HEADING_SECTION`(`font-semibold text-secondary-100`) 아래의 h3에 `font-semibold text-secondary-50`(더 밝음)이나
   `font-semibold text-secondary-100`(같음) 같은 리터럴을 쓰는 것도 같은 위반이다.
@@ -624,10 +583,6 @@ className="text-[#1a2b3c]"
 
 ## 새 화면을 만들 때
 
-2026-08 리디자인은 페이지 30여 개를 다시 쓰면서 같은 결함을 **여러 파일에서 반복해서**
-만났다. 아래는 그때 값을 치르고 알게 된 것들이라, 새 화면을 붙일 때 미리 지키면 같은
-값을 다시 치르지 않는다.
-
 ### 폭 규약
 
 **크롬은 뷰포트에, 본문은 읽기 폭에** 맞춘다.
@@ -642,11 +597,9 @@ className="text-[#1a2b3c]"
 | 본문 | `/methodology` | `mx-auto w-full max-w-4xl px-4`, 본문 단락은 `max-w-2xl` | `/about`과 같은 바깥 폭으로 두 페이지가 이어 읽히게 하고, 긴 글 단락만 한 줄 길이를 줄인다(시장별 출처 표는 바깥 폭을 쓴다) |
 | 본문 | `/developers` | `mx-auto w-full max-w-6xl px-4`, `lg`부터 13rem 목차 + 본문 열(`min-w-0`) | 사이드 목차가 있는 레퍼런스 페이지라 본문 열만 쓰면 코드 블록·표가 좁다. 목차는 `lg`에서 sticky, 그 아래에서는 본문 위에 칩 줄로 쌓는다(같은 `<nav>` 하나). 산문 단락은 `max-w-2xl`, 표·코드 블록은 열 폭을 쓴다 |
 
-**두 층이 어긋나 보이는 것은 의도다.** 한때 크롬도 본문 폭을 따라갔는데, 기본 진입 탭인
-차트가 자기 제목 줄을 전폭으로 그리는 탓에(캔버스 좌단에 맞추려고) 넓은 화면에서 크롬만
-안쪽으로 들여쓰여 두 줄이 어긋났다 — 1920px에서 448px. 제품의 주 표면이 심볼 페이지이므로
-크롬을 뷰포트에 맞추는 쪽을 골랐다. 그 결과 `page-container` 라우트에서는 헤더 로고가
-본문보다 바깥에서 시작하는데, GitHub이 쓰는 것과 같은 배치(크롬 전폭 · 본문 중앙)다.
+**두 층이 어긋나 보이는 것은 의도다.** 주 표면인 심볼 페이지의 차트가 제목 줄을 전폭으로 그리므로(캔버스 좌단에
+맞춤), 크롬이 본문 폭을 따르면 넓은 화면에서 두 줄이 어긋난다(1920px에서 448px). 그래서 크롬은 뷰포트에 맞추고, `page-container`
+라우트에서는 헤더 로고가 본문보다 바깥에서 시작한다(크롬 전폭 · 본문 중앙).
 
 크롬 값을 바꾸면 **짝이 되는 자리를 전부 같이 본다** — 사이트 헤더, 푸터, 심볼 헤더,
 심볼 헤더 스켈레톤, 탭 레일, 탭 스켈레톤, 차트 제목 줄까지 일곱 곳이 같은 규약을 공유한다.
@@ -667,23 +620,10 @@ className="text-[#1a2b3c]"
 
 ### 체크리스트
 
-1. **색은 토큰으로.** 임의 hex·`style={{color}}`·`text-[#...]` 금지. 새 토큰이 필요하면
-   `globals.css`의 `@theme`(다크)과 `:root[data-theme='light']`(라이트)에 **짝으로** 넣는다.
-2. **네 조합을 잰다.** 두 테마 × 페이지 배경/카드 배경. 다크만 재고 넘어가는 것이 이
-   리디자인에서 가장 자주 나온 실수다 — 라이트에서만 무너지는 값이 계속 나왔다.
-3. **반복되는 클래스 뭉치는 상수로.** 카드는 `SURFACE_CARD`, 섹션 제목은
-   `HEADING_SECTION`. 리터럴을 복제하면 한쪽만 고쳐지고, 그 시점부터 두 화면이 조용히
-   갈린다.
-4. **텍스트와 그래픽의 기준이 다르다.** 텍스트 4.5:1(`ui-*-text`), 그래픽·경계 3:1
-   (`chart-*` · `ui-*` · `border-control`). SVG `<text>`의 `fill`도 **글자색**이다 —
-   `fill-`이 붙었다고 그래픽이 되는 게 아니라 무엇을 칠하느냐가 기준을 정한다.
-5. **비활성·포커스·경계는 명시 토큰으로.** `opacity-*`로 비활성을 만들지 않고,
-   포커스는 `focus-visible:ring-2 ring-primary-500`을 붙이고(`focusIndicatorGuard`가 기준),
-   버튼 배경색이 링 색과 같으면 `ring-offset-2 ring-offset-<배경>`을 더해 3:1(WCAG 1.4.11)을 확보한다.
-   컨트롤 경계는 `border-control`을 쓴다.
-6. **테스트를 같이 쓴다.** 새 순수 함수에는 colocated 유닛 테스트, 새 화면에는 렌더
-   테스트. 훅을 테스트했다고 **배선을 테스트한 것이 아니다** — 호출부에서 그 효과가
-   나타나는지 한 줄이라도 단언한다(이 루프에서 여덟 번 반복된 결함이다).
+색은 토큰으로·라이트 짝과 네 조합 측정은 [DS-1](#DS-1)·[DS-14](#DS-14), 클래스 뭉치는 위 상수, 텍스트(4.5:1)와
+그래픽(3:1) 기준은 "AA Text-Variant Tokens", 비활성은 [DS-3](#DS-3), 경계는 [DS-16](#DS-16)을 따른다. 포커스는
+`focus-visible:ring-2 ring-primary-500`(`focusIndicatorGuard`가 기준)이고, 버튼 배경색이 링 색과 같으면
+`ring-offset-2 ring-offset-<배경>`을 더해 3:1(WCAG 1.4.11)을 확보한다. 호출부 배선 테스트는 `TESTING.md#TE-11`.
 
 ### 정적 가드 — 이미 깔려 있는 레일
 
@@ -749,8 +689,7 @@ fallback이 실제 헤더의 행 구조와 다르면(한 줄 대 두 줄) 교체
 
 ### 재는 법 — 측정기를 먼저 의심하라
 
-실패가 수십 건 나오면 제품이 아니라 **측정기**를 의심한다. 이 리디자인에서 가짜 실패를
-만든 원인들이다.
+실패가 수십 건 나오면 제품이 아니라 **측정기**를 의심한다. 가짜 실패의 원인들:
 
 - **정규식으로 색을 읽지 않는다.** Tailwind v4는 `oklab()`을 내보내고, 정규식은 그걸
   가짜 검정으로 읽어 실패 33건을 지어냈다. canvas에 칠해 실제 RGB로 해석한다.
@@ -787,6 +726,7 @@ fallback이 실제 헤더의 행 구조와 다르면(한 줄 대 두 줄) 교체
 
 요소에 `opacity`가 걸려 있으면 최종 알파는 `baseAlpha * elementOpacity`다. 불투명도를 무시하고 재면 `disabled:opacity-40` 버튼이
 8.82:1로 읽히는데 실제 렌더는 2.26:1이다.
+SVG의 장식 선·도형에 거는 `opacity`·`stroke-opacity`도 같고, 테스트는 색 hex만이 아니라 불투명도 값도 고정한다.
 
 <a id="DS-13"></a>
 
@@ -846,7 +786,7 @@ Distinction uses three orthogonal cues (not emotional color):
 
 `SignalStockCard` extends `IndexCard` language: mono ticker, tabular-nums price, signal badges as tracked uppercase labels with `·` bullet separator. Hover uses `-translate-y-px` + background/border shift, not `opacity-80`.
 
-**Title hierarchy is market-dependent** (`DashboardScope.tickerIsReadable`). US tickers are names a reader recognises (`XLK`, `AAPL`), so they take the primary line in mono and the Korean name sits below in muted grey. KRX tickers are 6-digit codes (`091160.KS`, `005930.KS`) that mean nothing to anyone, so on `tickerIsReadable: false` markets the two swap: the proportional Korean name (`반도체`, `삼성전자`) becomes the primary line and the mono ticker drops to the muted line. Both values stay in the DOM either way — only visual priority moves, and `translate="no"` follows the ticker. Ship a new quote card with the ticker hardcoded as the title and `/market/kr` goes back to a page whose headings are all numbers.
+**Title hierarchy is market-dependent**: follow "문구 규약" (`DashboardScope.tickerIsReadable`). The demoted line is muted grey. Both values stay in the DOM either way (only visual priority moves), and `translate="no"` follows the ticker.
 
 ### Background
 

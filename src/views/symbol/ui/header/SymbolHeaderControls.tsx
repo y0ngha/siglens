@@ -6,6 +6,8 @@ import { ShareButton } from '@/widgets/share/ui/ShareButton';
 import { WatchlistToggleButton } from '@/features/watchlist/ui/WatchlistToggleButton';
 import { RecordRecentSymbol } from '@/features/watchlist/ui/RecordRecentSymbol';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
+import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
+import { MailAlertButton } from '@/features/mail-alert/ui/MailAlertButton';
 
 /** "분석 설정" 메뉴가 쓰는 모델·reasoning 상태 — 헤더가 `useSymbolModel()`에서 한 번 읽어 넘긴다. */
 type AnalysisSettings = Pick<
@@ -21,6 +23,8 @@ type AnalysisSettings = Pick<
     | 'openSignupNudge'
 >;
 
+export type MailAlertSlot = 'button' | 'reserved' | 'none';
+
 interface SymbolHeaderControlsProps {
     /** 대문자 티커. */
     ticker: string;
@@ -28,10 +32,16 @@ interface SymbolHeaderControlsProps {
     watchlistLabel: string;
     /** "분석 설정" 메뉴 상태. */
     settings: AnalysisSettings;
+    /**
+     * "메일로 받기" 자리. `button`은 둘 수 있는 종목(미국·한국 주식과 ETF), `none`은 둘 수 없는 종목(크립토·지수),
+     * `reserved`는 자산 정보를 아직 몰라 모를 때 — 같은 크기의 빈 자리만 잡아 버튼이 나중에 생겨도 줄이
+     * 밀리지 않게 한다. 공개 전에는 어느 쪽이든 아무것도 그리지 않는다.
+     */
+    mailAlertSlot: MailAlertSlot;
 }
 
 /**
- * `[☆][평단 칩(회원)][공유][설정 기어]`의 size-11 아이콘형 컨트롤 한 줄. 모델 셀렉터·상세분석
+ * `[☆][메일로 받기(공개 후, 주식·ETF)][평단 칩(회원)][공유][설정 기어]`의 size-11 아이콘형 컨트롤 한 줄. 모델 셀렉터·상세분석
  * 토글은 "분석 설정" 팝오버 뒤에 있어 모바일도 한 줄에 들어간다 — 헤더 높이가 늘면 탭 레일이
  * 밀리므로 이 행은 한 줄을 넘지 않아야 한다. 폴백 셸(`SymbolHeaderShellFallback`)도 같은 폭의
  * 자리를 둔다.
@@ -40,6 +50,7 @@ export function SymbolHeaderControls({
     ticker,
     watchlistLabel,
     settings,
+    mailAlertSlot,
 }: SymbolHeaderControlsProps) {
     return (
         <div className="flex items-center gap-2">
@@ -50,6 +61,15 @@ export function SymbolHeaderControls({
                 successToast
                 showCoachMark
             />
+            {mailAlertSlot === 'button' && (
+                <MailAlertButton
+                    topic={{ kind: 'symbol', symbol: ticker }}
+                    name={watchlistLabel}
+                />
+            )}
+            {mailAlertSlot === 'reserved' && isMailAlertLaunched() && (
+                <span aria-hidden="true" className="inline-block size-11" />
+            )}
             {/* 헤더 ★·홈 카드·`/watchlist`의 "최근 본" 탭 기록. 그리는 것은 없다. */}
             <RecordRecentSymbol symbol={ticker} label={watchlistLabel} />
             <PortfolioChipMounted symbol={ticker} />

@@ -14,6 +14,7 @@ import {
     targetGapPct,
     targetsDisagree,
 } from '@/entities/analyst-views/lib/targetGap';
+import { loadPageKrValuation } from '@/entities/kr-valuation/server/loadPageKrValuation';
 import { loadAnalystEstimateTrend } from '@/entities/analyst-views/server/loadAnalystEstimateTrend';
 import { loadAnalystTargetsSummary } from '@/entities/analyst-views/server/loadAnalystTargetsSummary';
 import { readGradesSource } from '@/shared/api/fmp/gradesConsensusSource';
@@ -35,6 +36,11 @@ import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+
+/**
+ * 펀더멘털 섹션 정적 캐시(`fundamental:profile`·`fundamental:metrics-v3` 등)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const FUNDAMENTAL_SECTION_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
 /** TTM 재무비율 캐시 키 — 수익성 카드와 재무 건전성 카드가 같은 캐시 엔트리를 공유한다. */
 const RATIOS_CACHE_KEY = 'fundamental:ratios-v2';
@@ -58,7 +64,7 @@ interface LocalizedSectionProps extends SymbolSectionProps {
  * "장애가 이어지는 동안 방문당 최대 5분에 한 번 재렌더"뿐이라, 큐레이션 종목으로 한정하지 않는다.
  *
  * 키는 페이지 게이트(`getProfileResilient`의 `fundamental:profile`)·다른 섹션과 공유되는 리터럴이라
- * 호출부가 그대로 적는다(revalidate clamp 가드가 그 리터럴을 찾는다).
+ * 호출부가 그대로 적는다(revalidate clamp 가드가 `FUNDAMENTAL_SECTION_REVALIDATE_SECONDS`를 읽는다).
  */
 function loadSection<T, F>(
     key: string,
@@ -72,7 +78,7 @@ function loadSection<T, F>(
         symbol,
         load,
         [],
-        SECONDS_PER_DAY
+        FUNDAMENTAL_SECTION_REVALIDATE_SECONDS
     ).catch(async (error: unknown): Promise<F> => {
         console.error(failureLog, redactDbErrorForLog(error));
         await shortenRevalidateForRuntimeDegrade();
@@ -99,7 +105,7 @@ function loadOptionalSection<T, F>(
         symbol,
         load,
         [],
-        SECONDS_PER_DAY
+        FUNDAMENTAL_SECTION_REVALIDATE_SECONDS
     ).catch((error: unknown): F => {
         console.warn(failureLog, redactDbErrorForLog(error));
         return fallback;
@@ -159,11 +165,36 @@ export async function ProfileSection({
     return <ProfileCard profile={profile} descriptionSlot={descriptionSlot} />;
 }
 
-/** 밸류에이션 카드. 실패하면 `ValuationCard(null)`의 빈 상태. */
+/**
+ * 한국 종목 밸류에이션 카드의 지표와 계산 기준을 한 캐시 엔트리에서 읽는다. DART 오류·시한으로 제공처 값이 나온 일시적 결과는 페이지
+ * 캐시에 들어가지 않으므로(`loadPageKrValuation`) 이 렌더의 revalidate를 낮춰 곧 다시 만든다. 로더 자체가 던지면 빈 카드다.
+ */
+async function loadKrValuationSection(symbol: string) {
+    try {
+        const page = await loadPageKrValuation(symbol);
+        if (page.transient) await shortenRevalidateForRuntimeDegrade();
+        return page;
+    } catch (error) {
+        console.error(
+            '[ValuationSection] loadPageKrValuation failed, degrading to null:',
+            redactDbErrorForLog(error)
+        );
+        await shortenRevalidateForRuntimeDegrade();
+        return { metrics: null, basis: null, transient: false };
+    }
+}
+
+/**
+ * 밸류에이션 카드. 실패하면 `ValuationCard(null)`의 빈 상태. 한국 종목은 PER·PBR이 DART 기준이고 계산 기준 한 줄을 함께 싣는다.
+ */
 export async function ValuationSection({ symbol }: SymbolSectionProps) {
+    if (isKrEquitySymbol(symbol)) {
+        const { metrics, basis } = await loadKrValuationSection(symbol);
+        return <ValuationCard metrics={metrics} basis={basis} />;
+    }
     const metrics = await loadSection(
-        // `-v2`: 한국 종목 PER·EPS·요약 파생값의 산출 기준이 바뀌었다(`CachedFundamentalProvider` 키 주석).
-        'fundamental:metrics-v2',
+        // `-v3`: 한국 종목 PER·EPS의 산출 기준이 바뀌었다(`-v2`는 yahoo 파생 값). 한국 종목은 `fundamental:kr-valuation-v1`을 쓴다.
+        'fundamental:metrics-v3',
         symbol,
         () => getKeyMetricsTtm(symbol),
         '[ValuationSection] getKeyMetricsTtm failed, degrading to null:',

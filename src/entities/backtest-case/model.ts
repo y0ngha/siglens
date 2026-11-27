@@ -1,3 +1,8 @@
+import type {
+    BacktestTrade,
+    BacktestTrendRecognition,
+} from '@y0ngha/siglens-core';
+
 /**
  * 백테스트 화면에 쓰는 통계.
  *
@@ -45,11 +50,6 @@ export interface TickerStats {
     /** 보유일 합 ÷ 시뮬레이션 거래일. */
     exposurePct: number;
 }
-
-import type {
-    BacktestTrade,
-    BacktestTrendRecognition,
-} from '@y0ngha/siglens-core';
 
 /**
  * 화면 한 줄에 필요한 매매 값. UI 파일이 entity `lib/`를 직접 부르지 않도록(widgets/CLAUDE.md)

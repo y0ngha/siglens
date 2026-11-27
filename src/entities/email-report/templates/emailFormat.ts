@@ -115,3 +115,27 @@ export function formatConsentAt(
         return format('UTC');
     }
 }
+
+/**
+ * 분석 시각(ISO)을 수신자 달력의 "11월 24일" 꼴 날짜로 쓴다. 타임존을 모르는 값이면 UTC로 쓴다.
+ * 읽을 수 없는 시각이면 `null`.
+ */
+export function formatAnalysisDate(
+    iso: string,
+    locale: Locale,
+    timeZone: string
+): string | null {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return null;
+    const format = (zone: string) =>
+        new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+            month: 'long',
+            day: 'numeric',
+            timeZone: zone,
+        }).format(date);
+    try {
+        return format(timeZone);
+    } catch {
+        return format('UTC');
+    }
+}

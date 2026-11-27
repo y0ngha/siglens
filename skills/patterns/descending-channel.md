@@ -18,6 +18,7 @@ gating:
   triggers: [descending_channel]
 token_cost: 758
 digest_hash: "9ba9e97f"
+digest_text_hash: "f5b896c6"
 ---
 
 ## Detection Criteria

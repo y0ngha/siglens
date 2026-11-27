@@ -8,6 +8,7 @@ import {
     continuationFloor,
     planSignalEpisodes,
     recordableSessionDate,
+    SIGNAL_SETTLE_MINUTES,
 } from '../signalEventRows';
 
 const SETTLE = 15;
@@ -272,5 +273,11 @@ describe('planSignalEpisodes', () => {
             { symbol: 'AAPL', signalType: 'golden_cross' },
         ]);
         expect(plan.extends[0]).not.toHaveProperty('priceAtDetection');
+    });
+});
+
+describe('SIGNAL_SETTLE_MINUTES', () => {
+    it('미국은 15분, 한국은 시세 지연을 더해 35분이다', () => {
+        expect(SIGNAL_SETTLE_MINUTES).toEqual({ us: 15, kr: 35 });
     });
 });

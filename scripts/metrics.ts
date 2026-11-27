@@ -1,7 +1,6 @@
 /**
- * MAU/DAU 읽기. 관리자 UI도 API 라우트도 만들지 않는 이유는
- * `docs/superpowers/specs/2026-09-02-visitor-metrics-design.md` §6에 있다 —
- * `users`에 role 컬럼조차 없어 권한 체계부터 만들어야 한다.
+ * MAU/DAU 읽기. 관리자 UI도 API 라우트도 만들지 않는 이유는 `users`에 role
+ * 컬럼조차 없어 권한 체계부터 만들어야 하기 때문이다.
  *
  * 실행: `yarn metrics`
  */

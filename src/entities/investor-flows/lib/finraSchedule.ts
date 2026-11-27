@@ -42,6 +42,7 @@ export function shortInterestCandidateGroups(
         Number(today.slice(0, 4)),
         Number(today.slice(5, 7)),
     ];
+    // CONVENTIONS.md#CP-6 예외: 월 단위로 y/m을 한 칸씩 전진하며 결제일 Set 하나에 채운다(수십 개월). 월마다 Set을 복사하면 O(N²)다.
     for (
         let y = fromYear, m = fromMonth;
         y < toYear || (y === toYear && m <= toMonth);
@@ -62,13 +63,16 @@ export function shortInterestCandidateGroups(
             m += 1;
         }
     }
-    return [...settlements].sort().map(settlement => {
-        const group = [settlement];
-        let d = settlement;
-        while (group.length < variants) {
-            d = onOrBeforeWeekday(addDays(d, -1));
-            group.push(d);
-        }
-        return group;
-    });
+    return [...settlements].sort().map(settlement =>
+        // 각 날짜는 앞 날짜의 직전 평일이라 앞선 결과를 이어받는 reduce로 쌓는다.
+        Array.from({ length: variants - 1 }).reduce<string[]>(
+            group => [
+                ...group,
+                onOrBeforeWeekday(
+                    addDays(group[group.length - 1] ?? settlement, -1)
+                ),
+            ],
+            [settlement]
+        )
+    );
 }

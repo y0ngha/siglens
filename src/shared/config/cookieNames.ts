@@ -15,6 +15,15 @@ export const AUTH_HINT_COOKIE_NAME = 'siglens_auth';
 export const GUEST_ID_COOKIE_NAME = 'siglens_guest';
 
 /**
+ * HttpOnly nonce that binds the sign-up "email verified" marker to the browser
+ * that proved the code (`entities/auth/lib/signupVerificationCookie.ts`). Only
+ * its SHA-256 hash is stored server-side; `registerUser` refuses a sign-up whose
+ * cookie does not match. Host-only, Strict, expires with the marker (30 minutes)
+ * or as soon as sign-up completes.
+ */
+export const SIGNUP_VERIFICATION_COOKIE_NAME = 'siglens_signup_verify';
+
+/**
  * Client-readable one-shot flag the sign-up server actions set so the next
  * page can record a Google Ads sign-up conversion (`shared/lib/googleAds.ts`).
  * Value is always "1". Scoped to `siglens.io` so ai.siglens.io reads it too —

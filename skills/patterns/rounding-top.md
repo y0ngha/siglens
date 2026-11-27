@@ -18,6 +18,7 @@ gating:
   triggers: [rounding_top]
 token_cost: 615
 digest_hash: "317ddf4a"
+digest_text_hash: "aa11a003"
 ---
 
 ## Detection Criteria

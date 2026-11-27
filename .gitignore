@@ -96,6 +96,14 @@ next-env.d.ts
 !/scripts/skills-digest.ts
 # 차트 가이드: 스킬 → 가이드 링크 맵 생성기(guideCoverage 가드가 import한다).
 !/scripts/generate-guide-links.ts
+# 배포 env 게이트 목록 생성기(`yarn env:gate`, envRegistry 가드가 import한다).
+!/scripts/generate-env-gate.ts
+# 규칙 문서 총량 점검(`yarn rules:size`, ruleDocSize 가드와 같은 목록을 쓴다).
+!/scripts/rule-doc-size.ts
+# 코드 규칙 기준선 도구(`yarn rules:ratchet`, codeRules 가드와 같은 엔진·기준선을 쓴다).
+!/scripts/rule-ratchet.ts
+# 주간 커버리지 워크플로(`coverage-weekly`)가 실행하는 레이어별 표 생성기.
+!/scripts/coverage-by-layer.ts
 !/scripts/update-popular-tickers.ts
 !/scripts/__tests__/
 !/scripts/__tests__/**
@@ -132,6 +140,11 @@ next-env.d.ts
 !/scripts/db-dev.sh
 !/scripts/db-tunnel.sh
 !/scripts/db-dev-seed-from-prod.sh
+!/scripts/signal-universe/
+!/scripts/signal-universe/**
+# 에이전트 턴 슬롯 부하 시험(개발 도구, CI 미사용).
+!/scripts/load/
+!/scripts/load/**
 !/scripts/lib/
 !/scripts/lib/**
 # i18n 툴링 — `yarn i18n:extract/translate/verify/lint/routes`가 이 파일들을

@@ -25,6 +25,7 @@ import type {
     ReportEmailTranslator,
     ReportEmailWelcome,
     SignalLabelResolver,
+    SkillLabelResolver,
 } from '@/entities/email-report/templates/reportEmailTypes';
 import type {
     EmailReportDeliveryRepository,
@@ -40,6 +41,7 @@ import {
     redactDbErrorForLog,
     redactedErrorMessage,
 } from '@/shared/db/redactDbErrorForLog';
+import type { SymbolDrawings } from './loadSymbolDrawings';
 
 /** 발송 기록 보관 기간 — 그보다 오래된 행은 매 실행 끝에 지운다. */
 export const DELIVERY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
@@ -51,8 +53,8 @@ export const RECIPIENT_CONCURRENCY = 4;
  */
 export const BATCH_DEADLINE_MS = 45 * 60 * 1000;
 /**
- * 한 회원의 요약 데이터(일봉)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
- * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 요약(일봉) 경로의 동시 조회 최악은 그 곱(20)이다.
+ * 한 회원의 요약 데이터(일봉과 종목 이름 조회)를 동시에 받는 종목 수. 최대 20종목/통을 한 번에 던지지 않는다(CC-1).
+ * 회원이 `RECIPIENT_CONCURRENCY`명 동시에 돌므로 요약(일봉·이름) 경로의 동시 종목 수 최악은 그 곱(20)이다.
  * 전체 카드의 리포트 로드(`reportFor`)는 같은 회원 안에서 이 청크와 나란히 돌아 이 상한에
  * 포함되지 않는다 — 배치 전체의 업스트림 호출 상한이 아니다.
  */
@@ -79,8 +81,18 @@ export interface EmailReportBatchDeps {
      * 부른다. 비면 그 회원은 지금처럼 건너뛴다.
      */
     loadMarketPicks: () => Promise<string[]>;
+    /**
+     * 종목들의 차트에 그려지는 분석 작도. 이미지가 `localDate`까지의 봉으로 그려지므로 범례도 같은 날짜로
+     * 계산한다. 배치 안에서 (종목, 날짜)마다 한 번만 부른다(아직 모르는 것만 묶어서). 그릴 작도가 없는 종목은
+     * 결과에 없다.
+     */
+    loadDrawings: (
+        symbols: string[],
+        localDate: string
+    ) => Promise<Map<string, SymbolDrawings>>;
     getTranslator: (locale: Locale) => Promise<ReportEmailTranslator>;
     getSignalLabel: (locale: Locale) => Promise<SignalLabelResolver>;
+    getSkillLabel: (locale: Locale) => Promise<SkillLabelResolver>;
     dispatcher: KeyedEmailDispatcher;
     secret: string;
     siteUrl: string;
@@ -95,6 +107,12 @@ export interface EmailReportBatchCounts {
     skipped: number;
     /** `sent` 중 보유·관심종목이 없어 시장 브리핑으로 보낸 회원. */
     marketBriefings: number;
+    /**
+     * 차트에 분석 작도가 그려진 카드 수 / 작도 없이 캔들·이동평균만 나간 카드 수(전체 카드 기준).
+     * 정기 회차와 가입 첫 리포트의 카드를 함께 센다(둘 다 `composeEmail`을 거친다).
+     */
+    drawingsCards: number;
+    drawingsNone: number;
     /** 다른 실행이 이미 선점한 회원. */
     alreadyClaimed: number;
     /** 첫 리포트를 보낸 회원. */
@@ -159,6 +177,7 @@ function mapChunked<T, R>(
 function noDataBrief(symbol: string): SymbolBrief {
     return {
         symbol,
+        names: null,
         close: null,
         changePercent: null,
         trend: null,
@@ -214,6 +233,8 @@ export async function runEmailReportBatch(
         failed: 0,
         skipped: 0,
         marketBriefings: 0,
+        drawingsCards: 0,
+        drawingsNone: 0,
         alreadyClaimed: 0,
         welcomeSent: 0,
         welcomeFailed: 0,
@@ -264,6 +285,46 @@ export async function runEmailReportBatch(
             signalLabelCache.set(locale, pending);
         }
         return pending;
+    };
+
+    const skillLabelCache = new Map<Locale, Promise<SkillLabelResolver>>();
+    const skillLabelFor = (locale: Locale) => {
+        let pending = skillLabelCache.get(locale);
+        if (pending === undefined) {
+            pending = deps.getSkillLabel(locale);
+            skillLabelCache.set(locale, pending);
+        }
+        return pending;
+    };
+
+    // 작도는 로케일과 무관하다 — (종목, 날짜)마다 한 번만 읽고, 처음 보는 종목만 한 번에 묶어 조회한다.
+    // 작도 조회가 일시적으로 실패하면 그 결과(작도 없음)를 이 배치 안에서는 다시 시도하지 않는다 — 작도는 부가 표시다.
+    const drawingsCache = new Map<string, Promise<SymbolDrawings | null>>();
+    const drawingsFor = (symbols: readonly string[], localDate: string) => {
+        const keyOf = (symbol: string) => `${symbol}\u0000${localDate}`;
+        const missing = symbols.filter(s => !drawingsCache.has(keyOf(s)));
+        if (missing.length > 0) {
+            const pending = deps
+                .loadDrawings(missing, localDate)
+                .catch(error => {
+                    console.warn(
+                        '[email-report] chart drawings failed',
+                        redactDbErrorForLog(error)
+                    );
+                    return new Map<string, SymbolDrawings>();
+                });
+            for (const symbol of missing) {
+                drawingsCache.set(
+                    keyOf(symbol),
+                    pending.then(found => found.get(symbol) ?? null)
+                );
+            }
+        }
+        return Promise.all(
+            symbols.map(
+                s => drawingsCache.get(keyOf(s)) ?? Promise.resolve(null)
+            )
+        );
     };
 
     // 시장 브리핑 종목은 회원과 무관해 배치에 한 번만 조회한다(첫 필요 시점에). 실패는 빈 목록 — 그
@@ -324,12 +385,20 @@ export async function runEmailReportBatch(
         // 요약 조회는 전체 카드·요약 행을 한 줄로 묶어 청크로 돌린다 — 회원 한 명당 동시에
         // 떠 있는 일봉 조회가 BRIEF_CONCURRENCY를 넘지 않는다(최악 RECIPIENT_CONCURRENCY ×
         // BRIEF_CONCURRENCY = 20). 전체 카드의 리포트 로드는 이 청크와 나란히 돈다.
-        const [reports, briefs, t, signalLabel] = await Promise.all([
-            Promise.all(selection.full.map(s => reportFor(s, locale))),
-            mapChunked(symbols, BRIEF_CONCURRENCY, briefFor),
-            translatorFor(locale),
-            signalLabelFor(locale),
-        ]);
+        const [reports, briefs, t, signalLabel, skillLabel, drawingList] =
+            await Promise.all([
+                Promise.all(selection.full.map(s => reportFor(s, locale))),
+                mapChunked(symbols, BRIEF_CONCURRENCY, briefFor),
+                translatorFor(locale),
+                signalLabelFor(locale),
+                skillLabelFor(locale),
+                marketBriefing
+                    ? Promise.resolve([])
+                    : drawingsFor(selection.full, localDate),
+            ]);
+        const drawingsBySymbol = new Map(
+            selection.full.map((symbol, i) => [symbol, drawingList[i] ?? null])
+        );
         const briefBySymbol = new Map(briefs.map(b => [b.symbol, b]));
         const briefOf = (symbol: string) =>
             briefBySymbol.get(symbol) ?? noDataBrief(symbol);
@@ -337,21 +406,32 @@ export async function runEmailReportBatch(
             to: recipient.email,
             locale,
             localDate,
-            sections: reports.map(report => ({
-                report,
-                brief: briefOf(report.symbol),
-                chartUrl: buildChartImageUrl(
-                    deps.siteUrl,
-                    deps.secret,
-                    report.symbol,
-                    localDate
-                ),
-                pageUrl: buildSymbolPageUrl(
-                    deps.siteUrl,
-                    locale,
-                    report.symbol
-                ),
-            })),
+            sections: reports.map(report => {
+                const drawings = drawingsBySymbol.get(report.symbol) ?? null;
+                return {
+                    report,
+                    brief: briefOf(report.symbol),
+                    chartUrl: buildChartImageUrl(
+                        deps.siteUrl,
+                        deps.secret,
+                        report.symbol,
+                        localDate,
+                        drawings?.analysisAt ?? null
+                    ),
+                    drawings:
+                        drawings === null
+                            ? null
+                            : {
+                                  analyzedAt: drawings.analysisAt.toISOString(),
+                                  legend: drawings.legend,
+                              },
+                    pageUrl: buildSymbolPageUrl(
+                        deps.siteUrl,
+                        locale,
+                        report.symbol
+                    ),
+                };
+            }),
             briefRows: briefSymbols.map(symbol => ({
                 brief: briefOf(symbol),
                 pageUrl: buildSymbolPageUrl(deps.siteUrl, locale, symbol),
@@ -374,9 +454,15 @@ export async function runEmailReportBatch(
                 },
             }),
             ...(welcome !== undefined && { welcome }),
+            timeZone: recipient.timezone,
             t,
             signalLabel,
+            skillLabel,
         });
+        for (const drawings of drawingsBySymbol.values()) {
+            if (drawings === null) counts.drawingsNone += 1;
+            else counts.drawingsCards += 1;
+        }
         return { email, symbols, marketBriefing };
     }
 
@@ -466,7 +552,6 @@ export async function runEmailReportBatch(
             consentedAt: recipient.consentedAt,
             daysOfWeek: recipient.daysOfWeek,
             sendHour: recipient.sendHour,
-            timezone: recipient.timezone,
             sampleUrl: `${deps.siteUrl}${localePath(locale, '/email-report/sample')}`,
         });
         const outcome = await deps.dispatcher.sendKeyedEmail({

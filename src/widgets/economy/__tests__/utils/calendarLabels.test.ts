@@ -28,6 +28,12 @@ describe('calendarLabels', () => {
         expect(kstDayOfWeekLabel('2026-06-20', 'ko')).toBe('토');
     });
 
+    it('kstDayOfWeekLabel은 날짜로 읽히지 않는 키에 이름 있는 에러를 던진다', () => {
+        expect(() => kstDayOfWeekLabel('not-a-date', 'ko')).toThrow(
+            'invalid calendar date key: not-a-date'
+        );
+    });
+
     describe('displayEventLabel', () => {
         it('맵에 있으면 표시명, 없으면 원문', () => {
             expect(displayEventLabel('CPI', { CPI: '소비자물가' })).toBe(

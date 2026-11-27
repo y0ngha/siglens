@@ -3,16 +3,14 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    INSIDER_RENDER_BUDGET_MS,
-    INSIDER_RENDER_MAX_PAGES,
-} from '@/shared/api/fmp/investorFlowsFmpClient';
 import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import { AAPL_SUBMISSIONS } from './fixtures/submissionsSample';
 import {
     FmpInvestorFlowsClient,
     INSIDER_MAX_PAGES,
     INSIDER_PAGE_SIZE,
+    INSIDER_RENDER_BUDGET_MS,
+    INSIDER_RENDER_MAX_PAGES,
 } from '../investorFlowsFmpClient';
 
 /** Deny-by-default: URLs the test does not route throw instead of reaching FMP. */

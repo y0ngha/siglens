@@ -65,10 +65,12 @@ vi.mock('@/entities/news-article/api', () => ({
 
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
-import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from '../lib/newsAnalysisConstants';
+import {
+    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
+    VISITOR_NEWS_CARD_LIMIT,
+} from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
-import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
 import { getNewsClient } from '../server/getNewsClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {

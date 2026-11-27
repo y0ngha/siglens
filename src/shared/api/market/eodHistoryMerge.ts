@@ -93,11 +93,13 @@ export function hasSuspiciousGap(cachedLast: Bar, fetched: Bar[]): boolean {
     const appended = fetched
         .filter(b => b.time > cachedLast.time)
         .toSorted((a, b) => a.time - b.time);
-    return appended.some((bar, i) => {
-        const prevClose = (i === 0 ? cachedLast : appended[i - 1]!).close;
+    // 각 봉을 바로 앞 봉과 짝짓는다: 첫 봉의 앞은 캐시의 마지막 봉이다.
+    return [cachedLast, ...appended].some((prev, i, sequence) => {
+        const bar = sequence[i + 1];
+        if (bar === undefined) return false;
         return (
-            prevClose > 0 &&
-            Math.abs(bar.open / prevClose - 1) > SUSPICIOUS_GAP_RATIO
+            prev.close > 0 &&
+            Math.abs(bar.open / prev.close - 1) > SUSPICIOUS_GAP_RATIO
         );
     });
 }

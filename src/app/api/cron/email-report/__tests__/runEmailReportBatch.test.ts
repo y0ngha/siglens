@@ -6,6 +6,8 @@ import {
     selectDueRecipients,
     type EmailReportBatchDeps,
 } from '@/app/api/cron/email-report/runEmailReportBatch';
+import { defined } from '@/shared/test-utils/defined';
+import type { SymbolDrawings } from '@/app/api/cron/email-report/loadSymbolDrawings';
 import { weekdaysToMask } from '@/entities/email-report/lib/weekdayMask';
 import type {
     SymbolBrief,
@@ -69,6 +71,7 @@ function report(symbol: string): SymbolReport {
 function brief(symbol: string): SymbolBrief {
     return {
         symbol,
+        names: null,
         close: 100,
         changePercent: 1.5,
         trend: 'uptrend',
@@ -113,6 +116,10 @@ function makeDeps(overrides: Partial<EmailReportBatchDeps> = {}) {
         loadReport: vi.fn(async (symbol: string) => report(symbol)),
         loadBrief: vi.fn(async (symbol: string) => brief(symbol)),
         loadMarketPicks: vi.fn().mockResolvedValue([]),
+        loadDrawings: vi.fn(async () => new Map()),
+        getSkillLabel: vi
+            .fn()
+            .mockResolvedValue((name: string): string => name),
         getTranslator: vi.fn().mockResolvedValue((key: string) => key),
         getSignalLabel: vi
             .fn()
@@ -356,6 +363,135 @@ describe('runEmailReportBatch', () => {
             null
         );
         expect(counts.skipped).toBe(1);
+    });
+
+    describe('차트 작도', () => {
+        const ANALYSIS_AT = new Date('2026-10-03T21:00:00.123Z');
+        const drawingsFor = (symbols: string[]) =>
+            Promise.resolve(
+                new Map<string, SymbolDrawings>(
+                    symbols.includes('AAPL')
+                        ? [
+                              [
+                                  'AAPL',
+                                  {
+                                      analysisAt: ANALYSIS_AT,
+                                      legend: [
+                                          {
+                                              kind: 'trendUp',
+                                              color: '#26a69a',
+                                          },
+                                      ],
+                                  },
+                              ],
+                          ]
+                        : []
+                )
+            );
+
+        it('작도가 있는 종목의 이미지 URL에만 분석 시각(a)을 싣고, 범례와 근거를 카드에 낸다', async () => {
+            const { deps, sent } = makeDeps({
+                loadDrawings: vi.fn(drawingsFor),
+            });
+
+            const counts = await runEmailReportBatch(deps, NOW);
+
+            const urls = [
+                ...defined(sent[0]).html.matchAll(
+                    /src="(https:\/\/siglens\.io\/api\/email-report\/chart\?[^"]+)"/g
+                ),
+            ].map(m => new URL(defined(m[1]).replaceAll('&amp;', '&')));
+            const bySymbol = new Map(
+                urls.map(u => [u.searchParams.get('s'), u])
+            );
+            expect(bySymbol.get('AAPL')?.searchParams.get('a')).toBe(
+                String(ANALYSIS_AT.getTime())
+            );
+            expect(bySymbol.get('MSFT')?.searchParams.has('a')).toBe(false);
+            expect(defined(sent[0]).html).toContain('legendTrendUp');
+            expect(defined(sent[0]).html).toContain('chartAltDrawings');
+            expect(counts).toMatchObject({ drawingsCards: 1, drawingsNone: 1 });
+        });
+
+        it('같은 종목은 회원·로케일이 달라도 한 번만 읽고, 처음 보는 종목만 묶어 조회한다', async () => {
+            const { deps } = makeDeps({
+                subscriptions: {
+                    findEnabledRecipients: vi.fn().mockResolvedValue([
+                        recipient({ userId: 'a', email: 'a@x.com' }),
+                        recipient({
+                            userId: 'b',
+                            email: 'b@x.com',
+                            locale: 'en',
+                        }),
+                    ]),
+                },
+                loadDrawings: vi.fn(drawingsFor),
+            });
+
+            await runEmailReportBatch(deps, NOW);
+
+            const calls = vi.mocked(deps.loadDrawings).mock.calls;
+            const symbols = calls.flatMap(([list]) => list).sort();
+            expect(symbols).toEqual(['AAPL', 'MSFT']);
+        });
+
+        it('수신자 기준일이 다르면(타임존) 같은 종목도 날짜별로 따로 계산한다', async () => {
+            const { deps } = makeDeps({
+                subscriptions: {
+                    findEnabledRecipients: vi.fn().mockResolvedValue([
+                        recipient({ userId: 'seoul', email: 's@x.com' }),
+                        recipient({
+                            userId: 'ny',
+                            email: 'n@x.com',
+                            timezone: 'America/New_York',
+                            daysOfWeek: weekdaysToMask([0]),
+                            sendHour: 19,
+                        }),
+                    ]),
+                },
+                loadDrawings: vi.fn(drawingsFor),
+            });
+
+            await runEmailReportBatch(deps, NOW);
+
+            const calls = vi
+                .mocked(deps.loadDrawings)
+                .mock.calls.map(
+                    ([symbols, date]) => `${date}:${symbols.sort().join()}`
+                )
+                .sort();
+            expect(calls).toEqual([
+                '2026-10-04:AAPL,MSFT',
+                '2026-10-05:AAPL,MSFT',
+            ]);
+        });
+
+        it('작도 조회가 던져도 메일은 작도 없는 이미지로 나간다', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const { deps, sent } = makeDeps({
+                loadDrawings: vi.fn().mockRejectedValue(new Error('db down')),
+            });
+
+            const counts = await runEmailReportBatch(deps, NOW);
+
+            expect(sent).toHaveLength(1);
+            expect(defined(sent[0]).html).not.toContain('&amp;a=');
+            expect(defined(sent[0]).html).toContain('alt="chartAlt"');
+            expect(defined(sent[0]).html).not.toContain('chartAltDrawings');
+            expect(counts).toMatchObject({ sent: 1, failed: 0 });
+        });
+
+        it('시장 브리핑(전체 카드 없음)은 작도를 조회하지 않는다', async () => {
+            const { deps } = makeDeps({
+                findHoldings: vi.fn().mockResolvedValue([]),
+                findWatchlist: vi.fn().mockResolvedValue([]),
+                loadMarketPicks: vi.fn().mockResolvedValue(['NVDA']),
+            });
+
+            await runEmailReportBatch(deps, NOW);
+
+            expect(deps.loadDrawings).not.toHaveBeenCalled();
+        });
     });
 
     it('같은 (종목, 로케일)은 회원이 여럿이어도 한 번만 모은다', async () => {
@@ -732,6 +868,45 @@ describe('runEmailReportBatch: 가입 첫 리포트', () => {
         });
     });
 
+    it('첫 리포트 카드에도 회원 로컬 날짜의 작도를 싣고 작도 카운터에 센다', async () => {
+        const analysisAt = new Date('2026-10-03T21:00:00.000Z');
+        const loadDrawings = vi.fn(async (symbols: string[]) =>
+            symbols.includes('AAPL')
+                ? new Map<string, SymbolDrawings>([
+                      [
+                          'AAPL',
+                          {
+                              analysisAt,
+                              legend: [{ kind: 'trendUp', color: '#26a69a' }],
+                          },
+                      ],
+                  ])
+                : new Map<string, SymbolDrawings>()
+        );
+        // 뉴욕 회원은 NOW가 아직 2026-10-04다 — 작도와 차트는 그 날짜로 읽는다.
+        const { deps, sent } = makeWelcomeDeps(
+            [welcomeRecipient({ timezone: 'America/New_York' })],
+            { loadDrawings }
+        );
+
+        const counts = await runEmailReportBatch(deps, NOW);
+
+        expect(loadDrawings).toHaveBeenCalledTimes(1);
+        expect(loadDrawings).toHaveBeenCalledWith(
+            expect.arrayContaining(['AAPL', 'MSFT']),
+            '2026-10-04'
+        );
+        const html = defined(sent[0]).html;
+        expect(html).toContain('legendTrendUp');
+        expect(html).toContain(`a=${analysisAt.getTime()}`);
+        expect(html).toContain('d=2026-10-04');
+        expect(counts).toMatchObject({
+            welcomeSent: 1,
+            drawingsCards: 1,
+            drawingsNone: 1,
+        });
+    });
+
     it('발송이 거부되면 failed로 기록하고 실패로 센다', async () => {
         const { deps } = makeWelcomeDeps([welcomeRecipient()]);
         vi.mocked(deps.dispatcher.sendKeyedEmail).mockResolvedValue('rejected');
@@ -1066,14 +1241,11 @@ describe('runEmailReportBatch: 가입 첫 리포트', () => {
         const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => undefined);
-        let logged: unknown[][] = [];
-        let counts: Awaited<ReturnType<typeof runEmailReportBatch>>;
-        try {
-            counts = await runEmailReportBatch(deps, NOW);
-            logged = [...errorSpy.mock.calls];
-        } finally {
+        const logged: unknown[][] = [];
+        const counts = await runEmailReportBatch(deps, NOW).finally(() => {
+            logged.push(...errorSpy.mock.calls);
             errorSpy.mockRestore();
-        }
+        });
 
         expect(counts.deferred).toBe(2);
         expect(

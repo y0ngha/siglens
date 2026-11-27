@@ -4,6 +4,7 @@ import type { FaqItem } from '@/shared/lib/seo';
 import { splitSitePaths } from '@/shared/lib/splitSitePaths';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
+import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';
 
 // 한 페이지에 FAQ 섹션은 하나뿐이라 id는 상수로 충분하다.
 const FAQ_HEADING_ID = 'faq-heading';
@@ -21,6 +22,13 @@ interface FaqSectionProps {
      * 링크가 되지 않게 하려는 것이다.
      */
     linkifyPaths?: boolean;
+    /**
+     * 문항을 네이티브 `<details>`/`<summary>`로 접는다(JS 없음). 답변은 닫혀 있어도 서버 HTML에 그대로
+     * 있고, 같은 `items`가 FAQPage 마크업을 만드는 것도 그대로다. 길이가 중요한 홈만 켠다.
+     */
+    collapsible?: boolean;
+    /** `collapsible`일 때 처음부터 펼쳐 둘 앞쪽 문항 수. 기본 0(전부 닫힘). */
+    defaultOpenCount?: number;
 }
 
 function AnswerWithLinks({ answer }: { answer: string }) {
@@ -66,7 +74,44 @@ export function FaqSection({
     heading,
     items,
     linkifyPaths = false,
+    collapsible = false,
+    defaultOpenCount = 0,
 }: FaqSectionProps) {
+    const renderAnswer = (answer: string) =>
+        linkifyPaths ? <AnswerWithLinks answer={answer} /> : answer;
+
+    if (collapsible) {
+        return (
+            <section
+                aria-labelledby={FAQ_HEADING_ID}
+                className={cn(SURFACE_CARD, 'p-5')}
+            >
+                <h2 id={FAQ_HEADING_ID} className={HEADING_SECTION}>
+                    {heading}
+                </h2>
+                <ul className="mt-3 divide-y divide-secondary-700 text-sm leading-relaxed text-secondary-400">
+                    {items.map(({ question, answer }, index) => (
+                        <li key={question}>
+                            <details
+                                open={index < defaultOpenCount}
+                                className="group"
+                            >
+                                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded py-2 font-medium text-secondary-300 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+                                    <span>{question}</span>
+                                    <ChevronDownIcon
+                                        aria-hidden="true"
+                                        className="size-4 shrink-0 transition-transform group-open:rotate-180"
+                                    />
+                                </summary>
+                                <p className="pb-3">{renderAnswer(answer)}</p>
+                            </details>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        );
+    }
+
     return (
         <section
             aria-labelledby={FAQ_HEADING_ID}
@@ -81,13 +126,7 @@ export function FaqSection({
                         <dt className="font-medium text-secondary-300">
                             {question}
                         </dt>
-                        <dd className="mt-1">
-                            {linkifyPaths ? (
-                                <AnswerWithLinks answer={answer} />
-                            ) : (
-                                answer
-                            )}
-                        </dd>
+                        <dd className="mt-1">{renderAnswer(answer)}</dd>
                     </div>
                 ))}
             </dl>

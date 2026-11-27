@@ -29,6 +29,7 @@ type WelcomeInput = NonNullable<BuildReportEmailInput['welcome']>;
 function buildWelcomeLines(
     welcome: WelcomeInput,
     locale: BuildReportEmailInput['locale'],
+    timeZone: string,
     t: Translate
 ): string[] {
     const schedule = formatSchedule(
@@ -40,10 +41,10 @@ function buildWelcomeLines(
         t('welcomeIntro', {
             v0: schedule.days,
             v1: schedule.time,
-            v2: formatTimeZoneName(welcome.timezone, locale),
+            v2: formatTimeZoneName(timeZone, locale),
         }),
         t('welcomeConsentAt', {
-            v0: formatConsentAt(welcome.consentedAt, welcome.timezone, locale),
+            v0: formatConsentAt(welcome.consentedAt, timeZone, locale),
         }),
     ];
 }
@@ -105,7 +106,9 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
             ? t('intro', { v0: date })
             : t('marketIntro', { v0: date });
     const welcomeLines =
-        welcome === undefined ? [] : buildWelcomeLines(welcome, locale, t);
+        welcome === undefined
+            ? []
+            : buildWelcomeLines(welcome, locale, input.timeZone, t);
     const introLines = welcomeEmpty ? [] : [reportIntro];
     const emptyNote = welcomeEmpty
         ? {
@@ -121,6 +124,10 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     const showConfluenceNote =
         input.sections.some(s => s.brief.signals !== null) ||
         input.briefRows.some(r => r.brief.signals !== null);
+    const renderContext = {
+        timeZone: input.timeZone,
+        skillLabel: input.skillLabel,
+    };
     const reason = t('reason', { v0: brand });
     const marketHint = marketBriefing === undefined ? null : t('marketHint');
     const marketMore = marketBriefing === undefined ? null : t('marketMore');
@@ -134,7 +141,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
     ${introLines.map(line => `<p style="font-size:14px;color:${COLORS.body};margin:0;">${escapeHtml(line)}</p>`).join('\n    ')}
     ${emptyNote !== null ? `<p style="font-size:14px;line-height:1.6;color:${COLORS.body};margin:0 0 8px;">${escapeHtml(emptyNote.note)}</p><p style="font-size:14px;margin:0;"><a href="${escapeHtml(emptyNote.url)}" style="color:${COLORS.link};font-weight:600;">${escapeHtml(emptyNote.linkLabel)} →</a></p>` : ''}
   </div>
-  ${input.sections.map(s => sectionHtml(s, t, input.signalLabel, brand)).join('\n')}
+  ${input.sections.map(s => sectionHtml(s, locale, t, input.signalLabel, brand, renderContext)).join('\n')}
   ${briefTableHtml(input.briefRows, locale, t, input.signalLabel, briefHeading)}
   ${marketBriefing !== undefined && marketHint !== null && marketMore !== null ? `<div style="padding:0 8px 16px;"><p style="font-size:14px;line-height:1.6;color:${COLORS.body};margin:0 0 8px;">${escapeHtml(marketHint)}</p><p style="font-size:14px;margin:0;"><a href="${escapeHtml(marketBriefing.marketUrl)}" style="color:${COLORS.link};font-weight:600;">${escapeHtml(marketMore)} →</a></p></div>` : ''}
   <div style="padding:16px 8px;border-top:1px solid ${COLORS.rule};">
@@ -153,7 +160,7 @@ export function buildReportEmail(input: BuildReportEmailInput): EmailMessage {
             : []),
         '',
         ...input.sections.flatMap(s => [
-            sectionText(s, t, input.signalLabel, brand),
+            sectionText(s, locale, t, input.signalLabel, brand, renderContext),
             '',
         ]),
         ...briefTableLines(

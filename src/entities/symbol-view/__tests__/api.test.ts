@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
+import { renderSql } from '@/__tests__/utils/renderSql';
 import { symbolViewsDaily } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 
@@ -154,11 +155,9 @@ describe('DrizzleSymbolViewRepository', () => {
         await new DrizzleSymbolViewRepository(db).topViewed('2026-09-17', 3);
 
         expect(orderBy).toHaveBeenCalledTimes(1);
-        expect(orderBy).toHaveBeenCalledWith(
-            expect.anything(),
-            expect.objectContaining({
-                queryChunks: expect.arrayContaining([symbolViewsDaily.symbol]),
-            })
+        const [, tieBreaker] = orderBy.mock.calls.flat();
+        expect(renderSql(tieBreaker).sql).toBe(
+            '"symbol_views_daily"."symbol" asc'
         );
     });
 });

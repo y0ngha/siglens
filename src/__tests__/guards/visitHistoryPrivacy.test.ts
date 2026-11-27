@@ -1,18 +1,13 @@
+vi.mock('server-only', () => ({}));
+
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
-
 import { SNAPSHOT_MAX_BYTES } from '@/entities/feedback/lib/constants';
 import { parseAiFeedbackInput } from '@/entities/feedback/lib/validation';
 import { GUEST_RETURN_WINDOWS } from '@/entities/visitor/lib/visitHistory';
 import { ENTRY_SOURCES, type EntrySource } from '@/entities/visitor/types';
-import { OAUTH_STATE_TTL_SECONDS } from '@/features/auth-oauth/lib/state';
-import { HANDOFF_STATE_TTL_SECONDS } from '@/entities/auth/server/handoffStore';
 import { LOCALES } from '@/shared/i18n/locales';
-import { AI_SSO_PROBED_MAX_AGE_SECONDS } from '@/shared/config/cookieNames';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import { SHARE_MARKS_MAX_CREATED } from '@/shared/lib/funnel/shareMarks';
 import * as storageKeys from '@/shared/lib/storageKeys';
 import { STORAGE_KEYS, STORAGE_PREFIX } from '@/widgets/chart/constants';
@@ -204,6 +199,7 @@ const EXPECTED_COOKIE_WRITERS = [
     'app/api/auth/handoff/start/route.ts',
     'entities/auth/actions/currentUserAction.ts',
     'entities/auth/lib/mainSessionHintCookie.ts',
+    'entities/mail-alert/server/mailAlertGuestCookie.ts',
     'features/account-delete/actions/deleteAccountAction.ts',
     'features/auth-login/actions/loginAction.ts',
     'features/auth-logout/actions/logoutAction.ts',
@@ -345,19 +341,13 @@ describe(`재방문 이력 ↔ 방침 v${VERSION}`, () => {
     });
 
     it.each(NON_KO)(
-        '%s 번역본도 같은 숫자 주장(7~13, 30~36, 400, 20, 6)을 적는다',
+        '%s 번역본도 같은 숫자 주장(7~13, 30~36, 20, 6)을 적는다',
         locale => {
             const body = readPolicy(`.${locale}`);
             const claims: Record<string, readonly RegExp[]> = {
-                en: [
-                    /7 to 13 days/,
-                    /30 to 36 days/,
-                    /400 days/,
-                    /up to 20/,
-                    /six ranges/,
-                ],
-                ja: [/7~13日/, /30~36日/, /400日/, /最大20件/, /6つの区間/],
-                zh: [/7~13天/, /30~36天/, /400天/, /最多20个/, /6个区间/],
+                en: [/7 to 13 days/, /30 to 36 days/, /up to 20/, /six ranges/],
+                ja: [/7~13日/, /30~36日/, /最大20件/, /6つの区間/],
+                zh: [/7~13天/, /30~36天/, /最多20个/, /6个区间/],
             };
             for (const pattern of claims[locale] ?? []) {
                 expect(body).toMatch(pattern);
@@ -368,8 +358,7 @@ describe(`재방문 이력 ↔ 방침 v${VERSION}`, () => {
         }
     );
 
-    it('한국어 원문의 숫자 주장(400일, 6개 구간)도 적혀 있다', () => {
-        expect(KO).toContain('최대 400일');
+    it('한국어 원문의 숫자 주장(6개 구간)도 적혀 있다', () => {
         expect(KO).toContain('6개 구간');
     });
 
@@ -499,23 +488,8 @@ describe(`쿠키 ↔ 방침 v${VERSION} §7`, () => {
         }
     );
 
-    it('한국어 §7의 쿠키 수명이 코드의 상수와 같다', () => {
-        expect(KO_7).toContain(`최대 ${OAUTH_STATE_TTL_SECONDS / 60}분`);
-        expect(KO_7).toContain(`최대 ${HANDOFF_STATE_TTL_SECONDS / 60}분`);
-        expect(KO_7).toContain(
-            `${AI_SSO_PROBED_MAX_AGE_SECONDS / 60}분 뒤 만료`
-        );
-    });
-
-    const SIGNED_IN_LIFETIME_PHRASE: Record<string, string> = {
-        ko: `최대 ${DEFAULT_SESSION_TTL_SECONDS / 86400}일`,
-        en: `up to ${DEFAULT_SESSION_TTL_SECONDS / 86400} days`,
-        ja: `最大${DEFAULT_SESSION_TTL_SECONDS / 86400}日`,
-        zh: `最长${DEFAULT_SESSION_TTL_SECONDS / 86400}天`,
-    };
-
     it.each(LOCALES)(
-        '%s §7의 siglens_signed_in 항목이 HttpOnly와 최대 수명을 적는다',
+        '%s §7의 siglens_signed_in 항목이 HttpOnly를 적는다',
         locale => {
             const line =
                 (POLICY_7[locale] ?? '')
@@ -523,20 +497,18 @@ describe(`쿠키 ↔ 방침 v${VERSION} §7`, () => {
                     .find(l => l.includes('**siglens_signed_in**')) ?? '';
             expect(line).not.toBe('');
             expect(line).toContain('HttpOnly');
-            expect(line).toContain(SIGNED_IN_LIFETIME_PHRASE[locale] ?? '');
         }
     );
 
     /**
-     * `siglens_signed_in`의 약속(HttpOnly, 값 `1`, 식별자 없음, 두 호스트가 읽음, 최대 수명)은 코드의
-     * 쿠키 서술자와 같아야 한다. 수명은 세션 쿠키 상수에서 오므로 일수로 대조한다.
+     * `siglens_signed_in`의 약속(HttpOnly, 값 `1`)은 코드의 쿠키 서술자와 같아야 한다. 최대 수명은
+     * `privacyRetention.test.ts` 레지스트리가 세션 쿠키 상수와 묶는다.
      */
-    it('한국어 §7의 siglens_signed_in 항목이 코드의 수명(세션 쿠키와 같음)을 적는다', () => {
+    it('한국어 §7의 siglens_signed_in 항목이 HttpOnly와 값 `1`을 적는다', () => {
         const line =
             KO_7.split('\n').find(l => l.includes('**siglens_signed_in**')) ??
             '';
         expect(line).not.toBe('');
-        expect(line).toContain(`최대 ${DEFAULT_SESSION_TTL_SECONDS / 86400}일`);
         expect(line).toContain('HttpOnly');
         expect(line).toContain('`1`');
     });
@@ -805,10 +777,10 @@ describe('종목 조회수 집계 ↔ 방침 §2·§4', () => {
         ).toEqual([]);
     });
 
-    it('§4 보존 기간이 90일로 적혀 있다(코드의 RETENTION_DAYS=90)', () => {
+    it('§4에 종목 조회수 집계 항목이 있다(보존 기간은 privacyRetention 레지스트리가 묶는다)', () => {
         const line =
             KO.split('\n').find(l => l.startsWith('- 종목 조회수 집계(')) ?? '';
-        expect(line).toContain('최대 90일');
+        expect(line).not.toBe('');
     });
 });
 

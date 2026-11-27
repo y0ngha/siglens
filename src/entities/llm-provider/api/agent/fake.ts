@@ -29,6 +29,32 @@ function userWords(content: string): string {
         : content.slice(at + TURN_MESSAGE_HEADING.length);
 }
 
+/** `[e2e-hold:<ms>]` 상한(ms) — 부하 시험이 턴을 붙잡아 둘 수 있는 가장 긴 시간. */
+export const E2E_HOLD_MAX_MS = 180_000;
+
+/**
+ * 부하 시험용 시험 이음매 — 사용자 말 안의 `[e2e-hold:<ms>]`가 가리키는 시간(0..{@link E2E_HOLD_MAX_MS}로
+ * 자른다). 없으면 0. 이 provider는 E2E fake 모드에서만 쓰인다.
+ */
+function holdMs(words: string): number {
+    const found = /\[e2e-hold:(\d+)\]/.exec(words);
+    return found ? Math.min(Number(found[1]), E2E_HOLD_MAX_MS) : 0;
+}
+
+/** `ms`만큼 기다린다. 중단되면 곧바로 풀려 호출자가 정상 경로로 마무리한다. */
+function holdFor(ms: number, signal: AbortSignal): Promise<void> {
+    if (ms <= 0 || signal.aborted) return Promise.resolve();
+    return new Promise(resolve => {
+        const done = (): void => {
+            clearTimeout(timer);
+            signal.removeEventListener('abort', done);
+            resolve();
+        };
+        const timer = setTimeout(done, ms);
+        signal.addEventListener('abort', done, { once: true });
+    });
+}
+
 /**
  * 결정적인 E2E provider: 처음 나온 대문자 티커로 도구를 한 번 부른 뒤 고정 답변을 돌려준다. 질문에 "차트"가 있으면
  * 답변 안 차트(봉 지표 도구의 차트 블록)를 검증하도록 `get_bars_indicators`를, 아니면 `get_quote`를 부른다.
@@ -71,6 +97,26 @@ export async function fakeAgentProvider(
             usage: ZERO,
         };
     }
+    // `[e2e-fresh]`: 첫 단계에서 새 분석을 부른다(에이전트 턴 슬롯 주차 부하 시험용 이음매).
+    if (
+        lastUser.includes('[e2e-fresh]') &&
+        !hasToolResult &&
+        o.tools.some(t => t.name === 'run_fresh_analysis')
+    ) {
+        const call = {
+            id: 'fake_1',
+            name: 'run_fresh_analysis',
+            args: { symbol: 'AAPL', kind: 'technical' },
+        };
+        o.onEvent({ type: 'tool_call', call });
+        o.onEvent({ type: 'stop', reason: 'tool_use' });
+        return {
+            text: '',
+            toolCalls: [call],
+            stopReason: 'tool_use',
+            usage: ZERO,
+        };
+    }
     const symbol = /\b[A-Z]{2,5}\b/.exec(lastUser)?.[0];
     // "차트"를 물었어도 봉 지표 도구가 없으면(가용 목록에서 빠진 실행) 예전처럼 시세로 답한다.
     const wantsChart =
@@ -94,6 +140,7 @@ export async function fakeAgentProvider(
             usage: ZERO,
         };
     }
+    await holdFor(holdMs(lastUser), o.signal);
     const text = `[E2E agent] "${lastUser}"에 대한 테스트 답변입니다.`;
     o.onEvent({ type: 'text', delta: text });
     o.onEvent({ type: 'stop', reason: 'end' });

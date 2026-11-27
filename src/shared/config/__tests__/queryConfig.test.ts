@@ -41,6 +41,20 @@ describe('queryConfig staleTime constants', () => {
         expect(TICKER_SEARCH_STALE_TIME_MS).toBeGreaterThan(BARS_STALE_TIME_MS);
     });
 
+    it('mailAlertState query key는 항목마다 갈린다', () => {
+        expect(QUERY_KEYS.mailAlertState('symbol', 'AAPL')).toEqual([
+            'mail-alert-state',
+            'symbol',
+            'AAPL',
+        ]);
+        expect(QUERY_KEYS.mailAlertState('symbol', 'MSFT')).not.toEqual(
+            QUERY_KEYS.mailAlertState('symbol', 'AAPL')
+        );
+        expect(QUERY_KEYS.mailAlertState('fear_greed', 'us')).not.toEqual(
+            QUERY_KEYS.mailAlertState('signal', 'us')
+        );
+    });
+
     it('currentUser query key는 안정적이다', () => {
         expect(QUERY_KEYS.currentUser()).toEqual(['current-user']);
     });

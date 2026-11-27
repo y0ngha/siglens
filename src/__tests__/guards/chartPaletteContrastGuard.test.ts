@@ -19,8 +19,8 @@ import {
  */
 
 const hexToRgb = (hex: string): [number, number, number] => {
-    let h = hex.slice(1);
-    if (h.length === 3) h = [...h].map(c => c + c).join('');
+    const raw = hex.slice(1);
+    const h = raw.length === 3 ? [...raw].map(c => c + c).join('') : raw;
     return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)) as [
         number,
         number,

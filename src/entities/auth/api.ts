@@ -211,22 +211,31 @@ export class DrizzleUserRepository
         return deletedUsers.length > 0;
     }
 
-    async updatePassword(
+    async resetPasswordRevokingSessions(
         userId: string,
         passwordHash: string
     ): Promise<boolean> {
         // 비밀번호 변경 — 사용자가 폼 제출 직후 결과를 본다. transient retry로 흡수.
-        const updatedUsers = await withRetry(
+        // 세션 삭제를 같은 트랜잭션에 넣어, 해시만 바뀌고 옛 세션이 남는 중간 상태가 생기지 않게 한다.
+        // 재시도는 트랜잭션 전체를 다시 돌리므로 두 문장 모두 멱등이다.
+        return withRetry(
             () =>
-                this.db
-                    .update(users)
-                    .set({ passwordHash, updatedAt: sql`now()` })
-                    .where(eq(users.id, userId))
-                    .returning({ id: users.id }),
+                this.db.transaction(async tx => {
+                    const updatedUsers = await tx
+                        .update(users)
+                        .set({ passwordHash, updatedAt: sql`now()` })
+                        .where(eq(users.id, userId))
+                        .returning({ id: users.id });
+
+                    if (updatedUsers.length === 0) return false;
+
+                    await tx
+                        .delete(sessions)
+                        .where(eq(sessions.userId, userId));
+                    return true;
+                }),
             DB_TRANSIENT_RETRY
         );
-
-        return updatedUsers.length > 0;
     }
 
     /** 로그인·비밀번호 재설정용으로 `passwordHash`를 포함해 이메일로 찾는다. 호출부가 해시를 밖으로 내보내면 안 된다. */

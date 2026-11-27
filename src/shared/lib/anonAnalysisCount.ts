@@ -15,8 +15,8 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 /**
  * Threshold of distinct symbols analyzed in a day that triggers the signup nudge.
  *
- * 3이다. 이미 캐시된 분석은 즉시 그려지므로 문턱이 1이던 때(PR #1002)는 첫 방문 화면이
- * 뜬 지 약 1.5초 만에 모달이 덮었다.
+ * 3이다. 이미 캐시된 분석은 즉시 그려지므로 문턱이 1이면 첫 방문 화면이
+ * 뜬 지 약 1.5초 만에 모달이 덮는다.
  * 하루 1회 상한은 `hasNudgeShownToday`가 맡는다.
  */
 export const ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD = 3;

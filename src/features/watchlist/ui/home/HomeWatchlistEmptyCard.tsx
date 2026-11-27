@@ -2,12 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { HOME_POPULAR_ANCHOR_ID } from '@/shared/config/watchlist';
-import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { cn } from '@/shared/lib/cn';
+import { LINK_ACCENT } from '@/shared/lib/linkStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { StarIcon } from '@/shared/ui/StrokeIcons';
-import { useOpenTickerSearch } from '../../hooks/useOpenTickerSearch';
 import { HOME_WATCHLIST_EMPTY_HEIGHT } from '../../lib/watchlistStyles';
 
 interface HomeWatchlistEmptyCardProps {
@@ -15,56 +13,46 @@ interface HomeWatchlistEmptyCardProps {
     headingId: string;
 }
 
-/** 담은 것도 최근 본 것도 없을 때의 홈 카드 — 검색과 아래 인기 종목 섹션으로 안내한다. */
+/**
+ * 담은 것도 최근 본 것도 없을 때의 홈 카드 — 한 줄짜리 안내와 아래 인기 종목으로 가는 링크.
+ *
+ * 검색 버튼은 두지 않는다: 바로 위 히어로가 검색창이고, 같은 일을 하는 버튼을 한 화면에 둘 두면
+ * 첫 방문자의 모바일 화면만 길어진다. 제목은 시각적으로 숨기되(`sr-only`) 영역 이름은 그대로 남는다.
+ */
 export function HomeWatchlistEmptyCard({
     headingId,
 }: HomeWatchlistEmptyCardProps) {
     const t = useTranslations('features.watchlist');
-    const openSearch = useOpenTickerSearch();
     return (
         <section
             aria-labelledby={headingId}
             className={cn(
                 SURFACE_CARD,
                 HOME_WATCHLIST_EMPTY_HEIGHT,
-                'flex flex-col gap-4 p-5 sm:flex-row sm:items-center'
+                'flex flex-wrap items-center gap-x-3 gap-y-1 p-4'
             )}
         >
+            <h2 id={headingId} className="sr-only">
+                {t('home.heading')}
+            </h2>
             <span
                 aria-hidden="true"
-                className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary-900/30 text-primary-400"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-900/30 text-primary-400"
             >
                 <StarIcon className="size-5" />
             </span>
-            <div className="min-w-0 flex-1">
-                <h2 id={headingId} className={HEADING_SECTION}>
-                    {t('home.heading')}
-                </h2>
-                <p className="mt-1 text-sm leading-relaxed text-secondary-400">
-                    {t('common.emptyBody')}
-                </p>
-            </div>
-            <div className="flex shrink-0 gap-2">
-                <button
-                    type="button"
-                    onClick={openSearch}
-                    className={cn(
-                        BUTTON_PRIMARY,
-                        'h-11 flex-1 px-4 text-sm sm:flex-none'
-                    )}
-                >
-                    {t('common.search')}
-                </button>
-                <a
-                    href={`#${HOME_POPULAR_ANCHOR_ID}`}
-                    className={cn(
-                        BUTTON_OUTLINE,
-                        'h-11 flex-1 px-4 text-sm sm:flex-none'
-                    )}
-                >
-                    {t('home.popular')}
-                </a>
-            </div>
+            <p className="min-w-0 flex-1 basis-56 text-sm leading-relaxed text-secondary-400">
+                {t('common.emptyBody')}
+            </p>
+            <a
+                href={`#${HOME_POPULAR_ANCHOR_ID}`}
+                className={cn(
+                    LINK_ACCENT,
+                    'inline-flex min-h-10 shrink-0 items-center rounded px-2 text-sm'
+                )}
+            >
+                {t('home.popular')}
+            </a>
         </section>
     );
 }

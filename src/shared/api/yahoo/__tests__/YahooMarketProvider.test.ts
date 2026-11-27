@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const chart = vi.fn();
 const quote = vi.fn();
@@ -77,6 +77,170 @@ describe('YahooMarketProvider', () => {
             });
 
             expect(bars).toHaveLength(1);
+        });
+
+        describe('종가가 고저 밖인 봉 정규화', () => {
+            /**
+             * 리플레이 세트 v1(2026-11-21 수집)에서 관측된 14개 봉의 원본 값이다. yahoo `chart`
+             * 응답의 quote 모양(`date: Date`, `adjclose` 동반)으로 만들어 실제 매퍼를 통과시킨다.
+             * 005930.KS 2024-10-14는 같은 날 yahoo를 직접 조회해도 close(59300) < low(59400)이고
+             * adjclose(56492.99)와도 달라, 수정주가 혼용이 아님을 확인했다.
+             */
+            const OBSERVED: ReadonlyArray<
+                readonly [string, number, number, number, number, number]
+            > = [
+                ['2023-02-02', 94900, 94900, 92700, 91400, 8254],
+                ['2023-02-09', 94800, 94800, 92600, 94900, 12117],
+                ['2024-10-14', 186900, 192300, 186900, 186000, 3309274],
+                ['2023-02-01', 169200, 171500, 168700, 167000, 3251],
+                ['2024-01-15', 186000, 187200, 185800, 187500, 35456],
+                ['2024-10-14', 59500, 61200, 59400, 59300, 20886249],
+                ['2023-02-02', 213000, 213500, 210500, 205500, 20981],
+                ['2024-10-14', 350000, 351000, 342500, 354500, 283883],
+                ['2024-11-07', 300000, 305000, 294000, 305500, 365149],
+                [
+                    '2024-10-14',
+                    83431.375,
+                    84117.6484375,
+                    82352.9375,
+                    85196.078125,
+                    907600,
+                ],
+                ['2024-01-15', 51000, 51200, 50900, 51600, 83004],
+                ['2024-10-14', 92500, 98500, 92000, 91300, 2152870],
+                [
+                    '2023-02-10',
+                    1243866.625,
+                    1246941.625,
+                    1233103.875,
+                    1251554.25,
+                    164,
+                ],
+                [
+                    '2024-01-15',
+                    1140851.625,
+                    1163914.75,
+                    1136239,
+                    1174677.5,
+                    3956,
+                ],
+            ];
+
+            const toYahooQuote = ([
+                date,
+                open,
+                high,
+                low,
+                close,
+                volume,
+            ]: (typeof OBSERVED)[number]) => ({
+                date: new Date(`${date}T00:00:00Z`),
+                open,
+                high,
+                low,
+                close,
+                volume,
+                adjclose: close * 0.95,
+            });
+
+            const silenceWarn = () =>
+                vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it('관측된 14개 봉이 모두 L ≤ min(O,C) ≤ max(O,C) ≤ H를 만족한다', async () => {
+                silenceWarn();
+                chart.mockResolvedValue({
+                    quotes: OBSERVED.map(toYahooQuote),
+                });
+
+                const bars = await new YahooMarketProvider().getBars({
+                    symbol: '005930.KS',
+                    timeframe: '1Day',
+                });
+
+                expect(bars).toHaveLength(OBSERVED.length);
+                bars.forEach(b => {
+                    expect(b.low).toBeLessThanOrEqual(
+                        Math.min(b.open, b.close)
+                    );
+                    expect(b.high).toBeGreaterThanOrEqual(
+                        Math.max(b.open, b.close)
+                    );
+                });
+            });
+
+            it('종가가 저가 아래면 저가를, 고가 위면 고가를 종가로 넓히고 시가·종가·거래량은 그대로 둔다', async () => {
+                silenceWarn();
+                chart.mockResolvedValue({
+                    quotes: [
+                        toYahooQuote(OBSERVED[5]),
+                        toYahooQuote(OBSERVED[7]),
+                    ],
+                });
+
+                const bars = await new YahooMarketProvider().getBars({
+                    symbol: '005930.KS',
+                    timeframe: '1Day',
+                });
+
+                expect(bars).toEqual([
+                    {
+                        time: Math.floor(
+                            Date.parse('2024-10-14T00:00:00Z') / 1000
+                        ),
+                        open: 59500,
+                        high: 61200,
+                        low: 59300,
+                        close: 59300,
+                        volume: 20886249,
+                    },
+                    {
+                        time: Math.floor(
+                            Date.parse('2024-10-14T00:00:00Z') / 1000
+                        ),
+                        open: 350000,
+                        high: 354500,
+                        low: 342500,
+                        close: 354500,
+                        volume: 283883,
+                    },
+                ]);
+            });
+
+            it('이미 일관된 봉은 값이 바뀌지 않고 로그도 남기지 않는다', async () => {
+                const warnSpy = silenceWarn();
+                chart.mockResolvedValue({ quotes: [bar()] });
+
+                const bars = await new YahooMarketProvider().getBars({
+                    symbol: '005930.KS',
+                    timeframe: '1Day',
+                });
+
+                expect(bars[0]).toMatchObject({ high: 275500, low: 266000 });
+                expect(warnSpy).not.toHaveBeenCalled();
+            });
+
+            it('고친 봉 수를 호출당 한 줄로 남긴다', async () => {
+                const warnSpy = silenceWarn();
+                chart.mockResolvedValue({
+                    quotes: [bar(), ...OBSERVED.map(toYahooQuote)],
+                });
+
+                await new YahooMarketProvider().getBars({
+                    symbol: '005930.KS',
+                    timeframe: '1Day',
+                });
+
+                const lines = warnSpy.mock.calls
+                    .map(args => String(args[0]))
+                    .filter(line => line.includes('ohlc-normalized'));
+                expect(lines).toEqual([
+                    '[YahooMarketProvider] ohlc-normalized symbol=005930.KS timeframe=1Day fixed=14 total=15',
+                ]);
+            });
         });
 
         it('keeps bars whose only null is volume, coercing it to 0', async () => {

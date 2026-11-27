@@ -15,6 +15,7 @@ import {
 // 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
 // ticker.ts JSDoc 참조).
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { fromFmpSymbol } from '@/shared/lib/fmpSymbol';
 import { RESERVED_FIRST_SEGMENTS } from '@/shared/config/reservedFirstSegments';
 // 가드 경로 목록은 클라이언트(`NavigationPendingContext`)가 도착지를 예측할 때도 쓴다.
 // 외부 의존이 0인 상수 파일이라 edge runtime에서 안전하다.
@@ -49,14 +50,26 @@ import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 const intlMiddleware = createIntlMiddleware(routing);
 
 /**
+ * 종목 경로 첫 세그먼트의 정식 형태 — 대문자화 + FMP 표기 역변환(`brk-b` → `BRK.B`).
+ *
+ * 앱의 정식 심볼은 `BRK.B`이고 `BRK-B`는 FMP 요청 전용 표기다. 두 정규화를 한 함수로
+ * 묶어 `/en/brk-b/news` → `/en/BRK.B/news`가 한 홉에 끝나게 한다. 별칭 맵에 없는
+ * 하이픈 티커(`PBR-A`)는 `fromFmpSymbol`이 그대로 돌려줘 건드리지 않는다.
+ */
+function canonicalSymbolSegment(segment: string): string {
+    return fromFmpSymbol(segment.toUpperCase());
+}
+
+/**
  * `img-src`를 좁히는 이유는 모델 출력에 섞인 이미지 URL로 대화 내용을 빼내는 경로를
  * 막기 위해서다(agent-chat 설계 "출력 위생"). Google Ads 전환 픽셀 호스트만 연다 —
  * Google 태그 CSP 가이드의 Ads 이미지 목록. 국가 도메인은 와일드카드가 안 돼서
  * 광고 대상인 한국만 넣었다. `blob:`은 사용자가 첨부한 이미지의 미리보기·전송 직후 말풍선(브라우저가 만든 object
  * URL)이다 — 같은 출처 안에서만 만들어지고 바깥으로 요청을 보내지 않으므로 위 유출 경로와 무관하다. 빠지면 첨부
  * 썸네일이 CSP에 막혀 깨진 이미지로 보인다.
+ *
+ * ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
  */
-// ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
 const AI_CSP =
     "frame-ancestors 'none'; img-src 'self' data: blob: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
 /**
@@ -102,7 +115,6 @@ function aiSitemapXml(): string {
  *   `not-found.tsx`(브랜드 바·홈 링크가 있는 404)가 404 상태로 렌더되게 한다.
  *
  * 페이지 메타데이터도 noindex지만, 리다이렉트·404까지 덮도록 헤더로도 막는다.
- * (spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`)
  */
 const LP_PATH_BY_HOST = {
     main: '/lp/stock-analysis',
@@ -465,7 +477,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
                 !isLocale(stripped.toLowerCase())
             ) &&
             isAdmissibleSymbolShape(stripped)
-                ? pathname.replace(/^\/[^/]+/, '/' + stripped.toUpperCase())
+                ? pathname.replace(
+                      /^\/[^/]+/,
+                      '/' + canonicalSymbolSegment(stripped)
+                  )
                 : pathname;
         return NextResponse.redirect(canonicalUrl, 301);
     }
@@ -576,12 +591,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         firstSegment !== undefined &&
         !isReservedHere &&
         isAdmissibleSymbolShape(firstSegment) &&
-        firstSegment !== firstSegment.toUpperCase()
+        firstSegment !== canonicalSymbolSegment(firstSegment)
     ) {
         const canonicalUrl = new URL(reqUrl);
         canonicalUrl.pathname = localePath(
             locale,
-            pathname.replace(/^\/[^/]+/, '/' + firstSegment.toUpperCase())
+            pathname.replace(
+                /^\/[^/]+/,
+                '/' + canonicalSymbolSegment(firstSegment)
+            )
         );
         return NextResponse.redirect(canonicalUrl, 301);
     }
@@ -637,8 +655,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
 export const config = {
     matcher: [
-        // 데이터 파일(`.csv`·`.json`)은 로케일 접두·심볼 정규화를 타면 안 된다.
-        '/((?!api|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|csv|xml|txt|js|html|css|webmanifest|map|zip|ots|woff2?|ttf|otf|eot|mp4|webm)$).*)',
+        // 데이터 파일(`.csv`·`.json`·`.sha256`)은 로케일 접두·심볼 정규화를 타면 안 된다.
+        '/((?!api|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|csv|xml|txt|js|html|css|webmanifest|map|zip|ots|sha256|woff2?|ttf|otf|eot|mp4|webm)$).*)',
         '/robots.txt',
         '/sitemap.xml',
     ],

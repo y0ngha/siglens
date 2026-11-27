@@ -47,7 +47,7 @@ export function NotFoundContent() {
                 </p>
                 <SymbolSearchPanel className="mt-4 max-w-md" />
                 {/*
-                    카테고리 그리드(`TickerCategories`, 링크 85개)를 대신한다 — 404는
+                    카테고리 그리드(`PopularTickers`, 링크 수십 개)를 대신한다 — 404는
                     "여기엔 없다"를 말하는 페이지인데 그 아래 사이트 전체 링크 묶음을
                     두면 크롤러에게는 404가 허브처럼 보이고, 사용자에게는 원래 찾던
                     것과 무관한 벽이 된다. 허브 둘만 남긴다.

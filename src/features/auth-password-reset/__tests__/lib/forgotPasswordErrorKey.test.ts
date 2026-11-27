@@ -19,6 +19,12 @@ describe('forgotPasswordErrorKey', () => {
         );
     });
 
+    it('maps the rate limit to the too-many-requests message, not the invalid-email fallback', () => {
+        expect(forgotPasswordErrorKey('rate_limited')).toBe(
+            'error.tooManyRequests'
+        );
+    });
+
     it('falls back to the invalid-email key for an unknown error code', () => {
         expect(forgotPasswordErrorKey('totally_unknown_code')).toBe(
             FORGOT_PASSWORD_FALLBACK_ERROR_KEY

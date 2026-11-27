@@ -281,11 +281,9 @@ describe('DrizzleEmailReportSubscriptionRepository.findEnabledRecipients', () =>
         const sqlText = dialect.sqlToQuery(
             (where.mock.calls[0] as unknown as [SQL])[0]
         );
-        expect(sqlText.sql).toContain(
-            '"email_report_subscriptions"."enabled" = $1'
+        expect(sqlText.sql).toBe(
+            '("email_report_subscriptions"."enabled" = $1 and "users"."email_verified" = $2 and "users"."tier" in ($3, $4))'
         );
-        expect(sqlText.sql).toContain('"users"."email_verified" = $2');
-        expect(sqlText.sql).toContain('"users"."tier" in ($3, $4)');
         expect(sqlText.params).toEqual([true, true, 'member', 'pro']);
     });
 });
@@ -428,17 +426,15 @@ describe('DrizzleEmailReportExclusionRepository', () => {
         expect(captured).toHaveLength(3);
         // 상한 판정용 개수 조회는 이 회원의 행만 읽는다.
         expect(captured[1]).toEqual({
-            sql: expect.stringMatching(
-                /^select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"\."user_id" = \$1/
-            ),
+            sql: 'select "symbol" from "email_report_excluded_symbols" where "email_report_excluded_symbols"."user_id" = $1',
             params: ['user-1'],
         });
         expect(captured[0]).toEqual({
             sql: 'select "id" from "users" where "users"."id" = $1 for no key update',
             params: ['user-1'],
         });
-        expect(captured[2].sql).toMatch(
-            /^insert into "email_report_excluded_symbols" \("user_id", "symbol", "created_at"\) values \(\$1, \$2, default\) on conflict \("user_id","symbol"\) do nothing/
+        expect(captured[2].sql).toBe(
+            'insert into "email_report_excluded_symbols" ("user_id", "symbol", "created_at") values ($1, $2, default) on conflict ("user_id","symbol") do nothing'
         );
         expect(captured[2].params).toEqual(['user-1', 'AAPL']);
     });
@@ -472,8 +468,8 @@ describe('DrizzleEmailReportExclusionRepository', () => {
             )
         ).resolves.toBe('excluded');
         // 삽입은 여전히 나가지만 충돌 무시라 행이 늘지 않는다.
-        expect(captured[2].sql).toMatch(
-            /^insert into "email_report_excluded_symbols".* on conflict \("user_id","symbol"\) do nothing/
+        expect(captured[2].sql).toBe(
+            'insert into "email_report_excluded_symbols" ("user_id", "symbol", "created_at") values ($1, $2, default) on conflict ("user_id","symbol") do nothing'
         );
     });
 
@@ -486,9 +482,7 @@ describe('DrizzleEmailReportExclusionRepository', () => {
             )
         ).resolves.toBe(true);
         expect(removed.captured[0]).toEqual({
-            sql: expect.stringMatching(
-                /^delete from "email_report_excluded_symbols" where \("email_report_excluded_symbols"\."user_id" = \$1 and "email_report_excluded_symbols"\."symbol" = \$2\) returning /
-            ),
+            sql: 'delete from "email_report_excluded_symbols" where ("email_report_excluded_symbols"."user_id" = $1 and "email_report_excluded_symbols"."symbol" = $2) returning "symbol"',
             params: ['user-1', 'AAPL'],
         });
 
@@ -546,14 +540,11 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
         ]);
         expect(captured).toHaveLength(4);
         const [eligible, insert, update, select] = captured;
-        // 가입 화면에서 고른, 켜져 있고, 창 안에 동의했고, 인증된 회원 등급만.
-        expect(eligible?.sql).toContain('"consent_source" in');
-        expect(eligible?.sql).toContain('"consented_at" >');
-        expect(eligible?.sql).toContain('"email_verified" = $');
-        expect(eligible?.sql).toContain('"tier" in');
-        // 동의 뒤 정기 리포트가 이미 나간 회원은 제외한다.
-        expect(eligible?.sql).toContain('not exists');
-        expect(eligible?.sql).toContain('"email_report_deliveries"');
+        // 가입 화면에서 고른, 켜져 있고, 창 안에 동의했고, 인증된 회원 등급만. 동의 뒤 정기 리포트가
+        // 이미 나간 회원은 제외한다(`not exists`).
+        expect(eligible?.sql).toBe(
+            'select "email_report_subscriptions"."user_id" from "email_report_subscriptions" inner join "users" on "users"."id" = "email_report_subscriptions"."user_id" where ("email_report_subscriptions"."enabled" = $1 and "email_report_subscriptions"."consent_source" in ($2, $3) and "email_report_subscriptions"."consented_at" > $4 and "users"."email_verified" = $5 and "users"."tier" in ($6, $7) and not exists (select 1 from "email_report_deliveries" where ("email_report_deliveries"."user_id" = "email_report_subscriptions"."user_id" and "email_report_deliveries"."status" = $8 and "email_report_deliveries"."updated_at" > "email_report_subscriptions"."consented_at")))'
+        );
         expect(eligible?.params).toEqual(
             expect.arrayContaining([
                 'signup_email',
@@ -564,18 +555,16 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
             ])
         );
         // 충돌하면 건너뛰므로 두 번째 cron은 이미 잡힌 회원을 다시 얻지 못한다.
-        expect(insert?.sql).toMatch(
-            /^insert into "email_report_welcomes".* on conflict \("user_id"\) do nothing returning "user_id"$/
+        expect(insert?.sql).toBe(
+            'insert into "email_report_welcomes" ("user_id", "status", "attempts", "error", "sent_at", "created_at", "updated_at") values ($1, $2, $3, default, default, default, default), ($4, $5, $6, default, default, default, default) on conflict ("user_id") do nothing returning "user_id"'
         );
         expect(insert?.params).toEqual(
             expect.arrayContaining(['u-1', 'u-2', 'sending', 1])
         );
-        expect(update?.sql).toMatch(
-            /^update "email_report_welcomes" set "status" = \$1, "attempts" = "email_report_welcomes"\."attempts" \+ 1/
+        // 방금 삽입한 행(u-1)은 같은 트랜잭션의 재시도 갱신에서 제외한다(`"user_id" not in`).
+        expect(update?.sql).toBe(
+            'update "email_report_welcomes" set "status" = $1, "attempts" = "email_report_welcomes"."attempts" + 1, "updated_at" = now() where ("email_report_welcomes"."user_id" in ($2, $3) and "email_report_welcomes"."user_id" not in ($4) and "email_report_welcomes"."attempts" < $5 and ("email_report_welcomes"."status" = $6 or ("email_report_welcomes"."status" = $7 and "email_report_welcomes"."updated_at" < $8))) returning "user_id"'
         );
-        expect(update?.sql).toContain('"attempts" < $');
-        // 방금 삽입한 행(u-1)은 같은 트랜잭션의 재시도 갱신에서 제외한다.
-        expect(update?.sql).toContain('"user_id" not in');
         expect(update?.params).toEqual(
             expect.arrayContaining([
                 'sending',
@@ -586,7 +575,9 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
                 'u-2',
             ])
         );
-        expect(select?.sql).toContain('from "email_report_welcomes"');
+        expect(select?.sql).toBe(
+            'select "email_report_subscriptions"."user_id", "users"."email", "email_report_subscriptions"."days_of_week", "email_report_subscriptions"."send_hour", "email_report_subscriptions"."timezone", "email_report_subscriptions"."locale", "email_report_subscriptions"."consented_at", "email_report_welcomes"."attempts" from "email_report_welcomes" inner join "email_report_subscriptions" on "email_report_subscriptions"."user_id" = "email_report_welcomes"."user_id" inner join "users" on "users"."id" = "email_report_welcomes"."user_id" where "email_report_welcomes"."user_id" in ($1, $2)'
+        );
         expect(select?.params).toEqual(expect.arrayContaining(['u-1', 'u-2']));
     });
 
@@ -631,10 +622,8 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
         );
 
         const query = captured[0];
-        expect(query?.sql).toMatch(/^update "email_report_welcomes" set /);
-        expect(query?.sql).toContain('"sent_at" = now()');
-        expect(query?.sql).toMatch(
-            /where "email_report_welcomes"\."user_id" = \$\d+$/
+        expect(query?.sql).toBe(
+            'update "email_report_welcomes" set "status" = $1, "error" = $2, "sent_at" = now(), "updated_at" = now() where "email_report_welcomes"."user_id" = $3'
         );
         expect(query?.params).toEqual(['sent', null, 'u-1']);
     });
@@ -649,8 +638,9 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
         );
 
         const query = captured[0];
-        expect(query?.sql).not.toContain('"sent_at"');
-        expect(query?.sql).toContain('"status" <> $');
+        expect(query?.sql).toBe(
+            'update "email_report_welcomes" set "status" = $1, "error" = $2, "updated_at" = now() where ("email_report_welcomes"."user_id" = $3 and "email_report_welcomes"."status" <> $4)'
+        );
         expect(query?.params).toEqual(['failed', 'boom', 'u-1', 'sent']);
     });
 
@@ -664,8 +654,9 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
         );
 
         const query = captured[0];
-        expect(query?.sql).toContain('"attempts" = greatest(');
-        expect(query?.sql).toContain('"status" <> $');
+        expect(query?.sql).toBe(
+            'update "email_report_welcomes" set "status" = $1, "attempts" = greatest("email_report_welcomes"."attempts" - 1, 0), "error" = $2, "updated_at" = now() where ("email_report_welcomes"."user_id" = $3 and "email_report_welcomes"."status" <> $4)'
+        );
         expect(query?.params).toEqual([
             'failed',
             'request in flight',
@@ -687,8 +678,9 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
         ).findWelcomed(sentSince, inFlightSince);
 
         expect(welcomed).toEqual(new Set(['u-1', 'u-2']));
-        expect(captured[0]?.sql).toContain('"sent_at" >');
-        expect(captured[0]?.sql).toContain('"updated_at" >');
+        expect(captured[0]?.sql).toBe(
+            'select "user_id" from "email_report_welcomes" where (("email_report_welcomes"."status" = $1 and "email_report_welcomes"."sent_at" > $2) or ("email_report_welcomes"."status" = $3 and "email_report_welcomes"."updated_at" > $4))'
+        );
         expect(captured[0]?.params).toEqual([
             'sent',
             sentSince.toISOString(),

@@ -36,4 +36,12 @@ describe('useLoginErrorFocus', () => {
 
         expect(screen.getByLabelText('password')).toHaveFocus();
     });
+
+    it.each(['rate_limited', 'too_many_login_attempts'] as const)(
+        'does not move focus for the %s limit error',
+        code => {
+            render(<Harness state={{ error: { code, message: '' } }} />);
+            expect(screen.getByLabelText('password')).not.toHaveFocus();
+        }
+    );
 });

@@ -192,8 +192,8 @@ export const getNewsTool: ToolExecutor = async (args, ctx, runtime) => {
                     BODY_BUDGET_SAFETY_MARGIN
             );
             const perItemBodyCap = Math.floor(remaining / bodyItemCount);
-            for (let i = 0; i < bodyItemCount; i++) {
-                const body = resolveNewsBody(page[i]!);
+            for (const [i, entry] of page.slice(0, bodyItemCount).entries()) {
+                const body = resolveNewsBody(entry);
                 if (body && perItemBodyCap > 0) {
                     const fitted = fitToEscapedBudget(body, perItemBodyCap);
                     if (fitted !== '')

@@ -18,11 +18,13 @@ import {
     requireDatabaseUrl,
 } from '../db/scripts/lib/dbTarget';
 
-const FMP_API_KEY = process.env.FMP_API_KEY;
-
-if (!FMP_API_KEY) {
-    throw new Error('FMP_API_KEY env var required');
+function requireFmpApiKey(): string {
+    const key = process.env.FMP_API_KEY;
+    if (!key) throw new Error('FMP_API_KEY env var required');
+    return key;
 }
+
+const FMP_API_KEY = requireFmpApiKey();
 const databaseUrl = requireDatabaseUrl();
 const CHUNK_DAYS = 90; // 3-month chunks
 const BACKFILL_DAYS_EACH_SIDE = 365; // now ± 1yr
@@ -41,7 +43,7 @@ async function fetchCalendarChunk(
     from: string,
     to: string
 ): Promise<EconomicCalendarEvent[]> {
-    const params = new URLSearchParams({ from, to, apikey: FMP_API_KEY! });
+    const params = new URLSearchParams({ from, to, apikey: FMP_API_KEY });
     const res = await fetch(
         `${FMP_BASE}/economic-calendar?${params.toString()}`
     );

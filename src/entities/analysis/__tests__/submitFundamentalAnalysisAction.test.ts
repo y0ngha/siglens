@@ -49,6 +49,13 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn(),
 }));
+// 한국 종목은 PER·PBR을 DART 기준으로 바꿔 끼운 provider를 core에 넘긴다 — 감싸는 호출 자체를 관찰한다.
+const { withKrValuation } = vi.hoisted(() => ({
+    withKrValuation: vi.fn((provider: unknown) => provider),
+}));
+vi.mock('@/entities/kr-valuation/server/withKrValuation', () => ({
+    withKrValuation,
+}));
 
 import { headers } from 'next/headers';
 import {
@@ -150,6 +157,22 @@ describe('runFundamentalAnalysisAction 함수는', () => {
         const call = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(call?.dataProvider).toBeDefined();
         expect(FmpFundamentalClient).toHaveBeenCalled();
+    });
+
+    it('분석 입력의 provider는 `withKrValuation`이 심볼과 함께 감싼 것이다(한국 종목 PER·PBR이 탭·에이전트와 같은 기준)', async () => {
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+        const wrapped = { label: 'dart-aware provider' };
+        withKrValuation.mockReturnValueOnce(wrapped);
+
+        await runFundamentalAnalysisAction('005930.KS', MODEL_ID, 'ko');
+
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ dataProvider: wrapped })
+        );
+        expect(withKrValuation).toHaveBeenCalledWith(
+            expect.anything(),
+            '005930.KS'
+        );
     });
 
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {

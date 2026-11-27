@@ -1,5 +1,6 @@
 /**
- * 카테고리 카드 그리드의 타입과 렌더 — 데이터는 `toCategoryCards`가 만들어 넘긴다.
+ * 카테고리 카드 그리드 본체의 타입과 렌더 — 데이터는 `toCategoryCards`가 만들어 넘긴다.
+ * 제목·`nav` 랜드마크·탭은 `PopularTickers`가 소유한다(이 파일은 카드 격자만 그린다).
  */
 
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -12,7 +13,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { COLLAPSED_VISIBLE } from '../utils/popularCollapse';
 
 /** 카드 좌측 보더 + 라벨 텍스트의 Tailwind 색상 클래스 쌍. */
 export interface CardStyle {
@@ -35,33 +36,43 @@ export interface CategoryCard extends CardStyle {
     items: readonly TickerItem[];
 }
 
-interface CategoryCardGridProps {
-    heading: string;
-    ariaLabel: string;
+/**
+ * 접힌 패널(`group/grid`의 `data-collapsed="true"`)에서 카드를 숨기는 클래스. DOM에서 빼지 않고
+ * `display:none`만 건다 — 숨은 카드의 종목 링크도 서버 HTML에 남아야 크롤러가 따라간다.
+ * Tailwind가 소스에서 클래스를 찾으므로 문자열은 리터럴로 둔다(템플릿으로 조립하지 않는다).
+ */
+function collapsedCardClass(index: number): string | undefined {
+    if (index < COLLAPSED_VISIBLE.base) return undefined;
+    if (index < COLLAPSED_VISIBLE.md) {
+        return 'group-data-[collapsed=true]/grid:max-md:hidden';
+    }
+    if (index < COLLAPSED_VISIBLE.lg) {
+        return 'group-data-[collapsed=true]/grid:max-lg:hidden';
+    }
+    return 'group-data-[collapsed=true]/grid:hidden';
+}
+
+interface CategoryCardGridBodyProps {
     cards: readonly CategoryCard[];
     /** 있으면 종목 알약마다 관심종목 ★를 붙이고 이 값으로 담기 지점을 기록한다. */
     watchlistSource?: WatchlistSource;
-    /** 섹션 앵커(홈 빈 카드의 "인기 종목 보기"가 가리킨다). */
-    sectionId?: string;
 }
 
 /**
- * 카테고리 카드 그리드 — 주식(섹터)·암호화폐 섹션이 같은 카드 디자인을 공유하는
- * 순수 프레젠테이션 컴포넌트. 카드에 DOM id를 달지 않는다: 카테고리 id는 섹션 간에
- * 겹칠 수 있어 문서 전체에서 유일하다고 보장할 수 없다.
+ * 카테고리 카드 격자 — 미국·한국·암호화폐 패널이 같은 카드 디자인을 공유하는 프레젠테이션
+ * 컴포넌트. 접기는 조상의 `group/grid` + `data-collapsed`가 켠다(서버 컴포넌트라 상태가 없다).
+ * 카드에 DOM id를 달지 않는다: 카테고리 id는 패널 간에 겹칠 수 있어 문서 전체에서 유일하다고
+ * 보장할 수 없다.
  */
-export function CategoryCardGrid({
-    heading,
-    ariaLabel,
+export function CategoryCardGridBody({
     cards,
     watchlistSource,
-    sectionId,
-}: CategoryCardGridProps) {
+}: CategoryCardGridBodyProps) {
     const t = useTranslations('widgets.home');
     const assetLabel = useAssetLabel();
     const grid = (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {cards.map(card => {
+            {cards.map((card, index) => {
                 const title = card.labelKey ? t(card.labelKey) : card.label;
                 return (
                     <div
@@ -70,7 +81,8 @@ export function CategoryCardGrid({
                             SURFACE_CARD,
                             'p-5',
                             'border-l-2',
-                            card.borderColor
+                            card.borderColor,
+                            collapsedCardClass(index)
                         )}
                     >
                         <h3
@@ -147,22 +159,10 @@ export function CategoryCardGrid({
             })}
         </div>
     );
-    return (
-        <nav
-            id={sectionId}
-            aria-label={ariaLabel}
-            className="page-container scroll-mt-20 py-10"
-        >
-            {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다
-                (`shared/lib/typographyStyles.ts`). 한글 제목이라 uppercase·넓은
-                자간을 쓰지 않는 근거도 그 상수의 주석에 있다. */}
-            <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
-            {watchlistSource ? (
-                // ★들이 관심종목 상태를 그리드 단위로 한 번만 구독하게 한다(WatchlistPillScope).
-                <WatchlistPillScope>{grid}</WatchlistPillScope>
-            ) : (
-                grid
-            )}
-        </nav>
+    return watchlistSource ? (
+        // ★들이 관심종목 상태를 그리드 단위로 한 번만 구독하게 한다(WatchlistPillScope).
+        <WatchlistPillScope>{grid}</WatchlistPillScope>
+    ) : (
+        grid
     );
 }

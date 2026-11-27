@@ -8,6 +8,10 @@ import type {
     RunMacroBriefingResult,
 } from '@y0ngha/siglens-core';
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
+import type { LlmProvider } from '@/shared/config/llmProviders';
+// Import from marketProfile/types (not registry) to avoid a circular dependency:
+// shared/lib/types → marketProfile/registry → shared/lib/types
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';
 
 /**
@@ -130,11 +134,6 @@ export interface CryptoCategory {
     label: string;
     items: readonly TickerItem[];
 }
-
-import type { LlmProvider } from '@/shared/config/llmProviders';
-// Import from marketProfile/types (not registry) to avoid a circular dependency:
-// shared/lib/types → marketProfile/registry → shared/lib/types
-import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 export type GateMode = 'auth' | 'byok';
 

@@ -38,7 +38,7 @@ describe('findApiDefaultModel', () => {
         const { sql, params } = render(
             (fx.where.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"id" = $1');
+        expect(sql).toBe('"users"."id" = $1');
         expect(params).toEqual([OWNER]);
     });
 
@@ -107,7 +107,7 @@ describe('setApiDefaultModel', () => {
         const { sql, params } = render(
             (fx.where.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"id" = $1');
+        expect(sql).toBe('"users"."id" = $1');
         expect(params).toEqual([OWNER]);
     });
 

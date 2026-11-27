@@ -64,10 +64,11 @@ function makeDeps(deleted = true) {
             findById: vi.fn(),
             createEmailUser: vi.fn(),
             deleteUser: vi.fn().mockResolvedValue(deleted),
-            updatePassword: vi.fn(),
+            resetPasswordRevokingSessions: vi.fn(),
         },
         oauthAccounts: { findByUserId: vi.fn().mockResolvedValue([]) },
         oauthRevoker: { revokeToken: vi.fn() },
+        mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         apiKeys: {
             listActiveKeyHashes: vi.fn().mockResolvedValue([KEY_HASH]),
             revokeAuth: revokeApiKeyAuth,

@@ -53,7 +53,10 @@ function isUnsafeBlockChar(code: number): boolean {
 }
 
 function hasUnsafeBlockChar(text: string): boolean {
-    return Array.from(text).some(ch => isUnsafeBlockChar(ch.codePointAt(0)!));
+    return Array.from(text).some(ch => {
+        const code = ch.codePointAt(0);
+        return code !== undefined && isUnsafeBlockChar(code);
+    });
 }
 
 /** `JSON.stringify`가 이스케이프하지 않지만 YAML 1.2 큰따옴표 스칼라에서 그대로 쓸 수 없는 문자. */

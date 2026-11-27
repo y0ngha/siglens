@@ -21,6 +21,7 @@ function snapshot(
             trend: 'bullish',
             patternSummaries: [{ patternName: 'cup', summary: '컵 패턴' }],
             strategyResults: [],
+            analyzedAt: '2026-10-07T20:40:00.000Z',
         },
         plain: '쉬운 설명',
         model: 'm',
@@ -64,7 +65,44 @@ describe('loadSymbolReport', () => {
         expect(report.technical?.patterns).toEqual(['컵 패턴']);
         expect(report.plain).toBe('쉬운 설명');
         expect(report.options?.summary).toBe('옵션 요약');
-        expect(report.analyzedAt).toBe('2026-10-07T21:00:00.000Z');
+        expect(report.analyzedAt).toBe('2026-10-07T20:40:00.000Z');
+    });
+
+    it('분석 시각은 분석 내용에서 읽는다 — 하베스트가 행을 다시 쓴 시각(generatedAt)이 아니다', async () => {
+        const harvestedAt = new Date('2026-10-07T23:59:00.000Z');
+        const src = sources({
+            findSnapshots: vi.fn().mockResolvedValue([
+                snapshot({
+                    generatedAt: harvestedAt,
+                    content: {
+                        summary: '기술적 요약',
+                        analyzedAt: '2026-10-05T01:00:00.000Z',
+                    },
+                }),
+            ]),
+        });
+
+        const report = await loadSymbolReport('AAPL', 'ko', NOW, src);
+
+        expect(report.analyzedAt).toBe('2026-10-05T01:00:00.000Z');
+    });
+
+    it('분석 내용에 시각이 없거나 깨졌으면 행의 시각으로 대신하지 않고 비운다', async () => {
+        const src = sources({
+            findSnapshots: vi.fn().mockResolvedValue([
+                snapshot({
+                    content: {
+                        summary: '기술적 요약',
+                        analyzedAt: 'not-a-date',
+                    },
+                }),
+            ]),
+        });
+
+        const report = await loadSymbolReport('AAPL', 'ko', NOW, src);
+
+        expect(report.technical?.summary).toBe('기술적 요약');
+        expect(report.analyzedAt).toBeNull();
     });
 
     it('최대 보관 기간보다 오래된 스냅샷은 쓰지 않는다', async () => {
@@ -79,6 +117,23 @@ describe('loadSymbolReport', () => {
 
         expect(report.technical).toBeNull();
         expect(report.plain).toBeNull();
+    });
+
+    it('신선해도 기술 분석 내용을 읽을 수 없으면 그 행의 평문·시각도 싣지 않는다', async () => {
+        const src = sources({
+            findSnapshots: vi.fn().mockResolvedValue([
+                snapshot({
+                    content: { summary: 42 },
+                    plain: '남으면 안 되는 설명',
+                }),
+            ]),
+        });
+
+        const report = await loadSymbolReport('AAPL', 'ko', NOW, src);
+
+        expect(report.technical).toBeNull();
+        expect(report.plain).toBeNull();
+        expect(report.analyzedAt).toBeNull();
     });
 
     it('경계값(정확히 최대 보관 기간)은 신선한 것으로 본다', async () => {

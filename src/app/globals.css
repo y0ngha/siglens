@@ -1,6 +1,6 @@
 /*
    스캔 범위를 렌더 코드로 한정한다. 루트 전체를 훑는 기본값이 문서 예시의
-   클래스 이름까지 유틸리티로 구워냈다 — `docs/superpowers/plans/`의 마크다운
+   클래스 이름까지 유틸리티로 구워냈다 — 계획 문서의 마크다운
    한 줄 때문에 `.text-green-400`·`.text-red-400`·`.text-chart-bullish`가
    번들에 들어갔고, 그 셋은 src/ 어디에도 쓰이지 않는다.
 
@@ -499,6 +499,16 @@ body {
     word-break: keep-all;
     overflow-wrap: break-word;
     background-color: var(--color-secondary-900);
+}
+
+/* 일본어·중국어는 공백이 없어 keep-all이면 문장 전체가 한 토큰이 되어 좁은 화면에서
+   넘친다(375px `/ja/signup` 제목). keep-all을 풀면(`normal`) CJK는 글자 사이에서 줄이 나뉜다.
+   `anywhere`는 쓰지 않는다 — min-content 폭을 줄여 표 셀·티커·숫자가 토큰 중간에서 끊길 수
+   있다. `<html lang>`이 로케일을 따른다(`ja`·`zh-Hans`) — `:lang(zh)`가 `zh-Hans`도 잡는다. */
+body:lang(ja),
+body:lang(zh) {
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .hero-report-lines {

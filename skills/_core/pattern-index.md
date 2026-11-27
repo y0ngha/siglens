@@ -8,6 +8,7 @@ gating:
   tier: always_on
 token_cost: 1768
 digest_hash: "08c65fd4"
+digest_text_hash: "94fdb45d"
 ---
 
 ## Pattern Index (compressed)

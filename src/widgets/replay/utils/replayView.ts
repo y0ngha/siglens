@@ -29,7 +29,10 @@ export function deriveReplayView(
     scenarios: readonly ReplayScenario[],
     frame: Frame
 ): ReplayView {
-    const scenario = scenarios[frame.index]!;
+    const scenario = scenarios[frame.index];
+    if (scenario === undefined) {
+        throw new Error(`unknown replay scenario index: ${frame.index}`);
+    }
     const streaming = frame.summary && !frame.sources;
     return {
         scenario,

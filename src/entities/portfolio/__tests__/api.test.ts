@@ -9,6 +9,7 @@ import { and, eq, is, SQL } from 'drizzle-orm';
 import { portfolioHoldings } from '@/shared/db/schema';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { renderSql } from '@/__tests__/utils/renderSql';
 
 const createdAt = new Date('2026-05-01T00:00:00.000Z');
 const updatedAt = new Date('2026-05-01T00:00:01.000Z');
@@ -146,19 +147,17 @@ describe('DrizzlePortfolioRepository.upsert', () => {
         expect(is(set.companyName, SQL)).toBe(true);
         expect(is(set.fmpSymbol, SQL)).toBe(true);
 
-        const companyNameChunks = (set.companyName as SQL).queryChunks;
-        expect(
-            (companyNameChunks[0] as { value: string[] }).value[0]
-        ).toContain('coalesce(');
-        expect(companyNameChunks[1]).toBe('Apple Inc.');
-        expect(companyNameChunks[3]).toBe(portfolioHoldings.companyName);
-
-        const fmpSymbolChunks = (set.fmpSymbol as SQL).queryChunks;
-        expect((fmpSymbolChunks[0] as { value: string[] }).value[0]).toContain(
-            'coalesce('
+        const companyName = renderSql(set.companyName);
+        expect(companyName.sql).toBe(
+            'coalesce($1, "portfolio_holdings"."company_name")'
         );
-        expect(fmpSymbolChunks[1]).toBe('AAPL');
-        expect(fmpSymbolChunks[3]).toBe(portfolioHoldings.fmpSymbol);
+        expect(companyName.params).toEqual(['Apple Inc.']);
+
+        const fmpSymbol = renderSql(set.fmpSymbol);
+        expect(fmpSymbol.sql).toBe(
+            'coalesce($1, "portfolio_holdings"."fmp_symbol")'
+        );
+        expect(fmpSymbol.params).toEqual(['AAPL']);
     });
 
     it('degrades to preserving existing metadata: COALESCE with a null input keeps the stored column reference (never overwrites with null)', async () => {
@@ -185,15 +184,19 @@ describe('DrizzlePortfolioRepository.upsert', () => {
         };
 
         expect(set.quantity).toBe('25');
-        const companyNameChunks = (set.companyName as SQL).queryChunks;
         // The bound parameter is null; COALESCE falls back to the existing
         // stored column at query time rather than writing null.
-        expect(companyNameChunks[1]).toBeNull();
-        expect(companyNameChunks[3]).toBe(portfolioHoldings.companyName);
+        const companyName = renderSql(set.companyName);
+        expect(companyName.sql).toBe(
+            'coalesce($1, "portfolio_holdings"."company_name")'
+        );
+        expect(companyName.params).toEqual([null]);
 
-        const fmpSymbolChunks = (set.fmpSymbol as SQL).queryChunks;
-        expect(fmpSymbolChunks[1]).toBeNull();
-        expect(fmpSymbolChunks[3]).toBe(portfolioHoldings.fmpSymbol);
+        const fmpSymbol = renderSql(set.fmpSymbol);
+        expect(fmpSymbol.sql).toBe(
+            'coalesce($1, "portfolio_holdings"."fmp_symbol")'
+        );
+        expect(fmpSymbol.params).toEqual([null]);
     });
 
     it('throws when the database returns no row (defensive guard)', async () => {

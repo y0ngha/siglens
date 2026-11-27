@@ -1,5 +1,9 @@
 import type { Locale } from '@/shared/i18n/locales';
-import type { SymbolBrief, SymbolReport } from '../reportModel';
+import type {
+    ReportChartDrawings,
+    SymbolBrief,
+    SymbolReport,
+} from '../reportModel';
 
 /**
  * `entities.email-report.email` 네임스페이스 번역자. 템플릿은 순수 함수라 요청 스코프가
@@ -24,8 +28,16 @@ export interface ReportEmailSection {
     /** 경량 경로가 준 신호 요약. 조회 실패면 `signals: null`이고 카드의 신호 줄은 생략된다. */
     brief: SymbolBrief;
     chartUrl: string;
+    /** 차트 이미지에 그려지는 분석 작도. 없으면(그려진 게 없으면) 이미지는 캔들·이동평균뿐이다. */
+    drawings?: ReportChartDrawings | null;
     pageUrl: string;
 }
+
+/**
+ * 스킬 이름(패턴·전략 카드) → 수신자 로케일의 표시명. 사전에 없는 이름은 원문 그대로 돌려준다
+ * (`shared.skillName`, 사이트의 `useSkillLabel`과 같은 규칙).
+ */
+export type SkillLabelResolver = (name: string) => string;
 
 /** "그 외 관심종목" 표 한 행. */
 export interface SymbolBriefRow {
@@ -33,14 +45,15 @@ export interface SymbolBriefRow {
     pageUrl: string;
 }
 
-/** 첫 리포트 맨 위 안내 블록의 재료. 광고성 문구 없이 동의 결과와 일정만 담는다. */
+/**
+ * 첫 리포트 맨 위 안내 블록의 재료. 광고성 문구 없이 동의 결과와 일정만 담는다. 시간대는 따로 받지
+ * 않는다 — 메일 한 통이 한 달력을 쓰도록 `BuildReportEmailInput.timeZone`을 쓴다.
+ */
 export interface ReportEmailWelcome {
     consentedAt: Date;
     /** 수신 요일 비트마스크(`email_report_subscriptions.days_of_week`). */
     daysOfWeek: number;
     sendHour: number;
-    /** 회원의 IANA 시간대. */
-    timezone: string;
     /** 보낼 종목이 없을 때 안내하는 샘플 메일 주소. */
     sampleUrl: string;
 }
@@ -67,6 +80,9 @@ export interface BuildReportEmailInput {
      * 안내가 붙는다. 보낼 종목이 없으면(`sections`와 `briefRows`가 모두 빔) 샘플 메일 링크가 대신 실린다.
      */
     welcome?: ReportEmailWelcome;
+    /** 수신자의 IANA 타임존 — 분석 날짜를 수신자 달력으로 적는다. */
+    timeZone: string;
     t: ReportEmailTranslator;
     signalLabel: SignalLabelResolver;
+    skillLabel: SkillLabelResolver;
 }

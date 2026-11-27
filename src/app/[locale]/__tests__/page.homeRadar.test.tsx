@@ -3,9 +3,6 @@ vi.mock('@/widgets/home/utils/heroQuickLinks', () => ({
         { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
     ],
 }));
-vi.mock('@/widgets/home/CryptoShowcase', () => ({
-    CryptoShowcase: () => null,
-}));
 vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
 }));
@@ -18,8 +15,8 @@ vi.mock('@/widgets/home/StatsBar', () => ({
 vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
     HomeWatchlistCard: () => null,
 }));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
+vi.mock('@/widgets/home/PopularTickers', () => ({
+    PopularTickers: () => null,
 }));
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => null,

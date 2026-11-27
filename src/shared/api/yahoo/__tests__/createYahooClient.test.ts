@@ -217,8 +217,10 @@ describe('createYahooClient의 메서드 레벨 offline 가드는', () => {
 
     it('SIGLENS_OFFLINE_BUILD=1이어도 allowlist 밖의 함수 프로퍼티는 그대로 통과시켜 동기 반환을 보존한다', () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock 클래스에만 있는 메서드
-        const client = createYahooClient() as any;
+        // mock 클래스에만 있는 메서드라 실제 타입에는 없다.
+        const client = createYahooClient() as unknown as {
+            notAGuardedMethod: (symbol: string) => unknown;
+        };
 
         // Promise가 아니라 동기 값이 그대로 나와야 한다 — 감싸졌다면 Promise가 됐을 것이다.
         const result = client.notAGuardedMethod('005930.KS');

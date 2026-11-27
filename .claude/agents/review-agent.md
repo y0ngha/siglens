@@ -168,6 +168,8 @@ Check the changed code against the live rule documents loaded in Step 2: the rel
 (Comments & Documentation, Change Synchronization and the section matching the code are always relevant),
 REACT.md for client code, SERVER.md for server code, TESTING.md for tests, FF.md, DESIGN.md for UI, and the CLAUDE.md of each touched layer.
 Cite each violated rule in the finding's `reason` as `FILE#ID` (e.g. `CONVENTIONS.md#CS-5`, `TESTING.md#TE-1`).
+A rule listed in the "Enforced rules" table of `docs/conventions/CONVENTIONS.md` (an oxlint rule in `.oxlintrc.json` or a guard test in `src/__tests__/guards`) is reported by CI, not as a review finding. Do not spend a finding on it.
+Run `yarn rules:ratchet --against origin/master`. Any raised count or new key it lists that the PR body does not justify with the user's approval is a `required` finding (`TOOLCHAIN.md#TC-41`).
 
 ---
 

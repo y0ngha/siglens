@@ -3,15 +3,23 @@ import 'server-only';
 import type { Sql } from 'postgres';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { Tier } from '@y0ngha/siglens-core';
-import type { OAuthProvider } from '@/shared/lib/types';
-import type { LlmProvider } from '../config/llmProviders';
 import type {
+    OAuthProvider,
     KoreanTickerEntry,
     KoreanTickerUpsertEntry,
 } from '@/shared/lib/types';
+import type { LlmProvider } from '../config/llmProviders';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type { Locale } from '@/shared/i18n/locales';
-import type { EmailReportConsentSource } from './constants';
+import type {
+    EmailReportConsentSource,
+    MailAlertConsentSourceValue,
+    MailAlertTopicKindValue,
+    PriceAlertApproachValue,
+    PriceAlertBasisValue,
+    PriceAlertMarketValue,
+    PriceAlertStatusValue,
+} from './constants';
 import type * as schema from './schema';
 
 /** Connection configuration required to instantiate a database client. */
@@ -130,7 +138,15 @@ export interface UserRepository {
         input: CreateEmailUserInput
     ): Promise<AuthUserRecord | null>;
     deleteUser(userId: string): Promise<boolean>;
-    updatePassword(userId: string, passwordHash: string): Promise<boolean>;
+    /**
+     * 비밀번호 해시를 바꾸고 그 사용자의 세션을 **모두** 지운다(같은 트랜잭션). 반환값은 사용자 행이
+     * 바뀌었는지이며, 바뀐 행이 없으면 세션도 건드리지 않는다. 유출된 비밀번호로 만든 세션이
+     * 재설정 뒤에도 살아 있지 않게 한다.
+     */
+    resetPasswordRevokingSessions(
+        userId: string,
+        passwordHash: string
+    ): Promise<boolean>;
 }
 
 /** Interface for credential lookup required by email login. */
@@ -423,6 +439,295 @@ export interface EmailReportDeliveryRepository {
     ): Promise<void>;
     /** Deletes rows created before `cutoff`; returns the count. */
     pruneOlderThan(cutoff: Date): Promise<number>;
+}
+
+/** A persisted mail-alert subscriber — one row per verified address (member or guest). */
+export interface MailAlertSubscriberRecord {
+    id: string;
+    /** Normalized (lower-case, trimmed) address. */
+    email: string;
+    /** Set when a member with the same verified address exists; `null` for a pure guest. */
+    userId: string | null;
+    locale: Locale;
+    includePortfolio: boolean;
+    consentedAt: Date;
+    consentSource: MailAlertConsentSourceValue;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Input for creating (or re-confirming) a subscriber after the emailed code was verified. There is
+ * deliberately no `userId`: the repository resolves the owner itself (see `upsertVerified`), so a
+ * caller cannot link the session user to an address that is not theirs.
+ */
+export interface UpsertVerifiedMailAlertSubscriberInput {
+    /** Already normalized with `normalizeEmail`. */
+    email: string;
+    locale: Locale;
+    consentSource: MailAlertConsentSourceValue;
+}
+
+/** One stored topic of a subscriber: `symbol` → upper-case symbol, `signal` → signal type, `fear_greed` → market. */
+export interface MailAlertTopicRecord {
+    kind: MailAlertTopicKindValue;
+    key: string;
+}
+
+export type AddMailAlertTopicOutcome =
+    | 'added'
+    | 'exists'
+    | 'limit_reached'
+    /** The owner has no subscriber row (deleted between the caller's lookup and this call, or not theirs). */
+    | 'subscriber_missing';
+
+export interface RemoveMailAlertTopicOutcome {
+    /** The topic existed and was removed. */
+    deleted: boolean;
+    /** Removing it left the subscriber with nothing to receive (no topics, portfolio off, no live price alert), so the row was deleted too. */
+    subscriberDeleted: boolean;
+}
+
+/** A subscriber with everything the sender needs — one row per deliverable subscriber. */
+export interface MailAlertDeliveryTarget {
+    id: string;
+    email: string;
+    locale: Locale;
+    userId: string | null;
+    includePortfolio: boolean;
+    topics: MailAlertTopicRecord[];
+}
+
+/**
+ * Who a subscriber-row operation acts for. Every by-id method binds this in the statement (DB-12):
+ * a member addresses only the row whose `user_id` is theirs; a guest addresses a row by id **and**
+ * only while it is unlinked (`user_id IS NULL`). The guest id comes from the signed
+ * `siglens_mail_alert` cookie that app-B issues, never from request input. A member can therefore not
+ * reach a guest row by id, a guest id cannot reach a linked row, and one member cannot reach another's.
+ */
+export type MailAlertOwner =
+    | { kind: 'member'; userId: string }
+    | { kind: 'guest'; subscriberId: string }
+    /**
+     * A subscriber named by a signed mail link (`alert-manage` / `alert-unsubscribe`, verified by the
+     * caller with the HMAC secret before this value is built). It matches by id only, for guest and
+     * member-linked rows alike. The HMAC over the id is the authorization here, not the row state, so
+     * this owner must never be built from unsigned input: it is as strong as the secret, exactly like
+     * the report unsubscribe link. It is not allowed to change `include_portfolio` (a member setting).
+     */
+    | { kind: 'link'; subscriberId: string };
+
+/**
+ * Persistence operations for mail-alert subscribers and their topics. `upsertVerified` is keyed by the
+ * verified address, `findAllForDelivery` is the cron's system-wide read, and `deleteForAccount` /
+ * `findForMember` take the authenticated `userId`; every other method takes a {@link MailAlertOwner}.
+ */
+export interface MailAlertSubscriberRepository {
+    /**
+     * Creates the subscriber or re-confirms an existing one (unique by email). An existing row keeps
+     * its first consent time and screen. `user_id` is resolved in the same statement as the `users` row
+     * whose email equals the verified address and is `email_verified`, provided that user has no
+     * subscriber row yet; otherwise the row stays a guest (`user_id` null). It is filled only when it
+     * was still null.
+     */
+    upsertVerified(
+        input: UpsertVerifiedMailAlertSubscriberInput
+    ): Promise<{ id: string; created: boolean }>;
+    findByOwner(
+        owner: MailAlertOwner
+    ): Promise<MailAlertSubscriberRecord | null>;
+    /**
+     * By `user_id`, else the unlinked row whose address equals the user's own address (read from
+     * `users`, and only when `email_verified`), which gets linked. An unverified account adopts nothing.
+     */
+    findForMember(userId: string): Promise<MailAlertSubscriberRecord | null>;
+    listTopics(owner: MailAlertOwner): Promise<MailAlertTopicRecord[]>;
+    /** Idempotent insert under a per-subscriber lock so concurrent calls cannot exceed `max`. */
+    addTopic(
+        owner: MailAlertOwner,
+        topic: MailAlertTopicRecord,
+        max: number
+    ): Promise<AddMailAlertTopicOutcome>;
+    /** Removes the topic; deletes the subscriber too when nothing is left to receive. */
+    removeTopic(
+        owner: MailAlertOwner,
+        topic: MailAlertTopicRecord
+    ): Promise<RemoveMailAlertTopicOutcome>;
+    /**
+     * Turning it off with nothing else to receive (no topics, no live price alert) deletes the subscriber. `found` is false when the owner has no
+     * row, and always for a guest or link owner (the portfolio is a member's own setting; nothing is
+     * written).
+     */
+    setIncludePortfolio(
+        owner: MailAlertOwner,
+        value: boolean
+    ): Promise<{ found: boolean; subscriberDeleted: boolean }>;
+    deleteByOwner(owner: MailAlertOwner): Promise<boolean>;
+    /**
+     * Links the unlinked subscriber row to a member whose own account address equals the row's address
+     * (compared inside the statement), when that member has no row yet. The caller may call it only after
+     * the emailed code for that address was verified in the same request; it exists for members whose
+     * account email is not `email_verified`, which `upsertVerified` therefore cannot link. Returns whether
+     * the row was linked.
+     */
+    linkVerifiedMember(userId: string, subscriberId: string): Promise<boolean>;
+    /**
+     * Account deletion: removes the row linked to the user and, when the account's address is verified,
+     * the unlinked row with that address. Call it before the `users` row is deleted (the address is read
+     * from it).
+     */
+    deleteForAccount(userId: string): Promise<number>;
+    /**
+     * Subscribers with at least one topic, the portfolio switch on, or a live price alert. `alertDate`
+     * (the sender's KST date) sets the expiry clock; omitted, the DB's KST today.
+     */
+    findAllForDelivery(alertDate?: string): Promise<MailAlertDeliveryTarget[]>;
+}
+
+/** Final state of a claimed mail-alert delivery. */
+export type MailAlertDeliveryOutcome = 'sent' | 'failed';
+
+/**
+ * A price-alert condition as stored: the same three shapes core's `PriceLevelCondition` has, kept
+ * here so `shared/db` does not import core. Prices are JS numbers in this layer; the column is
+ * `numeric(20,6)`, so a value is exact to six decimals.
+ */
+export type PriceAlertConditionRecord =
+    | {
+          kind: 'enter_zone';
+          low: number;
+          high: number;
+          approach: PriceAlertApproachValue;
+      }
+    | { kind: 'close_below'; level: number }
+    | { kind: 'close_above'; level: number };
+
+/** A persisted price alert. */
+export interface PriceAlertRecord {
+    id: string;
+    subscriberId: string;
+    proposalId: string;
+    symbol: string;
+    market: PriceAlertMarketValue;
+    condition: PriceAlertConditionRecord;
+    basis: PriceAlertBasisValue;
+    /** `analyzedAt` of the AI analysis the levels came from; `null` for a price the user named. */
+    analysisAt: Date | null;
+    /** The price shown on the card when the alert was proposed. */
+    referenceClose: number;
+    /** KST `YYYY-MM-DD` of the last closed session at creation: only later closes count. */
+    startsAfterSession: string;
+    /** KST `YYYY-MM-DD`; the alert is still live on this date. */
+    expiresOn: string;
+    status: PriceAlertStatusValue;
+    firedSession: string | null;
+    firedClose: number | null;
+    firedAt: Date | null;
+    createdAt: Date;
+}
+
+/** What the create action hands over after verifying the signed proposal. */
+export interface CreatePriceAlertInput {
+    /** From the signed proposal: makes a repeated create of the same proposal idempotent. */
+    proposalId: string;
+    symbol: string;
+    market: PriceAlertMarketValue;
+    condition: PriceAlertConditionRecord;
+    basis: PriceAlertBasisValue;
+    analysisAt: Date | null;
+    referenceClose: number;
+    startsAfterSession: string;
+    expiresOn: string;
+}
+
+export type CreatePriceAlertOutcome =
+    | 'created'
+    /** The same proposal was already created (a retry or a double click). */
+    | 'exists'
+    /** A live alert with the same symbol, condition and levels already exists. */
+    | 'duplicate'
+    | 'limit_reached'
+    /** The owner has no subscriber row (unsubscribed between the caller's lookup and this call, or not theirs). */
+    | 'subscriber_missing'
+    /** A price is not a finite positive number, or a zone has low above high. Nothing was written. */
+    | 'invalid';
+
+export interface CancelPriceAlertOutcome {
+    /** The alert existed, was the owner's, and was removed. */
+    deleted: boolean;
+    /** Removing it left the subscriber with nothing to receive, so the row was deleted too. */
+    subscriberDeleted: boolean;
+}
+
+export interface PruneExpiredPriceAlertsResult {
+    alertsDeleted: number;
+    /** Subscribers that lost an alert in this run and were left with nothing to receive. */
+    subscribersDeleted: number;
+}
+
+/**
+ * Persistence operations for price alerts. Every user-reachable method takes a {@link MailAlertOwner}
+ * and resolves the subscriber inside the statement (DB-12): another owner's subscriber, or an alert id
+ * that is not theirs, matches nothing. `listActiveForDelivery` and `pruneExpiredAndFired` are
+ * cron-only and system-wide.
+ */
+export interface PriceAlertRepository {
+    /**
+     * Under a `FOR NO KEY UPDATE` lock on the owner's subscriber row: `invalid` for a non-finite or
+     * non-positive price, `exists` for a repeated proposal id, `duplicate` for a live alert with the
+     * same symbol, condition and levels, `limit_reached` when the live count is already `max`, else
+     * inserts. Safe under `withRetry`.
+     */
+    createWithinLimit(
+        owner: MailAlertOwner,
+        input: CreatePriceAlertInput,
+        max: number
+    ): Promise<CreatePriceAlertOutcome>;
+    /**
+     * Deletes the owner's own alert; deletes the subscriber too when nothing is left to receive (no
+     * topics, portfolio switch off, no live alert). Another owner's alert id is a no-op.
+     */
+    cancel(owner: MailAlertOwner, id: string): Promise<CancelPriceAlertOutcome>;
+    /** Every alert of the owner's subscriber (live, expired-unpruned and fired), oldest first. */
+    listForSubscriber(owner: MailAlertOwner): Promise<PriceAlertRecord[]>;
+    findByProposal(
+        owner: MailAlertOwner,
+        proposalId: string
+    ): Promise<PriceAlertRecord | null>;
+    /** Live alerts: `status = 'active'` and not past its KST expiry date. */
+    countActive(owner: MailAlertOwner): Promise<number>;
+    /** Active alerts with `expires_on >= alertDate`, grouped by subscriber, oldest first. */
+    listActiveForDelivery(
+        alertDate: string
+    ): Promise<Map<string, PriceAlertRecord[]>>;
+    /**
+     * Deletes active alerts with `expires_on < alertDate` and fired alerts fired more than
+     * `PRICE_ALERT_FIRED_RETENTION_DAYS` KST days before `alertDate`, then the subscribers that lost an
+     * alert here and have nothing left to receive (same rule as `removeTopic`).
+     */
+    pruneExpiredAndFired(
+        alertDate: string
+    ): Promise<PruneExpiredPriceAlertsResult>;
+}
+
+/**
+ * Idempotency log for mail-alert deliveries (one row per subscriber per KST alert date). Cron-only:
+ * these methods are keyed by ids the sender just read or claimed itself and are never reachable from a
+ * user request, so they take no {@link MailAlertOwner}.
+ */
+export interface MailAlertDeliveryRepository {
+    /** Claims the (subscriber, alertDate) slot; returns the row id, or `null` when already claimed. */
+    claim(subscriberId: string, alertDate: string): Promise<string | null>;
+    finish(
+        id: string,
+        outcome: MailAlertDeliveryOutcome,
+        itemKeys: readonly string[],
+        error: string | null
+    ): Promise<void>;
+    /** Item keys of `sent` deliveries with `alert_date >= sinceAlertDate`, per subscriber. */
+    recentItemKeys(sinceAlertDate: string): Promise<Map<string, Set<string>>>;
+    /** Deletes deliveries whose `alert_date` is before `alertDate`; returns the count. */
+    pruneBefore(alertDate: string): Promise<number>;
 }
 
 /** `korean_tickers`의 상장 상태만 담은 최소 행. 상폐 판정 로직(`planKrTickerReconcile`,

@@ -514,7 +514,10 @@ describe('runOverallWarmStep', () => {
 
             await runOverallWarmStep(input);
 
-            expect(mockHasPrewarmedOverall).toHaveBeenCalledWith('GONE');
+            expect(mockHasPrewarmedOverall).toHaveBeenCalledWith(
+                'GONE',
+                START_MS
+            );
             expect(mockRevalidateTag).toHaveBeenCalledWith(
                 'overall-peek:GONE',
                 'max'

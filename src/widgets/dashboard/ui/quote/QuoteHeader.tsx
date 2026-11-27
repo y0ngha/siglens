@@ -58,9 +58,11 @@ export function QuoteHeader({
         displayName: data.displayName,
         tickerIsReadable,
     };
-    const change = (
-        <QuoteChange changePercent={data.changePercent} layout={layout} />
-    );
+    // 가격 0은 조회 실패라 등락률도 의미가 없다(0%로 보이면 보합으로 읽힌다).
+    const change =
+        data.price === 0 ? null : (
+            <QuoteChange changePercent={data.changePercent} layout={layout} />
+        );
     const price = (
         <QuotePrice price={data.price} currencySymbol={currencySymbol} />
     );

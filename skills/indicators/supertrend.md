@@ -9,8 +9,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [supertrend_bullish_flip, supertrend_bearish_flip]
-token_cost: 371
-digest_hash: "5630c2d8"
+token_cost: 391
+digest_hash: "e3604fe5"
+digest_text_hash: "f2fb08d6"
 ---
 
 ## Overview
@@ -43,16 +44,16 @@ Supertrend is an ATR-based trend-following indicator that plots a single line ab
 
 ## Recommended Combinations
 
-- Supertrend + RSI: RSI provides overbought/oversold context. A Supertrend bullish flip with RSI below 50 (rising from oversold) is a high-probability entry. A Supertrend bearish flip with RSI above 50 (falling from overbought) strengthens the sell signal.
+- Supertrend + RSI: RSI provides overbought/oversold context. A Supertrend bullish flip with RSI below 50 (rising from oversold) is a bullish-flip candidate with the oscillator turning up from a low level. A Supertrend bearish flip with RSI above 50 (falling from overbought) is a bearish-flip candidate with the oscillator turning down from a high level. Two indicators agreeing is context, not a measured edge.
 - Supertrend + EMA(20/50): Use EMA as a structural trend filter. Only follow Supertrend buy signals when price is above EMA(50); only follow sell signals when below.
 - Supertrend + MACD: A Supertrend flip confirmed by MACD crossover in the same direction provides dual-system trend confirmation.
-- Supertrend + Volume: A Supertrend flip accompanied by above-average volume has higher follow-through probability than a low-volume flip.
+- Supertrend + Volume: A Supertrend flip accompanied by above-average volume has volume behind it, unlike a low-volume flip.
 
 ## Caveats
 
 - Supertrend is a lagging indicator — it confirms trends after they have begun, not before. Do not expect early reversal detection.
 - In choppy, ranging markets, Supertrend generates frequent flip signals (whipsaws), leading to losses. Filter with ADX > 25 to ensure a trending environment before acting on Supertrend signals.
-- The standard (10, 3.0) parameters suit daily charts for swing trading. For more sensitive signals (intraday), use (7, 2.0). For less sensitive signals (position trading), use (14, 4.0).
+- The standard (10, 3.0) parameters are the usual swing-trading reference. For more sensitive signals (short bar timeframes), use (7, 2.0). For less sensitive signals (position trading), use (14, 4.0).
 - A higher multiplier reduces flip frequency but increases lag. A lower multiplier increases sensitivity but adds noise. Adjust based on the asset's volatility characteristics.
 - Supertrend does not account for volume — a low-volume flip is equally weighted as a high-volume flip. Always cross-reference with volume.
 
@@ -74,7 +75,7 @@ ATR-based trend-following, single line as dynamic S/R. ATR period 10, multiplier
 
 **Distance:** large gap price↔Supertrend = strong momentum, far from reversal; narrowing gap = decelerating, tighten risk.
 
-**Combos:** +RSI (bullish flip + RSI<50 rising from oversold = high-prob; bearish flip + RSI>50 falling from overbought = stronger); +EMA(20/50) (only buy when price above EMA50, sell when below); +MACD (crossover same direction = dual confirmation); +Volume (above-avg flip = higher follow-through).
+**Combos:** +RSI (bullish flip + RSI<50 rising from oversold = bullish-flip candidate; bearish flip + RSI>50 falling from overbought = bearish-flip candidate; agreement is context, not a measured edge); +EMA(20/50) (only buy when price above EMA50, sell when below); +MACD (crossover same direction = dual confirmation); +Volume (above-avg flip has volume behind it).
 
-**Caveats:** lagging — confirms after trend begins, no early detection; choppy/ranging whipsaws — filter ADX>25; (10,3.0) = daily swing, intraday (7,2.0), position (14,4.0); higher mult = fewer flips + more lag, lower mult = more sensitive + noisier; ignores volume — always cross-reference.
+**Caveats:** lagging — confirms after trend begins, no early detection; choppy/ranging whipsaws — filter ADX>25; (10,3.0) = standard swing, short bar timeframes (7,2.0), position (14,4.0); higher mult = fewer flips + more lag, lower mult = more sensitive + noisier; ignores volume — always cross-reference.
 <!-- PROMPT_DIGEST:END -->

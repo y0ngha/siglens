@@ -14,8 +14,8 @@ vi.mock('@/features/watchlist/ui/HomeWatchlistCard', () => ({
         return null;
     },
 }));
-vi.mock('@/widgets/home/TickerCategories', () => ({
-    TickerCategories: () => null,
+vi.mock('@/widgets/home/PopularTickers', () => ({
+    PopularTickers: () => null,
 }));
 vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => null,
@@ -147,23 +147,25 @@ describe('홈 generateMetadata', () => {
     );
 
     it.each(['ko', 'en'])(
-        '%s: og·twitter 이미지를 잃지 않는다',
+        '%s: og·twitter 메타를 유지하고 이미지는 파일 컨벤션에 맡긴다',
         async locale => {
             const meta = await load(locale);
             const og = meta.openGraph as Record<string, unknown> | undefined;
             const twitter = meta.twitter as Record<string, unknown> | undefined;
 
-            expect(og?.['images']).toBeDefined();
+            // 이미지는 `(home)/opengraph-image.tsx`·`twitter-image.tsx` 파일 컨벤션이
+            // 채운다 — 공용 `/og-image.png`를 다시 박으면 카드가 이중이 된다.
+            expect(og?.['images']).toBeUndefined();
             expect(og?.['type']).toBe('website');
             expect(og?.['url']).toBeTruthy();
             expect(twitter?.['card']).toBe('summary_large_image');
-            expect(twitter?.['images']).toBeDefined();
+            expect(twitter?.['images']).toBeUndefined();
         }
     );
 });
 
 describe('홈 관심종목 카드 배치', () => {
-    it('HomeWatchlistCard가 히어로 섹션 안, StatsBar 앞에 한 번 렌더된다', async () => {
+    it('HomeWatchlistCard가 한 번 렌더되고 가격대 띠(HomeMethodBand)보다 앞에 온다', async () => {
         const { default: Home } = await import('../(home)/page');
         const { HomeWatchlistCard } =
             await import('@/features/watchlist/ui/HomeWatchlistCard');
@@ -171,12 +173,12 @@ describe('홈 관심종목 카드 배치', () => {
             await import('@/__tests__/utils/findElementByType');
         const tree = await Home({ params: Promise.resolve({ locale: 'ko' }) });
         expect(findAllElementsByType(tree, HomeWatchlistCard)).toHaveLength(1);
-        // 문서 순서: 관심종목 카드가 StatsBar보다 먼저 나온다.
+        // 문서 순서: 관심종목 카드가 가격대 띠보다 먼저 나온다.
         const flat = JSON.stringify(tree, (_key, value) =>
             typeof value === 'function' ? value.name : value
         );
         expect(flat.indexOf('HomeWatchlistCard')).toBeLessThan(
-            flat.indexOf('StatsBar')
+            flat.indexOf('HomeMethodBand')
         );
     });
 });

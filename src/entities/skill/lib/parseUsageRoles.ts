@@ -42,12 +42,8 @@ const USAGE_ROLE_SET: ReadonlySet<string> = new Set(USAGE_ROLE_ORDER);
  */
 export const parseUsageRoles = (raw: unknown): SkillUsageRole[] | undefined => {
     if (!Array.isArray(raw) || raw.length === 0) return undefined;
-    const seen = new Set<string>();
-    for (const r of raw) {
-        if (typeof r !== 'string') return undefined;
-        if (seen.has(r)) return undefined;
-        if (!USAGE_ROLE_SET.has(r)) return undefined;
-        seen.add(r);
-    }
-    return USAGE_ROLE_ORDER.filter(r => seen.has(r));
+    const valid =
+        raw.every(r => typeof r === 'string' && USAGE_ROLE_SET.has(r)) &&
+        new Set(raw).size === raw.length;
+    return valid ? USAGE_ROLE_ORDER.filter(r => raw.includes(r)) : undefined;
 };

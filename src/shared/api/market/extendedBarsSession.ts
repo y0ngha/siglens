@@ -149,8 +149,9 @@ export function filterOutOfSessionBars(
 /**
  * 확장 봉이 없을 때 모든 호출이 돌려주는 **같은 빈 배열**(동결). 호출마다 새 `[]`을 만들면 참조가 매번 달라져
  * `useMemo`·effect 의존성(`extendedBars`)이 렌더마다 깨진다 — 음영 primitive가 다시 붙고 시간축이 다시 맞춰진다.
+ *
+ * 동결 배열을 `Bar[]`로 본다 — 소비자는 이 배열을 변경하지 않는다(읽기·참조 비교만).
  */
-// 동결 배열을 `Bar[]`로 본다 — 소비자는 이 배열을 변경하지 않는다(읽기·참조 비교만).
 export const NO_EXTENDED_BARS: Bar[] = Object.freeze([]) as unknown as Bar[];
 
 export interface MergedExtendedBars {

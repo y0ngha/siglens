@@ -34,8 +34,10 @@ import { normalizeReactSsrText } from '../support/ssrText';
  *   - /AAPL  warmed 2nd req → `x-nextjs-cache: HIT` (ISR cache serves the route)
  */
 
-// `[\s\S]*?` (not the `s`/dotAll flag, which needs an es2018+ target) so the
-// matcher is newline-tolerant while staying within this project's TS target.
+/**
+ * `[\s\S]*?` (not the `s`/dotAll flag, which needs an es2018+ target) so the
+ * matcher is newline-tolerant while staying within this project's TS target.
+ */
 const LD_JSON_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
 
 /**

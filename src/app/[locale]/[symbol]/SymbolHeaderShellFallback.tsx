@@ -1,5 +1,6 @@
 'use client';
 
+import { isMailAlertLaunched } from '@/entities/mail-alert/lib/mailAlertConstants';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { brandName } from '@/shared/lib/brandName';
@@ -14,7 +15,7 @@ import { brandName } from '@/shared/lib/brandName';
  * - **행 구조가 같아야 한다.** 행 수가 다르면 전환 순간 세로로 밀린다. 지금은 양쪽 다 어느 폭에서든 한
  *   행이다 — 차트 라우트는 첫 뷰포트 세로 예산이 빠듯해 헤더가 커지면 그만큼 캔들이 줄어든다. 좁은
  *   화면에서 종목명이 잘리는 것은 감수했다(탭마다 본문 h1이 전체 이름을 갖는다). 컨트롤 크기(size-11)도 같다.
- * - 컨트롤은 **3개**다 — [☆ 관심종목][공유][설정]. 실제 헤더의 평단 칩은 회원 전용이라 게스트에겐
+ * - 컨트롤은 **3개**다(공개 후에는 ☆ 뒤에 "메일로 받기" 자리가 하나 더 생겨 4개) — [☆ 관심종목][공유][설정]. 실제 헤더의 평단 칩은 회원 전용이라 게스트에겐
  *   렌더되지 않아 자리를 두지 않는다(클러스터가 우측 정렬이라 개수가 달라도 나머지 x는 안 밀린다). ☆는
  *   회원·게스트 모두에게 하이드레이션 전부터 같은 크기로 그려져 자리를 둔다.
  */
@@ -44,6 +45,11 @@ export function SymbolHeaderShellFallback() {
                     <span className="inline-block h-6 w-16 animate-pulse rounded bg-secondary-700 sm:hidden" />
                     <div className="flex items-center gap-2">
                         <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
+                        {/* 공개 후의 "메일로 받기" 자리(아이콘형 size-11, 모든 로케일에서 같은 폭). 크립토·지수에서는
+                            이 자리가 비어 한 칸 당겨지지만, 폴백은 자산 정보를 모르는 첫 페인트라 있는 쪽으로 잡는다. */}
+                        {isMailAlertLaunched() && (
+                            <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
+                        )}
                         <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
                         <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
                     </div>

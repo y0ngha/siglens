@@ -13,8 +13,8 @@
 import {
     tryAcquireReanalyzeCooldown as coreTryAcquire,
     type AcquireReanalyzeCooldownResult,
+    type Timeframe,
 } from '@y0ngha/siglens-core';
-import type { Timeframe } from '@y0ngha/siglens-core';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**

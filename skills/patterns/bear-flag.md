@@ -18,6 +18,7 @@ gating:
   triggers: [bear_flag]
 token_cost: 966
 digest_hash: "addd96ab"
+digest_text_hash: "b6b32c9b"
 ---
 
 ## Detection Criteria

@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 const { send } = vi.hoisted(() => ({ send: vi.fn() }));
 
@@ -21,7 +21,6 @@ vi.mock('../config.mjs', () => ({
     },
 }));
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { getEntry, lookupEntry, setEntry } from '../s3Store.mjs';
 
 beforeEach(() => send.mockReset());

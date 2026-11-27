@@ -243,6 +243,7 @@ export function validateBacktestRunData(data: unknown): BacktestRunData {
     // 화면은 `tradeKey`로 서버 행과 클라이언트 상세를 잇는다. 키가 겹치면 한 매매의 상세가
     // 다른 매매로 조용히 덮인다.
     const seen = new Set<string>();
+    // CONVENTIONS.md#CP-6 예외: 중복 키를 만나는 즉시 던지는 단일 패스(O(N))다. 매매마다 Set을 복사하면 O(N²)다.
     for (const [i, trade] of (trades as UnknownRecord[]).entries()) {
         const key = tradeKey({
             ticker: trade['ticker'] as string,

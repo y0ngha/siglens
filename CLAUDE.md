@@ -36,11 +36,8 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
 - Chat prompt builder
 - Usage limit policy: "checkAnalysisLimit / checkChatbotLimit"
 
-> **2026-09 갱신**: siglens에는 더 이상 종목 페이지 자체 챗봇이 없다 —
-> `/[symbol]`의 플로팅 버튼은 `ai.siglens.io`로 보내는 링크일 뿐이다. 위
-> "Chat prompt builder"/"checkChatbotLimit" 트리거는 core 레포 자체 작업에
-> 여전히 적용되는 규칙이며, siglens 쪽에 챗 어댑터를 새로 만드는 작업은
-> 없다 — siglens의 유일한 챗은 `ai.siglens.io` 에이전트뿐이다.
+> siglens에는 종목 페이지 챗봇이 없다(`/[symbol]`의 플로팅 버튼은 `ai.siglens.io` 링크, 유일한 챗은 그 에이전트).
+> 위 챗 트리거는 core 레포 작업에 적용되며, siglens 쪽에 챗 어댑터를 새로 만들지 않는다.
 
 **What you must do when triggered**:
 
@@ -211,8 +208,7 @@ app  →  views  →  widgets  →  features  →  entities  →  shared
 
 ### oxlint 강제
 
-- 아래 방향 레이어 규칙은 oxlint `no-restricted-imports`(`.oxlintrc.json`의 레이어별 override)가 강제한다.
-- 순환은 `src/__tests__/guards/importCycles.test.ts`, widgets 간 import는 `src/__tests__/guards/noCrossWidgetImports.test.ts`, barrel(`index.ts`와 re-export 전용 파일)은 `src/__tests__/guards/noBarrelFiles.test.ts`가 강제한다.
+- 아래 방향 레이어 규칙은 oxlint `no-restricted-imports`(`.oxlintrc.json`의 레이어별 override)가, 순환·widgets 간 import는 위에 적은 가드가, barrel(`index.ts`와 re-export 전용 파일)은 `src/__tests__/guards/noBarrelFiles.test.ts`가 강제한다.
 - 위 가드들이 다루지 않는 같은 레이어 슬라이스 간 import 금지(entities·features·shared 예외 밖)는 리뷰 시점 규칙이다. 위반 시 PR 머지 불가.
 
 ---
@@ -256,7 +252,7 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 - Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
 - Rerun every gate covering a file after each code-changing review fix, React Doctor included; a pass on the earlier version does not carry over to the fixed one.
 - A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
-- A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule. The same sweep applies to any review finding that names a pattern, even when no rule text changed: grep the whole PR diff for that pattern before pushing the fix. "Every changed file" includes test files and test helpers: code rules (no `!` assertions, no `any`, no `let`/`for`/`push`) apply there too, so a sweep limited to production files leaves the same violation behind.
+- A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule. The same sweep applies to any review finding that names a pattern, even when no rule text changed: grep the whole PR diff for that pattern before pushing the fix. "Every changed file" includes test files and test helpers: code rules (the "Enforced rules" table in `docs/conventions/CONVENTIONS.md`, CP-4, CP-6) apply there too, so a sweep limited to production files leaves the same violation behind.
 - ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[locale]/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
 
 ---
@@ -298,13 +294,17 @@ Guidance lives in exactly one place. Pick the home by the kind of rule:
 | Layer-specific rules | `src/app/CLAUDE.md` (AP), `src/entities/CLAUDE.md` (EN), `src/shared/CLAUDE.md` (SH), `src/widgets/CLAUDE.md` (WD), `src/features/CLAUDE.md` (FE) | as listed |
 | Skill authoring | `skills/CLAUDE.md` | SK |
 
-**Rule IDs and references.** A rule that code or another doc cites carries a short, stable ID: an `<a id="CP-2"></a>` line directly above its heading (`#### CP-2 — title`). IDs are never renumbered or reused; delete a rule only together with every reference to it. Cite as `FILE#ID` — the basename for `docs/conventions/*` files (`CONVENTIONS.md#CP-2`, `TESTING.md#TE-1`), the repo-relative path for CLAUDE.md files (`src/app/CLAUDE.md#AP-1`). `src/__tests__/guards/ruleReferences.test.ts` fails on a dangling reference.
+**Rule IDs and references.** A rule that code or another doc cites carries a short, stable ID: an `<a id="CP-2"></a>` line directly above its heading (`#### CP-2 — title`). IDs are never renumbered or reused; delete a rule only together with every reference to it, and list the deleted ID on a `Retired IDs: A-1, B-2` line (one per rule-home file, right after its prefix legend) so it is never issued again. A new ID is the highest number among that prefix's anchors and retired IDs + 1 (a review-time rule; the guard checks the items listed next, not the number). Cite as `FILE#ID` — the basename for `docs/conventions/*` files (`CONVENTIONS.md#CP-2`, `TESTING.md#TE-1`), the repo-relative path for CLAUDE.md files (`src/app/CLAUDE.md#AP-1`). `src/__tests__/guards/ruleReferences.test.ts` fails on a dangling reference, on a retired ID that has an anchor or is cited, and on a malformed or duplicated `Retired IDs` entry.
 
-**Promotion.** Review fixes are first logged in the local scratch file `docs/__agents_only__/fix-log.md` (gitignored, shared across worktrees, append-only for other sessions). When the same violation recurs, `mistake-managing-agent` promotes it as a durable rule (do/don't + why, at most one ❌/✅ pair, no PR narration) into the home above and assigns the highest existing ID of that file's prefix + 1 (never fill a gap left by a removed rule). Check the destination first so a rule is never duplicated.
+**Promotion.** Review fixes are first logged in the local scratch file `docs/__agents_only__/fix-log.md` (gitignored, shared across worktrees, append-only for other sessions). When the same violation recurs, `mistake-managing-agent` promotes it as a durable rule (do/don't + why, at most one ❌/✅ pair, no PR narration) into the home above and assigns the next ID (see above; never fill a gap left by a removed rule). Rule documents are read in full on every review, so their total size is budgeted:
+
+Rule-document budget: 390,000 bytes.
+
+The budget only goes down; raising it needs the user's approval stated in the PR body. `yarn rules:size` prints per-file bytes and headroom, and `src/__tests__/guards/ruleDocSize.test.ts` fails when the 16 rule documents (`docs/conventions/*.md`, this file, the layer `CLAUDE.md` files, `skills/CLAUDE.md`) exceed it. Before adding a rule, `mistake-managing-agent` checks the headroom and greps **every** rule home (not only the destination) so a rule is never duplicated: an existing rule is extended by at most one sentence or example. A rule with a crisp syntactic test is reported for mechanization instead of written as prose. When headroom is short, it first frees bytes by shrinking rules that a lint rule or guard now enforces, merging duplicates into the older ID, and retiring rules about things that no longer exist; a bullet no other doc, lint rule or guard states is never deleted.
 
 **Public vs local.** `docs/conventions/` and every CLAUDE.md are public. Infra IDs, resource names, runbook steps, audit results and production incident detail stay in the local `docs/architecture/` runbooks.
 
-**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before.
+**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before. A compression keeps each rule's exact scope: compare subject and quantifier clause by clause, not only the do/don't verb.
 
 ---
 

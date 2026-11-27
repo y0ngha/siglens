@@ -71,10 +71,10 @@ export async function rebuildAggregates(
 
     for (const period of await deps.listPeriods()) {
         const mode = await aggregateModeFor(deps, period, floor, options.today);
-        let reset = 0;
-        if (options.reset && mode === 'none' && !options.dryRun) {
-            reset = await deps.resetAggregateChanges(period);
-        }
+        const reset =
+            options.reset && mode === 'none' && !options.dryRun
+                ? await deps.resetAggregateChanges(period)
+                : 0;
         let after = '';
         let cusips = 0;
         let chunks = 0;

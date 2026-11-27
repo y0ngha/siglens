@@ -9,6 +9,7 @@ import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { createMailAlertAccountCleanup } from '@/entities/mail-alert/server/accountCleanup';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 import { cookies } from 'next/headers';
@@ -65,6 +66,7 @@ export async function deleteAccountAction(
                 users: new DrizzleUserRepository(db),
                 oauthAccounts: new DrizzleOAuthAccountRepository(db),
                 oauthRevoker: compositeOAuthRevoker,
+                mailAlerts: createMailAlertAccountCleanup(db),
                 apiKeys: {
                     listActiveKeyHashes: userId =>
                         new DrizzleSiglensApiKeyRepository(

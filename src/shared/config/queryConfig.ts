@@ -126,6 +126,12 @@ export const QUERY_KEYS = {
     backtestRun: (runId: string) => ['backtest-run', runId] as const,
     watchlist: () => ['watchlist'] as const,
     emailReportSettings: () => ['email-report-settings'] as const,
+    /**
+     * 알림 메일 대화상자가 열릴 때 읽는 이 화면 항목의 상태. 회원 세션·쿠키마다 답이 달라서 대화상자가
+     * 닫히면 버린다(`gcTime: 0`) — 로그아웃 뒤 다음 사람에게 남지 않는다.
+     */
+    mailAlertState: (kind: string, key: string) =>
+        ['mail-alert-state', kind, key] as const,
     // exact same key they always have — only a member's explicit `true` value
     // produces a distinct key (member-reasoning-toggle spec Part A: "changing
     // the toggle re-submits analysis" relies on this key change).

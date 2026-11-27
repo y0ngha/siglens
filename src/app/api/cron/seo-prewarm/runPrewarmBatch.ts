@@ -379,7 +379,11 @@ function findStarvedSymbols(
     return staleSymbols
         .map(u => {
             let oldestGeneratedAt: Date | undefined;
-            const missingTabs: SeoSnapshotTab[] = [];
+            const missingTabs = u.tabs.filter(
+                tab =>
+                    !structural.has(snapshotKey(u.symbol, tab)) &&
+                    !generatedAtMap.has(snapshotKey(u.symbol, tab))
+            );
             for (const tab of u.tabs) {
                 // 만들 수 없는 탭은 "미도달"의 증거가 아니다. 빼지 않으면 6탭이
                 // 멀쩡한 심볼이 congress 하나 때문에 `never`로 찍혀, 이 워치가
@@ -389,10 +393,7 @@ function findStarvedSymbols(
                 const generatedAt = generatedAtMap.get(
                     snapshotKey(u.symbol, tab)
                 );
-                if (generatedAt === undefined) {
-                    missingTabs.push(tab);
-                    continue;
-                }
+                if (generatedAt === undefined) continue;
                 if (
                     oldestGeneratedAt === undefined ||
                     generatedAt < oldestGeneratedAt
@@ -593,7 +594,7 @@ export async function runPrewarmBatch(
     // 그 틱에 걸린 국내 종목은 형성 중인 일봉으로 만든 서술이 다음 마감까지 굳는다.
     //
     // `staleSymbols` **다음에** 거르는 것이 중요하다. `staleTotal`은 운영자가 야간
-    // 처리 여력을 판단하는 신호인데(`docs/architecture/SITEMAP_SCOPE.md` §2), 유니버스
+    // 처리 여력을 판단하는 신호인데, 유니버스
     // 단계에서 빼면 장중 시간대에 조회한 값이 실제 백로그보다 작게 나온다 — 미뤄진
     // 심볼도 아직 처리해야 할 대상이다.
     const selectable = staleSymbols.filter(
@@ -841,7 +842,7 @@ export async function runPrewarmBatch(
  * 18 × 7 × 2 = 252회였다. 마커가 present면 skip 조회를 생략하므로
  * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 낮다.
  *
- * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
+ * FIX 2 — 이 창 안의 후보 분류(`classifySymbol`)는 서로
  * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
  * `for`-루프 안에서 순차 `await` — 당시 worst case 252회 왕복이 전부 직렬이었다).
  * 결과 배열은 Promise.all이 입력 순서 그대로 반환하므로 회전 결정성이 유지된다.
@@ -1002,7 +1003,7 @@ async function processSymbol(
 
         try {
             const marker = await getInFlightMarker(u.symbol, tab);
-            // FIX 1(감사, PR #698 리뷰) — in-flight 마커가 있으면 이번 tick은
+            // FIX 1 — in-flight 마커가 있으면 이번 tick은
             // 건너뛴다. TTL(30min) 만료 후 다음 tick이 새로 submit한다.
             if (marker.present) continue;
             if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.

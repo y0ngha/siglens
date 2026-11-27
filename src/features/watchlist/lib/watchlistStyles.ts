@@ -11,5 +11,10 @@ export const WATCHLIST_SUBTLE_LINK =
 /**
  * 홈 카드가 비어 있을 때와 하이드레이션 전 자리표시자가 함께 쓰는 높이 — 첫 방문자(대부분의 검색
  * 유입)는 하이드레이션 순간 아무것도 밀리지 않는다. 이미 담아 둔 재방문자는 카드가 한 번 늘어난다.
+ *
+ * 값은 빈 카드의 실측(Chromium, Pretendard, 1px 테두리 제외)을 모두 덮는 최댓값이다:
+ * 360·390px는 ko 123.5, en·ja 146.3px(문구가 길어 줄이 늘어난다), 640px는 79.5px, 768px는 ko 74,
+ * en·ja 79.5px, 1024px 이상은 74px. 그래서 모바일 9.25rem(148px), `sm`부터 5rem(80px)이다.
+ * 빈 카드 문구나 레이아웃을 바꾸면 이 실측을 다시 한다.
  */
-export const HOME_WATCHLIST_EMPTY_HEIGHT = 'min-h-[13.5rem] sm:min-h-[9rem]';
+export const HOME_WATCHLIST_EMPTY_HEIGHT = 'min-h-[9.25rem] sm:min-h-[5rem]';

@@ -91,8 +91,8 @@ const nextConfig: NextConfig = {
      * 그래도 이 플래그는 유지한다: 롱테일은 엣지 MISS가 대부분이라 서울 오리진 →
      * 미국 엣지(Googlebot) 구간을 건너는데, 그 구간은 gzip(~40KB)이 비압축(~210KB)보다 싸다.
      *
-     * CPU 비용은 과소평가하지 말 것: CF HTML 히트율은 실측 36.7%
-     * (docs/architecture/CDN_CACHING.md)라 나머지는 오리진까지 오고, RSC 페이로드도
+     * CPU 비용은 과소평가하지 말 것: CF HTML 히트율은 실측 36.7%라
+     * 나머지는 오리진까지 오고, RSC 페이로드도
      * 압축 대상이다. t4g는 버스터블이라 배포 후 `CPUUtilization`과
      * `CPUCreditBalance`를 한 트래픽 주기 동안 지켜본 뒤 전체 롤아웃할 것.
      *
@@ -128,7 +128,7 @@ const nextConfig: NextConfig = {
      *     `/MSFT/options` 565KB → zstd 84KB). 단 CloudFlare는 ETag를 약한 ETag(`W/`)로 바꾸지
      *     않고 **아예 벗겼다**(gzip·zstd·identity 전부) — 즉 토글만 꺼도 재방문 304는 없다.
      *     그래서 이 플래그의 추가 비용은 0이고, 누가 그 토글을 다시 켜도 오염이 재발하지
-     *     않게 하는 가드로 남긴다(`docs/architecture/CDN_CACHING.md` R1).
+     *     않게 하는 가드로 남긴다.
      *   - `Last-Modified`도 내지 않으므로 재검증 수단은 없다. 304를 되살리려면 이 플래그와
      *     토글을 함께 봐야 하고, 되살린 뒤에는 위 재현(identity로 채우고 gzip/br 요청)으로
      *     엣지 압축이 유지되는지 반드시 다시 실측할 것.
@@ -191,7 +191,7 @@ const nextConfig: NextConfig = {
     // Next 16.3에서 기본 ON이 된 클라이언트 라우터 플래그(`validateRSCRequestHeaders`,
     // `prefetchInlining`, `varyParams`, `optimisticRouting`, `appNewScrollHandler`)는 기본값 그대로 둔다
     // (`appNewScrollHandler`는 16.4에서 플래그가 아니라 기본 동작이 됐다).
-    // CDN 캐시 규칙(docs/architecture/CDN_CACHING.md §3 R1/R2)이 기대는 계약 — "RSC 요청은 항상
+    // CDN 캐시 규칙이 기대는 계약 — "RSC 요청은 항상
     // `RSC` 헤더와 `_rsc` 쿼리를 함께 달고, `_rsc` URL은 `text/x-component`만 받는다" — 을 16.3.6
     // 프로덕션 빌드에서 실제 클라이언트 내비게이션으로 확인했다(2026-09-24, 위반 0, 307 0).
     // 16.3.8은 `next/dist/client`가 버전 문자열 외에 16.3.6과 같아 실측을 다시 하지 않았다.
@@ -273,6 +273,17 @@ const nextConfig: NextConfig = {
                 {
                     key: 'Strict-Transport-Security',
                     value: 'max-age=63072000; includeSubDomains; preload',
+                },
+            ],
+        },
+        // OpenTimestamps 증명(`.ots`)은 확장자 때문에 OpenDocument 템플릿 MIME으로 나간다.
+        // 벤치마크 공개 파일(바이트 동결)이라 응답 헤더만 바로잡는다.
+        {
+            source: '/benchmark/:path*.ots',
+            headers: [
+                {
+                    key: 'Content-Type',
+                    value: 'application/octet-stream',
                 },
             ],
         },

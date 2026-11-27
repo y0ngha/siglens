@@ -18,10 +18,36 @@ describe('buildEmailTokenKey', () => {
 });
 
 describe('parseEmailTokenValue', () => {
-    it('keeps a verified marker', () => {
-        expect(parseEmailTokenValue({ status: 'verified' })).toEqual({
+    it('keeps a verified marker with a code hash and a binding hash', () => {
+        expect(
+            parseEmailTokenValue({
+                status: 'verified',
+                tokenHash: HASH,
+                bindingHash: 'b'.repeat(64),
+            })
+        ).toEqual({
             status: 'verified',
+            tokenHash: HASH,
+            bindingHash: 'b'.repeat(64),
         });
+    });
+
+    it.each([
+        ['a legacy marker without any hash', { status: 'verified' }],
+        [
+            'a marker without bindingHash',
+            { status: 'verified', tokenHash: HASH },
+        ],
+        [
+            'a marker without tokenHash',
+            { status: 'verified', bindingHash: HASH },
+        ],
+        [
+            'a marker with a non-string bindingHash',
+            { status: 'verified', tokenHash: HASH, bindingHash: 1 },
+        ],
+    ])('fails closed (null) for %s', (_label, raw) => {
+        expect(parseEmailTokenValue(raw)).toBeNull();
     });
 
     it('keeps a pending value with a non-hex hash so the comparison step rejects it as invalid', () => {

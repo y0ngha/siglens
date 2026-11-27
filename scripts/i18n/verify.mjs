@@ -4,12 +4,13 @@
  *
  *   node scripts/i18n/verify.mjs
  *
- * 게이트 1~6은 **결정적**이다(모델 호출 없음). 역번역 채점(게이트 7)은
+ * 게이트 1~6·9는 **결정적**이다(모델 호출 없음). 역번역 채점(게이트 7)은
  * `translate.mjs --review`가 만든 `messages/_meta/review/{locale}.json`을 읽어
  * 미해결 항목만 확인한다 — 검증이 LLM을 부르면 CI가 비결정적이 된다.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { hashOf } from './lib/hashOf.mjs';
 
 const ROOT = resolve(process.argv[1], '../../..');
 // 로케일 단일 출처는 `src/shared/i18n/locales.ts`다. 여기에 손으로 적어두면
@@ -455,6 +456,39 @@ for (const locale of TARGETS) {
     }
 }
 
+// ── 게이트 9: hashes.json 최신성 ─────────────────────────────────────────
+//
+// `translate.mjs`는 `hashes[key] !== hashOf(String(ko))`인 키를 "변경됨"으로 보고
+// 기존 en/ja/zh를 덮어쓴다. ko 값을 손으로 고치고 해시를 안 갱신하면 다음
+// `yarn i18n:translate`가 손으로 쓴 번역을 조용히 지운다(I18N.md#I18-3).
+//
+// 항목이 **없는** 키도 같은 판정(undefined !== 해시)이라 똑같이 덮어쓰이므로
+// 오래된 해시와 함께 실패시킨다. 반대로 ko에 없는 키의 해시(고아 항목)는
+// translate.mjs가 무시하고 지우지도 않으므로 검사하지 않는다.
+{
+    const hashesPath = `${ROOT}/messages/_meta/hashes.json`;
+    const hashes = existsSync(hashesPath)
+        ? JSON.parse(readFileSync(hashesPath, 'utf8'))
+        : {};
+    const problems = [];
+    for (const key of sourceKeys) {
+        const expected = hashOf(String(source[key]));
+        if (!(key in hashes)) {
+            problems.push(`${key}: 항목 없음 (기대 ${expected})`);
+        } else if (hashes[key] !== expected) {
+            problems.push(`${key}: 저장 ${hashes[key]} ≠ 기대 ${expected}`);
+        }
+    }
+    if (problems.length) {
+        fail(
+            '9-해시',
+            `hashes.json이 ko 값과 어긋남 ${problems.length}건 — 손으로 쓴 en/ja/zh가 다음 i18n:translate에 덮어쓰인다. ` +
+                `해당 키의 값을 sha1(String(ko)).slice(0, 12)로 messages/_meta/hashes.json에 다시 계산해 넣는다 ` +
+                `(scripts/i18n/lib/hashOf.mjs). 키: ${problems.slice(0, 10).join(' | ')}${problems.length > 10 ? ` … 외 ${problems.length - 10}건` : ''}`
+        );
+    }
+}
+
 // ── 결과 ────────────────────────────────────────────────────────────────
 if (failures.length === 0) {
     console.log(
@@ -463,10 +497,10 @@ if (failures.length === 0) {
     process.exit(0);
 }
 
-const byGate = failures.reduce((acc, f) => {
-    (acc[f.gate] ??= []).push(f.detail);
-    return acc;
-}, {});
+const byGate = failures.reduce(
+    (acc, f) => ({ ...acc, [f.gate]: [...(acc[f.gate] ?? []), f.detail] }),
+    {}
+);
 for (const [gate, details] of Object.entries(byGate).sort()) {
     console.error(`\n✗ ${gate} — ${details.length}건`);
     for (const detail of details.slice(0, 15)) console.error(`    ${detail}`);

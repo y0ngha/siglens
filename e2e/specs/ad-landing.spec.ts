@@ -2,8 +2,7 @@ import { lpCopyViolations } from '@/views/lp/lib/lpCopyRules';
 import { test, expect } from '../support/fixtures';
 
 /**
- * Ad-only landing pages (`src/app/lp/`, spec
- * `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`).
+ * Ad-only landing pages (`src/app/lp/`).
  *
  * Google Ads (KR) limits ads whose landing page mentions crypto, so the
  * server HTML must carry no crypto word anywhere: body, header, footer or

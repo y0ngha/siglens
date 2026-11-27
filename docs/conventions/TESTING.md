@@ -2,7 +2,9 @@
 
 Test conventions for Siglens (split out of CONVENTIONS.md). Cite rules as `TESTING.md#TE-N`.
 
-**Rule IDs**: every rule carries a stable `TE-N` ID with an anchor line above its heading. IDs are never renumbered or reused; a new rule takes the highest existing number + 1 (gaps such as TE-32/TE-35 stay empty). Sections group rules by topic, so numbers are not contiguous within a section.
+**Rule IDs** follow the root `CLAUDE.md` "Rule IDs and references". Sections group rules by topic, so numbers are not contiguous within a section.
+
+Retired IDs: TE-32, TE-35, TE-57
 
 ## File Locations
 
@@ -27,13 +29,13 @@ widgets/        90%
 views/          90%
 app/            90%
 src/proxy.ts    90%
+src/instrumentation*.ts 90%
 cache-handler/  90%
 ```
 
 The project target is 90% coverage across all measured FSD layers.
-Current Vitest coverage includes `src/entities/**`, `src/features/**`, `src/shared/**`,
-`src/widgets/**`, `src/views/**`, `src/app/**`, `src/proxy.ts`, and `cache-handler/**`,
-excluding declaration files, type/model-only files, and test utilities.
+The measured file set is `coverage.include`/`exclude` in `vitest.config.ts` (every layer plus `cache-handler/**`).
+Measured weekly by the `coverage-weekly` workflow (per-layer table in the run summary); PR CI does not run coverage.
 
 `src/views/**` is the FSD `pages` layer — it lives under `views/` because creating
 `src/pages/` would activate Next's legacy Pages Router. `cache-handler/**` sits outside
@@ -52,57 +54,16 @@ When code is refactored or moved, the destination module carries the edge-case t
 
 <a id="TE-5"></a>
 
-#### TE-5 — New helpers, actions, adapters and policy components need their own tests
+#### TE-5 — New helpers, actions, adapters, hooks and branchy components need their own tests
 
-Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged).
+Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged). A new custom hook or a component with its own branches (states, empty/error paths, derived labels) gets a colocated test that drives it directly (`renderHook`, a render test per branch); the parent's integration test alone leaves the branches unpinned.
 
 - ❌ A new `callGeminiWithKeyFallback` added to an adapter with no colocated test file.
 - ✅ A `__tests__/` file next to it covering undefined input, missing levels, duplicates, zero values and the empty result.
 
 ## Test Structure
 
-```typescript
-// ✅ 2 levels: describe → it (simple cases)
-describe('formatVolume', () => {
-    it('returns "1.2M" for 1200000', () => { ... });
-    it('returns "0" for 0', () => { ... });
-});
-
-// ✅ 3 levels: describe → describe(context) → it
-describe('calculateRSI', () => {
-    describe('when input length is less than period', () => {
-        it('returns an all-null array', () => {
-            expect(calculateRSI([100, 101], 14)).toEqual([null, null]);
-        });
-    });
-    describe('when input is valid', () => {
-        it('returns null for the first period - 1 values', () => { ... });
-        it('returns values between 0 and 100', () => { ... });
-    });
-});
-
-// ✅ 4 levels: describe(module) → describe(function) → describe(context) → it
-describe('prompt', () => {
-    describe('buildAnalysisPrompt', () => {
-        describe('current market section', () => {
-            it('includes "No data available" when bars is empty', () => { ... });
-        });
-    });
-});
-
-// ✅ 5 levels: for complex modules requiring fine-grained context separation
-describe('candle-detection', () => {
-    describe('detectCandlePatternEntries', () => {
-        describe('multi-candle pattern detection', () => {
-            describe('when a 3-bar pattern exists', () => {
-                it('excludes single patterns on involved bars', () => { ... });
-            });
-        });
-    });
-});
-```
-
-Test structure allows **2 to 5 levels**. Choose the appropriate depth based on module complexity.
+Test structure allows **2 to 5 levels** (`describe(module)` → `describe(function)` → `describe(context)` → `it`). Choose the appropriate depth based on module complexity.
 6+ levels are prohibited — merge context into describe text to reduce nesting.
 
 <a id="TE-17"></a>
@@ -144,15 +105,6 @@ A new `describe`/`it` name uses the same language as the other tests in that fil
 - ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
 - ✅ `it('반 센트는 올림한다')` in the same file.
 
-<a id="TE-57"></a>
-
-#### TE-57 — New hooks and branchy components get their own tests
-
-A new custom hook, or a UI component with its own branches (states, empty/error paths, derived labels), gets a colocated test that drives it directly. Coverage through the parent's integration test alone leaves the branches unpinned and lets a regression in the extracted unit stay green.
-
-- ❌ A hook split out of a component, covered only by the parent component's test.
-- ✅ A `renderHook` test for the hook and a render test per branch of the component, next to the source.
-
 ## Required Test Cases
 
 <a id="TE-21"></a>
@@ -171,17 +123,7 @@ Each new field or indicator output needs at least one `it()` verifying its prese
 
 #### TE-23 — Period-based indicators pin reference values
 
-Sign-only checks (`toBeGreaterThan(0)`) do not verify a calculation. Every period-based indicator test includes `toBeCloseTo` against manually calculated expected values. Warm-up constants are imported from the source, and boundary constants cover the whole dependency chain (for example nested window calculations).
-
-### Required Test Cases for Period-Based Indicators
-
-| Case | it description |
-|------|----------------|
-| Empty array | 빈 배열을 반환한다 |
-| Input shorter than period | 전부 null인 배열을 반환한다 |
-| Initial null range | 처음 period - 1개의 값은 null이다 |
-| Valid value range | period번째 이후 값은 null이 아닌 숫자다 |
-| Calculation accuracy | 첫 번째 값이 명세와 일치한다 |
+Sign-only checks (`toBeGreaterThan(0)`) do not verify a calculation. Every period-based indicator test includes `toBeCloseTo` against manually calculated expected values. Warm-up constants are imported from the source, and boundary constants cover the whole dependency chain (for example nested window calculations). Each one also covers an empty input, an input shorter than the window, and the warm-up boundary: the first `period - 1` values are `null`, or the output is shorter by the window, whichever the function returns.
 
 ## Mocking
 
@@ -247,7 +189,7 @@ When a function starts passing a new argument or dependency to a mocked collabor
 
 #### TE-27 — Never assert by call index
 
-Do not use `mock.calls[0]` or `[1]`: a late call from an earlier test can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`.
+Do not assert by position (`mock.calls[0]`, `.at(n)`, destructuring, `toHaveBeenNthCalledWith`): `clearMocks` is off in `vitest.config.ts`, so calls from earlier tests and late async calls stay in the list and can occupy the slot. Find the call by a discriminating argument or use `toHaveBeenCalledWith`. Guard: `mock-call-index`.
 
 Assert what was written (the key and TTL), not just how many times the collaborator was called.
 
@@ -349,7 +291,7 @@ If a fixture value equals the literal in the assertion, reverting a dynamic prop
 
 #### TE-15 — Fixture shape equals the real call-site envelope
 
-A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission. The same holds for text heuristics over real documents (headline extraction, picking the primary document): derive the rules and the cases from cleaned samples of real documents, because hand-made text skips split titles, boilerplate and odd attachments.
+A helper that matches on paths, keys or prefixes needs at least one fixture carrying the exact envelope the production caller passes; tests with pre-unwrapped data stay green while the helper no-ops in production. Build fixtures from the real shape (`importOriginal`, or run them through the mapping layer) and populate every field, especially new ones, with non-default values. Hand-built fixtures and `toMatchObject` that omit a new field tolerate its omission. The same holds for URL and pattern assertions on framework-emitted output (metadata image routes get a hash suffix): read the framework source or a built page before writing the pattern. The same holds for text heuristics over real documents (headline extraction, picking the primary document): derive the rules and the cases from cleaned samples of real documents, because hand-made text skips split titles, boilerplate and odd attachments.
 
 Values a surface formats (scores, prices, ratios) use production-shaped unrounded numbers (`24.48367166813769`, not `24`) in fixtures for every text and metadata surface (title, description, structured data); integer fixtures hide a missing rounding step.
 
@@ -430,11 +372,10 @@ Pin the fix with inputs that almost match its guard, not only the one the review
 
 Code using `Date.now()` or `new Date()` runs under a mocked clock (`vi.useFakeTimers` / `vi.setSystemTime`). Hardcoded expected TTLs or dates without a fixed clock make flaky tests.
 
-This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event.
+This includes a clock passed as an argument: if a dependency (an LRU, a cache) also reads the real clock, freeze it too so only the injected value decides. Do not sleep real time to let callers interleave; wait on an observable event (a concurrency DB test polls `pg_blocking_pids` of the lock holder, never `setTimeout(500)`).
 
-- ❌ Passing a synthetic `now` of `999` to a limiter whose backing cache expires entries on `Date.now()`; a 1 ms TTL elapses in real CI time and a new window opens.
-- ✅ Freeze the clock for the suite (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
-- ❌ A cache key's date segment is matched with a regex (`/:\d{4}-\d{2}-\d{2}$/`) against the wall clock, so any date passes. ✅ Pin the clock with `vi.setSystemTime` and assert the exact key.
+- ❌ A synthetic `now` of `999` passed to a limiter whose cache expires on `Date.now()`; the TTL elapses in real CI time.
+- ✅ Freeze the clock (`vi.useFakeTimers()` + `vi.setSystemTime`) so the injected `now` is the only time source.
 
 <a id="TE-9"></a>
 
@@ -483,7 +424,7 @@ A guard that walks imports follows `import … from`, `export … from` re-expor
 
 #### TE-42 — Strip comments before matching source text
 
-A safety guard that matches a comment instead of the code line passes vacuously. Strip comments before matching, and pin explicit lists (excluded columns, allowed paths) rather than patterns.
+A safety guard that matches a comment instead of the code line passes vacuously. Strip comments before matching, and pin explicit lists (excluded columns, allowed paths) rather than patterns. Test a script's behaviour (for example a check mode) by running it on a temp copy, not by counting calls in its own source.
 
 <a id="TE-43"></a>
 
@@ -512,7 +453,9 @@ A guard on a promise (a policy or notice sentence) asserts each clause that code
 
 #### TE-63 — A parser-based guard accounts for every candidate
 
-A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line.
+A guard that parses call forms must count every candidate line and fail on any it did not recognise (variable arguments, unknown helpers, continued lines). Silently skipping unrecognised forms lets new code bypass the guard; the failure names the unparsed line. The matcher also covers aliases and typed parameters of the guarded object (not only its literal name) and rejects no-op escapes (`hasText: ''`); an override flag is scoped to named files and every exemption is logged; limits it cannot cover are stated in the guard's header. A rename that silences a new guard is a matcher gap to close, not a fix.
+
+`coreClientExports.test.ts` fails when client-bundle code imports a core value missing from the browser entry (`dist/index.client.js`), with no baseline. A bundle-reachability guard walks value edges only (type-only imports are erased); fix a latent violation's cause instead of baselining it.
 
 <a id="TE-64"></a>
 
@@ -573,11 +516,12 @@ When behavior or a constant changes, update every layer in the same change; scop
 
 #### TE-65 — An e2e update must pin the changed behaviour and fail against the old code
 
-"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Three recurring ways to pass without pinning:
+"Updating" a spec for a change is not done until an assertion names what changed, and that assertion is shown to fail on the pre-change behaviour (revert or perturb the code, run the spec, then restore). Recurring ways to pass without pinning:
 
 - Order change: adjusting the array a spec iterates keeps the old and new orders green. Assert the exact order (`toHaveText([...])`) and prove it by swapping two items.
 - Moved spec: moving a spec to another route to keep it passing leaves the route it left uncovered. Give the original route an equivalent assertion (for a link, host, path and decoded query, not only `href` containing a fragment).
 - Awaited mount: scope the locator to the container whose client mount is awaited. A bare `.first()` can match a server-rendered copy and return at once, so the wait never waits.
+- Alert locator: every page carries Next's empty route announcer (`role="alert"`), so `page.getByRole('alert')` needs `.filter({ hasText })` or a container scope (`e2eAlertLocatorScope.test.ts` enforces it).
 
 - ❌ Reorder the tab list in the spec's loop; the old order still passes.
 - ✅ `await expect(tabs).toHaveText(['A', 'B', 'C'])`, run against the old code to see it fail.
@@ -624,22 +568,34 @@ Fake LLMs and similar doubles that parse a vendor or core message format break s
 
 #### TE-53 — A test must fail when the behaviour it names is removed
 
-Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Tests that pass anyway are vacuous: a mocked query builder whose condition argument is never inspected, a SQL assertion built from short `toContain` fragments, a new tracking call with no click-and-assert test, a Redis Lua script whose `eval` is mocked so only the arguments are asserted (run the script against a real or emulated Redis, or assert its effects), or a "renders independently" test that mounts only the inner component. A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only through the data flag passes even when the renderer ignores the flag; assert the rendered output, and make fixtures discriminating (values where on and off differ) so a no-op mutation fails. Render the real condition (for SQL, its text and params), assert the full clause, drive the instrumented element, and assert on the composed tree.
+Before keeping a test, remove or break the behaviour it claims to cover and confirm it fails. Vacuous shapes and their fix:
 
-A component that reads shared async state (a hook that falls back to a seed while a run is in flight) is tested with the states the real hook produces; read the hook, then build the cases from those states. A convenient mock that hands the component a combination the hook never emits (live result while analysing) passes while the real transition is untested.
-
-An absence assertion over recorded calls ("no raw value is stored" by stringifying `mock.calls`) first asserts the call count; an empty array passes it vacuously.
-
-A "no write happens" test spies the operation that must not happen (update, insert, delete) and asserts `not.toHaveBeenCalled()`; asserting the mock's shape (`not.toHaveProperty('update')`) passes whatever the code does, and a stray call surfaces as a TypeError instead of the named assertion. Falsify it by adding the call.
+- **Mocked logic.** A query builder whose condition is never inspected, a Redis Lua `eval` mocked so only its arguments are asserted, or a mocked collaborator that holds the
+  behaviour (the value computation, the branch predicate). Mock only the I/O boundary; render the real condition (SQL
+  text and params), pin rendered SQL as a full string (guard-enforced); run the script on a real or emulated Redis or assert its effects; assert values
+  that differ per branch.
+- **Wrong surface.** A renderer behaviour (domain clamp, include flag, label suppression, tick density) asserted only
+  through the data flag, a "renders independently" test that mounts only the inner component, a new tracking call with
+  no click-and-assert test, an "unsubscribes on unmount" test reading `result.current` after `unmount()`. Assert the
+  rendered output and the composed tree, drive the instrumented element, spy on the unsubscribe.
+- **Non-discriminating fixtures.** On and off, or the latest and the oldest candidate, give the same result. Give each
+  case a distinct value so a no-op mutation or the wrong pick fails.
+- **Unobservable properties.** A read-only session or no-write guarantee passes the happy path either way: assert the
+  option sent through an exported builder and add an env-gated real-database test that a write fails. A "no write" test
+  spies the forbidden operation and asserts `not.toHaveBeenCalled()`, not the mock's shape
+  (`not.toHaveProperty('update')`); falsify it by adding the call. An absence assertion over recorded calls asserts the
+  call count first.
+- **Untested guards and changes.** A last-line defensive guard behind an earlier check gets an input driven past that
+  check. A widened fetch window, a changed fingerprint input, and a flag that must follow a successful primary write
+  (asserted absent when that write fails) each get a test. After a key rename, negative assertions target the key the
+  code now writes, and a test flips when a deliberate guard (not caching a partial result) is reverted.
+- **Exit codes.** A CLI or script failure-path test asserts output only the intended path prints, not only the exit code
+  (an earlier step can fail with the same code), and matches resolver errors by family (`ENOTFOUND|EAI_AGAIN`).
+- **Impossible states.** A component that reads shared async state is tested with the states the real hook produces
+  (read the hook first), not a combination it never emits (a live result while analysing).
 
 - ❌ `where` is mocked and never inspected, so dropping the date filter still passes.
-- ✅ Render the condition to SQL plus params and assert both.
-- ❌ A last-line defensive guard (a security or invariant check that "cannot happen" behind an earlier check) has no test, so deleting it still passes. ✅ Drive the input past the earlier check and assert the guard rejects it.
-- ❌ A test for "compare against the latest previous report" uses a fixture where the latest and the oldest previous report give the same result, so selecting the wrong one still passes. ✅ Give each candidate a distinct value and assert the one the rule picks.
-- ❌ A cache's fetch window is widened and its fingerprint input changed with no test on either, or a flag that must be set only after the primary write succeeds has no test where that write fails. ✅ Assert the window width and the fingerprint input, and assert the flag is absent when the primary step fails, so moving the mark earlier or reverting the change fails the test.
-- ❌ A test mocks the collaborator that holds the behaviour under test (the function computing the value, the predicate deciding the branch) and asserts only the mock's canned output, so the production logic could be deleted. ✅ Mock only the I/O boundary, run the real derivation, and assert on values that differ per branch.
-- ❌ After renaming a cache key, a negative assertion still checks the old key (`store.has('old:KEY') === false`), which passes on any implementation. ✅ Point it at the key the code now writes, and add a test that flips when a deliberately changed guard (for example, caching a partial result) is reverted.
-- ❌ An "unsubscribes on unmount" hook test asserts on `renderHook`'s `result.current` after `unmount()`; the result stops updating after unmount, so the assertion passes whether or not cleanup runs. ✅ Spy on the unsubscribe function (or the underlying subscription) and assert it was called on unmount.
+- ✅ Assert the full rendered SQL and params.
 
 <a id="TE-54"></a>
 
@@ -656,10 +612,10 @@ A new global stylesheet rule (for example a `:has()` selector) has no runtime te
 
 #### TE-55 — SQL whose meaning is the feature is verified on a real Postgres, and CI runs it
 
-A rendered-SQL assertion (`sqlToQuery` text and params) proves the statement is built, not that it computes the right numbers: joins, `FILTER` counts, `IS DISTINCT FROM` guards and `ON CONFLICT` behaviour only show up when the statement runs. Aggregation, dedup and pruning SQL therefore gets a `*.db.test.ts` that runs the real statements against Postgres, asserts the invariants (for example `priorHolders = holders − new + exited`) and seeds through the real write path instead of hand-inserting the rows the query is meant to produce.
+A rendered-SQL assertion (`sqlToQuery` text and params) proves the statement is built, not that it computes the right numbers: joins, `FILTER` counts, `IS DISTINCT FROM` guards and `ON CONFLICT` behaviour only show up when the statement runs; a predicate such as "latest completed session" is verified by running it on seeded rows, never by reading its rendered text. Aggregation, dedup and pruning SQL therefore gets a `*.db.test.ts` that runs the real statements against Postgres, asserts the invariants (for example `priorHolders = holders − new + exited`) and seeds through the real write path instead of hand-inserting the rows the query is meant to produce.
 
 - The test is opt-in by URL: every `*.db.test.ts` guards on the one shared variable, `describe.skipIf(!process.env.TEST_DATABASE_URL)`. It refuses any target that is not a local database (`describeTarget`: not local, or a tunnel port) and works in a throwaway schema it drops afterwards.
-- CI runs them where a Postgres already exists: the `e2e` workflow's shard 1, after `Migrate + seed e2e DB`, as `yarn test .db.test.ts` with `TEST_DATABASE_URL` set to the compose Postgres (`postgres://siglens:siglens@localhost:5433/siglens_e2e`). The step selects by the file-name pattern, so a new `*.db.test.ts` joins CI without touching the workflow — name it that way and read the shared variable, never a per-feature one.
+- CI's `e2e` workflow (shard 1, after migrating its compose Postgres) runs `yarn test .db.test.ts`, selecting by file name: a new test joins CI only when it is named `*.db.test.ts` and reads `TEST_DATABASE_URL`, never a per-feature variable.
 - Locally use a private compose project name so you cannot tear down someone else's stack: `docker compose -p <name> -f docker-compose.e2e.yml up -d --pull never postgres`, then `TEST_DATABASE_URL=postgres://siglens:siglens@localhost:5433/siglens_e2e yarn test .db.test.ts`.
 - ❌ Only `expect(sqlText).toContain('FULL OUTER JOIN')` for an aggregate query; a wrong join or filter still passes.
 - ✅ The same statement run on seeded rows, asserting the counts and the identity between two quarters.

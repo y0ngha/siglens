@@ -1,5 +1,7 @@
 import type { CategoryId, TickerCategory } from '@/shared/lib/types';
 
+// 심볼은 앱 정식 표기다(`BRK.B`) — URL·sitemap이 이 값으로 만들어진다. FMP·Yahoo 표기(`BRK-B`)는
+// 요청 경계에서만 쓴다(`toFmpSymbol`/`toYahooSymbol`, 유입은 `fromFmpSymbol`). POPULAR_OPTIONS_TICKERS도 같다.
 // TODO(seo): 현재 수동 관리 — 매일 새벽 FMP `/stable/stock-list`와 동기화하는 cron job 검토.
 //            상장폐지된 종목이 sitemap에 남아 404를 유발하는 케이스 모니터링 필요.
 export const TICKER_CATEGORIES: readonly TickerCategory[] = [
@@ -139,7 +141,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         // 아래 여섯 개 KR 카테고리의 종목 합집합은 `POPULAR_TICKERS`의 KR 블록과
         // **정확히 같아야 한다.**
         //
-        // 이 그리드(`widgets/home/TickerCategories` → `CategoryCardGrid`)가 저장소
+        // 이 그리드(`widgets/home/PopularTickers` → `CategoryCardGridBody`)가 저장소
         // 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한 `<a>`**다. 검색
         // 자동완성은 `<button>` + `router.push`라 링크가 아니고, 크로스링크 카드는
         // 같은 심볼의 다른 탭만 잇는다. 여기 빠진 종목은 sitemap에만 있는 고아가 된다.
@@ -538,7 +540,7 @@ export const POPULAR_TICKERS = [
     'MNST',
     'SNY',
     'STX',
-    'BRK-B',
+    'BRK.B',
     'HWM',
     'PLD',
     'ADP',

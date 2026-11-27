@@ -11,6 +11,7 @@ gating:
   triggers: [upside_gap_tasuki, downside_gap_tasuki, on_neck, in_neck]
 token_cost: 331
 digest_hash: "af64812b"
+digest_text_hash: "93057514"
 ---
 
 ## Overview

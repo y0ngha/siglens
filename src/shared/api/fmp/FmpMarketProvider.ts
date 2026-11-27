@@ -32,7 +32,7 @@ const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
  * 캐시 계층(`CachedMarketDataProvider`)이 같은 날짜 경계로 히스토리와 오늘 tail을 나눈다.
  */
 export const FMP_EXCHANGE_TIME_ZONE = 'America/New_York';
-const ISO_DATE_PART_INDEX = 0;
+const ISO_DATE_LENGTH = 'YYYY-MM-DD'.length;
 
 // FMP ET→UTC timestamp conversion. Canonical home after the market-provider
 // ejection: siglens-core no longer fetches market data (it owns only the
@@ -239,7 +239,7 @@ function toFmpTodayBar(quote: FmpQuote): Bar {
     const etDate = new Date(
         quoteMs + getEasternOffsetHours(new Date(quoteMs)) * MS_PER_HOUR
     );
-    const dateStr = etDate.toISOString().split('T')[ISO_DATE_PART_INDEX]!;
+    const dateStr = etDate.toISOString().slice(0, ISO_DATE_LENGTH);
     return {
         time: Math.floor(
             new Date(dateStr + 'T00:00:00Z').getTime() / MS_PER_SECOND
@@ -397,10 +397,10 @@ export class FmpMarketProvider implements SiglensMarketProvider {
             );
             return { quote: null, todayBar: null };
         }
-        if (!Array.isArray(raw) || raw.length === 0) {
+        const row = Array.isArray(raw) ? raw[0] : undefined;
+        if (row === undefined) {
             return { quote: null, todayBar: null };
         }
-        const row = raw[0]!;
         return {
             quote: mapOrNull('FmpMarketProvider', 'getQuote', symbol, () =>
                 toFmpMarketQuote(symbol, row)

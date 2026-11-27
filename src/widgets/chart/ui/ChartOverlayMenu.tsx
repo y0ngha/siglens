@@ -29,7 +29,7 @@ import { MenuTriggerText } from './MenuTriggerText';
 import type {
     OverlayMenuGroupKind,
     OverlayMenuItem,
-} from '../utils/overlayItems';
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
 
 interface ChartOverlayMenuProps {
     /** 헤더 띠 메뉴 셋이 공유하는 열림 제어(한 번에 하나만 열린다). */

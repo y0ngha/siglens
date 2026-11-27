@@ -8,6 +8,8 @@ import type {
     StockSignalResult,
 } from '@y0ngha/siglens-core';
 import type { GuideEntry } from '@/entities/guide/types';
+import { SIGNAL_HUBS } from '@/entities/signal-history/lib/signalHubs';
+import type { SignalLatestEpisodeRow } from '@/entities/signal-history/types';
 import { GUIDE_PATH_BY_TRIGGER } from '@/shared/config/guideLinks.generated';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { guideEntryPath } from '@/shared/lib/guidePaths';
@@ -28,16 +30,25 @@ export type LiveMatch =
       }
     | { readonly kind: 'pattern'; readonly guidePath: string };
 
-/** 모듈의 종목 한 행. 스캐너·스냅샷 두 데이터원을 한 모양으로 맞춰 컴포넌트가 출처를 몰라도 그리게 한다. */
+/** 모듈의 종목 한 행. 스캐너·신호 기록·스냅샷 세 데이터원을 한 모양으로 맞춰 컴포넌트가 출처를 몰라도 그리게 한다. */
 export interface LiveSymbolRow {
     readonly symbol: string;
     /** 한국어 이름. 스캐너 행은 스캐너가 준 이름, 스냅샷 행은 이름을 모른다(null) — 로더가 {@link withDisplayNames}로 채운다. */
     readonly name: string | null;
     /** 스캐너 행만 안다. */
     readonly changePercent: number | null;
-    readonly basis: 'scanner' | 'snapshot';
-    /** ISO 8601 — 스캐너는 `computedAt`, 스냅샷은 `generatedAt`. */
+    /**
+     * `scanner`는 스캐너, `history`는 신호 기록(`signal_events`), `snapshot`은 장 마감 스냅샷이다.
+     * 기록 행의 등락률은 첫 포착일의 값이라 "지금"의 시세로 읽히지 않게 `changePercent`를 비운다.
+     */
+    readonly basis: 'scanner' | 'history' | 'snapshot';
+    /** ISO 8601 — 스캐너는 `computedAt`, 스냅샷은 `generatedAt`, 기록은 첫 포착 세션(`T00:00:00.000Z`). */
     readonly detectedOn: string;
+    /**
+     * 신호 기록 행만 안다 — 에피소드가 처음 포착된 세션(`YYYY-MM-DD`). 실제 교차일보다 늦을 수 있어
+     * 화면은 "기록 기준"이라고 적는다.
+     */
+    readonly firstSeenSession: string | null;
     /** 무엇에 맞아 뽑혔는지. 스냅샷 행은 자기가 적중한 패턴의 가이드로 라벨링한다(가이드가 없는 패턴뿐이면 null). */
     readonly match: LiveMatch | null;
 }
@@ -69,10 +80,18 @@ export interface ScannerInput {
     readonly result: SectorSignalsResult;
 }
 
+/** 한 시장의 신호 기록 행(최근 완료 세션까지 이어진 에피소드). */
+export interface HistoryInput {
+    readonly market: LiveMarket;
+    readonly rows: readonly SignalLatestEpisodeRow[];
+}
+
 /** {@link selectLiveSymbols}의 입력. */
 export interface SelectLiveSymbolsInput {
     readonly targets: LiveTargets;
     readonly scanner: readonly ScannerInput[];
+    /** 시장마다 스캐너와 기록 중 한쪽만 넘긴다(로더가 기록이 비면 그 시장은 스캐너로 대신한다). */
+    readonly history?: readonly HistoryInput[];
     readonly snapshotHits: readonly SnapshotPatternHit[];
     readonly limitPerMarket: number;
 }
@@ -91,6 +110,38 @@ function unique<T>(values: readonly T[]): T[] {
     return [...new Set(values)];
 }
 
+/** 모듈이 대상을 뽑는 항목들 — howto는 `about`이 가리키는 항목들, 나머지는 자기 자신. */
+function liveSources(
+    entry: GuideEntry,
+    catalog: readonly GuideEntry[]
+): GuideEntry[] {
+    if (entry.category !== 'howto') return [entry];
+    const bySlug = new Map(catalog.map(e => [e.slug, e]));
+    return entry.about.flatMap(slug => {
+        const target = bySlug.get(slug);
+        return target === undefined ? [] : [target];
+    });
+}
+
+/**
+ * 이 항목이 설명하는 신호의 신호 페이지(`SIGNAL_HUBS[].guide`의 역방향) 슬러그. 허브가 가이드를 가리키는
+ * 방향만 있던 것을 가이드 쪽에서도 링크로 이어, 가이드 → 허브 내부 링크를 서버 HTML에 둔다. 모듈이 보여 주는
+ * 대상(`liveSources`)과 같은 항목에서 뽑으므로 howto도 설명 대상 항목의 허브를 얻는다. 없으면 `[]`.
+ */
+export function hubSlugsFor(
+    entry: GuideEntry,
+    catalog: readonly GuideEntry[]
+): string[] {
+    const sources = liveSources(entry, catalog);
+    return SIGNAL_HUBS.filter(hub =>
+        sources.some(
+            source =>
+                source.category === hub.guide.category &&
+                source.slug === hub.guide.slug
+        )
+    ).map(hub => hub.slug);
+}
+
 /**
  * 항목이 모듈에서 보여 줄 대상. howto는 자기 `signals` + `about` 항목들의 것, 용어 항목은 자기 것.
  * 패턴 id는 **차트 패턴 카테고리**에서만 뽑는다 — free 스냅샷에 캔들은 없고 전략은 탐지 플래그가 없다.
@@ -99,14 +150,7 @@ export function resolveLiveTargets(
     entry: GuideEntry,
     catalog: readonly GuideEntry[]
 ): LiveTargets {
-    const bySlug = new Map(catalog.map(e => [e.slug, e]));
-    const sources =
-        entry.category === 'howto'
-            ? entry.about.flatMap(slug => {
-                  const target = bySlug.get(slug);
-                  return target === undefined ? [] : [target];
-              })
-            : [entry];
+    const sources = liveSources(entry, catalog);
     const patternNames = unique(
         sources
             .filter(source => source.category === 'chart-patterns')
@@ -166,10 +210,43 @@ function scannerRows(
                     changePercent: stock.changePercent,
                     basis: 'scanner' as const,
                     detectedOn: input.result.computedAt,
+                    firstSeenSession: null,
                     match: {
                         kind: 'signal' as const,
                         signalType: shown.type,
                         expected: !confirmed,
+                    },
+                },
+            },
+        ];
+    });
+}
+
+/**
+ * 신호 기록 행 — 종목마다 하나. 같은 종목의 에피소드가 여럿이면 입력 순서(처음 포착이 가장 최근인 순)의
+ * 첫 행이다. 기록에는 확정된 에피소드만 있어 항상 confirmed 순위다.
+ */
+function historyRows(
+    input: HistoryInput,
+    signalTypes: ReadonlySet<SignalType>
+): RankedRow[] {
+    return input.rows.flatMap(episode => {
+        const signalType = [...signalTypes].find(t => t === episode.signalType);
+        if (signalType === undefined) return [];
+        return [
+            {
+                phase: 'confirmed' as const,
+                row: {
+                    symbol: episode.symbol,
+                    name: episode.koreanName,
+                    changePercent: null,
+                    basis: 'history' as const,
+                    detectedOn: `${episode.sessionDate}T00:00:00.000Z`,
+                    firstSeenSession: episode.sessionDate,
+                    match: {
+                        kind: 'signal' as const,
+                        signalType,
+                        expected: false,
                     },
                 },
             },
@@ -239,13 +316,16 @@ export function selectLiveSymbols({
     scanner,
     snapshotHits,
     limitPerMarket,
+    history = [],
 }: SelectLiveSymbolsInput): LiveSymbolGroup[] {
     const signalTypes = new Set(targets.signalTypes);
     const patternFirst = targets.patternNames.length > 0;
     const rank = phaseRank(patternFirst);
-    const scannerRanked = scanner.flatMap(input =>
-        scannerRows(input, signalTypes)
-    );
+    // 스캐너 행과 기록 행은 둘 다 "신호가 맞은 종목"이다 — 같은 순위 규칙과 스냅샷 병합을 쓴다.
+    const scannerRanked = [
+        ...scanner.flatMap(input => scannerRows(input, signalTypes)),
+        ...history.flatMap(input => historyRows(input, signalTypes)),
+    ];
     const ranked: RankedRow[] = [
         ...scannerRanked,
         ...(patternFirst
@@ -257,13 +337,15 @@ export function selectLiveSymbols({
                       changePercent: null,
                       basis: 'snapshot' as const,
                       detectedOn: hit.generatedAt,
+                      firstSeenSession: null,
                       match: patternMatch(targets.patternNames, hit),
                   },
               }))
             : []),
     ];
+    // 같은 종목의 행이 여럿(기록의 에피소드)이면 입력 순서의 첫 행이 이긴다 — 거꾸로 채워 첫 행이 남게 한다.
     const scannerBySymbol = new Map(
-        scannerRanked.map(({ row }) => [row.symbol, row])
+        scannerRanked.toReversed().map(({ row }) => [row.symbol, row])
     );
 
     const sorted = ranked.toSorted(

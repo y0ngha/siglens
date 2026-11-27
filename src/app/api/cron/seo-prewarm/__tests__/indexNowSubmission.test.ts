@@ -250,7 +250,7 @@ describe('submitIndexNowForBatch', () => {
         expect(enqueuedUrls()).not.toContain(`${SITE_URL}/news/forex`);
     });
 
-    it('본문이 바뀐 것으로만 확인된 허브(크론이 태그를 안 텀)는 두 주기 뒤다', async () => {
+    it('본문이 바뀐 것으로 확인된 허브(크론이 태그를 텀)는 한 주기 뒤다', async () => {
         await submitIndexNowForBatch({
             harvested: [],
             hubUrls: [],
@@ -259,7 +259,7 @@ describe('submitIndexNowForBatch', () => {
         });
 
         expect(notBeforeOf(`${SITE_URL}/market/kr`)).toBe(
-            NOW.getTime() + 12 * HOUR + MARGIN
+            NOW.getTime() + 6 * HOUR + MARGIN
         );
     });
 

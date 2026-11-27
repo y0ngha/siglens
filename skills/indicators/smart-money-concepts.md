@@ -8,8 +8,9 @@ confidence_weight: 0.5
 usage_roles: [signal, confirmation, regime]
 gating:
   tier: always_on
-token_cost: 1631
-digest_hash: "61da37cf"
+token_cost: 1645
+digest_hash: "4df882ef"
+digest_text_hash: "a04d5f71"
 smc_full_guide: true
 ---
 
@@ -57,8 +58,8 @@ Market structure describes the directional bias of price through its sequence of
 
 **Analysis rules:**
 - Count consecutive BOS events in the same direction to measure trend strength.
-- A CHoCH after a long BOS sequence is a high-probability reversal warning.
-- CHoCH followed by a successful test of an order block becomes a high-conviction reversal setup.
+- A CHoCH after a long BOS sequence is a reversal warning.
+- CHoCH followed by a successful test of an order block becomes a reversal setup with two structure signals agreeing.
 
 ---
 
@@ -75,8 +76,8 @@ An order block is the last candle before a significant directional move, represe
 
 **Analysis rules:**
 - Unmitigated OBs are the primary areas of interest for potential reversals or continuations.
-- When price returns to an unmitigated OB in the direction of the dominant structure, this is a high-probability entry zone.
-- The closer to the OB the test occurs, the higher the probability of a reaction.
+- When price returns to an unmitigated OB in the direction of the dominant structure, this is a candidate entry zone.
+- A test closer to the OB's edge is a more precise read of the zone.
 - Mitigated OBs lose their significance — do not expect reactions from them.
 - OBs near equal highs or lows have additional confluence (liquidity resting above/below these levels acts as fuel for the institutional move).
 
@@ -94,11 +95,11 @@ The FVG zone for a bullish gap is `[bars[i-2].high, bars[i].low]`. For a bearish
 **Mitigation**: An FVG is mitigated when price re-enters the gap zone.
 
 **Analysis rules:**
-- Unmitigated FVGs are magnets for price — institutions often drive price back to fill these imbalances before continuing.
+- Unmitigated FVGs are zones price often revisits — the SMC framework reads this as institutions filling the imbalance before continuing (a framework claim, not a measured rate).
 - Bullish FVG in a bullish trend = potential support zone when price returns.
 - Bearish FVG in a bearish trend = potential resistance zone when price returns.
-- Multiple stacked FVGs in the same zone increase the probability of a reaction.
-- An FVG that overlaps with an order block creates an especially high-probability zone.
+- Multiple stacked FVGs in the same zone mark a wider imbalance area.
+- An FVG that overlaps with an order block creates an overlapping zone worth extra attention.
 - Fully mitigated FVGs have reduced significance — do not expect a strong reaction.
 
 ---
@@ -114,7 +115,7 @@ Institutions use equal highs and lows as liquidity pools. Retail traders place s
 - EQH above current price = liquidity target. If structure is bullish and price is pushing toward EQH, expect a brief spike through then reversal — or a continuation if institutions are genuinely accumulating.
 - EQL below current price = liquidity target. If structure is bearish and price is approaching EQL, expect a brief dip below then reversal — or a continuation.
 - A BOS through EQH/EQL with follow-through confirms institutional intent in that direction.
-- A failed break through EQH/EQL (quick spike then reversal, often with a wick) is a high-probability reversal signal called a "liquidity sweep."
+- A failed break through EQH/EQL (quick spike then reversal, often with a wick) is a reversal signal called a "liquidity sweep" in SMC.
 
 ---
 
@@ -147,7 +148,7 @@ Signals are rated by the number of SMC factors aligning at the same price level.
 | 2 factors | Moderate — context-dependent |
 | 3+ factors | High — primary actionable signal |
 
-**Highest-probability setups:**
+**Setups with the most confluence:**
 1. CHoCH + unmitigated OB in Discount zone (bullish reversal)
 2. CHoCH + unmitigated OB in Premium zone (bearish reversal)
 3. BOS continuation + FVG test at Discount/Premium boundary
@@ -225,23 +226,23 @@ Pre-computed `smc` fields: `swingHighs`/`swingLows` (pivots), `structureBreaks` 
 - Bullish structure = higher highs (HH) + higher lows (HL). Bearish = lower highs (LH) + lower lows (LL).
 - **BOS (Break of Structure)**: close beyond most recent swing in SAME direction as trend → continuation. Bullish BOS closes above most recent confirmed swing high; bearish BOS closes below most recent swing low.
 - **CHoCH (Change of Character)**: close beyond swing in OPPOSITE direction to trend → first counter-trend break, potential reversal WARNING (does not confirm alone — needs OB/FVG reaction).
-- Count consecutive BOS in same direction = trend strength. CHoCH after long BOS sequence = high-prob reversal warning. CHoCH + successful OB test = high-conviction reversal.
+- Count consecutive BOS in same direction = trend strength. CHoCH after long BOS sequence = reversal warning. CHoCH + successful OB test = two structure signals agreeing.
 
 **2. Order Blocks (OB)**
 - Bullish OB = last bearish candle (close<open) immediately before a bullish BOS/CHoCH. Bearish OB = last bullish candle (close>open) before a bearish BOS/CHoCH.
 - Mitigation: Bullish OB mitigated when price closes below OB.low; Bearish OB when price closes above OB.high.
-- Unmitigated OBs = primary interest zones. Price returning to unmitigated OB in dominant-structure direction = high-prob entry. Closer test = higher reaction probability. Mitigated OBs lose significance — expect no reaction. OBs near EQH/EQL = extra confluence (resting liquidity fuels move).
+- Unmitigated OBs = primary interest zones. Price returning to unmitigated OB in dominant-structure direction = candidate entry zone. Closer test = more precise read of the zone. Mitigated OBs lose significance — expect no reaction. OBs near EQH/EQL = extra confluence (resting liquidity fuels move).
 
 **3. Fair Value Gaps (FVG)** — 3-candle imbalance where middle candle leaves untraded gap.
 - Bullish FVG: `bars[i].low > bars[i-2].high`; zone = `[bars[i-2].high, bars[i].low]`.
 - Bearish FVG: `bars[i].high < bars[i-2].low`; zone = `[bars[i].high, bars[i-2].low]`.
 - Mitigated when price re-enters gap zone.
-- Unmitigated FVGs = magnets; institutions drive price back to fill before continuing. Bullish FVG in bullish trend = support on return; bearish FVG in bearish trend = resistance. Stacked FVGs = higher reaction prob. FVG overlapping an OB = especially high-prob zone. Fully mitigated FVGs = reduced significance.
+- Unmitigated FVGs = zones price often revisits (SMC framework reads it as institutions filling the imbalance; not a measured rate). Bullish FVG in bullish trend = support on return; bearish FVG in bearish trend = resistance. Stacked FVGs = wider imbalance area. FVG overlapping an OB = overlapping zone, extra attention. Fully mitigated FVGs = reduced significance.
 
 **4. Equal Highs / Lows (EQH / EQL)** — two+ swing highs/lows within `0.5×ATR`.
 - Liquidity pools: retail stops rest just beyond; institutions drive through to trigger stops then reverse.
 - EQH above price = liquidity target: bullish structure pushing toward EQH → expect brief spike-through then reversal, OR continuation if genuinely accumulating. EQL below price = mirror for bearish.
-- BOS through EQH/EQL with follow-through = confirmed institutional intent. Failed break (quick spike then reversal, often wick) = high-prob reversal = "liquidity sweep."
+- BOS through EQH/EQL with follow-through = confirmed institutional intent. Failed break (quick spike then reversal, often wick) = reversal signal = "liquidity sweep."
 
 **5. Premium / Equilibrium / Discount** (from most recent swing high→swing low):
 - Premium (top 25%) = expensive; Equilibrium (mid 50%) = fair value; Discount (bottom 25%) = cheap.
@@ -249,7 +250,7 @@ Pre-computed `smc` fields: `swingHighs`/`swingLows` (pivots), `structureBreaks` 
 - Bullish bias: long setups in Discount near unmitigated bullish OB/FVG. Bearish bias: short setups in Premium near unmitigated bearish OB/FVG. Equilibrium = neutral, wait for signal. Equilibrium + strong CHoCH = mean-reversion trigger.
 
 **Confluence (heuristic, not empirically validated):** 1 factor = Low (don't act alone); 2 = Moderate (context-dependent); 3+ = High (primary actionable).
-Highest-prob setups: (1) CHoCH + unmitigated OB in Discount (bullish reversal); (2) CHoCH + unmitigated OB in Premium (bearish reversal); (3) BOS continuation + FVG test at Discount/Premium boundary; (4) liquidity sweep through EQH/EQL + OB/FVG in swept zone.
+Most-confluence setups: (1) CHoCH + unmitigated OB in Discount (bullish reversal); (2) CHoCH + unmitigated OB in Premium (bearish reversal); (3) BOS continuation + FVG test at Discount/Premium boundary; (4) liquidity sweep through EQH/EQL + OB/FVG in swept zone.
 Disconfirming (reduce confidence): OB/FVG already mitigated; mixed structure (no clear BOS sequence); price at Equilibrium with no nearby OB/FVG; EQH/EQL targeted but no reversal follows sweep.
 
 **Failure modes:** CHoCH reversed within 1–3 bars back to original trend = false (was liquidity sweep) — wait for OB/FVG retest before treating valid. OB entered and passed straight through without rejection wick/reaction = institutions not defending, drop it. FVG filled and closed beyond far edge = loses significance. SMC is discretionary/visual — treat programmatic output as shortlist, not standalone. Trend-strength-blind — cross-check ADX/trend filter before acting on breaks. Premium/Discount range is heuristic (built from single most recent high + low from independent arrays; may mismatch after CHoCH/chop) — cross-check actual BOS/CHoCH sequence before using as triggers.

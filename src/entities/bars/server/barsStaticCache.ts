@@ -13,6 +13,11 @@ import { toSeedBarsData } from '../lib/seedBars';
 import { loadBarsData } from './loadBarsData';
 
 /**
+ * 봉 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const BARS_STATIC_REVALIDATE_SECONDS = SECONDS_PER_QUARTER_DAY;
+
+/**
  * 봉이 하나도 없는 결과를 장기 캐시에 넣지 않으려 `unstable_cache` 콜백 안에서 던지는 sentinel
  * (`cacheNonEmpty`·`cacheNonNull`과 같은 방식). **바깥에서 잡아 빈 `BarsData`로 돌려준다** —
  * "provider가 예외를 던짐"(degraded)과 "봉이 정말 0개"(`no-price-data`)는 다른 상태라 호출부가
@@ -90,7 +95,10 @@ export async function getBarsStatic(
             // `-v2`: 값에 공포·탐욕용 5년 일봉(`fearGreedBars`)이 들어 있다. 이 필드가 없는 항목을
             // 읽으면 서버 점수가 2년 기준으로 돌아가므로 키 버전으로 분리한다.
             ['bars-static-v2', ticker, timeframe, fmpSymbol ?? ''],
-            { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${ticker}`] }
+            {
+                revalidate: BARS_STATIC_REVALIDATE_SECONDS,
+                tags: [`symbol:${ticker}`],
+            }
         )();
     } catch (error) {
         // Next 제어 흐름은 degrade가 아니다.

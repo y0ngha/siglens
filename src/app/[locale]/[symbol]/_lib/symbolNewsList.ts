@@ -9,6 +9,11 @@ import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
+/**
+ * 뉴스 목록 정적 캐시의 revalidate(뉴스·종합 탭 공유). `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const NEWS_LIST_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
+
 /** 종목 뉴스 목록 행 — 뉴스·종합 탭이 같은 모양을 받는다. */
 export type SymbolNewsListItems = Awaited<ReturnType<typeof getNewsList>>;
 
@@ -32,7 +37,7 @@ export const loadSymbolNewsList = cache(
             symbol,
             () => getNewsList(symbol, locale),
             [newsCacheTag(symbol)],
-            SECONDS_PER_HALF_DAY
+            NEWS_LIST_REVALIDATE_SECONDS
         ).catch((e: unknown): SymbolNewsListItems => {
             console.error(
                 '[loadSymbolNewsList] getNewsList failed, degrading to []:',

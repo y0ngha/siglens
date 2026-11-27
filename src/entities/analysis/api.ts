@@ -26,6 +26,7 @@ import {
     getDescriptor,
 } from '@/shared/config/marketProfile/registry';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -119,6 +120,8 @@ async function persistPrewarmAnalysis(input: {
             modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             // 프리웜은 항상 free tier로 생성한다(캐시 키 5축 정합 때문에 올릴 수 없다).
             tier: 'free',
+            // 프리웜은 free tier라 포지션 버킷이 없다.
+            personalized: false,
             // 프리웜은 현재 한국어로만 생성한다(harvest.ts의 `resolveHarvest`가
             // 같은 이유로 스냅샷에 `DEFAULT_LOCALE`을 적는 것과 동일한 근거).
             locale: DEFAULT_LOCALE,
@@ -255,7 +258,12 @@ export async function prewarmFundamental(
     return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        dataProvider: getFundamentalDataProvider(symbol),
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(`background`)으로 읽는다.
+        dataProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol,
+            { mode: 'background' }
+        ),
         // 방문자 경로와 같은 통화를 넘겨야 prewarm이 채운 캐시의 산출 텍스트가 갈리지 않는다.
         currency: currencyForSymbol(symbol),
         currentPrice: () =>
@@ -432,7 +440,11 @@ export async function prewarmOverall(
         companyName,
         timeframe,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        fundamentalProvider: getFundamentalDataProvider(symbol),
+        fundamentalProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol,
+            { mode: 'background' }
+        ),
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
@@ -492,12 +504,17 @@ export async function prewarmOverall(
  * reasoning off·기본 타임프레임·기본 로케일. 데이터 캐시(`staticSymbolCache`)를 거치지 않고 core를 직접
  * 읽는다: 거치면 그 캐시가 들고 있는 빈 엿보기를 그대로 읽는다.
  *
- * 한계: 이 키는 최신 결과를 덮어쓰는 포인터(TTL 24시간)라 `true`가 **방금 포기한 호출의 새 결과**를
- * 뜻하지는 않는다 — 어제의 사전 생성이나 방문자가 만든 이전 결과일 수 있다. 새 결과와 이전 결과를 가르려면
- * 캐시 항목에 생성 시각이 필요한데 그건 core 변경이라 하지 않았다. 호출부는 이 한계를 안고 쓴다
- * (이전 결과가 적중하면 페이지는 빈 화면이 아니라 이전 종합을 자기 캐시 기간 동안 보여 준다).
+ * 이 키는 최신 결과를 덮어쓰는 포인터(TTL 24시간)라 항목이 있다는 사실만으로는 **방금 포기한 호출의 새
+ * 결과**인지 어제의 사전 생성·방문자가 만든 이전 결과인지 가를 수 없다. 그래서 항목의 `analyzedAt`
+ * (core 2.42.0, LLM 호출 뒤에 찍힌다)이 `sinceMs`(포기한 호출의 시작 시각) 이후일 때만 true다.
+ * `analyzedAt`이 없는 옛 항목은 시각을 모르므로 이전 결과로 취급해 false다.
+ *
+ * @param sinceMs - 이 시각(epoch ms) 이후에 생성된 결과만 새 결과로 본다.
  */
-export async function hasPrewarmedOverall(symbol: string): Promise<boolean> {
+export async function hasPrewarmedOverall(
+    symbol: string,
+    sinceMs: number
+): Promise<boolean> {
     const cached = await peekOverallAnalysisCache(
         symbol,
         symbol,
@@ -508,5 +525,7 @@ export async function hasPrewarmedOverall(symbol: string): Promise<boolean> {
         undefined,
         DEFAULT_LOCALE
     );
-    return cached !== null;
+    if (cached === null || cached.analyzedAt === undefined) return false;
+    const analyzedAtMs = Date.parse(cached.analyzedAt);
+    return Number.isFinite(analyzedAtMs) && analyzedAtMs >= sinceMs;
 }

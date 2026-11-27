@@ -18,9 +18,12 @@ export function addDays(isoDate: string, days: number): string {
 
 /** `from`..`to`(양끝 포함)의 모든 날짜를 오름차순으로. `from > to`면 빈 배열. */
 export function eachDate(from: string, to: string): string[] {
-    const dates: string[] = [];
-    for (let d = from; d <= to; d = addDays(d, 1)) dates.push(d);
-    return dates;
+    const days =
+        (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
+        MS_PER_DAY;
+    return Array.from({ length: Math.max(0, Math.floor(days) + 1) }, (_, i) =>
+        addDays(from, i)
+    );
 }
 
 /** 토·일 여부. EDGAR는 주말에 제출을 받지 않는다. */

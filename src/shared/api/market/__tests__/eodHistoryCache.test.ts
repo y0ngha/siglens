@@ -224,4 +224,105 @@ describe('getEodHistory', () => {
         await read();
         expect(getOrSetCache).not.toHaveBeenCalled();
     });
+
+    describe('종가가 고저 밖인 봉 정규화(수정 전 캐시 엔트리)', () => {
+        // 005930.KS 2024-10-14 실측값: close(59300) < low(59400).
+        const badBar = (date: string): Bar => ({
+            time: secondsOf(date),
+            open: 59500,
+            high: 61200,
+            low: 59400,
+            close: 59300,
+            volume: 20886249,
+        });
+        const fixedBar = (date: string): Bar => ({
+            ...badBar(date),
+            low: 59300,
+        });
+        const servableEntry = (bars: Bar[]): EodHistoryEntry => ({
+            ...staleEntry(),
+            asOf: '2026-10-15',
+            bars,
+        });
+        beforeEach(() => {
+            vi.mocked(console.warn).mockClear();
+        });
+        const normalizedLogs = (): string[] =>
+            vi
+                .mocked(console.warn)
+                .mock.calls.map(args => String(args[0]))
+                .filter(line => line.includes('ohlc-normalized'));
+
+        it('Redis에 남은 옛 봉을 고쳐서 돌려주고 L1에는 고친 엔트리를 둔다', async () => {
+            store.set(
+                KEY,
+                servableEntry([bar('2026-10-14', 100), badBar('2026-10-15')])
+            );
+            expect(await read()).toEqual([
+                bar('2026-10-14', 100),
+                fixedBar('2026-10-15'),
+            ]);
+            expect(memory.get(KEY)).toMatchObject({
+                bars: [bar('2026-10-14', 100), fixedBar('2026-10-15')],
+            });
+            expect(normalizedLogs()).toEqual([
+                '[CachedMarketDataProvider] eodhist ohlc-normalized symbol=AAPL fixed=1 total=2',
+            ]);
+            await read();
+            expect(normalizedLogs()).toHaveLength(1);
+        });
+
+        it('유효한 히스토리는 같은 배열 참조와 값으로 돌려주고 로그를 남기지 않는다', async () => {
+            const entry = servableEntry([
+                bar('2026-10-14', 100),
+                bar('2026-10-15', 101),
+            ]);
+            memory.set(KEY, entry, 60_000);
+            expect(await read()).toBe(entry.bars);
+            expect(normalizedLogs()).toEqual([]);
+        });
+
+        it('증분 갱신이 옛 캐시 봉을 이어 붙여도 결과는 고쳐져 있다', async () => {
+            store.set(KEY, {
+                ...staleEntry(),
+                bars: [badBar('2026-10-12'), badBar('2026-10-14')],
+            });
+            // yahoo provider는 이미 고친 봉을 돌려준다.
+            getBars.mockResolvedValue([
+                fixedBar('2026-10-14'),
+                fixedBar('2026-10-15'),
+            ]);
+            const bars = await read();
+            expect(bars.map(b => b.low)).toEqual([59300, 59300, 59300]);
+            expect(memory.get(KEY)).toMatchObject({ bars });
+        });
+
+        it('수정 전 캐시의 마지막 봉이 옛 값이어도 고친 겹침 봉과 일치로 읽어 전체 재조회하지 않는다', async () => {
+            store.set(KEY, {
+                ...staleEntry(),
+                bars: [bar('2026-10-13', 59400), badBar('2026-10-14')],
+            });
+            getBars.mockResolvedValue([
+                fixedBar('2026-10-14'),
+                bar('2026-10-15', 59500),
+            ]);
+            const bars = await read();
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(getBars).toHaveBeenCalledWith({
+                ...OPTIONS,
+                from: '2026-10-14',
+                before: '2026-10-15',
+            });
+            expect(bars).toEqual([
+                bar('2026-10-13', 59400),
+                fixedBar('2026-10-14'),
+                bar('2026-10-15', 59500),
+            ]);
+            const mismatchLogs = vi
+                .mocked(console.warn)
+                .mock.calls.map(args => String(args[0]))
+                .filter(line => line.includes('overlap mismatch'));
+            expect(mismatchLogs).toEqual([]);
+        });
+    });
 });

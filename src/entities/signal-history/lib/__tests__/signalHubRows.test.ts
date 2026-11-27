@@ -1,9 +1,5 @@
 import type { SignalEpisodeRow } from '../../types';
-import {
-    latestEpisodePerSymbol,
-    orderForDisplay,
-    signalHubWindowStart,
-} from '../signalHubRows';
+import { orderForDisplay, signalHubWindowStart } from '../signalHubRows';
 
 function row(
     market: SignalEpisodeRow['market'],
@@ -29,27 +25,6 @@ describe('signalHubWindowStart', () => {
         expect(signalHubWindowStart(new Date('2026-11-15T14:59:00Z'))).toBe(
             '2026-10-17'
         );
-    });
-});
-
-describe('latestEpisodePerSymbol', () => {
-    it('종목마다 첫 번째(가장 최근) 에피소드만 남기고 순서를 지킨다', () => {
-        const rows = [
-            row('us', 'NVDA', '2026-11-13'),
-            row('us', 'AAPL', '2026-11-12'),
-            row('us', 'NVDA', '2026-10-20'),
-        ];
-
-        expect(latestEpisodePerSymbol(rows)).toEqual([rows[0], rows[1]]);
-    });
-
-    it('시장이 다르면 같은 심볼도 다른 종목이다', () => {
-        const rows = [
-            row('us', 'X', '2026-11-13'),
-            row('kr', 'X', '2026-11-12'),
-        ];
-
-        expect(latestEpisodePerSymbol(rows)).toEqual(rows);
     });
 });
 
