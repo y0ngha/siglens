@@ -26,7 +26,10 @@ export interface SymbolReport {
     plain: string | null;
     news: SymbolReportNews[];
     options: SymbolReportOptions | null;
-    /** 분석 스냅샷이 만들어진 시각(ISO). 분석이 없으면 `null`. */
+    /**
+     * 분석이 만들어진 시각(ISO) — 분석 내용 안의 `analyzedAt`이다. 스냅샷 행의 `generatedAt`(하베스트가 행을 다시
+     * 쓴 시각일 수 있다)이 아니다. 분석이 없거나 내용에 시각이 없으면 `null`.
+     */
     analyzedAt: string | null;
 }
 
@@ -79,9 +82,22 @@ export interface SignalBrief {
     pullback: Exclude<PullbackReading, 'none'> | null;
 }
 
+/** 메일에 이름으로 적는 종목 이름 원본. 사이트의 `AssetInfo`에서 이름 두 필드만 옮긴 것. */
+export interface ReportSymbolNames {
+    /** 영문 법인명. */
+    name: string;
+    /** 한글명. 번역이 아직 없으면 없다. */
+    koreanName?: string;
+}
+
 /** 요약 표 한 행 / 카드의 신호 줄에 필요한 종목 한 칸의 경량 데이터. */
 export interface SymbolBrief {
     symbol: string;
+    /**
+     * 표시 이름 원본(로케일 무관 — 어느 이름을 쓸지는 템플릿이 정한다). 이름 조회에 실패했거나
+     * 없는 종목은 `null`이고 메일은 접미사를 뗀 티커로 떨어진다.
+     */
+    names: ReportSymbolNames | null;
     /** 마지막 일봉 종가. 봉이 없으면 `null`. */
     close: number | null;
     /** 직전 종가 대비 등락률(%). 직전 봉이 없거나 0 이하면 `null`. */
@@ -93,3 +109,26 @@ export interface SymbolBrief {
 
 /** 신호 요약 한 줄에 라벨로 적는 최대 타입 수. 넘치는 만큼은 "+N". */
 export const SIGNAL_BRIEF_MAX_LABELS = 3;
+
+/**
+ * 차트 아래 범례의 한 칸. 이름은 언어마다 달라 템플릿이 정한다 — 카드(패턴·전략)는 스킬 원래 이름을 싣고
+ * 템플릿이 `shared.skillName` 사전으로 바꾼다. 나머지는 종류 이름이다.
+ */
+export type ReportLegendEntry =
+    | { kind: 'card'; name: string; color: string }
+    | {
+          kind:
+              | 'trendUp'
+              | 'trendDown'
+              | 'fibonacci'
+              | 'divergence'
+              | 'elliott';
+          color: string;
+      };
+
+/** 차트 이미지에 실제로 그려지는 분석 작도 — 어느 분석인지(시각)와 범례. */
+export interface ReportChartDrawings {
+    /** 작도를 가져온 분석이 만들어진 시각(ISO). */
+    analyzedAt: string;
+    legend: ReportLegendEntry[];
+}

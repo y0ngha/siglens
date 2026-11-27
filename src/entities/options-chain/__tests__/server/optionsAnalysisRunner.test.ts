@@ -23,7 +23,7 @@ import { ByokOnlyRoutingError } from '@/shared/lib/byokOnly';
 
 const mockRun = vi.mocked(runOptionsAnalysis);
 const mockFetch = vi.mocked(fetchOptionsSnapshot);
-const BYOK_MODEL = 'gpt-6-astra' as ModelId;
+const BYOK_MODEL = 'gpt-6.2-astra' as ModelId;
 const FREE_MODEL = 'gemini-3.6-flash' as ModelId;
 
 /** 호출을 모델로 고른다(인덱스로 잡지 않는다). */

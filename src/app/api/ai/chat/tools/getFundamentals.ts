@@ -1,5 +1,11 @@
 import 'server-only';
-import type { Bar, MarketSessionSpec } from '@y0ngha/siglens-core';
+import {
+    FUNDAMENTALS_RESULT_NOTES,
+    tallyEarningsReactions,
+    type Bar,
+    type EarningsReactionTally,
+    type MarketSessionSpec,
+} from '@y0ngha/siglens-core';
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 import { getKrValuation } from '@/entities/kr-valuation/server/getKrValuation';
 import type { EarningsSession } from '@/entities/analyst-views/model';
@@ -56,13 +62,15 @@ import {
     QUARTERS_FETCH_COUNT,
     recentQuarterRows,
     type EarningsReactionView,
+    type SecQuarterView,
 } from './earningsHistory';
 import {
     buildDividends,
     fetchDividendSource,
     withAnnualReported,
+    type DividendsView,
 } from './dividends';
-import { loadIndexMemberships } from './indexMembership';
+import { loadIndexMemberships, type IndexMemberships } from './indexMembership';
 import { fetchKrAnnualDividend } from './krAnnualDividend';
 import { krListedBasis } from './krListedBasis';
 import { loadSecQuarters } from './loadSecQuarters';
@@ -250,6 +258,140 @@ export function earningsDateCertainty(
         ...(session !== null && { earningsSession: session }),
         ...(session !== null && callAt !== null && { earningsCallAt: callAt }),
     };
+}
+
+/**
+ * Attaches `earningsReactionTally` right after `earningsReactions` so the model quotes
+ * the up/down counts and extremes instead of counting the list (the miscount
+ * the tally exists to remove). `null` exactly when `earningsReactions` is `null`.
+ *
+ * Pure function of the result shape: the tally reads the reactions as printed
+ * (already rounded), and the evaluation replay calls this same function on a
+ * recorded result, so it never runs a copy of production logic.
+ */
+export function withEarningsReactionTally<T extends object>(
+    result: T
+): T & { earningsReactionTally: EarningsReactionTally | null } {
+    const reactions =
+        (
+            result as {
+                earningsReactions?: readonly EarningsReactionView[] | null;
+            }
+        ).earningsReactions ?? null;
+    const tally = reactions === null ? null : tallyEarningsReactions(reactions);
+    const entries = Object.entries(result).flatMap(
+        ([key, value]): [string, unknown][] =>
+            key === 'earningsReactions'
+                ? [
+                      [key, value],
+                      ['earningsReactionTally', tally],
+                  ]
+                : [[key, value]]
+    );
+    // A result without the `earningsReactions` key still carries the tally (null), at the end.
+    const withTally = entries.some(([key]) => key === 'earningsReactionTally')
+        ? entries
+        : [...entries, ['earningsReactionTally', tally]];
+    return Object.fromEntries(withTally) as T & {
+        earningsReactionTally: EarningsReactionTally | null;
+    };
+}
+
+/** The slice of a finished `get_fundamentals` result that decides which `notes` apply. */
+interface FundamentalsNotesInput {
+    valuation: { pe: number | null } | null;
+    dividends: DividendsView | null;
+    recentQuarters: readonly { sec: SecQuarterView | null }[] | null;
+    indexMemberships: IndexMemberships | null;
+    analyst: {
+        nextEarningsDate: string | null;
+        earningsSession?: EarningsSession | null;
+        earningsDateAlt?: unknown;
+        earningsDateConfirmed?: boolean | null;
+    };
+}
+
+/** A confirmed non-payer, exactly as `dividends.ts` prints it. */
+function isConfirmedNonPayer(dividends: DividendsView): boolean {
+    return (
+        dividends.latestExDate === null &&
+        dividends.latestAmount === null &&
+        dividends.trailing12mAmount === 0 &&
+        dividends.trailingYieldPct === 0
+    );
+}
+
+/**
+ * Texts for the result's top-level `notes` (`PUBLIC_API.md`, `runAgentTurn` action ⑩; the
+ * wording is core's `FUNDAMENTALS_RESULT_NOTES`, attached verbatim). The tool description
+ * no longer carries these null rules, so a note that is missing here is a rule the model
+ * never sees. Each condition is the field's own printed state, read from the finished
+ * result (after rounding), and the order is the order of the list in core's contract:
+ *
+ * - `earningsSessionUnknown`: a next date, no session, no second-source date
+ *   (`earningsDateAlt` brings its own "sources disagree" rule) and a date not marked as an
+ *   estimate (an estimate already says the timing is unannounced, `earningsDateNote`).
+ * - `secFieldMissing`: a row's `sec` block exists and one of its three figures is null
+ *   (`form`, `filed` and `accn` are never null); a row with no `sec` is not a finding.
+ * - dividends: exactly one of non-payer / unknown (`null`, ETFs included) / latest payment
+ *   without any trailing figure. A null yield beside a trailing AMOUNT (no price) gets no
+ *   note: the amount is real and the model must not be told to hide it.
+ * - Korean annual dividend: `dpsCommon` null → `krDpsUnknown` only; a non-null DPS with a
+ *   null yield → `krYieldOnLastCloseNull`, so the two pieces of advice never disagree.
+ * - `indexMembershipUnknown`: US results only (the field is always null for Korean stocks).
+ * - `peUntrusted`: no `valuation` block or a null `pe`.
+ *
+ * Returns `[]` when nothing applies; the caller omits the key then (no empty array).
+ */
+function fundamentalsResultNotes(
+    result: FundamentalsNotesInput,
+    isKr: boolean
+): string[] {
+    const { analyst, dividends, valuation } = result;
+    const annual = dividends?.annualReported;
+    return [
+        ...(analyst.nextEarningsDate !== null &&
+        (analyst.earningsSession ?? null) === null &&
+        (analyst.earningsDateAlt ?? null) === null &&
+        analyst.earningsDateConfirmed !== false
+            ? [FUNDAMENTALS_RESULT_NOTES.earningsSessionUnknown]
+            : []),
+        ...(result.recentQuarters?.some(
+            row =>
+                row.sec !== null &&
+                (row.sec.epsDiluted === null ||
+                    row.sec.revenue === null ||
+                    row.sec.revenueYoYPct === null)
+        )
+            ? [FUNDAMENTALS_RESULT_NOTES.secFieldMissing]
+            : []),
+        ...(dividends !== null && isConfirmedNonPayer(dividends)
+            ? [FUNDAMENTALS_RESULT_NOTES.dividendsNonPayer]
+            : []),
+        ...(dividends === null
+            ? [FUNDAMENTALS_RESULT_NOTES.dividendsUnknown]
+            : []),
+        ...(dividends !== null &&
+        dividends.latestExDate !== null &&
+        dividends.trailing12mAmount === null &&
+        dividends.trailingYieldPct === null
+            ? [FUNDAMENTALS_RESULT_NOTES.dividendsTrailingUnknown]
+            : []),
+        ...(annual !== undefined &&
+        annual.yieldOnLastClosePct === null &&
+        annual.dpsCommon !== null
+            ? [FUNDAMENTALS_RESULT_NOTES.krYieldOnLastCloseNull]
+            : []),
+        ...(annual !== undefined && annual.dpsCommon === null
+            ? [FUNDAMENTALS_RESULT_NOTES.krDpsUnknown]
+            : []),
+        ...(!isKr && result.indexMemberships === null
+            ? [FUNDAMENTALS_RESULT_NOTES.indexMembershipUnknown]
+            : []),
+        ...(valuation === null || valuation.pe === null
+            ? [FUNDAMENTALS_RESULT_NOTES.peUntrusted]
+            : []),
+    ];
 }
 
 /**
@@ -551,7 +693,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
 
     // Provider ratios arrive as raw floats (P/E 27.622012578616346); trim them
     // to significant digits like every other number the agent quotes.
-    return roundNumbersDeep({
+    const result = roundNumbersDeep({
         /*
          * `asOf`는 **조회 시각**이다 — 데이터가 그 시점 값이라는 뜻이 아니다.
          *
@@ -721,4 +863,9 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             ),
         },
     });
+    const notes = fundamentalsResultNotes(result, isKr);
+    return {
+        ...withEarningsReactionTally(result),
+        ...(notes.length > 0 && { notes }),
+    };
 };

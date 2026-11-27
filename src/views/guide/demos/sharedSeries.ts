@@ -162,6 +162,43 @@ export function getTrendSeries(): SharedSeries {
     return TREND_SERIES;
 }
 
+/**
+ * 50/200일선 골든크로스용 합성 시세 (300봉): 길게 눌려 있다가 210봉 뒤에 오르기 시작해 50일선이 200일선을
+ * 아래에서 위로 넘는다. 200일선은 199번째 봉부터 값이 나오므로, 시세가 이보다 충분히 길어야 교차가 보인다.
+ */
+const GOLDEN_CROSS_PATH: Waypoint[] = [
+    [0, 120],
+    [40, 112],
+    [90, 100],
+    [140, 96],
+    [210, 100],
+    [235, 112],
+    [262, 140],
+    [284, 150],
+    [299, 156],
+].map(([i, price]) => ({ i, price }));
+
+function buildGoldenCrossSeries(): SharedSeries {
+    const raw = pathToBars(GOLDEN_CROSS_PATH, {
+        seed: 41,
+        rangePct: 0.014,
+        noisePct: 0.012,
+    });
+    const rand = mulberry32(17);
+    const bars: DemoBar[] = raw.map(bar => ({
+        ...bar,
+        volume: Math.round(BASE_VOLUME * (0.8 + rand() * 0.4)),
+    }));
+    return { bars, result: calculateIndicators(toCoreBars(bars)) };
+}
+
+const GOLDEN_CROSS_SERIES = buildGoldenCrossSeries();
+
+/** 이동평균 데모의 시세. 50일선과 200일선이 교차하려면 200봉이 넘는 시세가 필요해 공통 시세(260봉)와 따로 둔다. */
+export function getGoldenCrossSeries(): SharedSeries {
+    return GOLDEN_CROSS_SERIES;
+}
+
 /** 표준정규 난수 (Box-Muller). 시드 고정 `rand`를 받아 결정적이다. */
 function gaussian(rand: () => number): number {
     const u = Math.max(rand(), 1e-9);

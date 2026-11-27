@@ -1,12 +1,40 @@
 vi.mock('server-only', () => ({}));
 
-import type { Bar } from '@y0ngha/siglens-core';
+/**
+ * 담은 종목의 일봉 판정을 심는 표. 키는 마지막 봉의 거래량(표지)이고 값은 그 봉에서 "새로 켜진" 신호 유형이다.
+ * 표지가 없는 봉은 진짜 코어 판정을 그대로 쓴다.
+ */
+const planted = vi.hoisted(() => ({
+    newSignals: new Map<number, readonly string[]>(),
+}));
+
+vi.mock('@y0ngha/siglens-core', async importOriginal => {
+    const actual =
+        await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    return {
+        ...actual,
+        detectNewConfirmedSignals: (bars: Bar[]) => {
+            const tag = bars.at(-1)?.volume;
+            const types =
+                tag === undefined ? undefined : planted.newSignals.get(tag);
+            return types === undefined
+                ? actual.detectNewConfirmedSignals(bars)
+                : types.map(type => ({ type }));
+        },
+    };
+});
+
+import type { Bar, SignalType } from '@y0ngha/siglens-core';
 import { MAIL_ALERT_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
 import type {
     MailAlertDeliveryRepository,
     MailAlertDeliveryTarget,
 } from '@/shared/db/types';
-import type { EmailMessage } from '@/shared/email/types';
+import type {
+    EmailMessage,
+    KeyedEmailDispatcher,
+    KeyedEmailOutcome,
+} from '@/shared/email/types';
 import {
     PLANTED_EMAIL,
     PLANTED_TOKEN,
@@ -50,6 +78,16 @@ function target(
     };
 }
 
+/** 멱등 키 발송 결과를 정하는 가짜 발송기. 알림 패스는 `sendKeyedEmail`만 부른다. */
+function keyedDispatcher(
+    send: (message: EmailMessage) => Promise<KeyedEmailOutcome>
+): KeyedEmailDispatcher {
+    return {
+        sendEmail: async message => (await send(message)) !== 'rejected',
+        sendKeyedEmail: send,
+    };
+}
+
 const signalTopic = (key: string) => ({ kind: 'signal' as const, key });
 const symbolTopic = (key: string) => ({ kind: 'symbol' as const, key });
 const fgTopic = (key: string) => ({ kind: 'fear_greed' as const, key });
@@ -65,6 +103,30 @@ function barsEndingOn(session: string, count = 300): Bar[] {
         close: 100,
         volume: 1000,
     }));
+}
+
+/** 심은 판정마다 새 표지(평평한 봉의 거래량 1000과 겹치지 않는 값). */
+const nextTag = { value: 10_000 };
+
+/**
+ * `bySymbol`의 종목은 일봉 판정이 그 유형들을 새 신호로 내고, 나머지 종목은 신호 없는 평평한 일봉이다. 봉의
+ * 마지막 날짜는 `session`(기본: 미국 기대 세션)이다.
+ */
+function plantMineSignals(
+    harness: Harness,
+    bySymbol: Readonly<Record<string, readonly SignalType[]>>,
+    session = US_SESSION
+): void {
+    harness.sources.loadDailyBars = vi.fn(async (symbol: string) => {
+        const bars = barsEndingOn(session);
+        const types = bySymbol[symbol];
+        if (types === undefined) return bars;
+        const tag = nextTag.value++;
+        planted.newSignals.set(tag, types);
+        return bars.map((bar, i) =>
+            i === bars.length - 1 ? { ...bar, volume: tag } : bar
+        );
+    });
 }
 
 /** 테스트가 소스 함수를 갈아 끼울 수 있게 읽기 전용을 푼 소스 묶음. */
@@ -129,10 +191,7 @@ function makeHarness(
         },
         deliveries,
         sources,
-        universe: {
-            us: new Set(['AAPL', 'MSFT']),
-            kr: new Set(['005930.KS']),
-        },
+        getSymbolNames: vi.fn(async () => null),
         findHoldings: vi.fn().mockResolvedValue([]),
         findWatchlist: vi.fn().mockResolvedValue([]),
         resolveMarket: vi.fn(async (symbol: string) =>
@@ -144,12 +203,10 @@ function makeHarness(
                 ? labelKo(`signalType.${type}`)
                 : null,
         getDisclaimer: async () => '투자 참고용이에요.',
-        dispatcher: {
-            sendEmail: async message => {
-                sent.push(message);
-                return true;
-            },
-        },
+        dispatcher: keyedDispatcher(async message => {
+            sent.push(message);
+            return 'accepted';
+        }),
         ...overrides,
     };
     return { deps, sources, claimOnce, sent, claims, deliveries };
@@ -575,7 +632,7 @@ describe('runMailAlertBatch', () => {
 
         it('발송기가 거절하면 failed로 기록하고 같은 날 다시 시도하지 않는다', async () => {
             const harness = makeHarness(
-                { dispatcher: { sendEmail: async () => false } },
+                { dispatcher: keyedDispatcher(async () => 'rejected') },
                 {
                     targets: [
                         target('s1', { topics: [signalTopic('golden_cross')] }),
@@ -601,6 +658,36 @@ describe('runMailAlertBatch', () => {
             expect(final.alreadyClaimed).toBe(1);
             expect(final.failed).toBe(0);
         });
+
+        it.each(['already_accepted', 'in_flight'] as const)(
+            '제공자가 같은 키를 이미 받았다고 하면(%s) 실패가 아니라 sent로 기록한다(DB-11)',
+            async outcome => {
+                const harness = makeHarness(
+                    { dispatcher: keyedDispatcher(async () => outcome) },
+                    {
+                        targets: [
+                            target('s1', {
+                                topics: [signalTopic('golden_cross')],
+                            }),
+                        ],
+                    }
+                );
+                withEpisodes(harness, { us: [usEpisode('AAPL')] });
+
+                const counts = countsOf(
+                    await runMailAlertBatch(harness.deps, FIRST)
+                );
+
+                expect(counts.sent).toBe(1);
+                expect(counts.failed).toBe(0);
+                expect(harness.deliveries.finish).toHaveBeenCalledWith(
+                    `claim-s1|${ALERT_DATE}`,
+                    'sent',
+                    ['s:us:AAPL:golden_cross'],
+                    null
+                );
+            }
+        );
 
         it('메일을 만들다 던지면 가린 오류 문장으로 failed를 기록한다', async () => {
             const targets = [
@@ -638,11 +725,9 @@ describe('runMailAlertBatch', () => {
         it('실패 기록을 남기지 못해도 로그만 남기고 실행은 끝낸다', async () => {
             const harness = makeHarness(
                 {
-                    dispatcher: {
-                        sendEmail: async () => {
-                            throw new Error('boom');
-                        },
-                    },
+                    dispatcher: keyedDispatcher(async () => {
+                        throw new Error('boom');
+                    }),
                 },
                 {
                     targets: [
@@ -714,7 +799,7 @@ describe('runMailAlertBatch', () => {
     });
 
     describe('종목 소스', () => {
-        it('스캐너 대상 종목은 일봉을 읽지 않고, 대상 밖 종목만 일봉으로 판정한다', async () => {
+        it('담은 종목은 스캐너 대상이어도 신호 기록이 아니라 그 종목의 일봉으로 판정한다', async () => {
             const harness = makeHarness(
                 {},
                 {
@@ -725,25 +810,202 @@ describe('runMailAlertBatch', () => {
                     ],
                 }
             );
+            // 신호 기록에는 AAPL 골든크로스가 있지만, AAPL의 일봉은 RSI 과매도만 새로 켠다.
             withEpisodes(harness, { us: [usEpisode('AAPL')] });
-            harness.sources.loadDailyBars = vi.fn(async () =>
-                barsEndingOn(US_SESSION)
-            );
+            plantMineSignals(harness, { AAPL: ['rsi_oversold'] });
 
             const counts = countsOf(
                 await runMailAlertBatch(harness.deps, FIRST)
             );
 
             expect(harness.deps.sources.loadDailyBars).toHaveBeenCalledWith(
+                'AAPL'
+            );
+            expect(harness.deps.sources.loadDailyBars).toHaveBeenCalledWith(
                 'PLTR'
             );
-            expect(harness.deps.sources.loadDailyBars).not.toHaveBeenCalledWith(
-                'AAPL'
+            expect(counts.computedSymbols).toBe(2);
+            expect(harness.deliveries.claim).toHaveBeenCalledWith(
+                's1',
+                ALERT_DATE,
+                ['s:us:AAPL:rsi_oversold']
             );
-            expect(counts.computedSymbols).toBe(1);
+            const text = sentTo(harness, 's1@example.com')[0]?.text ?? '';
+            expect(text).toContain(labelKo('signalType.rsi_oversold'));
+            expect(text).not.toContain(labelKo('signalType.golden_cross'));
+        });
+
+        it('실린 종목의 이름은 종목 정보에서 읽는다(메일 리포트와 같은 원천)', async () => {
+            const harness = makeHarness(
+                {
+                    getSymbolNames: vi.fn(async (symbol: string) =>
+                        symbol === '005930.KS'
+                            ? {
+                                  name: 'Samsung Electronics',
+                                  koreanName: '삼성전자',
+                              }
+                            : null
+                    ),
+                },
+                {
+                    targets: [
+                        target('s1', { topics: [symbolTopic('005930.KS')] }),
+                    ],
+                }
+            );
+            plantMineSignals(
+                harness,
+                { '005930.KS': ['new_52w_high'] },
+                KR_SESSION
+            );
+
+            await runMailAlertBatch(harness.deps, FIRST);
+
             expect(sentTo(harness, 's1@example.com')[0]?.text).toContain(
-                'AAPL'
+                '삼성전자 (005930)'
             );
+            expect(harness.deps.getSymbolNames).toHaveBeenCalledWith(
+                '005930.KS'
+            );
+        });
+
+        it('이름 조회가 던지면 그 종목은 코드로 싣고 메일은 나간다', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const harness = makeHarness(
+                {
+                    getSymbolNames: vi.fn(async () => {
+                        throw plantedDbError();
+                    }),
+                },
+                { targets: [target('s1', { topics: [symbolTopic('AAPL')] })] }
+            );
+            plantMineSignals(harness, { AAPL: ['golden_cross'] });
+
+            const counts = countsOf(
+                await runMailAlertBatch(harness.deps, FIRST)
+            );
+
+            expect(counts.sent).toBe(1);
+            expect(sentTo(harness, 's1@example.com')[0]?.text).toContain(
+                '- AAPL'
+            );
+        });
+
+        it('첫 슬롯은 담은 종목의 봉이 아직 기대 세션이 아닌 구독자를 선점하지 않고 최종 슬롯에 맡긴다', async () => {
+            const harness = makeHarness(
+                {},
+                {
+                    targets: [
+                        target('late', {
+                            topics: [symbolTopic('AAPL'), symbolTopic('PLTR')],
+                        }),
+                        target('ok', { topics: [symbolTopic('AAPL')] }),
+                    ],
+                }
+            );
+            plantMineSignals(harness, { AAPL: ['golden_cross'] });
+            const fresh = harness.sources.loadDailyBars;
+            harness.sources.loadDailyBars = vi.fn(async (symbol: string) =>
+                symbol === 'PLTR' ? barsEndingOn('2026-11-20') : fresh(symbol)
+            );
+
+            const counts = countsOf(
+                await runMailAlertBatch(harness.deps, FIRST)
+            );
+
+            expect(counts.deferredSymbolsNotReady).toBe(1);
+            expect(counts.sent).toBe(1);
+            expect(sentTo(harness, 'late@example.com')).toEqual([]);
+            expect(sentTo(harness, 'ok@example.com')).toHaveLength(1);
+            expect(harness.deliveries.claim).not.toHaveBeenCalledWith(
+                'late',
+                ALERT_DATE,
+                expect.anything()
+            );
+        });
+
+        it('첫 슬롯은 담은 종목의 일봉 조회가 실패한 구독자도 미룬다', async () => {
+            const harness = makeHarness(
+                {},
+                { targets: [target('s1', { topics: [symbolTopic('BAD')] })] }
+            );
+            harness.sources.loadDailyBars = vi.fn(async () => {
+                throw plantedDbError();
+            });
+
+            const counts = countsOf(
+                await runMailAlertBatch(harness.deps, FIRST)
+            );
+
+            expect(counts.deferredSymbolsNotReady).toBe(1);
+            expect(counts.quiet).toBe(0);
+            expect(harness.deliveries.claim).not.toHaveBeenCalled();
+        });
+
+        it('최종 슬롯은 판정된 종목만으로 보내고 판정하지 못한 종목 코드를 한 줄로 남긴다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const harness = makeHarness(
+                {},
+                {
+                    targets: [
+                        target('s1', {
+                            topics: [
+                                symbolTopic('AAPL'),
+                                symbolTopic('PLTR'),
+                                symbolTopic('BAD'),
+                            ],
+                        }),
+                    ],
+                }
+            );
+            plantMineSignals(harness, { AAPL: ['golden_cross'] });
+            const fresh = harness.sources.loadDailyBars;
+            harness.sources.loadDailyBars = vi.fn(async (symbol: string) => {
+                if (symbol === 'BAD') throw plantedDbError();
+                return symbol === 'PLTR'
+                    ? barsEndingOn('2026-11-20')
+                    : fresh(symbol);
+            });
+
+            const counts = countsOf(
+                await runMailAlertBatch(harness.deps, FINAL)
+            );
+
+            expect(counts.deferredSymbolsNotReady).toBe(0);
+            expect(counts.sent).toBe(1);
+            expect(harness.deliveries.claim).toHaveBeenCalledWith(
+                's1',
+                ALERT_DATE,
+                ['s:us:AAPL:golden_cross']
+            );
+            const line = warn.mock.calls.find(
+                ([message]) =>
+                    message === '[mail-alert] symbols not ready at final slot:'
+            );
+            expect(line?.[1]).toBe(JSON.stringify(['BAD', 'PLTR']));
+            // 구독자 주소·식별자와 오류 원문은 이 줄에 없다.
+            const logged = JSON.stringify(warn.mock.calls);
+            expect(logged).not.toContain('s1@example.com');
+            expect(logged).not.toContain(PLANTED_TOKEN);
+            expect(logged).not.toContain(PLANTED_EMAIL);
+        });
+
+        it('시장 조회가 실패한 종목도 첫 슬롯에서 그 구독자를 미룬다', async () => {
+            const harness = makeHarness(
+                {
+                    resolveMarket: vi.fn(async () => {
+                        throw new Error('lookup failed');
+                    }),
+                },
+                { targets: [target('s1', { topics: [symbolTopic('AAPL')] })] }
+            );
+
+            const counts = countsOf(
+                await runMailAlertBatch(harness.deps, FIRST)
+            );
+
+            expect(counts.deferredSymbolsNotReady).toBe(1);
+            expect(harness.deliveries.claim).not.toHaveBeenCalled();
         });
 
         it('판정한 대상 밖 종목의 새 신호가 메일에 실린다', async () => {
@@ -769,7 +1031,7 @@ describe('runMailAlertBatch', () => {
             );
         });
 
-        it('마지막 봉이 기대 세션이 아니면 항목이 없고 센다', async () => {
+        it('최종 슬롯에서 마지막 봉이 기대 세션이 아니면 항목이 없고 센다', async () => {
             const harness = makeHarness(
                 {},
                 { targets: [target('s1', { topics: [symbolTopic('PLTR')] })] }
@@ -779,7 +1041,7 @@ describe('runMailAlertBatch', () => {
             );
 
             const counts = countsOf(
-                await runMailAlertBatch(harness.deps, FIRST)
+                await runMailAlertBatch(harness.deps, FINAL)
             );
 
             expect(counts.noFreshBar).toBe(1);
@@ -810,7 +1072,7 @@ describe('runMailAlertBatch', () => {
             expect(counts.noFreshBar).toBe(1);
         });
 
-        it('종목의 시장을 못 알아낸 오류도 그 종목만 세고, 주식이 아닌 종목은 건너뛴다', async () => {
+        it('최종 슬롯에서 종목의 시장을 못 알아낸 오류도 그 종목만 세고, 주식이 아닌 종목은 건너뛴다', async () => {
             const harness = makeHarness(
                 {
                     resolveMarket: vi.fn(async (symbol: string) => {
@@ -830,10 +1092,10 @@ describe('runMailAlertBatch', () => {
                     ],
                 }
             );
-            withEpisodes(harness, { us: [usEpisode('AAPL')] });
+            plantMineSignals(harness, { AAPL: ['golden_cross'] });
 
             const counts = countsOf(
-                await runMailAlertBatch(harness.deps, FIRST)
+                await runMailAlertBatch(harness.deps, FINAL)
             );
 
             expect(counts.computeErrors).toBe(1);
@@ -866,8 +1128,9 @@ describe('runMailAlertBatch', () => {
                     ],
                 }
             );
-            withEpisodes(harness, {
-                us: [usEpisode('AAPL'), usEpisode('MSFT', 'rsi_overbought')],
+            plantMineSignals(harness, {
+                AAPL: ['golden_cross'],
+                MSFT: ['rsi_overbought'],
             });
 
             const counts = countsOf(

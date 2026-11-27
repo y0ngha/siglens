@@ -43,6 +43,25 @@ describe('E2eEmailDispatcher', () => {
         );
     });
 
+    it('멱등 키 발송도 debug 키에 쓰고 accepted를 반환한다', async () => {
+        const { redis, setMock } = createRedisStub();
+        const dispatcher = new E2eEmailDispatcher(redis);
+        const message = buildEmailVerificationEmail({
+            t: tMail,
+            to: 'keyed@test.com',
+            code: '111111',
+        });
+
+        await expect(
+            dispatcher.sendKeyedEmail({ ...message, idempotencyKey: 'k-1' })
+        ).resolves.toBe('accepted');
+        expect(setMock).toHaveBeenCalledWith(
+            'email_debug:keyed@test.com',
+            expect.anything(),
+            expect.anything()
+        );
+    });
+
     it('재설정 이메일 발송 시 token을 debug 키에 쓴다', async () => {
         const { redis, setMock } = createRedisStub();
         const dispatcher = new E2eEmailDispatcher(redis);

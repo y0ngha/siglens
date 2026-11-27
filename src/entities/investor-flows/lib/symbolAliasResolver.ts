@@ -14,8 +14,9 @@ const CLASS_SEPARATORS = /[.\-/ ]/g;
  * 먼저 등록하고, 구분자를 `.`·`-`·`/`·공백으로 바꾼 것과 지운 것을 별칭으로 **정확 일치가 없을 때만** 추가한다 —
  * 별칭이 다른 유니버스 심볼의 정확 일치를 가로채면 안 된다. 입력은 앞뒤 공백을 지우고 대문자로 비교한다(가운데 공백은
  * `BRK B`의 구분자라 남긴다).
+ *
+ * CONVENTIONS.md#CP-6 예외: 유니버스 심볼(수천 개)마다 별칭을 조회 Map 하나에 채운다. 심볼마다 Map을 복사하면 O(N²)다.
  */
-// CONVENTIONS.md#CP-6 예외: 유니버스 심볼(수천 개)마다 별칭을 조회 Map 하나에 채운다. 심볼마다 Map을 복사하면 O(N²)다.
 export function buildSymbolAliasResolver(
     universeSymbols: Iterable<string>
 ): SymbolResolver {

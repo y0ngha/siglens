@@ -49,10 +49,10 @@ describe('OverallFactualFallback', () => {
         // 컴포넌트가 `symbol`을 한 번 더 붙여 `(AAPL) (AAPL)`로 나갔다.
         expect(section).not.toHaveTextContent('(AAPL) (AAPL)');
         expect(section).toHaveTextContent(
-            '현재 서버가 확인한 최근 뉴스는 3건이며, 이 중 2건은 AI 뉴스 카드 분석이 완료됐습니다.'
+            '현재 확인된 최근 뉴스는 3건이며, 이 중 2건은 AI 뉴스 카드 분석이 완료됐습니다.'
         );
         expect(section).toHaveTextContent(
-            '종합 AI 결론이 아직 캐시되지 않았습니다. 분석 결과가 준비되면 강세, 중립, 약세 시나리오와 위험 요인이 이 영역에 표시됩니다.'
+            '종합 AI 결론이 아직 준비되지 않았습니다. 분석이 끝나면 강세, 중립, 약세 시나리오와 위험 요인이 이 영역에 표시됩니다.'
         );
     });
 
@@ -114,6 +114,6 @@ describe('OverallFactualFallback', () => {
         expect(section).toHaveTextContent(
             '최근 뉴스 데이터는 아직 준비되지 않았습니다. 뉴스 카드가 분석되면 종합 분석의 뉴스 축 상태도 함께 반영됩니다.'
         );
-        expect(section).not.toHaveTextContent('현재 서버가 확인한 최근 뉴스는');
+        expect(section).not.toHaveTextContent('현재 확인된 최근 뉴스는');
     });
 });

@@ -8,7 +8,7 @@ confidence_weight: 0.55
 gating:
   tier: gated
   signal_kind: event
-  triggers: [golden_cross, death_cross]
+  triggers: [short_ma_bullish_cross, short_ma_bearish_cross, golden_cross, death_cross]
 token_cost: 1643
 digest_hash: "46990249"
 digest_text_hash: "3b244ebb"

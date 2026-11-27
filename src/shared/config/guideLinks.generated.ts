@@ -208,6 +208,8 @@ export const GUIDE_PATH_BY_TRIGGER: Readonly<Record<string, string>> = {
     bollinger_upper_breakout: '/guide/strategies/breakout',
     keltner_upper_breakout: '/guide/strategies/breakout',
     keltner_lower_breakout: '/guide/strategies/breakout',
+    short_ma_bullish_cross: '/guide/strategies/ma-cycle',
+    short_ma_bearish_cross: '/guide/strategies/ma-cycle',
     golden_cross: '/guide/strategies/ma-cycle',
     death_cross: '/guide/strategies/ma-cycle',
     gap_up: '/guide/strategies/gap-analysis',

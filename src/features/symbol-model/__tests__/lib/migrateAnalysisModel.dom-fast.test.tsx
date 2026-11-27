@@ -158,6 +158,9 @@ describe('migrateRetiredAnalysisModel', () => {
         ['claude-sonnet-5', 'claude-sonnet-5-5'],
         ['gpt-5.6-luna', 'gpt-6-luna'],
         ['gpt-5.6-terra', 'gpt-6-sol'],
+        ['claude-fable-5-1', 'claude-fable-5-2'],
+        ['gpt-6.1-sol', 'gpt-6.2-sol'],
+        ['gpt-6-astra', 'gpt-6.2-astra'],
     ])('moves the retired %s to its successor %s', (retired, successor) => {
         localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, retired);
 

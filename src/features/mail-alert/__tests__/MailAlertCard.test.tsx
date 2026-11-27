@@ -41,7 +41,7 @@ describe('MailAlertCard', () => {
 
         expect(
             screen.getByText(
-                '극단적 공포나 극단적 탐욕에 들어서면 그날 점수가 확정된 다음 한국 시간 아침에 메일로 알려 드려요'
+                '극단적 공포나 극단적 탐욕에 들어서면 점수가 확정된 뒤 한국 시간 아침에 메일로 알려 드려요'
             )
         ).toBeInTheDocument();
         expect(
@@ -54,7 +54,7 @@ describe('MailAlertCard', () => {
 
         expect(
             screen.getByText(
-                '한국 공포 탐욕 지수가 극단적 공포나 극단적 탐욕에 들어선 날 아침에 메일로 알려 드려요'
+                '한국 공포 탐욕 지수가 극단적 공포나 극단적 탐욕에 들어서면 점수가 확정된 뒤 한국 시간 아침에 메일로 알려 드려요'
             )
         ).toBeInTheDocument();
     });

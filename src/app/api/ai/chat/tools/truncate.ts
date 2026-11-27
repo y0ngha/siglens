@@ -2,22 +2,44 @@
 export const TOOL_RESULT_MAX_CHARS = 4_000;
 
 /**
- * `get_bars_indicators`' own ceiling — its `latest` block now covers ~16
- * indicator groups plus `candlePatterns` (2026-09-14), pushing even the
+ * `get_news` ceiling. An 8-10 item request with Korean summaries (~400 chars each) exceeds the 4,000 default, which
+ * would turn the result into the front-cut `{ truncated, preview }` envelope and lose the older items. The tool fits
+ * itself against this cap minus `NEWS_ANNOTATE_HEADROOM_CHARS` (shorter summaries, then fewer items, reported as
+ * `itemsTrimmed`), so the registry never sees an overflow. 8,000 holds ~10 items with summaries plus the
+ * `priceMoves` block (~1,500 chars).
+ */
+export const NEWS_RESULT_MAX_CHARS = 8_000;
+
+/** Chars `get_news` reserves under its cap for what `annotate` may prepend (`symbolCorrectedFrom`), same idea as `BARS_ANNOTATE_HEADROOM_CHARS`. */
+export const NEWS_ANNOTATE_HEADROOM_CHARS = 100;
+
+/**
+ * `get_bars_indicators`' own ceiling. Its `latest` block (~16 indicator groups,
+ * `candlePatterns`, `oscillatorZones` + `oscillatorSummary`) pushes even the
  * default-sized request past `TOOL_RESULT_MAX_CHARS` before `fitBarsToBudget`
- * gets to trim a single bar. `tools/index.ts`'s `ceilingFor` must route this
- * tool to this constant — otherwise the registry's generic
+ * gets to trim a single bar. `chatTools.ts`'s `ceilingFor` must route this tool
+ * to this constant — otherwise the registry's generic
  * `truncateToolResult(..., TOOL_RESULT_MAX_CHARS)` re-cuts the already-fit
  * result down to 4,000 and collapses it into a front-cut preview blob.
  *
- * Raised 6,000 → 6,500 (2026-10-24): after `derived.closeStreak` and the six
- * `*Close` fields on every `RangeWindow`, the default 30-bar 1Day request
- * measures 5,835 chars untrimmed and 5,892 in the live regular-session shape
- * (`lastBarInProgress` + `lastCompletedClose`) — only ~108 under 6,000, so a few
- * MA crosses would have tipped the DEFAULT request into `fitBarsToBudget`
- * trimming bars. 6,500 restores ~600 chars of headroom for that live shape.
+ * Basis for 7,000: the default 30-bar 1Day request in the live regular-session
+ * shape (`lastBarInProgress` + `lastCompletedClose`) measures ~6,155 chars with
+ * a typical oscillator tally and ~6,330 with the longest one ("… not
+ * available: CCI" tail, four "just below its overbought line" suffixes). The
+ * tool fits against this cap minus `BARS_ANNOTATE_HEADROOM_CHARS`, i.e. 6,900,
+ * so the worst case keeps ~570 chars — room for ~16 MA crosses (~35 chars each)
+ * before `fitBarsToBudget` starts trimming bars. Re-measure by serializing the
+ * "기본 요청(30봉, 1Day)" result in `getBarsIndicators.test.ts` whenever a
+ * top-level or `derived` field is added; see `DEFAULT_BARS` for the fixture.
  */
-export const BARS_RESULT_MAX_CHARS = 6_500;
+export const BARS_RESULT_MAX_CHARS = 7_000;
+
+/**
+ * Chars the executor reserves under a `get_bars_indicators` cap for what `annotate` prepends after the tool has fit
+ * itself (`symbolCorrectedFrom: "<symbol>"`, ~40 chars for a single symbol). The tool fits against
+ * `cap - this`, so the annotated result still ends under `cap` and `truncateToolResult` never sees an overflow.
+ */
+export const BARS_ANNOTATE_HEADROOM_CHARS = 100;
 
 /**
  * `get_market_overview` ceiling. Measured on a representative worst-case
@@ -27,12 +49,12 @@ export const BARS_RESULT_MAX_CHARS = 6_500;
  * envelope, not a rescue for an unbounded list. `get_economy` has its own
  * ceiling (`ECONOMY_RESULT_MAX_CHARS`).
  *
- * `get_fundamentals` and `get_congress_trades` fit comfortably under the
- * shared `TOOL_RESULT_MAX_CHARS` default and do not need their own ceiling:
- * `get_fundamentals` measured ~3,385 chars (2026-10-24) and ~3,689 after the Yahoo analyst extras
- * (2026-11-15: `consensusAnalysts`/`consensusSource`, `priceTargetSource`/`priceTargetYahoo`,
+ * `get_congress_trades` fits comfortably under the shared `TOOL_RESULT_MAX_CHARS` default (~2,500) and needs no
+ * ceiling of its own. `get_fundamentals` has `FUNDAMENTALS_RESULT_MAX_CHARS` (below): it measures ~3,385 chars (2026-10-24),
+ * ~3,689 with the Yahoo analyst extras (`consensusAnalysts`/`consensusSource`, `priceTargetSource`/`priceTargetYahoo`,
  * `targetSourcesDisagree`, and a confirmed `earningsSession` + `earningsCallAt`; `earningsDateAlt` never
- * co-occurs with the session, so the worst case is the session one) — still under 4,000, so no own ceiling.
+ * co-occurs with the session, so the worst case is the session one) and ~4,016 with `earningsReactionTally`
+ * (~+300 chars with mixed-sign 4-decimal moves), past the 4,000 default.
  * The 3,385 figure covers with every section filled plus 5
  * `recentQuarters` rows (each with `form`, `revenueYoYPct` and a full `sec`
  * as-filed block), 8 `earningsReactions`, the ~170-char `dividends` block
@@ -43,14 +65,27 @@ export const BARS_RESULT_MAX_CHARS = 6_500;
  * quarter, worst case with 12-digit revenue and a 22-char accession — and
  * +~115 for `annualReported`, which is KR-only while `sec` is US-only, so a real
  * result carries at most one of the two; the test only asserts
- * `< TOOL_RESULT_MAX_CHARS`),
- * `get_congress_trades` ~2,500.
+ * `< FUNDAMENTALS_RESULT_MAX_CHARS` with a margin).
  *
  * 한국 종목의 `valuation`은 DART 기준 블록(`epsTtm`·`bps`·`basis`·`nullReason`, 최대 ≈660자 — `basis.note`가 ≈350자)을
- * 더 싣는다. 모든 섹션 + 5분기 + 8 반응 + 확정 배당을 채운 한국 최악 케이스가 3,541자(2026-11-22)라 4,000 안이다
- * (`getFundamentals.test.ts`가 `< TOOL_RESULT_MAX_CHARS`로 고정한다).
+ * 더 싣는다. 모든 섹션 + 5분기 + 8 반응(+ `earningsReactionTally`) + 확정 배당에 `peUntrusted` note까지 붙은 한국 최악
+ * 케이스가 4,053자(2026-11-27)다 (`getFundamentals.test.ts`가 실측값 기준 `< 4,150`으로 고정한다).
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
+
+/**
+ * `get_fundamentals` ceiling. The worst-case fixture (every section filled, 5 quarters with `sec` blocks, 8 reactions
+ * and the `earningsReactionTally` block, ~300 chars of it) measures 4,016 chars with mixed-sign 4-decimal moves —
+ * over the 4,000 default, under which the whole result becomes a front-cut preview blob.
+ *
+ * Result `notes` (`FUNDAMENTALS_RESULT_NOTES`, 185-353 chars each, attached only where a field is null) sit on top
+ * of that. On the fully loaded fixture (8 quarters with `sec` blocks, 8 reactions, Yahoo extras;
+ * `getFundamentals.test.ts` "notes") the two notes a US filer carries most often (`earningsSessionUnknown`,
+ * `secFieldMissing`: every five-quarter window holds a fiscal Q4 row without EPS) measure 4,755, and all five US
+ * notes at once 5,166. The largest result the tool can make (every block present, a latest ex-date with no trailing
+ * figures, no P/E, no memberships, plus both common notes) measures 5,399 (2026-11-21). 6,500 keeps ~1,100 above that.
+ */
+export const FUNDAMENTALS_RESULT_MAX_CHARS = 6_500;
 
 /**
  * `get_economy` ceiling. Until 2026-10 it shared `AGGREGATE_RESULT_MAX_CHARS`
@@ -150,12 +185,34 @@ export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
 export const SWING_HISTORY_RESULT_MAX_CHARS = 11_000;
 
 /**
+ * `get_price_stats` ceiling. The result grows with subjects (3), date lookups (5 each), notes (a closed set in core, each
+ * naming its subject, so up to ~12 per subject) and correlation pairs (3 pairs of daily and weekly legs). The worst case
+ * pinned in `getPriceStats.test.ts` (three subjects of different markets with 36 years of history, five date lookups
+ * each hitting every status, an unusable row, an in-progress session, a window argument overridden twice and three
+ * cross-market pairs) measures 9,389 chars (2026-11-27): the figures are ~5,000 and the per-subject notes
+ * ~3,600. A typical single-subject call is ~800. 11,000 leaves ~1,600 for a longer name or a note core adds; the shared
+ * 4,000 default would cut the notes and correlation off the end and collapse the result into a front-cut preview blob.
+ */
+export const PRICE_STATS_RESULT_MAX_CHARS = 11_000;
+
+/**
  * `get_analyst_views` ceiling. Up to 15 firm-level actions plus up to four estimate periods: measured 2026-11-16
  * on a heavier-than-real case (`getAnalystViews.test.ts`: long firm names and grades, four periods with 5-digit
  * EPS and 16-digit revenue) at 4,721 chars. 5,500 leaves ~780; the shared 4,000 default would cut the estimates
  * block off the end.
  */
 export const ANALYST_VIEWS_RESULT_MAX_CHARS = 5_500;
+
+/**
+ * `web_search` ceiling (counted on the SERIALIZED length). Five results carry a title (clipped to 400 chars), a
+ * snippet (400), a URL (at most 500, longer ones are dropped) and an age; the top two also carry an `excerpt`
+ * of up to 1,800 chars and `publishedAt`. Measured 2026-11-22 on a heavier-than-real worst case
+ * (`webSearch.test.ts`: every text field full to its clip with a `"` and a newline every 12 characters, so
+ * JSON escaping adds ~15%, 480-char URLs, `cached: true`): 11,918 chars. 13,000 leaves ~9% above it; the shared
+ * 4,000 default would cut the second excerpt off into a front-cut preview blob. A realistic result with two
+ * ~1,800-char excerpts is ~6,000-7,000.
+ */
+export const WEB_SEARCH_RESULT_MAX_CHARS = 13_000;
 
 /**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that

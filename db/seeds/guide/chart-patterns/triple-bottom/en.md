@@ -28,11 +28,11 @@ The pattern completes only when a close finishes above the neckline. It counts a
 - Volume rises as price clears the neckline.
 - [RSI](/guide/indicators/rsi) makes progressively higher lows across the three lows.
 
-In the tabulation of bull-market cases by Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in books, 74% of triple bottoms reached their target.
+In the tabulation of bull-market cases by Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 74% of triple bottoms reached their target.
 
 ## How SIGLENS detects it
 
-SIGLENS checks whether the three most recent clearly turned lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) sit at a similar price. Once a swing is set, it does not change as more bars arrive. The conditions:
+SIGLENS checks whether the three most recent clear lows (swing lows: turning points from which price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average size of recent bars' moves) sit at a similar price. Once a swing is set, it does not change as more bars arrive. The conditions:
 
 - The gap between the highest and lowest of the three lows must be within the smaller of 1 times ATR and 3% of the average price.
 - Neighboring lows must be at least 10 bars apart, so the whole pattern spans at least 21 bars.

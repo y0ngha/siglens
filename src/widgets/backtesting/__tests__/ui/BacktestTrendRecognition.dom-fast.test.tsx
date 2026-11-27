@@ -34,7 +34,7 @@ describe('BacktestTrendRecognition', () => {
         render(<BacktestTrendRecognition stats={STATS} />);
         expect(screen.getByText('89.2%')).toBeInTheDocument();
         expect(
-            screen.getByText('추세 파악 일치율 (상승·하락 판단 2284회)')
+            screen.getByText('추세 파악 일치율 (상승 또는 하락 판단 2284회)')
         ).toBeInTheDocument();
     });
 

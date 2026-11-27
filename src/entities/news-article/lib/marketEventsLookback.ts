@@ -1,4 +1,8 @@
-import type { MarketSessionSpec, Timeframe } from '@y0ngha/siglens-core';
+import {
+    isDailyOrLonger,
+    type MarketSessionSpec,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import {
     HOURS_PER_DAY,
@@ -37,16 +41,20 @@ const LOOKBACK_DAYS: Record<Timeframe, number> = {
     '1Hour': 5,
     '4Hour': 14,
     '1Day': 60,
+    '1Week': 180,
 };
 
 /**
- * 버킷 창 길이(ms) — core `ANALYSIS_CACHE_TTL`의 사본(1Day는 세션 경계를 쓰므로 없다).
+ * 버킷 창 길이(ms) — core `ANALYSIS_CACHE_TTL`의 사본(1Day·1Week는 세션 경계를 쓰므로 없다).
  *
  * core는 이 값을 공개 export하지 않는다(`@internal`, deep import 금지). core 값이
  * 바뀌면 여기도 함께 바꿔야 한다 — 창이 core보다 짧으면 같은 캐시 창 안에서 이벤트
  * 집합이 바뀌어 키가 갈린다.
  */
-const ANALYSIS_CACHE_BUCKET_MS: Record<Exclude<Timeframe, '1Day'>, number> = {
+const ANALYSIS_CACHE_BUCKET_MS: Record<
+    Exclude<Timeframe, '1Day' | '1Week'>,
+    number
+> = {
     '5Min': 5 * MS_PER_MINUTE,
     '15Min': 15 * MS_PER_MINUTE,
     '30Min': 30 * MS_PER_MINUTE,
@@ -73,7 +81,7 @@ const ANALYSIS_CACHE_SETTLE_BUFFER_MINUTES = 30;
 
 /** core `priorAnalysisWindowStartMs`와 같은 계산 — 모든 버킷 길이가 하루를 나눈다. */
 function bucketWindowStart(
-    timeframe: Exclude<Timeframe, '1Day'>,
+    timeframe: Exclude<Timeframe, '1Day' | '1Week'>,
     now: Date
 ): Date {
     const windowMs = ANALYSIS_CACHE_BUCKET_MS[timeframe];
@@ -112,7 +120,7 @@ function sessionWindowStart(session: MarketSessionSpec, now: Date): Date {
  * `closeMinuteFor` 휴장일 건너뜀), always-open(크립토)은 다음 UTC 자정
  * (`secondsUntilNextUtcMidnight`).
  *
- * - 1Day: TTL 상한이 하루라 실질 수명을 세션 경계가 정한다 → 직전 세션 경계.
+ * - 1Day·1Week: TTL 상한이 하루라(core `ANALYSIS_CACHE_TTL['1Week']`도 하루) 실질 수명을 세션 경계가 정한다 → 직전 세션 경계.
  * - 그 밖(5분~4시간): TTL 상한이 먼저 끝난다 → core prior-analysis 창과 같은 TTL 버킷.
  *   새 타임프레임은 `ANALYSIS_CACHE_BUCKET_MS`에 빠지면 컴파일이 막는다.
  */
@@ -121,7 +129,7 @@ function cacheWindowStart(
     session: MarketSessionSpec,
     now: Date
 ): Date {
-    return timeframe === '1Day'
+    return isDailyOrLonger(timeframe)
         ? sessionWindowStart(session, now)
         : bucketWindowStart(timeframe, now);
 }

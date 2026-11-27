@@ -87,11 +87,13 @@ export async function MarketContent({
 
     const { summary, sectorData } = await loadMarketSignals(scope, dateHour);
     // peek는 읽기 전용 — 캐시 miss면 null이고 클라가 submit한다. 실패도 null로 흡수하되
-    // 조용히 삼키지 않고 로그를 남긴다(SERVER.md#SA-4).
+    // 조용히 삼키지 않고 로그를 남긴다(SERVER.md#SA-4). 단 `peekBriefingStatic`은 `cacheNonNull`이
+    // 읽기 실패를 이미 null로 삼키므로 이 catch는 방어용 no-op이다. 브리핑 실패는 클라가 직접
+    // 받는 소프트 실패라 알람 필터에 넣지 않는다(시장 태그는 로그 추적용으로만 둔다).
     const peekSeed = await peekBriefingStatic(summary, dateHour, scope).catch(
         (e: unknown) => {
             console.error(
-                '[MarketContent] peekBriefingStatic failed:',
+                `[MarketContent:${scope.id}] peekBriefingStatic failed:`,
                 redactDbErrorForLog(e)
             );
             return null;

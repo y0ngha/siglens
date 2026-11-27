@@ -8,6 +8,7 @@ import {
 } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+import { defined } from '@/shared/test-utils/defined';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import ko from '../../../../messages/ko.json';
 import { BenchmarkItemExplorer } from '../BenchmarkItemExplorer';
@@ -30,14 +31,14 @@ function detailResponse(): Response {
     return new Response(JSON.stringify(BENCHMARK_DETAIL_FIXTURE));
 }
 
-function renderExplorer() {
+function renderExplorer(items = BENCHMARK_FIXTURE.items) {
     const { wrapper: QueryWrapper } = createQueryClientWrapper();
     return renderWithIntl(
         <QueryWrapper>
             <BenchmarkItemExplorer
                 round={BENCHMARK_FIXTURE.round}
                 targets={BENCHMARK_FIXTURE.targets}
-                items={BENCHMARK_FIXTURE.items}
+                items={items}
                 levelNames={LEVEL_NAMES}
             />
         </QueryWrapper>
@@ -240,6 +241,22 @@ describe('BenchmarkItemExplorer', () => {
             expect(
                 screen.getByText(BENCHMARK_FIXTURE.items[3]!.question)
             ).toBeTruthy();
+        });
+
+        it('shows the display name, not the raw id, of a named pool in the row and the filter', () => {
+            const [head, ...rest] = BENCHMARK_FIXTURE.items;
+            const first = defined(head, 'first fixture item');
+            renderExplorer([{ ...first, pool: 'primary' }, ...rest]);
+            const row = defined(
+                screen.getByText(first.question).closest('li'),
+                'item row'
+            );
+            expect(within(row).getByText(e.pool.primary)).toBeTruthy();
+            expect(within(row).queryByText('primary')).toBeNull();
+            const filter = screen.getByLabelText(e.filter.pool);
+            expect(
+                within(filter).getByRole('option', { name: e.pool.primary })
+            ).toHaveProperty('value', 'primary');
         });
 
         it('applies filters that are already in the URL', () => {

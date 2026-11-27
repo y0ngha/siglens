@@ -1,10 +1,11 @@
+import { reportSymbolLabel } from '@/entities/email-report/lib/reportSymbolLabel';
 import { COLORS, FONT } from '@/entities/email-report/templates/emailTheme';
 import {
     formatDate,
     formatSignedPercent,
 } from '@/entities/email-report/templates/emailFormat';
 import type { EmailMessage } from '@/shared/email/types';
-import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
 import {
@@ -43,10 +44,24 @@ interface Block {
     readonly footnote: string | null;
 }
 
-function signalTitle(item: MailAlertSignalItem, locale: Locale): string {
-    return item.name === null || locale !== DEFAULT_LOCALE
-        ? item.symbol
-        : `${item.name} (${item.symbol})`;
+/**
+ * 종목 줄의 제목. 메일 리포트와 같은 `reportSymbolLabel`로 고른다: ko는 한글명, 다른 로케일은 영문 법인명,
+ * 보이는 코드는 거래소 접미사를 뗀 표기(`005930`)다. 링크는 원문 심볼로 만든다(`signalRow`).
+ *
+ * 이름 조회가 없을 때만 신호 기록이 남긴 한글명(`item.name`)을 ko에서 쓴다 — 다른 로케일에 한글을 섞지 않는다.
+ */
+function signalTitle(
+    item: MailAlertSignalItem,
+    input: BuildMailAlertEmailInput
+): string {
+    const { locale } = input;
+    const looked = input.symbolNames.get(item.symbol) ?? null;
+    const names =
+        looked ??
+        (item.name === null || locale !== DEFAULT_LOCALE
+            ? null
+            : { name: '', koreanName: item.name });
+    return reportSymbolLabel(item.symbol, names, locale).text;
 }
 
 function signalRow(
@@ -62,7 +77,7 @@ function signalRow(
             ? []
             : [t('change', { v0: formatSignedPercent(item.changePercent) })];
     return {
-        title: signalTitle(item, locale),
+        title: signalTitle(item, input),
         url: buildMailAlertSymbolUrl(siteUrl, locale, item.symbol),
         // 라벨 사전에 없는 유형은 알림 대상(허브 유형)에서는 일어나지 않는다 — 카탈로그 테스트가 고정한다.
         detail: [
@@ -196,7 +211,7 @@ function blockText(block: Block): string[] {
  */
 export function buildMailAlertEmail(
     input: BuildMailAlertEmailInput
-): EmailMessage {
+): EmailMessage & { idempotencyKey: string } {
     const { t, locale, plan } = input;
     const brand = brandName(locale);
     const blocks = blocksOf(input);
@@ -235,7 +250,8 @@ export function buildMailAlertEmail(
         subject: t('subject', {
             v0: brand,
             v1: formatDate(input.alertDate, locale),
-            v2: String(plan.itemKeys.length),
+            // 숫자 그대로 넘긴다 — en은 ICU 복수형(`one`/`other`)으로 고른다.
+            v2: plan.itemKeys.length,
         }),
         html,
         text,

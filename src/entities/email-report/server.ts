@@ -9,6 +9,7 @@ import { buildReportEmail } from './templates/reportEmail';
 import type {
     ReportEmailTranslator,
     SignalLabelResolver,
+    SkillLabelResolver,
 } from './templates/reportEmailTypes';
 
 /**
@@ -54,15 +55,30 @@ export async function getReportSignalLabelResolver(
 }
 
 /**
+ * 스킬 이름 → 수신자 로케일 표시명. 사이트 차트의 `useSkillLabel`과 같은 사전(`shared.skillName`)·같은 규칙이라
+ * 범례의 패턴 이름이 사이트와 같다. 사전에 없는 이름은 원문 그대로다.
+ */
+export async function getReportSkillLabelResolver(
+    locale: Locale
+): Promise<SkillLabelResolver> {
+    const tSkill = await getTranslations({
+        locale,
+        namespace: 'shared.skillName',
+    });
+    return name => (tSkill.has(name) ? tSkill(name) : name);
+}
+
+/**
  * 비회원용 샘플 페이지가 보여 주는 메일 한 통. 발송 cron과 같은 번역자·라벨 리졸버·
  * `buildReportEmail`을 거치고, 데이터만 고정 샘플이다 — 시장 데이터·DB 조회가 없다.
  */
 export async function buildSampleReportEmail(
     locale: Locale
 ): Promise<EmailMessage> {
-    const [t, signalLabel, sampleT] = await Promise.all([
+    const [t, signalLabel, skillLabel, sampleT] = await Promise.all([
         getReportEmailTranslator(locale),
         getReportSignalLabelResolver(locale),
+        getReportSkillLabelResolver(locale),
         getTranslations({
             locale,
             namespace: 'entities.email-report.sample',
@@ -73,6 +89,7 @@ export async function buildSampleReportEmail(
             locale,
             t,
             signalLabel,
+            skillLabel,
             sampleText: key => sampleT(key),
             siteUrl: SITE_URL,
         })

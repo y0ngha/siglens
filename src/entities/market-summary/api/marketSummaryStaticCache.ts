@@ -12,6 +12,8 @@ import {
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
+import { hasAnyQuote } from '../lib/marketSummaryCompleteness';
+import { hasMissingIndexQuote } from '../lib/shouldCacheMarketSummary';
 
 /**
  * `getMarketSummaryStatic`의 시장별 캐시 태그. 한국 시세를 무효화하려고 미국까지
@@ -19,6 +21,10 @@ import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
  */
 export function marketSummaryCacheTag(scope: DashboardScope): string {
     return `market:summary:${scope.id}`;
+}
+
+function hasSummaryRows(summary: MarketSummaryData): boolean {
+    return summary.indices.length + summary.sectors.length > 0;
 }
 
 /**
@@ -46,6 +52,30 @@ export function getMarketSummaryStatic(
             // 같은 0-가격을 읽는다. 호출부(loadMarketSignals)가 catch해 degrade한다.
             if (scopeUsesFmp(scope.id))
                 assertFmpAvailableAtBuild('market-summary-static');
+            // yahoo(KRX)는 429·장애를 provider가 null로 접고 core가 0-가격 행으로 바꾼다.
+            // 모든 quote가 0이면 종목 없음이 아니라 provider 장애다(큐레이션 지수·ETF가 전부
+            // 없을 수는 없다) — 던져서 0원 번들이 Data Cache(1h)에 굳지 않게 하고, 호출부
+            // (loadMarketSignals)가 catch해 degrade한다. 로그의 시장 태그가 알람 필터 문구다.
+            if (
+                !scopeUsesFmp(scope.id) &&
+                hasSummaryRows(summary) &&
+                !hasAnyQuote(summary)
+            )
+                throw new Error(
+                    `[market:${scope.id}] summary quotes all missing (provider outage)`
+                );
+            // 일부만 0일 때는 지수 결측만 장애 신호로 본다(섹터 ETF 결측은 얇은 거래의 일상).
+            // 이 콜백은 unstable_cache 미스에서만 돌아 **실제 provider 조회 1회당 한 줄**이다 —
+            // 렌더마다 찍으면 캐시된 번들 하나가 ISR 재생성·로케일 수만큼 알람 점수를 쌓는다.
+            // 지수가 0인 원인이 장애인지 종목 없음인지는 여기서 가를 수 없어 문구를 단정하지 않는다.
+            if (!scopeUsesFmp(scope.id) && hasMissingIndexQuote(summary))
+                console.error(
+                    `[market:${scope.id}] summary index quotes missing:`,
+                    summary.indices
+                        .filter(q => q.price === 0)
+                        .map(q => q.symbol)
+                        .join(',')
+                );
             return summary;
         },
         [

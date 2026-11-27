@@ -4,7 +4,9 @@ import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
     barPeriodStartSeconds,
+    BARS_RESULT_NOTES,
     calculateIndicators,
+    classifyOscillatorZones,
     fearGreedInputs,
     calculateMA,
     classifyMaStack,
@@ -38,6 +40,8 @@ import {
     type MarketSessionSpec,
     type MaStackDirection,
     type MACDResult,
+    type OscillatorKey,
+    type OscillatorZone,
     type MultiCandlePattern,
     type PullbackReading,
     type PullbackSnapshot,
@@ -80,6 +84,7 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { utcMidnightSeconds } from '@/shared/api/market/barsWindow';
 import { pctVs, ratioPct } from './percent';
+import { computeRangeWindow, type RangeWindow } from './rangeWindow';
 import {
     resolveAssetInfoOrNull,
     resolvedInstrumentFields,
@@ -88,24 +93,33 @@ import { BARS_RESULT_MAX_CHARS } from './truncate';
 import { chartBlockFrom } from './chartBlock';
 
 /**
- * Restored 20 → 30 (2026-09-14): this tool now fits against its own
- * `BARS_RESULT_MAX_CHARS` (6,500, not the shared `TOOL_RESULT_MAX_CHARS`
- * 4,000) — `fitBarsToBudget`'s trim loop already guarantees that ceiling
- * for any `bars` the model requests, so the default no longer needs to
- * shrink just to keep the common (unbudgeted) case comfortably under 4,000.
+ * Default bar count. This tool fits against its own bars cap
+ * (`ToolRuntime.barsResultMaxChars`: 7,000 for the agent `BARS_RESULT_MAX_CHARS`
+ * and the public API `PUBLIC_API_RESULT_CAPS.bars`, not the shared
+ * `TOOL_RESULT_MAX_CHARS` 4,000), and `fitBarsToBudget`'s trim loop guarantees
+ * that ceiling for any `bars` the model requests, so the default does not have
+ * to shrink to keep the common case under 4,000.
  *
- * Measured 2026-10-24 after `derived` gained `closeStreak` and every
- * `RangeWindow` (`range`, `ranges` 20/60 bars) gained the six `*Close` fields:
- * the default 30-bar 1Day request on a production-sized series (500 bars,
- * real indicators, fear & greed, three signals, no MA cross) serializes to
- * ~5,835 chars, untrimmed. During the regular session `lastBarInProgress` +
- * `lastCompletedClose` bring it to ~5,892 — ~608 chars under
- * `BARS_RESULT_MAX_CHARS` (6,500, raised from 6,000 on 2026-10-24 when the
- * headroom was down to ~108), and the "기본 요청(30봉, 1Day)" test pins that
- * larger live-session shape. Re-measure (serialize that test's result, live
- * and non-live) when a top-level or `derived` field is added. Each listed
- * cross adds ~35 chars, so ~17 crosses is what the remaining headroom absorbs
- * before `fitBarsToBudget` starts trimming bars.
+ * Headroom at 30 bars (1Day, production-sized series: 500 bars, real
+ * indicators, fear & greed, three signals, no MA cross, in the live
+ * regular-session shape `lastBarInProgress` + `lastCompletedClose` that the
+ * "기본 요청(30봉, 1Day)" test pins): ~6,155 chars with a typical oscillator
+ * tally, ~6,330 with the longest. The tool fits against the calling executor's
+ * cap minus `BARS_ANNOTATE_HEADROOM_CHARS` (100) = 6,900, leaving ~745 (~570
+ * with the longest tally). Each listed cross adds ~35 chars, so ~16 crosses are
+ * what the worst case absorbs before `fitBarsToBudget` starts trimming bars.
+ *
+ * Result `notes` (core `BARS_RESULT_NOTES`) appear only where a field is null.
+ * Measured at the default 30 bars on production-shaped series (2026-11-21):
+ * 1Day with every field present 5,938 (no `notes` key); 1Day with 451 bars
+ * (`maCrossShortHistory`, 260 chars) 6,230; 4Hour with `dailyOnlyFields`
+ * (~470 chars, the longest note) 6,197; 1Week 5,463. The three 1Day notes
+ * (245 + 260 + 235) only meet on a series so short that the rest of the
+ * payload is mostly absent. The notes sit inside `fitBarsToBudget`'s builder,
+ * so a long request trims bars rather than the note.
+ *
+ * Re-measure by serializing that test's result when a top-level or `derived`
+ * field is added.
  */
 const DEFAULT_BARS = 30;
 /**
@@ -139,7 +153,8 @@ interface BarPoint {
  */
 function fitBarsToBudget<T extends { bars: BarPoint[] }>(
     buildResult: (bars: BarPoint[], barsTrimmed: number) => T,
-    allBars: BarPoint[]
+    allBars: BarPoint[],
+    maxChars: number
 ): T {
     let bars = allBars;
     let barsTrimmed = 0;
@@ -150,7 +165,7 @@ function fitBarsToBudget<T extends { bars: BarPoint[] }>(
     const MAX_ITERATIONS = 30;
     for (let i = 0; i < MAX_ITERATIONS && bars.length > 1; i++) {
         const serialized = JSON.stringify(buildResult(bars, barsTrimmed));
-        const overflow = serialized.length - BARS_RESULT_MAX_CHARS;
+        const overflow = serialized.length - maxChars;
         if (overflow <= 0) break;
         const perBar = Math.max(1, Math.ceil(serialized.length / bars.length));
         const drop = Math.min(
@@ -192,6 +207,15 @@ interface LatestIndicatorsView {
      * while the chart tab called it neutral.
      */
     rsiZone: RsiZone | null;
+    /**
+     * Computed zone of RSI, stochastic %K, Williams %R, CCI and MFI (`null` for
+     * a reading that is not available), from one core `classifyOscillatorZones`
+     * call on the rounded values shown here. The prompt tells the model to
+     * quote these instead of calling an oversold/overbought state from RSI alone.
+     */
+    oscillatorZones: Record<OscillatorKey, OscillatorZone | null>;
+    /** One-line tally of `oscillatorZones` (counts and names); `null` when no oscillator reading is available. */
+    oscillatorSummary: string | null;
     macd: MACDResult | null;
     bollinger: BollingerResult | null;
     atr: number | null;
@@ -231,9 +255,23 @@ function latestIndicators(
     const supertrend = last(ind.supertrend);
     const parabolicSar = last(ind.parabolicSar);
     const rsi = last(ind.rsi);
+    const stochastic = lastPick(ind.stochastic, ['percentK', 'percentD']);
+    const cci = last(ind.cci);
+    const mfi = last(ind.mfi);
+    const williamsR = last(ind.williamsR);
+    // A missing reading is `null`, never 0 (0 is a real, neutral value).
+    const oscillators = classifyOscillatorZones({
+        rsi,
+        stochasticK: stochastic?.percentK ?? null,
+        williamsR,
+        cci,
+        mfi,
+    });
     return {
         rsi,
         rsiZone: rsi !== null && Number.isFinite(rsi) ? rsiZone(rsi) : null,
+        oscillatorZones: oscillators.zones,
+        oscillatorSummary: oscillators.summary,
         macd: last(ind.macd),
         bollinger: last(ind.bollinger),
         atr: last(ind.atr),
@@ -244,10 +282,10 @@ function latestIndicators(
             Object.entries(ind.ema).map(([p, s]) => [p, last(s)])
         ),
         dmi: lastPick(ind.dmi, ['adx', 'diPlus', 'diMinus']),
-        stochastic: lastPick(ind.stochastic, ['percentK', 'percentD']),
-        cci: last(ind.cci),
-        mfi: last(ind.mfi),
-        williamsR: last(ind.williamsR),
+        stochastic,
+        cci,
+        mfi,
+        williamsR,
         vwap: last(ind.vwap),
         ichimoku: lastPick(ind.ichimoku, [
             'tenkan',
@@ -671,37 +709,6 @@ function higherTimeframeView(
 }
 
 /**
- * High/low over a window, the bar each was set on, and the last close's
- * distance from each — shared shape for `range` (which also carries `bars`,
- * the window size actually used) and every entry of `ranges`.
- *
- * `highDate`/`lowDate` (dev-2026-10-22 A4): without them a "when was the
- * 52-week low" question had no answer once the low fell outside the returned
- * raw `bars`, and the model borrowed a fear & greed date instead. Same format
- * as the bar timestamps (`YYYY-MM-DD` on 1Day, ISO instant intraday); a tie
- * resolves to the MOST RECENT bar.
- *
- * `high`/`low` are INTRADAY extremes (the bars' high/low). The `*Close`
- * fields are the same window's CLOSING-price extremes ("종가 기준 최고가/최저가")
- * with the same date format, tie rule and distance-from-last-close semantics:
- * a "highest close in 52 weeks" question must read `highClose`, never `high`.
- */
-interface RangeWindow {
-    high: number | null;
-    highDate: string | null;
-    low: number | null;
-    lowDate: string | null;
-    fromHighPct: number | null;
-    fromLowPct: number | null;
-    highClose: number | null;
-    highCloseDate: string | null;
-    fromHighClosePct: number | null;
-    lowClose: number | null;
-    lowCloseDate: string | null;
-    fromLowClosePct: number | null;
-}
-
-/**
  * Consecutive-close streak ending at the last COMPLETED daily bar, so "며칠
  * 연속 하락" questions need no hand counting. `days` counts consecutive closes
  * moving in `direction` (closes 10,9,8 → down, 2; a single down day after an up
@@ -841,81 +848,6 @@ const RANGES_BARS_BACK: Record<keyof DerivedView['ranges'], number> = {
  */
 export const MA50_PERIOD = 50;
 
-/**
- * The bar holding the extreme of `value` over `window`. Only finite values
- * count; `beats` uses `>=`/`<=` so a LATER bar wins a tie (the date is the most
- * recent touch). One helper serves intraday high/low and the close extremes.
- */
-function extremeBar(
-    window: readonly Bar[],
-    value: (bar: Bar) => number,
-    beats: (candidate: number, best: number) => boolean
-): Bar | null {
-    return window.reduce<Bar | null>((best, b) => {
-        const v = value(b);
-        if (!Number.isFinite(v)) return best;
-        return best === null || beats(v, value(best)) ? b : best;
-    }, null);
-}
-
-/**
- * High/low over `window`, the bar each was set on, and the last close's
- * distance from each. Only finite highs/lows count — a single bad bar
- * (NaN/Infinity from an upstream data glitch) must not poison the whole
- * window's max/min. `>=`/`<=` let a later bar win a tie, so the date is the
- * most recent touch. Shared by `range` (the 252-bar-on-1Day /
- * all-loaded-intraday window) and `ranges` (fixed 20/60-bar windows) so this
- * filtering logic lives once.
- */
-function computeRangeWindow(
-    window: readonly Bar[],
-    lastClose: number | null,
-    timeframe: AgentBarsTimeframe
-): RangeWindow {
-    const highBar = extremeBar(
-        window,
-        b => b.high,
-        (a, best) => a >= best
-    );
-    const lowBar = extremeBar(
-        window,
-        b => b.low,
-        (a, best) => a <= best
-    );
-    const highCloseBar = extremeBar(
-        window,
-        b => b.close,
-        (a, best) => a >= best
-    );
-    const lowCloseBar = extremeBar(
-        window,
-        b => b.close,
-        (a, best) => a <= best
-    );
-    const high = highBar?.high ?? null;
-    const low = lowBar?.low ?? null;
-    const highClose = highCloseBar?.close ?? null;
-    const lowClose = lowCloseBar?.close ?? null;
-    return {
-        high,
-        highDate: highBar ? isoTimestamp(highBar.time, timeframe) : null,
-        low,
-        lowDate: lowBar ? isoTimestamp(lowBar.time, timeframe) : null,
-        fromHighPct: pctVs(lastClose, high),
-        fromLowPct: pctVs(lastClose, low),
-        highClose,
-        highCloseDate: highCloseBar
-            ? isoTimestamp(highCloseBar.time, timeframe)
-            : null,
-        fromHighClosePct: pctVs(lastClose, highClose),
-        lowClose,
-        lowCloseDate: lowCloseBar
-            ? isoTimestamp(lowCloseBar.time, timeframe)
-            : null,
-        fromLowClosePct: pctVs(lastClose, lowClose),
-    };
-}
-
 function directionOf(sign: number): CloseStreakView['direction'] {
     if (sign > 0) return 'up';
     return sign < 0 ? 'down' : 'flat';
@@ -982,10 +914,12 @@ function computeDerived(
         })
     ) as DerivedView['changePct'];
 
+    const formatDate = (unixSeconds: number): string =>
+        isoTimestamp(unixSeconds, timeframe);
     const rangeWindow =
         timeframe === '1Day' ? bars.slice(-RANGE_MAX_DAILY_BARS) : bars;
     const range = {
-        ...computeRangeWindow(rangeWindow, lastClose, timeframe),
+        ...computeRangeWindow(rangeWindow, lastClose, formatDate),
         bars: rangeWindow.length,
     };
 
@@ -993,7 +927,7 @@ function computeDerived(
         Object.entries(RANGES_BARS_BACK).map(([key, n]) => [
             key,
             bars.length >= n
-                ? computeRangeWindow(bars.slice(-n), lastClose, timeframe)
+                ? computeRangeWindow(bars.slice(-n), lastClose, formatDate)
                 : null,
         ])
     ) as DerivedView['ranges'];
@@ -1062,6 +996,41 @@ function computeDerived(
         maCross50_200: timeframe === '1Day' ? maCross50_200View(bars) : null,
         closeStreak: computeCloseStreak(bars, timeframe, lastBarInProgress),
     };
+}
+
+/**
+ * `notes` for the result: why a field is null HERE and what the model must do
+ * about it (`PUBLIC_API.md`, `runAgentTurn` action ⑩; the texts are core's
+ * `BARS_RESULT_NOTES`, attached verbatim). The descriptions no longer carry
+ * these null rules, so a missing note means the model never sees the rule.
+ *
+ * - Any timeframe but `1Day`: the daily-only fields are not computed, one note
+ *   naming the requested timeframe (weekly and monthly included). The three
+ *   notes below are never added next to it: on those timeframes the null is
+ *   expected, not a finding about the data.
+ * - `1Day`: one note per null field (`closeStreak`, `maCross50_200` when the
+ *   252-session scan is incomplete, `fearGreed`). The two scan and ranking
+ *   notes do not name a cause: a short history and a failed computation print
+ *   the same text, because the executor cannot tell them apart.
+ *
+ * Empty when nothing applies; the caller then omits the key (no empty array).
+ */
+function barsResultNotes(
+    timeframe: AgentBarsTimeframe,
+    derived: DerivedView,
+    fearGreed: SymbolFearGreedView | null
+): string[] {
+    if (timeframe !== '1Day')
+        return [BARS_RESULT_NOTES.dailyOnlyFields(timeframe)];
+    return [
+        ...(derived.closeStreak === null
+            ? [BARS_RESULT_NOTES.closeStreakUnavailable]
+            : []),
+        ...(derived.maCross50_200 === null
+            ? [BARS_RESULT_NOTES.maCrossShortHistory]
+            : []),
+        ...(fearGreed === null ? [BARS_RESULT_NOTES.fearGreedUnavailable] : []),
+    ];
 }
 
 /** One Flow/Trend group of {@link SymbolFearGreedView}. `label` is the name the symbol fear & greed page shows, in the reader's locale. */
@@ -1477,6 +1446,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
             ? (longDailyBars.findLast(hasUsablePrices)?.time ?? latestBar.time)
             : latestBar.time;
     const asOf = isoTimestamp(asOfTime, timeframe);
+    const notes = barsResultNotes(timeframe, derived, fearGreed);
 
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({
@@ -1496,10 +1466,14 @@ export const getBarsIndicatorsTool: ToolExecutor = async (
             latest,
             candlePatterns,
             fearGreed,
+            // Inside the builder so the fit counts it; absent (never `[]`) when no note applies.
+            ...(notes.length > 0 && { notes }),
             barsReturned: barsForOutput.length,
             barsTrimmed,
             bars: barsForOutput,
         }),
-        requestedBars
+        requestedBars,
+        // The calling executor's cap (agent or public API); see `ToolRuntime.barsResultMaxChars`.
+        runtime.barsResultMaxChars ?? BARS_RESULT_MAX_CHARS
     );
 };

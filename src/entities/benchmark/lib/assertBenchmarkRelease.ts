@@ -160,8 +160,9 @@ function checkTargets(raw: unknown): BaselineById {
  * 경쟁 모델은 검정한 비교라 Holm p값이 숫자여야 하고, 기준선은 검정하지 않으므로 null이어야 한다.
  * 같은 대상의 비교가 둘이면 헤드라인 개수가 부풀고, 경쟁 모델 비교가 빠지면 조용히 줄어든다 —
  * 주체를 뺀 비기준선 대상마다 정확히 하나, 기준선은 많아야 하나만 받는다.
+ *
+ * CONVENTIONS.md#CP-6 예외: 대조 대상별 중복을 만나는 즉시 던지는 단일 패스(O(N))다. 항목마다 Set을 복사하면 O(N²)다.
  */
-// CONVENTIONS.md#CP-6 예외: 대조 대상별 중복을 만나는 즉시 던지는 단일 패스(O(N))다. 항목마다 Set을 복사하면 O(N²)다.
 function checkHeadline(raw: unknown, baselineById: BaselineById): void {
     const seen = new Set<string>();
     arr(raw, 'headline').forEach((entry, i) => {

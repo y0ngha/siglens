@@ -1,19 +1,13 @@
 import path from 'node:path';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import {
-    EMAIL_VERIFICATION_PENDING_TTL_SECONDS,
-    EMAIL_VERIFICATION_RATE_LIMITS,
-    EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS,
-} from '@/entities/auth/lib/authUseCaseConstants';
 import { SIGNUP_VERIFICATION_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { LOCALES, type Locale } from '@/shared/i18n/locales';
 
 /**
- * 회원가입 이메일 인증(`email_verification`)이 개인정보처리방침(§2 수집, §4 보유, §6 위탁 Upstash)이 적은
- * 보관 시간과 코드가 같은지 본다. 인증 코드·인증 완료 표시 30분과 횟수 제한 기록의 가장 긴 창(24시간)이
- * 바뀌면 이 테스트가 깨져 방침을 함께 고치게 된다. **가장 높은 버전**의 원문을 읽는다.
+ * 회원가입 이메일 인증(`email_verification`)이 개인정보처리방침(§2 수집, §4 보유, §6 위탁 Upstash)이 고지한
+ * 항목·쿠키 이름과 코드가 같은지 본다. 보관 시간(인증 코드·완료 표시 30분, 횟수 제한 기록 24시간)은
+ * `privacyRetention.test.ts` 레지스트리가 코드 상수와 묶는다. **가장 높은 버전**의 원문을 읽는다.
  */
 const PRIVACY_DIR = path.resolve(process.cwd(), 'db/seeds/terms/privacy');
 const ORIGINAL_FILE = /^v(\d+)\.md$/;
@@ -49,30 +43,6 @@ function lineStartingWith(section: string, opening: string): string {
     return section.split('\n').find(line => line.startsWith(opening)) ?? '';
 }
 
-const PENDING_MINUTES =
-    EMAIL_VERIFICATION_PENDING_TTL_SECONDS / SECONDS_PER_MINUTE;
-const VERIFIED_MINUTES =
-    EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS / SECONDS_PER_MINUTE;
-const LONGEST_WINDOW_HOURS =
-    Math.max(
-        ...Object.values(EMAIL_VERIFICATION_RATE_LIMITS).map(
-            rule => rule.windowSeconds
-        )
-    ) / SECONDS_PER_HOUR;
-
-const MINUTES: Record<Locale, (n: number) => string> = {
-    ko: n => `${n}분`,
-    en: n => `${n} minutes`,
-    ja: n => `${n}分間`,
-    zh: n => `${n}分钟`,
-};
-const HOURS: Record<Locale, (n: number) => string> = {
-    ko: n => `${n}시간`,
-    en: n => `${n} hours`,
-    ja: n => `${n}時間`,
-    zh: n => `${n}小时`,
-};
-
 interface LocalePhrases {
     readonly sec2Opening: string;
     readonly sec4Opening: string;
@@ -86,7 +56,8 @@ const PHRASES: Record<Locale, LocalePhrases> = {
     ko: {
         sec2Opening: '- 회원가입을 위해 이메일 인증을 요청한 경우',
         sec4Opening: '- 회원가입 이메일 인증 정보',
-        upstashPurpose: '회원가입 이메일 인증 코드 보관과 요청·입력 횟수 제한',
+        upstashPurpose:
+            '회원가입 이메일 인증 코드 보관과 인증 메일 요청, 코드 입력 횟수 제한',
         sec7Opening: `- **${SIGNUP_VERIFICATION_COOKIE_NAME}**`,
     },
     en: {
@@ -100,7 +71,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec2Opening: '- 会員登録のためにメール認証をリクエストした場合',
         sec4Opening: '- 会員登録のメール認証情報',
         upstashPurpose:
-            '会員登録のメール認証コードの保管とリクエスト・入力回数の制限',
+            '会員登録のメール認証コードの保管と、認証メールのリクエストとコード入力の回数制限',
         sec7Opening: `- **${SIGNUP_VERIFICATION_COOKIE_NAME}**`,
     },
     zh: {
@@ -115,12 +86,6 @@ describe('회원가입 이메일 인증: 코드의 숫자가 방침의 고지와
     it('바인딩 쿠키 이름은 방침이 적은 리터럴과 같다', () => {
         expect(SIGNUP_VERIFICATION_COOKIE_NAME).toBe('siglens_signup_verify');
     });
-
-    it('인증 코드와 완료 표시는 30분, 횟수 제한 기록의 가장 긴 창은 24시간', () => {
-        expect(PENDING_MINUTES).toBe(30);
-        expect(VERIFIED_MINUTES).toBe(30);
-        expect(LONGEST_WINDOW_HOURS).toBe(24);
-    });
 });
 
 describe.each(LOCALES)(
@@ -128,94 +93,56 @@ describe.each(LOCALES)(
     locale => {
         const policy = readPolicy(locale);
         const phrases = PHRASES[locale];
-        const minutes = MINUTES[locale];
-        const hours = HOURS[locale];
 
-        it('§2 수집: 코드 보관 시간, 완료 표시 시간, 횟수 제한 기록 시간', () => {
+        it('§2 수집: 이메일 인증 항목이 있다', () => {
             const bullet = lineStartingWith(
                 sectionBetween(policy, 2, 3),
                 phrases.sec2Opening
             );
 
             expect(bullet).not.toBe('');
-            expect(bullet).toContain(minutes(PENDING_MINUTES));
-            expect(bullet).toContain(minutes(VERIFIED_MINUTES));
-            expect(bullet).toContain(hours(LONGEST_WINDOW_HOURS));
         });
 
-        it('§4 보유: 같은 숫자가 보유 기간 항목에도 있다', () => {
+        it('§4 보유: 보유 기간 항목이 있다', () => {
             const bullet = lineStartingWith(
                 sectionBetween(policy, 4, 5),
                 phrases.sec4Opening
             );
 
             expect(bullet).not.toBe('');
-            expect(bullet).toContain(minutes(PENDING_MINUTES));
-            expect(bullet).toContain(minutes(VERIFIED_MINUTES));
-            expect(bullet).toContain(hours(LONGEST_WINDOW_HOURS));
         });
 
-        it('§7 쿠키: 바인딩 쿠키 줄이 이름과 수명(분)을 적고 HttpOnly다', () => {
+        it('§7 쿠키: 바인딩 쿠키 줄이 이름을 적고 HttpOnly다', () => {
             const bullet = lineStartingWith(
                 sectionBetween(policy, 7, 8),
                 phrases.sec7Opening
             );
 
             expect(bullet).not.toBe('');
-            expect(bullet).toContain(minutes(VERIFIED_MINUTES));
             expect(bullet).toContain('HttpOnly');
         });
 
-        it('§4 보유: 바인딩 쿠키 이름과 수명(분)을 보유 기간 항목에도 적는다', () => {
+        it('§4 보유: 바인딩 쿠키 이름을 보유 기간 항목에도 적는다', () => {
             const bullet = sectionBetween(policy, 4, 5)
                 .split('\n')
                 .find(line => line.includes(SIGNUP_VERIFICATION_COOKIE_NAME));
 
             expect(bullet).toBeDefined();
-            expect(bullet).toContain(minutes(VERIFIED_MINUTES));
         });
 
-        it('§6 위탁: Upstash 항목이 목적과 숫자를 적는다', () => {
+        it('§6 위탁: Upstash 항목이 목적을 적는다', () => {
             const upstash = lineStartingWith(
                 sectionBetween(policy, 6, 7),
                 '- **Upstash'
             );
 
             expect(upstash).toContain(phrases.upstashPurpose);
-            expect(upstash).toContain(minutes(PENDING_MINUTES));
-            expect(upstash).toContain(hours(LONGEST_WINDOW_HOURS));
         });
     }
 );
 
 describe('탐지기 반증(공회전 방지)', () => {
     const ko = readPolicy('ko');
-
-    it('가장 긴 창 숫자를 바꾼 사본은 시간 검사를 통과하지 못한다', () => {
-        const tampered = lineStartingWith(
-            sectionBetween(ko, 2, 3),
-            PHRASES.ko.sec2Opening
-        ).replace(
-            HOURS.ko(LONGEST_WINDOW_HOURS),
-            HOURS.ko(LONGEST_WINDOW_HOURS + 1)
-        );
-
-        expect(tampered).not.toContain(HOURS.ko(LONGEST_WINDOW_HOURS));
-    });
-
-    it('바인딩 쿠키 수명 숫자를 바꾼 사본은 §7 검사를 통과하지 못한다', () => {
-        const line = lineStartingWith(
-            sectionBetween(ko, 7, 8),
-            PHRASES.ko.sec7Opening
-        );
-        const tampered = line.replace(
-            MINUTES.ko(VERIFIED_MINUTES),
-            MINUTES.ko(VERIFIED_MINUTES + 1)
-        );
-
-        expect(line).toContain(MINUTES.ko(VERIFIED_MINUTES));
-        expect(tampered).not.toContain(MINUTES.ko(VERIFIED_MINUTES));
-    });
 
     it('쿠키 항목을 지운 사본에서는 줄을 찾지 못한다', () => {
         const tampered = sectionBetween(ko, 7, 8).replace(

@@ -26,7 +26,7 @@ The pattern is complete only when, after the right shoulder, a close finishes ab
 
 ## How it differs from a head and shoulders
 
-In the counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, the inverse head and shoulders did better than the [head and shoulders](/guide/chart-patterns/head-and-shoulders).
+In the counts of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, the inverse head and shoulders did better than the [head and shoulders](/guide/chart-patterns/head-and-shoulders).
 
 - The share that failed to move far enough after the breakout (the break-even failure rate) was 11%, lower than the head and shoulders' 19%.
 - 71% reached the price target, higher than the head and shoulders' 51%.

@@ -388,6 +388,42 @@ export interface EmailReportExclusionRepository {
     includeSymbol(userId: string, symbol: string): Promise<boolean>;
 }
 
+/** A welcome-report recipient claimed by the cron: the usual recipient fields plus the consent time. */
+export interface EmailReportWelcomeRecipient extends EmailReportRecipient {
+    consentedAt: Date;
+    /** 1 for the first try; grows by one on every retry. */
+    attempts: number;
+}
+
+/**
+ * Final state of a claimed welcome report. `retry` hands the row back without spending the attempt
+ * (the provider said an identical request is still in flight): it becomes `failed` with the attempt
+ * count restored, so the next run takes it again.
+ */
+export type EmailReportWelcomeOutcome = 'sent' | 'failed' | 'retry';
+
+/** Idempotency log for the first report sent to members who opted in at signup (one row per user). */
+export interface EmailReportWelcomeRepository {
+    /**
+     * Claims members due a first report: new eligible members are inserted, failed or stalled ones are
+     * taken again for a retry (bounded by attempts and the 24h window).
+     */
+    claimDue(now: Date): Promise<EmailReportWelcomeRecipient[]>;
+    /** Records the outcome. A row already `sent` is never overwritten by `failed` or `retry`. */
+    finish(
+        userId: string,
+        outcome: EmailReportWelcomeOutcome,
+        error: string | null
+    ): Promise<void>;
+    /**
+     * Users whose regular report must be skipped because of the first report: sent after `sentSince`, or
+     * still `sending` (updated after `inFlightSince`), e.g. claimed by a concurrent run.
+     */
+    findWelcomed(sentSince: Date, inFlightSince: Date): Promise<Set<string>>;
+    /** Deletes rows created before `cutoff`; returns the count. */
+    pruneOlderThan(cutoff: Date): Promise<number>;
+}
+
 /** Final state of a claimed delivery. */
 export type EmailReportDeliveryOutcome = 'sent' | 'failed' | 'skipped';
 

@@ -58,7 +58,7 @@ import {
     LEVEL_TITLE_FONT,
     type TextMeasurer,
 } from './utils/levelLabelGutter';
-import type { OverlayMenuItem } from './utils/overlayItems';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { buildPaneLabels } from './utils/paneLabelUtils';
 
 const EMPTY_CHART_OVERLAYS: ChartOverlay[] = [];

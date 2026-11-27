@@ -8,10 +8,13 @@ import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
- * 신호 이력 단계의 상한(ms). 스캐너 한 번(미국 약 100종목, 봉은 대부분 캐시 적중)과 DB 쓰기 몇 번이면
- * 끝나는 일이라 넉넉히 1분 — 넘기면 기다리지 않고 배치로 넘어간다(다음 실행이 마저 남긴다).
+ * 신호 이력 단계의 상한(ms). 대상이 약 860종목(S&P 500·코스피 200·코스닥 150)이라 한 실행이 다 못 끝낸다 —
+ * 종목별 진행 표식이 있어 다음 실행(5분 뒤)이 이어 받으므로, 이 상한은 "한 번에 얼마나 하나"를 정할 뿐이다.
+ * 업스트림 호출은 FMP 분당 200건·yahoo 분당 240건으로 묶여(`SIGNAL_SCAN_PACING_MS`) 한 시장이 150초에
+ * 약 500건을 받는다. 두 시장은 서로 다른 provider라 같은 시간 안에 병렬로 돈다. 배치 몫은 여전히
+ * `lockAcquiredAtMs + BATCH_WALL_CLOCK_BUDGET_MS`가 묶는다.
  */
-const SIGNAL_HISTORY_STEP_MAX_MS = 60_000;
+const SIGNAL_HISTORY_STEP_MAX_MS = 150_000;
 
 /** 한 단계의 예외를 삼키고 로그만 남긴다 — 뒤 단계(워밍·정리·락 해제)가 앞 단계 실패에 막히지 않게 한다. */
 async function logFailure(
@@ -55,9 +58,11 @@ export async function runSeoPrewarmJob(
     lockToken: string,
     lockAcquiredAtMs: number
 ): Promise<void> {
-    // 신호 이력은 배치 **앞**에서 돈다. 시장마다 세션당 한 번뿐인 가벼운 단계인데, 예산을 다 쓰도록
-    // 짜인 배치 뒤에 두면 바쁜 밤마다 예산이 바닥나 그 세션을 영영 못 남긴다. 대신 자기 상한
-    // (`SIGNAL_HISTORY_STEP_MAX_MS`)을 따로 둬 배치 몫을 크게 깎지 않는다. 스스로 던지지 않는다.
+    // 신호 이력은 배치 **앞**에서 돈다. 마감 뒤 창에서는 세션이 완료될 때까지(약 860종목, 실행마다 최대
+    // `SIGNAL_HISTORY_STEP_MAX_MS`) 매 틱 이 단계가 한도까지 돌 수 있어 가볍지 않다. 그래도 앞에 두는 까닭은
+    // 예산을 다 쓰도록 짜인 배치 뒤에 두면 바쁜 밤마다 예산이 바닥나 그 세션을 영영 못 완료하기 때문이다.
+    // 대신 자기 상한을 따로 둬 배치 몫을 제한한다. 완료된 뒤의 틱은 진행 표식만 읽고 곧바로 끝난다.
+    // 스스로 던지지 않는다.
     await logFailure('signal history', async () => {
         const { db } = getDatabaseClient();
         const outcome = await recordSignalHistory(db, {

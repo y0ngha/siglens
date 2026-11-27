@@ -418,8 +418,7 @@ export async function resolveHarvest(
          * 실패하면 `null`이다 — `rewriteToPlainLanguage`는 절대 throw하지 않고,
          * 소비자는 `null`이면 토글 없이 원문만 보여준다. 즉 이 호출이 실패해도
          * 스냅샷 자체는 예전과 똑같이 저장된다.
-         */
-        /*
+         *
          * 현재가를 함께 넘긴다. `fundamental`·`news`·`financials` payload에는
          * 숫자 필드가 없어, 없이 돌리면 모델이 "현재 주가가 어느 수준인지는
          * 제시된 자료에 명시되어 있지 않지만"으로 글을 연다 — 실제로 이 배선이

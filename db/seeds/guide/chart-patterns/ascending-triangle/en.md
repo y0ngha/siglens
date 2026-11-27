@@ -22,7 +22,7 @@ The highs stall at nearly the same price along a horizontal line, while each low
 
 Sellers stop price at the same level every time, but buyers step in at higher prices each time. Buyers are steadily pushing price up, so many traders lean toward an upward break through resistance.
 
-That is only a modest tilt, not a certainty. Thomas Bulkowski counted what actually happened after patterns across decades of US stock charts and published the results in his books. In his tabulation, 63% broke upward and more than a third broke down. A breakout counts when the close finishes above resistance on rising volume. Volume usually shrinks as the triangle narrows.
+That is only a modest tilt, not a certainty. In the tabulation by Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 63% broke upward and more than a third broke down. A breakout counts when the close finishes above resistance on rising volume. Volume usually shrinks as the triangle narrows.
 
 ## How it differs from a descending triangle
 
@@ -34,7 +34,7 @@ A breakout is considered strongest when it comes 50% to 75% of the way from the 
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line is nearly flat, only the lower line rises, and the gap narrows, it treats the shape as an ascending triangle.
+SIGLENS connects clear highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line is nearly flat, only the lower line rises, and the gap narrows, it treats the shape as an ascending triangle.
 
 - The upper line must be flat: over the whole pattern it must move less than the smaller of 0.75 times ATR and 1% of price.
 - The lower line must rise at least 1.5 times ATR.

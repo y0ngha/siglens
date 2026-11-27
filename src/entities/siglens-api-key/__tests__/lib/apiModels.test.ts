@@ -96,6 +96,28 @@ describe('checkApiModel', () => {
         }
     );
 
+    it.each(['claude-fable-5-1', 'gpt-6.1-sol', 'gpt-6-astra'])(
+        '퇴역한 %s는 로스터에 없어 invalid_model',
+        id => {
+            expect(
+                checkApiModel(id, ['anthropic', 'openai', 'google', 'deepseek'])
+            ).toEqual({ ok: false, reason: 'invalid_model' });
+        }
+    );
+
+    it('2026-11 신규 모델 6종은 로스터에 있다', () => {
+        expect(API_KNOWN_MODELS).toEqual(
+            expect.arrayContaining([
+                'claude-fable-5-2',
+                'gpt-6.2-sol',
+                'gpt-6.2-astra',
+                'gemini-4-carbon',
+                'gemini-4-neon',
+                'gemini-4-hydrogen',
+            ])
+        );
+    });
+
     it.each(['nope', '', 'claude-opus-5 '])(
         '%j는 로스터에 없어 invalid_model',
         id => {

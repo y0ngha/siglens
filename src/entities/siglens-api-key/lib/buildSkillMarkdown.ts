@@ -23,7 +23,7 @@ export interface BuildSkillMarkdownInput {
 export const FRESH_ANALYSIS_TOOL = 'run_fresh_analysis';
 
 const SKILL_DESCRIPTION =
-    "Query SigLens stock analysis (US/KR equities, crypto): ticker search, quotes, bars with indicators (one call returns bars plus any of the technical indicators as time-aligned series), AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
+    "Query SIGLENS stock analysis (US/KR equities, crypto): ticker search, quotes, bars with indicators (one call returns bars plus any of the technical indicators as time-aligned series), AI technical analysis, news, options, fundamentals, congress trades, macro. Use when the user asks about a stock's chart, signals or analysis.";
 
 /** 인자 타입의 사람용 표기(`"1Day" | "1Hour"`, `integer (10..60)`). `/developers`의 인자 표도 같은 표기를 쓴다. */
 export function typeLabel(prop: JsonSchemaProperty): string {
@@ -72,8 +72,8 @@ export function renderLimits(limits: PublicApiRateLimit): string {
  */
 export function renderFreshAnalysisNotes(): string[] {
     return [
-        '- `run_fresh_analysis` first looks for a shared cached analysis: a hit is returned at no cost (`meta.source: "cache"`, no LLM call, no `ai` quota) with a normal JSON response. Only when none exists does it generate one, with your own LLM key registered at siglens.io/account (BYOK). SigLens never spends its own LLM key on API calls.',
-        "- Every model in the `model` argument list can generate a new analysis, free and member models included, but only with your own registered key for that model's provider. SigLens's own LLM key is never used (the SigLens website generates the lower models with its own key; the API does not).",
+        '- `run_fresh_analysis` first looks for a shared cached analysis: a hit is returned at no cost (`meta.source: "cache"`, no LLM call, no `ai` quota) with a normal JSON response. Only when none exists does it generate one, with your own LLM key registered at siglens.io/account (BYOK). SIGLENS never spends its own LLM key on API calls.',
+        "- Every model in the `model` argument list can generate a new analysis, free and member models included, but only with your own registered key for that model's provider. SIGLENS's own LLM key is never used (the SIGLENS website generates the lower models with its own key; the API does not).",
         '- Pick the model with `model`, or set an API default model at siglens.io/account (`GET /me` shows it as `defaultModel`).',
         `- Generation attempts (a cache miss that calls your LLM) have their own per-account limit: ${renderLimits(PUBLIC_API_RATE_LIMITS.ai)}. Cached hits only use the regular limit above.`,
         `- Generating usually takes about a minute and never longer than the ${FRESH_ANALYSIS_DEADLINE_SECONDS}-second tool deadline (then \`tool_timeout\`). Once everything is validated and generation starts, the response is HTTP 200 \`application/json\` that is written in two parts: whitespace keepalive bytes (a newline, sent periodically so proxies do not cut the silent connection), then the JSON body. Leading whitespace is valid JSON, so just parse the whole body. Because the status is already sent, a failure after that point also arrives as HTTP 200: parse the body, and an \`error\` field means failure even on 200. The streamed response also carries \`X-RateLimit-AI-Limit\`, \`X-RateLimit-AI-Remaining\` and \`X-RateLimit-AI-Reset\` for the \`ai\` quota it just used (cache hits do not touch that quota, so they have no such headers). Everything found before generation (auth, rate limits, bad arguments, model, missing key, cache hits) uses normal status codes and a normal body. Closing the connection does not cancel the generation: it still finishes, is charged to your key, and fills the shared cache, so calling again later returns it as a cache hit.`,
@@ -110,7 +110,7 @@ export function buildSkillMarkdown({
     const notes = [
         '- Tool descriptions are written for an in-app assistant; ignore references to tools that are not listed here.',
         '- Results are size-capped per tool. When a result is cut, the response carries `meta.truncated: true` and `data` is `{ "truncated": true, "preview": "..." }`; narrow the request (fewer bars, a shorter list) and retry.',
-        '- `get_news` returns only news SigLens has already stored; this API never triggers a fresh ingest or a server-side analysis.',
+        '- `get_news` returns only news SIGLENS has already stored; this API never triggers a fresh ingest or a server-side analysis.',
         '- Analyses returned by `get_cached_analysis` were generated on siglens.io; reading them costs nothing and never calls an LLM.',
         ...(hasFreshAnalysis ? renderFreshAnalysisNotes() : []),
         ...(hasChartData ? renderChartDataNotes() : []),
@@ -125,7 +125,7 @@ export function buildSkillMarkdown({
         `description: ${SKILL_DESCRIPTION}`,
         '---',
         '',
-        '# SigLens',
+        '# SIGLENS',
         '',
         `Auth: create an API key at siglens.io/account, export it as \`${API_KEY_ENV_NAME}\`, and send \`Authorization: Bearer $${API_KEY_ENV_NAME}\` with every request.`,
         '',

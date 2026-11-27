@@ -1,3 +1,4 @@
+import type { ReportSymbolNames } from '@/entities/email-report/reportModel';
 import type { Locale } from '@/shared/i18n/locales';
 import type { MailAlertPlan } from '../lib/planMailAlertItems';
 
@@ -7,7 +8,7 @@ import type { MailAlertPlan } from '../lib/planMailAlertItems';
  */
 export type MailAlertEmailTranslator = (
     key: string,
-    values?: Record<string, string>
+    values?: Record<string, string | number>
 ) => string;
 
 /** 신호 유형 → 사람이 읽는 라벨(`shared.enumLabel.signalType`). 사전에 없으면 `null`. */
@@ -32,4 +33,9 @@ export interface BuildMailAlertEmailInput {
     readonly idempotencyKey: string;
     readonly t: MailAlertEmailTranslator;
     readonly signalLabel: MailAlertSignalLabelResolver;
+    /**
+     * 실린 종목의 표시 이름(영문 법인명과 한글명). 메일 리포트와 같은 원천·같은 규칙(`reportSymbolLabel`)으로
+     * 고른다. 없는 종목(조회 실패 등)은 키가 없거나 `null`이다.
+     */
+    readonly symbolNames: ReadonlyMap<string, ReportSymbolNames | null>;
 }

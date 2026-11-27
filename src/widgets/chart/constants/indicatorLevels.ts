@@ -9,7 +9,7 @@
  * 동일하게 이 파일에 로컬 상수로 둔다. core가 해당 상수를 배럴로 노출하면 교체.
  */
 
-// MFI: 0~100 오실레이터, 통상 80/20 (RSI와 동일 컨벤션).
+/** MFI: 0~100 오실레이터, 통상 80/20 (RSI와 동일 컨벤션). */
 export const MFI_OVERBOUGHT_LEVEL = 80;
 export const MFI_OVERSOLD_LEVEL = 20;
 

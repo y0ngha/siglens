@@ -368,7 +368,7 @@ describe('ChartContent', () => {
         render(<ChartContent {...defaultProps} />);
         expect(
             screen.getByText(
-                /차트는 Pre-market, After-market 주가를 반영하지 않습니다/
+                /차트는 프리마켓과 애프터마켓 주가를 반영하지 않습니다/
             )
         ).toBeDefined();
     });
@@ -380,7 +380,7 @@ describe('ChartContent', () => {
             );
             expect(
                 screen.getByText(
-                    /차트는 Pre-market, After-market 주가를 반영하지 않습니다/
+                    /차트는 프리마켓과 애프터마켓 주가를 반영하지 않습니다/
                 )
             ).toBeDefined();
         });
@@ -390,7 +390,7 @@ describe('ChartContent', () => {
             render(<ChartContent {...defaultProps} marketProfile="crypto" />);
             expect(
                 screen.queryByText(
-                    /차트는 Pre-market, After-market 주가를 반영하지 않습니다/
+                    /차트는 프리마켓과 애프터마켓 주가를 반영하지 않습니다/
                 )
             ).toBeNull();
         });

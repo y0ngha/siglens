@@ -7,6 +7,7 @@ import { BacktestComparison } from '@/widgets/backtesting/BacktestComparison';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
 import { BacktestStrategy } from '@/widgets/backtesting/BacktestStrategy';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
+import { BacktestTimingCheck } from '@/widgets/backtesting/BacktestTimingCheck';
 import { BacktestTradeList } from '@/widgets/backtesting/BacktestTradeList';
 import { BacktestTrendRecognition } from '@/widgets/backtesting/BacktestTrendRecognition';
 import {
@@ -58,6 +59,7 @@ export default async function BacktestingPage({
                 </div>
                 <BacktestHero stats={BACKTEST_STATS} />
                 <BacktestComparison stats={BACKTEST_STATS} />
+                <BacktestTimingCheck stats={BACKTEST_STATS} />
                 <BacktestTrendRecognition stats={BACKTEST_STATS} />
                 <BacktestStrategy
                     run={BACKTEST_RUN.run}

@@ -23,9 +23,12 @@ import { createMailAlertBatchDeps } from '@/app/api/cron/mail-alert/createMailAl
 import { runMailAlertBatch } from '@/app/api/cron/mail-alert/runMailAlertBatch';
 import { scheduleMailAlertPass } from '@/app/api/cron/mail-alert/scheduleMailAlertPass';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
-import type { EmailDispatcher } from '@/shared/email/types';
+import type { KeyedEmailDispatcher } from '@/shared/email/types';
 
-const dispatcher: EmailDispatcher = { sendEmail: async () => true };
+const dispatcher: KeyedEmailDispatcher = {
+    sendEmail: async () => true,
+    sendKeyedEmail: async () => 'accepted',
+};
 const NOW = new Date('2026-11-24T22:05:00Z');
 
 describe('scheduleMailAlertPass', () => {

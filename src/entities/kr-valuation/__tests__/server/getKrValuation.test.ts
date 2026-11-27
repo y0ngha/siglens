@@ -42,6 +42,7 @@ describe('getKrValuation', () => {
         mocks.getKrValuationInputs.mockResolvedValue({
             kind: 'ok',
             data: DATA,
+            transient: false,
         });
         const v = await getKrValuation('029780.KS', PRICE, PROVIDER);
         expect(v.basis.source).toBe('dart');
@@ -55,6 +56,7 @@ describe('getKrValuation', () => {
         mocks.getKrValuationInputs.mockResolvedValue({
             kind: 'ok',
             data: DATA,
+            transient: false,
         });
         const now = new Date('2026-05-20T00:00:00Z');
         await getKrValuation('029780.KS', PRICE, PROVIDER, now);
@@ -80,6 +82,7 @@ describe('getKrValuation', () => {
     it('DART 숫자가 모자라 계산할 수 없으면(순이익·자본 모두 없음) incomplete_report로 제공처 값을 쓴다', async () => {
         mocks.getKrValuationInputs.mockResolvedValue({
             kind: 'ok',
+            transient: false,
             data: {
                 ...DATA,
                 current: { ...DATA.current, netIncomeYtd: null, equity: null },
@@ -109,9 +112,21 @@ describe('resolveKrValuation', () => {
         mocks.getKrValuationInputs.mockResolvedValue({
             kind: 'ok',
             data: DATA,
+            transient: false,
         });
         const r = await resolveKrValuation('029780.KS', PRICE, PROVIDER);
         expect(r.transient).toBe(false);
+        expect(r.valuation.basis.source).toBe('dart');
+    });
+
+    it('KRX 갱신을 못 해 낡은 주식수로 계산한 DART 값은 일시적이다(값은 DART 기준 그대로)', async () => {
+        mocks.getKrValuationInputs.mockResolvedValue({
+            kind: 'ok',
+            data: DATA,
+            transient: true,
+        });
+        const r = await resolveKrValuation('029780.KS', PRICE, PROVIDER);
+        expect(r.transient).toBe(true);
         expect(r.valuation.basis.source).toBe('dart');
     });
 
@@ -147,6 +162,7 @@ describe('resolveKrValuation', () => {
         mocks.getKrValuationInputs.mockResolvedValue({
             kind: 'ok',
             data: DATA,
+            transient: false,
         });
         const now = new Date('2026-11-22T00:00:00Z');
         await resolveKrValuation(

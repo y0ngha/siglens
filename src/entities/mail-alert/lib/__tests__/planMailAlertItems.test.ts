@@ -24,6 +24,19 @@ function row(
     return { symbol, signalType, changePercent, name };
 }
 
+/** 담은 종목 하나의 일봉 판정 결과. */
+function judged(
+    signalTypes: readonly SignalType[],
+    overrides: Partial<MailAlertComputedSymbol> = {}
+): MailAlertComputedSymbol {
+    return {
+        sessionDate: SESSIONS.us,
+        changePercent: 1,
+        signalTypes,
+        ...overrides,
+    };
+}
+
 const symbolTopic = (symbol: string): MailAlertTopic => ({
     kind: 'symbol',
     symbol,
@@ -46,7 +59,6 @@ function input(
         marketOf: new Map<string, SignalHistoryMarket | null>(),
         episodes: { us: [], kr: [] },
         episodeSessions: SESSIONS,
-        universe: { us: new Set<string>(), kr: new Set<string>() },
         computed: new Map<string, MailAlertComputedSymbol>(),
         fearGreed: new Map<MailAlertFearGreedMarket, MailAlertFearGreedEntry>(),
         suppressed: new Set<string>(),
@@ -65,7 +77,7 @@ describe('planMailAlertItems', () => {
         expect(plan.suppressedCount).toBe(0);
     });
 
-    it('스캐너 대상 종목은 새 에피소드에서, 대상 밖 종목은 직접 판정 결과에서 읽는다', () => {
+    it('담은 종목은 스캐너 대상이어도 신호 기록이 아니라 그 종목의 일봉 판정을 읽는다', () => {
         const plan = planMailAlertItems(
             input({
                 topics: [symbolTopic('AAPL'), symbolTopic('PLTR')],
@@ -73,7 +85,7 @@ describe('planMailAlertItems', () => {
                     ['AAPL', 'us'],
                     ['PLTR', 'us'],
                 ]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
+                // 신호 기록에는 AAPL 골든크로스가 있지만 담은 종목 섹션은 일봉 판정(RSI 과매도)만 쓴다.
                 episodes: {
                     us: [
                         row('AAPL', 'golden_cross', 2.5),
@@ -82,14 +94,8 @@ describe('planMailAlertItems', () => {
                     kr: [],
                 },
                 computed: new Map([
-                    [
-                        'PLTR',
-                        {
-                            sessionDate: '2026-11-24',
-                            changePercent: -3,
-                            signalTypes: ['rsi_oversold'],
-                        },
-                    ],
+                    ['AAPL', judged(['rsi_oversold'], { changePercent: 2 })],
+                    ['PLTR', judged(['rsi_oversold'], { changePercent: -3 })],
                 ]),
             })
         );
@@ -99,33 +105,24 @@ describe('planMailAlertItems', () => {
                 item.symbol,
                 item.signalType,
                 item.sessionDate,
+                item.changePercent,
             ])
         ).toEqual([
-            ['AAPL', 'golden_cross', '2026-11-24'],
-            ['PLTR', 'rsi_oversold', '2026-11-24'],
+            ['AAPL', 'rsi_oversold', '2026-11-24', 2],
+            ['PLTR', 'rsi_oversold', '2026-11-24', -3],
         ]);
         expect(plan.itemKeys).toEqual([
-            's:us:AAPL:golden_cross',
+            's:us:AAPL:rsi_oversold',
             's:us:PLTR:rsi_oversold',
         ]);
     });
 
-    it('대상 안 종목의 일봉 판정 결과는 쓰지 않는다(에피소드가 유일한 출처)', () => {
+    it('일봉 판정이 없는 담은 종목은 신호 기록에 새 에피소드가 있어도 싣지 않는다', () => {
         const plan = planMailAlertItems(
             input({
                 topics: [symbolTopic('AAPL')],
                 marketOf: new Map([['AAPL', 'us']]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
-                computed: new Map([
-                    [
-                        'AAPL',
-                        {
-                            sessionDate: '2026-11-24',
-                            changePercent: 1,
-                            signalTypes: ['golden_cross'],
-                        },
-                    ],
-                ]),
+                episodes: { us: [row('AAPL', 'golden_cross')], kr: [] },
             })
         );
 
@@ -139,16 +136,7 @@ describe('planMailAlertItems', () => {
                 marketOf: new Map<string, SignalHistoryMarket | null>([
                     ['BTCUSD', null],
                 ]),
-                computed: new Map([
-                    [
-                        'BTCUSD',
-                        {
-                            sessionDate: '2026-11-24',
-                            changePercent: 1,
-                            signalTypes: ['golden_cross'],
-                        },
-                    ],
-                ]),
+                computed: new Map([['BTCUSD', judged(['golden_cross'])]]),
             })
         );
 
@@ -164,14 +152,10 @@ describe('planMailAlertItems', () => {
                     ['MSFT', 'us'],
                     ['AAPL', 'us'],
                 ]),
-                universe: { us: new Set(['MSFT', 'AAPL']), kr: new Set() },
-                episodes: {
-                    us: [
-                        row('AAPL', 'golden_cross'),
-                        row('MSFT', 'golden_cross'),
-                    ],
-                    kr: [],
-                },
+                computed: new Map([
+                    ['AAPL', judged(['golden_cross'])],
+                    ['MSFT', judged(['golden_cross'])],
+                ]),
             })
         );
 
@@ -181,16 +165,20 @@ describe('planMailAlertItems', () => {
         ]);
     });
 
-    it('한국 종목은 한국 세션 날짜와 한국어 이름을 싣는다', () => {
+    it('한국 종목은 한국 세션 날짜를 싣고 이름은 비워 둔다(메일을 만들 때 고른다)', () => {
         const plan = planMailAlertItems(
             input({
                 topics: [symbolTopic('005930.KS')],
                 marketOf: new Map([['005930.KS', 'kr']]),
-                universe: { us: new Set(), kr: new Set(['005930.KS']) },
-                episodes: {
-                    us: [],
-                    kr: [row('005930.KS', 'new_52w_high', 1.2, '삼성전자')],
-                },
+                computed: new Map([
+                    [
+                        '005930.KS',
+                        judged(['new_52w_high'], {
+                            sessionDate: SESSIONS.kr,
+                            changePercent: 1.2,
+                        }),
+                    ],
+                ]),
             })
         );
 
@@ -200,7 +188,7 @@ describe('planMailAlertItems', () => {
                 section: 'mine',
                 market: 'kr',
                 symbol: '005930.KS',
-                name: '삼성전자',
+                name: null,
                 signalType: 'new_52w_high',
                 sessionDate: SESSIONS.kr,
                 changePercent: 1.2,
@@ -217,11 +205,9 @@ describe('planMailAlertItems', () => {
             input({
                 topics: symbols.map(symbolTopic),
                 marketOf: new Map(symbols.map(symbol => [symbol, 'us'])),
-                universe: { us: new Set(symbols), kr: new Set() },
-                episodes: {
-                    us: symbols.map(symbol => row(symbol, 'rsi_oversold')),
-                    kr: [],
-                },
+                computed: new Map(
+                    symbols.map(symbol => [symbol, judged(['rsi_oversold'])])
+                ),
             })
         );
 
@@ -316,7 +302,7 @@ describe('planMailAlertItems', () => {
             input({
                 topics: [symbolTopic('AAPL'), signalTopic('golden_cross')],
                 marketOf: new Map([['AAPL', 'us']]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
+                computed: new Map([['AAPL', judged(['golden_cross'])]]),
                 episodes: {
                     us: [
                         row('AAPL', 'golden_cross', 5),
@@ -338,7 +324,7 @@ describe('planMailAlertItems', () => {
             input({
                 topics: [symbolTopic('AAPL'), signalTopic('golden_cross')],
                 marketOf: new Map([['AAPL', 'us']]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
+                computed: new Map([['AAPL', judged(['golden_cross'])]]),
                 episodes: { us: [row('AAPL', 'golden_cross')], kr: [] },
             })
         );
@@ -405,7 +391,7 @@ describe('planMailAlertItems', () => {
                     fgTopic('us'),
                 ],
                 marketOf: new Map([['AAPL', 'us']]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
+                computed: new Map([['AAPL', judged(['golden_cross'])]]),
                 episodes: {
                     us: [
                         row('AAPL', 'golden_cross'),
@@ -446,7 +432,7 @@ describe('planMailAlertItems', () => {
             input({
                 topics: [symbolTopic('AAPL'), signalTopic('golden_cross')],
                 marketOf: new Map([['AAPL', 'us']]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
+                computed: new Map([['AAPL', judged(['golden_cross'])]]),
                 episodes: { us: [row('AAPL', 'golden_cross')], kr: [] },
                 suppressed: new Set(['s:us:AAPL:golden_cross']),
             })
@@ -485,14 +471,8 @@ describe('planMailAlertItems', () => {
                     fgTopic('kr'),
                 ],
                 marketOf: new Map([['AAPL', 'us']]),
-                universe: { us: new Set(['AAPL']), kr: new Set() },
-                episodes: {
-                    us: [
-                        row('AAPL', 'rsi_oversold'),
-                        row('MSFT', 'golden_cross'),
-                    ],
-                    kr: [],
-                },
+                computed: new Map([['AAPL', judged(['rsi_oversold'])]]),
+                episodes: { us: [row('MSFT', 'golden_cross')], kr: [] },
                 fearGreed: new Map([
                     [
                         'kr',

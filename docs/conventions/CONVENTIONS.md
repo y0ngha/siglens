@@ -14,7 +14,7 @@ IDs follow the root `CLAUDE.md` "Rule IDs and references". Cite them as `CONVENT
 | `CM` | Comments & documentation |
 | `CS` | Change synchronization |
 
-Retired IDs: TS-4
+Retired IDs: TS-4, CM-14
 
 ## Coding Paradigm
 
@@ -324,7 +324,7 @@ Exempt (Next.js file conventions — the framework fixes the signature and the r
 
 #### TS-1 — `as` assertions: guards first, documented safe-casts only
 
-Prefer a type guard, a narrowing helper or `satisfies` over `as`. Never reach for the `!` operator instead: it silences the compiler without narrowing, so an impossible `null` fails later as an unhelpful `TypeError` (production code is linted, see "Enforced rules"). A cast that hides a value which can really be `null`/`undefined`/another shape is the bug being avoided. Replacing a `!` or `as` means real narrowing (a closed key type or `switch`, a named error on the impossible branch, a restructure that makes the value known); a type predicate that claims more than it checks, a fail-open `?? fallback` or a silent `return` on an "impossible" branch only moves the bug.
+Prefer a type guard, a narrowing helper or `satisfies` over `as`. Never use the `!` operator instead: it silences the compiler without narrowing, so an impossible `null` fails later as a vague `TypeError` (production code is linted, see "Enforced rules"). A cast hiding a value that can really be `null`/`undefined`/another shape is the bug to avoid. Replacing a `!` or `as` means real narrowing (a closed key type or `switch`, a named error on the impossible branch, a restructure that makes the value known); a type predicate that claims more than it checks, a fail-open `?? fallback` or a silent `return` on an "impossible" branch only moves the bug.
 
 A cast is acceptable only when TypeScript cannot express a constraint the runtime provably satisfies, and then it **must carry a comment stating the guarantee**:
 
@@ -456,12 +456,8 @@ import { helper } from './helper';
 
 ### No Barrels — Import from the Defining File
 
-Barrels are banned (root `CLAUDE.md`; `src/__tests__/guards/noBarrelFiles.test.ts`). Every import, including tests and
-`vi.mock`/`vi.importActual`/`await import()` paths, names the file that defines the symbol: `vi.mock` intercepts by
-module path, so a different path is not mocked.
-
-❌ `import { useSymbolModel } from '@/features/symbol-model';`
-✅ `import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';`
+Barrels are banned (root `CLAUDE.md`; `noBarrelFiles.test.ts`). `vi.mock`/`vi.importActual`/`await import()` paths
+also name the defining file: `vi.mock` intercepts by module path, so a different path is not mocked.
 
 ---
 
@@ -481,7 +477,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | Imports before any other statement | oxlint `import/first` | production code; tests are exempt because `vi.mock` goes above the imports (`TESTING.md#TE-1`) | Move the import to the top of the file. |
 | No explicit `any` | oxlint `typescript/no-explicit-any` | all code | Use `unknown` and narrow, or a precise type. Do not evade it: no alias that resolves to `any` (`ReturnType<typeof JSON.parse>`), no self-referential index type (`{ [k: string]: Self }`); use the real type, `Mutable<T>`, or `unknown` plus a shared narrowing helper. |
 | No lint-disable comments | `codeRules.test.ts` rule `lint-disable-directive`, zero tolerance | comments in code under `src e2e scripts cache-handler db infra` and root configs; two allowlisted files that state a `--` reason | Fix the cause; a rule that cannot apply to a file is turned off in `.oxlintrc.json` with a reason. |
-| No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support) | Early return, or bind a local `const` and throw a readable error; for a Map or array lookup, destructure or use `entries()` instead of indexing. Do not evade it (`TS-1`). |
+| No non-null assertion `x!` (TS-1) | oxlint `typescript/no-non-null-assertion` | production code (`src`, `scripts`, `db`, e2e support) | Early return, or a local `const` and a named error; for a Map or array lookup, destructure or use `entries()`. |
 | No new non-null assertion in tests (TS-1) | `codeRules.test.ts` rule `non-null-assertion`, per-file baseline (`TOOLCHAIN.md#TC-41`) | test files and e2e | Bind the value and narrow it, or use `defined(value, 'what')` from `src/shared/test-utils/defined.ts`. |
 | No assertion by mock call index (TE-27) | `codeRules.test.ts` rule `mock-call-index`, per-file baseline | test files and e2e | `mock.calls.find(...)` by a discriminating argument, or `toHaveBeenCalledWith`. |
 | No `let x = a;` + `if` that only assigns `x` (CP-4) | `codeRules.test.ts` rule `let-then-if`, zero tolerance | all code | `const x = c ? b : a;` or a small named function. |
@@ -492,6 +488,7 @@ A rule listed here is enforced by the tool in the "Mechanism" column, in `yarn l
 | No citation of local-only docs (CM-9) | rule `local-doc-citation`, zero tolerance | comments and strings of code, and `.sh`/`.css`/`.yml` text, under the scan roots; strings in test files are fixtures and skipped | State the fact inline. |
 | No issue/PR number `#123`+ in a comment (CM-11) | `codeRules.test.ts` rule `issue-ref-in-comment`, zero tolerance | comments in `src/**/*.ts(x)`; URLs, `#418` in a React/hydration comment, hex colours with a letter and one-digit-repeat numbers are skipped; `PR 123` without `#` is not seen | State the constraint and reason instead. |
 | No partial assertion on rendered SQL (TE-53) | rule `sql-substring-assertion`, zero tolerance | tests: `toContain`/`toMatch`/`toHaveLength`/`toBeTruthy`/`not.toBe('')`/`stringContaining`/`.includes()`/`.length` on `renderSql().sql`, `captured[n].sql`, aliases, joins, splits; absence checks need `// sql-absence: <reason>` (logged), snapshots are full pins; not seen: other-file helpers, `Array.from`/`reduce` lists, array destructuring | `toBe` the full rendered SQL. |
+| No `//` or block comment between a JSDoc and its declaration (CM-4) | rule `jsdoc-detached-by-comment`, zero tolerance | all code; directive comments (`oxlint-disable`, `eslint-disable`, `@ts-expect-error`, `@ts-ignore`, `react-doctor-disable`) are skipped, a JSDoc followed by a non-declaration (file header before `vi.mock`/`import`) is skipped; not seen: a helper or blank line between, declarations without a leading keyword (`foo() {}`, properties) | Move the comment above the `/**` or into the JSDoc. |
 | The rules above stay switched on | `src/__tests__/guards/lintRulesEnabled.test.ts` plants a violation per rule and runs oxlint with the real config | `.oxlintrc.json` | Restore the rule instead of editing the guard. |
 
 ---
@@ -507,9 +504,7 @@ label a section, narrate a state transition, restate a name or a type narrowing 
 `// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's or options
 interface's name (`/** [[useX]] options. */`: say what the options control instead) or only lists a props interface's
 field names, a file-header JSDoc that repeats the single export's JSDoc (keep one block, on the
-export), comments framed as history ("회귀:", "previously…", "fixed in…"; state the current reason
-instead), and
-structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
+export), comments framed as history ("회귀:", "previously…"; CM-11), and structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
 multi-line WHY blocks.
 
 ```typescript
@@ -594,27 +589,9 @@ removed together with its pointer leaves the claim unsourced.
 
 #### CM-4 — A JSDoc block stays directly above its declaration
 
-When inserting a helper, constant or export above existing code, insert it above the `/**` of the existing block,
-never between the JSDoc and its declaration. If the line above your insertion point ends with `*/`, move up. The
-same applies to JSX: when wrapping an element that has a preceding comment block, put the wrapper above the comment.
+Insert a helper, constant or export above the existing `/**`, never between the JSDoc and its declaration; if the line above your insertion point ends with `*/`, move up. JSX: put a wrapper above the element's preceding comment block. When removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left. No comment, not only JSDoc, is split from the code it describes: insert above the comment or give the new code its own comment.
 
-The inverse also holds: when removing or moving a declaration, remove or move its JSDoc with it so no orphaned block is left above the next declaration.
-
-The same holds for any comment, not only JSDoc: a new constant, setup block or statement never goes between a
-comment and the code it describes (a header JSDoc and its declaration, a `// matchMedia ...` note and the line it
-explains). Insert above the comment, or give the new code its own comment.
-
-```typescript
-// ❌ the new helper splits the JSDoc from fetchBars
-/** Fetches bars for a symbol. */
-function normalizeSymbol() {}
-function fetchBars() {}
-
-// ✅ inserted above the existing `/**`
-function normalizeSymbol() {}
-/** Fetches bars for a symbol. */
-function fetchBars() {}
-```
+A `//` or `/* */` comment between a JSDoc and its declaration: rule `jsdoc-detached-by-comment`.
 
 <a id="CM-5"></a>
 
@@ -695,19 +672,6 @@ claim or extend the check in the same change; a rule that nothing enforces says 
 - ❌ "Refuses non-local databases and Redis" over a helper that validates only `DATABASE_URL`.
 - ✅ One guard checks every inherited address variable, and the comment lists exactly those.
 
-<a id="CM-14"></a>
-
-#### CM-14 — Every export in a module gets JSDoc once its siblings do
-
-When a file's exports carry JSDoc (role, consumer, WHY), a newly added or split-out export gets one too, and a JSDoc
-that only restates the name or type does not count. A lone undocumented export reads as an oversight and hides its
-consumer.
-
-```typescript
-// ❌ siblings documented, this one bare
-export function rssNewsSurface() {}
-// ✅ /** Why this surface exists and who consumes it. */
-
 <a id="CM-13"></a>
 
 #### CM-13 — One comment language per file
@@ -718,14 +682,17 @@ language, never introducing a second one. A mixed file reads as two authors and 
 ```typescript
 // ❌ English JSDoc throughout the file, one new block written in Korean
 // ✅ the new block is English like its neighbours
+```
+
 <a id="CM-12"></a>
 
 #### CM-12 — Every exported component, hook and helper carries its own JSDoc
 
-A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one.
+A module-level JSDoc does not replace per-symbol docs. Each exported component, hook and non-trivial helper gets a JSDoc directly above it stating its responsibility (and, for hooks, what it returns). A new export is not finished without one. Any other export (constant, type) added or split out beside documented siblings gets one too; a JSDoc that only restates the name or type does not count.
 
 - ❌ A new `useEconomyFilter` exported under only the file's header comment.
 - ✅ A short JSDoc above `useEconomyFilter` naming what it owns and returns.
+
 <a id="CM-11"></a>
 
 #### CM-11 — Comments describe the current design and WHY, not history
@@ -765,6 +732,10 @@ second site is meant to import rather than redeclare a list, pin that with a sou
 The same applies to derived logic, not only literals: one window boundary (for example a weekend roll-back) or one
 "last completed daily close" rule computed in two places drifts apart. Keep one function in the lowest layer that
 needs it and have the other callers delegate to it.
+
+A value two outputs must agree on (a DB bound and the returned window start) is derived once and passed to both, and
+eval or replay harnesses import the production normalisers and constants instead of re-implementing them, or they
+measure code that does not ship.
 
 Extracting a shared rule (a validation predicate, a locale or formatting helper) is finished only when every existing
 copy, including hand-rolled duplicates and constant aliases at the original call site, is migrated to it. Grep for the
@@ -895,12 +866,13 @@ Privacy policies, terms and in-product copy (prompts, toasts, banners) state exa
 sentence with every code path that reads or writes the data; on a mismatch change the code or the text, never leave
 both. Update the text in the same change as a new path that writes user data, a new use (extend the purpose list), or a
 store found during the revision that was never disclosed (user-supplied keys, bands, counters). A security limit's
-numbers (attempt caps, TTLs, windows) published in that text are pinned by a guard that reads the code constants (the
-`*Privacy.test.ts` guards), never by literals typed into the test.
+numbers (attempt caps, TTLs, windows) published there are pinned by a guard reading code constants (durations:
+`privacyRetention.test.ts`; caps: `*Privacy.test.ts`), not test literals.
 
 - Copy never promises a delivery or effect some users skip, or a delivery timing the schedule never meets (gate it on the real state or word it conditionally; pin the real lag with a test), names
   a cause only when every path that shows it guarantees that cause, and labels a state only when the data can show it
-  (a filing proves "filed", not "in progress").
+  (a filing proves "filed", not "in progress"). A timing promise ("right away") is checked against the path's real
+  latency (a cron cadence is not instant) in every locale's copy. A heading or label that groups items holds for every item under it (a non-holding comparison is not listed under "holding strategies").
 - Policies list the storage items, the data actually used and every item sent to a third party (including identifiers
   embedded in links). Processor-held identifiers (a member id inside cache or quota keys) and every new event appear in
   the stored-data, purpose and retention sections; non-advertising items stay out of the advertising-cookie paragraph.
@@ -918,7 +890,8 @@ numbers (attempt caps, TTLs, windows) published in that text are pinned by a gua
   (an older column may keep the raw path) and against rows written before the change; when old rows contradict it, ship
   an idempotent backfill in the same change.
 - Parallel locale texts use the same enumeration and punctuation; user-facing examples use plain language, not
-  internal code values.
+  internal code values. Catalogs, guides and the newest terms carry no em dash, middle dot or `・`, and an en dash only
+  in number ranges (`userCopyPunctuation.test.ts`).
 
 - ❌ Policy says "quantity and average price are used" while the code only reads tickers.
 - ✅ Policy lists tickers only, matching what the code reads.
@@ -940,6 +913,9 @@ the code actually established. A flag that covers several cases (absent vs. stal
 prove exactness) is split per case or set from the narrower check. Explanatory text attached to such a result (a hint
 or note read by a user or a model) follows the same limit: it states only the case the code distinguished ("none usable
 for this caller", not "none exists") and names only fields or tools that are present in that response.
+
+A type or JSDoc that promises a key ("null exactly when X is null") must hold when the source is absent too: emit the
+key in that case, or narrow the type and the doc.
 
 <a id="CS-16"></a>
 

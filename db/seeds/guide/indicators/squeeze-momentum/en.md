@@ -52,4 +52,4 @@ So it is better not to compare their values directly with a Bollinger Band or Ke
 - In quiet, choppy markets, ON and OFF can flip often without any big move. So SIGLENS also checks whether [ADX](/guide/indicators/adx), which measures trend strength, is above 20.
 - The momentum value is smoothed by regression, so it misses sharp intraday reversals.
 - On short timeframes it crosses the zero line often. Look for whether it holds for a bar or two before judging.
-- It suits daily and hourly charts. On minute charts, some traders shorten the length to 10–14.
+- It suits daily and hourly charts. On minute charts, some traders shorten the length to between 10 and 14.

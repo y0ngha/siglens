@@ -291,7 +291,8 @@ A body of the wrong shape (a non-array where a list is expected, a missing field
 should have rows, or a 200 whose body carries only an `errors` array (a suspended or protected account, a partial
 failure) is a failure, not an empty answer. Throw or return the error result so the caller degrades, and never cache it
 or let it set a completion flag: a stored `[]` hides the gap for the whole TTL, and a swallowed chunk makes a partial
-result look complete.
+result look complete. The same holds for a durable completion marker: derive it only from writes that succeeded, so an attempt
+whose write failed does not count as done.
 
 - Keep three outcomes distinct: absent by nature (an ETF with no analyst coverage; cache it as a legitimate empty
   result), a failed load (never cached; an empty result for a non-empty window is returned uncached or with a short TTL
@@ -352,7 +353,9 @@ adversarial input under a time bound.
 A scan that returns at the first match becomes a full fall-through once you add skip/continue conditions, so re-check
 every per-item helper it calls (and its siblings in the same file) for searches from index 0 and for `slice(from)`
 copies of the remainder: compute spans once or search a bounded window, and add one cap-sized adversarial test per new
-skip class. Anchor label-only skip patterns to the whole line so they do not match the first words of real titles.
+skip class. Anchor label-only skip patterns to the whole line so they do not match the first words of real titles. A
+callback that handles third-party input (a response or stream handler) catches, tears the connection down and rejects: a
+throw there leaves the promise unsettled.
 
 A helper that gains a new caller (for example when it moves to a shared file) gets its input bound re-checked: a
 per-match `slice(0, index)` that is safe for a bounded caller is quadratic for an unbounded one. Bound constant factors
@@ -438,6 +441,8 @@ Never fan out an unbounded `Promise.all`/`Promise.allSettled` over provider call
 limits differ (FMP depends on the plan, `yahoo-finance2` is unofficial, LLM providers depend on the API tier), and
 two chunked pipelines started together double the effective concurrency. Use `Promise.allSettled` inside a chunk
 when one failure must not discard its siblings.
+When job durations vary under a caller deadline, chunk-and-await (or round-robin slot pinning) lets a fast job wait
+behind a slow one while capacity sits idle; use a first-free-slot FIFO semaphore with a wait deadline instead.
 
 ```typescript
 // ❌ every symbol at once
@@ -495,6 +500,9 @@ For a unit chaining several capped steps (ingest + analysis + sequential transla
 is the sum of each step's worst case, written next to the caps. A budget claimed from the typical case silently
 exceeds the platform timeout.
 
+A step documented as "DB only" gains no external call: compute a derivation in the step that already resolved its
+inputs, and update that step's comments, budget and lease in the same change.
+
 <a id="CC-8"></a>
 
 #### CC-8 — Bound a drain loop with a sufficiency condition
@@ -520,7 +528,8 @@ step) and loses what earlier attempts learned.
 - A count-then-insert limit check (per-user cap) races across tabs and requests. Run it in a transaction holding a row
   lock on the owner, and let an item that already exists bypass the cap instead of failing the re-add.
 - Take row locks in one parent→child order on every path; a batch job (cron prune) that locks child rows first
-  deadlocks (40P01) against user paths that lock the parent first.
+  deadlocks (40P01) against user paths that lock the parent first. An FK insert takes only KEY SHARE on the parent, so
+  lock the parent row explicitly (`FOR NO KEY UPDATE`) before inserting the child.
 
 <a id="CC-11"></a>
 
@@ -531,6 +540,8 @@ is surfaced as a separate state. Give each failure mode an exit (retry cap, dead
 
 - Count per the unit the policy names: a "N days of failure" counter increments once per day, not once per run.
 - A blanket outage (provider down, auth failure) is not a per-symbol fault; do not charge it against each item's failure budget.
+- One counter per failure kind, each with its own cap and give-up reason, in one map typed `satisfies Record<FailureKind, ...>` (shared with the fake); one counter against several caps lets one kind spend another's budget.
+- A per-row failure backs off before its capped give-up; a version-keyed job records the version it failed at, and a transient "missing" result is seen on separate days before it is terminal.
 - ❌ Gate holds until `pending = 0`, while an item that always errors never leaves `pending`; a per-run counter trips the threshold in one busy day.
 - ✅ Failing items move to a terminal state after a cap, the day counter is keyed by date, and an outage trips a run-level breaker instead.
 
@@ -709,6 +720,10 @@ A memo or cache that refreshes periodically returns the previous (even expired) 
 keeps its expiry so the next call retries. Returning an empty value turns a transient failure into wrong answers
 (entries briefly classified as unknown).
 
+A negative memo stores "not found" only for a definite negative answer, so every error path that would collapse to null
+or an empty series (a throwing lookup, a failed cache read) stays distinguishable (tagged result, rethrow) up to the memo
+decision.
+
 <a id="DC-8"></a>
 
 #### DC-8 — Keep a short-lived fallback write when removing a cache layer
@@ -842,6 +857,30 @@ small-universe rehearsal will not surface them. Cover it with a duplicate-key ba
 
 - ❌ Map rows to the target key and insert in chunks; one duplicate aborts the whole run.
 - ✅ `uniqueForUpsert(table, rows, keyOf, log)` (last row per key, one warning when rows were dropped) or a domain resolver like `resolveCusipMapConflicts` first, then chunk and upsert.
+
+<a id="DB-10"></a>
+
+#### DB-10 — A result that may depend on one user's input carries a marker every writer sets
+
+A stored result that may be conditioned on one user's input (holdings) records that in a required column
+(`personalized`). Every reader that reuses the row for others (statistics, prior-result context, public pages) filters
+on it; find the readers by grepping the repository, and treat a legacy `NULL` as unknown, not as false.
+
+- ❌ An outcome capture and a prior-analysis read take every row, so one member's holdings-based plan feeds other users.
+- ✅ The capture takes `= false`; the prior read takes `false`, or `NULL` only where the tier rules holdings out (`free`).
+
+<a id="DB-11"></a>
+
+#### DB-11 — Exactly-once sends: terminal writes never overwrite a success, and streams cross-check each other
+
+A send that must happen once per recipient keeps its outcome in a durable record, and:
+
+- The final status write is conditional (`WHERE status <> 'sent'`); a late failure path never overwrites `sent`.
+- With an idempotency-keyed provider, an "already accepted" rejection on a retry is a success, and "in flight" means retry later without spending an attempt. Neither is a send failure.
+- When two jobs can mail the same person (e.g. a welcome and a regular report), each checks the other's sent and in-flight records before claiming, so a retry or a duplicate cron invocation cannot send both.
+
+- ❌ `UPDATE ... SET status = 'failed'` after the provider rejected a retry with "already accepted"; the delivered mail is recorded as failed and re-sent.
+- ✅ Map the rejection to success, guard the write with `status <> 'sent'`, and exclude recipients the other stream already sent to or has in flight.
 
 <a id="DB-12"></a>
 

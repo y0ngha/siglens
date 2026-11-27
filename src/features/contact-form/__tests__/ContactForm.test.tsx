@@ -217,7 +217,7 @@ describe('ContactForm', () => {
         render(<ContactForm />);
 
         expect(screen.getByRole('alert')).toHaveTextContent(
-            '문의를 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.'
+            '문의를 너무 자주 보냈습니다. 잠시 후 다시 시도해 주세요.'
         );
     });
 

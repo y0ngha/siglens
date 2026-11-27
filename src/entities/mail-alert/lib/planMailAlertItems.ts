@@ -23,7 +23,10 @@ export interface MailAlertEpisodeRow {
     readonly name: string | null;
 }
 
-/** 스캐너 범위 밖 종목을 일봉으로 직접 판정한 결과. `signalTypes`는 이미 알림 유형만 남긴 것이다. */
+/**
+ * 담은 종목 하나를 일봉으로 직접 판정한 결과. `signalTypes`는 이미 알림 유형만 남긴 것이다. 스캐너 대상
+ * 종목도 신호 기록(`signal_events`)이 아니라 이 판정을 쓴다 — 담은 종목의 신호는 그 종목의 봉이 정한다.
+ */
 export interface MailAlertComputedSymbol {
     readonly sessionDate: string;
     readonly changePercent: number | null;
@@ -50,10 +53,7 @@ export interface PlanMailAlertInput {
     >;
     /** 시장별 기대 세션(`episodes`가 가리키는 날). */
     readonly episodeSessions: Readonly<Record<SignalHistoryMarket, string>>;
-    /** 시장별 스캐너 대상 종목. 이 안의 종목은 `episodes`를, 밖의 종목은 `computed`를 읽는다. */
-    readonly universe: Readonly<
-        Record<SignalHistoryMarket, ReadonlySet<string>>
-    >;
+    /** 담은 종목별 일봉 판정. 판정하지 못한 종목(낡은 봉, 조회 실패)은 키가 없다. */
     readonly computed: ReadonlyMap<string, MailAlertComputedSymbol>;
     /** 시장별 극단 구간 진입. 준비되지 않았거나 진입이 없으면 키가 없다. */
     readonly fearGreed: ReadonlyMap<
@@ -99,20 +99,6 @@ function mineItemsOf(
 ): MailAlertSignalItem[] {
     const market = input.marketOf.get(symbol) ?? null;
     if (market === null) return [];
-    if (input.universe[market].has(symbol)) {
-        return input.episodes[market]
-            .filter(row => row.symbol === symbol)
-            .map(row => ({
-                kind: 'signal',
-                section: 'mine',
-                market,
-                symbol,
-                name: row.name,
-                signalType: row.signalType,
-                sessionDate: input.episodeSessions[market],
-                changePercent: row.changePercent,
-            }));
-    }
     const computed = input.computed.get(symbol);
     if (computed === undefined) return [];
     return computed.signalTypes.map(signalType => ({
@@ -120,6 +106,7 @@ function mineItemsOf(
         section: 'mine',
         market,
         symbol,
+        // 표시 이름은 메일을 만들 때 사이트 종목 페이지와 같은 이름 원천에서 고른다(`symbolNames`).
         name: null,
         signalType,
         sessionDate: computed.sessionDate,
@@ -213,11 +200,11 @@ function fearGreedItemsOf(input: PlanMailAlertInput): FearGreedPick {
 }
 
 /**
- * 한 구독자가 이번 알림 날짜에 받을 항목을 정한다. 순수 함수다 — 어디서 읽었는지(`signal_events`인지 일봉
- * 직접 판정인지)는 호출자가 `episodes`·`computed`로 나눠 넣고, 여기서는 고르고 줄이고 거르기만 한다.
+ * 한 구독자가 이번 알림 날짜에 받을 항목을 정한다. 순수 함수다 — 담은 종목은 일봉 직접 판정(`computed`),
+ * 신호별 섹션은 신호 기록(`episodes`)으로 호출자가 나눠 넣고, 여기서는 고르고 줄이고 거르기만 한다.
  *
- * - 담은 종목: 주제의 종목과 보유·관심종목(회원 선택)의 합집합. 스캐너 대상이면 새 에피소드, 아니면
- *   `computed`. 종목·신호 유형 하나가 한 항목이다.
+ * - 담은 종목: 주제의 종목과 보유·관심종목(회원 선택)의 합집합. 스캐너 대상 여부와 상관없이 그 종목의 일봉
+ *   판정(`computed`)만 읽는다 — 신호 기록과 맞춰 보지 않는다. 종목·신호 유형 하나가 한 항목이다.
  * - 신호별 새 종목: 신호 주제마다 두 시장의 새 에피소드. 담은 종목 섹션에 실린 종목은 다시 싣지 않고, 변동률
  *   절댓값 순으로 `MAIL_ALERT_MAX_HUB_ROWS`개까지 싣는다.
  * - 공포·탐욕: 구독한 시장 중 극단 구간에 진입한 시장.

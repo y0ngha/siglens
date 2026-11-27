@@ -113,7 +113,7 @@ describe('expectedSessions', () => {
 describe('공포탐욕 진입일과 발송일의 간격', () => {
     /**
      * 항목이 처음 "기대 세션"이 되는 07:05 KST 알림 날짜(KST 날짜)를 찾는다. 진입일은 그 시장의 세션 날짜다.
-     * 카드의 안내 문구("그날 점수가 확정된 다음 한국 시간 아침")가 이 간격에 기대므로 값을 고정한다.
+     * 카드의 안내 문구("점수가 확정된 뒤 한국 시간 아침")가 이 간격에 기대므로 값을 고정한다.
      */
     function firstSendDate(
         market: 'us' | 'kr' | 'crypto',
@@ -403,6 +403,7 @@ describe('loadComputedSources', () => {
 
         expect(result.computed.size).toBe(0);
         expect(result.noFreshBar).toBe(1);
+        expect([...result.notReadySymbols]).toEqual(['STALE']);
     });
 
     it('기대 세션보다 뒤의 봉은 잘라 내고 그 세션의 마지막 봉으로 판정한다', async () => {
@@ -445,6 +446,7 @@ describe('loadComputedSources', () => {
         expect(result.computed.has('GOOD')).toBe(true);
         expect(result.computed.has('BAD')).toBe(false);
         expect(result.computedSymbols).toBe(2);
+        expect([...result.notReadySymbols]).toEqual(['BAD']);
     });
 
     it('일봉을 동시에 받는 수는 상한을 넘지 않는다', async () => {

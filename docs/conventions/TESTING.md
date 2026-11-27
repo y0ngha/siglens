@@ -4,7 +4,7 @@ Test conventions for Siglens (split out of CONVENTIONS.md). Cite rules as `TESTI
 
 **Rule IDs** follow the root `CLAUDE.md` "Rule IDs and references". Sections group rules by topic, so numbers are not contiguous within a section.
 
-Retired IDs: TE-32, TE-35
+Retired IDs: TE-32, TE-35, TE-57
 
 ## File Locations
 
@@ -54,9 +54,9 @@ When code is refactored or moved, the destination module carries the edge-case t
 
 <a id="TE-5"></a>
 
-#### TE-5 — New helpers, actions, adapters and policy components need their own tests
+#### TE-5 — New helpers, actions, adapters, hooks and branchy components need their own tests
 
-Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged).
+Every new pure helper, Server Action wrapper, API/adapter function and policy-invariant component gets a colocated test file that reaches the project coverage target. Thin wrappers that delegate to `@y0ngha/siglens-core` still need a forwarding test (arguments and result pass through unchanged). A new custom hook or a component with its own branches (states, empty/error paths, derived labels) gets a colocated test that drives it directly (`renderHook`, a render test per branch); the parent's integration test alone leaves the branches unpinned.
 
 - ❌ A new `callGeminiWithKeyFallback` added to an adapter with no colocated test file.
 - ✅ A `__tests__/` file next to it covering undefined input, missing levels, duplicates, zero values and the empty result.
@@ -104,15 +104,6 @@ A new `describe`/`it` name uses the same language as the other tests in that fil
 
 - ❌ `it('rounds half a cent up')` added to a file whose other cases are Korean.
 - ✅ `it('반 센트는 올림한다')` in the same file.
-
-<a id="TE-57"></a>
-
-#### TE-57 — New hooks and branchy components get their own tests
-
-A new custom hook, or a UI component with its own branches (states, empty/error paths, derived labels), gets a colocated test that drives it directly. Coverage through the parent's integration test alone leaves the branches unpinned and lets a regression in the extracted unit stay green.
-
-- ❌ A hook split out of a component, covered only by the parent component's test.
-- ✅ A `renderHook` test for the hook and a render test per branch of the component, next to the source.
 
 ## Required Test Cases
 
@@ -260,7 +251,7 @@ Exception: persisted or wire-level strings (storage keys, persisted event names,
 
 #### TE-6 — Import boundary constants
 
-Period and threshold constants come from the source (`import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core'`), not a local `const TEST_PERIOD = 14`. Do not mirror a private source constant by hand or leave literal copies in assertions and log strings after the source is converted.
+Period and threshold constants come from the source (`import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core'`), not a local `const TEST_PERIOD = 14`. Do not mirror a private source constant by hand or leave literal copies in assertions and log strings after the source is converted. The same holds for logic: a demo or fixture test runs the production detector or function the copy relies on, never a local re-implementation of it.
 
 <a id="TE-4"></a>
 
@@ -614,6 +605,15 @@ A new global stylesheet rule (for example a `:has()` selector) has no runtime te
 
 - ❌ A `:has()` rule added to `globals.css` and a page card rewritten inline, with no test touching either.
 - ✅ A test reads `globals.css`, normalizes whitespace and asserts the exact rule; the card lives in a feature component with its own render test.
+
+<a id="TE-68"></a>
+
+#### TE-68 — A test with known heavy cost declares a named timeout constant
+
+A test whose cost is bounded but above the 5s default (full core computation over a bar series, process spawns, a whole-repo scan) passes locally and times out on a loaded CI runner. Declare `const HEAVY_COMPUTE_TIMEOUT_MS = 30_000;` (or a matching `SPAWN_TEST_TIMEOUT_MS`) next to the test with a one-line WHY, and pass it as the `{ timeout }` options argument in second position (Vitest rejects options after the callback). A describe-level timeout is not overridden by `--testTimeout`, so scale it explicitly for a slower mode such as coverage.
+
+- ❌ `it('detects signals over 500 bars', () => { ... })` running the full detector on the default timeout, or `{ timeout: 30000 }` with no explanation.
+- ✅ `it('detects signals over 500 bars', { timeout: HEAVY_COMPUTE_TIMEOUT_MS }, () => { ... })`.
 
 ## Real-database tests
 

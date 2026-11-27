@@ -1,4 +1,5 @@
-import { LOCALES } from '@/shared/i18n/locales';
+import { createTranslator } from 'next-intl';
+import { LOCALES, type Locale } from '@/shared/i18n/locales';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
 import { MAIL_ALERT_SIGNAL_TYPES } from '../../lib/mailAlertConstants';
 import { MAIL_ALERT_UTM_CAMPAIGN } from '../../lib/mailAlertLinks';
@@ -11,13 +12,29 @@ import {
     buildMailAlertEmail,
     MAIL_ALERT_EMAIL_MAX_HTML_BYTES,
 } from '../mailAlertEmail';
-import type { BuildMailAlertEmailInput } from '../mailAlertEmailTypes';
+import type {
+    BuildMailAlertEmailInput,
+    MailAlertEmailTranslator,
+} from '../mailAlertEmailTypes';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 const tKo = catalogTranslator('entities.mail-alert.email', 'ko');
 const tEn = catalogTranslator('entities.mail-alert.email', 'en');
 const labelKo = catalogTranslator('shared.enumLabel', 'ko');
 const labelEn = catalogTranslator('shared.enumLabel', 'en');
+
+/**
+ * 실제 next-intl 번역자. 카탈로그 스텁(`catalogTranslator`)은 ICU 복수형을 렌더하지 않으므로, 제목의 건수처럼
+ * 복수형이 걸린 문장은 이 번역자로 확인한다.
+ */
+function icuTranslator(locale: Locale): MailAlertEmailTranslator {
+    return createTranslator({
+        locale,
+        messages: MESSAGE_CATALOGS[locale],
+        namespace: 'entities.mail-alert.email',
+    } as never) as unknown as MailAlertEmailTranslator;
+}
 
 const SITE = 'https://siglens.io';
 const ID = '3f0c8e3e-6b9a-4e4d-9d3a-1a2b3c4d5e6f';
@@ -69,6 +86,7 @@ function input(
             labelKo.has(`signalType.${type}`)
                 ? labelKo(`signalType.${type}`)
                 : null,
+        symbolNames: new Map(),
         ...overrides,
     };
 }
@@ -90,6 +108,39 @@ describe('buildMailAlertEmail', () => {
         expect(message.subject).toBe('[시그렌즈] 11월 25일 새로 잡힌 변화 3건');
         expect(message.to).toBe('user@example.com');
     });
+
+    it('영어 제목은 건수에 맞는 단수·복수형을 쓴다', () => {
+        const subjectFor = (count: number) =>
+            buildMailAlertEmail(
+                input({
+                    locale: 'en',
+                    t: icuTranslator('en'),
+                    plan: plan(
+                        { mine: [signalItem()] },
+                        Array.from({ length: count }, (_, i) => `k${i}`)
+                    ),
+                })
+            ).subject;
+
+        expect(subjectFor(1)).toBe('[SIGLENS] November 25: 1 new change');
+        expect(subjectFor(3)).toBe('[SIGLENS] November 25: 3 new changes');
+    });
+
+    it.each(LOCALES)(
+        '%s: 실제 번역자로 렌더한 제목에 건수가 들어가고 자리표시자가 남지 않는다',
+        locale => {
+            const message = buildMailAlertEmail(
+                input({
+                    locale,
+                    t: icuTranslator(locale),
+                    plan: plan({ mine: [signalItem()] }, ['a', 'b']),
+                })
+            );
+
+            expect(message.subject).toContain('2');
+            expect(message.subject).not.toMatch(/[{}#]/);
+        }
+    );
 
     it('섹션 순서는 공포 탐욕, 담은 종목, 신호별 새 종목이다', () => {
         const message = buildMailAlertEmail(
@@ -139,7 +190,33 @@ describe('buildMailAlertEmail', () => {
         expect(message.text).toContain('등락 +1.23%');
     });
 
-    it('한국어에서는 종목명과 코드를 함께, 한국 종목은 한국장 문구를 쓴다', () => {
+    it('종목 이름은 메일 리포트와 같은 규칙이다: ko는 한글명, 다른 로케일은 영문 법인명', () => {
+        const names = new Map([
+            [
+                '005930.KS',
+                { name: 'Samsung Electronics', koreanName: '삼성전자' },
+            ],
+        ]);
+        const build = (locale: Locale) =>
+            buildMailAlertEmail(
+                input({
+                    locale,
+                    t: catalogTranslator('entities.mail-alert.email', locale),
+                    symbolNames: names,
+                    plan: plan({
+                        mine: [
+                            signalItem({ market: 'kr', symbol: '005930.KS' }),
+                        ],
+                    }),
+                })
+            ).text;
+
+        expect(build('ko')).toContain('삼성전자 (005930)');
+        expect(build('en')).toContain('Samsung Electronics (005930)');
+        expect(build('en')).not.toContain('삼성전자');
+    });
+
+    it('이름 조회가 없으면 ko는 신호 기록의 한글명으로, 한국 종목은 한국장 문구를 쓴다', () => {
         const message = buildMailAlertEmail(
             input({
                 plan: plan({
@@ -154,7 +231,10 @@ describe('buildMailAlertEmail', () => {
             })
         );
 
-        expect(message.text).toContain('삼성전자 (005930.KS)');
+        // 보이는 코드는 접미사를 뗀 표기, 링크는 원문 심볼이다.
+        expect(message.text).toContain('삼성전자 (005930)');
+        expect(message.text).not.toContain('(005930.KS)');
+        expect(message.html).toContain(`href="${SITE}/005930.KS?`);
         expect(message.text).toContain('한국장 11월 24일 마감 기준');
     });
 
@@ -172,7 +252,7 @@ describe('buildMailAlertEmail', () => {
         );
 
         expect(message.text).not.toContain('삼성전자');
-        expect(message.text).toContain('005930.KS');
+        expect(message.text).toMatch(/^- 005930$/m);
     });
 
     it('등락률이 없으면 등락 문구를 빼고, 라벨 사전에 없는 유형은 유형 이름으로 싣는다', () => {
@@ -387,7 +467,7 @@ describe('buildMailAlertEmail', () => {
         const message = buildMailAlertEmail(
             input({
                 locale: 'en',
-                t: tEn,
+                t: icuTranslator('en'),
                 signalLabel: type =>
                     labelEn.has(`signalType.${type}`)
                         ? labelEn(`signalType.${type}`)
@@ -396,7 +476,7 @@ describe('buildMailAlertEmail', () => {
             })
         );
 
-        expect(message.subject).toBe('[SIGLENS] November 25: 1 new changes');
+        expect(message.subject).toBe('[SIGLENS] November 25: 1 new change');
         expect(message.html).toContain('<html lang="en">');
         expect(message.text).toContain(
             'US market, as of the November 24 close'

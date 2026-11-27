@@ -18,12 +18,12 @@ import { DrizzleSignalHistoryRepository } from '@/entities/signal-history/api';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { DrizzleWatchlistRepository } from '@/entities/watchlist/api';
-import { dashboardScopeOf } from '@/shared/config/dashboardScope';
 import { getDatabaseClient } from '@/shared/db/client';
-import type { EmailDispatcher } from '@/shared/email/types';
+import type { KeyedEmailDispatcher } from '@/shared/email/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import type { MailAlertFearGreedMarket } from '@/entities/mail-alert/model';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { createSymbolBriefSources } from '../email-report/loadSymbolBrief';
 import type { MailAlertBatchDeps } from './runMailAlertBatch';
 
 function alertMarketOf(profile: MarketProfileId): SignalHistoryMarket | null {
@@ -37,11 +37,11 @@ function alertMarketOf(profile: MarketProfileId): SignalHistoryMarket | null {
     }
 }
 
-function universeOf(market: SignalHistoryMarket): ReadonlySet<string> {
-    return new Set(
-        dashboardScopeOf(market).sectorStocks.map(stock => stock.symbol)
-    );
-}
+/**
+ * 종목 표시 이름 — 메일 리포트가 쓰는 같은 조회(`createSymbolBriefSources().getNames`, 종목 페이지의 24시간 데이터
+ * 캐시)라, 두 메일이 같은 종목을 같은 이름으로 부른다.
+ */
+const { getNames: getSymbolNames } = createSymbolBriefSources();
 
 async function loadFearGreedHistory(market: MailAlertFearGreedMarket) {
     switch (market) {
@@ -55,13 +55,13 @@ async function loadFearGreedHistory(market: MailAlertFearGreedMarket) {
 }
 
 /**
- * 운영 의존성. 신호는 `signal_events`와 같은 저장소를, 공포·탐욕은 허브 페이지가 읽는 같은 판독 캐시를,
+ * 운영 의존성. 신호는 `signal_events`와 같은 저장소를, 공포 탐욕은 허브 페이지가 읽는 같은 판독 캐시를,
  * 스캐너 범위 밖 종목의 일봉은 종목 페이지·메일 리포트와 같은 `loadBarsData(symbol, '1Day')`(봉 캐시)를 쓴다.
  * 발송기는 호출자가 넘긴다 — 메일 리포트 패스와 같은 인스턴스를 공유해 두 패스의 발송 속도를 함께 묶는다.
  */
 export function createMailAlertBatchDeps(
     secret: string | null,
-    dispatcher: EmailDispatcher
+    dispatcher: KeyedEmailDispatcher
 ): MailAlertBatchDeps {
     const { db } = getDatabaseClient();
     const portfolio = new DrizzlePortfolioRepository(db);
@@ -78,7 +78,7 @@ export function createMailAlertBatchDeps(
             loadDailyBars: async symbol =>
                 (await loadBarsData(symbol, '1Day')).bars,
         },
-        universe: { us: universeOf('us'), kr: universeOf('kr') },
+        getSymbolNames,
         findHoldings: userId => portfolio.findByUser(userId),
         findWatchlist: userId => watchlist.findByUser(userId),
         resolveMarket: async symbol =>

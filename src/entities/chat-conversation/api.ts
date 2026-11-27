@@ -5,8 +5,13 @@ import {
     desc,
     eq,
     getTableColumns,
+    gt,
     gte,
+    like,
+    lt,
     max,
+    not,
+    or,
     sql,
     type SQL,
 } from 'drizzle-orm';
@@ -20,6 +25,10 @@ import {
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import {
+    WEB_SEARCH_BODIES_OMITTED_KEY,
+    WEB_SEARCH_RETENTION_DAYS,
+} from '@/shared/api/web/webSearchResult';
 import type { NormalizedChatImage } from './server/normalizeChatImage';
 import {
     CONVERSATION_LIST_LIMIT,
@@ -88,7 +97,7 @@ export interface ChatImageWithOwner {
  * 소유자 범위다: 조회 후 검사가 아니라 SQL `WHERE`에서 `userId`로 걸러, 훗날 리팩터링에도
  * 다른 사용자의 행이 새지 않는다.
  *
- * **메시지 메서드(`listMessages`, `appendMessages`, `supersedeAfterLastUser`,
+ * **메시지 메서드(`listMessages`, `appendMessages`, `setTurnAt`, `supersedeAfterLastUser`,
  * `deleteFromSeq`)는 `conversationId`만 받으며 소유자 범위가 아니다** — 호출자가 이미 그 id를
  * 확인·인가했다고 신뢰한다. 호출자는 반드시 먼저 `findForUser(id, userId)`로 소유를 확인해야 한다
  * (불일치는 null). 건너뛰면 id만으로 남의 메시지를 읽거나 바꿀 수 있다.
@@ -424,6 +433,36 @@ export class DrizzleChatConversationRepository {
     }
 
     /**
+     * user 행에 그 턴의 시계 메모를 만든 UTC 시각을 저장한다(멱등 UPDATE 한 번 — `regenerate`는 같은 행을 덮어쓴다).
+     * `turnAt`은 core가 돌려준 ISO 문자열이며 `Date`로 바꿔도 밀리초까지 그대로다. `conversationId`를 WHERE에 함께 걸어,
+     * 호출자가 쥔 (대화, 행) 쌍이 어긋나면 아무 행도 바꾸지 않는다. 소유자 범위가 아니다(클래스 문서 참고).
+     * 형식이 틀린 id나 시각은 쿼리 없이 no-op. 시각이 없으면 다음 턴 캐시가 한 번 빗나갈 뿐이라, 실패를 어떻게
+     * 다룰지는 호출자가 정한다.
+     */
+    async setTurnAt(
+        conversationId: string,
+        messageId: string,
+        turnAt: string
+    ): Promise<void> {
+        if (!isValidUuid(conversationId) || !isValidUuid(messageId)) return;
+        const at = new Date(turnAt);
+        if (Number.isNaN(at.getTime())) return;
+        await withRetry(
+            () =>
+                this.db
+                    .update(chatMessages)
+                    .set({ turnAt: at })
+                    .where(
+                        and(
+                            eq(chatMessages.id, messageId),
+                            eq(chatMessages.conversationId, conversationId)
+                        )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
      * 메시지는 이미 커밋됐다. 카운터 갱신이 재시도 후에도 실패했을 때 턴을 실패로 알리면
      * 호출자가 재시도해 방금 넣은 행이 중복되므로, 오류를 삼킨다.
      * 다음 호출이 `message_count`/`last_message_at`을 처음부터 다시 계산해 복구한다.
@@ -509,5 +548,89 @@ export class DrizzleChatConversationRepository {
                 updatedAt: new Date(),
             })
             .where(eq(chatConversations.id, conversationId));
+    }
+
+    /**
+     * 보존 기간 작업용(소유자 범위가 아니다 — 시스템 작업이라 사용자와 무관하게 읽는다). 생성 시각이 DB 시계 기준
+     * 보존 일수(`WEB_SEARCH_RETENTION_DAYS`)보다 이른(`now() - make_interval`, DB-7) `web_search` 도구 행 중 **아직 줄이지 않은** 행을 `id` 순서로 `afterId` 다음부터 `limit`개 돌려준다.
+     * "줄이지 않았다"는 표식(`"bodiesOmitted":true`)이 없는 결과 모양(`"results":[` 또는 잘림 봉투의 `"preview":`)이다 —
+     * 오류 결과는 어느 쪽에도 맞지 않아 매일 다시 읽히지 않는다. 직렬화에 공백이 없어 부분 문자열로 찾는다. `id` 키셋
+     * 페이지네이션이라 줄일 수 없었던 행이 있어도 한 번의 실행 안에서는 다시 읽지 않는다.
+     */
+    async listUnstrippedWebSearchRows(
+        afterId: string | null,
+        limit: number
+    ): Promise<Array<{ id: string; content: string }>> {
+        return withRetry(
+            () =>
+                this.db
+                    .select({
+                        id: chatMessages.id,
+                        content: chatMessages.content,
+                    })
+                    .from(chatMessages)
+                    .where(
+                        and(
+                            eq(chatMessages.toolName, 'web_search'),
+                            lt(
+                                chatMessages.createdAt,
+                                sql`now() - make_interval(days => ${WEB_SEARCH_RETENTION_DAYS})`
+                            ),
+                            not(
+                                like(
+                                    chatMessages.content,
+                                    `%"${WEB_SEARCH_BODIES_OMITTED_KEY}":true%`
+                                )
+                            ),
+                            or(
+                                like(chatMessages.content, '%"results":[%'),
+                                like(chatMessages.content, '%"preview":%')
+                            ),
+                            afterId === null
+                                ? undefined
+                                : gt(chatMessages.id, afterId)
+                        )
+                    )
+                    .orderBy(chatMessages.id)
+                    .limit(limit),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * 보존 기간 작업용. 줄인 `content`를 한 트랜잭션에서 쓴다. 이미 줄인 행(표식이 있는 행)은 `WHERE`가 거르므로 같은
+     * 입력으로 다시 불러도 아무것도 바뀌지 않는다(멱등). 실제로 바뀐 행 수를 돌려준다.
+     */
+    async rewriteWebSearchContent(
+        updates: ReadonlyArray<{ id: string; content: string }>
+    ): Promise<number> {
+        if (updates.length === 0) return 0;
+        // 트랜잭션은 연결 하나라 UPDATE가 어차피 한 줄로 선다. `Promise.all`로 동시에 띄운 것처럼 보이지 않게
+        // 하나가 끝난 뒤 다음을 보내는 사슬로 쓴다.
+        return this.db.transaction(async tx =>
+            updates.reduce<Promise<number>>(
+                (previous, update) =>
+                    previous.then(async sum => {
+                        const rows = await tx
+                            .update(chatMessages)
+                            .set({ content: update.content })
+                            .where(
+                                and(
+                                    eq(chatMessages.id, update.id),
+                                    eq(chatMessages.toolName, 'web_search'),
+                                    not(
+                                        like(
+                                            chatMessages.content,
+                                            `%"${WEB_SEARCH_BODIES_OMITTED_KEY}":true%`
+                                        )
+                                    )
+                                )
+                            )
+                            .returning({ id: chatMessages.id });
+                        return sum + rows.length;
+                    }),
+                Promise.resolve(0)
+            )
+        );
     }
 }

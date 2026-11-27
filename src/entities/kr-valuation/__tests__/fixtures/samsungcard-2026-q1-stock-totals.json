@@ -1,0 +1,42 @@
+{
+    "status": "000",
+    "message": "정상",
+    "list": [
+        {
+            "rcept_no": "20260515002134",
+            "corp_cls": "Y",
+            "corp_code": "00126292",
+            "corp_name": "삼성카드",
+            "se": "합계",
+            "isu_stock_totqy": "-",
+            "now_to_isu_stock_totqy": "-",
+            "now_to_dcrs_stock_totqy": "-",
+            "redc": "-",
+            "profit_incnr": "-",
+            "rdmstk_repy": "-",
+            "etc": "-",
+            "istc_totqy": "-",
+            "tesstk_co": "-",
+            "distb_stock_co": "-",
+            "stlm_dt": "2026-03-31"
+        },
+        {
+            "rcept_no": "20260515002134",
+            "corp_cls": "Y",
+            "corp_code": "00126292",
+            "corp_name": "삼성카드",
+            "se": "비고",
+            "isu_stock_totqy": "-",
+            "now_to_isu_stock_totqy": "-",
+            "now_to_dcrs_stock_totqy": "-",
+            "redc": "-",
+            "profit_incnr": "-",
+            "rdmstk_repy": "-",
+            "etc": "-",
+            "istc_totqy": "-",
+            "tesstk_co": "-",
+            "distb_stock_co": "-",
+            "stlm_dt": "2026-03-31"
+        }
+    ]
+}

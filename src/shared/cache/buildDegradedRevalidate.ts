@@ -68,6 +68,15 @@ export const NOINDEX_DEGRADED_RENDER_TAG = 'noindex-degraded-render';
  */
 export const INCOMPLETE_SESSION_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
 
+/**
+ * 보강 데이터 일부가 **재시도하면 풀릴 일시 사유**로 빠진 채 저장되지 않은 렌더의 revalidate(초).
+ *
+ * 300초(`RUNTIME_DEGRADED_REVALIDATE_SECONDS`)가 아니라 1h인 이유: 본문은 멀쩡하고 빠진 것은 보강 한 조각뿐이라
+ * 노출 창을 5분까지 줄일 가치가 없다. 반대로 사유가 SEC 같은 외부 한도일 때 5분 주기는 한도를 더 두드린다 —
+ * 종목 수만큼 곱해진 재요청이 한도 초과를 길게 만든다. 1h면 12h 고정보다 빠르게 채워지고 재요청은 종목·시간당 1회로 묶인다.
+ */
+export const PENDING_ENRICHMENT_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
+
 /*
  * 렌더 중 호출된 `unstable_cache`는 자기 `revalidate`가 더 짧으면 렌더 스토어의
  * revalidate를 그 값으로 낮춘다(next/dist/server/web/spec-extension/unstable-cache.js,
@@ -103,6 +112,12 @@ const pinNoindexDegradedRender = unstable_cache(
         // `prerender-legacy` 분기). 그래서 이 핀을 거친 렌더는 페이지 엔트리에 이 태그가 남는다.
         tags: [NOINDEX_DEGRADED_RENDER_TAG],
     }
+);
+
+const pinPendingEnrichmentRevalidate = unstable_cache(
+    async () => true,
+    ['pending-enrichment-revalidate'],
+    { revalidate: PENDING_ENRICHMENT_REVALIDATE_SECONDS }
 );
 
 const pinIncompleteSessionRevalidate = unstable_cache(
@@ -240,6 +255,22 @@ export async function shortenRevalidateForIncompleteSession(): Promise<void> {
     } catch (error) {
         console.warn(
             '[shortenRevalidateForIncompleteSession] pin skipped (outside a Next render?):',
+            redactDbErrorForLog(error)
+        );
+    }
+}
+
+/**
+ * 보강 조각이 일시 사유로 빠진 렌더의 revalidate를 1h로 낮춘다(`PENDING_ENRICHMENT_REVALIDATE_SECONDS`).
+ * 쓰는 곳: 뉴스 탭 공시 섹션의 제목 로드 실패(`news:company-filings`). 제약은 다른 핀과 같다 — 렌더 경로에서
+ * 불러야 하고, 다른 `unstable_cache` 콜백 안에서는 효과가 없다. 실패는 삼킨다.
+ */
+export async function shortenRevalidateForPendingEnrichment(): Promise<void> {
+    try {
+        await pinPendingEnrichmentRevalidate();
+    } catch (error) {
+        console.warn(
+            '[shortenRevalidateForPendingEnrichment] pin skipped (outside a Next render?):',
             redactDbErrorForLog(error)
         );
     }

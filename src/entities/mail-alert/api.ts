@@ -8,6 +8,7 @@ import {
     inArray,
     isNull,
     lt,
+    ne,
     sql,
     type SQL,
 } from 'drizzle-orm';
@@ -573,7 +574,14 @@ export class DrizzleMailAlertDeliveryRepository implements MailAlertDeliveryRepo
                         error,
                         updatedAt: sql`now()`,
                     })
-                    .where(eq(mailAlertDeliveries.id, id)),
+                    // 끝난 기록이 이미 `sent`면 덮지 않는다(DB-11) — 늦게 도착한 실패 경로가 나간 메일을
+                    // 실패로 바꾸면 그 항목이 다음 날 억제되지 않는다.
+                    .where(
+                        and(
+                            eq(mailAlertDeliveries.id, id),
+                            ne(mailAlertDeliveries.status, 'sent')
+                        )
+                    ),
             DB_TRANSIENT_RETRY
         );
     }

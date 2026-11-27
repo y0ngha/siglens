@@ -2,14 +2,18 @@ import {
     EMAIL_SEND_MIN_INTERVAL_MS,
     ThrottledEmailDispatcher,
 } from '../ThrottledEmailDispatcher';
-import type { EmailDispatcher, EmailMessage } from '../types';
+import type {
+    EmailMessage,
+    KeyedEmailDispatcher,
+    KeyedEmailOutcome,
+} from '../types';
 
 function message(to: string): EmailMessage {
     return { to, subject: 's', html: '<p>h</p>', text: 't' };
 }
 
 interface Recorder {
-    dispatcher: EmailDispatcher;
+    dispatcher: KeyedEmailDispatcher;
     startedAt: Map<string, number>;
 }
 
@@ -23,6 +27,10 @@ function recorder(
             sendEmail: async m => {
                 startedAt.set(m.to, Date.now());
                 return send(m);
+            },
+            sendKeyedEmail: async (m): Promise<KeyedEmailOutcome> => {
+                startedAt.set(m.to, Date.now());
+                return (await send(m)) ? 'accepted' : 'rejected';
             },
         },
     };
@@ -129,5 +137,31 @@ describe('ThrottledEmailDispatcher', () => {
         await results;
 
         expect(startedAt.get('b')).toBe(begin + EMAIL_SEND_MIN_INTERVAL_MS);
+    });
+
+    it('멱등 키 발송도 같은 줄에 서서 일반 발송과 간격을 둔다', async () => {
+        const { dispatcher, startedAt } = recorder();
+        const throttled = new ThrottledEmailDispatcher(dispatcher, 500);
+        const begin = Date.now();
+
+        const results = Promise.all([
+            throttled.sendEmail(message('a')),
+            throttled.sendKeyedEmail({ ...message('b'), idempotencyKey: 'k' }),
+        ]);
+        await vi.advanceTimersByTimeAsync(500);
+
+        await expect(results).resolves.toEqual([true, 'accepted']);
+        expect(startedAt.get('b')).toBe(begin + 500);
+    });
+
+    it('멱등 키 발송에서 안쪽 dispatcher가 던지면 rejected를 돌려준다', async () => {
+        const { dispatcher } = recorder(async () => {
+            throw new Error('network down');
+        });
+        const throttled = new ThrottledEmailDispatcher(dispatcher, 0);
+
+        await expect(
+            throttled.sendKeyedEmail({ ...message('a'), idempotencyKey: 'k' })
+        ).resolves.toBe('rejected');
     });
 });

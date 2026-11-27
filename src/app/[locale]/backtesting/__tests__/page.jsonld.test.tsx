@@ -38,6 +38,9 @@ vi.mock('@/widgets/backtesting/BacktestHero', () => ({
 vi.mock('@/widgets/backtesting/BacktestComparison', () => ({
     BacktestComparison: () => null,
 }));
+vi.mock('@/widgets/backtesting/BacktestTimingCheck', () => ({
+    BacktestTimingCheck: () => null,
+}));
 vi.mock('@/widgets/backtesting/BacktestTrendRecognition', () => ({
     BacktestTrendRecognition: () => null,
 }));

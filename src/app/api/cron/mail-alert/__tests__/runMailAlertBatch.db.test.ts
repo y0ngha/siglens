@@ -144,7 +144,7 @@ describe.skipIf(!URL)(
                     loadFearGreedHistory: vi.fn().mockResolvedValue([]),
                     loadDailyBars: vi.fn().mockResolvedValue([]),
                 },
-                universe: { us: new Set(['AAPL']), kr: new Set() },
+                getSymbolNames: async () => null,
                 findHoldings: vi.fn().mockResolvedValue([]),
                 findWatchlist: vi.fn().mockResolvedValue([]),
                 resolveMarket: vi.fn().mockResolvedValue('us'),
@@ -158,6 +158,10 @@ describe.skipIf(!URL)(
                     sendEmail: async message => {
                         sent.push(message);
                         return true;
+                    },
+                    sendKeyedEmail: async message => {
+                        sent.push(message);
+                        return 'accepted';
                     },
                 },
             };

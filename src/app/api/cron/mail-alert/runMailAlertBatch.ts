@@ -31,6 +31,7 @@ import type {
     MailAlertEmailTranslator,
     MailAlertSignalLabelResolver,
 } from '@/entities/mail-alert/templates/mailAlertEmailTypes';
+import type { ReportSymbolNames } from '@/entities/email-report/reportModel';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import {
     redactDbErrorForLog,
@@ -41,7 +42,10 @@ import type {
     MailAlertDeliveryTarget,
     MailAlertSubscriberRepository,
 } from '@/shared/db/types';
-import type { EmailDispatcher } from '@/shared/email/types';
+import type {
+    KeyedEmailDispatcher,
+    KeyedEmailOutcome,
+} from '@/shared/email/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 import { mapChunked } from '@/shared/lib/mapChunked';
@@ -80,10 +84,13 @@ export interface MailAlertBatchDeps {
     >;
     readonly deliveries: MailAlertDeliveryRepository;
     readonly sources: AlertSourceDeps;
-    /** 시장별 스캐너 대상 종목. */
-    readonly universe: Readonly<
-        Record<SignalHistoryMarket, ReadonlySet<string>>
-    >;
+    /**
+     * 메일에 싣는 종목의 표시 이름(영문 법인명과 한글명). 메일 리포트와 같은 원천(종목 페이지의 24시간 데이터
+     * 캐시)이다. 없는 종목은 `null`, 조회가 던지면 그 종목만 이름 없이(코드로) 싣는다.
+     */
+    readonly getSymbolNames: (
+        symbol: string
+    ) => Promise<ReportSymbolNames | null>;
     readonly findHoldings: (
         userId: string
     ) => Promise<ReadonlyArray<{ symbol: string }>>;
@@ -101,7 +108,7 @@ export interface MailAlertBatchDeps {
         locale: Locale
     ) => Promise<MailAlertSignalLabelResolver>;
     readonly getDisclaimer: (locale: Locale) => Promise<string>;
-    readonly dispatcher: EmailDispatcher;
+    readonly dispatcher: KeyedEmailDispatcher;
     /** 테스트가 마감을 당길 수 있게 주입한다. */
     readonly clock?: () => number;
 }
@@ -128,6 +135,11 @@ export interface MailAlertBatchCounts {
     computeErrors: number;
     /** 보유·관심종목을 읽지 못해 이번 실행에서 건너뛴 구독자(선점하지 않았으니 다음 슬롯이 다시 본다). */
     portfolioErrors: number;
+    /**
+     * 첫 슬롯에서 담은 종목 중 판정하지 못한 종목(낡은 봉, 일봉·시장 조회 오류)이 있어 선점하지 않고 최종 슬롯으로
+     * 넘긴 구독자.
+     */
+    deferredSymbolsNotReady: number;
     pruned: number;
 }
 
@@ -145,6 +157,19 @@ interface PreparedSubscriber {
     readonly target: MailAlertDeliveryTarget;
     readonly topics: readonly MailAlertTopic[];
     readonly portfolioSymbols: readonly string[];
+}
+
+/**
+ * 멱등 키 발송 결과를 `sent`로 기록할지. `already_accepted`는 같은 키(같은 구독자, 같은 날)의 첫 요청을 제공자가
+ * 이미 받았다는 뜻이라 DB-11 그대로 성공이다(실패로 남기면 받은 항목이 다음 날 억제되지 않는다).
+ *
+ * **`in_flight`는 DB-11에서 일부러 벗어난다.** DB-11은 "처리 중"을 시도를 쓰지 않고 나중에 다시 하라고 하지만,
+ * 알림 메일에는 그 "나중"이 없다: 선점 행이 이미 그 날을 잡았고, 08시 최종 슬롯도 선점된 구독자를 건너뛰며,
+ * 다음 날은 새 알림 날짜다. 다시 시도할 길이 없으니 같은 키의 진행 중 요청이 이 날의 메일을 보낸다고 보고 `sent`로
+ * 접는다 — `failed`로 남기면 그 요청이 실제로 나간 날 항목이 억제되지 않아 다음 날 같은 소식이 다시 간다.
+ */
+function countsAsSent(outcome: KeyedEmailOutcome): boolean {
+    return outcome !== 'rejected';
 }
 
 function errorText(error: unknown): string {
@@ -219,10 +244,12 @@ function watchedSymbolsOf(
     ];
 }
 
+/** 종목 → 알림 시장. 조회가 던진 종목은 `failed`에 넣고 `null`(싣지 않음)로 둔다. */
 async function resolveMarkets(
     deps: MailAlertBatchDeps,
     symbols: readonly string[],
-    counts: MailAlertBatchCounts
+    counts: MailAlertBatchCounts,
+    failed: Set<string>
 ): Promise<Map<string, SignalHistoryMarket | null>> {
     const entries = await mapChunked(
         symbols,
@@ -232,6 +259,7 @@ async function resolveMarkets(
                 return [symbol, await deps.resolveMarket(symbol)];
             } catch (error) {
                 counts.computeErrors += 1;
+                failed.add(symbol);
                 console.error(
                     `[mail-alert] market lookup failed for ${symbol}`,
                     redactDbErrorForLog(error)
@@ -241,6 +269,64 @@ async function resolveMarkets(
         }
     );
     return new Map(entries);
+}
+
+/** 한 구독자가 담은 종목(주제의 종목, 보유·관심종목). */
+function watchedOf(subscriber: PreparedSubscriber): string[] {
+    return [
+        ...subscriber.topics.flatMap(topic =>
+            topic.kind === 'symbol' ? [topic.symbol] : []
+        ),
+        ...subscriber.portfolioSymbols,
+    ];
+}
+
+/** 메일에 실릴 종목(담은 종목 섹션과 신호별 섹션). */
+function plannedSymbols(plan: MailAlertPlan): string[] {
+    return [
+        ...new Set([
+            ...plan.sections.mine.map(item => item.symbol),
+            ...plan.sections.hubs.flatMap(section =>
+                section.items.map(item => item.symbol)
+            ),
+        ]),
+    ];
+}
+
+/**
+ * 종목 표시 이름을 실행 안에서 종목마다 한 번만 읽는다. 조회 실패는 그 종목만 이름 없이(`null`) 두고 메일은
+ * 나간다. 메일 리포트의 이름 조회와 같은 처리다.
+ */
+function createSymbolNamesCache(
+    deps: MailAlertBatchDeps
+): (
+    symbols: readonly string[]
+) => Promise<ReadonlyMap<string, ReportSymbolNames | null>> {
+    const cache = new Map<string, Promise<ReportSymbolNames | null>>();
+    const one = (symbol: string): Promise<ReportSymbolNames | null> => {
+        const cached = cache.get(symbol);
+        if (cached !== undefined) return cached;
+        const pending = deps.getSymbolNames(symbol).catch(error => {
+            console.warn(
+                `[mail-alert] name lookup failed for ${symbol}`,
+                redactDbErrorForLog(error)
+            );
+            return null;
+        });
+        cache.set(symbol, pending);
+        return pending;
+    };
+    return async symbols =>
+        new Map(
+            await mapChunked(
+                symbols,
+                MAIL_ALERT_LOOKUP_CONCURRENCY,
+                async (symbol): Promise<[string, ReportSymbolNames | null]> => [
+                    symbol,
+                    await one(symbol),
+                ]
+            )
+        );
 }
 
 function fearGreedMarketsOf(
@@ -284,8 +370,16 @@ function createLocaleCache<T>(
  *   `pending`으로 남은 행도 같다 — 두 슬롯 모두 그 구독자를 `alreadyClaimed`로 건너뛰므로 그날 메일은 사라진다.
  *   중복 발송을 막는 대가로 받아들인 한 건의 손실이며, 다음 날은 새 행이라 영향이 없다. `pending` 행은
  *   `mail_alert_deliveries`에서 `status = 'pending'`으로 센다.
- * - **반복 방지**: 최근 `MAIL_ALERT_SUPPRESS_DAYS`일 안에 보낸(`sent`) 항목 키는 뺀다. 실패한 발송의 항목은
- *   받지 못한 것이라 세지 않는다.
+ * - **반복 방지**: 최근 `MAIL_ALERT_SUPPRESS_DAYS`일 안에 보낸(`sent`) 행과 선점만 하고 끝나지 않은(`pending`) 행의
+ *   항목 키는 뺀다. `pending`도 세는 이유: 보낸 뒤 기록 전에 프로세스가 죽은 행일 수 있어, 세지 않으면 이미 받은
+ *   소식이 다음 날 다시 간다(한 번 덜 받는 쪽보다 같은 소식을 두 번 받는 쪽이 더 나쁘다). 실패한(`failed`) 발송의
+ *   항목은 받지 못한 것이라 세지 않는다.
+ * - **담은 종목의 준비**: 첫 슬롯에서 담은 종목 중 하나라도 판정하지 못했으면(마지막 봉이 기대 세션이 아니거나
+ *   일봉·시장 조회가 실패) 그 구독자는 선점하지 않고 최종 슬롯에 맡긴다 — 봉 캐시가 아직 덜 찬 아침에 그 종목이
+ *   빠진 메일을 먼저 보내면 그날은 다시 보낼 수 없다. 최종 슬롯은 판정된 종목만으로 보내고 빠진 종목을 로그로 남긴다.
+ * - **담은 종목은 봉으로 판정한다**: 구독자가 담은 종목(주제의 종목, 보유·관심종목)의 새 신호는 스캐너 대상
+ *   여부와 상관없이 그 종목의 일봉을 코어 `detectNewConfirmedSignals`로 판정한다. 신호 기록(`signal_events`)은
+ *   신호별 섹션만 읽는다. 마지막 봉이 기대 세션이 아니면 그 종목은 싣지 않는다(`noFreshBar`).
  * - LLM을 부르지 않는다. 판정은 `signal_events`와 코어 함수(`detectNewConfirmedSignals`,
  *   `findExtremeZoneEntryOn`)가 한다.
  */
@@ -335,6 +429,7 @@ async function runInWindow(
         noFreshBar: 0,
         computeErrors: 0,
         portfolioErrors: 0,
+        deferredSymbolsNotReady: 0,
         pruned: 0,
     };
 
@@ -394,13 +489,16 @@ async function runInWindow(
         kr: krEpisodes,
     };
 
+    const lookupFailed = new Set<string>();
     const marketOf = await resolveMarkets(
         deps,
         watchedSymbolsOf(subscribers),
-        counts
+        counts,
+        lookupFailed
     );
+    // 담은 종목은 스캐너 대상이어도 모두 일봉으로 판정한다 — 신호 기록은 신호별 섹션만 읽는다.
     const computedTargets = [...marketOf].flatMap(([symbol, market]) =>
-        market === null || deps.universe[market].has(symbol)
+        market === null
             ? []
             : [{ symbol, sessionDate: expected.signals[market] }]
     );
@@ -411,6 +509,18 @@ async function runInWindow(
     counts.computedSymbols = computedSources.computedSymbols;
     counts.noFreshBar = computedSources.noFreshBar;
     counts.computeErrors += computedSources.computeErrors;
+    const symbolsNotReady = new Set([
+        ...computedSources.notReadySymbols,
+        ...lookupFailed,
+    ]);
+    if (slot === 'final' && symbolsNotReady.size > 0) {
+        // 종목 코드만 남긴다(구독자 식별자, 주소 없음). 오류 내용은 종목별 로그가 가려서 이미 남겼다(SA-26).
+        console.warn(
+            '[mail-alert] symbols not ready at final slot:',
+            JSON.stringify([...symbolsNotReady].toSorted())
+        );
+    }
+    const namesFor = createSymbolNamesCache(deps);
 
     const recent = await deps.deliveries.recentItemKeys(
         kstDateKeyDaysBefore(alertDate, MAIL_ALERT_SUPPRESS_DAYS)
@@ -426,7 +536,6 @@ async function runInWindow(
             marketOf,
             episodes,
             episodeSessions: expected.signals,
-            universe: deps.universe,
             computed: computedSources.computed,
             fearGreed: fearGreed.entries,
             suppressed: recent.get(subscriber.target.id) ?? new Set<string>(),
@@ -483,8 +592,11 @@ async function runInWindow(
                 idempotencyKey: mailAlertIdempotencyKey(target.id, alertDate),
                 t,
                 signalLabel,
+                symbolNames: await namesFor(plannedSymbols(plan)),
             });
-            const accepted = await deps.dispatcher.sendEmail(message);
+            const accepted = countsAsSent(
+                await deps.dispatcher.sendKeyedEmail(message)
+            );
             await deps.deliveries.finish(
                 claimId,
                 accepted ? 'sent' : 'failed',
@@ -511,6 +623,13 @@ async function runInWindow(
     }
 
     async function processOne(subscriber: PreparedSubscriber): Promise<void> {
+        if (
+            slot === 'first' &&
+            watchedOf(subscriber).some(symbol => symbolsNotReady.has(symbol))
+        ) {
+            counts.deferredSymbolsNotReady += 1;
+            return;
+        }
         const plan = planFor(subscriber);
         counts.suppressedItems += plan.suppressedCount;
         if (plan.itemKeys.length === 0) {

@@ -98,7 +98,7 @@ describe('/fear-greed/crypto page', () => {
             mockLoader.mockResolvedValue(EMPTY);
             const meta = await generateMetadata(PARAMS);
             expect(meta.title).toBe(
-                '코인 공포탐욕지수 - 오늘 암호화폐 시장 심리'
+                '코인 공포탐욕지수: 오늘 암호화폐 시장 심리'
             );
         });
 

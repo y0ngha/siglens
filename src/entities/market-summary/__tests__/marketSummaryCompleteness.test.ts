@@ -1,6 +1,7 @@
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
 import {
     allQuotesPresent,
+    hasAnyQuote,
     hasMissingQuotes,
 } from '../lib/marketSummaryCompleteness';
 
@@ -28,6 +29,16 @@ function makeSummary(
 }
 
 describe('marketSummaryCompleteness', () => {
+    describe('hasAnyQuote', () => {
+        it('하나라도 비-0 시세가 있으면 true', () => {
+            expect(hasAnyQuote(makeSummary([0], [0, 80]))).toBe(true);
+        });
+
+        it('전부 0이면 false(provider 전면 장애)', () => {
+            expect(hasAnyQuote(makeSummary([0, 0], [0]))).toBe(false);
+        });
+    });
+
     describe('hasMissingQuotes', () => {
         it('전 종목이 비-0 시세면 false', () => {
             const summary = makeSummary([5000, 39000], [200, 80]);

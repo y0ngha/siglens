@@ -3,9 +3,9 @@ import {
     findSignalHub,
     signalHubPath,
 } from '@/entities/signal-history/lib/signalHubs';
-import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
+import { displayTicker } from '@/shared/lib/displayTicker';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { formatKoreanDate } from '@/shared/lib/legal';
 import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';
@@ -72,16 +72,11 @@ function latest(
               null);
 }
 
-/** 화면 표기용 코드 — 한국 종목의 거래소 접미사(`.KS`/`.KQ`)를 뗀다. 링크 경로에는 쓰지 않는다. */
-function displayCode(symbol: string): string {
-    return symbol.replace(KR_EXCHANGE_SUFFIX_RE, '');
-}
-
 /** 링크 문구에 쓸 종목 표기. ko는 한국어 이름만(코드는 병기하지 않는다), 이름이 없으면 표시용 코드다. */
 function rowLabel(row: LiveSymbolRow, locale: Locale): string {
     return row.name !== null && locale === DEFAULT_LOCALE
         ? row.name
-        : displayCode(row.symbol);
+        : displayTicker(row.symbol);
 }
 
 /**

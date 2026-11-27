@@ -7,6 +7,7 @@ const {
     getCachedAnalysis,
     getBarsIndicators,
     getNews,
+    getFundamentals,
     getEconomy,
     ensureSymbolNewsFresh,
 } = vi.hoisted(() => ({
@@ -15,6 +16,7 @@ const {
     getCachedAnalysis: vi.fn(),
     getBarsIndicators: vi.fn(),
     getNews: vi.fn(),
+    getFundamentals: vi.fn(),
     getEconomy: vi.fn(),
     ensureSymbolNewsFresh: vi.fn(),
 }));
@@ -32,6 +34,9 @@ vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: getCachedAnalysis,
 }));
 vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: getNews }));
+vi.mock('@/app/api/ai/chat/tools/getFundamentals', () => ({
+    getFundamentalsTool: getFundamentals,
+}));
 vi.mock('@/app/api/ai/chat/tools/getEconomy', () => ({
     getEconomyTool: getEconomy,
 }));
@@ -62,6 +67,10 @@ const getGuide = vi.hoisted(() => vi.fn());
 vi.mock('@/app/api/ai/chat/tools/getGuide', () => ({
     getGuideTool: getGuide,
 }));
+const getPriceStats = vi.hoisted(() => vi.fn());
+vi.mock('@/app/api/ai/chat/tools/getPriceStats', () => ({
+    getPriceStatsTool: getPriceStats,
+}));
 const e2eState = vi.hoisted(() => ({ on: false }));
 const naverState = vi.hoisted(() => ({ creds: false }));
 vi.mock('@/shared/api/naver/naverSearch', () => ({
@@ -84,6 +93,7 @@ vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
 }));
 
 import {
+    AGENT_RESULT_CAPS,
     availableToolNames,
     createToolExecutor,
     type ToolRuntime,
@@ -121,7 +131,7 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 21종(web_search·get_x_posts는 키 있을 때만)', () => {
+    it('가용 툴 22종(web_search·get_x_posts는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_analyst_views',
             'get_bars_indicators',
@@ -138,6 +148,7 @@ describe('tool registry', () => {
             'get_my_portfolio',
             'get_news',
             'get_options_summary',
+            'get_price_stats',
             'get_quote',
             'get_swing_history',
             'get_theme_snapshot',
@@ -161,15 +172,17 @@ describe('tool registry', () => {
         }
     });
 
-    it('E2E fake 모드에서는 get_index_history_stats·get_swing_history를 내놓지 않는다(이력을 읽지 않는다)', () => {
+    it('E2E fake 모드에서는 get_index_history_stats·get_swing_history·get_price_stats를 내놓지 않는다(이력을 읽지 않는다)', () => {
         expect(availableToolNames().has('get_index_history_stats')).toBe(true);
         expect(availableToolNames().has('get_swing_history')).toBe(true);
+        expect(availableToolNames().has('get_price_stats')).toBe(true);
         e2eState.on = true;
         try {
             expect(availableToolNames().has('get_index_history_stats')).toBe(
                 false
             );
             expect(availableToolNames().has('get_swing_history')).toBe(false);
+            expect(availableToolNames().has('get_price_stats')).toBe(false);
         } finally {
             e2eState.on = false;
         }
@@ -241,6 +254,40 @@ describe('tool registry', () => {
                 symbolCorrectedFrom: '253450.KS',
                 symbol: '253450.KQ',
             });
+        } finally {
+            correctKrSymbolSuffix.mockImplementation(async (s: string) =>
+                s.toUpperCase()
+            );
+        }
+    });
+
+    it('get_price_stats의 symbols 목록도 한국 종목 접미사를 교정하고, 모양이 잘못된 심볼은 실행 전에 거절한다', async () => {
+        correctKrSymbolSuffix.mockImplementation(async (s: string) =>
+            s.toUpperCase() === '253450.KS' ? '253450.KQ' : s.toUpperCase()
+        );
+        getPriceStats.mockResolvedValue({ subjects: [] });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        try {
+            const result = await exec(
+                'get_price_stats',
+                { symbols: ['253450.KS', 'NVDA'], period: 'ytd' },
+                makeCtx()
+            );
+            expect(getPriceStats).toHaveBeenCalledWith(
+                { symbols: ['253450.KQ', 'NVDA'], period: 'ytd' },
+                expect.anything(),
+                expect.anything()
+            );
+            expect(result).toMatchObject({
+                symbolCorrections: [{ from: '253450.KS', to: '253450.KQ' }],
+            });
+            getPriceStats.mockClear();
+            await expect(
+                exec('get_price_stats', { symbols: ['../etc'] }, makeCtx())
+            ).resolves.toEqual({ error: 'invalid_symbol' });
+            expect(getPriceStats).not.toHaveBeenCalled();
         } finally {
             correctKrSymbolSuffix.mockImplementation(async (s: string) =>
                 s.toUpperCase()
@@ -562,7 +609,7 @@ describe('tool registry', () => {
         );
     });
 
-    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·6,500자 이내는 온전히, 6,500자 초과는 절단된다', async () => {
+    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·7,000자 이내는 온전히, 7,000자 초과는 절단된다', async () => {
         const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
         const exec = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
@@ -571,7 +618,7 @@ describe('tool registry', () => {
             exec('get_bars_indicators', { symbol: 'AAPL' }, makeCtx());
         // Regression guard for `ceilingFor` ignoring the bars ceiling: a
         // result strictly between TOOL_RESULT_MAX_CHARS (4,000) and
-        // BARS_RESULT_MAX_CHARS (6,500) would be collapsed into a
+        // BARS_RESULT_MAX_CHARS (7,000) would be collapsed into a
         // `{truncated, preview}` blob by the shared 4,000 default.
         const midSize = Math.floor(
             (TOOL_RESULT_MAX_CHARS + BARS_RESULT_MAX_CHARS) / 2
@@ -847,7 +894,11 @@ describe('결과 상한 옵션(resultCaps)', () => {
         xPosts: 9_000,
         indexHistory: 9_000,
         swingHistory: 9_000,
+        priceStats: 9_000,
         analystViews: 9_000,
+        news: 9_000,
+        fundamentals: 9_000,
+        webSearch: 9_000,
         cachedAnalysis: 20_000,
         cachedAnalysisBudget: 20_000,
     };
@@ -912,6 +963,21 @@ describe('결과 상한 옵션(resultCaps)', () => {
         expect(result).toEqual(big(15_000));
     });
 
+    it('web_search는 standard가 아니라 webSearch 상한을 쓴다', async () => {
+        // 상위 두 결과의 발췌까지 실린 결과가 standard(4,000자) 상한에 잘리면 두 번째 발췌가 미리보기로 무너진다.
+        const { webSearchTool } =
+            await import('@/app/api/ai/chat/tools/webSearch');
+        vi.mocked(webSearchTool).mockResolvedValue(big(8_500));
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'k');
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, webSearch: 9_000 } }
+        );
+        expect(await exec('web_search', { query: 'a' }, makeCtx())).toEqual(
+            big(8_500)
+        );
+    });
+
     it('get_economy는 aggregate가 아니라 economy 상한을 쓴다', async () => {
         // 지표에 최대 80건 캘린더까지 실린 결과가 종합 도구 상한(aggregate)에
         // 잘리면 앞부분 미리보기 덩어리로 무너진다.
@@ -922,5 +988,70 @@ describe('결과 상한 옵션(resultCaps)', () => {
         );
         const result = await exec('get_economy', {}, makeCtx());
         expect(result).toEqual(big(12_000));
+    });
+
+    it('get_news는 standard가 아니라 news 상한을 쓴다', async () => {
+        // 4,000자 기본 상한에서는 항목 8~10건 결과가 앞부분 미리보기 덩어리로 무너졌다.
+        getNews.mockResolvedValue(big(7_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, news: 8_000 } }
+        );
+        const result = await exec('get_news', { symbol: 'AAPL' }, makeCtx());
+        expect(result).toEqual(big(7_000));
+    });
+
+    it('get_news도 news 상한을 넘으면 잘린다', async () => {
+        getNews.mockResolvedValue(big(9_000));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, news: 8_000 } }
+        );
+        const result = (await exec(
+            'get_news',
+            { symbol: 'AAPL' },
+            makeCtx()
+        )) as { truncated?: boolean };
+        expect(result.truncated).toBe(true);
+    });
+
+    it('에이전트 기본 상한의 news는 8,000자, fundamentals는 6,500자다', () => {
+        expect(AGENT_RESULT_CAPS.news).toBe(8_000);
+        expect(AGENT_RESULT_CAPS.fundamentals).toBe(6_500);
+    });
+
+    it('에이전트 기본 상한의 priceStats는 11,000자다', () => {
+        expect(AGENT_RESULT_CAPS.priceStats).toBe(11_000);
+    });
+
+    it('get_price_stats는 standard가 아니라 priceStats 상한을 쓴다', async () => {
+        // 4,000자 기본 상한에서는 세 주체 + 상관계수 결과가 앞부분 미리보기 덩어리로 무너진다.
+        getPriceStats.mockResolvedValue(big(10_500));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, priceStats: 11_000 } }
+        );
+        expect(
+            await exec('get_price_stats', { symbols: ['AAPL'] }, makeCtx())
+        ).toEqual(big(10_500));
+        getPriceStats.mockResolvedValue(big(11_500));
+        expect(
+            await exec('get_price_stats', { symbols: ['AAPL'] }, makeCtx())
+        ).toMatchObject({ truncated: true });
+    });
+
+    it('get_fundamentals는 standard가 아니라 fundamentals 상한을 쓴다', async () => {
+        getFundamentals.mockResolvedValue(big(4_500));
+        const exec = createToolExecutor(
+            { analysisModel: 'm' as never },
+            { resultCaps: { ...caps, standard: 4_000, fundamentals: 5_000 } }
+        );
+        expect(
+            await exec('get_fundamentals', { symbol: 'AAPL' }, makeCtx())
+        ).toEqual(big(4_500));
+        getFundamentals.mockResolvedValue(big(5_500));
+        expect(
+            await exec('get_fundamentals', { symbol: 'AAPL' }, makeCtx())
+        ).toMatchObject({ truncated: true });
     });
 });

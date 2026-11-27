@@ -172,7 +172,7 @@ describe('MailAlertDialog 처음 신청 (new)', () => {
 
         expect(
             await screen.findByText(
-                '신청했어요. 새로 잡힌 소식이 있는 날 아침에 g***@example.com로 보내 드려요.'
+                '신청했어요. 새로 잡힌 소식이 있으면 한국 시간 아침에 g***@example.com로 보내 드려요.'
             )
         ).toBeInTheDocument();
         expect(formValues(actions.confirm)).toEqual({

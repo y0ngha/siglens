@@ -21,7 +21,7 @@ import type { ModelId } from '@y0ngha/siglens-core';
 
 /** 세대 우선 — Anthropic은 세대 갭이 라인 갭보다 크다고 보고 5세대를 모두 앞에 둔다. */
 export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
-    'claude-fable-5-1',
+    'claude-fable-5-2',
     'claude-opus-5-5',
     'claude-opus-5',
     'claude-opus-4-8',
@@ -32,25 +32,28 @@ export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
 /**
  * 라인 우선(Pro급 → Flash → Flash-Lite), 라인 안에서 세대 우선.
  * 3세대 신모델(3.8/3.6/3.5)은 Flash·Flash-Lite 라인에만 있어 세대를 앞세우면 Pro 3.1이
- * Flash 뒤로 밀린다 — 그래서 Pro 3.1을 Flash보다 앞에 둔다. 4세대 Argon은 Pro급
- * 추론 모델이지만 BYOK 전용·고가($2/$10, 2026-12부터 $4/$20)라 기본값 후보로는
- * 검증된 Pro 3.1 다음, Flash 라인 앞에 둔다.
+ * Flash 뒤로 밀린다 — 그래서 Pro 3.1을 Flash보다 앞에 둔다. 4세대(Carbon/Neon/
+ * Argon/Hydrogen)는 BYOK 전용이라 기본값 후보로는 검증된 Pro 3.1 다음, Flash 라인
+ * 앞에 두고, 제공사의 성능 포지셔닝 순(Carbon → Neon → Argon → Hydrogen)으로 놓는다.
  */
 export const GEMINI_MODEL_PRIORITY: readonly ModelId[] = [
     'gemini-3.1-pro-preview',
+    'gemini-4-carbon',
+    'gemini-4-neon',
     'gemini-4-argon',
+    'gemini-4-hydrogen',
     'gemini-3.8-flash',
     'gemini-3.6-flash',
     'gemini-3.5-flash-lite',
 ];
 
 /**
- * 변형 등급 우선(astra → sol → luna), 같은 등급 안에서는 세대 우선(6.1 → 6 → 5.6).
+ * 변형 등급 우선(astra → sol → luna), 같은 등급 안에서는 세대 우선(6.2 → 6 → 5.6).
  * luna는 6세대지만 경량 변형이라 기본값 후보로는 5.6 sol보다 뒤에 둔다.
  */
 export const CHATGPT_MODEL_PRIORITY: readonly ModelId[] = [
-    'gpt-6-astra',
-    'gpt-6.1-sol',
+    'gpt-6.2-astra',
+    'gpt-6.2-sol',
     'gpt-6-sol',
     'gpt-5.6-sol',
     'gpt-6-luna',

@@ -54,7 +54,7 @@ describe('ResetPasswordPage render', () => {
             screen.getByRole('heading', { name: '새 비밀번호 설정' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('이전 비밀번호와 다른 값으로 설정해주세요')
+            screen.getByText('이전 비밀번호와 다른 비밀번호로 설정해주세요')
         ).toBeInTheDocument();
     });
 

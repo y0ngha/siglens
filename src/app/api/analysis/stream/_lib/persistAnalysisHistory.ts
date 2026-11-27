@@ -24,6 +24,8 @@ export interface PersistAnalysisHistoryInput {
     modelId: string;
     /** 이 분석을 생성한 요청의 tier(`tierContext.tier`). */
     tier: Tier;
+    /** 이 분석이 보유 맞춤(포지션 버킷 포함)이었는지 — 다른 사람에게 보이는 이력 읽기가 거른다. */
+    personalized: boolean;
     locale: Locale;
     result: unknown;
     /**
@@ -60,6 +62,7 @@ export function schedulePersistAnalysisHistory(
                 tab: input.tab,
                 modelId: input.modelId,
                 tier: input.tier,
+                personalized: input.personalized,
                 locale: input.locale,
                 result: input.result,
                 generatedAt,

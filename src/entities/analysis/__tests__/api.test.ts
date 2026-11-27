@@ -504,6 +504,7 @@ describe('prewarmTechnical', () => {
                     modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                     // 프리웜은 항상 free tier로 생성한다.
                     tier: 'free',
+                    personalized: false,
                     locale: 'ko',
                     // 필터된 `result`가 아니라 `unfilteredResult`가 저장돼야
                     // 한다 — riskLevel이 살아 있는 쪽.
@@ -1307,7 +1308,7 @@ describe('hasPrewarmedOverall', () => {
     it('종합 탭 엿보기와 같은 키(기본 모델·reasoning off·기본 타임프레임·기본 로케일)로 core를 읽는다', async () => {
         vi.mocked(peekOverallAnalysisCache).mockResolvedValue(null);
 
-        await hasPrewarmedOverall('AAPL');
+        await hasPrewarmedOverall('AAPL', 0);
 
         expect(peekOverallAnalysisCache).toHaveBeenCalledWith(
             'AAPL',
@@ -1321,14 +1322,51 @@ describe('hasPrewarmedOverall', () => {
         );
     });
 
-    it('결과가 있으면 true, 없으면 false', async () => {
-        vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce({
-            headlineKo: 'x',
-        } as never);
-        expect(await hasPrewarmedOverall('AAPL')).toBe(true);
+    describe('시작 시각(sinceMs) 이후의 새 결과만 true', () => {
+        const SINCE_MS = Date.parse('2026-11-26T03:00:00.000Z');
+        const peeked = (analyzedAt?: string) =>
+            ({
+                headlineKo: 'x',
+                ...(analyzedAt === undefined ? {} : { analyzedAt }),
+            }) as never;
 
-        vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(null);
-        expect(await hasPrewarmedOverall('AAPL')).toBe(false);
+        it('항목이 없으면 false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(null);
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
+
+        it('analyzedAt이 시작 시각 이후면 true', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('2026-11-26T03:04:00.000Z')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(true);
+        });
+
+        it('analyzedAt이 시작 시각과 같으면 true', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('2026-11-26T03:00:00.000Z')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(true);
+        });
+
+        it('analyzedAt이 시작 시각보다 이르면(이전 결과) false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('2026-11-25T03:00:00.000Z')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
+
+        it('analyzedAt이 없는 옛 항목은 이전 결과로 보고 false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(peeked());
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
+
+        it('analyzedAt이 날짜로 읽히지 않으면 false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('not-a-date')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
     });
 });
 

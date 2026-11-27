@@ -1,10 +1,10 @@
 import type {
     BacktestEntryType,
     BacktestLegExitReason,
-    BacktestRunData,
     BacktestTradePlan,
 } from '@y0ngha/siglens-core';
 import { tradeKey } from '@/entities/backtest-case/lib/tradeKey';
+import type { VerifiedBacktestRunData } from '@/entities/backtest-case/model';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -166,13 +166,144 @@ function validateTrade(trade: unknown, i: number): string {
     return trade['ticker'] as string;
 }
 
-function validateBaseline(value: unknown, path: string): string {
+function validateBaseline(
+    value: unknown,
+    path: string,
+    requireMatchedFields = true
+): string {
     if (!isRecord(value)) throw new Error(`${path} must be an object`);
     requireString(value, 'ticker', path);
-    for (const key of ['buyHoldPct', 'buyHoldMaxDrawdownPct', 'tradingDays']) {
+    // 코어 타입에서는 뒤의 두 필드가 선택이지만(옛 데이터) 이 화면은 요구한다 — 없으면 비교 열이
+    // 빈 칸이 되므로 조용히 숨기지 않고 빌드에서 던진다.
+    // 최상위 `spy`는 화면에 그리지 않아(SPY는 종목 행으로 나온다) 옛 필드만 요구한다.
+    for (const key of [
+        'buyHoldPct',
+        'buyHoldMaxDrawdownPct',
+        'tradingDays',
+        ...(requireMatchedFields
+            ? ['exposureMatchedHoldPct', 'markToMarketMaxDrawdownPct']
+            : []),
+    ]) {
         requireNumber(value, key, path);
     }
     return value['ticker'] as string;
+}
+
+function requireRecord(
+    source: UnknownRecord,
+    key: string,
+    path: string
+): UnknownRecord {
+    const value = source[key];
+    if (!isRecord(value)) throw new Error(`${path}.${key} must be an object`);
+    return value;
+}
+
+/** 0..1 비율. 퍼센트(0..100)로 잘못 들어온 값을 여기서 거른다. */
+function requireShare(source: UnknownRecord, key: string, path: string): void {
+    requireNumber(source, key, path);
+    const value = source[key] as number;
+    if (value < 0 || value > 1) {
+        throw new Error(`${path}.${key} must be a share between 0 and 1`);
+    }
+}
+
+function requireCount(source: UnknownRecord, key: string, path: string): void {
+    requireNumber(source, key, path);
+    if (!Number.isInteger(source[key]) || (source[key] as number) < 0) {
+        throw new Error(`${path}.${key} must be a non-negative integer`);
+    }
+}
+
+function validateDistribution(
+    source: UnknownRecord,
+    key: string,
+    path: string
+): void {
+    const distribution = requireRecord(source, key, path);
+    const here = `${path}.${key}`;
+    for (const bound of ['p5', 'median', 'p95']) {
+        requireNumber(distribution, bound, here);
+    }
+    if (
+        (distribution['p5'] as number) > (distribution['median'] as number) ||
+        (distribution['median'] as number) > (distribution['p95'] as number)
+    ) {
+        throw new Error(`${here} must satisfy p5 <= median <= p95`);
+    }
+}
+
+function validateRaceShare(
+    source: UnknownRecord,
+    key: string,
+    path: string
+): void {
+    const race = requireRecord(source, key, path);
+    requireCount(race, 'resolvedRaces', `${path}.${key}`);
+    requireShare(race, 'targetFirstShare', `${path}.${key}`);
+}
+
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+
+/**
+ * 생성기가 계산한 기준선 묶음(`BacktestBenchmarks`)의 모양을 확인한다. 숫자 자체는 다시
+ * 계산하지 않는다(통계는 코어 생성기의 몫).
+ *
+ * 런타임은 모양만 본다(없으면 모듈 로드에서 던져 빌드가 실패한다). 거래와의 짝 검사
+ * (`tradesSha256 === sha256(canonicalJson(trades))`)는 테스트 시점에 한다 — 브라우저 번들에
+ * 해시 구현(`node:crypto` 폴리필이나 손으로 쓴 SHA-256)을 넣지 않으려는 것이고, `data.json`은
+ * 커밋된 정적 파일이라 CI에서 같은 효과로 닫힌다(`validate.test.ts`).
+ */
+function validateBenchmarks(value: unknown): void {
+    const path = 'benchmarks';
+    if (!isRecord(value)) throw new Error(`${path} must be an object`);
+    if (value['version'] !== 1) throw new Error(`${path}.version must be 1`);
+    for (const key of ['tradesSha256', 'barsFingerprint', 'coreSha']) {
+        requireString(value, key, path);
+    }
+    if (!SHA256_HEX.test(value['tradesSha256'] as string)) {
+        throw new Error(`${path}.tradesSha256 must be a 64-char hex digest`);
+    }
+
+    const hold = requireRecord(value, 'holdPortfolio', path);
+    for (const key of ['returnPct', 'maxDrawdownPct']) {
+        requireNumber(hold, key, `${path}.holdPortfolio`);
+    }
+    const matched = requireRecord(value, 'exposureMatchedHold', path);
+    for (const key of ['exposurePct', 'returnPct', 'maxDrawdownPct']) {
+        requireNumber(matched, key, `${path}.exposureMatchedHold`);
+    }
+    requireNumber(value, 'strategyMarkToMarketMaxDrawdownPct', path);
+
+    const excess = requireRecord(value, 'perTradeExcess', path);
+    const excessPath = `${path}.perTradeExcess`;
+    requireOneOf(excess, 'basis', ['same_length_drift'], excessPath);
+    requireOneOf(excess, 'clusters', ['week'], excessPath);
+    requireCount(excess, 'n', excessPath);
+    requireNumber(excess, 'meanPct', excessPath);
+    requireNumber(excess, 'baselineMeanPct', excessPath);
+    const ci = requireRecord(excess, 'ci95', excessPath);
+    requireNumber(ci, 'low', `${excessPath}.ci95`);
+    requireNumber(ci, 'high', `${excessPath}.ci95`);
+    if ((ci['low'] as number) > (ci['high'] as number)) {
+        throw new Error(`${excessPath}.ci95 must satisfy low <= high`);
+    }
+
+    const random = requireRecord(value, 'randomEntry', path);
+    const randomPath = `${path}.randomEntry`;
+    requireCount(random, 'draws', randomPath);
+    requireNumber(random, 'seed', randomPath);
+    validateDistribution(random, 'returnPct', randomPath);
+    validateDistribution(random, 'maxDrawdownPct', randomPath);
+    requireShare(random, 'shareAboveStrategyReturn', randomPath);
+    requireShare(random, 'shareWithSmallerDrawdown', randomPath);
+
+    const bracket = requireRecord(value, 'bracket', path);
+    const bracketPath = `${path}.bracket`;
+    requireCount(bracket, 'n', bracketPath);
+    validateRaceShare(bracket, 'initialPlan', bracketPath);
+    validateRaceShare(bracket, 'placebo', bracketPath);
+    requireShare(bracket, 'storedTargetFirstShare', bracketPath);
 }
 
 const TREND_LABELS = ['bullish', 'bearish', 'neutral'] as const;
@@ -221,9 +352,12 @@ function validateRun(run: unknown): void {
 
 /**
  * `data.json`을 경계에서 검증한다. 정적 데이터라 실패는 빌드에서 던진다(런타임 폴백 없음).
- * 통계는 여기서 만들지 않는다 — `deriveBacktestStats`가 `trades`에서 계산한다.
+ * 통계는 여기서 만들지 않는다 — `deriveBacktestStats`가 `trades`에서 계산한다. 기준선
+ * (`benchmarks`와 종목별 두 필드)은 필수다. 거래 해시 짝은 `validate.test.ts`가 확인한다.
  */
-export function validateBacktestRunData(data: unknown): BacktestRunData {
+export function validateBacktestRunData(
+    data: unknown
+): VerifiedBacktestRunData {
     if (!isRecord(data)) throw new Error('BacktestRunData must be an object');
     validateRun(data['run']);
 
@@ -234,12 +368,13 @@ export function validateBacktestRunData(data: unknown): BacktestRunData {
     const baselineTickers = new Set(
         baselines.map((b: unknown, i) => validateBaseline(b, `baselines[${i}]`))
     );
-    validateBaseline(data['spy'], 'spy');
+    validateBaseline(data['spy'], 'spy', false);
     validateTrendRecognition(data['trendRecognition']);
 
     const trades: unknown = data['trades'];
     if (!Array.isArray(trades)) throw new Error('trades must be an array');
     const tradedTickers = new Set(trades.map(validateTrade));
+    validateBenchmarks(data['benchmarks']);
     // 화면은 `tradeKey`로 서버 행과 클라이언트 상세를 잇는다. 키가 겹치면 한 매매의 상세가
     // 다른 매매로 조용히 덮인다.
     const seen = new Set<string>();
@@ -274,5 +409,5 @@ export function validateBacktestRunData(data: unknown): BacktestRunData {
             `baselines must include every traded ticker (missing: ${missing.join(', ')})`
         );
     }
-    return data as unknown as BacktestRunData;
+    return data as unknown as VerifiedBacktestRunData;
 }

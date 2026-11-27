@@ -5,6 +5,7 @@ import {
     type FearGreedReading,
     type SignalType,
 } from '@y0ngha/siglens-core';
+import { lastDailyBarDate } from '@/entities/bars/lib/sessionBars';
 import { barsUpToDate } from '@/entities/email-report/lib/barsUpToDate';
 import { MAIL_ALERT_SIGNAL_TYPES } from '@/entities/mail-alert/lib/mailAlertConstants';
 import type {
@@ -18,11 +19,8 @@ import type { SignalHistoryRepository } from '@/entities/signal-history/api';
 import type { SignalHistoryMarket } from '@/entities/signal-history/types';
 import { sessionSpecForDashboardScope } from '@/shared/api/market/sessionSpecFor';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { mapChunked } from '@/shared/lib/mapChunked';
-
-const MS_PER_SECOND = 1000;
 
 /** 스캐너 범위 밖 종목의 일봉을 동시에 받는 수(CC-1). 일봉은 대개 종목 페이지가 채운 캐시 적중이다. */
 export const COMPUTE_CONCURRENCY = 5;
@@ -190,19 +188,14 @@ export interface ComputedSources {
     readonly noFreshBar: number;
     /** 일봉을 못 읽었거나 판정이 던진 종목 수. */
     readonly computeErrors: number;
+    /** 판정하지 못한 종목(낡은 봉 또는 오류). 준비 게이트가 이 종목을 담은 구독자를 첫 슬롯에서 미룬다. */
+    readonly notReadySymbols: ReadonlySet<string>;
 }
 
 type ComputeOutcome =
     | { readonly kind: 'ok'; readonly value: MailAlertComputedSymbol }
     | { readonly kind: 'stale' }
     | { readonly kind: 'error' };
-
-function lastBarDate(bars: readonly Bar[]): string | null {
-    const last = bars.at(-1);
-    return last === undefined
-        ? null
-        : toUtcIsoDate(new Date(last.time * MS_PER_SECOND));
-}
 
 /**
  * 일봉 한 종목의 새 확정 신호. 마지막 봉의 날짜가 기대 세션일 때만 판정한다 — 코어 함수는 받은 봉의 마지막
@@ -211,7 +204,7 @@ function lastBarDate(bars: readonly Bar[]): string | null {
  */
 function computeOne(bars: readonly Bar[], sessionDate: string): ComputeOutcome {
     const { bars: upTo } = barsUpToDate(bars, sessionDate);
-    if (lastBarDate(upTo) !== sessionDate) return { kind: 'stale' };
+    if (lastDailyBarDate(upTo) !== sessionDate) return { kind: 'stale' };
     const last = upTo.at(-1);
     const previous = upTo.at(-2);
     const signalTypes: SignalType[] = detectNewConfirmedSignals(upTo)
@@ -233,8 +226,8 @@ function computeOne(bars: readonly Bar[], sessionDate: string): ComputeOutcome {
 }
 
 /**
- * 스캐너 범위 밖 종목들의 새 신호를 일봉으로 판정한다. 종목마다 따로 잡아 한 종목의 실패가 나머지를
- * 막지 않고, 동시에 받는 일봉은 `COMPUTE_CONCURRENCY`개다.
+ * 담은 종목들의 새 신호를 일봉으로 판정한다(스캐너 대상 종목도 같다). 종목마다 따로 잡아 한 종목의 실패가
+ * 나머지를 막지 않고, 동시에 받는 일봉은 `COMPUTE_CONCURRENCY`개다.
  */
 export async function loadComputedSources(
     deps: AlertSourceDeps,
@@ -277,5 +270,10 @@ export async function loadComputedSources(
         computeErrors: outcomes.filter(
             ({ outcome }) => outcome.kind === 'error'
         ).length,
+        notReadySymbols: new Set(
+            outcomes
+                .filter(({ outcome }) => outcome.kind !== 'ok')
+                .map(({ symbol }) => symbol)
+        ),
     };
 }

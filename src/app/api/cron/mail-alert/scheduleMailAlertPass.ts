@@ -1,7 +1,7 @@
 import 'server-only';
 import { readEmailReportSecret } from '@/entities/email-report/emailReportSecret';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
-import type { EmailDispatcher } from '@/shared/email/types';
+import type { KeyedEmailDispatcher } from '@/shared/email/types';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { createMailAlertBatchDeps } from './createMailAlertDeps';
@@ -16,7 +16,7 @@ import { runMailAlertBatch } from './runMailAlertBatch';
  */
 export function scheduleMailAlertPass(options: {
     readonly now: Date;
-    readonly dispatcher: EmailDispatcher;
+    readonly dispatcher: KeyedEmailDispatcher;
 }): void {
     afterWithDrain(() =>
         runAsBatchWork(async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
 import {
     lastBarSessionDate,
+    lastDailyBarDate,
     toSessionBarsData,
 } from '@/entities/bars/lib/sessionBars';
 
@@ -94,5 +95,18 @@ describe('lastBarSessionDate', () => {
 
     it('봉이 없으면 null', () => {
         expect(lastBarSessionDate(data([]))).toBeNull();
+    });
+});
+
+describe('lastDailyBarDate', () => {
+    it('봉 배열의 마지막 봉 날짜를 lastBarSessionDate와 같은 정의로 돌려준다', () => {
+        const bars = data(DATES).bars;
+
+        expect(lastDailyBarDate(bars)).toBe('2026-10-06');
+        expect(lastDailyBarDate(bars)).toBe(lastBarSessionDate(data(DATES)));
+    });
+
+    it('봉이 없으면 null', () => {
+        expect(lastDailyBarDate([])).toBeNull();
     });
 });

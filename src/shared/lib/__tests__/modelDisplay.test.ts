@@ -11,6 +11,13 @@ describe('MODEL_DISPLAY_MAP', () => {
     // core에 모델을 추가하고 라벨을 빠뜨리는 드리프트를 이 테스트로 막는다.
     const selectableModels: readonly ModelId[] = getAllowedModels('pro');
 
+    it('has a display entry for every id in MODEL_SPECS', () => {
+        const missing = Object.keys(MODEL_SPECS).filter(
+            id => !(id in MODEL_DISPLAY_MAP)
+        );
+        expect(missing).toEqual([]);
+    });
+
     it('has a display entry for every selectable model', () => {
         const missing = selectableModels.filter(
             id => MODEL_DISPLAY_MAP[id] === undefined
@@ -46,7 +53,33 @@ describe('MODEL_DISPLAY_MAP', () => {
             'Gemini 4 Argon'
         );
         expect(getModelDisplay('gpt-6-luna').label).toBe('GPT 6 Luna');
-        expect(getModelDisplay('gpt-6.1-sol').fullName).toBe('GPT-6.1 Sol');
+    });
+
+    it('labels the 2026-11 model roster', () => {
+        expect(getModelDisplay('claude-fable-5-2')).toEqual({
+            label: 'Fable 5.2',
+            fullName: 'Claude Fable 5.2',
+        });
+        expect(getModelDisplay('gpt-6.2-sol')).toEqual({
+            label: 'GPT 6.2 Sol',
+            fullName: 'GPT-6.2 Sol',
+        });
+        expect(getModelDisplay('gpt-6.2-astra')).toEqual({
+            label: 'GPT 6.2 Astra',
+            fullName: 'GPT-6.2 Astra',
+        });
+        expect(getModelDisplay('gemini-4-carbon')).toEqual({
+            label: 'Carbon 4',
+            fullName: 'Gemini 4 Carbon',
+        });
+        expect(getModelDisplay('gemini-4-neon')).toEqual({
+            label: 'Neon 4',
+            fullName: 'Gemini 4 Neon',
+        });
+        expect(getModelDisplay('gemini-4-hydrogen')).toEqual({
+            label: 'Hydrogen 4',
+            fullName: 'Gemini 4 Hydrogen',
+        });
     });
 
     it('labels the 2026-07 model generation', () => {

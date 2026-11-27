@@ -34,6 +34,24 @@ const row = (
 });
 
 describe('buildHistoryDividends', () => {
+    it('이력이 비어 있으면 가격을 몰라도 확정 무배당(수익률 0)이다', () => {
+        expect(
+            buildHistoryDividends(
+                [],
+                null,
+                'USD',
+                NOW,
+                TZ,
+                'FMP dividends history'
+            )
+        ).toMatchObject({
+            latestExDate: null,
+            latestAmount: null,
+            trailing12mAmount: 0,
+            trailingYieldPct: 0,
+        });
+    });
+
     it('직전 배당과 365일 트레일링 합·수익률을 계산한다', () => {
         const r = buildHistoryDividends(
             [
@@ -454,6 +472,24 @@ describe('withAnnualReported', () => {
             withAnnualReported(view, { ...annual, dpsCommon: null }, 100)
                 ?.annualReported?.yieldOnLastClosePct
         ).toBeNull();
+    });
+
+    it('DPS가 0이면 현재가가 없어도 수익률은 0이다(양수 DPS는 가격이 없으면 null)', () => {
+        expect(
+            withAnnualReported(view, { ...annual, dpsCommon: 0 }, null)
+                ?.annualReported?.yieldOnLastClosePct
+        ).toBe(0);
+        expect(
+            withAnnualReported(view, annual, null)?.annualReported
+                ?.yieldOnLastClosePct
+        ).toBeNull();
+    });
+
+    it('DPS가 0(무배당 해)이면 현재가 기준 수익률도 0이다(미확인 null과 다르다)', () => {
+        expect(
+            withAnnualReported(view, { ...annual, dpsCommon: 0 }, 189400)
+                ?.annualReported
+        ).toMatchObject({ dpsCommon: 0, yieldOnLastClosePct: 0 });
     });
 
     it('DART 값이 없으면 필드를 만들지 않고, 뷰가 없으면 null이다', () => {

@@ -36,7 +36,7 @@ SIGLENS checks whether the close is pinned to the top or bottom of the recent ra
 
 There is one exception. When the daily close is above the 200-day moving average, it looks at the value inside the zone itself rather than waiting for a cross. When SIGLENS checked data since 2000 across several periods, days when %R closed at -90 or below under this condition had better 5-day returns than usual in every period. In periods when the whole market fell sharply, the difference was in losing less. By contrast, counting from the cross back above -80 made this difference disappear. This describes a past tendency, not a buy signal. This case is also covered in the [mean reversion strategy](/guide/strategies/mean-reversion).
 
-SIGLENS also refers to pairing [MACD](/guide/indicators/macd) for trend direction with %R for timing, and to cases where an oversold %R coincides with the lower Bollinger Band.
+SIGLENS also considers pairing [MACD](/guide/indicators/macd) for trend direction with %R for timing, and cases where an oversold %R coincides with the lower Bollinger Band.
 
 ## Watch out for
 

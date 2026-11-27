@@ -14,6 +14,7 @@ import {
     AGENT_MODEL,
     type AgentProviderState,
 } from '@/entities/llm-provider/api/agent/router';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     AgentTurnError,
@@ -56,6 +57,27 @@ export async function appendOrNotFound(
     } catch (error) {
         if (isConversationGone(error)) throw new AgentTurnError('not_found');
         throw error;
+    }
+}
+
+/**
+ * 턴의 시계 메모를 만든 시각을 user 행에 저장한다(시각만 — 메모 문구에는 사용자의 현지 시각·시간대가 들어
+ * 있어 저장하지 않는다). 실패해도 턴은 계속한다 — 시각이 없으면 다음 턴의 provider 캐시가 한 번 빗나갈 뿐이고,
+ * 이미 끝난 (과금된) 턴을 저장 오류로 잃을 이유가 없다.
+ */
+async function persistTurnAt(
+    repo: NonNullable<ReadyTurn['repo']>,
+    conversationId: string,
+    messageId: string,
+    turnAt: string
+): Promise<void> {
+    try {
+        await repo.setTurnAt(conversationId, messageId, turnAt);
+    } catch (error) {
+        console.warn(
+            '[agent] turn time save failed:',
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -103,6 +125,7 @@ export function agentTurnStream({
         userImages,
         userMessageId,
         userMessageSeq,
+        turnAtRowId,
         history,
         portfolioSymbols,
     } = turn;
@@ -166,6 +189,8 @@ export function agentTurnStream({
                         portfolioSymbols,
                         // Untrusted; core validates and falls back to the locale's zone.
                         timeZone,
+                        // The KRX holiday list lives in the app on purpose (core has no KRX calendar).
+                        krSession: KR_EQUITY_SESSION,
                         signal: controller.signal,
                     },
                     {
@@ -173,6 +198,8 @@ export function agentTurnStream({
                         executeTool,
                         counters: createAgentCounters(),
                         globalLimits: agentGlobalLimitsFromEnv(),
+                        // 전역 `web_search` 예산은 게이트가 아니라 실행기가 Brave 요청 직전에 차감한다(`webSearch.ts`).
+                        webSearchMetering: 'executor',
                         maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
                         onEvent: event => {
                             if (
@@ -215,6 +242,16 @@ export function agentTurnStream({
                         },
                     }
                 );
+                // Success and failure both: the note was sent to the provider either way, and the
+                // next turn must rebuild it byte for byte (core does, from this instant) to keep the
+                // provider's prefix cache.
+                if (repo && conversationId && turnAtRowId && result.turnAt)
+                    await persistTurnAt(
+                        repo,
+                        conversationId,
+                        turnAtRowId,
+                        result.turnAt
+                    );
                 // Known only after the turn ran: which model actually answered.
                 const effectiveModel = providerState.fallbackUsed
                     ? AGENT_FALLBACK_MODEL

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     fearGreedKr: vi.fn(),
     fearGreedCrypto: vi.fn(),
     isMailAlertLaunched: vi.fn(),
+    getAssetInfoStatic: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -34,6 +35,9 @@ vi.mock('@/entities/watchlist/api', () => ({
 }));
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: mocks.resolveMarketProfile,
+}));
+vi.mock('@/entities/ticker/server/getAssetInfoStatic', () => ({
+    getAssetInfoStatic: mocks.getAssetInfoStatic,
 }));
 vi.mock('@/entities/bars/server/loadBarsData', () => ({
     loadBarsData: mocks.loadBarsData,
@@ -65,10 +69,12 @@ vi.mock(
 );
 
 import { createMailAlertBatchDeps } from '@/app/api/cron/mail-alert/createMailAlertDeps';
-import { dashboardScopeOf } from '@/shared/config/dashboardScope';
-import type { EmailDispatcher } from '@/shared/email/types';
+import type { KeyedEmailDispatcher } from '@/shared/email/types';
 
-const dispatcher: EmailDispatcher = { sendEmail: async () => true };
+const dispatcher: KeyedEmailDispatcher = {
+    sendEmail: async () => true,
+    sendKeyedEmail: async () => 'accepted',
+};
 
 describe('createMailAlertBatchDeps', () => {
     beforeEach(() => {
@@ -90,20 +96,20 @@ describe('createMailAlertBatchDeps', () => {
         expect(createMailAlertBatchDeps(null, dispatcher).secret).toBeNull();
     });
 
-    it('스캐너 대상 종목은 대시보드 범위의 종목 목록과 같다', () => {
+    it('종목 이름은 메일 리포트와 같은 종목 정보 캐시에서 영문명과 한글명을 읽는다', async () => {
+        mocks.getAssetInfoStatic.mockResolvedValueOnce({
+            name: 'Samsung Electronics',
+            koreanName: '삼성전자',
+        });
+        mocks.getAssetInfoStatic.mockResolvedValueOnce(null);
         const deps = createMailAlertBatchDeps('s', dispatcher);
 
-        expect(deps.universe.us).toEqual(
-            new Set(
-                dashboardScopeOf('us').sectorStocks.map(stock => stock.symbol)
-            )
-        );
-        expect(deps.universe.kr).toEqual(
-            new Set(
-                dashboardScopeOf('kr').sectorStocks.map(stock => stock.symbol)
-            )
-        );
-        expect(deps.universe.kr.has('005930.KS')).toBe(true);
+        await expect(deps.getSymbolNames('005930.KS')).resolves.toEqual({
+            name: 'Samsung Electronics',
+            koreanName: '삼성전자',
+        });
+        await expect(deps.getSymbolNames('ZZZZ')).resolves.toBeNull();
+        expect(mocks.getAssetInfoStatic).toHaveBeenCalledWith('005930.KS');
     });
 
     it('보유·관심종목 조회는 각 저장소에 회원 id로 연결한다', async () => {

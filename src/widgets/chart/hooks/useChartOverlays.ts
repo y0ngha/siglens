@@ -15,7 +15,7 @@ import {
     type SeriesMarker,
     type Time,
 } from 'lightweight-charts';
-import type { OverlayLineSpec } from '../utils/chartOverlayUtils';
+import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
 import {
     isSameOverlayStyle,
     overlayGeometryKeys,
@@ -24,7 +24,7 @@ import {
 } from '../utils/overlaySeriesSync';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { createRightExtendPrimitive } from '../utils/rightExtendPrimitive';
-import { visibleLevelLabels } from '../utils/levelLabelCulling';
+import { visibleLevelLabels } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
 
 const OVERLAY_SERIES_OPTIONS = {
     lastValueVisible: false,

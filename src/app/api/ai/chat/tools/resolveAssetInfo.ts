@@ -21,8 +21,26 @@ export async function resolveAssetInfoOrNull(
     symbol: string,
     toolName: string
 ): Promise<AssetInfo | null> {
+    return (await resolveAssetLookup(symbol, toolName)).asset;
+}
+
+/** `resolveAssetInfoOrNull`의 결과에 "조회가 던졌는가"를 더한 것. */
+export interface AssetLookup {
+    asset: AssetInfo | null;
+    /** `true`면 조회가 던져 `asset`이 `null`이다(일시 장애일 수 있다). `false`인 `null`은 조회가 성공해 모르는 심볼이라고 답한 것이다. */
+    lookupFailed: boolean;
+}
+
+/**
+ * `resolveAssetInfoOrNull`과 같은 조회·로그 규칙이되, 조회가 던진 `null`과 조회가 성공해 돌려준 `null`(모르는 심볼)을 구분한다.
+ * 모르는 심볼의 "이력 없음"을 잠시 기억해도 되는 쪽은 뒤쪽뿐이다.
+ */
+export async function resolveAssetLookup(
+    symbol: string,
+    toolName: string
+): Promise<AssetLookup> {
     try {
-        return await getAssetInfo(symbol);
+        return { asset: await getAssetInfo(symbol), lookupFailed: false };
     } catch (error) {
         const errorName = error instanceof Error ? error.name : 'unknown';
         console.warn(
@@ -31,7 +49,7 @@ export async function resolveAssetInfoOrNull(
             'getAssetInfo failed, degrading',
             { errorName }
         );
-        return null;
+        return { asset: null, lookupFailed: true };
     }
 }
 

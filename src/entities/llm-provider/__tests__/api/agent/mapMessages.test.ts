@@ -38,6 +38,44 @@ describe('toOpenAiChatMessages', () => {
         ]);
     });
 
+    it('도구 인자는 모델이 낸 키 순서와 jsonb가 돌려주는 순서에서 같은 문자열이 된다', () => {
+        // jsonb는 키를 길이, 바이트 순으로 돌려준다: bars(4) < symbol(6) < filter(6) < timeframe(9).
+        const modelOrder = {
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            bars: 30,
+            filter: { zeta: [{ b: 2, a: 1 }, 3], alpha: null },
+        };
+        const jsonbOrder = {
+            bars: 30,
+            symbol: 'AAPL',
+            filter: { alpha: null, zeta: [{ a: 1, b: 2 }, 3] },
+            timeframe: '1Day',
+        };
+        const argumentsOf = (args: Record<string, unknown>): unknown => {
+            const [assistant] = toOpenAiChatMessages([
+                {
+                    role: 'assistant',
+                    content: '',
+                    toolCalls: [
+                        { id: 'c1', name: 'get_bars_indicators', args },
+                    ],
+                },
+            ]);
+            const first =
+                assistant && 'tool_calls' in assistant
+                    ? assistant.tool_calls?.[0]
+                    : undefined;
+            return first && 'function' in first
+                ? first.function.arguments
+                : undefined;
+        };
+        expect(argumentsOf(modelOrder)).toBe(argumentsOf(jsonbOrder));
+        expect(argumentsOf(modelOrder)).toBe(
+            '{"bars":30,"filter":{"alpha":null,"zeta":[{"a":1,"b":2},3]},"symbol":"AAPL","timeframe":"1Day"}'
+        );
+    });
+
     it('toolCallId 없는 tool 메시지는 빈 id로 보내지 않고 throw한다', () => {
         expect(() =>
             toOpenAiChatMessages([
