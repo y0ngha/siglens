@@ -68,18 +68,24 @@ export const BARS_ANNOTATE_HEADROOM_CHARS = 100;
  * `< FUNDAMENTALS_RESULT_MAX_CHARS` with a margin).
  *
  * 한국 종목의 `valuation`은 DART 기준 블록(`epsTtm`·`bps`·`basis`·`nullReason`, 최대 ≈660자 — `basis.note`가 ≈350자)을
- * 더 싣는다. 모든 섹션 + 5분기 + 8 반응(+ `earningsReactionTally`) + 확정 배당을 채운 한국 최악 케이스가 3,834자
- * (2026-11-27)다 (`getFundamentals.test.ts`가 `< FUNDAMENTALS_RESULT_MAX_CHARS - 500`으로 고정한다).
+ * 더 싣는다. 모든 섹션 + 5분기 + 8 반응(+ `earningsReactionTally`) + 확정 배당에 `peUntrusted` note까지 붙은 한국 최악
+ * 케이스가 4,053자(2026-11-27)다 (`getFundamentals.test.ts`가 실측값 기준 `< 4,150`으로 고정한다).
  */
 export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
 
 /**
  * `get_fundamentals` ceiling. The worst-case fixture (every section filled, 5 quarters with `sec` blocks, 8 reactions
  * and the `earningsReactionTally` block, ~300 chars of it) measures 4,016 chars with mixed-sign 4-decimal moves —
- * over the 4,000 default, under which the whole result becomes a front-cut preview blob. 5,000 keeps ~900 of headroom
- * for longer values.
+ * over the 4,000 default, under which the whole result becomes a front-cut preview blob.
+ *
+ * Result `notes` (`FUNDAMENTALS_RESULT_NOTES`, 185-353 chars each, attached only where a field is null) sit on top
+ * of that. On the fully loaded fixture (8 quarters with `sec` blocks, 8 reactions, Yahoo extras;
+ * `getFundamentals.test.ts` "notes") the two notes a US filer carries most often (`earningsSessionUnknown`,
+ * `secFieldMissing`: every five-quarter window holds a fiscal Q4 row without EPS) measure 4,755, and all five US
+ * notes at once 5,166. The largest result the tool can make (every block present, a latest ex-date with no trailing
+ * figures, no P/E, no memberships, plus both common notes) measures 5,399 (2026-11-21). 6,500 keeps ~1,100 above that.
  */
-export const FUNDAMENTALS_RESULT_MAX_CHARS = 5_000;
+export const FUNDAMENTALS_RESULT_MAX_CHARS = 6_500;
 
 /**
  * `get_economy` ceiling. Until 2026-10 it shared `AGGREGATE_RESULT_MAX_CHARS`
@@ -177,6 +183,17 @@ export const INDEX_HISTORY_RESULT_MAX_CHARS = 9_000;
  * 11,000 leaves room for wider prices (KRW closes) and a future field.
  */
 export const SWING_HISTORY_RESULT_MAX_CHARS = 11_000;
+
+/**
+ * `get_price_stats` ceiling. The result grows with subjects (3), date lookups (5 each), notes (a closed set in core, each
+ * naming its subject, so up to ~12 per subject) and correlation pairs (3 pairs of daily and weekly legs). The worst case
+ * pinned in `getPriceStats.test.ts` (three subjects of different markets with 36 years of history, five date lookups
+ * each hitting every status, an unusable row, an in-progress session, a window argument overridden twice and three
+ * cross-market pairs) measures 9,389 chars (2026-11-27): the figures are ~5,000 and the per-subject notes
+ * ~3,600. A typical single-subject call is ~800. 11,000 leaves ~1,600 for a longer name or a note core adds; the shared
+ * 4,000 default would cut the notes and correlation off the end and collapse the result into a front-cut preview blob.
+ */
+export const PRICE_STATS_RESULT_MAX_CHARS = 11_000;
 
 /**
  * `get_analyst_views` ceiling. Up to 15 firm-level actions plus up to four estimate periods: measured 2026-11-16

@@ -107,6 +107,7 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
 import {
     aggregateBarsToMonthly,
     aggregateBarsToWeekly,
+    BARS_RESULT_NOTES,
     calculateIndicators,
     calculateMA,
     classifyOscillatorZones,
@@ -1746,8 +1747,6 @@ describe('getBarsIndicatorsTool', () => {
                     };
                 };
             };
-            const closeOn = (bars: ReturnType<typeof barV>[], date: string) =>
-                bars.find(b => day(b.time) === date)!.close;
 
             it('changePct.252bars compares with the close 252 bars back', async () => {
                 const bars = weekdayBars('2025-01-01', '2026-10-19');
@@ -1763,16 +1762,24 @@ describe('getBarsIndicatorsTool', () => {
                 // Sun 2025-10-19, so each base is the Friday before.
                 const bars = weekdayBars('2025-01-01', '2026-10-19');
                 const r = await run(bars);
-                const lastClose = bars.at(-1)!.close;
-                const expected = (baseDate: string) => ({
-                    baseDate,
-                    baseClose: closeOn(bars, baseDate),
-                    pct: pctVs(lastClose, closeOn(bars, baseDate)),
-                });
+                // Closes are 100 + weekday index, so the last close is 568. Literal 2-decimal returns,
+                // worked out by hand: 568/547 = +3.84%, 568/502 = +13.15%, 568/307 = +85.02%.
                 expect(r.derived.calendarChange).toEqual({
-                    '1month': expected('2026-09-18'),
-                    '3months': expected('2026-07-17'),
-                    '1year': expected('2025-10-17'),
+                    '1month': {
+                        baseDate: '2026-09-18',
+                        baseClose: 547,
+                        pct: 3.84,
+                    },
+                    '3months': {
+                        baseDate: '2026-07-17',
+                        baseClose: 502,
+                        pct: 13.15,
+                    },
+                    '1year': {
+                        baseDate: '2025-10-17',
+                        baseClose: 307,
+                        pct: 85.02,
+                    },
                 });
                 // A calendar month is not 20 bars: the two returns differ here.
                 expect(r.derived.calendarChange!['1month']!.pct).not.toBe(
@@ -2415,6 +2422,167 @@ describe('getBarsIndicatorsTool', () => {
         expect(raw.derived.lastClose).not.toBeNull();
         expect(raw.higherTimeframe).not.toBeNull();
         expect(raw.higherTimeframe!.timeframe).toBe('1Day');
+    });
+
+    /**
+     * `notes`: core's `BARS_RESULT_NOTES` attached verbatim, only where the field is null
+     * (`PUBLIC_API.md`, `runAgentTurn` action ⑩). The expected arrays are built from the same
+     * exported texts, so a reworded note never breaks a test but a wrong condition does.
+     */
+    describe('notes (BARS_RESULT_NOTES)', () => {
+        const DAY = 86_400;
+        const START = Date.parse('2024-10-21T00:00:00Z') / 1000;
+        /** Production-shaped daily series: real OHLCV movement, so fear & greed and the 252-session scan both have data. */
+        const series = (length: number, step = DAY) =>
+            Array.from({ length }, (_, i) => {
+                const close =
+                    Math.round((420 + Math.sin(i / 9) * 35 + i * 0.09) * 100) /
+                    100;
+                return {
+                    time: START + i * step,
+                    open: Math.round((close - 1.37) * 100) / 100,
+                    high: Math.round((close + 3.21) * 100) / 100,
+                    low: Math.round((close - 4.08) * 100) / 100,
+                    close,
+                    volume: 1_000_000 + ((i * 7_919) % 2_345_678),
+                };
+            });
+        const withFlow = (bars: ReturnType<typeof series>) => ({
+            ...calculateIndicators(bars),
+            buySellVolume: bars.map((b, i) => ({
+                buyVolume: b.volume * (0.45 + ((i * 13) % 10) / 100),
+                sellVolume: b.volume * (0.45 + ((i * 7) % 10) / 100),
+            })),
+        });
+        type NotesResult = {
+            notes?: string[];
+            barsReturned: number;
+            barsTrimmed: number;
+            derived: {
+                closeStreak: unknown;
+                maCross50_200: unknown;
+            };
+            fearGreed: unknown;
+        };
+        const run = async (
+            bars: ReturnType<typeof series>,
+            timeframe: string,
+            args: Record<string, unknown> = {}
+        ) => {
+            profile.mockResolvedValue('us-equity');
+            spec.mockReturnValue({
+                kind: 'scheduled',
+                timeZone: 'America/New_York',
+                openMinute: 570,
+                closeMinute: 960,
+                weekendDays: [0, 6],
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: withFlow(bars),
+            });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe, ...args },
+                ctx,
+                rt
+            )) as NotesResult;
+        };
+
+        it('a full 1Day result (every field present) has no notes key at all', async () => {
+            const r = await run(series(500), '1Day');
+            expect(r.derived.closeStreak).not.toBeNull();
+            expect(r.derived.maCross50_200).not.toBeNull();
+            expect(r.fearGreed).not.toBeNull();
+            expect(r).not.toHaveProperty('notes');
+        });
+
+        it.each(['4Hour', '1Hour', '1Week', '1Month'])(
+            '%s: one dailyOnlyFields note naming the requested timeframe, and nothing else',
+            async timeframe => {
+                const r = await run(
+                    series(500, timeframe === '4Hour' ? 14_400 : DAY),
+                    timeframe
+                );
+                expect(r.notes).toEqual([
+                    BARS_RESULT_NOTES.dailyOnlyFields(timeframe),
+                ]);
+                expect(r.notes?.[0]).toContain(`timeframe ${timeframe}`);
+            }
+        );
+
+        it('1Day with fewer than two completed bars: closeStreakUnavailable (and the other two nulls), in fixed order', async () => {
+            const r = await run(series(1), '1Day');
+            expect(r.derived.closeStreak).toBeNull();
+            expect(r.notes).toEqual([
+                BARS_RESULT_NOTES.closeStreakUnavailable,
+                BARS_RESULT_NOTES.maCrossShortHistory,
+                BARS_RESULT_NOTES.fearGreedUnavailable,
+            ]);
+        });
+
+        it('1Day, a non-finite last close (the streak walk gives up): closeStreakUnavailable is attached', async () => {
+            const bars = series(500);
+            const broken = [
+                ...bars.slice(0, -1),
+                { ...bars.at(-1)!, close: Number.NaN },
+            ];
+            const r = await run(broken, '1Day');
+            expect(r.derived.closeStreak).toBeNull();
+            expect(r.notes).toContain(BARS_RESULT_NOTES.closeStreakUnavailable);
+        });
+
+        it('1Day, 451 bars (one short of the 252-session cross scan): only maCrossShortHistory', async () => {
+            const r = await run(series(451), '1Day');
+            expect(r.derived.maCross50_200).toBeNull();
+            expect(r.derived.closeStreak).not.toBeNull();
+            expect(r.fearGreed).not.toBeNull();
+            expect(r.notes).toEqual([BARS_RESULT_NOTES.maCrossShortHistory]);
+        });
+
+        it('1Day with 452 bars the scan can finish: no maCross note', async () => {
+            const r = await run(series(452), '1Day');
+            expect(r.derived.maCross50_200).not.toBeNull();
+            expect(r.notes ?? []).not.toContain(
+                BARS_RESULT_NOTES.maCrossShortHistory
+            );
+        });
+
+        it('1Day, core abstains from the fear & greed reading: only fearGreedUnavailable', async () => {
+            computeFearGreed.mockReturnValueOnce(null);
+            const r = await run(series(500), '1Day');
+            expect(r.fearGreed).toBeNull();
+            expect(r.notes).toEqual([BARS_RESULT_NOTES.fearGreedUnavailable]);
+        });
+
+        it('the daily-only note is the only one on other timeframes even though the three fields are null there too', async () => {
+            const r = await run(series(1, 3_600), '1Hour');
+            expect(r.derived.closeStreak).toBeNull();
+            expect(r.fearGreed).toBeNull();
+            expect(r.notes).toHaveLength(1);
+        });
+
+        it('the note is part of what the budget fit counts: a 200-bar request on a non-daily timeframe still ends under the cap with the note kept', async () => {
+            const r = await run(series(500, 14_400), '4Hour', { bars: 200 });
+            expect(r.barsTrimmed).toBeGreaterThan(0);
+            expect(r.barsReturned).toBeGreaterThan(0);
+            expect(r.notes).toEqual([
+                BARS_RESULT_NOTES.dailyOnlyFields('4Hour'),
+            ]);
+            expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+                BARS_RESULT_MAX_CHARS
+            );
+        });
+
+        it('the default 30-bar request keeps every bar on a non-daily timeframe with the note attached', async () => {
+            const r = await run(series(500, 14_400), '4Hour');
+            expect(r.barsTrimmed).toBe(0);
+            expect(r.barsReturned).toBe(30);
+            expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+                BARS_RESULT_MAX_CHARS
+            );
+        });
     });
 
     describe('fearGreed groups and history', () => {

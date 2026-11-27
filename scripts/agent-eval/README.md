@@ -35,7 +35,7 @@ node scripts/agent-eval/run.mjs --compare <scratch>/old.json <scratch>/new.json
 
 Flags: `--label`, `--only a,b` (unknown ids are refused before anything runs; `conv` needs `--cache`), `--cache`
 (adds the 4-turn `conv` case and its cached-prefix check), `--out <file>` (required, keep it outside the repo),
-`--compare a b`, `--site <url>` (default `http://localhost:4200`), `--ai <url>` (default `http://ai.localhost:4200`),
+`--compare a b`, `--reference <run.json>` (judge answers that stored no `get_price_stats` result against another run's stored result of the same case; run both the same day so closes are unchanged), `--site <url>` (default `http://localhost:4200`), `--ai <url>` (default `http://ai.localhost:4200`),
 `--no-web-search` (force "web_search not offered"), `--turn-at-fallback` (when measuring an older app that stores no
 `turn_at`, rebuild the clock note from `created_at`).
 
@@ -71,6 +71,36 @@ analysis levels, without chart references, which a review line says).
 | `levelsNearest` | levels-* | `get_cached_analysis.sinceAnalysis.levelLadder` | a number after "가장 가까운 지지/저항" is not `below[0]`/`above[0]` (±0.01); two numbers in one role; "저항/지지가 더 가깝다" contradicts `closer` (ties are a review line) |
 | `newsAligned` | news-*, kr-month (`periodStart`) | `get_news` results and calls | a stored result is cut (`truncated:true` or not JSON); `since` missing or more than 3 days from the period start; a headline tied to a date earlier than its `session`; a `session: null` item presented as a cause. Review line: answer dates beside `priceMoves.moveDays` |
 | `holderLookupUsed` | holder, holder-2 | first `get_investor_flows` call, `holderLookup` | the first call has no `holder`; status `found` but the answer lacks the grouped share count or the period. Other statuses: share check not evaluable |
+
+## WP-09 checks (price statistics, `get_price_stats`)
+
+Case fields added: `mustCallAny` (fail when none of the listed tools was called), `reviewIfCalled` (a review line, never a
+failure, for boundary cases) and `expectArgs` (one `get_price_stats` call must satisfy every listed argument; keys are
+documented at `argMismatches` in `checks.mjs`). Judged from stored rows; a check without its input reports `notEvaluable`.
+
+| Check | Cases | Fails when |
+|---|---|---|
+| `priceStatsSelection` | ps-* with `expectArgs` | no single `get_price_stats` call matches `expectArgs` (three single-symbol calls for a three-symbol comparison fail). The tool-name conditions (`mustCall`, `mustCallAny`, `mustNotCall`) are reported by `runChecks`. This is the primary metric |
+| `priceFigures` | ps-* | a percent in a sentence about returns, drops or annual rates is none of `returnPct`, `cagrPct`, `fromHighestClosePct`, `maxDrawdown.pct` (0.01, sign-insensitive); a close quoted next to a date differs from `closes[].close`. An answer with no stored result of its own is judged against `--reference` |
+| `priceStatsDates` | ps-date-* | a `previous_session` date is answered without naming the session date; an `after_last_close` date is given a close (unless the sentence says there is none) |
+| `noAnnualRateUnderYear` | ps-* | every window subject has `cagrPct: null` yet the answer gives an annual rate |
+| `correlationNoCause` | ps-corr-* | review line only: a correlation sentence also reads as a cause |
+
+## WP-09 notes checks (null rules moved from descriptions to result `notes`)
+
+Run both arms (OLD: the rule is in the description, NEW: the result carries `notes`) on the same questions; `div-1..3`
+(`dividendVerbatim`) run with them. A check whose stored result is not shaped to test its rule (the field is not null) reports
+`notEvaluable`, never a pass.
+
+| Check | Cases | Fails when |
+|---|---|---|
+| `streakNotFromOtherTimeframe` | n-streak-1 | no `get_bars_indicators` call with `timeframe: 1Day` yet the answer counts a streak ("3일 연속"); or, after a 1Day call, the count differs from `derived.closeStreak.days` (`truncated`: fewer than `days`). A "cannot determine" answer passes |
+| `crossNotDeniedOnShortHistory` | n-cross-1 | the stored 1Day `derived.maCross50_200` is `null` (scan incomplete) and a sentence says no cross happened. A stored `[]` or list is not evaluable: pick a younger listing (under ~450 sessions) |
+| `nonPayerSaysNone` | n-div-1 | the stored `dividends` is the confirmed non-payer shape and `web_search` was called or the answer does not say no dividend is paid. Other shapes: not evaluable |
+| `earningsTimingNotInvented` | n-earn-1 | no `analyst.earningsSession` and no `web_search`, yet an unhedged sentence states a before/after-market timing. No stored `nextEarningsDate`: not evaluable |
+
+Boundary cases: `b-idxh-1` and `b-swing-1` must not call `get_price_stats`; `quote` must not; `trend-*` and `b-52w-1` leave a
+review line if it is called.
 
 The run summary and `--compare` count the not-evaluable lines (`old n/e`, `new n/e` columns) beside the failures.
 

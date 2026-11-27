@@ -6194,6 +6194,7 @@
                 "toolOptions": "期权",
                 "toolOther": "数据查询",
                 "toolPortfolio": "我的持仓",
+                "toolPriceStats": "区间收益与最大回撤",
                 "toolQuote": "行情",
                 "toolSearchTicker": "股票搜索",
                 "toolSwingHistory": "历史回调与上涨区间",

@@ -73,7 +73,7 @@ describe('parseAlotMatterRows', () => {
         ).toBe(2500);
     });
 
-    it('보통주 현금배당이 없으면(`-`) 보고서는 있으므로 값만 null이다', () => {
+    it('보통주 DPS 칸이 `-`뿐이면 배당 없음이라 0이다(보고 수익률 칸이 없으면 그건 null)', () => {
         expect(
             parseAlotMatterRows(
                 [
@@ -85,7 +85,117 @@ describe('parseAlotMatterRows', () => {
                 ],
                 2025
             )
-        ).toEqual({ fiscalYear: 2025, dpsCommon: null, dartYieldPct: null });
+        ).toEqual({ fiscalYear: 2025, dpsCommon: 0, dartYieldPct: null });
+    });
+
+    it('종류 구분 없는 회사의 DPS 칸이 `-`뿐이어도 0이다', () => {
+        expect(
+            parseAlotMatterRows(
+                [{ se: '주당 현금배당금(원)', stock_knd: '-', thstrm: '-' }],
+                2025
+            )?.dpsCommon
+        ).toBe(0);
+    });
+
+    it('DART가 `0`을 적었으면 0 그대로다', () => {
+        expect(
+            parseAlotMatterRows(
+                [
+                    {
+                        se: '주당 현금배당금(원)',
+                        stock_knd: '보통주',
+                        thstrm: '0',
+                    },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBe(0);
+    });
+
+    it('우선주 행만 `-`이거나 DPS 행이 아예 없으면 보통주 DPS는 확인하지 못한 것이라 null이다', () => {
+        expect(
+            parseAlotMatterRows(
+                [
+                    {
+                        se: '주당 현금배당금(원)',
+                        stock_knd: '우선주',
+                        thstrm: '-',
+                    },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBeNull();
+        expect(
+            parseAlotMatterRows(
+                [
+                    {
+                        se: '현금배당수익률(%)',
+                        stock_knd: '보통주',
+                        thstrm: '4.10',
+                    },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBeNull();
+    });
+
+    it('주 행(보통주 행)이 `-`가 아닌 값이면 둘째 줄의 `-` 자리 표시가 있어도 null이다', () => {
+        expect(
+            parseAlotMatterRows(
+                [
+                    {
+                        se: '주당 현금배당금(원)',
+                        stock_knd: '-',
+                        thstrm: '1,000원',
+                    },
+                    { se: '주당 현금배당금(원)', stock_knd: '-', thstrm: '-' },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBeNull();
+    });
+
+    it('종류 구분 없는 회사의 `-`/`-` 두 줄은 배당 없음이라 0이다', () => {
+        expect(
+            parseAlotMatterRows(
+                [
+                    { se: '주당 현금배당금(원)', stock_knd: '-', thstrm: '-' },
+                    { se: '주당 현금배당금(원)', stock_knd: '-', thstrm: '-' },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBe(0);
+    });
+
+    it('보통주 행이 있으면 그 행이 주 행이다(`-` 행이 먼저 와도)', () => {
+        expect(
+            parseAlotMatterRows(
+                [
+                    { se: '주당 현금배당금(원)', stock_knd: '-', thstrm: '-' },
+                    {
+                        se: '주당 현금배당금(원)',
+                        stock_knd: '보통주',
+                        thstrm: '해당없음',
+                    },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBeNull();
+    });
+
+    it('숫자도 `-`도 아닌 값이 적혀 있으면 미확인이라 null이다', () => {
+        expect(
+            parseAlotMatterRows(
+                [
+                    {
+                        se: '주당 현금배당금(원)',
+                        stock_knd: '보통주',
+                        thstrm: '해당없음',
+                    },
+                ],
+                2025
+            )?.dpsCommon
+        ).toBeNull();
     });
 
     it('행이 없으면 null이다', () => {
@@ -157,7 +267,7 @@ describe('fetchKrAnnualDividend', () => {
             string,
             (value: unknown) => number,
         ];
-        expect(key).toBe('dart:alot-matter:v1:00244455:2025');
+        expect(key).toBe('dart:alot-matter:v2:00244455:2025');
         expect(ttl({ fiscalYear: 2025 })).toBe(
             KR_ANNUAL_DIVIDEND_CACHE_TTL_SECONDS
         );
