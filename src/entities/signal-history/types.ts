@@ -54,18 +54,6 @@ export interface SignalHubCount {
     readonly latestSession: string;
 }
 
-/** (종목, 신호) — 에피소드를 고르는 키. 시장은 호출 단위로 따로 준다. */
-export interface SignalEpisodeKey {
-    readonly symbol: string;
-    readonly signalType: string;
-}
-
-/** 한 세션 기록 계획 — 새로 여는 에피소드와, 직전 세션에서 이어져 마지막 포착일만 늘릴 키. */
-export interface SignalEpisodePlan {
-    readonly inserts: readonly SignalEpisodeInsert[];
-    readonly extends: readonly SignalEpisodeKey[];
-}
-
 /** 한 세션에 처음 포착된 에피소드 한 줄 — 알림 메일이 읽는다. */
 export interface SignalEpisodeStartedRow {
     readonly symbol: string;

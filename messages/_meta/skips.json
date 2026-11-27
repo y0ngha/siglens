@@ -1015,7 +1015,7 @@
     },
     {
         "file": "src/entities/signal-history/api.ts",
-        "line": 916,
+        "line": 805,
         "reason": "developer-diagnostic",
         "text": "[signal-hub] 사이트맵 집계 실패"
     },

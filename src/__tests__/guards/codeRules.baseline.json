@@ -408,7 +408,6 @@
         "src/entities/seo-snapshot/__tests__/api.test.ts": 6,
         "src/entities/seo-snapshot/__tests__/server/getSnapshotStatic.test.ts": 6,
         "src/entities/shared-analysis/__tests__/api.test.ts": 1,
-        "src/entities/signal-history/lib/__tests__/signalEventRows.test.ts": 1,
         "src/entities/sitemap-entry/__tests__/buildCryptoPopularEntries.test.ts": 1,
         "src/entities/sitemap-entry/__tests__/buildPopularEntries.test.ts": 17,
         "src/entities/sitemap-entry/__tests__/buildStaticEntries.test.ts": 26,

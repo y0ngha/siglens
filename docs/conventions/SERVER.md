@@ -291,7 +291,8 @@ A body of the wrong shape (a non-array where a list is expected, a missing field
 should have rows, or a 200 whose body carries only an `errors` array (a suspended or protected account, a partial
 failure) is a failure, not an empty answer. Throw or return the error result so the caller degrades, and never cache it
 or let it set a completion flag: a stored `[]` hides the gap for the whole TTL, and a swallowed chunk makes a partial
-result look complete.
+result look complete. The same holds for a durable completion marker: derive it only from writes that succeeded, so an attempt
+whose write failed does not count as done.
 
 - Keep three outcomes distinct: absent by nature (an ETF with no analyst coverage; cache it as a legitimate empty
   result), a failed load (never cached; an empty result for a non-empty window is returned uncached or with a short TTL
