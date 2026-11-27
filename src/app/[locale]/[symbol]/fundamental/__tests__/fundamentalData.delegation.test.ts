@@ -16,13 +16,10 @@
  *
  * `getProfileDescriptionKo` is intentionally excluded — it has DB + translation
  * logic that is orthogonal to provider delegation.
+ *
+ * The stable mock provider below is created before any module-level code runs (hoisted).
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// ---------------------------------------------------------------------------
-// Stable mock provider — created before any module-level code runs (hoisted).
-// ---------------------------------------------------------------------------
 const getFundamentalDataProviderMock = vi.hoisted(() => vi.fn());
 
 const mockProvider = vi.hoisted(() => ({
@@ -72,6 +69,8 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/ticker/server/koreanTranslator', () => ({
     translateCompanyDescription: vi.fn(),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Import the module under test AFTER mocks are in place.

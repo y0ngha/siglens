@@ -1,9 +1,3 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ko from '../../../../messages/ko.json';
-
-const router = { push: vi.fn() };
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 const { deleteConversationAction, renameConversationAction } = vi.hoisted(
@@ -25,7 +19,14 @@ vi.mock(
     })
 );
 
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import ko from '../../../../messages/ko.json';
+
 import { Sidebar } from '@/widgets/agent-chat/Sidebar';
+
+const router = { push: vi.fn() };
 
 const wrap = (ui: React.ReactElement) =>
     render(

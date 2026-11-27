@@ -1,8 +1,3 @@
-import { FUNDAMENTALS_RESULT_NOTES } from '@y0ngha/siglens-core';
-import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FUNDAMENTALS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
-
 const {
     isTabAllowed,
     getProvider,
@@ -110,6 +105,11 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/app/api/ai/chat/tools/indexMembership', () => ({
     loadIndexMemberships,
 }));
+
+import { FUNDAMENTALS_RESULT_NOTES } from '@y0ngha/siglens-core';
+import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FUNDAMENTALS_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 import type { ResolvedNextEarnings } from '@/entities/analyst-views/lib/resolveNextEarnings';
 import { providerKrValuation } from '@/entities/kr-valuation/lib/computeKrValuation';

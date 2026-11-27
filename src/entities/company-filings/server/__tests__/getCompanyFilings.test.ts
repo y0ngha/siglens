@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const sec = vi.hoisted(() => ({
     fetchSubmissionsJson: vi.fn(),
     fetchFilingIndexJson: vi.fn(),
@@ -71,6 +69,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
         return value;
     },
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     AGENT_FILING_TEXT_MAX_CHARS,

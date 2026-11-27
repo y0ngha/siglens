@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getYahooAnalystSummary, fmpGet } = vi.hoisted(() => ({
     getYahooAnalystSummary: vi.fn(),
     fmpGet: vi.fn(),
@@ -8,6 +6,8 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
     getYahooAnalystSummary,
 }));
 vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CurrentGradesFmpClient } from '@/shared/api/fmp/CurrentGradesFmpClient';
 

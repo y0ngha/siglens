@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const dns = vi.hoisted(() => ({
     lookup: vi.fn<
         (host: string, opts: unknown) => Promise<Array<{ address: string }>>
@@ -27,6 +25,8 @@ const redis = vi.hoisted(() => ({
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => redis.client,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     fetchPageExcerpt,

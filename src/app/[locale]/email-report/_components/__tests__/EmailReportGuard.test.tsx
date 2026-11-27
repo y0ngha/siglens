@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
@@ -19,6 +17,8 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_REDIRECT');
     }),
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import { redirect } from 'next/navigation';
 import { loadReportPreview } from '@/app/[locale]/email-report/_lib/loadReportPreview';

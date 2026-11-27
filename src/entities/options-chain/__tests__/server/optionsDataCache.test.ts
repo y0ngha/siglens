@@ -8,14 +8,6 @@
  * unchanged through the wrapper to the underlying `YahooOptionsAdapter`.
  */
 
-// release-it 경유 실행 시 `.env.local`의 UPSTASH_REDIS_REST_*가 부모 프로세스에 주입되어,
-// module-level에서 import되는 `hasOptionsMarket`/`fetchOptionsSnapshot`이 cached Redis 인스턴스를
-// 만들고 redis 경로를 타게 된다(mock 미설정 시 cache hit 오인). 첫 번째 describe block들의
-// "adapter 직행 forwarding" 검증을 보존하기 위해 import 평가 전에 unset 한다.
-// `loadWithEnv` 기반 describe들은 isolateModulesAsync로 env를 명시 주입하므로 영향 없음.
-delete process.env.UPSTASH_REDIS_REST_URL;
-delete process.env.UPSTASH_REDIS_REST_TOKEN;
-
 vi.mock('server-only', () => ({}));
 
 const {
@@ -67,6 +59,14 @@ import {
     COMPRESSED_VALUE_PREFIX,
     decodeCacheValue,
 } from '@/shared/cache/cacheValueCodec';
+
+// release-it 경유 실행 시 `.env.local`의 UPSTASH_REDIS_REST_*가 부모 프로세스에 주입되어,
+// module-level에서 import되는 `hasOptionsMarket`/`fetchOptionsSnapshot`이 cached Redis 인스턴스를
+// 만들고 redis 경로를 타게 된다(mock 미설정 시 cache hit 오인). 첫 번째 describe block들의
+// "adapter 직행 forwarding" 검증을 보존하기 위해 import 평가 전에 unset 한다.
+// `loadWithEnv` 기반 describe들은 isolateModulesAsync로 env를 명시 주입하므로 영향 없음.
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
 /**
  * optionsDataCache가 module-scope에서 Redis 인스턴스를 캐싱(`cachedRedis`)하므로

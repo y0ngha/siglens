@@ -16,10 +16,6 @@
  * 새 인스턴스를 얻는다 — SIGTERM 리스너도 afterEach에서 제거한다.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-// ── 의존성 mock (hoisted) ──────────────────────────────────────────────
-
 const { mockDrainBackgroundTasks, mockStopAcceptingBackgroundTasks } =
     vi.hoisted(() => ({
         mockDrainBackgroundTasks: vi.fn().mockResolvedValue(undefined),
@@ -50,6 +46,8 @@ vi.mock('@/shared/lib/backgroundTask', () => ({
 vi.mock('@/shared/lib/sse/activeStreams', async () =>
     vi.importActual('@/shared/lib/sse/activeStreams')
 );
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // activeStreams는 실제 구현을 사용한다 — 카운터를 조작해 drain 대기를 제어한다.
 import {

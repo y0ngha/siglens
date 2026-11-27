@@ -1,3 +1,9 @@
+const { action } = vi.hoisted(() => ({ action: vi.fn() }));
+vi.mock(
+    '@/entities/chat-conversation/actions/getConversationChangesAction',
+    () => ({ getConversationChangesAction: action })
+);
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
@@ -8,12 +14,6 @@ import type {
 } from '@/entities/chat-conversation/types';
 import en from '../../../../../messages/en.json';
 import ko from '../../../../../messages/ko.json';
-
-const { action } = vi.hoisted(() => ({ action: vi.fn() }));
-vi.mock(
-    '@/entities/chat-conversation/actions/getConversationChangesAction',
-    () => ({ getConversationChangesAction: action })
-);
 
 import { SinceEarlierCard } from '@/widgets/agent-chat/message/SinceEarlierCard';
 

@@ -1,4 +1,4 @@
-// vi.mock 호출은 vitest가 자동 호이스팅하지만, import/first 일관성을 위해
+// vi.mock 호출은 vitest가 자동 호이스팅하지만, import 블록을 하나로 이어 두려고(TESTING.md#TE-1)
 // 모든 import보다 위(파일 최상단)에 모아 둔다.
 vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,

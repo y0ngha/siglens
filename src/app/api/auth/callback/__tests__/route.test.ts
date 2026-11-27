@@ -1,4 +1,3 @@
-import type { Mocked, MockedFunction, MockedClass } from 'vitest';
 vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn().mockReturnValue({ name: 'auth', value: 'v' }),
 }));
@@ -24,11 +23,6 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/oauth-account/server/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
-// getOAuthRedirectBaseUrl는 콜백 라우트의 모든 리다이렉트 base로 쓰인다.
-// 요청 호스트(makeRequest의 example.com)와 다른 값(siglens.io)을 반환하게 해서,
-// 리다이렉트 Location이 요청 호스트가 아니라 신뢰된 base를 쓰는지 검증한다.
-// (구버전의 `req.url` base였다면 example.com이 나와 이 단언이 실패한다.)
-const TRUSTED_BASE = 'https://siglens.io';
 vi.mock('@/features/auth-oauth/lib/providers', () => ({
     buildOAuthRedirectUri: vi
         .fn()
@@ -53,6 +47,8 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
     sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
 
+import type { Mocked, MockedFunction, MockedClass } from 'vitest';
+
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
 import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
@@ -66,6 +62,12 @@ import {
     isOAuthProvider,
 } from '@/features/auth-oauth/lib/providers';
 import { verifyOAuthState } from '@/features/auth-oauth/lib/state';
+
+// getOAuthRedirectBaseUrl는 콜백 라우트의 모든 리다이렉트 base로 쓰인다.
+// 요청 호스트(makeRequest의 example.com)와 다른 값(siglens.io)을 반환하게 해서,
+// 리다이렉트 Location이 요청 호스트가 아니라 신뢰된 base를 쓰는지 검증한다.
+// (구버전의 `req.url` base였다면 example.com이 나와 이 단언이 실패한다.)
+const TRUSTED_BASE = 'https://siglens.io';
 
 const MockUserRepository = DrizzleUserRepository as MockedClass<
     typeof DrizzleUserRepository

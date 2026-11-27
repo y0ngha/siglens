@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockGetAssetInfoResilient } = vi.hoisted(() => ({
     mockGetAssetInfoResilient: vi.fn(),
 }));
@@ -11,6 +9,8 @@ vi.mock('next/navigation', () => ({
         throw new Error('NOT_FOUND');
     }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 

@@ -1,18 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
-import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
-
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/features/ticker-search/hooks/useRecentSearches');
-
-/**
- * 오버레이 트리거는 provider가 있을 때만 렌더된다. provider 유무를 케이스마다
- * 바꿔야 해서 훅을 직접 갈아끼운다 — 실제 provider를 쓰면 라우터까지 따라온다.
- */
-const overlayState: { value: { open: () => void } | null } = { value: null };
 vi.mock('@/features/ticker-search/model/SearchOverlayContext', () => ({
     useSearchOverlayTrigger: () => overlayState.value,
 }));
@@ -50,8 +39,19 @@ vi.mock('next/link', () => ({
     }) => <a {...props}>{children}</a>,
 }));
 
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
+import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
+
 import { SEARCH_PLACEHOLDER_KEY } from '@/features/ticker-search/lib/searchLabels';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+/**
+ * 오버레이 트리거는 provider가 있을 때만 렌더된다. provider 유무를 케이스마다
+ * 바꿔야 해서 훅을 직접 갈아끼운다 — 실제 provider를 쓰면 라우터까지 따라온다.
+ */
+const overlayState: { value: { open: () => void } | null } = { value: null };
 
 const SEARCH_PLACEHOLDER = catalogTranslator(
     'features.ticker-search',

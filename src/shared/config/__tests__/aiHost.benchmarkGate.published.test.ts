@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-
 vi.mock('../benchmark', () => ({
     BENCHMARK_PUBLISHED: true,
     BENCHMARK_PATH: '/benchmark',
 }));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { AI_INDEXABLE_PATHS } from '../aiHost';
 

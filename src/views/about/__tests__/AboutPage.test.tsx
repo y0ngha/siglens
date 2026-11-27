@@ -1,3 +1,10 @@
+vi.mock('next-intl/server', () => ({
+    getTranslations: vi.fn(
+        async ({ namespace }: { locale: string; namespace: string }) =>
+            createTranslator({ locale: 'ko', messages: ko, namespace } as never)
+    ),
+}));
+
 import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -8,13 +15,6 @@ import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/bench
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import ko from '../../../../messages/ko.json';
-
-vi.mock('next-intl/server', () => ({
-    getTranslations: vi.fn(
-        async ({ namespace }: { locale: string; namespace: string }) =>
-            createTranslator({ locale: 'ko', messages: ko, namespace } as never)
-    ),
-}));
 
 import { AboutPage } from '../AboutPage';
 import { EMPTY_SKILL_COUNTS, getAboutFaq } from '../lib/aboutContent';

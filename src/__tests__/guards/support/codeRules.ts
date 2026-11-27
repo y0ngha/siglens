@@ -806,6 +806,63 @@ export function issueRefLinesOf(file: string, text: string): readonly number[] {
           });
 }
 
+// ------------------------------------------------------------ imports-contiguous
+
+/** `vi.mock(...)`·`vi.unmock(...)` 문장. 둘 다 Vitest가 import 위로 끌어올린다. */
+function isHoistedViCall(statement: AstNode): boolean {
+    const call =
+        statement.type === 'ExpressionStatement'
+            ? child(statement, 'expression')
+            : null;
+    const callee = call === null ? null : child(call, 'callee');
+    const method = dotName(callee);
+    return (
+        call?.type === 'CallExpression' &&
+        nameOf(child(callee ?? call, 'object')) === 'vi' &&
+        (method === 'mock' || method === 'unmock')
+    );
+}
+
+/** `const x = vi.hoisted(...)`·`vi.hoisted(...)` 선언. */
+function isViHoisted(statement: AstNode): boolean {
+    const declarator = children(statement, 'declarations')[0];
+    const expression = child(statement, 'expression');
+    const init =
+        declarator === undefined ? expression : child(declarator, 'init');
+    const callee =
+        init?.type === 'CallExpression' ? child(init, 'callee') : null;
+    return (
+        dotName(callee) === 'hoisted' &&
+        nameOf(child(callee ?? statement, 'object')) === 'vi'
+    );
+}
+
+/**
+ * 마지막 import보다 앞에 놓인 import 아닌 최상위 문장 수. 첫 import 위에 모은 `vi.mock`·`vi.unmock`·
+ * `vi.hoisted`는 Vitest가 원래 거기서 실행하므로 허용한다. 지시어(`'use client'`)는 `directives`라 문장이 아니다.
+ */
+export function findStatementsBetweenImports(
+    ctx: FileContext
+): readonly AstNode[] {
+    const program = ctx.ast === null ? null : child(ctx.ast, 'program');
+    const body = program === null ? [] : children(program, 'body');
+    const imports = body.flatMap((statement, index) =>
+        statement.type === 'ImportDeclaration' ? [index] : []
+    );
+    const first = imports[0];
+    const last = imports[imports.length - 1];
+    if (first === undefined || last === undefined) return [];
+    return body.filter(
+        (statement, index) =>
+            index < last &&
+            statement.type !== 'ImportDeclaration' &&
+            !(
+                index < first &&
+                (isHoistedViCall(statement) || isViHoisted(statement))
+            )
+    );
+}
+
 // ------------------------------------------------------- jsdoc-detached-by-comment
 
 /**
@@ -1612,6 +1669,14 @@ export const CODE_RULES: readonly CodeRule[] = [
         fix: 'Move the `//` or block comment above the `/**`, or fold it into the JSDoc, so the JSDoc sits directly above its declaration.',
         appliesTo: file => isCodeFile(file),
         countFile: ctx => findDetachedJsdocLines(ctx).length,
+    },
+    {
+        key: 'imports-contiguous',
+        docRef: 'TESTING.md#TE-1',
+        mode: 'zero',
+        fix: 'Keep the imports contiguous: move vi.mock/vi.unmock/vi.hoisted above the first import, and any other statement (vi.doMock, const x = vi.fn()) below the last import.',
+        appliesTo: file => isTestFile(file) && isCodeFile(file),
+        countFile: ctx => findStatementsBetweenImports(ctx).length,
     },
     {
         key: 'lint-disable-directive',

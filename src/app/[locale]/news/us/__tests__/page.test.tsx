@@ -1,6 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 /** 미리보기 목의 기본값 — 목 팩토리(호이스팅)와 테스트별 복원이 같은 값을 쓴다. */
 const { DEFAULT_PREVIEWS } = vi.hoisted(() => ({
     DEFAULT_PREVIEWS: ['헤드라인 1'],
@@ -21,6 +18,9 @@ vi.mock('@/app/[locale]/news/_lib/categoryPreviews', () => ({
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
+
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import UsNewsHubPage, {

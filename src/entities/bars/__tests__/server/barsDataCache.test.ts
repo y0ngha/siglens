@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { mockFetch, mockTtl, mockRedisGet, mockRedisSet } = vi.hoisted(() => ({
@@ -19,6 +17,8 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => ({ get: mockRedisGet, set: mockRedisSet }),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     CRYPTO_SESSION,

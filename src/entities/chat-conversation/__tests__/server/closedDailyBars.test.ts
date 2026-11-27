@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getCachedBars } = vi.hoisted(() => ({ getCachedBars: vi.fn() }));
 
 vi.mock('server-only', () => ({}));
@@ -9,6 +7,8 @@ vi.mock('@/entities/bars/server/barsDataCache', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadClosedDailyBars } from '@/entities/chat-conversation/server/closedDailyBars';
 import { SECONDS_PER_DAY } from '@/shared/config/time';

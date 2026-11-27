@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 const { mockUpsert } = vi.hoisted(() => ({ mockUpsert: vi.fn() }));
 
 // 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
@@ -32,6 +31,8 @@ vi.mock('@/entities/api-key/api', () => ({
         };
     }),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { revalidatePath } from 'next/cache';

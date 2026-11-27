@@ -1,8 +1,3 @@
-import type {
-    FearGreedReading,
-    SectorSignalsResult,
-} from '@y0ngha/siglens-core';
-
 vi.mock('server-only', () => ({}));
 
 const fearGreed = vi.hoisted(() => vi.fn());
@@ -28,6 +23,11 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: pins.build,
     shortenRevalidateForRuntimeDegrade: pins.runtime,
 }));
+
+import type {
+    FearGreedReading,
+    SectorSignalsResult,
+} from '@y0ngha/siglens-core';
 
 import { loadHomeTodayMarket } from '../loadHomeTodayMarket';
 

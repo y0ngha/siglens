@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: vi.fn(),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GET } from '../route';
 import { __resetActiveNoticesMemoForTests } from '@/entities/notice/server/activeNoticesMemo';

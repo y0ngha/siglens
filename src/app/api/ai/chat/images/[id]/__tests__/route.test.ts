@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { m, RepoCtor } = vi.hoisted(() => {
     const m = {
         user: vi.fn(),
@@ -22,6 +20,8 @@ vi.mock('@/entities/chat-conversation/api', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GET } from '@/app/api/ai/chat/images/[id]/route';
 

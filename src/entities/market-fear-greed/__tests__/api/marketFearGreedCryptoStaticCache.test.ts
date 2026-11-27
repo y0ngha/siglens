@@ -1,7 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MarketFearGreedCryptoHubView } from '@/entities/market-fear-greed/model';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
 vi.mock('server-only', () => ({}));
 
 const { mockUnstableCache } = vi.hoisted(() => ({
@@ -33,6 +29,10 @@ vi.mock('@/entities/market-fear-greed/api/marketFearGreedCryptoCache', () => ({
     getCachedMarketFearGreedCrypto: vi.fn(),
     MARKET_FEAR_GREED_CRYPTO_CONFIG_FINGERPRINT: 'crypto0123456',
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { MarketFearGreedCryptoHubView } from '@/entities/market-fear-greed/model';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 import { getMarketFearGreedCryptoStatic } from '@/entities/market-fear-greed/api/marketFearGreedCryptoStaticCache';
 import { getCachedMarketFearGreedCrypto } from '@/entities/market-fear-greed/api/marketFearGreedCryptoCache';

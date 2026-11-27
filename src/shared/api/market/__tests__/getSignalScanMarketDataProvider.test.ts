@@ -1,5 +1,3 @@
-import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
-
 const { mockIsE2E, sharedProvider, createSpacerSpy, cachedCtorOptions } =
     vi.hoisted(() => ({
         mockIsE2E: vi.fn(() => false),
@@ -53,6 +51,8 @@ vi.mock('@/shared/lib/startSpacer', async orig => {
         },
     };
 });
+
+import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
 
 import {
     getSignalScanMarketDataProvider,

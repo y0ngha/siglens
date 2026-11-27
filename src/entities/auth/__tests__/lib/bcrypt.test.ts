@@ -1,8 +1,9 @@
-import type { MockedFunction } from 'vitest';
 vi.mock('bcryptjs', () => ({
     hash: vi.fn(),
     compare: vi.fn(),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { compare, hash } from 'bcryptjs';
 import {

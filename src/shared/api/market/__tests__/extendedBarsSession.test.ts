@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Bar, GetBarsOptions } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';

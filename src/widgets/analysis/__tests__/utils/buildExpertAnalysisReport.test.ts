@@ -6,6 +6,14 @@ import { readingContextFor } from './readingContext';
 
 import koMessages from '@/../messages/ko.json';
 
+import type {
+    AnalysisResponse,
+    ClusteredKeyLevels,
+    CycleReading,
+    IndicatorReading,
+    PlanState,
+} from '@y0ngha/siglens-core';
+
 /** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
 const tReport = (key: string, values?: Record<string, string | number>) => {
     const table = koMessages.widgets.analysis.expertReport as Record<
@@ -19,14 +27,6 @@ const tReport = (key: string, values?: Record<string, string | number>) => {
         raw
     );
 };
-
-import type {
-    AnalysisResponse,
-    ClusteredKeyLevels,
-    CycleReading,
-    IndicatorReading,
-    PlanState,
-} from '@y0ngha/siglens-core';
 
 // t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
 // 실제 번역자를 한 번 만들어 모든 호출에 재사용한다.

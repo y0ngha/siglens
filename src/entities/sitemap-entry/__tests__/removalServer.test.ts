@@ -1,9 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability/config/approved-longtail-tickers';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-
 const mocks = vi.hoisted(() => ({
     unstableCache: vi.fn(
         (loader: () => Promise<unknown>) => async (): Promise<unknown> => {
@@ -37,6 +31,12 @@ vi.mock('../api', () => ({
 vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability/config/approved-longtail-tickers';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 
 import {
     REMOVAL_CHART_CUTOFF_ISO,

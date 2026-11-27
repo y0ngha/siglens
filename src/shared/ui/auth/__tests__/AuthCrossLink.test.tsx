@@ -1,5 +1,3 @@
-const searchParams = { value: new URLSearchParams() };
-
 vi.mock('next/navigation', () => ({
     useSearchParams: () => searchParams.value,
 }));
@@ -22,6 +20,8 @@ vi.mock('next/link', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { AuthCrossLink } from '../AuthCrossLink';
+
+const searchParams = { value: new URLSearchParams() };
 
 /**
  * 로그인 ↔ 회원가입 링크가 `next`를 잃으면, 인증 게이트에 걸려 돌아온

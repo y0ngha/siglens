@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { redis, mockGetRedisClient } = vi.hoisted(() => ({
     redis: { set: vi.fn(), eval: vi.fn() },
     mockGetRedisClient: vi.fn(),
@@ -7,6 +5,8 @@ const { redis, mockGetRedisClient } = vi.hoisted(() => ({
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: mockGetRedisClient,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     acquireTurnLock,

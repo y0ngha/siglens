@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 vi.mock('@/app/[locale]/reset-password/ResetPasswordContent', () => ({
     ResetPasswordContent: () => <div data-testid="reset-password-content" />,
 }));
@@ -40,6 +38,8 @@ vi.mock('next/link', () => ({
         children: React.ReactNode;
     }) => <a href={href}>{children}</a>,
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import ResetPasswordPage from '@/app/[locale]/reset-password/page';
 

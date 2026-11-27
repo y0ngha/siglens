@@ -1,15 +1,3 @@
-// useIsClamped(useEffect + ResizeObserver)가 SkillCard에서 호출되므로
-// 파일 전역으로 ResizeObserver를 stub해 ReferenceError를 방지한다.
-// scrollHeight/clientHeight은 SkillCard expand 테스트 내부에서 개별 stubClamp로 제어.
-vi.stubGlobal(
-    'ResizeObserver',
-    class {
-        observe = vi.fn();
-        unobserve = vi.fn();
-        disconnect = vi.fn();
-    }
-);
-
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) =>
         args
@@ -68,6 +56,18 @@ import userEvent from '@testing-library/user-event';
 import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
 
 import { SkillsShowcase } from '../SkillsShowcase';
+
+// useIsClamped(useEffect + ResizeObserver)가 SkillCard에서 호출되므로
+// 파일 전역으로 ResizeObserver를 stub해 ReferenceError를 방지한다.
+// scrollHeight/clientHeight은 SkillCard expand 테스트 내부에서 개별 stubClamp로 제어.
+vi.stubGlobal(
+    'ResizeObserver',
+    class {
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+    }
+);
 
 function makeSkill(
     name: string,

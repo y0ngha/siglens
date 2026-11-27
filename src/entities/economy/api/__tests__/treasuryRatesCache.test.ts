@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockGetOrSetCache, mockGetTreasury, provider } = vi.hoisted(() => {
     const mockGetTreasury = vi.fn();
     return {
@@ -20,6 +18,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
 vi.mock('@/shared/api/economy/getEconomyProvider', () => ({
     getEconomyProvider: () => provider,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     buildTreasuryCacheKey,

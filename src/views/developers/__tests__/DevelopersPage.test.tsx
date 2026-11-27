@@ -1,3 +1,20 @@
+vi.mock('next-intl/server', () => ({
+    getTranslations: vi.fn(
+        async ({
+            locale,
+            namespace,
+        }: {
+            locale: 'ko' | 'en';
+            namespace: string;
+        }) =>
+            createTranslator({
+                locale,
+                messages: catalogs[locale],
+                namespace,
+            } as never)
+    ),
+}));
+
 import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
 import type { AgentToolSpec } from '@y0ngha/siglens-core';
@@ -21,27 +38,10 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
 import ko from '../../../../messages/ko.json';
 
-const catalogs = { ko, en } as const;
-
-vi.mock('next-intl/server', () => ({
-    getTranslations: vi.fn(
-        async ({
-            locale,
-            namespace,
-        }: {
-            locale: 'ko' | 'en';
-            namespace: string;
-        }) =>
-            createTranslator({
-                locale,
-                messages: catalogs[locale],
-                namespace,
-            } as never)
-    ),
-}));
-
 import { DEVELOPER_SECTION_IDS } from '../lib/developersContent';
 import { DevelopersPage } from '../DevelopersPage';
+
+const catalogs = { ko, en } as const;
 
 const d = ko.views.developers;
 

@@ -1,6 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { inspect } from 'node:util';
-
 const {
     search,
     getOptionsSummary,
@@ -107,6 +104,9 @@ const correctKrSymbolSuffix = vi.hoisted(() =>
 vi.mock('@/entities/ticker/server/koreanNameStore', () => ({
     correctKrSymbolSuffix,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { inspect } from 'node:util';
 
 import {
     AGENT_RESULT_CAPS,

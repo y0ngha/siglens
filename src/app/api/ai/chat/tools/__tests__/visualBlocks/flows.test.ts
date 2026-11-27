@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const m = vi.hoisted(() => ({
@@ -22,6 +20,8 @@ vi.mock('@/app/api/ai/chat/tools/krInvestorTrend', async importOriginal => ({
     >()),
     loadKrInvestorTrendRows: m.krRows,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { InvestorFlowsSnapshot } from '@y0ngha/siglens-core';
 import {

@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const m = vi.hoisted(() => ({
     findByUser: vi.fn(),
     getAgentSuggestions: vi.fn(),
@@ -15,6 +13,8 @@ vi.mock('@/entities/agent-suggestions/api', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadAiHomeSuggestions } from '../homeLoaders';
 

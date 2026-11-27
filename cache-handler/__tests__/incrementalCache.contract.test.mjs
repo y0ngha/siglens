@@ -6,8 +6,6 @@
 // (TESTING.md#TE-8 — mock이 아니라 실물로 계약을 확인).
 // Next를 올렸을 때 이 파일이 깨지면 nextInternals.mjs의 인용부터 다시 확인할 것.
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-
 const { s3Objects } = vi.hoisted(() => ({ s3Objects: new Map() }));
 
 // S3는 직렬화까지 실제로 태운 인메모리 버킷으로 대체한다 — cacheControl 영속이 v8+gzip
@@ -40,6 +38,8 @@ vi.mock('../upstashRest.mjs', () => ({
     serverTimeMs: vi.fn(),
     expireKey: vi.fn(),
 }));
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { createRequire } from 'node:module';
 import CacheHandler, { __resetForTests as resetHandler } from '../index.mjs';

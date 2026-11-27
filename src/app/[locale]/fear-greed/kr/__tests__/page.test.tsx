@@ -1,13 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import {
-    describe,
-    it,
-    expect,
-    vi,
-    beforeEach,
-    type MockedFunction,
-} from 'vitest';
-
 vi.mock('@/widgets/market-fear-greed/MarketFearGreedPage', () => ({
     MarketFearGreedPage: () => null,
 }));
@@ -18,6 +8,16 @@ vi.mock(
         getMarketFearGreedKrStatic: vi.fn(),
     })
 );
+
+import { render, screen } from '@testing-library/react';
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    beforeEach,
+    type MockedFunction,
+} from 'vitest';
 
 import FearGreedKrRoutePage, {
     generateMetadata,

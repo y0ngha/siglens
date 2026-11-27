@@ -1,6 +1,3 @@
-import { act, render } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const interaction = vi.hoisted(() => ({
     pending: [] as Array<() => void>,
 }));
@@ -14,6 +11,18 @@ vi.mock('@/shared/lib/onFirstInteraction', () => ({
         };
     },
 }));
+
+const track = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
+    trackFunnelEvent: track,
+}));
+
+import { act, render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ShareOpenedPing } from '@/features/visitor-ping/ui/ShareOpenedPing';
+import { claimShareCreated } from '@/shared/lib/funnel/shareMarks';
+
 function fireInteraction(): void {
     const callbacks = interaction.pending;
     interaction.pending = [];
@@ -21,14 +30,6 @@ function fireInteraction(): void {
         callbacks.forEach(c => c());
     });
 }
-
-const track = vi.hoisted(() => vi.fn());
-vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
-    trackFunnelEvent: track,
-}));
-
-import { ShareOpenedPing } from '@/features/visitor-ping/ui/ShareOpenedPing';
-import { claimShareCreated } from '@/shared/lib/funnel/shareMarks';
 
 describe('ShareOpenedPing', () => {
     beforeEach(() => {

@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { profile, assetInfo, getQuote, spec } = vi.hoisted(() => ({
     profile: vi.fn(),
     assetInfo: vi.fn(),
@@ -22,6 +20,8 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
         quoteDelayMinutes: id === 'kr-equity' ? 20 : 0,
     }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getQuoteTool } from '@/app/api/ai/chat/tools/getQuote';
 import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';

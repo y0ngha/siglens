@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const m = vi.hoisted(() => ({
@@ -27,6 +25,8 @@ vi.mock('@/entities/earnings-report/server/earningsReportsRepository', () => ({
         listReportedEps = m.reportedEps;
     },
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IncomeStatementRow } from '@y0ngha/siglens-core';
 import {

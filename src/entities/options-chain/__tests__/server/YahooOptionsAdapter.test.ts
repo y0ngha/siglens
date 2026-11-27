@@ -1,4 +1,3 @@
-import type { MockInstance, Mock } from 'vitest';
 /**
  * Unit tests for YahooOptionsAdapter.
  *
@@ -38,6 +37,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
+import type { MockInstance, Mock } from 'vitest';
 import {
     mapExpirationsToSlots,
     sanitizeOptionsChain,

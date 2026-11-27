@@ -1,11 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { readAt } from '@/shared/test-utils/readAt';
-import {
-    ANALYST_VIEWS_RESULT_MAX_CHARS,
-    TOOL_RESULT_MAX_CHARS,
-} from '@/app/api/ai/chat/tools/truncate';
-import type { AnalystViews } from '@/entities/analyst-views/model';
-
 const { isTabAllowed, getViews, getQuote, resolveProfile, assetInfo } =
     vi.hoisted(() => ({
         isTabAllowed: vi.fn(),
@@ -37,6 +29,14 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
         priceFormat: { currency: id === 'kr-equity' ? 'KRW' : 'USD' },
     }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readAt } from '@/shared/test-utils/readAt';
+import {
+    ANALYST_VIEWS_RESULT_MAX_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+} from '@/app/api/ai/chat/tools/truncate';
+import type { AnalystViews } from '@/entities/analyst-views/model';
 
 import { getAnalystViewsTool } from '@/app/api/ai/chat/tools/getAnalystViews';
 

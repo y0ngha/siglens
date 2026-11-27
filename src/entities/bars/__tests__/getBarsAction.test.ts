@@ -1,5 +1,3 @@
-delete process.env.UPSTASH_REDIS_REST_URL;
-delete process.env.UPSTASH_REDIS_REST_TOKEN;
 vi.mock('server-only', () => ({}));
 vi.mock('@upstash/redis', () => ({
     Redis: vi.fn().mockImplementation(() => ({ get: vi.fn(), set: vi.fn() })),
@@ -64,15 +62,19 @@ import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
 import koMessages from '../../../../messages/ko.json';
 
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
+
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
 /**
  * 액션은 이제 **키가 아니라 번역된 문구**를 던진다(`translateFmpError`).
  * 키 상수를 그대로 단언하면 번역 배선이 빠져도 통과한다.
  */
 const FMP_UNAVAILABLE_TEXT = koMessages.shared.api.fmpUnavailable;
 const FMP_BUSY_TEXT = koMessages.shared.api.fmpBusy;
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;

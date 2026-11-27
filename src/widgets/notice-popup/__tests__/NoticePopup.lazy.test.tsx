@@ -1,3 +1,15 @@
+const loaded = vi.hoisted(() => ({ markdown: 0 }));
+
+vi.mock('@/shared/ui/MarkdownText', () => {
+    loaded.markdown += 1;
+    return {
+        MarkdownText: ({ children }: { children: React.ReactNode }) => (
+            <div>{children}</div>
+        ),
+    };
+});
+vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
+
 // @vitest-environment jsdom
 /**
  * 마크다운 렌더러가 **정말로 지연 로드되는지** 고정한다.
@@ -10,18 +22,6 @@
  * 단언이 무의미해진다.
  */
 import { render, waitFor } from '@testing-library/react';
-
-const loaded = vi.hoisted(() => ({ markdown: 0 }));
-
-vi.mock('@/shared/ui/MarkdownText', () => {
-    loaded.markdown += 1;
-    return {
-        MarkdownText: ({ children }: { children: React.ReactNode }) => (
-            <div>{children}</div>
-        ),
-    };
-});
-vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
 import { stubNoticesFetch } from './noticesFetchStub';

@@ -1,3 +1,9 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
+
+import { SkillsShowcase } from '../SkillsShowcase';
+
 vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -6,12 +12,6 @@ vi.stubGlobal(
         disconnect = vi.fn();
     }
 );
-
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { HomeSkillItem } from '../utils/toSkillShowcaseItems';
-
-import { SkillsShowcase } from '../SkillsShowcase';
 
 function makeSkills(
     type: NonNullable<HomeSkillItem['type']>,

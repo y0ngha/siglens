@@ -1,6 +1,3 @@
-import { MODEL_SPECS } from '@y0ngha/siglens-core';
-import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
-
 const { callGeminiMock } = vi.hoisted(() => ({
     callGeminiMock: vi.fn(),
 }));
@@ -8,6 +5,9 @@ const { callGeminiMock } = vi.hoisted(() => ({
 vi.mock('@/entities/llm-provider/api/gemini', () => ({
     callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
 }));
+
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import { runWithoutServerLlm } from '@/shared/lib/serverLlmPolicy';
 
 import {
     translateCompanyDescription,

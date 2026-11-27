@@ -1,9 +1,3 @@
-const mockFetchOptionsSnapshot = vi.fn();
-const mockGetFinancialsSnapshot = vi.fn();
-const mockComputeFinancialsScorecard = vi.fn();
-const mockIsEtRegularSessionOpen = vi.fn();
-const mockIsOpenInterestSnapshotStale = vi.fn();
-
 vi.mock('@/entities/options-chain/server/optionsDataCache', () => ({
     fetchOptionsSnapshot: (...args: unknown[]) =>
         mockFetchOptionsSnapshot(...args),
@@ -31,6 +25,12 @@ import {
     loadFinancialsScorecardOrUndefined,
     loadOptionsSnapshotOrNull,
 } from '@/entities/analysis/server/overallAxisInputs';
+
+const mockFetchOptionsSnapshot = vi.fn();
+const mockGetFinancialsSnapshot = vi.fn();
+const mockComputeFinancialsScorecard = vi.fn();
+const mockIsEtRegularSessionOpen = vi.fn();
+const mockIsOpenInterestSnapshotStale = vi.fn();
 
 const SNAPSHOT = { symbol: 'AAPL' } as never;
 

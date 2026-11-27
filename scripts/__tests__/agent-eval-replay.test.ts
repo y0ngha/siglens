@@ -1,10 +1,10 @@
+vi.mock('server-only', () => ({}));
+
 /**
  * Unit tests for scripts/agent-eval/replayTools.mjs: the recorded tool results of a saved conversation are turned
  * into the NEW variant's shape by the app's exported enrichment functions. Hand-written fixtures; no network, DB or LLM.
  */
 import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('server-only', () => ({}));
 
 import {
     buildHolderReads,

@@ -1,12 +1,13 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-const pathnameRef = { current: '/NVDA' };
 vi.mock('next/navigation', () => ({
     usePathname: () => pathnameRef.current,
 }));
 
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useSearchOverlay } from '@/features/ticker-search/hooks/useSearchOverlay';
+
+const pathnameRef = { current: '/NVDA' };
 
 /**
  * 이 훅의 계약은 "검색은 목적지가 아니라 경유지"라는 한 문장으로 요약된다.

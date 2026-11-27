@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 vi.mock('@/entities/auth/lib/errorMessages', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
@@ -30,6 +29,8 @@ const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn() }));
 vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';

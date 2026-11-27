@@ -1,7 +1,3 @@
-const mockFindHoldings = vi.fn();
-const mockFindWatchlist = vi.fn();
-const mockFindExcluded = vi.fn();
-
 vi.mock('server-only', () => ({}));
 vi.mock('@/entities/portfolio/api', () => ({
     DrizzlePortfolioRepository: vi.fn().mockImplementation(function () {
@@ -29,6 +25,10 @@ import {
     expectLogWithoutPlantedSecrets,
     plantedDbError,
 } from '@/shared/test-utils/plantedDbError';
+
+const mockFindHoldings = vi.fn();
+const mockFindWatchlist = vi.fn();
+const mockFindExcluded = vi.fn();
 
 describe('loadReportPreview', () => {
     beforeEach(() => {

@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const {
     peekAnalysis,
     peekOverall,
@@ -64,6 +62,8 @@ vi.mock('@/shared/api/market/sessionSpecFor', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     buildPlanCheck,

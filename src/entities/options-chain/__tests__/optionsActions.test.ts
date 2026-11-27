@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
     cookies: vi.fn(),
@@ -43,6 +41,8 @@ vi.mock('@/shared/lib/byokGate', () => ({
         message: `mock-${code}`,
     })),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import {
     runOptionsAnalysis,

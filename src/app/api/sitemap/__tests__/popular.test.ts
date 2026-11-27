@@ -9,9 +9,7 @@ vi.mock('@/entities/sitemap-entry/lib/buildPopularEntries', () => ({
 vi.mock('@/entities/sitemap-entry/lib/xml', () => ({
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
-const PROSE_INPUTS = {
-    snapshotGeneratedAt: new Map([['AAPL:overall', new Date(0)]]),
-};
+
 vi.mock('@/entities/sitemap-entry/server', () => ({
     loadPopularSitemapInputs: vi.fn(async () => PROSE_INPUTS),
 }));
@@ -20,6 +18,10 @@ import { GET } from '@/app/api/sitemap/popular/route';
 import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
 import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
+
+const PROSE_INPUTS = {
+    snapshotGeneratedAt: new Map([['AAPL:overall', new Date(0)]]),
+};
 
 const mockBuildPopularEntries = buildPopularEntries as MockedFunction<
     typeof buildPopularEntries

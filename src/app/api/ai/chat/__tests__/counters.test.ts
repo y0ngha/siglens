@@ -1,5 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
-
 const { mockCreate } = vi.hoisted(() => ({
     mockCreate: vi.fn((o: unknown) => ({ o })),
 }));
@@ -7,6 +5,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
     createCounterStore: mockCreate,
 }));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { AGENT_GLOBAL_LIMITS, agentLimit } from '@y0ngha/siglens-core';
 import {

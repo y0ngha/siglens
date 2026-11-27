@@ -1,8 +1,3 @@
-import { createTranslator } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
-import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
-
 vi.mock('next-intl/server', () => ({
     getTranslations: vi.fn(
         async ({
@@ -19,6 +14,11 @@ vi.mock('next-intl/server', () => ({
             } as never)
     ),
 }));
+
+import { createTranslator } from 'next-intl';
+import { describe, expect, it, vi } from 'vitest';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seoClamp';
+import { MESSAGE_CATALOGS } from '@/shared/test-utils/messageCatalogs';
 
 import { BENCHMARK_FIXTURE } from '@/entities/benchmark/__tests__/fixtures/benchmarkFixture';
 import {

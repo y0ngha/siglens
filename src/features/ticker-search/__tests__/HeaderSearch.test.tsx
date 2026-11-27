@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
     usePathname: () => '/NVDA',
 }));
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';

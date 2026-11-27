@@ -1,7 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { SectorSignalsResult } from '@y0ngha/siglens-core';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
-
 vi.mock('server-only', () => ({}));
 
 vi.mock('next/cache', () => ({
@@ -32,6 +28,10 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
 vi.mock('../api/sectorSignalsProvider', () => ({
     sectorSignalsProviderFor: vi.fn(() => ({})),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
 import { getCachedSectorSignals } from '../api/sectorSignalsCache';

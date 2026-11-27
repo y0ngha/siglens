@@ -5,14 +5,6 @@
  * All other rendering is deterministic from props.
  */
 
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { MockedFunction } from 'vitest';
-import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
-import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news/lib/marketNewsConstants';
-import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
-import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
-
 vi.mock('@/widgets/market-news/hooks/useMarketNewsCardPolling', () => ({
     useMarketNewsCardPolling: vi.fn(),
 }));
@@ -34,14 +26,22 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-const mockUseMarketNewsCardPolling = useMarketNewsCardPolling as MockedFunction<
-    typeof useMarketNewsCardPolling
->;
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { MockedFunction } from 'vitest';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news/lib/marketNewsConstants';
+import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
+import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
 
 import {
     MARKET_NEWS_LIST_PAGE_SIZE as PAGE_SIZE,
     NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
 } from '@/shared/config/newsSerialization';
+
+const mockUseMarketNewsCardPolling = useMarketNewsCardPolling as MockedFunction<
+    typeof useMarketNewsCardPolling
+>;
 
 function makeItem(n: number): MarketNewsCardItem {
     return {

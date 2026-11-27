@@ -1,4 +1,3 @@
-import type { MockedFunction } from 'vitest';
 /**
  * OverallContent done branch만 검증하는 테스트. hook은 mock 처리해
  * 다양한 state shape를 강제로 주입하고, 4축 layout(특히 OptionsSummary 위치,
@@ -6,8 +5,7 @@ import type { MockedFunction } from 'vitest';
  */
 
 /**
- * vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
- * 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
+ * vi.mock은 vitest가 import 위로 hoist하지만, 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
  *
  * 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
  * 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
@@ -112,6 +110,7 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn() }),
 }));
 
+import type { MockedFunction } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import type { ReactNode } from 'react';

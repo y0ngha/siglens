@@ -4,6 +4,11 @@ import { getReanalyzeCooldownMs } from '../actions/getReanalyzeCooldownMs';
 import * as tryAcquireModule from '../actions/tryAcquireReanalyzeCooldown';
 import { tryAcquireReanalyzeCooldown } from '../actions/tryAcquireReanalyzeCooldown';
 
+import {
+    getReanalyzeCooldownMs as coreGetMs,
+    tryAcquireReanalyzeCooldown as coreTryAcquire,
+} from '@y0ngha/siglens-core';
+
 /**
  * Task 5: `releaseReanalyzeCooldown`이 공개 server-action 표면에 없음을 보장한다.
  *
@@ -20,10 +25,6 @@ it('releaseReanalyzeCooldown은 공개 server-action 표면에 노출되지 않�
         ...Object.keys(getReanalyzeCooldownMsModule),
     ]).not.toContain('releaseReanalyzeCooldown');
 });
-import {
-    getReanalyzeCooldownMs as coreGetMs,
-    tryAcquireReanalyzeCooldown as coreTryAcquire,
-} from '@y0ngha/siglens-core';
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),

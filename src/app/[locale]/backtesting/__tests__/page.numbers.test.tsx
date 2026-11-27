@@ -1,13 +1,3 @@
-// @vitest-environment jsdom
-//
-// The numbers on /backtesting equal the `data.json` fields they come from, and the copy
-// stays inside the display rules (one period, a baseline next to every return, no claims).
-//
-// The expected strings are formatted here from the RAW `data.json` / `summary.json` fields with a
-// local `toFixed`, not from the stats the page derives, so a page that reads the wrong field (or
-// swaps two) fails. The page tree is real (no widget mocks) and rendered the way SSR renders it.
-import { renderToStaticMarkup } from 'react-dom/server';
-
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     backtestingDescription: () => 'test desc',
@@ -30,6 +20,16 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
     usePathname: () => '/backtesting',
 }));
+
+// @vitest-environment jsdom
+//
+// The numbers on /backtesting equal the `data.json` fields they come from, and the copy
+// stays inside the display rules (one period, a baseline next to every return, no claims).
+//
+// The expected strings are formatted here from the RAW `data.json` / `summary.json` fields with a
+// local `toFixed`, not from the stats the page derives, so a page that reads the wrong field (or
+// swaps two) fails. The page tree is real (no widget mocks) and rendered the way SSR renders it.
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import BacktestingPage from '@/app/[locale]/backtesting/page';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';

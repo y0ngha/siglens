@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GuideEntry } from '@/entities/guide/types';
-
 const { loadGuideCatalog } = vi.hoisted(() => ({ loadGuideCatalog: vi.fn() }));
 vi.mock('@/entities/guide/api', () => ({ loadGuideCatalog }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GuideEntry } from '@/entities/guide/types';
 
 import {
     GUIDE_BODY_MAX_CHARS,

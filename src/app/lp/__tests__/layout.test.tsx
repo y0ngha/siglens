@@ -1,7 +1,3 @@
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
-
 const { marker } = vi.hoisted(() => ({
     marker:
         (name: string) =>
@@ -18,6 +14,10 @@ vi.mock('@/app/_components/GoogleAdsTag', () => ({
 vi.mock('@/app/fontVariables', () => ({ FONT_VARIABLE_CLASSES: '' }));
 vi.mock('next/script', () => ({ default: marker('script') }));
 vi.mock('../../globals.css', () => ({}));
+
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
 
 import LandingRootLayout from '@/app/lp/layout';
 

@@ -1,8 +1,3 @@
-import { EventEmitter, getEventListeners } from 'node:events';
-import { Readable } from 'node:stream';
-import { deflateSync, gzipSync } from 'node:zlib';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const dns = vi.hoisted(() => ({
     lookup: vi.fn<
         (
@@ -12,15 +7,6 @@ const dns = vi.hoisted(() => ({
     >(),
 }));
 vi.mock('node:dns/promises', () => ({ lookup: dns.lookup }));
-
-interface FakeReply {
-    statusCode: number;
-    headers: Record<string, string | string[]>;
-    /** Chunks are pushed one per read, so a consumer can stop before the end. */
-    chunks: Buffer[];
-    /** Never end the stream after the last chunk (a stalled server). */
-    hang?: boolean;
-}
 const net = vi.hoisted(() => ({
     reply: null as null | FakeReply,
     error: null as Error | null,
@@ -86,6 +72,11 @@ vi.mock('node:zlib', async importOriginal => {
     };
 });
 
+import { EventEmitter, getEventListeners } from 'node:events';
+import { Readable } from 'node:stream';
+import { deflateSync, gzipSync } from 'node:zlib';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
     BlockedAddressError,
     pinnedGet,
@@ -93,6 +84,15 @@ import {
     resolveCheckedAddresses,
     UnsupportedEncodingError,
 } from '@/shared/api/web/pinnedRequest';
+
+interface FakeReply {
+    statusCode: number;
+    headers: Record<string, string | string[]>;
+    /** Chunks are pushed one per read, so a consumer can stop before the end. */
+    chunks: Buffer[];
+    /** Never end the stream after the last chunk (a stalled server). */
+    hang?: boolean;
+}
 
 const PUBLIC = { address: '93.184.216.34', family: 4 };
 

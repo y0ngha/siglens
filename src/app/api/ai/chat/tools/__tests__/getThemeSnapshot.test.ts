@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { provider, asset, forming } = vi.hoisted(() => ({
@@ -16,6 +14,8 @@ vi.mock('@/app/api/ai/chat/tools/resolveAssetInfo', () => ({
 vi.mock('@/entities/bars/lib/quantizeBars', () => ({
     lastBarIsForming: () => forming.value,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AGENT_THEMES, type ThemeSnapshot } from '@y0ngha/siglens-core';
 import { isRecord } from '@/shared/lib/isRecord';

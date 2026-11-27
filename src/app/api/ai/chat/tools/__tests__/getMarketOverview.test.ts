@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const {
     fgUs,
     fgKr,
@@ -46,6 +44,8 @@ vi.mock('@/entities/market-summary/api/briefingStaticCache', () => ({
 vi.mock('next-intl/server', () => ({
     getTranslations: getTranslationsMock,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getMarketOverviewTool } from '@/app/api/ai/chat/tools/getMarketOverview';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';

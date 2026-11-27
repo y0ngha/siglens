@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 vi.mock('@/shared/lib/seo', () => ({ SITE_URL: 'https://siglens.io' }));
 vi.mock('next/link', () => ({
     default: ({
@@ -16,6 +14,8 @@ vi.mock('next/link', () => ({
         </a>
     ),
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import EmailReportSamplePage, {
     generateMetadata,

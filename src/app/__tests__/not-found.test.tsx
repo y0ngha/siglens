@@ -1,7 +1,3 @@
-// @vitest-environment jsdom
-import { screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const resolverSpy = vi.hoisted(() => ({
     calls: [] as Array<[string, string]>,
 }));
@@ -16,6 +12,10 @@ vi.mock('@/shared/i18n/locationSurface', async importOriginal => {
         },
     };
 });
+
+// @vitest-environment jsdom
+import { screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildOverrides } from '@/app/_components/notFoundOverrides';
 import { generateMetadata } from '../not-found';

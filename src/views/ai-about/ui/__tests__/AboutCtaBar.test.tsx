@@ -1,12 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-
-const mockUseHideOnScrollDown = vi.fn();
 vi.mock('@/shared/hooks/useHideOnScrollDown', () => ({
     useHideOnScrollDown: () => mockUseHideOnScrollDown(),
 }));
 
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import { AboutCtaBar } from '../AboutCtaBar';
+
+const mockUseHideOnScrollDown = vi.fn();
 
 describe('AboutCtaBar', () => {
     it('renders the title and links the cta to the given href', () => {

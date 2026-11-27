@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const naver = vi.hoisted(() => ({
     creds: false,
     search: vi.fn<
@@ -14,7 +12,6 @@ const naver = vi.hoisted(() => ({
         ) => Promise<unknown[]>
     >(),
 }));
-const AI_CREDS = { id: 'ai-id', secret: 'ai-secret' };
 vi.mock('@/shared/api/naver/naverSearch', () => ({
     naverAiCredentials: () => (naver.creds ? AI_CREDS : null),
     searchNaverNews: naver.search,
@@ -37,9 +34,13 @@ vi.mock('@/app/api/ai/chat/tools/fetchPageExcerpt', () => ({
     fetchPageExcerpt: excerpt.fetch,
 }));
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { webSearchTool } from '@/app/api/ai/chat/tools/webSearch';
 import { __resetWebSearchCacheForTests } from '@/app/api/ai/chat/tools/webSearchCache';
 import { WEB_SEARCH_RESULT_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
+
+const AI_CREDS = { id: 'ai-id', secret: 'ai-secret' };
 
 const rt = {} as never;
 const ctx = (locale: 'ko' | 'en', claim?: () => Promise<unknown>) =>

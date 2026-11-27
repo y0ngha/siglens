@@ -1,5 +1,3 @@
-import type { CacheProvider } from '@y0ngha/siglens-core';
-
 const { tryGetDatabaseClientMock, repositoryMock } = vi.hoisted(() => ({
     tryGetDatabaseClientMock: vi.fn(),
     repositoryMock: { findBySymbol: vi.fn(), upsert: vi.fn() },
@@ -15,6 +13,8 @@ vi.mock('../../api', () => ({
         }
     },
 }));
+
+import type { CacheProvider } from '@y0ngha/siglens-core';
 
 import {
     persistOrCacheProvisional,

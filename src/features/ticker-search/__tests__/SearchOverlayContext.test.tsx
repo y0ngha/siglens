@@ -1,16 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LocaleProvider } from '@/shared/i18n/LocaleContext';
-import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
-import {
-    assignLocation,
-    replaceLocation,
-} from '@/shared/lib/crossHostNavigate';
-
-const replaceMock = vi.fn();
-const pushMock = vi.fn();
-const pathnameRef = { current: '/NVDA' };
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: replaceMock, push: pushMock }),
     usePathname: () => pathnameRef.current,
@@ -20,13 +7,6 @@ vi.mock('@/shared/lib/crossHostNavigate', () => ({
     assignLocation: vi.fn(),
     replaceLocation: vi.fn(),
 }));
-
-const searchState = {
-    results: [] as unknown[],
-    isSearching: false,
-    hasQuery: false,
-    debouncedQuery: '',
-};
 vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
     useTickerSearch: () => searchState,
 }));
@@ -40,10 +20,31 @@ vi.mock('@/features/ticker-search/hooks/useRecentSearches', () => ({
     }),
 }));
 
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
+import {
+    assignLocation,
+    replaceLocation,
+} from '@/shared/lib/crossHostNavigate';
+
 import {
     SearchOverlayProvider,
     useSearchOverlayTrigger,
 } from '@/features/ticker-search/model/SearchOverlayContext';
+
+const replaceMock = vi.fn();
+const pushMock = vi.fn();
+const pathnameRef = { current: '/NVDA' };
+
+const searchState = {
+    results: [] as unknown[],
+    isSearching: false,
+    hasQuery: false,
+    debouncedQuery: '',
+};
 
 function Trigger() {
     const overlay = useSearchOverlayTrigger();

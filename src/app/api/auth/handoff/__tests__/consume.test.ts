@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const m = vi.hoisted(() => ({ consume: vi.fn(), createSession: vi.fn() }));
 vi.mock('@/entities/auth/server/handoffStore', async importOriginal => ({
     ...(await importOriginal<object>()),
@@ -17,6 +15,8 @@ vi.mock('@/shared/config/aiHost', () => ({
     AI_SITE_URL: 'https://ai.siglens.io',
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/handoff/consume/route';

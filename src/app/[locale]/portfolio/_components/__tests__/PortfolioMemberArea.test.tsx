@@ -11,7 +11,7 @@
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
-const mockFindByUser = vi.fn();
+
 vi.mock('@/entities/portfolio/api', () => ({
     // A plain `function` (not an arrow) — the production code calls this via
     // `new DrizzlePortfolioRepository(db)`, and arrow functions are not
@@ -44,6 +44,8 @@ import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHol
 import { PortfolioManager } from '../PortfolioManager';
 import { PortfolioMemberArea } from '../PortfolioMemberArea';
 import { PortfolioEmptyState, PortfolioErrorState } from '../PortfolioStates';
+
+const mockFindByUser = vi.fn();
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
 

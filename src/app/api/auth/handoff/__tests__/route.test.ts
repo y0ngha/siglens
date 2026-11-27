@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const m = vi.hoisted(() => ({ user: vi.fn(), issue: vi.fn() }));
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: m.user,
@@ -13,6 +11,8 @@ vi.mock('@/shared/config/aiHost', () => ({
     MAIN_SITE_URL: 'https://siglens.io',
     isAiHost: (h: string | null) => h === 'ai.siglens.io',
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/handoff/route';

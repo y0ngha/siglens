@@ -1,6 +1,3 @@
-// vi.mock is hoisted above all imports by vitest — must appear before any import statements.
-// getYahooQuote()가 동적 import로 가져오는 모듈이라, 정적 import처럼 vi.mock으로 가로챈다.
-const getListingOrThrow = vi.fn();
 vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
     YahooMarketProvider: class {
         getListingOrThrow = getListingOrThrow;
@@ -10,6 +7,10 @@ vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fetchKrEquityQuoteName } from '@/entities/ticker/server/krEquityQuoteName';
 import { QUOTE_MAX_AGE_MS } from '@/shared/config/quoteFreshness';
+
+// vi.mock is hoisted above all imports by vitest — must appear before any import statements.
+// getYahooQuote()가 동적 import로 가져오는 모듈이라, 정적 import처럼 vi.mock으로 가로챈다.
+const getListingOrThrow = vi.fn();
 
 /** 고정 시계 — 리스팅 나이 판정이 실행 시각에 따라 흔들리지 않게 한다. */
 const NOW = Date.UTC(2026, 9, 22, 12, 0, 0);

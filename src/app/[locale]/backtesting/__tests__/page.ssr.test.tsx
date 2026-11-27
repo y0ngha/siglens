@@ -1,19 +1,3 @@
-// @vitest-environment jsdom
-//
-// Proves the /backtesting fix actually works, not just "looks correct".
-//
-// React does not run useEffect during server rendering — renderToStaticMarkup
-// mirrors that (unlike @testing-library/react's render(), which flushes effects
-// via act() and would hide this bug). Before the fix, the visible case list was
-// derived synchronously from useSearchParams() during render,
-// so a Suspense boundary wrapping that subtree caused Next.js to statically bake
-// only the "로딩 중..." fallback — the cases never reached crawlers.
-//
-// This test renders the real page tree (no widget mocks) with renderToStaticMarkup
-// and asserts real data.json case content is present in that first, effect-free
-// pass — the same pass that becomes the static SSR HTML in production.
-import { renderToStaticMarkup } from 'react-dom/server';
-
 /**
  * **부분 목이다.** 통째로 갈아끼우면 이 모듈에 export가 하나 생길 때마다
  * `No "x" export is defined on the mock`으로 깨지고, 더 나쁘게는 URL을 만드는
@@ -41,6 +25,22 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
     usePathname: () => '/backtesting',
 }));
+
+// @vitest-environment jsdom
+//
+// Proves the /backtesting fix actually works, not just "looks correct".
+//
+// React does not run useEffect during server rendering — renderToStaticMarkup
+// mirrors that (unlike @testing-library/react's render(), which flushes effects
+// via act() and would hide this bug). Before the fix, the visible case list was
+// derived synchronously from useSearchParams() during render,
+// so a Suspense boundary wrapping that subtree caused Next.js to statically bake
+// only the "로딩 중..." fallback — the cases never reached crawlers.
+//
+// This test renders the real page tree (no widget mocks) with renderToStaticMarkup
+// and asserts real data.json case content is present in that first, effect-free
+// pass — the same pass that becomes the static SSR HTML in production.
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import BacktestingPage from '@/app/[locale]/backtesting/page';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';

@@ -1,12 +1,5 @@
 vi.mock('server-only', () => ({}));
 
-/**
- * `unstable_cache`의 keyParts·options를 캡처한다. 그냥 call-through로 두면
- * ISR 태그가 잘못돼도(예: KR 카드가 미국 태그를 달아 KR 인제스션의
- * `revalidateTag`가 아무것도 못 맞추는 경우) 테스트가 전부 통과한다.
- */
-let capturedKeyParts: string[] = [];
-let capturedOptions: Record<string, unknown> = {};
 vi.mock('next/cache', () => ({
     unstable_cache:
         (
@@ -21,7 +14,6 @@ vi.mock('next/cache', () => ({
         },
 }));
 
-const listAnnouncedSince = vi.fn();
 vi.mock('../economicCalendarRepository', () => ({
     DrizzleEconomicCalendarRepository: vi.fn(function () {
         return { listAnnouncedSince };
@@ -34,6 +26,16 @@ vi.mock('@/shared/db/client', () => ({
 
 import { getKrIndicatorCards } from '../getKrIndicatorCards';
 import { ECONOMY_CALENDAR_REVALIDATE_SECONDS } from '../../lib/economyCalendarConstants';
+
+/**
+ * `unstable_cache`의 keyParts·options를 캡처한다. 그냥 call-through로 두면
+ * ISR 태그가 잘못돼도(예: KR 카드가 미국 태그를 달아 KR 인제스션의
+ * `revalidateTag`가 아무것도 못 맞추는 경우) 테스트가 전부 통과한다.
+ */
+let capturedKeyParts: string[] = [];
+let capturedOptions: Record<string, unknown> = {};
+
+const listAnnouncedSince = vi.fn();
 
 const ANCHOR = '2026-08-19';
 

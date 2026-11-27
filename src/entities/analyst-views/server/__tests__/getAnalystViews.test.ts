@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getYahooAnalystSummary, getProvider } = vi.hoisted(() => ({
     getYahooAnalystSummary: vi.fn(),
     getProvider: vi.fn(),
@@ -10,6 +8,8 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: getProvider,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAnalystViews } from '@/entities/analyst-views/server/getAnalystViews';
 

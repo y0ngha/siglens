@@ -1,3 +1,15 @@
+vi.mock('next/navigation', () => ({
+    useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
+const { action } = vi.hoisted(() => ({ action: vi.fn() }));
+vi.mock(
+    '@/entities/chat-conversation/actions/getConversationChangesAction',
+    () => ({ getConversationChangesAction: action })
+);
+vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
+    getAssetLabelsAction: vi.fn(async () => ({ labels: {}, failed: [] })),
+}));
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
@@ -15,18 +27,6 @@ import type { ChatSymbolChanges } from '@/entities/chat-conversation/types';
 import { defined } from '@/shared/test-utils/defined';
 import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 import ko from '../../../../messages/ko.json';
-
-vi.mock('next/navigation', () => ({
-    useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
-}));
-const { action } = vi.hoisted(() => ({ action: vi.fn() }));
-vi.mock(
-    '@/entities/chat-conversation/actions/getConversationChangesAction',
-    () => ({ getConversationChangesAction: action })
-);
-vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
-    getAssetLabelsAction: vi.fn(async () => ({ labels: {}, failed: [] })),
-}));
 
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 

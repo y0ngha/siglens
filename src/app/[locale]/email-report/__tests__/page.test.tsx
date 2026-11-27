@@ -1,5 +1,3 @@
-import { render, screen } from '@testing-library/react';
-
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
@@ -48,6 +46,8 @@ vi.mock('next/link', () => ({
         </a>
     ),
 }));
+
+import { render, screen } from '@testing-library/react';
 
 import EmailReportPage, {
     generateMetadata,

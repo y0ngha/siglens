@@ -15,8 +15,6 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-// Shared findByNames spy — all repository instances share this mock.
-const findByNames = vi.fn();
 vi.mock('@/entities/economy/api/indicatorTranslationRepository', () => ({
     DrizzleIndicatorTranslationRepository: class {
         findByNames = findByNames;
@@ -26,6 +24,9 @@ vi.mock('@/entities/economy/api/indicatorTranslationRepository', () => ({
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
+
+// Shared findByNames spy — all repository instances share this mock.
+const findByNames = vi.fn();
 
 const ev = (event: string): EconomicCalendarEvent => ({
     date: '2026-06-13 08:30:00',

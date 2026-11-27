@@ -17,7 +17,7 @@ const signalHubCounts = vi.hoisted(() => ({
 vi.mock('@/entities/signal-history/api', () => ({
     loadSignalHubCounts: vi.fn(async () => signalHubCounts.value),
 }));
-const BACKTESTING_DATA_AT = new Date('2026-03-31T00:00:00.000Z');
+
 vi.mock('@/entities/sitemap-entry/lib/buildStaticEntries', () => ({
     buildStaticEntries: vi.fn().mockReturnValue([]),
 }));
@@ -32,6 +32,8 @@ import { GET } from '@/app/api/sitemap/static/route';
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
+
+const BACKTESTING_DATA_AT = new Date('2026-03-31T00:00:00.000Z');
 
 const mockBuildStaticEntries = buildStaticEntries as MockedFunction<
     typeof buildStaticEntries

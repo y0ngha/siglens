@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockSummary, mockE2E } = vi.hoisted(() => ({
     mockSummary: vi.fn(),
     mockE2E: vi.fn(() => false),
@@ -9,6 +7,8 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
     getYahooAnalystSummary: mockSummary,
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode: mockE2E }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadAnalystEstimateTrend } from '@/entities/analyst-views/server/loadAnalystEstimateTrend';
 

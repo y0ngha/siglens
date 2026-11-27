@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getCachedBars, profile } = vi.hoisted(() => ({
     getCachedBars: vi.fn(),
     profile: vi.fn(),
@@ -14,6 +12,8 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     changeReferenceOf,

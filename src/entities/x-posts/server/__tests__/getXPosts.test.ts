@@ -1,12 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
-
-type Reservation = 'reserved' | 'exhausted' | 'unavailable';
-interface BudgetOptions {
-    guest: boolean;
-    now?: Date;
-}
 
 const { cache, x, wikidata, budget } = vi.hoisted(() => ({
     cache: {
@@ -67,12 +59,20 @@ vi.mock('../xDailyBudget', () => ({
     refundXReads: budget.refund,
 }));
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
     AGENT_X_POSTS_MAX,
     AGENT_X_POSTS_PAGE_SIZE,
 } from '@y0ngha/siglens-core';
 import { XApiError } from '@/shared/api/x/xClient';
 import { getXPosts } from '../getXPosts';
+
+type Reservation = 'reserved' | 'exhausted' | 'unavailable';
+interface BudgetOptions {
+    guest: boolean;
+    now?: Date;
+}
 
 const MEMBER = { guest: false };
 const PAGE = AGENT_X_POSTS_PAGE_SIZE;

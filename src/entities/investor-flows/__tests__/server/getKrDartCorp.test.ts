@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { mockCache, mockClient, mockE2E, mockResolve } = vi.hoisted(() => ({
@@ -18,6 +16,8 @@ vi.mock('../../api/investorFlowsDartRepository', () => ({
         resolveCorpCode = mockResolve;
     },
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     INVESTOR_FLOWS_READINESS_TAG,

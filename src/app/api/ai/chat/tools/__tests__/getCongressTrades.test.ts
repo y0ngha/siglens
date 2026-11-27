@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { isTabAllowed, getTrades } = vi.hoisted(() => ({
     isTabAllowed: vi.fn(),
     getTrades: vi.fn(),
@@ -10,6 +8,8 @@ vi.mock('@/entities/ticker/api', () => ({
 vi.mock('@/entities/congress-trades/server/getCongressTradesResilient', () => ({
     getCongressTradesResilient: getTrades,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getCongressTradesTool } from '@/app/api/ai/chat/tools/getCongressTrades';
 

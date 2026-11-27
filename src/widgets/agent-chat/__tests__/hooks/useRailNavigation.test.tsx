@@ -1,9 +1,9 @@
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
+
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import Link from 'next/link';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const router = vi.hoisted(() => ({ push: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 import { useRailNavigation } from '@/widgets/agent-chat/hooks/useRailNavigation';
 

@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AnalystEarningsHint } from '@/entities/analyst-views/model';
-
 const { mockGetAnalystViews, mockE2E } = vi.hoisted(() => ({
     mockGetAnalystViews: vi.fn(),
     mockE2E: vi.fn(() => false),
@@ -20,6 +17,9 @@ const { mockCache } = vi.hoisted(() => ({
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: mockCache,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AnalystEarningsHint } from '@/entities/analyst-views/model';
 
 import {
     EARNINGS_HINT_BUDGET_MS,

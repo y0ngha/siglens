@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { findByUser, listForSubscriber, getQuote, asset, launched } = vi.hoisted(
     () => ({
         findByUser: vi.fn(),
@@ -41,6 +39,8 @@ vi.mock('@/shared/api/market/sessionSpecFor', async importOriginal => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     getMyWatchlistTool,

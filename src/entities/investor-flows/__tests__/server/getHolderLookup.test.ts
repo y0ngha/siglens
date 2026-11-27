@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { mockClient, mockE2E, repoReads } = vi.hoisted(() => ({
@@ -22,6 +20,8 @@ vi.mock('../../api/investorFlowsSnapshotRepository', () => ({
         return repoReads;
     }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     getHolderLookup,

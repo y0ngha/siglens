@@ -1,12 +1,3 @@
-import {
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-    type MockedFunction,
-} from 'vitest';
-
 // 벤치마크 게이트를 명시적으로 닫는다 — 공개 PR이 실제 상수를 올려도 이 스위트는 그대로 통과한다.
 vi.mock('@/shared/config/benchmark', () => ({
     BENCHMARK_PUBLISHED: false,
@@ -52,6 +43,15 @@ vi.mock('next/server', () => {
         }),
     };
 });
+
+import {
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+    type MockedFunction,
+} from 'vitest';
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { proxy } from '@/proxy';

@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { yahoo, e2e } = vi.hoisted(() => ({
@@ -10,6 +8,8 @@ vi.mock('@/shared/api/yahoo/yahooAnalystSource', () => ({
     getYahooAnalystSummary: yahoo.summary,
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode: () => e2e.fake }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAnalystActionHistory } from '../getAnalystActionHistory';
 

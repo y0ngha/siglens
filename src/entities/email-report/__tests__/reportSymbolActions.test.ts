@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 const { mockExclude, mockInclude } = vi.hoisted(() => ({
     mockExclude: vi.fn(),
     mockInclude: vi.fn(),
@@ -19,6 +17,8 @@ vi.mock('@/entities/email-report/api', () => ({
             return { excludeSymbol: mockExclude, includeSymbol: mockInclude };
         }),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { logActionError } from '@/shared/lib/logActionError';

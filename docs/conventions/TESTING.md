@@ -135,12 +135,9 @@ const mockFmpBarsResponse = [{ date: '2026-05-25', open: 100, high: 101, low: 99
 
 <a id="TE-1"></a>
 
-#### TE-1 — vi.mock goes above all imports
+#### TE-1 — Imports stay contiguous
 
-All static `import` statements stay contiguous at the top. `vi.mock(...)` is hoisted by Vitest, so placing it above the imports is safe and idiomatic; never sandwich it between two imports (it trips `import/first`).
-
-- ❌ `import { withRetry } from '...'; vi.mock('@/shared/lib/sleep', ...); import { sleep } from '@/shared/lib/sleep';`
-- ✅ `vi.mock('@/shared/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/shared/lib/sleep';`
+Machine-checked (`CONVENTIONS.md` "Enforced rules"). `vi.mock`, `vi.unmock` and `vi.hoisted` go above all imports (Vitest hoists them); any other statement goes below the last import.
 
 <a id="TE-2"></a>
 

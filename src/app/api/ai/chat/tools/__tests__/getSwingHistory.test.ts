@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { loader, asset, cache } = vi.hoisted(() => ({
@@ -30,6 +28,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
         return value;
     },
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isRecord } from '@/shared/lib/isRecord';
 import { getSwingHistoryTool } from '@/app/api/ai/chat/tools/getSwingHistory';

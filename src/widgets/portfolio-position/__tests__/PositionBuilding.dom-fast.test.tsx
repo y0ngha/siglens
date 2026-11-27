@@ -8,18 +8,6 @@ import { PositionBuilding } from '../ui/PositionBuilding';
 
 import koMessages from '@/../messages/ko.json';
 
-/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
-const tPos = (key: string, values?: Record<string, string | number>) => {
-    const table = koMessages.widgets['portfolio-position']
-        .positionNote as Record<string, string>;
-    const raw = table[key];
-    if (raw === undefined) return key;
-    return Object.entries(values ?? {}).reduce(
-        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
-        raw
-    );
-};
-
 import {
     AVG_LABEL_PREFIX_KEY,
     CURRENT_LABEL_PREFIX_KEY,
@@ -31,6 +19,18 @@ import {
     estimateSvgLabelWidth,
     SVG_LABEL_AVAILABLE_WIDTH,
 } from '../utils/buildingGeometry';
+
+/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
+const tPos = (key: string, values?: Record<string, string | number>) => {
+    const table = koMessages.widgets['portfolio-position']
+        .positionNote as Record<string, string>;
+    const raw = table[key];
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
 
 function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
     return computePosition({

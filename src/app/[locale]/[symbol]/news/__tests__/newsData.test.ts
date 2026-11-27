@@ -1,9 +1,3 @@
-import type { EarningsReportComparisonItem } from '@/shared/lib/types';
-import { EARNINGS_REPORT_FMP_LIMIT } from '@/entities/earnings-report/api';
-import type { EarningsReportUpsertInput } from '@/entities/earnings-report/model';
-import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
-import { MS_PER_HOUR } from '@/shared/config/time';
-
 const {
     mockDb,
     mockGetLatestFetchedAt,
@@ -73,6 +67,12 @@ const { markerStore, fakeRedis } = vi.hoisted(() => {
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => fakeRedis,
 }));
+
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import { EARNINGS_REPORT_FMP_LIMIT } from '@/entities/earnings-report/api';
+import type { EarningsReportUpsertInput } from '@/entities/earnings-report/model';
+import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
+import { MS_PER_HOUR } from '@/shared/config/time';
 
 import {
     getEarningsReportComparison,

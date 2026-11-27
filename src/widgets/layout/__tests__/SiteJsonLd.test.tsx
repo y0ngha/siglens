@@ -9,15 +9,6 @@ vi.mock('@/shared/lib/seo', () => ({
     }),
 }));
 
-/** `@graph`에서 `@type`으로 노드 하나를 꺼낸다. */
-function nodeOf(
-    data: { '@graph': Record<string, unknown>[] },
-    type: string
-): Record<string, unknown> {
-    const node = data['@graph'].find(n => n['@type'] === type);
-    expect(node).toBeDefined();
-    return node as Record<string, unknown>;
-}
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: ({ data }: { data: Record<string, unknown> }) => (
         <script
@@ -31,6 +22,16 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 import { render, screen } from '@testing-library/react';
 
 import { SiteJsonLd } from '../SiteJsonLd';
+
+/** `@graph`에서 `@type`으로 노드 하나를 꺼낸다. */
+function nodeOf(
+    data: { '@graph': Record<string, unknown>[] },
+    type: string
+): Record<string, unknown> {
+    const node = data['@graph'].find(n => n['@type'] === type);
+    expect(node).toBeDefined();
+    return node as Record<string, unknown>;
+}
 
 describe('SiteJsonLd', () => {
     it('renders a JSON-LD script with WebSite type', () => {

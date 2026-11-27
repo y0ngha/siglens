@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 const getCurrentUser = vi.hoisted(() => vi.fn());
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({ getCurrentUser }));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveUserId } from '../resolveUserId';
 

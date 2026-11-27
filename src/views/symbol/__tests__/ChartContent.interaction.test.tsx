@@ -16,8 +16,8 @@ const FALLBACK_ANALYSIS = buildFallbackAnalysis(
 // 무거운 차트/하위 훅은 stub. 단, usePanelResize/useDragListener는 실제 구현을
 // 사용해 키보드·마우스 드래그가 실제로 panelWidth(aria-valuenow)를 바꾸는지
 // 검증한다. 배너 분기 검증을 위해 useAnalysis·useAnalysisDisplay만 테스트별로
-// 제어한다. (slot 테스트와 동일하게 vi.mock은 hoist되지만 import/first를 위해
-// 위에 모은다.)
+// 제어한다. (slot 테스트와 동일하게 vi.mock은 hoist되며 import 블록을 이어 두려고
+// 위에 모은다. TESTING.md#TE-1)
 vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,
 }));

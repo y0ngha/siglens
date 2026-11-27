@@ -1,10 +1,10 @@
-import { renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const track = vi.hoisted(() => vi.fn());
 vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
     trackFunnelEvent: track,
 }));
+
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFunnelNudgeShown } from '@/shared/hooks/useFunnelNudgeShown';
 import type { ContextOf } from '@/shared/lib/funnel/funnelEvents';

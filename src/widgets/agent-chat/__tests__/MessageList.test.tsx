@@ -1,20 +1,3 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NextIntlClientProvider } from 'next-intl';
-import {
-    afterAll,
-    afterEach,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
-import type { AgentUiMessage } from '@/features/agent-chat/model/types';
-import ko from '../../../../messages/ko.json';
-import en from '../../../../messages/en.json';
-
 const { labels } = vi.hoisted(() => ({
     labels: vi.fn(async (symbols: readonly string[]) => ({
         labels: Object.fromEntries(
@@ -46,6 +29,23 @@ vi.mock(
         };
     }
 );
+
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NextIntlClientProvider } from 'next-intl';
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+import type { AgentUiMessage } from '@/features/agent-chat/model/types';
+import ko from '../../../../messages/ko.json';
+import en from '../../../../messages/en.json';
 
 import { MessageList } from '@/widgets/agent-chat/MessageList';
 

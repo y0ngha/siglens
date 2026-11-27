@@ -1,7 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
@@ -15,6 +11,10 @@ vi.mock('@y0ngha/siglens-core', async () => {
 vi.mock('../server/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import {
     runOptionsAnalysis,

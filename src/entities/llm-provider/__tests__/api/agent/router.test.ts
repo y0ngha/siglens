@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockDeepseek, mockGemini } = vi.hoisted(() => ({
     mockDeepseek: vi.fn(),
     // Never a real Gemini call: vitest may load a real GEMINI_CHAT_API_KEY.
@@ -11,6 +9,8 @@ vi.mock('@/entities/llm-provider/api/agent/deepseek', () => ({
 vi.mock('@/entities/llm-provider/api/agent/gemini', () => ({
     callGeminiAgent: mockGemini,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     AGENT_FALLBACK_MODEL,

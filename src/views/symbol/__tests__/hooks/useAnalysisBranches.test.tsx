@@ -14,14 +14,16 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-type RunAnalysisActionResult =
-    | (RunAnalysisResult & { personalized?: boolean })
-    | AnalysisGateBlockedResult;
+
 import { getReanalyzeCooldownMs } from '@/entities/analysis/actions/getReanalyzeCooldownMs';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/actions/tryAcquireReanalyzeCooldown';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
+
+type RunAnalysisActionResult =
+    | (RunAnalysisResult & { personalized?: boolean })
+    | AnalysisGateBlockedResult;
 
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),

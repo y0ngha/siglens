@@ -1,6 +1,3 @@
-import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { deleteConversationAction, renameConversationAction } = vi.hoisted(
     () => ({
         deleteConversationAction: vi.fn(),
@@ -15,6 +12,9 @@ vi.mock(
     '@/entities/chat-conversation/actions/renameConversationAction',
     () => ({ renameConversationAction })
 );
+
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useConversationMutations } from '@/widgets/agent-chat/hooks/useConversationMutations';
 

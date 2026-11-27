@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { fmpGet, e2e, providerGrades, getOrSetCache } = vi.hoisted(() => ({
     fmpGet: vi.fn(),
     e2e: { value: false },
@@ -15,6 +13,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: () => ({ getGradesConsensus: providerGrades }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
 

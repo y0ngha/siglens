@@ -1,20 +1,3 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
-import {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
-import type { ChatSymbolChanges } from '@/entities/chat-conversation/types';
-import { defined } from '@/shared/test-utils/defined';
-import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
-import ko from '../../../../messages/ko.json';
-
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }));
@@ -26,14 +9,6 @@ vi.mock(
 vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: vi.fn(async () => ({ labels: {}, failed: [] })),
 }));
-
-interface MockMessage {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    tools: unknown[];
-    status: 'complete';
-}
 const mockStream = vi.hoisted(() => ({
     messages: [] as MockMessage[],
     conversationId: 'c1' as string | null,
@@ -53,7 +28,32 @@ vi.mock('@/features/agent-chat/hooks/useAgentStream', async importOriginal => ({
     useAgentStream: () => mockStream,
 }));
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import {
+    afterAll,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+import type { ChatSymbolChanges } from '@/entities/chat-conversation/types';
+import { defined } from '@/shared/test-utils/defined';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
+import ko from '../../../../messages/ko.json';
+
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
+
+interface MockMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    tools: unknown[];
+    status: 'complete';
+}
 
 const message = (id: string, role: 'user' | 'assistant'): MockMessage => ({
     id,

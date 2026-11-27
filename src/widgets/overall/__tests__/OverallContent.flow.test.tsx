@@ -1,10 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { MockedFunction } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-
 /**
  * useOverallAnalysis 훅을 mock하지 않고 실제로 구동한다 — OverallContent.test.tsx가
  * state를 강제 주입해 개별 분기를 보는 것과 달리, 이 파일은 CTA 클릭 → submit →
@@ -13,7 +6,7 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
  * 만들고, polling 대기(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS)를 즉시 resolve해
  * 테스트가 done까지 빠르게 진행되게 하기 위함이다.
  *
- * vi.mock은 hoist되지만 ESLint(import/first)와 가독성을 위해 import 위에 둔다.
+ * vi.mock은 hoist되지만 가독성을 위해 import 위에 둔다.
  */
 vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
@@ -71,6 +64,13 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
         <div>{children}</div>
     ),
 }));
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { MockedFunction } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
+import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';

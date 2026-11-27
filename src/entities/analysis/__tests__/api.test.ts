@@ -1,8 +1,3 @@
-import type { MockedClass, Mock } from 'vitest';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 const {
     MOCK_CRYPTO_SESSION,
     MOCK_EQUITY_SESSION,
@@ -19,8 +14,7 @@ const {
     mockFindRecentForPrompt: vi.fn(),
     mockSaveAnalysisHistory: vi.fn(),
 }));
-
-// vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와 가독성을
+// vi.mock은 vitest가 import 위로 hoist하지만, 가독성을
 // 위해 소스 코드에서도 모든 import보다 위에 둔다 (runOverallAnalysisAction.test.ts와 동일 패턴).
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
@@ -197,6 +191,11 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
             }),
     };
 });
+
+import type { MockedClass, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import {
     runAnalysis,

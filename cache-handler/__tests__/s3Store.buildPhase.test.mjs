@@ -1,5 +1,3 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-
 const { send } = vi.hoisted(() => ({ send: vi.fn() }));
 
 vi.mock('@aws-sdk/client-s3', () => ({
@@ -20,6 +18,8 @@ vi.mock('../config.mjs', () => ({
         buildPhase: true,
     },
 }));
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { getEntry, lookupEntry, setEntry } from '../s3Store.mjs';
 

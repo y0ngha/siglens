@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { fmp, yahoo, e2e } = vi.hoisted(() => ({
@@ -12,6 +10,8 @@ vi.mock('@/shared/api/yahoo/createYahooClient', () => ({
     getYahooClient: () => ({ chart: yahoo.chart }),
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2EFakeMode: () => e2e.fake }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';

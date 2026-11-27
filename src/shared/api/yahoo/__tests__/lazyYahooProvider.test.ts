@@ -1,6 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
-
-const constructed = vi.fn();
 vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
     YahooMarketProvider: class {
         constructor() {
@@ -9,7 +6,11 @@ vi.mock('@/shared/api/yahoo/YahooMarketProvider', () => ({
     },
 }));
 
+import { describe, expect, it, vi } from 'vitest';
+
 import { loadYahooProvider } from '../lazyYahooProvider';
+
+const constructed = vi.fn();
 
 describe('loadYahooProvider', () => {
     it('creates one provider and reuses it for every caller', async () => {

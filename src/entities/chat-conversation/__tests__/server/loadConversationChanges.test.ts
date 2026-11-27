@@ -1,6 +1,3 @@
-import type { Bar } from '@y0ngha/siglens-core';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { getAssetInfo, getBars } = vi.hoisted(() => ({
     getAssetInfo: vi.fn(),
     getBars: vi.fn(),
@@ -13,6 +10,9 @@ vi.mock('@/entities/bars/server/barsDataCache', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
+
+import type { Bar } from '@y0ngha/siglens-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CONVERSATION_CHANGES_MAX_SYMBOLS } from '@/entities/chat-conversation/server/conversationAnalyses';
 import {

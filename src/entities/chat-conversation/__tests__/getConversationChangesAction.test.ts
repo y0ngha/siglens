@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockUser, repo, RepoCtor, load } = vi.hoisted(() => {
     const repo = {
         findForUser: vi.fn(),
@@ -33,6 +31,8 @@ vi.mock('@/entities/chat-conversation/api', () => ({
 vi.mock('@/entities/chat-conversation/server/loadConversationChanges', () => ({
     loadConversationChanges: load,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getConversationChangesAction } from '@/entities/chat-conversation/actions/getConversationChangesAction';
 

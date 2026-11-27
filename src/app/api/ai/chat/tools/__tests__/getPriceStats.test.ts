@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { loaders, asset, core, seen } = vi.hoisted(() => ({
@@ -41,6 +39,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     core.compute.mockImplementation(actual.computePriceStats);
     return { ...actual, computePriceStats: core.compute };
 });
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     AGENT_PRICE_STATS_MAX_DATES,

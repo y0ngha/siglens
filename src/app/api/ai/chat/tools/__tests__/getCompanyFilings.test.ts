@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { listFilings, readFiling } = vi.hoisted(() => ({
     listFilings: vi.fn(),
     readFiling: vi.fn(),
@@ -8,6 +6,8 @@ vi.mock('@/entities/company-filings/server/getCompanyFilings', () => ({
     listCompanyFilings: listFilings,
     readCompanyFiling: readFiling,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     AGENT_FILING_TEXT_MAX_CHARS,

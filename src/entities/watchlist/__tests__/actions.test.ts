@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 const { mockFindByUser, mockAdd, mockRemove, mockMerge } = vi.hoisted(() => ({
     mockFindByUser: vi.fn(),
     mockAdd: vi.fn(),
@@ -26,6 +24,8 @@ vi.mock('@/entities/watchlist/api', () => ({
 vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getAssetInfo } from '@/entities/ticker/server/getAssetInfo';

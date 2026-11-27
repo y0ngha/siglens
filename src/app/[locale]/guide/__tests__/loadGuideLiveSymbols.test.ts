@@ -1,16 +1,3 @@
-import { defined } from '@/shared/test-utils/defined';
-import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
-
-const getSectorSignalsStatic = vi.fn();
-const listSymbolsWithDetectedPatterns = vi.fn();
-const isOfflineBuild = vi.fn(() => false);
-const lookupTickerDisplayNames = vi.fn();
-const listLatestSessionEpisodes = vi.fn();
-const shortenIfDbMissing = vi.fn(() => Promise.resolve());
-const shortenForRuntimeDegrade = vi.fn(() => Promise.resolve());
-
-const unstableCache = vi.fn((fn: () => unknown, ..._rest: unknown[]) => fn);
-
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: () => unknown, ...rest: unknown[]) =>
         unstableCache(fn, ...rest),
@@ -45,10 +32,23 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
     },
 }));
 
+import { defined } from '@/shared/test-utils/defined';
+import { guideEntry } from '@/__tests__/fixtures/guideFixtures';
+
 import { TWICE_WEEKLY_MAX_GAP_MS } from '@/entities/seo-snapshot/lib/freshness';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { loadGuideLiveSymbols } from '../_lib/loadGuideLiveSymbols';
+
+const getSectorSignalsStatic = vi.fn();
+const listSymbolsWithDetectedPatterns = vi.fn();
+const isOfflineBuild = vi.fn(() => false);
+const lookupTickerDisplayNames = vi.fn();
+const listLatestSessionEpisodes = vi.fn();
+const shortenIfDbMissing = vi.fn(() => Promise.resolve());
+const shortenForRuntimeDegrade = vi.fn(() => Promise.resolve());
+
+const unstableCache = vi.fn((fn: () => unknown, ..._rest: unknown[]) => fn);
 
 const rsi = guideEntry({ slug: 'rsi', signals: ['rsi_oversold'] });
 const doubleBottom = guideEntry({

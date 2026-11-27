@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-
 const normalizeChatImage = vi.hoisted(() => vi.fn());
 vi.mock('@/entities/chat-conversation/server/normalizeChatImage', () => ({
     normalizeChatImage,
 }));
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { normalizeBodyImages } from '@/app/api/ai/chat/stream/_lib/normalizeBodyImages';
 

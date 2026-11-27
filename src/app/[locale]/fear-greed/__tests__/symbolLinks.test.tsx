@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
-
 vi.mock('@/widgets/market-fear-greed/MarketFearGreedPage', () => ({
     MarketFearGreedPage: () => null,
 }));
@@ -16,6 +13,9 @@ vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
     shortenRevalidateIfDatabaseMissingAtBuild: mockShortenDb,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render } from '@testing-library/react';
 
 import { FearGreedRouteBody } from '@/app/[locale]/fear-greed/FearGreedRouteBody';
 import { loadFearGreedSymbolLinks } from '@/app/[locale]/fear-greed/fearGreedRoute';

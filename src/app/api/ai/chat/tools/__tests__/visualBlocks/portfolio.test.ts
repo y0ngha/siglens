@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const { load } = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
     loadMyPortfolio: load,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HoldingView } from '@/app/api/ai/chat/tools/getMyPortfolio';
 import {

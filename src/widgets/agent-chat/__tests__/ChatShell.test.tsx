@@ -1,28 +1,3 @@
-import {
-    act,
-    fireEvent,
-    render,
-    screen,
-    waitFor,
-    within,
-} from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-    afterAll,
-    afterEach,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
-import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
-import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
-import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
-import ko from '../../../../messages/ko.json';
-
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 // The Sidebar rendered by ChatShell is real (not mocked) — its rename/delete
@@ -53,16 +28,6 @@ vi.mock(
     '@/entities/chat-conversation/actions/getConversationChangesAction',
     () => ({ getConversationChangesAction: vi.fn(async () => []) })
 );
-
-interface MockStreamMessage {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    followUps?: readonly string[];
-    seq?: number;
-    tools: unknown[];
-    status: 'complete' | 'streaming' | 'aborted' | 'error';
-}
 
 const mockStream = vi.hoisted(() => ({
     messages: [
@@ -104,7 +69,42 @@ vi.mock('@/features/agent-chat/hooks/useAgentStream', async importOriginal => ({
     },
 }));
 
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
+import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
+import ko from '../../../../messages/ko.json';
+
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
+
+interface MockStreamMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    followUps?: readonly string[];
+    seq?: number;
+    tools: unknown[];
+    status: 'complete' | 'streaming' | 'aborted' | 'error';
+}
 
 // A shared QueryClient across a render+rerender pair: MessageList's
 // RelatedPages mounts a `useQuery` for any non-streaming assistant bubble

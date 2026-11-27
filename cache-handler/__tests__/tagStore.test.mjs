@@ -1,5 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
 const {
     isUpstashConfigured,
     zaddGreater,
@@ -24,6 +22,8 @@ vi.mock('../upstashRest.mjs', () => ({
     serverTimeMs,
     expireKey,
 }));
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import {
     markRevalidated,

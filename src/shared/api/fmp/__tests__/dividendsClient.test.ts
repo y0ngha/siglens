@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { fmpGet, getOrSetCache } = vi.hoisted(() => ({
     fmpGet: vi.fn(),
     getOrSetCache: vi.fn(),
 }));
 vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet }));
 vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     getFmpDividendHistory,

@@ -1,15 +1,3 @@
-import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
-import { render, screen } from '@testing-library/react';
-import { Suspense, isValidElement } from 'react';
-import {
-    describe,
-    it,
-    expect,
-    vi,
-    beforeEach,
-    type MockedFunction,
-} from 'vitest';
-
 vi.mock('@/widgets/economy/sections/EconomicCalendarGrid', () => ({
     EconomicCalendarGrid: () => null,
 }));
@@ -32,6 +20,18 @@ vi.mock('@/entities/economy/api/resolveIndicatorLabels', () => ({
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
+
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
+import { render, screen } from '@testing-library/react';
+import { Suspense, isValidElement } from 'react';
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    beforeEach,
+    type MockedFunction,
+} from 'vitest';
 
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import EconomyKrPage, {

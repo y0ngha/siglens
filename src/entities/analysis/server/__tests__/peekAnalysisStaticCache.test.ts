@@ -1,5 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
 }));
@@ -18,6 +16,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
     ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     peekAnalysisCache: vi.fn(),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { peekAnalysisStatic } from '@/entities/analysis/server/peekAnalysisStaticCache';
 import { peekAnalysisCache } from '@y0ngha/siglens-core';

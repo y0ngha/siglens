@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const {
     mockIsE2E,
     mockTryGetDatabaseClient,
@@ -41,6 +39,8 @@ vi.mock('../../server/getInvestorFlowsDataProvider', () => ({
         getInvestorFlowsSnapshot: mockGetSnapshot,
     }),
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';

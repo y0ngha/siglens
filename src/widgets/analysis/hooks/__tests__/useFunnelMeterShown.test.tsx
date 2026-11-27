@@ -1,7 +1,3 @@
-// @vitest-environment jsdom
-import { render } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { track, claim } = vi.hoisted(() => ({
     track: vi.fn(),
     claim: vi.fn(),
@@ -12,6 +8,10 @@ vi.mock('@/shared/lib/funnel/trackFunnelEvent', () => ({
 vi.mock('@/shared/lib/funnel/meterShownDedupe', () => ({
     claimMeterShown: claim,
 }));
+
+// @vitest-environment jsdom
+import { render } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFunnelMeterShown } from '../useFunnelMeterShown';
 import type { MeterState } from '@/shared/lib/funnel/funnelEvents';

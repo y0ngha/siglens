@@ -1,4 +1,3 @@
-import type { MockedFunction, MockedClass } from 'vitest';
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
@@ -25,6 +24,8 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn(),
 }));
+
+import type { MockedFunction, MockedClass } from 'vitest';
 
 import { cookies } from 'next/headers';
 import { verifyEmail } from '@/entities/auth/lib/verifyEmail';

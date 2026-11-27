@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { snapshot, briefing, freshTreasury, calendarRange, krCards, krDb } =
     vi.hoisted(() => ({
         snapshot: vi.fn(),
@@ -32,6 +30,8 @@ vi.mock('@/entities/economy/api/getKrIndicatorCards', () => ({
 vi.mock('@/entities/economy/api/getCalendarFromDb', () => ({
     getCalendarFromDb: krDb,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEconomyTool } from '@/app/api/ai/chat/tools/getEconomy';
 import { ECONOMY_CALENDAR_DEFAULT_DAYS } from '@/shared/config/economyCalendar';

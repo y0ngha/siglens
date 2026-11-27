@@ -1,5 +1,3 @@
-import { describe, it, expect, vi } from 'vitest';
-
 vi.mock('@/entities/ticker/server/getAssetInfoStatic', () => ({
     getAssetInfoStatic: vi.fn(),
 }));
@@ -9,6 +7,8 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
         throw new Error('uncached getAssetInfo must not be called');
     }),
 }));
+
+import { describe, it, expect, vi } from 'vitest';
 
 import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';

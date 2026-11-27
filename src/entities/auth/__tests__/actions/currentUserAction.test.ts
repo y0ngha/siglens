@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 const { cookieStore, hostHeader } = vi.hoisted(() => ({
     cookieStore: { get: vi.fn(), set: vi.fn() },
     hostHeader: {
@@ -17,6 +15,8 @@ vi.mock('next/headers', () => ({
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
+
+import type { MockedFunction } from 'vitest';
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';

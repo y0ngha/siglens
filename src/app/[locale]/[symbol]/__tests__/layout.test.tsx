@@ -20,7 +20,7 @@
  */
 
 /**
- * TESTING.md#TE-1: 모든 vi.mock + 변수 선언은 import 위로(import/first 규칙).
+ * TESTING.md#TE-1: vi.mock/vi.hoisted만 import 위에 두고 나머지 선언은 마지막 import 아래에 둔다(imports-contiguous 가드).
  * vi.hoisted로 mock 변수를 호이스트해 vi.mock 콜백에서 참조 가능하게 한다.
  */
 const {
@@ -149,12 +149,13 @@ vi.mock('@/entities/bars/server/sessionBarsStaticCache', () => ({
     getSymbolFearGreedChipStatic: mockGetSymbolFearGreedChipStatic,
 }));
 
-import { Suspense } from 'react';
 vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
     SymbolViewPing: function SymbolViewPing() {
         return null;
     },
 }));
+
+import { Suspense } from 'react';
 
 import SymbolLayout from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutChrome } from '@/app/[locale]/[symbol]/_components/SymbolLayoutChrome';

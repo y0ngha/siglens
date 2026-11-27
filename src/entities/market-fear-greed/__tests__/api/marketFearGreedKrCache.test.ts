@@ -1,11 +1,5 @@
 vi.mock('server-only', () => ({}));
 
-const computeMarketFearGreedIndex = vi.fn(
-    (..._args: unknown[]): unknown => ({})
-);
-const computeMarketFearGreedHistory = vi.fn(
-    (..._args: unknown[]): unknown[] => []
-);
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
@@ -19,12 +13,10 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-const fetchKrDailyCloses = vi.fn();
 vi.mock('../../api/fetchKrDailyCloses', () => ({
     fetchKrDailyCloses: (...args: unknown[]) => fetchKrDailyCloses(...args),
 }));
 
-const getOrSetCache = vi.fn();
 vi.mock('@/shared/cache/getOrSetCache', () => ({
     getOrSetCache: (...args: unknown[]) => getOrSetCache(...args),
 }));
@@ -43,6 +35,17 @@ import { KOSPI_INDEX_SYMBOL } from '../../lib/marketFearGreedKrSymbols';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+
+const computeMarketFearGreedIndex = vi.fn(
+    (..._args: unknown[]): unknown => ({})
+);
+const computeMarketFearGreedHistory = vi.fn(
+    (..._args: unknown[]): unknown[] => []
+);
+
+const fetchKrDailyCloses = vi.fn();
+
+const getOrSetCache = vi.fn();
 
 /** `getOrSetCache(key, ttl, fetcher, guard)`의 fetcher를 실행해 결과를 얻는다. */
 async function runFetcher() {

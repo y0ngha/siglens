@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-
 vi.mock('server-only', () => ({}));
 
 const { cachedProvider, rawProvider, mockGetCached, mockRawFor } = vi.hoisted(
@@ -23,6 +20,9 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: mockRawFor,
     scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 
 import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';

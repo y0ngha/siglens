@@ -1,17 +1,3 @@
-// @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react';
-import type { Bar, CandlePatternEntry } from '@y0ngha/siglens-core';
-import { useCandlePatternMarkers } from '../../hooks/useCandlePatternMarkers';
-
-const mockSetMarkers = vi.fn();
-const mockDetach = vi.fn();
-const mockCreateSeriesMarkers = vi.fn(
-    (_series: unknown, _markers: unknown) => ({
-        setMarkers: mockSetMarkers,
-        detach: mockDetach,
-    })
-);
-
 vi.mock('lightweight-charts', () => ({
     createSeriesMarkers: (series: unknown, markers: unknown) =>
         mockCreateSeriesMarkers(series, markers),
@@ -28,11 +14,25 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     getSinglePatternTrend: vi.fn(() => 'bearish'),
 }));
 
+// @vitest-environment jsdom
+import { act, renderHook } from '@testing-library/react';
+import type { Bar, CandlePatternEntry } from '@y0ngha/siglens-core';
+import { useCandlePatternMarkers } from '../../hooks/useCandlePatternMarkers';
+
 import {
     detectCandlePatternEntries,
     getMultiPatternTrend,
     getSinglePatternTrend,
 } from '@y0ngha/siglens-core';
+
+const mockSetMarkers = vi.fn();
+const mockDetach = vi.fn();
+const mockCreateSeriesMarkers = vi.fn(
+    (_series: unknown, _markers: unknown) => ({
+        setMarkers: mockSetMarkers,
+        detach: mockDetach,
+    })
+);
 
 function makeSeriesRef(series: unknown = null) {
     return { current: series } as Parameters<

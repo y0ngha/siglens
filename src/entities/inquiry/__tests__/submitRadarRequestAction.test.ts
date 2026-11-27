@@ -1,4 +1,3 @@
-import type { MockInstance } from 'vitest';
 const { mockSubmitInquiry, mockCreate, mockRateLimited, mockSchedule } =
     vi.hoisted(() => ({
         mockSubmitInquiry: vi.fn(),
@@ -28,6 +27,8 @@ vi.mock('../api', () => ({
 vi.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),
 }));
+
+import type { MockInstance } from 'vitest';
 
 import { submitRadarRequestAction } from '../actions/submitRadarRequestAction';
 import type { RadarRequestFormState } from '../lib/types';

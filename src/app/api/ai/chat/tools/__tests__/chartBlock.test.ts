@@ -1,5 +1,3 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 
 const deps = vi.hoisted(() => ({
@@ -20,6 +18,8 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { TIER_CONFIG, type Bar, type ChartOverlay } from '@y0ngha/siglens-core';
 import {

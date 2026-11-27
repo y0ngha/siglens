@@ -1,15 +1,5 @@
 vi.mock('server-only', () => ({}));
 
-/**
- * unstable_cache mock: call-through이지만 (fn, keyParts, options) 인자를 캡처해
- * 캐시 키·revalidate·tags 계약을 단언할 수 있게 한다.
- *
- * 모듈-레벨 unstable_cache(fn, keyParts, options) 구조:
- * - keyParts: ['economy-calendar-db']
- * - anchorEt는 반환된 래퍼 함수의 인자로 전달(auto-keyed by Next.js)
- */
-let capturedKeyParts: string[] = [];
-let capturedOptions: Record<string, unknown> = {};
 vi.mock('next/cache', () => ({
     unstable_cache:
         (
@@ -27,17 +17,11 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-// 사이드카(content_translations) 게이트. `contentLocaleKeyPart`와
-// `localizeContent`가 둘 다 이 모듈의 `isContentLocaleEnabled`를 본다 —
-// 하나만 mock하면 캐시 키와 실제 조회 분기가 어긋난다.
-const isContentLocaleEnabledMock = vi.fn(() => false);
-const findForEntity = vi.fn();
 vi.mock('@/shared/db/contentTranslationClient', () => ({
     isContentLocaleEnabled: () => isContentLocaleEnabledMock(),
     getContentTranslationRepository: () => ({ findForEntity }),
 }));
 
-const listInRange = vi.fn();
 vi.mock('@/entities/economy/api/economicCalendarRepository', () => ({
     DrizzleEconomicCalendarRepository: class {
         listInRange = listInRange;
@@ -51,6 +35,25 @@ import {
     futureWindowEnd,
 } from '@/entities/economy/lib/calendarWindow';
 import { ECONOMY_CALENDAR_REVALIDATE_SECONDS } from '@/entities/economy/lib/economyCalendarConstants';
+
+/**
+ * unstable_cache mock: call-through이지만 (fn, keyParts, options) 인자를 캡처해
+ * 캐시 키·revalidate·tags 계약을 단언할 수 있게 한다.
+ *
+ * 모듈-레벨 unstable_cache(fn, keyParts, options) 구조:
+ * - keyParts: ['economy-calendar-db']
+ * - anchorEt는 반환된 래퍼 함수의 인자로 전달(auto-keyed by Next.js)
+ */
+let capturedKeyParts: string[] = [];
+let capturedOptions: Record<string, unknown> = {};
+
+// 사이드카(content_translations) 게이트. `contentLocaleKeyPart`와
+// `localizeContent`가 둘 다 이 모듈의 `isContentLocaleEnabled`를 본다 —
+// 하나만 mock하면 캐시 키와 실제 조회 분기가 어긋난다.
+const isContentLocaleEnabledMock = vi.fn(() => false);
+const findForEntity = vi.fn();
+
+const listInRange = vi.fn();
 
 describe('getCalendarFromDb', () => {
     beforeEach(() => {

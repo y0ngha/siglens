@@ -1,6 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AssetInfo } from '@/shared/lib/types';
-
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
 }));
@@ -9,6 +6,9 @@ vi.mock('next/cache', () => ({
 vi.mock('@/entities/ticker/actions/getAssetInfoAction', () => ({
     getAssetInfoAction: vi.fn(),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { AssetInfo } from '@/shared/lib/types';
 
 import { getAssetInfoStatic } from '@/entities/ticker/server/getAssetInfoStatic';
 import { getAssetInfoAction } from '@/entities/ticker/actions/getAssetInfoAction';

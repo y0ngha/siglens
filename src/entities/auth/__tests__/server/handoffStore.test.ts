@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { redis, client } = vi.hoisted(() => {
     const redis = { set: vi.fn(), getdel: vi.fn() };
     return { redis, client: { current: redis as typeof redis | null } };
@@ -7,6 +5,8 @@ const { redis, client } = vi.hoisted(() => {
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => client.current,
 }));
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     consumeHandoffCode,

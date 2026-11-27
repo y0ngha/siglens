@@ -1,7 +1,3 @@
-import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { TickerSearchResult } from '@/shared/lib/types';
-import type { FmpSearchResult } from '../../model';
-
 const {
     mockCache,
     createCacheProviderMock,
@@ -58,6 +54,10 @@ vi.mock('../cryptoAssetStore', () => ({
 vi.mock('../krEquitySearch', () => ({
     searchKrEquity: (q: string) => searchKrEquityMock(q),
 }));
+
+import type { CacheProvider } from '@y0ngha/siglens-core';
+import type { TickerSearchResult } from '@/shared/lib/types';
+import type { FmpSearchResult } from '../../model';
 
 import {
     _resetInFlightTranslationsForTest,

@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const dns = vi.hoisted(() => ({
     lookup: vi.fn<
         (host: string, opts: unknown) => Promise<Array<{ address: string }>>
@@ -19,6 +17,8 @@ vi.mock('@/shared/api/web/pinnedRequest', async importOriginal => ({
     >()),
     pinnedGet: transport.get,
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isBlockedAddress } from '@/shared/api/web/ipGuard';
 import { BlockedAddressError } from '@/shared/api/web/pinnedRequest';

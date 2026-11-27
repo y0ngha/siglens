@@ -1,5 +1,3 @@
-import type { MockedFunction, MockedClass, Mock } from 'vitest';
-
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
@@ -59,6 +57,8 @@ vi.mock('@/shared/lib/byokGate', () => ({
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
+
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';

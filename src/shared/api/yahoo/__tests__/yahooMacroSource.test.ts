@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { quote, chart, getOrSetCache, isE2E } = vi.hoisted(() => ({
     quote: vi.fn(),
     chart: vi.fn(),
@@ -13,6 +11,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({ getOrSetCache }));
 vi.mock('@/shared/api/e2eEnv', () => ({
     isE2EFakeMode: () => isE2E() && process.env.AGENT_REAL_PROVIDER !== '1',
 }));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     getYahooMacroDailyCloses,

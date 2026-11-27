@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
+
+import { describe, expect, it, vi } from 'vitest';
+
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { CONVERSATION_LIST_LIMIT } from '@/entities/chat-conversation/model';
 import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';

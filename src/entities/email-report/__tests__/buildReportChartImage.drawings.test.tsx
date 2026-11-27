@@ -1,7 +1,3 @@
-import type { Bar } from '@y0ngha/siglens-core';
-import type { ChartDrawingSource } from '@/entities/analysis/lib/narrowChartDrawings';
-import type { ReactElement, ReactNode } from 'react';
-
 const rendered = vi.hoisted(() => ({ element: null as unknown }));
 
 vi.mock('next/og', () => ({
@@ -12,6 +8,10 @@ vi.mock('next/og', () => ({
         }
     },
 }));
+
+import type { Bar } from '@y0ngha/siglens-core';
+import type { ChartDrawingSource } from '@/entities/analysis/lib/narrowChartDrawings';
+import type { ReactElement, ReactNode } from 'react';
 
 import { buildReportChartImage } from '@/entities/email-report/server/buildReportChartImage';
 import {

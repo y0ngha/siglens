@@ -756,6 +756,64 @@ describe('code rules: planted predicates', () => {
         });
     });
 
+    describe('imports-contiguous', () => {
+        const A = "import { a } from 'a';";
+        const B = "import { b } from 'b';";
+        it.each([
+            ['vi.mock between imports', `${A}\nvi.mock('x');\n${B}`, 1],
+            [
+                'vi.hoisted between imports',
+                `${A}\nconst h = vi.hoisted(() => ({}));\n${B}`,
+                1,
+            ],
+            ['vi.mock above all imports', `vi.mock('x');\n${A}\n${B}`, 0],
+            [
+                'vi.hoisted above all imports',
+                `const h = vi.hoisted(() => ({}));\n${A}\n${B}`,
+                0,
+            ],
+            ['vi.mock after all imports', `${A}\n${B}\nvi.mock('x');`, 0],
+            ['vi.doMock above an import', `vi.doMock('x');\n${A}\n${B}`, 1],
+            [
+                'const x = vi.fn() between imports',
+                `${A}\nconst x = vi.fn();\n${B}`,
+                1,
+            ],
+            ['vi.unmock above all imports', `vi.unmock('x');\n${A}\n${B}`, 0],
+            [
+                'vi.mock between an import type and a value import',
+                `import type { T } from 't';\nvi.mock('x');\n${B}`,
+                1,
+            ],
+            [
+                'vi.mock between a side-effect import and another',
+                `import 'side-effect';\nvi.mock('x');\n${B}`,
+                1,
+            ],
+            [
+                'vi.mock between multi-line imports',
+                `import {\n    a,\n    c,\n} from 'a';\nvi.mock('x');\nimport {\n    b,\n} from 'b';`,
+                1,
+            ],
+            ['use client directive', `'use client';\n${A}\n${B}`, 0],
+            ['no imports', "vi.mock('x');\nconst x = 1;", 0],
+        ])('%s -> %i', (_name, text, expected) => {
+            expect(countOf('imports-contiguous', TEST_PATH, text)).toBe(
+                expected
+            );
+        });
+
+        it('does not apply to production files (import/first covers them)', () => {
+            expect(
+                countOf(
+                    'imports-contiguous',
+                    PROD_PATH,
+                    `${A}\nconst x = 1;\n${B}`
+                )
+            ).toBe(0);
+        });
+    });
+
     describe('jsdoc-detached-by-comment', () => {
         const SRC = 'src/a/x.ts';
         const DOC = '/** Fetches bars. */\n';

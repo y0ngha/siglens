@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { hasMarket, fetchSnapshot, summarize, isTabAllowed } = vi.hoisted(
     () => ({
         hasMarket: vi.fn(),
@@ -20,6 +18,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
     return { ...actual, summarizeChainForLlm: summarize };
 });
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getOptionsSummaryTool } from '@/app/api/ai/chat/tools/getOptionsSummary';
 

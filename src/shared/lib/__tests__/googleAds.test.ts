@@ -1,6 +1,3 @@
-// @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 const config = vi.hoisted(() => ({
     GOOGLE_ADS_ID: 'AW-1',
     GOOGLE_ADS_CONVERSION_LABELS: {
@@ -12,6 +9,9 @@ const config = vi.hoisted(() => ({
     SIGNUP_CONVERSION_COOKIE_MAX_AGE_SECONDS: 600,
 }));
 vi.mock('@/shared/config/googleAds', () => config);
+
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     ADS_CONVERSION_QUEUED_EVENT,

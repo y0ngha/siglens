@@ -1,7 +1,7 @@
+vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
+
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
 
 import nextConfig from '../../../../../../next.config';
 import { config } from '@/proxy';

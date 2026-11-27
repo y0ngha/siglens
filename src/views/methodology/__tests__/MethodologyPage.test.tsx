@@ -1,3 +1,10 @@
+vi.mock('next-intl/server', () => ({
+    getTranslations: vi.fn(
+        async ({ namespace }: { locale: string; namespace: string }) =>
+            createTranslator({ locale: 'ko', messages: ko, namespace } as never)
+    ),
+}));
+
 import { screen, within } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
@@ -22,13 +29,6 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import ko from '../../../../messages/ko.json';
-
-vi.mock('next-intl/server', () => ({
-    getTranslations: vi.fn(
-        async ({ namespace }: { locale: string; namespace: string }) =>
-            createTranslator({ locale: 'ko', messages: ko, namespace } as never)
-    ),
-}));
 
 import { MethodologyPage } from '../MethodologyPage';
 import { METHODOLOGY_CHANGELOG } from '../lib/methodologyChangelog';
