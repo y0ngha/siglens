@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['yangZhang']
 confidence_weight: 0.3
 usage_roles: [measurement, risk]
+computed_card: yang_zhang
 gating:
   tier: gated
   signal_kind: state

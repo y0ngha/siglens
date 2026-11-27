@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['cmf']
 confidence_weight: 0.75
 usage_roles: [signal, confirmation, measurement]
+computed_card: cmf
 gating:
   tier: gated
   signal_kind: event

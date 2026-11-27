@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['buySellVolume']
 confidence_weight: 0.75
 usage_roles: [confirmation, measurement]
+computed_card: buy_sell_volume
 gating:
   tier: gated
   signal_kind: state

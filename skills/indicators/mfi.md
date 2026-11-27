@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['mfi']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, measurement]
+computed_card: mfi
 gating:
   tier: gated
   signal_kind: event

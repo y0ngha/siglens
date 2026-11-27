@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['stochRsi']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation]
+computed_card: stoch_rsi
 gating:
   tier: gated
   signal_kind: state

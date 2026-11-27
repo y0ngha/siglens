@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['macd']
 confidence_weight: 0.9
 usage_roles: [signal, confirmation]
+computed_card: macd
 gating:
   tier: gated
   signal_kind: event

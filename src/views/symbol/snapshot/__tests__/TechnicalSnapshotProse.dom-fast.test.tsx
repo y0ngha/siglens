@@ -190,6 +190,117 @@ describe('TechnicalSnapshotProse', () => {
         expect(screen.getByText(/trend-following/)).toBeInTheDocument();
     });
 
+    // WP-16: core는 이제 엔진이 자격을 인정한 후보만 patternSummaries에 싣는다. 옛 행이나 반려된
+    // 후보의 `detected: false` 판정은 크롤러에 내보낼 산문이 아니다.
+    it('감지되지 않은 패턴 판정은 렌더하지 않는다 (WP-16)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: [
+                        {
+                            id: 'p1',
+                            patternName: 'double_top',
+                            skillName: 'double-top',
+                            detected: false,
+                            trend: 'neutral',
+                            summary: '이 패턴은 보이지 않아요.',
+                            confidenceWeight: 0,
+                        },
+                        {
+                            id: 'p2',
+                            patternName: 'head_and_shoulders',
+                            skillName: 'head-and-shoulders',
+                            detected: true,
+                            trend: 'bearish',
+                            summary: '헤드앤숄더가 보여요.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        expect(screen.getByText('헤드앤숄더가 보여요.')).toBeInTheDocument();
+        expect(
+            screen.queryByText('이 패턴은 보이지 않아요.')
+        ).not.toBeInTheDocument();
+    });
+
+    it('대순환 카드는 영어 정본 대신 구조화된 읽기를 독자 언어로 렌더한다 (WP-16)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    strategyResults: [
+                        {
+                            id: 's1',
+                            strategyName: 'MACD 대순환 분석',
+                            trend: 'bearish',
+                            summary:
+                                'MACD cycle: stage 4 (English canonical line).',
+                            confidenceWeight: 0,
+                            cycle: {
+                                kind: 'macd_cycle',
+                                stage: 4,
+                                previousStage: 3,
+                                barsInStage: 12,
+                                progression: 'forward',
+                                stageChanges: 2,
+                                values: {
+                                    upper: -1.2,
+                                    middle: -2.5,
+                                    lower: -1.3,
+                                },
+                                slopes: {
+                                    ema9: 'falling',
+                                    ema21: 'falling',
+                                    ema60: 'flat',
+                                },
+                            },
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        expect(
+            screen.getByText('MACD 대순환 4단계 (안정 하락기)')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('3단계에서 순서대로 넘어왔어요')
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/English canonical line/)).toBeNull();
+    });
+
+    it('손상된 cycle은 저장된 요약으로 물러난다 (WP-16)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    strategyResults: [
+                        {
+                            id: 's1',
+                            strategyName: 'MACD 대순환 분석',
+                            trend: 'bearish',
+                            summary: '저장된 요약 문장입니다.',
+                            confidenceWeight: 0,
+                            cycle: { kind: 'macd_cycle', stage: 99 },
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        expect(screen.getByText('저장된 요약 문장입니다.')).toBeInTheDocument();
+    });
+
     // REACT.md#AX-1 — 목록의 aria-label은 보이는 헤딩과 같은
     // 용어("기술적 신호")를 써야 한다. 헤딩이 "전략"에서 "기술적 신호"로
     // 바뀌었는데 aria-label만 "전략 시그널"로 남으면 스크린리더 사용자에게

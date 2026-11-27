@@ -38,4 +38,36 @@ describe('extractProse', () => {
             extractProse({ Ko: '값', ticker: 'AAPL', trend: 'bullish' })
         ).toEqual([]);
     });
+
+    it('core가 코드로 만든 카드의 영어 정본 줄은 번역 대상이 아니다', () => {
+        expect(
+            extractProse({
+                indicatorResults: [
+                    {
+                        indicatorName: 'RSI Signal Guide',
+                        signals: [
+                            {
+                                description: 'RSI is oversold at 28.4.',
+                                reading: { kind: 'rsi' },
+                            },
+                            { description: '모델이 쓴 옛 카드 설명' },
+                        ],
+                    },
+                ],
+                strategyResults: [
+                    {
+                        summary: 'MACD cycle: stage 4.',
+                        cycle: { kind: 'macd_cycle' },
+                    },
+                    { summary: '모델이 쓴 전략 요약' },
+                ],
+            })
+        ).toEqual([
+            {
+                path: 'indicatorResults.0.signals.1.description',
+                text: '모델이 쓴 옛 카드 설명',
+            },
+            { path: 'strategyResults.1.summary', text: '모델이 쓴 전략 요약' },
+        ]);
+    });
 });

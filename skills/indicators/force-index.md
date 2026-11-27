@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['forceIndex']
 confidence_weight: 0.4
 usage_roles: [signal, confirmation]
+computed_card: force_index
 gating:
   tier: gated
   signal_kind: state

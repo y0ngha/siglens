@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['chandelierExit']
 confidence_weight: 0.35
 usage_roles: [regime, risk]
+computed_card: chandelier
 gating:
   tier: gated
   signal_kind: state

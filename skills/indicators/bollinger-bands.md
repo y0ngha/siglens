@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['bollinger']
 confidence_weight: 0.85
 usage_roles: [signal, confirmation, measurement]
+computed_card: bollinger
 gating:
   tier: gated
   signal_kind: state

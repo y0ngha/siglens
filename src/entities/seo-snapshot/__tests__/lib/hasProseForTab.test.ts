@@ -186,6 +186,54 @@ describe('hasProseForTab', () => {
     // isolated via the DISCRIMINATING fixtures above and asserted
     // separately).
     describe('different-tab fixture renders false (catches a swapped mapping)', () => {
+        // 엔진이 자격을 인정한 후보에 대한 "아니다" 판정은 크롤러·메일에 내보낼 산문이 아니다
+        // (WP-16). 감지된 패턴만 산문 근거로 센다 — 기술 탭 sitemap·noindex 판정이 이 함수를 쓴다.
+        it('technical: an undetected pattern verdict alone is not prose', () => {
+            expect(
+                hasProseForTab('technical', {
+                    patternSummaries: [
+                        {
+                            patternName: '더블탑',
+                            detected: false,
+                            trend: 'neutral',
+                            summary: '이 패턴은 보이지 않아요.',
+                        },
+                    ],
+                })
+            ).toBe(false);
+        });
+
+        it('technical: a detected pattern alone is prose', () => {
+            expect(
+                hasProseForTab('technical', {
+                    patternSummaries: [
+                        {
+                            patternName: '더블탑',
+                            detected: true,
+                            trend: 'bearish',
+                            summary: '쌍봉이 보여요.',
+                        },
+                    ],
+                })
+            ).toBe(true);
+        });
+
+        it('technical: an undetected verdict does not hide the summary prose', () => {
+            expect(
+                hasProseForTab('technical', {
+                    summary: '요약 산문입니다.',
+                    patternSummaries: [
+                        {
+                            patternName: '더블탑',
+                            detected: false,
+                            trend: 'neutral',
+                            summary: '이 패턴은 보이지 않아요.',
+                        },
+                    ],
+                })
+            ).toBe(true);
+        });
+
         it('technical: a congress-shaped fixture does not render (no shared field names)', () => {
             expect(hasProseForTab('technical', CONGRESS_FIXTURE)).toBe(false);
         });
@@ -283,7 +331,12 @@ describe('PROSE_SOURCE_FIELDS — sitemap 투영이 판정을 바꾸지 않는�
         technical: {
             ...TECHNICAL_FIXTURE,
             patternSummaries: [
-                { patternName: '더블탑', trend: 'bearish', summary: '요약' },
+                {
+                    patternName: '더블탑',
+                    detected: true,
+                    trend: 'bearish',
+                    summary: '요약',
+                },
             ],
         },
         news: NEWS_FIXTURE,
@@ -339,7 +392,14 @@ describe('PROSE_SOURCE_FIELDS — sitemap 투영이 판정을 바꾸지 않는�
         const PROBE_VALUES: readonly unknown[] = [
             '산문 문단입니다.',
             ['산문 항목입니다.'],
-            [{ patternName: '패턴', trend: 'bullish', summary: '요약입니다.' }],
+            [
+                {
+                    patternName: '패턴',
+                    detected: true,
+                    trend: 'bullish',
+                    summary: '요약입니다.',
+                },
+            ],
         ];
 
         function proseBearingFields(tab: keyof typeof PROSE_SOURCE_FIELDS) {

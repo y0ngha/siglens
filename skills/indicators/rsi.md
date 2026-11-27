@@ -5,6 +5,7 @@ type: indicator_guide
 indicators: ['rsi']
 confidence_weight: 0.9
 usage_roles: [signal, confirmation]
+computed_card: rsi
 gating:
   tier: gated
   signal_kind: event
