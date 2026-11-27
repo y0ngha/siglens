@@ -72,11 +72,18 @@ export const WATCHLIST_ALERT_TOOLS: readonly AgentToolDefinition[] = [
 export const WATCHLIST_ALERT_ROUTING_ROWS: readonly AgentRoutingRow[] = [
     {
         requires: [GET_MY_WATCHLIST_TOOL],
-        text: 'The user asks about their watchlist (관심종목, 담아 둔 종목) as a whole → get_my_watchlist first; their holdings or profit/loss → get_my_portfolio.',
+        // Holdings belong to the portfolio row. The pointer names no tool and
+        // renders only when that row does, so this row keeps one arrow and
+        // never names a tool the model may not have.
+        text: available =>
+            `The user asks about their watchlist (관심종목, 담아 둔 종목) as a whole → get_my_watchlist first.${available.has('get_my_portfolio') ? ' Questions about their own holdings or profit/loss are not watchlist questions.' : ''}`,
     },
     {
         requires: [PROPOSE_PRICE_ALERT_TOOL],
-        text: 'The user asks to be alerted when a price, a zone or the 무효화 기준 is reached or crossed → propose_price_alert (for analysis levels after get_cached_analysis or run_fresh_analysis has shown them).',
+        // The executor reads the analysis levels from the same cache peek as
+        // get_cached_analysis, so no analysis tool has to run first and the
+        // row names none.
+        text: "The user asks to be alerted when a price, a zone or the 무효화 기준 is reached or crossed → propose_price_alert (for analysis levels pass an analysis basis: it reads them from SIGLENS's latest daily technical analysis).",
     },
 ];
 
