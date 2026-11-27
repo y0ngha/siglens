@@ -335,13 +335,6 @@ export const getNewsTool: ToolExecutor = async (args, ctx, runtime) => {
             issues: [{ path: 'since', message: 'invalid date' }],
         };
     const nowMs = Date.now();
-    const windowFor = (market: NewsMarketContext | null) =>
-        resolveNewsWindow({
-            since: args.since,
-            nowMs,
-            baselineSinceMs: sinceResult.sinceMs,
-            zone: market === null ? null : zoneOf(market.session),
-        });
     const limit = clampLimit(args.limit);
     const query =
         typeof args.query === 'string' ? args.query.toLowerCase() : null;
@@ -372,9 +365,18 @@ export const getNewsTool: ToolExecutor = async (args, ctx, runtime) => {
     if (symbolArg !== null) await runtime.ensureSymbolData(symbolArg);
     // `market` and `window` are computed ONCE and reused: the DB bound and the `priceMoves` window start come from
     // the same instant. The window needs the market's zone, so the DB read waits for the (already running) closes load.
+    // A category query has no window: it reads from `sinceResult.sinceMs` directly.
     const market = marketPending === null ? null : await marketPending;
-    const window = windowFor(market);
-    if (symbolArg !== null) {
+    const window =
+        symbolArg === null
+            ? null
+            : resolveNewsWindow({
+                  since: args.since,
+                  nowMs,
+                  baselineSinceMs: sinceResult.sinceMs,
+                  zone: market === null ? null : zoneOf(market.session),
+              });
+    if (symbolArg !== null && window !== null) {
         rows = await new DrizzleNewsRepository(db).listCardsBySymbol(
             symbolArg,
             Math.max(0, nowMs - window.cutoffMs),
@@ -421,17 +423,18 @@ export const getNewsTool: ToolExecutor = async (args, ctx, runtime) => {
         : rows;
     // The symbol window is exactly [cutoff, now]: the repository bound can sit a few ms off the cutoff, and a
     // row older than it would fall before `priceMoves`' first session. An unparseable date stays (unknown).
-    const filtered = isSymbolQuery
-        ? queried.filter(r => {
-              const t = Date.parse(r.publishedAt);
-              return Number.isNaN(t) || t >= window.cutoffMs;
-          })
-        : queried;
+    const filtered =
+        window !== null
+            ? queried.filter(r => {
+                  const t = Date.parse(r.publishedAt);
+                  return Number.isNaN(t) || t >= window.cutoffMs;
+              })
+            : queried;
     const page = filtered.slice(0, limit);
     // Computed over ALL of `filtered` (before the page and before any self-fit trimming), so move-day headlines
     // exist even when they fall outside the page.
     const enriched =
-        market === null
+        market === null || window === null
             ? null
             : enrichNewsWithPriceMoves({
                   rows: filtered,

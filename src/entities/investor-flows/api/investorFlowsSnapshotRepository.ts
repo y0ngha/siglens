@@ -260,6 +260,7 @@ export class DrizzleInvestorFlowsSnapshotRepository {
             prevShares: row.prevShares,
         }));
     }
+
     /**
      * 이름에 모든 토큰이 들어 있는 13F 제출자(`upper(name) LIKE '%TOKEN%'`을 토큰마다 AND). 후보만 좁히는 1차 필터라
      * 정확한 판정은 호출자가 `matchesFiler`로 한다. 짧은 이름이 먼저 오게 정렬해 상한 안에 가장 가까운 이름이 들어간다.
