@@ -22,11 +22,11 @@ Highs keep getting higher and lows keep getting lower, so the range widens over 
 
 Price swings wider and wider in both directions. It sets new highs and new lows, but no direction is established; only volatility grows. So it is read as a sign of an unstable market.
 
-The direction only shows after price leaves the lines. In the tabulation of Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results in his books, 60% broke upward for both the top and bottom versions. In both, the upward breakouts also performed better afterward. In the performance ranking, though, which orders patterns by how far price went after the breakout, the bottom version ranked higher than the top, and Bulkowski called the broadening top a poor performer. Results were reportedly better when volume rose inside the pattern.
+The direction only shows after price leaves the lines. In the tabulation of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, 60% broke upward for both the top and bottom versions. In both, the upward breakouts also performed better afterward. In the performance ranking, though, which orders patterns by how far price went after the breakout, the bottom version ranked higher than the top, and Bulkowski called the broadening top a poor performer. Results were reportedly better when volume rose inside the pattern.
 
 ## How SIGLENS detects it
 
-SIGLENS connects clearly turning highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line rises, the lower line falls, and the gap clearly widens, it treats the shape as a broadening formation.
+SIGLENS connects clear highs and lows (swings: turning points where price reversed by more than 1.5 times the [ATR](/guide/indicators/atr), the average range of recent bars) to draw the upper and lower boundaries. When the upper line rises, the lower line falls, and the gap clearly widens, it treats the shape as a broadening formation.
 
 - The upper line must rise and the lower line must fall, each moving at least 1.5 times ATR over the pattern.
 - The final width must be at least 1.3 times the starting width.

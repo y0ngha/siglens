@@ -101,7 +101,11 @@ export async function BenchmarkPage({
                     total: totalItems,
                     pools: formatBenchmarkPoolSummary(
                         methodology.poolSizes,
-                        locale
+                        locale,
+                        {
+                            primary: t('explorer.pool.primary'),
+                            aux: t('explorer.pool.aux'),
+                        }
                     ),
                 }),
                 t('method.levels'),

@@ -4,7 +4,7 @@ aliases: [pivot point levels, pivot support and resistance, floor pivots, pivot 
 summary: "A day-trading tool that sets today's candidate support and resistance from yesterday's high, low and close."
 seoTitle: "Pivot Points: Calculation and Support/Resistance"
 seoDescription: What the pivot point PP, R1 to R3 and S1 to S3 mean, and how the Classic, Fibonacci, Woodie, Camarilla and DeMark methods differ.
-demoCaption: Synthetic, illustrative candles. Shows the pivot line (PP) calculated from the high, low and close of the prior day's bars, shaded on the chart, with resistance R1 above and support S1 below.
+demoCaption: Synthetic, illustrative candles. Shows the pivot line (PP) calculated from the high, low and close of the prior day's bars (shaded), with resistance R1 above and support S1 below.
 faq:
   - q: How are pivot points calculated?
     a: In the classic method, the pivot (PP) is the prior day's high, low and close added together and divided by 3. R1 is twice PP minus the low, and S1 is twice PP minus the high. SIGLENS calculates these values and shows them.

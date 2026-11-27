@@ -88,6 +88,23 @@ describe('BenchmarkPage', () => {
     });
 
     describe('headline', () => {
+        it('names the primary and aux pools in the item summary', async () => {
+            await renderPage({
+                release: {
+                    ...BENCHMARK_FIXTURE,
+                    methodology: {
+                        ...BENCHMARK_FIXTURE.methodology,
+                        poolSizes: { primary: 3, aux: 1 },
+                    },
+                },
+            });
+            const text = document.body.textContent ?? '';
+            expect(text).toContain(
+                `${ko.views.benchmark.explorer.pool.primary} 3 및 ${ko.views.benchmark.explorer.pool.aux} 1`
+            );
+            expect(text).not.toMatch(/primary 3|aux 1/);
+        });
+
         it('builds the summary sentence from the data', async () => {
             await renderPage();
             expect(

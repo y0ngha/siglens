@@ -4186,6 +4186,8 @@
                 "views.benchmark.explorer.label.pending",
                 "views.benchmark.explorer.market.kr",
                 "views.benchmark.explorer.market.us",
+                "views.benchmark.explorer.pool.aux",
+                "views.benchmark.explorer.pool.primary",
                 "views.benchmark.explorer.results",
                 "views.benchmark.explorer.truth",
                 "views.benchmark.market.kr",

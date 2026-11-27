@@ -312,7 +312,7 @@ describe('TechnicalFactsSummary', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                '위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.'
+                '위 지표는 화면에 표시된 차트 데이터로 자동 계산한 값입니다.'
             )
         ).toBeInTheDocument();
     });

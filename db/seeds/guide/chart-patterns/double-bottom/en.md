@@ -26,7 +26,7 @@ The pattern is complete only when, after the second low, a close finishes above 
 
 ## How it differs from a double top
 
-Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results, split double bottoms into four types by the shape of each low. A sharp low is called Adam and a rounded low Eve, and the types are the pairings (Adam & Adam, Adam & Eve, and so on).
+Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, split double bottoms into four types by the shape of each low. A sharp low is called Adam and a rounded low Eve, and the types are the pairings (Adam & Adam, Adam & Eve, and so on).
 
 - The share that failed to move far enough after the breakout (the break-even failure rate) was 12–16%.
 - 65–73% reached the price target.

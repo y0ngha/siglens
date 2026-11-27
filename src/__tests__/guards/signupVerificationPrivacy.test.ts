@@ -56,7 +56,8 @@ const PHRASES: Record<Locale, LocalePhrases> = {
     ko: {
         sec2Opening: '- 회원가입을 위해 이메일 인증을 요청한 경우',
         sec4Opening: '- 회원가입 이메일 인증 정보',
-        upstashPurpose: '회원가입 이메일 인증 코드 보관과 요청·입력 횟수 제한',
+        upstashPurpose:
+            '회원가입 이메일 인증 코드 보관과 인증 메일 요청, 코드 입력 횟수 제한',
         sec7Opening: `- **${SIGNUP_VERIFICATION_COOKIE_NAME}**`,
     },
     en: {
@@ -70,7 +71,7 @@ const PHRASES: Record<Locale, LocalePhrases> = {
         sec2Opening: '- 会員登録のためにメール認証をリクエストした場合',
         sec4Opening: '- 会員登録のメール認証情報',
         upstashPurpose:
-            '会員登録のメール認証コードの保管とリクエスト・入力回数の制限',
+            '会員登録のメール認証コードの保管と、認証メールのリクエストとコード入力の回数制限',
         sec7Opening: `- **${SIGNUP_VERIFICATION_COOKIE_NAME}**`,
     },
     zh: {

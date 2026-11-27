@@ -16,7 +16,7 @@ faq:
 
 ## How it's calculated
 
-In one line: it combines into a single number how hard price has moved lately, how many days in a row it has moved one way, and how large the move was compared with usual. It was built to look for chances where price that has moved too far in the short term snaps back toward its average (short-term mean reversion).
+It rolls three things into one number: how hard price has moved lately, how many days in a row it has moved one way, and how large the move was compared with usual. It was built to look for chances where price that has moved too far in the short term snaps back toward its average (short-term mean reversion).
 
 CRSI(3, 2, 100) = [RSI(close, 3) + RSI(streak, 2) + percent rank of return(100)] ÷ 3
 

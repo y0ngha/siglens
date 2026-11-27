@@ -26,7 +26,7 @@ The pattern is complete only when, after the right shoulder, a close finishes be
 
 ## How it differs from an inverse head and shoulders
 
-It is only the same shape flipped, but the results differ. Here is what the bull-market counts of Thomas Bulkowski, who tallied what actually happened after patterns across decades of US stock charts and published the results, show:
+It is only the same shape flipped, but the results differ. Here is what the bull-market counts of Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, show:
 
 - After the neckline break, the share of head and shoulders that failed to move far enough (the break-even failure rate) was 19%.
 - Its performance rank (a ranking by how far price went afterward) was 9th of 36 bearish patterns.

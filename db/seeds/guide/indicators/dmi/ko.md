@@ -7,7 +7,7 @@ title: DMI
 aliases: [방향성 지수, Directional Movement Index, +DI -DI, 디렉셔널 무브먼트]
 summary: 매수 쪽 힘(+DI)과 매도 쪽 힘(-DI) 두 선을 비교해 추세의 방향과 우위를 보여 주는 지표예요.
 seoTitle: DMI 지표 보는 법, +DI -DI 교차
-seoDescription: DMI의 +DI와 -DI가 무엇인지, 두 선의 교차를 ADX 20 기준으로 거르는 법, 횡보장에서 가짜 신호가 많은 이유까지 다뤄요.
+seoDescription: DMI의 +DI와 -DI가 무엇인지, 두 선의 교차를 ADX 20 기준으로 거르는 법, 횡보장에서 가짜 신호가 많은 이유를 다뤄요.
 demoCaption: 설명용으로 만든 가상의 봉이에요. 상승이 이어지며 +DI가 -DI를 위로 가로지르고 ADX가 함께 오르는 모습을 보여 줘요.
 faq:
   - q: +DI가 -DI를 넘으면 상승 전환인가요?
@@ -32,7 +32,7 @@ DMI(Directional Movement Index)는 J. 웰스 와일더가 1978년에 만든 지�
 
 교차는 이렇게 읽어요.
 
-- +DI가 -DI를 위로 넘음: 상승 쪽 전환의 초기 신호예요. 그때 ADX가 20 위면 신뢰가 훨씬 올라가요.
+- +DI가 -DI를 위로 넘음: 상승 쪽 전환의 초기 신호예요. 그때 ADX가 20 위면 더 믿을 만해요.
 - -DI가 +DI를 위로 넘음: 하락 쪽 전환의 초기 신호예요. 마찬가지로 ADX 20 위에서 확인해요.
 - ADX 20 아래의 교차는 가짜가 많으니 조심해요.
 

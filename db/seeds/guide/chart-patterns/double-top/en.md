@@ -26,7 +26,7 @@ The pattern is complete only when, after the second high, a close finishes below
 
 ## How it differs from a double bottom
 
-Thomas Bulkowski, who counted what actually happened after patterns across decades of US stock charts and published the results, split double tops into four types by the shape of each high. A sharp high is called Adam and a rounded high Eve, and the types are the pairings of the two.
+Thomas Bulkowski, who tracked how chart patterns played out over decades of US stock data, split double tops into four types by the shape of each high. A sharp high is called Adam and a rounded high Eve, and the types are the pairings of the two.
 
 - The share that failed to move far enough after the breakout (the break-even failure rate) was highest for Adam & Adam, with two sharp highs, at 25%; the other three were 20–21%.
 - Performance rank (a ranking by how far price went afterward) was 10th to 19th of 36 bearish patterns.

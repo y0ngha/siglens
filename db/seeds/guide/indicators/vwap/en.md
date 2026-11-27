@@ -25,17 +25,17 @@ Instead of restarting every day, you can also pick an important day, such as an 
 - When price is above VWAP, most of today's volume traded at lower prices than now, so it is read as favoring buyers; below it, favoring sellers. Moving up and down around VWAP is a flat stretch where neither side has the upper hand.
 - Price coming down from above and holding at VWAP is support, and price rising from below and getting blocked at VWAP is resistance. The more volume has piled up nearby, the stronger it is considered.
 - A cross above VWAP with above-average volume reads as a sign of buyers coming in, and a break below as sellers taking over. A breakout on thin volume is more likely to be false.
-- As a common rule of thumb in stocks, when price moves more than 1–2% away from VWAP, it is considered far from the average, and traders watch for a return toward VWAP. This is thought to hold more on low-volatility days.
+- As a common rule of thumb in stocks, when price moves more than 1 to 2% away from VWAP, it is considered far from the average, and traders watch for a return toward VWAP. This is thought to hold more on low-volatility days.
 
 ## How SIGLENS detects it
 
 SIGLENS looks at whether price is above or below today's VWAP, whether it is hovering near it, and whether it crosses VWAP with volume behind it. VWAP restarts from the open of every trading day. Dates are split on Coordinated Universal Time (UTC), but the US and Korean regular sessions both fall within that one day.
 
-- On an intraday chart, when price is 1× [ATR](/guide/indicators/atr) (the average size of recent bars' moves) or more away from VWAP, SIGLENS flags it as worth watching. The 1–2% above is a common rule of thumb; SIGLENS uses this ATR yardstick instead of a percentage.
+- On an intraday chart, when price is 1× [ATR](/guide/indicators/atr) (the average size of recent bars' moves) or more away from VWAP, SIGLENS flags it as worth watching. The 1 to 2% figure above is a common rule of thumb; SIGLENS uses this ATR yardstick instead of a percentage.
 - On a daily chart it does not check this distance, because one bar is one day and VWAP equals that day's (high + low + close) ÷ 3.
 - When VWAP sits near the POC (the price where the most volume traded) of the [volume profile](/guide/indicators/volume-profile), the volume-weighted average price and the most-traded price point to the same place, so support or resistance there is considered stronger.
 
-SIGLENS also refers to the pairing of VWAP for the broad direction and [Stochastic RSI](/guide/indicators/stochastic-rsi) for short-term timing within it.
+SIGLENS also considers pairing VWAP for the broad direction with [Stochastic RSI](/guide/indicators/stochastic-rsi) for short-term timing within it.
 
 ## Watch out for
 

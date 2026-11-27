@@ -47,7 +47,7 @@ function downLine(down: FeedbackDigest['downs'][number]): string {
     const where = [surfaceLabel(down.surface), down.target, down.symbol]
         .filter(Boolean)
         .join(' / ');
-    const comment = down.comment ? ` — ${oneLine(down.comment)}` : '';
+    const comment = down.comment ? `: ${oneLine(down.comment)}` : '';
     return `${where} [${reasonLabels(down.reasons)}]${comment}`;
 }
 
@@ -65,7 +65,7 @@ export function renderFeedbackDigest(
     const textLines = [
         `지난 24시간 AI 응답 피드백: 총 ${digest.total}건 (👍 ${digest.up} / 👎 ${digest.down})`,
         '',
-        '[표면·분석 종류별]',
+        '[남긴 곳, 분석 종류별]',
         ...digest.groups.map(
             g =>
                 `- ${surfaceLabel(g.surface)} / ${g.target}: 👍 ${g.up} / 👎 ${g.down}`
@@ -99,8 +99,8 @@ export function renderFeedbackDigest(
             : '';
     const html =
         `<p>지난 24시간 AI 응답 피드백: 총 ${digest.total}건 (👍 ${digest.up} / 👎 ${digest.down})</p>` +
-        `<h3>표면·분석 종류별</h3>` +
-        `<table border="1" cellpadding="4" cellspacing="0"><tr><th>표면</th><th>종류</th><th>👍</th><th>👎</th></tr>${groupRows}</table>` +
+        `<h3>남긴 곳, 분석 종류별</h3>` +
+        `<table border="1" cellpadding="4" cellspacing="0"><tr><th>남긴 곳</th><th>종류</th><th>👍</th><th>👎</th></tr>${groupRows}</table>` +
         downSection;
 
     return { subject, text, html };

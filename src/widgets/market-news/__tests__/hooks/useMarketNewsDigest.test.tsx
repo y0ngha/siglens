@@ -420,7 +420,7 @@ describe('useMarketNewsDigest', () => {
                 if (result.current.status !== 'error')
                     throw new Error('expected error');
                 expect(result.current.error.message).toBe(
-                    'AI 다이제스트 생성 중 오류가 발생했어요.'
+                    'AI 다이제스트 생성 중 오류가 발생했습니다.'
                 );
                 expect(consoleError).toHaveBeenCalledWith(
                     '[useWaitForMarketNewsCards] poll failed:',
