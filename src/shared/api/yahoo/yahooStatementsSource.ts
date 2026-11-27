@@ -3,6 +3,7 @@ import { getYahooClient } from './createYahooClient';
 import type { StatementPeriod } from '@y0ngha/siglens-core';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -100,7 +101,12 @@ async function fetchModule(
         // 매핑 단계가 결측을 `null`로 흡수하므로 형상이 어긋나도 런타임에서 안전하다.
         return (rows as unknown as YahooStatementRaw[]).toReversed();
     } catch (e) {
-        console.warn('[yahooStatements] fetch failed', symbol, module, e);
+        console.warn(
+            '[yahooStatements] fetch failed',
+            symbol,
+            module,
+            redactDbErrorForLog(e)
+        );
         return [];
     }
 }
@@ -134,7 +140,11 @@ export function getYahooStatements(
     if (hit && Date.now() - hit.at < DEDUP_WINDOW_MS) return hit.value;
 
     const value = fetchAll(symbol.toUpperCase(), period).catch((e: unknown) => {
-        console.warn('[yahooStatements] fetch failed', key, e);
+        console.warn(
+            '[yahooStatements] fetch failed',
+            key,
+            redactDbErrorForLog(e)
+        );
         cache.delete(key);
         return EMPTY;
     });
@@ -202,7 +212,7 @@ function getSingleStatement(
                 '[yahooStatements] single-module fetch failed',
                 key,
                 module,
-                e
+                redactDbErrorForLog(e)
             );
             return [];
         }

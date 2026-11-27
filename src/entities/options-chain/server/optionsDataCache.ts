@@ -18,6 +18,7 @@ import {
     type RedisClient,
     writeLastGoodSnapshot,
 } from './optionsLastGoodStore';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const adapter = getOptionsProvider();
 
@@ -136,7 +137,7 @@ export const hasOptionsMarket = cache(
                 console.error(
                     '[optionsDataCache] Redis get failed for',
                     key,
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
         }
@@ -151,7 +152,7 @@ export const hasOptionsMarket = cache(
             console.error(
                 '[optionsDataCache] adapter.hasOptionsMarket failed for',
                 key,
-                error
+                redactDbErrorForLog(error)
             );
             return false;
         }
@@ -165,7 +166,7 @@ export const hasOptionsMarket = cache(
                 console.error(
                     '[optionsDataCache] Redis set failed for',
                     key,
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
         }
@@ -277,7 +278,7 @@ export async function refreshLastGoodSnapshot(
         console.error(
             '[optionsDataCache] adapter.fetchSnapshot failed for',
             symbol.toUpperCase(),
-            error
+            redactDbErrorForLog(error)
         );
         return 'none';
     }

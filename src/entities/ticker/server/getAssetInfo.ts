@@ -42,6 +42,7 @@ import {
 } from '@/shared/lib/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 서버 키 LLM을 못 쓰는 흐름(공개 API)이면 번역 없이 영문명 결과를 API 전용 키에 1시간 두고 `true`를 돌려준다.
@@ -151,7 +152,12 @@ async function resolveKrEquityAssetInfo(
                 { ...info, koreanName },
                 upper,
                 cache
-            ).catch(e => console.warn('[getAssetInfo] kr persist failed', e))
+            ).catch(e =>
+                console.warn(
+                    '[getAssetInfo] kr persist failed',
+                    redactDbErrorForLog(e)
+                )
+            )
         );
         return info;
     }
@@ -171,7 +177,10 @@ async function resolveKrEquityAssetInfo(
             cache,
             'kr-equity'
         ).catch(e =>
-            console.warn('[getAssetInfo] kr background translation failed', e)
+            console.warn(
+                '[getAssetInfo] kr background translation failed',
+                redactDbErrorForLog(e)
+            )
         )
     );
 
@@ -229,7 +238,7 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
  * 전부 1년 TTL이었고 DB에는 `asset_translations` 28,499행 + `crypto_assets`
  * 4,785행이 있어 Redis는 DB의 중복 사본이었다. 그 GET이 앱 Redis 명령의 14%였고
  * Upstash는 명령 수로 과금한다. DB가 같은 AZ의 RDS(~1ms)로 옮겨 가므로 DB를 바로
- * 읽는 쪽이 더 싸고 빠르다. (수치 근거와 재측정 방법: PR #915 설명 — 키 수·TTL은 SCAN +
+ * 읽는 쪽이 더 싸고 빠르다. (수치 근거와 재측정 방법: 키 수·TTL은 SCAN +
  * PTTL 전수 집계, 명령 비중은 운영 Upstash `MONITOR` 2분 표본을 클라이언트 IP별로 집계.)
  *
  * 크립토 검사는 `asset_translations`보다 앞에 둔다 — 분류 우선순위를 기존과 같게
@@ -375,7 +384,12 @@ async function resolveUsEquityAssetInfo(
                 { ...info, koreanName },
                 fmpSymbol,
                 cache
-            ).catch(e => console.warn('[getAssetInfo] persist failed', e))
+            ).catch(e =>
+                console.warn(
+                    '[getAssetInfo] persist failed',
+                    redactDbErrorForLog(e)
+                )
+            )
         );
         return info;
     }
@@ -388,7 +402,10 @@ async function resolveUsEquityAssetInfo(
             { symbol: fmpSymbol, name, exchange, exchangeFullName },
             cache
         ).catch(e =>
-            console.warn('[getAssetInfo] background translation failed', e)
+            console.warn(
+                '[getAssetInfo] background translation failed',
+                redactDbErrorForLog(e)
+            )
         )
     );
 

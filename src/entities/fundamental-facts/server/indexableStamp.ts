@@ -1,6 +1,7 @@
 import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 펀더멘털 탭 색인 판정을 sitemap에 넘기는 자리.
@@ -40,7 +41,10 @@ export async function recordFundamentalIndexable(
             ex: FUNDAMENTAL_INDEXABLE_TTL_SECONDS,
         });
     } catch (error) {
-        console.error('[fundamentalIndexable] record failed', error);
+        console.error(
+            '[fundamentalIndexable] record failed',
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -65,7 +69,10 @@ export async function readFundamentalIndexableMap(
         });
         return map;
     } catch (error) {
-        console.error('[fundamentalIndexable] read failed', error);
+        console.error(
+            '[fundamentalIndexable] read failed',
+            redactDbErrorForLog(error)
+        );
         return undefined;
     }
 }

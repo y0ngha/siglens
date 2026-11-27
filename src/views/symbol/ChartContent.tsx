@@ -6,6 +6,7 @@ import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHo
 import { cn } from '@/shared/lib/cn';
 import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
 import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
+import { AnalysisConclusionCard } from '@/widgets/analysis/sections/AnalysisConclusionCard';
 import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
 import { useChartSync } from '@/widgets/chart/hooks/useChartSync';
 import { computePositionStatus } from '@/widgets/portfolio-position/utils/positionStatus';
@@ -52,7 +53,7 @@ import { useHasStoredChartPreferences } from '@/widgets/chart/hooks/useHasStored
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
-} from '@/widgets/chart/utils/overlayItems';
+} from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { barTimesOf } from '@/entities/analysis/lib/overlayAlignment';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { PANEL_MIN_WIDTH, usePanelResize } from './hooks/usePanelResize';
@@ -151,6 +152,11 @@ interface ChartContentProps {
      * 나타나거나 사라져도 차트·제목 행이 움직이지 않는다. 호출부가 자산군 판정을 끝낸 뒤 넣는다(프리·애프터마켓 한 줄).
      */
     chartHeaderStartSlot?: ReactNode;
+    /**
+     * AI 패널 맨 위에 흐르는 슬롯(서사가 있든 없든). 호출부가 "AI에게 물어보기" 링크를 넣는다.
+     * 데스크톱 패널과 모바일 시트가 같은 요소를 렌더하므로 고정 높이 요소여야 아래 내용이 밀리지 않는다.
+     */
+    panelTopSlot?: ReactNode;
 }
 
 export function ChartContent({
@@ -168,6 +174,7 @@ export function ChartContent({
     krxTickTable,
     seedHasFormingBarTrimmed = true,
     chartHeaderStartSlot,
+    panelTopSlot,
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
     const tFallback = useTranslations('entities.analysis.fallback');
@@ -494,6 +501,20 @@ export function ChartContent({
 
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
+                {/* 첫 분석이 도착하기 전에도 카드 자리를 먼저 잡는다(`pending`) — 결과가 오면 같은 높이
+                    그대로 값만 채워져 아래 내용이 밀리지 않는다. 입력을 기다리는 중이거나 오류일 때는
+                    보여 줄 결과도 곧 올 결과도 없으므로 카드를 두지 않는다. */}
+                {displayAnalyzing && (
+                    <AnalysisConclusionCard
+                        status="pending"
+                        analysis={analysis}
+                        keyLevels={clusteredKeyLevels}
+                        lockedInfoDepth={lockedInfoDepth}
+                        symbol={symbol}
+                        krxTickTable={krxTickTable}
+                    />
+                )}
+                {panelTopSlot}
                 {/* 첫 분석(서사 없음) 중에는 작은 텍스트 배너 대신, 캐시된 분석
                     재분석 시 AnalysisPanel이 쓰는 것과 동일한 AnalysisProgress(스피너·
                     페이즈·스켈레톤)를 노출한다. 모바일 바텀시트의 좁은 Peek에서도 분석
@@ -521,8 +542,28 @@ export function ChartContent({
         ) : (
             <div className="flex flex-col gap-3">
                 {statusBanner}
-                {factsSummary}
+                {/* 결론 카드는 패널 카드 안이 아니라 형제다(DS-17). 추세는 여기가 헤드라인이라 패널의
+                    배지는 숨긴다. 지표 요약은 AI 본문이 첫 화면에 오도록 패널 아래로 내렸다.
+                    분석이 도는 동안(재분석·tier 확정 재시작·모델/보유 변경 모두 `useAnalysis.onMutate`가
+                    `analysisResult`를 비운다) `analysis`는 무료 시드로 되돌아가 레벨·손절이 비어 있다.
+                    그 값을 그리면 "없음"·"회원 전용"이 깜빡이므로 결과가 없는 동안은 `pending`이다.
+                    결과가 도착한 뒤 마무리 애니메이션이 도는 구간(결과 있음 + `displayAnalyzing`)은
+                    실제 값을 그대로 보인다. */}
+                <AnalysisConclusionCard
+                    status={
+                        displayAnalyzing && analysisResult === null
+                            ? 'pending'
+                            : 'ready'
+                    }
+                    analysis={analysis}
+                    keyLevels={clusteredKeyLevels}
+                    lockedInfoDepth={lockedInfoDepth}
+                    symbol={symbol}
+                    krxTickTable={krxTickTable}
+                />
+                {panelTopSlot}
                 <AnalysisPanel
+                    hideTrendBadge
                     symbol={symbol}
                     krxTickTable={krxTickTable}
                     analysis={analysis}
@@ -553,6 +594,7 @@ export function ChartContent({
                     onClearOverlayHighlight={clearHighlightedOverlay}
                     feedbackSettings={{ modelId, reasoning }}
                 />
+                {factsSummary}
                 {/* "내 포지션" 결정적 요약 — 홀딩이 있는 회원에게만, AI 분석
                     바로 옆에 노출한다(personalized-analysis 배지와 동일 이웃).
                     positionStatus가 null이면(비회원/홀딩 없음/가격 데이터 미비)
@@ -575,6 +617,7 @@ export function ChartContent({
         clusteredKeyLevels,
         timeframe,
         displayAnalyzing,
+        analysisResult,
         isAwaitingInteraction,
         grantAutoRun,
         marketProfile,
@@ -604,6 +647,7 @@ export function ChartContent({
         clearHighlightedOverlay,
         statusBanner,
         factsSummary,
+        panelTopSlot,
         modelId,
         reasoning,
     ]);
@@ -657,6 +701,17 @@ export function ChartContent({
         // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent, react-doctor/no-prop-callback-in-effect
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
+
+    // 언마운트 시 시트 콘텐츠를 비운다. 시트는 에러 경계 밖(부모)에 있어, 경계가 이 컴포넌트를
+    // 갈아치워도 마지막 콘텐츠(인라인 링크 포함)가 남기 때문이다. deps를 비워 mobileContent가
+    // 바뀔 때마다 비웠다 채우는(깜빡임) 일이 없게 한다 — 갱신은 위 effect가 덮어쓴다.
+    useEffect(
+        () => () => {
+            // react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-prop-callback-in-effect
+            notifyMobileContent(null);
+        },
+        []
+    );
 
     // 비회원 첫 분석 회원가입 유도(Part B) — 실제 서사가 렌더된 시점("완료/렌더")에
     // 카운트한다. 캐시 HIT으로 즉시 나타나든 새로 생성됐든 동일하게 "봤으면" 카운트한다
@@ -850,12 +905,12 @@ export function ChartContent({
                 중 jail·`<main>`은 여전히 스크롤러가 아니다 — 문서 + 이 패널, 둘이다.
                 `md:h-full`이 아니라 변수를 쓰는 건 행이 `items-start`라 stretch로
                 높이를 받지 못하기 때문이다.
-                `md:pb-32`: Ask-AI FAB(`md:bottom-6` 24px + 높이 44px = 바닥에서 68px)이
-                패널 위에 떠 있어, 패널 끝까지 스크롤해도 마지막 줄(재분석 버튼)이 FAB 밑에
-                깔린다. 게다가 `--symbol-chrome-h`가 시간 단위 줄을 세지 않아 문서 스크롤
-                0에서 패널 아래 끝이 첫 뷰포트보다 약 44px 아래에 있다(1512×823 실측:
-                패널 bottom 867px). 44 + 68 + 여유 12 = 124px → 128px(pb-32)로 스크롤
-                끝에서 마지막 줄이 FAB 위로 올라오게 한다.
+                `md:pb-16`: `--symbol-chrome-h`가 시간 단위 줄을 세지 않아 문서 스크롤 0에서
+                패널 아래 끝이 첫 뷰포트보다 약 44px 아래에 있다(1512×823 실측: 패널 bottom
+                867px). 이 44px에 여유 12px을 더하면 56px이라 64px(pb-16)로 스크롤 끝에서
+                마지막 줄(재분석 버튼)이 뷰포트 안에 들어온다. 예전에는 차트 탭에서도
+                Ask-AI FAB(바닥에서 68px)이 패널 위에 떠 있어 pb-32(128px)였지만, 이제
+                링크가 패널 맨 위(`panelTopSlot`)로 들어가 FAB은 차트 탭에서 숨겨진다.
 
                 `<aside>`가 아니라 이름 붙은 `<section>`이다 — AI 분석은 이 페이지의 주 콘텐츠라
                 complementary(보조) 랜드마크가 아니다. 패널 전체에 `aria-live`를 걸지 않는다:
@@ -863,7 +918,7 @@ export function ChartContent({
                 (`AnalysisProgress`·`AnalysisToast`의 `role="status"`)이 알린다. */}
             <section
                 aria-label={t('ChartContent.f69071')}
-                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-[min(var(--panel-width),calc(45%-4px))] md:flex-col md:overflow-y-auto md:pb-32 xl:w-(--panel-width)"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-[min(var(--panel-width),calc(45%-4px))] md:flex-col md:overflow-y-auto md:pb-16 xl:w-(--panel-width)"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

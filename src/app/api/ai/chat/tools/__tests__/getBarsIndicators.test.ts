@@ -119,6 +119,8 @@ import {
 import {
     buildFearGreedHistoryView,
     getBarsIndicatorsTool,
+    MA_CROSS_FAST_PERIOD,
+    MA_CROSS_SLOW_PERIOD,
     MA50_PERIOD,
 } from '@/app/api/ai/chat/tools/getBarsIndicators';
 import {
@@ -1678,6 +1680,19 @@ describe('getBarsIndicatorsTool', () => {
                     series(Array.from({ length: 451 }, (_, i) => 100 + i))
                 );
                 expect(r.derived.maCross50_200).toBeNull();
+            });
+
+            it('the key name states the SMA periods the scan uses', async () => {
+                const r = await run(
+                    series(Array.from({ length: 500 }, (_, i) => 100 + i))
+                );
+                // A period change must force a key rename (the key is the contract).
+                expect(
+                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                ).toBe('maCross50_200');
+                expect(Object.keys(r.derived)).toContain(
+                    `maCross${MA_CROSS_FAST_PERIOD}_${MA_CROSS_SLOW_PERIOD}`
+                );
             });
 
             it('is null on intraday timeframes', async () => {

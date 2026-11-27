@@ -13,6 +13,7 @@ import {
     type RenameCandidate,
     type StockListEntry,
 } from '../lib/tickerNameReconcile';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface TickerNameReconcileCounts {
     /** stock-list 수신 행 수. */
@@ -237,7 +238,10 @@ export async function reconcileUsTickerNames(
             );
             return true;
         } catch (error) {
-            console.error(`[ticker-names] rename failed ${c.symbol}:`, error);
+            console.error(
+                `[ticker-names] rename failed ${c.symbol}:`,
+                redactDbErrorForLog(error)
+            );
             return false;
         }
     };

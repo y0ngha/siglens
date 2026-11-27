@@ -18,6 +18,7 @@ import type {
 } from './investorFlowsProvider.types';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** FMP `insider-trading/search`의 페이지 크기. 한 페이지가 가득 차야 다음 페이지가 있을 수 있다. */
 export const INSIDER_PAGE_SIZE = 200;
@@ -189,7 +190,7 @@ export class FmpInvestorFlowsClient implements InvestorFlowsFmpProvider {
                 failed = true;
                 console.warn(
                     '[investor-flows] SEC submissions lookup failed:',
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
         }

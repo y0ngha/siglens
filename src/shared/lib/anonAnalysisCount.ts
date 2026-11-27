@@ -15,30 +15,41 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 /**
  * Threshold of distinct symbols analyzed in a day that triggers the signup nudge.
  *
- * 3이다. 이미 캐시된 분석은 즉시 그려지므로 문턱이 1이던 때(PR #1002)는 첫 방문 화면이
- * 뜬 지 약 1.5초 만에 모달이 덮었다.
+ * 3이다. 이미 캐시된 분석은 즉시 그려지므로 문턱이 1이면 첫 방문 화면이
+ * 뜬 지 약 1.5초 만에 모달이 덮는다.
  * 하루 1회 상한은 `hasNudgeShownToday`가 맡는다.
  */
 export const ANON_DISTINCT_SYMBOL_NUDGE_THRESHOLD = 3;
 
-/** 가입 넛지 모달 문구 종류 — 같은 모달이 두 기능을 번갈아 알린다. */
+/** 가입 넛지 모달 문구 종류 — 같은 모달이 두 기능을 하나씩 알린다. */
 export type SignupNudgeVariant = 'reasoning' | 'emailReport';
 
+/** 자동 넛지가 보여 줄 문구 순서. 문구마다 한 번씩만 보여 주고, 다 보여 주면 더 띄우지 않는다. */
+export const ANON_NUDGE_VARIANT_ORDER = [
+    'emailReport',
+    'reasoning',
+] as const satisfies readonly SignupNudgeVariant[];
+
 /**
- * 이번 자동 넛지에 보여 줄 문구를 고르고 기록한다. 직전과 다른 문구를 고른다 — 매번 같은
- * 모달을 보면 사용자가 읽지 않고 닫는다. 기록이 없으면(첫 넛지) 메일 리포트부터 보여 준다.
- * 저장소가 막혀 있으면 메일 리포트로 고정된다.
+ * 다음 문구를 고르고 기록한다. 더 보여 줄 문구가 없거나, 기록이 알 수 없는 값이거나, 저장소를 못 쓰면
+ * `null`. 저장소를 못 쓰면 이미 보여 줬는지 알 수 없어 같은 문구가 반복될 수 있으므로 띄우지 않는다.
+ * 기록이 없으면(첫 넛지) 메일 리포트부터 보여 준다.
  */
-export function nextAnonNudgeVariant(): SignupNudgeVariant {
-    if (typeof window === 'undefined') return 'emailReport';
+export function claimNextAnonNudgeVariant(): SignupNudgeVariant | null {
+    if (typeof window === 'undefined') return null;
     try {
         const last = localStorage.getItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY);
-        const next: SignupNudgeVariant =
-            last === 'emailReport' ? 'reasoning' : 'emailReport';
+        const lastIndex =
+            last === null
+                ? -1
+                : ANON_NUDGE_VARIANT_ORDER.findIndex(v => v === last);
+        if (last !== null && lastIndex === -1) return null;
+        const next = ANON_NUDGE_VARIANT_ORDER[lastIndex + 1];
+        if (next === undefined) return null;
         localStorage.setItem(LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY, next);
         return next;
     } catch {
-        return 'emailReport';
+        return null;
     }
 }
 

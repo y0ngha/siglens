@@ -34,6 +34,10 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { GET } from '@/app/api/v1/me/route';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const principal = {
     keyId: '33333333-3333-4333-8333-333333333333',
@@ -161,5 +165,16 @@ describe('GET /api/v1/me', () => {
         expect(response.status).toBe(429);
         expect(response.headers.get('Retry-After')).toBe('20');
         expect(mockFindProviders).not.toHaveBeenCalled();
+    });
+
+    it('provider 조회가 DB 에러로 실패해도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        mockFindProviders.mockRejectedValue(plantedDbError());
+        const response = await GET(request());
+        expect(response.status).toBe(503);
+        expect(console.error).toHaveBeenCalledWith(
+            '[api/v1/me] provider lookup failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

@@ -1,9 +1,19 @@
+import {
+    hasPublishableHistory,
+    scoredReadings,
+} from '@/entities/market-fear-greed/lib/publishableHistory';
 import type {
-    MarketFearGreedView,
+    MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
 import { SITE_NAME } from '@/shared/config/brand';
+import {
+    FEAR_GREED_DATA_FORMATS,
+    FEAR_GREED_DATA_MEDIA_TYPE,
+    fearGreedDataPath,
+} from '@/shared/config/fearGreedData';
 import type { Locale } from '@/shared/i18n/locales';
+import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { METHODOLOGY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import {
     localizedAbsoluteUrl,
@@ -12,7 +22,9 @@ import {
 } from '@/shared/lib/seo';
 
 interface MarketFearGreedDatasetInput {
-    readonly view: MarketFearGreedView<MarketFearGreedViewSnapshot>;
+    readonly view: MarketFearGreedHubView<MarketFearGreedViewSnapshot>;
+    /** 내려받기 파일 URL을 정하는 시장. */
+    readonly market: FearGreedMarketId;
     /** 화면 브레드크럼과 같은 지수 이름(`copy.heading`). */
     readonly name: string;
     readonly description: string;
@@ -25,9 +37,11 @@ interface MarketFearGreedDatasetInput {
  * 시장 공포·탐욕 지수 자체를 `Dataset`으로 선언한다. 판독값이 없으면 `null`.
  *
  * 이 사이트가 직접 계산하는 1차 데이터라 AI 검색·데이터셋 검색이 출처로 집을 수 있는
- * 표면이다. 다운로드 파일이 없어 `distribution`은 싣지 않는다(공개 API를 열 때 붙인다).
- * 기간은 화면의 비교 시점 중 가장 이른 세션부터 최신 판독일까지 — 화면이 실제로 보여 주는
- * 범위만 말한다.
+ * 표면이다. 기록이 공개 하한을 넘으면(`hasPublishableHistory`) 내려받기 파일 두 개를
+ * `distribution`으로 싣고 기간은 점수가 있는 첫 날부터 최신 판독일까지로 말한다. 파일은
+ * 로케일이 없으므로 `contentUrl`은 모든 로케일에서 같은 절대 URL이다. 하한을 못 넘으면
+ * `distribution`을 빼고 기간은 화면의 비교 시점 중 가장 이른 세션부터 최신 판독일까지 — 화면이
+ * 실제로 보여 주는 범위만 말한다.
  *
  * - `url`은 로케일별 주소다 — 같은 Dataset을 네 URL이 각자 자기 주소로 선언해야 크롤러가 언어
  *   클러스터를 하나로 접지 않는다(`backtestingJsonLd.ts`와 같은 이유).
@@ -36,6 +50,7 @@ interface MarketFearGreedDatasetInput {
  */
 export function buildMarketFearGreedDatasetJsonLd({
     view,
+    market,
     name,
     description,
     url,
@@ -43,11 +58,13 @@ export function buildMarketFearGreedDatasetJsonLd({
 }: MarketFearGreedDatasetInput): Record<string, unknown> | null {
     const { snapshot } = view;
     if (snapshot === null) return null;
-    const earliestDate =
-        view.comparisons
-            .map(point => point.date)
-            .toSorted()
-            .at(0) ?? snapshot.asOf;
+    const publishable = hasPublishableHistory(view);
+    const earliestDate = publishable
+        ? scoredReadings(view.history)[0].date
+        : (view.comparisons
+              .map(point => point.date)
+              .toSorted()
+              .at(0) ?? snapshot.asOf);
     return {
         '@context': 'https://schema.org',
         '@type': 'Dataset',
@@ -65,6 +82,15 @@ export function buildMarketFearGreedDatasetJsonLd({
         measurementTechnique: `${SITE_URL}${METHODOLOGY_PATH}`,
         dateModified: snapshot.asOf,
         temporalCoverage: `${earliestDate}/${snapshot.asOf}`,
+        ...(publishable
+            ? {
+                  distribution: FEAR_GREED_DATA_FORMATS.map(format => ({
+                      '@type': 'DataDownload',
+                      encodingFormat: FEAR_GREED_DATA_MEDIA_TYPE[format],
+                      contentUrl: `${SITE_URL}${fearGreedDataPath(market, format)}`,
+                  })),
+              }
+            : {}),
         variableMeasured: {
             '@type': 'PropertyValue',
             name,

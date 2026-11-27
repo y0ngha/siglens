@@ -7,8 +7,9 @@ confidence_weight: 0.8
 usage_roles: [confirmation, measurement, risk]
 gating:
   tier: always_on
-token_cost: 445
-digest_hash: "b2973bd0"
+token_cost: 448
+digest_hash: "2fff5429"
+digest_text_hash: "9c44a849"
 ---
 
 ## Overview
@@ -39,14 +40,14 @@ ATR (Average True Range), developed by J. Welles Wilder in 1978, measures market
 
 ### Breakout Confirmation
 
-- A breakout accompanied by ATR expanding above its 20-period average suggests the move is driven by genuine volatility expansion — higher probability of follow-through.
-- A breakout with ATR flat or declining suggests low conviction — higher probability of false breakout or quick reversal.
+- A breakout accompanied by ATR expanding above its 20-period average suggests the move is driven by genuine volatility expansion — follow-through is plausible.
+- A breakout with ATR flat or declining suggests low conviction — a false breakout or quick reversal is a risk.
 
 ## Recommended Combinations
 
 - ATR + Parabolic SAR: ATR calibrates stop distances while Parabolic SAR provides trailing stop levels — together they form a robust trend-exit system.
 - ATR + Bollinger Bands: When Bollinger bandwidth compresses and ATR hits historical lows simultaneously, the impending breakout signal has dual volatility confirmation.
-- ATR + ADX: ATR measures volatility magnitude; ADX measures trend strength. ATR rising + ADX rising = strengthening trend with expanding volatility — the highest-confidence trend-following environment.
+- ATR + ADX: ATR measures volatility magnitude; ADX measures trend strength. ATR rising + ADX rising = strengthening trend with expanding volatility — a trend-following environment where trend and volatility agree.
 - ATR + Donchian Channel: Donchian breakout filtered by ATR expansion reduces false breakout entries significantly.
 
 ## Caveats
@@ -72,13 +73,13 @@ Stop-loss (Chandelier Exit): long = highest high − N×ATR; short = lowest low 
 Position sizing: Position Size = Account Risk / (ATR × Multiplier). E.g. $500 risk, ATR(14)=$2.50, 2× → $500/($2.50×2) = 100 shares. Equalizes dollar risk across assets regardless of volatility.
 
 Breakout confirmation:
-- Breakout + ATR expanding above its 20-period average = genuine volatility expansion, higher follow-through.
-- Breakout + ATR flat/declining = low conviction, higher probability of false breakout/quick reversal.
+- Breakout + ATR expanding above its 20-period average = genuine volatility expansion, follow-through plausible.
+- Breakout + ATR flat/declining = low conviction, risk of false breakout/quick reversal.
 
 Combinations:
 - ATR + Parabolic SAR: robust trend-exit system.
 - ATR + Bollinger: bandwidth compression + ATR at historic lows = dual squeeze confirmation.
-- ATR + ADX: both rising = strengthening trend + expanding volatility = highest-confidence trend-following.
+- ATR + ADX: both rising = strengthening trend + expanding volatility = trend and volatility agree (trend-following environment).
 - ATR + Donchian: breakout filtered by ATR expansion cuts false entries significantly.
 
 Caveats: no direction; gap moves spike ATR for the whole lookback (caution near earnings/news); compare cross-asset as ATR/Close×100; lagging — use for risk calibration, not directional prediction.

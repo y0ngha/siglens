@@ -2,6 +2,7 @@
 
 import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
@@ -10,6 +11,7 @@ import { INVALID_EMAIL_CODE } from '@/shared/lib/auth/constants';
 import { normalizeEmail, validateEmail } from '@/shared/lib/auth/validation';
 import { getTranslations } from 'next-intl/server';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 가입 1단계: 입력한 주소로 이메일 인증 코드를 발급해 보낸다.
@@ -56,10 +58,16 @@ export async function requestEmailVerificationAction(
             namespace: 'entities.email-token.email',
         });
 
-        // ok: true 고정 (enumeration 회피); codeIssued/emailDispatched 는 운영 디버깅용 필드.
-        await requestEmailVerification(
+        // 한도(`rate_limited`)와 발송 실패(`email_send_failed`)는 주소·IP·제공자 상태로만 정해지고 DB를 읽지
+        // 않으므로 계정 존재 여부와 무관하다. 발송이 실패했는데 submitted: true를 주면 화면이 "보냈다"며
+        // 오지 않을 코드를 기다리게 한다.
+        const result = await requestEmailVerification(
             { email },
-            { emailTokens, emailDispatcher },
+            {
+                emailTokens,
+                emailDispatcher,
+                ...createAuthRateLimitGuards('signupEmailCodeRateLimit'),
+            },
             {
                 buildMessage: code =>
                     buildEmailVerificationEmail({
@@ -71,11 +79,24 @@ export async function requestEmailVerificationAction(
             }
         );
 
+        if (!result.ok) {
+            return {
+                submitted: false,
+                error: {
+                    code: result.reason,
+                    message:
+                        result.reason === 'email_send_failed'
+                            ? tAuth('verificationEmailFailed')
+                            : tAuth('tooManyRequests'),
+                },
+            };
+        }
+
         return { submitted: true, error: null };
     } catch (err) {
         console.error(
             '[requestEmailVerificationAction] unexpected error:',
-            err
+            redactDbErrorForLog(err)
         );
         return {
             submitted: false,

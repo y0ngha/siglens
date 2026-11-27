@@ -15,7 +15,7 @@ import {
     type SeriesMarker,
     type Time,
 } from 'lightweight-charts';
-import type { OverlayLineSpec } from '../utils/chartOverlayUtils';
+import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
 import {
     isSameOverlayStyle,
     overlayGeometryKeys,
@@ -24,7 +24,7 @@ import {
 } from '../utils/overlaySeriesSync';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { createRightExtendPrimitive } from '../utils/rightExtendPrimitive';
-import { visibleLevelLabels } from '../utils/levelLabelCulling';
+import { visibleLevelLabels } from '@/entities/analysis/lib/chartOverlays/levelLabelCulling';
 
 const OVERLAY_SERIES_OPTIONS = {
     lastValueVisible: false,
@@ -323,19 +323,19 @@ export function useChartOverlays({
         );
         entriesRef.current = next;
 
-        const titled: TitledSeries[] = specs.flatMap((spec, i) =>
-            spec.title === ''
-                ? []
-                : [
-                      {
-                          series: next.get(keys[i])!.series,
-                          title: spec.title,
-                          price: spec.points[1].value,
-                          priority: spec.labelPriority,
-                          entry: next.get(keys[i])!,
-                      },
-                  ]
-        );
+        const titled: TitledSeries[] = specs.flatMap((spec, i) => {
+            const entry = next.get(keys[i]);
+            if (spec.title === '' || entry === undefined) return [];
+            return [
+                {
+                    series: entry.series,
+                    title: spec.title,
+                    price: spec.points[1].value,
+                    priority: spec.labelPriority,
+                    entry,
+                },
+            ];
+        });
         const detachCulling = attachLabelCulling(chart, titled);
         return () => {
             try {

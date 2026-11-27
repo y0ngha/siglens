@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildAgentTurnContext,
     composeAgentUserMessage,
@@ -206,5 +206,100 @@ describe('fakeAgentProvider', () => {
         expect(r.text).toBe(
             '[E2E agent] "이어하기 첫 질문"에 대한 테스트 답변입니다.'
         );
+    });
+
+    describe('부하 시험 이음매', () => {
+        const withTools = {
+            ...base,
+            tools: [
+                ...base.tools,
+                { ...base.tools[0], name: 'run_fresh_analysis' },
+            ],
+        };
+
+        it('[e2e-fresh]는 첫 단계에서 run_fresh_analysis(AAPL, technical)를 부른다', async () => {
+            const r = await fakeAgentProvider({
+                ...withTools,
+                onEvent: vi.fn(),
+                messages: [{ role: 'user', content: '[e2e-fresh] 분석해줘' }],
+            });
+            expect(r.toolCalls).toEqual([
+                {
+                    id: 'fake_1',
+                    name: 'run_fresh_analysis',
+                    args: { symbol: 'AAPL', kind: 'technical' },
+                },
+            ]);
+            expect(r.stopReason).toBe('tool_use');
+        });
+
+        it('도구 결과가 온 뒤에는 고정 답으로 끝난다', async () => {
+            const r = await fakeAgentProvider({
+                ...withTools,
+                onEvent: vi.fn(),
+                messages: [
+                    { role: 'user', content: '[e2e-fresh] 분석해줘' },
+                    { role: 'tool', content: '{}', toolCallId: 'fake_1' },
+                ],
+            });
+            expect(r.toolCalls).toEqual([]);
+            expect(r.text).toContain('[e2e-fresh] 분석해줘');
+        });
+
+        it('run_fresh_analysis가 가용 목록에 없으면 이음매를 쓰지 않는다', async () => {
+            const r = await fakeAgentProvider({
+                ...base,
+                onEvent: vi.fn(),
+                messages: [{ role: 'user', content: '[e2e-fresh] 분석해줘' }],
+            });
+            expect(r.toolCalls).toEqual([]);
+        });
+
+        describe('[e2e-hold:<ms>]', () => {
+            beforeEach(() => vi.useFakeTimers());
+            afterEach(() => vi.useRealTimers());
+
+            const ask = (content: string, signal = base.signal) =>
+                fakeAgentProvider({
+                    ...base,
+                    signal,
+                    onEvent: vi.fn(),
+                    messages: [{ role: 'user', content }],
+                });
+
+            it('최종 답을 지정한 시간만큼 미룬다', async () => {
+                const done = vi.fn();
+                void ask('[e2e-hold:10000]').then(done);
+                await vi.advanceTimersByTimeAsync(9_999);
+                expect(done).not.toHaveBeenCalled();
+                await vi.advanceTimersByTimeAsync(1);
+                expect(done).toHaveBeenCalledTimes(1);
+            });
+
+            it('180초를 넘는 값은 180초로 자른다', async () => {
+                const done = vi.fn();
+                void ask('[e2e-hold:99999999]').then(done);
+                await vi.advanceTimersByTimeAsync(179_999);
+                expect(done).not.toHaveBeenCalled();
+                await vi.advanceTimersByTimeAsync(1);
+                expect(done).toHaveBeenCalledTimes(1);
+            });
+
+            it('signal이 중단되면 곧바로 풀린다', async () => {
+                const abort = new AbortController();
+                const done = vi.fn();
+                void ask('[e2e-hold:60000]', abort.signal).then(done);
+                await vi.advanceTimersByTimeAsync(10);
+                expect(done).not.toHaveBeenCalled();
+                abort.abort();
+                await vi.advanceTimersByTimeAsync(0);
+                expect(done).toHaveBeenCalledTimes(1);
+            });
+
+            it('토큰이 없으면 미루지 않는다', async () => {
+                const r = await ask('그냥 질문');
+                expect(r.text).toContain('그냥 질문');
+            });
+        });
     });
 });

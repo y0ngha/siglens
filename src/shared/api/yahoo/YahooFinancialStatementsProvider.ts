@@ -178,7 +178,10 @@ function growthRows<T>(
     const offset = yoyOffset(period);
     const result: T[] = [];
     for (let i = 0; i + offset < rows.length && result.length < limit; i++) {
-        result.push(build(rows[i]!, rows[i + offset]!));
+        const curr = rows[i];
+        const prior = rows[i + offset];
+        if (curr === undefined || prior === undefined) break;
+        result.push(build(curr, prior));
     }
     return result;
 }

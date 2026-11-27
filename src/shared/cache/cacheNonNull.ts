@@ -1,6 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { markSsrMiss } from './ssrMissMarker';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `null` 결과를 캐싱 우회용으로 throw할 때 쓰는 내부 sentinel(`cacheNonEmpty`와 같은 방식). */
 class NullResultError extends Error {}
@@ -42,7 +43,10 @@ export async function cacheNonNull<T>(
         )();
     } catch (error) {
         if (!(error instanceof NullResultError)) {
-            console.error('[cacheNonNull] unexpected cache error:', error);
+            console.error(
+                '[cacheNonNull] unexpected cache error:',
+                redactDbErrorForLog(error)
+            );
         }
         await markSsrMiss(tags[0]);
         return null;

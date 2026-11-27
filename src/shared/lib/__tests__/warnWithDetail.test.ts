@@ -27,4 +27,23 @@ describe('warnWithDetail', () => {
         warnWithDetail('count', 0);
         expect(warn).toHaveBeenCalledWith('count', 0);
     });
+
+    it('keeps the fixed message and redacts a database error detail', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const dbError = Object.assign(
+            new Error(
+                'Failed query: select 1 where token = $1\nparams: tok_FAKE_planted_123'
+            ),
+            { cause: Object.assign(new Error('driver'), { code: '23505' }) }
+        );
+        warnWithDetail('[cusip-map] profile failed AAA:', dbError);
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn).toHaveBeenCalledWith(
+            '[cusip-map] profile failed AAA:',
+            'Error code=23505'
+        );
+        expect(JSON.stringify(warn.mock.calls)).not.toContain(
+            'tok_FAKE_planted_123'
+        );
+    });
 });

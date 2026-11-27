@@ -6,7 +6,7 @@ import {
     getCachedMarketFearGreedKr,
     MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT,
 } from './marketFearGreedKrCache';
-import type { MarketFearGreedView } from '../model';
+import type { MarketFearGreedHubView } from '../model';
 
 /**
  * ISR-safe 한국 시장 공포·탐욕 판독값. 미국판(`marketFearGreedStaticCache`)과 같은
@@ -23,7 +23,7 @@ import type { MarketFearGreedView } from '../model';
  *   그 반대. `unstable_cache`는 요청 간 정적화를 담당하지 요청 내 메모가 아니다.
  */
 export const getMarketFearGreedKrStatic = cache(
-    (): Promise<MarketFearGreedView> =>
+    (): Promise<MarketFearGreedHubView> =>
         unstable_cache(
             () => getCachedMarketFearGreedKr(),
             [

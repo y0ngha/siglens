@@ -208,43 +208,46 @@ function parseAgentContext(raw: unknown): AgentMessageFeedbackContext | null {
     };
 }
 
+type TranscriptTool = NonNullable<AgentTranscriptEntry['tools']>[number];
+
+function parseTranscriptTool(tool: unknown): TranscriptTool | null {
+    if (!isRecord(tool) || typeof tool.name !== 'string') return null;
+    if (tool.summary !== undefined && typeof tool.summary !== 'string') {
+        return null;
+    }
+    return {
+        name: tool.name.slice(0, CONTEXT_STRING_MAX_LENGTH),
+        ...(tool.summary !== undefined ? { summary: tool.summary } : {}),
+    };
+}
+
+function parseTranscriptEntry(item: unknown): AgentTranscriptEntry | null {
+    if (!isRecord(item)) return null;
+    if (item.role !== 'user' && item.role !== 'assistant') return null;
+    if (typeof item.content !== 'string') return null;
+    if (item.tools === undefined) {
+        return { role: item.role, content: item.content };
+    }
+    if (!Array.isArray(item.tools)) return null;
+    const tools = item.tools
+        .slice(0, TRANSCRIPT_MAX_TOOLS)
+        .map(parseTranscriptTool);
+    return tools.every((tool): tool is TranscriptTool => tool !== null)
+        ? { role: item.role, content: item.content, tools }
+        : null;
+}
+
 function parseTranscript(raw: unknown): AgentTranscriptEntry[] | null {
     if (!Array.isArray(raw)) return null;
-    const entries: AgentTranscriptEntry[] = [];
     // 상한을 넘으면 거부하지 않고 가장 최근 줄만 남긴다(평가한 답변은 대화 끝쪽에 있다).
-    for (const item of raw.slice(-TRANSCRIPT_MAX_ENTRIES)) {
-        if (!isRecord(item)) return null;
-        if (item.role !== 'user' && item.role !== 'assistant') return null;
-        if (typeof item.content !== 'string') return null;
-        let tools: AgentTranscriptEntry['tools'];
-        if (item.tools !== undefined) {
-            if (!Array.isArray(item.tools)) return null;
-            const parsed: { name: string; summary?: string }[] = [];
-            for (const tool of item.tools.slice(0, TRANSCRIPT_MAX_TOOLS)) {
-                if (!isRecord(tool) || typeof tool.name !== 'string')
-                    return null;
-                if (
-                    tool.summary !== undefined &&
-                    typeof tool.summary !== 'string'
-                ) {
-                    return null;
-                }
-                parsed.push({
-                    name: tool.name.slice(0, CONTEXT_STRING_MAX_LENGTH),
-                    ...(tool.summary !== undefined
-                        ? { summary: tool.summary }
-                        : {}),
-                });
-            }
-            tools = parsed;
-        }
-        entries.push({
-            role: item.role,
-            content: item.content,
-            ...(tools !== undefined ? { tools } : {}),
-        });
-    }
-    return entries;
+    const entries = raw
+        .slice(-TRANSCRIPT_MAX_ENTRIES)
+        .map(parseTranscriptEntry);
+    return entries.every(
+        (entry): entry is AgentTranscriptEntry => entry !== null
+    )
+        ? entries
+        : null;
 }
 
 /**
@@ -307,14 +310,15 @@ export function parseUpdateInput(raw: unknown): UpdateAiFeedbackInput | null {
         ) {
             return null;
         }
-        const unique = new Set<FeedbackDownReason>();
-        for (const reason of raw.reasons) {
-            if (!isOneOf<FeedbackDownReason>(FEEDBACK_DOWN_REASONS, reason)) {
-                return null;
-            }
-            unique.add(reason);
+        const given: unknown[] = raw.reasons;
+        if (
+            !given.every((reason): reason is FeedbackDownReason =>
+                isOneOf<FeedbackDownReason>(FEEDBACK_DOWN_REASONS, reason)
+            )
+        ) {
+            return null;
         }
-        reasons = [...unique];
+        reasons = [...new Set(given)];
     }
 
     let comment: string | undefined;

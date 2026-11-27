@@ -10,7 +10,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  * 만료가 없는 이유: 수신거부 링크는 몇 달 뒤 열어도 동작해야 하고, 차트 URL은 날짜가 키라
  * 같은 서명으로 다른 날 그림을 받을 수 없다. 비밀값을 바꾸면 기존 링크는 전부 무효가 된다.
  */
-export type ReportSignaturePurpose = 'chart' | 'unsubscribe';
+export type ReportSignaturePurpose =
+    | 'chart'
+    | 'unsubscribe'
+    /** 알림 메일: 게스트 브라우저 쿠키가 담는 구독자 id. */
+    | 'alert-session'
+    /** 알림 메일: 메일 속 설정 링크. */
+    | 'alert-manage'
+    /** 알림 메일: 메일 속 수신거부 링크. */
+    | 'alert-unsubscribe';
 
 function digest(
     secret: string,

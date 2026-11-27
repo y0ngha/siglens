@@ -12,6 +12,7 @@ import { cookies } from 'next/headers';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { setMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
 import { loginUser } from '@/entities/auth/lib/loginUser';
 import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
@@ -19,6 +20,7 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffRedirect';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
@@ -26,6 +28,7 @@ import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 import { LOGIN_FIELD } from '../lib/loginFields';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이메일·비밀번호 로그인 서버 액션(`useActionState` 시그니처).
@@ -57,6 +60,7 @@ export async function loginAction(
                 users: new DrizzleUserRepository(db),
                 sessions: new DrizzleSessionRepository(db),
                 passwordVerifier: bcryptPasswordVerifier,
+                ...createAuthRateLimitGuards('loginRateLimit'),
             },
             { secureCookie: secure }
         );
@@ -78,6 +82,7 @@ export async function loginAction(
                 secure,
             })
         );
+        setMainSessionHint(cookieStore, { secure });
         // 리다이렉트 싱크 바로 앞에서 URL 파서로 같은-오리진 경로만 남긴다.
         // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을
         // 파서가 호스트째로 떼어낸다.
@@ -93,7 +98,10 @@ export async function loginAction(
         );
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[loginAction] unexpected error:', err);
+        console.error(
+            '[loginAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             error: {
                 code: 'unexpected',

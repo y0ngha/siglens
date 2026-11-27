@@ -9,10 +9,12 @@
  * `event: error`로 변환한다. fake timer로 10분을 앞당겨 이 경로를 검증한다.
  */
 
-// --- Module mocks (hoisted before imports) ---
-
-// 생성 한도 — 기본은 항상 허락(예약·환불 관측은 개별 테스트가 덮어쓴다).
-// 신원 해석이 `cookies()`/`headers()`를 부르므로 그 둘도 막는다.
+/**
+ * --- Module mocks (hoisted before imports) ---
+ *
+ * 생성 한도 — 기본은 항상 허락(예약·환불 관측은 개별 테스트가 덮어쓴다).
+ * 신원 해석이 `cookies()`/`headers()`를 부르므로 그 둘도 막는다.
+ */
 const { mockReserveAnalysisGeneration } = vi.hoisted(() => ({
     mockReserveAnalysisGeneration: vi.fn().mockResolvedValue({
         ok: true,

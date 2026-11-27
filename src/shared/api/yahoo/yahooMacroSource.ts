@@ -10,6 +10,7 @@ import {
     SECONDS_PER_MINUTE,
 } from '@/shared/config/time';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -208,7 +209,11 @@ export async function getYahooMacroQuotes(
                         ),
                     ];
                 } catch (error) {
-                    console.warn('[yahooMacro] quote failed', symbol, error);
+                    console.warn(
+                        '[yahooMacro] quote failed',
+                        symbol,
+                        redactDbErrorForLog(error)
+                    );
                     return [symbol, null];
                 }
             }
@@ -251,7 +256,11 @@ export async function getYahooMacroDailyCloses(
             }
         );
     } catch (error) {
-        console.warn('[yahooMacro] daily closes failed', yahooSymbol, error);
+        console.warn(
+            '[yahooMacro] daily closes failed',
+            yahooSymbol,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

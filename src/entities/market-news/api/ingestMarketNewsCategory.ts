@@ -19,6 +19,7 @@ import { selectAnalysisCandidates } from '../lib/selectAnalysisCandidates';
 import { getMarketNewsClient } from './getMarketNewsClient';
 import { isRecentlyFetched, markFetched } from './marketNewsRefreshFlags';
 import { DrizzleMarketNewsRepository } from './marketNewsRepository';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 절반 초과 실패 판정의 나눗수 — 적재는 upsert가 절반을 넘게 실패하면 중단하고, 보강은 같은 기준으로 로그만 남긴다. */
 const MAJORITY_DIVISOR = 2;
@@ -182,7 +183,7 @@ async function analyzeSelected(
     if (failures.length > 0) {
         console.error(
             `[${logLabel}] ${failures.length}/${selected.length} analyzeAndPersist failed`,
-            failures.map(f => f.reason)
+            failures.map(f => redactDbErrorForLog(f.reason))
         );
     }
     if (failures.length > selected.length / MAJORITY_DIVISOR) {
@@ -243,7 +244,10 @@ export async function ingestMarketNewsCategory(
     const fresh = await getMarketNewsClient(category)
         .fetchCategoryNews(category, MARKET_NEWS_LOOKBACK_MS)
         .catch((err: unknown) => {
-            console.error(`[${logLabel}] feed fetch failed:`, err);
+            console.error(
+                `[${logLabel}] feed fetch failed:`,
+                redactDbErrorForLog(err)
+            );
             return null;
         });
     if (fresh === null) return { status: 'fetch-failed' };

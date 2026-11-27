@@ -1,9 +1,11 @@
 /**
- * 가입 퍼널 리포트 — 표 세 개.
+ * 가입 퍼널 리포트 — 표 여섯 개.
  *  1. 게이트·넛지별 게이트 클릭·노출·CTA 클릭·클릭률·그 게이트를 lastGate로 가진 가입 수
  *  2. 가입 방식 × lastGate 분포
  *  3. 가입 주별 D7·D30 재방문율(가입일 +7·+30 이후 7일 창)
  *  4. 하루 무료 공개 미터 — 노출 상태별 방문자와 이후 전환 창(`METER_CONVERSION_WINDOW_DAYS`) 안 가입 전환
+ *  5. 브라우저 재방문 — 방문 이력 구간값(`visitor_days.return_window`)으로 센 사이트별 D1·D7·D30(회원 포함)
+ *  6. 공유 — 공유 링크 생성·열람 이벤트(`share_created`·`share_opened`)를 분석 종류별로
  *
  * 실행: `yarn funnel:report --from 2026-10-01 --to 2026-10-31` (KST, 양끝 포함)
  * 운영 DB는 `yarn db:tunnel`로 터널을 연 뒤 **읽기 전용 URL**로 — `scripts/metrics.ts`와
@@ -15,6 +17,7 @@ import {
     METER_CONVERSION_WINDOW_DAYS,
 } from '@/entities/funnel/api';
 import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
+import { DrizzleVisitorRepository } from '@/entities/visitor/api';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import {
     buildGateTable,
@@ -24,6 +27,7 @@ import {
     parseReportArgs,
     renderTable,
 } from './lib/funnelReport';
+import { returnRateRows } from './lib/visitReport';
 
 const UNSETTLED = '미확정';
 
@@ -35,13 +39,17 @@ async function main(): Promise<void> {
     const { from, toExclusive } = kstRangeBounds(range);
     const { db } = getDatabaseClient();
     const repo = new DrizzleFunnelEventRepository(db);
+    const visitorRepo = new DrizzleVisitorRepository(db);
 
-    const [counts, breakdown, cohorts, meterCohort] = await Promise.all([
-        repo.countByKeyAndEvent(from, toExclusive),
-        repo.signupBreakdown(from, toExclusive),
-        repo.signupCohortRetention(from, toExclusive),
-        repo.meterCohort(from, toExclusive),
-    ]);
+    const [counts, breakdown, cohorts, meterCohort, returns, shares] =
+        await Promise.all([
+            repo.countByKeyAndEvent(from, toExclusive),
+            repo.signupBreakdown(from, toExclusive),
+            repo.signupCohortRetention(from, toExclusive),
+            repo.meterCohort(from, toExclusive),
+            visitorRepo.returnWindowCounts(range.from, range.to),
+            repo.shareEventCounts(from, toExclusive),
+        ]);
 
     console.log(`가입 퍼널 ${range.from} ~ ${range.to} (KST)`);
     console.log('');
@@ -119,6 +127,47 @@ async function main(): Promise<void> {
     );
     console.log(
         `(같은 기간 안에서 revealed와 exhausted를 비교한다. 최근 ${METER_CONVERSION_WINDOW_DAYS}일 안의 노출은 아직 전환 창이 닫히지 않았다)`
+    );
+
+    console.log('');
+    console.log('5. 브라우저 재방문 (방문 이력 구간값, 회원 포함, 사이트별)');
+    console.log(
+        renderTable(
+            ['사이트', '새 방문', 'D1', 'D1율', 'D7', 'D7율', 'D30', 'D30율'],
+            returnRateRows(returns, range, today).map(row => [
+                row.site,
+                row.newVisitors,
+                row.d1,
+                row.d1Rate,
+                row.d7,
+                row.d7Rate,
+                row.d30,
+                row.d30Rate,
+            ])
+        )
+    );
+    console.log(
+        `(새 방문 = 구간에서 처음 온 브라우저. D1은 정확하고 D7·D30은 첫 방문 뒤 7~13일, 30~36일 창의 첫 방문을 창 중앙값만큼 옮긴 날짜로 센 추정치라 코호트 경계에 ±3일 오차가 있다. ${UNSETTLED}: 구간의 마지막 날 기준 창이 아직 닫히지 않았다. 사파리는 7일 미방문 시 이력이 지워져 D30은 하한이고, 시크릿 창은 늘 새 방문이며, 호스트별 이력이라 사이트는 첫 진입 기준이다)`
+    );
+
+    console.log('');
+    console.log('6. 공유');
+    console.log(
+        renderTable(
+            ['이벤트', '분석 종류', '건수', '방문자'],
+            [...shares]
+                .sort(
+                    (a, b) =>
+                        a.event.localeCompare(b.event) ||
+                        (a.shareKind ?? '').localeCompare(b.shareKind ?? '')
+                )
+                .map(row => [
+                    row.event,
+                    row.shareKind ?? '(없음)',
+                    n(row.count),
+                    n(row.visitors),
+                ])
+        )
     );
 }
 

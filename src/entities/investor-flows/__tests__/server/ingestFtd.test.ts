@@ -18,6 +18,10 @@ import {
     FTD_FILE_EXCERPT,
     FTD_LISTING_EXCERPT,
 } from '../fixtures/investorFlowsExpansionSamples';
+import {
+    PLANTED_TOKEN,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const NOW = new Date('2026-10-16T13:50:00Z');
 const UNIVERSE: InvestorFlowsUniverse = {
@@ -394,5 +398,22 @@ describe('pendingFiles', () => {
                 ])
             ).map(l => l.fileKey)
         ).toEqual(['202608b']);
+    });
+
+    it('stores a DB error as name and code only, keeps a provider message as is', async () => {
+        const { deps, calls } = build({
+            files: {
+                cnsfails202609b: plantedDbError(),
+                cnsfails202609a: new Error('socket hang up'),
+            },
+        });
+        await runFtdIngest(deps);
+        expect(calls.rejected).toEqual(
+            expect.arrayContaining([
+                { fileKey: '202609b', error: 'Error code=57014' },
+                { fileKey: '202609a', error: 'socket hang up' },
+            ])
+        );
+        expect(JSON.stringify(calls.rejected)).not.toContain(PLANTED_TOKEN);
     });
 });

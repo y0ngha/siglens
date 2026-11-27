@@ -53,11 +53,13 @@ export async function GET(
 
     const profileResult = await exchangeProfile(provider, code);
     if (!profileResult.ok) {
-        return redirectToLoginWithError(
-            'oauth_profile_invalid',
-            undefined,
-            stateResult.next
-        );
+        // 미인증 이메일은 공격자가 고른 값이므로 URL에 싣지 않는다. 어댑터가 먼저 거절해
+        // 아래 DB 조회와 pending 저장소에 닿지 않는다.
+        const errorCode =
+            profileResult.reason === 'email_unverified'
+                ? 'oauth_email_unverified'
+                : 'oauth_profile_invalid';
+        return redirectToLoginWithError(errorCode, undefined, stateResult.next);
     }
 
     const userRepo = new DrizzleUserRepository(getDatabaseClient().db);

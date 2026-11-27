@@ -3,6 +3,7 @@ import Script from 'next/script';
 import type { ReactNode } from 'react';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { FONT_VARIABLE_CLASSES } from '@/app/fontVariables';
+import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { cn } from '@/shared/lib/cn';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
@@ -23,6 +24,13 @@ export const metadata: Metadata = { manifest: null };
  * nav verticals or `NextIntlClientProvider`. The global chrome carries crypto
  * menu items, and Google Ads (KR) limits ads whose landing page mentions crypto.
  * The Google Ads tag stays so conversions from these pages are still measured.
+ *
+ * `VisitorPing` is the one piece shared with the rest of the site: the visit
+ * beacon. It needs no provider, so it does not undo the bareness above. Without
+ * it a paid click that lands here is invisible: the CTA is a same-origin link,
+ * so the next page sees an own-host referrer. The beacon fires on the first
+ * trusted input (it may be the CTA click itself, `keepalive` survives the
+ * navigation) and records the day's first row with `/lp/*` as the landing path.
  */
 export default function LandingRootLayout({
     children,
@@ -46,6 +54,7 @@ export default function LandingRootLayout({
                     strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
                 />
+                <VisitorPing />
                 {children}
                 {GOOGLE_ADS_ID && <GoogleAdsTag id={GOOGLE_ADS_ID} eager />}
             </body>

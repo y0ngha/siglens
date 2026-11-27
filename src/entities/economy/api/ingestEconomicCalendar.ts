@@ -25,6 +25,7 @@ import {
     economyCalendarCacheTag,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `ingestEconomicCalendar`의 결과 — 호출부(액션·크론)가 `status`로 분기한다.
@@ -73,7 +74,7 @@ async function fetchCalendarRange(
     return provider
         .getCalendarForCountry(range.from, range.to, country)
         .catch((err: unknown) => {
-            console.error(errorLabel, err);
+            console.error(errorLabel, redactDbErrorForLog(err));
             return null;
         });
 }
@@ -160,7 +161,9 @@ export async function ingestEconomicCalendar(
     if (failures.length > 0) {
         console.error(
             `[${logLabel}] ${failures.length}/${rows.length} upserts failed`,
-            failures.map(f => (f.status === 'rejected' ? f.reason : null))
+            failures.map(f =>
+                f.status === 'rejected' ? redactDbErrorForLog(f.reason) : null
+            )
         );
     }
     // 과반 판정은 최근 구간으로 한다(이번 수집의 본업). 최근 구간이 비면 앞쪽 과거로 판정한다.

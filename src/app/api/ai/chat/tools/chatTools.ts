@@ -54,6 +54,7 @@ import { safeErrorFields } from './logToolDegrade';
 import { correctKrSymbolArgs } from './krSymbolCorrection';
 import { isGuestSubject } from '../guestSubject';
 import { ensureSymbolNewsFresh } from '@/entities/news-article/server/ensureSymbolNewsFresh';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */
@@ -323,7 +324,11 @@ export function createToolExecutor(
         const pending = ensureSymbolNewsFresh(symbol).then(
             () => undefined,
             (error: unknown) => {
-                console.error('[ensureSymbolData]', symbol, error);
+                console.error(
+                    '[ensureSymbolData]',
+                    symbol,
+                    redactDbErrorForLog(error)
+                );
             }
         );
         refreshed.set(symbol, pending);

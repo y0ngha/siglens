@@ -1,0 +1,1 @@
+ALTER TABLE "analysis_history" ADD COLUMN "personalized" boolean;

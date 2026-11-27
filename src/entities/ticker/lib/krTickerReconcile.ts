@@ -55,7 +55,7 @@ export const KR_RECONCILE_MIN_COUNT = 1_000;
  * **진짜로 25종목 넘게 상폐된 날은 크론이 스스로 수렴하지 못한다** — 다음 날도 같은
  * 후보 집합이 나와 계속 걸린다. 그건 의도된 정지다: 그 규모면 사람이 목록을 눈으로
  * 확인할 값어치가 있다. 확인 후에는 `yarn db:seed:kr-names --force-delist`로 한 번
- * 통과시킨다(재배포 불필요). 절차는 `docs/reference/CRON.md`의 kr-tickers 항목 참조.
+ * 통과시킨다(재배포 불필요).
  */
 export const KR_RECONCILE_DELIST_ABORT_THRESHOLD = 25;
 

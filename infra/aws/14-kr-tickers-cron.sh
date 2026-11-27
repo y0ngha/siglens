@@ -14,7 +14,7 @@
 # 때문이고, 하루 한 틱은 그 제약을 받지 않는다.
 #
 # ⚠️ 이 스크립트는 수동 실행이다. deploy 파이프라인 어디서도 자동 호출하지 않는다.
-#    생성 직후 수동 invoke로 202가 실제로 오는지 확인할 것(docs/reference/CRON.md).
+#    생성 직후 수동 invoke로 202가 실제로 오는지 확인할 것.
 #
 # 사용법:
 #     bash infra/aws/14-kr-tickers-cron.sh

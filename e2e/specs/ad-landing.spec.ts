@@ -1,9 +1,8 @@
-import { lpCopyViolations } from '@/views/lp/__tests__/lpCopyRules';
+import { lpCopyViolations } from '@/views/lp/lib/lpCopyRules';
 import { test, expect } from '../support/fixtures';
 
 /**
- * Ad-only landing pages (`src/app/lp/`, spec
- * `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`).
+ * Ad-only landing pages (`src/app/lp/`).
  *
  * Google Ads (KR) limits ads whose landing page mentions crypto, so the
  * server HTML must carry no crypto word anywhere: body, header, footer or
@@ -44,6 +43,27 @@ test.describe('ad landing pages', () => {
             expect(lpCopyViolations(body)).toEqual([]);
         });
     }
+
+    test('/lp/stock-analysis no longer carries the invented example numbers and is ISR cached', async ({
+        request,
+    }) => {
+        const res = await request.get(`${MAIN}/lp/stock-analysis`, {
+            maxRedirects: 0,
+        });
+        expect(res.headers()['cache-control']).toContain('s-maxage=21600');
+        const body = (await res.text()).replace(
+            /<script[\s\S]*?<\/script>/g,
+            ''
+        );
+        for (const invented of [
+            '예시 화면',
+            'RSI는 <b>64',
+            '$221',
+            '70,000원',
+        ]) {
+            expect(body).not.toContain(invented);
+        }
+    });
 
     test('each page 308-redirects to its own host, keeping the query', async ({
         request,

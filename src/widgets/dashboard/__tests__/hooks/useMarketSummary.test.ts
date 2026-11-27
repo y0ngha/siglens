@@ -176,6 +176,60 @@ describe('useMarketSummary', () => {
             expect(result.current.isTotalFailure).toBe(true);
             client.clear();
         });
+
+        describe('응답은 있지만 쓸 시세가 없을 때', () => {
+            it.each([
+                ['서버가 심은 빈 번들', { indices: [], sectors: [] }],
+                [
+                    '전 행이 0-가격인 번들',
+                    {
+                        indices: SUMMARY_DATA.summary.indices.map(q => ({
+                            ...q,
+                            price: 0,
+                        })),
+                        sectors: SUMMARY_DATA.summary.sectors.map(q => ({
+                            ...q,
+                            price: 0,
+                        })),
+                    },
+                ],
+            ])('%s는 전면 실패(true)다', async (_label, summary) => {
+                mockAction.mockResolvedValue({ summary });
+                const { client, wrapper } = makeWrapper();
+                const { result } = renderHook(() => useMarketSummary('us'), {
+                    wrapper,
+                });
+
+                await waitFor(() => {
+                    expect(result.current.isPending).toBe(false);
+                });
+                expect(result.current.isTotalFailure).toBe(true);
+                client.clear();
+            });
+
+            it('일부만 0이면 전면 실패가 아니라 부분 안내(false)다', async () => {
+                mockAction.mockResolvedValue({
+                    summary: {
+                        indices: SUMMARY_DATA.summary.indices,
+                        sectors: SUMMARY_DATA.summary.sectors.map(q => ({
+                            ...q,
+                            price: 0,
+                        })),
+                    },
+                });
+                const { client, wrapper } = makeWrapper();
+                const { result } = renderHook(() => useMarketSummary('us'), {
+                    wrapper,
+                });
+
+                await waitFor(() => {
+                    expect(result.current.isPending).toBe(false);
+                });
+                expect(result.current.isTotalFailure).toBe(false);
+                expect(result.current.hasMissingQuotes).toBe(true);
+                client.clear();
+            });
+        });
     });
 
     it('(Worst-E2E) isE2EClient=true → staleTime 0 적용 (즉시 refetch)', async () => {

@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { EmailReportSignupOptIn } from '@/features/email-report-settings/ui/EmailReportSignupOptIn';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
@@ -44,6 +45,7 @@ export function OAuthConsentForm({
     const tAuth = useTranslations('entities.auth');
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
+    const [emailReportOptIn, setEmailReportOptIn] = useState(false);
     const [finalizeState, finalizeFormAction] = useFinalizeOAuthSignup();
     const finalizeFormRef = useRef<HTMLFormElement>(null);
     usePageShowReload();
@@ -96,6 +98,10 @@ export function OAuthConsentForm({
                     onPrivacyChange={setPrivacyChecked}
                     onTosChange={setTosChecked}
                     error={consentError}
+                />
+                <EmailReportSignupOptIn
+                    checked={emailReportOptIn}
+                    onChange={setEmailReportOptIn}
                 />
                 <SubmitButton
                     label={t('OAuthConsentForm.6615ab')}

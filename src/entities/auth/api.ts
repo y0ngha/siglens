@@ -21,8 +21,10 @@ import type {
     UserTierRepository,
 } from '@/shared/db/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 import type { OAuthProvider } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { SIGNED_UP_USER_TIER } from './lib/authUseCaseConstants';
 import { isSessionToken } from './lib/isSessionToken';
 
 const sessionColumns = {
@@ -31,13 +33,6 @@ const sessionColumns = {
     expiresAt: sessions.expiresAt,
     createdAt: sessions.createdAt,
 };
-
-/**
- * 가입(이메일/비밀번호·OAuth) 시 부여하는 tier. 가입한 사용자는 member이고, 사용자 행이 없는
- * 익명 방문자는 {@link DrizzleUserRepository.getUserTier}를 거쳐 core의 `DEFAULT_TIER`('free')로
- * 떨어진다 — 이 상수와 무관하다.
- */
-const SIGNED_UP_USER_TIER: Tier = 'member';
 
 /**
  * {@link DrizzleSessionRepository.pruneExpiredSessions} 한 번이 지우는 최대 행 수.
@@ -176,12 +171,15 @@ export class DrizzleUserRepository
 {
     constructor(private readonly db: SiglensDatabase) {}
 
-    /** 이메일로 사용자를 찾는다(비밀번호 해시 제외). */
+    /**
+     * 이메일로 사용자를 찾는다(비밀번호 해시 제외). `users.email`은 항상 소문자로 저장되므로
+     * 대소문자가 섞인 입력도 같은 행을 찾도록 경계에서 한 번 더 정규화한다(멱등).
+     */
     async findByEmail(email: string): Promise<AuthUserRecord | null> {
         const [user] = await this.db
             .select(authUserColumns)
             .from(users)
-            .where(eq(users.email, email))
+            .where(eq(users.email, normalizeEmail(email)))
             .limit(1);
 
         return user ?? null;
@@ -213,22 +211,31 @@ export class DrizzleUserRepository
         return deletedUsers.length > 0;
     }
 
-    async updatePassword(
+    async resetPasswordRevokingSessions(
         userId: string,
         passwordHash: string
     ): Promise<boolean> {
         // 비밀번호 변경 — 사용자가 폼 제출 직후 결과를 본다. transient retry로 흡수.
-        const updatedUsers = await withRetry(
+        // 세션 삭제를 같은 트랜잭션에 넣어, 해시만 바뀌고 옛 세션이 남는 중간 상태가 생기지 않게 한다.
+        // 재시도는 트랜잭션 전체를 다시 돌리므로 두 문장 모두 멱등이다.
+        return withRetry(
             () =>
-                this.db
-                    .update(users)
-                    .set({ passwordHash, updatedAt: sql`now()` })
-                    .where(eq(users.id, userId))
-                    .returning({ id: users.id }),
+                this.db.transaction(async tx => {
+                    const updatedUsers = await tx
+                        .update(users)
+                        .set({ passwordHash, updatedAt: sql`now()` })
+                        .where(eq(users.id, userId))
+                        .returning({ id: users.id });
+
+                    if (updatedUsers.length === 0) return false;
+
+                    await tx
+                        .delete(sessions)
+                        .where(eq(sessions.userId, userId));
+                    return true;
+                }),
             DB_TRANSIENT_RETRY
         );
-
-        return updatedUsers.length > 0;
     }
 
     /** 로그인·비밀번호 재설정용으로 `passwordHash`를 포함해 이메일로 찾는다. 호출부가 해시를 밖으로 내보내면 안 된다. */
@@ -305,11 +312,15 @@ export class DrizzleUserRepository
                 this.db
                     .insert(users)
                     .values({
-                        email: input.email,
+                        // provider가 준 주소의 대소문자가 섞여 있어도 이메일 가입과 같은
+                        // 소문자 키로 저장해야 유니크 충돌이 같은 사람을 잡는다(멱등).
+                        email: normalizeEmail(input.email),
                         passwordHash: null,
                         name: input.name ?? null,
                         avatarUrl: input.avatarUrl ?? null,
                         tier: SIGNED_UP_USER_TIER,
+                        // OAuth 어댑터가 provider에서 인증된 이메일만 통과시키므로(google.ts)
+                        // 항상 true다. 새 provider도 같은 검사를 해야 이 불변식이 유지된다.
                         emailVerified: true,
                     })
                     .onConflictDoNothing({ target: users.email })

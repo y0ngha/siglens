@@ -13,7 +13,7 @@ const {
     MOCK_CRYPTO_SESSION: { type: 'crypto' } as never,
     MOCK_EQUITY_SESSION: { type: 'equity' } as never,
     MOCK_KR_SESSION: { type: 'kr-equity' } as never,
-    // Task S3/S2 (prior-analysis-context wiring gap, PR #784 review) —
+    // Task S3/S2 (prior-analysis-context wiring) —
     // hoisted so individual tests can assert what prewarmTechnical/
     // prewarmOverall read from and write to analysis_history.
     mockFindRecentForPrompt: vi.fn(),
@@ -33,6 +33,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
         runFinancialsAnalysis: vi.fn(),
         runCongressTrend: vi.fn(),
         runOverallAnalysis: vi.fn(),
+        peekOverallAnalysisCache: vi.fn(),
         isEtRegularSessionOpen: vi.fn(),
         computeFinancialsScorecard: vi.fn(),
     };
@@ -66,6 +67,14 @@ vi.mock('@/entities/ticker/server/getAssetInfo', () => ({
 
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: vi.fn(() => mockFundamentalProvider),
+}));
+
+// 한국 종목은 PER·PBR을 DART 기준으로 바꿔 끼운 provider를 core에 넘긴다 — 감싸는 호출 자체를 관찰한다.
+const { withKrValuation } = vi.hoisted(() => ({
+    withKrValuation: vi.fn((provider: unknown) => provider),
+}));
+vi.mock('@/entities/kr-valuation/server/withKrValuation', () => ({
+    withKrValuation,
 }));
 
 vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
@@ -195,6 +204,7 @@ import {
     runFinancialsAnalysis,
     runCongressTrend,
     runOverallAnalysis,
+    peekOverallAnalysisCache,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
     DEEPSEEK_V4_1_FLASH_MODEL,
@@ -230,6 +240,7 @@ import {
     prewarmFinancials,
     prewarmCongress,
     prewarmOverall,
+    hasPrewarmedOverall,
 } from '../api';
 
 const mockProvider = {
@@ -321,7 +332,7 @@ describe('prewarmTechnical', () => {
                 // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
                 providerFallback: true,
                 positionBucket: undefined,
-                // Task S3 (prior-analysis-context, PR #784 review) — the SSE
+                // Task S3 (prior-analysis-context) — the SSE
                 // route's non-bot branch always supplies both; prewarm must
                 // match so it computes the SAME core cache key (see the
                 // `priorAnalyses`/`onPromptAssembled` describe block below).
@@ -491,6 +502,9 @@ describe('prewarmTechnical', () => {
                     timeframe: '1Day',
                     tab: 'technical',
                     modelId: DEEPSEEK_V4_1_FLASH_MODEL,
+                    // 프리웜은 항상 free tier로 생성한다.
+                    tier: 'free',
+                    personalized: false,
                     locale: 'ko',
                     // 필터된 `result`가 아니라 `unfilteredResult`가 저장돼야
                     // 한다 — riskLevel이 살아 있는 쪽.
@@ -552,6 +566,23 @@ describe('prewarmFundamental', () => {
         vi.clearAllMocks();
         mockRunFundamentalAnalysis.mockResolvedValue(cachedResult);
         mockGetFundamentalDataProvider.mockReturnValue(mockFundamentalProvider);
+    });
+
+    it('dataProvider는 `withKrValuation`이 심볼과 함께 감싼 것이다', async () => {
+        const wrapped = { label: 'dart-aware provider' };
+        withKrValuation.mockReturnValueOnce(wrapped);
+
+        await prewarmFundamental('005930.KS', false);
+
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ dataProvider: wrapped })
+        );
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(background)으로 읽는다.
+        expect(withKrValuation).toHaveBeenCalledWith(
+            mockFundamentalProvider,
+            '005930.KS',
+            { mode: 'background' }
+        );
     });
 
     it('calls runFundamentalAnalysis with the anonymous-free branch shape', async () => {
@@ -862,6 +893,23 @@ describe('prewarmOverall', () => {
             }
         }
     );
+
+    it('fundamentalProvider는 `withKrValuation`이 심볼과 함께 감싼 것이다(프리웜도 탭·에이전트와 같은 기준)', async () => {
+        const wrapped = { label: 'dart-aware provider' };
+        withKrValuation.mockReturnValueOnce(wrapped);
+
+        await prewarmOverall('005930.KS', 'Samsung', false);
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ fundamentalProvider: wrapped })
+        );
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(background)으로 읽는다.
+        expect(withKrValuation).toHaveBeenCalledWith(
+            mockFundamentalProvider,
+            '005930.KS',
+            { mode: 'background' }
+        );
+    });
 
     it('kr-equity → 이벤트 창을 core에 넘기는 것과 같은 KR 세션으로 계산한다', async () => {
         mockResolveMarketProfile.mockResolvedValue('kr-equity');
@@ -1248,6 +1296,76 @@ describe('prewarmOverall', () => {
             } finally {
                 errorSpy.mockRestore();
             }
+        });
+    });
+});
+
+describe('hasPrewarmedOverall', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('종합 탭 엿보기와 같은 키(기본 모델·reasoning off·기본 타임프레임·기본 로케일)로 core를 읽는다', async () => {
+        vi.mocked(peekOverallAnalysisCache).mockResolvedValue(null);
+
+        await hasPrewarmedOverall('AAPL', 0);
+
+        expect(peekOverallAnalysisCache).toHaveBeenCalledWith(
+            'AAPL',
+            'AAPL',
+            '1Day',
+            DEEPSEEK_V4_1_FLASH_MODEL,
+            false,
+            undefined,
+            undefined,
+            'ko'
+        );
+    });
+
+    describe('시작 시각(sinceMs) 이후의 새 결과만 true', () => {
+        const SINCE_MS = Date.parse('2026-11-26T03:00:00.000Z');
+        const peeked = (analyzedAt?: string) =>
+            ({
+                headlineKo: 'x',
+                ...(analyzedAt === undefined ? {} : { analyzedAt }),
+            }) as never;
+
+        it('항목이 없으면 false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(null);
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
+
+        it('analyzedAt이 시작 시각 이후면 true', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('2026-11-26T03:04:00.000Z')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(true);
+        });
+
+        it('analyzedAt이 시작 시각과 같으면 true', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('2026-11-26T03:00:00.000Z')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(true);
+        });
+
+        it('analyzedAt이 시작 시각보다 이르면(이전 결과) false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('2026-11-25T03:00:00.000Z')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
+
+        it('analyzedAt이 없는 옛 항목은 이전 결과로 보고 false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(peeked());
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
+        });
+
+        it('analyzedAt이 날짜로 읽히지 않으면 false', async () => {
+            vi.mocked(peekOverallAnalysisCache).mockResolvedValueOnce(
+                peeked('not-a-date')
+            );
+            expect(await hasPrewarmedOverall('AAPL', SINCE_MS)).toBe(false);
         });
     });
 });

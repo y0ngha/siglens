@@ -16,8 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_top]
-token_cost: 919
-digest_hash: "e17d7205"
+token_cost: 920
+digest_hash: "1a0ce876"
+digest_text_hash: "a09ad4c4"
 ---
 
 ## Detection Criteria
@@ -62,7 +63,7 @@ Factors that decrease confidence:
 - **No volume divergence**: If volume remains consistent or increases across the three peaks, buying pressure has not weakened and the pattern may resolve upward as a rectangle breakout.
 - **Insufficient time between peaks**: If the three peaks form too quickly (< 20 bars total), the structure may be noise rather than a meaningful reversal pattern.
 - **Ascending peaks**: If each successive peak is notably higher than the previous one (> 3% difference), this is a rising channel, not a Triple Top.
-- **Premature neckline break**: An intraday wick below the neckline without a closing break is not confirmation. Wait for a decisive close below.
+- **Premature neckline break**: A within-bar wick below the neckline without a closing break is not confirmation. Wait for a decisive close below.
 - **Confusion with Head and Shoulders**: If the middle peak is significantly higher than the other two, the pattern is Head and Shoulders, not Triple Top. All three peaks must be at approximately the same level.
 
 ## Entry/Exit Considerations
@@ -107,7 +108,7 @@ When this pattern is detected, include the following in the analysis response:
 - Volume consistent/increasing across peaks → buying not weakened, may resolve up as rectangle breakout.
 - Peaks form too quickly (<20 bars total) → likely noise.
 - Each peak notably higher than previous (>3%) → rising channel, not Triple Top.
-- Intraday wick below neckline without closing break = not confirmed.
+- Within-bar wick below neckline without closing break = not confirmed.
 - Middle peak significantly HIGHER than the other two → Head & Shoulders, not Triple Top.
 
 ### Geometry (do not calculate targets)

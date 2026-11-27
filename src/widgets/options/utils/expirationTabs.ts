@@ -34,6 +34,20 @@ export function buildExpirationTabs(
     return [...slotTabs, { key: 'all', label: allLabel, value: 'all' }];
 }
 
+/**
+ * Value of the active tab (the first tab when nothing matches). Throws when
+ * `tabs` is empty: `buildExpirationTabs` always ends with the "all" tab, so an
+ * empty list means the caller bypassed it.
+ */
+export function findActiveTabValue(
+    tabs: ReadonlyArray<ExpirationTab>,
+    value: OptionsExpirationSelector
+): OptionsExpirationSelector {
+    const tab = tabs[findActiveTabIndex(tabs, value)];
+    if (tab === undefined) throw new Error('expiration tabs are empty');
+    return tab.value;
+}
+
 /** Index of the tab matching `value`; falls back to the first tab. */
 export function findActiveTabIndex(
     tabs: ReadonlyArray<ExpirationTab>,

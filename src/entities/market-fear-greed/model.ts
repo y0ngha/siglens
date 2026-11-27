@@ -1,6 +1,7 @@
 import type {
     CryptoFearGreedSnapshot,
     FearGreedLabel,
+    FearGreedReading,
     MarketFearGreedSnapshot,
 } from '@y0ngha/siglens-core';
 
@@ -48,8 +49,9 @@ export interface FearGreedLookbackPoint extends MarketFearGreedComparisonPoint {
 /**
  * 시장 공포·탐욕 페이지가 그리는 전부.
  *
- * walk-forward 이력은 여기에 싣지 않는다: ~750 세션에 달하는데 페이지는 그중 네 개만
- * 읽으므로, RSC 페이로드로 직렬화하지 않고 캐시 경계에서 `comparisons`로 줄인다.
+ * 위젯에는 네 개의 비교 점(`comparisons`)만 넘긴다. 일별 이력은 서버 렌더 허브와 내려받기
+ * 파일만 읽는 `MarketFearGreedHubView`가 따로 싣는다 — 클라이언트 컴포넌트 props로 넘기면
+ * RSC 페이로드가 커지므로 이 타입에는 넣지 않는다.
  *
  * 스냅샷에 대해 제네릭이라 시장(`MarketFearGreedSnapshot`)과 크립토(`CryptoFearGreedSnapshot`)
  * 판독이 캐스트 없이 같은 위젯으로 렌더된다 — 둘은 요인 키 집합만 다르다.
@@ -66,3 +68,20 @@ export interface MarketFearGreedView<
 /** 크립토 판독: 같은 뷰에 크립토 스냅샷(크립토 요인 키 여섯 개)을 끼운 형태. */
 export type MarketFearGreedCryptoView =
     MarketFearGreedView<CryptoFearGreedSnapshot>;
+
+/**
+ * 허브 판독 + 일별 점수 기록. 서버 컴포넌트와 내려받기 파일만 읽는다.
+ *
+ * `history`: 날짜 오름차순 walk-forward 점수. 앞쪽 워밍업(`score === null`) 구간은 잘라 내고
+ * 중간의 빈 날은 남긴다(core 극단 구간 판정이 빈 날을 끊김으로 본다). 점수는 화면과 같은
+ * 정수(`Math.round`), 라벨은 반올림 전 점수로 core가 매긴 값이다. `snapshot`이 `null`이면 빈 배열.
+ */
+export interface MarketFearGreedHubView<
+    S extends MarketFearGreedViewSnapshot = MarketFearGreedSnapshot,
+> extends MarketFearGreedView<S> {
+    history: FearGreedReading[];
+}
+
+/** 크립토 허브 판독: 같은 허브 뷰에 크립토 스냅샷을 끼운 형태. */
+export type MarketFearGreedCryptoHubView =
+    MarketFearGreedHubView<CryptoFearGreedSnapshot>;

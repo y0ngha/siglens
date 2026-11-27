@@ -6,6 +6,7 @@ import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { runFeedbackDigest } from './runFeedbackDigest';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
 
@@ -32,7 +33,10 @@ export async function PATCH(request: Request): Promise<Response> {
                     notifier: notifyOperator,
                 });
             } catch (error) {
-                console.error('[feedback-digest] run failed:', error);
+                console.error(
+                    '[feedback-digest] run failed:',
+                    redactDbErrorForLog(error)
+                );
             }
         })
     );

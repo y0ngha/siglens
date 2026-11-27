@@ -1,5 +1,6 @@
 import 'server-only';
 import { getRedisClient } from './redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 고정 Redis 키를 사용하는 boolean-flag 핸들 (인수 없음 모드). */
 export interface RedisFlagHandle {
@@ -57,7 +58,10 @@ export function createRedisFlag(
         try {
             return (await redis.get(resolveKey(arg))) !== null;
         } catch (error) {
-            console.error(`${logPrefix} get failed`, error);
+            console.error(
+                `${logPrefix} get failed`,
+                redactDbErrorForLog(error)
+            );
             return false;
         }
     }
@@ -68,7 +72,10 @@ export function createRedisFlag(
         try {
             await redis.set(resolveKey(arg), '1', { ex: ttlSeconds });
         } catch (error) {
-            console.error(`${logPrefix} set failed`, error);
+            console.error(
+                `${logPrefix} set failed`,
+                redactDbErrorForLog(error)
+            );
         }
     }
 

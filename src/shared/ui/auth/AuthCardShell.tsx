@@ -60,8 +60,11 @@ export function AuthCardShell({
                             {SITE_NAME}
                         </span>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-semibold text-secondary-50">
+                    {/* items-start 열에서 제목 줄의 가장 긴 끊김 없는 구간이 래퍼 폭을 정하면 ja처럼
+                        띄어쓰기 없는 제목·부제목이 열 밖으로 나간다. 래퍼를 열 폭에 고정한다. */}
+                    <div className="w-full min-w-0">
+                        {/* wrap-break-word는 긴 영문 단어용이다. 넘침을 막는 건 위 래퍼의 `w-full min-w-0`다. */}
+                        <h1 className="text-2xl font-semibold wrap-break-word text-secondary-50">
                             {title}
                         </h1>
                         {subtitle ? (

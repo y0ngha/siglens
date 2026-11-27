@@ -22,6 +22,8 @@ export type DetailsStepErrorSlot = 'password' | 'consent' | 'banner';
 
 const EMAIL_STEP_SLOT: Record<EmailStepErrorCode, StepErrorSlot> = {
     invalid_email: 'field',
+    rate_limited: 'banner',
+    email_send_failed: 'banner',
     redis_unavailable: 'banner',
     unexpected: 'banner',
 };
@@ -30,6 +32,8 @@ const CODE_STEP_SLOT: Record<CodeStepErrorCode, StepErrorSlot> = {
     invalid_verification_code: 'field',
     expired_verification_code: 'field',
     email_already_exists: 'banner',
+    rate_limited: 'banner',
+    too_many_verification_attempts: 'banner',
     redis_unavailable: 'banner',
     unexpected: 'banner',
 };

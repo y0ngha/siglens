@@ -32,7 +32,9 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     } = useSkillsShowcase();
 
     return (
-        <section className="page-container py-10">
+        // 홈의 닫힌 `<details>` 안에서 그려진다(`HomeSkillsDisclosure`) — 바깥 `page-container`가 이미
+        // 가로 거터를 잡고 있어 여기서 또 잡으면 펼칠 때 안쪽으로 한 번 더 들어간다.
+        <section className="pt-6 pb-2">
             {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다. */}
             <div className="mb-6 flex items-center gap-1">
                 <h2 className={HEADING_SECTION}>

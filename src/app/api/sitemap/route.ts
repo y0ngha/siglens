@@ -9,7 +9,7 @@ import {
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
-import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
+import { rejectAiHost } from '@/app/api/_shared/aiHostGuard';
 
 export const dynamic = 'force-dynamic';
 

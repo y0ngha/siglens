@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { useRestartOnHistoryRestore } from '../hooks/useRestartOnHistoryRestore';
 import { useSignupFlow } from '../hooks/useSignupFlow';
 import type { SignupPhase } from '../lib/signupPhase';
@@ -12,6 +12,11 @@ import { EmailStepForm } from './EmailStepForm';
 interface SignupFormProps {
     /** 가입 후 돌아갈 경로(검증 전 원문). */
     next?: string;
+    /**
+     * 이메일 단계(첫 단계)에서만 단계 표시 위에 그리는 영역. 가입 방법 중 소셜 로그인을 이메일 입력보다
+     * 먼저 보여 주되, 코드·상세 단계에서는 진행 중인 입력을 밀어내지 않도록 숨긴다.
+     */
+    socialSlot?: ReactNode;
 }
 
 interface StepIndicatorProps {
@@ -41,7 +46,7 @@ function StepIndicator({ phase }: StepIndicatorProps) {
  * 「이메일 수정」으로 다시 시작할 때만 이메일 입력에 포커스를 준다(뒤로가기
  * 복원은 사용자가 누른 컨트롤이 없어 포커스를 옮기지 않는다).
  */
-export function SignupForm({ next }: SignupFormProps) {
+export function SignupForm({ next, socialSlot }: SignupFormProps) {
     const [flow, setFlow] = useState({ key: 0, focusEmail: false });
 
     const restart = useCallback((): void => {
@@ -58,6 +63,7 @@ export function SignupForm({ next }: SignupFormProps) {
         <SignupFormFlow
             key={flow.key}
             next={next}
+            socialSlot={socialSlot}
             focusEmailOnMount={flow.focusEmail}
             onRestart={restart}
             onEditEmail={editEmail}
@@ -73,6 +79,7 @@ interface SignupFormFlowProps extends SignupFormProps {
 
 function SignupFormFlow({
     next,
+    socialSlot,
     focusEmailOnMount,
     onRestart,
     onEditEmail,
@@ -84,6 +91,7 @@ function SignupFormFlow({
 
     return (
         <div className="space-y-4">
+            {phase === 'email' ? socialSlot : null}
             <StepIndicator phase={phase} />
             {phase === 'email' && <EmailStepForm step={emailStep} />}
             {phase === 'code' && (

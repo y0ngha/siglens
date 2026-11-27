@@ -86,7 +86,7 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
 }));
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     // isFreeUser는 광고 게이팅 prop이다. Pro tier에서 false가 실제로 전달되는지
-    // 검증할 수 있도록 data 속성으로 노출한다(회귀 방지 — PR #690).
+    // 검증할 수 있도록 data 속성으로 노출한다.
     AnalysisPanel: ({ isFreeUser }: { isFreeUser?: boolean }) => (
         <div data-testid="analysis-panel" data-free-user={String(isFreeUser)} />
     ),
@@ -355,14 +355,16 @@ describe('ChartContent', () => {
     });
 
     describe('데스크톱 분석 패널', () => {
-        // 패널 아래 끝이 첫 뷰포트 아래 끝과 겹쳐 Ask-AI FAB(바닥에서 68px)이
-        // 마지막 줄을 덮는다 — 스크롤 끝에서 FAB을 넘기는 하단 패딩(128px = pb-32: 뷰포트 밖 44px + FAB 68px + 여유).
-        it('Ask-AI FAB이 마지막 줄을 가리지 않도록 md:pb-32 하단 여유를 둔다', () => {
+        // 패널 아래 끝이 첫 뷰포트 아래보다 약 44px 아래에 있다(`--symbol-chrome-h`가 시간 단위 줄을 안 센다).
+        // 차트 탭에서는 Ask-AI 링크가 패널 맨 위로 들어가 FAB이 숨겨지므로, 스크롤 끝에서 마지막 줄이
+        // 보이는 하단 패딩은 44px + 여유 12px → 64px(pb-16)이다.
+        it('스크롤 끝에서 마지막 줄이 보이도록 md:pb-16 하단 여유를 둔다(FAB용 pb-32가 아니다)', () => {
             renderChart();
 
             const panel = getSeparator().nextElementSibling as HTMLElement;
             expect(panel.tagName).toBe('SECTION');
-            expect(panel.className).toContain('md:pb-32');
+            expect(panel.className).toContain('md:pb-16');
+            expect(panel.className).not.toContain('md:pb-32');
             expect(panel.className).toContain('md:overflow-y-auto');
         });
     });
@@ -432,7 +434,7 @@ describe('ChartContent', () => {
     });
 
     // isFreeUser는 광고 게이팅 prop이다. 기본값 true에 의존하면 Pro 사용자에게
-    // 광고가 새는 회귀가 발생했었다(PR #690). ChartContent가 tier로
+    // 광고가 샌다. ChartContent가 tier로
     // 계산한 값이 AnalysisProgress·AnalysisPanel 양쪽에 정확히 전달되는지 검증한다.
     describe('광고 게이팅(isFreeUser) 전달', () => {
         it('free tier면 AnalysisProgress에 isFreeUser=true를 전달한다', () => {

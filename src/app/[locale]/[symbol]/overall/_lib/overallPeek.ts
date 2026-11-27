@@ -3,10 +3,17 @@ import {
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 
+import { overallPeekTag } from '@/entities/analysis/lib/overallPeekTag';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+
+/**
+ * 종합 분석 peek 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const OVERALL_PEEK_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
 
 /** 종합 분석 캐시 엿보기 결과 — MISS·손상·읽기 실패는 모두 `null`이다. */
 export type OverallPeekResult = Awaited<
@@ -44,10 +51,14 @@ export function loadOverallPeek(
                 undefined,
                 locale
             ),
-        [],
-        SECONDS_PER_HALF_DAY
+        // 프리웜이 종합 분석을 데운 뒤 이 항목만 털 수 있게 한다(`overallPeekTag`).
+        [overallPeekTag(symbol)],
+        OVERALL_PEEK_REVALIDATE_SECONDS
     ).catch((error: unknown) => {
-        console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
+        console.error(
+            '[OverallPage] peekOverallAnalysisCache failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     });
 }

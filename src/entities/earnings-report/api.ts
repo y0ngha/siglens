@@ -17,6 +17,7 @@ import {
     markEarningsEmpty,
 } from './server/earningsEmptyMarker';
 import { DrizzleEarningsReportsRepository } from './server/earningsReportsRepository';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * FMP/yahoo 실적 행 조회 개수(최신순, 예정 1~2행 포함). 5 → 12(2026-10-22, dev 결함 A12):
@@ -104,12 +105,15 @@ async function refreshEarningsIfStale(
             );
             await repo.upsertMany(reports);
             await repo.pruneSupersededUpcoming(symbol, reports, today);
-            // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막는다(#567).
+            // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막는다.
             if (reports.length === 0) await markEarningsEmpty(symbol);
         } catch (err) {
             // Best-effort: FMP 실패 시 분석은 실적 맥락 없이 진행한다.
             // 로깅은 남겨 운영자가 FMP 키 만료/타임아웃 등 장애를 감지할 수 있게 한다.
-            console.warn('[getNextEarningsReport] FMP refresh failed:', err);
+            console.warn(
+                '[getNextEarningsReport] FMP refresh failed:',
+                redactDbErrorForLog(err)
+            );
         }
     }
 
@@ -145,7 +149,10 @@ export async function listEarningsDates(
         ).listDatesSince(symbol, kstDateKey(from));
         return dates.length > 0 ? dates : undefined;
     } catch (err) {
-        console.warn('[listEarningsDates] lookup failed:', err);
+        console.warn(
+            '[listEarningsDates] lookup failed:',
+            redactDbErrorForLog(err)
+        );
         return undefined;
     }
 }
@@ -179,7 +186,10 @@ export async function resolveEarningsDates(
 ): Promise<readonly string[] | undefined> {
     const next = await getNextEarningsReport(symbol, db).catch(
         (err: unknown) => {
-            console.warn('[resolveEarningsDates] refresh failed:', err);
+            console.warn(
+                '[resolveEarningsDates] refresh failed:',
+                redactDbErrorForLog(err)
+            );
             return null;
         }
     );

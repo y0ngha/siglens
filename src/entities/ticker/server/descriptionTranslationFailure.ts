@@ -2,6 +2,7 @@ import 'server-only';
 import { getUpstashWriterCredentials } from '@/shared/cache/redisClient';
 import { runUpstashCommandOutsideFetch } from '@/shared/cache/upstashRenderSafeCommand';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 회사 설명 한국어 번역(`translateCompanyDescription`)이 실패했거나 빈 글을 돌려준 심볼의
@@ -44,7 +45,10 @@ export async function hasDescriptionTranslationFailed(
             null
         );
     } catch (error) {
-        console.error('[descriptionTranslationFailure] get failed', error);
+        console.error(
+            '[descriptionTranslationFailure] get failed',
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }
@@ -63,6 +67,9 @@ export async function markDescriptionTranslationFailed(
             DESCRIPTION_TRANSLATION_FAILURE_TTL_SECONDS,
         ]);
     } catch (error) {
-        console.error('[descriptionTranslationFailure] set failed', error);
+        console.error(
+            '[descriptionTranslationFailure] set failed',
+            redactDbErrorForLog(error)
+        );
     }
 }

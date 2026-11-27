@@ -8,6 +8,7 @@ import {
     type NaverCredentials,
 } from '@/shared/api/naver/naverSearch';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 const COUNT = 5;
@@ -73,8 +74,9 @@ async function searchBrave(
     url.searchParams.set('q', query);
     url.searchParams.set('count', String(COUNT));
     url.searchParams.set('search_lang', locale === 'ko' ? 'ko' : 'en');
-    if (typeof freshness === 'string' && FRESHNESS[freshness])
-        url.searchParams.set('freshness', FRESHNESS[freshness]!);
+    const freshnessParam =
+        typeof freshness === 'string' ? FRESHNESS[freshness] : undefined;
+    if (freshnessParam) url.searchParams.set('freshness', freshnessParam);
 
     let response: Response;
     try {
@@ -148,7 +150,10 @@ async function searchNaver(
     } catch (e) {
         // The client promises to degrade, but one provider must never be able
         // to take the other's successful result down with it.
-        console.warn(`${LOG_TAG} naver threw`, e instanceof Error ? e.name : e);
+        console.warn(
+            `${LOG_TAG} naver threw`,
+            e instanceof Error ? e.name : redactDbErrorForLog(e)
+        );
         return [];
     }
     return items
@@ -188,7 +193,7 @@ async function searchNaverWebDocs(
     } catch (e) {
         console.warn(
             `${LOG_TAG} naver webkr threw`,
-            e instanceof Error ? e.name : e
+            e instanceof Error ? e.name : redactDbErrorForLog(e)
         );
         return [];
     }

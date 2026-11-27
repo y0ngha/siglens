@@ -4,6 +4,7 @@ import { MS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
 import { fetchCryptoAssetList } from '../cryptoAssetApi';
 import { CRYPTO_FMP_LIST_CACHE_KEY } from '../lib/cacheKeys';
 import type { CryptoAssetRow } from '../lib/fmpCryptoListClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** Shape of a single entry in the FMP cryptocurrency list. */
 export interface FmpCryptoEntry {
@@ -32,7 +33,7 @@ let inFlight: Promise<Map<string, FmpCryptoEntry>> | null = null;
  *   시절엔 그때마다 Redis에서 ~170KB 값을 통째로 받았다: 2026-10 운영 Redis MONITOR
  *   2분 표본에서 앱 명령의 7%가 이 키 GET(약 7초에 한 번)이었고, 월 ~65GB로
  *   Upstash 대역폭의 ~30%였다(재측정: 운영 Upstash에 TLS `redis-cli MONITOR`로 2분
- *   표본을 떠 앱 EIP 트래픽만 집계 — PR #914 설명). 운영은 장수 EC2 프로세스라 모듈
+ *   표본을 떠 앱 EIP 트래픽만 집계). 운영은 장수 EC2 프로세스라 모듈
  *   메모리가 유지된다.
  * - L2 Redis(24h, `getOrSetCache`): 인스턴스 간 공유와 콜드 스타트 시 FMP 재호출 방지.
  *
@@ -93,7 +94,7 @@ async function loadFromSharedCache(): Promise<Map<string, FmpCryptoEntry>> {
             memo === null
                 ? '[fmpCryptoMembership] getFmpCryptoListMap failed, degrading to empty'
                 : '[fmpCryptoMembership] getFmpCryptoListMap failed, serving expired list',
-            e
+            redactDbErrorForLog(e)
         );
         return memo?.map ?? new Map();
     }

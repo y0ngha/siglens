@@ -2,7 +2,7 @@ import type {
     GetBarsOptions,
     Bar,
     MarketQuote,
-    Timeframe,
+    ProviderTimeframe,
 } from '@y0ngha/siglens-core';
 import type {
     ExtendedHoursTrade,
@@ -22,6 +22,7 @@ import {
     getEasternOffsetHours,
 } from '@/shared/lib/eastern';
 import { mapOrNull } from '@/shared/api/market/mapOrNull';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
 
@@ -31,7 +32,7 @@ const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
  * 캐시 계층(`CachedMarketDataProvider`)이 같은 날짜 경계로 히스토리와 오늘 tail을 나눈다.
  */
 export const FMP_EXCHANGE_TIME_ZONE = 'America/New_York';
-const ISO_DATE_PART_INDEX = 0;
+const ISO_DATE_LENGTH = 'YYYY-MM-DD'.length;
 
 // FMP ET→UTC timestamp conversion. Canonical home after the market-provider
 // ejection: siglens-core no longer fetches market data (it owns only the
@@ -107,7 +108,10 @@ function fmpIntradayDateToUtcSeconds(dateStr: string): number {
     return Math.floor(utcMs / MS_PER_SECOND);
 }
 
-const FMP_INTRADAY_TIMEFRAME_MAP: Record<Exclude<Timeframe, '1Day'>, string> = {
+const FMP_INTRADAY_TIMEFRAME_MAP: Record<
+    Exclude<ProviderTimeframe, '1Day'>,
+    string
+> = {
     '5Min': '5min',
     '15Min': '15min',
     '30Min': '30min',
@@ -238,7 +242,7 @@ function toFmpTodayBar(quote: FmpQuote): Bar {
     const etDate = new Date(
         quoteMs + getEasternOffsetHours(new Date(quoteMs)) * MS_PER_HOUR
     );
-    const dateStr = etDate.toISOString().split('T')[ISO_DATE_PART_INDEX]!;
+    const dateStr = etDate.toISOString().slice(0, ISO_DATE_LENGTH);
     return {
         time: Math.floor(
             new Date(dateStr + 'T00:00:00Z').getTime() / MS_PER_SECOND
@@ -272,7 +276,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
         // Safe: the '1Day' branch returned above, so timeframe is guaranteed non-'1Day' here.
         return this.getIntradayBars(
             symbol,
-            timeframe as Exclude<Timeframe, '1Day'>,
+            timeframe as Exclude<ProviderTimeframe, '1Day'>,
             fromDate,
             endDate,
             false
@@ -295,7 +299,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
         if (timeframe === '1Day') return [];
         return this.getIntradayBars(
             symbol,
-            timeframe as Exclude<Timeframe, '1Day'>,
+            timeframe as Exclude<ProviderTimeframe, '1Day'>,
             from?.substring(0, ISO_DATE_PREFIX_LENGTH),
             before?.substring(0, ISO_DATE_PREFIX_LENGTH),
             true
@@ -304,7 +308,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
 
     private async getIntradayBars(
         symbol: string,
-        timeframe: Exclude<Timeframe, '1Day'>,
+        timeframe: Exclude<ProviderTimeframe, '1Day'>,
         fromDate: string | undefined,
         endDate: string | undefined,
         extended: boolean
@@ -369,7 +373,7 @@ export class FmpMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[FmpMarketProvider] aftermarket trade fetch failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return null;
         }
@@ -392,14 +396,14 @@ export class FmpMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[FmpMarketProvider] quote snapshot fetch failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return { quote: null, todayBar: null };
         }
-        if (!Array.isArray(raw) || raw.length === 0) {
+        const row = Array.isArray(raw) ? raw[0] : undefined;
+        if (row === undefined) {
             return { quote: null, todayBar: null };
         }
-        const row = raw[0]!;
         return {
             quote: mapOrNull('FmpMarketProvider', 'getQuote', symbol, () =>
                 toFmpMarketQuote(symbol, row)

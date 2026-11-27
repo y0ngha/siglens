@@ -1,3 +1,4 @@
+import { LOCALES } from '@/shared/i18n/locales';
 import type { EntrySource } from '../types';
 
 /**
@@ -102,31 +103,82 @@ function classifyHost(host: string): EntrySource {
     return GOOGLE_HOST.test(host) ? 'google' : 'other';
 }
 
+/**
+ * 유료 매체로 보는 `utm_medium` 값. 정해진 값만 받고 나머지는 무시한다. 우리 광고는 구글 자동
+ * 태그(`gclid` 등)만 쓰지만, 다른 광고 링크가 매체 값을 붙여 와도 광고로 센다.
+ */
+const PAID_MEDIUMS: ReadonlySet<string> = new Set([
+    'cpc',
+    'ppc',
+    'paid',
+    'paid_search',
+    'paid_social',
+    'display',
+    'cpm',
+]);
+
+/**
+ * 분석 공유 링크 페이지 경로. 로케일 접두사는 선택이고 `id` 뒤 슬래시 하나까지 받는다.
+ * 의도적으로 사이트를 보지 않는다(`collapseLandingPath`는 사이트별). ai 호스트에는 `/share` 경로가 없다.
+ */
+const SHARE_PATH = new RegExp(`^(/(${LOCALES.join('|')}))?/share/[^/]+/?$`);
+
 export interface EntrySourceInput {
     /** 첫 진입 문서의 `document.referrer` 호스트. 없으면 `null`. */
     readonly referrerHost: string | null;
     /** 첫 진입 URL의 `utm_source`. 없으면 `null`. */
     readonly utmSource: string | null;
+    /** 첫 진입 URL의 `utm_medium`. 없으면 `null`. */
+    readonly utmMedium: string | null;
+    /** 첫 진입 URL에 광고 클릭 식별자(`gclid`·`gbraid`·`wbraid`)가 있었는가. 값은 받지 않는다. */
+    readonly adClick: boolean;
+    /** 비콘이 뜬 페이지의 경로(쿼리 제외). 공유 링크 페이지 판정에 쓴다. */
+    readonly landingPath: string | null;
     /** 이 사이트의 호스트(`siglens.io`). 같은 사이트 안의 이동은 출처가 아니다. */
     readonly ownHost: string;
 }
 
+function normalize(value: string | null): string | undefined {
+    return value?.trim().toLowerCase();
+}
+
 /**
- * 하루 첫 진입의 출처를 정해진 분류값으로 바꾼다. 원본 호스트·`utm_source`는 여기서 버린다.
+ * 하루 첫 진입의 출처를 정해진 분류값으로 바꾼다. 원본 호스트·`utm_*`·클릭 식별자는 여기서 버린다.
  *
- * 순서: 알려진 `utm_source` → 외부 Referer 호스트 → 없음(`null`). 같은 사이트(서브도메인 포함,
- * `ai.siglens.io` → `siglens.io`)에서 온 이동과 Referer가 없는 직접 방문은 `null`이다.
+ * 우선순위(처음 맞는 것이 이긴다):
+ *  1. `paid` — 광고 클릭 식별자가 있거나 `utm_medium`이 유료 매체 값. 클릭 식별자는 광고 네트워크가
+ *     클릭 시점에 붙이므로 Referer(`www.google.com`)보다 확실하다.
+ *  2. `email` — `utm_source` 또는 `utm_medium`이 `email`. 우리가 메일 링크에 일부러 붙인 값이다.
+ *  3. `share` — 공유 링크 페이지는 공유 링크로만 닿고, 메신저는 Referer를 보내지 않는다.
+ *  4. 알려진 `utm_source`.
+ *  5. 외부 Referer 호스트.
+ *  6. 없음(`null`) — 같은 사이트(서브도메인 포함, `ai.siglens.io` → `siglens.io`)에서 온 이동과
+ *     Referer가 없는 직접 방문.
+ *
+ * 1~3은 Referer가 같은 사이트여도 적용된다. 한계: 클릭 식별자가 붙은 주소를 복사해 퍼뜨리면 `paid`로
+ * 잡히고, 공유한 사람이 자기 링크를 그날 첫 방문으로 열면 `share`로 잡힌다.
  */
 export function classifyEntrySource({
     referrerHost,
     utmSource,
+    utmMedium,
+    adClick,
+    landingPath,
     ownHost,
 }: EntrySourceInput): EntrySource | null {
-    const utm = utmSource?.trim().toLowerCase();
+    const utm = normalize(utmSource);
+    const medium = normalize(utmMedium);
+
+    if (adClick || (medium !== undefined && PAID_MEDIUMS.has(medium))) {
+        return 'paid';
+    }
+    if (utm === 'email' || medium === 'email') return 'email';
+    if (landingPath !== null && SHARE_PATH.test(landingPath)) return 'share';
+
     const fromUtm = utm === undefined ? undefined : UTM_RULES.get(utm);
     if (fromUtm !== undefined) return fromUtm;
 
-    const host = referrerHost?.trim().toLowerCase().replace(/\.$/, '');
+    const host = normalize(referrerHost)?.replace(/\.$/, '');
     if (host === undefined || host === '') return null;
     const own = ownHost.toLowerCase();
     if (hostMatches(host, own)) return null;

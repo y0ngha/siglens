@@ -1,5 +1,6 @@
 import type { Locale } from '@/shared/i18n/locales';
 import { escapeHtml } from '@/shared/lib/escapeHtml';
+import { reportSymbolLabel } from '../lib/reportSymbolLabel';
 import { COLORS } from './emailTheme';
 import { formatClose, formatSignedPercent } from './emailFormat';
 import type {
@@ -71,8 +72,13 @@ export function briefTableHtml(
     const body = rows
         .map(row => {
             const cells = briefRowCells(row, locale, t, signalLabel);
+            const label = reportSymbolLabel(
+                row.brief.symbol,
+                row.brief.names,
+                locale
+            );
             return `<tr>
-  <td style="${CELL}"><a href="${escapeHtml(row.pageUrl)}" style="color:${COLORS.link};font-weight:600;text-decoration:none;">${escapeHtml(row.brief.symbol)}</a></td>
+  <td style="${CELL}"><a href="${escapeHtml(row.pageUrl)}" style="color:${COLORS.link};font-weight:600;text-decoration:none;">${escapeHtml(label.name)}</a>${label.name === label.code ? '' : `<br /><span style="font-size:12px;color:${COLORS.muted};">${escapeHtml(label.code)}</span>`}</td>
   <td style="${CELL}white-space:nowrap;">${escapeHtml(cells.close)}${cells.change ? ` <span style="color:${cells.changeColor};">${escapeHtml(cells.change)}</span>` : ''}</td>
   <td style="${CELL}">${escapeHtml(cells.trend)}</td>
   <td style="${CELL}">${escapeHtml(cells.signals)}</td>
@@ -106,7 +112,7 @@ export function briefTableLines(
         `■ ${heading}`,
         ...rows.map(row => {
             const cells = briefRowCells(row, locale, t, signalLabel);
-            return `- ${row.brief.symbol} | ${[cells.close, cells.change].filter(Boolean).join(' ')} | ${cells.trend} | ${cells.signals}\n  ${row.pageUrl}`;
+            return `- ${reportSymbolLabel(row.brief.symbol, row.brief.names, locale).text} | ${[cells.close, cells.change].filter(Boolean).join(' ')} | ${cells.trend} | ${cells.signals}\n  ${row.pageUrl}`;
         }),
         '',
     ];

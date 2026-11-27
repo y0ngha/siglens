@@ -10,6 +10,7 @@ import {
     resolveTierAndByok,
 } from '@/shared/lib/byokGate';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 게이트가 정한 필드로, core `run*` 호출이 공통으로 받는다. 호출부가 자신의
@@ -101,7 +102,10 @@ export async function runGatedAnalysis<R>({
                 : {}),
         });
     } catch (err) {
-        console.error(`[${actionName}] unexpected error:`, err);
+        console.error(
+            `[${actionName}] unexpected error:`,
+            redactDbErrorForLog(err)
+        );
         return {
             status: 'error',
             error: await buildGateError(caughtAnalysisErrorCode(err), locale),

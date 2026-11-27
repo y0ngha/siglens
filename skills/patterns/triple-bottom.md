@@ -16,8 +16,9 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_bottom]
-token_cost: 909
-digest_hash: "b920f76a"
+token_cost: 910
+digest_hash: "2004c5b2"
+digest_text_hash: "929f07dd"
 ---
 
 ## Detection Criteria
@@ -62,7 +63,7 @@ Factors that decrease confidence:
 - **No volume patterns**: If volume shows no discernible pattern across the three troughs, the accumulation thesis is weaker and the reversal may not materialize.
 - **Insufficient time between troughs**: If the three troughs form too quickly (< 20 bars total), the structure may be noise rather than meaningful accumulation.
 - **Descending troughs**: If each successive trough is notably lower than the previous one (> 3%), this is a descending channel, not a Triple Bottom.
-- **Premature neckline break**: An intraday wick above the neckline without a closing break is not confirmation.
+- **Premature neckline break**: A within-bar wick above the neckline without a closing break is not confirmation.
 - **Confusion with Inverse Head and Shoulders**: If the middle trough is significantly lower than the other two, the pattern is Inverse Head and Shoulders, not Triple Bottom.
 
 ## Entry/Exit Considerations
@@ -107,7 +108,7 @@ When this pattern is detected, include the following in the analysis response:
 - No volume pattern across troughs → weak accumulation thesis.
 - Troughs form too quickly (<20 bars total) → likely noise.
 - Each trough notably lower than previous (>3%) → descending channel, not Triple Bottom.
-- Intraday wick above neckline without closing break = not confirmed.
+- Within-bar wick above neckline without closing break = not confirmed.
 - Middle trough significantly LOWER than the other two → Inverse Head & Shoulders, not Triple Bottom.
 
 ### Geometry (do not calculate targets)

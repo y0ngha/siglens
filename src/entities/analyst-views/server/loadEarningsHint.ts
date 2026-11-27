@@ -6,6 +6,12 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { withTimeout } from '@/shared/lib/withTimeout';
 import type { AnalystEarningsHint } from '../model';
 import { getAnalystViews } from './getAnalystViews';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+
+/**
+ * Yahoo 실적 힌트 정적 캐시(`fundamental-facts:earnings-hint`)의 revalidate. 펀더멘털·뉴스 탭이 읽으므로 `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const EARNINGS_HINT_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
 
 /** 실적 힌트(Yahoo) 보강에 기다리는 최대 시간. 페이지·분석이 보강 때문에 8초씩 기다리지 않게 한다. */
 export const EARNINGS_HINT_BUDGET_MS = 2_500;
@@ -46,13 +52,16 @@ export async function loadEarningsHintBounded(
                 symbol,
                 () => loadEarningsHint(symbol),
                 [],
-                SECONDS_PER_HALF_DAY
+                EARNINGS_HINT_REVALIDATE_SECONDS
             ),
             EARNINGS_HINT_BUDGET_MS,
             null
         );
     } catch (err) {
-        console.warn(`[loadEarningsHint] failed for ${symbol}:`, err);
+        console.warn(
+            `[loadEarningsHint] failed for ${symbol}:`,
+            redactDbErrorForLog(err)
+        );
         return null;
     }
 }

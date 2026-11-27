@@ -7,6 +7,7 @@ import type {
     DeleteAccountOptions,
     DeleteAccountResult,
 } from './authUseCaseTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type RevocableOAuthAccount = Omit<OAuthAccountRecord, 'accessToken'> & {
     accessToken: string;
@@ -28,7 +29,7 @@ async function findOAuthAccountsForRevocation(
     } catch (error) {
         console.warn(
             '[deleteAccount] findByUserId for OAuth revocation failed',
-            error
+            redactDbErrorForLog(error)
         );
         return [];
     }
@@ -56,7 +57,7 @@ async function revokeOAuthTokens(
                 .catch(error => {
                     console.warn(
                         '[deleteAccount] OAuth revokeToken failed',
-                        error
+                        redactDbErrorForLog(error)
                     );
                 })
         )
@@ -70,7 +71,10 @@ async function readActiveApiKeyHashes(
     try {
         return await dependencies.apiKeys.listActiveKeyHashes(userId);
     } catch (error) {
-        console.warn('[deleteAccount] listing API key hashes failed', error);
+        console.warn(
+            '[deleteAccount] listing API key hashes failed',
+            redactDbErrorForLog(error)
+        );
         return [];
     }
 }
@@ -83,7 +87,29 @@ async function revokeApiKeyAuth(
     try {
         await dependencies.apiKeys.revokeAuth(keyHashes);
     } catch (error) {
-        console.warn('[deleteAccount] API key auth revocation failed', error);
+        console.warn(
+            '[deleteAccount] API key auth revocation failed',
+            redactDbErrorForLog(error)
+        );
+    }
+}
+
+/**
+ * 알림 메일 신청 파기. 구독자 행의 주소는 회원 행에서 읽으므로 회원 행을 지우기 전에 부른다. 실패하면
+ * 로그만 남기고 삭제는 계속한다 — 연결된 행은 `user_id` FK 연쇄로 어차피 지워지고, 연결 안 된 비회원
+ * 행만 남는데 그것은 같은 주소의 수신 거부 링크로 지울 수 있다.
+ */
+async function destroyMailAlerts(
+    userId: string,
+    dependencies: Pick<DeleteAccountDependencies, 'mailAlerts'>
+): Promise<void> {
+    try {
+        await dependencies.mailAlerts.deleteForAccount(userId);
+    } catch (error) {
+        console.warn(
+            '[deleteAccount] mail alert cleanup failed',
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -99,7 +125,7 @@ function userNotFoundError(): DeleteAccountError {
 /**
  * 계정을 삭제하고 만료 세션 쿠키를 돌려준다. 종속 행은 FK cascade로 지워진다.
  *
- * OAuth 토큰 폐기와 공개 API 키 인증 캐시 폐기는 모두 최선 노력이라 실패해도 삭제를 막지
+ * OAuth 토큰 폐기, 알림 메일 신청 파기, 공개 API 키 인증 캐시 폐기는 모두 최선 노력이라 실패해도 삭제를 막지
  * 않는다(OAuth 토큰 폐기 호출은 기다리지도 않는다). 사용자 행이 없으면 `user_not_found`.
  */
 export async function deleteAccount(
@@ -113,6 +139,8 @@ export async function deleteAccount(
         input.userId,
         dependencies
     );
+
+    await destroyMailAlerts(input.userId, dependencies);
 
     const deleted = await dependencies.users.deleteUser(input.userId);
 

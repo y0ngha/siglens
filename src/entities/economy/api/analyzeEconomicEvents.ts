@@ -22,6 +22,7 @@ import {
     economyCalendarCacheTag,
 } from '../lib/economyCalendarConstants';
 import type { CalendarCountry } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `analyzeEconomicEvents` 호출 옵션 — 방문자 경로는 `limit` 없이, 크론은 상한을 걸어 부른다. */
 export interface AnalyzeEconomicEventsOptions {
@@ -73,11 +74,10 @@ async function analyzeAndPersistEvent(
 
     const runResult = await runEconomicEventAnalysis(input);
 
-    let analysis: EconomicEventAnalysis | null = null;
-
-    if (runResult.status === 'cached' || runResult.status === 'done') {
-        analysis = runResult.result;
-    }
+    const analysis: EconomicEventAnalysis | null =
+        runResult.status === 'cached' || runResult.status === 'done'
+            ? runResult.result
+            : null;
 
     if (analysis === null) {
         console.warn(
@@ -148,7 +148,7 @@ export async function analyzeEconomicEvents(
     if (failures.length > 0) {
         console.warn(
             `[${logLabel}] ${failures.length}/${batch.length} analyze failed`,
-            failures.map(f => f.reason)
+            failures.map(f => redactDbErrorForLog(f.reason))
         );
     }
     if (failures.length > batch.length / CALENDAR_MAJORITY_FAILURE_DIVISOR) {

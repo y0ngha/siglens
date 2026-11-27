@@ -368,6 +368,45 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
     );
 });
 
+describe('FMP 표기 종목 주소 — 정식 심볼로 한 홉 301', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it.each([
+        ['/BRK-B', '/BRK.B', ''],
+        ['/BRK-B/news', '/BRK.B/news', ''],
+        ['/en/BRK-B/news', '/en/BRK.B/news', ''],
+        ['/brk-b', '/BRK.B', ''],
+        ['/en/brk-b/news?x=1', '/en/BRK.B/news', '?x=1'],
+        ['/BRK-B/fundamentals?a=1&b=2', '/BRK.B/fundamentals', '?a=1&b=2'],
+        ['/ko/BRK-B', '/BRK.B', ''],
+        ['/bf-a', '/BF.A', ''],
+    ])('%s → 301 → %s%s', async (input, expectedPath, expectedSearch) => {
+        await proxy(makeRequest(undefined, input));
+        expect(mockRedirect).toHaveBeenCalledTimes(1);
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({
+                pathname: expectedPath,
+                search: expectedSearch,
+            }),
+            301
+        );
+        expect(mockPass).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        '/PBR-A', // 별칭이 없는 실제 하이픈 티커
+        '/BRK.B', // 이미 정식
+        '/en/BRK.B/news',
+        '/market',
+        '/guide',
+    ])('%s 는 redirect하지 않는다', async path => {
+        await proxy(makeRequest(undefined, path));
+        expect(mockRedirect).not.toHaveBeenCalled();
+    });
+});
+
 describe('/share 라우트 — base64url id 대문자화 방지 회귀 테스트', () => {
     beforeEach(() => {
         mockRedirect.mockClear();

@@ -65,11 +65,14 @@ vi.mock('drizzle-orm', async importOriginal => {
 });
 
 import { createHash } from 'node:crypto';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type {
     AssembledPromptRecord,
     PriorAnalysis,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { defined } from '@/shared/test-utils/defined';
 import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
@@ -79,6 +82,10 @@ import {
     PRUNE_BATCH_SIZE,
     RESULT_RETENTION_DAYS,
 } from '@/entities/analysis/analysisHistoryRepository';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 function sha256Hex(body: string): string {
     return createHash('sha256').update(body, 'utf8').digest('hex');
@@ -144,6 +151,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt,
@@ -165,6 +173,8 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            tier: null,
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             inputFingerprint: null,
@@ -192,6 +202,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             // free tier가 실제로 내려주는 모양 — trend만 살아 있다.
             result: { trend: 'bullish', riskLevel: null },
@@ -221,6 +232,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'overall',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'en',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -235,6 +247,28 @@ describe('DrizzleAnalysisHistoryRepository', () => {
         consoleError.mockRestore();
     });
 
+    it('writes the generation tier when supplied', async () => {
+        const { historyValues, db } = makeDb();
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        await repository.saveAnalysisHistory({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            modelId: 'analysis-worker',
+            personalized: false,
+            tier: 'member',
+            locale: 'ko',
+            result: readableResult,
+            generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+            prompt: promptRecord,
+        });
+
+        expect(historyValues).toHaveBeenCalledWith(
+            expect.objectContaining({ tier: 'member' })
+        );
+    });
+
     it('passes inputFingerprint through when supplied', async () => {
         const { historyValues, db } = makeDb();
         const repository = new DrizzleAnalysisHistoryRepository(db);
@@ -244,6 +278,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             timeframe: '1Day',
             tab: 'technical',
             modelId: 'analysis-worker',
+            personalized: false,
             locale: 'ko',
             result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -269,6 +304,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -298,6 +334,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 timeframe: '1Day',
                 tab: 'overall',
                 modelId: 'analysis-worker',
+                personalized: false,
                 locale: 'ko',
                 result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
@@ -376,9 +413,17 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.symbol, 'AAPL');
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.timeframe, '1Day');
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.tab, 'technical');
-        // model_id/locale은 필터하지 않는다 — eq는 정확히 symbol/timeframe/tab
-        // 3번만 호출돼야 한다. 늘어나면 누군가 금지된 필터를 추가한 것이다.
-        expect(eqSpy).toHaveBeenCalledTimes(3);
+        // model_id/locale은 필터하지 않는다. eq는 symbol/timeframe/tab 3번에 맞춤 조건
+        // (`personalized = false`, `tier = 'free'`) 2번을 더한 5번뿐이어야 한다.
+        expect(eqSpy).toHaveBeenCalledTimes(5);
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.modelId,
+            expect.anything()
+        );
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.locale,
+            expect.anything()
+        );
 
         expect(gteSpy).toHaveBeenCalledWith(
             analysisHistory.generatedAt,
@@ -494,8 +539,16 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         });
 
         expect(result).toHaveLength(2);
-        // The query never filters by model_id or locale.
-        expect(eqSpy).toHaveBeenCalledTimes(3);
+        // The query never filters by model_id or locale (3 axis eq + 2 personalisation eq).
+        expect(eqSpy).toHaveBeenCalledTimes(5);
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.modelId,
+            expect.anything()
+        );
+        expect(eqSpy).not.toHaveBeenCalledWith(
+            analysisHistory.locale,
+            expect.anything()
+        );
     });
 
     it('skips a row with a missing/invalid trend or riskLevel, keeps valid ones', async () => {
@@ -729,6 +782,117 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
 
         expect(consoleError).toHaveBeenCalledWith(
             '[analysisHistoryRepository] findRecentForPrompt failed:',
+            expect.any(Error)
+        );
+        consoleError.mockRestore();
+    });
+});
+
+describe('DrizzleAnalysisHistoryRepository.findLatestShareable', () => {
+    it('returns an empty map and logs the redacted error when the query fails', async () => {
+        const orderBy = vi.fn(() => Promise.reject(new Error('select failed')));
+        const where = vi.fn(() => ({ orderBy }));
+        const from = vi.fn(() => ({ where }));
+        const selectDistinctOn = vi.fn(() => ({ from }));
+        const repository = new DrizzleAnalysisHistoryRepository({
+            selectDistinctOn,
+        } as unknown as SiglensDatabase);
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const found = await repository.findLatestShareable({
+            symbols: ['AAPL'],
+            timeframe: '1Day',
+            tab: 'technical',
+            notBefore: new Date('2026-10-26T00:00:00.000Z'),
+        });
+
+        expect(found.size).toBe(0);
+        expect(orderBy).toHaveBeenCalledTimes(1);
+        expect(consoleError).toHaveBeenCalledWith(
+            '[analysisHistoryRepository] findLatestShareable failed:',
+            expect.any(Error)
+        );
+        consoleError.mockRestore();
+    });
+});
+
+describe('DrizzleAnalysisHistoryRepository.findShareableAt', () => {
+    const input = {
+        symbol: 'AAPL',
+        timeframe: '1Day' as const,
+        tab: 'technical' as const,
+        generatedAt: new Date('2026-11-25T00:00:00.123Z'),
+    };
+
+    function makeDb(rows: Promise<unknown[]>) {
+        const conditions: SQL[] = [];
+        const limit = vi.fn(() => rows);
+        const where = vi.fn((condition: SQL) => {
+            conditions.push(condition);
+            return { limit };
+        });
+        const from = vi.fn(() => ({ where }));
+        const select = vi.fn(() => ({ from }));
+        return {
+            db: { select } as unknown as SiglensDatabase,
+            conditions,
+            limit,
+        };
+    }
+
+    it('맞춤이 아닌 행만, 심볼·주기·탭·생성 시각이 정확히 같은 한 행을 읽는다', async () => {
+        const row = {
+            symbol: 'AAPL',
+            generatedAt: input.generatedAt,
+            tier: 'member',
+            result: { trend: 'bullish' },
+        };
+        const { db, conditions, limit } = makeDb(Promise.resolve([row]));
+
+        const found = await new DrizzleAnalysisHistoryRepository(
+            db
+        ).findShareableAt(input);
+
+        expect(found).toEqual({ status: 'found', row });
+        expect(limit).toHaveBeenCalledWith(1);
+        expect(conditions).toHaveLength(1);
+        const rendered = new PgDialect().sqlToQuery(defined(conditions[0]));
+        expect(rendered.sql).toBe(
+            '("analysis_history"."symbol" = $1 and "analysis_history"."timeframe" = $2 and "analysis_history"."tab" = $3 and "analysis_history"."personalized" = $4 and "analysis_history"."generated_at" = $5)'
+        );
+        expect(rendered.params).toEqual([
+            'AAPL',
+            '1Day',
+            'technical',
+            false,
+            input.generatedAt.toISOString(),
+        ]);
+    });
+
+    it('행이 없으면 absent', async () => {
+        const { db } = makeDb(Promise.resolve([]));
+        expect(
+            await new DrizzleAnalysisHistoryRepository(db).findShareableAt(
+                input
+            )
+        ).toEqual({ status: 'absent' });
+    });
+
+    it('조회가 실패하면 absent가 아니라 failed를 돌려주고 가린 오류를 남긴다', async () => {
+        const { db } = makeDb(Promise.reject(new Error('select failed')));
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const found = await new DrizzleAnalysisHistoryRepository(
+            db
+        ).findShareableAt(input);
+
+        expect(found).toEqual({ status: 'failed' });
+        expect(consoleError).toHaveBeenCalledWith(
+            '[analysisHistoryRepository] findShareableAt failed:',
             expect.any(Error)
         );
         consoleError.mockRestore();
@@ -996,5 +1160,39 @@ describe('DrizzleAnalysisHistoryRepository.pruneAnalysisHistory', () => {
             rowsDeleted: 0,
             promptsCleared: 0,
         });
+    });
+
+    it('저장 실패가 DB 에러여도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        const rejecting = {
+            values: () => ({
+                onConflictDoNothing: () => Promise.reject(plantedDbError()),
+            }),
+        };
+        const db = {
+            insert: vi.fn(() => rejecting),
+        } as unknown as SiglensDatabase;
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            await new DrizzleAnalysisHistoryRepository(db).saveAnalysisHistory({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+                modelId: 'analysis-worker',
+                personalized: false,
+                locale: 'ko',
+                result: readableResult,
+                generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+                prompt: promptRecord,
+            });
+            expect(consoleError).toHaveBeenCalledWith(
+                '[analysisHistoryRepository] persist failed:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(consoleError);
+        } finally {
+            consoleError.mockRestore();
+        }
     });
 });

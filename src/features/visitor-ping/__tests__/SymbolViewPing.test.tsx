@@ -73,6 +73,20 @@ describe('SymbolViewPing', () => {
         );
     });
 
+    it('다른 날짜의 낡은 목록은 읽는 순간 지운다(전송이 실패해 새로 쓰지 못해도)', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+        window.localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ date: '2000-01-01', symbols: ['AAPL'] })
+        );
+        render(<SymbolViewPing symbol="MSFT" />);
+        fireInteraction();
+        await waitFor(() => {
+            expect(fetch).toHaveBeenCalledTimes(1);
+        });
+        expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    });
+
     it('같은 날 같은 심볼은 다시 보내지 않는다', () => {
         window.localStorage.setItem(
             STORAGE_KEY,

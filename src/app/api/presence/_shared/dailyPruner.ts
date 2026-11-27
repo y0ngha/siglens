@@ -1,5 +1,6 @@
 import { constants } from 'node:http2';
 import { kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_NO_CONTENT } = constants;
 
@@ -47,7 +48,10 @@ export function createDailyPruner(
             );
         } catch (error) {
             // 다음 날 다시 시도된다.
-            console.error(`${logTag} prune failed:`, error);
+            console.error(
+                `${logTag} prune failed:`,
+                redactDbErrorForLog(error)
+            );
         }
     };
 }

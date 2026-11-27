@@ -4,6 +4,7 @@ import {
     validateEmail,
     validatePassword,
 } from '@/shared/lib/auth/validation';
+import { hashEmailToken, safeCompareTokenHashes } from './tokenUtils';
 import {
     EMAIL_ALREADY_EXISTS_CODE,
     EMAIL_NOT_VERIFIED_CODE,
@@ -13,6 +14,7 @@ import type {
     RegisterUserInput,
     RegisterUserResult,
 } from './authUseCaseTypes';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
@@ -37,7 +39,8 @@ function emailNotVerifiedError(): RegisterUserError {
 }
 
 /**
- * 이메일·비밀번호로 가입시키고 약관 동의를 기록한다. 이메일 인증 마커(`verified`)가 있어야 한다.
+ * 이메일·비밀번호로 가입시키고 약관 동의를 기록한다. 이메일 인증 마커(`verified`)가 있고,
+ * 인증한 브라우저의 바인딩 값(`verificationBinding`)이 마커에 저장된 해시와 맞아야 한다.
  *
  * 동의 기록이 실패하면 방금 만든 사용자를 지워(보상) 같은 이메일로 재시도할 수 있게 하고
  * 원래 오류를 다시 던진다. 가입이 끝나면 인증 마커를 지운다.
@@ -61,7 +64,17 @@ export async function registerUser(
     if (passwordError !== null) return { ok: false, error: passwordError };
 
     const verification = await dependencies.emailTokens.get(PURPOSE, email);
-    if (verification === null || verification.status !== 'verified') {
+    // 마커가 없거나, 바인딩 쿠키가 없거나, 마커의 해시와 다르면 모두 같은 오류다 — 마커가 있다는 사실도
+    // 쿠키가 틀렸다는 사실도 알리지 않는다.
+    if (
+        verification === null ||
+        verification.status !== 'verified' ||
+        input.verificationBinding === null ||
+        !safeCompareTokenHashes(
+            hashEmailToken(input.verificationBinding),
+            verification.bindingHash
+        )
+    ) {
         return { ok: false, error: emailNotVerifiedError() };
     }
 
@@ -105,7 +118,7 @@ export async function registerUser(
         await dependencies.users.deleteUser(user.id).catch(deleteErr => {
             console.warn(
                 '[registerUser] compensating delete failed — user row may be orphaned',
-                deleteErr
+                redactDbErrorForLog(deleteErr)
             );
         });
         throw err;

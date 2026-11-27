@@ -1,4 +1,5 @@
 import { staticSymbolCache } from './staticSymbolCache';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `cacheNonEmpty`가 빈 결과를 캐싱 우회용으로 throw할 때 쓰는 내부 sentinel.
@@ -84,7 +85,10 @@ export async function cacheNonEmptyOrNull<T>(
         // sentinel(의도적 빈 결과)은 무음. 그 외(staticSymbolCache/fetcher의
         // 예상치 못한 throw)는 로깅해 프로덕션 캐시 장애를 추적 가능하게 한다.
         if (err instanceof EmptyResultError) return [];
-        console.error('[cacheNonEmpty] unexpected cache error:', err);
+        console.error(
+            '[cacheNonEmpty] unexpected cache error:',
+            redactDbErrorForLog(err)
+        );
         return null;
     }
 }

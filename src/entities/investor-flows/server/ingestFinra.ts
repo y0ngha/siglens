@@ -109,7 +109,7 @@ const emptyResult = (
  * FINRA 일별 공매도 거래량(CNMS) + 공매도 잔고(biweekly) 수집. 둘 다 유니버스 심볼로 걸러 저장한다.
  *
  * ⚠️ 비상업 라이선스 — `deps.isEnabled()`가 false면 **아무 요청도 보내지 않고** 끝낸다
- * (`shared/api/finra/finraShortDataEnabled.ts`, 라이선스 이슈 #1042). 재수집 요청도 그대로 남아 켜진 뒤에 돈다.
+ * (`shared/api/finra/finraShortDataEnabled.ts`, 비상업 라이선스). 재수집 요청도 그대로 남아 켜진 뒤에 돈다.
  *
  * **1회 재수집**: cusip-map이 전수 한 바퀴를 처음 끝내면 `INVESTOR_FLOWS_STATE_FINRA_REBACKFILL`을 남긴다. 그 요청이 있으면 빠진
  * 날을 받은 뒤 **남은 실행당 상한** 안에서 이미 저장된 파일(거래량 창 전체, 잔고 1년치)을 최근 것부터 다시 읽어 지금의 전체

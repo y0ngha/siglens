@@ -4,6 +4,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 
 import { isTranslatableCalendarIndicator } from '../api/isTranslatableCalendarIndicator';
 import { translateIndicator } from '../api/translateIndicators';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * Server Action: 미매핑 지표명 1건을 AI로 번역해 캐시한다. 본문은
@@ -26,6 +27,9 @@ export async function ensureIndicatorTranslatedAction(
             'ensureIndicatorTranslatedAction'
         );
     } catch (error) {
-        console.error('[ensureIndicatorTranslatedAction]', error);
+        console.error(
+            '[ensureIndicatorTranslatedAction]',
+            redactDbErrorForLog(error)
+        );
     }
 }

@@ -95,7 +95,10 @@ function answerLines(raws: AnswerRaws): ReplayLine[] {
 
 /**
  * Example conversations for the replay. Every string is a literal `t()` /
- * `t.raw()` call so the i18n extractor sees the keys as used.
+ * `t.raw()` call so the i18n extractor sees the keys as used. The answer lines
+ * describe what the agent covers and carry no figure, and the summary has no
+ * duration: an invented price or percentage next to a real ticker would read as
+ * a quote.
  */
 export function buildScenarios(t: AboutT, locale: Locale): ReplayScenario[] {
     const toolList = toolListFormat(locale);
@@ -119,9 +122,6 @@ export function buildScenarios(t: AboutT, locale: Locale): ReplayScenario[] {
         lines,
         summary: t('replay.summary', {
             tools: toolList.format(tools.map(x => x.label)),
-            seconds: (tools.reduce((sum, x) => sum + x.ms, 0) / 1000).toFixed(
-                1
-            ),
         }),
         sources,
         asOf: t('replay.asOf', { time }),

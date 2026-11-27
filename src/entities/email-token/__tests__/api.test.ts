@@ -145,7 +145,11 @@ describe('createEmailTokenStore', () => {
         });
 
         it('get delegates to reader.get with the namespaced key', async () => {
-            const stored: EmailTokenValue = { status: 'verified' };
+            const stored: EmailTokenValue = {
+                status: 'verified',
+                tokenHash: 'a'.repeat(64),
+                bindingHash: 'b'.repeat(64),
+            };
             const mockGet = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(function () {
                 return {
@@ -294,7 +298,11 @@ describe('createEmailTokenStore', () => {
             // consume() must hand back whatever shape getdel returns; status
             // gating is the caller's responsibility (e.g. confirmPasswordReset
             // must verify status === 'pending' itself).
-            const stored: EmailTokenValue = { status: 'verified' };
+            const stored: EmailTokenValue = {
+                status: 'verified',
+                tokenHash: 'a'.repeat(64),
+                bindingHash: 'b'.repeat(64),
+            };
             const mockGetdel = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(function () {
                 return {

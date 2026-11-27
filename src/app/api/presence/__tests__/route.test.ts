@@ -117,6 +117,12 @@ describe('POST /api/presence', () => {
             landingPath: '/ko/AAPL',
             // 본문 없는 비콘(옛 클라이언트·직접 방문)은 출처가 없다.
             entrySource: null,
+            // Referer가 siglens.io 페이지라 사이트는 main이고, 본문이 없으니 구간값은 없다.
+            landingSite: 'main',
+            firstVisitBucket: null,
+            lastVisitBucket: null,
+            visitDaysBucket: null,
+            returnWindow: null,
             userId: null,
         });
     });
@@ -147,6 +153,190 @@ describe('POST /api/presence', () => {
         expect(JSON.stringify(vi.mocked(recordVisit).mock.calls)).not.toContain(
             'www.google.com'
         );
+    });
+
+    it('본문의 방문 이력 구간값과 Referer의 사이트를 함께 남긴다', async () => {
+        requestHeaders.set('referer', 'https://ai.siglens.io/');
+        const { POST } = await importRoute();
+        await POST(
+            beaconRequest(
+                JSON.stringify({
+                    referrerHost: null,
+                    utmSource: null,
+                    utmMedium: null,
+                    adClick: false,
+                    visit: {
+                        first: 'd7_13',
+                        last: 'd7_13',
+                        days: 'n2',
+                        window: 'd7',
+                    },
+                })
+            )
+        );
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                landingSite: 'ai',
+                firstVisitBucket: 'd7_13',
+                lastVisitBucket: 'd7_13',
+                visitDaysBucket: 'n2',
+                returnWindow: 'd7',
+            })
+        );
+    });
+
+    it('방문 이력 구간값이 잘못돼도 방문은 구간값 없이 기록한다', async () => {
+        const { POST } = await importRoute();
+        await POST(
+            beaconRequest(
+                JSON.stringify({
+                    referrerHost: 'chatgpt.com',
+                    visit: {
+                        first: 'new',
+                        last: 'd1',
+                        days: 'n1',
+                        window: null,
+                    },
+                })
+            )
+        );
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entrySource: 'chatgpt',
+                firstVisitBucket: null,
+                lastVisitBucket: null,
+                visitDaysBucket: null,
+                returnWindow: null,
+            })
+        );
+    });
+
+    it('광고 클릭 식별자가 있으면 구글 Referer여도 paid로 남기고 식별자 값은 남기지 않는다', async () => {
+        requestHeaders.set(
+            'referer',
+            'https://siglens.io/lp/stock-analysis?gclid=SECRET-CLICK-ID'
+        );
+        const { POST } = await importRoute();
+        await POST(
+            beaconRequest(
+                JSON.stringify({
+                    referrerHost: 'www.google.com',
+                    adClick: true,
+                })
+            )
+        );
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entrySource: 'paid',
+                landingPath: '/lp/stock-analysis',
+            })
+        );
+        const recorded = JSON.stringify(vi.mocked(recordVisit).mock.calls);
+        expect(recorded).not.toContain('SECRET-CLICK-ID');
+        expect(recorded).not.toContain('www.google.com');
+    });
+
+    it('메일 링크(utm_source=email)는 email로 남기고 UTM 원문은 남기지 않는다', async () => {
+        const { POST } = await importRoute();
+        await POST(
+            beaconRequest(
+                JSON.stringify({ utmSource: 'email', utmMedium: 'email' })
+            )
+        );
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ entrySource: 'email' })
+        );
+    });
+
+    it('공유 링크 페이지의 방문은 share로 분류하되 저장하는 경로에는 공유 id가 남지 않는다', async () => {
+        requestHeaders.set(
+            'referer',
+            'https://siglens.io/ko/share/SECRET-SHARE-ID?x=1'
+        );
+        const { POST } = await importRoute();
+        await POST();
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledTimes(1);
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entrySource: 'share',
+                landingPath: '/ko/share/:id',
+            })
+        );
+        expect(JSON.stringify(vi.mocked(recordVisit).mock.calls)).not.toContain(
+            'SECRET-SHARE-ID'
+        );
+    });
+
+    it('ai 호스트의 대화 id도 저장하는 경로에 남지 않는다', async () => {
+        requestHeaders.set('referer', 'https://ai.siglens.io/c/SECRET-CONV-ID');
+        const { POST } = await importRoute();
+        await POST();
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledTimes(1);
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                landingSite: 'ai',
+                landingPath: '/c/:id',
+            })
+        );
+        expect(JSON.stringify(vi.mocked(recordVisit).mock.calls)).not.toContain(
+            'SECRET-CONV-ID'
+        );
+    });
+
+    it('공유 링크 페이지의 방문은 외부 Referer보다 share가 먼저다', async () => {
+        requestHeaders.set('referer', 'https://siglens.io/ko/share/abc123');
+        const { POST } = await importRoute();
+        await POST(beaconRequest(JSON.stringify({ referrerHost: 't.co' })));
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ entrySource: 'share' })
+        );
+    });
+
+    it('본문 없는 비콘이 공유 링크 페이지에서 오면 share다', async () => {
+        requestHeaders.set('referer', 'https://siglens.io/share/abc123');
+        const { POST } = await importRoute();
+        await POST();
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ entrySource: 'share' })
+        );
+    });
+
+    it('원본 호스트와 UTM은 기록 객체 어디에도 남지 않는다', async () => {
+        requestHeaders.set(
+            'referer',
+            'https://ai.siglens.io/c/x?utm_source=zzz'
+        );
+        const { POST } = await importRoute();
+        await POST(
+            beaconRequest(
+                JSON.stringify({
+                    referrerHost: 'news.example-origin.test',
+                    utmSource: 'my-secret-campaign',
+                    utmMedium: 'my-secret-medium',
+                })
+            )
+        );
+        await flushAfter();
+        expect(recordVisit).toHaveBeenCalledTimes(1);
+        const recorded = JSON.stringify(vi.mocked(recordVisit).mock.calls);
+        for (const raw of [
+            'SECRET-CLICK-ID',
+            'news.example-origin.test',
+            'my-secret-campaign',
+            'my-secret-medium',
+            'ai.siglens.io',
+            'utm_source=zzz',
+        ]) {
+            expect(recorded).not.toContain(raw);
+        }
     });
 
     it('본문이 깨졌거나 모양이 다르거나 너무 커도 방문은 출처 없이 기록한다', async () => {
@@ -192,8 +382,7 @@ describe('POST /api/presence', () => {
             expect.objectContaining({ userId: null })
         );
         expect(spy).toHaveBeenCalledWith(
-            '[visitor-metrics] getCurrentUser failed:',
-            expect.any(Error)
+            '[visitor-metrics] getCurrentUser failed: Error code=none'
         );
         spy.mockRestore();
     });
@@ -208,7 +397,11 @@ describe('POST /api/presence', () => {
         await flushAfter();
 
         expect(recordVisit).toHaveBeenCalledWith(
-            expect.objectContaining({ country: null, landingPath: null })
+            expect.objectContaining({
+                country: null,
+                landingPath: null,
+                landingSite: null,
+            })
         );
     });
 
@@ -263,7 +456,11 @@ describe('POST /api/presence', () => {
     });
 
     it('DB 쓰기가 실패해도 204를 준다', async () => {
-        recordVisit.mockRejectedValueOnce(new Error('neon down'));
+        recordVisit.mockRejectedValueOnce(
+            new Error('Failed query: params hash-secret,UA-secret', {
+                cause: Object.assign(new Error('x'), { code: '42703' }),
+            })
+        );
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         const { POST } = await importRoute();
@@ -272,7 +469,11 @@ describe('POST /api/presence', () => {
 
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
-        expect(spy).toHaveBeenCalled();
+        // 에러 이름과 DB 코드만 남기고 메시지(파라미터)는 남기지 않는다.
+        expect(spy).toHaveBeenCalledWith(
+            '[visitor-metrics] recordVisit failed: Error code=42703'
+        );
+        expect(JSON.stringify(spy.mock.calls)).not.toContain('secret');
         spy.mockRestore();
     });
 

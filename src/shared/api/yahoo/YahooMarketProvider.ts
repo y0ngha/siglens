@@ -15,6 +15,8 @@ import { pickYahooDisplayName } from './displayName';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import { mapOrNull } from '@/shared/api/market/mapOrNull';
+import { clampBarsRange } from '@/shared/api/market/barRange';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -83,20 +85,24 @@ function utcMidnightSeconds(isoDate: string): number {
 }
 
 type YahooQuote = NonNullable<Awaited<ReturnType<typeof yahooFinance.quote>>>;
+/** `hasQuotedPrice`를 통과해 `regularMarketPrice`가 있다고 확정된 시세. */
+type PricedYahooQuote = YahooQuote & { regularMarketPrice: number };
 
 /**
  * 쓸 수 있는 시세가 왔는지. 상장폐지/오타 심볼에 대해 yahoo는 throw가 아니라 `undefined`를
  * 돌려준다(실측: `999999.KS` → undefined) — 옵셔널 체이닝 없이 접근하면 TypeError가 된다.
  * `getQuoteOrThrow`와 `getQuoteSnapshot`이 같은 판정을 쓰도록 한 곳에 둔다.
  */
-function hasQuotedPrice(q: YahooQuote | undefined | null): q is YahooQuote {
+function hasQuotedPrice(
+    q: YahooQuote | undefined | null
+): q is PricedYahooQuote {
     return !!q && q.regularMarketPrice !== undefined;
 }
 
-function toYahooMarketQuote(symbol: string, q: YahooQuote): MarketQuote {
+function toYahooMarketQuote(symbol: string, q: PricedYahooQuote): MarketQuote {
     return {
         symbol,
-        price: q.regularMarketPrice!,
+        price: q.regularMarketPrice,
         changesPercentage: q.regularMarketChangePercent ?? 0,
         // 일부 KRX 종목은 사명 대신 코드 나열이 온다 — `displayName.ts` 참조.
         name: pickYahooDisplayName(symbol, q.longName, q.shortName),
@@ -118,10 +124,10 @@ function toYahooMarketQuote(symbol: string, q: YahooQuote): MarketQuote {
  * 00:00~06:30 UTC)은 UTC 날짜와 KST 날짜가 같지만, 시간외 체결이나 지연된
  * `regularMarketTime`이 UTC 날짜 경계를 넘길 수 있어 KST로 명시 환산한다.
  */
-function toYahooTodayBar(q: YahooQuote): Bar {
+function toYahooTodayBar(q: PricedYahooQuote): Bar {
     const at =
         q.regularMarketTime instanceof Date ? q.regularMarketTime : new Date();
-    const close = q.regularMarketPrice!;
+    const close = q.regularMarketPrice;
 
     // 장 시작 전·마감 뒤에는 open/high/low가 비어 오거나 **0으로** 온다(실측:
     // 2026-10 KRX 휴장 직후 `regularMarketOpen/DayHigh/DayLow = 0`). `?? close`는
@@ -183,7 +189,18 @@ export class YahooMarketProvider implements SiglensMarketProvider {
         // `YahooChartQuote`는 OHLCV를 전부 nullable로 선언하고 `toBar`가 결측을
         // 걸러내므로, 실제 응답이 이 형상을 벗어나도 런타임에서 흡수된다.
         const quotes = result.quotes as unknown as YahooChartQuote[];
-        return quotes.map(toBar).filter((bar): bar is Bar => bar !== null);
+        // 소스 쪽 정규화. 읽기 경로(`eodHistoryCache`)에도 같은 클램프가 있다 — 이 수정 전에
+        // 쓰인 캐시 엔트리를 위한 것이고, 새로 받는 봉은 여기서 고친다.
+        const { bars, fixed } = clampBarsRange(
+            quotes.map(toBar).filter((bar): bar is Bar => bar !== null)
+        );
+        // 호출당 한 줄. 고친 봉이 없으면 남기지 않는다.
+        if (fixed > 0) {
+            console.warn(
+                `[YahooMarketProvider] ohlc-normalized symbol=${options.symbol} timeframe=${options.timeframe} fixed=${fixed} total=${bars.length}`
+            );
+        }
+        return [...bars];
     }
 
     /**
@@ -261,7 +278,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[YahooMarketProvider] getQuote failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return null;
         }
@@ -289,7 +306,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             console.warn(
                 '[YahooMarketProvider] quote snapshot fetch failed:',
                 symbol,
-                error
+                redactDbErrorForLog(error)
             );
             return { quote: null, todayBar: null };
         }

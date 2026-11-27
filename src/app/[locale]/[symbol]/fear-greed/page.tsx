@@ -53,6 +53,7 @@ import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 
 import { MARKET_FEAR_GREED_LINK } from './_lib/marketFearGreedLink';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * ISR 상한. SSR이 점수·요인·시계열 요약까지 텍스트로 렌더하므로(`FearGreedFactsSummary`) 이 값이
@@ -96,7 +97,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ).catch((e: unknown) => {
         console.error(
             '[SymbolFearGreedPage] generateMetadata getSessionBarsStatic failed:',
-            e
+            redactDbErrorForLog(e)
         );
         return null;
     });
@@ -218,7 +219,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             marketProfileOf(assetInfo),
             assetInfo.fmpSymbol
         ).catch((e: unknown): BarsData | null => {
-            console.error('[FearGreedPage] getSessionBarsStatic failed:', e);
+            console.error(
+                '[FearGreedPage] getSessionBarsStatic failed:',
+                redactDbErrorForLog(e)
+            );
             return null;
         }),
         getMarketFearGreedReading(marketProfile),

@@ -14,6 +14,7 @@ import { etDateOf } from '../lib/calendarWindow';
 import type { CalendarCountry } from '../model';
 import { INDICATOR_NAME_KO } from '../lib/indicatorNameKo';
 import { INDICATOR_TRANSLATION_CACHE_TAG } from '../lib/indicatorTranslationConstants';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * `translateIndicator`의 결과 — `dictionary`(사전에 있어 생략)·`pending`(최근 제출 플래그로
@@ -119,7 +120,10 @@ export async function translateUnresolvedCalendarIndicators(
         // react-doctor-disable-next-line react-doctor/async-await-in-loop
         const outcome = await translateIndicator(base, logLabel).catch(
             (error: unknown) => {
-                console.error(`[${logLabel}] translate failed: ${base}`, error);
+                console.error(
+                    `[${logLabel}] translate failed: ${base}`,
+                    redactDbErrorForLog(error)
+                );
                 return 'failed' as const;
             }
         );

@@ -17,6 +17,7 @@ import {
     buildKrxTickTableCacheKey,
     KRX_TICK_TABLE_CACHE_TTL,
 } from '../lib/cacheKeys';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** yahoo가 ETF/ETN을 어떤 `quoteType`으로 부르든 상장지수상품 호가표('etp')를 쓴다. */
 const ETP_QUOTE_TYPES: ReadonlySet<string> = new Set(['ETF', 'ETN']);
@@ -119,7 +120,7 @@ export async function resolveKrxTickTableForDisplay(
         console.warn(
             '[resolveKrxTickTable] quoteType lookup failed, displaying with the share table:',
             symbol,
-            error
+            redactDbErrorForLog(error)
         );
         return 'share';
     }

@@ -10,6 +10,11 @@ import {
 } from './gradesConsensusSource';
 
 /**
+ * 등급 컨센서스 정적 캐시(`fundamental:grades-consensus-v2`)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const GRADES_CONSENSUS_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
+/**
  * 로더가 "Yahoo 실패로 내려온 FMP 값"을 데이터 캐시에 넣지 않으려고 던지는 내부 신호. 던진 값은
  * `unstable_cache`가 저장하지 않으므로 이 값이 페이지 캐시(24h)에 굳지 않는다.
  */
@@ -57,7 +62,7 @@ export async function loadPageGradesConsensus(
                 return value;
             },
             [],
-            SECONDS_PER_DAY
+            GRADES_CONSENSUS_REVALIDATE_SECONDS
         );
         return { grades, yahooFailed: false };
     } catch (error) {

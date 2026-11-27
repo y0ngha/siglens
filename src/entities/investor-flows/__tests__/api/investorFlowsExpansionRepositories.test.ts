@@ -167,8 +167,8 @@ describe('DrizzleSecFilingsRepository', () => {
         const [[config]] = callsOf(ops[0] as never, 'onConflictDoUpdate') as [
             [{ setWhere: Parameters<typeof renderSql>[0] }],
         ];
-        expect(renderSql(config.setWhere).text).toContain(
-            'IS DISTINCT FROM excluded.kind'
+        expect(renderSql(config.setWhere).text).toBe(
+            '"sec_offering_filings"."kind" IS DISTINCT FROM excluded.kind'
         );
         expect(ops[1]).toMatchObject({
             kind: 'delete',
@@ -271,8 +271,8 @@ describe('DrizzleSecFilingsRepository', () => {
             [Parameters<typeof renderSql>[0]],
         ];
         const rendered = renderSql(where);
-        expect(rendered.text).toContain(
-            'IN (SELECT cik FROM sec_cik_symbol_map WHERE symbol = $2)'
+        expect(rendered.text).toBe(
+            '("sec_form144"."filing_date" >= $1 and "sec_form144"."issuer_cik" IN (SELECT cik FROM sec_cik_symbol_map WHERE symbol = $2))'
         );
         expect(rendered.params).toEqual(['2026-04-15', 'AMD']);
         expect(callsOf(ops[0] as never, 'limit')).toEqual([[5]]);
@@ -339,7 +339,9 @@ describe('DrizzleSecFilingsRepository', () => {
             [Parameters<typeof renderSql>[0]],
         ];
         const rendered = renderSql(where);
-        expect(rendered.text).toContain('"skipped" = $2');
+        expect(rendered.text).toBe(
+            '("sec_filings_failures"."attempts" >= $1 and "sec_filings_failures"."skipped" = $2)'
+        );
         expect(rendered.params).toEqual([3, false]);
     });
 
@@ -485,8 +487,9 @@ describe('DrizzleInvestorFlowsFtdRepository', () => {
             { settlementDate: '2026-09-15', failsQty: 300, price: null },
         ]);
         const { text, params } = renderSql(ops[0]?.target as never);
-        expect(text).toContain('sum(fails_qty)');
-        expect(text).toContain('GROUP BY settlement_date');
+        expect(text).toBe(
+            ' SELECT settlement_date::text AS settlement_date, sum(fails_qty)::bigint::text AS fails_qty, max(price)::text AS price FROM sec_ftd WHERE symbol = $1 AND settlement_date >= $2::date GROUP BY settlement_date ORDER BY settlement_date'
+        );
         expect(params).toEqual(['AAPL', '2026-04-01']);
     });
 

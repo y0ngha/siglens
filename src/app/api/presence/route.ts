@@ -13,8 +13,13 @@ import {
     createDailyPruner,
     noContent,
 } from '@/app/api/presence/_shared/dailyPruner';
+import { collapseLandingPath } from '@/app/api/presence/_shared/collapseLandingPath';
 import { entrySourceOf } from '@/app/api/presence/_shared/entrySourceOf';
-import { landingPathOf } from '@/app/api/presence/_shared/landingPathOf';
+import {
+    landingPathOf,
+    landingSiteOf,
+} from '@/app/api/presence/_shared/landingPathOf';
+import { readPresenceBody } from '@/app/api/presence/_shared/readPresenceBody';
 import { resolveUserId } from '@/app/api/presence/_shared/resolveUserId';
 import {
     rejectUncountedRequest,
@@ -25,6 +30,7 @@ import {
     type VisitorDayRecord,
 } from '@/entities/visitor/api';
 import { getDatabaseClient } from '@/shared/db/client';
+import { describeDbErrorForLog } from '@/shared/db/describeDbErrorForLog';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 
@@ -42,7 +48,8 @@ const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[visitor-metrics]');
 
 /**
  * 방문 비콘 수신 — 집계 대상이면 방문자당 하루 1행 기록을 응답 뒤로 미루고 언제나 204로 답한다.
- * 본문(`{ referrerHost, utmSource }`)은 첫 진입 출처 분류에만 쓰고 원본은 저장하지 않는다.
+ * 본문(출처 신호 `{ referrerHost, utmSource, utmMedium, adClick }`와 방문 이력 구간값 `visit`)은
+ * 첫 진입 출처 분류와 구간값 저장에만 쓰고, 분류 전 원본은 저장하지 않는다.
  */
 export async function POST(request?: Request): Promise<Response> {
     const headerList = await headers();
@@ -60,9 +67,13 @@ export async function POST(request?: Request): Promise<Response> {
     if (!identity.ok) return identity.response;
 
     const today = kstDateKey(new Date());
+    const referer = headerList.get('referer');
+    // 원본 경로는 출처 분류(공유 링크 판정)에만 쓰고, 저장하는 값은 식별자를 접은 경로다.
+    const landingPath = landingPathOf(referer);
+    const landingSite = landingSiteOf(referer);
     // 본문 읽기와 회원 확인은 서로 무관하다 — 겹쳐서 응답 경로를 줄인다.
-    const [entrySource, userId] = await Promise.all([
-        entrySourceOf(request),
+    const [body, userId] = await Promise.all([
+        readPresenceBody(request),
         // 회원 D7/D30 재방문의 축. 세션 쿠키가 없으면 DB 왕복 없이 null이다.
         resolveUserId('[visitor-metrics]'),
     ]);
@@ -72,8 +83,13 @@ export async function POST(request?: Request): Promise<Response> {
         date: today,
         userAgent: identity.userAgent,
         country: headerList.get('cf-ipcountry'),
-        landingPath: landingPathOf(headerList.get('referer')),
-        entrySource,
+        landingPath: collapseLandingPath(landingPath, landingSite),
+        entrySource: entrySourceOf(body, landingPath),
+        landingSite,
+        firstVisitBucket: body?.visit?.first ?? null,
+        lastVisitBucket: body?.visit?.last ?? null,
+        visitDaysBucket: body?.visit?.days ?? null,
+        returnWindow: body?.visit?.window ?? null,
         userId,
     };
     // 헤더는 위에서 다 읽었다 — 기록은 응답 뒤로 미룬다(`recordVisitAndPrune`).
@@ -98,7 +114,10 @@ async function recordVisitAndPrune(visit: VisitorDayRecord): Promise<void> {
         await repo.recordVisit(visit);
     } catch (error) {
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.
-        console.error('[visitor-metrics] recordVisit failed:', error);
+        // 메시지·파라미터는 남기지 않는다(`describeDbErrorForLog`) — 해시·UA·경로가 로그로 샌다.
+        console.error(
+            `[visitor-metrics] recordVisit failed: ${describeDbErrorForLog(error)}`
+        );
         // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
         return;
     }

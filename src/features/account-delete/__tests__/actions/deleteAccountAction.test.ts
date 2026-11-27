@@ -56,6 +56,11 @@ vi.mock('@/entities/oauth-account/api', () => ({
 vi.mock('@/entities/oauth-account/server/revoker', () => ({
     compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
+vi.mock('@/entities/mail-alert/server/accountCleanup', () => ({
+    createMailAlertAccountCleanup: vi.fn(() => ({
+        deleteForAccount: vi.fn(),
+    })),
+}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -64,6 +69,10 @@ import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockDelete = deleteAccount as MockedFunction<typeof deleteAccount>;
@@ -208,6 +217,10 @@ describe('deleteAccountAction', () => {
                     oauthRevoker: expect.objectContaining({
                         revokeToken: expect.any(Function),
                     }),
+                    // 회원 행을 지우기 전에 알림 메일 신청을 파기하는 포트가 연결돼 있다.
+                    mailAlerts: expect.objectContaining({
+                        deleteForAccount: expect.any(Function),
+                    }),
                 }),
                 expect.any(Object)
             );
@@ -215,6 +228,16 @@ describe('deleteAccountAction', () => {
                 expect.objectContaining({
                     name: 'siglens_session',
                     maxAgeSeconds: 0,
+                })
+            );
+            // 계정과 모든 세션이 사라졌으니 메인 로그인 흔적도 같은 도메인·경로로 지운다.
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_signed_in',
+                    value: '',
+                    maxAge: 0,
+                    domain: 'siglens.io',
+                    path: '/',
                 })
             );
         });
@@ -234,5 +257,27 @@ describe('deleteAccountAction', () => {
             expect(result.error?.code).toBe('unexpected');
             expect(setSpy).not.toHaveBeenCalled();
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockGetCurrentUser.mockResolvedValue(USER);
+            mockDelete.mockRejectedValue(plantedDbError());
+            const result = await deleteAccountAction(
+                { error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[deleteAccountAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

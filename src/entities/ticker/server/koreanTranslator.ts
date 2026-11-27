@@ -4,6 +4,7 @@ import { parseJsonResponse } from '@/entities/llm-provider/lib/parseJsonResponse
 import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 import { tryReadTranslatorConfig } from './config';
 import type { TranslatorConfig, TranslatorEntry } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 function buildTranslatePrompt(entries: readonly TranslatorEntry[]): string {
     const entryList = entries.map(e => `- ${e.symbol}: ${e.name}`).join('\n');
@@ -83,7 +84,7 @@ export async function translateCompanyNames(
         console.error('[koreanTranslator] translateCompanyNames failed', {
             model: config.model,
             entryCount: entries.length,
-            error,
+            error: redactDbErrorForLog(error),
         });
         return {};
     }
@@ -109,7 +110,7 @@ export async function translateCompanyDescription(
         console.error('[koreanTranslator] translateCompanyDescription failed', {
             model: config.model,
             descriptionLength: description.length,
-            error,
+            error: redactDbErrorForLog(error),
         });
         return null;
     }

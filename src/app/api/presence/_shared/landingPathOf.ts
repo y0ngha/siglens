@@ -1,3 +1,6 @@
+import type { LandingSite } from '@/entities/visitor/types';
+import { isAiHost } from '@/shared/config/aiHost';
+
 /**
  * 비콘이 뜬 페이지의 경로. 비콘은 same-origin `fetch`라 `Referer`에 현재 페이지
  * URL이 그대로 실린다 — 클라이언트가 본문을 보낼 필요가 없다.
@@ -8,4 +11,13 @@
 export function landingPathOf(referer: string | null): string | null {
     if (referer === null || !URL.canParse(referer)) return null;
     return new URL(referer).pathname;
+}
+
+/**
+ * 비콘이 뜬 페이지의 사이트. 두 호스트가 같은 `/api/presence`를 쓰므로 같은 `Referer`로 가른다.
+ * 원본 호스트가 아니라 `main`·`ai` 두 값만 돌려준다. 헤더가 없거나 URL로 해석되지 않으면 `null`.
+ */
+export function landingSiteOf(referer: string | null): LandingSite | null {
+    if (referer === null || !URL.canParse(referer)) return null;
+    return isAiHost(new URL(referer).host) ? 'ai' : 'main';
 }

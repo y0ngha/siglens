@@ -6,6 +6,7 @@ import type {
     CryptoAssetRepository,
 } from '@/shared/db/types';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // Fetch extra candidates (CRYPTO_SEARCH_LIMIT) so app-side relevance re-ranking has enough
 // to work with; the DB pre-sort only orders them, the final ranking is done in searchRelevance.
@@ -72,7 +73,8 @@ function recordToSearchResult(r: CryptoAssetRecord): TickerSearchResult {
  */
 export async function isCryptoSymbol(symbol: string): Promise<boolean> {
     const upper = symbol.toUpperCase();
-    if (cryptoSymbolCache.has(upper)) return cryptoSymbolCache.get(upper)!;
+    const cachedClassification = cryptoSymbolCache.get(upper);
+    if (cachedClassification !== undefined) return cachedClassification;
     const repository = tryGetRepository();
     if (!repository) {
         // No DB — try FMP-list as last resort so tab guards don't 404 new coins.
@@ -94,7 +96,10 @@ export async function isCryptoSymbol(symbol: string): Promise<boolean> {
         cryptoSymbolCache.set(upper, isCrypto);
         return isCrypto;
     } catch (e) {
-        console.warn('[cryptoAssetStore] findBySymbol failed', e);
+        console.warn(
+            '[cryptoAssetStore] findBySymbol failed',
+            redactDbErrorForLog(e)
+        );
         return false;
     }
 }
@@ -134,7 +139,10 @@ export async function getCryptoAsset(
         }
         return record;
     } catch (e) {
-        console.warn('[cryptoAssetStore] getCryptoAsset failed', e);
+        console.warn(
+            '[cryptoAssetStore] getCryptoAsset failed',
+            redactDbErrorForLog(e)
+        );
         return null;
     }
 }
@@ -144,8 +152,8 @@ export async function searchCryptoAssets(
     query: string
 ): Promise<TickerSearchResult[]> {
     const normalizedQuery = query.toLowerCase().trim();
-    if (cryptoSearchCache.has(normalizedQuery))
-        return cryptoSearchCache.get(normalizedQuery)!;
+    const cachedResults = cryptoSearchCache.get(normalizedQuery);
+    if (cachedResults !== undefined) return cachedResults;
     const repository = tryGetRepository();
     if (!repository) return [];
     try {
@@ -157,7 +165,10 @@ export async function searchCryptoAssets(
         cryptoSearchCache.set(normalizedQuery, results);
         return results;
     } catch (e) {
-        console.warn('[cryptoAssetStore] search failed', e);
+        console.warn(
+            '[cryptoAssetStore] search failed',
+            redactDbErrorForLog(e)
+        );
         return [];
     }
 }

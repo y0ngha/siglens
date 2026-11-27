@@ -239,6 +239,10 @@ import {
     __activeStreamCount,
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_USER_ID = '22222222-2222-4222-8222-222222222222';
@@ -357,8 +361,8 @@ describe('모델 결정', () => {
     it('인자가 기본 모델을 이긴다(기본 모델은 읽지도 않는다)', async () => {
         m.findDefaultModel.mockResolvedValue(BYOK_MODEL);
         core.cache = { summary: 'cached' };
-        await run({ model: 'gpt-6-astra' });
-        expect(core.calls[0].model).toBe('gpt-6-astra');
+        await run({ model: 'gpt-6.2-astra' });
+        expect(core.calls[0].model).toBe('gpt-6.2-astra');
         expect(m.findDefaultModel).not.toHaveBeenCalled();
     });
 
@@ -371,6 +375,19 @@ describe('모델 결정', () => {
         });
         expect(core.calls).toHaveLength(0);
     });
+
+    it.each(['claude-fable-5-1', 'gpt-6.1-sol', 'gpt-6-astra'])(
+        '퇴역한 %s를 model 인자로 주면 후속 모델로 바꾸지 않고 400 invalid_model',
+        async retired => {
+            const result = await run({ model: retired });
+            expect(result).toMatchObject({
+                ok: false,
+                status: 400,
+                code: 'invalid_model',
+            });
+            expect(core.calls).toHaveLength(0);
+        }
+    );
 
     it('저장된 기본 모델이 로스터에서 사라졌으면 400 invalid_model', async () => {
         m.findDefaultModel.mockResolvedValue('retired-model');
@@ -505,7 +522,7 @@ describe('캐시 미스', () => {
 
     it.each([
         ['claude-opus-5', 'anthropic'],
-        ['gpt-6-astra', 'openai'],
+        ['gpt-6.2-astra', 'openai'],
         ['gemini-4-argon', 'google'],
     ])('%s의 키가 없으면 provider는 %s', async (model, provider) => {
         const result = await run({ model });
@@ -872,7 +889,7 @@ describe('provider 오류 → 502 provider_error', () => {
             'no access',
             HEADERS
         );
-        const result = await run({ model: 'gpt-6-astra' });
+        const result = await run({ model: 'gpt-6.2-astra' });
         expect(result).toMatchObject({
             status: 502,
             details: { provider: 'openai', status: 403 },
@@ -1179,7 +1196,11 @@ describe('스트리밍 경계 — 사전 검사를 모두 통과한 생성만 �
 
     it.each([
         ['model_required', {}, (): void => undefined],
-        ['byok_key_required', { model: 'gpt-6-astra' }, (): void => undefined],
+        [
+            'byok_key_required',
+            { model: 'gpt-6.2-astra' },
+            (): void => undefined,
+        ],
         [
             'rate_limited',
             { model: BYOK_MODEL },
@@ -1377,5 +1398,15 @@ describe('BYOK 가드 — 생성 호출은 byokOnly 검사를 거친다', () => 
             tier: 'member',
         });
         expect(core.calls[0].userApiKey).toBeUndefined();
+    });
+
+    it('키 조회가 DB 에러로 실패해도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        m.findKey.mockRejectedValue(plantedDbError());
+        await run({ model: FREE_MODEL });
+        expect(console.error).toHaveBeenCalledWith(
+            '[api/v1 run_fresh_analysis] key lookup failed:',
+            'Error code=57014'
+        );
+        expectLogWithoutPlantedSecrets(vi.mocked(console.error));
     });
 });

@@ -64,6 +64,11 @@ vi.mock('../fundamentalStamps', () => ({
     refreshFundamentalStamps: mockRefreshFundamentalStamps,
 }));
 
+vi.mock('../viewDemand', () => ({
+    // 집계 읽기는 DB를 친다. 이 스위트는 그 단계를 보지 않는다 — "집계를 모름 = 전부 활성"(종전 동작)으로
+    // 고정한다. 활성·조용한 심볼 분기는 `runPrewarmBatch.viewDemand.test.ts`가 본다.
+    loadViewDemand: async () => ({ active: null, overallWarm: [] }),
+}));
 vi.mock('../hubs', () => ({
     // 이 함수는 LLM·Redis를 실제로 친다. 목하지 않으면 이 파일의 모든
     // `runPrewarmBatch()` 호출이 그 경로를 타고, 전역 fetch 스텁이 **우연히**
@@ -91,6 +96,9 @@ vi.mock('../lock', () => ({
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
     advanceRotationCursor: mockAdvanceRotationCursor,
+    // 종합 사전 생성 대기 목록 — 이 스위트는 그 단계를 보지 않는다.
+    listOverallWarmPending: async () => [],
+    isTransientlySkipped: async () => false,
     // 이 스위트는 구조적 불가 집합을 다루지 않으므로 항상 빈 집합을 준다
     // (= 이 수정 이전과 동일한 판정). 집합 자체의 계약은
     // `runPrewarmBatch.structuralUnavailable.test.ts`가 진짜 lock.ts로 검증한다.
@@ -1084,7 +1092,7 @@ describe('runPrewarmBatch', () => {
         expect(selectedEver.size).toBe(universeSymbols.length);
     });
 
-    // ── FIX 1(감사, PR #698 리뷰) — legacy in-flight 마커(present, jobId 없음) ──
+    // ── FIX 1 — legacy in-flight 마커(present, jobId 없음) ──
 
     it('legacy 마커(present, jobId 없음)가 있는 유닛은 재제출되지 않는다(seam 미호출) — 회귀 가드', async () => {
         // 픽스 전에는 getInFlightJobId만 확인해 legacy 마커를 "in-flight 아님"으로

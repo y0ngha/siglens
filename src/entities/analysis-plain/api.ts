@@ -22,6 +22,7 @@ import {
     tryCreateRepository,
 } from './server/plainStore';
 import type { PlainGenerationKey } from './plainGenerationCoordination';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 자체 마감. `withDeadline`의 `Promise.race`가 **이미 끝난 뒤** 붙는 레이어라
@@ -268,7 +269,7 @@ export async function rewriteToPlainLanguage(
             symbol,
             locale,
             model: config?.model ?? null,
-            error,
+            error: redactDbErrorForLog(error),
         });
         return null;
     }

@@ -20,6 +20,7 @@ import {
     shortenNewsRefreshClaim,
     tryClaimNewsRefresh,
 } from '../server/newsRefreshFlag';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 적재를 돌린다. 실패하면(소스 실패 = `null`, DB 쓰기 실패, 그 밖의 예외) 앞에서 잡은
@@ -44,7 +45,7 @@ async function ingestOrReleaseClaim(
         if (err instanceof NewsIngestWriteError) {
             console.error(
                 `[ensureNewsCardsAnalyzedAction] ingest failed for ${symbol}:`,
-                err
+                redactDbErrorForLog(err)
             );
             return null;
         }

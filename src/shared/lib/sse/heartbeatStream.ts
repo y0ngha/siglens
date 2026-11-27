@@ -8,6 +8,7 @@ import {
     RATE_LIMITED_SSE_EVENT,
     RateLimitedStreamError,
 } from '@/shared/lib/sse/analysisRateLimit';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * ALB `idle_timeout`이 60초다(실측: heartbeat 없이 61.1초에 끊김). 그 절반 이하로 잡아
@@ -191,7 +192,10 @@ export function heartbeatStream<T>(
                     // [analysis-stream] failed: 접두는 07-alarms.sh CloudWatch 메트릭
                     // 필터와 정합하는 안정 ASCII 마커다 — non-ASCII 변경 금지.
                     if (logFailures) {
-                        console.error('[analysis-stream] failed:', err);
+                        console.error(
+                            '[analysis-stream] failed:',
+                            redactDbErrorForLog(err)
+                        );
                     }
                     const message = toClientErrorMessage(
                         err,

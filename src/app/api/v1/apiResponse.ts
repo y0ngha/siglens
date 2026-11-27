@@ -1,5 +1,6 @@
 import { constants } from 'node:http2';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -142,7 +143,10 @@ export async function withApiErrorBoundary(
     try {
         return await handler();
     } catch (error) {
-        console.error(`[api/v1/${label}] unexpected error:`, error);
+        console.error(
+            `[api/v1/${label}] unexpected error:`,
+            redactDbErrorForLog(error)
+        );
         return apiError(
             API_STATUS.internalError,
             'internal_error',

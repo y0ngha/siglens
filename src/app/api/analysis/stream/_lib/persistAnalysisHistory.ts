@@ -1,4 +1,4 @@
-import type { AssembledPromptRecord } from '@y0ngha/siglens-core';
+import type { AssembledPromptRecord, Tier } from '@y0ngha/siglens-core';
 import { after } from 'next/server';
 import {
     DrizzleAnalysisHistoryRepository,
@@ -7,6 +7,7 @@ import {
 } from '@/entities/analysis/analysisHistoryRepository';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 모델 미지정 technical 요청이 `analysis_history.model_id`(감사용 컬럼)에 남기는 값.
@@ -21,6 +22,10 @@ export interface PersistAnalysisHistoryInput {
     timeframe: string;
     tab: AnalysisHistoryTab;
     modelId: string;
+    /** 이 분석을 생성한 요청의 tier(`tierContext.tier`). */
+    tier: Tier;
+    /** 이 분석이 보유 맞춤(포지션 버킷 포함)이었는지 — 다른 사람에게 보이는 이력 읽기가 거른다. */
+    personalized: boolean;
     locale: Locale;
     result: unknown;
     /**
@@ -56,6 +61,8 @@ export function schedulePersistAnalysisHistory(
                 timeframe: input.timeframe,
                 tab: input.tab,
                 modelId: input.modelId,
+                tier: input.tier,
+                personalized: input.personalized,
                 locale: input.locale,
                 result: input.result,
                 generatedAt,
@@ -65,7 +72,7 @@ export function schedulePersistAnalysisHistory(
     } catch (err) {
         console.error(
             '[streamAnalysisRoute] schedulePersistAnalysisHistory failed:',
-            err
+            redactDbErrorForLog(err)
         );
     }
 }

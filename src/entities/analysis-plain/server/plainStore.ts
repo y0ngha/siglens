@@ -7,6 +7,7 @@ import type { PlainTextRepository } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { PLAIN_PROMPT_VERSION } from '../lib/buildPlainPrompt';
 import { DrizzlePlainTextRepository } from '../plainTextRepository';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 저장소 조회 상한(ms). DB 클라이언트(postgres-js)는 연결 타임아웃(`connect_timeout`)만
@@ -63,7 +64,9 @@ export function tryCreateRepository(): PlainTextRepository | null {
         }
         return new DrizzlePlainTextRepository(client.db);
     } catch (error) {
-        console.error('[analysisPlain] repository unavailable', { error });
+        console.error('[analysisPlain] repository unavailable', {
+            error: redactDbErrorForLog(error),
+        });
         return null;
     }
 }

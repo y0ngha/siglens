@@ -26,8 +26,8 @@ function poolBounds(content: string): { start: number; end: number } {
 /** `CRYPTO_CANDIDATE_POOL` 배열 리터럴의 심볼들, 선언 순서대로. */
 export function extractCandidatePool(content: string): string[] {
     const { start, end } = poolBounds(content);
-    return [...content.slice(start, end).matchAll(POOL_SYMBOL_RE)].map(
-        m => m[1]!
+    return [...content.slice(start, end).matchAll(POOL_SYMBOL_RE)].flatMap(m =>
+        m[1] === undefined ? [] : [m[1]]
     );
 }
 

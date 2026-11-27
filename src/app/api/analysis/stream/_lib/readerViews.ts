@@ -7,6 +7,7 @@ import {
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisType } from './types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 평이화("쉽게보기")를 적용할 분석 종류.
@@ -143,7 +144,10 @@ export function withReaderViews<T>(
         // 감당할 수 있는 실패가 아니다.
         const withPlain = await withPlainLanguage(result, symbol, locale).catch(
             (error: unknown) => {
-                console.error('[withPlainLanguage] unexpected throw', error);
+                console.error(
+                    '[withPlainLanguage] unexpected throw',
+                    redactDbErrorForLog(error)
+                );
                 return result as WithPlain<T>;
             }
         );

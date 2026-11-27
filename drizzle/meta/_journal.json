@@ -418,8 +418,71 @@
     {
       "idx": 59,
       "version": "7",
-      "when": 1795148978932,
-      "tag": "0059_cynical_devos",
+      "when": 1795157646342,
+      "tag": "0059_visitor_visit_signals",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795160263959,
+      "tag": "0060_backfill_landing_path_identifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795178274826,
+      "tag": "0061_signal_price_analysis_tier",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1795239051454,
+      "tag": "0062_email_report_consent_and_welcome",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795285711485,
+      "tag": "0063_mail_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795307643463,
+      "tag": "0064_signal_scan_progress",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1795421451623,
+      "tag": "0065_price_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795674498309,
+      "tag": "0066_analysis_history_personalized",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795748917787,
+      "tag": "0067_analysis_outcomes",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795751194231,
+      "tag": "0068_chat_message_turn_at",
       "breakpoints": true
     }
   ]

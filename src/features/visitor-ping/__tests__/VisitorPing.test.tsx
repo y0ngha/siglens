@@ -72,7 +72,7 @@ describe('VisitorPing', () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 
-    it('첫 방문에 본문 없는 POST를 보낸다', async () => {
+    it('첫 방문에 POST를 보낸다', async () => {
         render(<VisitorPing />);
         fireInteraction();
 
@@ -91,6 +91,7 @@ describe('VisitorPing', () => {
 
     describe('첫 진입 출처', () => {
         afterEach(() => {
+            vi.restoreAllMocks();
             window.history.replaceState(null, '', '/');
             Object.defineProperty(document, 'referrer', {
                 value: '',
@@ -107,22 +108,30 @@ describe('VisitorPing', () => {
                 : undefined;
         }
 
-        it('Referer도 utm_source도 없으면 본문 없이 보낸다', async () => {
+        const NEW_VISIT = {
+            first: 'new',
+            last: 'none',
+            days: 'n1',
+            window: null,
+        };
+
+        it('Referer도 utm도 없으면 출처 필드는 비우고 구간값만 싣는다(본문은 언제나 보낸다)', async () => {
             render(<VisitorPing />);
             fireInteraction();
 
             await waitFor(() => {
                 expect(fetch).toHaveBeenCalledTimes(1);
             });
-            const init = vi
-                .mocked(fetch)
-                .mock.calls.find(([url]) => url === '/api/presence')?.[1];
-            expect(init).toBeDefined();
-            expect(init).not.toHaveProperty('body');
-            expect(init).not.toHaveProperty('headers');
+            expect(sentBody()).toEqual({
+                referrerHost: null,
+                utmSource: null,
+                utmMedium: null,
+                adClick: false,
+                visit: NEW_VISIT,
+            });
         });
 
-        it('Referer 호스트와 utm_source만 본문에 싣는다(경로·다른 쿼리는 보내지 않는다)', async () => {
+        it('Referer 호스트와 utm_source·utm_medium만 본문에 싣는다(경로·다른 쿼리는 보내지 않는다)', async () => {
             Object.defineProperty(document, 'referrer', {
                 value: 'https://www.google.com/search?q=secret',
                 configurable: true,
@@ -130,7 +139,7 @@ describe('VisitorPing', () => {
             window.history.replaceState(
                 null,
                 '',
-                '/AAPL?utm_source=chatgpt.com&ref=private'
+                '/AAPL?utm_source=chatgpt.com&utm_medium=cpc&ref=private'
             );
             render(<VisitorPing />);
             fireInteraction();
@@ -139,7 +148,86 @@ describe('VisitorPing', () => {
                 expect(sentBody()).toEqual({
                     referrerHost: 'www.google.com',
                     utmSource: 'chatgpt.com',
+                    utmMedium: 'cpc',
+                    adClick: false,
+                    visit: NEW_VISIT,
                 });
+            });
+            expect(JSON.stringify(sentBody())).not.toContain('secret');
+            expect(JSON.stringify(sentBody())).not.toContain('private');
+        });
+
+        it.each(['gclid', 'gbraid', 'wbraid'])(
+            '%s가 있으면 adClick만 true로 보내고 식별자 값은 보내지 않는다',
+            async key => {
+                window.history.replaceState(
+                    null,
+                    '',
+                    `/lp/stock-analysis?${key}=SECRET-CLICK-ID`
+                );
+                render(<VisitorPing />);
+                fireInteraction();
+
+                await waitFor(() => {
+                    expect(sentBody()).toMatchObject({ adClick: true });
+                });
+                expect(JSON.stringify(sentBody())).not.toContain(
+                    'SECRET-CLICK-ID'
+                );
+            }
+        );
+
+        it('64자를 넘는 utm 값은 null로 보낸다', async () => {
+            window.history.replaceState(
+                null,
+                '',
+                `/?utm_source=${'a'.repeat(65)}&utm_medium=${'b'.repeat(64)}`
+            );
+            render(<VisitorPing />);
+            fireInteraction();
+
+            await waitFor(() => {
+                expect(sentBody()).toMatchObject({
+                    utmSource: null,
+                    utmMedium: 'b'.repeat(64),
+                });
+            });
+        });
+
+        it('저장소를 읽지 못하면 visit은 null이고 방문 기록은 그대로 보낸다', async () => {
+            vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new Error('quota');
+            });
+            render(<VisitorPing />);
+            fireInteraction();
+
+            await waitFor(() => {
+                expect(sentBody()).toMatchObject({ visit: null });
+            });
+        });
+
+        it('같은 날 다시 보내도 같은 visit을 싣는다', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+            const { unmount } = render(<VisitorPing />);
+            fireInteraction();
+            await waitFor(() => {
+                expect(fetch).toHaveBeenCalledTimes(1);
+            });
+            unmount();
+
+            // 응답이 실패해 마커가 없으니 다음 로드가 다시 보낸다.
+            render(<VisitorPing />);
+            fireInteraction();
+            await waitFor(() => {
+                expect(fetch).toHaveBeenCalledTimes(2);
+            });
+            const bodies = vi
+                .mocked(fetch)
+                .mock.calls.map(([, init]) => init?.body);
+            expect(bodies).toHaveLength(2);
+            expect(bodies[1]).toBe(bodies[0]);
+            expect(JSON.parse(String(bodies[1]))).toMatchObject({
+                visit: NEW_VISIT,
             });
         });
 
@@ -154,6 +242,9 @@ describe('VisitorPing', () => {
                 expect(sentBody()).toEqual({
                     referrerHost: null,
                     utmSource: 'perplexity',
+                    utmMedium: null,
+                    adClick: false,
+                    visit: NEW_VISIT,
                 });
             });
         });
@@ -200,13 +291,14 @@ describe('VisitorPing', () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 
-    it('옛 형식(날짜만) 값은 무시하고 새 키로 보낸다', async () => {
+    it('옛 형식(날짜만) 값은 무시하고 새 키로 보내며, 옛 키는 지운다', async () => {
         window.localStorage.setItem('siglens:visit', TODAY);
         render(<VisitorPing />);
         fireInteraction();
         await waitFor(() => {
             expect(fetch).toHaveBeenCalledTimes(1);
         });
+        expect(window.localStorage.getItem('siglens:visit')).toBeNull();
     });
 
     it('저장된 날짜가 오늘이 아니면 다시 보낸다', async () => {

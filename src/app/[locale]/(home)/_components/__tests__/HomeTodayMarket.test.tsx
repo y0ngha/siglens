@@ -6,6 +6,10 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import ko from '../../../../../../messages/ko.json';
 import en from '../../../../../../messages/en.json';
 import { HomeTodayMarket } from '../HomeTodayMarket';
+import {
+    SIGNAL_HUBS,
+    signalHubPath,
+} from '@/entities/signal-history/lib/signalHubs';
 import type { HomeTodayMarketData } from '../../_lib/loadHomeTodayMarket';
 import { toTodayMarketView } from '../../_lib/todayMarketView';
 
@@ -199,5 +203,98 @@ describe('HomeTodayMarket', () => {
             screen.getByRole('link', { name: '005930' })
         ).toBeInTheDocument();
         expect(screen.queryByText('삼성전자')).toBeNull();
+    });
+
+    describe('신호 허브 링크', () => {
+        it('허브마다 링크 하나가 카드 안에 있고 경로는 signalHubPath다', () => {
+            renderSection();
+
+            const nav = screen.getByRole('navigation', {
+                name: ko.app.market.signalHub.marketLinksHeading,
+            });
+            const links = within(nav).getAllByRole('link');
+            expect(links).toHaveLength(SIGNAL_HUBS.length);
+            expect(links.map(link => link.getAttribute('href'))).toEqual(
+                SIGNAL_HUBS.map(hub => signalHubPath(hub.slug))
+            );
+            expect(
+                screen.getByRole('region', { name: c.heading }).contains(nav)
+            ).toBe(true);
+        });
+
+        it('카드 안이라 제목은 h3다(h2는 카드 제목 하나뿐)', () => {
+            renderSection();
+
+            expect(
+                screen.getByRole('heading', {
+                    level: 3,
+                    name: ko.app.market.signalHub.marketLinksHeading,
+                })
+            ).toBeInTheDocument();
+            expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(
+                1
+            );
+        });
+
+        it('신호 종목이 없어도 허브 링크는 남는다', () => {
+            renderSection({
+                ...FULL,
+                signals: {
+                    us: { rows: [], computedAt: null },
+                    kr: { rows: [], computedAt: null },
+                },
+            });
+
+            expect(screen.getAllByRole('link', { name: /종목$/ })).toHaveLength(
+                SIGNAL_HUBS.length
+            );
+        });
+    });
+
+    describe('모바일 압축', () => {
+        const FOUR_ROWS = Array.from({ length: 4 }, (_, i) => ({
+            symbol: `SYM${i}`,
+            koreanName: null,
+            changePercent: i,
+            signalType: 'golden_cross' as const,
+            expected: false,
+        }));
+
+        it('시장별 4번째 신호 행만 max-sm:hidden이고 링크는 DOM에 남는다', () => {
+            renderSection({
+                ...FULL,
+                signals: {
+                    us: { rows: FOUR_ROWS, computedAt: null },
+                    kr: {
+                        rows: FOUR_ROWS.slice(0, 2).map(row => ({
+                            ...row,
+                            symbol: `KR${row.symbol}`,
+                        })),
+                        computedAt: null,
+                    },
+                },
+            });
+
+            const rows = FOUR_ROWS.map(row =>
+                screen.getByRole('link', { name: row.symbol }).closest('li')
+            );
+            expect(
+                rows.map(li => li?.className.includes('max-sm:hidden'))
+            ).toEqual([false, false, false, true]);
+        });
+
+        it('공포탐욕 칸은 모바일에서 2열 그리드(시장·날짜 / 점수·단계 / 막대)로 접힌다', () => {
+            renderSection();
+
+            const us = screen.getByRole('link', {
+                name: new RegExp(c.marketUs),
+            });
+            expect(us.className).toContain('max-sm:grid');
+            expect(us.className).toContain('max-sm:grid-cols-');
+            // 막대는 두 열을 가로지르고, sm부터는 이전 3열 모양 그대로다.
+            expect(
+                us.querySelector('[aria-hidden="true"]')?.className
+            ).toContain('max-sm:col-span-2');
+        });
     });
 });

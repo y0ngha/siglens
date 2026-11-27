@@ -380,11 +380,11 @@ export function deduplicateCryptoEntries(
         .split(/\r?\n/)
         .reduce((acc, line): DedupAcc => {
             const symbolMatch = line.match(CRYPTO_LITERAL_LINE_PATTERN);
-            if (!symbolMatch) {
+            const symbol = symbolMatch?.[2];
+            if (symbol === undefined) {
                 return { ...acc, keptLines: [...acc.keptLines, line] };
             }
 
-            const symbol = symbolMatch[2]!;
             if (acc.seen.has(symbol)) {
                 return { ...acc, removed: [...acc.removed, symbol] };
             }

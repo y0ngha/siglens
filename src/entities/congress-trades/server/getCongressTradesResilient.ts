@@ -3,6 +3,7 @@ import type { CongressTrade } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { getCongressTrades } from './getCongressTrades';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `getCongressTradesResilient`의 반환 envelope. */
 export interface ResilientCongressTrades {
@@ -34,7 +35,7 @@ export const getCongressTradesResilient = cache(
             if (!isE2E()) {
                 console.error(
                     '[getCongressTradesResilient] FMP 의회 거래 장애, degrade:',
-                    e
+                    redactDbErrorForLog(e)
                 );
             }
             return { trades: [], degraded: true };

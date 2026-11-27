@@ -1,5 +1,6 @@
 import 'server-only';
 import { getYahooClient } from './createYahooClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const yahooFinance = getYahooClient();
 
@@ -35,7 +36,11 @@ export async function searchYahooQuotes(
         // 호출부가 `isKrEquitySymbol`로 형상을 다시 검증한 뒤에만 사용한다.
         return result.quotes as unknown as YahooSearchQuote[];
     } catch (e) {
-        console.warn('[yahooSearch] search failed', query, e);
+        console.warn(
+            '[yahooSearch] search failed',
+            query,
+            redactDbErrorForLog(e)
+        );
         return [];
     }
 }

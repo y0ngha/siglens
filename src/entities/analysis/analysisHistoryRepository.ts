@@ -15,8 +15,10 @@ import {
     gte,
     inArray,
     isNotNull,
+    isNull,
     lt,
     notExists,
+    or,
     sql,
 } from 'drizzle-orm';
 import {
@@ -25,6 +27,7 @@ import {
     type AssembledPromptRecord,
     type MarketSessionSpec,
     type PriorAnalysis,
+    type Tier,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
@@ -34,6 +37,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
 import { toPriorAnalysis } from './lib/toPriorAnalysis';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `analysis_history` 탭 축 — 현재는 technical/overall 둘뿐이다. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
@@ -138,6 +142,73 @@ export interface SaveAnalysisHistoryInput {
      */
     prompt?: AssembledPromptRecord;
     inputFingerprint?: string;
+    /**
+     * 이 분석을 생성한 요청의 tier. 생략하면 `NULL`로 남는다. 응답에 필터가 적용된 뒤의 tier가
+     * 아니라 **생성 시점** tier다(free 프리웜과 회원 분석은 스킬 세트가 다르다).
+     */
+    tier?: Tier;
+    /**
+     * 이 분석이 보유 맞춤(`positionBucket`이 프롬프트에 들어감)이었는지. 맞춤 분석은 "보유자 관점"
+     * 서술과 그에 맞춘 계획을 담아 한 회원의 보유 상태를 드러내므로, 다른 사람에게 보이는 읽기가
+     * 이 값으로 거른다. 필수 필드라 작성자가 반드시 명시한다.
+     */
+    personalized: boolean;
+}
+
+/** `findLatestShareable` 입력. */
+export interface FindLatestShareableInput {
+    symbols: readonly string[];
+    timeframe: '1Day';
+    tab: 'technical';
+    /** 이 시각 이후에 생성된 행만. */
+    notBefore: Date;
+}
+
+/** `findShareableAt` 입력. */
+export interface FindShareableAtInput {
+    symbol: string;
+    timeframe: '1Day';
+    tab: 'technical';
+    /** 읽을 행의 `generated_at`(밀리초까지 정확히 같은 행). */
+    generatedAt: Date;
+}
+
+/**
+ * `findShareableAt` 결과. "행이 없다"(보존 기간 경과 — 영원히 같은 답)와 "읽지 못했다"(DB 오류 — 곧 달라질 수 있는
+ * 답)를 가른다. 호출자가 앞의 것은 오래 캐시하고 뒤의 것은 캐시하지 않는다.
+ */
+export type FindShareableAtResult =
+    | { status: 'found'; row: ShareableAnalysisRow }
+    | { status: 'absent' }
+    | { status: 'failed' };
+
+/** `findLatestShareable`이 심볼마다 돌려주는 행. */
+export interface ShareableAnalysisRow {
+    symbol: string;
+    generatedAt: Date;
+    tier: string | null;
+    result: unknown;
+}
+
+/**
+ * 다른 사람에게 보여 줘도 되는 행만 남기는 조건 — 이전 분석 읽기(`findRecentForPrompt`)가 쓴다.
+ *
+ * - `personalized = false`: 작성자가 맞춤이 아니라고 기록한 행.
+ * - `personalized IS NULL AND tier = 'free'`: 이 컬럼이 생기기 전 행 중 free tier가 생성한 것.
+ *   free는 포지션 버킷을 만들지 않으므로(`resolvePositionBucket`) 맞춤일 수 없다.
+ *
+ * 그 밖의 `NULL`(회원 tier이거나 tier를 모르는 옛 행)은 맞춤이었는지 알 수 없어 버린다. 맞춤 결과에는
+ * 보유 상태(손익 구간)를 드러내는 서술이 있을 수 있어서 안전한 쪽을 택했다. 보존 90일이 지나면 그런 행은
+ * 사라진다.
+ */
+function priorAnalysisReadable() {
+    return or(
+        eq(analysisHistory.personalized, false),
+        and(
+            isNull(analysisHistory.personalized),
+            eq(analysisHistory.tier, 'free')
+        )
+    );
 }
 
 /** `findRecentForPrompt` 입력. */
@@ -219,26 +290,11 @@ export class DrizzleAnalysisHistoryRepository {
         const prompt = input.prompt;
         if (prompt === undefined) return;
 
-        // 읽기가 버릴 행은 쓰지 않는다 — 판정은 읽기와 **같은 함수**로 한다.
+        // 읽기가 버릴 행은 쓰지 않는다 — 판정은 읽기와 **같은 함수**로 한다. 조건을 다시 적으면 읽기 쪽
+        // 판정이 바뀔 때 조용히 어긋난다(저장은 되는데 읽히지 않거나 그 반대).
         //
-        // core는 tier별로 응답 필드를 잠근 뒤(`filterAnalysisResult`) 그 결과를
-        // 호출자에게 돌려준다. free tier의 `infoDepth`는 `direction`·`summary`·
-        // `skill_detection`뿐이라 `riskLevel`(= `partial_detail`)이 `null`로
-        // 내려오고, `toPriorAnalysis`는 `trend`/`riskLevel`이 온전하지 않은 행을
-        // 버린다. 즉 free 경로가 남기는 이력은 **읽는 순간 전량 폐기**된다.
-        //
-        // 그 경로가 주변부가 아니다: SEO pre-warm이 `tier: 'free'`로 돌고
-        // (`entities/analysis/api.ts` — 캐시 키 5축 정합 때문에 올릴 수 없다),
-        // 비회원 방문자도 같은 tier다. 저장을 막지 않으면 90일 보존 내내 아무도
-        // 읽지 못하는 행과 그 프롬프트 블롭(수십 KB)만 쌓인다.
-        //
-        // 여기서 `toPriorAnalysis`를 그대로 쓰는 이유는 대칭성이다. 조건을 다시
-        // 적으면 읽기 쪽 판정이 바뀔 때 조용히 어긋난다 — 저장은 되는데 읽히지
-        // 않거나, 그 반대가 된다.
-        //
-        // ⚠️ 이건 봉합이지 근본 해결이 아니다. free tier의 분석도 **이력으로서는**
-        // 온전히 남는 것이 옳고, 그러려면 core가 tier 필터 이전 결과를 이력용으로
-        // 따로 노출해야 한다(캐시에는 이미 필터 전 값이 들어간다).
+        // 두 작성자(SSE 라우트, SEO 프리웜)는 tier 필터 **전** 결과를 넘기므로 free 경로의 행도 `riskLevel`을
+        // 갖고 여기를 통과한다. 이 검사는 필터된 결과가 새어 들어오거나 정규화가 깨진 입력을 막는 안전망이다.
         if (
             toPriorAnalysis({
                 result: input.result,
@@ -283,6 +339,8 @@ export class DrizzleAnalysisHistoryRepository {
                         timeframe: input.timeframe,
                         tab: input.tab,
                         modelId: input.modelId,
+                        tier: input.tier ?? null,
+                        personalized: input.personalized,
                         locale: input.locale,
                         result: input.result,
                         inputFingerprint: input.inputFingerprint ?? null,
@@ -295,7 +353,10 @@ export class DrizzleAnalysisHistoryRepository {
                 DB_TRANSIENT_RETRY
             );
         } catch (err) {
-            console.error('[analysisHistoryRepository] persist failed:', err);
+            console.error(
+                '[analysisHistoryRepository] persist failed:',
+                redactDbErrorForLog(err)
+            );
         }
     }
 
@@ -327,6 +388,10 @@ export class DrizzleAnalysisHistoryRepository {
      * 의존해 새 생성이 그것을 밀어낼 수 없다. 현재 버킷을 포함한 가장 최신 행이 필요한
      * 호출자(예: "지금 있는 것 아무거나"를 원하는 챗 폴백)는 `includeCurrentWindow: true`로
      * 이 상한을 건너뛴다.
+     *
+     * **맞춤 분석은 읽지 않는다**({@link priorAnalysisReadable}). 이전 분석은 모든 호출자의 프롬프트와 에이전트
+     * 이력 요약에 들어가므로, 한 회원의 보유자 관점 분석이 다른 사람에게 새면 안 된다. 읽는 행 집합이 달라지면
+     * core가 도출하는 `:hist=` 지문도 한 번 바뀐다(배포 직후 캐시 미스 한 번, 이후 수렴).
      *
      * 각 행의 `result` jsonb는 {@link toPriorAnalysis}로 `PriorAnalysis`에 매핑한다.
      * `trend`/`riskLevel`이 없거나 문자열이 아닌 행은 버리고, 비유한 가격은 통과시키지
@@ -364,6 +429,7 @@ export class DrizzleAnalysisHistoryRepository {
                                 eq(analysisHistory.timeframe, input.timeframe),
                                 eq(analysisHistory.tab, input.tab),
                                 gte(analysisHistory.generatedAt, since),
+                                priorAnalysisReadable(),
                                 ...(input.includeCurrentWindow
                                     ? []
                                     : [
@@ -385,9 +451,112 @@ export class DrizzleAnalysisHistoryRepository {
         } catch (err) {
             console.error(
                 '[analysisHistoryRepository] findRecentForPrompt failed:',
-                err
+                redactDbErrorForLog(err)
             );
             return [];
+        }
+    }
+
+    /**
+     * 심볼마다 `notBefore` 이후의 가장 최근 **맞춤이 아닌** 분석 한 건.
+     *
+     * `personalized = false`만 읽는다 — `NULL`(옛 행)은 `tier = 'free'`여도 쓰지 않는다. 이 읽기는 한 사람의
+     * 분석을 다른 사람에게 보여 주는 용도(메일 등)라 확정된 행만 쓴다. best-effort: 실패하면 로그를 남기고
+     * 빈 맵을 돌려준다.
+     */
+    async findLatestShareable(
+        input: FindLatestShareableInput
+    ): Promise<Map<string, ShareableAnalysisRow>> {
+        const found = new Map<string, ShareableAnalysisRow>();
+        if (input.symbols.length === 0) return found;
+        try {
+            const rows = await withRetry(
+                () =>
+                    this.db
+                        .selectDistinctOn([analysisHistory.symbol], {
+                            symbol: analysisHistory.symbol,
+                            generatedAt: analysisHistory.generatedAt,
+                            tier: analysisHistory.tier,
+                            result: analysisHistory.result,
+                        })
+                        .from(analysisHistory)
+                        .where(
+                            and(
+                                inArray(analysisHistory.symbol, [
+                                    ...input.symbols,
+                                ]),
+                                eq(analysisHistory.timeframe, input.timeframe),
+                                eq(analysisHistory.tab, input.tab),
+                                eq(analysisHistory.personalized, false),
+                                gte(
+                                    analysisHistory.generatedAt,
+                                    input.notBefore
+                                )
+                            )
+                        )
+                        .orderBy(
+                            analysisHistory.symbol,
+                            desc(analysisHistory.generatedAt)
+                        ),
+                DB_TRANSIENT_RETRY
+            );
+            for (const row of rows) found.set(row.symbol, row);
+        } catch (err) {
+            console.error(
+                '[analysisHistoryRepository] findLatestShareable failed:',
+                redactDbErrorForLog(err)
+            );
+            return new Map();
+        }
+        return found;
+    }
+
+    /**
+     * 지정한 시각에 만들어진 공유 가능한 분석 한 행. 메일의 차트 이미지 URL이 `findLatestShareable`이 고른 분석을
+     * 시각으로 고정해 두므로(`a=<generatedAt>`), 이미지 라우트가 나중에 새 분석이 생겨도 같은 행을 다시 읽는다.
+     *
+     * `findLatestShareable`과 같은 이유로 `personalized = false`만 읽는다. 행이 없으면 `absent`, 읽기에 실패하면(로그를
+     * 남기고) `failed`다 — 둘 다 호출자가 작도 없는 차트로 떨어지지만 캐시 정책이 다르다.
+     */
+    async findShareableAt(
+        input: FindShareableAtInput
+    ): Promise<FindShareableAtResult> {
+        try {
+            const rows = await withRetry(
+                () =>
+                    this.db
+                        .select({
+                            symbol: analysisHistory.symbol,
+                            generatedAt: analysisHistory.generatedAt,
+                            tier: analysisHistory.tier,
+                            result: analysisHistory.result,
+                        })
+                        .from(analysisHistory)
+                        .where(
+                            and(
+                                eq(analysisHistory.symbol, input.symbol),
+                                eq(analysisHistory.timeframe, input.timeframe),
+                                eq(analysisHistory.tab, input.tab),
+                                eq(analysisHistory.personalized, false),
+                                eq(
+                                    analysisHistory.generatedAt,
+                                    input.generatedAt
+                                )
+                            )
+                        )
+                        .limit(1),
+                DB_TRANSIENT_RETRY
+            );
+            const row = rows[0];
+            return row === undefined
+                ? { status: 'absent' }
+                : { status: 'found', row };
+        } catch (err) {
+            console.error(
+                '[analysisHistoryRepository] findShareableAt failed:',
+                redactDbErrorForLog(err)
+            );
+            return { status: 'failed' };
         }
     }
 
@@ -435,7 +604,7 @@ export class DrizzleAnalysisHistoryRepository {
         } catch (err) {
             console.error(
                 '[analysisHistoryRepository] pruneAnalysisHistory failed:',
-                err
+                redactDbErrorForLog(err)
             );
             return { rowsDeleted: 0, promptsCleared: 0 };
         }

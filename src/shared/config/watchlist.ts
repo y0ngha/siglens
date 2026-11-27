@@ -16,7 +16,7 @@ export const RECENT_SYMBOLS_MAX = 20;
 /** 클라이언트가 넘긴 표시명(`company_name`)의 최대 글자 수. 서버가 해석한 이름에는 적용하지 않는다. */
 export const WATCHLIST_LABEL_MAX_LENGTH = 100;
 /**
- * 홈 인기 종목 섹션(`TickerCategories`)의 앵커. 홈 빈 카드의 "인기 종목 보기"가 가리킨다.
+ * 홈 인기 종목 섹션(`PopularTickers`)의 앵커. 홈 빈 카드의 "인기 종목 보기"가 가리킨다.
  * 서버 컴포넌트(섹션)와 클라이언트 컴포넌트(카드)가 함께 읽으므로 config에 둔다 —
  * `'use client'` 모듈의 export를 서버에서 import하면 값이 아니라 클라이언트 참조가 온다.
  */

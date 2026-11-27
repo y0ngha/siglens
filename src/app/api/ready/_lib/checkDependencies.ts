@@ -1,5 +1,6 @@
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { tryGetDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 각 의존성 핑의 짧은 타임아웃(ms). 느린 의존성에 readiness가 매달리지 않게 한다. */
 export const PING_TIMEOUT_MS = 2_000;
@@ -17,10 +18,10 @@ export interface DependencyCheck {
     error?: string;
 }
 
-class PingTimeoutError extends Error {}
+export class PingTimeoutError extends Error {}
 
 /** `promise`를 최대 `ms`까지 기다리고, 초과 시 `PingTimeoutError`로 reject한다. */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         const timer = setTimeout(
             () => reject(new PingTimeoutError(`timeout after ${ms}ms`)),
@@ -51,7 +52,10 @@ async function runPing(
         await withTimeout(ping(), PING_TIMEOUT_MS);
         return { ok: true };
     } catch (err) {
-        console.error(`[ready] ${label} ping failed:`, err);
+        console.error(
+            `[ready] ${label} ping failed:`,
+            redactDbErrorForLog(err)
+        );
         return {
             ok: false,
             error:

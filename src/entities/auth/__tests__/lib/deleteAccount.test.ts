@@ -2,7 +2,14 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
-import type { DeleteAccountApiKeys } from '@/entities/auth/lib/authUseCaseTypes';
+import type {
+    DeleteAccountApiKeys,
+    DeleteAccountMailAlerts,
+} from '@/entities/auth/lib/authUseCaseTypes';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 async function waitFor(
     assertion: () => void | Promise<void>,
@@ -38,6 +45,7 @@ function makeDependencies(deleted: boolean): {
         oauthAccounts: OAuthAccountRepository;
         oauthRevoker: OAuthRevoker;
         apiKeys: DeleteAccountApiKeys;
+        mailAlerts: DeleteAccountMailAlerts;
     };
     deleteUser: ReturnType<typeof vi.fn>;
 } {
@@ -50,7 +58,7 @@ function makeDependencies(deleted: boolean): {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser,
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: {
                 findByUserId: vi.fn().mockResolvedValue([]),
@@ -63,6 +71,7 @@ function makeDependencies(deleted: boolean): {
                 listActiveKeyHashes: vi.fn().mockResolvedValue([]),
                 revokeAuth: vi.fn().mockResolvedValue(undefined),
             },
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         },
         deleteUser,
     };
@@ -157,11 +166,12 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -199,11 +209,12 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -225,7 +236,7 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: {
                 findByUserId: vi.fn().mockRejectedValue(lookupError),
@@ -234,6 +245,7 @@ describe('deleteAccount', () => {
                 revokeToken: vi.fn().mockResolvedValue(undefined),
             },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -257,7 +269,7 @@ describe('deleteAccount', () => {
                 findById: vi.fn(),
                 createEmailUser: vi.fn(),
                 deleteUser: vi.fn().mockResolvedValue(true),
-                updatePassword: vi.fn(),
+                resetPasswordRevokingSessions: vi.fn(),
             },
             oauthAccounts: {
                 findByUserId: vi.fn().mockResolvedValue([
@@ -277,6 +289,7 @@ describe('deleteAccount', () => {
                 revokeToken: vi.fn().mockRejectedValue(revokeError),
             },
             apiKeys: noApiKeys(),
+            mailAlerts: { deleteForAccount: vi.fn().mockResolvedValue(0) },
         };
 
         const result = await deleteAccount({ userId: 'user-1' }, dependencies);
@@ -375,5 +388,117 @@ describe('deleteAccount', () => {
             );
             expect(apiKeys.revokeAuth).not.toHaveBeenCalled();
         });
+    });
+
+    describe('mail alert cleanup', () => {
+        it('destroys the mail alert subscription BEFORE the user row is deleted (the address is read from it)', async () => {
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const order: string[] = [];
+            deleteUser.mockImplementation(async () => {
+                order.push('delete');
+                return true;
+            });
+            const mailAlerts = {
+                deleteForAccount: vi.fn(async () => {
+                    order.push('mail-alerts');
+                    return 1;
+                }),
+            };
+
+            await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, mailAlerts }
+            );
+
+            expect(order).toEqual(['mail-alerts', 'delete']);
+            expect(mailAlerts.deleteForAccount).toHaveBeenCalledWith('user-1');
+        });
+
+        it('still deletes the account when the cleanup fails', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { dependencies, deleteUser } = makeDependencies(true);
+            const mailAlerts = {
+                deleteForAccount: vi.fn().mockRejectedValue(new Error('db')),
+            };
+
+            const result = await deleteAccount(
+                { userId: 'user-1' },
+                { ...dependencies, mailAlerts }
+            );
+
+            expect(deleteUser).toHaveBeenCalledWith('user-1');
+            expect(result.ok).toBe(true);
+        });
+    });
+
+    describe('DB 에러 로그', () => {
+        it.each([
+            [
+                'OAuth 계정 조회',
+                '[deleteAccount] findByUserId for OAuth revocation failed',
+                (
+                    deps: ReturnType<typeof makeDependencies>['dependencies']
+                ) => ({
+                    ...deps,
+                    oauthAccounts: {
+                        findByUserId: vi
+                            .fn()
+                            .mockRejectedValue(plantedDbError()),
+                    },
+                }),
+            ],
+            [
+                'API 키 해시 조회',
+                '[deleteAccount] listing API key hashes failed',
+                (
+                    deps: ReturnType<typeof makeDependencies>['dependencies']
+                ) => ({
+                    ...deps,
+                    apiKeys: {
+                        listActiveKeyHashes: vi
+                            .fn()
+                            .mockRejectedValue(plantedDbError()),
+                        revokeAuth: vi.fn(),
+                    },
+                }),
+            ],
+            [
+                'API 키 인증 폐기',
+                '[deleteAccount] API key auth revocation failed',
+                (
+                    deps: ReturnType<typeof makeDependencies>['dependencies']
+                ) => ({
+                    ...deps,
+                    apiKeys: {
+                        listActiveKeyHashes: vi
+                            .fn()
+                            .mockResolvedValue(['hash-1']),
+                        revokeAuth: vi.fn().mockRejectedValue(plantedDbError()),
+                    },
+                }),
+            ],
+        ])(
+            '%s 실패는 파라미터 없이 남긴다',
+            async (_label, prefix, withFailure) => {
+                const warnSpy = vi
+                    .spyOn(console, 'warn')
+                    .mockImplementation(() => undefined);
+                try {
+                    const { dependencies } = makeDependencies(true);
+                    const result = await deleteAccount(
+                        { userId: 'user-1' },
+                        withFailure(dependencies)
+                    );
+                    expect(result.ok).toBe(true);
+                    expect(warnSpy).toHaveBeenCalledWith(
+                        prefix,
+                        'Error code=57014'
+                    );
+                    expectLogWithoutPlantedSecrets(warnSpy);
+                } finally {
+                    warnSpy.mockRestore();
+                }
+            }
+        );
     });
 });

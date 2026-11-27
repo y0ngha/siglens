@@ -1,5 +1,6 @@
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 빈 earnings 응답 마커 TTL. staleness gate(24h)와 동일하게 두어 데이터 유무와 무관하게
@@ -16,7 +17,7 @@ function earningsEmptyMarkerKey(symbol: string): string {
  *
  * ETF·지수·잘못된 심볼은 FMP가 빈 응답을 주어 `earningsReports` 테이블에 레코드가
  * 생기지 않는다 → `getLatestFetchedAt`이 항상 `null` → staleness가 항상 stale로 판정되어
- * 매 요청 FMP를 호출하는 영구 cache-miss 루프가 발생한다(#567). 이 마커가 있으면 TTL 동안
+ * 매 요청 FMP를 호출하는 영구 cache-miss 루프가 발생한다. 이 마커가 있으면 TTL 동안
  * FMP 재호출을 건너뛴다. Redis 미설정/장애 시 `false`로 degrade(기존 동작대로 fetch).
  */
 export async function isEarningsKnownEmpty(symbol: string): Promise<boolean> {
@@ -25,7 +26,10 @@ export async function isEarningsKnownEmpty(symbol: string): Promise<boolean> {
     try {
         return (await redis.get(earningsEmptyMarkerKey(symbol))) !== null;
     } catch (error) {
-        console.error('[isEarningsKnownEmpty] redis get failed:', error);
+        console.error(
+            '[isEarningsKnownEmpty] redis get failed:',
+            redactDbErrorForLog(error)
+        );
         return false;
     }
 }
@@ -42,6 +46,9 @@ export async function markEarningsEmpty(symbol: string): Promise<void> {
             ex: EARNINGS_EMPTY_MARKER_TTL_SECONDS,
         });
     } catch (error) {
-        console.error('[markEarningsEmpty] redis set failed:', error);
+        console.error(
+            '[markEarningsEmpty] redis set failed:',
+            redactDbErrorForLog(error)
+        );
     }
 }

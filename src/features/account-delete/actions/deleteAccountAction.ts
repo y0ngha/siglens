@@ -7,7 +7,9 @@ import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { createMailAlertAccountCleanup } from '@/entities/mail-alert/server/accountCleanup';
 import { DrizzleSiglensApiKeyRepository } from '@/entities/siglens-api-key/api';
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 import { cookies } from 'next/headers';
@@ -17,6 +19,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { getTranslations } from 'next-intl/server';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 확인 이메일이 로그인한 본인과 같을 때 계정을 지우고 세션 쿠키를 만료한 뒤 홈으로
@@ -63,6 +66,7 @@ export async function deleteAccountAction(
                 users: new DrizzleUserRepository(db),
                 oauthAccounts: new DrizzleOAuthAccountRepository(db),
                 oauthRevoker: compositeOAuthRevoker,
+                mailAlerts: createMailAlertAccountCleanup(db),
                 apiKeys: {
                     listActiveKeyHashes: userId =>
                         new DrizzleSiglensApiKeyRepository(
@@ -86,12 +90,17 @@ export async function deleteAccountAction(
         const cookieStore = await cookies();
         cookieStore.set(applyAuthCookie(result.cookie));
         cookieStore.set(createExpiredAuthHintCookie({ secure }));
+        // 계정과 모든 세션이 사라졌다 — 어느 호스트에서 탈퇴했든 흔적도 함께 지운다.
+        clearMainSessionHint(cookieStore, { secure });
         // 예전엔 `/?account_deleted=1`로 보냈지만 그 쿼리를 읽는 곳이 없었다 —
         // 받을 쪽 없는 파라미터는 URL에 남아 공유·북마크만 더럽힌다.
         return localeRedirect('/');
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[deleteAccountAction] unexpected error:', err);
+        console.error(
+            '[deleteAccountAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             error: {
                 code: 'unexpected',

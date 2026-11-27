@@ -1,5 +1,5 @@
 {
-  "id": "cb3105e1-1e7d-4e24-95a9-94ef3e482fe8",
+  "id": "206bb6d9-6ddc-49f9-9e6f-2a711e890469",
   "prevId": "3d23571d-7f79-4d47-bb71-e9d8eb801a26",
   "version": "7",
   "dialect": "postgresql",
@@ -673,12 +673,6 @@
         "usage": {
           "name": "usage",
           "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "turn_at": {
-          "name": "turn_at",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -5378,6 +5372,36 @@
         },
         "entry_source": {
           "name": "entry_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "landing_site": {
+          "name": "landing_site",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_visit_bucket": {
+          "name": "first_visit_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_visit_bucket": {
+          "name": "last_visit_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visit_days_bucket": {
+          "name": "visit_days_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "return_window": {
+          "name": "return_window",
           "type": "text",
           "primaryKey": false,
           "notNull": false

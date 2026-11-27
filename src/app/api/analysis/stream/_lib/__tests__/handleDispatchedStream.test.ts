@@ -10,6 +10,10 @@ import {
 import { resolveRequestModel } from '../../modelFallback';
 import { dispatchHandlerFor } from '../dispatch';
 import { handleDispatchedStream } from '../handleDispatchedStream';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const { promptProbe, onPromptAssembled } = vi.hoisted(() => ({
     promptProbe: { onResolved: vi.fn(), onRejected: vi.fn() },
@@ -253,5 +257,22 @@ describe('handleDispatchedStream', () => {
         });
         expect(releaseGenerationGate).toHaveBeenCalledTimes(1);
         spy.mockRestore();
+    });
+
+    it('세션 조회가 DB 에러로 실패해도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            vi.mocked(getCurrentUser).mockRejectedValue(plantedDbError());
+            await (
+                await handleDispatchedStream(request(), 'fundamental', {})
+            ).text();
+            expect(spy).toHaveBeenCalledWith(
+                '[streamAnalysisRoute] session lookup failed:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(spy);
+        } finally {
+            spy.mockRestore();
+        }
     });
 });

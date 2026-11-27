@@ -3,6 +3,7 @@ import type { AgentTurnEvent } from '@y0ngha/siglens-core';
 import type { ChatBlock } from '@/entities/chat-conversation/types';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** Typed turn failure so the writer emits `{code}` instead of a generic server_error. */
 export class AgentTurnError extends Error {
@@ -107,7 +108,10 @@ export function agentEventStream<TDone extends Record<string, unknown>>(
                                 })
                             );
                         } else {
-                            console.error('[agent-stream] failed:', error);
+                            console.error(
+                                '[agent-stream] failed:',
+                                redactDbErrorForLog(error)
+                            );
                             send(
                                 frame('error', {
                                     code: 'server_error',

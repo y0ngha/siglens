@@ -14,6 +14,7 @@ import { createExpiredSessionCookie } from '@/entities/auth/lib/sessionCookie';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { clearMainSessionHint } from '@/entities/auth/lib/mainSessionHintCookie';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -25,6 +26,7 @@ import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 import { SITE_URL } from '@/shared/lib/seo';
 import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** `getLocale()`의 문자열을 지원 로케일로 좁힌다 — 핸드오프 URL과 `aiSignedOutUrl`이 `Locale`을 받는다. */
 async function requestLocale(): Promise<Locale> {
@@ -50,7 +52,10 @@ async function aiLogoutTarget(userId: string | null): Promise<string> {
             url.searchParams.set('code', code);
             return url.href;
         } catch (error) {
-            console.error('[logoutAction] logout code not issued', error);
+            console.error(
+                '[logoutAction] logout code not issued',
+                redactDbErrorForLog(error)
+            );
         }
     }
     return aiSignedOutUrl(locale).href;
@@ -70,20 +75,34 @@ async function setLoggedOutCookies(
 }
 
 /**
+ * 메인 호스트의 로그인 흔적(`siglens_signed_in`)을 지운다. 세션 쿠키가 없던 요청에서도
+ * 부른다 — 흔적만 남은 브라우저가 ai 호스트에서 헛된 핸드오프 왕복을 하지 않게.
+ * ai 호스트 로그아웃은 부르지 않는다: 코드를 못 만들면 메인 세션이 살아남을 수 있어
+ * 흔적이 계속 사실을 말해야 한다(메인 `handoff/logout` 라우트가 세션과 함께 지운다).
+ */
+async function expireMainSessionHint(secure: boolean): Promise<void> {
+    clearMainSessionHint(await cookies(), { secure });
+}
+
+/**
  * 오류가 난 로그아웃에서도 이 브라우저의 세션 쿠키·힌트 쿠키는 만료시킨다. DB 세션
  * 삭제가 실패했다고 쿠키를 남기면 사용자는 로그아웃했다고 믿지만 다음 요청에서 그대로
  * 로그인돼 있다(공용 PC에서 다음 사람이 그 계정을 쓴다). 쿠키를 지우는 것까지 실패하면
  * 리다이렉트를 막지 않도록 기록만 한다.
  */
-async function expireAuthCookiesAfterError(): Promise<void> {
+async function expireAuthCookiesAfterError(onAiHost: boolean): Promise<void> {
     try {
         const secure = isSecureCookieEnv();
         await setLoggedOutCookies(
             createExpiredSessionCookie({ secure }),
             secure
         );
+        if (!onAiHost) await expireMainSessionHint(secure);
     } catch (error) {
-        console.error('[logoutAction] auth cookies not expired', error);
+        console.error(
+            '[logoutAction] auth cookies not expired',
+            redactDbErrorForLog(error)
+        );
     }
 }
 
@@ -109,6 +128,7 @@ export async function logoutAction(): Promise<void> {
             );
             await setLoggedOutCookies(result.cookie, secure);
         }
+        if (!onAiHost) await expireMainSessionHint(secure);
         redirect(
             onAiHost
                 ? await aiLogoutTarget(aiUser?.id ?? null)
@@ -116,8 +136,11 @@ export async function logoutAction(): Promise<void> {
         );
     } catch (err) {
         if (isNextRedirectError(err)) throw err;
-        console.error('[logoutAction] unexpected error:', err);
-        await expireAuthCookiesAfterError();
+        console.error(
+            '[logoutAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
+        await expireAuthCookiesAfterError(onAiHost);
         redirect(
             onAiHost
                 ? aiSignedOutUrl(await requestLocale()).href

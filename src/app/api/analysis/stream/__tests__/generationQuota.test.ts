@@ -46,6 +46,10 @@ import {
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { RateLimitedStreamError } from '@/shared/lib/sse/analysisRateLimit';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const BROWSER_UA =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
@@ -459,5 +463,22 @@ describe('shouldAttemptReanalyze', () => {
         [undefined, false, false],
     ])('requested=%j rateLimited=%j → %j', (requested, limited, expected) => {
         expect(shouldAttemptReanalyze(requested, limited)).toBe(expected);
+    });
+
+    it('identity 해석이 DB 에러로 실패해도 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            mockGetClientIp.mockRejectedValue(plantedDbError());
+            await reserveGenerationGate(null, false, BROWSER_HEADERS);
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[analysis-quota] identity resolution failed',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

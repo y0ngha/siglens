@@ -1,6 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { metadata as analysisMetadata } from '../stock-analysis/page';
-import { lpCopyViolations } from '@/views/lp/__tests__/lpCopyRules';
+vi.mock('server-only', () => ({}));
+vi.mock('../stock-analysis/_lib/loadLpRealAnalyses', () => ({
+    loadLpRealAnalyses: vi.fn(),
+}));
+
+import { describe, expect, it, vi } from 'vitest';
+import {
+    metadata as analysisMetadata,
+    revalidate as analysisRevalidate,
+} from '../stock-analysis/page';
+import { lpCopyViolations } from '@/views/lp/lib/lpCopyRules';
 import { metadata as chatMetadata } from '../stock-chat/page';
 
 describe.each([
@@ -18,5 +26,11 @@ describe.each([
         const text = `${String(metadata.title)} ${metadata.description}`;
         expect(metadata.description).toBeTruthy();
         expect(lpCopyViolations(text)).toEqual([]);
+    });
+});
+
+describe('/lp/stock-analysis ISR', () => {
+    it('declares the 6h revalidate literal shared with the symbol page', () => {
+        expect(analysisRevalidate).toBe(21600);
     });
 });

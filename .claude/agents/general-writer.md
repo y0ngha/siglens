@@ -33,6 +33,8 @@ If the instruction file conflicts with this document, **the instruction file win
 - **Never run git write operations.** `git commit` / `git push` / `git tag` / branch creation
   are all forbidden (git-agent's responsibility). Read-only git commands
   (`git status`, `git diff --name-only`) are allowed.
+  `git rm`, `git add`, `git restore` and `git mv` are git writes too; delete files with `rm`
+  and move them with `mv`, and leave staging to git-agent.
 - **Never call another agent.** Routing is handled by the main orchestrator.
 - **Never use `--no-verify`.** Do not bypass hooks under any circumstance.
 - **Use `yarn` only** for package installation. `npm` / `pnpm` are prohibited.
@@ -90,7 +92,7 @@ The only permitted output is the exit signal JSON.
 {
   "agent": "general-writer",
   "status": "done",
-  "files_changed": ["src/entities/x/lib/foo.ts", "src/entities/x/lib/foo.test.ts"],
+  "files_changed": ["src/entities/<x>/lib/foo.ts", "src/entities/<x>/lib/foo.test.ts"],
   "gates": { "tsc": "pass", "test": "pass", "lint": "pass" },
   "notes": "Deviations from the design or anything the upstream model must know (empty string if none)"
 }

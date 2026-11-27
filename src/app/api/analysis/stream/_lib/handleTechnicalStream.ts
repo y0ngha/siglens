@@ -46,6 +46,7 @@ import { loadTechnicalPromptInputs } from './technicalPromptInputs';
 import { toClientWork } from './toClientWork';
 import type { TechnicalParams } from './types';
 import { withDeadline } from './withDeadline';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 하루 무료 공개 미터의 신규 기록 해제 함수를 바깥 catch까지 들고 가는 칸. */
 interface MeterReleaseHolder {
@@ -68,7 +69,10 @@ export async function handleTechnicalStream(
     try {
         return await streamTechnical(request, params, quotaSlot, meterRelease);
     } catch (err) {
-        console.error('[streamAnalysisRoute] unexpected error:', err);
+        console.error(
+            '[streamAnalysisRoute] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         await quotaSlot.release();
         await meterRelease.current();
         return unexpectedErrorResponse(localeFromRequestHeader(request));
@@ -312,6 +316,10 @@ async function streamTechnical(
             timeframe,
             tab: 'technical',
             modelId: modelId ?? DEFAULT_TECHNICAL_MODEL_ID,
+            // 필터 전 결과와 같은 이유로 **생성** tier를 남긴다(free 프리웜과 회원 분석은 스킬 세트가 다르다).
+            tier,
+            // 포지션 버킷이 프롬프트에 들어갔는지. 맞춤 분석은 다른 사람에게 보이는 이력 읽기에서 빠진다.
+            personalized: positionBucket !== undefined,
             locale: requestLocale,
             // 이력에는 **필터 전** 결과를 남긴다. `result.result`는 이 요청의 tier가 *볼 수 있는* 만큼만
             // 담아 free는 `riskLevel`이 null이고, `PriorAnalysis`는 trend와 riskLevel을 모두 요구하므로

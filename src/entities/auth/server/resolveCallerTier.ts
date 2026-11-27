@@ -2,6 +2,7 @@ import type { Tier } from '@y0ngha/siglens-core';
 import { getCurrentUser } from './getCurrentUser';
 import { resolveTierOnly } from '@/shared/lib/byokGate';
 import { isCacheScopeDynamicUsage } from '@/shared/lib/isCacheScopeDynamicUsage';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 호출자의 tier를 해석한다. `getCurrentUser`처럼 세션·DB I/O를 하므로 `lib/`(순수 함수 전용,
@@ -20,7 +21,10 @@ export async function resolveCallerTier(scope: string): Promise<Tier> {
         return await resolveTierOnly(user?.id ?? null);
     } catch (error) {
         if (!isCacheScopeDynamicUsage(error)) {
-            console.error(`[${scope}] Failed to resolve caller tier:`, error);
+            console.error(
+                `[${scope}] Failed to resolve caller tier:`,
+                redactDbErrorForLog(error)
+            );
         }
         return 'free';
     }

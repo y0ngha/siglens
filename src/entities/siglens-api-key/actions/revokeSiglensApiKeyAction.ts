@@ -12,6 +12,7 @@ import type {
 import { revokeApiKeyAuth } from '@/entities/siglens-api-key/server/apiKeyAuthCache';
 import { isPublicApiEnabled } from '@/shared/api/publicApiEnabled';
 import { getDatabaseClient } from '@/shared/db/client';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const UUID_PATTERN =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -67,7 +68,10 @@ export async function revokeSiglensApiKeyAction(
         revalidatePath('/[locale]/account', 'page');
         return { status: 'revoked' };
     } catch (error) {
-        console.error('[revokeSiglensApiKeyAction] failed:', error);
+        console.error(
+            '[revokeSiglensApiKeyAction] failed:',
+            redactDbErrorForLog(error)
+        );
         return await errorState('server_error');
     }
 }

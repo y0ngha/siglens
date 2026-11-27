@@ -24,7 +24,7 @@ import FearGreedCryptoRoutePage, {
     revalidate,
 } from '@/app/[locale]/fear-greed/crypto/page';
 import { getMarketFearGreedCryptoStatic } from '@/entities/market-fear-greed/api/marketFearGreedCryptoStaticCache';
-import type { MarketFearGreedCryptoView } from '@/entities/market-fear-greed/model';
+import type { MarketFearGreedCryptoHubView } from '@/entities/market-fear-greed/model';
 import { CRYPTO_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { SITE_URL } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
@@ -34,7 +34,7 @@ const mockLoader = getMarketFearGreedCryptoStatic as MockedFunction<
     typeof getMarketFearGreedCryptoStatic
 >;
 
-const READY: MarketFearGreedCryptoView = {
+const READY: MarketFearGreedCryptoHubView = {
     snapshot: {
         score: 27.877412031782065,
         label: 'FEAR',
@@ -44,9 +44,14 @@ const READY: MarketFearGreedCryptoView = {
         asOf: '2026-09-24',
     },
     comparisons: [],
+    history: [],
 };
 
-const EMPTY: MarketFearGreedCryptoView = { snapshot: null, comparisons: [] };
+const EMPTY: MarketFearGreedCryptoHubView = {
+    snapshot: null,
+    comparisons: [],
+    history: [],
+};
 
 const PARAMS = { params: Promise.resolve({ locale: 'ko' }) };
 
@@ -250,5 +255,86 @@ describe('/fear-greed/crypto page', () => {
                 koMessage('shared.ui.Breadcrumb.46c31f')
             );
         });
+    });
+});
+
+/**
+ * 지난 점수 기록 카드와 극단 구간 기록은 하한(`hasPublishableHistory`)을 통과할 때만 나온다.
+ * 표본이 부족하거나 기록이 짧거나 마지막 날짜가 기준일과 어긋나면 카드 전체를 생략한다.
+ */
+describe('/fear-greed/crypto 지난 점수 기록', () => {
+    const ASOF = READY.snapshot?.asOf ?? '';
+    const renderWith = async (view: typeof READY) => {
+        mockLoader.mockResolvedValue(view);
+        return render(
+            await FearGreedCryptoRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+    };
+
+    it('하한을 통과하면 기록 카드와 극단 구간 기록을 그린다', async () => {
+        const { scoredHistory } =
+            await import('@/__tests__/utils/marketFearGreedHubView');
+        await renderWith({
+            ...READY,
+            history: scoredHistory(30, ASOF),
+        });
+
+        expect(
+            screen.getByRole('heading', { level: 2, name: '지난 점수 기록' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('group', { name: '극단 구간 기록' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/이 지수 점수가 계산된 날/)
+        ).toBeInTheDocument();
+    });
+
+    it('판독값이 없으면(snapshot: null) 카드를 그리지 않는다', async () => {
+        const { scoredHistory } =
+            await import('@/__tests__/utils/marketFearGreedHubView');
+        await renderWith({
+            snapshot: null,
+            comparisons: [],
+            history: scoredHistory(30, ASOF),
+        });
+
+        expect(
+            screen.queryByRole('heading', { name: '지난 점수 기록' })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('group', { name: '극단 구간 기록' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('점수 있는 날이 19개면 카드를 그리지 않는다', async () => {
+        const { scoredHistory } =
+            await import('@/__tests__/utils/marketFearGreedHubView');
+        await renderWith({
+            ...READY,
+            history: scoredHistory(19, ASOF),
+        });
+
+        expect(
+            screen.queryByRole('heading', { name: '지난 점수 기록' })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('group', { name: '극단 구간 기록' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('마지막 기록 날짜가 기준일과 다르면 카드를 그리지 않는다', async () => {
+        const { scoredHistory } =
+            await import('@/__tests__/utils/marketFearGreedHubView');
+        await renderWith({
+            ...READY,
+            history: scoredHistory(30, '2020-01-01'),
+        });
+
+        expect(
+            screen.queryByRole('heading', { name: '지난 점수 기록' })
+        ).not.toBeInTheDocument();
     });
 });

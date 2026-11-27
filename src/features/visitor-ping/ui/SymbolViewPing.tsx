@@ -21,8 +21,24 @@ function readSent(today: string): string[] {
     }
 }
 
+/**
+ * 오늘 기록이 아닌 낡은 목록(다른 날짜·깨진 값)은 읽는 순간 지운다 — 목록은 "오늘" 조회를 이미 센 종목만
+ * 담는다. 개인정보처리방침 v15 §7이 이 동작을 그대로 적는다.
+ */
+function dropStaleSent(today: string): void {
+    try {
+        const raw = window.localStorage.getItem(SYMBOL_VIEWS_STORAGE_KEY);
+        if (raw !== null && parseSentSymbols(raw, today).length === 0) {
+            window.localStorage.removeItem(SYMBOL_VIEWS_STORAGE_KEY);
+        }
+    } catch {
+        // 저장소가 막혀 있으면 지울 것도 없다.
+    }
+}
+
 function sendView(symbol: string): void {
     const today = kstDateKey(new Date());
+    dropStaleSent(today);
     if (readSent(today).includes(symbol)) return;
 
     postBeacon({

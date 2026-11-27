@@ -8,6 +8,7 @@ import {
     SECONDS_PER_DAY,
 } from '@/shared/config/time';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** DART가 문서화한 하루 요청 상한(`020` 메시지 — "일반적으로는 20,000건"). */
 export const DART_DAILY_QUOTA = 20_000;
@@ -53,9 +54,10 @@ export function secondsUntilNextKstMidnight(now: Date): number {
 function warnRedisUnavailableOnce(error?: unknown): void {
     if (warnedRedisUnavailable) return;
     warnedRedisUnavailable = true;
+    const loggable = redactDbErrorForLog(error);
     console.warn(
         '[dart] redis unavailable — daily call counter and quota breaker are not shared (DART still enforces 020)',
-        error instanceof Error ? error.message : (error ?? '')
+        loggable instanceof Error ? loggable.message : (loggable ?? '')
     );
 }
 
@@ -65,10 +67,14 @@ const warnThreshold = Math.ceil(DART_DAILY_QUOTA * DART_QUOTA_WARN_RATIO);
 export const DART_QUOTA_GUARD_MAX_REDIS_COMMANDS = 3;
 
 /**
- * 실제 요청 직전에 부른다 — 차단 중이면 호출부가 `DartQuotaError`로 던질 사유를, 아니면 일일 카운터를 올린 뒤 `null`을 돌려준다. Redis가 없거나 실패하면 통과시킨다
+ * 실제 요청 직전에 부른다. `reserve`가 양수면 일일 예산에서 그만큼을 **다른 호출자(수집 크론)를 위해 남긴다** — 오늘 카운터가 `예산 − reserve`에
+ * 닿았으면 카운터를 올리지 않고(차단 표식도 세우지 않는다: 남은 예산은 예약 없는 호출자의 몫이다) 사유를 돌려준다.
+ * 예약선은 **근사**다: 읽기와 증가가 한 명령이 아니라서, 예약선을 읽은 호출들이 동시에 증가시키면 넘길 수 있다. 넘는 양은 그 순간 진행 중인 예약
+ * 호출 수가 상한이다(프로세스당 동시 종목 수 × 인스턴스 수, 예: 4 × 인스턴스). 예약량(6,000)에 비하면 무시할 수 있어 원자적 증가·되돌림으로 바꾸지 않는다.
+ *  차단 중이면 호출부가 `DartQuotaError`로 던질 사유를, 아니면 일일 카운터를 올린 뒤 `null`을 돌려준다. Redis가 없거나 실패하면 통과시킨다
  * (fail-open: 이 가드는 DART의 `020`보다 먼저 멈추려는 보조 장치이고, `020` 자체는 응답에서 잡는다).
  */
-export async function reserveCall(): Promise<string | null> {
+export async function reserveCall(reserve = 0): Promise<string | null> {
     const today = kstDateKey(new Date());
     if (blockedKstDate === today) return BREAKER_OPEN_MESSAGE;
     const redis = getRedisClient();
@@ -83,6 +89,12 @@ export async function reserveCall(): Promise<string | null> {
             return BREAKER_OPEN_MESSAGE;
         }
         const key = dartDailyCallCounterKey(today);
+        if (reserve > 0) {
+            const used = Number((await redis.get(key)) ?? 0);
+            if (used >= DART_DAILY_CALL_BUDGET - reserve) {
+                return `daily call budget keeps ${reserve} calls for other callers`;
+            }
+        }
         count = await redis.incr(key);
         if (count === 1) await redis.expire(key, COUNTER_TTL_SECONDS);
     } catch (error) {

@@ -5,6 +5,7 @@ import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { syncKrListedTickers } from '@/entities/ticker/server/syncKrListedTickers';
 import { reconcileUsTickerNames } from '@/entities/ticker/server/reconcileUsTickerNames';
 import { createReconcileDeps } from './reconcileDeps';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
 
@@ -48,7 +49,10 @@ export async function PATCH(request: Request): Promise<Response> {
                 const counts = await syncKrListedTickers();
                 console.log('[kr-tickers] sync done:', JSON.stringify(counts));
             } catch (error) {
-                console.error('[kr-tickers] sync failed:', error);
+                console.error(
+                    '[kr-tickers] sync failed:',
+                    redactDbErrorForLog(error)
+                );
             }
             // 독립된 try — 두 작업은 서로의 입력이 아니다. KR 동기화(data.go.kr)가
             // 죽어도 미국 종목 이름 재대조(FMP)는 돌아야 하고, 그 반대도 같다.
@@ -61,7 +65,10 @@ export async function PATCH(request: Request): Promise<Response> {
                     JSON.stringify(counts)
                 );
             } catch (error) {
-                console.error('[ticker-names] reconcile failed:', error);
+                console.error(
+                    '[ticker-names] reconcile failed:',
+                    redactDbErrorForLog(error)
+                );
             }
         })
     );

@@ -160,10 +160,10 @@ import { getAssetInfoResilient } from '@/entities/ticker/server/getAssetInfoResi
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,
+    isRegularSessionOpen,
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
-import { isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { loadBarsData } from '@/entities/bars/server/loadBarsData';
@@ -544,7 +544,7 @@ describe('Symbol page', () => {
         /**
          * 서버가 넘기는 값은 **생성 시점에 정규장이 열려 있었는가**(세션 기준)다 — quantize가 실제로
          * 봉을 뗐는지가 아니다. 장중에 만든 ISR HTML을 장 마감 뒤에 열면 seed에 그날 봉이 없을 수 있고
-         * 분석 작도는 그 봉을 참조하므로(PR #957 `chart-overlays` e2e 회귀) 클라이언트가 입력 없이
+         * 분석 작도는 그 봉을 참조하므로(`chart-overlays` e2e가 이 경로를 지킨다) 클라이언트가 입력 없이
          * 라이브 봉을 받아야 한다. 오늘 봉이 아직 없어 quantize가 아무것도 안 떼는 장중에도 참이다.
          */
         describe('seedHasFormingBarTrimmed (세션 기준)', () => {

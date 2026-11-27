@@ -11,6 +11,7 @@ gating:
   triggers: [advance_block, ladder_bottom]
 token_cost: 293
 digest_hash: "5e2ea5cc"
+digest_text_hash: "553c1f3b"
 ---
 
 ## Overview

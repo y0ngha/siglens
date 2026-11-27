@@ -46,7 +46,7 @@ test('/about renders the intro page with its example report and FAQ', async ({
     await expect(
         page.getByRole('heading', {
             level: 1,
-            name: '종목 하나만 입력하면, AI가 한 번에 분석해 드려요',
+            name: '종목 하나를 입력하면, 지켜볼 가격대를 정리해 드려요',
         })
     ).toBeVisible();
     await expect(page).toHaveTitle(/^시그렌즈\(SIGLENS\) 소개: /);

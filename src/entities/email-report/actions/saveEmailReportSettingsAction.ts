@@ -63,6 +63,7 @@ export async function saveEmailReportSettingsAction(
             sendHour: v.sendHour,
             timezone: v.timezone,
             locale,
+            consentSource: 'settings',
         });
         return { status: 'ok', settings: toSettingsView(record) };
     } catch (error) {

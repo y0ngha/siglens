@@ -177,8 +177,8 @@ export function quarterlyTtmNetIncome(
         return v !== undefined && Number.isFinite(v) ? [v] : [];
     });
     if (values.length < recent.length) return undefined;
-    const newest = recent[0]!.date;
-    const oldest = recent[3]!.date;
+    const newest = recent[0]?.date;
+    const oldest = recent[3]?.date;
     if (newest instanceof Date && oldest instanceof Date) {
         const spanDays = (newest.getTime() - oldest.getTime()) / MS_PER_DAY;
         if (spanDays > TTM_QUARTER_SPAN_MAX_DAYS) return undefined;

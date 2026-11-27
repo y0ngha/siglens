@@ -32,6 +32,7 @@
  * 접근도 함께 끈다(Next의 `loadEnvConfig`는 이미 프리셋된 env를 `.env.local` 값으로
  * 덮어쓰지 않는다).
  */
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 export function isOfflineBuild(): boolean {
     return process.env.SIGLENS_OFFLINE_BUILD === '1';
 }
@@ -145,9 +146,11 @@ export function assertFmpAvailableAtBuild(detail: string): void {
 export function tripFmpBuildBreaker(detail: string, error: unknown): void {
     if (fmpBuildBreakerOpen) return;
     fmpBuildBreakerOpen = true;
-    const cause = error instanceof Error ? error.message : String(error);
+    const loggable = redactDbErrorForLog(error);
+    const summary =
+        loggable instanceof Error ? loggable.message : String(loggable);
     console.warn(
-        `[build-fmp] breaker tripped on ${detail} (${cause}) — remaining FMP calls in this build process fail fast`
+        `[build-fmp] breaker tripped on ${detail} (${summary}) — remaining FMP calls in this build process fail fast`
     );
 }
 

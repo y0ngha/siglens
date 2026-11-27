@@ -36,11 +36,8 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
 - Chat prompt builder
 - Usage limit policy: "checkAnalysisLimit / checkChatbotLimit"
 
-> **2026-09 갱신**: siglens에는 더 이상 종목 페이지 자체 챗봇이 없다 —
-> `/[symbol]`의 플로팅 버튼은 `ai.siglens.io`로 보내는 링크일 뿐이다. 위
-> "Chat prompt builder"/"checkChatbotLimit" 트리거는 core 레포 자체 작업에
-> 여전히 적용되는 규칙이며, siglens 쪽에 챗 어댑터를 새로 만드는 작업은
-> 없다 — siglens의 유일한 챗은 `ai.siglens.io` 에이전트뿐이다.
+> siglens에는 종목 페이지 챗봇이 없다(`/[symbol]`의 플로팅 버튼은 `ai.siglens.io` 링크, 유일한 챗은 그 에이전트).
+> 위 챗 트리거는 core 레포 작업에 적용되며, siglens 쪽에 챗 어댑터를 새로 만들지 않는다.
 
 **What you must do when triggered**:
 
@@ -183,14 +180,14 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 ### FSD 6-Layer 의존 방향
 
 ```
-app  →  pages  →  widgets  →  features  →  entities  →  shared
+app  →  views  →  widgets  →  features  →  entities  →  shared
                                                           ↑
                                           @y0ngha/siglens-core (외부, 모든 레이어 직접 import 가능)
 ```
 
 - 각 레이어는 자기 위 레이어를 import할 수 없다 (예: entities는 features를 import할 수 없음).
 - 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/analysis`는 `entities/ticker`를 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
-  - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). ESLint `{ from: 'shared', allow: ['shared'] }` 규칙으로 강제.
+  - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). 이 예외 구간은 oxlint가 제한하지 않는다.
   - **예외**: entities 간 cross-import 허용 (analysis → news-article, earnings-report 등 도메인 조합 필요).
   - **예외**: features 간 cross-import 허용 (auth-signup → auth-email-verification 등).
   - cross-import를 허용하는 곳에서도 **순환은 금지**다. 파일 단위 런타임 순환과 entities·features 슬라이스 순환은 0건이어야 한다 (`src/__tests__/guards/importCycles.test.ts`).
@@ -206,12 +203,13 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 
 ### Server Action 예외
 
-`entities/<x>/actions/`(Next.js `'use server'` 파일)는 features/widgets/pages/app에서 import 가능하다.
+`entities/<x>/actions/`(Next.js `'use server'` 파일)는 features/widgets/views/app에서 import 가능하다.
 `entities/<x>/api.ts`는 server-only이므로 same-entity 또는 app 레이어에서만 import.
 
-### ESLint 강제
+### oxlint 강제
 
-위 규칙은 oxlint의 `no-restricted-imports` 패턴(레이어별 override)으로 정적 검증된다. 위반 시 PR 머지 불가. 자세한 설정은 `.oxlintrc.json`.
+- 아래 방향 레이어 규칙은 oxlint `no-restricted-imports`(`.oxlintrc.json`의 레이어별 override)가, 순환·widgets 간 import는 위에 적은 가드가, barrel(`index.ts`와 re-export 전용 파일)은 `src/__tests__/guards/noBarrelFiles.test.ts`가 강제한다.
+- 위 가드들이 다루지 않는 같은 레이어 슬라이스 간 import 금지(entities·features·shared 예외 밖)는 리뷰 시점 규칙이다. 위반 시 PR 머지 불가.
 
 ---
 
@@ -248,15 +246,14 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 #### RT-1 — Verify gates by running them, and verify claims exhaustively
 
 - "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
-- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
 - A `@y0ngha/siglens-core` version bump has no changed files in `src/`, so the consumers are every importer of each changed core export: grep the export name across `src` and run those tests (e.g. a changed tool spec is also pinned by the public `src/app/api/v1` tests), not only the folder you edited.
 - Source-scanning guards also live in route/slice `__tests__` folders outside `src/__tests__/guards` (`src/app/[locale]/__tests__`, `src/shared/i18n/__tests__`). When a change moves calls, directives (`'use client'`) or exports into a helper, include those folders in the scope and update the guard to follow the moved code.
 - Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards` and `src/shared/i18n/__tests__` (e.g. `noClientHookInServerComponent`), because scoped runs skip the repo-wide guards. Before removing a `'use client'` directive, confirm the component calls no client-only hook.
 - Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
 - Rerun every gate covering a file after each code-changing review fix, React Doctor included; a pass on the earlier version does not carry over to the fixed one.
 - A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
-- A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule. The same sweep applies to any review finding that names a pattern, even when no rule text changed: grep the whole PR diff for that pattern before pushing the fix. "Every changed file" includes test files and test helpers: code rules (no `!` assertions, no `any`, no `let`/`for`/`push`) apply there too, so a sweep limited to production files leaves the same violation behind.
-- ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
+- A rule added or sharpened in a PR is swept across that PR's own diff before pushing (grep for the violating pattern in every changed file), not only the file the reviewer named; otherwise the PR violates its own new rule. The same sweep applies to any review finding that names a pattern, even when no rule text changed: grep the whole PR diff for that pattern before pushing the fix. "Every changed file" includes test files and test helpers: code rules (the "Enforced rules" table in `docs/conventions/CONVENTIONS.md`, CP-4, CP-6) apply there too, so a sweep limited to production files leaves the same violation behind.
+- ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[locale]/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
 
 ---
 
@@ -297,13 +294,17 @@ Guidance lives in exactly one place. Pick the home by the kind of rule:
 | Layer-specific rules | `src/app/CLAUDE.md` (AP), `src/entities/CLAUDE.md` (EN), `src/shared/CLAUDE.md` (SH), `src/widgets/CLAUDE.md` (WD), `src/features/CLAUDE.md` (FE) | as listed |
 | Skill authoring | `skills/CLAUDE.md` | SK |
 
-**Rule IDs and references.** A rule that code or another doc cites carries a short, stable ID: an `<a id="CP-2"></a>` line directly above its heading (`#### CP-2 — title`). IDs are never renumbered or reused; delete a rule only together with every reference to it. Cite as `FILE#ID` — the basename for `docs/conventions/*` files (`CONVENTIONS.md#CP-2`, `TESTING.md#TE-1`), the repo-relative path for CLAUDE.md files (`src/app/CLAUDE.md#AP-1`). `src/__tests__/guards/ruleReferences.test.ts` fails on a dangling reference.
+**Rule IDs and references.** A rule that code or another doc cites carries a short, stable ID: an `<a id="CP-2"></a>` line directly above its heading (`#### CP-2 — title`). IDs are never renumbered or reused; delete a rule only together with every reference to it, and list the deleted ID on a `Retired IDs: A-1, B-2` line (one per rule-home file, right after its prefix legend) so it is never issued again. A new ID is the highest number among that prefix's anchors and retired IDs + 1 (a review-time rule; the guard checks the items listed next, not the number). Cite as `FILE#ID` — the basename for `docs/conventions/*` files (`CONVENTIONS.md#CP-2`, `TESTING.md#TE-1`), the repo-relative path for CLAUDE.md files (`src/app/CLAUDE.md#AP-1`). `src/__tests__/guards/ruleReferences.test.ts` fails on a dangling reference, on a retired ID that has an anchor or is cited, and on a malformed or duplicated `Retired IDs` entry.
 
-**Promotion.** Review fixes are first logged in the local scratch file `docs/__agents_only__/fix-log.md` (gitignored, shared across worktrees, append-only for other sessions). When the same violation recurs, `mistake-managing-agent` promotes it as a durable rule (do/don't + why, at most one ❌/✅ pair, no PR narration) into the home above and assigns the highest existing ID of that file's prefix + 1 (never fill a gap left by a removed rule). Check the destination first so a rule is never duplicated.
+**Promotion.** Review fixes are first logged in the local scratch file `docs/__agents_only__/fix-log.md` (gitignored, shared across worktrees, append-only for other sessions). When the same violation recurs, `mistake-managing-agent` promotes it as a durable rule (do/don't + why, at most one ❌/✅ pair, no PR narration) into the home above and assigns the next ID (see above; never fill a gap left by a removed rule). Rule documents are read in full on every review, so their total size is budgeted:
+
+Rule-document budget: 390,000 bytes.
+
+The budget only goes down; raising it needs the user's approval stated in the PR body. `yarn rules:size` prints per-file bytes and headroom, and `src/__tests__/guards/ruleDocSize.test.ts` fails when the 16 rule documents (`docs/conventions/*.md`, this file, the layer `CLAUDE.md` files, `skills/CLAUDE.md`) exceed it. Before adding a rule, `mistake-managing-agent` checks the headroom and greps **every** rule home (not only the destination) so a rule is never duplicated: an existing rule is extended by at most one sentence or example. A rule with a crisp syntactic test is reported for mechanization instead of written as prose. When headroom is short, it first frees bytes by shrinking rules that a lint rule or guard now enforces, merging duplicates into the older ID, and retiring rules about things that no longer exist; a bullet no other doc, lint rule or guard states is never deleted.
 
 **Public vs local.** `docs/conventions/` and every CLAUDE.md are public. Infra IDs, resource names, runbook steps, audit results and production incident detail stay in the local `docs/architecture/` runbooks.
 
-**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before.
+**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before. A compression keeps each rule's exact scope: compare subject and quantifier clause by clause, not only the do/don't verb.
 
 ---
 

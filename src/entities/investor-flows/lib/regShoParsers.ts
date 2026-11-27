@@ -26,7 +26,11 @@ const SYMBOL_HEADER = 'symbol';
 const FLAG_HEADER = 'reg sho threshold flag';
 const LISTED_FLAG = 'Y';
 
-/** 과열 목록 텍스트 → 등재 심볼(파일 표기 그대로, 중복 제거). 헤더가 없거나(HTML) 날짜를 검증할 수 없으면 `unavailable`. */
+/**
+ * 과열 목록 텍스트 → 등재 심볼(파일 표기 그대로, 중복 제거). 헤더가 없거나(HTML) 날짜를 검증할 수 없으면 `unavailable`.
+ *
+ * CONVENTIONS.md#CP-6 예외: 목록 한 파일(수천 행)의 심볼을 Set 하나에 모은다. 행마다 Set을 복사하면 O(N²)다.
+ */
 export function parseRegShoThresholdList(
     text: string,
     options: RegShoParseOptions

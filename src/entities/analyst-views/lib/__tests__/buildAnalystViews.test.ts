@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { YahooEstimatePeriod } from '@/shared/api/yahoo/yahooAnalystSource';
 import type {
+    YahooEstimatePeriod,
     YahooAnalystSummary,
     YahooRawAnalystAction,
 } from '@/shared/api/yahoo/yahooAnalystSource';

@@ -112,6 +112,15 @@ function makeCounts(): PrewarmBatchCounts {
         indexNowSubmitted: 0,
         indexNowOk: 0,
         indexNowFailed: 0,
+        activeSymbols: null,
+        quietSymbols: 0,
+        overallWarmed: 0,
+        overallWarmSkippedByBudget: 0,
+        overallWarmSkippedByBacklog: 0,
+        overallWarmSkippedByDailyCap: 0,
+        overallWarmTimedOut: 0,
+        overallWarmFailed: 0,
+        overallWarmPendingRevalidated: 0,
     };
 }
 

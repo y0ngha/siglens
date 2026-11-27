@@ -20,6 +20,7 @@ import { buildEconomyKrFaq } from '../_lib/economyJsonLd';
 import { requestNow } from '../_lib/requestNow';
 import { economyKrDescription, economyKrTitle } from '../constants';
 import { KrEconomyContent } from './_components/KrEconomyContent';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고, 신선도는 캘린더 인제스션의
 // `revalidateTag('economy:calendar')`가 책임진다. 시간 기반은 상한만 정한다.
@@ -59,7 +60,7 @@ export async function generateMetadata({
         getKrIndicatorCards(todayEt).catch((e: unknown): KrIndicatorCard[] => {
             console.error(
                 '[economy.kr.generateMetadata] indicators failed:',
-                e
+                redactDbErrorForLog(e)
             );
             return [];
         }),
@@ -67,7 +68,7 @@ export async function generateMetadata({
             (e: unknown) => {
                 console.error(
                     '[economy.kr.generateMetadata] calendar failed:',
-                    e
+                    redactDbErrorForLog(e)
                 );
                 return [];
             }

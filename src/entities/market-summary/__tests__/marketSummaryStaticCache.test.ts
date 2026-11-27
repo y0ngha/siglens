@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
@@ -180,6 +180,105 @@ describe('getMarketSummaryStatic', () => {
             sampleSummary
         );
         vi.unstubAllEnvs();
+    });
+
+    const zeroSummary: MarketSummaryData = {
+        indices: sampleSummary.indices.map(q => ({ ...q, price: 0 })),
+        sectors: sampleSummary.sectors.map(q => ({ ...q, price: 0 })),
+    };
+
+    // yahoo 429는 provider가 null로 접어 전 행이 0-가격이 된다 — 1h Data Cache에 굳으면 안 된다.
+    it('(Worst) kr scope의 전 quote가 0이면 시장 태그가 붙은 에러로 던져 캐시하지 않는다', async () => {
+        mockGetCachedMarketSummary.mockResolvedValue(zeroSummary);
+
+        await expect(
+            getMarketSummaryStatic(KR_DASHBOARD_SCOPE)
+        ).rejects.toThrow('[market:kr] summary quotes all missing');
+    });
+
+    it('(Edge) kr scope의 일부 quote만 0이면 던지지 않는다(종목 하나의 결측)', async () => {
+        const partial: MarketSummaryData = {
+            indices: sampleSummary.indices,
+            sectors: zeroSummary.sectors,
+        };
+        mockGetCachedMarketSummary.mockResolvedValue(partial);
+
+        await expect(getMarketSummaryStatic(KR_DASHBOARD_SCOPE)).resolves.toBe(
+            partial
+        );
+    });
+
+    it('(Edge) 행이 아예 없는 빈 번들은 장애 판정으로 던지지 않는다', async () => {
+        const empty: MarketSummaryData = { indices: [], sectors: [] };
+        mockGetCachedMarketSummary.mockResolvedValue(empty);
+
+        await expect(getMarketSummaryStatic(KR_DASHBOARD_SCOPE)).resolves.toBe(
+            empty
+        );
+    });
+
+    describe('시장 태그 로그와 provider 판정', () => {
+        const indexMissing: MarketSummaryData = {
+            indices: zeroSummary.indices,
+            sectors: sampleSummary.sectors,
+        };
+        const sectorMissing: MarketSummaryData = {
+            indices: sampleSummary.indices,
+            sectors: zeroSummary.sectors,
+        };
+        const errorSpy = vi.spyOn(console, 'error');
+
+        beforeEach(() => {
+            errorSpy.mockReset();
+            errorSpy.mockImplementation(() => {});
+        });
+
+        afterAll(() => {
+            errorSpy.mockRestore();
+        });
+
+        describe('kr scope의 지수 행이 0일 때', () => {
+            it('실제 조회 한 번당 시장 태그 로그를 한 줄 남긴다', async () => {
+                mockGetCachedMarketSummary.mockResolvedValue(indexMissing);
+
+                await getMarketSummaryStatic(KR_DASHBOARD_SCOPE);
+
+                expect(errorSpy).toHaveBeenCalledTimes(1);
+                expect(errorSpy).toHaveBeenCalledWith(
+                    '[market:kr] summary index quotes missing:',
+                    'SPY'
+                );
+            });
+        });
+
+        describe('kr scope의 섹터 ETF만 0일 때', () => {
+            it('일상 결측이라 로그를 남기지 않는다', async () => {
+                mockGetCachedMarketSummary.mockResolvedValue(sectorMissing);
+
+                await getMarketSummaryStatic(KR_DASHBOARD_SCOPE);
+
+                expect(errorSpy).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('us scope(FMP)일 때', () => {
+            it('전 행이 0이어도 던지지 않고 로그도 없다', async () => {
+                mockGetCachedMarketSummary.mockResolvedValue(zeroSummary);
+
+                await expect(
+                    getMarketSummaryStatic(US_DASHBOARD_SCOPE)
+                ).resolves.toBe(zeroSummary);
+                expect(errorSpy).not.toHaveBeenCalled();
+            });
+
+            it('지수만 0이어도 [market:] 로그가 없다', async () => {
+                mockGetCachedMarketSummary.mockResolvedValue(indexMissing);
+
+                await getMarketSummaryStatic(US_DASHBOARD_SCOPE);
+
+                expect(errorSpy).not.toHaveBeenCalled();
+            });
+        });
     });
 
     it('(Worst) getCachedMarketSummary가 throw하면 에러가 전파된다', async () => {

@@ -39,13 +39,25 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
 }));
+vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
+    createAuthRateLimitGuards: vi.fn(() => ({
+        rateLimit: vi.fn(),
+        resetCounter: vi.fn(),
+        ipHash: vi.fn(),
+    })),
+}));
 
 import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { createEmailTokenStore } from '@/entities/email-token/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockConfirm = confirmPasswordReset as MockedFunction<
     typeof confirmPasswordReset
@@ -168,6 +180,48 @@ describe('confirmPasswordResetAction', () => {
                 })
             );
             expect(result.error?.code).toBe('invalid_email');
+        });
+    });
+
+    describe('남용 한도', () => {
+        it('rate_limited 코드를 폼 상태로 그대로 돌려준다(필드 없음)', async () => {
+            mockConfirm.mockResolvedValue({
+                ok: false,
+                error: { code: 'rate_limited', message: 'slow' },
+            });
+            const result = await confirmPasswordResetAction(
+                { error: null },
+                makeFormData({
+                    email: 'user@example.com',
+                    token: 't',
+                    newPassword: 'Pass1234',
+                })
+            );
+            expect(result.error?.code).toBe('rate_limited');
+            expect(result.error?.field).toBeUndefined();
+        });
+
+        it('재설정 전용 로그 이름의 한도 포트를 코어에 넘긴다', async () => {
+            mockConfirm.mockResolvedValue({ ok: true });
+            await confirmPasswordResetAction(
+                { error: null },
+                makeFormData({
+                    email: 'user@example.com',
+                    token: 't',
+                    newPassword: 'Pass1234',
+                })
+            ).catch(() => undefined);
+            expect(createAuthRateLimitGuards).toHaveBeenCalledWith(
+                'passwordResetRateLimit'
+            );
+            expect(mockConfirm).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    rateLimit: expect.any(Function),
+                    resetCounter: expect.any(Function),
+                    ipHash: expect.any(Function),
+                })
+            );
         });
     });
 
@@ -308,5 +362,30 @@ describe('confirmPasswordResetAction', () => {
                 })
             );
         });
+    });
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockConfirm.mockRejectedValue(plantedDbError());
+            const result = await confirmPasswordResetAction(
+                { error: null },
+                makeFormData({
+                    email: 'user@example.com',
+                    token: 'tok',
+                    newPassword: 'NewPass1234',
+                })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[confirmPasswordResetAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
     });
 });

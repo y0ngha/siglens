@@ -38,8 +38,37 @@ describe('findApiDefaultModel', () => {
         const { sql, params } = render(
             (fx.where.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"id" = $1');
+        expect(sql).toBe('"users"."id" = $1');
         expect(params).toEqual([OWNER]);
+    });
+
+    it('저장된 퇴역 모델은 후속 모델로 답하고 행은 다시 쓰지 않는다', async () => {
+        const fx = makeSelectDb([{ model: 'gpt-5.6-terra' }]);
+        const writes = {
+            update: vi.fn(),
+            insert: vi.fn(),
+            delete: vi.fn(),
+        };
+        const repo = new DrizzleSiglensApiKeyRepository({
+            ...fx.db,
+            ...writes,
+        } as unknown as SiglensDatabase);
+
+        await expect(repo.findApiDefaultModel(OWNER)).resolves.toBe(
+            'gpt-6-sol'
+        );
+        expect(writes.update).not.toHaveBeenCalled();
+        expect(writes.insert).not.toHaveBeenCalled();
+        expect(writes.delete).not.toHaveBeenCalled();
+    });
+
+    it('모르는 모델 ID는 그대로 돌려준다', async () => {
+        const repo = new DrizzleSiglensApiKeyRepository(
+            makeSelectDb([{ model: 'not-a-model' }]).db
+        );
+        await expect(repo.findApiDefaultModel(OWNER)).resolves.toBe(
+            'not-a-model'
+        );
     });
 
     it.each([
@@ -69,16 +98,16 @@ describe('setApiDefaultModel', () => {
         const repo = new DrizzleSiglensApiKeyRepository(fx.db);
 
         await expect(
-            repo.setApiDefaultModel(OWNER, 'gpt-6-astra')
+            repo.setApiDefaultModel(OWNER, 'gpt-6.2-astra')
         ).resolves.toBe(true);
 
         expect(fx.set).toHaveBeenCalledWith({
-            apiDefaultModel: 'gpt-6-astra',
+            apiDefaultModel: 'gpt-6.2-astra',
         });
         const { sql, params } = render(
             (fx.where.mock.calls as unknown[][])[0][0]
         );
-        expect(sql).toContain('"id" = $1');
+        expect(sql).toBe('"users"."id" = $1');
         expect(params).toEqual([OWNER]);
     });
 

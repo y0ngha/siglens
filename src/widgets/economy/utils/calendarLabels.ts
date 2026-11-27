@@ -43,7 +43,11 @@ export function monthLabel(locale: Locale, month: number): string {
 
 /** 'YYYY-MM-DD'의 로케일 요일 레이블. */
 export function kstDayOfWeekLabel(dateKey: string, locale: Locale): string {
-    return weekdayLabels(locale)[dayOfWeekFromKey(dateKey)]!;
+    const label = weekdayLabels(locale)[dayOfWeekFromKey(dateKey)];
+    if (label === undefined) {
+        throw new Error(`invalid calendar date key: ${dateKey}`);
+    }
+    return label;
 }
 
 /**

@@ -19,6 +19,19 @@ import {
     isFundamentalIndexable,
 } from '../lib/buildFundamentalFacts';
 import type { FundamentalFactsInput, FundamentalFactsResult } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+
+/**
+ * 목표가 컨센서스·요약 정적 캐시(`fundamental:pt-consensus`·`fundamental:pt-summary`)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const PRICE_TARGET_REVALIDATE_SECONDS = SECONDS_PER_DAY;
+
+/**
+ * 사실 블록의 실적 정적 캐시(`fundamental-facts:earnings`)의 revalidate. `[symbol]` 탭 revalidate clamp 가드가
+ * 이 값을 읽는다. 같은 블록의 다른 캐시는 각자 상수가 가드 행에 있다 — 수급 점수표(`INVESTOR_FLOWS_*`),
+ * 재무(`FINANCIALS_SNAPSHOT_*`), 목표가(`PRICE_TARGET_*`), 등급(`GRADES_CONSENSUS_*`), Yahoo 힌트(`EARNINGS_HINT_*`).
+ */
+export const FUNDAMENTAL_FACTS_REVALIDATE_SECONDS = SECONDS_PER_HALF_DAY;
 
 /** EPS 연속 판정에 읽는 최근 발표 수 — 연속이 이보다 길어도 이 수에서 멈춘다. */
 const REPORTED_EPS_LIMIT = 8;
@@ -36,7 +49,7 @@ async function settle<T>(
     } catch (err) {
         console.warn(
             `[getFundamentalFacts] ${label} failed for ${symbol}:`,
-            err
+            redactDbErrorForLog(err)
         );
         return FAILED;
     }
@@ -109,7 +122,7 @@ export const getFundamentalFacts = cache(
                         symbol,
                         () => provider.getPriceTargetConsensus(symbol),
                         [],
-                        SECONDS_PER_DAY
+                        PRICE_TARGET_REVALIDATE_SECONDS
                     )
                 ),
                 settle('price-target-summary', symbol, () =>
@@ -118,7 +131,7 @@ export const getFundamentalFacts = cache(
                         symbol,
                         () => provider.getPriceTargetSummary(symbol),
                         [],
-                        SECONDS_PER_DAY
+                        PRICE_TARGET_REVALIDATE_SECONDS
                     )
                 ),
                 // 섹션과 같은 로더(`loadPageGradesConsensus`) — Yahoo 실패 fallback은 캐시에 굳지 않는다.
@@ -136,7 +149,7 @@ export const getFundamentalFacts = cache(
                         symbol,
                         () => loadEarnings(symbol, today),
                         [],
-                        SECONDS_PER_HALF_DAY
+                        FUNDAMENTAL_FACTS_REVALIDATE_SECONDS
                     )
                 ),
                 loadEarningsHintBounded(symbol),

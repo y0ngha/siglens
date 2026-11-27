@@ -24,6 +24,7 @@ import {
 } from '../plainGenerationCoordination';
 import type { PlainFlight } from './plainFlights';
 import type { PlainModelConfig } from './plainModel';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 평이화 호출 상한. 재시도는 SDK가 아니라 이 모듈이 정한다 — `attempt()`가 가드 실패에
@@ -263,7 +264,7 @@ export function startPlainGeneration(ctx: PlainGenerationContext): PlainFlight {
                 symbol: ctx.symbol,
                 locale: ctx.locale,
                 model: ctx.config.model,
-                error,
+                error: redactDbErrorForLog(error),
             });
             return null;
         }),

@@ -46,20 +46,42 @@ describe('globals.css — 펼친 모바일 시트의 Ask-AI FAB·PWA 배너 규�
     });
 
     /**
-     * 배너와 FAB은 모바일에서 같은 오른쪽 아래 자리에 고정된다. 배너가 떠 있는 동안
-     * FAB을 배너 높이(3rem)+간격(0.5rem) 위로 올리지 않으면 둘이 겹친다.
+     * 하단 오버레이는 한 번에 하나다(일시·모달 UI > 시트 > Ask-AI 링크 > 설치 배너).
+     * 차트 탭은 패널 본문의 인라인 링크가 떠 있는 버튼을 대신하고, 링크가 있는 화면에는 배너가 없다.
      */
-    it('모바일에서 PWA 배너가 떠 있으면 FAB을 배너 위로 올린다', () => {
+    it('인라인 Ask-AI 링크가 있으면 떠 있는 버튼을 숨긴다', () => {
         expect(normalized).toContain(
-            '@media (width < 40rem) { body:has([data-pwa-banner]) [data-ask-ai-fab] { bottom: calc(0.75rem + env(safe-area-inset-bottom) + 3.5rem); } }'
+            'body:has([data-ask-ai-inline]) [data-ask-ai-fab] { display: none; }'
+        );
+    });
+
+    it('떠 있는 Ask-AI 버튼이 있는 화면에는 PWA 설치 배너를 숨긴다', () => {
+        expect(normalized).toContain(
+            'body:has([data-ask-ai-fab]) [data-pwa-banner] { display: none; }'
+        );
+    });
+
+    it('배너 위로 버튼을 들어 올리던 규칙은 없다 — 둘이 함께 보이는 화면이 없다', () => {
+        expect(normalized).not.toContain(
+            'body:has([data-pwa-banner]) [data-ask-ai-fab]'
+        );
+        expect(normalized).not.toContain('safe-area-inset-bottom) + 3.5rem');
+    });
+
+    it('규칙이 인라인 링크·배너 컴포넌트가 실제로 다는 속성명을 쓴다', () => {
+        const inline = readFileSync(
+            join(
+                process.cwd(),
+                'src/widgets/ask-ai-fab/ui/AskAiInlineLink.tsx'
+            ),
+            'utf-8'
         );
         const banner = readFileSync(
             join(process.cwd(), 'src/features/pwa-install/ui/PwaBanner.tsx'),
             'utf-8'
         );
+        expect(inline).toContain('data-ask-ai-inline');
         expect(banner).toContain('data-pwa-banner');
-        // 들어올림 값(3.5rem)은 배너 높이 h-12(3rem)를 전제로 한다.
-        expect(banner).toContain('h-12');
     });
 
     it('규칙이 시트·FAB 컴포넌트가 실제로 다는 속성명을 쓴다', () => {

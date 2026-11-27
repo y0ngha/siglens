@@ -4,6 +4,7 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import type { AiSeoCopy } from '@/shared/config/aiHost';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 랜딩의 `generateMetadata`와 JSON-LD가 함께 쓰는 SEO 문구. */
 export async function getAiHomeSeoCopy(locale: Locale): Promise<AiSeoCopy> {
@@ -34,7 +35,10 @@ export async function loadAiHomeSuggestions(
             portfolioSymbols: holdings.map(h => h.symbol),
         });
     } catch (error) {
-        console.error('[AiHomePage] loadSuggestions failed:', error);
+        console.error(
+            '[AiHomePage] loadSuggestions failed:',
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

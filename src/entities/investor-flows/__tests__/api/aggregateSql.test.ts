@@ -24,29 +24,22 @@ const render = (query: SQL): { text: string; params: unknown[] } => {
     return { text: sql.replace(/\s+/g, ' '), params };
 };
 
-describe('aggregate SQL — table names match the schema', () => {
-    const all = [
-        render(
-            buildAggregateUpsertSql('panel', '2026-09-30', '2026-06-30', ['A'])
-        ).text,
-        render(buildBaselinelessAggregateUpsertSql('2026-09-30', ['A'])).text,
-        render(
-            buildAggregateDeleteSql('complete', '2026-09-30', '2026-06-30', [
-                'A',
-            ])
-        ).text,
-        render(buildResetChangesSql('2026-09-30')).text,
-    ].join(' ');
+/**
+ * 렌더된 SQL의 테이블 이름은 스키마에서 읽는다. 리터럴로 적으면 스키마 이름이 바뀌어도 이 테스트가
+ * 낡은 이름을 고정한 채 통과한다.
+ */
+const TABLE = {
+    aggregates: getTableName(sec13fAggregates),
+    filings: getTableName(sec13fFilings),
+    positions: getTableName(sec13fPositions),
+    cusipMap: getTableName(cusipSymbolMap),
+    optionAggregates: getTableName(sec13fOptionAggregates),
+    optionPositions: getTableName(sec13fOptionPositions),
+};
 
-    it.each([
-        ['aggregates', getTableName(sec13fAggregates)],
-        ['filings', getTableName(sec13fFilings)],
-        ['positions', getTableName(sec13fPositions)],
-        ['cusip map', getTableName(cusipSymbolMap)],
-    ])('references the %s table by its real name', (_label, name) => {
-        expect(all).toContain(name);
-    });
-});
+const COMPLETE_UPSERT_SQL = ` WITH m AS ( SELECT id, cusip, created_at FROM ${TABLE.cusipMap} WHERE cusip IN ($1, $2) ), pe AS ( SELECT min(universe_stamp) AS first_at FROM ${TABLE.filings} WHERE period = $3 AND processed_at IS NOT NULL ), j AS ( SELECT coalesce(c.cusip_id, p.cusip_id) AS cusip_id, c.shares AS cur_shares, c.value_k AS cur_value, p.shares AS prev_shares FROM ( SELECT cik, cusip_id, shares, value_k FROM ${TABLE.positions} WHERE period = $4 AND cusip_id IN (SELECT id FROM m) ) c FULL OUTER JOIN ( SELECT cik, cusip_id, shares FROM ${TABLE.positions} WHERE period = $5 AND cusip_id IN (SELECT id FROM m) ) p ON p.cik = c.cik AND p.cusip_id = c.cusip_id ) INSERT INTO ${TABLE.aggregates} AS a (cusip, period, holders, shares, value_usd, new_holders, increased, decreased, exited, net_share_change, computed_at) SELECT m.cusip, $6::date, (count(*) FILTER (WHERE j.cur_shares IS NOT NULL))::int, (coalesce(sum(j.cur_shares), 0))::bigint, (coalesce(sum(j.cur_value), 0) * 1000)::bigint, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares IS NOT NULL AND j.prev_shares IS NULL))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares > j.prev_shares))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares < j.prev_shares))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares IS NULL AND j.prev_shares IS NOT NULL))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (coalesce(sum(j.cur_shares), 0) - coalesce(sum(j.prev_shares), 0))::bigint END, now() FROM j JOIN m ON m.id = j.cusip_id GROUP BY m.id, m.cusip, m.created_at ON CONFLICT (cusip, period) DO UPDATE SET holders = excluded.holders, shares = excluded.shares, value_usd = excluded.value_usd, new_holders = excluded.new_holders, increased = excluded.increased, decreased = excluded.decreased, exited = excluded.exited, net_share_change = excluded.net_share_change, computed_at = now() WHERE (a.holders, a.shares, a.value_usd, a.new_holders, a.increased, a.decreased, a.exited, a.net_share_change) IS DISTINCT FROM (excluded.holders, excluded.shares, excluded.value_usd, excluded.new_holders, excluded.increased, excluded.decreased, excluded.exited, excluded.net_share_change)`;
+const BASELINELESS_UPSERT_SQL = ` WITH m AS ( SELECT id, cusip FROM ${TABLE.cusipMap} WHERE cusip IN ($1) ) INSERT INTO ${TABLE.aggregates} AS a (cusip, period, holders, shares, value_usd, computed_at) SELECT m.cusip, $2::date, (count(*))::int, (coalesce(sum(p.shares), 0))::bigint, (coalesce(sum(p.value_k), 0) * 1000)::bigint, now() FROM ${TABLE.positions} p JOIN m ON m.id = p.cusip_id WHERE p.period = $3 GROUP BY m.cusip ON CONFLICT (cusip, period) DO UPDATE SET holders = excluded.holders, shares = excluded.shares, value_usd = excluded.value_usd, computed_at = now() WHERE (a.holders, a.shares, a.value_usd) IS DISTINCT FROM (excluded.holders, excluded.shares, excluded.value_usd)`;
+const RESET_CHANGES_SQL = ` UPDATE ${TABLE.aggregates} SET new_holders = NULL, increased = NULL, decreased = NULL, exited = NULL, net_share_change = NULL, computed_at = now() WHERE period = $1::date AND new_holders IS NOT NULL`;
 
 describe('buildAggregateUpsertSql', () => {
     describe('complete mode (full previous quarter vs full current quarter)', () => {
@@ -58,10 +51,9 @@ describe('buildAggregateUpsertSql', () => {
         );
 
         it('does not restrict either side to a filer set (symmetric populations)', () => {
-            // the only filings reference is the prior period's first-ingestion time for the per-CUSIP baseline
-            expect(text).not.toContain(
-                'cik IN (SELECT cik FROM sec_13f_filings'
-            );
+            // 핀의 주목 절: `FROM ( SELECT … FROM positions WHERE period = $4 …) c FULL OUTER JOIN ( … period = $5 …) p` — 양쪽 모두 cik 제한이 없고,
+            // filings는 `pe` CTE의 이전 분기 첫 적재 시각 조회에만 나온다.
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
 
         it('binds period, prior period and CUSIPs as parameters (never inlined)', () => {
@@ -73,47 +65,33 @@ describe('buildAggregateUpsertSql', () => {
                 '2026-03-31', // prior period positions
                 '2026-06-30', // the period column written
             ]);
-            for (const literal of ['2026-06-30', '2026-03-31', '037833100']) {
-                expect(text).not.toContain(literal);
-            }
+            // 핀의 주목 절: `$1`~`$6` 자리표시자만 있고 날짜·CUSIP 리터럴이 없다(위 params가 값을 가진다).
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
 
         it('classifies new / increased / decreased / exited from the full outer join', () => {
-            expect(text).toContain('FULL OUTER JOIN');
-            expect(text).toContain(
-                'j.cur_shares IS NOT NULL AND j.prev_shares IS NULL'
-            );
-            expect(text).toContain('j.cur_shares > j.prev_shares');
-            expect(text).toContain('j.cur_shares < j.prev_shares');
-            expect(text).toContain(
-                'j.cur_shares IS NULL AND j.prev_shares IS NOT NULL'
-            );
+            // 핀의 주목 절: `FULL OUTER JOIN` 뒤 `cur_shares IS NOT NULL AND prev_shares IS NULL`(신규), `>`(증가), `<`(감소), `IS NULL AND … IS NOT NULL`(이탈).
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
 
         it('nulls every change column for a CUSIP mapped AFTER the prior period was first ingested (per-CUSIP baseline by ingestion time)', () => {
-            const cases =
-                text.match(
-                    /CASE WHEN m\.created_at <= \(SELECT first_at FROM pe\)/g
-                ) ?? [];
-            expect(cases).toHaveLength(5);
+            // 핀의 주목 절: 다섯 변경 컬럼 모두 `CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN … END`로 감싸인다.
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
 
         it('derives the baseline reference from the prior period’s earliest universe snapshot stamp, not from processed_at or a calendar cutoff', () => {
-            expect(text).toContain(
-                'SELECT min(universe_stamp) AS first_at FROM sec_13f_filings WHERE period = $3 AND processed_at IS NOT NULL'
-            );
-            expect(text).not.toContain('+ 1)');
+            // 핀의 주목 절: 기준은 `pe` CTE의 `min(universe_stamp)`(이전 분기, `processed_at IS NOT NULL` filings)이고 달력 컷오프가 아니다.
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
 
         it('stores value in thousands and scales the sum back to dollars', () => {
-            expect(text).toContain(
-                '(coalesce(sum(j.cur_value), 0) * 1000)::bigint'
-            );
+            // 핀의 주목 절: `(coalesce(sum(j.cur_value), 0) * 1000)::bigint` — 천 단위 합을 달러로 되돌린다.
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
 
         it('skips unchanged rows with an IS DISTINCT FROM guard on the conflict update', () => {
-            expect(text).toContain('ON CONFLICT (cusip, period) DO UPDATE');
-            expect(text).toContain('IS DISTINCT FROM');
+            // 핀의 주목 절: `ON CONFLICT … DO UPDATE … WHERE (a.holders, …) IS DISTINCT FROM (excluded.holders, …)`.
+            expect(text).toBe(COMPLETE_UPSERT_SQL);
         });
     });
 
@@ -123,12 +101,10 @@ describe('buildAggregateUpsertSql', () => {
         );
 
         it('restricts BOTH the current and the prior side to filers that filed both periods', () => {
-            const filerFilters =
-                text.match(
-                    /cik IN \(SELECT cik FROM sec_13f_filings WHERE period = \$\d+ AND processed_at IS NOT NULL\)/g
-                ) ?? [];
             // 2 periods × 2 sides
-            expect(filerFilters).toHaveLength(4);
+            expect(text).toBe(
+                ` WITH m AS ( SELECT id, cusip, created_at FROM ${TABLE.cusipMap} WHERE cusip IN ($1) ), pe AS ( SELECT min(universe_stamp) AS first_at FROM ${TABLE.filings} WHERE period = $2 AND processed_at IS NOT NULL ), j AS ( SELECT coalesce(c.cusip_id, p.cusip_id) AS cusip_id, c.shares AS cur_shares, c.value_k AS cur_value, p.shares AS prev_shares FROM ( SELECT cik, cusip_id, shares, value_k FROM ${TABLE.positions} WHERE period = $3 AND cusip_id IN (SELECT id FROM m) AND cik IN (SELECT cik FROM ${TABLE.filings} WHERE period = $4 AND processed_at IS NOT NULL) AND cik IN (SELECT cik FROM ${TABLE.filings} WHERE period = $5 AND processed_at IS NOT NULL) ) c FULL OUTER JOIN ( SELECT cik, cusip_id, shares FROM ${TABLE.positions} WHERE period = $6 AND cusip_id IN (SELECT id FROM m) AND cik IN (SELECT cik FROM ${TABLE.filings} WHERE period = $7 AND processed_at IS NOT NULL) AND cik IN (SELECT cik FROM ${TABLE.filings} WHERE period = $8 AND processed_at IS NOT NULL) ) p ON p.cik = c.cik AND p.cusip_id = c.cusip_id ) INSERT INTO ${TABLE.aggregates} AS a (cusip, period, holders, shares, value_usd, new_holders, increased, decreased, exited, net_share_change, computed_at) SELECT m.cusip, $9::date, (count(*) FILTER (WHERE j.cur_shares IS NOT NULL))::int, (coalesce(sum(j.cur_shares), 0))::bigint, (coalesce(sum(j.cur_value), 0) * 1000)::bigint, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares IS NOT NULL AND j.prev_shares IS NULL))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares > j.prev_shares))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares < j.prev_shares))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (count(*) FILTER (WHERE j.cur_shares IS NULL AND j.prev_shares IS NOT NULL))::int END, CASE WHEN m.created_at <= (SELECT first_at FROM pe) THEN (coalesce(sum(j.cur_shares), 0) - coalesce(sum(j.prev_shares), 0))::bigint END, now() FROM j JOIN m ON m.id = j.cusip_id GROUP BY m.id, m.cusip, m.created_at ON CONFLICT (cusip, period) DO UPDATE SET holders = excluded.holders, shares = excluded.shares, value_usd = excluded.value_usd, new_holders = excluded.new_holders, increased = excluded.increased, decreased = excluded.decreased, exited = excluded.exited, net_share_change = excluded.net_share_change, computed_at = now() WHERE (a.holders, a.shares, a.value_usd, a.new_holders, a.increased, a.decreased, a.exited, a.net_share_change) IS DISTINCT FROM (excluded.holders, excluded.shares, excluded.value_usd, excluded.new_holders, excluded.increased, excluded.decreased, excluded.exited, excluded.net_share_change)`
+            );
         });
     });
 });
@@ -139,28 +115,18 @@ describe('buildBaselinelessAggregateUpsertSql', () => {
     );
 
     it('writes only counts and never the change columns', () => {
-        expect(text).toContain(
-            '(cusip, period, holders, shares, value_usd, computed_at)'
-        );
-        expect(text).not.toContain('new_holders = excluded');
-        expect(text).not.toContain('net_share_change');
+        expect(text).toBe(BASELINELESS_UPSERT_SQL);
     });
 
     it('always refreshes holders / shares / value, leaving only the change columns untouched', () => {
         const update = text.slice(text.indexOf('DO UPDATE SET'));
-        expect(update).toContain('holders = excluded.holders');
-        expect(update).toContain('shares = excluded.shares');
-        expect(update).toContain('value_usd = excluded.value_usd');
-        expect(update).not.toMatch(
-            /new_holders = |increased = |decreased = |exited = |net_share_change = /
+        expect(update).toBe(
+            'DO UPDATE SET holders = excluded.holders, shares = excluded.shares, value_usd = excluded.value_usd, computed_at = now() WHERE (a.holders, a.shares, a.value_usd) IS DISTINCT FROM (excluded.holders, excluded.shares, excluded.value_usd)'
         );
     });
 
     it('is not gated on the existing row having NULL change columns', () => {
-        expect(text).not.toContain('a.new_holders IS NULL');
-        expect(text).toContain(
-            'IS DISTINCT FROM (excluded.holders, excluded.shares, excluded.value_usd)'
-        );
+        expect(text).toBe(BASELINELESS_UPSERT_SQL);
     });
 });
 
@@ -171,8 +137,9 @@ describe('buildAggregateDeleteSql', () => {
                 'A',
             ])
         );
-        expect(text).toContain('p.period IN ($3, $4)');
-        expect(text).not.toContain('sec_13f_filings');
+        expect(text).toBe(
+            ` DELETE FROM ${TABLE.aggregates} a WHERE a.period = $1 AND a.cusip IN ($2) AND NOT EXISTS ( SELECT 1 FROM ${TABLE.positions} p JOIN ${TABLE.cusipMap} m ON m.id = p.cusip_id WHERE m.cusip = a.cusip AND p.period IN ($3, $4) )`
+        );
         expect(params).toEqual(['2026-09-30', 'A', '2026-09-30', '2026-06-30']);
     });
 
@@ -180,47 +147,30 @@ describe('buildAggregateDeleteSql', () => {
         const { text } = render(
             buildAggregateDeleteSql('panel', '2026-09-30', '2026-06-30', ['A'])
         );
-        expect(
-            text.match(/p\.cik IN \(SELECT cik FROM sec_13f_filings/g)
-        ).toHaveLength(2);
+        expect(text).toBe(
+            ` DELETE FROM ${TABLE.aggregates} a WHERE a.period = $1 AND a.cusip IN ($2) AND NOT EXISTS ( SELECT 1 FROM ${TABLE.positions} p JOIN ${TABLE.cusipMap} m ON m.id = p.cusip_id WHERE m.cusip = a.cusip AND p.period IN ($3, $4) AND p.cik IN (SELECT cik FROM ${TABLE.filings} WHERE period = $5 AND processed_at IS NOT NULL) AND p.cik IN (SELECT cik FROM ${TABLE.filings} WHERE period = $6 AND processed_at IS NOT NULL) )`
+        );
     });
 
     it('none: only rows computed without a baseline are deleted', () => {
         const { text } = render(
             buildAggregateDeleteSql('none', '2026-03-31', '2025-12-31', ['A'])
         );
-        expect(text).toContain('a.new_holders IS NULL');
-        expect(text).not.toContain('p.period IN');
+        expect(text).toBe(
+            ` DELETE FROM ${TABLE.aggregates} a WHERE a.period = $1 AND a.cusip IN ($2) AND a.new_holders IS NULL AND NOT EXISTS ( SELECT 1 FROM ${TABLE.positions} p JOIN ${TABLE.cusipMap} m ON m.id = p.cusip_id WHERE m.cusip = a.cusip AND p.period = $3 )`
+        );
     });
 });
 
 describe('buildResetChangesSql', () => {
     it('nulls all five change columns of rows that have a baseline, for one period', () => {
         const { text, params } = render(buildResetChangesSql('2026-03-31'));
-        for (const column of [
-            'new_holders',
-            'increased',
-            'decreased',
-            'exited',
-            'net_share_change',
-        ]) {
-            expect(text).toContain(`${column} = NULL`);
-        }
-        expect(text).toContain('new_holders IS NOT NULL');
+        expect(text).toBe(RESET_CHANGES_SQL);
         expect(params).toEqual(['2026-03-31']);
     });
 });
 
 describe('option aggregate SQL', () => {
-    it('names the schema tables', () => {
-        const text = [
-            render(buildOptionAggregateUpsertSql('2026-09-30', ['A'])).text,
-            render(buildOptionAggregateDeleteSql('2026-09-30', ['A'])).text,
-        ].join(' ');
-        expect(text).toContain(getTableName(sec13fOptionAggregates));
-        expect(text).toContain(getTableName(sec13fOptionPositions));
-    });
-
     it('splits puts and calls with FILTER and binds the period and CUSIPs', () => {
         const { text, params } = render(
             buildOptionAggregateUpsertSql('2026-09-30', [
@@ -228,13 +178,9 @@ describe('option aggregate SQL', () => {
                 '594918104',
             ])
         );
-        expect(text).toContain(
-            "(count(*) FILTER (WHERE o.put_call = 'put'))::int"
+        expect(text).toBe(
+            ` INSERT INTO ${TABLE.optionAggregates} AS a (cusip, period, put_holders, put_shares, put_value_usd, call_holders, call_shares, call_value_usd, computed_at) SELECT o.cusip, $1::date, (count(*) FILTER (WHERE o.put_call = 'put'))::int, (coalesce(sum(o.shares) FILTER (WHERE o.put_call = 'put'), 0))::bigint, (coalesce(sum(o.value_usd) FILTER (WHERE o.put_call = 'put'), 0))::bigint, (count(*) FILTER (WHERE o.put_call = 'call'))::int, (coalesce(sum(o.shares) FILTER (WHERE o.put_call = 'call'), 0))::bigint, (coalesce(sum(o.value_usd) FILTER (WHERE o.put_call = 'call'), 0))::bigint, now() FROM ${TABLE.optionPositions} o WHERE o.period = $2 AND o.cusip IN ($3, $4) GROUP BY o.cusip ON CONFLICT (cusip, period) DO UPDATE SET put_holders = excluded.put_holders, put_shares = excluded.put_shares, put_value_usd = excluded.put_value_usd, call_holders = excluded.call_holders, call_shares = excluded.call_shares, call_value_usd = excluded.call_value_usd, computed_at = now() WHERE (a.put_holders, a.put_shares, a.put_value_usd, a.call_holders, a.call_shares, a.call_value_usd) IS DISTINCT FROM (excluded.put_holders, excluded.put_shares, excluded.put_value_usd, excluded.call_holders, excluded.call_shares, excluded.call_value_usd)`
         );
-        expect(text).toContain(
-            "(coalesce(sum(o.value_usd) FILTER (WHERE o.put_call = 'call'), 0))::bigint"
-        );
-        expect(text).toContain('IS DISTINCT FROM');
         expect(params).toEqual([
             '2026-09-30',
             '2026-09-30',
@@ -247,8 +193,8 @@ describe('option aggregate SQL', () => {
         const { text, params } = render(
             buildOptionAggregateDeleteSql('2026-09-30', ['A'])
         );
-        expect(text).toContain(
-            'NOT EXISTS ( SELECT 1 FROM sec_13f_option_positions o WHERE o.cusip = a.cusip AND o.period = $3 )'
+        expect(text).toBe(
+            ` DELETE FROM ${TABLE.optionAggregates} a WHERE a.period = $1 AND a.cusip IN ($2) AND NOT EXISTS ( SELECT 1 FROM ${TABLE.optionPositions} o WHERE o.cusip = a.cusip AND o.period = $3 )`
         );
         expect(params).toEqual(['2026-09-30', 'A', '2026-09-30']);
     });

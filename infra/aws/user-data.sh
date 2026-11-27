@@ -4,6 +4,11 @@
 set -euxo pipefail
 REGION=ap-northeast-2
 
+# user-data는 인스턴스당 한 번만 돈다(첫 부팅). launch 훅이 끝났다는 표식은 **이 인스턴스가 서빙을
+# 시작한 뒤에야** 생겨야 하므로, 서빙 중인 인스턴스에서 구운 AMI가 표식을 물려받아 게이트를 우회하지
+# 못하게 여기서 먼저 지운다(siglens-wait-migrations.sh가 이 표식으로 재부팅 시 InService를 가른다).
+rm -f /var/lib/siglens/launch-completed
+
 # 골든 AMI(M2) 감지: 09-bake-ami.sh가 docker·cloudwatch-agent·jq를 미리 설치하고
 # /etc/siglens-golden-ami 마커를 남긴다. 마커가 있으면 부팅 시 dnf install을 건너뛰어
 # 부팅을 빠르고 결정적으로 만든다(boot = env-fetch + docker pull(델타) + run).
@@ -203,6 +208,75 @@ exit 1
 WAIT
 chmod +x /usr/local/bin/siglens-wait-healthy.sh
 
+# ── 마이그레이션 게이트 ───────────────────────────────────────────────────────
+# 이 이미지가 기대하는 마이그레이션이 DB에 아직 없으면(= 배포가 마이그레이션을 앞질렀으면)
+# cloudflared를 띄우지 않는다. 터널이 붙는 순간이 트래픽이 이 박스로 오는 순간이라, 여기서
+# 막으면 이 인스턴스는 트래픽을 받지 않고, 라이프사이클 훅이 곧바로 ABANDON되어 instance
+# refresh가 실패하며 옛 인스턴스가 그대로 남는다(deploy.sh 참고).
+#
+#   200(어떤 status든)               -> 통과
+#   503 + missing/manifest_unavailable -> 막는다(닫힘): 이미지가 DB보다 앞섰다는 **확정** 답이다
+#   그 밖(unknown, 연결 거부, 404) -> 5초 뒤 재시도, 12번 뒤에도 못 정하면
+#                                      통과(열림): 재부팅·스케일아웃 중 DB 블립이 인그레스를 없애면 안 된다
+#
+# 최악 12 × (3 + 5) = 96초. 결과는 /run/siglens(tmpfs)에 표식으로 남긴다: passed면 cloudflared가
+# 서빙 중에 재시작돼도 다시 묻지 않고, failed면 ABANDON 처리 동안 재조회 루프를 돌지 않는다.
+# 재부팅하면 tmpfs가 비어 다시 확인한다(의도). 단 launch 훅이 CONTINUE까지 끝낸 InService 인스턴스는
+# 재부팅 때 막히지 않는다(아래 COMPLETED): 훅이 이미 없어 ABANDON할 수 없고 막아 봐야 인그레스만 잃는다.
+# 404는 "옛 빌드"가 아니다: user-data와 이미지는 같은 태그라서, 404면 이 이미지에서 라우트가 깨졌다는
+# 뜻이다. 그래도 확정 답이 아니므로 재시도 뒤 열린 쪽으로 통과한다. 경로·간격은 테스트가 환경변수로 바꾼다.
+# 비상 스위치는 SSM /siglens/MIGRATION_GATE (enforce 기본, report, off) — 앱이 읽는다.
+cat > /usr/local/bin/siglens-wait-migrations.sh <<'MIGGATE'
+#!/usr/bin/env bash
+set -uo pipefail
+RUN_DIR="${SIGLENS_RUN_DIR:-/run/siglens}"
+OPS="${SIGLENS_OPS_LOG:-/var/log/siglens-ops.log}"
+URL="${SIGLENS_MIGRATIONS_URL:-http://127.0.0.1:3000/api/ready/migrations}"
+PAUSE="${SIGLENS_GATE_SLEEP:-5}"
+# launch 훅이 CONTINUE까지 끝낸 인스턴스(= 이미 InService)에 남는 표식. 재부팅 때 게이트가 이
+# 박스를 막으면 InService인 채로 인그레스만 잃는다(ABANDON할 훅도 이미 없다) — 그래서 이 경우에만
+# 막지 않고 크게 로그를 남긴다. /var/lib는 디스크라 재부팅을 넘어 살아남는다.
+COMPLETED="${SIGLENS_LAUNCH_COMPLETED:-/var/lib/siglens/launch-completed}"
+PASSED="$RUN_DIR/migration-gate-passed"
+FAILED="$RUN_DIR/migration-gate-failed"
+say() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$OPS"; }
+
+mkdir -p "$RUN_DIR"
+[ -f "$PASSED" ] && exit 0
+[ -f "$FAILED" ] && exit 1
+
+BODY=$(mktemp)
+trap 'rm -f "$BODY"' EXIT
+for _ in $(seq 1 12); do
+  : > "$BODY"
+  CODE=$(curl -sS -m 3 -o "$BODY" -w '%{http_code}' "$URL") || CODE=000
+  STATUS=$(jq -r '.status // empty' "$BODY" 2>/dev/null) || STATUS=""
+  if [ "$CODE" = "200" ]; then
+    say "[migration-gate] passed (${STATUS:-unknown})"
+    touch "$PASSED"
+    exit 0
+  fi
+  if [ "$CODE" = "503" ] && { [ "$STATUS" = "missing" ] || [ "$STATUS" = "manifest_unavailable" ]; }; then
+    COUNT=$(jq -r '.missing // empty' "$BODY" 2>/dev/null) || COUNT=""
+    if [ -f "$COMPLETED" ]; then
+      say "[migration-gate] blocked on an InService instance, passing ($STATUS${COUNT:+ $COUNT})"
+      touch "$PASSED"
+      exit 0
+    fi
+    say "[migration-gate] blocked: $STATUS ${COUNT:-}"
+    touch "$FAILED"
+    exit 1
+  fi
+  LAST_CODE="$CODE"
+  LAST_STATUS="${STATUS:-none}"
+  sleep "$PAUSE"
+done
+say "[migration-gate] could not verify (last: ${LAST_CODE:-none} $LAST_STATUS), passing"
+touch "$PASSED"
+exit 0
+MIGGATE
+chmod +x /usr/local/bin/siglens-wait-migrations.sh
+
 # ── cloudflared ──────────────────────────────────────────────────────────────
 # TUNNEL_GRACE_PERIOD=180s가 ALB의 deregistration_delay=185를 대체한다. SIGTERM을
 # 받으면 새 요청 수신을 멈추고 인플라이트를 이 값까지 배수한다(기본 30초는 180초
@@ -223,6 +297,9 @@ chmod +x /usr/local/bin/siglens-wait-healthy.sh
 #
 # 토큰은 SSM SecureString. EC2 역할이 이미 /siglens/* 에 ssm:GetParameter를 갖고 있어
 # IAM 변경이 필요 없다.
+# TimeoutStartSec=540은 두 ExecStartPre의 최악 합이다: wait-healthy 60 × (curl -m 2 + sleep 5) = 420초
+# + wait-migrations 12 × (curl -m 3 + sleep 5) = 96초 = 516초, 여유 24초. 합이 이 값을 넘으면
+# systemd가 게이트 도중 유닛을 죽인다(guards/migrationGateContract.test.ts가 이 산식을 지킨다).
 cat > /etc/systemd/system/cloudflared.service <<TUNNEL
 [Unit]
 Description=Cloudflare Tunnel (siglens origin ingress)
@@ -233,8 +310,9 @@ Requires=siglens.service
 Environment=TUNNEL_GRACE_PERIOD=180s
 Environment=TUNNEL_METRICS=127.0.0.1:2000
 ExecStartPre=/usr/local/bin/siglens-wait-healthy.sh
+ExecStartPre=/usr/local/bin/siglens-wait-migrations.sh
 ExecStart=/bin/sh -c '/usr/bin/cloudflared tunnel --no-autoupdate run --token \$(aws ssm get-parameter --region $REGION --name /siglens/TUNNEL_TOKEN --with-decryption --query Parameter.Value --output text)'
-TimeoutStartSec=360
+TimeoutStartSec=540
 TimeoutStopSec=190
 Restart=always
 RestartSec=10
@@ -254,6 +332,14 @@ cat > /usr/local/bin/siglens-lifecycle-launch.sh <<'LAUNCH'
 #!/usr/bin/env bash
 set -uo pipefail
 REGION=ap-northeast-2
+# 경로는 환경변수로 바꿀 수 있다(테스트용). 기본값은 siglens-wait-migrations.sh와 같아야 한다.
+RUN_DIR="${SIGLENS_RUN_DIR:-/run/siglens}"
+OPS="${SIGLENS_OPS_LOG:-/var/log/siglens-ops.log}"
+COMPLETED="${SIGLENS_LAUNCH_COMPLETED:-/var/lib/siglens/launch-completed}"
+say() {
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$OPS"
+  echo "$*" >&2
+}
 imds() {
   local t
   t=$(curl -sf -X PUT http://169.254.169.254/latest/api/token \
@@ -263,7 +349,24 @@ imds() {
 # 60 × 5초 = 300초. 앱은 이 시점에 이미 wait-healthy로 증명됐으므로 터널만 기다린다.
 # 훅 예산 600초에서 부팅(cloud-init + dnf + docker pull + 앱 기동)이 이미 상당량을
 # 쓰고 시작하므로, 여기서 500초를 더 쓰면 ABANDON이 폴링보다 먼저 터진다.
+# 마이그레이션 게이트(siglens-wait-migrations.sh)가 막았으면 cloudflared는 끝내 뜨지 않는다.
+# 600초 타임아웃을 기다리지 말고 바로 ABANDON해 이 인스턴스를 치운다(refresh는 실패, 옛 인스턴스 유지).
 for _ in $(seq 1 60); do
+  if [ -f "$RUN_DIR/migration-gate-failed" ]; then
+    if IID=$(imds instance-id); then
+      if aws autoscaling complete-lifecycle-action --region "$REGION" \
+        --auto-scaling-group-name siglens-asg \
+        --lifecycle-hook-name siglens-launch-gate \
+        --instance-id "$IID" --lifecycle-action-result ABANDON; then
+        say "[lifecycle-launch] migration gate failed, abandoning"
+      else
+        say "[lifecycle-launch] ABANDON failed; hook defaults to ABANDON at 600s"
+      fi
+    else
+      say "[lifecycle-launch] migration gate failed but IMDS instance-id unavailable; hook defaults to ABANDON at 600s"
+    fi
+    exit 0
+  fi
   curl -fsS -m 2 http://127.0.0.1:2000/ready >/dev/null && break
   sleep 5
 done
@@ -276,11 +379,17 @@ curl -fsS -m 2 http://127.0.0.1:2000/ready >/dev/null || {
   echo "[lifecycle-launch] tunnel not ready — letting the hook ABANDON" >&2
   exit 1
 }
-IID=$(imds instance-id) || exit 0
+IID=$(imds instance-id) || {
+  say "[lifecycle-launch] IMDS instance-id unavailable; hook defaults to ABANDON at 600s"
+  exit 0
+}
+# CONTINUE가 성공한 뒤에만 표식을 남긴다: 이 인스턴스가 InService가 됐다는 뜻이고,
+# siglens-wait-migrations.sh가 재부팅 때 이 표식을 보고 InService 인스턴스를 막지 않는다.
 aws autoscaling complete-lifecycle-action --region "$REGION" \
   --auto-scaling-group-name siglens-asg \
   --lifecycle-hook-name siglens-launch-gate \
-  --instance-id "$IID" --lifecycle-action-result CONTINUE
+  --instance-id "$IID" --lifecycle-action-result CONTINUE \
+  && { mkdir -p "$(dirname "$COMPLETED")" && touch "$COMPLETED"; }
 LAUNCH
 
 # drain: IMDS의 target-lifecycle-state가 Terminating:Wait 동안 "Terminated"로 바뀐다.

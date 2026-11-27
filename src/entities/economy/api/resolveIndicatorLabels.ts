@@ -15,6 +15,7 @@ import {
     INDICATOR_TRANSLATION_CACHE_TAG,
     INDICATOR_TRANSLATION_REVALIDATE_SECONDS,
 } from '../lib/indicatorTranslationConstants';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 모듈 레벨 `unstable_cache` — ISR cold-gen 안전: DB 쿼리는 drizzle 로거(`noStoreQueryLogger`)의
@@ -58,7 +59,10 @@ async function readDbMap(
     const sorted = [...unknownNames].toSorted((a, b) => a.localeCompare(b));
     // DB 실패는 영어 fallback으로 graceful — 캐시에는 남지 않는다(위 JSDoc).
     return getCachedIndicatorDbMap(sorted).catch((error: unknown) => {
-        console.error('[resolveIndicatorLabels] DB read failed:', error);
+        console.error(
+            '[resolveIndicatorLabels] DB read failed:',
+            redactDbErrorForLog(error)
+        );
         return {};
     });
 }

@@ -1,4 +1,5 @@
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 interface FmpQuoteNameRaw {
     symbol?: string;
@@ -11,7 +12,10 @@ export async function fetchCryptoQuoteName(symbol: string): Promise<string> {
         const rows = await fmpGet<FmpQuoteNameRaw[]>('quote', { symbol });
         return rows[0]?.name || symbol;
     } catch (e) {
-        console.warn('[cryptoQuoteName] fetchCryptoQuoteName failed', e);
+        console.warn(
+            '[cryptoQuoteName] fetchCryptoQuoteName failed',
+            redactDbErrorForLog(e)
+        );
         return symbol;
     }
 }

@@ -5,12 +5,14 @@ import type { MockedFunction } from 'vitest';
  * IntegratedConclusion rename, ReanalyzeButton 노출 + amber 강조 조건)을 확인한다.
  */
 
-// vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
-// 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
-//
-// 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
-// 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
-// initialAnalysis prop → done 서사로 흐르는 전체 경로를 검증한다(아래 참고).
+/**
+ * vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
+ * 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
+ *
+ * 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
+ * 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
+ * initialAnalysis prop → done 서사로 흐르는 전체 경로를 검증한다(아래 참고).
+ */
 const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
     mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
 }));
@@ -27,6 +29,20 @@ vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
         useOverallAnalysis: vi.fn(),
     };
 });
+// 공유 등록 인자를 관찰하기 위한 통과형 spy — 실제 구현은 그대로 돈다.
+vi.mock(
+    '@/features/share/model/ShareableAnalysisContext',
+    async importOriginal => {
+        const actual =
+            await importOriginal<
+                typeof import('@/features/share/model/ShareableAnalysisContext')
+            >();
+        return {
+            ...actual,
+            useRegisterShareable: vi.fn(actual.useRegisterShareable),
+        };
+    }
+);
 vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
 }));
@@ -102,6 +118,7 @@ import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import {
     useOverallAnalysis,
@@ -220,6 +237,67 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             false,
             true
         );
+    });
+});
+
+describe('OverallContent 공유 등록의 분석 기준 시각', () => {
+    const ANALYZED_AT = '2026-11-26T03:21:09.000Z';
+
+    function lastRegistration() {
+        const calls = vi.mocked(useRegisterShareable).mock.calls;
+        return calls[calls.length - 1][0];
+    }
+
+    beforeEach(() => {
+        mockUseOverallAnalysis.mockReset();
+        vi.mocked(useRegisterShareable).mockClear();
+        setSearch('');
+    });
+
+    it('결과에 analyzedAt이 있으면 공유 context에 그대로 싣는다', () => {
+        mockDoneState(makeDoneResult({ analyzedAt: ANALYZED_AT }));
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple"
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(lastRegistration().context.analyzedAt).toBe(ANALYZED_AT);
+    });
+
+    it('옛 캐시 항목처럼 analyzedAt이 없으면 undefined로 둔다(resolveAsOf가 createdAt으로 대체)', () => {
+        mockDoneState(makeDoneResult());
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple"
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(lastRegistration().context.analyzedAt).toBeUndefined();
+    });
+
+    it('결과가 없는 상태(idle)에서는 undefined다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+            reanalyze: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple"
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+
+        expect(lastRegistration().context.analyzedAt).toBeUndefined();
     });
 });
 

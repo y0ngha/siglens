@@ -2,6 +2,7 @@ import 'server-only';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 const NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 
@@ -46,7 +47,10 @@ export async function tryClaimNewsRefresh(symbol: string): Promise<boolean> {
         });
         return claimed !== null;
     } catch (error) {
-        console.error('[newsRefreshFlag] claim failed', error);
+        console.error(
+            '[newsRefreshFlag] claim failed',
+            redactDbErrorForLog(error)
+        );
         return true;
     }
 }
@@ -73,6 +77,9 @@ export async function shortenNewsRefreshClaim(symbol: string): Promise<void> {
             ex: NEWS_REFRESH_RETRY_TTL_SECONDS,
         });
     } catch (error) {
-        console.error('[newsRefreshFlag] shorten failed', error);
+        console.error(
+            '[newsRefreshFlag] shorten failed',
+            redactDbErrorForLog(error)
+        );
     }
 }

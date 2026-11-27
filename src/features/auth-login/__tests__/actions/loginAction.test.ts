@@ -51,13 +51,25 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/entities/auth/lib/bcrypt', () => ({
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
 }));
+vi.mock('@/entities/auth/server/createAuthRateLimitGuards', () => ({
+    createAuthRateLimitGuards: vi.fn(() => ({
+        rateLimit: vi.fn(),
+        resetCounter: vi.fn(),
+        ipHash: vi.fn(),
+    })),
+}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { loginUser } from '@/entities/auth/lib/loginUser';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
 import { loginAction } from '@/features/auth-login/actions/loginAction';
 import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockLogin = loginUser as MockedFunction<typeof loginUser>;
@@ -113,6 +125,46 @@ describe('loginAction', () => {
         );
     });
 
+    it.each(['rate_limited', 'too_many_login_attempts'] as const)(
+        '한도 오류(%s)는 코드 그대로 폼 상태로 반환하고 쿠키를 심지 않는다',
+        async code => {
+            mockLogin.mockResolvedValue({
+                ok: false,
+                error: { code, message: 'slow' },
+            });
+            const result = await loginAction(
+                { error: null },
+                makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+            );
+            expect(result.error?.code).toBe(code);
+            expect(setSpy).not.toHaveBeenCalled();
+            expect(mockRedirect).not.toHaveBeenCalled();
+        }
+    );
+
+    it('로그인 전용 로그 이름의 한도 포트를 코어에 넘긴다', async () => {
+        mockLogin.mockResolvedValue({
+            ok: false,
+            error: { code: 'rate_limited', message: 'slow' },
+        });
+        await loginAction(
+            { error: null },
+            makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+        );
+        expect(createAuthRateLimitGuards).toHaveBeenCalledWith(
+            'loginRateLimit'
+        );
+        expect(mockLogin).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                rateLimit: expect.any(Function),
+                resetCounter: expect.any(Function),
+                ipHash: expect.any(Function),
+            }),
+            expect.anything()
+        );
+    });
+
     it('로그인 실패 시 폼 상태로 에러를 반환한다', async () => {
         mockLogin.mockResolvedValue({
             ok: false,
@@ -160,6 +212,17 @@ describe('loginAction', () => {
             expect.objectContaining({
                 name: 'siglens_session',
                 value: 'tok',
+            })
+        );
+        // ai 호스트가 읽는 메인 로그인 흔적(부모 도메인, HttpOnly)도 함께 심는다.
+        expect(setSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_signed_in',
+                value: '1',
+                domain: 'siglens.io',
+                path: '/',
+                httpOnly: true,
+                sameSite: 'lax',
             })
         );
     });
@@ -234,4 +297,25 @@ describe('loginAction', () => {
             ).rejects.toThrow(/^NEXT_REDIRECT:\/$/);
         }
     );
+
+    it('DB 에러는 파라미터 없이 로그에 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        try {
+            mockLogin.mockRejectedValue(plantedDbError());
+            const result = await loginAction(
+                { error: null },
+                makeFormData({ email: 'user@example.com', password: 'pw' })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[loginAction] unexpected error:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(errorSpy);
+        } finally {
+            errorSpy.mockRestore();
+        }
+    });
 });

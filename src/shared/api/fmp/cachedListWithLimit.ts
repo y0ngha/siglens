@@ -1,4 +1,5 @@
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 에러 처리 전략 — 'empty': 로깅 후 [] 반환, 'rethrow': 에러 전파 */
 type CachedListOnError = 'empty' | 'rethrow';
@@ -52,7 +53,7 @@ export function cachedListWithLimit<T>(
     // financials 패턴: 에러 로깅 후 빈 배열 반환. 장애 결과는 캐시되지 않는다
     // (getOrSetCache는 fetcher가 throw하면 set을 건너뜀).
     return base.catch(error => {
-        console.error(logPrefix, error);
+        console.error(logPrefix, redactDbErrorForLog(error));
         return [] as T[];
     });
 }

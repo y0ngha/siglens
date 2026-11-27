@@ -11,7 +11,7 @@ vi.mock('@/features/watchlist/ui/WatchlistPillScope', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import { TickerCategories } from '@/widgets/home/TickerCategories';
+import { PopularTickers } from '@/widgets/home/PopularTickers';
 
 vi.mock('next/link', () => ({
     default: ({
@@ -30,8 +30,8 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/shared/config/popular-tickers', () => ({
-    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `TickerCategories`가 한국
-    // 섹션을 렌더하지 않고, 이 파일들은 미국 그리드만 검증한다.
+    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `PopularTickers`가 한국
+    // 탭을 만들지 않고, 이 파일들은 미국 그리드만 검증한다.
     KR_CATEGORY_IDS: new Set<string>(),
     TICKER_CATEGORIES: [
         {
@@ -56,43 +56,49 @@ vi.mock('@/shared/config/popular-tickers', () => ({
 
 describe('Home Page Category Browse', () => {
     it('renders all categories', () => {
-        render(<TickerCategories />);
+        render(<PopularTickers />);
         expect(screen.getByText('Mega Cap')).toBeInTheDocument();
         expect(screen.getByText('AI & Semiconductor')).toBeInTheDocument();
     });
 
     it('renders ticker links within each category', () => {
-        render(<TickerCategories />);
+        render(<PopularTickers />);
         const aaplLink = screen.getByRole('link', { name: /AAPL/ });
         expect(aaplLink).toHaveAttribute('href', '/AAPL');
         const nvdaLink = screen.getByRole('link', { name: /NVDA/ });
         expect(nvdaLink).toHaveAttribute('href', '/NVDA');
     });
 
-    it('renders accessible nav landmark', () => {
-        render(<TickerCategories />);
+    it('renders accessible nav landmark named by the section heading', () => {
+        render(<PopularTickers />);
         expect(
-            screen.getByRole('navigation', {
-                name: '미국 테마별 인기 종목 탐색',
-            })
+            screen.getByRole('navigation', { name: '인기 종목' })
         ).toBeInTheDocument();
     });
 
-    it('renders section heading', () => {
-        render(<TickerCategories />);
+    it('renders section heading and market tabs without a KR tab when KR has no categories', () => {
+        render(<PopularTickers />);
         expect(
-            screen.getByRole('heading', { name: '미국 테마별 인기 종목' })
+            screen.getByRole('heading', { level: 2, name: '인기 종목' })
         ).toBeInTheDocument();
+        expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+            '미국 주식',
+            '암호화폐',
+        ]);
     });
 
-    it('each category has an accessible list', () => {
-        render(<TickerCategories />);
-        const lists = screen.getAllByRole('list');
-        expect(lists.length).toBe(2);
+    it('each US category has an accessible list', () => {
+        render(<PopularTickers />);
+        expect(
+            screen.getByRole('list', { name: /Mega Cap 종목 목록/ })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('list', { name: /AI & Semiconductor 종목 목록/ })
+        ).toBeInTheDocument();
     });
 
     it('ticker links have title attribute for SEO', () => {
-        render(<TickerCategories />);
+        render(<PopularTickers />);
         const aaplLink = screen.getByRole('link', { name: /AAPL/ });
         expect(aaplLink).toHaveAttribute('title', 'AAPL 분석');
     });

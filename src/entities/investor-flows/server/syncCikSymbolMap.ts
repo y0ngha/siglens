@@ -8,6 +8,7 @@ import {
 } from '../lib/investorFlowsPolicy';
 import { parseCompanyTickers, type CikSymbolPair } from '../lib/companyTickers';
 import type { CikMapReplaceResult } from '../api/investorFlowsFilingsRepository';
+import { redactedErrorMessage } from '@/shared/db/redactDbErrorForLog';
 
 export interface SyncCikSymbolMapDeps {
     /** `www.sec.gov/files/company_tickers.json` 본문(JSON). 없으면 null. */
@@ -100,7 +101,7 @@ export async function runCikSymbolMapSync(
         }
         deps.log(
             '[cusip-map] cik map sync failed:',
-            error instanceof Error ? error.message : error
+            redactedErrorMessage(error)
         );
         return result('failed');
     }

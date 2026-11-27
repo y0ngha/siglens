@@ -35,8 +35,8 @@ export const LOCAL_STORAGE_ANON_ANALYZED_SYMBOLS_KEY =
 export const LOCAL_STORAGE_ANON_NUDGE_SHOWN_KEY = 'siglens_anon_nudge_shown';
 
 /**
- * 비회원 가입 넛지 모달이 마지막으로 보여 준 문구 종류(`SignupNudgeVariant`). 다음 넛지는
- * 다른 문구를 보여 준다 — 같은 모달로 "상세 분석"과 "메일 리포트"를 번갈아 알린다.
+ * 비회원 가입 넛지 모달이 마지막으로 보여 준 문구 종류(`SignupNudgeVariant`). 순서상 이 문구까지는
+ * 이미 보여 줬다는 뜻이기도 해서, 같은 문구를 다시 띄우지 않고 다음 문구로 넘어가는 데 쓴다.
  */
 export const LOCAL_STORAGE_ANON_NUDGE_VARIANT_KEY =
     'siglens_anon_nudge_variant';
@@ -74,6 +74,14 @@ export const LOCAL_STORAGE_FUNNEL_LAST_GATE_KEY = 'siglens:funnel:last-gate';
  */
 export const LOCAL_STORAGE_FUNNEL_METER_SHOWN_KEY =
     'siglens:funnel:meter-shown';
+
+/**
+ * 이 브라우저가 만든 공유 링크 id(`created`, 최대 20개)와 오늘 연 공유 링크 id(`opened`) —
+ * `{ created: string[], opened: { date(KST), ids: string[] } }`. 자기 링크 열람과 같은 날 재열람을
+ * `share_opened`에서 빼는 데만 쓰며 서버로 보내지 않는다(`shared/lib/funnel/shareMarks.ts`).
+ * 개인정보처리방침 v15 §7이 이 키를 고지한다(가드 `visitHistoryPrivacy`).
+ */
+export const LOCAL_STORAGE_SHARE_MARKS_KEY = 'siglens:share-marks:v1';
 
 /**
  * 비회원 관심종목 — `Array<{ symbol, label, addedAt }>`. 키에 버전을 붙이는 이유는

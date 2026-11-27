@@ -132,8 +132,7 @@ describe('POST /api/presence/funnel', () => {
             expect.objectContaining({ userId: null })
         );
         expect(spy).toHaveBeenCalledWith(
-            '[funnel] getCurrentUser failed:',
-            expect.any(Error)
+            '[funnel] getCurrentUser failed: Error code=none'
         );
         spy.mockRestore();
     });
@@ -226,17 +225,22 @@ describe('POST /api/presence/funnel', () => {
     });
 
     it('DB 기록이 실패해도 204를 주고 정리를 소진하지 않는다', async () => {
-        record.mockRejectedValueOnce(new Error('rds down'));
+        record.mockRejectedValueOnce(
+            new Error('Failed query: params secret-hash', {
+                cause: Object.assign(new Error('x'), { code: '42703' }),
+            })
+        );
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         const { POST } = await importRoute();
         expect((await POST(makeRequest(VALID))).status).toBe(
             HTTP_STATUS_NO_CONTENT
         );
         await flushAfter();
+        // 에러 이름과 DB 코드만 남기고 메시지(파라미터)는 남기지 않는다.
         expect(spy).toHaveBeenCalledWith(
-            '[funnel] record failed:',
-            expect.any(Error)
+            '[funnel] record failed: Error code=42703'
         );
+        expect(JSON.stringify(spy.mock.calls)).not.toContain('secret-hash');
         expect(pruneOlderThan).not.toHaveBeenCalled();
 
         await POST(makeRequest(VALID));

@@ -178,18 +178,10 @@ async function callModel(prompt: string): Promise<Record<string, string>> {
     }
     const { GoogleGenAI } = await import('@google/genai');
     const client = new GoogleGenAI({ apiKey });
-    const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-            responseMimeType: 'application/json',
-            temperature: 0,
-            // 번역은 결정적 변환이라 추론 이득이 없다. 생략하면 2.5 Flash의 기본 동적
-            // 사고가 켜져 배치마다 사고 토큰이 출력 단가로 청구된다. 2.5 Flash는 숫자 0을
-            // 받는다(3세대 Gemini와 달리 — `llm-provider/api/gemini.ts`의 thinkingLevel 주석).
-            thinkingConfig: { thinkingBudget: 0 },
-        },
-    });
+    const { buildTranslateRequest } = await import('./lib/translateRequest');
+    const response = await client.models.generateContent(
+        buildTranslateRequest(prompt)
+    );
     return parseModelJson(response.text ?? '');
 }
 
@@ -204,7 +196,7 @@ function parseModelJson(text: string): Record<string, string> {
     try {
         return JSON.parse(text) as Record<string, string>;
     } catch {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // 깨진 JSON일 때만 필요한 폴백이라 지연 require한다(.oxlintrc.json의 require 허용 목록).
         const { jsonrepair } = require('jsonrepair') as {
             jsonrepair: (input: string) => string;
         };

@@ -5,6 +5,7 @@ import { runMacroBriefing } from '@y0ngha/siglens-core';
 import type { MacroBriefingActionResult } from '@/shared/lib/types';
 
 import { getEconomySnapshot } from '../api/economySnapshotCache';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * /economy 거시 브리핑 클라 트리거 — `submitMarketBriefingAction` 미러.
@@ -35,7 +36,10 @@ export async function submitMacroBriefingAction(
         const briefing = await runMacroBriefing(snapshot, { signal });
         return { briefing };
     } catch (e) {
-        console.error('[submitMacroBriefingAction] failed:', e);
+        console.error(
+            '[submitMacroBriefingAction] failed:',
+            redactDbErrorForLog(e)
+        );
         return { ok: false, error: 'server_error' };
     }
 }

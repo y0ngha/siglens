@@ -57,9 +57,10 @@ export function buildKrInvestorTrend(
     allRows: readonly NaverInvestorTrendRow[]
 ): KrInvestorTrendView | null {
     const rows = allRows.slice(0, KR_TREND_LONG_WINDOW);
-    if (rows.length === 0) return null;
+    const newest = rows[0];
+    if (newest === undefined) return null;
     return {
-        asOf: rows[0]!.date,
+        asOf: newest.date,
         rows: rows.slice(0, KR_TREND_ROWS_SHOWN),
         sum5d:
             rows.length >= KR_TREND_SHORT_WINDOW

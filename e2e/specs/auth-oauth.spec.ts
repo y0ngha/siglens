@@ -147,4 +147,34 @@ test.describe('auth oauth (google, fake adapter)', () => {
             page.getByRole('button', { name: /사용자 메뉴/ })
         ).toBeVisible({ timeout: 15_000 });
     });
+
+    test('consent screen: mail report opt-in is unchecked, separate from 모두 동의, and saved when chosen', async ({
+        page,
+    }) => {
+        // Re-provision from the "new user" branch: the fixture identity is fixed
+        // and the earlier tests already created it.
+        resetOAuthFixtureUser();
+        const state = await issueState(page, '/account');
+        await page.goto(
+            `/api/auth/callback/google?code=e2e_code&state=${encodeURIComponent(state)}`
+        );
+        await page.waitForURL(/\/signup\/oauth\/consent\?token=/, {
+            timeout: 15_000,
+        });
+
+        const optIn = page.getByRole('checkbox', { name: /메일 리포트 받기/ });
+        await expect(optIn).not.toBeChecked({ timeout: 15_000 });
+        await page.getByLabel('모두 동의').check();
+        await expect(optIn).not.toBeChecked();
+
+        await optIn.check();
+        await page.getByRole('button', { name: '가입 완료' }).click();
+        await page.waitForURL(/\/account$/, { timeout: 15_000 });
+
+        await page.goto('/email-report');
+        await expect(page.getByRole('switch')).toBeChecked({
+            timeout: 15_000,
+        });
+        await expect(page.getByRole('checkbox', { name: '월' })).toBeChecked();
+    });
 });

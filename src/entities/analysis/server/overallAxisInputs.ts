@@ -10,6 +10,7 @@ import { getFinancialsSnapshot } from '@/entities/financials-statements/server/g
 // "의도적 예외" 표에 등재된 허용 경로.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/server/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 종합 분석의 옵션 스냅샷 입력. 실패하면 경고만 남기고 `null`로 내려가 분석을 막지
@@ -21,7 +22,10 @@ export function loadOptionsSnapshotOrNull(
     logTag: string
 ): Promise<OptionsSnapshot | null> {
     return fetchOptionsSnapshot(symbol).catch(error => {
-        console.warn(`${logTag} options snapshot fetch failed:`, error);
+        console.warn(
+            `${logTag} options snapshot fetch failed:`,
+            redactDbErrorForLog(error)
+        );
         return null;
     });
 }
@@ -38,7 +42,10 @@ export function loadFinancialsScorecardOrUndefined(
     return getFinancialsSnapshot(symbol)
         .then(snapshot => computeFinancialsScorecard(snapshot))
         .catch(error => {
-            console.warn(`${logTag} financials scorecard fetch failed:`, error);
+            console.warn(
+                `${logTag} financials scorecard fetch failed:`,
+                redactDbErrorForLog(error)
+            );
             return undefined;
         });
 }

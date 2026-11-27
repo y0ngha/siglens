@@ -74,6 +74,15 @@ describe('runSeoPrewarmJob', () => {
             indexNowSubmitted: 0,
             indexNowOk: 0,
             indexNowFailed: 0,
+            activeSymbols: null,
+            quietSymbols: 0,
+            overallWarmed: 0,
+            overallWarmSkippedByBudget: 0,
+            overallWarmSkippedByBacklog: 0,
+            overallWarmSkippedByDailyCap: 0,
+            overallWarmTimedOut: 0,
+            overallWarmFailed: 0,
+            overallWarmPendingRevalidated: 0,
         });
         vi.mocked(warmOptionsLastGood).mockResolvedValue({
             status: 'out_of_window',
@@ -99,6 +108,12 @@ describe('runSeoPrewarmJob', () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
+    });
+
+    it('락 획득 시각을 배치에 넘겨 종합 사전 생성 예산이 락 TTL 기준이 되게 한다', async () => {
+        await runSeoPrewarmJob('token-1', 1_234);
+
+        expect(runPrewarmBatch).toHaveBeenCalledWith(undefined, 1_234);
     });
 
     it('락 해제는 받은 토큰으로 한다', async () => {
@@ -133,6 +148,15 @@ describe('runSeoPrewarmJob', () => {
                 indexNowSubmitted: 0,
                 indexNowOk: 0,
                 indexNowFailed: 0,
+                activeSymbols: null,
+                quietSymbols: 0,
+                overallWarmed: 0,
+                overallWarmSkippedByBudget: 0,
+                overallWarmSkippedByBacklog: 0,
+                overallWarmSkippedByDailyCap: 0,
+                overallWarmTimedOut: 0,
+                overallWarmFailed: 0,
+                overallWarmPendingRevalidated: 0,
             })
         );
     });

@@ -1,15 +1,35 @@
 import type { MockedFunction } from 'vitest';
 
-const { cookieStore } = vi.hoisted(() => ({
+const { cookieStore, hostHeader } = vi.hoisted(() => ({
     cookieStore: { get: vi.fn(), set: vi.fn() },
+    hostHeader: {
+        value: 'siglens.io' as string | null,
+        error: null as Error | null,
+    },
 }));
-vi.mock('next/headers', () => ({ cookies: async () => cookieStore }));
+vi.mock('next/headers', () => ({
+    cookies: async () => cookieStore,
+    headers: async () => {
+        if (hostHeader.error) throw hostHeader.error;
+        return new Headers({ host: hostHeader.value ?? '' });
+    },
+}));
 vi.mock('@/entities/auth/server/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
 import { getCurrentUser } from '@/entities/auth/server/getCurrentUser';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
+
+/** Cookie jar by name: `{ siglens_session: 'x' }`. Unlisted names are absent. */
+const jar = (values: Record<string, string>) =>
+    cookieStore.get.mockImplementation((name: string) =>
+        name in values ? { value: values[name] } : undefined
+    );
+const hintWrite = () =>
+    cookieStore.set.mock.calls
+        .map(([c]) => c)
+        .find(c => c.name === 'siglens_signed_in');
 
 const mockGet = getCurrentUser as MockedFunction<typeof getCurrentUser>;
 
@@ -18,6 +38,8 @@ describe('currentUserAction', () => {
         cookieStore.get.mockReset();
         cookieStore.set.mockReset();
         mockGet.mockReset();
+        hostHeader.value = 'siglens.io';
+        hostHeader.error = null;
     });
 
     afterEach(() => {
@@ -27,7 +49,7 @@ describe('currentUserAction', () => {
     it('getCurrentUser 결과를 그대로 반환하고 쿠키는 건드리지 않는다', async () => {
         const fakeUser = { id: 'u1' } as never;
         mockGet.mockResolvedValue(fakeUser);
-        cookieStore.get.mockReturnValue({ value: 'live' });
+        jar({ siglens_session: 'live', siglens_signed_in: '1' });
         await expect(currentUserAction()).resolves.toBe(fakeUser);
         expect(cookieStore.set).not.toHaveBeenCalled();
     });
@@ -99,5 +121,123 @@ describe('currentUserAction', () => {
             )
             .join('\n');
         expect(logged).not.toContain(sentinel);
+    });
+    describe('main-host sign-in hint (siglens_signed_in)', () => {
+        const user = { id: 'u1' } as never;
+
+        it('main host + user + no hint -> sets the hint for a pre-deploy session', async () => {
+            mockGet.mockResolvedValue(user);
+            jar({ siglens_session: 'live' });
+            await expect(currentUserAction()).resolves.toBe(user);
+            expect(hintWrite()).toEqual({
+                name: 'siglens_signed_in',
+                value: '1',
+                maxAge: 60 * 60 * 24 * 30,
+                path: '/',
+                domain: 'siglens.io',
+                sameSite: 'lax',
+                secure: false,
+                httpOnly: true,
+            });
+        });
+
+        it('main host + user + hint -> no hint write', async () => {
+            mockGet.mockResolvedValue(user);
+            jar({ siglens_session: 'live', siglens_signed_in: '1' });
+            await currentUserAction();
+            expect(cookieStore.set).not.toHaveBeenCalled();
+        });
+
+        it('main host + no user + hint (no session cookie) -> expires the hint only', async () => {
+            mockGet.mockResolvedValue(null);
+            jar({ siglens_signed_in: '1' });
+            await expect(currentUserAction()).resolves.toBeNull();
+            expect(hintWrite()).toEqual(
+                expect.objectContaining({
+                    value: '',
+                    maxAge: 0,
+                    domain: 'siglens.io',
+                    path: '/',
+                })
+            );
+            expect(cookieStore.set).toHaveBeenCalledTimes(1);
+        });
+
+        it('main host + no user + hint + stale session cookie -> hint is expired and the stale session is still cleared', async () => {
+            mockGet.mockResolvedValue(null);
+            jar({ siglens_session: 'stale', siglens_signed_in: '1' });
+            await currentUserAction();
+            const names = cookieStore.set.mock.calls.map(([c]) => c.name);
+            expect(names).toEqual(
+                expect.arrayContaining([
+                    'siglens_session',
+                    'siglens_auth',
+                    'siglens_signed_in',
+                ])
+            );
+            expect(hintWrite()?.maxAge).toBe(0);
+        });
+
+        it('main host + no user + no hint -> no hint write', async () => {
+            mockGet.mockResolvedValue(null);
+            jar({});
+            await currentUserAction();
+            expect(hintWrite()).toBeUndefined();
+            expect(cookieStore.set).not.toHaveBeenCalled();
+        });
+
+        it('ai host + user -> no hint write (the ai session is not a main session)', async () => {
+            hostHeader.value = 'ai.siglens.io';
+            mockGet.mockResolvedValue(user);
+            jar({ siglens_session: 'live' });
+            await currentUserAction();
+            expect(hintWrite()).toBeUndefined();
+        });
+
+        it('ai host + no user + hint -> the hint is left alone', async () => {
+            hostHeader.value = 'ai.siglens.io';
+            mockGet.mockResolvedValue(null);
+            jar({ siglens_signed_in: '1' });
+            await currentUserAction();
+            expect(hintWrite()).toBeUndefined();
+        });
+
+        it('cookies().set throws while syncing the hint -> the user is still returned and the error is logged', async () => {
+            mockGet.mockResolvedValue(user);
+            jar({ siglens_session: 'live' });
+            cookieStore.set.mockImplementation(() => {
+                throw new Error('cannot set cookie');
+            });
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            await expect(currentUserAction()).resolves.toBe(user);
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[currentUserAction] main session hint sync failed',
+                expect.anything()
+            );
+        });
+
+        it('headers() throws while syncing the hint -> the user is still returned and the error is logged', async () => {
+            mockGet.mockResolvedValue(user);
+            jar({ siglens_session: 'live' });
+            hostHeader.error = new Error('no request scope');
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            await expect(currentUserAction()).resolves.toBe(user);
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[currentUserAction] main session hint sync failed',
+                expect.anything()
+            );
+        });
+
+        it('lookup failure -> no hint write', async () => {
+            mockGet.mockRejectedValue(new Error('db down'));
+            jar({ siglens_session: 'live' });
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+            await currentUserAction();
+            expect(hintWrite()).toBeUndefined();
+        });
     });
 });

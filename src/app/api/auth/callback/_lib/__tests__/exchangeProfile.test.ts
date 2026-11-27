@@ -36,6 +36,25 @@ describe('exchangeProfile', () => {
         });
     });
 
+    it('성공한 프로필의 이메일을 소문자로 정규화하고 나머지 필드는 보존한다', async () => {
+        const profile = {
+            provider: 'google',
+            providerAccountId: 'uid-1',
+            email: ' Foo@Gmail.com ',
+            name: 'Foo',
+        };
+        mockGetOAuthAdapter.mockReturnValue({
+            exchangeCodeForProfile: vi
+                .fn()
+                .mockResolvedValue({ ok: true, profile }),
+        });
+
+        expect(await exchangeProfile('google', 'the-code')).toEqual({
+            ok: true,
+            profile: { ...profile, email: 'foo@gmail.com' },
+        });
+    });
+
     it('어댑터가 던지면 token_exchange_failed로 접는다', async () => {
         mockGetOAuthAdapter.mockReturnValue({
             exchangeCodeForProfile: vi

@@ -15,6 +15,7 @@ import {
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 애널리스트 등급 이벤트(뉴스 탭 애널리스트 의견 섹션). CachedFundamentalProvider가
@@ -53,7 +54,7 @@ export async function getEarningsReportComparison(
             await repo.upsertMany(reports);
             // 옮겨진 예정일의 옛 행을 지운다 — 남기면 비교 카드의 "다음 실적"이 옛 날짜를 고른다.
             await repo.pruneSupersededUpcoming(symbol, reports, today);
-            // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막고(#567),
+            // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막고,
             // upsert로 DB가 바뀌지 않았으므로 재조회 없이 기존 비교 데이터를 반환한다.
             if (reports.length === 0) {
                 await markEarningsEmpty(symbol);
@@ -67,7 +68,7 @@ export async function getEarningsReportComparison(
             ) {
                 console.warn(
                     `[newsData] failed to refresh earnings reports for ${symbol}:`,
-                    error
+                    redactDbErrorForLog(error)
                 );
             }
             if (comparisonItems.length === 0) throw error;

@@ -122,7 +122,7 @@ describe('normalizeAnalysisResponse', () => {
         expect(result.riskLevel).toBe('medium');
     });
 
-    // PR #685 round-3 blocker: `useAnalysis`가 실제로 호출하는 것은
+    // `useAnalysis`가 실제로 호출하는 것은
     // `normalizeAnalysisResponse(analysisResult ?? initialAnalysis)`이지 FALLBACK_ANALYSIS를
     // 직접 prop으로 주입하는 게 아니다. normalizeAnalysisResponse는 `{ ...analysis }`로 항상
     // 새 객체를 반환하므로, 정규화를 통과한 뒤에도 isFallbackAnalysis가 fallback을 여전히

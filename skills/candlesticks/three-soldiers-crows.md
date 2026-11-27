@@ -11,6 +11,7 @@ gating:
   triggers: [three_white_soldiers, three_black_crows]
 token_cost: 304
 digest_hash: "542ff51f"
+digest_text_hash: "ebf962d1"
 ---
 
 ## Overview

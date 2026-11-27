@@ -6,6 +6,7 @@ import {
     type RunFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import type { Locale } from '@/shared/i18n/locales';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
@@ -59,7 +60,10 @@ export async function runFundamentalAnalysisAction(
                 // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
                 locale,
                 modelId,
-                dataProvider: getFundamentalDataProvider(symbol),
+                dataProvider: withKrValuation(
+                    getFundamentalDataProvider(symbol),
+                    symbol
+                ),
                 // `## Derived Metrics`의 price-relative 행(target upside 등)이
                 // 계산되도록 시세를 넘긴다 — core는 자체 quote provider가 없다.
                 // 캐시 키에는 포함되지 않는다(시점 값). 지연 getter(core의

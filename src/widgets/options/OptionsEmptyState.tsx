@@ -57,7 +57,7 @@ export function OptionsEmptyState({
                         <Link
                             key={key}
                             href={href(symbol)}
-                            // 형제 탭 4개를 한 번에 노출 — docs/architecture/CDN_CACHING.md §1
+                            // 형제 탭 4개를 한 번에 노출한다(prefetch를 켜면 한 번에 4개가 미리 받아진다)
                             prefetch={false}
                             className={FALLBACK_LINK_CLASSES}
                         >

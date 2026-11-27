@@ -253,7 +253,7 @@ export const SITE_BUILD_DATE = parseBuildDate();
  * 없으므로 문구를 들 수 없고, 소비 지점(레이아웃·홈 페이지)이 번역자로 읽는다.
  */
 
-// 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
+/** 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다. */
 export const ROOT_KEYWORDS = [
     'SIGLENS',
     '미국 주식 AI 분석',
@@ -277,6 +277,7 @@ export const ROOT_KEYWORDS = [
     '코인 AI 분석',
     '암호화폐 차트 분석',
     '비트코인 차트',
+    '지지선 저항선 분석',
 ];
 
 /**

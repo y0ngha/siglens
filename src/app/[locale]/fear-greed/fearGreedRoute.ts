@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type {
-    MarketFearGreedView,
+    MarketFearGreedHubView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
 import { loadSymbolNames } from '@/entities/ticker/server/loadSymbolNames';
@@ -22,8 +22,9 @@ import {
 } from '@/shared/lib/symbolDirectory';
 import { fearGreedCopyFor, type FearGreedCopy } from './copy';
 import { composeMarketFearGreedReading } from './_lib/marketFearGreedAnswer';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
-type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
+type FearGreedRouteView = MarketFearGreedHubView<MarketFearGreedViewSnapshot>;
 
 /**
  * 시장별 공포·탐욕 라우트(us/kr/crypto)가 서로 다른 유일한 부분 — 어느 시장이고
@@ -62,7 +63,10 @@ export async function fearGreedMetadata(
     const copy = fearGreedCopyFor(source.market, t);
     const view = await source.load().catch((e: unknown) => {
         // 접두사를 페이지 본문 로그와 통일한다 — `failureLog` 참조.
-        console.error(`${source.failureLog} (metadata):`, e);
+        console.error(
+            `${source.failureLog} (metadata):`,
+            redactDbErrorForLog(e)
+        );
         return null;
     });
     const answer = await loadMetadataAnswer(view, copy, locale, t);
@@ -111,8 +115,8 @@ export async function loadFearGreedView(
     source: FearGreedRouteSource
 ): Promise<FearGreedRouteView> {
     const view = await source.load().catch((e: unknown): FearGreedRouteView => {
-        console.error(`${source.failureLog}:`, e);
-        return { snapshot: null, comparisons: [] };
+        console.error(`${source.failureLog}:`, redactDbErrorForLog(e));
+        return { snapshot: null, comparisons: [], history: [] };
     });
     // 빌드 중 FMP 실패 시 60초 degrade revalidate는 FMP 라우트(us·crypto)에만 —
     // kr은 yahoo라 FMP 상태와 무관하다. 시장 → 시세 출처 판정은 scopeUsesFmp 하나가 소유.

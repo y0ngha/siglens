@@ -11,6 +11,7 @@ gating:
   triggers: [above_the_stomach, below_the_stomach]
 token_cost: 281
 digest_hash: "54b13340"
+digest_text_hash: "639f64f0"
 ---
 
 ## Overview

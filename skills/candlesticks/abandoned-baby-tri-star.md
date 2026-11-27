@@ -11,6 +11,7 @@ gating:
   triggers: [bullish_abandoned_baby, bearish_abandoned_baby, bullish_triple_star, bearish_triple_star]
 token_cost: 303
 digest_hash: "f2488b62"
+digest_text_hash: "1bb4ae85"
 ---
 
 ## Overview

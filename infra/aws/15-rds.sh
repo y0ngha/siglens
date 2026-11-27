@@ -3,8 +3,7 @@
 # infra/aws/15-rds.sh — 운영 Postgres(RDS) 프로비저닝 (멱등)
 #
 # Neon(싱가포르) → AWS RDS PostgreSQL 17 이전의 인프라 부분이다. 절차 전체(롤/스키마/
-# 논리 복제/컷오버/롤백)는 docs/architecture/RDS_MIGRATION.md가 정본이고, 이 스크립트는
-# 그 §1(RDS 생성)과 §4(복제 구간의 공개 토글)만 맡는다.
+# 논리 복제/컷오버/롤백) 중 이 스크립트는 RDS 생성과 복제 구간의 공개 토글만 맡는다.
 #
 # 만드는 것:
 #   - DB 서브넷 그룹  siglens-db-subnets   (기본 VPC의 2a/2b/2c 서브넷)

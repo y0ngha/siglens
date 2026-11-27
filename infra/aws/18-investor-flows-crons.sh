@@ -17,7 +17,7 @@
 # sec-13f는 cusip-map이 **전수 한 바퀴(후보 0건)**를 끝내 `investor_flows_state`에 표식(`cusip_map_full_pass_done`, 한 번 서면
 # 지워지지 않는다)을 남기기 전까지는 아무것도 수집하지 않고 `[sec-13f] universe_incomplete`만 남기고 끝난다(결과 `stoppedBy:
 # "universe_incomplete"`). 덜 찬 유니버스로 제출을 "처리됨" 처리하면 나중에 매핑된 CUSIP은 그 포지션을 영영 못 얻기 때문이다.
-# 표식이 선 뒤에 생긴 늦은 매핑(신규 상장 등)의 복구는 `yarn investor-flows:reingest-13f`(docs/reference/CRON.md).
+# 표식이 선 뒤에 생긴 늦은 매핑(신규 상장 등)의 복구는 `yarn investor-flows:reingest-13f`.
 # 부트스트랩을 앞당기려면 cusip-map을 수동 invoke로 여러 번 부른다(락이 겹침을 막는다).
 # 초기 채우기 동안에는 cusip-map Rule을 임시로 `cron(0 0/4 * * ? *)`(4시간마다)로 바꿔 둘 수 있다 — 실행마다 FMP 호출을
 # 분당 120건으로 페이싱하므로(`CUSIP_MAP_FMP_CALLS_PER_MINUTE`, 실행당 ~1,100건) 사이트 몫을 잠식하지 않는다. 단
@@ -26,7 +26,7 @@
 #
 # ⚠️ 이 스크립트는 수동 실행이다. deploy 파이프라인 어디서도 자동 호출하지 않는다. 마이그레이션
 #    0048(investor_flows_data) 적용과 SSM 키(필요 시 OPENFIGI_API_KEY) 확인 **뒤에** 돌릴 것.
-#    생성 직후 수동 invoke로 202가 오는지 확인한다(docs/reference/CRON.md).
+#    생성 직후 수동 invoke로 202가 오는지 확인한다.
 #
 # 사용법:
 #     bash infra/aws/18-investor-flows-crons.sh
@@ -64,7 +64,7 @@ put_signal_filter sec-13f "failed-backlog" '"[sec-13f] backlog"' 30
 # 게이트 정체 알람 — sec-13f는 cusip-map이 전수 한 바퀴를 끝내기 전까지 2시간마다 `[sec-13f] universe_incomplete`를 남긴다.
 # 정상 부트스트랩(~5~6일)에는 찍히는 게 당연하므로 점수 필터(P2Score)로 만들지 않고 건수 메트릭 + **7일 연속** 알람으로만 본다
 # (알람 평가 범위의 상한이 7일이라 Period 1일 × 7회가 가능한 최대다). 연속 실패하는 심볼이 있으면 부트스트랩이 7일을 넘길 수
-# 있는데, 그때의 알람은 "cusip-map이 안 끝나고 있으니 확인하라"는 의도된 신호다(docs/reference/CRON.md).
+# 있는데, 그때의 알람은 "cusip-map이 안 끝나고 있으니 확인하라"는 의도된 신호다.
 # 07-alarms.sh와 같은 방식(FILL(m1, 0) 수식 + P2 토픽 siglens-alerts-low; create-topic은 멱등). 알람 지표 무료 10개는 이미 다 쓰고
 # 있어 이 알람은 유료다(월 ~$0.1). 필터에는 defaultValue를 붙이지 않는다(07-alarms.sh와 같은 이유).
 aws logs put-metric-filter --log-group-name "$LOG_GROUP" \

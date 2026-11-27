@@ -100,8 +100,18 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 
 import sharp from 'sharp';
 import { POST } from '@/app/api/ai/chat/stream/route';
-import { getActiveAgentTurns } from '@/app/api/ai/chat/stream/_lib/turnSlots';
+import {
+    __resetTurnSlotsForTests,
+    AGENT_TURN_QUEUE_MAX,
+    AGENT_TURN_QUEUE_WAIT_MS,
+    getActiveAgentTurns,
+    getQueuedAgentTurns,
+} from '@/app/api/ai/chat/stream/_lib/turnSlots';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const AI_ORIGIN = new URL(AI_SITE_URL).origin;
 
@@ -162,6 +172,7 @@ describe('POST /api/ai/chat/stream', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.unstubAllEnvs();
+        __resetTurnSlotsForTests();
         m.user.mockResolvedValue({ id: 'u1' });
         m.isBot.mockReturnValue(false);
         m.canAccept.mockReturnValue(true);
@@ -437,17 +448,107 @@ describe('POST /api/ai/chat/stream', () => {
         expect(warn).not.toHaveBeenCalled();
         warn.mockRestore();
     });
-    it('동시성 상한 초과 → 503, lock 획득 전, 알람 마커를 남긴다', async () => {
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        m.canAccept.mockReturnValueOnce(false);
-        const res = await POST(post({ message: 'x' }));
-        expect(res.status).toBe(503);
-        expect(m.lock).not.toHaveBeenCalled();
-        expect(warn).toHaveBeenCalledWith(
-            '[agent] busy',
-            expect.objectContaining({ reason: 'analysis_stream_slots' })
+    describe('용량 게이트와 대기열', () => {
+        // 대기 시간만 가짜 시계로 돌린다 — nextTick·setImmediate까지 얼리면 요청 처리 await이 멈춘다.
+        beforeEach(() =>
+            vi.useFakeTimers({
+                toFake: [
+                    'setTimeout',
+                    'clearTimeout',
+                    'setInterval',
+                    'clearInterval',
+                    'Date',
+                ],
+            })
         );
-        warn.mockRestore();
+        afterEach(() => vi.useRealTimers());
+
+        it('분석 스트림 슬롯이 계속 막혀 있으면 15초를 기다린 뒤 503, lock 획득 전, 알람 마커에 대기 정보가 실린다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            m.canAccept.mockReturnValue(false);
+            const pending = POST(post({ message: 'x' }));
+            await vi.advanceTimersByTimeAsync(AGENT_TURN_QUEUE_WAIT_MS);
+            const res = await pending;
+            expect(res.status).toBe(503);
+            expect(res.headers.get('Retry-After')).toBe('30');
+            expect(await res.json()).toEqual({ error: 'server_busy' });
+            expect(m.lock).not.toHaveBeenCalled();
+            expect(warn).toHaveBeenCalledWith('[agent] busy', {
+                reason: 'queue_timeout',
+                blockedBy: 'analysis_stream_slots',
+                activeAgentTurns: 0,
+                cap: 4,
+                queued: 0,
+                waitedMs: AGENT_TURN_QUEUE_WAIT_MS,
+            });
+            warn.mockRestore();
+        });
+
+        it('분석 스트림 슬롯이 잠깐 막혔다 풀리면 503 없이 턴이 돈다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            m.canAccept.mockReturnValueOnce(false).mockReturnValue(true);
+            const pending = POST(post({ message: 'x' }));
+            await vi.advanceTimersByTimeAsync(1_000);
+            const res = await pending;
+            expect(res.status).toBe(200);
+            await res.text();
+            expect(
+                warn.mock.calls.some(([marker]) => marker === '[agent] busy')
+            ).toBe(false);
+            expect(getActiveAgentTurns()).toBe(0);
+            warn.mockRestore();
+        });
+
+        it('줄이 가득 차면 기다리지 않고 queue_full로 바로 503', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            m.canAccept.mockReturnValue(false);
+            const queued = Array.from({ length: AGENT_TURN_QUEUE_MAX }, () =>
+                POST(post({ message: 'x' }))
+            );
+            await vi.advanceTimersByTimeAsync(0);
+            expect(getQueuedAgentTurns()).toBe(AGENT_TURN_QUEUE_MAX);
+
+            const res = await POST(post({ message: 'x' }));
+            expect(res.status).toBe(503);
+            expect(warn).toHaveBeenCalledWith(
+                '[agent] busy',
+                expect.objectContaining({
+                    reason: 'queue_full',
+                    queued: AGENT_TURN_QUEUE_MAX,
+                    waitedMs: 0,
+                })
+            );
+            await vi.advanceTimersByTimeAsync(AGENT_TURN_QUEUE_WAIT_MS);
+            await Promise.all(queued);
+            warn.mockRestore();
+        });
+
+        it('줄에서 기다리다 끊긴 요청은 499로 끝나고 lock·슬롯을 쓰지 않으며 알람 마커도 없다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            m.canAccept.mockReturnValue(false);
+            const gone = new AbortController();
+            const pending = POST(
+                new Request('http://localhost/api/ai/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        Origin: AI_ORIGIN,
+                    },
+                    body: JSON.stringify({ message: 'x' }),
+                    signal: gone.signal,
+                })
+            );
+            await vi.advanceTimersByTimeAsync(0);
+            expect(getQueuedAgentTurns()).toBe(1);
+            gone.abort();
+            const res = await pending;
+            expect(res.status).toBe(499);
+            expect(m.lock).not.toHaveBeenCalled();
+            expect(getQueuedAgentTurns()).toBe(0);
+            expect(getActiveAgentTurns()).toBe(0);
+            expect(warn).not.toHaveBeenCalled();
+            warn.mockRestore();
+        });
     });
     it('사용자별 턴 락 충돌(409)은 용량 문제가 아니라 알람 마커를 남기지 않는다', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -477,15 +578,19 @@ describe('POST /api/ai/chat/stream', () => {
         // Flush microtasks so each POST reaches its stuck `findForUser` await.
         await new Promise(r => setTimeout(r, 0));
         // The 4 stuck requests already passed the gate (and acquired the lock, since lock
-        // acquisition happens before the stuck `findForUser` call) — a 5th must be rejected
-        // without ever calling `acquireTurnLock`.
+        // acquisition happens before the stuck `findForUser` call) — a 5th waits in the
+        // queue without ever calling `acquireTurnLock` until a slot frees up.
         const lockCallsBeforeFifth = m.lock.mock.calls.length;
         expect(lockCallsBeforeFifth).toBe(4);
-        const fifth = await POST(post({ conversationId: 'c1', message: 'x' }));
-        expect(fifth.status).toBe(503);
+        const fifth = POST(post({ conversationId: 'c1', message: 'x' }));
+        await new Promise(r => setTimeout(r, 0));
+        expect(getQueuedAgentTurns()).toBe(1);
         expect(m.lock.mock.calls.length).toBe(lockCallsBeforeFifth);
+        m.repo.findForUser.mockResolvedValue({ id: 'c1', title: 't' });
         releaseStuck.forEach(r => r());
         await Promise.all(stuck);
+        // 앞 턴이 끝나 슬롯이 나면 줄 서 있던 5번째가 들어와 503 없이 돈다.
+        expect((await fifth).status).toBe(200);
         // Let each request's `work` settle so its slot is released before the next test.
         await new Promise(r => setTimeout(r, 0));
     });
@@ -1454,5 +1559,25 @@ describe('POST /api/ai/chat/stream', () => {
             expect(m.runTurn).not.toHaveBeenCalled();
             expect(release).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it('repository가 DB 에러를 던져도 알람 접두사는 그대로고 파라미터는 로그에 없다', async () => {
+        const release = vi.fn();
+        m.lock.mockResolvedValue({ release });
+        m.repo.findForUser.mockRejectedValueOnce(plantedDbError());
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const res = await POST(
+                post({ conversationId: 'c1', message: 'x' })
+            );
+            expect(res.status).toBe(500);
+            expect(err).toHaveBeenCalledWith(
+                '[agent-stream] failed:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(err);
+        } finally {
+            err.mockRestore();
+        }
     });
 });

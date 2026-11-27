@@ -50,14 +50,16 @@ export const getOptionsSummaryTool: ToolExecutor = async args => {
     if (!(await hasOptionsMarket(symbol)))
         return { symbol, available: false, reason: 'no_options_market' };
     const snapshot = await fetchOptionsSnapshot(symbol);
-    if (snapshot === null || snapshot.chains.length === 0)
+    if (snapshot === null)
         return { symbol, available: false, reason: 'no_snapshot' };
     // chains[0] can be a same-day (daysToExpiration 0) expiry, which makes
     // the implied-move metric null — prefer the first chain with at least
     // one day left, falling back to chains[0] if every chain expires today.
-    const chosenIndex = snapshot.chains.findIndex(c => c.daysToExpiration >= 1);
-    const chainIndex = chosenIndex >= 0 ? chosenIndex : 0;
-    const chain = snapshot.chains[chainIndex]!;
+    const chain =
+        snapshot.chains.find(c => c.daysToExpiration >= 1) ??
+        snapshot.chains[0];
+    if (chain === undefined)
+        return { symbol, available: false, reason: 'no_snapshot' };
     return {
         asOf: snapshot.capturedAt,
         source: 'options snapshot (cached)',
@@ -76,7 +78,7 @@ export const getOptionsSummaryTool: ToolExecutor = async args => {
             )
         ),
         otherExpirations: snapshot.chains
-            .filter((_, i) => i !== chainIndex)
+            .filter(c => c !== chain)
             .slice(0, 3)
             .map(c => c.expirationDate),
     };

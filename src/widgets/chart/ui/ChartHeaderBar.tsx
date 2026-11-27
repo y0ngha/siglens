@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 import { useExclusiveChartMenu } from '../hooks/useExclusiveChartMenu';
 import type { IndicatorBinding } from '../model/indicatorRegistry';
 import type { ToggleSetting } from '../types';
-import type { OverlayMenuItem } from '../utils/overlayItems';
+import type { OverlayMenuItem } from '@/entities/analysis/lib/chartOverlays/overlayItems';
 import { ChartOverlayMenu } from './ChartOverlayMenu';
 import { ChartSettingsMenu } from './ChartSettingsMenu';
 import { IndicatorMenu } from './IndicatorMenu';

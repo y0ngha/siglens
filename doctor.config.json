@@ -49,8 +49,7 @@
             "db/**",
             "drizzle/**",
             "infra/**",
-            "lighthouse/**",
-            "update-popular-tickers.ts"
+            "lighthouse/**"
         ],
         "overrides": [
             {

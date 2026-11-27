@@ -15,6 +15,18 @@ import type {
 } from '../types';
 
 /**
+ * 마감 뒤 이만큼 지나야 기록한다(분). 미국은 마지막 봉이 확정될 여유 15분. 한국은 시세가 20분
+ * 늦게 오므로(`marketProfile` 실측 KRX 20분) 그만큼 더 기다린다 — 그 전에 계산하면 동시호가
+ * 마감가가 빠진 봉으로 신호를 판정한다. 기록기와 알림 발송기가 같은 값으로 "기대 세션"을 구한다.
+ */
+export const SIGNAL_SETTLE_MINUTES: Readonly<
+    Record<SignalHistoryMarket, number>
+> = {
+    us: 15,
+    kr: 35,
+};
+
+/**
  * 지금이 `market` 세션을 기록할 때인가 — 그렇다면 그 세션 날짜, 아니면 `null`.
  *
  * 조건: 지금 시각이 **그 시장의 마지막 세션이 마감 + `settleMinutes` 지난 뒤이고, 같은 현지 날짜**일 것.
@@ -72,6 +84,10 @@ export function planSignalEpisodes(input: {
                 signalType: signal.type,
                 direction: signal.direction,
                 changePercent: stock.changePercent,
+                priceAtDetection:
+                    Number.isFinite(stock.price) && stock.price > 0
+                        ? stock.price
+                        : null,
                 koreanName: stock.koreanName === '' ? null : stock.koreanName,
                 computedAt: input.result.computedAt,
             }))

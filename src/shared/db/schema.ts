@@ -29,8 +29,18 @@ import { EMAIL_MAX_LENGTH } from '@/shared/config/email';
 import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import { API_KEY_NAME_MAX_LENGTH } from '@/shared/config/publicApi';
 import {
+    EMAIL_REPORT_CONSENT_SOURCE_VALUES,
+    MAIL_ALERT_CONSENT_SOURCE_VALUES,
+    MAIL_ALERT_DELIVERY_STATUS_VALUES,
+    MAIL_ALERT_TOPIC_KIND_VALUES,
     OAUTH_PROVIDER_VALUES,
+    PRICE_ALERT_APPROACH_VALUES,
+    PRICE_ALERT_BASIS_VALUES,
+    PRICE_ALERT_CONDITION_VALUES,
+    PRICE_ALERT_MARKET_VALUES,
+    PRICE_ALERT_STATUS_VALUES,
     SHAREABLE_KIND_VALUES,
+    SIGNAL_SCAN_OUTCOME_VALUES,
     SYMBOL_MAX_LENGTH,
     TERMS_KIND_VALUES,
     USER_TIER_VALUES,
@@ -170,12 +180,43 @@ export const visitorDays = pgTable(
          */
         landingPath: text('landing_path'),
         /**
-         * 그날 첫 진입의 출처 분류(`EntrySource`, 예: `chatgpt`·`google`·`other`). 원본 Referer
-         * 호스트·`utm_source`는 저장하지 않는다 — 분류는 `classifyEntrySource`가 수신 시점에 한다.
-         * 같은 사이트 안의 이동·직접 방문은 null. 같은 날 다시 와도 첫 행의 값을 바꾸지 않는다.
-         * 개인정보처리방침 §2 접속 통계 항목에 고지돼 있어야 한다.
+         * 그날 첫 진입의 출처 분류(`EntrySource`, 예: `chatgpt`·`google`·`paid`·`email`·`share`·`other`).
+         * 원본 Referer 호스트·`utm_source`·`utm_medium`·광고 클릭 식별자 값은 저장하지 않는다 — 분류는
+         * `classifyEntrySource`가 수신 시점에 한다. 광고(`paid`)·메일(`email`)·공유 링크(`share`)는 v15에서
+         * 더해졌고, 그 전 행의 `google` 등에는 광고 클릭이 섞여 있다. 같은 사이트 안의 이동·직접 방문은
+         * null. 같은 날 다시 와도 첫 행의 값을 바꾸지 않는다. 개인정보처리방침 v15 §2 접속 통계 항목에
+         * 고지돼 있어야 한다.
          */
         entrySource: text('entry_source'),
+        /**
+         * 비콘을 보낸 페이지의 사이트. `main`(siglens.io) 또는 `ai`(ai.siglens.io) — 원본 호스트는
+         * 저장하지 않는다. 두 호스트가 같은 `/api/presence`와 같은 해시·PK를 쓰므로 한 방문자가 같은
+         * 날 두 사이트를 열어도 행은 하나이고, 이 값은 **먼저 연 사이트**다(첫 행이 이긴다).
+         * 도입 전 행은 null. 개인정보처리방침 v15 §2 접속 통계 항목에 고지돼 있어야 한다.
+         */
+        landingSite: text('landing_site'),
+        /**
+         * 이 브라우저에서 처음 방문한 뒤 지난 일수 구간(`new`·`d1_6`·`d7_13`·`d14_29`·`d30_89`·
+         * `d90_plus`). 브라우저가 로컬 스토리지의 날짜 기록으로 계산해 구간값만 보낸다. 구간값을 못
+         * 보낸 방문(저장소 차단·옛 클라이언트)과 도입 전 행은 null. 개인정보처리방침 v15 §2에 고지.
+         */
+        firstVisitBucket: text('first_visit_bucket'),
+        /**
+         * 직전 방문 뒤 지난 일수 구간(`none`·`d1`·`d2_6`·`d7_13`·`d14_29`·`d30_plus`). 같은 날 첫 행의
+         * 값을 바꾸지 않는다. 개인정보처리방침 v15 §2에 고지.
+         */
+        lastVisitBucket: text('last_visit_bucket'),
+        /**
+         * 이 브라우저가 방문한 날 수 구간(`n1`·`n2`·`n3_4`·`n5_9`·`n10_19`·`n20_plus`). 개인정보처리방침
+         * v15 §2에 고지.
+         */
+        visitDaysBucket: text('visit_days_bucket'),
+        /**
+         * 이번 방문이 첫 방문 다음 날(`d1`), 7~13일 뒤(`d7`), 30~36일 뒤(`d30`) 창의 **첫** 방문이면 그
+         * 창, 아니면 null. 한 브라우저는 창마다 최대 한 번 채워지므로 ID 없이 D7 비율을 셀 수 있다.
+         * 개인정보처리방침 v15 §2에 고지.
+         */
+        returnWindow: text('return_window'),
         /**
          * 비콘을 보낸 시점에 로그인한 회원이면 그 id. 회원 D7/D30 재방문율의 축이다
          * (`scripts/funnel-report.ts`). 탈퇴하면 SET NULL — 방문 행(익명 집계)은 남고 회원
@@ -228,8 +269,9 @@ export const funnelEvents = pgTable(
  * 종목 페이지 일자 조회수 — 인기 목록 스크립트(`update-popular-tickers.ts`·
  * `scripts/update-popular-cryptos.ts`)의 **추가 후보** 신호.
  *
- * 개인 식별 정보를 담지 않는다(IP·UA·해시 없음) — 집계값만 있으므로 개인정보처리방침
- * 대상이 아니다. 중복 방지는 클라이언트(`SymbolViewPing`, 종목당 하루 1회)가 하고,
+ * 개인 식별 정보를 담지 않는다(IP·UA·해시·회원 id 없음) — 종목 코드·날짜별 횟수뿐이다. 그래도
+ * 개인정보처리방침 v15가 §2(종목 조회수 집계)와 §4(보존 90일)에서 이 수집을 고지한다. 중복 방지는
+ * 클라이언트(`SymbolViewPing`, 종목당 하루 1회, 브라우저 저장소를 쓸 수 있을 때)가 하고,
  * 봇 필터는 비콘 게이트(`onFirstInteraction`) + `isBot`이다.
  *
  * 인증 없는 비콘이라 반복 POST로 부풀릴 수 있다. 방어선은 스크립트의 시장 필터와
@@ -397,29 +439,79 @@ export const watchlistItems = pgTable(
  * 기준 로컬 시(`send_hour`)라서, cron은 매시 각 행의 로컬 요일·시를 계산해 매칭한다 —
  * UTC로 미리 환산해 저장하지 않는 이유는 DST가 있는 타임존에서 환산 결과가 철마다 바뀌기 때문이다.
  */
-export const emailReportSubscriptions = pgTable('email_report_subscriptions', {
-    userId: uuid('user_id')
-        .primaryKey()
-        .references(() => users.id, { onDelete: 'cascade' }),
-    enabled: boolean('enabled').notNull().default(false),
-    /** 요일 비트마스크 — bit n = `Date#getDay()`의 n(0=일요일 … 6=토요일). */
-    daysOfWeek: integer('days_of_week').notNull(),
-    /** 회원 로컬 시각의 시(0–23). */
-    sendHour: integer('send_hour').notNull(),
-    /** IANA 타임존 이름(예: `Asia/Seoul`). */
-    timezone: text('timezone').notNull(),
-    /** 메일 본문 로케일 — 설정을 저장한 화면의 로케일. */
-    locale: contentLocaleEnum('locale').notNull().default('ko'),
-    /** 마지막으로 수신을 켠 시각(수신 동의 기록). 한 번도 켜지 않았으면 null. */
-    consentedAt: timestamp('consented_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-        .notNull()
-        .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-        .notNull()
-        .defaultNow()
-        .$onUpdateFn(nowFn),
-});
+export const emailReportSubscriptions = pgTable(
+    'email_report_subscriptions',
+    {
+        userId: uuid('user_id')
+            .primaryKey()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        enabled: boolean('enabled').notNull().default(false),
+        /** 요일 비트마스크 — bit n = `Date#getDay()`의 n(0=일요일 … 6=토요일). */
+        daysOfWeek: integer('days_of_week').notNull(),
+        /** 회원 로컬 시각의 시(0–23). */
+        sendHour: integer('send_hour').notNull(),
+        /** IANA 타임존 이름(예: `Asia/Seoul`). */
+        timezone: text('timezone').notNull(),
+        /** 메일 본문 로케일 — 설정을 저장한 화면의 로케일. */
+        locale: contentLocaleEnum('locale').notNull().default('ko'),
+        /** 마지막으로 수신을 켠 시각(수신 동의 기록). 한 번도 켜지 않았으면 null. */
+        consentedAt: timestamp('consented_at', { withTimezone: true }),
+        /**
+         * 마지막으로 수신을 켠 화면(`settings` | `signup_email` | `signup_oauth`). `consented_at`과
+         * 같은 규칙으로 꺼진 상태에서 켤 때만 바뀐다. 동의 기록이 없으면 null.
+         */
+        consentSource: text('consent_source', {
+            enum: EMAIL_REPORT_CONSENT_SOURCE_VALUES,
+        }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'email_report_subscriptions_consent_source_check',
+            sql`${table.consentSource} IS NULL OR ${table.consentSource} IN ('settings','signup_email','signup_oauth')`
+        ),
+    ]
+);
+
+/**
+ * 가입 때 메일 리포트를 고른 회원에게 보내는 첫 리포트의 발송 기록. 회원당 한 행이라 PK가
+ * "한 번만"을 보장한다. cron이 보내기 전에 행을 삽입해 선점한다.
+ */
+export const emailReportWelcomes = pgTable(
+    'email_report_welcomes',
+    {
+        userId: uuid('user_id')
+            .primaryKey()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        /** `sending`(선점) → `sent` | `failed`. */
+        status: text('status', {
+            enum: ['sending', 'sent', 'failed'],
+        }).notNull(),
+        attempts: smallint('attempts').notNull().default(1),
+        error: text('error'),
+        sentAt: timestamp('sent_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'email_report_welcomes_status_check',
+            sql`${table.status} IN ('sending','sent','failed')`
+        ),
+        index('email_report_welcomes_created_at_idx').on(table.createdAt),
+    ]
+);
 
 /**
  * 메일 리포트 발송 기록 — 회원의 로컬 날짜당 한 행.
@@ -480,6 +572,232 @@ export const emailReportExcludedSymbols = pgTable(
             .defaultNow(),
     },
     table => [primaryKey({ columns: [table.userId, table.symbol] })]
+);
+
+/**
+ * 알림 메일 구독자 — 이메일 주소당 한 행. 회원이 아니어도 만들어진다.
+ *
+ * 행은 6자리 인증 코드로 주소를 확인한 **뒤에만** 생긴다(이중 동의). `user_id`는 같은 주소의 회원이
+ * 있을 때만 채워지고(회원 계정에 연결), 회원이 삭제되면 행도 함께 지워진다. 구독자 행을 지우는 것이
+ * 곧 수신 거부다 — 받을 항목과 발송 기록은 연쇄로 사라진다. `consented_at`·`consent_source`는
+ * 처음 신청한 시각·화면이며 이후 다른 항목을 더해도 옮기지 않는다.
+ */
+export const mailAlertSubscribers = pgTable(
+    'mail_alert_subscribers',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        /** `normalizeEmail` 형태(소문자, 앞뒤 공백 없음). */
+        email: varchar('email', { length: EMAIL_MAX_LENGTH })
+            .notNull()
+            .unique(),
+        userId: uuid('user_id')
+            .unique()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        /** 메일 본문 로케일 — 처음 신청한 화면의 로케일. */
+        locale: contentLocaleEnum('locale').notNull().default('ko'),
+        /** 회원이 고른 경우에만 켜진다: 보유종목·관심종목의 새 신호도 함께 받기. */
+        includePortfolio: boolean('include_portfolio').notNull().default(false),
+        consentedAt: timestamp('consented_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        consentSource: text('consent_source', {
+            enum: MAIL_ALERT_CONSENT_SOURCE_VALUES,
+        }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'mail_alert_subscribers_consent_source_check',
+            sql`${table.consentSource} IN ('symbol','fear_greed','signal_hub','settings','agent_chat')`
+        ),
+    ]
+);
+
+/**
+ * 구독자가 고른 받을 항목. `(subscriber_id, kind, key)`가 기본키라 같은 항목은 한 번만 담긴다.
+ * `key`는 종류별 정규형이다: `symbol`은 대문자 심볼, `signal`은 신호 유형, `fear_greed`는
+ * 시장(`us` | `kr` | `crypto`). 항목 수 상한은 저장소가 구독자 행 잠금 아래에서 지킨다.
+ */
+export const mailAlertTopics = pgTable(
+    'mail_alert_topics',
+    {
+        subscriberId: uuid('subscriber_id')
+            .notNull()
+            .references(() => mailAlertSubscribers.id, { onDelete: 'cascade' }),
+        kind: text('kind', { enum: MAIL_ALERT_TOPIC_KIND_VALUES }).notNull(),
+        key: varchar('key', { length: 48 }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({ columns: [table.subscriberId, table.kind, table.key] }),
+        check(
+            'mail_alert_topics_kind_check',
+            sql`${table.kind} IN ('symbol','signal','fear_greed')`
+        ),
+        index('mail_alert_topics_kind_key_idx').on(table.kind, table.key),
+    ]
+);
+
+/**
+ * 알림 메일 발송 기록 — 구독자의 알림 날짜(KST)당 한 행.
+ *
+ * `(subscriber_id, alert_date)` 유니크가 "하루 한 통"의 멱등 키다. 발송기는 보내기 **전에** 행을
+ * 선점(insert)하고 충돌하면 건너뛴다. 보낼 게 없는 날은 행을 만들지 않는다. `item_keys`는 메일에 실린
+ * 항목의 키라서 이후 7일 반복 발송을 막는 데 쓴다. 구독자가 지워지면 함께 사라진다.
+ */
+export const mailAlertDeliveries = pgTable(
+    'mail_alert_deliveries',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        subscriberId: uuid('subscriber_id')
+            .notNull()
+            .references(() => mailAlertSubscribers.id, { onDelete: 'cascade' }),
+        /** 발송 슬롯의 한국 시간 날짜(`YYYY-MM-DD`). */
+        alertDate: date('alert_date').notNull(),
+        /** `pending`(선점) → `sent` | `failed`. */
+        status: text('status', {
+            enum: MAIL_ALERT_DELIVERY_STATUS_VALUES,
+        }).notNull(),
+        itemKeys: text('item_keys')
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+        error: text('error'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check(
+            'mail_alert_deliveries_status_check',
+            sql`${table.status} IN ('pending','sent','failed')`
+        ),
+        uniqueIndex('mail_alert_deliveries_subscriber_date_uidx').on(
+            table.subscriberId,
+            table.alertDate
+        ),
+        index('mail_alert_deliveries_alert_date_idx').on(table.alertDate),
+    ]
+);
+
+/**
+ * 가격대 알림 — 구독자(`mail_alert_subscribers`)가 가진 한 번짜리 알림 한 행. 아침 알림 메일이 완료된
+ * 일봉 종가로 조건을 판정해 처음 충족한 세션에 한 줄을 싣고(`status`가 `fired`로 바뀐다) 끝난다.
+ *
+ * 모델이 쓴 자유 문장은 저장하지 않는다: 종목·조건·가격·기준(분석 구간, 무효화 기준, 말한 가격)만 담는다.
+ * `proposal_id`는 서명된 제안 토큰에서 오며 `(subscriber_id, proposal_id)` 유니크가 더블클릭·재시도를
+ * 멱등하게 만든다. `starts_after_session`은 만든 시점의 마지막 완료 세션으로, 그 뒤 종가만 센다
+ * (만든 날 장중 거래가 거짓 발화를 만들지 않게). 구독자가 지워지면 알림도 함께 사라진다(수신 거부 = 구독자 삭제).
+ * 조건별 모양(구간은 approach·low·high, 단일 가격은 level)은 CHECK가 지킨다.
+ */
+export const priceAlerts = pgTable(
+    'price_alerts',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        subscriberId: uuid('subscriber_id')
+            .notNull()
+            .references(() => mailAlertSubscribers.id, { onDelete: 'cascade' }),
+        proposalId: uuid('proposal_id').notNull(),
+        /** 관심종목과 같은 정규형(대문자). */
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        market: text('market', { enum: PRICE_ALERT_MARKET_VALUES }).notNull(),
+        condition: text('condition', {
+            enum: PRICE_ALERT_CONDITION_VALUES,
+        }).notNull(),
+        /** `enter_zone`에서만 값이 있다: 구간 위에서 내려오는지 아래에서 올라오는지. */
+        approach: text('approach', { enum: PRICE_ALERT_APPROACH_VALUES }),
+        // numeric은 Drizzle에서 문자열이다 — 십진 문자열로 다루고 JS 부동소수로 되돌릴 때만 Number로 바꾼다.
+        zoneLow: numeric('zone_low', { precision: 20, scale: 6 }),
+        zoneHigh: numeric('zone_high', { precision: 20, scale: 6 }),
+        level: numeric('level', { precision: 20, scale: 6 }),
+        basis: text('basis', { enum: PRICE_ALERT_BASIS_VALUES }).notNull(),
+        /** 구간·무효화 기준을 읽어 온 AI 분석의 `analyzedAt`. 가격을 직접 말한 알림은 null. */
+        analysisAt: timestamp('analysis_at', { withTimezone: true }),
+        /** 카드에 보인 가격(만들 때의 시세). */
+        referenceClose: numeric('reference_close', {
+            precision: 20,
+            scale: 6,
+        }).notNull(),
+        /** 만든 시점의 마지막 완료 세션 날짜. 이보다 뒤의 종가만 판정한다. */
+        startsAfterSession: date('starts_after_session').notNull(),
+        /** 한국 날짜. 이 날짜까지는 살아 있다(만료일 당일은 아직 active). */
+        expiresOn: date('expires_on').notNull(),
+        status: text('status', { enum: PRICE_ALERT_STATUS_VALUES })
+            .notNull()
+            .default('active'),
+        firedSession: date('fired_session'),
+        firedClose: numeric('fired_close', { precision: 20, scale: 6 }),
+        firedAt: timestamp('fired_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        check('price_alerts_market_check', sql`${table.market} IN ('us','kr')`),
+        check(
+            'price_alerts_condition_check',
+            sql`${table.condition} IN ('enter_zone','close_below','close_above')`
+        ),
+        check(
+            'price_alerts_approach_check',
+            sql`${table.approach} IN ('from_above','from_below')`
+        ),
+        check(
+            'price_alerts_basis_check',
+            sql`${table.basis} IN ('analysis_entry_zone','analysis_invalidation','price_level')`
+        ),
+        check(
+            'price_alerts_status_check',
+            sql`${table.status} IN ('active','fired')`
+        ),
+        check(
+            'price_alerts_shape_check',
+            sql`(${table.condition} = 'enter_zone' AND ${table.approach} IS NOT NULL AND ${table.zoneLow} IS NOT NULL AND ${table.zoneHigh} IS NOT NULL AND ${table.level} IS NULL AND ${table.zoneLow} > 0 AND ${table.zoneLow} <= ${table.zoneHigh}) OR (${table.condition} IN ('close_below','close_above') AND ${table.approach} IS NULL AND ${table.zoneLow} IS NULL AND ${table.zoneHigh} IS NULL AND ${table.level} IS NOT NULL AND ${table.level} > 0)`
+        ),
+        // numeric은 NaN을 저장하고 NaN은 모든 수보다 크게 비교된다 — `> 0` 검사만으로는 걸러지지 않는다.
+        check(
+            'price_alerts_finite_check',
+            sql`${table.zoneLow} <> 'NaN' AND ${table.zoneHigh} <> 'NaN' AND ${table.level} <> 'NaN' AND ${table.referenceClose} <> 'NaN' AND ${table.firedClose} <> 'NaN'`
+        ),
+        check(
+            'price_alerts_reference_close_check',
+            sql`${table.referenceClose} > 0`
+        ),
+        // 한 번 알리면 끝이다: 진행 중이면 알린 흔적이 없고, 알렸으면 세 값이 모두 있다.
+        check(
+            'price_alerts_fired_state_check',
+            sql`(${table.status} = 'active' AND ${table.firedSession} IS NULL AND ${table.firedClose} IS NULL AND ${table.firedAt} IS NULL) OR (${table.status} = 'fired' AND ${table.firedSession} IS NOT NULL AND ${table.firedClose} IS NOT NULL AND ${table.firedAt} IS NOT NULL)`
+        ),
+        // 분석에서 읽은 기준은 분석 시각을 가지고, 진입 구간은 구간 조건, 무효화 기준은 아래로 닫히는 조건과만 짝이다.
+        check(
+            'price_alerts_basis_shape_check',
+            sql`(${table.basis} = 'price_level' AND ${table.analysisAt} IS NULL) OR (${table.basis} = 'analysis_entry_zone' AND ${table.analysisAt} IS NOT NULL AND ${table.condition} = 'enter_zone') OR (${table.basis} = 'analysis_invalidation' AND ${table.analysisAt} IS NOT NULL AND ${table.condition} = 'close_below')`
+        ),
+        uniqueIndex('price_alerts_subscriber_proposal_uidx').on(
+            table.subscriberId,
+            table.proposalId
+        ),
+        index('price_alerts_status_expires_idx').on(
+            table.status,
+            table.expiresOn
+        ),
+    ]
 );
 
 /**
@@ -715,7 +1033,7 @@ export const earningsReports = pgTable(
  *
  * `id`는 country+dateEt+event의 결정론적 해시(`economicCalendarId`)다. `actual`을
  * 포함하지 않으므로 발표 후 actual이 채워져도 같은 행으로 upsert돼 갱신된다
- * (#610 그리드의 React key `${date}:${event}:${actual}`와는 의도가 다른 안정 키).
+ * (그리드의 React key `${date}:${event}:${actual}`와는 의도가 다른 안정 키).
  *
  * SP-D에서 별도 마이그레이션으로 sentiment/summaryKo/interpretationKo/analyzedAt가
  * 추가된다 — SP-A 테이블에는 미포함.
@@ -1027,7 +1345,7 @@ export const seoAnalysisSnapshots = pgTable(
  * **한계(의도적)**
  * - 원본 행과의 FK가 없다 — `entity_id`가 테이블마다 타입이 달라(uuid/text)
  *   단일 FK를 걸 수 없다. 원본 삭제 시 고아 행이 남는다. 정리는
- *   `docs/reference/CRON.md`의 후속 항목으로 둔다(고아 행은 조회 키가
+ *   후속 작업으로 둔다(고아 행은 조회 키가
  *   맞지 않아 화면에 새어 나오지 않는다).
  * - `field`가 문자열이다 — 오타를 막으려고 호출부는
  *   `shared/db/contentTranslationFields.ts`의 상수만 쓴다.
@@ -1125,10 +1443,29 @@ export const analysisHistory = pgTable(
         /** 'technical' | 'overall' */
         tab: varchar('tab', { length: 16 }).notNull(),
         modelId: varchar('model_id', { length: 64 }).notNull(),
+        /**
+         * 이 분석을 **생성한** 요청의 tier(`free` | `pro` 등). 같은 종목이라도 free 프리웜과 회원
+         * 분석은 스킬 세트가 달라 tier 없이는 결과를 해석할 수 없다. user enum이 아닌 varchar인
+         * 이유는 `signal_events.signal_type`과 같다(tier가 늘어도 DB 제약이 막지 않게).
+         * 이 컬럼이 생기기 전 행과 tier를 알리지 않은 작성자의 행은 null.
+         */
+        tier: varchar('tier', { length: 16 }),
         /** 감사용 — 읽기 필터 금지. 테이블 JSDoc 참조. */
         locale: contentLocaleEnum('locale').notNull(),
         /** 정규화된 AnalysisResponse. */
         result: jsonb('result').notNull(),
+        /**
+         * 보유 맞춤(포지션 버킷이 프롬프트에 들어간) 분석인지. 맞춤 분석은 "보유자 관점"
+         * 서술과 그에 맞춘 진입·청산 계획을 담아 한 회원의 보유 상태(손익 구간)를 드러내므로,
+         * 다른 사람에게 보이는 읽기는 이 값으로 거른다.
+         * `null`은 이 컬럼이 생기기 전 행(알 수 없음)이다. 읽기마다 규칙이 다르다.
+         * - `findRecentForPrompt`(이전 분석, 에이전트 이력 요약): `false`이거나, `null`이면서 generating
+         *   tier가 `free`인 행만 읽는다(free는 버킷을 만들지 않아 맞춤일 수 없다).
+         * - `findLatestShareable`: `false`인 행만 읽는다. `null`은 tier와 무관하게 쓰지 않는다.
+         * - 사후 결과 라벨러(`analysis_outcomes`) 캡처: `false`인 행만 가져간다. 맞춤 분석은 회원 보유 정보에서
+         *   파생된 산출물이고, `null`은 맞춤이었을 수 있다.
+         */
+        personalized: boolean('personalized'),
         inputFingerprint: varchar('input_fingerprint', { length: 32 }),
         promptVersion: varchar('prompt_version', { length: 32 }),
         promptStableHash: char('prompt_stable_hash', {
@@ -1152,6 +1489,150 @@ export const analysisHistory = pgTable(
             table.tab,
             table.generatedAt.desc()
         ),
+        /**
+         * 결과 사후 라벨러의 캡처 스캔(`generated_at ≥ now − 6일`)과 90일 prune이 둘 다
+         * `generated_at` 단독 범위로 거른다. 복합 `analysis_history_lookup_idx`는 선두가
+         * `symbol`이라 이 범위를 도울 수 없다.
+         */
+        index('analysis_history_generated_at_idx').on(table.generatedAt),
+    ]
+);
+
+/**
+ * 분석이 **말한 것**과 그 **사후 결과 라벨**을 한 행에 남기는 측정 테이블(`analysis_history`와 같은 id).
+ *
+ * `analysis_history`는 90일 뒤, `prompt_dynamic`은 7일 뒤 사라진다. 라벨은 분석 생성 약 한 달 뒤에야
+ * 계산되고(일봉 20봉 창), 라벨 정의가 바뀌면 다시 계산해야 하므로 입력(`subject`, `bars_snapshot`)을 함께
+ * 보관한다. 그래서 FK를 걸지 않고 보존 기간도 따로 둔다(`OUTCOME_RETENTION_DAYS`, `generated_at` 기준).
+ *
+ * **사용자 데이터가 없다.** 회원 id·비회원 식별자·IP·보유 종목·프롬프트 본문 어느 것도 담지 않는다.
+ * `subject`는 core `extractOutcomeSubject`가 숫자·enum·레벨 라벨만 복사한 사본이고 `labels`·`bars_snapshot`은
+ * 시장 봉에서만 나온다. 그래서 `users`를 참조하지 않으며 dev 시드 제외 목록(`EXCLUDED_TABLES`)에도 넣지 않는다.
+ *
+ * 이 테이블은 저장만 한다. 집계·표시는 읽는 쪽 몫이고, 읽는 쪽이 알아야 할 규칙과 체계적으로 빠지는 행은 아래와 같다.
+ *
+ * 읽는 규칙
+ * - 라벨은 측정값이다. 비율은 항상 표본 수 `n`과 함께 쓴다.
+ * - `labels->>'anchorSource' = 'generated_at'`(분석이 본 봉을 몰라 생성 시각의 봉으로 대신한 행, 기준가가 분석이
+ *   본 가격이 아니다)이거나 `labels->'plan'->>'anchorBarUnobserved' = 'true'`(형성 중이던 앵커 봉의 나머지에서
+ *   체결됐을 수 있는 행)이면 따로 센다.
+ * - 계획 결과는 `labels->'plan'->>'recommendation'`(판정)별로 나눠 센다. `void_at_entry`는 승리가 아니다.
+ * - 무작위 보행 귀무확률(`rwNullTargetFirst`)은 체결된 **모든** 계획(`target_first`, `stop_first`, `ambiguous`,
+ *   `open_at_horizon`)의 `target_first` 비율과만 비교한다. 해결된 거래만의 비율과 비교하지 않는다.
+ * - 패턴의 제외 사유 `target_reached`와 `target_reached_on_breakout`은 서로 다른 모집단이라 따로 센다.
+ * - 출력 로케일마다 행이 하나라 같은 시점의 near-duplicate가 있다. 집계 전에 `locale`을 한 값으로 고르거나
+ *   (프리웜은 항상 `ko`) (symbol, timeframe, 앵커 봉, tier)로 중복을 지운다. `input_fingerprint`는 로케일을 가로질러
+ *   같은 입력을 가리키지만 현재 어떤 작성자도 채우지 않아 대부분 null이다. 채워진 행에서만 정확한 키로 쓴다.
+ * - `anchor_close_basis`: 일봉에서 분석이 본 앵커 종가가 공식 종가인지 실시간 시세인지의 구분이다. 첫 라벨이 생긴 뒤
+ *   `'after_close_quote'` 행 중 분할·배당이 없는 행의 `subject.anchor.close / bars_snapshot.anchorBar` 종가 비율이
+ *   1에서 얼마나 벗어나는지 보면 시세와 공식 종가의 차이가 통계에 영향을 주는지 알 수 있다.
+ *
+ * 체계적으로 빠지거나 치우치는 행
+ * - 보유 종목 맥락으로 생성한 분석(`analysis_history.personalized = true`)과 컬럼이 생기기 전에 쓴 행(null)은 캡처하지
+ *   않는다. 이전 분석(prior) 조회의 규칙은 `analysis_history.personalized` JSDoc에 있다.
+ * - 주봉(`1Week`)은 캡처하지 않는다(`UNCAPTURED_TIMEFRAMES`, 라벨 규칙이 일봉·분봉만 있다).
+ * - 실제로 생성된 분석만 저장된다(캐시 적중은 이력을 쓰지 않는다). 프리웜 행은 항상 `ko`다. 종합(overall) 탭은
+ *   캡처하지 않는다. 추론 모드(reasoning)는 기록하지 않는다.
+ * - `unlabelable`: `subject_invalid`(core가 주장을 읽지 못함), `timeframe_unsupported`, `anchor_mismatch`(분할·가격
+ *   기준 점프), `anchor_missing`(제공자 결측, 제공자 조회 기간보다 오래된 분봉 행), `label_error`.
+ *   `forward_stalled`와 `bars_unavailable`은 거래정지·상장폐지 종목에서 나오므로 생존 편향이 있고, 실패 쪽이
+ *   적게 세어질 수 있다.
+ * - `generated_at` 앵커 행(`dataAsOf` 없음)은 별도 묶음이다.
+ * - 캡처가 6일 안에 못 가져간 분석은 영영 못 가져온다(`capture backlog` 로그). 한국 일봉은 하루 늦게 성숙한다.
+ */
+export const analysisOutcomes = pgTable(
+    'analysis_outcomes',
+    {
+        /** = `analysis_history.id`. FK 없음: 원본 행은 90일 뒤 지워지고 이 행은 더 오래 남는다. */
+        analysisId: uuid('analysis_id').primaryKey(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        timeframe: varchar('timeframe', { length: 8 }).notNull(),
+        /** `analysis_history.model_id` 사본. `analysis-worker` 같은 자리표시자일 수 있다. */
+        modelId: varchar('model_id', { length: 64 }).notNull(),
+        /** 분석을 **생성한** 요청의 tier. 옛 행·tier 미기록 작성자는 null. */
+        tier: varchar('tier', { length: 16 }),
+        promptVersion: varchar('prompt_version', { length: 32 }),
+        /** `analysis_history.locale` 사본 — 로케일별 near-duplicate를 가르는 키. */
+        locale: contentLocaleEnum('locale').notNull(),
+        /** `analysis_history.input_fingerprint` 사본(없으면 null). 위 테이블 JSDoc의 중복 제거 규칙 참조. */
+        inputFingerprint: varchar('input_fingerprint', { length: 32 }),
+        generatedAt: timestamp('generated_at', {
+            withTimezone: true,
+        }).notNull(),
+        /**
+         * 일봉 앵커 종가의 출처. 라벨 단계에서 그룹의 세션 스펙이 풀린 뒤, 저장된 `generated_at`과 subject 앵커 봉의
+         * 날짜로만 정한다(캡처는 DB만 쓰므로 여기서 정하지 않는다).
+         * `'eod_published'`: 봉 날짜가 생성 시각의 `lastClosedSessionDate` 이하라 공식 종가였다.
+         * `'after_close_quote'`: 세션 마감 뒤 EOD 발행 전에 생성돼 분석이 본 종가가 실시간 시세에서 왔다.
+         * NULL이 되는 경우는 이것뿐이다: (1) `pending` 행, (2) 봉 창을 평가하기 전에 끝난 `unlabelable` 행
+         * (`subject_invalid`, `timeframe_unsupported`, `bars_unavailable`, `label_error`, `anchor_missing`),
+         * (3) subject에 앵커가 없다, (4) 분봉이다(분봉 봉은 시세로 만들지 않아 구분이 없다), (5) 생성 시각에 일봉 앵커가
+         * 마감 전 형성 중이었다. 라벨된 행과 `anchor_mismatch`·`forward_stalled`로 끝난 행은 (3)~(5)가 아니면 값이 있다.
+         * 종목 조회 실패로 비는 값은 없다.
+         * 첫 라벨이 생긴 뒤 `'after_close_quote'` 행 중 분할·배당이 없는 행의 `subject.anchor.close /
+         * bars_snapshot.anchorBar` 종가 비율을 보면 시세와 공식 종가의 차이가 통계에 영향을 주는지 알 수 있다.
+         */
+        anchorCloseBasis: varchar('anchor_close_basis', { length: 24 }),
+        /** core `OutcomeSubject` — 캡처 시점에 `analysis_history.result`에서 복사한 분석 주장. */
+        subject: jsonb('subject').notNull(),
+        /** 'pending' | 'labeled' | 'unlabelable'. */
+        status: varchar('status', { length: 16 }).notNull(),
+        /**
+         * `unlabelable`의 사유: subject_invalid, timeframe_unsupported, anchor_missing, anchor_mismatch,
+         * bars_unavailable, forward_stalled, label_error. 그 밖의 상태는 null.
+         */
+        skipReason: varchar('skip_reason', { length: 32 }),
+        /**
+         * 실패 종류별 횟수는 `load_failures`, `row_errors`, `anchor_missing_seen` 세 카운터로 따로 센다. 종류마다 포기
+         * 한도와 사유가 달라서(`bars_unavailable`, `label_error`, `anchor_missing`) 하나의 카운터를 나눠 쓰면 한 종류의
+         * 누적이 다른 종류의 포기를 앞당긴다. 아직 봉이 모자라 미룬 횟수는 세지 않는다. 이 컬럼: 그룹 봉 로드 실패
+         * (제공자 장애·종목 해석 실패·빈 봉·타임아웃).
+         */
+        loadFailures: integer('load_failures').notNull().default(0),
+        /** 행 하나를 처리하다 던진 횟수(한도 초과 시 `label_error`). */
+        rowErrors: integer('row_errors').notNull().default(0),
+        /** 앵커 봉을 못 찾은 관측 횟수(앞 봉 검증 실패 포함, 한도 초과 시 `anchor_missing`). */
+        anchorMissingSeen: integer('anchor_missing_seen').notNull().default(0),
+        nextAttemptAt: timestamp('next_attempt_at', {
+            withTimezone: true,
+        }).notNull(),
+        /**
+         * 마지막으로 본 앵커 이후 완결 봉 수(`insufficient_forward.have`). 다음 시도에서 늘었는지 비교해
+         * 상장폐지·거래정지로 더는 자라지 않는 행을 포기한다(`forward_stalled`).
+         */
+        forwardHave: integer('forward_have'),
+        /** `forward_have`가 처음 자라지 않은 시각. 다시 자라면 null로 돌아간다. */
+        stalledSince: timestamp('stalled_since', { withTimezone: true }),
+        /**
+         * 재라벨이 던진 행에 그 시점의 `OUTCOME_LABEL_VERSION`을 적어 둔다. 선택은 이 값이 현재 버전인 행을
+         * 건너뛰므로 같은 버전에서 같은 오류를 매 실행 되풀이하지 않고, 버전이 오르면 다시 시도한다.
+         * `label_version`은 건드리지 않는다(낡은 라벨이 낡았다는 사실을 가리지 않기 위해).
+         */
+        relabelFailedVersion: integer('relabel_failed_version'),
+        labelVersion: integer('label_version'),
+        /** core `AnalysisOutcomeLabels`. */
+        labels: jsonb('labels'),
+        /** core `OutcomeWindow` — 정의가 바뀌면 공급자 호출 없이 이 창으로 다시 라벨한다. */
+        barsSnapshot: jsonb('bars_snapshot'),
+        labeledAt: timestamp('labeled_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('analysis_outcomes_pending_idx')
+            .on(table.nextAttemptAt)
+            .where(sql`${table.status} = 'pending'`),
+        index('analysis_outcomes_symbol_tf_idx').on(
+            table.symbol,
+            table.timeframe,
+            table.generatedAt.desc()
+        ),
+        index('analysis_outcomes_generated_at_idx').on(table.generatedAt),
+        /** 재라벨 후보 선택(`status = 'labeled' AND label_version < 현재`)이 후보가 없을 때도 전 행을 훑지 않게 한다. */
+        index('analysis_outcomes_relabel_idx')
+            .on(table.labelVersion)
+            .where(sql`${table.status} = 'labeled'`),
     ]
 );
 
@@ -1981,6 +2462,14 @@ export const signalEvents = pgTable(
         direction: varchar('direction', { length: 8 }).notNull(),
         /** 그날 등락률(%). 목록에 함께 보여 준다. */
         changePercent: doublePrecision('change_percent').notNull(),
+        /**
+         * 에피소드가 처음 기록될 때 스캐너가 보고한 가격(시세가 있으면 시세, 없으면 마지막 일봉
+         * 종가) — 마감 + 정착 시간 뒤의 값이다. 이어지는 동안 갱신하지 않는다(첫 포착 가격).
+         * 단위는 그 시장의 자국 통화(`market` 컬럼으로 구분: 미국 USD, 한국 KRW)다. 시세를 못 받아
+         * 폴백한 경우 스캐너가 가진 일봉의 마지막 종가라 직전 세션 종가일 수 있다.
+         * 가격을 알 수 없으면 null이고, 이 컬럼이 생기기 전 행도 null이다.
+         */
+        priceAtDetection: doublePrecision('price_at_detection'),
         /** 기록 시점의 한글 종목명. 없으면 null — 목록이 이름 조회 없이 그려지게 남긴다. */
         koreanName: text('korean_name'),
         /** 스캐너 계산 시각. */
@@ -2011,4 +2500,75 @@ export const signalEvents = pgTable(
             table.lastSeenSession
         ),
     ]
+);
+
+/**
+ * 신호 기록기가 종목별로 어디까지 기록했는지 — 한 세션을 여러 번의 실행에 걸쳐 기록하고, 놓친 세션을
+ * 따라잡기 위한 영속 진행 표식이다. Redis 표식은 사라질 수 있고 "세션당 한 번"만 알려 줘서, 종목 수가
+ * 늘어 한 실행에 다 못 끝내는 규모에서는 쓸 수 없다.
+ *
+ * 한 행 = (시장, 종목). `last_session`은 그 종목의 신호가 `signal_events`에 반영된 마지막 세션이다.
+ * 아직 한 번도 성공하지 못했으면 null(처음 기록하는 종목). 실패·낡은 데이터 시도는 `attempt_session`의
+ * 세션 안에서 `attempts`로 센다 — 세션이 바뀌면 다시 1부터다.
+ *
+ * 개인 식별 정보가 없다(시장 데이터의 처리 진행뿐).
+ */
+export const signalScanCursors = pgTable(
+    'signal_scan_cursors',
+    {
+        /** 대시보드 범위 id(`us` | `kr`). */
+        market: varchar('market', { length: 8 }).notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        /** `signal_events`에 반영된 마지막 세션(`YYYY-MM-DD`). 첫 성공 전에는 null. */
+        lastSession: date('last_session'),
+        /** 아래 `attempts`가 속한 세션. 세션이 바뀌면 시도 횟수를 다시 센다. */
+        attemptSession: date('attempt_session'),
+        attempts: smallint('attempts').notNull().default(0),
+        /** 가장 최근 시도의 결과: 기록됨 / 조회 실패 / 마지막 봉이 그 세션이 아님. */
+        lastOutcome: text('last_outcome', {
+            enum: SIGNAL_SCAN_OUTCOME_VALUES,
+        }).notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        primaryKey({ columns: [table.market, table.symbol] }),
+        check(
+            'signal_scan_cursors_last_outcome_check',
+            sql`${table.lastOutcome} IN ('recorded','failed','stale')`
+        ),
+    ]
+);
+
+/**
+ * 시장·세션별 기록 완료 표식 — 메일 발송기와 신호 페이지가 "그 세션이 끝까지 기록됐는가"를 읽는 영속
+ * 값이다. `signal_events`의 `max(last_seen_session)`으로는 알 수 없다: 한 세션을 여러 실행에 나눠 기록하면
+ * 첫 종목이 들어간 순간부터 그 값이 참이 된다.
+ *
+ * `completed_at`은 대상 종목이 전부 정리된(기록됐거나 한 세션에 3번 실패한) 순간에 한 번 채운다. 나머지
+ * 숫자는 가장 최근 실행이 본 집계다. 개인 식별 정보가 없다.
+ */
+export const signalScanSessions = pgTable(
+    'signal_scan_sessions',
+    {
+        market: varchar('market', { length: 8 }).notNull(),
+        sessionDate: date('session_date').notNull(),
+        /** 그 세션 시작 때의 대상 종목 수. */
+        universeSize: integer('universe_size').notNull(),
+        recorded: integer('recorded').notNull(),
+        failed: integer('failed').notNull(),
+        stale: integer('stale').notNull(),
+        /** 모든 대상이 정리된 시각. 아직이면 null. */
+        completedAt: timestamp('completed_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [primaryKey({ columns: [table.market, table.sessionDate] })]
 );

@@ -3,6 +3,7 @@
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 import { QUARTER_LIMIT } from '../lib/financialsSnapshot';
 import { getFinancialsSnapshot } from '../server/getFinancialsSnapshot';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /** 예기치 않은 fetch 실패 시 반환하는, 모든 섹션이 빈 완전한 스냅샷. */
 const EMPTY_SNAPSHOT: FinancialsSnapshot = {
@@ -35,7 +36,7 @@ export async function getFinancialsQuarterAction(
         console.error(
             '[getFinancialsQuarterAction] quarter fetch failed:',
             symbol,
-            error
+            redactDbErrorForLog(error)
         );
         return EMPTY_SNAPSHOT;
     }

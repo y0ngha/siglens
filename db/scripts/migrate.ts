@@ -1,23 +1,20 @@
 import postgres from 'postgres';
 import { readFileSync } from 'fs';
-import crypto from 'crypto';
 import path from 'path';
 import {
     assertRemoteWriteAllowed,
     describeTarget,
     formatTarget,
+    requireDatabaseUrl,
 } from './lib/dbTarget';
+import { hashMigrationSql } from '../../src/shared/db/migrations/migrationJournal';
 
-const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is required');
-}
+const databaseUrl = requireDatabaseUrl();
 
 /**
  * **대상 확인 + 원격 쓰기 가드.**
  *
- * 이 스크립트는 `dotenv -e .env.local`로 실행되고, 그 파일은 운영 Neon
+ * 이 스크립트는 `dotenv -e .env.local`로 실행되고, 그 파일은 운영 DB(Amazon RDS)
  * 인스턴스를 가리킨다. 즉 `yarn db:migrate`는 기본값이 **운영 스키마 변경**이다.
  * 마이그레이션은 되돌리기 어렵고(`DROP INDEX` 포함), 로컬에 적용하려던 사람이
  * 그대로 치면 운영이 바뀐다.
@@ -62,7 +59,7 @@ function parseUntil(argv: readonly string[]): string | null {
 
 async function runMigrations(): Promise<void> {
     const until = parseUntil(process.argv.slice(2));
-    const sql = postgres(databaseUrl!, { max: 1 });
+    const sql = postgres(databaseUrl, { max: 1 });
     const drizzleRoot = path.resolve(__dirname, '../../drizzle');
 
     const journal: { entries: JournalEntry[] } = JSON.parse(
@@ -85,10 +82,7 @@ async function runMigrations(): Promise<void> {
             path.join(drizzleRoot, `${entry.tag}.sql`),
             'utf-8'
         );
-        const hash = crypto
-            .createHash('sha256')
-            .update(migrationSql)
-            .digest('hex');
+        const hash = hashMigrationSql(migrationSql);
 
         if (appliedHashes.has(hash)) {
             console.log(`skip (already applied): ${entry.tag}`);

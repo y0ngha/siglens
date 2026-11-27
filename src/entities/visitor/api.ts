@@ -6,6 +6,7 @@ import {
     countDistinct,
     desc,
     gte,
+    isNotNull,
     isNull,
     lt,
     sql,
@@ -15,12 +16,20 @@ import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { LOCALES } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import { GUEST_RETURN_WINDOWS } from './lib/visitHistory';
 import type {
     DailyActiveUsers,
     DailyLandingCount,
     EntrySource,
-    EntrySourceTally,
+    EntrySourceSiteTally,
+    FirstVisitBucket,
+    LandingSite,
+    LastVisitBucket,
+    ReturnWindow,
+    ReturnWindowRow,
     UserAgentTally,
+    VisitDaysBucket,
+    VisitDaysTally,
 } from './types';
 
 /**
@@ -42,6 +51,13 @@ export interface VisitorDayRecord {
     landingPath: string | null;
     /** 그날 첫 진입의 출처 분류. 같은 사이트 이동·직접 방문은 null. */
     entrySource: EntrySource | null;
+    /** 비콘을 보낸 사이트. 그날 첫 행의 값이 남는다. Referer가 없으면 null. */
+    landingSite: LandingSite | null;
+    /** 방문 이력 구간값(`VisitSignals`). 브라우저가 못 보냈으면 전부 null. */
+    firstVisitBucket: FirstVisitBucket | null;
+    lastVisitBucket: LastVisitBucket | null;
+    visitDaysBucket: VisitDaysBucket | null;
+    returnWindow: ReturnWindow | null;
     /** 비콘 시점의 로그인 회원 id. 비회원이면 null. 회원 D7/D30 재방문의 축. */
     userId: string | null;
 }
@@ -75,10 +91,21 @@ interface VisitorRepository {
         section: string
     ): Promise<DailyLandingCount[]>;
     /**
-     * `fromDate` 이후 구간의 첫 진입 출처별 방문 행 수(많은 순). AI 답변 서비스·검색엔진·SNS
-     * 중 어디서 들어오는지 보는 용도. 출처 없음(직접 방문·같은 사이트)은 `entrySource: null`.
+     * `fromDate` 이후 구간의 (사이트, 첫 진입 출처)별 방문 행 수(많은 순). 출처 없음(직접 방문·같은
+     * 사이트)은 `entrySource: null`, 사이트를 모르는 도입 전 행은 `site: null`. 새 방문·재방문은
+     * `first_visit_bucket` 기준이라 구간값이 없는 행은 둘 다에서 빠진다.
      */
-    entrySourceCounts(fromDate: string): Promise<EntrySourceTally[]>;
+    entrySourceBySite(fromDate: string): Promise<EntrySourceSiteTally[]>;
+    /** `fromDate` 이후 구간의 (사이트, 방문 날 수 구간)별 행 수. 구간값이 있는 행만 센다. */
+    visitDaysDistribution(fromDate: string): Promise<VisitDaysTally[]>;
+    /**
+     * 첫 방문일이 `[fromDate, toDate]`(KST, 양 끝 포함)인 새 방문과, 그 코호트가 창 안에서 처음 돌아온
+     * 건수를 사이트별로 센다. 돌아온 행은 창 중앙값만큼 옮긴 날짜 범위에서 센다(D1 정확, D7·D30 추정).
+     */
+    returnWindowCounts(
+        fromDate: string,
+        toDate: string
+    ): Promise<ReturnWindowRow[]>;
 }
 
 /**
@@ -190,13 +217,66 @@ export class DrizzleVisitorRepository implements VisitorRepository {
             .orderBy(desc(visitorDays.date));
     }
 
-    async entrySourceCounts(fromDate: string): Promise<EntrySourceTally[]> {
+    async entrySourceBySite(fromDate: string): Promise<EntrySourceSiteTally[]> {
         const tally = count();
         return this.db
-            .select({ entrySource: visitorDays.entrySource, count: tally })
+            .select({
+                site: visitorDays.landingSite,
+                entrySource: visitorDays.entrySource,
+                count: tally,
+                newVisitors: sql<number>`(count(*) filter (where ${visitorDays.firstVisitBucket} = 'new'))::int`,
+                returning: sql<number>`(count(*) filter (where ${visitorDays.firstVisitBucket} <> 'new'))::int`,
+            })
             .from(visitorDays)
             .where(gte(visitorDays.date, fromDate))
-            .groupBy(visitorDays.entrySource)
+            .groupBy(visitorDays.landingSite, visitorDays.entrySource)
             .orderBy(desc(tally));
+    }
+
+    async visitDaysDistribution(fromDate: string): Promise<VisitDaysTally[]> {
+        return this.db
+            .select({
+                site: visitorDays.landingSite,
+                bucket: sql<string>`${visitorDays.visitDaysBucket}`,
+                count: count(),
+            })
+            .from(visitorDays)
+            .where(
+                and(
+                    gte(visitorDays.date, fromDate),
+                    isNotNull(visitorDays.visitDaysBucket)
+                )
+            )
+            .groupBy(visitorDays.landingSite, visitorDays.visitDaysBucket)
+            .orderBy(visitorDays.landingSite, visitorDays.visitDaysBucket);
+    }
+
+    async returnWindowCounts(
+        fromDate: string,
+        toDate: string
+    ): Promise<ReturnWindowRow[]> {
+        // 창 중앙값 이동: 창 안의 첫 방문은 첫 방문 뒤 `startDay..endDay`일 사이 어느 날이든 올 수 있어
+        // 코호트를 중앙값(`round((startDay + endDay) / 2)`)만큼 옮겨 센다. D7·D30은 ±3일 경계의 추정이다.
+        const shift = (window: { startDay: number; endDay: number }) =>
+            Math.round((window.startDay + window.endDay) / 2);
+        const { d1, d7, d30 } = GUEST_RETURN_WINDOWS;
+        const lastEnd = Math.max(d1.endDay, d7.endDay, d30.endDay);
+        // postgres-js는 raw sql의 날짜 문자열을 그대로 두므로 `::date`로 캐스팅하고, 이동 일수는 `::int`로 넘긴다.
+        const rows = await this.db.execute<
+            ReturnWindowRow & Record<string, unknown>
+        >(sql`
+            select
+                landing_site as site,
+                (count(*) filter (where first_visit_bucket = 'new' and "date" between ${fromDate}::date and ${toDate}::date))::int as "newVisitors",
+                (count(*) filter (where return_window = 'd1' and "date" between ${fromDate}::date + ${shift(d1)}::int and ${toDate}::date + ${shift(d1)}::int))::int as d1,
+                (count(*) filter (where return_window = 'd7' and "date" between ${fromDate}::date + ${shift(d7)}::int and ${toDate}::date + ${shift(d7)}::int))::int as d7,
+                (count(*) filter (where return_window = 'd30' and "date" between ${fromDate}::date + ${shift(d30)}::int and ${toDate}::date + ${shift(d30)}::int))::int as d30
+            from ${visitorDays}
+            where "date" between ${fromDate}::date and ${toDate}::date + ${lastEnd}::int
+              and first_visit_bucket is not null
+            group by 1
+            order by 1
+        `);
+        return [...rows];
     }
 }

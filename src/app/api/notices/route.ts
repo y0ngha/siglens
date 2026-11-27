@@ -4,6 +4,7 @@ import { getActiveNoticesMemoized } from '@/entities/notice/server/activeNotices
 import type { NoticeWireRecord } from '@/entities/notice/model/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { resolveLocale } from '@/shared/i18n/locales';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 요청 URL(`?locale=`)을 읽으므로 빌드 시점에 굳을 수 없다. 캐시는 아래 `Cache-Control`로
 // CDN이 맡는다.
@@ -66,7 +67,10 @@ export async function GET(request: Request): Promise<Response> {
             headers: { 'Cache-Control': NOTICES_CACHE_CONTROL },
         });
     } catch (err) {
-        console.error('[api/notices] unexpected error:', err);
+        console.error(
+            '[api/notices] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return NextResponse.json([], { headers: NO_STORE });
     }
 }

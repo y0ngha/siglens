@@ -3,17 +3,24 @@
 import { verifyEmail } from '@/entities/auth/lib/verifyEmail';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { DrizzleUserRepository } from '@/entities/auth/api';
+import { createAuthRateLimitGuards } from '@/entities/auth/server/createAuthRateLimitGuards';
+import { createSignupVerificationCookie } from '@/entities/auth/lib/signupVerificationCookie';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
 import { getDatabaseClient } from '@/shared/db/client';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
+import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 가입 2단계: 받은 인증 코드를 확인하고, 이미 가입된 주소인지 확인한다.
  *
  * 중복 가입 여부는 코드 확인 **뒤에** 본다 — 메일함 소유를 증명한 사람에게만
  * 계정 존재 여부가 드러난다.
+ *
+ * 바인딩 쿠키는 마지막 `verified: true` 반환 직전에만 심는다. `email_already_exists`로 끝나는 경우에는
+ * 심지 않는다 — 그 브라우저는 가입을 이어 갈 수 없고, 마커만 있는 상태가 가입 가능으로 오해되면 안 된다.
  */
 export async function verifyEmailAction(
     _prev: VerifyEmailFormState,
@@ -35,7 +42,13 @@ export async function verifyEmailAction(
                 },
             };
         }
-        const result = await verifyEmail({ email, code }, { emailTokens });
+        const result = await verifyEmail(
+            { email, code },
+            {
+                emailTokens,
+                ...createAuthRateLimitGuards('signupEmailCodeRateLimit'),
+            }
+        );
 
         if (!result.ok) {
             return {
@@ -62,9 +75,15 @@ export async function verifyEmailAction(
             };
         }
 
+        (await cookies()).set(
+            createSignupVerificationCookie(result.bindingToken)
+        );
         return { verified: true, error: null };
     } catch (err) {
-        console.error('[verifyEmailAction] unexpected error:', err);
+        console.error(
+            '[verifyEmailAction] unexpected error:',
+            redactDbErrorForLog(err)
+        );
         return {
             verified: false,
             error: {

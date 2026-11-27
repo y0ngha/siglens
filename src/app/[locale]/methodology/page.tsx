@@ -15,6 +15,7 @@ import {
     buildMethodologyJsonLd,
 } from '@/app/[locale]/methodology/_lib/methodologyJsonLd';
 import { buildMethodologyMetadata } from '@/app/[locale]/methodology/_lib/methodologyMetadata';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // `/about`·`/terms`와 같은 근거 — 본문이 메시지 카탈로그와 코드 상수라 배포 자체가
 // 갱신이므로 하루 재검증이면 충분하다. 라우트 세그먼트 설정은 리터럴이어야 한다(AP-1).
@@ -41,7 +42,10 @@ export default async function MethodologyRoute({
     const [tSeo, counts] = await Promise.all([
         getTranslations({ locale, namespace: 'shared.seo' }),
         countSkillFiles().catch(e => {
-            console.error('[MethodologyPage] countSkillFiles failed:', e);
+            console.error(
+                '[MethodologyPage] countSkillFiles failed:',
+                redactDbErrorForLog(e)
+            );
             return EMPTY_SKILL_COUNTS;
         }),
     ]);

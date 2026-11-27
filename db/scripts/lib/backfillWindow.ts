@@ -20,6 +20,13 @@
  */
 export const DEFAULT_SINCE = '6 months';
 
+const SINCE_UNITS: Readonly<Record<string, string>> = {
+    d: 'days',
+    w: 'weeks',
+    m: 'months',
+    y: 'years',
+};
+
 /**
  * `--since` 값을 Postgres `interval` 리터럴로 바꾼다.
  *
@@ -35,6 +42,9 @@ export function parseSince(raw: string | null): string | null {
             `[backfill] --since 형식이 잘못됐다: ${raw} (예: 30d, 4w, 6m, 1y, all)`
         );
     }
-    const unit = { d: 'days', w: 'weeks', m: 'months', y: 'years' }[m[2]!]!;
+    const unit = SINCE_UNITS[m[2] ?? ''];
+    if (unit === undefined) {
+        throw new Error(`[backfill] --since 단위를 알 수 없다: ${raw}`);
+    }
     return `${m[1]} ${unit}`;
 }

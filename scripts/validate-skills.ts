@@ -67,6 +67,8 @@ const SIGNAL_CATALOG = [
     'rsi_bearish_divergence',
     'golden_cross',
     'death_cross',
+    'short_ma_bullish_cross',
+    'short_ma_bearish_cross',
     'macd_bullish_cross',
     'macd_bearish_cross',
     'macd_histogram_bullish_convergence',

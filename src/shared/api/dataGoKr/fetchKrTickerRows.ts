@@ -5,6 +5,7 @@ import {
     type KrxListedItem,
 } from './krxListedInfoClient';
 import { toKoreanTickerRows } from './toKoreanTickerRows';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export interface KrTickerRowsResult {
     /** 마스터(KRX 상장종목정보) 원본 항목 — KONEX 제외·중복 병합 전. 수신량 로그용. */
@@ -89,7 +90,7 @@ async function fetchSupplement(
     } catch (error) {
         console.error(
             '[kr-tickers] supplement fetch failed — delist will be skipped',
-            error
+            redactDbErrorForLog(error)
         );
         return null;
     }

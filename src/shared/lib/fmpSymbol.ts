@@ -7,6 +7,11 @@ const FMP_SYMBOL_ALIASES: Readonly<Record<string, string>> = {
     'BF.B': 'BF-B',
 };
 
+const FMP_SYMBOL_CANONICAL: Readonly<Record<string, string>> =
+    Object.fromEntries(
+        Object.entries(FMP_SYMBOL_ALIASES).map(([app, fmp]) => [fmp, app])
+    );
+
 /**
  * Converts a SIGLENS ticker to FMP's provider-specific notation.
  *
@@ -24,6 +29,15 @@ const FMP_SYMBOL_ALIASES: Readonly<Record<string, string>> = {
  */
 export function toFmpSymbol(symbol: string): string {
     return FMP_SYMBOL_ALIASES[symbol] ?? symbol;
+}
+
+/**
+ * Inverse of {@link toFmpSymbol} for symbols that arrive FROM FMP (screener
+ * results etc.): `BRK-B` → `BRK.B`. Only verified aliases are reversed, so
+ * hyphenated tickers that are genuinely canonical (`PBR-A`) pass through.
+ */
+export function fromFmpSymbol(symbol: string): string {
+    return FMP_SYMBOL_CANONICAL[symbol] ?? symbol;
 }
 
 /**

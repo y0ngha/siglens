@@ -26,6 +26,10 @@ import {
     PRIMARY_DOC_ORIGINAL,
     PRIMARY_DOC_RESTATEMENT,
 } from '../fixtures/investorFlowsSamples';
+import {
+    PLANTED_TOKEN,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 const NOW = new Date('2026-10-15T12:00:00Z'); // Thursday; Q2 (06-30) is complete, Q3 (09-30) in progress
 const ABBOTT = '002824100';
@@ -1715,5 +1719,18 @@ describe('run13fIngest', () => {
                 INVESTOR_FLOWS_REVALIDATE_CAP
             );
         });
+    });
+
+    it('a DB error while processing a filing is recorded as name and code only', async () => {
+        const { deps, calls } = build(original());
+        deps.sec.fetchFilingIndexJson = async () => {
+            throw plantedDbError();
+        };
+        await run13fIngest(deps);
+        expect(calls.failures.length).toBeGreaterThan(0);
+        const stored = calls.failures.map(f => f.error).join('\n');
+        expect(stored).toContain('Error code=57014');
+        expect(stored).not.toContain(PLANTED_TOKEN);
+        expect(stored).not.toContain('Failed query');
     });
 });

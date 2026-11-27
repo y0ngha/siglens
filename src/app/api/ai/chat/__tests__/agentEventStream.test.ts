@@ -8,6 +8,10 @@ import {
     __activeStreamCount,
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
+import {
+    expectLogWithoutPlantedSecrets,
+    plantedDbError,
+} from '@/shared/test-utils/plantedDbError';
 
 async function readAll(stream: ReadableStream<Uint8Array>): Promise<string[]> {
     const reader = stream.getReader();
@@ -210,5 +214,27 @@ describe('agentEventStream', () => {
         await reader.read();
         await reader.cancel();
         expect(() => emitLate({ type: 'text', delta: 'late' })).not.toThrow();
+    });
+
+    it('DB 에러는 알람 접두사를 지키되 파라미터 없이 console.error로 남긴다', async () => {
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            await readAll(
+                agentEventStream({
+                    meta: {},
+                    work: async () => {
+                        throw plantedDbError();
+                    },
+                    onAbort: vi.fn(),
+                })
+            );
+            expect(err).toHaveBeenCalledWith(
+                '[agent-stream] failed:',
+                'Error code=57014'
+            );
+            expectLogWithoutPlantedSecrets(err);
+        } finally {
+            err.mockRestore();
+        }
     });
 });

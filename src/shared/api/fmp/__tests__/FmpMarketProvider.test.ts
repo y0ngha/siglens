@@ -403,7 +403,7 @@ describe('FmpMarketProvider', () => {
              * Shifted: 2026-01-16T00:30:00Z + (-5h) → 2026-01-15T19:30:00 ET (same day).
              * Date extracted from shifted instant = 2026-01-15 ✓
              */
-            // timestamp in seconds: 2026-01-16T00:30:00Z
+            /** timestamp in seconds: 2026-01-16T00:30:00Z */
             const timestampSec = Math.floor(
                 Date.UTC(2026, 0, 16, 0, 30, 0) / MS_PER_SECOND
             );

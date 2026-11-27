@@ -5,7 +5,7 @@ import {
     overlaySeriesStyle,
     withOpacity,
 } from '../../utils/overlaySeriesSync';
-import type { OverlayLineSpec } from '../../utils/chartOverlayUtils';
+import type { OverlayLineSpec } from '@/entities/analysis/lib/chartOverlays/chartOverlayUtils';
 
 const SPEC: OverlayLineSpec = {
     paneIndex: 0,

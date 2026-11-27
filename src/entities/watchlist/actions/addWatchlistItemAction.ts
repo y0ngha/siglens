@@ -12,6 +12,7 @@ import { normalizeWatchlistLabel } from '../lib/normalizeWatchlistLabel';
 import { toWatchlistView } from '../lib/toWatchlistView';
 import { validateWatchlistSymbol } from '../lib/validateWatchlistSymbol';
 import type { AddWatchlistResult, RawWatchlistInput } from '../model';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 type CompanyNameResolution =
     | { status: 'ok'; companyName: string | null }
@@ -35,7 +36,7 @@ async function resolveCompanyName(
     } catch (error) {
         console.warn(
             '[addWatchlistItemAction] symbol verification unavailable, proceeding',
-            error
+            redactDbErrorForLog(error)
         );
         return { status: 'ok', companyName: fallback };
     }

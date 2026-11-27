@@ -13,7 +13,7 @@ const REG_SHO_LEASE_TTL_SECONDS = 7 * 60;
  * Reg SHO 과열 목록 수집 cron(`PATCH /api/cron/reg-sho-threshold`) — 평일 05:00 UTC. 거래소 서버(Nasdaq·NYSE·Cboe)라 SEC 요청
  * 예산·공유 락과 무관해 이름별 락을 쓴다.
  *
- * ⚠️ `REG_SHO_THRESHOLD_DATA_ENABLED=false`면 요청 0건으로 끝난다(거래소 데이터 비상업 라이선스, 이슈 #1042 —
+ * ⚠️ `REG_SHO_THRESHOLD_DATA_ENABLED=false`면 요청 0건으로 끝난다(거래소 데이터 비상업 라이선스 —
  * `shared/api/exchange/regShoThresholdDataEnabled.ts`).
  */
 export async function PATCH(request: Request): Promise<Response> {

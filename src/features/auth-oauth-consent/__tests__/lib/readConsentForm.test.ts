@@ -54,4 +54,25 @@ describe('readConsentForm', () => {
         const input = formData({ agreed_privacy: 'on', agreed_tos: 'on' });
         expect(readConsentForm(input).agreed).toBe(false);
     });
+
+    it('reads the optional email report opt-in separately from the required consents', () => {
+        const input = formData({
+            agreed_privacy: 'true',
+            agreed_tos: 'true',
+            email_report_opt_in: 'true',
+            email_report_timezone: 'Europe/London',
+        });
+        expect(readConsentForm(input)).toMatchObject({
+            agreed: true,
+            emailReportOptIn: { optIn: true, timezone: 'Europe/London' },
+        });
+    });
+
+    it('does not opt in to the email report when the field is missing', () => {
+        const input = formData({ agreed_privacy: 'true', agreed_tos: 'true' });
+        expect(readConsentForm(input).emailReportOptIn).toEqual({
+            optIn: false,
+            timezone: 'Asia/Seoul',
+        });
+    });
 });

@@ -5,6 +5,7 @@ import {
     runFundamentalAnalysis,
     runFinancialsAnalysis,
     runCongressTrend,
+    peekOverallAnalysisCache,
     DEEPSEEK_V4_1_FLASH_MODEL,
     type AssembledPromptRecord,
     type RunAnalysisResult,
@@ -25,6 +26,7 @@ import {
     getDescriptor,
 } from '@/shared/config/marketProfile/registry';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { withKrValuation } from '@/entities/kr-valuation/server/withKrValuation';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -40,6 +42,7 @@ import {
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import {
     DrizzleAnalysisHistoryRepository,
@@ -52,6 +55,7 @@ import {
     loadFinancialsScorecardOrUndefined,
     loadOptionsSnapshotOrNull,
 } from './server/overallAxisInputs';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_1_FLASH_MODEL`을 직접 명시 전달하는
@@ -114,6 +118,10 @@ async function persistPrewarmAnalysis(input: {
             // failed; retrying once on fallback model` 경고와 provider의 `[Usage]`
             // 텔레메트리로 확인할 수 있다.
             modelId: DEEPSEEK_V4_1_FLASH_MODEL,
+            // 프리웜은 항상 free tier로 생성한다(캐시 키 5축 정합 때문에 올릴 수 없다).
+            tier: 'free',
+            // 프리웜은 free tier라 포지션 버킷이 없다.
+            personalized: false,
             // 프리웜은 현재 한국어로만 생성한다(harvest.ts의 `resolveHarvest`가
             // 같은 이유로 스냅샷에 `DEFAULT_LOCALE`을 적는 것과 동일한 근거).
             locale: DEFAULT_LOCALE,
@@ -124,7 +132,7 @@ async function persistPrewarmAnalysis(input: {
     } catch (err) {
         console.error(
             '[entities/analysis/api] persistPrewarmAnalysis failed:',
-            err
+            redactDbErrorForLog(err)
         );
     }
 }
@@ -250,7 +258,12 @@ export async function prewarmFundamental(
     return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        dataProvider: getFundamentalDataProvider(symbol),
+        // 프리웜은 기다리는 사람이 없어 DART를 크론 기본 옵션(`background`)으로 읽는다.
+        dataProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol,
+            { mode: 'background' }
+        ),
         // 방문자 경로와 같은 통화를 넘겨야 prewarm이 채운 캐시의 산출 텍스트가 갈리지 않는다.
         currency: currencyForSymbol(symbol),
         currentPrice: () =>
@@ -427,7 +440,11 @@ export async function prewarmOverall(
         companyName,
         timeframe,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
-        fundamentalProvider: getFundamentalDataProvider(symbol),
+        fundamentalProvider: withKrValuation(
+            getFundamentalDataProvider(symbol),
+            symbol,
+            { mode: 'background' }
+        ),
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
@@ -476,4 +493,39 @@ export async function prewarmOverall(
     // 모양이라 사문(死文) 행만 쌓인다(스트림 경로의 같은 지점 주석 참고).
 
     return result;
+}
+
+/**
+ * 종합 분석 캐시에 지금 결과가 있는가 — 읽기 전용(생성·enqueue 없음, LLM 없음)이다.
+ *
+ * 프리웜이 시간 초과로 기다리기를 포기한 종합 호출의 결과가 캐시에 올라왔는지 확인해, 올라온 뒤에만
+ * 종합 탭 엿보기 태그를 털게 하는 용도다(`app/api/cron/seo-prewarm/overallWarm.ts`). 캐시 키는 종합 탭
+ * SSR 엿보기(`app/[locale]/[symbol]/overall/_lib/overallPeek.ts`)와 같아야 한다 — 같은 기본 모델·
+ * reasoning off·기본 타임프레임·기본 로케일. 데이터 캐시(`staticSymbolCache`)를 거치지 않고 core를 직접
+ * 읽는다: 거치면 그 캐시가 들고 있는 빈 엿보기를 그대로 읽는다.
+ *
+ * 이 키는 최신 결과를 덮어쓰는 포인터(TTL 24시간)라 항목이 있다는 사실만으로는 **방금 포기한 호출의 새
+ * 결과**인지 어제의 사전 생성·방문자가 만든 이전 결과인지 가를 수 없다. 그래서 항목의 `analyzedAt`
+ * (core 2.42.0, LLM 호출 뒤에 찍힌다)이 `sinceMs`(포기한 호출의 시작 시각) 이후일 때만 true다.
+ * `analyzedAt`이 없는 옛 항목은 시각을 모르므로 이전 결과로 취급해 false다.
+ *
+ * @param sinceMs - 이 시각(epoch ms) 이후에 생성된 결과만 새 결과로 본다.
+ */
+export async function hasPrewarmedOverall(
+    symbol: string,
+    sinceMs: number
+): Promise<boolean> {
+    const cached = await peekOverallAnalysisCache(
+        symbol,
+        symbol,
+        DEFAULT_TIMEFRAME,
+        DEEPSEEK_V4_1_FLASH_MODEL,
+        false,
+        undefined,
+        undefined,
+        DEFAULT_LOCALE
+    );
+    if (cached === null || cached.analyzedAt === undefined) return false;
+    const analyzedAtMs = Date.parse(cached.analyzedAt);
+    return Number.isFinite(analyzedAtMs) && analyzedAtMs >= sinceMs;
 }

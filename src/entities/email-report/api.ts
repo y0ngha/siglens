@@ -1,9 +1,21 @@
-import { and, eq, inArray, lt, sql } from 'drizzle-orm';
+import {
+    and,
+    eq,
+    gt,
+    inArray,
+    lt,
+    ne,
+    notExists,
+    notInArray,
+    or,
+    sql,
+} from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     emailReportDeliveries,
     emailReportExcludedSymbols,
     emailReportSubscriptions,
+    emailReportWelcomes,
     users,
 } from '@/shared/db/schema';
 import type {
@@ -14,13 +26,19 @@ import type {
     EmailReportRecipient,
     EmailReportSubscriptionRecord,
     EmailReportSubscriptionRepository,
+    EmailReportWelcomeOutcome,
+    EmailReportWelcomeRecipient,
+    EmailReportWelcomeRepository,
     SiglensDatabase,
     UpsertEmailReportSubscriptionInput,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-
-/** 메일 리포트 대상 등급 — 가입 회원 이상(무료 회원 포함). */
-const EMAIL_REPORT_TIERS = ['member', 'pro'] as const;
+import {
+    EMAIL_REPORT_TIERS,
+    WELCOME_MAX_ATTEMPTS,
+    WELCOME_STALE_SENDING_MS,
+    WELCOME_WINDOW_MS,
+} from './lib/emailReportConstants';
 
 /** 구독 행의 select 컬럼 — 조회·upsert 반환이 같은 `EmailReportSubscriptionRecord` 모양을 쓴다. */
 const columns = {
@@ -31,6 +49,7 @@ const columns = {
     timezone: emailReportSubscriptions.timezone,
     locale: emailReportSubscriptions.locale,
     consentedAt: emailReportSubscriptions.consentedAt,
+    consentSource: emailReportSubscriptions.consentSource,
     createdAt: emailReportSubscriptions.createdAt,
     updatedAt: emailReportSubscriptions.updatedAt,
 };
@@ -41,7 +60,8 @@ const columns = {
  *
  * `consented_at`은 **회원이 수신을 마지막으로 켠 시각**이다. `enabled = true` upsert는 저장돼 있던
  * 행이 꺼져 있었거나(또는 없었을) 때만 이 값을 찍는다. 이미 켜진 구독을 다시 저장하면(예: 시각 변경)
- * 동의 시각을 조용히 옮기지 않고 원래 값을 지킨다.
+ * 동의 시각을 조용히 옮기지 않고 원래 값을 지킨다. `consent_source`(수신을 켠 화면)도 같은 규칙이다:
+ * 꺼진 상태에서 켤 때만 입력 값으로 바뀌고, 이미 켜져 있으면 처음 동의한 화면을 지킨다.
  */
 export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubscriptionRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -78,6 +98,9 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
                         timezone: input.timezone,
                         locale: input.locale,
                         consentedAt: input.enabled ? sql`now()` : null,
+                        consentSource: input.enabled
+                            ? input.consentSource
+                            : null,
                     })
                     .onConflictDoUpdate({
                         target: emailReportSubscriptions.userId,
@@ -90,6 +113,9 @@ export class DrizzleEmailReportSubscriptionRepository implements EmailReportSubs
                             consentedAt: input.enabled
                                 ? sql`case when ${emailReportSubscriptions.enabled} then ${emailReportSubscriptions.consentedAt} else now() end`
                                 : sql`${emailReportSubscriptions.consentedAt}`,
+                            consentSource: input.enabled
+                                ? sql`case when ${emailReportSubscriptions.enabled} then ${emailReportSubscriptions.consentSource} else ${input.consentSource} end`
+                                : sql`${emailReportSubscriptions.consentSource}`,
                             updatedAt: sql`now()`,
                         },
                     })
@@ -208,6 +234,250 @@ export class DrizzleEmailReportDeliveryRepository implements EmailReportDelivery
                     .delete(emailReportDeliveries)
                     .where(lt(emailReportDeliveries.createdAt, cutoff))
                     .returning({ id: emailReportDeliveries.id }),
+            DB_TRANSIENT_RETRY
+        );
+        return deleted.length;
+    }
+}
+
+/**
+ * {@link EmailReportWelcomeRepository}의 Drizzle 구현. 회원당 한 행(`user_id`가 기본키)이라
+ * "가입 첫 리포트는 한 번만"을 PK가 보장한다 — cron이 **보내기 전에** 행을 삽입해 선점한다.
+ * 모든 쿼리는 일시적 DB 오류에 한해 재시도한다.
+ *
+ * 대상은 가입 화면에서 수신을 고른 회원(`consent_source`가 `signup_email`·`signup_oauth`)이다.
+ * 설정 화면에서 켠 회원에게는 첫 리포트를 보내지 않는다 — 그 회원은 정기 일정만 기다린다.
+ * 인증된 주소와 메일 리포트 대상 등급만 받는다(`findEnabledRecipients`와 같은 기준).
+ */
+export class DrizzleEmailReportWelcomeRepository implements EmailReportWelcomeRepository {
+    constructor(private readonly db: SiglensDatabase) {}
+
+    /**
+     * 한 트랜잭션에서 (1) 대상 회원을 고르고 (2) 아직 행이 없는 회원을 `sending`으로 삽입하고 (3) 실패했거나
+     * `sending`인 채 멈춘 행을 시도 횟수 안에서 다시 잡은 뒤 (4) 잡은 회원의 수신자 정보를 읽는다. 겹쳐 도는
+     * 두 cron이 같은 대상을 함께 골라도 삽입은 PK 충돌(`ON CONFLICT DO NOTHING`은 진 쪽에 행을 돌려주지
+     * 않는다), 갱신은 행 잠금과 재평가로 한쪽만 이긴다. 모든 시각 비교는 인자 `now`를 쓴다.
+     */
+    async claimDue(now: Date): Promise<EmailReportWelcomeRecipient[]> {
+        const windowStart = new Date(now.getTime() - WELCOME_WINDOW_MS);
+        const staleBefore = new Date(now.getTime() - WELCOME_STALE_SENDING_MS);
+        return withRetry(
+            () =>
+                this.db.transaction(async tx => {
+                    const eligible = await tx
+                        .select({ userId: emailReportSubscriptions.userId })
+                        .from(emailReportSubscriptions)
+                        .innerJoin(
+                            users,
+                            eq(users.id, emailReportSubscriptions.userId)
+                        )
+                        .where(
+                            and(
+                                eq(emailReportSubscriptions.enabled, true),
+                                inArray(
+                                    emailReportSubscriptions.consentSource,
+                                    ['signup_email', 'signup_oauth']
+                                ),
+                                gt(
+                                    emailReportSubscriptions.consentedAt,
+                                    windowStart
+                                ),
+                                eq(users.emailVerified, true),
+                                inArray(users.tier, EMAIL_REPORT_TIERS),
+                                // 동의한 뒤 정기 리포트가 이미 나갔으면 첫 리포트는 보내지 않는다 —
+                                // 정기 메일 뒤에 환영 메일이 뒤따르면 순서가 거꾸로다.
+                                notExists(
+                                    tx
+                                        .select({ one: sql`1` })
+                                        .from(emailReportDeliveries)
+                                        .where(
+                                            and(
+                                                eq(
+                                                    emailReportDeliveries.userId,
+                                                    emailReportSubscriptions.userId
+                                                ),
+                                                eq(
+                                                    emailReportDeliveries.status,
+                                                    'sent'
+                                                ),
+                                                gt(
+                                                    emailReportDeliveries.updatedAt,
+                                                    emailReportSubscriptions.consentedAt
+                                                )
+                                            )
+                                        )
+                                )
+                            )
+                        );
+                    if (eligible.length === 0) return [];
+                    const eligibleIds = eligible.map(row => row.userId);
+                    const inserted = await tx
+                        .insert(emailReportWelcomes)
+                        .values(
+                            eligibleIds.map(userId => ({
+                                userId,
+                                status: 'sending' as const,
+                                attempts: 1,
+                            }))
+                        )
+                        .onConflictDoNothing({
+                            target: emailReportWelcomes.userId,
+                        })
+                        .returning({ userId: emailReportWelcomes.userId });
+                    // 방금 삽입한 행은 재시도 대상이 아니다. 앱 시계가 DB `now()`보다 앞서면 `updated_at`이 "30분
+                    // 전"보다 이전으로 보여 같은 트랜잭션에서 곧바로 다시 잡힐 수 있다.
+                    const insertedIds = inserted.map(row => row.userId);
+                    const retried = await tx
+                        .update(emailReportWelcomes)
+                        .set({
+                            status: 'sending',
+                            attempts: sql`${emailReportWelcomes.attempts} + 1`,
+                            updatedAt: sql`now()`,
+                        })
+                        .where(
+                            and(
+                                inArray(
+                                    emailReportWelcomes.userId,
+                                    eligibleIds
+                                ),
+                                ...(insertedIds.length > 0
+                                    ? [
+                                          notInArray(
+                                              emailReportWelcomes.userId,
+                                              insertedIds
+                                          ),
+                                      ]
+                                    : []),
+                                lt(
+                                    emailReportWelcomes.attempts,
+                                    WELCOME_MAX_ATTEMPTS
+                                ),
+                                or(
+                                    eq(emailReportWelcomes.status, 'failed'),
+                                    and(
+                                        eq(
+                                            emailReportWelcomes.status,
+                                            'sending'
+                                        ),
+                                        lt(
+                                            emailReportWelcomes.updatedAt,
+                                            staleBefore
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        .returning({ userId: emailReportWelcomes.userId });
+                    const claimedIds = [...inserted, ...retried].map(
+                        row => row.userId
+                    );
+                    if (claimedIds.length === 0) return [];
+                    const rows = await tx
+                        .select({
+                            userId: emailReportSubscriptions.userId,
+                            email: users.email,
+                            daysOfWeek: emailReportSubscriptions.daysOfWeek,
+                            sendHour: emailReportSubscriptions.sendHour,
+                            timezone: emailReportSubscriptions.timezone,
+                            locale: emailReportSubscriptions.locale,
+                            consentedAt: emailReportSubscriptions.consentedAt,
+                            attempts: emailReportWelcomes.attempts,
+                        })
+                        .from(emailReportWelcomes)
+                        .innerJoin(
+                            emailReportSubscriptions,
+                            eq(
+                                emailReportSubscriptions.userId,
+                                emailReportWelcomes.userId
+                            )
+                        )
+                        .innerJoin(
+                            users,
+                            eq(users.id, emailReportWelcomes.userId)
+                        )
+                        .where(inArray(emailReportWelcomes.userId, claimedIds));
+                    // `consented_at`은 대상 조건(창 안)에서 null일 수 없지만 타입은 nullable이다.
+                    return rows.flatMap(({ consentedAt, ...rest }) =>
+                        consentedAt === null ? [] : [{ ...rest, consentedAt }]
+                    );
+                }),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * 선점한 행에 결과를 기록한다. `sent`일 때만 보낸 시각을 찍는다. 이미 `sent`인 행은 `failed`·`retry`로
+     * 덮어쓰지 않는다 — 보낸 메일을 실패로 남기면 다음 실행이 같은 회원에게 다시 보낸다. `retry`는 시도를
+     * 쓰지 않은 채 `failed`로 돌려놓아(횟수를 되돌린다) 다음 실행이 같은 횟수로 다시 잡게 한다.
+     */
+    async finish(
+        userId: string,
+        outcome: EmailReportWelcomeOutcome,
+        error: string | null
+    ): Promise<void> {
+        await withRetry(
+            () =>
+                this.db
+                    .update(emailReportWelcomes)
+                    .set({
+                        status: outcome === 'sent' ? 'sent' : 'failed',
+                        error,
+                        ...(outcome === 'sent' && { sentAt: sql`now()` }),
+                        ...(outcome === 'retry' && {
+                            attempts: sql`greatest(${emailReportWelcomes.attempts} - 1, 0)`,
+                        }),
+                        updatedAt: sql`now()`,
+                    })
+                    .where(
+                        outcome === 'sent'
+                            ? eq(emailReportWelcomes.userId, userId)
+                            : and(
+                                  eq(emailReportWelcomes.userId, userId),
+                                  ne(emailReportWelcomes.status, 'sent')
+                              )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * 정기 회차를 건너뛸 회원: `sentSince` 뒤에 첫 리포트를 보냈거나, 아직 `sending`이고 `inFlightSince`
+     * 뒤에 갱신된 회원(겹친 다른 실행이 보내는 중일 수 있다).
+     */
+    async findWelcomed(
+        sentSince: Date,
+        inFlightSince: Date
+    ): Promise<Set<string>> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({ userId: emailReportWelcomes.userId })
+                    .from(emailReportWelcomes)
+                    .where(
+                        or(
+                            and(
+                                eq(emailReportWelcomes.status, 'sent'),
+                                gt(emailReportWelcomes.sentAt, sentSince)
+                            ),
+                            and(
+                                eq(emailReportWelcomes.status, 'sending'),
+                                gt(emailReportWelcomes.updatedAt, inFlightSince)
+                            )
+                        )
+                    ),
+            DB_TRANSIENT_RETRY
+        );
+        return new Set(rows.map(row => row.userId));
+    }
+
+    /** `cutoff`보다 먼저 만들어진 기록을 지우고 지운 행 수를 돌려준다. */
+    async pruneOlderThan(cutoff: Date): Promise<number> {
+        const deleted = await withRetry(
+            () =>
+                this.db
+                    .delete(emailReportWelcomes)
+                    .where(lt(emailReportWelcomes.createdAt, cutoff))
+                    .returning({ userId: emailReportWelcomes.userId }),
             DB_TRANSIENT_RETRY
         );
         return deleted.length;

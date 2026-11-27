@@ -1,10 +1,12 @@
 import {
     buildChartImageUrl,
+    buildMarketPageUrl,
     buildSymbolPageUrl,
     buildUnsubscribeApiUrl,
     buildUnsubscribePageUrl,
     chartSignatureValue,
 } from '@/entities/email-report/lib/reportLinks';
+import { defined } from '@/shared/test-utils/defined';
 import { verifyReportValue } from '@/entities/email-report/lib/reportSignature';
 
 const SITE = 'https://siglens.io';
@@ -27,6 +29,78 @@ describe('reportLinks', () => {
                 url.searchParams.get('sig')!
             )
         ).toBe(true);
+    });
+
+    describe('차트 URL 서명 고정', () => {
+        // 값을 하드코딩해 둔다 — 서명 입력 모양이 바뀌면 이미 나간 메일의 이미지가 깨진다.
+        const ANALYSIS_AT = new Date(1_793_062_800_123);
+
+        it('작도가 없는 URL은 옛 서명(symbol:date)을 그대로 쓰고 a가 없다', () => {
+            const url = new URL(
+                buildChartImageUrl(SITE, SECRET, '005930.KS', '2026-10-08')
+            );
+
+            expect(url.searchParams.has('a')).toBe(false);
+            expect(url.searchParams.get('sig')).toBe(
+                'KPs38qrgBgzicJ4krxKoiEj-3giePfDIEOL5lWim1Kk'
+            );
+            expect(chartSignatureValue('005930.KS', '2026-10-08')).toBe(
+                '005930.KS:2026-10-08'
+            );
+        });
+
+        it('작도가 있는 URL은 분석 시각(epoch 밀리초)을 a로 싣고 서명이 그 시각을 묶는다', () => {
+            const url = new URL(
+                buildChartImageUrl(
+                    SITE,
+                    SECRET,
+                    '005930.KS',
+                    '2026-10-08',
+                    ANALYSIS_AT
+                )
+            );
+
+            expect(url.searchParams.get('a')).toBe('1793062800123');
+            expect(url.searchParams.get('sig')).toBe(
+                '-q-r7jtYQMTAZUxLazeq2DhyirLkaT33v5JH8EzMCF0'
+            );
+            expect(
+                chartSignatureValue('005930.KS', '2026-10-08', '1793062800123')
+            ).toBe('005930.KS:2026-10-08:1793062800123');
+        });
+
+        it('다른 분석 시각의 서명은 통하지 않는다', () => {
+            const url = new URL(
+                buildChartImageUrl(
+                    SITE,
+                    SECRET,
+                    '005930.KS',
+                    '2026-10-08',
+                    ANALYSIS_AT
+                )
+            );
+
+            expect(
+                verifyReportValue(
+                    SECRET,
+                    'chart',
+                    chartSignatureValue(
+                        '005930.KS',
+                        '2026-10-08',
+                        '1793062800124'
+                    ),
+                    defined(url.searchParams.get('sig'))
+                )
+            ).toBe(false);
+            expect(
+                verifyReportValue(
+                    SECRET,
+                    'chart',
+                    chartSignatureValue('005930.KS', '2026-10-08'),
+                    defined(url.searchParams.get('sig'))
+                )
+            ).toBe(false);
+        });
     });
 
     it('수신거부 페이지 URL은 로케일 경로를 따르고 회원 id 서명을 싣는다', () => {
@@ -57,5 +131,28 @@ describe('reportLinks', () => {
 
         expect(url.pathname).toBe('/ja/AAPL');
         expect(url.searchParams.get('utm_campaign')).toBe('email_report');
+    });
+
+    it('종목 페이지 URL은 메일 출처 UTM 세 쌍을 싣는다', () => {
+        const url = new URL(buildSymbolPageUrl(SITE, 'ko', 'AAPL'));
+
+        expect(url.searchParams.get('utm_source')).toBe('email');
+        expect(url.searchParams.get('utm_medium')).toBe('email');
+        expect(url.searchParams.get('utm_campaign')).toBe('email_report');
+    });
+
+    it('시장 페이지 URL은 로케일 경로와 같은 UTM을 싣는다', () => {
+        const url = new URL(buildMarketPageUrl(SITE, 'en'));
+
+        expect(url.pathname).toBe('/en/market');
+        expect(url.searchParams.get('utm_source')).toBe('email');
+        expect(url.searchParams.get('utm_medium')).toBe('email');
+        expect(url.searchParams.get('utm_campaign')).toBe('email_report');
+    });
+
+    it('한국어 시장 페이지 URL은 로케일 접두사가 없다', () => {
+        expect(new URL(buildMarketPageUrl(SITE, 'ko')).pathname).toBe(
+            '/market'
+        );
     });
 });

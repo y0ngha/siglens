@@ -11,6 +11,7 @@ import {
     EmailReportSettingsSkeleton,
 } from './_components/EmailReportGuard';
 import { IncludedSymbolsNote } from './_components/IncludedSymbolsNote';
+import { MailAlertsLinkRow } from './_components/MailAlertsLinkRow';
 import { EMAIL_REPORT_PATH } from './_lib/paths';
 
 /** 로그인 전용 개인 설정 페이지 — 색인하지 않는다(포트폴리오·계정 설정과 같은 취급). */
@@ -65,6 +66,7 @@ export default async function EmailReportPage({
                     </Suspense>
                 </section>
                 <IncludedSymbolsNote />
+                <MailAlertsLinkRow />
             </div>
         </main>
     );

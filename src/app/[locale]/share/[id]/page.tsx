@@ -5,6 +5,7 @@ import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getC
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
+import { ShareOpenedPing } from '@/features/visitor-ping/ui/ShareOpenedPing';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { brandName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
@@ -81,6 +82,8 @@ export default async function SharePage({ params }: Props) {
     const label = tLabel(kindLabelKey(snapshot.kind));
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
+            {/* 만료·없는 링크는 위 notFound()에서 끝나 여기까지 오지 않는다. */}
+            <ShareOpenedPing id={id} kind={snapshot.kind} />
             {/* 이 h1에는 텍스트 스타일이 없다 — 의도된 것이다. 직접 텍스트 노드가
                 없고 네 개의 자식 span이 각자 크기·굵기·색을 갖는 브레드크럼 형태라
                 (브랜드 / TICKER [종류]), 상속색은 화면에 나타나지 않는다.

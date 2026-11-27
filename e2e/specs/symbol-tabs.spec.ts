@@ -50,6 +50,13 @@ const TABS = [
         heading: CHART_H1,
     },
     {
+        key: 'overall',
+        label: '종합',
+        path: '/AAPL/overall',
+        urlRe: /\/AAPL\/overall$/,
+        heading: /차트와 옵션 시장, 실적, 뉴스 종합 분석/,
+    },
+    {
         key: 'news',
         label: '뉴스',
         path: '/AAPL/news',
@@ -78,13 +85,6 @@ const TABS = [
         path: '/AAPL/fear-greed',
         urlRe: /\/AAPL\/fear-greed$/,
         heading: /공포 탐욕 지수: 0~100 점수와 최근 흐름/,
-    },
-    {
-        key: 'overall',
-        label: '종합',
-        path: '/AAPL/overall',
-        urlRe: /\/AAPL\/overall$/,
-        heading: /차트와 옵션 시장, 실적, 뉴스 종합 분석/,
     },
 ] as const;
 
@@ -119,6 +119,24 @@ test.describe('@webkit symbol tabs', () => {
 
         const tabNav = page.getByRole('navigation', { name: TAB_NAV_NAME });
         if (!isMobile) await expect(tabNav).toBeVisible();
+
+        // 탭 순서 자체를 고정한다 — 아래 순회는 라벨로 링크를 찾아 누르므로 순서가 바뀌어도 통과한다.
+        // 종합은 차트 바로 다음, 내 위치는 마지막이다(`symbolTabsConfig.ts`).
+        await expect(tabNav.getByRole('link')).toHaveText(
+            [
+                '차트',
+                '종합',
+                '뉴스',
+                '펀더멘털',
+                '재무제표',
+                '의회 거래',
+                '수급',
+                '옵션',
+                '공포 탐욕 지수',
+                '내 위치',
+            ],
+            { timeout: 15_000 }
+        );
 
         for (const tab of TABS) {
             if (isMobile) {

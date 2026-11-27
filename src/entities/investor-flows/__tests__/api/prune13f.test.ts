@@ -40,11 +40,11 @@ describe('prunePositionsBefore', () => {
             () => false
         );
         expect(result).toEqual({ deleted: 7, done: true });
-        expect(renderSql(ops[0]?.target as never).text).toContain(
-            'DELETE FROM sec_13f_positions WHERE ctid IN'
+        expect(renderSql(ops[0]?.target as never).text).toBe(
+            ' DELETE FROM sec_13f_positions WHERE ctid IN ( SELECT ctid FROM sec_13f_positions WHERE period < $1::date LIMIT $2 )'
         );
-        expect(renderSql(ops[1]?.target as never).text).toContain(
-            'DELETE FROM sec_13f_option_positions WHERE ctid IN'
+        expect(renderSql(ops[1]?.target as never).text).toBe(
+            ' DELETE FROM sec_13f_option_positions WHERE ctid IN ( SELECT ctid FROM sec_13f_option_positions WHERE period < $1::date LIMIT $2 )'
         );
     });
 

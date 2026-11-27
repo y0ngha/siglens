@@ -9,6 +9,7 @@ import { MS_PER_MINUTE, SECONDS_PER_DAY } from '@/shared/config/time';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { SlottedOptionsSnapshot } from '../lib/optionsSlots';
 import { rebaseOptionsSnapshot } from '../lib/rebaseOptionsSnapshot';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // 로그 태그 `[optionsDataCache]`는 모듈 분리 뒤에도 의도적으로 유지한다 — grep·알림 연속성.
 
@@ -78,7 +79,11 @@ export async function writeLastGoodSnapshot(
             ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS,
         });
     } catch (error) {
-        console.error('[optionsDataCache] Redis set failed for', key, error);
+        console.error(
+            '[optionsDataCache] Redis set failed for',
+            key,
+            redactDbErrorForLog(error)
+        );
         return false;
     }
     // 보조 키 실패는 흡수한다 — 없으면 워밍이 그 종목을 "미확보"로 보고 한 번 더 돌 뿐이다.
@@ -91,7 +96,7 @@ export async function writeLastGoodSnapshot(
         console.error(
             '[optionsDataCache] Redis set failed for',
             capturedAtKey,
-            error
+            redactDbErrorForLog(error)
         );
     }
     return true;
@@ -119,7 +124,11 @@ export async function shouldRewriteLastGood(
             now.getTime() - capturedMs >= LAST_GOOD_MIN_REWRITE_INTERVAL_MS
         );
     } catch (error) {
-        console.error('[optionsDataCache] Redis get failed for', key, error);
+        console.error(
+            '[optionsDataCache] Redis get failed for',
+            key,
+            redactDbErrorForLog(error)
+        );
         return true;
     }
 }
@@ -160,7 +169,11 @@ export async function readLastGoodSnapshot(
         }
         return { snapshot: rebased };
     } catch (error) {
-        console.error('[optionsDataCache] Redis get failed for', key, error);
+        console.error(
+            '[optionsDataCache] Redis get failed for',
+            key,
+            redactDbErrorForLog(error)
+        );
         return { reason: 'read_error' };
     }
 }
@@ -192,7 +205,7 @@ export async function readLastGoodCapturedAtBatch(
     } catch (error) {
         console.error(
             '[optionsDataCache] Redis mget failed for last-good captured-at',
-            error
+            redactDbErrorForLog(error)
         );
         return new Map();
     }

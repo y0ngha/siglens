@@ -75,7 +75,7 @@ describe('findSelectableModelId', () => {
     });
 
     it('선택지에 없는 저장값(키를 지운 provider)은 null이다', () => {
-        expect(findSelectableModelId(groups, 'gpt-6-astra')).toBeNull();
+        expect(findSelectableModelId(groups, 'gpt-6.2-astra')).toBeNull();
     });
 
     it('저장값이 없으면 null이다', () => {

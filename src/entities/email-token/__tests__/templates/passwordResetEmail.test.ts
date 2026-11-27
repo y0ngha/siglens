@@ -1,5 +1,7 @@
-import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
-import { DEFAULT_SITE_URL } from '../../templates/passwordResetEmail';
+import {
+    buildPasswordResetEmail,
+    DEFAULT_SITE_URL,
+} from '../../templates/passwordResetEmail';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 /**

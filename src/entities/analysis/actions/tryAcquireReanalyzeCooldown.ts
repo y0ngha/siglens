@@ -13,8 +13,9 @@
 import {
     tryAcquireReanalyzeCooldown as coreTryAcquire,
     type AcquireReanalyzeCooldownResult,
+    type Timeframe,
 } from '@y0ngha/siglens-core';
-import type { Timeframe } from '@y0ngha/siglens-core';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 재분석 쿨다운을 획득한다. 저장소 장애는 기록하고 `{ ok: true }`로 통과시킨다 — 쿨다운
@@ -27,7 +28,10 @@ export async function tryAcquireReanalyzeCooldown(
     try {
         return await coreTryAcquire(symbol, timeframe);
     } catch (error) {
-        console.error('[ReanalyzeCooldown] acquire 실패:', error);
+        console.error(
+            '[ReanalyzeCooldown] acquire 실패:',
+            redactDbErrorForLog(error)
+        );
         return { ok: true };
     }
 }

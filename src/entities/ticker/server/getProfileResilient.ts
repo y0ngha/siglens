@@ -5,6 +5,12 @@ import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
+
+/**
+ * 프로필 정적 캐시의 revalidate. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다.
+ */
+export const PROFILE_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
 export interface ResilientProfile {
     /**
@@ -57,7 +63,7 @@ export async function getProfileResilient(
             upper,
             () => getFundamentalDataProvider(upper).getProfile(upper),
             [],
-            SECONDS_PER_DAY
+            PROFILE_REVALIDATE_SECONDS
         );
         return { profile, degraded: false };
     } catch (e) {
@@ -68,7 +74,7 @@ export async function getProfileResilient(
         if (!isE2E()) {
             console.error(
                 '[getProfileResilient] FMP profile infra failure, degrading:',
-                e
+                redactDbErrorForLog(e)
             );
         }
         await shortenRevalidateForRuntimeDegrade();

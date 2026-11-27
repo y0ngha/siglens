@@ -1,6 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'crypto';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 // KEYS[1]=락 키, ARGV[1]=보유 토큰 — 저장된 값이 호출자의 토큰과 일치할 때만 DEL한다
 // (compare-and-delete). TTL 만료로 새 실행이 이미 재획득한 락을 옛 실행의 finally가
@@ -33,6 +34,9 @@ const SKIP_TTL_SECONDS = 21600; // 6h
  * 6시간을 걸면 20분짜리 FMP 장애가 그날 밤 prewarm을 통째로 날린다(야간 창이 7.5시간).
  */
 export const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
+
+/** 일시적 실패 backoff 마커의 값(기본 6시간·뉴스 없음 24시간 마커는 '1'). */
+const TRANSIENT_SKIP_VALUE = 't';
 
 /** 기준일 재생성 마커(`claimBasisForce`)의 최소 TTL — 경계 직전에 세워도 1시간은 남긴다. */
 const BASIS_FORCE_MIN_TTL_SECONDS = 3600;
@@ -92,7 +96,10 @@ export async function acquirePrewarmLock(): Promise<string | null> {
         await redis
             .eval(RELEASE_LOCK_SCRIPT, [LOCK_KEY], [token])
             .catch((cleanupError: unknown) =>
-                console.warn('[seo-prewarm] lock cleanup failed', cleanupError)
+                console.warn(
+                    '[seo-prewarm] lock cleanup failed',
+                    redactDbErrorForLog(cleanupError)
+                )
             );
         throw error;
     }
@@ -200,9 +207,12 @@ export async function markSkipped(
 ): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
-    await redis.set(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`, '1', {
-        ex: ttlSeconds,
-    });
+    // 값으로 일시적(짧은 TTL) 마커와 확정에 가까운 마커를 가른다 — `isTransientlySkipped`.
+    await redis.set(
+        `seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`,
+        ttlSeconds <= TRANSIENT_SKIP_TTL_SECONDS ? TRANSIENT_SKIP_VALUE : '1',
+        { ex: ttlSeconds }
+    );
 }
 
 /**
@@ -232,6 +242,184 @@ export async function claimBasisForce(
         { nx: true, ex: Math.max(ttlSeconds, BASIS_FORCE_MIN_TTL_SECONDS) }
     );
     return result === 'OK';
+}
+
+/**
+ * 종합(overall) 사전 생성 마커 — 한 경계 안에서 심볼당 **한 번만** 시도를 허락한다.
+ *
+ * 종합 분석은 스냅샷 행이 없어 `generatedAt`으로 "이미 했다"를 알 수 없다. 마커가 없으면 상위
+ * 조회 심볼의 종합 호출이 5분 tick마다 반복된다(캐시가 비어 있거나 실패하는 밤에는 매번 LLM).
+ * `claimBasisForce`와 같은 모양이다: SET NX, 키에 경계 시각(ms)을 넣어 경계가 롤하면 새 키가 된다.
+ * 성공·실패와 무관하게 경계당 한 번이다 — 실패한 시도는 다음 경계(다음 거래일)에 다시 한다.
+ *
+ * @returns 이 호출이 마커를 **처음** 세웠으면 true. 이미 있거나 Redis를 쓸 수 없으면 false —
+ * LLM을 부르는 일은 중복을 막을 수단이 없을 때 하지 않는다.
+ */
+export async function claimOverallWarm(
+    symbol: string,
+    boundaryMs: number,
+    ttlSeconds: number
+): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return false;
+    const result = await redis.set(
+        overallWarmClaimKey(symbol, boundaryMs),
+        '1',
+        { nx: true, ex: Math.max(ttlSeconds, BASIS_FORCE_MIN_TTL_SECONDS) }
+    );
+    return result === 'OK';
+}
+
+/** `claimOverallWarm` 마커 키 — 세우는 쪽과 들여다보는 쪽이 같은 형식을 쓰게 한 곳에서 만든다. */
+function overallWarmClaimKey(symbol: string, boundaryMs: number): string {
+    return `seo-prewarm:overall-warm:${symbol.toUpperCase()}:${boundaryMs}`;
+}
+
+/**
+ * 이 경계에서 종합 사전 생성을 이미 시도했는가 — 마커를 **세우지 않고** 읽기만 한다.
+ *
+ * 예산이 모자라 이번 tick에 못 만들 때, 이미 시도한 심볼까지 "예산 부족으로 건너뜀"으로 세지 않으려는
+ * 용도다. Redis를 쓸 수 없으면 true(시도한 것으로 본다) — `claimOverallWarm`이 그때 false를 돌려주는 것과
+ * 같은 쪽(생성하지 않음)으로 기운다.
+ */
+export async function isOverallWarmClaimed(
+    symbol: string,
+    boundaryMs: number
+): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return true;
+    return (await redis.get(overallWarmClaimKey(symbol, boundaryMs))) !== null;
+}
+
+/** 시간 초과로 포기한 종합 사전 생성의 대기 목록 SET 키(설명은 `OverallWarmPendingEntry`). */
+const OVERALL_WARM_PENDING_SET_KEY = 'seo-prewarm:overall-warm-pending';
+/** 집합 키 백스톱 TTL(24시간). */
+const OVERALL_WARM_PENDING_SET_TTL_SECONDS = 86400;
+
+/**
+ * 시간 초과로 포기한 종합 사전 생성의 대기 항목. 항목은 **SET 하나**(`SMEMBERS` 1회)에 모은다.
+ *
+ * 심볼별 키로 두면 오늘의 상위 목록에 든 심볼만 확인할 수 있어, 그 사이 목록에서 빠진 심볼의 마커가
+ * 소비되지 않는다. 집합이면 매 tick 목록 구성과 무관하게 전부 읽는다. 항목은 `SYMBOL|시작ms|확인횟수`
+ * 문자열이다. 항목의 수명은 소비자(`overallWarm.ts`)가 시작 시각으로 12시간 안에 끊고(프리웜 창 사이
+ * 가장 긴 공백 7.5시간 + 여유) 확인 횟수로도 끊는다. 집합 키 자체의 TTL(24시간)은 그 위의 백스톱이며
+ * 새 항목을 더할 때마다 갱신된다. API: `addOverallWarmPending`·`listOverallWarmPending`·
+ * `removeOverallWarmPending`·`bumpOverallWarmPendingChecks`.
+ */
+export interface OverallWarmPendingEntry {
+    readonly symbol: string;
+    readonly startedAtMs: number;
+    /** 지금까지 "캐시에 아직 없음"으로 끝난 확인 횟수. */
+    readonly checks: number;
+    /** 집합 안의 원문 — 갱신·삭제 때 그대로 넘긴다. */
+    readonly member: string;
+}
+
+function pendingMember(
+    symbol: string,
+    startedAtMs: number,
+    checks: number
+): string {
+    return `${symbol.toUpperCase()}|${startedAtMs}|${checks}`;
+}
+
+function parsePendingMember(member: unknown): OverallWarmPendingEntry | null {
+    if (typeof member !== 'string') return null;
+    const [symbol, started, checks] = member.split('|');
+    const startedAtMs = Number(started);
+    const checkCount = Number(checks);
+    if (
+        !symbol ||
+        !Number.isFinite(startedAtMs) ||
+        !Number.isInteger(checkCount)
+    ) {
+        return null;
+    }
+    return { symbol, startedAtMs, checks: checkCount, member };
+}
+
+/**
+ * 종합 사전 생성이 `OVERALL_WARM_TIMEOUT_MS`(`overallWarm.ts`)를 넘겨 기다리기를 포기했음을 대기 목록에
+ * 올린다. 포기한 core 호출은 계속 돌아 캐시를 채울 수 있고, 그 사이 태그를 털면 아직 MISS를 읽는다 —
+ * 그래서 시각만 남기고 이후 tick이 캐시를 확인한 뒤 턴다.
+ */
+export async function addOverallWarmPending(
+    symbol: string,
+    startedAtMs: number
+): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.sadd(
+        OVERALL_WARM_PENDING_SET_KEY,
+        pendingMember(symbol, startedAtMs, 0)
+    );
+    await redis.expire(
+        OVERALL_WARM_PENDING_SET_KEY,
+        OVERALL_WARM_PENDING_SET_TTL_SECONDS
+    );
+}
+
+/** 대기 목록 전체. Redis를 쓸 수 없으면 빈 배열, 깨진 항목은 건너뛴다. */
+export async function listOverallWarmPending(): Promise<
+    OverallWarmPendingEntry[]
+> {
+    const redis = getRedisClient();
+    if (redis === null) return [];
+    const members = await redis.smembers(OVERALL_WARM_PENDING_SET_KEY);
+    return members
+        .map(parsePendingMember)
+        .filter((entry): entry is OverallWarmPendingEntry => entry !== null);
+}
+
+export async function removeOverallWarmPending(member: string): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.srem(OVERALL_WARM_PENDING_SET_KEY, member);
+}
+
+/** 확인 횟수를 하나 올린 항목으로 바꾼다(시작 시각은 그대로 — 수명은 처음 시작 기준이다). */
+export async function bumpOverallWarmPendingChecks(
+    entry: OverallWarmPendingEntry
+): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.srem(OVERALL_WARM_PENDING_SET_KEY, entry.member);
+    await redis.sadd(
+        OVERALL_WARM_PENDING_SET_KEY,
+        pendingMember(entry.symbol, entry.startedAtMs, entry.checks + 1)
+    );
+}
+
+/** UTC 하루 안의 종합 사전 생성 **시작** 수 카운터의 TTL — 하루보다 조금 길다. */
+const OVERALL_WARM_DAILY_TTL_SECONDS = 25 * 3600;
+
+function overallWarmDailyKey(utcDay: string): string {
+    return `seo-prewarm:overall-warm-starts:${utcDay}`;
+}
+
+/**
+ * 오늘(UTC) 시작한 종합 사전 생성 수. Redis를 쓸 수 없으면 `Infinity` — 상한에 닿은 것으로 보고 만들지
+ * 않는다(`claimOverallWarm`이 그때 false를 돌려주는 것과 같은 쪽).
+ */
+export async function getOverallWarmStartsToday(
+    utcDay: string
+): Promise<number> {
+    const redis = getRedisClient();
+    if (redis === null) return Number.POSITIVE_INFINITY;
+    const value = await redis.get(overallWarmDailyKey(utcDay));
+    const count = Number(value ?? 0);
+    return Number.isFinite(count) ? count : 0;
+}
+
+/** 실제로 시작하기 직전에 한 번 올린다. */
+export async function incrementOverallWarmStartsToday(
+    utcDay: string
+): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    const key = overallWarmDailyKey(utcDay);
+    await redis.incrby(key, 1);
+    await redis.expire(key, OVERALL_WARM_DAILY_TTL_SECONDS);
 }
 
 /**
@@ -317,6 +505,24 @@ export async function isSkipped(symbol: string, tab: string): Promise<boolean> {
     return (
         (await redis.get(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`)) !==
         null
+    );
+}
+
+/**
+ * backoff 마커가 **일시적 실패**(프로바이더 장애·타임아웃, 30분 TTL)로 세워진 것인가.
+ *
+ * 6시간·24시간 마커(뉴스 없는 심볼 등)는 한동안 풀리지 않는 상태라 "처리할 일이 남았다"는 근거가 못 된다.
+ * 일시적 마커는 곧 풀려 다시 처리 대상이 된다 — 종합 사전 생성이 "심볼 처리가 아직 안 끝났다"를 가르는 데 쓴다.
+ */
+export async function isTransientlySkipped(
+    symbol: string,
+    tab: string
+): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return false;
+    return (
+        (await redis.get(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`)) ===
+        TRANSIENT_SKIP_VALUE
     );
 }
 

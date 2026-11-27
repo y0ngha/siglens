@@ -1,4 +1,8 @@
-import { toFmpSearchSymbol, toFmpSymbol } from '@/shared/lib/fmpSymbol';
+import {
+    fromFmpSymbol,
+    toFmpSearchSymbol,
+    toFmpSymbol,
+} from '@/shared/lib/fmpSymbol';
 import {
     isAdmissibleSymbolShape,
     SUPPORTED_DOT_SUFFIXES,
@@ -17,6 +21,24 @@ describe('toFmpSymbol', () => {
         expect(toFmpSymbol('7203.T')).toBe('7203.T');
         expect(toFmpSymbol('^SPX')).toBe('^SPX');
         expect(toFmpSymbol('AAPL')).toBe('AAPL');
+    });
+});
+
+describe('fromFmpSymbol', () => {
+    it('maps FMP dual-class notation back to the canonical app symbol', () => {
+        expect(fromFmpSymbol('BRK-B')).toBe('BRK.B');
+        expect(fromFmpSymbol('BF-B')).toBe('BF.B');
+    });
+
+    it('is the inverse of toFmpSymbol for every alias', () => {
+        for (const symbol of ['BRK.A', 'BRK.B', 'BF.A', 'BF.B']) {
+            expect(fromFmpSymbol(toFmpSymbol(symbol))).toBe(symbol);
+        }
+    });
+
+    it('leaves genuinely hyphenated and ordinary symbols alone', () => {
+        expect(fromFmpSymbol('PBR-A')).toBe('PBR-A');
+        expect(fromFmpSymbol('AAPL')).toBe('AAPL');
     });
 });
 

@@ -8,6 +8,7 @@
  * @param source 로그 접두사로 쓸 어댑터 이름(예: `FmpMarketProvider`).
  * @param label 어떤 매핑인지(예: `getQuote`, `today-quote`).
  */
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 export function mapOrNull<T>(
     source: string,
     label: string,
@@ -17,7 +18,11 @@ export function mapOrNull<T>(
     try {
         return map();
     } catch (error) {
-        console.warn(`[${source}] ${label} mapping failed:`, symbol, error);
+        console.warn(
+            `[${source}] ${label} mapping failed:`,
+            symbol,
+            redactDbErrorForLog(error)
+        );
         return null;
     }
 }

@@ -14,6 +14,7 @@ import {
     dashboardScopeOf,
     isPageDashboardScopeId,
 } from '@/shared/config/dashboardScope';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 /**
  * 대시보드 섹터 신호 Server Action. 입력이 잘못됐거나 조회가 실패하면 빈 결과를 돌려준다.
@@ -58,7 +59,10 @@ export async function getSectorSignalsAction(
             timeframeToUse
         );
     } catch (error) {
-        console.error('[getSectorSignalsAction] failed:', error);
+        console.error(
+            '[getSectorSignalsAction] failed:',
+            redactDbErrorForLog(error)
+        );
         return { computedAt: new Date().toISOString(), stocks: [] };
     }
 }

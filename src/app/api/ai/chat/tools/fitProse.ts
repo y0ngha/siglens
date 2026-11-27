@@ -44,26 +44,25 @@ export function fitProse(
     envelope: unknown,
     fields: Record<string, ProseSpec>
 ): Record<string, string | unknown[]> {
-    const keys = Object.keys(fields);
+    const entries = Object.entries(fields);
     const out: Record<string, string | unknown[]> = {};
     const asIs = (spec: ProseSpec): string | unknown[] =>
         spec.kind === 'text' ? (spec.value ?? '') : [...(spec.value ?? [])];
     const overflow =
         JSON.stringify(envelope).length - CACHED_ANALYSIS_MAX_CHARS;
-    if (overflow <= 0 || keys.length === 0) {
-        for (const key of keys) out[key] = asIs(fields[key]!);
+    if (overflow <= 0 || entries.length === 0) {
+        for (const [key, spec] of entries) out[key] = asIs(spec);
         return out;
     }
     let currentLeavesSize = 0;
-    for (const key of keys)
-        currentLeavesSize += JSON.stringify(asIs(fields[key]!)).length;
+    for (const [, spec] of entries)
+        currentLeavesSize += JSON.stringify(asIs(spec)).length;
     const targetLeavesSize = Math.max(
         0,
         currentLeavesSize - overflow - PROSE_BUDGET_SAFETY_MARGIN
     );
-    const share = Math.floor(targetLeavesSize / keys.length);
-    for (const key of keys) {
-        const field = fields[key]!;
+    const share = Math.floor(targetLeavesSize / entries.length);
+    for (const [key, field] of entries) {
         if (field.kind === 'text') {
             out[key] = fitToEscapedBudget(field.value ?? '', share);
             continue;

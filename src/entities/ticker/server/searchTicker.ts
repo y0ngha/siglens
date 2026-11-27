@@ -32,6 +32,7 @@ import {
 } from '@/shared/lib/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
+import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 
 export const MAX_SEARCH_RESULTS = 10;
 
@@ -174,7 +175,10 @@ export async function searchTicker(
     if (translate && unmapped.length > 0) {
         fireAndForget(
             translateAndCache(unmapped).catch(e =>
-                console.warn('[searchTicker] background translation failed', e)
+                console.warn(
+                    '[searchTicker] background translation failed',
+                    redactDbErrorForLog(e)
+                )
             ),
             options
         );
@@ -195,7 +199,10 @@ export async function searchTicker(
                         : TICKER_SEARCH_CACHE_TTL
                 )
                 .catch(e =>
-                    console.warn('[searchTicker] cache write failed', e)
+                    console.warn(
+                        '[searchTicker] cache write failed',
+                        redactDbErrorForLog(e)
+                    )
                 ),
             options
         );
