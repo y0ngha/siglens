@@ -11,6 +11,8 @@ import {
     emailReportWelcomes,
 } from '@/shared/db/schema';
 import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
+import { WELCOME_WINDOW_MS } from '@/entities/email-report/lib/emailReportConstants';
+import { defined } from '@/shared/test-utils/defined';
 import {
     DrizzleEmailReportDeliveryRepository,
     DrizzleEmailReportExclusionRepository,
@@ -549,7 +551,7 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
             expect.arrayContaining([
                 'signup_email',
                 'signup_oauth',
-                new Date(NOW.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+                new Date(NOW.getTime() - 23 * 60 * 60 * 1000).toISOString(),
                 'member',
                 'pro',
             ])
@@ -579,6 +581,65 @@ describe('DrizzleEmailReportWelcomeRepository', () => {
             'select "email_report_subscriptions"."user_id", "users"."email", "email_report_subscriptions"."days_of_week", "email_report_subscriptions"."send_hour", "email_report_subscriptions"."timezone", "email_report_subscriptions"."locale", "email_report_subscriptions"."consented_at", "email_report_welcomes"."attempts" from "email_report_welcomes" inner join "email_report_subscriptions" on "email_report_subscriptions"."user_id" = "email_report_welcomes"."user_id" inner join "users" on "users"."id" = "email_report_welcomes"."user_id" where "email_report_welcomes"."user_id" in ($1, $2)'
         );
         expect(select?.params).toEqual(expect.arrayContaining(['u-1', 'u-2']));
+    });
+
+    describe('claimDue: 재시도 창과 Resend 멱등 키 유효 기간의 경계', () => {
+        /**
+         * Resend 멱등 키는 첫 요청을 받은 때부터 24시간 유효하다. 첫 리포트의 첫 발송은 선점 뒤에만
+         * 나가고, 선점은 동의 뒤에만 되므로 첫 발송 시각 ≥ `consentedAt`이다. 그래서 마지막 선점 시각
+         * (`consentedAt + WELCOME_WINDOW_MS` 직전)과 첫 발송의 간격은 창보다 짧다. 창은 키 유효 기간보다
+         * 1시간 짧아, DB·앱·Resend 시계가 조금 어긋나도 모든 재시도가 같은 키로 접힌다.
+         */
+        const HOUR_MS = 60 * 60 * 1000;
+        const RESEND_IDEMPOTENCY_KEY_TTL_MS = 24 * HOUR_MS;
+        const CONSENTED_AT = new Date('2026-11-21T00:30:00.000Z');
+
+        async function windowStartAt(now: Date): Promise<Date> {
+            const { db, captured } = txDb([[]]);
+            await new DrizzleEmailReportWelcomeRepository(db).claimDue(now);
+            // 대상 조회의 `"consented_at" > $4`(엄격한 부등호, 위 전체 SQL 단언이 고정한다).
+            return new Date(String(defined(captured[0]).params[3]));
+        }
+
+        beforeEach(() => {
+            // 인자로 받은 `now`만 쓰는지 보려고 시스템 시계를 멀리 둔다.
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2030-01-01T00:00:00.000Z'));
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('창이 끝나기 1ms 전에는 아직 잡히고, 그때도 첫 발송 뒤 키 유효 기간 안이다', async () => {
+            const lastClaim = new Date(
+                CONSENTED_AT.getTime() + WELCOME_WINDOW_MS - 1
+            );
+
+            const windowStart = await windowStartAt(lastClaim);
+
+            expect(windowStart.getTime()).toBeLessThan(CONSENTED_AT.getTime());
+            // 첫 발송이 가장 이른 경우(동의 직후)에도 마지막 재시도는 키 만료 1시간 이상 전이다.
+            expect(
+                RESEND_IDEMPOTENCY_KEY_TTL_MS -
+                    (lastClaim.getTime() - CONSENTED_AT.getTime())
+            ).toBeGreaterThanOrEqual(HOUR_MS);
+        });
+
+        it('동의한 지 정확히 창 길이가 지나면 더 잡지 않는다', async () => {
+            const windowStart = await windowStartAt(
+                new Date(CONSENTED_AT.getTime() + WELCOME_WINDOW_MS)
+            );
+
+            // `consented_at > windowStart`가 거짓이 되는 첫 시각.
+            expect(windowStart).toEqual(CONSENTED_AT);
+        });
+
+        it('재시도 창은 멱등 키 유효 기간보다 1시간 이상 짧다(23시간)', () => {
+            expect(WELCOME_WINDOW_MS).toBe(23 * HOUR_MS);
+            expect(
+                RESEND_IDEMPOTENCY_KEY_TTL_MS - WELCOME_WINDOW_MS
+            ).toBeGreaterThanOrEqual(HOUR_MS);
+        });
     });
 
     it('claimDue: 대상이 없으면 삽입·갱신 없이 빈 목록이다', async () => {

@@ -134,7 +134,7 @@ describe.skipIf(!URL)(
             await admin?.end();
         });
 
-        it('가입 화면에서 고른, 켜져 있고, 인증됐고, 회원 등급이고, 24시간 안에 동의한 회원만 잡는다', async () => {
+        it('가입 화면에서 고른, 켜져 있고, 인증됐고, 회원 등급이고, 23시간 안에 동의한 회원만 잡는다', async () => {
             const eligibleEmail = await createMember({
                 consentSource: 'signup_email',
             });
@@ -149,8 +149,9 @@ describe.skipIf(!URL)(
             const disabled = await createMember({ enabled: false });
             const unverified = await createMember({ verified: false });
             const freeTier = await createMember({ tier: 'free' });
+            // 창은 23시간이다(Resend 멱등 키 24시간보다 1시간 짧게, `WELCOME_WINDOW_MS`).
             const tooOld = await createMember({
-                consentedMinutesAgo: 24 * 60 + 5,
+                consentedMinutesAgo: 23 * 60 + 5,
             });
 
             const claimed = await repo.claimDue(new Date());
@@ -270,12 +271,12 @@ describe.skipIf(!URL)(
             expect((await welcomeRow(fresh)).attempts).toBe(1);
         });
 
-        it('동의한 지 24시간이 지나면 실패한 건도 다시 잡지 않는다', async () => {
+        it('동의한 지 23시간이 지나면 실패한 건도 다시 잡지 않는다', async () => {
             const userId = await createMember();
             await repo.claimDue(new Date());
             await repo.finish(userId, 'failed', 'dispatcher rejected');
             await client`UPDATE email_report_subscriptions
-                SET consented_at = now() - interval '25 hours'
+                SET consented_at = now() - interval '23 hours 30 minutes'
                 WHERE user_id = ${userId}`;
 
             expect(ids(await repo.claimDue(new Date()))).not.toContain(userId);
