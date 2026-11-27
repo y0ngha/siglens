@@ -24,7 +24,10 @@ import { SYMBOL_SUB_TAB_KEYS } from '@/views/symbol/utils/symbolTabsConfig';
 
 import { NEWS_LIST_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/_lib/symbolNewsList';
 import { FUNDAMENTAL_SECTION_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/fundamental/_components/FundamentalSections';
-import { NEWS_SECTION_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/news/_components/NewsSections';
+import {
+    COMPANY_FILINGS_CACHE_TTL_SECONDS,
+    NEWS_SECTION_REVALIDATE_SECONDS,
+} from '@/app/[locale]/[symbol]/news/_components/NewsSections';
 import { OPTIONS_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/options/_lib/optionsData';
 import { OVERALL_PEEK_REVALIDATE_SECONDS } from '@/app/[locale]/[symbol]/overall/_lib/overallPeek';
 
@@ -246,10 +249,12 @@ const PAGE_READS: Readonly<Record<string, readonly PageRead[]>> = {
         },
     ],
     'news/page.tsx': [
-        // 알려진 예외: 공시 섹션의 'news:company-filings'(NewsSections.tsx, 1시간 loadBoundedOptional)는
-        // 이 표에 없다. 제목을 못 읽은 공시 목록이 오래 남지 않도록 일부러 짧게 둔 값이라 탭 선언(12시간)보다
-        // 낮고, 행을 넣으면 이 가드가 실패한다. 탭 전체가 1시간마다 다시 만들어지는 비용을 재고 구조를 정하면
-        // 이 주석을 지우고 행을 넣는다.
+        // 공시 섹션(한국 종목도 읽는다): 정상 목록은 탭 선언과 같은 12h, 제목을 못 읽은 목록은 저장하지 않고
+        // 그 렌더만 낮춘다(DegradedValueError). 1h로 두면 탭 전체가 1h마다 재생성된다(2026-11 실측).
+        {
+            token: "'news:company-filings'",
+            revalidate: COMPANY_FILINGS_CACHE_TTL_SECONDS,
+        },
         { token: 'getNewsList', revalidate: NEWS_LIST_REVALIDATE_SECONDS },
         {
             token: "'news:earnings'",

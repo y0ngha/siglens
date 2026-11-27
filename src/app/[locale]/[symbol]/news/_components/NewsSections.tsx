@@ -10,11 +10,14 @@ import { loadEarningsHintBounded } from '@/entities/analyst-views/server/loadEar
 import type { CompanyFiling } from '@/entities/company-filings/model';
 import { listCompanyFilings } from '@/entities/company-filings/server/getCompanyFilings';
 import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
-import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    shortenRevalidateForPendingEnrichment,
+    shortenRevalidateForRuntimeDegrade,
+} from '@/shared/cache/buildDegradedRevalidate';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
-import { SECONDS_PER_HALF_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { addUtcIsoDays, toUtcIsoDate } from '@/shared/lib/isoDate';
 import type { Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
@@ -48,17 +51,38 @@ const ANALYST_HISTORY_BUDGET_MS = 2_500;
  */
 const ANALYST_HISTORY_MAX_AGE_DAYS = 180;
 /**
- * 공시 섹션 캐시 TTL. 엔티티가 공시별 제목을 30일, 제출 목록을 30분 캐시하므로 다시 만드는 비용은 작다 — 짧게 두어
- * 일부 공시의 제목을 SEC 제한으로 못 읽은 목록(`headline: null`)이 다음 재생성까지 남지 않게 한다.
+ * 공시 섹션 캐시 TTL — 페이지 선언(12h)과 같다. `[symbol]` 탭 revalidate clamp 가드가 이 값을 직접 읽는다. 정상 목록은 12h 굳어도 된다(새 공시는 `news:${symbol}` 태그
+ * 무효화가 보장). 이 값이 선언보다 짧으면 Next가 라우트 s-maxage를 렌더 중 읽힌 `unstable_cache` revalidate의
+ * 최솟값으로 낮춰 탭 전체가 그 주기로 재생성된다 — 한국 종목도 이 섹션을 읽어(빈 목록 캐시) 같이 1h로 내려갔다.
+ * 재시도하면 읽힐 사유로 제목을 못 읽은 목록(`headlinesPending`)은 TTL이 아니라 `DegradedValueError`로 캐시에서 빼고
+ * 그 렌더만 1h로 낮춘다. 제목이 없는 채로 읽힌 공시(`headline: null`이 30일 캐시된다)는 일시 상태가 아니라 12h 캐시다.
  */
-const COMPANY_FILINGS_CACHE_TTL_SECONDS = SECONDS_PER_HOUR;
+export const COMPANY_FILINGS_CACHE_TTL_SECONDS =
+    NEWS_SECTION_REVALIDATE_SECONDS;
 
 const TIMED_OUT = Symbol('timed-out');
+
+/**
+ * 캐시 스코프 안(`staticSymbolCache` 로더)에서 던져 **그 값을 데이터 캐시에 저장하지 않게** 하면서, 바깥에서
+ * 받아 그릴 값과 이번 렌더에 쓸 revalidate 핀을 싣는 표식 에러. 일시 상태(제목을 못 읽음)의 목록이 12h 굳지 않게 한다.
+ */
+class DegradedValueError<T> extends Error {
+    constructor(
+        readonly value: T,
+        readonly pinRevalidate: () => Promise<void>,
+        message: string
+    ) {
+        super(message);
+        this.name = 'DegradedValueError';
+    }
+}
 
 /**
  * 보강 섹션 공통 로더: `staticSymbolCache`로 감싸고 `budgetMs`만 기다린다.
  * - 로더가 던지면(출처 장애) 경고만 남기고 `null` — 캐시에 남지 않고 revalidate도 낮추지 않는다. 보강 하나의 장애가
  *   페이지 전체를 5분마다 재렌더하게 만들면 안 된다.
+ * - 로더가 `DegradedValueError`를 던지면(캐시에 저장하지 않을 일시 상태 값) 그 값을 그리되 에러가 실어 온
+ *   핀으로 이번 렌더의 revalidate를 낮춘다.
  * - 시간 초과면 `null`이고 이번 렌더의 revalidate를 낮춘다(`shortenRevalidateForRuntimeDegrade`). 로드는 뒤에서 마저
  *   돌아 캐시를 채우므로(`withTimeout`은 취소하지 않는다) 곧 다시 그리면 섹션이 들어간다 — 낮추지 않으면 섹션이 빠진
  *   콜드 렌더가 라우트 revalidate(12시간) 동안 굳는다.
@@ -72,23 +96,37 @@ async function loadBoundedOptional<T>(options: {
     failureLog: string;
 }): Promise<T | null> {
     const { key, symbol, load, budgetMs, ttlSeconds, failureLog } = options;
-    const result = await withTimeout<T | null | typeof TIMED_OUT>(
+    const result = await withTimeout<
+        | { value: T | null; pin: (() => Promise<void>) | null }
+        | typeof TIMED_OUT
+    >(
         staticSymbolCache(
             [key, symbol],
             symbol,
             load,
             [newsCacheTag(symbol)],
             ttlSeconds
-        ).catch((error: unknown) => {
-            console.warn(failureLog, redactDbErrorForLog(error));
-            return null;
-        }),
+        )
+            .then(value => ({ value, pin: null }))
+            .catch((error: unknown) => {
+                // 로더가 `DegradedValueError`로 던진 일시 상태 값 — 저장되지 않았고, 그릴 값은 있다.
+                if (error instanceof DegradedValueError)
+                    return {
+                        value: error.value as T,
+                        pin: error.pinRevalidate,
+                    };
+                console.warn(failureLog, redactDbErrorForLog(error));
+                return { value: null, pin: null };
+            }),
         budgetMs,
         TIMED_OUT
     );
-    if (result !== TIMED_OUT) return result;
-    await shortenRevalidateForRuntimeDegrade();
-    return null;
+    if (result === TIMED_OUT) {
+        await shortenRevalidateForRuntimeDegrade();
+        return null;
+    }
+    if (result.pin !== null) await result.pin();
+    return result.value;
 }
 
 /**
@@ -295,7 +333,19 @@ async function loadCompanyFilings(symbol: string): Promise<CompanyFiling[]> {
     const result = await listCompanyFilings(symbol);
     if (result.status === 'failed')
         throw new Error(`company filings unavailable for ${symbol}`);
-    return result.status === 'ok' ? result.filings : [];
+    if (result.status !== 'ok') return [];
+    // 제목을 못 읽은 이유가 재시도하면 풀릴 일시 사유일 때만(`headlinesPending`) 목록을 저장하지 않는다 — 던지면
+    // 데이터 캐시가 쓰기를 건너뛴다. `headline: null` 자체로는 판정하지 않는다: 문서를 읽고도 제목이 없는 공시와
+    // 제목을 읽지 않는 뒤쪽 공시는 영구히 null이라, 그걸로 판정하면 그 종목이 계속 짧은 주기로 재생성된다. SEC 차단·한도는
+    // pending이 아니다(엔티티가 걸러 12h 캐시 — 짧게 다시 그리면 모든 종목이 한도를 더 두드린다).
+    // 렌더는 1h로 낮춘다(`shortenRevalidateForPendingEnrichment`): 5분 핀은 SEC에 종목당 재요청을 12배 늘린다.
+    if (result.headlinesPending)
+        throw new DegradedValueError(
+            result.filings,
+            shortenRevalidateForPendingEnrichment,
+            `company filings of ${symbol} have pending headlines`
+        );
+    return result.filings;
 }
 
 /**

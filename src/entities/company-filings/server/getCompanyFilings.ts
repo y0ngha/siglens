@@ -11,6 +11,8 @@ import {
     fetchSubmissionsJson,
     filingFolderUrl,
     isSecBlockedError,
+    SecBodyTimeoutError,
+    SecSlotTimeoutError,
     submissionsFileName,
 } from '@/shared/api/sec/secClient';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
@@ -64,7 +66,7 @@ const FILING_TEXT_CACHE_KEY_PREFIX = 'sec:filing-text:v3';
  * 10건(21건 ≈ 4.6초)을 한 번에 밀어 넣지 않는다. 나머지 공시도 목록에는 나오고(`headline: null`) 접수번호로
  * 읽을 수 있다.
  */
-const FILING_META_LOAD_MAX = 6;
+export const FILING_META_LOAD_MAX = 6;
 
 /**
  * 도구 경로(요청 경로)의 SEC 호출 옵션: 재시도 없음, 요청 6초, 슬롯 대기 포함 전체 8초(SERVER.md#SA-14).
@@ -85,7 +87,19 @@ const SEC_TOOL_OPTIONS = {
 const HEAD_CAP_SLACK_BYTES = 4;
 
 type ListCompanyFilingsResult =
-    | { status: 'ok'; filings: CompanyFiling[] }
+    | {
+          status: 'ok';
+          filings: CompanyFiling[];
+          /**
+           * 제목을 읽으려 시도한 앞쪽 공시 중 **재시도하면 읽힐 수 있는** 사유로 못 읽은 것이 있다(그 공시의 메타가
+           * 거부됐고 캐시되지 않았다). 호출부는 이 목록을 길게 캐시하지 않는다. 아래는 pending이 **아니다**:
+           * - 문서를 읽었지만 제목이 없는 공시(`headline: null`을 30일 캐시).
+           * - SEC 차단·한도·시간 초과(`isSecContentionError` — 재시도가 한도를 더 두드린다), 또는 같은 호출에서 차단(`state.blocked`)이 있었다.
+           * - 결정적 실패(색인·문서 404, 정제 후 빈 본문)가 `FILING_PUBLICATION_WINDOW_MS`를 **지난** 공시(`headline: null`을 30일 캐시).
+           * 같은 결정적 실패라도 그 기간 **안**의 공시(방금 접수돼 아직 게시 전일 수 있다)는 pending이다. 그 밖의 거부(네트워크 오류 등)도 pending이다.
+           */
+          headlinesPending: boolean;
+      }
     | { status: 'no_sec_filer' }
     | { status: 'failed' };
 
@@ -99,6 +113,59 @@ type FilerLookup =
     | { status: 'ok'; cik: string }
     | { status: 'no_sec_filer' }
     | { status: 'failed' };
+
+/**
+ * 접수 직후 공시의 색인·문서가 아직 게시되지 않아 잠깐 404일 수 있는 기간(밀리초) — 접수일(`filedAt`)이 끝난 시각부터 센다.
+ * 이 안의 "없음"은 일시 사유로 보고 캐시하지 않는다(`headlinesPending`으로 다음 재생성이 다시 읽는다). 가장 새 공시가 가장
+ * 중요한데 30일 `headline: null`이 굳으면 안 되기 때문이다. 이 기간이 지난 "없음"은 영구하다. `filedAt`은 날짜만 있어
+ * (UTC 자정 기준으로 읽는다) 접수 시각의 오차 하루를 이 값의 하루가 흡수한다.
+ */
+export const FILING_PUBLICATION_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
+
+/** 접수일이 끝난 뒤 게시 대기 기간이 지났는가 — 지났으면 "없음"이 영구하다. */
+function isPastPublicationWindow(filedAt: string): boolean {
+    const endOfFiledDay =
+        Date.parse(`${filedAt}T00:00:00Z`) + 24 * 60 * 60 * 1000;
+    return Date.now() - endOfFiledDay > FILING_PUBLICATION_WINDOW_MS;
+}
+
+/**
+ * 재시도해도 같은 결과인 결정적 실패(색인·문서가 없다고 응답했거나 정제하면 본문이 비는 공시). 던져서 문서 캐시(`loadFilingDocument`)에는
+ * 남기지 않지만, 제목 메타(`loadFilingMeta`)는 이것을 `headline: null`로 30일 캐시한다 — 안 그러면 그 공시가 매 목록 호출마다 거부돼
+ * 목록 소비자가 영구히 "제목 대기" 상태로 본다(`headlinesPending`).
+ */
+class PermanentFilingFailure extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'PermanentFilingFailure';
+    }
+}
+
+/**
+ * 요청 시간 초과(abort) 판정.
+ * 요청 시간 초과는 `secGetDocument`의 타이머가 `controller.abort()`로 끊어 `fetch`가 `AbortError`(또는 `TimeoutError`)
+ * `DOMException`으로 거부된다. 이 경로에서 abort를 부르는 것은 그 타이머뿐이라(호출자가 `signal`을 넘기지 않는다) abort는 곧
+ * 시간 초과이고, SEC가 느리다는 신호이므로 짧게 다시 그리지 않는다.
+ */
+function isSecAbortError(error: unknown): boolean {
+    return (
+        error instanceof Error &&
+        (error.name === 'AbortError' || error.name === 'TimeoutError')
+    );
+}
+
+/**
+ * SEC 한도·과부하 신호 넷: 차단(403·429, `isSecBlockedError`), 슬롯 대기 예산 초과(`SecSlotTimeoutError`), 본문 수신
+ * 시간 초과(`SecBodyTimeoutError`), 요청 시간 초과(abort — `isSecAbortError`). 이 사유의 거부는 `headlinesPending`이 아니다.
+ */
+function isSecContentionError(error: unknown): boolean {
+    return (
+        isSecBlockedError(error) ||
+        error instanceof SecSlotTimeoutError ||
+        error instanceof SecBodyTimeoutError ||
+        isSecAbortError(error)
+    );
+}
 
 /** 오류 객체·메시지는 남기지 않는다(DB 오류 메시지에는 바인딩된 값이 들어간다). 이름과 짧은 코드만. */
 function logDegrade(step: string, error: unknown): void {
@@ -194,7 +261,8 @@ function loadFilingDocument(
                     filing.accession,
                     SEC_TOOL_OPTIONS
                 );
-                if (indexJson === null) throw new Error('index unavailable');
+                if (indexJson === null)
+                    throw new PermanentFilingFailure('index unavailable');
                 // 색인을 기다리는 사이 다른 공시가 차단을 겪었으면 문서 요청은 보내지 않는다.
                 if (state.blocked) throw new Error('sec blocked');
                 const { fileName, document } = pickFilingDocument(
@@ -207,10 +275,12 @@ function loadFilingDocument(
                     fileName,
                     SEC_TOOL_OPTIONS
                 );
-                if (head === null) throw new Error('document unavailable');
+                if (head === null)
+                    throw new PermanentFilingFailure('document unavailable');
                 const cleaned = htmlToText(head);
                 const text = stripExhibitPreamble(cleaned);
-                if (text === '') throw new Error('document empty');
+                if (text === '')
+                    throw new PermanentFilingFailure('document empty');
                 const cut = truncateFilingText(
                     text,
                     AGENT_FILING_TEXT_MAX_CHARS
@@ -247,12 +317,24 @@ function loadFilingMeta(
         `${FILING_META_CACHE_KEY_PREFIX}:${filing.accession}`,
         FILING_CACHE_TTL_SECONDS,
         async () => {
-            const { fileName, document, headline } = await loadFilingDocument(
-                cik,
-                filing,
-                state
-            );
-            return { fileName, document, headline };
+            try {
+                const { fileName, document, headline } =
+                    await loadFilingDocument(cik, filing, state);
+                return { fileName, document, headline };
+            } catch (error) {
+                // 접수 직후(`FILING_PUBLICATION_WINDOW_MS` 안)의 "없음"은 아직 게시 전일 수 있어 일시 거부로 둔다.
+                if (
+                    !(error instanceof PermanentFilingFailure) ||
+                    !isPastPublicationWindow(filing.filedAt)
+                )
+                    throw error;
+                // 제목 없는 공시와 같은 취급: 주 문서 URL로 `headline: null`을 30일 캐시한다.
+                return {
+                    fileName: filing.primaryDocument,
+                    document: 'primary',
+                    headline: null,
+                };
+            }
         }
     );
 }
@@ -307,7 +389,16 @@ export async function listCompanyFilings(
         }
         return toCompanyFiling(cik, row, settled.value);
     });
-    return { status: 'ok', filings };
+    // 차단(`state.blocked`)·한도·시간 초과는 SEC가 과부하라는 신호다 — 이때 호출부가 목록을 짧게 캐시하면 모든 종목이
+    // 다시 요청해 한도를 더 넘긴다. 그래서 그 사유는 pending이 아니다(다음 정상 재생성이 다시 시도한다).
+    const headlinesPending =
+        !state.blocked &&
+        metas.some(
+            settled =>
+                settled.status === 'rejected' &&
+                !isSecContentionError(settled.reason)
+        );
+    return { status: 'ok', filings, headlinesPending };
 }
 
 /**
