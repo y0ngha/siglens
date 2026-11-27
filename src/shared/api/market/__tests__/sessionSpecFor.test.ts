@@ -6,7 +6,13 @@ import {
     KR_CALENDAR_HORIZON,
     __resetKrHorizonWarnings,
 } from '../sessionSpecFor';
-import { US_EQUITY_SESSION, CRYPTO_SESSION } from '@y0ngha/siglens-core';
+import {
+    US_EQUITY_SESSION,
+    CRYPTO_SESSION,
+    buildAgentTurnContext,
+    isRegularSessionOpen,
+} from '@y0ngha/siglens-core';
+import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 
 describe('sessionSpecFor', () => {
     it('maps crypto → always-open session', () => {
@@ -31,6 +37,7 @@ describe('KR_EQUITY_SESSION', () => {
             closeMinute: 930,
             weekendDays: [0, 6],
             closeMinuteFor: expect.any(Function),
+            openMinuteFor: expect.any(Function),
         });
     });
 });
@@ -125,6 +132,191 @@ describe('KR_EQUITY_SESSION.closeMinuteFor', () => {
         closeMinuteFor(new Date(base + 6 * dayMs));
 
         expect(warnSpy).toHaveBeenCalledTimes(2);
+    });
+});
+
+/**
+ * KRX 특수 거래일 — 연초 첫 거래일(10:00 개장)과 수능일(10:00~16:30).
+ *
+ * 함수 계약(개장·마감 분)만 보지 않고, 그 값을 읽는 core 소비 지점 두 곳
+ * (`isRegularSessionOpen` = 에이전트 시계 노트가 쓰는 세션 판정, `lastClosedSessionDate`
+ * = EOD 캐시 키·sitemap이 쓰는 마지막 마감 세션)까지 함께 단언한다 — 표가 있어도 spec에
+ * 연결이 빠지면 함수 단위 테스트만으로는 드러나지 않는다.
+ */
+describe('KR_EQUITY_SESSION 특수 거래일', () => {
+    if (KR_EQUITY_SESSION.kind !== 'scheduled') {
+        throw new Error('KR_EQUITY_SESSION must be a scheduled session');
+    }
+    const { openMinuteFor, closeMinuteFor } = KR_EQUITY_SESSION;
+    if (openMinuteFor === undefined || closeMinuteFor === undefined) {
+        throw new Error(
+            'KR_EQUITY_SESSION open/close overrides must be defined'
+        );
+    }
+
+    beforeEach(() => {
+        __resetKrHorizonWarnings();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it.each([['2023-11-16'], ['2024-11-14'], ['2025-11-13'], ['2026-11-19']])(
+        '수능일 %s은 10:00 개장, 16:30 마감',
+        date => {
+            const noonKst = new Date(`${date}T03:00:00Z`);
+            expect(openMinuteFor(noonKst)).toBe(600);
+            expect(closeMinuteFor(noonKst)).toBe(990);
+        }
+    );
+
+    it.each([['2023-01-02'], ['2024-01-02'], ['2025-01-02'], ['2026-01-02']])(
+        '연초 첫 거래일 %s은 10:00 개장, 마감은 평소대로 15:30',
+        date => {
+            const noonKst = new Date(`${date}T03:00:00Z`);
+            expect(openMinuteFor(noonKst)).toBe(600);
+            expect(closeMinuteFor(noonKst)).toBe(930);
+        }
+    );
+
+    /**
+     * 지평선을 다음 해로 늘리면서 특수일 표를 잊으면, 그해 첫 거래일·수능일이 조용히 09:00
+     * 개장으로 남는다. 지평선 해에 두 종류가 모두 있어야 통과하므로 지평선을 올리는 변경이
+     * 표 갱신을 함께 강제한다.
+     */
+    it('지평선 해의 연초 첫 거래일과 수능일이 표에 있다', () => {
+        const year = Number(KR_CALENDAR_HORIZON.slice(0, 4));
+        const dayMs = 24 * 60 * 60 * 1000;
+        const kinds: string[] = [];
+        for (
+            let t = Date.UTC(year, 0, 1, 3);
+            t <= Date.parse(`${KR_CALENDAR_HORIZON}T03:00:00Z`);
+            t += dayMs
+        ) {
+            const noonKst = new Date(t);
+            const open = openMinuteFor(noonKst);
+            const close = closeMinuteFor(noonKst);
+            if (open === 600 && close === 930) kinds.push('first-trading-day');
+            if (open === 600 && close === 990) kinds.push('csat');
+        }
+        expect(kinds).toEqual(['first-trading-day', 'csat']);
+    });
+
+    it('평범한 거래일은 09:00 개장, 15:30 마감', () => {
+        // 2026-11-18(수) — 수능일 전날.
+        const noonKst = new Date('2026-11-18T03:00:00Z');
+        expect(openMinuteFor(noonKst)).toBe(540);
+        expect(closeMinuteFor(noonKst)).toBe(930);
+    });
+
+    it('특수일 판정은 UTC가 아니라 KST 날짜로 한다', () => {
+        // 2026-11-18T15:30Z = 2026-11-19 00:30 KST(수능일). UTC 날짜로 읽으면 전날이 된다.
+        expect(openMinuteFor(new Date('2026-11-18T15:30:00Z'))).toBe(600);
+        // 2026-11-19T15:30Z = 2026-11-20 00:30 KST — 수능일 다음 날은 평소대로.
+        expect(openMinuteFor(new Date('2026-11-19T15:30:00Z'))).toBe(540);
+    });
+
+    it('지평선 밖 날짜는 09:00 개장으로 폴백하고, 개장·마감 조회를 합쳐 경고는 한 번', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const beyond = new Date(
+            Date.parse(`${KR_CALENDAR_HORIZON}T03:00:00Z`) +
+                4 * 24 * 60 * 60 * 1000
+        );
+        expect(openMinuteFor(beyond)).toBe(540);
+        expect(closeMinuteFor(beyond)).toBe(930);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('수능일 09:30 KST는 장 전, 10:00부터 개장, 16:00 KST에도 개장 중', () => {
+        // 00:30Z = 09:30 KST, 01:00Z = 10:00 KST, 07:00Z = 16:00 KST, 07:30Z = 16:30 KST.
+        expect(
+            isRegularSessionOpen(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-19T00:30:00Z')
+            )
+        ).toBe(false);
+        expect(
+            isRegularSessionOpen(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-19T01:00:00Z')
+            )
+        ).toBe(true);
+        expect(
+            isRegularSessionOpen(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-19T07:00:00Z')
+            )
+        ).toBe(true);
+        expect(
+            isRegularSessionOpen(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-19T07:30:00Z')
+            )
+        ).toBe(false);
+    });
+
+    it('평범한 거래일은 09:30 KST에 개장 중, 16:00 KST에 마감', () => {
+        expect(
+            isRegularSessionOpen(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-18T00:30:00Z')
+            )
+        ).toBe(true);
+        expect(
+            isRegularSessionOpen(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-18T07:00:00Z')
+            )
+        ).toBe(false);
+    });
+
+    it('에이전트 시계 노트는 수능일 09:30 KST의 KRX를 닫힘으로 적고 10:00 개장을 예고한다', () => {
+        const note = buildAgentTurnContext({
+            locale: 'ko',
+            now: new Date('2026-11-19T00:30:00Z'),
+            krSession: KR_EQUITY_SESSION,
+            timeZone: 'Asia/Seoul',
+        });
+        const krLine = note
+            .split('\n')
+            .find(line => line.includes('Korean stocks (KRX)'));
+        expect(krLine).toBeDefined();
+        expect(krLine).not.toMatch(/KRX\): open/);
+        expect(krLine).toContain('opens');
+        expect(krLine).toContain('10:00');
+    });
+
+    it('에이전트 시계 노트는 수능일 16:00 KST의 KRX를 개장으로 적고 16:30 마감을 예고한다', () => {
+        const note = buildAgentTurnContext({
+            locale: 'ko',
+            now: new Date('2026-11-19T07:00:00Z'),
+            krSession: KR_EQUITY_SESSION,
+            timeZone: 'Asia/Seoul',
+        });
+        const krLine = note
+            .split('\n')
+            .find(line => line.includes('Korean stocks (KRX)'));
+        expect(krLine).toMatch(/KRX\): open/);
+        expect(krLine).toContain('closes');
+        expect(krLine).toContain('16:30');
+    });
+
+    it('수능일 마지막 마감 세션은 16:30 마감 + 버퍼가 지나야 그날로 롤한다', () => {
+        // 마감 16:30 KST + 4h 버퍼 = 20:30 KST = 11:30Z. 평소 마감(15:30)이었다면
+        // 10:30Z에 이미 롤했을 시각인 11:00Z에는 아직 전날이다.
+        expect(
+            lastClosedSessionDate(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-19T11:00:00Z')
+            )
+        ).toBe('2026-11-18');
+        expect(
+            lastClosedSessionDate(
+                KR_EQUITY_SESSION,
+                new Date('2026-11-19T11:35:00Z')
+            )
+        ).toBe('2026-11-19');
     });
 });
 

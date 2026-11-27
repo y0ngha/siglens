@@ -424,6 +424,10 @@ export function getPeriodColor(period: number): string {
             return CHART_COLORS.period10;
         case 20:
             return CHART_COLORS.period20;
+        // 50일선(차트 전용 MA)은 10일선 색을 빌린다 — MA·EMA 기본 기간에 10이 없어
+        // 한 차트에서 두 선이 같은 색으로 겹치지 않는다.
+        case 50:
+            return CHART_COLORS.period10;
         case 60:
             return CHART_COLORS.period60;
         case 120:

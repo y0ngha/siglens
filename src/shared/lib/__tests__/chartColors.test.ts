@@ -178,6 +178,11 @@ describe('getPeriodColor', () => {
             expect(getPeriodColor(20)).toBe('#eab308');
         });
 
+        it('기간 50(차트 전용 MA)은 10일선 색(period10, #f97316)을 쓴다', () => {
+            expect(getPeriodColor(50)).toBe(CHART_COLORS.period10);
+            expect(getPeriodColor(50)).toBe('#f97316');
+        });
+
         it('기간 60에 대해 #22c55e를 반환한다', () => {
             expect(getPeriodColor(60)).toBe('#22c55e');
         });

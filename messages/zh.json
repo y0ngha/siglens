@@ -4218,7 +4218,7 @@
                 "tradesLabel": "交易笔数",
                 "tradesValue": "{v0, number} 笔",
                 "meanReturnLabel": "每笔平均收益率",
-                "meanReturnSub": "与同一标的在期间内任意一天起持有相同天数的平均相比，每笔平均差异为 {v0}（95% 区间 {v1}~{v2}）",
+                "meanReturnSub": "与同一标的在期间内任意一天起持有相同天数的平均（{v3}）相比，每笔平均差异为 {v0}（95% 区间 {v1}~{v2}）",
                 "meanHoldingLabel": "平均持有时间",
                 "tradingDays": "{v0} 个交易日"
             },

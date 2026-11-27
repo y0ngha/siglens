@@ -51,6 +51,7 @@ import { useSmcZones } from './hooks/useSmcZones';
 import type { IndicatorHookParams } from './model/chartHookParams';
 import { ChartHeaderBar } from './ui/ChartHeaderBar';
 import { ExtendedHoursLegendBadge } from './ui/ExtendedHoursLegendBadge';
+import { withChartOnlyMaPeriods } from './utils/chartMaPeriods';
 import { createExtendedGapController } from './utils/extendedGapChart';
 import { buildIndicatorBindings } from './utils/indicatorBindings';
 import {
@@ -234,10 +235,17 @@ export function StockChart({
     );
     useExtendedSessionBand(seriesRef, extendedRanges);
 
+    // 50일선처럼 core가 내지 않는 차트 전용 MA 기간을 봉으로 채운다. 오버레이 훅과 범례가
+    // 같은 객체를 읽어야 선과 범례 값이 어긋나지 않는다.
+    const chartIndicators = useMemo(
+        () => withChartOnlyMaPeriods(indicators, bars),
+        [indicators, bars]
+    );
+
     const indicatorParams: IndicatorHookParams = {
         chartRef: indicatorChartRef,
         bars,
-        indicators,
+        indicators: chartIndicators,
         lineWidth: DEFAULT_LINE_WIDTH,
     };
     // 일목균형표 선행 구름은 마지막 **그려진** 봉(정규장 + 시간외) 오른쪽에서 시작해야 한다.
@@ -283,7 +291,7 @@ export function StockChart({
     const overlayLegendItems = useOverlayLegend({
         chartRef,
         bars,
-        indicators,
+        indicators: chartIndicators,
         labelConfigs,
     });
 
