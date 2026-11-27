@@ -12,51 +12,9 @@ import { isRecord } from '@/shared/lib/isRecord';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { foldDailyToMonthEnds } from '../lib/foldMonthEnds';
+import { INDEX_SOURCES, type IndexSource } from '../lib/indexSources';
 
 const yahooFinance = getYahooClient();
-
-interface IndexSource {
-    provider: 'fmp' | 'yahoo';
-    symbol: string;
-    /** 이력의 실제 첫 달(실측 2026-11-16). 받은 이력이 여기서 시작하지 않으면 잘린 응답으로 본다. */
-    firstMonth: string;
-    /** 거래소 시간대 — 월 경계와 "진행 중인 달"을 이 시간대 달력으로 정한다. */
-    timeZone: string;
-    /** 미국 대통령 임기 주기 통계를 낼 지수인가. */
-    usCycle: boolean;
-}
-
-const SOURCES: Readonly<Record<AgentHistoryIndex, IndexSource>> = {
-    sp500: {
-        provider: 'fmp',
-        symbol: '^GSPC',
-        firstMonth: '1950-01',
-        timeZone: 'America/New_York',
-        usCycle: true,
-    },
-    nasdaq: {
-        provider: 'fmp',
-        symbol: '^IXIC',
-        firstMonth: '1971-02',
-        timeZone: 'America/New_York',
-        usCycle: true,
-    },
-    // FMP는 KOSPI·KOSDAQ에 402·빈 응답이다. Yahoo 월봉.
-    kospi: {
-        provider: 'yahoo',
-        symbol: '^KS11',
-        firstMonth: '1996-12',
-        timeZone: 'Asia/Seoul',
-        usCycle: false,
-    },
-    kosdaq: {
-        provider: 'yahoo',
-        symbol: '^KQ11',
-        firstMonth: '2000-10',
-        timeZone: 'Asia/Seoul',
-        usCycle: false,
-    },
-};
 
 /**
  * FMP `historical-price-eod/light` 한 요청의 연도 폭. 한 요청은 약 5,000행에서 잘리고(오래된 행부터 빠진다), 1950년대에는
@@ -188,7 +146,7 @@ export async function loadIndexMonthEnds(
     index: AgentHistoryIndex,
     now: Date = new Date()
 ): Promise<IndexMonthEnds> {
-    const source = SOURCES[index];
+    const source = INDEX_SOURCES[index];
     const today = zonedDate(now, source.timeZone);
     const currentMonth = today.slice(0, 7);
     if (isE2EFakeMode())

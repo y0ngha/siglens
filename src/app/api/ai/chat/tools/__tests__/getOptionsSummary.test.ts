@@ -185,8 +185,68 @@ describe('getOptionsSummaryTool', () => {
             otherExpirations: string[];
         };
         expect(r.available).toBe(true);
-        expect(r.metrics).toEqual({ maxPain: 195, topOiBidAskSummary: [] });
+        // No ratio in the chain -> no reading (never a guessed side).
+        expect(r.metrics).toEqual({
+            maxPain: 195,
+            topOiBidAskSummary: [],
+            putCallReading: null,
+        });
         expect(r.otherExpirations).toEqual(['2026-10-08']);
+    });
+
+    describe('metrics.putCallReading', () => {
+        const withRatio = async (putCallRatio: number | null) => {
+            hasMarket.mockResolvedValue(true);
+            fetchSnapshot.mockResolvedValue({
+                underlyingPrice: 200,
+                capturedAt: '2026-09-10T00:00:00.000Z',
+                chains: [
+                    { expirationDate: '2026-10-01', daysToExpiration: 21 },
+                ],
+            });
+            summarize.mockReturnValue({ putCallRatio, topOiBidAskSummary: [] });
+            const r = (await getOptionsSummaryTool(
+                { symbol: 'AAPL' },
+                ctx,
+                rt
+            )) as {
+                metrics: {
+                    putCallRatio: number | null;
+                    putCallReading: { side: string; text: string } | null;
+                };
+            };
+            return r.metrics;
+        };
+
+        it('ratio below 1 reads as more call contracts open', async () => {
+            expect(await withRatio(0.58)).toMatchObject({
+                putCallRatio: 0.58,
+                putCallReading: {
+                    side: 'more_calls',
+                    text: '0.58 puts per call by open interest: more call contracts open than put contracts',
+                },
+            });
+        });
+
+        it('ratio above 1 reads as more put contracts open', async () => {
+            expect(await withRatio(1.42)).toMatchObject({
+                putCallReading: {
+                    side: 'more_puts',
+                    text: '1.42 puts per call by open interest: more put contracts open than call contracts',
+                },
+            });
+        });
+
+        it('is read from the ROUNDED ratio the model sees: 1.0000004 prints as 1 and reads even', async () => {
+            // Read from the raw value the side would be more_puts while the printed ratio says 1.
+            const metrics = await withRatio(1.0000004);
+            expect(metrics.putCallRatio).toBe(1);
+            expect(metrics.putCallReading?.side).toBe('even');
+        });
+
+        it('a null ratio has no reading', async () => {
+            expect((await withRatio(null)).putCallReading).toBeNull();
+        });
     });
 
     it('snapshot이 null이면 available:false', async () => {

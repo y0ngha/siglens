@@ -3734,6 +3734,19 @@
                 "button": "See Apple's analysis"
             },
             "updated": "Last updated: {date}"
+        },
+        "signal-record": {
+            "basisBearish": "The share of cases where the close some days later was lower than the close on the day the signal was first confirmed. Read all four periods together. Days are trading days.",
+            "basisBullish": "The share of cases where the close some days later was higher than the close on the day the signal was first confirmed. Read all four periods together. Days are trading days.",
+            "disclaimer": "This is a record of the past and does not indicate future results.",
+            "eventRow": "{days, plural, one {# day} other {# days}} later, share that moved in the signal's direction {event} ({n, plural, one {# case} other {# cases}})",
+            "heading": "Past record of the {signal} signal",
+            "horizonLabel": "{days, plural, one {# day} other {# days}} later",
+            "insufficient": "Too few cases, so no share is shown.",
+            "placeboRow": "Random dates of the same stock, counted the same way {placebo}",
+            "scope": "Scope: daily bars of {us, number} US stocks and {kr, number} Korean stocks, cases where the signal was first confirmed from {from} to {to}.",
+            "verdictBeats": "Higher than random dates.",
+            "verdictNoEdge": "Not shown to be higher than random dates."
         }
     },
     "widgets": {
@@ -6185,6 +6198,7 @@
                 "toolOptions": "Options",
                 "toolOther": "Data lookup",
                 "toolPortfolio": "My portfolio",
+                "toolPriceStats": "Period returns and drawdowns",
                 "toolQuote": "Quote",
                 "toolSearchTicker": "Symbol search",
                 "toolSwingHistory": "Past declines and rallies",

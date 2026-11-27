@@ -12,6 +12,8 @@ import {
     answerHasClock,
     extractClockTimes,
     extractEarningsDayCounts,
+    extractNearestClaims,
+    EVAL_TIME_ZONE,
     compareRuns,
     hasDateToken,
     isFigureSentence,
@@ -21,7 +23,10 @@ import {
     OFFER_RE,
     parseSseFrames,
     parseTurnNote,
+    periodForms,
+    periodStartFor,
     runChecks,
+    sideEffects,
     selectCases,
     splitSentences,
     storedOscillatorZones,
@@ -1106,7 +1111,1835 @@ describe('실행기 보조 함수', () => {
                 newFails: 1,
                 droppedTools: ['get_news'],
                 addedTools: ['web_search'],
+                // neither run recorded side effects or not-evaluable lines
+                oldNotEvaluable: null,
+                newNotEvaluable: null,
+                oldSideEffects: null,
+                newSideEffects: null,
             },
         ]);
+    });
+
+    it('compareRuns: sums the per-turn side effects of each run (null ungrounded stays null)', () => {
+        const effects = (chars: number, ungrounded: number | null) => ({
+            answerChars: chars,
+            figureSentences: 2,
+            steps: 3,
+            toolCalls: 1,
+            webSearches: 0,
+            ungroundedNumbers: ungrounded,
+        });
+        const run = (sideEffects: ReturnType<typeof effects>[]) => ({
+            label: 'x',
+            results: [
+                {
+                    id: 'c',
+                    fails: [],
+                    turns: [{ toolCalls: [] }, { toolCalls: [] }],
+                    sideEffects,
+                },
+            ],
+        });
+        const [row] = compareRuns(
+            run([effects(100, 1), effects(50, 2)]),
+            run([effects(10, null), effects(20, 1)])
+        );
+        expect(row?.oldSideEffects).toEqual({
+            answerChars: 150,
+            figureSentences: 4,
+            steps: 6,
+            toolCalls: 2,
+            webSearches: 0,
+            ungroundedNumbers: 3,
+        });
+        expect(row?.newSideEffects?.answerChars).toBe(30);
+        expect(row?.newSideEffects?.ungroundedNumbers).toBeNull();
+    });
+});
+
+const row = (toolName: string, content: unknown) => ({
+    toolName,
+    content: typeof content === 'string' ? content : JSON.stringify(content),
+});
+
+describe('earningsTally on an OLD result', () => {
+    it('computes the reference tally from the recorded earningsReactions with core', () => {
+        // 5 up, 3 down by hand: the old model said 6 of 8
+        const reactions = [3, 2, 1, 4, 5]
+            .map(m => ({ date: '2026-01-0' + m, movePct: m }))
+            .concat(
+                [1, 2, 3].map(m => ({ date: '2025-01-0' + m, movePct: -m }))
+            );
+        const result = (answer: string) =>
+            CHECKS.earningsTally(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [
+                        row('get_fundamentals', {
+                            earningsReactions: reactions,
+                        }),
+                    ],
+                })
+            );
+        expect(result('8번 중 6번 상승했어요.').fails).toEqual([
+            'tally: the answer says 6 rises but the tally has 5',
+        ]);
+        expect(result('8번 중 5번 상승했어요.').fails).toEqual([]);
+    });
+});
+
+describe('earningsTally', () => {
+    // 5 up, 3 down, 8 measured; largest rise +6.05, largest fall -4.5 (hand-written, not from the tool).
+    const tally = {
+        measured: 8,
+        up: 5,
+        down: 3,
+        flat: 0,
+        largestRise: { date: '2026-02-03', movePct: 6.05 },
+        largestFall: { date: '2025-07-29', movePct: -4.5 },
+    };
+    const run = (
+        answer: string,
+        content: unknown = { earningsReactionTally: tally }
+    ) =>
+        CHECKS.earningsTally(
+            {},
+            transcript({ answer, toolRows: [row('get_fundamentals', content)] })
+        );
+
+    it('passes when the counts and extremes match the tally', () => {
+        expect(
+            run(
+                '최근 8번 중 5번 상승했고 3번 하락했어요. 가장 크게 오른 날은 +6.05%, 최대 하락은 -4.5%입니다.'
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('fails on a wrong "N번 중 M번" count', () => {
+        const r = run('8번 중 6번 상승했습니다.');
+        expect(r.fails).toEqual([
+            'tally: the answer says 6 rises but the tally has 5',
+        ]);
+    });
+
+    it('fails when the "N번 중" total differs from measured', () => {
+        expect(run('10번 중 5번 상승했습니다.').fails).toEqual([
+            'tally: the answer says "10 reports" but the tally measured 8',
+        ]);
+    });
+
+    it('checks a plain "M번 올랐/내렸" count against up/down', () => {
+        expect(run('5번 올랐고 3번 내렸어요.').fails).toEqual([]);
+        expect(run('4번 올랐어요.').fails).toHaveLength(1);
+        expect(run('2번 하락했어요.').fails).toHaveLength(1);
+    });
+
+    it('does not count "5번 상승" inside "8번 중 5번 상승" twice', () => {
+        expect(run('8번 중 5번 상승했어요.').fails).toEqual([]);
+    });
+
+    it('fails on a wrong extreme, tolerates 0.01', () => {
+        expect(run('가장 크게 오른 날은 +6.5%였어요.').fails).toHaveLength(1);
+        expect(run('가장 크게 오른 날은 6.06%였어요.').fails).toEqual([]);
+        expect(run('최대 하락은 4.8%였어요.').fails).toHaveLength(1);
+    });
+
+    it('fails when an extreme is quoted but the tally has none', () => {
+        const r = run('가장 크게 오른 날은 3%였어요.', {
+            earningsReactionTally: { ...tally, largestRise: null },
+        });
+        expect(r.fails).toEqual([
+            'tally: the answer quotes a largest rise but the tally has none',
+        ]);
+    });
+
+    it('is not evaluable without a tally in the stored result', () => {
+        const r = run('8번 중 6번 상승', { symbol: 'X' });
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+});
+
+describe('putCallSide', () => {
+    const options = (ratio: number, side: string) =>
+        row('get_options_summary', {
+            metrics: {
+                putCallRatio: ratio,
+                putCallReading: { side, text: 't' },
+            },
+        });
+    const run = (answer: string, ...rows: ReturnType<typeof row>[]) =>
+        CHECKS.putCallSide({}, transcript({ answer, toolRows: rows }));
+
+    it('fails when a sentence with the ratio says puts dominate but the side is more_calls', () => {
+        const r = run(
+            '풋이 콜의 0.83배로, 하락 쪽 베팅이 조금 더 많아요.',
+            options(0.83, 'more_calls')
+        );
+        expect(r.fails).toHaveLength(1);
+        expect(r.fails[0]).toContain('more_calls');
+    });
+
+    it.each([
+        '풋 우위로 0.83입니다.',
+        '0.83이라 풋이 더 많습니다.',
+        '비율 0.83, 하락 베팅이 더 많아요.',
+    ])('fails for "%s" when the side is more_calls', sentence => {
+        expect(run(sentence, options(0.83, 'more_calls')).fails).toHaveLength(
+            1
+        );
+    });
+
+    it('fails the converse: calls dominate while the side is more_puts', () => {
+        expect(
+            run('비율 1.42, 콜이 더 많아요.', options(1.42, 'more_puts')).fails
+        ).toHaveLength(1);
+        expect(
+            run('비율 1.42, 상승 베팅이 더 많아요.', options(1.42, 'more_puts'))
+                .fails
+        ).toHaveLength(1);
+    });
+
+    it('passes when the sentence matches the side', () => {
+        expect(
+            run('비율 0.83이라 콜이 더 많아요.', options(0.83, 'more_calls'))
+                .fails
+        ).toEqual([]);
+        expect(
+            run('비율 1.42이라 풋이 더 많아요.', options(1.42, 'more_puts'))
+                .fails
+        ).toEqual([]);
+    });
+
+    it('only judges sentences that quote the source ratio', () => {
+        const r = run(
+            '풋이 더 많다는 말이 있지만 다른 이야기예요.',
+            options(0.83, 'more_calls')
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.reviews).toHaveLength(1);
+    });
+
+    it('does not judge an even side', () => {
+        expect(
+            run('비율 1, 풋이 더 많아요.', options(1, 'even')).fails
+        ).toEqual([]);
+    });
+
+    it('keeps the options and 13F sides apart', () => {
+        const flows = row('get_investor_flows', {
+            institutional: {
+                putCall: {
+                    putCallValueRatio: 1.47,
+                    reading: { side: 'more_puts' },
+                },
+            },
+        });
+        // options 0.83 -> more_calls; 13F 1.47 -> more_puts. Each sentence is judged against its own source.
+        expect(
+            run(
+                '옵션은 0.83으로 콜이 더 많아요. 13F는 1.47로 풋이 더 많아요.',
+                options(0.83, 'more_calls'),
+                flows
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('is not evaluable without a ratio at all', () => {
+        const r = run('x', row('get_options_summary', { metrics: {} }));
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+
+    describe('an OLD result (no reading field): the side is computed from the printed ratio with core', () => {
+        const oldOptions = (ratio: number) =>
+            row('get_options_summary', { metrics: { putCallRatio: ratio } });
+
+        it('options: 0.83 means more calls, so "puts dominate" fails and "calls dominate" passes', () => {
+            expect(
+                run('비율 0.83, 풋이 더 많아요.', oldOptions(0.83)).fails
+            ).toHaveLength(1);
+            expect(
+                run('비율 0.83, 콜이 더 많아요.', oldOptions(0.83)).fails
+            ).toEqual([]);
+        });
+
+        it('13F: 1.47 means more puts by notional', () => {
+            const flows = row('get_investor_flows', {
+                institutional: { putCall: { putCallValueRatio: 1.47 } },
+            });
+            expect(run('비율 1.47, 콜이 더 많아요.', flows).fails).toHaveLength(
+                1
+            );
+            expect(run('비율 1.47, 풋이 더 많아요.', flows).fails).toEqual([]);
+        });
+    });
+
+    it('matches the ratio as a whole number token, not a substring of another number', () => {
+        // 0.83 is inside 10.83 and 0.835: neither sentence quotes the ratio
+        const r = run(
+            '지수는 10.83이고 풋이 더 많아요. 0.835 수준이며 풋이 더 많아요.',
+            options(0.83, 'more_calls')
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.reviews).toHaveLength(1);
+        // a sentence that really quotes it is still judged, also with trailing punctuation
+        expect(
+            run(
+                '비율은 0.83. 풋이 더 많아요 0.83.',
+                options(0.83, 'more_calls')
+            ).fails
+        ).toHaveLength(1);
+    });
+});
+
+describe('levelsNearest', () => {
+    const ladder = {
+        above: [{ price: 117.77 }, { price: 119.7 }],
+        below: [{ price: 112.1 }],
+        closer: 'above',
+    };
+    const analysisRow = (l: unknown = ladder) =>
+        row('get_cached_analysis', { sinceAnalysis: { levelLadder: l } });
+    const run = (answer: string, l?: unknown) =>
+        CHECKS.levelsNearest(
+            {},
+            transcript({ answer, toolRows: [analysisRow(l)] })
+        );
+
+    it('passes when the nearest numbers are the first rung of each side (±0.01)', () => {
+        expect(
+            run('가장 가까운 저항은 117.77, 가장 가까운 지지는 112.1입니다.')
+                .fails
+        ).toEqual([]);
+        expect(run('가장 가까운 저항선 117.78').fails).toEqual([]);
+    });
+
+    it('fails when the number is not the first rung', () => {
+        expect(run('가장 가까운 저항은 119.70입니다.').fails).toEqual([
+            "levels: the answer's nearest resistance is 119.7 but the ladder's is 117.77",
+        ]);
+    });
+
+    it('fails on two different numbers in one role', () => {
+        const r = run(
+            '가장 가까운 저항은 117.77이고, 가장 가까운 저항은 119.7이에요.'
+        );
+        expect(r.fails).toContain(
+            'levels: two different numbers in the nearest resistance role: 117.77, 119.7'
+        );
+    });
+
+    it('fails when a nearest claim has no rung on that side', () => {
+        expect(
+            run('가장 가까운 지지는 100입니다.', {
+                above: [],
+                below: [],
+                closer: null,
+            }).fails
+        ).toHaveLength(1);
+    });
+
+    it('checks closer wording against the ladder', () => {
+        expect(run('위쪽 저항이 더 가까워요.').fails).toEqual([]);
+        expect(run('지지선이 더 가까워요.').fails).toEqual([
+            'levels: the answer says the support is closer but the ladder says above (resistance) is',
+        ]);
+        expect(
+            run('저항이 더 가까워요.', { ...ladder, closer: 'below' }).fails
+        ).toHaveLength(1);
+        // a tie or one empty side is not decided: a review line, not a failure
+        const tie = run('저항이 더 가까워요.', { ...ladder, closer: 'equal' });
+        expect(tie.fails).toEqual([]);
+        expect(tie.reviews).toHaveLength(1);
+    });
+
+    describe('an OLD result (no levelLadder): the reference is rebuilt from the recorded analysis levels', () => {
+        const oldResult = (extra: Record<string, unknown> = {}) =>
+            row('get_cached_analysis', {
+                analysis: {
+                    keyLevels: {
+                        support: [{ price: 112.1 }],
+                        resistance: [{ price: 117.77 }, { price: 119.7 }],
+                    },
+                },
+                sinceAnalysis: { priceNow: 115, ...extra },
+            });
+        const runOld = (answer: string) =>
+            CHECKS.levelsNearest(
+                {},
+                transcript({ answer, toolRows: [oldResult()] })
+            );
+
+        it('passes the right nearest numbers and says the chart references are missing', () => {
+            const r = runOld(
+                '가장 가까운 저항은 117.77, 가장 가까운 지지는 112.1입니다.'
+            );
+            expect(r.fails).toEqual([]);
+            expect(r.reviews[0]).toContain(
+                'rebuilt from the recorded analysis levels'
+            );
+        });
+
+        it('fails a wrong nearest number', () => {
+            expect(
+                runOld('가장 가까운 저항은 119.7입니다.').fails
+            ).toHaveLength(1);
+        });
+
+        it('is not evaluable without priceNow', () => {
+            const r = CHECKS.levelsNearest(
+                {},
+                transcript({
+                    answer: '가장 가까운 저항은 1입니다.',
+                    toolRows: [
+                        row('get_cached_analysis', {
+                            analysis: { keyLevels: {} },
+                        }),
+                    ],
+                })
+            );
+            expect(r.notEvaluable).toHaveLength(1);
+        });
+    });
+
+    it('skips a number followed by 일/주/개월 and reads the price after it', () => {
+        expect(
+            extractNearestClaims('가장 가까운 지지는 20일 평균선(98.5)입니다.')
+        ).toEqual([{ role: 'support', value: 98.5 }]);
+        expect(
+            extractNearestClaims(
+                '가장 가까운 저항선 52주 고점 130, 가장 가까운 지지는 3개월 저점 99'
+            )
+        ).toEqual([
+            { role: 'resistance', value: 130 },
+            { role: 'support', value: 99 },
+        ]);
+        // a bare number is still the price; a role with no price in reach yields no claim
+        expect(
+            extractNearestClaims('가장 가까운 저항은 117.77입니다.')
+        ).toEqual([{ role: 'resistance', value: 117.77 }]);
+        expect(
+            extractNearestClaims('가장 가까운 지지는 50일선입니다.')
+        ).toEqual([]);
+    });
+
+    it('is not evaluable without a ladder', () => {
+        const r = CHECKS.levelsNearest(
+            {},
+            transcript({
+                answer: '가장 가까운 저항은 1입니다.',
+                toolRows: [row('get_cached_analysis', { sinceAnalysis: {} })],
+            })
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+});
+
+describe('newsAligned', () => {
+    const TURN_AT = '2026-11-20T03:00:00.000Z'; // Friday
+    const news = (items: unknown[], moveDays: unknown[] = []) =>
+        row('get_news', { priceMoves: { moveDays }, items });
+    const call = (args: Record<string, unknown>) => ({
+        id: '1',
+        name: 'get_news',
+        args,
+    });
+    const run = (
+        testCase: Record<string, unknown>,
+        over: Partial<Transcript>
+    ) => CHECKS.newsAligned(testCase, transcript({ turnAt: TURN_AT, ...over }));
+
+    it('periodStartFor counts the date in the eval time zone (KST), not in UTC', () => {
+        expect(EVAL_TIME_ZONE).toBe('Asia/Seoul');
+        // Sunday 16:00 UTC = Monday 01:00 KST: the week already started on 2026-11-23 in the asking zone
+        expect(periodStartFor('week', '2026-11-22T16:00:00.000Z')).toBe(
+            '2026-11-23'
+        );
+        // Friday 03:00 UTC is Friday noon KST: same week either way
+        expect(periodStartFor('week', TURN_AT)).toBe('2026-11-16');
+        // 2026-11-30 16:00 UTC = 2026-12-01 01:00 KST: a month back is 11-01, not 10-31
+        expect(periodStartFor('month', '2026-11-30T16:00:00.000Z')).toBe(
+            '2026-11-01'
+        );
+    });
+
+    it('periodStartFor: a month back and the Monday of the week', () => {
+        expect(periodStartFor('month', TURN_AT)).toBe('2026-10-20');
+        expect(periodStartFor('week', TURN_AT)).toBe('2026-11-16');
+        expect(periodStartFor('month', null)).toBeNull();
+        expect(periodStartFor('other', TURN_AT)).toBeNull();
+    });
+
+    it('fails when a stored get_news result is the truncation envelope or not JSON', () => {
+        const r = run(
+            { periodStart: 'month' },
+            {
+                toolRows: [
+                    row('get_news', { truncated: true, preview: '{"a' }),
+                    row('get_news', '{"items": [{"title'),
+                ],
+            }
+        );
+        expect(r.fails).toHaveLength(2);
+    });
+
+    it('fails when get_news was called without since, or since is more than 3 days from the period start', () => {
+        const base = { periodStart: 'month' };
+        const rows = [news([])];
+        expect(
+            run(base, { toolCalls: [call({ symbol: 'AAPL' })], toolRows: rows })
+                .fails
+        ).toEqual([
+            'news: get_news was called without since for a period question',
+        ]);
+        expect(
+            run(base, {
+                toolCalls: [call({ symbol: 'AAPL', since: '2026-10-23' })],
+                toolRows: rows,
+            }).fails
+        ).toEqual([]);
+        expect(
+            run(base, {
+                toolCalls: [call({ symbol: 'AAPL', since: '2026-10-24' })],
+                toolRows: rows,
+            }).fails
+        ).toEqual([
+            'news: since 2026-10-24 is 4 days from the period start 2026-10-20',
+        ]);
+    });
+
+    it('a category call needs no since', () => {
+        expect(
+            run(
+                { periodStart: 'month' },
+                {
+                    toolCalls: [call({ category: 'crypto' })],
+                    toolRows: [news([])],
+                }
+            ).fails
+        ).toEqual([]);
+    });
+
+    const items = [
+        { title: '실적 발표 앞두고 기대감 확산 소식', session: '2026-11-12' },
+        { title: '주말에 나온 규제 관련 발표 내용', session: null },
+    ];
+
+    it('fails when a headline is tied to a date earlier than its session', () => {
+        const r = run(
+            { periodStart: 'month' },
+            {
+                answer: '11월 10일 하락은 실적 발표 앞두고 기대감 확산 소식과 같이 봐야 해요.',
+                toolRows: [news(items)],
+            }
+        );
+        expect(r.fails).toEqual([
+            'news: the headline "실적 발표 앞두고 기대감 확산 소식" belongs to session 2026-11-12 but is tied to 2026-11-10',
+        ]);
+    });
+
+    it('passes when the headline is tied to its own or a later date', () => {
+        expect(
+            run(
+                { periodStart: 'month' },
+                {
+                    answer: '11월 12일 상승은 실적 발표 앞두고 기대감 확산 소식과 같이 봐야 해요.',
+                    toolRows: [news(items)],
+                }
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('fails when a session-null item is presented as a cause, passes when reported as later news', () => {
+        const cause = run(
+            { periodStart: 'month' },
+            {
+                answer: '주말에 나온 규제 관련 발표 내용 때문에 하락했어요.',
+                toolRows: [news(items)],
+            }
+        );
+        expect(cause.fails).toEqual([
+            'news: an item with session null (after the last close) is presented as a cause: "주말에 나온 규제 관련 발표 내용"',
+        ]);
+        expect(
+            run(
+                { periodStart: 'month' },
+                {
+                    answer: '마감 이후에는 주말에 나온 규제 관련 발표 내용이 있었어요.',
+                    toolRows: [news(items)],
+                }
+            ).fails
+        ).toEqual([]);
+    });
+
+    it('lists the answer dates beside the move days for review', () => {
+        const r = run(
+            { periodStart: 'month' },
+            {
+                answer: '11월 12일에 크게 올랐어요.',
+                toolRows: [
+                    news([], [{ date: '2026-11-12' }, { date: '2026-11-03' }]),
+                ],
+            }
+        );
+        expect(r.reviews).toEqual([
+            'news: answer dates=[2026-11-12], priceMoves.moveDays=[2026-11-12, 2026-11-03]',
+        ]);
+    });
+
+    it('is not evaluable for alignment when no result carries priceMoves', () => {
+        const r = run(
+            { periodStart: 'month' },
+            { toolRows: [row('get_news', { items: [] })] }
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+});
+
+describe('holderLookupUsed', () => {
+    const lookup = (over: Record<string, unknown> = {}) => ({
+        query: 'Two Sigma',
+        period: '2026-06-30',
+        status: 'found',
+        matches: [{ shares: 1234567 }],
+        ...over,
+    });
+    const flowsCall = (args: Record<string, unknown>) => ({
+        id: '1',
+        name: 'get_investor_flows',
+        args,
+    });
+    const run = (
+        answer: string,
+        args: Record<string, unknown>,
+        l: unknown = lookup()
+    ) =>
+        CHECKS.holderLookupUsed(
+            {},
+            transcript({
+                answer,
+                toolCalls: [flowsCall(args)],
+                toolRows: [row('get_investor_flows', { holderLookup: l })],
+            })
+        );
+
+    it('passes with holder in the first call and the grouped share count and period in the answer', () => {
+        expect(
+            run('2026-06-30 기준 1,234,567주를 보유해요.', {
+                symbol: 'AMD',
+                holder: 'Two Sigma',
+            }).fails
+        ).toEqual([]);
+    });
+
+    it('accepts the period written in Korean or as a quarter', () => {
+        expect(periodForms('2026-06-30')).toContain('2026년 6월 30일');
+        expect(
+            run('2026년 2분기 말 1,234,567주예요.', {
+                symbol: 'AMD',
+                holder: 'Two Sigma',
+            }).fails
+        ).toEqual([]);
+    });
+
+    it('fails without holder in the first get_investor_flows call', () => {
+        expect(run('2026-06-30 1,234,567주', { symbol: 'AMD' }).fails).toEqual([
+            'holder: the first get_investor_flows call has no holder argument',
+        ]);
+        expect(
+            run('2026-06-30 1,234,567주', { symbol: 'AMD', holder: '  ' }).fails
+        ).toHaveLength(1);
+    });
+
+    it('fails when found but the answer lacks the share count or the period', () => {
+        const r = run('보유하고 있어요.', {
+            symbol: 'AMD',
+            holder: 'Two Sigma',
+        });
+        expect(r.fails).toEqual([
+            'holder: the answer lacks the matched share count 1,234,567',
+            'holder: the answer lacks the period 2026-06-30',
+        ]);
+    });
+
+    it('a status other than found makes the share check not evaluable, with a review line', () => {
+        const r = run(
+            '찾지 못했어요.',
+            { symbol: 'AMD', holder: 'Two Sigma' },
+            lookup({ status: 'no_matching_filer', matches: [] })
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+        expect(r.reviews).toHaveLength(1);
+    });
+
+    it('is not evaluable without a holderLookup in the stored result', () => {
+        const r = CHECKS.holderLookupUsed(
+            {},
+            transcript({
+                toolCalls: [flowsCall({ symbol: 'AMD', holder: 'x' })],
+                toolRows: [row('get_investor_flows', { available: true })],
+            })
+        );
+        expect(r.fails).toEqual([]);
+        expect(r.notEvaluable).toHaveLength(1);
+    });
+
+    it('does nothing when get_investor_flows was never called (mustCall reports that)', () => {
+        expect(CHECKS.holderLookupUsed({}, transcript()).fails).toEqual([]);
+    });
+});
+
+describe('sideEffects', () => {
+    it('counts chars, figure sentences, steps, tool calls, web searches and ungrounded numbers', () => {
+        const effects = sideEffects(
+            transcript({
+                answer: '종가는 44.74달러예요. 좋아요.',
+                toolCalls: [
+                    { id: '1', name: 'get_quote', args: {} },
+                    { id: '2', name: 'web_search', args: {} },
+                ],
+                toolRows: [row('get_quote', { price: 44.74 })],
+                steps: [
+                    { promptTokens: 1, cachedTokens: 0 },
+                    { promptTokens: 1, cachedTokens: 0 },
+                ],
+            }),
+            (answer: string, toolResults: string[]) => {
+                expect(answer).toContain('44.74');
+                expect(toolResults).toEqual(['{"price":44.74}']);
+                return ['1'];
+            }
+        );
+        expect(effects).toEqual({
+            answerChars: 19,
+            figureSentences: 1,
+            steps: 2,
+            toolCalls: 2,
+            webSearches: 1,
+            ungroundedNumbers: 1,
+        });
+    });
+
+    it('leaves ungroundedNumbers null without a finder', () => {
+        expect(sideEffects(transcript()).ungroundedNumbers).toBeNull();
+    });
+});
+
+describe('WP-08 cases', () => {
+    interface EvalCase {
+        id: string;
+        question?: string;
+        mustCall?: string[];
+        checks?: string[];
+        periodStart?: string;
+    }
+    const cases = CASES as EvalCase[];
+    const byId = (id: string) => cases.find(c => c.id === id);
+
+    it('adds news-month-1..4, news-why-1, pc-1..2, levels-1..2 and the holder cases with their checks', () => {
+        expect(byId('news-month-3')?.checks).toContain('newsAligned');
+        expect(byId('news-month-1')?.periodStart).toBe('month');
+        expect(byId('news-why-1')?.periodStart).toBe('week');
+        expect(byId('pc-2')?.checks).toEqual(['putCallSide']);
+        expect(byId('levels-1')?.checks).toEqual(['levelsNearest']);
+        expect(byId('holder')?.checks).toContain('holderLookupUsed');
+        expect(byId('holder-2')?.checks).toContain('holderLookupUsed');
+        expect(byId('earn-1')?.checks).toContain('earningsTally');
+        expect(
+            [
+                'news-month-1',
+                'news-month-2',
+                'news-month-3',
+                'news-month-4',
+            ].every(id => byId(id)?.mustCall?.includes('get_news'))
+        ).toBe(true);
+    });
+
+    it('case ids are unique', () => {
+        const ids = cases.map(c => c.id);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+});
+
+describe('compareRuns not-evaluable counts', () => {
+    it('reports how many not-evaluable lines each run had, so a quiet run is not read as clean', () => {
+        const run = (notEvaluable: string[]) => ({
+            label: 'x',
+            results: [
+                {
+                    id: 'c',
+                    fails: [],
+                    notEvaluable,
+                    turns: [{ toolCalls: [] }],
+                },
+            ],
+        });
+        const [row] = compareRuns(run(['a', 'b', 'c']), run(['a']));
+        expect([row?.oldNotEvaluable, row?.newNotEvaluable]).toEqual([3, 1]);
+    });
+});
+
+describe('runChecks: mustCallAny and reviewIfCalled', () => {
+    const called = (...names: string[]) =>
+        transcript({
+            toolCalls: names.map((name, i) => ({
+                id: String(i),
+                name,
+                args: {},
+            })),
+        });
+
+    it('mustCallAny passes when any listed tool was called and fails when none was', () => {
+        const testCase = {
+            mustCallAny: ['get_bars_indicators', 'get_price_stats'],
+        };
+        expect(runChecks(testCase, called('get_price_stats')).fails).toEqual(
+            []
+        );
+        expect(runChecks(testCase, called('get_quote')).fails).toEqual([
+            'tool: none of get_bars_indicators, get_price_stats was called',
+        ]);
+    });
+
+    it('reviewIfCalled leaves a review line, never a failure', () => {
+        const testCase = { reviewIfCalled: ['get_price_stats'] };
+        const hit = runChecks(testCase, called('get_price_stats'));
+        expect(hit.fails).toEqual([]);
+        expect(hit.reviews).toHaveLength(1);
+        expect(runChecks(testCase, called('get_quote')).reviews).toEqual([]);
+    });
+});
+
+describe('price statistics checks', () => {
+    // 2026-11-20 KST: the year is 2026.
+    const TURN_AT = '2026-11-20T03:00:00.000Z';
+    const call = (args: Record<string, unknown>, id = '1') => ({
+        id,
+        name: 'get_price_stats',
+        args,
+    });
+    const stats = (subjects: unknown[]) => row('get_price_stats', { subjects });
+    const view = (over: Record<string, unknown> = {}) => ({
+        subject: 'AAPL',
+        window: { baseDate: '2025-12-31', endDate: '2026-11-19' },
+        returnPct: 8.27,
+        cagrPct: null,
+        fromHighestClosePct: -6.08,
+        maxDrawdown: { pct: -18.4 },
+        ...over,
+    });
+    const run = (
+        name: keyof typeof CHECKS,
+        testCase: Record<string, unknown>,
+        over: Partial<Transcript>,
+        reference: Transcript | null = null
+    ) =>
+        (
+            CHECKS[name] as (...a: unknown[]) => {
+                fails: string[];
+                reviews: string[];
+                notEvaluable?: string[];
+            }
+        )(testCase, transcript({ turnAt: TURN_AT, ...over }), null, reference);
+
+    describe('priceStatsSelection', () => {
+        const expectArgs = { period: 'ytd' };
+        it('accepts period ytd or a from near the start of the year', () => {
+            [
+                { period: 'ytd' },
+                { from: '2025-12-31' },
+                { from: '2026-01-02' },
+            ].forEach(args =>
+                expect(
+                    run(
+                        'priceStatsSelection',
+                        { expectArgs },
+                        { toolCalls: [call(args)] }
+                    ).fails
+                ).toEqual([])
+            );
+        });
+
+        it('fails on another window and names the mismatch', () => {
+            const r = run(
+                'priceStatsSelection',
+                { expectArgs },
+                { toolCalls: [call({ period: '1y' })] }
+            );
+            expect(r.fails).toHaveLength(1);
+            expect(r.fails[0]).toContain('window is not ytd');
+            expect(
+                run(
+                    'priceStatsSelection',
+                    { expectArgs },
+                    { toolCalls: [call({ from: '2026-03-02' })] }
+                ).fails
+            ).toHaveLength(1);
+        });
+
+        it('is empty without expectArgs or without a call (mustCall reports that)', () => {
+            expect(
+                run('priceStatsSelection', {}, { toolCalls: [call({})] }).fails
+            ).toEqual([]);
+            expect(
+                run('priceStatsSelection', { expectArgs }, {}).fails
+            ).toEqual([]);
+        });
+
+        it('a comparison needs every symbol in one call: three single-symbol calls fail', () => {
+            const cmp = {
+                expectArgs: {
+                    symbols: ['AAPL', 'MSFT', 'GOOGL'],
+                    period: 'ytd',
+                },
+            };
+            expect(
+                run('priceStatsSelection', cmp, {
+                    toolCalls: [
+                        call({ symbols: ['AAPL'], period: 'ytd' }, '1'),
+                        call({ symbols: ['MSFT'], period: 'ytd' }, '2'),
+                        call({ symbols: ['GOOGL'], period: 'ytd' }, '3'),
+                    ],
+                }).fails
+            ).toHaveLength(1);
+            expect(
+                run('priceStatsSelection', cmp, {
+                    toolCalls: [
+                        call({
+                            symbols: ['aapl', 'MSFT', 'GOOGL'],
+                            period: 'ytd',
+                        }),
+                    ],
+                }).fails
+            ).toEqual([]);
+        });
+
+        it('treats a KR suffix as the same symbol', () => {
+            expect(
+                run(
+                    'priceStatsSelection',
+                    { expectArgs: { symbols: ['005930', 'NVDA'] } },
+                    { toolCalls: [call({ symbols: ['005930.KS', 'NVDA'] })] }
+                ).fails
+            ).toEqual([]);
+        });
+
+        it('index, previous year, from, dates, noWindow and defaultPeriod', () => {
+            const ok = (expectArgs: object, args: object) =>
+                run(
+                    'priceStatsSelection',
+                    { expectArgs },
+                    { toolCalls: [call(args as Record<string, unknown>)] }
+                ).fails;
+            expect(ok({ index: 'kospi' }, { index: 'kospi' })).toEqual([]);
+            expect(ok({ index: 'kospi' }, { index: 'kosdaq' })).toHaveLength(1);
+            expect(ok({ year: 'previous' }, { year: 2025 })).toEqual([]);
+            expect(ok({ year: 'previous' }, { year: 2026 })).toHaveLength(1);
+            expect(ok({ from: '2026-03-02' }, { from: '2026-03-02' })).toEqual(
+                []
+            );
+            expect(
+                ok(
+                    { datesInclude: ['2026-07-03'], noWindow: true },
+                    { dates: ['2026-07-03'] }
+                )
+            ).toEqual([]);
+            expect(
+                ok(
+                    { datesInclude: ['2026-07-03'], noWindow: true },
+                    { dates: ['2026-07-03'], period: '1y' }
+                )
+            ).toHaveLength(1);
+            expect(
+                ok({ datesInclude: ['2026-07-03'] }, { dates: ['2026-07-02'] })
+            ).toHaveLength(1);
+            expect(ok({ period: '1y', defaultPeriod: true }, {})).toEqual([]);
+            expect(
+                ok({ period: '1y', defaultPeriod: true }, { period: '3y' })
+            ).toHaveLength(1);
+        });
+    });
+
+    describe('priceFigures', () => {
+        const toolRows = [stats([view()])];
+        it('passes when every quoted percent is a stored figure (sign-insensitive)', () => {
+            const r = run(
+                'priceFigures',
+                {},
+                {
+                    toolRows,
+                    answer: '올해 수익률은 +8.27%입니다. 고점 대비 6.08% 하락했고, 최대 낙폭은 -18.4%입니다.',
+                }
+            );
+            expect(r.fails).toEqual([]);
+        });
+
+        it('fails on a percent that is none of the stored figures', () => {
+            const r = run(
+                'priceFigures',
+                {},
+                { toolRows, answer: '올해 수익률은 8.9%입니다.' }
+            );
+            expect(r.fails).toHaveLength(1);
+            expect(r.fails[0]).toContain('8.9%');
+        });
+
+        it('ignores percents in sentences without a return wording', () => {
+            expect(
+                run(
+                    'priceFigures',
+                    {},
+                    { toolRows, answer: '거래량은 평소의 120%였어요.' }
+                ).fails
+            ).toEqual([]);
+        });
+
+        it('checks a quoted date close against closes[].close', () => {
+            const dated = stats([
+                view({
+                    closes: [
+                        {
+                            requestedDate: '2026-07-03',
+                            date: '2026-07-02',
+                            close: 51.2,
+                            status: 'previous_session',
+                        },
+                    ],
+                }),
+            ]);
+            expect(
+                run(
+                    'priceFigures',
+                    {},
+                    {
+                        toolRows: [dated],
+                        answer: '2026-07-02 종가는 $51.2입니다.',
+                    }
+                ).fails
+            ).toEqual([]);
+            const wrong = run(
+                'priceFigures',
+                {},
+                { toolRows: [dated], answer: '7월 3일 종가는 52.1달러입니다.' }
+            );
+            expect(wrong.fails).toHaveLength(1);
+            expect(wrong.fails[0]).toContain('stored close is 51.2');
+        });
+
+        it('judges an OLD answer against the reference run and says so', () => {
+            const reference = transcript({ toolRows });
+            const r = run(
+                'priceFigures',
+                {},
+                { answer: '올해 수익률은 5%입니다.' },
+                reference
+            );
+            expect(r.fails).toHaveLength(1);
+            const ok = run(
+                'priceFigures',
+                {},
+                { answer: '올해 수익률은 8.27%입니다.' },
+                reference
+            );
+            expect(ok.fails).toEqual([]);
+            expect(ok.reviews).toEqual([
+                'price figures: judged against the reference run result',
+            ]);
+        });
+
+        it('is not evaluable without any stored result', () => {
+            const r = run(
+                'priceFigures',
+                {},
+                { answer: '올해 수익률은 5%입니다.' }
+            );
+            expect(r.fails).toEqual([]);
+            expect(r.notEvaluable).toHaveLength(1);
+        });
+    });
+
+    describe('priceStatsDates', () => {
+        const withStatus = (
+            status: string,
+            over: Record<string, unknown> = {}
+        ) =>
+            stats([
+                view({
+                    closes: [
+                        {
+                            requestedDate: '2026-07-04',
+                            date: '2026-07-02',
+                            close: 51.2,
+                            status,
+                            ...over,
+                        },
+                    ],
+                }),
+            ]);
+        it('previous_session: the answer must name the session date', () => {
+            const toolRows = [withStatus('previous_session')];
+            expect(
+                run(
+                    'priceStatsDates',
+                    {},
+                    {
+                        toolRows,
+                        answer: '7월 4일은 휴장이라 7월 2일 종가 51.2달러입니다.',
+                    }
+                ).fails
+            ).toEqual([]);
+            expect(
+                run(
+                    'priceStatsDates',
+                    {},
+                    { toolRows, answer: '7월 4일 종가는 51.2달러입니다.' }
+                ).fails
+            ).toHaveLength(1);
+        });
+
+        it('after_last_close: no close for that date, unless the sentence says there is none', () => {
+            const toolRows = [
+                withStatus('after_last_close', { date: null, close: null }),
+            ];
+            expect(
+                run(
+                    'priceStatsDates',
+                    {},
+                    { toolRows, answer: '7월 4일 종가는 52달러입니다.' }
+                ).fails
+            ).toHaveLength(1);
+            expect(
+                run(
+                    'priceStatsDates',
+                    {},
+                    {
+                        toolRows,
+                        answer: '7월 4일 종가는 아직 없어요. 마지막 종가는 51달러예요.',
+                    }
+                ).fails
+            ).toEqual([]);
+        });
+
+        it('has nothing to judge without date lookups', () => {
+            expect(
+                run(
+                    'priceStatsDates',
+                    {},
+                    { toolRows: [stats([view()])], answer: 'x' }
+                ).fails
+            ).toEqual([]);
+        });
+    });
+
+    describe('noAnnualRateUnderYear', () => {
+        it('fails on an annual figure when every cagrPct is null', () => {
+            const toolRows = [stats([view()])];
+            expect(
+                run(
+                    'noAnnualRateUnderYear',
+                    {},
+                    { toolRows, answer: '연평균 12.5%로 올랐어요.' }
+                ).fails
+            ).toHaveLength(1);
+            expect(
+                run(
+                    'noAnnualRateUnderYear',
+                    {},
+                    { toolRows, answer: '올해 8.27% 올랐어요.' }
+                ).fails
+            ).toEqual([]);
+        });
+
+        it('does not judge when a subject has an annual rate', () => {
+            const toolRows = [
+                stats([view(), view({ subject: 'MSFT', cagrPct: 15.87 })]),
+            ];
+            expect(
+                run(
+                    'noAnnualRateUnderYear',
+                    {},
+                    { toolRows, answer: '연평균 15.87%예요.' }
+                ).fails
+            ).toEqual([]);
+        });
+    });
+
+    describe('correlationNoCause', () => {
+        it('leaves a review line when a correlation sentence reads as a cause', () => {
+            expect(
+                run(
+                    'correlationNoCause',
+                    {},
+                    { answer: '상관계수가 0.8이라 NVDA 영향으로 움직였어요.' }
+                ).reviews
+            ).toHaveLength(1);
+            expect(
+                run(
+                    'correlationNoCause',
+                    {},
+                    { answer: '상관계수는 0.8로 같이 움직였어요.' }
+                ).reviews
+            ).toEqual([]);
+        });
+    });
+});
+
+describe('WP-09 cases', () => {
+    interface EvalCase {
+        id: string;
+        mustCall?: string[];
+        mustCallAny?: string[];
+        mustNotCall?: string[];
+        reviewIfCalled?: string[];
+        expectArgs?: Record<string, unknown>;
+        checks?: string[];
+    }
+    const cases = CASES as EvalCase[];
+    const byId = (id: string) => cases.find(c => c.id === id);
+
+    it('adds 14 price statistics cases, each requiring get_price_stats and carrying expectArgs', () => {
+        const ps = cases.filter(
+            c => c.id.startsWith('ps-') && c.id !== 'ps-1y-1'
+        );
+        expect(ps).toHaveLength(14);
+        expect(
+            ps.every(
+                c =>
+                    c.mustCall?.includes('get_price_stats') &&
+                    c.expectArgs !== undefined
+            )
+        ).toBe(true);
+    });
+
+    it('ps-1y-1 accepts either the bars tool or the price statistics tool', () => {
+        expect(byId('ps-1y-1')?.mustCallAny).toEqual([
+            'get_bars_indicators',
+            'get_price_stats',
+        ]);
+    });
+
+    it('the three-symbol comparison expects all three symbols in one call', () => {
+        expect(byId('ps-cmp-1')?.expectArgs?.symbols).toEqual([
+            'AAPL',
+            'MSFT',
+            'GOOGL',
+        ]);
+    });
+
+    it('the index-history and swing boundary cases must not call get_price_stats', () => {
+        expect(byId('b-idxh-1')?.mustNotCall).toContain('get_price_stats');
+        expect(byId('b-swing-1')?.mustNotCall).toContain('get_price_stats');
+    });
+
+    it('quote must not call it, and the 52-week and trend cases only leave a review line', () => {
+        expect(byId('quote')?.mustNotCall).toContain('get_price_stats');
+        expect(byId('b-52w-1')?.reviewIfCalled).toContain('get_price_stats');
+        expect(byId('trend-1')?.reviewIfCalled).toContain('get_price_stats');
+    });
+});
+
+describe('WP-09 notes checks', () => {
+    const barsRow = (over: Record<string, unknown>) => ({
+        toolName: 'get_bars_indicators',
+        content: JSON.stringify({ timeframe: '1Day', ...over }),
+    });
+    const barsCall = (timeframe: string) => ({
+        id: `c-${timeframe}`,
+        name: 'get_bars_indicators',
+        args: { symbol: 'AAPL', timeframe },
+    });
+
+    describe('streakNotFromOtherTimeframe', () => {
+        const run = (t: Partial<Transcript>) =>
+            CHECKS.streakNotFromOtherTimeframe({}, transcript(t));
+
+        it('fails: a streak counted without any 1Day call', () => {
+            const result = run({
+                answer: '4시간봉 기준으로 3일 연속 올랐습니다.',
+                toolCalls: [barsCall('4Hour')],
+            });
+            expect(result.fails).toEqual([
+                'streak: no 1Day call, yet the answer counts a streak: "4시간봉 기준으로 3일 연속 올랐습니다."',
+            ]);
+        });
+
+        it('passes: no 1Day call and the answer says it cannot be determined', () => {
+            const result = run({
+                answer: '4시간봉에서는 연속 상승 일수를 확인할 수 없습니다.',
+                toolCalls: [barsCall('4Hour')],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.reviews).toEqual([]);
+        });
+
+        it('review: no 1Day call, no count and no limit wording', () => {
+            const result = run({
+                answer: '최근 흐름은 완만합니다.',
+                toolCalls: [barsCall('4Hour')],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.reviews).toHaveLength(1);
+        });
+
+        it('passes: a 1Day call and the count equals derived.closeStreak.days (a date in the sentence is not a count)', () => {
+            const result = run({
+                answer: '11월 20일 종가 기준으로 3일 연속 상승했습니다.',
+                toolCalls: [barsCall('4Hour'), barsCall('1Day')],
+                toolRows: [
+                    barsRow({
+                        derived: {
+                            closeStreak: {
+                                direction: 'up',
+                                days: 3,
+                                truncated: false,
+                            },
+                        },
+                    }),
+                ],
+            });
+            expect(result.fails).toEqual([]);
+        });
+
+        it('fails: a 1Day call but the count differs from days', () => {
+            const result = run({
+                answer: '5일 연속 상승했습니다.',
+                toolCalls: [barsCall('1Day')],
+                toolRows: [
+                    barsRow({
+                        derived: {
+                            closeStreak: {
+                                direction: 'up',
+                                days: 3,
+                                truncated: false,
+                            },
+                        },
+                    }),
+                ],
+            });
+            expect(result.fails).toEqual([
+                'streak: the answer says 5 but derived.closeStreak.days is 3',
+            ]);
+        });
+
+        it('truncated streak: "at least" counts of days or more pass, fewer fail', () => {
+            const row = barsRow({
+                derived: {
+                    closeStreak: { direction: 'up', days: 4, truncated: true },
+                },
+            });
+            expect(
+                run({
+                    answer: '최소 4일 연속 상승했습니다.',
+                    toolCalls: [barsCall('1Day')],
+                    toolRows: [row],
+                }).fails
+            ).toEqual([]);
+            expect(
+                run({
+                    answer: '3일 연속 상승했습니다.',
+                    toolCalls: [barsCall('1Day')],
+                    toolRows: [row],
+                }).fails
+            ).toHaveLength(1);
+        });
+
+        it('not evaluable: a 1Day call whose stored result has no streak', () => {
+            const result = run({
+                answer: '연속 일수는 확인할 수 없습니다.',
+                toolCalls: [barsCall('1Day')],
+                toolRows: [barsRow({ derived: { closeStreak: null } })],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.notEvaluable).toHaveLength(1);
+        });
+    });
+
+    describe('crossNotDeniedOnShortHistory', () => {
+        const run = (t: Partial<Transcript>) =>
+            CHECKS.crossNotDeniedOnShortHistory({}, transcript(t));
+        const shortRow = barsRow({ derived: { maCross50_200: null } });
+
+        it('fails: the scan is incomplete (null) and the answer says no cross happened', () => {
+            const result = run({
+                answer: '최근 1년 안에 골든크로스는 없었습니다.',
+                toolRows: [shortRow],
+            });
+            expect(result.fails).toEqual([
+                'cross: maCross50_200 is null (scan incomplete) but the answer denies a cross: "최근 1년 안에 골든크로스는 없었습니다."',
+            ]);
+        });
+
+        it('passes: the answer says the data does not reach that far', () => {
+            const result = run({
+                answer: '상장 기간이 짧아 1년 전까지 골든크로스를 확인할 수 없습니다.',
+                toolRows: [shortRow],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.reviews).toEqual([]);
+        });
+
+        it('review: no sentence about a cross at all', () => {
+            const result = run({
+                answer: '데이터가 짧습니다.',
+                toolRows: [shortRow],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.reviews).toHaveLength(1);
+        });
+
+        it('not evaluable: the stored scan finished (an empty list is a real "none")', () => {
+            const result = run({
+                answer: '골든크로스는 없었습니다.',
+                toolRows: [barsRow({ derived: { maCross50_200: [] } })],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.notEvaluable).toHaveLength(1);
+        });
+
+        it('not evaluable: no stored daily result', () => {
+            const result = run({ answer: '골든크로스는 없었습니다.' });
+            expect(result.notEvaluable).toHaveLength(1);
+        });
+    });
+
+    describe('nonPayerSaysNone', () => {
+        const fundamentals = (dividends: unknown) => ({
+            toolName: 'get_fundamentals',
+            content: JSON.stringify({ dividends }),
+        });
+        const NON_PAYER = {
+            latestExDate: null,
+            latestAmount: null,
+            trailing12mAmount: 0,
+            trailingYieldPct: 0,
+        };
+        const run = (t: Partial<Transcript>) =>
+            CHECKS.nonPayerSaysNone({}, transcript(t));
+
+        it('passes: a confirmed non-payer, the answer says no dividend, no web search', () => {
+            const result = run({
+                answer: 'Amazon은 배당금을 지급하지 않습니다.',
+                toolRows: [fundamentals(NON_PAYER)],
+            });
+            expect(result.fails).toEqual([]);
+        });
+
+        it('fails: web_search was called for a confirmed non-payer', () => {
+            const result = run({
+                answer: '배당금은 없습니다.',
+                toolCalls: [{ id: 'w', name: 'web_search', args: {} }],
+                toolRows: [fundamentals(NON_PAYER)],
+            });
+            expect(result.fails).toEqual([
+                'non-payer: web_search was called for a confirmed non-payer',
+            ]);
+        });
+
+        it('fails: the answer never says the company pays nothing', () => {
+            const result = run({
+                answer: '배당 정보를 정리해 드릴게요.',
+                toolRows: [fundamentals(NON_PAYER)],
+            });
+            expect(result.fails).toEqual([
+                'non-payer: the answer does not say the company pays no dividend',
+            ]);
+        });
+
+        it('not evaluable: the stored dividends are a payer, null, or absent', () => {
+            expect(
+                run({
+                    answer: 'x',
+                    toolRows: [
+                        fundamentals({ ...NON_PAYER, trailing12mAmount: 1.2 }),
+                    ],
+                }).notEvaluable
+            ).toHaveLength(1);
+            expect(
+                run({ answer: 'x', toolRows: [fundamentals(null)] })
+                    .notEvaluable
+            ).toHaveLength(1);
+            expect(run({ answer: 'x' }).notEvaluable).toHaveLength(1);
+        });
+    });
+
+    describe('earningsTimingNotInvented', () => {
+        const fundamentals = (analyst: Record<string, unknown>) => ({
+            toolName: 'get_fundamentals',
+            content: JSON.stringify({ analyst }),
+        });
+        const run = (t: Partial<Transcript>) =>
+            CHECKS.earningsTimingNotInvented({}, transcript(t));
+
+        it('fails: a timing stated with no earningsSession and no web search', () => {
+            const result = run({
+                answer: '삼성전자는 장 시작 전에 발표합니다.',
+                toolRows: [fundamentals({ nextEarningsDate: '2026-10-30' })],
+            });
+            expect(result.fails).toEqual([
+                'earnings timing: no earningsSession and no web search, but the answer states a timing: "삼성전자는 장 시작 전에 발표합니다."',
+            ]);
+        });
+
+        it('passes: the answer says the timing is not provided', () => {
+            const result = run({
+                answer: '발표 시간대(장 시작 전인지 후인지)는 확인할 수 없습니다.',
+                toolRows: [fundamentals({ nextEarningsDate: '2026-10-30' })],
+            });
+            expect(result.fails).toEqual([]);
+        });
+
+        it('passes: earningsSession supports the claim', () => {
+            const result = run({
+                answer: '장 마감 후에 발표합니다.',
+                toolRows: [
+                    fundamentals({
+                        nextEarningsDate: '2026-10-30',
+                        earningsSession: 'after_market',
+                    }),
+                ],
+            });
+            expect(result.fails).toEqual([]);
+        });
+
+        it('passes: a web search was made', () => {
+            const result = run({
+                answer: '회사 공지에 따르면 장 시작 전에 발표합니다.',
+                toolCalls: [{ id: 'w', name: 'web_search', args: {} }],
+                toolRows: [fundamentals({ nextEarningsDate: '2026-10-30' })],
+            });
+            expect(result.fails).toEqual([]);
+        });
+
+        it('not evaluable: no stored next earnings date', () => {
+            const result = run({
+                answer: '장 시작 전입니다.',
+                toolRows: [fundamentals({ nextEarningsDate: null })],
+            });
+            expect(result.fails).toEqual([]);
+            expect(result.notEvaluable).toHaveLength(1);
+        });
+    });
+});
+
+describe('WP-09 notes cases', () => {
+    interface EvalCase {
+        id: string;
+        question?: string;
+        mustCall?: string[];
+        mustNotCall?: string[];
+        checks?: string[];
+    }
+    const cases = CASES as EvalCase[];
+    const byId = (id: string) => cases.find(c => c.id === id);
+
+    it('adds n-streak-1, n-cross-1, n-div-1 and n-earn-1, each with its check, beside the existing div-1..3', () => {
+        expect(byId('n-streak-1')?.checks).toEqual([
+            'streakNotFromOtherTimeframe',
+        ]);
+        expect(byId('n-cross-1')?.checks).toEqual([
+            'crossNotDeniedOnShortHistory',
+        ]);
+        expect(byId('n-div-1')?.checks).toEqual(['nonPayerSaysNone']);
+        expect(byId('n-earn-1')?.checks).toEqual(['earningsTimingNotInvented']);
+        expect(
+            ['div-1', 'div-2', 'div-3'].every(id =>
+                byId(id)?.checks?.includes('dividendVerbatim')
+            )
+        ).toBe(true);
+    });
+
+    it('the cases call the tool whose null rule they test', () => {
+        expect(byId('n-streak-1')?.mustCall).toEqual(['get_bars_indicators']);
+        expect(byId('n-cross-1')?.mustCall).toEqual(['get_bars_indicators']);
+        expect(byId('n-div-1')?.mustCall).toEqual(['get_fundamentals']);
+        expect(byId('n-earn-1')?.mustCall).toEqual(['get_fundamentals']);
+    });
+});
+
+describe('WP-09 notes checks: hedge and claim in one sentence, anchors, amounts', () => {
+    const barsCall = (timeframe: string) => ({
+        id: `c-${timeframe}`,
+        name: 'get_bars_indicators',
+        args: { symbol: 'AAPL', timeframe },
+    });
+    const dailyRow = (derived: Record<string, unknown>) => ({
+        toolName: 'get_bars_indicators',
+        content: JSON.stringify({ timeframe: '1Day', derived }),
+    });
+    const fundamentals = (body: Record<string, unknown>) => ({
+        toolName: 'get_fundamentals',
+        content: JSON.stringify(body),
+    });
+
+    it('streak: a sentence that hedges AND counts goes to review, not pass or fail', () => {
+        const result = CHECKS.streakNotFromOtherTimeframe(
+            {},
+            transcript({
+                answer: '정확히 확인할 수 없지만 차트상 3봉 연속 올랐습니다.',
+                toolCalls: [barsCall('4Hour')],
+            })
+        );
+        expect(result.fails).toEqual([]);
+        expect(result.reviews).toHaveLength(1);
+        expect(result.reviews[0]).toContain(
+            'both says it cannot be determined'
+        );
+    });
+
+    it('streak: a short-history word is not a hedge here (only the cross check uses it)', () => {
+        const result = CHECKS.streakNotFromOtherTimeframe(
+            {},
+            transcript({
+                answer: '기간이 짧아서 그런지 3일 연속 올랐습니다.',
+                toolCalls: [barsCall('4Hour')],
+            })
+        );
+        expect(result.fails).toHaveLength(1);
+    });
+
+    it('cross: a sentence that hedges AND denies goes to review; a short-history word still hedges', () => {
+        const row = dailyRow({ maCross50_200: null });
+        const mixed = CHECKS.crossNotDeniedOnShortHistory(
+            {},
+            transcript({
+                answer: '데이터가 짧지만 골든크로스는 없었습니다.',
+                toolRows: [row],
+            })
+        );
+        expect(mixed.fails).toEqual([]);
+        expect(mixed.reviews).toHaveLength(1);
+        const asked = CHECKS.crossNotDeniedOnShortHistory(
+            {},
+            transcript({
+                answer: '이력이 짧아 골든크로스가 없었는지 알 수 없습니다.',
+                toolRows: [row],
+            })
+        );
+        expect(asked.fails).toEqual([]);
+        expect(asked.reviews).toEqual([]);
+    });
+
+    describe('earnings timing words', () => {
+        const run = (answer: string) =>
+            CHECKS.earningsTimingNotInvented(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [
+                        fundamentals({
+                            analyst: { nextEarningsDate: '2026-10-30' },
+                        }),
+                    ],
+                })
+            ).fails;
+
+        it.each([
+            '성장 전망이 밝아 실적이 기대됩니다.',
+            '시장 전반의 분위기도 함께 봐야 합니다.',
+            '시장 마감 후 뉴스도 있었습니다.',
+        ])('does not match "%s"', answer => {
+            expect(run(answer)).toEqual([]);
+        });
+
+        it.each([
+            '장 시작 전에 발표합니다.',
+            '개장 전 발표입니다.',
+            '장 마감 후 발표합니다.',
+            '장 전에 공개됩니다.',
+        ])('matches "%s"', answer => {
+            expect(run(answer)).toHaveLength(1);
+        });
+    });
+
+    describe('nonPayerSaysNone amounts', () => {
+        const NON_PAYER = {
+            latestExDate: null,
+            latestAmount: null,
+            trailing12mAmount: 0,
+            trailingYieldPct: 0,
+        };
+        const run = (answer: string) =>
+            CHECKS.nonPayerSaysNone(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [fundamentals({ dividends: NON_PAYER })],
+                })
+            ).fails;
+
+        it('fails when a non-zero amount sits next to 배당 even though the answer also says none', () => {
+            expect(
+                run(
+                    '배당금은 주지 않는다고 하지만 분기 0.5달러를 준다고 합니다.'
+                )
+            ).toHaveLength(1);
+            expect(run('배당은 없고 주당 1,000원을 지급합니다.')).toHaveLength(
+                1
+            );
+        });
+
+        it('"배당금은 주당 0.5달러" fails; "배당 1,000원" fails', () => {
+            const amountFails = (answer: string) =>
+                run(answer).filter(f => f.includes('gives a dividend amount'));
+            expect(amountFails('배당금은 주당 0.5달러입니다.')).toHaveLength(1);
+            expect(amountFails('배당 1,000원을 지급합니다.')).toHaveLength(1);
+        });
+
+        it('a price in the same sentence as "no dividend" is not a fail, it goes to review', () => {
+            const result = CHECKS.nonPayerSaysNone(
+                {},
+                transcript({
+                    answer: '주가는 200달러이고 배당은 없습니다.',
+                    toolRows: [fundamentals({ dividends: NON_PAYER })],
+                })
+            );
+            expect(result.fails).toEqual([]);
+            expect(result.reviews).toHaveLength(1);
+        });
+
+        it('a zero amount or an amount in a non-dividend sentence is fine', () => {
+            expect(run('배당금은 0달러, 즉 지급하지 않습니다.')).toEqual([]);
+            expect(run('배당을 주지 않습니다. 주가는 200달러입니다.')).toEqual(
+                []
+            );
+        });
+    });
+});
+
+describe('WP-09 notes checks: live A/B misfires', () => {
+    const barsRow = (derived: Record<string, unknown>) => ({
+        toolName: 'get_bars_indicators',
+        content: JSON.stringify({ timeframe: '1Day', derived }),
+    });
+    const fundamentals = (analyst: Record<string, unknown>) => ({
+        toolName: 'get_fundamentals',
+        content: JSON.stringify({ analyst }),
+    });
+
+    describe.each([
+        '발표 시간대는 아직 정해지지 않았습니다.',
+        '장 시작 전인지는 확인하지 못했습니다.',
+        '이 결과에는 발표 시간대가 담겨 있지 않습니다.',
+        '장 시작 전이라고 단정하지 않겠습니다.',
+        '장 시작 전인지 끝난 뒤인지 판단할 근거가 없습니다.',
+    ])('hedge "%s"', answer => {
+        it('is not a timing claim', () => {
+            const result = CHECKS.earningsTimingNotInvented(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [
+                        fundamentals({ nextEarningsDate: '2026-10-30' }),
+                    ],
+                })
+            );
+            expect(result.fails).toEqual([]);
+        });
+    });
+
+    it('streak: the new hedges count (no count and a limit sentence passes quietly)', () => {
+        const result = CHECKS.streakNotFromOtherTimeframe(
+            {},
+            transcript({
+                answer: '연속 일수는 이 결과에 담겨 있지 않아 판단하지 못합니다.',
+                toolCalls: [
+                    {
+                        id: 'c',
+                        name: 'get_bars_indicators',
+                        args: { timeframe: '4Hour' },
+                    },
+                ],
+            })
+        );
+        expect(result.fails).toEqual([]);
+        expect(result.reviews).toEqual([]);
+    });
+
+    it('cross: "근거가 없어요" is a statement about evidence, not a no-cross claim', () => {
+        const run = (answer: string) =>
+            CHECKS.crossNotDeniedOnShortHistory(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [barsRow({ maCross50_200: null })],
+                })
+            );
+        expect(run('골든크로스 여부를 판단할 근거가 없어요.').fails).toEqual(
+            []
+        );
+        expect(run('골든크로스를 말할 근거가 없습니다.').fails).toEqual([]);
+        expect(run('골든크로스는 없었습니다.').fails).toHaveLength(1);
+    });
+
+    describe('earnings timing from memory', () => {
+        const run = (answer: string, analyst: Record<string, unknown> = {}) =>
+            CHECKS.earningsTimingNotInvented(
+                {},
+                transcript({
+                    answer,
+                    toolRows: [
+                        fundamentals({
+                            nextEarningsDate: '2026-10-30',
+                            ...analyst,
+                        }),
+                    ],
+                })
+            );
+
+        it.each([
+            '보통 장 마감 뒤에 발표합니다.',
+            '지난 몇 년간 장 마감 뒤에 발표했습니다.',
+            'They usually report after the close.',
+            '정확한 시간은 확인할 수 없지만 보통 장 마감 후입니다.',
+        ])('fails "%s"', answer => {
+            expect(run(answer).fails).toHaveLength(1);
+        });
+
+        it('passes the same remark when earningsSession supports it', () => {
+            expect(
+                run('보통 장 마감 뒤에 발표합니다.', {
+                    earningsSession: 'after_market',
+                }).fails
+            ).toEqual([]);
+        });
+
+        it('not evaluable when earningsSessionUnknown would not apply (second-source date, or an estimate)', () => {
+            expect(
+                run('x', { earningsDateAlt: { date: '2026-11-02' } })
+                    .notEvaluable
+            ).toHaveLength(1);
+            expect(
+                run('x', { earningsDateConfirmed: false }).notEvaluable
+            ).toHaveLength(1);
+        });
+    });
+
+    it('n-earn-2 (AMZN) and n-earn-3 (O) ask the same question as n-earn-1 and use the same check', () => {
+        interface EvalCase {
+            id: string;
+            question: string;
+            mustCall: string[];
+            checks: string[];
+        }
+        const cases = CASES as EvalCase[];
+        const byId = (id: string) => cases.find(c => c.id === id);
+        expect(byId('n-earn-2')?.question).toBe(
+            'AMZN 다음 실적 발표는 장 시작 전이야, 끝난 뒤야?'
+        );
+        expect(byId('n-earn-3')?.question).toBe(
+            'O 다음 실적 발표는 장 시작 전이야, 끝난 뒤야?'
+        );
+        expect(
+            ['n-earn-2', 'n-earn-3'].every(
+                id =>
+                    byId(id)?.checks.includes('earningsTimingNotInvented') &&
+                    byId(id)?.mustCall.includes('get_fundamentals')
+            )
+        ).toBe(true);
     });
 });

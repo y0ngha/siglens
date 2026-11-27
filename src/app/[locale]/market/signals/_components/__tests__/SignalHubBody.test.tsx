@@ -29,6 +29,22 @@ const catalog = vi.hoisted(() => ({ value: null as unknown }));
 vi.mock('@/entities/guide/api', () => ({
     loadGuideCatalog: vi.fn(async () => catalog.value),
 }));
+/** 표 내용은 `views/signal-record` 스위트가 본다. 여기서는 본문이 어느 신호로 부르는지만 본다. */
+vi.mock('@/views/signal-record/SignalBaseRateTable', () => ({
+    SignalBaseRateTable: ({
+        signalType,
+        locale,
+    }: {
+        signalType: string;
+        locale: string;
+    }) => (
+        <section
+            data-testid="signal-record"
+            data-signal={signalType}
+            data-locale={locale}
+        />
+    ),
+}));
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: ({ data }: { data: Record<string, unknown> }) => (
         <script
@@ -382,5 +398,25 @@ describe('SignalHubBody', () => {
             .getAllByTestId('json-ld')
             .find(node => node.dataset.type === 'ItemList');
         expect(itemList?.dataset.items).toBe(String(FIVE_ROWS.length));
+    });
+
+    it('이 허브의 신호로 과거 기록 표를 한 장 부른다', async () => {
+        await renderBody('en');
+
+        const record = screen.getByTestId('signal-record');
+        expect(record).toHaveAttribute('data-signal', 'golden_cross');
+        expect(record).toHaveAttribute('data-locale', 'en');
+    });
+
+    it('신호 기록을 못 읽어도(degraded) 합산 기록 표는 그대로 둔다', async () => {
+        hubData.value = {
+            rows: [],
+            counts: { us: 0, kr: 0 },
+            degraded: true,
+        };
+
+        await renderBody();
+
+        expect(screen.getByTestId('signal-record')).toBeInTheDocument();
     });
 });

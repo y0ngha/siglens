@@ -733,6 +733,10 @@ The same applies to derived logic, not only literals: one window boundary (for e
 "last completed daily close" rule computed in two places drifts apart. Keep one function in the lowest layer that
 needs it and have the other callers delegate to it.
 
+A value two outputs must agree on (a DB bound and the returned window start) is derived once and passed to both, and
+eval or replay harnesses import the production normalisers and constants instead of re-implementing them, or they
+measure code that does not ship.
+
 Extracting a shared rule (a validation predicate, a locale or formatting helper) is finished only when every existing
 copy, including hand-rolled duplicates and constant aliases at the original call site, is migrated to it. Grep for the
 old logic before calling the extraction done.
@@ -909,6 +913,9 @@ the code actually established. A flag that covers several cases (absent vs. stal
 prove exactness) is split per case or set from the narrower check. Explanatory text attached to such a result (a hint
 or note read by a user or a model) follows the same limit: it states only the case the code distinguished ("none usable
 for this caller", not "none exists") and names only fields or tools that are present in that response.
+
+A type or JSDoc that promises a key ("null exactly when X is null") must hold when the source is absent too: emit the
+key in that case, or narrow the type and the doc.
 
 <a id="CS-16"></a>
 

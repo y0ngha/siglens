@@ -14,6 +14,8 @@
 //   --cache             conv(4턴) 케이스까지 돌려 접두사 캐시 검사를 켠다. 없으면 conv는 건너뛴다.
 //   --out <file>        transcript JSON 저장 경로(필수 — 레포 밖 스크래치 경로를 쓴다).
 //   --compare a b       두 결과 JSON을 견줘 표로 출력한다(서버·DB 불필요).
+//   --reference <file>  같은 케이스·턴의 다른 실행 결과 JSON. 도구를 안 불러 저장 결과가 없는 OLD 답변을 NEW의 저장된
+//                       `get_price_stats` 결과로 판정한다(둘 다 같은 날 실행, 종가가 그대로여야 한다).
 //   --no-web-search     web_search가 없는 서버라고 강제로 알린다. 주지 않으면 dev-server.sh가 쓴 상태 파일(AGENT_EVAL_STATE_FILE,
 //                       기본 scripts/agent-eval/.server-state.json)에서 읽고, 그것도 없으면 턴 결과로 추정한다.
 //                       web_search를 내놓지 않은 서버에서 holder 케이스는 실패가 아니라 "평가 불가"로 보고된다.
@@ -37,12 +39,14 @@ import { tsImport } from 'tsx/esm/api';
 import postgres from 'postgres';
 import { CASES } from './cases.mjs';
 import {
+    EVAL_TIME_ZONE,
     buildTranscript,
     compareRuns,
     isLocalUrl,
     parseSseFrames,
     runChecks,
     selectCases,
+    sideEffects,
 } from './checks.mjs';
 import { isStrictLocalAddress } from './localGuard.mjs';
 
@@ -51,7 +55,6 @@ const E2E_PASSWORD = 'E2eAuthUser1!';
 // 모델이 본 메모는 DB에 없다(저장하는 것은 `turn_at` 시각뿐). 같은 시각·로케일·시간대·KRX 스펙으로 core가 다시 만든다.
 // 요청마다 이 시간대 헤더를 보내므로 서버가 쓴 값과 같다(로케일은 한국어 로그인 화면이라 ko).
 const EVAL_LOCALE = 'ko';
-const EVAL_TIME_ZONE = 'Asia/Seoul';
 const TIME_ZONE_HEADER = 'x-siglens-timezone';
 const DESKTOP_UA =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
@@ -90,11 +93,15 @@ function printComparison(oldPath, newPath) {
         JSON.parse(readFileSync(newPath, 'utf8'))
     );
     process.stdout.write(
-        'id\told fails\tnew fails\tdropped tools\tadded tools\n'
+        'id\told fails\tnew fails\told n/e\tnew n/e\tdropped tools\tadded tools\n'
     );
+    const side = e =>
+        e === null
+            ? '-'
+            : `chars ${e.answerChars}, figures ${e.figureSentences}, steps ${e.steps}, tools ${e.toolCalls}, search ${e.webSearches}, ungrounded ${e.ungroundedNumbers ?? '?'}`;
     rows.forEach(row =>
         process.stdout.write(
-            `${row.id}\t${row.oldFails ?? '-'}\t${row.newFails}\t${row.droppedTools.join(',') || '-'}\t${row.addedTools.join(',') || '-'}${row.droppedTools.length > 0 ? '\t<-- REGRESSION' : ''}\n`
+            `${row.id}\t${row.oldFails ?? '-'}\t${row.newFails}\t${row.oldNotEvaluable ?? '-'}\t${row.newNotEvaluable}\t${row.droppedTools.join(',') || '-'}\t${row.addedTools.join(',') || '-'}${row.droppedTools.length > 0 ? '\t<-- REGRESSION' : ''}\n    old: ${side(row.oldSideEffects)}\n    new: ${side(row.newSideEffects)}\n`
         )
     );
 }
@@ -112,6 +119,10 @@ const databaseUrl = process.env.DATABASE_URL ?? databaseUrlFromE2eEnv();
 const outPath = option('out');
 const label = option('label') ?? 'run';
 const only = option('only')?.split(',');
+const referencePath = option('reference');
+const referenceRun = referencePath
+    ? JSON.parse(readFileSync(referencePath, 'utf8'))
+    : null;
 const { selected, errors: selectionErrors } = selectCases(
     CASES,
     only,
@@ -263,7 +274,11 @@ async function runCase(page, testCase) {
             const checked = runChecks(
                 { ...turn, id: `${testCase.id}-t${index + 1}` },
                 transcript,
-                acc.transcripts.at(-1) ?? null
+                acc.transcripts.at(-1) ?? null,
+                // conv는 턴 번호로, 단일 턴 케이스는 첫 턴으로 같은 케이스의 기준 실행 transcript를 찾는다.
+                referenceRun?.results?.find(r => r.id === testCase.id)?.turns?.[
+                    index
+                ] ?? null
             );
             return {
                 conversationId,
@@ -284,6 +299,10 @@ async function runCase(page, testCase) {
     return {
         id: testCase.id,
         turns: done.transcripts,
+        // 판정이 아닌 부작용 수치(답변 길이, 수치 문장, 단계·도구·검색 수, 근거 없는 숫자): `--compare`가 견준다.
+        sideEffects: done.transcripts.map(t =>
+            sideEffects(t, installedCore.findUngroundedNumbers)
+        ),
         fails: done.fails,
         reviews: done.reviews,
         notEvaluable: done.notEvaluable,
@@ -365,8 +384,13 @@ try {
         )
     );
     const failed = results.filter(r => r.fails.length > 0).length;
+    // A not-evaluable line is never a pass: count them beside the failures so a quiet run is not read as a clean one.
+    const notEvaluable = results.reduce((n, r) => n + r.notEvaluable.length, 0);
+    const notEvaluableCases = results.filter(
+        r => r.notEvaluable.length > 0
+    ).length;
     process.stdout.write(
-        `${results.length} cases, ${failed} with failures -> ${outPath}\n`
+        `${results.length} cases, ${failed} with failures, ${notEvaluable} not evaluable lines in ${notEvaluableCases} cases -> ${outPath}\n`
     );
 } finally {
     await browser.close();
