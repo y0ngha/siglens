@@ -1,9 +1,9 @@
 import 'server-only';
+import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import {
     AGENT_MACRO_QUOTES_MAX,
     type AgentMacroInstrument,
-} from '@y0ngha/siglens-core';
-import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
+} from '@/features/agent-tools/lib/macroInstruments';
 import {
     macroChanges,
     macroRange52w,

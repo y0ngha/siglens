@@ -7,9 +7,28 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
-import { AGENT_TOOL_SPECS, type AgentStreamEvent } from '@y0ngha/siglens-core';
+import type { AgentStreamEvent, AgentToolSpec } from '@y0ngha/siglens-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { callDeepseekAgent } from '@/entities/llm-provider/api/agent/deepseek';
+
+/** 공급자 어댑터가 도구 명세를 공급자 형식으로 옮기는지만 보는 작은 명세. 실제 도구 문구는 siglens `features/agent-tools/spec`에 있다. */
+const QUOTE_TOOL: AgentToolSpec = {
+    name: 'get_quote',
+    description: 'Latest price and day change for up to 3 symbols.',
+    costClass: 'free',
+    inputSchema: {
+        type: 'object',
+        properties: {
+            symbols: {
+                type: 'array',
+                description: 'Up to 3 symbols',
+                items: { type: 'string' },
+            },
+        },
+        required: ['symbols'],
+        additionalProperties: false,
+    },
+};
 
 async function* chunks(items: unknown[]) {
     for (const i of items) yield i;
@@ -74,7 +93,7 @@ function opts(overrides = {}) {
         model: 'deepseek-v4.1-flash' as const,
         system: 'sys',
         messages: [{ role: 'user' as const, content: 'AAPL?' }],
-        tools: AGENT_TOOL_SPECS.filter(t => t.name === 'get_quote'),
+        tools: [QUOTE_TOOL],
         maxOutputTokens: 4096,
         signal: new AbortController().signal,
         onEvent: vi.fn<(e: AgentStreamEvent) => void>(),
@@ -110,8 +129,11 @@ describe('callDeepseekAgent', () => {
             type: 'function',
             function: {
                 name: 'get_quote',
-                description: expect.any(String),
-                parameters: expect.objectContaining({ type: 'object' }),
+                description: QUOTE_TOOL.description,
+                parameters: expect.objectContaining({
+                    type: 'object',
+                    required: ['symbols'],
+                }),
             },
         });
         expect(params.stream).toBe(true);

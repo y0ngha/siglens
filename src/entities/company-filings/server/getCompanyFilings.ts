@@ -1,8 +1,8 @@
 import 'server-only';
 import {
-    AGENT_FILING_TEXT_MAX_CHARS,
     AGENT_FILINGS_LIST_MAX,
-} from '@y0ngha/siglens-core';
+    AGENT_FILING_TEXT_MAX_CHARS,
+} from '@/entities/company-filings/lib/companyFilingsConstants';
 import { DrizzleSecFilingsRepository } from '@/entities/investor-flows/api/investorFlowsFilingsRepository';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { isE2EFakeMode } from '@/shared/api/e2eEnv';

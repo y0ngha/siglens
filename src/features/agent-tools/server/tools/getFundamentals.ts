@@ -1,6 +1,5 @@
 import 'server-only';
 import {
-    FUNDAMENTALS_RESULT_NOTES,
     tallyEarningsReactions,
     type Bar,
     type EarningsReactionTally,
@@ -56,6 +55,7 @@ import {
     type DividendsView,
 } from '@/features/agent-tools/server/data/dividends';
 import { fetchKrAnnualDividend } from '@/features/agent-tools/server/data/krAnnualDividend';
+import { FUNDAMENTALS_RESULT_NOTES } from '@/features/agent-tools/spec/resultNotes';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getFmpGradesConsensus } from '@/shared/api/fmp/getFmpGradesConsensus';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
@@ -325,11 +325,11 @@ function isConfirmedNonPayer(dividends: DividendsView): boolean {
 }
 
 /**
- * Texts for the result's top-level `notes` (`PUBLIC_API.md`, `runAgentTurn` action ⑩; the
- * wording is core's `FUNDAMENTALS_RESULT_NOTES`, attached verbatim). The tool description
+ * Texts for the result's top-level `notes` (the wording is
+ * `FUNDAMENTALS_RESULT_NOTES` in `spec/resultNotes.ts`, attached verbatim). The tool description
  * no longer carries these null rules, so a note that is missing here is a rule the model
  * never sees. Each condition is the field's own printed state, read from the finished
- * result (after rounding), and the order is the order of the list in core's contract:
+ * result (after rounding), and the order is the key order of `FUNDAMENTALS_RESULT_NOTES`:
  *
  * - `earningsSessionUnknown`: a next date, no session, no second-source date
  *   (`earningsDateAlt` brings its own "sources disagree" rule) and a date not marked as an

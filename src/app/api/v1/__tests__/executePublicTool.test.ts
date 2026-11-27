@@ -19,17 +19,21 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     TOOL_TIMEOUT_MS: { free: 25, cached: 25, external: 25, expensive: 25 },
 }));
 
-import { findToolSpec } from '@y0ngha/siglens-core';
+import { selectToolSetSpecs } from '@y0ngha/siglens-core';
 import { CHART_DATA_TOOL_SPEC } from '@/app/api/v1/chartDataToolSpec';
 import {
     executePublicTool,
     resolveApiLocale,
 } from '@/app/api/v1/executePublicTool';
 import type { ApiKeyPrincipal } from '@/entities/siglens-api-key/model';
+import { SIGLENS_AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
 import { isServerLlmAllowed } from '@/shared/lib/serverLlmPolicy';
 
-const spec = findToolSpec('get_quote')!;
+const [spec] = selectToolSetSpecs(
+    SIGLENS_AGENT_TOOL_SET,
+    new Set(['get_quote'])
+);
 const principal: ApiKeyPrincipal = {
     keyId: 'key-a',
     keyName: 'A',

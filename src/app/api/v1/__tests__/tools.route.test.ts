@@ -103,7 +103,7 @@ describe('GET /api/v1/tools', () => {
         expect(fresh?.inputSchema.required).toEqual(['symbol', 'kind']);
     });
 
-    it('스키마는 core 스펙 그대로다', async () => {
+    it('스키마는 에이전트 도구 명세 그대로다', async () => {
         mockAuth.mockResolvedValue({ status: 'ok', principal });
         const body = (await (
             await GET(request({ authorization: 'Bearer slk_x' }))

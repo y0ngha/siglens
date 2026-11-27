@@ -377,7 +377,7 @@ import {
 } from '@/features/agent-tools/server/createToolExecutor';
 import { __resetFreshSemaphoreForTests } from '@/features/agent-tools/server/freshAnalysis/runFreshAnalysis';
 import { __resetWebSearchCacheForTests } from '@/features/agent-tools/server/webSearchCache';
-import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
+import { SIGLENS_AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { PUBLIC_API_RESULT_CAPS } from '@/shared/config/publicApi';
 import { fakes, MOCKED_MODULES, resetWorld, world } from './boundary';
 import { CALLERS, type GoldenCase } from './goldenCase';
@@ -630,8 +630,10 @@ describe('골든 커버리지', () => {
         expect(undercovered(names)).toEqual([]);
     });
 
-    it('AGENT_TOOL_SET의 모든 도구에 사례가 3개 이상 있다', () => {
-        expect(undercovered(AGENT_TOOL_SET.tools.map(t => t.name))).toEqual([]);
+    it('SIGLENS_AGENT_TOOL_SET의 모든 도구에 사례가 3개 이상 있다', () => {
+        expect(
+            undercovered(SIGLENS_AGENT_TOOL_SET.tools.map(t => t.name))
+        ).toEqual([]);
     });
 
     it('모든 사례의 도구를 실행기가 안다', () => {

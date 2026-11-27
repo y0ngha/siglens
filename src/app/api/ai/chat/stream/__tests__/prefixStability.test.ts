@@ -12,6 +12,7 @@ import {
     type ChatMessageRecord,
 } from '@/entities/chat-conversation/model';
 import { toOpenAiChatMessages } from '@/entities/llm-provider/api/agent/mapMessages';
+import { SIGLENS_AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 
@@ -143,6 +144,8 @@ async function simulate(turnCount: number): Promise<Request[]> {
                 history: toAgentHistory(stored.map(storedRow)),
                 userMessage,
                 availableTools: new Set(['get_quote', 'get_bars_indicators']),
+                // 운영 스트림과 같은 도구 모음 — 시스템 프롬프트·도구 바이트도 운영과 같게 만든다.
+                toolSet: SIGLENS_AGENT_TOOL_SET,
                 krSession: KR_EQUITY_SESSION,
                 now: new Date(Date.UTC(2026, 10, 20, 14, 9 + turn * 7)),
             },

@@ -1,4 +1,3 @@
-import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
 import {
     PRICE_STATS_YEAR_MAX,
@@ -7,6 +6,7 @@ import {
     type ParsedPriceStatsArgs,
     type PriceStatsInvalidArgs,
 } from '@/features/agent-tools/server/tools/priceStatsArgs';
+import { GET_PRICE_STATS_SPEC } from '@/features/agent-tools/spec/getPriceStats';
 
 const ok = (args: Record<string, unknown>): ParsedPriceStatsArgs => {
     const parsed = parsePriceStatsArgs(args);
@@ -180,9 +180,7 @@ describe('parsePriceStatsArgs — accepted shapes', () => {
 
 describe('year bounds', () => {
     it('equal the get_price_stats spec minimum and maximum', () => {
-        const year = AGENT_TOOL_SPECS.find(
-            spec => spec.name === 'get_price_stats'
-        )?.inputSchema.properties.year;
+        const year = GET_PRICE_STATS_SPEC.inputSchema.properties.year;
         expect(year).toMatchObject({
             minimum: PRICE_STATS_YEAR_MIN,
             maximum: PRICE_STATS_YEAR_MAX,

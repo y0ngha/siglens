@@ -43,7 +43,7 @@ const DEFERRED: SymbolFreshnessResult = {
 /**
  * 수급 각 단계에 거는 벽시계 예산.
  *
- * 이 경로는 `get_news` 안에서 돈다. `get_news`는 core 스펙상 `costClass: 'free'`라
+ * 이 경로는 `get_news` 안에서 돈다. `get_news`는 도구 명세상 `costClass: 'free'`라
  * `TOOL_TIMEOUT_MS.free = 30_000`을 받고, 넘기면 `runAgentTurn.executeOne`이 그 툴
  * 호출을 `{ error: 'timeout' }`으로 접는다 — 모델은 **기사를 한 건도 못 받는다.**
  * 이 경로는 원래 적재를 부르지 않으므로, 바운드 없는 수급은 오히려 툴 전체를

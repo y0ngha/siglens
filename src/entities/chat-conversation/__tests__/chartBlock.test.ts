@@ -1,8 +1,4 @@
-import {
-    AGENT_BARS_TIMEFRAMES,
-    AGENT_CHART_KINDS,
-    AGENT_CHART_PERIODS,
-} from '@y0ngha/siglens-core';
+import { AGENT_BARS_TIMEFRAMES } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
 import {
     CHAT_ACTION_BLOCK_KINDS,
@@ -17,6 +13,10 @@ import {
     isChatVisualBlock,
     isVisualBlock,
 } from '@/entities/chat-conversation/lib/chartBlock';
+import {
+    AGENT_CHART_KINDS,
+    AGENT_CHART_PERIODS,
+} from '@/entities/chat-conversation/lib/chartToolConstants';
 import { PRICE_ALERT_TOKEN_MAX_LENGTH } from '@/entities/mail-alert/lib/priceAlertProposal';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 
@@ -71,7 +71,7 @@ describe('차트 블록 값 목록', () => {
         expect([...CHAT_CHART_TIMEFRAMES]).toEqual([...AGENT_BARS_TIMEFRAMES]);
     });
 
-    it('시각화 종류·비교 기간 목록은 core show_chart와 같다', () => {
+    it('시각화 종류·비교 기간 목록은 show_chart 계약 상수와 같다', () => {
         expect([...CHAT_VISUAL_BLOCK_KINDS]).toEqual([...AGENT_CHART_KINDS]);
         expect([...CHAT_COMPARE_PERIODS]).toEqual([...AGENT_CHART_PERIODS]);
     });

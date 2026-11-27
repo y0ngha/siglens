@@ -2,7 +2,7 @@ import 'server-only';
 import {
     AGENT_X_POSTS_MAX,
     AGENT_X_POSTS_PAGE_SIZE,
-} from '@y0ngha/siglens-core';
+} from '@/entities/x-posts/lib/xPostsConstants';
 import { fetchStockXAccounts } from '@/shared/api/wikidata/stockXAccounts';
 import {
     fetchXTimelinePage,

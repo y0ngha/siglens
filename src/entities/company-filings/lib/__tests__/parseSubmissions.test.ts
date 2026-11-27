@@ -1,5 +1,5 @@
-import { AGENT_FILINGS_WINDOW_DAYS } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
+import { AGENT_FILINGS_WINDOW_DAYS } from '@/entities/company-filings/lib/companyFilingsConstants';
 import { hasRecentFilings, parseSubmissions } from '../parseSubmissions';
 
 const NOW_WINTER = new Date('2026-11-16T03:00:00Z'); // 22:00 EST, 11-15 in New York

@@ -14,7 +14,7 @@ const {
 } = PUBLIC_API_CHART_DATA;
 
 /**
- * 공개 API 전용 도구 — 에이전트(ai.siglens.io)에는 없고 core 스펙에도 없다. 같은 `validateArgs` 경로로 인자를
+ * 공개 API 전용 도구 — 에이전트(ai.siglens.io)에도 에이전트 도구 모음에도 없다. 같은 `validateArgs` 경로로 인자를
  * 검증하려고 core와 같은 JSON Schema 부분집합으로 쓴다. 지표 이름 열거는 `CHART_DATA_INDICATOR_NAMES`(core의
  * `IndicatorResult`와 1:1)에서 파생한다.
  */

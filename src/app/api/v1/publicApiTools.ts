@@ -1,11 +1,8 @@
 import 'server-only';
-import {
-    findToolSpec,
-    selectTools,
-    type AgentToolSpec,
-} from '@y0ngha/siglens-core';
+import { selectToolSetSpecs, type AgentToolSpec } from '@y0ngha/siglens-core';
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import { availableToolNames } from '@/features/agent-tools/server/createToolExecutor';
+import { SIGLENS_AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import {
     GET_MY_WATCHLIST_TOOL,
     PROPOSE_PRICE_ALERT_TOOL,
@@ -76,7 +73,7 @@ import { CHART_DATA_TOOL_SPEC } from './chartDataToolSpec';
  *
  * `get_my_watchlist`·`propose_price_alert`(2026-11): **공개 API에서 제외**한다. 관심종목을 API 키로 읽을지는 별도 결정이고,
  *   알림 제안은 카드 블록(`emitChart`)으로만 의미가 있는데 API 실행기에는 그 길이 없다(제안은 아무것도 만들지 않는다).
- *   siglens가 소유한 도구라 core `selectTools`가 모르는 이름이기도 하다 — 제외하지 않으면 명세 없이 노출된다.
+ *   에이전트 도구 모음에는 있으므로 제외하지 않으면 그대로 노출된다.
  *   SiglensAI 에이전트에서만 쓴다.
  *
  * 나머지 도구의 감사: LLM 호출이 없다.
@@ -143,7 +140,7 @@ function toApiSpec(spec: AgentToolSpec): AgentToolSpec {
 }
 
 /**
- * 공개 API에만 있는 도구(에이전트·core 스펙에는 없다). 시장 데이터 키만 쓰는 읽기 전용 도구이고 LLM을
+ * 공개 API에만 있는 도구(에이전트 도구 모음에는 없다). 시장 데이터 키만 쓰는 읽기 전용 도구이고 LLM을
  * 부르지 않는다(`executePublicTool`이 `runWithoutServerLlm`으로 감싸 이중으로 막는다) — 감사 기준은 위와 같다.
  * 실행은 `createToolExecutor`가 아니라 `getChartDataTool`로 간다.
  */
@@ -165,10 +162,12 @@ export function publicApiToolNames(): ReadonlySet<string> {
     );
 }
 
-/** 노출 도구의 core 스펙(순서는 `AGENT_TOOL_SPECS` 그대로). */
+/** 노출 도구의 명세(순서는 `SIGLENS_AGENT_TOOL_SET.tools` 그대로, 루프 전용 필드는 뺀다). */
 export function publicApiToolSpecs(): AgentToolSpec[] {
     return [
-        ...selectTools(publicApiToolNames()).map(toApiSpec),
+        ...selectToolSetSpecs(SIGLENS_AGENT_TOOL_SET, publicApiToolNames()).map(
+            toApiSpec
+        ),
         ...PUBLIC_API_ONLY_TOOL_SPECS,
     ];
 }
@@ -177,8 +176,7 @@ export function publicApiToolSpecs(): AgentToolSpec[] {
 export function findPublicApiToolSpec(name: string): AgentToolSpec | undefined {
     const apiOnly = PUBLIC_API_ONLY_TOOL_SPECS.find(spec => spec.name === name);
     if (apiOnly !== undefined) return apiOnly;
-    const spec = publicApiToolNames().has(name)
-        ? findToolSpec(name)
-        : undefined;
+    if (!publicApiToolNames().has(name)) return undefined;
+    const [spec] = selectToolSetSpecs(SIGLENS_AGENT_TOOL_SET, new Set([name]));
     return spec === undefined ? undefined : toApiSpec(spec);
 }

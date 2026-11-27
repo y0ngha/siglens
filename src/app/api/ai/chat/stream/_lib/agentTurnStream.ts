@@ -27,7 +27,10 @@ import {
     availableToolNames,
     createToolExecutor,
 } from '@/features/agent-tools/server/createToolExecutor';
-import { AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
+import {
+    AGENT_TOOLSET_VERSION,
+    SIGLENS_AGENT_TOOL_SET,
+} from '@/features/agent-tools/spec/agentToolSet';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { redactDbErrorForLog } from '@/shared/db/redactDbErrorForLog';
 import type { Locale } from '@/shared/i18n/locales';
@@ -188,8 +191,8 @@ export function agentTurnStream({
                               }
                             : {}),
                         availableTools: availableToolNames(),
-                        // core의 기본 도구 모음에 관심종목·가격대 알림 도구를 덧붙인 모음 — 이 턴 실행기만 쓴다.
-                        toolSet: AGENT_TOOL_SET,
+                        // 도구 명세·라우팅 줄·도구별 규칙 문구는 siglens가 소유한다 — core는 루프·한도·프레임만 갖는다.
+                        toolSet: SIGLENS_AGENT_TOOL_SET,
                         portfolioSymbols,
                         // Untrusted; core validates and falls back to the locale's zone.
                         timeZone,
@@ -358,6 +361,7 @@ export function agentTurnStream({
                         steps: result.usage.steps,
                         toolCalls: toolTimings,
                         promptVersion: result.promptVersion,
+                        toolsetVersion: AGENT_TOOLSET_VERSION,
                         ms: result.usage.ms,
                         stopReason: result.stopReason,
                         queuedMs,

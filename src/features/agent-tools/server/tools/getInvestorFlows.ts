@@ -250,7 +250,7 @@ export const getInvestorFlowsTool: ToolExecutor = async (args, _ctx, rt) => {
     const result = await getInvestorFlowsScorecard(symbol);
     if (result.degraded)
         return { symbol, available: false, reason: 'provider_failed' };
-    // 한국 종목은 Yahoo 보유 비율 집계가 없다 — core 설명대로 `null`을 실어 "없음"을 밝힌다(보유 지분은 DART 공시로 답한다).
+    // 한국 종목은 Yahoo 보유 비율 집계가 없다 — 도구 설명대로 `null`을 실어 "없음"을 밝힌다(보유 지분은 DART 공시로 답한다).
     // 공개 API는 비공식 출처 필드를 싣지 않으므로 키도 없다.
     if (result.market === 'kr')
         return {

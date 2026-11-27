@@ -27,6 +27,10 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 
 features 간 import는 루트 `CLAUDE.md`가 허용하고 oxlint는 막지 않는다. 순환은 `src/__tests__/guards/importCycles.test.ts`가 막는다.
 
+## 에이전트 도구 문구
+
+도구 설명·스키마·라우팅 줄·도구별 규칙·결과 notes는 `agent-tools/spec`에만 두고, 모델이 보는 문구를 바꾸면 `AGENT_TOOLSET_VERSION`을 올린다.
+
 ## 데이터 접근
 
 `.tsx` UI 파일은 entity의 `lib/`·`api/`를 직접 부르지 않는다. 훅(`hooks/*.ts`)이 `entities/*/actions/`의 Server Action을

@@ -62,7 +62,7 @@ vi.mock('@/features/agent-tools/server/tools/getCompanyFilings', () => ({
     getCompanyFilingsTool: vi.fn(),
 }));
 
-import { AGENT_TOOL_SPECS } from '@y0ngha/siglens-core';
+import { selectToolSetSpecs } from '@y0ngha/siglens-core';
 import {
     findPublicApiToolSpec,
     isPublicApiOnlyTool,
@@ -76,6 +76,7 @@ import { CHART_DATA_INDICATOR_NAMES } from '@/entities/bars/lib/chartDataIndicat
 import { API_KNOWN_MODELS } from '@/entities/siglens-api-key/lib/apiModels';
 import { renderChartDataNotes } from '@/entities/siglens-api-key/lib/buildSkillMarkdown';
 import { availableToolNames } from '@/features/agent-tools/server/createToolExecutor';
+import { SIGLENS_AGENT_TOOL_SET } from '@/features/agent-tools/spec/agentToolSet';
 import {
     PUBLIC_API_CHART_DATA,
     PUBLIC_API_CHART_DATA_MEASURED_SIZES as MEASURED,
@@ -156,15 +157,21 @@ describe('publicApiToolNames', () => {
     });
 });
 
+/** 에이전트 도구 모음 전체의 공급자용 명세(루프 전용 필드를 뺀 것). */
+const AGENT_SPECS = selectToolSetSpecs(
+    SIGLENS_AGENT_TOOL_SET,
+    new Set(SIGLENS_AGENT_TOOL_SET.tools.map(tool => tool.name))
+);
+
 describe('publicApiToolSpecs', () => {
-    it('모든 노출 도구에 core 스펙이 있다(스펙 없는 실행기가 조용히 사라지지 않는다) — 공개 API 전용 도구는 그 뒤에 더해진다', () => {
+    it('모든 노출 도구에 에이전트 명세가 있다(스펙 없는 실행기가 조용히 사라지지 않는다) — 공개 API 전용 도구는 그 뒤에 더해진다', () => {
         expect(publicApiToolSpecs()).toHaveLength(
             publicApiToolNames().size + PUBLIC_API_ONLY_TOOL_SPECS.length
         );
     });
 
-    it('run_fresh_analysis 외에는 core AGENT_TOOL_SPECS의 같은 객체이고 순서도 같다', () => {
-        const expected = AGENT_TOOL_SPECS.filter(spec =>
+    it('run_fresh_analysis 외에는 에이전트 도구 모음의 명세 그대로이고 순서도 같다', () => {
+        const expected = AGENT_SPECS.filter(spec =>
             EXPECTED_TOOLS.includes(spec.name)
         );
         const actual = publicApiToolSpecs().filter(
@@ -175,18 +182,18 @@ describe('publicApiToolSpecs', () => {
         );
         actual.forEach((spec, index) => {
             if (spec.name === PUBLIC_API_FRESH_ANALYSIS_TOOL) return;
-            expect(spec).toBe(expected[index]);
+            expect(spec).toEqual(expected[index]);
         });
     });
 });
 
 describe('run_fresh_analysis의 API 전용 스펙', () => {
-    const core = AGENT_TOOL_SPECS.find(
+    const core = AGENT_SPECS.find(
         spec => spec.name === PUBLIC_API_FRESH_ANALYSIS_TOOL
     )!;
     const api = findPublicApiToolSpec(PUBLIC_API_FRESH_ANALYSIS_TOOL)!;
 
-    it('core 스펙에 선택 인자 model만 더한다(필수 목록·추가 필드 금지는 그대로)', () => {
+    it('에이전트 명세에 선택 인자 model만 더한다(필수 목록·추가 필드 금지는 그대로)', () => {
         expect(Object.keys(api.inputSchema.properties).toSorted()).toEqual(
             [...Object.keys(core.inputSchema.properties), 'model'].toSorted()
         );
@@ -237,12 +244,12 @@ describe('findPublicApiToolSpec', () => {
 describe('get_chart_data (공개 API 전용 도구)', () => {
     const spec = findPublicApiToolSpec(PUBLIC_API_CHART_DATA.tool)!;
 
-    it('에이전트 실행기·core 스펙에는 없고 API 목록에만 있다', () => {
+    it('에이전트 실행기·도구 모음에는 없고 API 목록에만 있다', () => {
         expect(publicApiToolNames().has(PUBLIC_API_CHART_DATA.tool)).toBe(
             false
         );
         expect(
-            AGENT_TOOL_SPECS.some(s => s.name === PUBLIC_API_CHART_DATA.tool)
+            AGENT_SPECS.some(s => s.name === PUBLIC_API_CHART_DATA.tool)
         ).toBe(false);
         expect(publicApiToolSpecs().map(s => s.name)).toContain(
             PUBLIC_API_CHART_DATA.tool
@@ -266,9 +273,7 @@ describe('get_chart_data (공개 API 전용 도구)', () => {
     // (core builds weekly bars from daily history inside fetchBarsWithIndicators). 1Month
     // is a bar get_bars_indicators builds for the agent and exists on that tool alone.
     it('timeframe 열거값은 get_bars_indicators의 제공자 타임프레임에 1Week를 더한 것이고, 월봉은 없다', () => {
-        const core = AGENT_TOOL_SPECS.find(
-            s => s.name === 'get_bars_indicators'
-        )!;
+        const core = AGENT_SPECS.find(s => s.name === 'get_bars_indicators')!;
         const coreEnum = core.inputSchema.properties.timeframe.enum ?? [];
         expect(coreEnum).toEqual(expect.arrayContaining(['1Week', '1Month']));
         const providerTimeframes = coreEnum.filter(
