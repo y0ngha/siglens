@@ -169,16 +169,17 @@ export function PlainAnalysisSwitch({
         />
     ) : null;
 
-    const body = !showPlain ? (
-        children
-    ) : keepRawCollapsed ? (
-        <>
-            {plainView}
-            <RawAnalysisDisclosure>{children}</RawAnalysisDisclosure>
-        </>
-    ) : (
-        plainView
-    );
+    const bodyOf = () => {
+        if (!showPlain) return children;
+        if (!keepRawCollapsed) return plainView;
+        return (
+            <>
+                {plainView}
+                <RawAnalysisDisclosure>{children}</RawAnalysisDisclosure>
+            </>
+        );
+    };
+    const body = bodyOf();
 
     if (renderToggle !== undefined) {
         return (

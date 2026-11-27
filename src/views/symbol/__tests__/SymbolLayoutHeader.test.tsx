@@ -109,6 +109,10 @@ vi.mock('@/widgets/analysis/AnalysisSettingsMenu', () => ({
         [key: string]: unknown;
     }) => {
         const [open, setOpen] = useState(false);
+        const reasoningLabel = (): string => {
+            if (!canUseReasoning) return 'locked';
+            return reasoning ? 'on' : 'off';
+        };
         return (
             <div>
                 <button
@@ -130,11 +134,7 @@ vi.mock('@/widgets/analysis/AnalysisSettingsMenu', () => ({
                                     : openSignupNudge()
                             }
                         >
-                            {canUseReasoning
-                                ? reasoning
-                                    ? 'on'
-                                    : 'off'
-                                : 'locked'}
+                            {reasoningLabel()}
                         </button>
                     </div>
                 )}

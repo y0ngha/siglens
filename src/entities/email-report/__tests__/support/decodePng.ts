@@ -55,16 +55,8 @@ export function decodePng(bytes: Uint8Array): DecodedPng {
                 y > 0 && i >= channels
                     ? out[(y - 1) * stride + i - channels]
                     : 0;
-            const add =
-                filter === 0
-                    ? 0
-                    : filter === 1
-                      ? left
-                      : filter === 2
-                        ? up
-                        : filter === 3
-                          ? (left + up) >> 1
-                          : paeth(left, up, upLeft);
+            const predictors = [0, left, up, (left + up) >> 1];
+            const add = predictors[filter] ?? paeth(left, up, upLeft);
             out[y * stride + i] = (cur + add) & 0xff;
         }
     }

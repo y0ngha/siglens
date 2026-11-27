@@ -35,6 +35,18 @@ export function EarningsReportCard({
     // 회사가 확정한 날짜(Yahoo 집계)일 때만 "확정"이라고 말한다. 추정이거나 모르면 종전 "예정" 그대로다.
     const confirmed = isFuture && item.confirmed === true;
     const surpriseBadge = getSurpriseBadge(item);
+    const sessionLabels: Record<
+        NonNullable<EarningsCardItem['session']>,
+        string
+    > = {
+        before_market: t('EventCalendar.sessionBeforeOpen'),
+        during_market: t('EventCalendar.sessionDuringMarket'),
+        after_market: t('EventCalendar.sessionAfterClose'),
+    };
+    const badgeLabelOf = (): string => {
+        if (confirmed) return t('EventCalendar.confirmed');
+        return isFuture ? t('EventCalendar.7ba954') : t('EventCalendar.c0c9e1');
+    };
 
     return (
         <article className={cn(SURFACE_CARD, 'p-4')}>
@@ -54,22 +66,14 @@ export function EarningsReportCard({
                         </time>
                         {confirmed && item.session !== null ? (
                             <span className="ml-1.5 text-xs text-secondary-400">
-                                {item.session === 'before_market'
-                                    ? t('EventCalendar.sessionBeforeOpen')
-                                    : item.session === 'during_market'
-                                      ? t('EventCalendar.sessionDuringMarket')
-                                      : t('EventCalendar.sessionAfterClose')}
+                                {sessionLabels[item.session]}
                             </span>
                         ) : null}
                     </p>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
                     <span className="rounded-full border border-secondary-600 px-2 py-0.5 text-xs text-secondary-300">
-                        {confirmed
-                            ? t('EventCalendar.confirmed')
-                            : isFuture
-                              ? t('EventCalendar.7ba954')
-                              : t('EventCalendar.c0c9e1')}
+                        {badgeLabelOf()}
                     </span>
                     {surpriseBadge !== null ? (
                         <SurpriseBadge badge={surpriseBadge} />

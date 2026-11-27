@@ -1,3 +1,4 @@
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { compareIsoDate } from './investorFlowsDates';
 
 /** 정렬에 필요한 최소 필드 — 같은 필러의 제출 순서를 정한다. */
@@ -5,11 +6,6 @@ interface CikFiling {
     cik: string;
     filingDate: string;
     accession: string;
-}
-
-/** 코드 유닛 순서 3분기 비교(-1/0/1) — `localeCompare`와 달리 `-`·숫자 순서가 로케일에 따라 바뀌지 않는다. */
-function compareCodeUnits(a: string, b: string): number {
-    return Number(a > b) - Number(a < b);
 }
 
 /**

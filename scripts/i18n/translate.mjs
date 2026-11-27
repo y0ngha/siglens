@@ -22,6 +22,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { compareCodeUnits } from './lib/compareCodeUnits.mjs';
 import { hashOf } from './lib/hashOf.mjs';
 
 const require = createRequire(import.meta.url);
@@ -197,7 +198,7 @@ function persist() {
     const nested = {};
     for (const key of Object.keys(nextTarget).sort((a, b) =>
         // 코드포인트 정렬 — extract.mjs 주석 참고.
-        a < b ? -1 : a > b ? 1 : 0
+        compareCodeUnits(a, b)
     )) {
         setPath(nested, key, nextTarget[key]);
     }

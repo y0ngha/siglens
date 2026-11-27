@@ -1,6 +1,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { compareCodeUnits } from './compareCodeUnits';
 import { symbolLabel } from './symbolLabel';
 
 /**
@@ -26,15 +27,6 @@ export interface SymbolDirectorySection {
     readonly id: 'us' | 'kr' | 'crypto';
     readonly labelKey: string;
     readonly items: readonly SymbolDirectoryItem[];
-}
-
-/**
- * 코드 유닛 비교 — 서버 ICU 로케일에 의존하지 않는다. 동률 해소용이라 "사람이 읽는
- * 순서"가 아니라 **어디서 돌려도 같은 순서**가 필요하다(`localeCompare()`는 런타임
- * 기본 로케일을 쓴다).
- */
-function compareCodeUnits(a: string, b: string): number {
-    return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**

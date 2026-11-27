@@ -44,11 +44,9 @@ function ConsentRow({
             className={cn(
                 'group flex min-h-11 cursor-pointer flex-col gap-1 py-1 sm:flex-row sm:items-center sm:justify-between',
                 'border-l pl-3 transition-colors duration-200',
-                invalid
-                    ? 'border-ui-danger'
-                    : checked
-                      ? 'border-primary-500'
-                      : 'border-transparent'
+                invalid && 'border-ui-danger',
+                !invalid && checked && 'border-primary-500',
+                !invalid && !checked && 'border-transparent'
             )}
         >
             <span className="flex min-w-0 items-center gap-2">

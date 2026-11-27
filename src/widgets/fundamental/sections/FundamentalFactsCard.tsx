@@ -216,23 +216,28 @@ function toLine(
         case 'nextEarnings': {
             // 확정(회사 공지, Yahoo 집계)일 때만 "확정"이라고 말한다. 추정이거나 모르면 종전 "예정" 문장 그대로다.
             const confirmed = fact.confirmed === true;
-            const sentences = [
-                confirmed && fact.session !== null
-                    ? t('FundamentalFactsCard.nextEarningsConfirmedSession', {
+            const headlineOf = (): string => {
+                if (confirmed && fact.session !== null) {
+                    return t(
+                        'FundamentalFactsCard.nextEarningsConfirmedSession',
+                        {
+                            date: date(fact.date),
+                            session: fact.session,
+                            days: fact.daysUntil,
+                        }
+                    );
+                }
+                return confirmed
+                    ? t('FundamentalFactsCard.nextEarningsConfirmed', {
                           date: date(fact.date),
-                          session: fact.session,
                           days: fact.daysUntil,
                       })
-                    : confirmed
-                      ? t('FundamentalFactsCard.nextEarningsConfirmed', {
-                            date: date(fact.date),
-                            days: fact.daysUntil,
-                        })
-                      : t('FundamentalFactsCard.nextEarnings', {
-                            date: date(fact.date),
-                            days: fact.daysUntil,
-                        }),
-            ];
+                    : t('FundamentalFactsCard.nextEarnings', {
+                          date: date(fact.date),
+                          days: fact.daysUntil,
+                      });
+            };
+            const sentences = [headlineOf()];
             if (fact.lastSurprisePct !== null && fact.lastDate !== null) {
                 sentences.push(
                     t('FundamentalFactsCard.lastSurprise', {

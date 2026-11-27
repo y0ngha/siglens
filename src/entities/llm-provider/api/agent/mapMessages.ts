@@ -1,5 +1,6 @@
 import type OpenAI from 'openai';
 import type { AgentMessage } from '@y0ngha/siglens-core';
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 
 /**
  * 객체 키를 모든 깊이에서 코드 유닛 순으로 정렬해 직렬화한다(배열 순서는 그대로).
@@ -17,7 +18,7 @@ function sortKeys(value: unknown): unknown {
     if (typeof value !== 'object' || value === null) return value;
     return Object.fromEntries(
         Object.entries(value)
-            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+            .sort(([a], [b]) => compareCodeUnits(a, b))
             .map(([key, v]) => [key, sortKeys(v)])
     );
 }

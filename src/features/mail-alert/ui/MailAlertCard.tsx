@@ -60,12 +60,15 @@ export function MailAlertCard({
     const t = useTranslations('features.mail-alert');
     const [isOpen, setIsOpen] = useState(false);
     const topic = topicOf(target);
-    const line =
-        target.kind === 'fear_greed'
-            ? showMarketInLine
-                ? t('cardFearGreedMarket', { market: target.marketLabel })
-                : t('cardFearGreed')
-            : t('cardSignalHub', { hubName: target.hubName });
+    const lineOf = () => {
+        if (target.kind !== 'fear_greed') {
+            return t('cardSignalHub', { hubName: target.hubName });
+        }
+        return showMarketInLine
+            ? t('cardFearGreedMarket', { market: target.marketLabel })
+            : t('cardFearGreed');
+    };
+    const line = lineOf();
     const title =
         target.kind === 'fear_greed'
             ? t('titleFearGreed', { market: target.marketLabel })

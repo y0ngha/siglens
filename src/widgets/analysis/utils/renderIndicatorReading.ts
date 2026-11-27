@@ -293,13 +293,14 @@ export function renderIndicatorReading(
               });
     }
 
-    const signalTypes: readonly SignalType[] =
-        reading.signals.length > 0
-            ? reading.signals.map(signal => signal.type)
-            : reading.basis === 'event'
-              ? // safe: 이벤트 카드의 `state`는 발화한 첫 신호의 타입이다(core `IndicatorCardStates`의 `SignalType` 종류).
-                [reading.state as SignalType]
-              : [];
+    const signalTypesOf = (): readonly SignalType[] => {
+        if (reading.signals.length > 0) {
+            return reading.signals.map(signal => signal.type);
+        }
+        // safe: 이벤트 카드의 `state`는 발화한 첫 신호의 타입이다(core `IndicatorCardStates`의 `SignalType` 종류).
+        return reading.basis === 'event' ? [reading.state as SignalType] : [];
+    };
+    const signalTypes = signalTypesOf();
     const values: Record<string, string> = {
         ...Object.fromEntries(
             Object.entries(reading.values).map(([name, value]) => [

@@ -8,6 +8,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { buildPrewarmUniverse } from '@/entities/seo-snapshot/lib/applicability';
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 
 const allItems = () =>
@@ -56,8 +57,7 @@ describe('buildSymbolDirectory', () => {
             });
             expect(symbols).toEqual(
                 [...symbols].sort(
-                    (a, b) =>
-                        collator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0)
+                    (a, b) => collator.compare(a, b) || compareCodeUnits(a, b)
                 )
             );
         }

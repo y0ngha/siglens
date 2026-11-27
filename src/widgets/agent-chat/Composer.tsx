@@ -139,6 +139,34 @@ export function Composer({
     // 데스크톱 동작으로 시작하지만, 그 사이에는 입력 이벤트가 붙지 않아 차이가 없다.
     const isTouch = useMediaQuery(COARSE_POINTER_MEDIA_QUERY);
     const overLimit = text.length > MESSAGE_MAX_CHARS;
+    const counterNote = () => {
+        if (overLimit) {
+            return (
+                <span className="text-ui-danger-text">
+                    {t('Composer.tooLong', {
+                        len: text.length.toLocaleString(),
+                        max: MESSAGE_MAX_CHARS.toLocaleString(),
+                    })}
+                </span>
+            );
+        }
+        if (text.length >= COUNTER_VISIBLE_FROM) {
+            return (
+                <span className="tabular-nums">
+                    {t('Composer.charCount', {
+                        len: text.length.toLocaleString(),
+                        max: MESSAGE_MAX_CHARS.toLocaleString(),
+                    })}
+                </span>
+            );
+        }
+        return (
+            // Enter·Shift+Enter 안내는 물리 키보드 기기에만 맞는 말이다.
+            <span className="hidden sm:pointer-fine:inline">
+                {t('Composer.keyHint')}
+            </span>
+        );
+    };
     const hasImages = images.attachments.length > 0;
     // 이미지가 있으면 글이 비어도 보낼 수 있다(길이 상한은 그대로).
     const hasSendableContent = hasImages
@@ -370,28 +398,7 @@ export function Composer({
                 </p>
             )}
             <p className="mx-auto mt-1.5 flex w-full max-w-3xl items-baseline justify-between gap-3 text-xs text-secondary-400">
-                <span className="truncate">
-                    {overLimit ? (
-                        <span className="text-ui-danger-text">
-                            {t('Composer.tooLong', {
-                                len: text.length.toLocaleString(),
-                                max: MESSAGE_MAX_CHARS.toLocaleString(),
-                            })}
-                        </span>
-                    ) : text.length >= COUNTER_VISIBLE_FROM ? (
-                        <span className="tabular-nums">
-                            {t('Composer.charCount', {
-                                len: text.length.toLocaleString(),
-                                max: MESSAGE_MAX_CHARS.toLocaleString(),
-                            })}
-                        </span>
-                    ) : (
-                        // Enter·Shift+Enter 안내는 물리 키보드 기기에만 맞는 말이다.
-                        <span className="hidden sm:pointer-fine:inline">
-                            {t('Composer.keyHint')}
-                        </span>
-                    )}
-                </span>
+                <span className="truncate">{counterNote()}</span>
                 <span className="shrink-0 text-right">
                     {remainingTurns !== null
                         ? t('Composer.remainingTurns', { n: remainingTurns })

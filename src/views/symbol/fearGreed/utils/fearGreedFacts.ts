@@ -259,7 +259,11 @@ export function buildFearGreedPeriodComparisonLine(
         const past = pointBefore(points, back);
         if (past === null) return [];
         const diff = Math.round(current.score) - Math.round(past.score);
-        const kind = diff === 0 ? 'same' : diff > 0 ? 'up' : 'down';
+        const kindOf = (): 'same' | 'up' | 'down' => {
+            if (diff === 0) return 'same';
+            return diff > 0 ? 'up' : 'down';
+        };
+        const kind = kindOf();
         const anchor = tFacts('anchorPoint', {
             v0: tFacts(label),
             v1: Math.round(past.score),
@@ -444,12 +448,11 @@ export function buildFearGreedMarketGapLine(
     const symbolScore = Math.round(gap.symbolScore);
     const marketScore = Math.round(gap.marketScore);
     const diff = symbolScore - marketScore;
-    const key =
-        diff === 0
-            ? 'regimeMarketGapSame'
-            : diff > 0
-              ? 'regimeMarketGapUp'
-              : 'regimeMarketGapDown';
+    const keyOf = () => {
+        if (diff === 0) return 'regimeMarketGapSame';
+        return diff > 0 ? 'regimeMarketGapUp' : 'regimeMarketGapDown';
+    };
+    const key = keyOf();
     return tFacts(key, {
         v0: formatIsoDate(gap.date, tFacts),
         v1: marketLabel,

@@ -524,15 +524,11 @@ export async function resolveHarvest(
             `${result.axis !== undefined ? ` axis=${result.axis}` : ''}` +
             `${noRecentNews ? ' (no analyzable news in window — 24h backoff)' : ''}`
     );
-    await markSkipped(
-        symbol,
-        tab,
-        noRecentNews
-            ? NO_RECENT_NEWS_SKIP_TTL_SECONDS
-            : isTransient
-              ? TRANSIENT_SKIP_TTL_SECONDS
-              : undefined
-    );
+    const skipTtlOf = (): number | undefined => {
+        if (noRecentNews) return NO_RECENT_NEWS_SKIP_TTL_SECONDS;
+        return isTransient ? TRANSIENT_SKIP_TTL_SECONDS : undefined;
+    };
+    await markSkipped(symbol, tab, skipTtlOf());
     /**
      * 구조적으로 불가능한 유닛은 **영속** 집합에도 넣는다 — backoff만으로는
      * 6시간마다 되살아나 배치 슬롯을 먹고, 무엇보다 그 심볼이 stale 집합에서

@@ -169,17 +169,19 @@ describe('widgets.analysis.reading 카탈로그', () => {
 
     it('상태 키는 `종류.상태`이고 이벤트 키는 `종류.event`다 — 상태를 서로 바꿔 매단 표를 막는다', () => {
         const mismatches = Object.entries(INDICATOR_TEXT_KEYS).flatMap(
-            ([kind, entry]) =>
-                typeof entry === 'string'
-                    ? entry === `${kind}.event`
+            ([kind, entry]) => {
+                if (typeof entry === 'string') {
+                    return entry === `${kind}.event`
                         ? []
-                        : [`${kind}: ${entry}`]
-                    : Object.entries(entry).flatMap(([state, key]) =>
-                          key === `${kind}.${state}` ||
-                          key === `${kind}.color.${state}`
-                              ? []
-                              : [`${kind}.${state}: ${key}`]
-                      )
+                        : [`${kind}: ${entry}`];
+                }
+                return Object.entries(entry).flatMap(([state, key]) =>
+                    key === `${kind}.${state}` ||
+                    key === `${kind}.color.${state}`
+                        ? []
+                        : [`${kind}.${state}: ${key}`]
+                );
+            }
         );
         expect(mismatches).toEqual([]);
     });

@@ -104,13 +104,10 @@ const breakout = (): GuideDemo => {
     );
     const breakIdx = firstIndex(raw, 37, bar => bar.close > 108.4);
     const retest = raw.findIndex((bar, i) => i > 46 && bar.low <= 109.5);
-    const bars = withVolume(raw, index =>
-        index === breakIdx
-            ? 3.2
-            : index === breakIdx + 1
-              ? 1.8
-              : 0.8 + ((index * 7) % 5) * 0.06
-    );
+    const bars = withVolume(raw, index => {
+        if (index === breakIdx) return 3.2;
+        return index === breakIdx + 1 ? 1.8 : 0.8 + ((index * 7) % 5) * 0.06;
+    });
     return {
         bars,
         overlays: [

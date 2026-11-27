@@ -246,12 +246,13 @@ export function earningsDateCertainty(
 ): Partial<EarningsDateCertainty> {
     if (resolved === null) return {};
     const { confirmed, session, callAt, alt } = resolved;
-    const timingNote: EarningsTimingNote =
-        session !== null
-            ? 'given'
-            : alt !== null || confirmed === false
-              ? 'unsettled'
-              : 'not_provided';
+    const timingNoteOf = (): EarningsTimingNote => {
+        if (session !== null) return 'given';
+        return alt !== null || confirmed === false
+            ? 'unsettled'
+            : 'not_provided';
+    };
+    const timingNote = timingNoteOf();
     return {
         earningsDateConfirmed: confirmed,
         earningsDateNote: earningsDateNoteFor(confirmed, timingNote),
@@ -824,8 +825,7 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
             priceTarget,
             // Which aggregator `priceTarget` is: the Korean provider is Yahoo, everything else FMP.
             ...(useYahooExtras && {
-                priceTargetSource:
-                    priceTarget === null ? null : isKr ? 'yahoo' : 'fmp',
+                priceTargetSource: priceTargetSourceOf(priceTarget, isKr),
                 // Yahoo's mean target and how many analysts stand behind it, beside FMP's `priceTarget`.
                 // `targetUpsidePct` stays FMP-based.
                 priceTargetYahoo:
@@ -869,3 +869,11 @@ export const getFundamentalsTool: ToolExecutor = async (args, _ctx, rt) => {
         ...(notes.length > 0 && { notes }),
     };
 };
+
+function priceTargetSourceOf(
+    priceTarget: unknown,
+    isKr: boolean
+): 'yahoo' | 'fmp' | null {
+    if (priceTarget === null) return null;
+    return isKr ? 'yahoo' : 'fmp';
+}

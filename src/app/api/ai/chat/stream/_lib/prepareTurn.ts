@@ -227,12 +227,13 @@ export async function prepareMemberTurn(
         body.action === 'regenerate'
             ? [...rows].reverse().find(r => r.role === 'user')
             : undefined;
-    const userImages: readonly StoredChatImage[] =
-        body.action !== 'regenerate'
-            ? carriedImages
-            : lastUser !== undefined && (lastUser.images?.length ?? 0) > 0
-              ? await repo.listImagesOfMessage(lastUser.id)
-              : [];
+    const loadUserImages = async (): Promise<readonly StoredChatImage[]> => {
+        if (body.action !== 'regenerate') return carriedImages;
+        return lastUser !== undefined && (lastUser.images?.length ?? 0) > 0
+            ? await repo.listImagesOfMessage(lastUser.id)
+            : [];
+    };
+    const userImages = await loadUserImages();
     if (body.action === 'regenerate') {
         userMessage = lastUser?.content ?? '';
         turnAtRowId = lastUser?.id ?? null;

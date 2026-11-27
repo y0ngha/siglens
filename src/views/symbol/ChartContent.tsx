@@ -498,6 +498,16 @@ export function ChartContent({
 
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis, fallbackSummary);
+        const awaitingOrBanner = () => {
+            if (!isAwaitingInteraction) return statusBanner;
+            return (
+                <AiAnalysisAwaitingSection
+                    heading={t('ChartContent.f69071')}
+                    idPrefix="chart-analysis"
+                    onStart={grantAutoRun}
+                />
+            );
+        };
 
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
@@ -528,14 +538,8 @@ export function ChartContent({
                         indicatorCount={indicatorCount}
                         skillCount={skillCount}
                     />
-                ) : isAwaitingInteraction ? (
-                    <AiAnalysisAwaitingSection
-                        heading={t('ChartContent.f69071')}
-                        idPrefix="chart-analysis"
-                        onStart={grantAutoRun}
-                    />
                 ) : (
-                    statusBanner
+                    awaitingOrBanner()
                 )}
                 {factsSummary}
             </div>

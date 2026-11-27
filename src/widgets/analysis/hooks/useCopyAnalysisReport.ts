@@ -47,11 +47,11 @@ export function useCopyAnalysisReport({
     const skillLabel = useSkillLabel();
     const readingContext = useReadingRenderContext();
     const { copied, failed, copy } = useCopyToClipboard();
-    const copyState: CopyReportState = copied
-        ? 'copied'
-        : failed
-          ? 'failed'
-          : 'idle';
+    const copyStateOf = (): CopyReportState => {
+        if (copied) return 'copied';
+        return failed ? 'failed' : 'idle';
+    };
+    const copyState = copyStateOf();
 
     const copyReport = (): void => {
         if (disabled) return;

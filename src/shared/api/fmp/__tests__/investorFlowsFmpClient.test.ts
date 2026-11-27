@@ -67,11 +67,10 @@ describe('FmpInvestorFlowsClient.getInsiderTrades', () => {
     it('keeps paging while a full page is still inside the window, then stops at the first short page', async () => {
         route(url => {
             const p = Number(url.searchParams.get('page'));
-            return p === 0
-                ? page(200, '2026-09-01')
-                : p === 1
-                  ? page(200, '2026-08-01')
-                  : page(40, '2026-07-01');
+            return (
+                [page(200, '2026-09-01'), page(200, '2026-08-01')][p] ??
+                page(40, '2026-07-01')
+            );
         });
         const rows = await new FmpInvestorFlowsClient().getInsiderTrades(
             'AAPL',

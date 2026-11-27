@@ -50,6 +50,11 @@ export interface EnvScanOptions {
     readonly injectedEnv?: boolean;
 }
 
+function bracketDelta(ch: string): number {
+    if (ch === '[') return 1;
+    return ch === ']' ? -1 : 0;
+}
+
 /** `[`에 대응하는 `]` 바로 앞까지의 본문(중첩 대괄호를 센다). 닫히지 않으면 나머지 전부. */
 function bracketBody(code: string, open: number): string {
     const end = code
@@ -58,8 +63,7 @@ function bracketBody(code: string, open: number): string {
         .reduce(
             (acc, ch, index) => {
                 if (acc.end !== -1) return acc;
-                const depth =
-                    acc.depth + (ch === '[' ? 1 : ch === ']' ? -1 : 0);
+                const depth = acc.depth + bracketDelta(ch);
                 return depth < 0
                     ? { depth, end: index }
                     : { depth, end: acc.end };

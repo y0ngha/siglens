@@ -236,13 +236,14 @@ export async function executePublicTool(
     // 도구 흐름 전체를 `runWithoutServerLlm`으로 감싼다: 회사명 번역(`getAssetInfo`·`searchTicker`의
     // 서버 Gemini 키 호출)은 도구·분석 러너 어디서든 닿는 깊은 길에 있어, 이 한 겹이 사이트의 서버 키
     // LLM을 공개 API에서 통째로 막는다. 웹·에이전트는 감싸지 않아 그대로 번역한다.
-    const work: Promise<PublicToolResult> = runWithoutServerLlm(() =>
-        spec.name === PUBLIC_API_FRESH_ANALYSIS_TOOL
-            ? runByokFreshAnalysis({ args, principal, locale, signal })
-            : isPublicApiOnlyTool(spec.name)
-              ? runApiOnlyTool(args, ctx)
-              : runViaExecutor(spec, args, ctx)
-    );
+    const work: Promise<PublicToolResult> = runWithoutServerLlm(() => {
+        if (spec.name === PUBLIC_API_FRESH_ANALYSIS_TOOL) {
+            return runByokFreshAnalysis({ args, principal, locale, signal });
+        }
+        return isPublicApiOnlyTool(spec.name)
+            ? runApiOnlyTool(args, ctx)
+            : runViaExecutor(spec, args, ctx);
+    });
     const result = await Promise.race([work, abortedPromise]);
 
     const abortedOutcome = (): PublicToolOutcome =>

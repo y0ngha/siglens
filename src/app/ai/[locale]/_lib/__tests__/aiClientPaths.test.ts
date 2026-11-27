@@ -4,13 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { AI_CLIENT_PATHS } from '@/app/ai/[locale]/_lib/aiClientPaths';
 
 function walk(dir: string, exts: readonly string[] = ['.tsx']): string[] {
-    return readdirSync(dir, { withFileTypes: true }).flatMap(e =>
-        e.isDirectory()
-            ? walk(join(dir, e.name), exts)
-            : exts.some(ext => e.name.endsWith(ext))
-              ? [join(dir, e.name)]
-              : []
-    );
+    return readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+        if (e.isDirectory()) return walk(join(dir, e.name), exts);
+        return exts.some(ext => e.name.endsWith(ext))
+            ? [join(dir, e.name)]
+            : [];
+    });
 }
 
 describe('AI_CLIENT_PATHS', () => {

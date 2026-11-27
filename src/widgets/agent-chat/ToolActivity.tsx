@@ -131,6 +131,30 @@ export function ToolActivity({
     const seconds = (ms: number): string =>
         t('ToolActivity.seconds', { n: (ms / 1000).toFixed(1) });
 
+    const statusMark = (item: ToolActivityItem) => {
+        if (item.status === 'running') {
+            return (
+                <span className="motion-safe:animate-pulse">
+                    {t('ToolActivity.inProgress')}
+                </span>
+            );
+        }
+        if (needsLogin(item)) {
+            return (
+                <span className="text-secondary-300">
+                    {t('ToolActivity.loginRequired')}
+                </span>
+            );
+        }
+        return item.status === 'error' ? (
+            <span className="text-ui-warning-text">
+                {t('ToolActivity.failed')}
+            </span>
+        ) : (
+            <CheckIcon className="size-3.5 text-ui-success-text" />
+        );
+    };
+
     const running = tools.find(item => item.status === 'running');
     const failed = tools.some(
         item => item.status === 'error' && !needsLogin(item)
@@ -182,11 +206,9 @@ export function ToolActivity({
                     aria-hidden="true"
                     className={cn(
                         'size-1.5 shrink-0 rounded-full',
-                        running
-                            ? 'bg-primary-400 motion-safe:animate-pulse'
-                            : failed
-                              ? 'bg-ui-warning'
-                              : 'bg-ui-success'
+                        running && 'bg-primary-400 motion-safe:animate-pulse',
+                        !running && failed && 'bg-ui-warning',
+                        !running && !failed && 'bg-ui-success'
                     )}
                 />
                 <span className="truncate">
@@ -229,21 +251,7 @@ export function ToolActivity({
                                     {subject(item)}
                                 </span>
                                 <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-2 text-secondary-400 tabular-nums">
-                                    {item.status === 'running' ? (
-                                        <span className="motion-safe:animate-pulse">
-                                            {t('ToolActivity.inProgress')}
-                                        </span>
-                                    ) : needsLogin(item) ? (
-                                        <span className="text-secondary-300">
-                                            {t('ToolActivity.loginRequired')}
-                                        </span>
-                                    ) : item.status === 'error' ? (
-                                        <span className="text-ui-warning-text">
-                                            {t('ToolActivity.failed')}
-                                        </span>
-                                    ) : (
-                                        <CheckIcon className="size-3.5 text-ui-success-text" />
-                                    )}
+                                    {statusMark(item)}
                                     {item.ms !== undefined
                                         ? seconds(item.ms)
                                         : null}

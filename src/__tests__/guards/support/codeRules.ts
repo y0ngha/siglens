@@ -400,13 +400,7 @@ function childNodes(node: AstNode): readonly AstNode[] {
         .filter(
             ([key]) => key !== 'loc' && key !== 'extra' && key !== 'comments'
         )
-        .flatMap(([, value]) =>
-            Array.isArray(value)
-                ? value.filter(isNode)
-                : isNode(value)
-                  ? [value]
-                  : []
-        )
+        .flatMap(([, value]) => [value].flat().filter(isNode))
         .toSorted((a, b) => (a.start ?? 0) - (b.start ?? 0));
 }
 
@@ -616,11 +610,7 @@ function collectAccumulations(
               },
           ]
         : frames;
-    const depth = isFunction
-        ? 0
-        : LOOP_TYPES.has(node.type)
-          ? loopDepth + 1
-          : loopDepth;
+    const depth = nextLoopDepth(node, isFunction, loopDepth);
     const next = [...trail, node];
     const accumulator = isCall(node)
         ? localAccumulator(node, here, depth)
@@ -1515,6 +1505,15 @@ export function sqlAbsenceExemptionsOf(
                   ? [{ line: finding.line, reason: finding.reason }]
                   : []
           );
+}
+
+function nextLoopDepth(
+    node: AstNode,
+    isFunction: boolean,
+    loopDepth: number
+): number {
+    if (isFunction) return 0;
+    return LOOP_TYPES.has(node.type) ? loopDepth + 1 : loopDepth;
 }
 
 export const CODE_RULES: readonly CodeRule[] = [

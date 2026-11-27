@@ -276,12 +276,11 @@ const PLAIN = '쉽게 쓴 산문입니다.';
 
 function PlainProbe() {
     const reg = useShareable();
-    const label =
-        reg?.plain === null
-            ? 'NULL'
-            : reg?.plain === undefined
-              ? 'UNDEFINED'
-              : reg.plain;
+    const labelOf = (): string => {
+        if (reg?.plain === null) return 'NULL';
+        return reg?.plain === undefined ? 'UNDEFINED' : reg.plain;
+    };
+    const label = labelOf();
     return <div data-testid="probe-plain">{label}</div>;
 }
 

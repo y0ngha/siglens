@@ -47,6 +47,10 @@ export function TimeframeSelector({
                 // "왜 안 바뀌는지"를 알리는 유일한 피드백이다.
                 const isLocked =
                     !isPending && isFreeTier && timeframe !== '1Day';
+                const titleOf = (): string | undefined => {
+                    if (isPending) return t('TimeframeSelector.fd0418');
+                    return isLocked ? t('TimeframeSelector.a4632e') : undefined;
+                };
                 const handleClick = (): void => {
                     if (isLocked) {
                         trackFunnelEvent('gate_clicked', { gate: 'timeframe' });
@@ -62,21 +66,18 @@ export function TimeframeSelector({
                         type="button"
                         disabled={isPending}
                         aria-disabled={isLocked || undefined}
-                        title={
-                            isPending
-                                ? t('TimeframeSelector.fd0418')
-                                : isLocked
-                                  ? t('TimeframeSelector.a4632e')
-                                  : undefined
-                        }
+                        title={titleOf()}
                         onClick={handleClick}
                         className={cn(
                             'focus-visible:ring-primary-500 flex-1 touch-manipulation rounded border px-2 py-1 text-center text-sm font-medium transition-colors focus-visible:ring-1 disabled:cursor-not-allowed disabled:text-secondary-500 aria-disabled:cursor-not-allowed aria-disabled:text-secondary-500 sm:flex-none sm:px-3',
-                            timeframe === value
-                                ? 'border-primary-400 text-primary-400'
-                                : isLocked
-                                  ? 'border-transparent'
-                                  : 'text-secondary-400 hover:text-secondary-200 border-transparent'
+                            timeframe === value &&
+                                'border-primary-400 text-primary-400',
+                            timeframe !== value &&
+                                isLocked &&
+                                'border-transparent',
+                            timeframe !== value &&
+                                !isLocked &&
+                                'text-secondary-400 hover:text-secondary-200 border-transparent'
                         )}
                     >
                         {timeframeLabel(timeframe, locale)}

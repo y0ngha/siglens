@@ -75,12 +75,12 @@ const NON_CODE_SPECIFIER = /\.(json|css|scss|svg|png|jpe?g|webp|md)([?#].*)?$/;
 const internalBase = (
     specifier: string,
     fromFile: string
-): string | undefined =>
-    specifier.startsWith('@/')
-        ? path.join(SRC, specifier.slice(2))
-        : specifier.startsWith('.')
-          ? path.resolve(path.dirname(fromFile), specifier)
-          : undefined;
+): string | undefined => {
+    if (specifier.startsWith('@/')) return path.join(SRC, specifier.slice(2));
+    return specifier.startsWith('.')
+        ? path.resolve(path.dirname(fromFile), specifier)
+        : undefined;
+};
 
 const directoryEntries = new Map<string, ReadonlySet<string> | null>();
 
@@ -163,14 +163,13 @@ const allSpecifiersAreTypes = (specifiers: unknown): boolean =>
     );
 
 /** 호출식이 모듈을 불러오는 형태면 그 종류, 아니면 `null`. */
-const loadCallKind = (callee: unknown): 'import()' | 'require' | null =>
-    !isNode(callee)
-        ? null
-        : callee.type === 'Import'
-          ? 'import()'
-          : callee.type === 'Identifier' && callee.name === 'require'
-            ? 'require'
-            : null;
+const loadCallKind = (callee: unknown): 'import()' | 'require' | null => {
+    if (!isNode(callee)) return null;
+    if (callee.type === 'Import') return 'import()';
+    return callee.type === 'Identifier' && callee.name === 'require'
+        ? 'require'
+        : null;
+};
 
 export interface ImportRecord {
     specifier: string;
@@ -195,14 +194,15 @@ interface LocShape {
     start: { line: number };
 }
 
-const nameOf = (node: unknown): string | null =>
-    !isNode(node)
-        ? null
-        : node.type === 'Identifier' && typeof node.name === 'string'
-          ? node.name
-          : node.type === 'StringLiteral' && typeof node.value === 'string'
-            ? node.value
-            : null;
+const nameOf = (node: unknown): string | null => {
+    if (!isNode(node)) return null;
+    if (node.type === 'Identifier' && typeof node.name === 'string') {
+        return node.name;
+    }
+    return node.type === 'StringLiteral' && typeof node.value === 'string'
+        ? node.value
+        : null;
+};
 
 /** 지정자 하나가 런타임에 가져오는 이름. 타입 지정자는 빈 배열. */
 const valueNamesOf = (specifiers: unknown): string[] =>
@@ -302,11 +302,8 @@ const collectRecords = (node: unknown): ImportRecord[] =>
 export type FileDirective = 'use client' | 'use server' | null;
 
 const directiveOf = (values: readonly string[]): FileDirective =>
-    values.includes('use client')
-        ? 'use client'
-        : values.includes('use server')
-          ? 'use server'
-          : null;
+    (['use client', 'use server'] as const).find(d => values.includes(d)) ??
+    null;
 
 /** 파일 하나의 import 지정자 목록, 지시문, 파싱 오류. */
 export function extractImports(
@@ -394,14 +391,13 @@ export function buildImportGraph(): ImportGraph {
         // 해석 실패와 함께, 프로덕션 코드가 테스트·스토리 같은 그래프 밖 파일을 import하는
         // 경우도 드러낸다 — 그 엣지는 그래프에서 빠지고 그 파일을 거치는 순환도 사라진다.
         unresolved: parsed.flatMap(({ rel, imports }) =>
-            imports.flatMap(({ specifier, resolved }) =>
-                resolved === null
-                    ? [`${rel} → ${specifier}`]
-                    : typeof resolved === 'string' &&
-                        !fileSet.has(toRel(resolved))
-                      ? [`${rel} → ${specifier} (프로덕션 밖 파일)`]
-                      : []
-            )
+            imports.flatMap(({ specifier, resolved }) => {
+                if (resolved === null) return [`${rel} → ${specifier}`];
+                return typeof resolved === 'string' &&
+                    !fileSet.has(toRel(resolved))
+                    ? [`${rel} → ${specifier} (프로덕션 밖 파일)`]
+                    : [];
+            })
         ),
         parseErrors: parsed.flatMap(({ rel, errors }) =>
             errors.map(message => `${rel}: ${message}`)

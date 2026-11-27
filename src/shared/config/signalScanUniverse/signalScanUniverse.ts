@@ -1,4 +1,5 @@
 import { dashboardScopeOf } from '@/shared/config/dashboardScope';
+import { compareCodeUnits } from '@/shared/lib/compareCodeUnits';
 import { KR_INDEX_UNIVERSE_SNAPSHOT } from './krIndexUniverse.generated';
 import { US_SP500_SNAPSHOT } from './usSp500.generated';
 
@@ -53,7 +54,7 @@ function buildTargets(market: SignalScanMarket): readonly SignalScanTarget[] {
         if (!bySymbol.has(target.symbol)) bySymbol.set(target.symbol, target);
     });
     return [...bySymbol.values()].sort((a, b) =>
-        a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0
+        compareCodeUnits(a.symbol, b.symbol)
     );
 }
 

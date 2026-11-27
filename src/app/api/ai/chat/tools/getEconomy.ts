@@ -330,10 +330,14 @@ function treasuryView(picked: PickedTreasury | null) {
         cache:
             fetchedAt === null
                 ? 'economy snapshot (up to ~48h old)'
-                : fallback
-                  ? `FMP fallback (US Treasury unavailable; ${TREASURY_FALLBACK_TTL_SECONDS / SECONDS_PER_MINUTE}-min cache; FMP can lag the Treasury by ~2 days)`
-                  : `treasury rates (${TREASURY_CACHE_TTL_SECONDS / SECONDS_PER_HOUR}h cache)`,
+                : treasuryCacheNote(fallback),
     };
+}
+
+function treasuryCacheNote(fallback: boolean): string {
+    return fallback
+        ? `FMP fallback (US Treasury unavailable; ${TREASURY_FALLBACK_TTL_SECONDS / SECONDS_PER_MINUTE}-min cache; FMP can lag the Treasury by ~2 days)`
+        : `treasury rates (${TREASURY_CACHE_TTL_SECONDS / SECONDS_PER_HOUR}h cache)`;
 }
 
 const CALENDAR_SOURCE = 'economic calendar: 3h cache';
